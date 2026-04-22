@@ -85,14 +85,14 @@ Our documentation is available in multiple formats:
   versioning](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
 * Note
   [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
-  can be used for note organization, querying and advanced
+  can be used for note organisation, querying and advanced
   [scripting](https://docs.triliumnotes.org/user-guide/scripts)
 * UI available in English, German, Spanish, French, Romanian, and Chinese
   (simplified and traditional)
 * Direct [OpenID and TOTP
   integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
   more secure login
-* [Synchronization](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+* [Synchronisation](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   with self-hosted sync server
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
@@ -106,7 +106,7 @@ Our documentation is available in multiple formats:
 * [Relation
   maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
   [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
+  for visualising notes and their relations
 * Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
 * [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) with
   location pins and GPX tracks
@@ -115,7 +115,7 @@ Our documentation is available in multiple formats:
 * [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) for
   automation
 * Scales well in both usability and performance upwards of 100 000 notes
-* Touch optimized [mobile
+* Touch optimised [mobile
   frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) for
   smartphones and tablets
 * Built-in [dark
@@ -126,7 +126,7 @@ Our documentation is available in multiple formats:
   export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for
   easy saving of web content
-* Customizable UI (sidebar buttons, user-defined widgets, ...)
+* Customisable UI (sidebar buttons, user-defined widgets, ...)
 * [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
   along with a Grafana Dashboard.
 
@@ -327,7 +327,7 @@ Consider supporting the main developer
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 License
+## 🔑 Licence
 
 Copyright 2017-2025 zadam, Elian Doran, and other contributors
 

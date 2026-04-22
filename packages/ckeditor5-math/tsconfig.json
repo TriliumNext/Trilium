@@ -26,6 +26,7 @@
 	"moduleResolution": "NodeNext",
 	"module": "NodeNext",
 	"skipLibCheck": true,
+	"noUncheckedSideEffectImports": false,
 	"outDir": "out-tsc",
     "typeRoots": [
       "typings",

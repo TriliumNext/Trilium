@@ -81,9 +81,20 @@ export default function JumpToNoteDialogComponent() {
                 break;
         }
 
-        $autoComplete
-            .trigger("focus")
-            .trigger("select");
+        $autoComplete.trigger("focus");
+
+        if (mode === "commands") {
+            // In command mode, place caret at end instead of selecting all text
+            // This preserves the ">" prefix when the user starts typing
+            const input = autocompleteRef.current;
+            if (input) {
+                const len = input.value.length;
+                input.setSelectionRange(len, len);
+            }
+        } else {
+            $autoComplete.trigger("select");
+        }
+
 
         // Add keyboard shortcut for full search
         shortcutService.bindElShortcut($autoComplete, "ctrl+return", () => {

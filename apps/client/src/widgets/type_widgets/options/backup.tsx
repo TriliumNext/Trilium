@@ -1,18 +1,18 @@
 import { BackupDatabaseNowResponse, DatabaseBackup } from "@triliumnext/commons";
+import { useCallback, useEffect, useState } from "preact/hooks";
+
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import Button from "../../react/Button";
-import FormCheckbox from "../../react/FormCheckbox";
-import { FormMultiGroup } from "../../react/FormGroup";
+import { formatDateTime } from "../../../utils/formatters";
+import ActionButton from "../../react/ActionButton";
 import FormText from "../../react/FormText";
 import { useTriliumOptionBool } from "../../react/hooks";
+import { OptionsRowWithButton, OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
-import { useCallback, useEffect, useState } from "preact/hooks";
-import { formatDateTime } from "../../../utils/formatters";
 
 export default function BackupSettings() {
-    const [ backups, setBackups ] = useState<DatabaseBackup[]>([]);
+    const [backups, setBackups] = useState<DatabaseBackup[]>([]);
 
     const refreshBackups = useCallback(() => {
         server.get<DatabaseBackup[]>("database/backups").then((backupFiles) => {
@@ -25,56 +25,54 @@ export default function BackupSettings() {
 
             setBackups(backupFiles);
         });
-    }, [ setBackups ]);
+    }, [setBackups]);
 
     useEffect(refreshBackups, []);
 
     return (
         <>
-            <AutomaticBackup />
-            <BackupNow refreshCallback={refreshBackups} />
+            <BackupConfiguration refreshCallback={refreshBackups} />
             <BackupList backups={backups} />
         </>
-    )
+    );
 }
 
-export function AutomaticBackup() {
-    const [ dailyBackupEnabled, setDailyBackupEnabled ] = useTriliumOptionBool("dailyBackupEnabled");
-    const [ weeklyBackupEnabled, setWeeklyBackupEnabled ] = useTriliumOptionBool("weeklyBackupEnabled");
-    const [ monthlyBackupEnabled, setMonthlyBackupEnabled ] = useTriliumOptionBool("monthlyBackupEnabled");
+export function BackupConfiguration({ refreshCallback }: { refreshCallback: () => void }) {
+    const [dailyBackupEnabled, setDailyBackupEnabled] = useTriliumOptionBool("dailyBackupEnabled");
+    const [weeklyBackupEnabled, setWeeklyBackupEnabled] = useTriliumOptionBool("weeklyBackupEnabled");
+    const [monthlyBackupEnabled, setMonthlyBackupEnabled] = useTriliumOptionBool("monthlyBackupEnabled");
 
     return (
-        <OptionsSection title={t("backup.automatic_backup")}>
-            <FormMultiGroup label={t("backup.automatic_backup_description")}>
-                <FormCheckbox
-                    name="daily-backup-enabled"
-                    label={t("backup.enable_daily_backup")}
-                    currentValue={dailyBackupEnabled} onChange={setDailyBackupEnabled}
-                />
+        <OptionsSection title={t("backup.title")}>
+            <FormText>{t("backup.automatic_backup_description")}</FormText>
 
-                <FormCheckbox
-                    name="weekly-backup-enabled"
-                    label={t("backup.enable_weekly_backup")}
-                    currentValue={weeklyBackupEnabled} onChange={setWeeklyBackupEnabled}
-                />
+            <OptionsRowWithToggle
+                name="daily-backup-enabled"
+                label={t("backup.enable_daily_backup")}
+                currentValue={dailyBackupEnabled}
+                onChange={setDailyBackupEnabled}
+            />
 
-                <FormCheckbox
-                    name="monthly-backup-enabled"
-                    label={t("backup.enable_monthly_backup")}
-                    currentValue={monthlyBackupEnabled} onChange={setMonthlyBackupEnabled}
-                />
-            </FormMultiGroup>
+            <OptionsRowWithToggle
+                name="weekly-backup-enabled"
+                label={t("backup.enable_weekly_backup")}
+                currentValue={weeklyBackupEnabled}
+                onChange={setWeeklyBackupEnabled}
+            />
+
+            <OptionsRowWithToggle
+                name="monthly-backup-enabled"
+                label={t("backup.enable_monthly_backup")}
+                currentValue={monthlyBackupEnabled}
+                onChange={setMonthlyBackupEnabled}
+            />
 
             <FormText>{t("backup.backup_recommendation")}</FormText>
-        </OptionsSection>
-    )
-}
 
-export function BackupNow({ refreshCallback }: { refreshCallback: () => void }) {
-    return (
-        <OptionsSection title={t("backup.backup_now")}>
-            <Button
-                text={t("backup.backup_database_now")}
+            <hr />
+
+            <OptionsRowWithButton
+                label={t("backup.backup_database_now")}
                 onClick={async () => {
                     const { backupFile } = await server.post<BackupDatabaseNowResponse>("database/backup-database");
                     toast.showMessage(t("backup.database_backed_up_to", { backupFilePath: backupFile }), 10000);
@@ -82,7 +80,7 @@ export function BackupNow({ refreshCallback }: { refreshCallback: () => void }) 
                 }}
             />
         </OptionsSection>
-    )
+    );
 }
 
 export function BackupList({ backups }: { backups: DatabaseBackup[] }) {
@@ -92,11 +90,13 @@ export function BackupList({ backups }: { backups: DatabaseBackup[] }) {
                 <colgroup>
                     <col width="33%" />
                     <col />
+                    <col width="1%" />
                 </colgroup>
                 <thead>
                     <tr>
                         <th>{t("backup.date-and-time")}</th>
                         <th>{t("backup.path")}</th>
+                        <th />
                     </tr>
                 </thead>
                 <tbody>
@@ -105,15 +105,20 @@ export function BackupList({ backups }: { backups: DatabaseBackup[] }) {
                             <tr>
                                 <td>{mtime ? formatDateTime(mtime) : "-"}</td>
                                 <td className="selectable-text">{filePath}</td>
+                                <td>
+                                    <a href={`api/database/backup/download?filePath=${encodeURIComponent(filePath)}`} download>
+                                        <ActionButton icon="bx bx-download" text={t("backup.download")} />
+                                    </a>
+                                </td>
                             </tr>
                         ))
                     ) : (
                         <tr>
-                            <td className="empty-table-placeholder" colspan={2}>{t("backup.no_backup_yet")}</td>
+                            <td className="empty-table-placeholder" colspan={3}>{t("backup.no_backup_yet")}</td>
                         </tr>
                     )}
                 </tbody>
             </table>
         </OptionsSection>
-    );   
+    );
 }

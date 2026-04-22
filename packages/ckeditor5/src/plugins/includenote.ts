@@ -2,6 +2,16 @@ import { ButtonView, Command, Plugin, toWidget, Widget, type Editor, type Observ
 import noteIcon from '../icons/note.svg?raw';
 
 export const COMMAND_NAME = 'insertIncludeNote';
+export const BOX_SIZE_COMMAND_NAME = 'includeNoteBoxSize';
+
+export const BOX_SIZES = [
+	{ value: 'small', label: 'Small' },
+	{ value: 'medium', label: 'Medium' },
+	{ value: 'full', label: 'Full' },
+	{ value: 'expandable', label: 'Expandable' }
+] as const;
+
+export type BoxSizeValue = typeof BOX_SIZES[number]['value'];
 
 export default class IncludeNote extends Plugin {
 	static get requires() {
@@ -54,6 +64,7 @@ class IncludeNoteEditing extends Plugin {
 		this._defineConverters();
 
 		this.editor.commands.add( COMMAND_NAME, new InsertIncludeNoteCommand( this.editor ) );
+		this.editor.commands.add( BOX_SIZE_COMMAND_NAME, new IncludeNoteBoxSizeCommand( this.editor ) );
 	}
 
 	_defineSchema() {
@@ -133,6 +144,29 @@ class IncludeNoteEditing extends Plugin {
 				return toWidget( section, viewWriter, { label: 'include note widget' } );
 			}
 		} );
+
+		// Handle boxSize attribute changes on existing elements
+		conversion.for( 'editingDowncast' ).add( dispatcher => {
+			dispatcher.on( 'attribute:boxSize:includeNote', ( evt, data, conversionApi ) => {
+				const viewElement = conversionApi.mapper.toViewElement( data.item );
+				if ( !viewElement ) {
+					return;
+				}
+
+				const viewWriter = conversionApi.writer;
+				const oldBoxSize = data.attributeOldValue as string;
+				const newBoxSize = data.attributeNewValue as string;
+
+				// Remove old class and add new class
+				if ( oldBoxSize ) {
+					viewWriter.removeClass( 'box-size-' + oldBoxSize, viewElement );
+				}
+				if ( newBoxSize ) {
+					viewWriter.addClass( 'box-size-' + newBoxSize, viewElement );
+					viewWriter.setAttribute( 'data-box-size', newBoxSize, viewElement );
+				}
+			} );
+		} );
 	}
 }
 
@@ -154,6 +188,41 @@ class InsertIncludeNoteCommand extends Command {
 	}
 }
 
+class IncludeNoteBoxSizeCommand extends Command {
+	declare value: BoxSizeValue | null;
+
+	override execute( options: { value: BoxSizeValue } ) {
+		const model = this.editor.model;
+		const includeNoteElement = this._getSelectedIncludeNote();
+
+		if ( includeNoteElement ) {
+			model.change( writer => {
+				writer.setAttribute( 'boxSize', options.value, includeNoteElement );
+			} );
+		}
+	}
+
+	override refresh() {
+		const includeNoteElement = this._getSelectedIncludeNote();
+
+		this.isEnabled = !!includeNoteElement;
+		this.value = includeNoteElement?.getAttribute( 'boxSize' ) as BoxSizeValue | null ?? null;
+	}
+
+	private _getSelectedIncludeNote() {
+		const selection = this.editor.model.document.selection;
+		const selectedElement = selection.getSelectedElement();
+
+		if ( selectedElement?.name === 'includeNote' ) {
+			return selectedElement;
+		}
+
+		// Check if we're inside an include note
+		const firstPosition = selection.getFirstPosition();
+		return firstPosition?.findAncestor( 'includeNote' ) ?? null;
+	}
+}
+
 /**
  * Hack coming from https://github.com/ckeditor/ckeditor5/issues/4465
  * Source issue: https://github.com/zadam/trilium/issues/1117
@@ -163,7 +232,17 @@ function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
 
 	// commenting out click events to allow link click handler to still work
 	//domElement.addEventListener( 'click', stopEventPropagationAndHackRendererFocus, { capture: true } );
-	domElement.addEventListener( 'mousedown', stopEventPropagationAndHackRendererFocus, { capture: true } );
+
+	domElement.addEventListener( 'mousedown', ( evt: Event ) => {
+		evt.stopPropagation();
+		// This prevents rendering changed view selection thus preventing to changing DOM selection while inside a widget.
+		//@ts-expect-error: We are accessing a private field.
+		editor.editing.view._renderer.isFocused = false;
+
+		// Select the widget so the toolbar can appear
+		selectIncludeNoteWidget( domElement, editor );
+	}, { capture: true } );
+
 	domElement.addEventListener( 'focus', stopEventPropagationAndHackRendererFocus, { capture: true } );
 
 	// Prevents TAB handling or other editor keys listeners which might be executed on editors selection.
@@ -175,4 +254,32 @@ function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
         //@ts-expect-error: We are accessing a private field.
 		editor.editing.view._renderer.isFocused = false;
 	}
+}
+
+function selectIncludeNoteWidget( domElement: HTMLElement, editor: Editor ) {
+	// Find the parent section element (the widget container)
+	const sectionElement = domElement.closest( 'section.include-note' ) as HTMLElement | null;
+	if ( !sectionElement ) {
+		return;
+	}
+
+	// Get the view element from the DOM element
+	const viewElement = editor.editing.view.domConverter.mapDomToView( sectionElement );
+	if ( !viewElement || !viewElement.is( 'element' ) ) {
+		return;
+	}
+
+	// Get the model element from the view element
+	const modelElement = editor.editing.mapper.toModelElement( viewElement );
+	if ( !modelElement ) {
+		return;
+	}
+
+	// Focus the editor view first to ensure selection sync works
+	editor.editing.view.focus();
+
+	// Select the model element using a non-undoable batch so it doesn't affect undo
+	editor.model.enqueueChange( { isUndoable: false }, writer => {
+		writer.setSelection( modelElement, 'on' );
+	} );
 }

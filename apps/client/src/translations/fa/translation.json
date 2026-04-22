@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "درباره Trilium Notes",
-    "homepage": "صفحه اصلی:",
-    "app_version": "نسخه برنامه:",
-    "db_version": "نسخه پایگاه داده:",
-    "sync_version": "نسخه منطبق:",
-    "build_date": "تاریخ ساخت:",
-    "build_revision": "نسخه بازنگری شده:",
     "data_directory": "دایرکتوری داده:"
   },
   "toast": {

@@ -2,10 +2,13 @@ import "./CollectionProperties.css";
 
 import { t } from "i18next";
 import { ComponentChildren } from "preact";
-import { useRef } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
+import appContext from "../../components/app_context";
+import dialogService from "../../services/dialog";
 import { ViewTypeOptions } from "../collections/interface";
+import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import { useNoteProperty, useTriliumEvent } from "../react/hooks";
@@ -24,6 +27,8 @@ export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     presentation: "bx bx-rectangle"
 };
 
+const MAX_OPEN_TABS = 50;
+
 export default function CollectionProperties({ note, centerChildren, rightChildren }: {
     note: FNote;
     centerChildren?: ComponentChildren;
@@ -31,6 +36,7 @@ export default function CollectionProperties({ note, centerChildren, rightChildr
 }) {
     const [ viewType, setViewType ] = useViewType(note);
     const noteType = useNoteProperty(note, "type");
+    const [ isOpening, setIsOpening ] = useState(false);
 
     return ([ "book", "search" ].includes(noteType ?? "") &&
         <div className="collection-properties">
@@ -43,8 +49,56 @@ export default function CollectionProperties({ note, centerChildren, rightChildr
             </div>
             <div className="right-container">
                 {rightChildren}
+                {noteType === "search" && (
+                    <OpenAllButton note={note} isOpening={isOpening} setIsOpening={setIsOpening} />
+                )}
             </div>
         </div>
+    );
+}
+
+function OpenAllButton({ note, isOpening, setIsOpening }: {
+    note: FNote;
+    isOpening: boolean;
+    setIsOpening: (value: boolean) => void;
+}) {
+    const noteIds = note.getChildNoteIds();
+    const count = noteIds.length;
+
+    const handleOpenAll = async () => {
+        if (count === 0) return;
+
+        if (count > MAX_OPEN_TABS) {
+            await dialogService.info(t("book_properties.open_all_too_many", { count, max: MAX_OPEN_TABS }));
+            return;
+        }
+
+        if (count > 10) {
+            const confirmed = await dialogService.confirm(t("book_properties.open_all_confirm", { count }));
+            if (!confirmed) return;
+        }
+
+        setIsOpening(true);
+        try {
+            for (let i = 0; i < noteIds.length; i++) {
+                const noteId = noteIds[i];
+                const isLast = i === noteIds.length - 1;
+                await appContext.tabManager.openTabWithNoteWithHoisting(noteId, {
+                    activate: isLast
+                });
+            }
+        } finally {
+            setIsOpening(false);
+        }
+    };
+
+    return (
+        <ActionButton
+            icon={isOpening ? "bx bx-loader-alt bx-spin" : "bx bx-window-open"}
+            text={t("book_properties.open_all_in_tabs_tooltip")}
+            onClick={handleOpenAll}
+            disabled={count === 0 || isOpening}
+        />
     );
 }
 

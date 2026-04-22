@@ -7,7 +7,7 @@ import link from "../../../services/link";
 import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption } from "../../react/hooks";
 import { buildConfig, BuildEditorOptions } from "./config";
 
-export type BoxSize = "small" | "medium" | "full";
+export type BoxSize = "small" | "medium" | "full" | "expandable";
 
 export interface CKEditorApi {
     /** returns true if user selected some text, false if there's no selection */
@@ -205,7 +205,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                 watchdog.on("stateChange", () => onWatchdogStateChange(watchdog));
             }
 
-            await watchdog.create(container);
+            await watchdog.create(container, {});
         };
 
         init();

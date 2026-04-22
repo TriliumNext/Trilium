@@ -1,20 +1,21 @@
+import type { AttributeType } from "@triliumnext/commons";
 import { dayjs } from "@triliumnext/commons";
 import sax from "sax";
 import stream from "stream";
 import { Throttle } from "stream-throttle";
-import log from "../log.js";
-import { md5, escapeHtml, fromBase64 } from "../utils.js";
-import date_utils from "../date_utils.js";
-import sql from "../sql.js";
-import noteService from "../notes.js";
-import imageService from "../image.js";
-import protectedSessionService from "../protected_session.js";
-import htmlSanitizer from "../html_sanitizer.js";
-import sanitizeAttributeName from "../sanitize_attribute_name.js";
-import type TaskContext from "../task_context.js";
+
 import type BNote from "../../becca/entities/bnote.js";
+import date_utils from "../date_utils.js";
+import htmlSanitizer from "../html_sanitizer.js";
+import imageService from "../image.js";
+import log from "../log.js";
+import noteService from "../notes.js";
+import protectedSessionService from "../protected_session.js";
+import sanitizeAttributeName from "../sanitize_attribute_name.js";
+import sql from "../sql.js";
+import type TaskContext from "../task_context.js";
+import { escapeHtml, fromBase64,md5 } from "../utils.js";
 import type { File } from "./common.js";
-import type { AttributeType } from "@triliumnext/commons";
 
 /**
  * date format is e.g. 20181121T193703Z or 2013-04-14T16:19:00.000Z (Mac evernote, see #3496)
@@ -25,7 +26,7 @@ function parseDate(text: string) {
     text = text.replace(/[-:]/g, "");
 
     // insert - and : to convert it to trilium format
-    text = text.substr(0, 4) + "-" + text.substr(4, 2) + "-" + text.substr(6, 2) + " " + text.substr(9, 2) + ":" + text.substr(11, 2) + ":" + text.substr(13, 2) + ".000Z";
+    text = `${text.substr(0, 4)  }-${  text.substr(4, 2)  }-${  text.substr(6, 2)  } ${  text.substr(9, 2)  }:${  text.substr(11, 2)  }:${  text.substr(13, 2)  }.000Z`;
 
     return text;
 }
@@ -318,27 +319,17 @@ function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentN
 
             resource.mime = resource.mime || "application/octet-stream";
 
-            const createFileNote = () => {
-                const resourceNote = noteService.createNewNote({
-                    parentNoteId: noteEntity.noteId,
+            const createFileAttachment = () => {
+                const attachment = noteEntity.saveAttachment({
+                    role: "file",
+                    mime: resource.mime || "application/octet-stream",
                     title: resource.title,
-                    content: resource.content ?? "",
-                    type: "file",
-                    mime: resource.mime,
-                    isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
-                }).note;
+                    content: resource.content ?? ""
+                });
 
-                for (const attr of resource.attributes) {
-                    resourceNote.addAttribute(attr.type, attr.name, attr.value);
-                }
+                const attachmentLink = `<a class="reference-link" href="#root/${noteEntity.noteId}?viewMode=attachments&attachmentId=${attachment.attachmentId}">${escapeHtml(resource.title)}</a>`;
 
-                updateDates(resourceNote, utcDateCreated, utcDateModified);
-
-                taskContext.increaseProgressCount();
-
-                const resourceLink = `<a href="#root/${resourceNote.noteId}">${escapeHtml(resource.title)}</a>`;
-
-                content = (content || "").replace(mediaRegex, resourceLink);
+                content = (content || "").replace(mediaRegex, attachmentLink);
             };
 
             if (resource.mime && resource.mime.startsWith("image/")) {
@@ -360,10 +351,10 @@ function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentN
                     }
                 } catch (e: any) {
                     log.error(`error when saving image from ENEX file: ${e.message}`);
-                    createFileNote();
+                    createFileAttachment();
                 }
             } else {
-                createFileNote();
+                createFileAttachment();
             }
         }
 

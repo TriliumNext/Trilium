@@ -42,6 +42,7 @@ function sanitize(dirtyHtml: string) {
         allowedTags: allowedTags as string[],
         allowedAttributes: {
             "*": ["class", "style", "title", "src", "href", "hash", "disabled", "align", "alt", "center", "data-*"],
+            a: ["id"], // CKEditor bookmark anchors use <a id="name"></a>
             input: ["type", "checked"],
             img: ["width", "height"],
             code: [ "spellcheck" ]
@@ -49,7 +50,10 @@ function sanitize(dirtyHtml: string) {
         allowedStyles: {
             "*": {
                 color: colorRegex,
-                "background-color": colorRegex
+                "background-color": colorRegex,
+                "margin-left": sizeRegex,
+                "padding-left": sizeRegex,
+                "text-align": [/^\s*(left|center|right|justify)\s*$/]
             },
             figure: {
                 float: [/^\s*(left|right|none)\s*$/],

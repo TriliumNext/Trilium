@@ -1,6 +1,5 @@
 "use strict";
 
-import normalizeString from "normalize-strings";
 import lex from "./lex.js";
 import handleParens from "./handle_parens.js";
 import parse from "./parse.js";
@@ -8,7 +7,8 @@ import SearchResult from "../search_result.js";
 import SearchContext from "../search_context.js";
 import becca from "../../../becca/becca.js";
 import beccaService from "../../../becca/becca_service.js";
-import { normalize, escapeHtml, escapeRegExp } from "../../utils.js";
+import { normalize, removeDiacritic, escapeHtml, escapeRegExp } from "../../utils.js";
+import { stripHtmlTags } from "../utils/text_utils.js";
 import log from "../../log.js";
 import hoistedNoteService from "../../hoisted_note.js";
 import type BNote from "../../../becca/entities/bnote.js";
@@ -17,8 +17,8 @@ import type { SearchParams, TokenStructure } from "./types.js";
 import type Expression from "../expressions/expression.js";
 import sql from "../../sql.js";
 import scriptService from "../../script.js";
-import striptags from "striptags";
 import protectedSessionService from "../../protected_session.js";
+import optionService from "../../options.js";
 
 export interface SearchNoteResult {
     searchResultNoteIds: string[];
@@ -252,21 +252,21 @@ function findResultsWithExpression(expression: Expression, searchContext: Search
 
     // Phase 1: Try exact matches first (without fuzzy matching)
     const exactResults = performSearch(expression, searchContext, false);
-    
+
     // Check if we have sufficient high-quality results
     const minResultThreshold = 5;
     const minScoreForQuality = 10; // Minimum score to consider a result "high quality"
-    
+
     const highQualityResults = exactResults.filter(result => result.score >= minScoreForQuality);
-    
+
     // If we have enough high-quality exact matches, return them
     if (highQualityResults.length >= minResultThreshold) {
         return exactResults;
     }
-    
+
     // Phase 2: Add fuzzy matching as fallback when exact matches are insufficient
     const fuzzyResults = performSearch(expression, searchContext, true);
-    
+
     // Merge results, ensuring exact matches always rank higher than fuzzy matches
     return mergeExactAndFuzzyResults(exactResults, fuzzyResults);
 }
@@ -410,6 +410,12 @@ function findResultsWithQuery(query: string, searchContext: SearchContext): Sear
     query = query || "";
     searchContext.originalQuery = query;
 
+    // For autocomplete searches, use the dedicated autocomplete fuzzy option
+    // instead of the global fuzzy setting. Do this early so it applies to all code paths.
+    if (searchContext.autocomplete) {
+        searchContext.enableFuzzyMatching = optionService.getOptionBool("searchAutocompleteFuzzy");
+    }
+
     const expression = parseQueryToExpression(query, searchContext);
 
     if (!expression) {
@@ -435,21 +441,46 @@ function findFirstNoteWithQuery(query: string, searchContext: SearchContext): BN
     return searchResults.length > 0 ? becca.notes[searchResults[0].noteId] : null;
 }
 
+/**
+ * Returns the first non-empty textRepresentation for a note's own blob
+ * or any of its attachment blobs.
+ */
+function getTextRepresentationForNote(note: BNote): string | null {
+    // Query only textRepresentation to avoid loading large binary content into memory.
+    const row = sql.getRow<{ textRepresentation: string | null }>(`
+        SELECT b.textRepresentation FROM blobs b
+        WHERE b.textRepresentation IS NOT NULL
+          AND b.textRepresentation != ''
+          AND (
+              b.blobId = ?
+              OR b.blobId IN (SELECT blobId FROM attachments WHERE ownerId = ? AND isDeleted = 0)
+          )
+        LIMIT 1
+    `, [note.blobId, note.noteId]);
+
+    return row?.textRepresentation ?? null;
+}
+
 function extractContentSnippet(noteId: string, searchTokens: string[], maxLength: number = 200): string {
     const note = becca.notes[noteId];
     if (!note) {
         return "";
     }
 
-    // Only extract content for text-based notes
-    if (!["text", "code", "mermaid", "canvas", "mindMap"].includes(note.type)) {
-        return "";
-    }
-
     try {
-        let content = note.getContent();
-        
-        if (!content || typeof content !== "string") {
+        let content: string | undefined;
+
+        if (["text", "code", "mermaid", "canvas", "mindMap"].includes(note.type)) {
+            const raw = note.getContent();
+            if (raw && typeof raw === "string") {
+                content = raw;
+            }
+        } else {
+            // For non-text notes (image, file), use OCR text representation
+            content = getTextRepresentationForNote(note) || undefined;
+        }
+
+        if (!content) {
             return "";
         }
 
@@ -466,75 +497,63 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
 
         // Strip HTML tags for text notes
         if (note.type === "text") {
-            content = striptags(content);
+            content = stripHtmlTags(content);
         }
-
-        // Normalize whitespace while preserving paragraph breaks
-        // First, normalize multiple newlines to double newlines (paragraph breaks)
-        content = content.replace(/\n\s*\n/g, "\n\n");
-        // Then normalize spaces within lines
-        content = content.split('\n').map(line => line.replace(/\s+/g, " ").trim()).join('\n');
-        // Finally trim the whole content
-        content = content.trim();
 
         if (!content) {
             return "";
         }
 
-        // Try to find a snippet around the first matching token
-        const normalizedContent = normalizeString(content.toLowerCase());
+        // Find match position using normalize on the raw stripped content.
+        // We use a single normalize() pass — no need for expensive whitespace
+        // normalization just to find the match index.
+        const normalizedContent = normalize(content);
+        const normalizedTokens = searchTokens.map(token => normalize(token));
         let snippetStart = 0;
-        let matchFound = false;
 
-        for (const token of searchTokens) {
-            const normalizedToken = normalizeString(token.toLowerCase());
+        for (const normalizedToken of normalizedTokens) {
             const matchIndex = normalizedContent.indexOf(normalizedToken);
-            
+
             if (matchIndex !== -1) {
                 // Center the snippet around the match
                 snippetStart = Math.max(0, matchIndex - maxLength / 2);
-                matchFound = true;
                 break;
             }
         }
 
-        // Extract snippet
-        let snippet = content.substring(snippetStart, snippetStart + maxLength);
+        // Extract a snippet region from the raw content, then clean only that
+        const snippetRegion = content.substring(snippetStart, snippetStart + maxLength + 100);
 
-        // If snippet contains linebreaks, limit to max 4 lines and override character limit
+        // Normalize whitespace only on the small snippet region
+        let snippet = snippetRegion
+            .replace(/\n\s*\n/g, "\n\n")
+            .replace(/[ \t]+/g, " ")
+            .trim()
+            .substring(0, maxLength);
+
+        // If snippet contains linebreaks, limit to max 4 lines
         const lines = snippet.split('\n');
         if (lines.length > 4) {
-            // Find which lines contain the search tokens to ensure they're included
-            const normalizedLines = lines.map(line => normalizeString(line.toLowerCase()));
-            const normalizedTokens = searchTokens.map(token => normalizeString(token.toLowerCase()));
-
             // Find the first line that contains a search token
             let firstMatchLine = -1;
-            for (let i = 0; i < normalizedLines.length; i++) {
-                if (normalizedTokens.some(token => normalizedLines[i].includes(token))) {
+            for (let i = 0; i < lines.length; i++) {
+                const normalizedLine = normalize(lines[i]);
+                if (normalizedTokens.some(token => normalizedLine.includes(token))) {
                     firstMatchLine = i;
                     break;
                 }
             }
 
             if (firstMatchLine !== -1) {
-                // Center the 4-line window around the first match
-                // Try to show 1 line before and 2 lines after the match
                 const startLine = Math.max(0, firstMatchLine - 1);
                 const endLine = Math.min(lines.length, startLine + 4);
                 snippet = lines.slice(startLine, endLine).join('\n');
             } else {
-                // No match found in lines (shouldn't happen), just take first 4
                 snippet = lines.slice(0, 4).join('\n');
             }
-            // Add ellipsis if we truncated lines
             snippet = snippet + "...";
-        } else if (lines.length > 1) {
-            // For multi-line snippets that are 4 or fewer lines, keep them as-is
-            // No need to truncate
-        } else {
-            // Single line content - apply original word boundary logic
-            // Try to start/end at word boundaries
+        } else if (lines.length <= 1) {
+            // Single line content - apply word boundary logic
             if (snippetStart > 0) {
                 const firstSpace = snippet.search(/\s/);
                 if (firstSpace > 0 && firstSpace < 20) {
@@ -542,7 +561,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
                 }
                 snippet = "..." + snippet;
             }
-            
+
             if (snippetStart + maxLength < content.length) {
                 const lastSpace = snippet.search(/\s[^\s]*$/);
                 if (lastSpace > snippet.length - 20 && lastSpace > 0) {
@@ -576,13 +595,14 @@ function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLeng
         
         // Look for attributes that match the search tokens
         for (const attr of attributes) {
-            const attrName = attr.name?.toLowerCase() || "";
-            const attrValue = attr.value?.toLowerCase() || "";
+            // Use pre-normalized fields from BAttribute for diacritic-insensitive matching
+            const attrName = attr.normalizedName || normalize(attr.name || "");
+            const attrValue = attr.normalizedValue || normalize(attr.value || "");
             const attrType = attr.type || "";
-            
+
             // Check if any search token matches the attribute name or value
             const hasMatch = searchTokens.some(token => {
-                const normalizedToken = normalizeString(token.toLowerCase());
+                const normalizedToken = normalize(token);
                 return attrName.includes(normalizedToken) || attrValue.includes(normalizedToken);
             });
             
@@ -650,7 +670,8 @@ function searchNotesForAutocomplete(query: string, fastSearch: boolean = true) {
         includeHiddenNotes: true,
         fuzzyAttributeSearch: true,
         ignoreInternalAttributes: true,
-        ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId()
+        ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId(),
+        autocomplete: true
     });
 
     const allSearchResults = findResultsWithQuery(query, searchContext);
@@ -727,37 +748,40 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
         }
 
         for (const result of searchResults) {
-            // Reset token
-            const tokenRegex = new RegExp(escapeRegExp(token), "gi");
             let match;
 
             // Highlight in note path title
             if (result.highlightedNotePathTitle) {
                 const titleRegex = new RegExp(escapeRegExp(token), "gi");
-                while ((match = titleRegex.exec(normalizeString(result.highlightedNotePathTitle))) !== null) {
+                // Compute diacritic-free version ONCE before the loop, not on every iteration
+                let titleNoDiacritics = removeDiacritic(result.highlightedNotePathTitle);
+                while ((match = titleRegex.exec(titleNoDiacritics)) !== null) {
                     result.highlightedNotePathTitle = wrapText(result.highlightedNotePathTitle, match.index, token.length, "{", "}");
-                    // 2 characters are added, so we need to adjust the index
+                    // 2 characters are added, so we need to adjust the index and re-derive
                     titleRegex.lastIndex += 2;
+                    titleNoDiacritics = removeDiacritic(result.highlightedNotePathTitle);
                 }
             }
 
             // Highlight in content snippet
             if (result.highlightedContentSnippet) {
                 const contentRegex = new RegExp(escapeRegExp(token), "gi");
-                while ((match = contentRegex.exec(normalizeString(result.highlightedContentSnippet))) !== null) {
+                let contentNoDiacritics = removeDiacritic(result.highlightedContentSnippet);
+                while ((match = contentRegex.exec(contentNoDiacritics)) !== null) {
                     result.highlightedContentSnippet = wrapText(result.highlightedContentSnippet, match.index, token.length, "{", "}");
-                    // 2 characters are added, so we need to adjust the index
                     contentRegex.lastIndex += 2;
+                    contentNoDiacritics = removeDiacritic(result.highlightedContentSnippet);
                 }
             }
 
             // Highlight in attribute snippet
             if (result.highlightedAttributeSnippet) {
                 const attributeRegex = new RegExp(escapeRegExp(token), "gi");
-                while ((match = attributeRegex.exec(normalizeString(result.highlightedAttributeSnippet))) !== null) {
+                let attrNoDiacritics = removeDiacritic(result.highlightedAttributeSnippet);
+                while ((match = attributeRegex.exec(attrNoDiacritics)) !== null) {
                     result.highlightedAttributeSnippet = wrapText(result.highlightedAttributeSnippet, match.index, token.length, "{", "}");
-                    // 2 characters are added, so we need to adjust the index
                     attributeRegex.lastIndex += 2;
+                    attrNoDiacritics = removeDiacritic(result.highlightedAttributeSnippet);
                 }
             }
         }

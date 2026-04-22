@@ -19,13 +19,14 @@ import { openInAppHelpFromUrl } from "../../services/utils";
 import { formatDateTime } from "../../utils/formatters";
 import { BacklinksList, useBacklinkCount } from "../FloatingButtonsDefinitions";
 import Dropdown, { DropdownProps } from "../react/Dropdown";
-import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useActiveNoteContext, useLegacyImperativeHandlers, useNoteLabel, useNoteProperty, useStaticTooltip, useTriliumEvent, useTriliumEvents } from "../react/hooks";
+import { FormDropdownDivider, FormListHeader, FormListItem } from "../react/FormList";
+import { useActiveNoteContext, useLegacyImperativeHandlers, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useStaticTooltip, useTriliumEvent, useTriliumEvents, useTriliumOptionBool, useTriliumOptionInt } from "../react/hooks";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
 import { ParentComponent } from "../react/react_utils";
 import { ContentLanguagesModal, NoteTypeCodeNoteList, NoteTypeOptionsModal, useLanguageSwitcher, useMimeTypes } from "../ribbon/BasicPropertiesTab";
 import AttributeEditor, { AttributeEditorImperativeHandlers } from "../ribbon/components/AttributeEditor";
+import AutoLinkAttributesTab from "../ribbon/AutoLinkAttributesTab";
 import InheritedAttributesTab from "../ribbon/InheritedAttributesTab";
 import { NoteSizeWidget, useNoteMetadata } from "../ribbon/NoteInfoTab";
 import { NotePathsWidget, useSortedNotePaths } from "../ribbon/NotePathsTab";
@@ -33,6 +34,7 @@ import SimilarNotesTab from "../ribbon/SimilarNotesTab";
 import { useAttachments } from "../type_widgets/Attachment";
 import { useProcessedLocales } from "../type_widgets/options/components/LocaleSelector";
 import Breadcrumb from "./Breadcrumb";
+import { convertIndentation } from "./reindentation";
 
 interface StatusBarContext {
     note: FNote;
@@ -69,6 +71,7 @@ export default function StatusBar() {
 
                     <div className="actions-row">
                         <CodeNoteSwitcher {...context} />
+                        <TabWidthSwitcher {...context} />
                         <LanguageSwitcher {...context} />
                         {!isHiddenNote && <NotePaths {...context} />}
                         <AttributesButton {...attributesContext} />
@@ -399,6 +402,11 @@ function AttributesPane({ note, noteContext, attributesShown, setAttributesShown
             <span class="attributes-panel-label">{t("inherited_attribute_list.title")}</span>
             <InheritedAttributesTab {...context} emptyListString="inherited_attribute_list.none" />
 
+            {glob.isDev && <div>
+                <span class="attributes-panel-label">{t("auto_link_attribute_list.title")}</span>
+                <AutoLinkAttributesTab {...context} />
+            </div>}
+
             <AttributeEditor
                 {...context}
                 api={api}
@@ -431,6 +439,104 @@ function NotePaths({ note, hoistedNoteId, notePath }: StatusBarContext) {
                 sortedNotePaths={sortedNotePaths}
                 currentNotePath={notePath}
             />
+        </StatusBarDropdown>
+    );
+}
+//#endregion
+
+//#region Tab width switcher
+const TAB_WIDTH_OPTIONS = [1, 2, 3, 4, 6, 8] as const;
+
+function TabWidthSwitcher({ note, noteContext }: StatusBarContext) {
+    const [ globalTabWidth ] = useTriliumOptionInt("codeNoteTabWidth");
+    const [ globalUseTabs ] = useTriliumOptionBool("codeNoteIndentWithTabs");
+    const [ noteTabWidth, setNoteTabWidth ] = useNoteLabelInt(note, "tabWidth");
+    const [ noteUseTabs, setNoteUseTabs ] = useNoteLabelOptionalBool(note, "indentWithTabs");
+    const effectiveTabWidth = noteTabWidth ?? globalTabWidth ?? 4;
+    const effectiveUseTabs = noteUseTabs ?? globalUseTabs;
+    const hasWidthOverride = noteTabWidth != null;
+    const hasStyleOverride = noteUseTabs != null;
+
+    const reindentTo = async (targetUseTabs: boolean, targetWidth: number) => {
+        const editor = await noteContext.getCodeEditor();
+        if (!editor) return;
+        const converted = convertIndentation(
+            editor.getText(),
+            { useTabs: effectiveUseTabs, width: effectiveTabWidth },
+            { useTabs: targetUseTabs, width: targetWidth }
+        );
+        if (converted !== editor.getText()) {
+            editor.setText(converted);
+        }
+        setNoteTabWidth(targetWidth);
+        setNoteUseTabs(targetUseTabs);
+    };
+
+    const statusText = effectiveUseTabs
+        ? t("status_bar.tab_width_tabs", { width: effectiveTabWidth })
+        : t("status_bar.tab_width_spaces_short", { width: effectiveTabWidth });
+
+    return (note.type === "code" &&
+        <StatusBarDropdown
+            icon="bx bx-right-indent"
+            text={statusText}
+            title={t("status_bar.tab_width_title")}
+        >
+            <FormListHeader text={t("status_bar.tab_width_style_header")} />
+            <FormListItem
+                checked={!effectiveUseTabs}
+                onClick={() => setNoteUseTabs(false)}
+            >
+                {t("status_bar.tab_width_style_spaces")}
+            </FormListItem>
+            <FormListItem
+                checked={effectiveUseTabs}
+                onClick={() => setNoteUseTabs(true)}
+            >
+                {t("status_bar.tab_width_style_tabs")}
+            </FormListItem>
+            {hasStyleOverride &&
+                <FormListItem icon="bx bx-x" onClick={() => setNoteUseTabs(null)}>
+                    {t("status_bar.tab_width_use_default_style", {
+                        style: globalUseTabs ? t("status_bar.tab_width_style_tabs") : t("status_bar.tab_width_style_spaces")
+                    })}
+                </FormListItem>
+            }
+
+            <FormDropdownDivider />
+            <FormListHeader text={t("status_bar.tab_width_display_header")} />
+            {TAB_WIDTH_OPTIONS.map(size => (
+                <FormListItem
+                    key={`display-${size}`}
+                    checked={effectiveTabWidth === size}
+                    onClick={() => setNoteTabWidth(size)}
+                >
+                    {t("status_bar.tab_width_spaces", { count: size })}
+                </FormListItem>
+            ))}
+            {hasWidthOverride &&
+                <FormListItem icon="bx bx-x" onClick={() => setNoteTabWidth(null)}>
+                    {t("status_bar.tab_width_use_default", { width: globalTabWidth })}
+                </FormListItem>
+            }
+
+            <FormDropdownDivider />
+            <FormListHeader text={t("status_bar.tab_width_reindent_header")} />
+            {TAB_WIDTH_OPTIONS.map(size => (
+                <FormListItem
+                    key={`reindent-spaces-${size}`}
+                    disabled={!effectiveUseTabs && effectiveTabWidth === size}
+                    onClick={() => reindentTo(false, size)}
+                >
+                    {t("status_bar.tab_width_spaces", { count: size })}
+                </FormListItem>
+            ))}
+            <FormListItem
+                disabled={effectiveUseTabs}
+                onClick={() => reindentTo(true, effectiveTabWidth)}
+            >
+                {t("status_bar.tab_width_style_tabs")}
+            </FormListItem>
         </StatusBarDropdown>
     );
 }

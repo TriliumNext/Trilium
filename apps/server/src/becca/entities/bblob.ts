@@ -15,6 +15,7 @@ class BBlob extends AbstractBeccaEntity<BBlob> {
 
     content!: string | Buffer;
     contentLength!: number;
+    textRepresentation?: string | null;
 
     constructor(row: BlobRow) {
         super();
@@ -25,6 +26,7 @@ class BBlob extends AbstractBeccaEntity<BBlob> {
         this.blobId = row.blobId;
         this.content = row.content;
         this.contentLength = row.contentLength;
+        this.textRepresentation = row.textRepresentation;
         this.dateModified = row.dateModified;
         this.utcDateModified = row.utcDateModified;
     }
@@ -34,9 +36,15 @@ class BBlob extends AbstractBeccaEntity<BBlob> {
             blobId: this.blobId,
             content: this.content || null,
             contentLength: this.contentLength,
+            textRepresentation: this.textRepresentation || null,
             dateModified: this.dateModified,
             utcDateModified: this.utcDateModified
         };
+    }
+
+    protected getPojoToSave() {
+        const { contentLength: _, ...pojo } = this.getPojo();
+        return pojo;
     }
 }
 

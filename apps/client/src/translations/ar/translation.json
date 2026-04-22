@@ -1,13 +1,6 @@
 {
   "about": {
-    "title": "حول تريليوم للملاحظات",
-    "homepage": "الصفحة الرئيسية:",
-    "app_version": "اصدار التطبيق:",
-    "sync_version": "اصدار المزامنه:",
-    "build_date": "تاريخ الانشاء:",
-    "build_revision": "مراجعة الاصدار:",
-    "data_directory": "مجلد البيانات:",
-    "db_version": "اصدار قاعدة البيانات:"
+    "data_directory": "مجلد البيانات:"
   },
   "toast": {
     "critical-error": {
@@ -373,7 +366,6 @@
     "theme_defined": "النسق المحدد",
     "main_font": "الخط الرئيسي",
     "font_family": "عائلة الخطوط",
-    "reload_frontend": "اعادة تحميل الواجهة",
     "generic-fonts": "الخطوط العامة",
     "sans-serif": "خطوط بدون زوائد",
     "system-default": "الاعداد الافتراضي للنظام",
@@ -393,9 +385,7 @@
   },
   "delete_notes": {
     "close": "غلق",
-    "cancel": "الغاء",
-    "ok": "نعم",
-    "delete_notes_preview": "حذف معاينة الملاحظات"
+    "cancel": "الغاء"
   },
   "export": {
     "close": "غلق",
@@ -486,26 +476,6 @@
     "modal_title": "جلسة محمية",
     "start_button": "بدء جلسة محمية",
     "help_title": "مساعدة حول الملاحظات المحمية"
-  },
-  "revisions": {
-    "delete_button": "حذف",
-    "download_button": "تنزيل",
-    "restore_button": "أستعادة",
-    "note_revisions": "مراجعات الملاحظة",
-    "diff_on": "عرض الفروقات",
-    "diff_off": "عرض المحتوى",
-    "file_size": "حجم الملف:",
-    "mime": "MIME: ",
-    "delete_all_button": "حذف كل المراجعات",
-    "settings": "اعدادات مراجعة الملاحظة",
-    "diff_not_available": "المقارنة غير متوفرة.",
-    "help_title": "مساعدة حول مراجعات الملاحظة",
-    "diff_off_hint": "انقر لعرض محتويات الملاحظة",
-    "revisions_deleted": "تم حذف جميع نسخ المراجعات للملاحظة.",
-    "revision_restored": "تم استعادة نسخ المراجعة للملاحظة.",
-    "revision_deleted": "تم حذف مراجعة الملاحظة.",
-    "snapshot_interval": "فاصل زمني لحفظ لقطات اصدارات المراجعة: {{seconds}}",
-    "maximum_revisions": "حد عدد لقطات اصدارات الملاحظة: {{number}}"
   },
   "sort_child_notes": {
     "title": "عنوان",
@@ -626,7 +596,8 @@
     "date-and-time": "التاريخ والوقت",
     "no_backup_yet": "لايوجد نسخة احتياطية لحد الان",
     "enable_daily_backup": "تمكين النسخ الاحتياطي اليومي",
-    "backup_database_now": "نسخ اختياطي لقاعدة البيانات الان"
+    "backup_database_now": "نسخ اختياطي لقاعدة البيانات الان",
+    "download": "تنزيل"
   },
   "etapi": {
     "created": "تم الأنشاء",
@@ -663,8 +634,6 @@
     "default_shortcuts": "اختصارات افتراضية"
   },
   "sync_2": {
-    "timeout_unit": "ميلي ثانية",
-    "note": "ملاحظة",
     "save": "حفظ",
     "help": "المساعدة",
     "config_title": "تهيئة المزامنة",
@@ -1129,9 +1098,7 @@
   "spellcheck": {
     "title": "التدقيق الاملائي",
     "enable": "تفعيل التدقيق الاملائي",
-    "language_code_label": "رمز اللغة او رموز اللغات",
-    "available_language_codes_label": "رموز اللغات المتاحة:",
-    "language_code_placeholder": "على سبيل المثال \"en-US\", \"de-AI\""
+    "language_code_label": "رمز اللغة او رموز اللغات"
   },
   "note-map": {
     "button-link-map": "خريطة الروابط",

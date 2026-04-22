@@ -120,7 +120,7 @@ async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = f
 
     if (moveToParent) {
         try {
-            await activateParentNotePath();
+            await activateParentNotePath(branchIdsToDelete);
         } catch (e) {
             console.error(e);
         }
@@ -152,13 +152,28 @@ async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = f
     return true;
 }
 
-async function activateParentNotePath() {
-    // this is not perfect, maybe we should find the next/previous sibling, but that's more complex
+async function activateParentNotePath(branchIdsToDelete: string[]) {
     const activeContext = appContext.tabManager.getActiveContext();
-    const parentNotePathArr = activeContext?.notePathArray.slice(0, -1);
+    const activeNotePath = activeContext?.notePathArray ?? [];
 
-    if (parentNotePathArr && parentNotePathArr.length > 0) {
-        activeContext?.setNote(parentNotePathArr.join("/"));
+    // Find the deleted branch that appears earliest in the active note's path
+    let earliestIndex = activeNotePath.length;
+    for (const branchId of branchIdsToDelete) {
+        const branch = froca.getBranch(branchId);
+        if (branch) {
+            const index = activeNotePath.indexOf(branch.noteId);
+            if (index !== -1 && index < earliestIndex) {
+                earliestIndex = index;
+            }
+        }
+    }
+
+    // Navigate to the parent of the highest deleted ancestor
+    if (earliestIndex < activeNotePath.length) {
+        const parentPath = activeNotePath.slice(0, earliestIndex);
+        if (parentPath.length > 0) {
+            await activeContext?.setNote(parentPath.join("/"));
+        }
     }
 }
 

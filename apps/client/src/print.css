@@ -2,18 +2,17 @@
 
 :root {
     --print-font-size: 11pt;
-    --ck-content-color-image-caption-background: transparent !important;
 }
+
 
 html,
 body {
+    --print-font-family: var(--detail-font-family, sans-serif);
+
     width: 100%;
     height: 100%;
     color: black;
-}
-
-@page {
-    margin: 2cm;
+    font-family: var(--print-font-family);
 }
 
 .note-list-widget.full-height,
@@ -26,6 +25,12 @@ body {
 }
 
 body[data-note-type="text"] .ck-content {
+    --ck-content-font-family: var(--print-font-family);
+    --ck-content-font-size: var(--print-font-size);
+    --ck-content-font-color: black;
+    --ck-content-line-height: 1.5;
+    --ck-content-color-image-caption-background: transparent;
+
     font-size: var(--print-font-size);
     text-align: justify;
 }

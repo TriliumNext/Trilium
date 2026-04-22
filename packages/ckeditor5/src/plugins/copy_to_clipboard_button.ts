@@ -38,28 +38,43 @@ export class CopyToClipboardCommand extends Command {
             this.executeCallback = this.editor.config.get("clipboard")?.copy;
         }
 
+        // Try code block first
         const codeBlockEl = selection.getFirstPosition()?.findAncestor("codeBlock");
-        if (!codeBlockEl) {
-            console.warn("Unable to find code block element to copy from.");
+        if (codeBlockEl) {
+            const codeText = Array.from(codeBlockEl.getChildren())
+                .map(child => "data" in child ? child.data : "\n")
+                .join("");
+            this.copyText(codeText, "code block");
             return;
         }
 
-        const codeText = Array.from(codeBlockEl.getChildren())
-            .map(child => "data" in child ? child.data : "\n")
-            .join("");
-
-        if (codeText) {
-            if (!this.executeCallback) {
-                navigator.clipboard.writeText(codeText).then(() => {
-                    console.log('Code block copied to clipboard');
-                }).catch(err => {
-                    console.error('Failed to copy code block', err);
-                });
-            } else {
-                this.executeCallback(codeText);
+        // Try inline code (text with 'code' attribute)
+        const position = selection.getFirstPosition();
+        if (position) {
+            const textNode = position.textNode || position.nodeBefore || position.nodeAfter;
+            if (textNode && "data" in textNode && textNode.hasAttribute?.("code")) {
+                this.copyText(textNode.data as string, "inline code");
+                return;
             }
+        }
+
+        console.warn("No code block or inline code found to copy from.");
+    }
+
+    private copyText(text: string, source: string) {
+        if (!text) {
+            console.warn(`No text found in ${source}.`);
+            return;
+        }
+
+        if (!this.executeCallback) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log(`${source} copied to clipboard`);
+            }).catch(err => {
+                console.error(`Failed to copy ${source}`, err);
+            });
         } else {
-            console.warn('No code block selected or found.');
+            this.executeCallback(text);
         }
     }
 

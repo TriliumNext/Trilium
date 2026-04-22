@@ -1534,8 +1534,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const hoistedNotePath = await treeService.resolveNotePath(this.noteContext.hoistedNoteId);
 
         if (!forceUpdate && this.lastFilteredHoistedNotePath === hoistedNotePath) {
-            // no need to re-filter if the hoisting did not change
-            // (helps with flickering on simple note change with large subtrees)
+            // Hoisting did not change, so skip the expensive re-filter (avoids flickering on
+            // simple note changes with large subtrees). The hidden-node class must still be
+            // reapplied — the <li> may have been recreated by a lazy reload (e.g. via
+            // `getNodeFromPath` → `parentNode.load(true)` after an import into root).
+            this.toggleHiddenNode(this.noteContext.hoistedNoteId !== "root");
             return;
         }
 
@@ -1568,8 +1571,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
     toggleHiddenNode(show: boolean) {
         const hiddenNode = this.getNodesByNoteId("_hidden")[0];
-        // TODO: Check how .li exists here.
-        $((hiddenNode as any).li).toggleClass("hidden-node-is-hidden", !show);
+        if (hiddenNode?.li) {
+            $(hiddenNode.li).toggleClass("hidden-node-is-hidden", !show);
+        }
     }
 
     async frocaReloadedEvent() {

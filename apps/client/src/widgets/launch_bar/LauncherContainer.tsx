@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
 import { isDesktop, isMobile } from "../../services/utils";
 import TabSwitcher from "../mobile_widgets/TabSwitcher";
@@ -12,6 +13,7 @@ import HistoryNavigationButton from "./HistoryNavigation";
 import { LaunchBarContext } from "./launch_bar_widgets";
 import { CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher } from "./LauncherDefinitions";
 import ProtectedSessionStatusWidget from "./ProtectedSessionStatusWidget";
+import SidebarChatButton from "./SidebarChatButton";
 import SpacerWidget from "./SpacerWidget";
 import SyncStatus from "./SyncStatus";
 
@@ -81,13 +83,13 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
             const baseSize = parseInt(note.getLabelValue("baseSize") || "40");
             const growthFactor = parseInt(note.getLabelValue("growthFactor") || "100");
 
-            return <SpacerWidget baseSize={baseSize} growthFactor={growthFactor} />;
+            return <SpacerWidget launcherNote={note} baseSize={baseSize} growthFactor={growthFactor} />;
         case "bookmarks":
-            return <BookmarkButtons />;
+            return <BookmarkButtons launcherNote={note} />;
         case "protectedSession":
-            return <ProtectedSessionStatusWidget />;
+            return <ProtectedSessionStatusWidget launcherNote={note} />;
         case "syncStatus":
-            return <SyncStatus />;
+            return <SyncStatus launcherNote={note} />;
         case "backInHistoryButton":
             return <HistoryNavigationButton launcherNote={note} command="backInNoteHistory" />;
         case "forwardInHistoryButton":
@@ -95,9 +97,11 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
         case "todayInJournal":
             return <TodayLauncher launcherNote={note} />;
         case "quickSearch":
-            return <QuickSearchLauncherWidget />;
+            return <QuickSearchLauncherWidget launcherNote={note} />;
         case "mobileTabSwitcher":
-            return <TabSwitcher />;
+            return <TabSwitcher launcherNote={note} />;
+        case "sidebarChat":
+            return isExperimentalFeatureEnabled("llm") ? <SidebarChatButton launcherNote={note} /> : undefined;
         default:
             console.warn(`Unrecognized builtin widget ${builtinWidget} for launcher ${note.noteId} "${note.title}"`);
     }

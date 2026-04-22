@@ -98,8 +98,8 @@ Notre documentation est disponible sous plusieurs formats :
   connexion plus sécurisée
 * [Synchronisation](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   avec un serveur de synchronisation auto-hébergé
-  * there are [3rd party services for hosting synchronisation
-    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+  * Il existe des [services tiers pour héberger un serveur de
+    synchronisation](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Partage](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (publication) de notes sur Internet
 * [Cryptage de
@@ -108,9 +108,9 @@ Notre documentation est disponible sous plusieurs formats :
 * Diagrammes d'esquisse, basés sur [Excalidraw](https://excalidraw.com/) (type
   de note "canvas"))
 * [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
+  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) et
   [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
+  pour visualiser les notes et leurs relations
 * Cartes mentales, basées sur [Mind Elixir] (https://docs.mind-elixir.com/)
 * [Cartes
   géographiques](https://docs.triliumnotes.org/user-guide/collections/geomap)

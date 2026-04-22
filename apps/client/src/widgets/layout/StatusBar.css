@@ -87,7 +87,8 @@
             font-weight: 600;
         }
 
-        .inherited-attributes-widget {
+        .inherited-attributes-widget,
+        .auto-link-attributes-widget {
             display: inline;
 
             > div {

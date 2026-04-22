@@ -1,4 +1,4 @@
-import { join } from "path";
+import { join, dirname } from "path";
 import packageJson from "../package.json" with { type: "json" };
 import fs from "fs/promises";
 import * as yauzl from "yauzl";
@@ -34,12 +34,13 @@ async function main() {
             }
 
             const relativePath = entry.fileName.substring("web/".length);
-            zip.openReadStream(entry, (err, readStream) => {
+            zip.openReadStream(entry, async (err, readStream) => {
                 if (err) {
                     console.error(`Failed to read ${entry.fileName} from zip:`, err);
                     return;
                 }
                 const outPath = join(__dirname, "../viewer", relativePath);
+                await fs.mkdir(dirname(outPath), { recursive: true });
                 const outStream = createWriteStream(outPath);
                 readStream.pipe(outStream);
                 outStream.on("finish", () => {

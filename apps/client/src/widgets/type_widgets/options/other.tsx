@@ -1,38 +1,60 @@
 import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 import { useMemo } from "preact/hooks";
-import type React from "react";
-import { Trans } from "react-i18next";
 
 import { t } from "../../../services/i18n";
 import search from "../../../services/search";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { isElectron } from "../../../services/utils";
+import { Badge } from "../../react/Badge";
 import Button from "../../react/Button";
-import FormCheckbox from "../../react/FormCheckbox";
-import FormGroup from "../../react/FormGroup";
-import FormSelect from "../../react/FormSelect";
 import FormText from "../../react/FormText";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
+import OptionsRow, { OptionsRowWithButton, OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import TimeSelector from "./components/TimeSelector";
 
 export default function OtherSettings() {
     return (
         <>
+            <SearchSettings />
             {isElectron() && <>
                 <SearchEngineSettings />
                 <TrayOptionsSettings />
             </>}
             <NoteErasureTimeout />
             <AttachmentErasureTimeout />
-            <RevisionSnapshotInterval />
-            <RevisionSnapshotLimit />
+            <RevisionSettings />
             <HtmlImportTags />
             <ShareSettings />
             <NetworkSettings />
         </>
+    );
+}
+
+function SearchSettings() {
+    const [ fuzzyEnabled, setFuzzyEnabled ] = useTriliumOptionBool("searchEnableFuzzyMatching");
+    const [ autocompleteFuzzy, setAutocompleteFuzzy ] = useTriliumOptionBool("searchAutocompleteFuzzy");
+
+    return (
+        <OptionsSection title={t("search.title")}>
+            <OptionsRowWithToggle
+                name="search-fuzzy-matching"
+                label={t("search.fuzzy_matching_label")}
+                description={t("search.fuzzy_matching_description")}
+                currentValue={fuzzyEnabled}
+                onChange={setFuzzyEnabled}
+            />
+
+            <OptionsRowWithToggle
+                name="search-autocomplete-fuzzy"
+                label={t("search.autocomplete_fuzzy_label")}
+                description={t("search.autocomplete_fuzzy_description")}
+                currentValue={autocompleteFuzzy}
+                onChange={setAutocompleteFuzzy}
+            />
+        </OptionsSection>
     );
 }
 
@@ -42,47 +64,45 @@ function SearchEngineSettings() {
 
     const searchEngines = useMemo(() => {
         return [
-            { url: "https://www.bing.com/search?q={keyword}", name: t("search_engine.bing") },
-            { url: "https://www.baidu.com/s?wd={keyword}", name: t("search_engine.baidu") },
             { url: "https://duckduckgo.com/?q={keyword}", name: t("search_engine.duckduckgo") },
-            { url: "https://www.google.com/search?q={keyword}", name: t("search_engine.google") }
+            { url: "https://www.bing.com/search?q={keyword}", name: t("search_engine.bing"), icon: "bx bxl-bing" },
+            { url: "https://www.baidu.com/s?wd={keyword}", name: t("search_engine.baidu"), icon: "bx bxl-baidu" },
+            { url: "https://www.google.com/search?q={keyword}", name: t("search_engine.google"), icon: "bx bxl-google" }
         ];
     }, []);
 
     return (
-        <OptionsSection title={t("search_engine.title")}>
-            <FormText>{t("search_engine.custom_search_engine_info")}</FormText>
+        <OptionsSection title={t("search_engine.title")} description={t("search_engine.custom_search_engine_info")}>
+            <OptionsRow name="predefined-templates" label={t("search_engine.predefined_templates_label")}>
+                <div className="search-engine-templates">
+                    {searchEngines.map(engine => (
+                        <Badge
+                            key={engine.url}
+                            icon={engine.icon}
+                            text={engine.name}
+                            className={customSearchEngineUrl === engine.url ? "selected" : ""}
+                            onClick={() => {
+                                setCustomSearchEngineName(engine.name);
+                                setCustomSearchEngineUrl(engine.url);
+                            }}
+                        />
+                    ))}
+                </div>
+            </OptionsRow>
 
-            <FormGroup name="predefined-search-engine" label={t("search_engine.predefined_templates_label")}>
-                <FormSelect
-                    values={searchEngines}
-                    currentValue={customSearchEngineUrl}
-                    keyProperty="url" titleProperty="name"
-                    onChange={newValue => {
-                        const searchEngine = searchEngines.find(e => e.url === newValue);
-                        if (!searchEngine) {
-                            return;
-                        }
-
-                        setCustomSearchEngineName(searchEngine.name);
-                        setCustomSearchEngineUrl(searchEngine.url);
-                    }}
-                />
-            </FormGroup>
-
-            <FormGroup name="custom-name" label={t("search_engine.custom_name_label")}>
+            <OptionsRow name="custom-name" label={t("search_engine.custom_name_label")}>
                 <FormTextBox
-                    currentValue={customSearchEngineName} onChange={setCustomSearchEngineName}
+                    currentValue={customSearchEngineName} onBlur={setCustomSearchEngineName}
                     placeholder={t("search_engine.custom_name_placeholder")}
                 />
-            </FormGroup>
+            </OptionsRow>
 
-            <FormGroup name="custom-url" label={t("search_engine.custom_url_label")}>
+            <OptionsRow name="custom-url" label={t("search_engine.custom_url_label")} description={t("search_engine.custom_url_description")} stacked>
                 <FormTextBox
-                    currentValue={customSearchEngineUrl} onChange={setCustomSearchEngineUrl}
+                    currentValue={customSearchEngineUrl} onBlur={setCustomSearchEngineUrl}
                     placeholder={t("search_engine.custom_url_placeholder")}
                 />
-            </FormGroup>
+            </OptionsRow>
         </OptionsSection>
     );
 }
@@ -92,9 +112,10 @@ function TrayOptionsSettings() {
 
     return (
         <OptionsSection title={t("tray.title")}>
-            <FormCheckbox
+            <OptionsRowWithToggle
                 name="tray-enabled"
                 label={t("tray.enable_tray")}
+                description={t("tray.enable_tray_description")}
                 currentValue={!disableTray}
                 onChange={trayEnabled => setDisableTray(!trayEnabled)}
             />
@@ -105,17 +126,18 @@ function TrayOptionsSettings() {
 function NoteErasureTimeout() {
     return (
         <OptionsSection title={t("note_erasure_timeout.note_erasure_timeout_title")}>
-            <FormText>{t("note_erasure_timeout.note_erasure_description")}</FormText>
-            <FormGroup name="erase-entities-after" label={t("note_erasure_timeout.erase_notes_after")}>
+            <FormText>{t("note_erasure_timeout.description")}</FormText>
+
+            <OptionsRow name="erase-entities-after" label={t("note_erasure_timeout.erase_notes_after")} description={t("note_erasure_timeout.erase_notes_after_description")}>
                 <TimeSelector
                     name="erase-entities-after"
                     optionValueId="eraseEntitiesAfterTimeInSeconds" optionTimeScaleId="eraseEntitiesAfterTimeScale"
                 />
-            </FormGroup>
-            <FormText>{t("note_erasure_timeout.manual_erasing_description")}</FormText>
+            </OptionsRow>
 
-            <Button
-                text={t("note_erasure_timeout.erase_deleted_notes_now")}
+            <OptionsRowWithButton
+                label={t("note_erasure_timeout.erase_deleted_notes_now")}
+                description={t("note_erasure_timeout.manual_erasing_description")}
                 onClick={() => {
                     server.post("notes/erase-deleted-notes-now").then(() => {
                         toast.showMessage(t("note_erasure_timeout.deleted_notes_erased"));
@@ -129,17 +151,18 @@ function NoteErasureTimeout() {
 function AttachmentErasureTimeout() {
     return (
         <OptionsSection title={t("attachment_erasure_timeout.attachment_erasure_timeout")}>
-            <FormText>{t("attachment_erasure_timeout.attachment_auto_deletion_description")}</FormText>
-            <FormGroup name="erase-unused-attachments-after" label={t("attachment_erasure_timeout.erase_attachments_after")}>
+            <FormText>{t("attachment_erasure_timeout.description")}</FormText>
+
+            <OptionsRow name="erase-unused-attachments-after" label={t("attachment_erasure_timeout.erase_attachments_after")} description={t("attachment_erasure_timeout.erase_attachments_after_description")}>
                 <TimeSelector
                     name="erase-unused-attachments-after"
                     optionValueId="eraseUnusedAttachmentsAfterSeconds" optionTimeScaleId="eraseUnusedAttachmentsAfterTimeScale"
                 />
-            </FormGroup>
-            <FormText>{t("attachment_erasure_timeout.manual_erasing_description")}</FormText>
+            </OptionsRow>
 
-            <Button
-                text={t("attachment_erasure_timeout.erase_unused_attachments_now")}
+            <OptionsRowWithButton
+                label={t("attachment_erasure_timeout.erase_unused_attachments_now")}
+                description={t("attachment_erasure_timeout.manual_erasing_description")}
                 onClick={() => {
                     server.post("notes/erase-unused-attachments-now").then(() => {
                         toast.showMessage(t("attachment_erasure_timeout.unused_attachments_erased"));
@@ -150,49 +173,36 @@ function AttachmentErasureTimeout() {
     );
 }
 
-function RevisionSnapshotInterval() {
+function RevisionSettings() {
+    const [ revisionSnapshotNumberLimit, setRevisionSnapshotNumberLimit ] = useTriliumOption("revisionSnapshotNumberLimit");
+
     return (
-        <OptionsSection title={t("revisions_snapshot_interval.note_revisions_snapshot_interval_title")}>
-            <FormText>
-                <Trans
-                    i18nKey="revisions_snapshot_interval.note_revisions_snapshot_description"
-                    components={{ doc: <a href="https://triliumnext.github.io/Docs/Wiki/note-revisions.html" class="external" /> as React.ReactElement }}
-                />
-            </FormText>
-            <FormGroup name="revision-snapshot-time-interval" label={t("revisions_snapshot_interval.snapshot_time_interval_label")}>
+        <OptionsSection title={t("revisions_snapshot.title")}>
+            <OptionsRow name="revision-snapshot-time-interval" label={t("revisions_snapshot_interval.snapshot_time_interval_label")} description={t("revisions_snapshot_interval.note_revisions_snapshot_description_short")}>
                 <TimeSelector
                     name="revision-snapshot-time-interval"
                     optionValueId="revisionSnapshotTimeInterval" optionTimeScaleId="revisionSnapshotTimeIntervalTimeScale"
                     minimumSeconds={10}
                 />
-            </FormGroup>
-        </OptionsSection>
-    );
-}
+            </OptionsRow>
 
-function RevisionSnapshotLimit() {
-    const [ revisionSnapshotNumberLimit, setRevisionSnapshotNumberLimit ] = useTriliumOption("revisionSnapshotNumberLimit");
-
-    return (
-        <OptionsSection title={t("revisions_snapshot_limit.note_revisions_snapshot_limit_title")}>
-            <FormText>{t("revisions_snapshot_limit.note_revisions_snapshot_limit_description")}</FormText>
-
-            <FormGroup name="revision-snapshot-number-limit">
+            <OptionsRow name="revision-snapshot-number-limit" label={t("revisions_snapshot_limit.snapshot_number_limit_label")} description={t("revisions_snapshot_limit.note_revisions_snapshot_limit_description_short")}>
                 <FormTextBoxWithUnit
                     type="number" min={-1}
                     currentValue={revisionSnapshotNumberLimit}
                     unit={t("revisions_snapshot_limit.snapshot_number_limit_unit")}
-                    onChange={value => {
+                    onBlur={value => {
                         const newValue = parseInt(value, 10);
                         if (!isNaN(newValue) && newValue >= -1) {
                             setRevisionSnapshotNumberLimit(newValue);
                         }
                     }}
                 />
-            </FormGroup>
+            </OptionsRow>
 
-            <Button
-                text={t("revisions_snapshot_limit.erase_excess_revision_snapshots")}
+            <OptionsRowWithButton
+                label={t("revisions_snapshot_limit.erase_excess_revision_snapshots")}
+                description={t("revisions_snapshot_limit.erase_excess_revision_snapshots_description")}
                 onClick={async () => {
                     await server.post("revisions/erase-all-excess-revisions");
                     toast.showMessage(t("revisions_snapshot_limit.erase_excess_revision_snapshots_prompt"));
@@ -247,34 +257,35 @@ function ShareSettings() {
 
     return (
         <OptionsSection title={t("share.title")}>
-            <FormGroup name="redirectBareDomain" description={t("share.redirect_bare_domain_description")}>
-                <FormCheckbox
-                    label={t(t("share.redirect_bare_domain"))}
-                    currentValue={redirectBareDomain}
-                    onChange={async value => {
-                        if (value) {
-                            const shareRootNotes = await search.searchForNotes("#shareRoot");
-                            const sharedShareRootNote = shareRootNotes.find((note) => note.isShared());
+            <OptionsRowWithToggle
+                name="redirect-bare-domain"
+                label={t("share.redirect_bare_domain")}
+                description={t("share.redirect_bare_domain_description")}
+                currentValue={redirectBareDomain}
+                onChange={async value => {
+                    if (value) {
+                        const shareRootNotes = await search.searchForNotes("#shareRoot");
+                        const sharedShareRootNote = shareRootNotes.find((note) => note.isShared());
 
-                            if (sharedShareRootNote) {
-                                toast.showMessage(t("share.share_root_found", { noteTitle: sharedShareRootNote.title }));
-                            } else if (shareRootNotes.length > 0) {
-                                toast.showError(t("share.share_root_not_shared", { noteTitle: shareRootNotes[0].title }));
-                            } else {
-                                toast.showError(t("share.share_root_not_found"));
-                            }
+                        if (sharedShareRootNote) {
+                            toast.showMessage(t("share.share_root_found", { noteTitle: sharedShareRootNote.title }));
+                        } else if (shareRootNotes.length > 0) {
+                            toast.showError(t("share.share_root_not_shared", { noteTitle: shareRootNotes[0].title }));
+                        } else {
+                            toast.showError(t("share.share_root_not_found"));
                         }
-                        setRedirectBareDomain(value);
-                    }}
-                />
-            </FormGroup>
+                    }
+                    setRedirectBareDomain(value);
+                }}
+            />
 
-            <FormGroup name="showLoginInShareTheme" description={t("share.show_login_link_description")}>
-                <FormCheckbox
-                    label={t("share.show_login_link")}
-                    currentValue={showLogInShareTheme} onChange={setShowLogInShareTheme}
-                />
-            </FormGroup>
+            <OptionsRowWithToggle
+                name="show-login-in-share-theme"
+                label={t("share.show_login_link")}
+                description={t("share.show_login_link_description")}
+                currentValue={showLogInShareTheme}
+                onChange={setShowLogInShareTheme}
+            />
         </OptionsSection>
     );
 }
@@ -284,10 +295,12 @@ function NetworkSettings() {
 
     return (
         <OptionsSection title={t("network_connections.network_connections_title")}>
-            <FormCheckbox
+            <OptionsRowWithToggle
                 name="check-for-updates"
                 label={t("network_connections.check_for_updates")}
-                currentValue={checkForUpdates} onChange={setCheckForUpdates}
+                description={t("network_connections.check_for_updates_description")}
+                currentValue={checkForUpdates}
+                onChange={setCheckForUpdates}
             />
         </OptionsSection>
     );

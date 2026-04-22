@@ -26,7 +26,8 @@
 .modal .modal-header .btn-close,
 .modal .modal-header .help-button,
 .modal .modal-header .custom-title-bar-button,
-#toast-container .toast .toast-header .btn-close {
+#toast-container .toast .toast-header .btn-close,
+#toast-container .toast .toast-close .btn-close {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -46,12 +47,14 @@
 }
 
 .modal .modal-header .btn-close,
-#toast-container .toast .toast-header .btn-close {
+#toast-container .toast .toast-header .btn-close,
+#toast-container .toast .toast-close .btn-close {
     --modal-control-button-hover-background: var(--modal-close-button-hover-background);
 }
 
 .modal .modal-header .btn-close::after,
-#toast-container .toast .toast-header .btn-close::after {
+#toast-container .toast .toast-header .btn-close::after,
+#toast-container .toast .toast-close .btn-close::after {
     content: "\ec8d";
     font-family: boxicons;
 }
@@ -67,7 +70,8 @@
 .modal .modal-header .btn-close:hover,
 .modal .modal-header .help-button:hover,
 .modal .modal-header .custom-title-bar-button:hover,
-#toast-container .toast .toast-header .btn-close:hover {
+#toast-container .toast .toast-header .btn-close:hover,
+#toast-container .toast .toast-close .btn-close:hover {
     background: var(--modal-control-button-hover-background);
     color: var(--modal-control-button-hover-color);
 }
@@ -75,19 +79,22 @@
 .modal .modal-header .btn-close:active,
 .modal .modal-header .help-button:active,
 .modal .modal-header .custom-title-bar-button:active,
-#toast-container .toast .toast-header .btn-close:active {
+#toast-container .toast .toast-header .btn-close:active,
+#toast-container .toast .toast-close .btn-close:active {
     transform: scale(.85);
 }
 
 .modal .modal-header .btn-close:focus,
 .modal .modal-header .help-button:focus,
-#toast-container .toast .toast-header .btn-close:focus {
+#toast-container .toast .toast-header .btn-close:focus,
+#toast-container .toast .toast-close .btn-close:focus {
     box-shadow: none !important;
 }
 
 .modal .modal-header .btn-close:focus-visible,
 .modal .modal-header .help-button:focus-visible,
-#toast-container .toast .toast-header .btn-close:focus-visible {
+#toast-container .toast .toast-header .btn-close:focus-visible,
+#toast-container .toast .toast-close .btn-close:focus-visible {
     outline: 2px solid var(--input-focus-outline-color);
     outline-offset: 2px;
 }

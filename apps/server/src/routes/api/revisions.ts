@@ -111,6 +111,18 @@ function eraseRevision(req: Request<{ revisionId: string }>) {
     eraseService.eraseRevisions([req.params.revisionId]);
 }
 
+function updateRevisionDescription(req: Request<{ revisionId: string }>) {
+    const revision = becca.getRevisionOrThrow(req.params.revisionId);
+    const { description } = req.body;
+
+    if (typeof description !== "string") {
+        return [400, "Description must be a string."];
+    }
+
+    revision.description = description;
+    revision.save();
+}
+
 function eraseAllExcessRevisions() {
     const allNoteIds = sql.getRows("SELECT noteId FROM notes WHERE SUBSTRING(noteId, 1, 1) != '_'") as { noteId: string }[];
     allNoteIds.forEach((row) => {
@@ -125,7 +137,7 @@ function restoreRevision(req: Request<{ revisionId: string }>) {
         const note = revision.getNote();
 
         sql.transactional(() => {
-            note.saveRevision();
+            note.saveRevision({ source: "restore" });
 
             for (const oldNoteAttachment of note.getAttachments()) {
                 oldNoteAttachment.markAsDeleted();
@@ -222,5 +234,6 @@ export default {
     eraseAllRevisions,
     eraseAllExcessRevisions,
     eraseRevision,
-    restoreRevision
+    restoreRevision,
+    updateRevisionDescription
 };

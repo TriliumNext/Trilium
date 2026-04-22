@@ -13,6 +13,7 @@ As such, there are third-party solutions that integrate an MCP server that can b
 
 *   [tan-yong-sheng/triliumnext-mcp](https://github.com/tan-yong-sheng/triliumnext-mcp)
 *   [perfectra1n/triliumnext-mcp](https://github.com/perfectra1n/triliumnext-mcp)
+*   [eliassoares/trilium-fastmcp](https://github.com/eliassoares/trilium-fastmcp)
 
 > [!IMPORTANT]
 > These solutions are third-party and thus not endorsed or supported directly by the Trilium Notes team. Please address questions and issues on their corresponding repository instead.

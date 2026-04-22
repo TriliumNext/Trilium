@@ -98,6 +98,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
     const [ state, setState ] = useState<"normal" | "showHelpTooltip" | "showAttributeDetail">();
     const [ error, setError ] = useState<unknown>();
     const [ needsSaving, setNeedsSaving ] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const suppressNextOnHide = useRef(false);
 
     const lastSavedContent = useRef<string>();
     const currentValueRef = useRef(currentValue);
@@ -383,6 +385,12 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                             onClick={(e) => {
                                 // Prevent automatic hiding of the context menu due to the button being clicked.
                                 e.stopPropagation();
+                                if (isMenuOpen) {
+                                // If we re-show the menu, ContextMenu.show() will call hide()
+                                // and immediately trigger onHide. Suppress that transient hide.
+                                    suppressNextOnHide.current = true;
+                                }
+                                setIsMenuOpen(true);
 
                                 contextMenu.show<AttributeCommandNames>({
                                     x: e.pageX,
@@ -395,7 +403,14 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                                         { title: t("attribute_editor.add_new_label_definition"), command: "addNewLabelDefinition", uiIcon: "bx bx-empty" },
                                         { title: t("attribute_editor.add_new_relation_definition"), command: "addNewRelationDefinition", uiIcon: "bx bx-empty" }
                                     ],
-                                    selectMenuItemHandler: (item) => handleAddNewAttributeCommand(item.command)
+                                    selectMenuItemHandler: (item) => handleAddNewAttributeCommand(item.command),
+                                    onHide: () => {
+                                        if (suppressNextOnHide.current) {
+                                            suppressNextOnHide.current = false;
+                                            return;
+                                        }
+                                        setIsMenuOpen(false);
+                                    },
                                 });
                             }}
                         />

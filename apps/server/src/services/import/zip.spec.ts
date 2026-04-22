@@ -71,6 +71,11 @@ describe("processNoteContent", () => {
         expect(content).toContain(`<img src="api/images/${bananaNote!.noteId}/banana.jpeg`);
     });
 
+    it("can import ZIP with UTF-8 filenames without language encoding flag", async () => {
+        const { importedNote } = await testImport("utf8-filename.zip");
+        expect(importedNote.title).toBe("测试");
+    });
+
     it("can import old geomap notes", async () => {
         const { importedNote } = await testImport("geomap.zip");
         expect(importedNote.type).toBe("book");

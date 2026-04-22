@@ -26,7 +26,7 @@ export default function FileTypeWidget({ note, parentComponent, noteContext }: T
 
 }
 
-function TextPreview({ content }: { content: string }) {
+export function TextPreview({ content }: { content: string }) {
     const trimmedContent = content.substring(0, TEXT_MAX_NUM_CHARS);
     const isTooLarge = trimmedContent.length !== content.length;
 

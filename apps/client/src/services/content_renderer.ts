@@ -1,6 +1,7 @@
 import "./content_renderer.css";
 
-import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import { normalizeMimeTypeForCKEditor, renderToHtml, type TextRepresentationResponse } from "@triliumnext/commons";
+import DOMPurify from "dompurify";
 import { h, render } from "preact";
 import WheelZoom from 'vanilla-js-wheel-zoom';
 
@@ -8,13 +9,14 @@ import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
-import renderText from "./content_renderer_text.js";
+import renderText, { postProcessRichContent, renderChildrenList } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
 import openService from "./open.js";
 import protectedSessionService from "./protected_session.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import renderService from "./render.js";
+import server from "./server.js";
 import { applySingleBlockSyntaxHighlight } from "./syntax_highlight.js";
 import utils, { getErrorMessage } from "./utils.js";
 
@@ -32,6 +34,7 @@ export interface RenderOptions {
     includeArchivedNotes?: boolean;
     /** Set of note IDs that have already been seen during rendering to prevent infinite recursion. */
     seenNoteIds?: Set<string>;
+    showTextRepresentation?: boolean;
 }
 
 const CODE_MIME_TYPES = new Set(["application/json"]);
@@ -52,12 +55,14 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 
     if (type === "text" || type === "book") {
         await renderText(entity, $renderedContent, options);
+    } else if (type === "markdown") {
+        await renderMarkdown(entity, $renderedContent, options);
     } else if (type === "code") {
         await renderCode(entity, $renderedContent);
     } else if (["image", "canvas", "mindMap", "spreadsheet"].includes(type)) {
-        renderImage(entity, $renderedContent, options);
+        await renderImage(entity, $renderedContent, options);
     } else if (!options.tooltip && ["file", "pdf", "audio", "video"].includes(type)) {
-        await renderFile(entity, type, $renderedContent);
+        await renderFile(entity, type, $renderedContent, options);
     } else if (type === "mermaid") {
         await renderMermaid(entity, $renderedContent);
     } else if (type === "render" && entity instanceof FNote) {
@@ -118,6 +123,31 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 }
 
 /**
+ * Renders a markdown note by converting its source to CKEditor-compatible HTML,
+ * then running the same post-render pipeline as text notes (included notes,
+ * math, reference links, Mermaid, code highlight) so the preview matches what
+ * the user sees in the Markdown note type's preview pane.
+ */
+async function renderMarkdown(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions) {
+    const blob = await note.getBlob();
+    const source = blob?.content ?? "";
+
+    if (!source.trim()) {
+        if (note instanceof FNote && !options.noChildrenList) {
+            await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
+        }
+        return;
+    }
+
+    const html = renderToHtml(source, note.title, {
+        sanitize: (dirty) => DOMPurify.sanitize(dirty),
+        wikiLink: { formatHref: (id) => `#root/${id}` }
+    });
+    $renderedContent.append($('<div class="ck-content">').html(html));
+    await postProcessRichContent(note, $renderedContent, options);
+}
+
+/**
  * Renders a code note, by displaying its content and applying syntax highlighting based on the selected MIME type.
  */
 async function renderCode(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>) {
@@ -138,7 +168,7 @@ async function renderCode(note: FNote | FAttachment, $renderedContent: JQuery<HT
     await applySingleBlockSyntaxHighlight($codeBlock, normalizeMimeTypeForCKEditor(note.mime));
 }
 
-function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
+async function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
     const encodedTitle = encodeURIComponent(entity.title);
 
     let url;
@@ -146,13 +176,14 @@ function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLE
     if (entity instanceof FNote) {
         url = `api/images/${entity.noteId}/${encodedTitle}?${Math.random()}`;
     } else if (entity instanceof FAttachment) {
-        url = `api/attachments/${entity.attachmentId}/image/${encodedTitle}?${entity.utcDateModified}">`;
+        url = `api/attachments/${entity.attachmentId}/image/${encodedTitle}?${entity.utcDateModified}`;
     }
 
     $renderedContent // styles needed for the zoom to work well
         .css("display", "flex")
         .css("align-items", "center")
-        .css("justify-content", "center");
+        .css("justify-content", "center")
+        .css("flex-direction", "column");   // OCR text is displayed below the image.
 
     const $img = $("<img>")
         .attr("src", url || "")
@@ -178,9 +209,35 @@ function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLE
     }
 
     imageContextMenuService.setupContextMenu($img);
+
+    if (entity instanceof FNote && options.showTextRepresentation) {
+        await addOCRTextIfAvailable(entity, $renderedContent);
+    }
 }
 
-async function renderFile(entity: FNote | FAttachment, type: string, $renderedContent: JQuery<HTMLElement>) {
+async function addOCRTextIfAvailable(note: FNote, $content: JQuery<HTMLElement>) {
+    try {
+        const data = await server.get<TextRepresentationResponse>(`ocr/notes/${note.noteId}/text`);
+        if (data.success && data.hasOcr && data.text) {
+            const $ocrSection = $(`
+                <div class="ocr-text-section">
+                    <div class="ocr-header">
+                        <span class="bx bx-text"></span> ${t("ocr.extracted_text")}
+                    </div>
+                    <div class="ocr-content"></div>
+                </div>
+            `);
+
+            $ocrSection.find('.ocr-content').text(data.text);
+            $content.append($ocrSection);
+        }
+    } catch (error) {
+        // Silently fail if OCR API is not available
+        console.debug('Failed to fetch OCR text:', error);
+    }
+}
+
+async function renderFile(entity: FNote | FAttachment, type: string, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
     let entityType, entityId;
 
     if (entity instanceof FNote) {
@@ -218,6 +275,10 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
             .css("width", "100%");
 
         $content.append($videoPreview);
+    }
+
+    if (entity instanceof FNote && options.showTextRepresentation) {
+        await addOCRTextIfAvailable(entity, $content);
     }
 
     if (entityType === "notes" && "noteId" in entity) {
@@ -297,6 +358,8 @@ function getRenderingType(entity: FNote | FAttachment) {
 
     if (type === "file" && mime === "application/pdf") {
         type = "pdf";
+    } else if (type === "code" && entity instanceof FNote && entity.isMarkdown()) {
+        type = "markdown";
     } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime) && !isIconPack) {
         type = "code";
     } else if (type === "file" && mime && mime.startsWith("audio/")) {

@@ -114,7 +114,7 @@
     "options-title": "Опции",
     "appearance-title": "Оформление",
     "shortcuts-title": "Сочетания клавиш",
-    "images-title": "Изображения",
+    "images-title": "Медиа",
     "spellcheck-title": "Проверка орфографии",
     "password-title": "Пароль",
     "etapi-title": "ETAPI",
@@ -157,7 +157,11 @@
     "open-today-journal-note-title": "Открыть сегодняшнюю заметку в журнале",
     "zen-mode": "Режим \"Дзен\"",
     "command-palette": "Открыть панель команд",
-    "tab-switcher-title": "Переключатель вкладок"
+    "tab-switcher-title": "Переключатель вкладок",
+    "llm-chat-history-title": "История чата с ИИ",
+    "llm-title": "ИИ / LLM",
+    "sidebar-chat-title": "Чат с ИИ",
+    "custom-dictionary-title": "Пользовательский словарь"
   },
   "tray": {
     "bookmarks": "Закладки",
@@ -340,7 +344,8 @@
     "outstanding-items": "Оставшиеся элементы синхронизации:"
   },
   "special_notes": {
-    "search_prefix": "Поиск:"
+    "search_prefix": "Поиск:",
+    "llm_chat_prefix": "Чат:"
   },
   "notes": {
     "duplicate-note-suffix": "(дубликат)",
@@ -357,7 +362,10 @@
     "site-theme": "Тема оформления сайта",
     "image_alt": "Изображение статьи",
     "on-this-page": "На текущей странице",
-    "last-updated": "Последнее обновление: {{- date}}"
+    "last-updated": "Последнее обновление: {{- date}}",
+    "logo-alt": "Логотип",
+    "toggle-toc": "Переключение оглавления",
+    "toggle-navigation": "Переключение навигации"
   },
   "hidden_subtree_templates": {
     "description": "Описание",
@@ -400,7 +408,7 @@
   "setup_sync-from-desktop": {
     "heading": "Синхронизация с настольной версией",
     "description": "Это настройку нужно выполнить с помощью настольной версии:",
-    "step1": "Откройте приложение Trilium Notes на ПК.",
+    "step1": "Откройте приложение Trilium Notes на компьютере.",
     "step2": "В меню Trilium выберите «Параметры».",
     "step3": "Нажмите на категорию «Синхронизация».",
     "step4": "Измените адрес экземпляра сервера на: {{- host}} и нажмите «Сохранить».",
@@ -437,5 +445,21 @@
   },
   "desktop": {
     "instance_already_running": "Приложение уже запущено, фокус переключен на него."
+  },
+  "password": {
+    "incorrect": "Вы ввели неверный пароль."
+  },
+  "script": {
+    "wrong-environment": "Не удается выполнить заметку \"{{- noteTitle}}\" ({{- noteId}}). Это скрипт {{- actualEnv}}, но попытка выполнения была предпринята в {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Ошибка в {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" - зарезервированное ключевое слово. Для поиска буквального значения используйте кавычки: \"{{- token}}\"",
+      "cannot-compare-with": "невозможно сравнить с \"{{- token}}\". Для поиска буквального значения используйте кавычки: \"{{- token}}\"",
+      "misplaced-expression": "Неподходящее или неполное выражение \"{{- token}}\"",
+      "fulltext-after-expression": "\"{{- token}}\" - неверное выражение. Для поиска текста поместите его перед фильтрами атрибутов (например, \"{{- token}} #метка\" вместо \"#метка {{- token}}\").",
+      "unrecognized-expression": "Нераспознанное выражение \"{{- token}}\""
+    }
   }
 }

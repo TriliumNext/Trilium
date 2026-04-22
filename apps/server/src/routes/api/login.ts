@@ -15,6 +15,7 @@ import etapiTokenService from "../../services/etapi_tokens.js";
 import type { Request } from "express";
 import totp from "../../services/totp";
 import recoveryCodeService from "../../services/encryption/recovery_codes";
+import { t } from "i18next";
 
 /**
  * @swagger
@@ -126,7 +127,7 @@ function loginToProtectedSession(req: Request) {
     if (!passwordEncryptionService.verifyPassword(password)) {
         return {
             success: false,
-            message: "Given current password doesn't match hash"
+            message: t("password.incorrect")
         };
     }
 

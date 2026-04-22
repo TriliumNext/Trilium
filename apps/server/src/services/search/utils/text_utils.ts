@@ -50,6 +50,30 @@ export function normalizeSearchText(text: string): string {
 }
 
 /**
+ * Strips HTML tags from content for snippet extraction.
+ * Uses iterative replacement to handle nested/malformed tags like `<scr<script>ipt>`.
+ *
+ * @param html The HTML content to strip
+ * @returns Plain text with all HTML tags removed
+ */
+export function stripHtmlTags(html: string): string {
+    if (!html || typeof html !== "string") {
+        return "";
+    }
+
+    let result = html;
+    let previous: string;
+
+    // Loop until no more tags — handles nested cases like <scr<script>ipt>
+    do {
+        previous = result;
+        result = result.replace(/<[^>]*>/g, "");
+    } while (result !== previous);
+
+    return result;
+}
+
+/**
  * Optimized edit distance calculation using single array and early termination.
  * This is significantly more memory efficient than the 2D matrix approach and includes
  * early termination optimizations for better performance.
@@ -275,19 +299,19 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
     }
     
     try {
-        // Normalize both strings for comparison
+        // Normalize for comparison — some callers pass pre-normalized text,
+        // others don't, so this function must be self-contained.
         const normalizedToken = token.toLowerCase();
         const normalizedText = text.toLowerCase();
-        
+
         // Exact match check first (most common case)
         if (normalizedText.includes(normalizedToken)) {
-            // Find the exact match in the original text to preserve case
-            const exactMatch = text.match(new RegExp(escapeRegExp(token), 'i'));
-            return exactMatch ? exactMatch[0] : token;
+            // Find the exact match position and return the original substring with case preserved
+            const matchIndex = normalizedText.indexOf(normalizedToken);
+            return text.substring(matchIndex, matchIndex + normalizedToken.length);
         }
-        
-        // For fuzzy matching, we need to check individual words in the text
-        // Split the text into words and check each word against the token
+
+        // For fuzzy matching, split into words and check each against the token
         const words = normalizedText.split(/\s+/).filter(word => word.length > 0);
         const originalWords = text.split(/\s+/).filter(word => word.length > 0);
         

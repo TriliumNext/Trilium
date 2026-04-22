@@ -33,3 +33,7 @@
 ## 🛠️ Technical updates
 
 *   \[…\]
+
+## 🔒️ Security improvements
+
+*   \[…\]

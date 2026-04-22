@@ -119,6 +119,22 @@ export function sanitizeSqlIdentifier(str: string) {
     return str.replace(/[^A-Za-z0-9_]/g, "");
 }
 
+/**
+ * Sanitize SVG to remove potentially dangerous elements and attributes.
+ * This prevents XSS via script injection in SVG content.
+ */
+export function sanitizeSvg(svg: string): string {
+    return svg
+        // Remove script elements
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        // Remove on* event handlers (onclick, onload, onerror, etc.)
+        .replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '')
+        // Remove javascript: URLs
+        .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"')
+        .replace(/xlink:href\s*=\s*["']javascript:[^"']*["']/gi, 'xlink:href="#"');
+}
+
 export const escapeHtml = escape;
 
 export const unescapeHtml = unescape;
@@ -560,6 +576,7 @@ export default {
     replaceAll,
     safeExtractMessageAndStackFromError,
     sanitizeSqlIdentifier,
+    sanitizeSvg,
     stripTags,
     slugify,
     timeLimit,

@@ -1,0 +1,173 @@
+/* Input form */
+.llm-chat-input-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--main-border-color);
+}
+
+.llm-chat-input {
+    flex: 1;
+    min-height: 60px;
+    max-height: 200px;
+    resize: vertical;
+    padding: 0.75rem;
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: inherit;
+    background: var(--main-background-color);
+    color: var(--main-text-color);
+}
+
+.llm-chat-input:focus {
+    outline: none;
+    border-color: var(--main-selection-color);
+    box-shadow: 0 0 0 2px var(--main-selection-color-soft, rgba(0, 123, 255, 0.25));
+}
+
+.llm-chat-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Options row */
+.llm-chat-options {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.llm-chat-send-btn {
+    margin-left: auto;
+    font-size: 1.25rem;
+}
+
+.llm-chat-send-btn.disabled {
+    opacity: 0.4;
+}
+
+.llm-chat-stop-btn {
+    color: var(--danger-color, #dc3545);
+}
+
+/* Model selector */
+.llm-chat-model-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.85rem;
+    color: var(--muted-text-color);
+}
+
+.llm-chat-model-selector .bx {
+    font-size: 1rem;
+}
+
+.llm-chat-model-selector .dropdown {
+    display: flex;
+
+    small {
+        margin-left: 0.5em;
+        color: var(--muted-text-color);
+    }
+
+    /* Position legacy models submenu to open upward */
+    .dropdown-submenu .dropdown-menu {
+        bottom: 0;
+        top: auto;
+    }
+}
+
+.llm-chat-model-select.select-button {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--main-border-color);
+    border-radius: 4px;
+    background: var(--main-background-color);
+    color: var(--main-text-color);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    min-width: 140px;
+    text-align: left;
+}
+
+.llm-chat-model-select.select-button:focus {
+    outline: none;
+    border-color: var(--main-selection-color);
+}
+
+.llm-chat-model-select.select-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Note context toggle */
+.llm-chat-note-context.tn-low-profile {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.5;
+    background: none;
+    border: none;
+}
+
+.llm-chat-note-context.tn-low-profile:hover:not(:disabled) {
+    opacity: 0.8;
+    background: none;
+}
+
+.llm-chat-note-context.tn-low-profile.active {
+    opacity: 1;
+}
+
+/* Context window indicator */
+.llm-chat-context-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-left: 0.5rem;
+    cursor: help;
+}
+
+.llm-chat-context-pie {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.llm-chat-context-text {
+    font-size: 0.75rem;
+    color: var(--muted-text-color);
+}
+
+/* No provider state */
+.llm-chat-no-provider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    border-top: 1px solid var(--main-border-color);
+}
+
+.llm-chat-no-provider-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+    color: var(--muted-text-color);
+}
+
+.llm-chat-no-provider-icon {
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
+.llm-chat-no-provider-content p {
+    margin: 0;
+    font-size: 0.9rem;
+}

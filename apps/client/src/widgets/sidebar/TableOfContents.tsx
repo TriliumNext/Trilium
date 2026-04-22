@@ -1,13 +1,12 @@
 import "./TableOfContents.css";
 
-import { attributeChangeAffectsHeading, CKTextEditor, ModelElement } from "@triliumnext/ckeditor5";
+import { attributeChangeAffectsHeading, CKTextEditor, ModelElement, type ModelNode } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
-import math from "../../services/math";
 import { randomString } from "../../services/utils";
-import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useNoteProperty, useTextEditor } from "../react/hooks";
+import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useMathRendering, useNoteProperty, useTextEditor } from "../react/hooks";
 import Icon from "../react/Icon";
 import RawHtml from "../react/RawHtml";
 import RightPanelWidget from "./RightPanelWidget";
@@ -84,19 +83,7 @@ function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
     const isActive = heading.id === activeHeadingId;
     const contentRef = useRef<HTMLElement>(null);
 
-    // Render math equations after component mounts/updates
-    useEffect(() => {
-        if (!contentRef.current) return;
-        const mathElements = contentRef.current.querySelectorAll(".ck-math-tex");
-
-        for (const mathEl of mathElements ?? []) {
-            try {
-                math.render(mathEl.textContent || "", mathEl as HTMLElement);
-            } catch (e) {
-                console.warn("Failed to render math in TOC:", e);
-            }
-        }
-    }, [heading.text]);
+    useMathRendering(contentRef, [heading.text]);
 
     return (
         <>
@@ -213,20 +200,37 @@ function extractTocFromTextEditor(editor: CKTextEditor) {
 
             const level = Number(item.name.replace( 'heading', '' ));
 
-            // Convert model element to view, then to DOM to get HTML
+            // Convert model element to view, then to DOM to get HTML.
+            // Math UIElements render their KaTeX content asynchronously, so
+            // ck-math-tex spans may be empty at read time. Replace them with
+            // math-tex spans (the data format) using the equation from the model,
+            // so useMathRendering can render them synchronously in the sidebar.
             const viewEl = editor.editing.mapper.toViewElement(item);
             let text = '';
             if (viewEl) {
                 const domEl = editor.editing.view.domConverter.mapViewToDom(viewEl);
                 if (domEl instanceof HTMLElement) {
-                    text = domEl.innerHTML;
+                    const clone = domEl.cloneNode(true) as HTMLElement;
+                    const ckMathSpans = clone.querySelectorAll('.ck-math-tex');
+                    let mathIdx = 0;
+                    for (const child of item.getChildren()) {
+                        if (!child.is('element', 'mathtex-inline')) continue;
+                        if (mathIdx >= ckMathSpans.length) break;
+                        const equation = String(child.getAttribute('equation') ?? '');
+                        const span = document.createElement('span');
+                        span.className = 'math-tex';
+                        span.textContent = `\\(${equation}\\)`;
+                        ckMathSpans[mathIdx].replaceWith(span);
+                        mathIdx++;
+                    }
+                    text = clone.innerHTML;
                 }
             }
 
-            // Fallback to plain text if conversion fails
+            // Fallback to plain text if DOM conversion fails
             if (!text) {
                 text = Array.from( item.getChildren() )
-                    .map( c => c.is( '$text' ) ? c.data : '' )
+                    .map( (c: ModelNode) => c.is( '$text' ) ? c.data : '' )
                     .join( '' );
             }
 
@@ -273,7 +277,7 @@ function extractTocFromStaticHtml(el: HTMLElement | null) {
         headings.push({
             id: randomString(),
             level: parseInt(headingEl.tagName.substring(1), 10),
-            text: headingEl.textContent,
+            text: headingEl.innerHTML,
             element: headingEl
         });
     }

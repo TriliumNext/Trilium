@@ -76,7 +76,7 @@ function patchCacheBuster(htmlFilePath: string) {
             `<link rel="stylesheet" href="${file}" />`,
             `<link rel="stylesheet" href="${file}?v=${version}" />`);
     }
-    for (const file of [ "viewer.mjs", "custom.mjs" ]) {
+    for (const file of [ "viewer.mjs", "custom.mjs", "../build/pdf.mjs" ]) {
         html = html.replace(
             `<script src="${file}" type="module"></script>`,
             `<script src="${file}?v=${version}" type="module"></script>`
@@ -84,6 +84,15 @@ function patchCacheBuster(htmlFilePath: string) {
     }
 
     writeFileSync(htmlFilePath, html);
+
+    // Also patch the worker source in viewer.mjs
+    const viewerMjsPath = htmlFilePath.replace("viewer.html", "viewer.mjs");
+    let viewerMjs = readFileSync(viewerMjsPath, "utf-8");
+    viewerMjs = viewerMjs.replace(
+        `value: "../build/pdf.worker.mjs"`,
+        `value: "../build/pdf.worker.mjs?v=${version}"`
+    );
+    writeFileSync(viewerMjsPath, viewerMjs);
 }
 
 function watchForChanges() {

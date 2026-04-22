@@ -141,7 +141,7 @@ async function createInitialDatabase(skipDemoDb?: boolean) {
         // the previous solution was to move option initialization here, but then the important parts of initialization
         // are not all in one transaction (because ZIP import is async and thus not transactional)
 
-        const startNoteId = sql.getValue("SELECT noteId FROM branches WHERE parentNoteId = 'root' AND isDeleted = 0 ORDER BY notePosition");
+        const startNoteId = sql.getValue("SELECT noteId FROM branches WHERE parentNoteId = 'root' AND isDeleted = 0 AND noteId != '_hidden' ORDER BY notePosition") || "root";
 
         optionService.setOption(
             "openNoteContexts",

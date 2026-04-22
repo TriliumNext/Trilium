@@ -1,12 +1,5 @@
 {
   "about": {
-    "homepage": "Trang chủ:",
-    "title": "Về Trilium Notes",
-    "app_version": "Phiên bản:",
-    "db_version": "Phiên bản DB:",
-    "sync_version": "Phiên bản liên kết:",
-    "build_date": "Ngày build:",
-    "build_revision": "Xây dựng bản sửa đổi:",
     "data_directory": "Đường dẫn dữ liệu:"
   },
   "add_link": {
@@ -27,7 +20,6 @@
   },
   "delete_notes": {
     "close": "Đóng",
-    "ok": "OK",
     "cancel": "Huỷ"
   },
   "export": {
@@ -69,10 +61,6 @@
   },
   "protected_session_password": {
     "close_label": "Đóng"
-  },
-  "revisions": {
-    "restore_button": "Khôi phục",
-    "delete_button": "Xoá"
   },
   "upload_attachments": {
     "options": "Tuỳ chọn"

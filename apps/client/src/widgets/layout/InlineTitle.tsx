@@ -75,6 +75,7 @@ function shouldShow(note: FNote | null | undefined, type: NoteType | undefined, 
     if (viewScope?.viewMode !== "default") return false;
     if (note?.noteId?.startsWith("_options")) return true;
     if (note?.isTriliumSqlite()) return false;
+    if (note?.isMarkdown()) return false;
     return type && supportedNoteTypes.has(type);
 }
 

@@ -100,6 +100,7 @@
     "reset-zoom-level": "Reset zoom level",
     "copy-without-formatting": "Copy selected text without formatting",
     "force-save-revision": "Force creating / saving new note revision of the active note",
+    "save-named-revision": "Save a named revision of the active note",
     "toggle-book-properties": "Toggle Collection Properties",
     "toggle-classic-editor-toolbar": "Toggle the Formatting tab for the editor with fixed toolbar",
     "export-as-pdf": "Export the current note as a PDF",
@@ -200,7 +201,8 @@
     "zoom-in": "Zoom In",
     "reset-zoom-level": "Reset Zoom Level",
     "copy-without-formatting": "Copy Without Formatting",
-    "force-save-revision": "Force Save Revision"
+    "force-save-revision": "Force Save Revision",
+    "save-named-revision": "Save Named Revision"
   },
   "login": {
     "title": "Login",
@@ -211,6 +213,9 @@
     "remember-me": "Remember me",
     "button": "Login",
     "sign_in_with_sso": "Sign in with {{ ssoIssuerName }}"
+  },
+  "password": {
+    "incorrect": "The password you entered is incorrect."
   },
   "set_password": {
     "title": "Set Password",
@@ -297,7 +302,8 @@
   },
   "quarterNumber": "Quarter {quarterNumber}",
   "special_notes": {
-    "search_prefix": "Search:"
+    "search_prefix": "Search:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "Sync server host is not configured. Please configure sync first.",
@@ -308,9 +314,11 @@
     "search-history-title": "Search History",
     "note-map-title": "Note Map",
     "sql-console-history-title": "SQL Console History",
+    "llm-chat-history-title": "AI Chat History",
     "shared-notes-title": "Shared Notes",
     "bulk-action-title": "Bulk Action",
     "backend-log-title": "Backend Log",
+    "custom-dictionary-title": "Custom Dictionary",
     "user-hidden-title": "User Hidden",
     "launch-bar-templates-title": "Launch Bar Templates",
     "base-abstract-launcher-title": "Base Abstract Launcher",
@@ -342,7 +350,7 @@
     "shortcuts-title": "Shortcuts",
     "text-notes": "Text Notes",
     "code-notes-title": "Code Notes",
-    "images-title": "Images",
+    "images-title": "Media",
     "spellcheck-title": "Spellcheck",
     "password-title": "Password",
     "multi-factor-authentication-title": "MFA",
@@ -351,11 +359,13 @@
     "sync-title": "Sync",
     "other": "Other",
     "advanced-title": "Advanced",
+    "llm-title": "AI / LLM",
     "visible-launchers-title": "Visible Launchers",
     "user-guide": "User Guide",
     "localization": "Language & Region",
     "inbox-title": "Inbox",
-    "tab-switcher-title": "Tab Switcher"
+    "tab-switcher-title": "Tab Switcher",
+    "sidebar-chat-title": "AI Chat"
   },
   "notes": {
     "new-note": "New note",
@@ -389,7 +399,8 @@
   "migration": {
     "old_version": "Direct migration from your current version is not supported. Please upgrade to the latest v0.60.4 first and only then to this version.",
     "error_message": "Error during migration to version {{version}}: {{stack}}",
-    "wrong_db_version": "The version of the database ({{version}}) is newer than what the application expects ({{targetVersion}}), which means that it was created by a newer and incompatible version of Trilium. Upgrade to the latest version of Trilium to resolve this issue."
+    "wrong_db_version": "The version of the database ({{version}}) is newer than what the application expects ({{targetVersion}}), which means that it was created by a newer and incompatible version of Trilium. Upgrade to the latest version of Trilium to resolve this issue.",
+    "invalid_db_version": "The database version is not a valid number. This usually indicates a corrupted 'dbVersion' option in the database. Please restore from a backup."
   },
   "modals": {
     "error_title": "Error"
@@ -401,7 +412,10 @@
     "last-updated": "Last updated on {{- date}}",
     "subpages": "Subpages:",
     "on-this-page": "On This Page",
-    "expand": "Expand"
+    "expand": "Expand",
+    "toggle-navigation": "Toggle Navigation",
+    "toggle-toc": "Toggle Table of Contents",
+    "logo-alt": "Logo"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",
@@ -437,5 +451,18 @@
   },
   "desktop": {
     "instance_already_running": "There's already an instance running, focusing that instance instead."
+  },
+  "script": {
+    "wrong-environment": "Cannot execute note \"{{- noteTitle}}\" ({{- noteId}}). This is a {{- actualEnv}} script, but execution was attempted in the {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Error in {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" is a reserved keyword. To search for a literal value, use quotes: \"{{- token}}\"",
+      "cannot-compare-with": "cannot compare with \"{{- token}}\". To search for a literal value, use quotes: \"{{- token}}\"",
+      "misplaced-expression": "Misplaced or incomplete expression \"{{- token}}\"",
+      "fulltext-after-expression": "\"{{- token}}\" is not a valid expression. To search for text, place it before attribute filters (e.g., \"{{- token}} #label\" instead of \"#label {{- token}}\").",
+      "unrecognized-expression": "Unrecognized expression \"{{- token}}\""
+    }
   }
 }

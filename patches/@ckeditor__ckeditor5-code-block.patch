@@ -1,33 +1,37 @@
 diff --git a/dist/index.css b/dist/index.css
-index 8276289d55abd0f70d399e33c5f6c2d006745000..c70f12f1644dcebea6730b9b201a6933fa28969b 100644
+index 50d1b0005b464f33fb3f07f69c06f36a35e0c406..785e95ceeb7fce12be6249b43abf9b83e15fcfde 100644
 --- a/dist/index.css
 +++ b/dist/index.css
-@@ -9,8 +9,6 @@
+@@ -26,12 +26,10 @@
+ }
  
  .ck-content pre {
- 	padding: 1em;
--	color: hsl(0, 0%, 20.8%);
--	background: hsla(0, 0%, 78%, 0.3);
- 	border: 1px solid hsl(0, 0%, 77%);
- 	border-radius: 2px;
- 
-@@ -28,6 +26,11 @@
- 	min-width: 200px;
+-  color: #353535;
+   text-align: left;
+   tab-size: 4;
+   white-space: pre-wrap;
+   direction: ltr;
+-  background: #c7c7c74d;
+   border: 1px solid #c4c4c4;
+   border-radius: 2px;
+   min-width: 200px;
+@@ -40,6 +38,11 @@
+   font-style: normal;
  }
  
 +.ck-content pre:not(.hljs) {
-+	color: hsl(0, 0%, 20.8%);
-+	background: hsla(0, 0%, 78%, 0.3);
++  color: #353535;
++  background: #c7c7c74d;
 +}
 +
  .ck-content pre code {
- 		background: unset;
- 		padding: 0;
+   background: unset;
+   border-radius: 0;
 diff --git a/dist/index.js b/dist/index.js
-index f0f8aec2323e8cdb34fa0bb4f48c2b433abcb804..b9600d356df2bf1922d51c6cebd1f74ee3ed9155 100644
+index 2e231803ce8450f8498e2a37f1be8c32ff52d090..b54c4943904d2b325f3ca6cef08888b3defc29b9 100644
 --- a/dist/index.js
 +++ b/dist/index.js
-@@ -656,6 +656,7 @@ function getLastOutdentableSequenceRange(model, position, sequence) {
+@@ -673,6 +673,7 @@ function getLastOutdentableSequenceRange(model, position, sequence) {
          // Attributes added only in the editing view.
          if (useLabels) {
              preAttributes['data-language'] = languagesToLabels[codeBlockLanguage];

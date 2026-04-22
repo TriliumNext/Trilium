@@ -20,7 +20,7 @@
     "customConditions": ["development"],
     "verbatimModuleSyntax": false,  // TODO: Re-enable it when migrating back to ESM.
     "resolveJsonModule": true,
-    "downlevelIteration": true,
     "esModuleInterop": true,
+    "noUncheckedSideEffectImports": false,
   }
 }

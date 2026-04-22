@@ -409,7 +409,10 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefin
     }
 
     for (const candidateNote of Object.values(becca.notes)) {
-        if (candidateNote.noteId === baseNote.noteId || hasConnectingRelation(candidateNote, baseNote) || hasConnectingRelation(baseNote, candidateNote)) {
+        if (candidateNote.noteId === baseNote.noteId
+            || candidateNote.isHiddenCompletely()
+            || hasConnectingRelation(candidateNote, baseNote)
+            || hasConnectingRelation(baseNote, candidateNote)) {
             continue;
         }
 

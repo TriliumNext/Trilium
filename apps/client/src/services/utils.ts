@@ -360,7 +360,8 @@ function copySelectionToClipboard() {
 type dynamicRequireMappings = {
     "@electron/remote": typeof import("@electron/remote"),
     "electron": typeof import("electron"),
-    "child_process": typeof import("child_process")
+    "child_process": typeof import("child_process"),
+    "url": typeof import("url")
 };
 
 export function dynamicRequire<T extends keyof dynamicRequireMappings>(moduleName: T): Awaited<dynamicRequireMappings[T]>{
@@ -455,9 +456,7 @@ export function openInAppHelpFromUrl(inAppHelpPage: string) {
 export async function openInReusableSplit(targetNoteId: string, targetViewMode: ViewMode, openOpts: {
     hoistedNoteId?: string;
 } = {}) {
-    // Dynamic import to avoid import issues in tests.
-    const appContext = (await import("../components/app_context.js")).default;
-    const activeContext = appContext.tabManager.getActiveContext();
+    const activeContext = glob.appContext?.tabManager?.getActiveContext();
     if (!activeContext) {
         return;
     }
@@ -467,7 +466,7 @@ export async function openInReusableSplit(targetNoteId: string, targetViewMode: 
     if (!existingSubcontext) {
         // The target split is not already open, open a new split with it.
         const { ntxId } = subContexts[subContexts.length - 1];
-        appContext.triggerCommand("openNewNoteSplit", {
+        glob.appContext?.triggerCommand("openNewNoteSplit", {
             ntxId,
             notePath: targetNoteId,
             hoistedNoteId: openOpts.hoistedNoteId,
@@ -922,6 +921,7 @@ export default {
     parseDate,
     formatDateISO,
     formatDateTime,
+    formatTime,
     formatTimeInterval,
     formatSize,
     localNowDateTime,

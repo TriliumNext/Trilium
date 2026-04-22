@@ -87,7 +87,7 @@ function buildUserAttribute(attr: AttributeWithDefinitions): ComponentChildren {
                 content = <><Icon icon={value === "true" ? "bx bx-check-square" : "bx bx-square"} />{" "}<strong>{attr.friendlyName}</strong></>;
                 break;
             case "url":
-                content = <a href={value} target="_blank" rel="noopener noreferrer">{attr.friendlyName}</a>;
+                content = <a href={value} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{attr.friendlyName}</a>;
                 break;
             case "color":
                 style = { backgroundColor: value, color: getReadableTextColor(value) };

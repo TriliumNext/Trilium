@@ -6,10 +6,8 @@ import froca from "./froca";
 import server from "./server.js";
 
 // Spy on server methods to track calls
-// @ts-expect-error the generic typing is causing issues here
-server.put = vi.fn(async <T> (url: string, data?: T) => ({} as T));
-// @ts-expect-error the generic typing is causing issues here
-server.remove = vi.fn(async <T> (url: string) => ({} as T));
+server.put = vi.fn(async () => ({})) as typeof server.put;
+server.remove = vi.fn(async () => ({})) as typeof server.remove;
 
 describe("Set boolean with inheritance", () => {
     beforeEach(() => {

@@ -60,7 +60,6 @@ If you would like us to work on these features, consider [supporting us](https:/
 ## Known limitations
 
 *   It is possible to share a spreadsheet, case in which a best-effort HTML rendering of the spreadsheet is done.
-    
     *   For more advanced use cases, this will most likely not work as intended. Feel free to [report issues](../Troubleshooting/Reporting%20issues.md), but keep in mind that we might not be able to have a complete feature parity with all the features of Univer.
 *   There is currently no export functionality, as stated previously.
 *   There is no dedicated mobile support. Mobile support is currently experimental in Univer and when it becomes stable, we could potentially integrate it into Trilium as well.

@@ -66,11 +66,19 @@ runs:
     if: ${{ inputs.os == 'linux' }}
     shell: ${{ inputs.shell }}
     run: |
-      sudo apt-get update && sudo apt-get install rpm flatpak-builder elfutils
+      sudo apt-get update && sudo apt-get install rpm flatpak-builder elfutils libfuse2
       flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
       FLATPAK_ARCH=$(if [[ ${{ inputs.arch }} = 'arm64' ]]; then echo 'aarch64'; else echo 'x86_64'; fi)
       FLATPAK_VERSION='24.08'
       flatpak install --user --no-deps --arch $FLATPAK_ARCH --assumeyes runtime/org.freedesktop.Platform/$FLATPAK_ARCH/$FLATPAK_VERSION runtime/org.freedesktop.Sdk/$FLATPAK_ARCH/$FLATPAK_VERSION org.electronjs.Electron2.BaseApp/$FLATPAK_ARCH/$FLATPAK_VERSION
+
+  - name: Install appimagetool
+    if: ${{ inputs.os == 'linux' }}
+    shell: ${{ inputs.shell }}
+    run: |
+      APPIMAGETOOL_ARCH=$(if [[ ${{ inputs.arch }} = 'arm64' ]]; then echo 'aarch64'; else echo 'x86_64'; fi)
+      wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${APPIMAGETOOL_ARCH}.AppImage" -O /usr/local/bin/appimagetool
+      chmod +x /usr/local/bin/appimagetool
 
   - name: Update build info
     shell: ${{ inputs.shell }}
@@ -89,6 +97,14 @@ runs:
       TRILIUM_ARTIFACT_NAME_HINT: TriliumNotes-${{ github.ref_name }}-${{ inputs.os }}-${{ inputs.arch }}
       TARGET_ARCH: ${{ inputs.arch }}
     run: pnpm run --filter desktop electron-forge:make --arch=${{ inputs.arch }} --platform=${{ inputs.forge_platform }}
+
+  - name: Build AppImage
+    if: ${{ inputs.os == 'linux' }}
+    shell: ${{ inputs.shell }}
+    env:
+      TRILIUM_ARTIFACT_NAME_HINT: TriliumNotes-${{ github.ref_name }}-${{ inputs.os }}-${{ inputs.arch }}
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    run: bash apps/desktop/scripts/build-appimage.sh ${{ inputs.arch }}
 
   # Add DMG signing step
   - name: Sign DMG

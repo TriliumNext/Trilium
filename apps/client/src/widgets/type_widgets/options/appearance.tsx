@@ -1,22 +1,23 @@
 import "./appearance.css";
 
-import { FontFamily, OptionNames } from "@triliumnext/commons";
+import { FontFamily, OptionNames, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK } from "@triliumnext/commons";
+import { Fragment } from "preact";
+import { createPortal } from "preact/compat";
 import { useEffect, useState } from "preact/hooks";
 
+import zoomService from "../../../components/zoom";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import { isElectron, isMobile, reloadFrontendApp, restartDesktopApp } from "../../../services/utils";
 import { VerticalLayoutIcon } from "../../buttons/global_menu";
-import Button from "../../react/Button";
-import Column from "../../react/Column";
-import FormCheckbox from "../../react/FormCheckbox";
-import FormGroup from "../../react/FormGroup";
-import FormRadioGroup from "../../react/FormRadioGroup";
-import FormSelect, { FormSelectWithGroups } from "../../react/FormSelect";
-import FormText from "../../react/FormText";
-import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
+import Dropdown from "../../react/Dropdown";
+import FormList, { FormListHeader, FormListItem } from "../../react/FormList";
+import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import Icon from "../../react/Icon";
+import Modal from "../../react/Modal";
+import Slider from "../../react/Slider";
+import OptionsRow, { OptionsRowWithButton, OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import PlatformIndicator from "./components/PlatformIndicator";
 import RadioWithIllustration from "./components/RadioWithIllustration";
@@ -27,16 +28,20 @@ const MIN_CONTENT_WIDTH = 640;
 interface Theme {
     val: string;
     title: string;
+    icon?: string;
     noteId?: string;
 }
 
-const BUILTIN_THEMES: Theme[] = [
-    { val: "next", title: t("theme.triliumnext") },
-    { val: "next-light", title: t("theme.triliumnext-light") },
-    { val: "next-dark", title: t("theme.triliumnext-dark") },
-    { val: "auto", title: t("theme.auto_theme") },
-    { val: "light", title: t("theme.light_theme") },
-    { val: "dark", title: t("theme.dark_theme") }
+const MODERN_THEMES: Theme[] = [
+    { val: "next", title: t("theme.triliumnext"), icon: "bx bx-sun bx-flip-horizontal" },
+    { val: "next-light", title: t("theme.triliumnext-light"), icon: "bx bx-sun" },
+    { val: "next-dark", title: t("theme.triliumnext-dark"), icon: "bx bx-moon" }
+];
+
+const LEGACY_THEMES: Theme[] = [
+    { val: "auto", title: t("theme.auto_theme"), icon: "bx bx-sun bx-flip-horizontal" },
+    { val: "light", title: t("theme.light_theme"), icon: "bx bx-sun" },
+    { val: "dark", title: t("theme.dark_theme"), icon: "bx bx-moon" }
 ];
 
 interface FontFamilyEntry {
@@ -87,14 +92,10 @@ const FONT_FAMILIES: FontGroup[] = [
 ];
 
 export default function AppearanceSettings() {
-    const [ overrideThemeFonts ] = useTriliumOption("overrideThemeFonts");
-
     return (
         <div>
-            {!isMobile() && <LayoutSwitcher />}
-            {!isMobile() && <LayoutOrientation />}
-            <ApplicationTheme />
-            {overrideThemeFonts === "true" && <Fonts />}
+            <UserInterface />
+            <Fonts />
             {isElectron() && <ElectronIntegration /> }
             <Performance />
             <MaxContentWidth />
@@ -113,22 +114,97 @@ export default function AppearanceSettings() {
     );
 }
 
-function LayoutSwitcher() {
+function UserInterface() {
+    const [ theme, setTheme ] = useTriliumOption("theme", true);
+    const [ customThemes, setCustomThemes ] = useState<Theme[]>([]);
     const [ newLayout, setNewLayout ] = useTriliumOptionBool("newLayout");
+    const [ layoutOrientation, setLayoutOrientation ] = useTriliumOption("layoutOrientation", true);
+
+    useEffect(() => {
+        server.get<Theme[]>("options/user-themes").then((userThemes) => {
+            setCustomThemes(userThemes);
+        });
+    }, []);
+
+    // Find current theme for display
+    const allThemes = [...MODERN_THEMES, ...LEGACY_THEMES, ...customThemes];
+    const currentTheme = allThemes.find(t => t.val === theme);
+    const currentThemeIcon = currentTheme?.icon ?? "bx bx-palette";
+    const currentThemeLabel = currentTheme?.title ?? theme ?? "";
 
     return (
-        <OptionsSection title={t("settings_appearance.ui")}>
-            <RadioWithIllustration
-                currentValue={newLayout ? "new-layout" : "old-layout"}
-                onChange={async newValue => {
-                    await setNewLayout(newValue === "new-layout");
-                    reloadFrontendApp();
-                }}
-                values={[
-                    { key: "old-layout", text: t("settings_appearance.ui_old_layout"), illustration: <LayoutIllustration /> },
-                    { key: "new-layout", text: t("settings_appearance.ui_new_layout"), illustration: <LayoutIllustration isNewLayout /> }
-                ]}
-            />
+        <OptionsSection title={t("theme.title")}>
+            <OptionsRow name="theme" label={t("theme.theme_label")}>
+                <Dropdown
+                    text={<>
+                        <span className={currentThemeIcon} style={{ marginRight: "8px" }} />
+                        {currentThemeLabel}
+                    </>}
+                >
+                    <FormListHeader text={t("theme.modern_themes")} />
+                    {MODERN_THEMES.map(th => (
+                        <FormListItem
+                            key={th.val}
+                            icon={th.icon}
+                            selected={theme === th.val}
+                            onClick={() => setTheme(th.val)}
+                        >
+                            {th.title}
+                        </FormListItem>
+                    ))}
+                    <FormListHeader text={t("theme.legacy_themes")} />
+                    {LEGACY_THEMES.map(th => (
+                        <FormListItem
+                            key={th.val}
+                            icon={th.icon}
+                            selected={theme === th.val}
+                            onClick={() => setTheme(th.val)}
+                        >
+                            {th.title}
+                        </FormListItem>
+                    ))}
+                    {customThemes.length > 0 && (
+                        <>
+                            <FormListHeader text={t("theme.custom_themes")} />
+                            {customThemes.map(ct => (
+                                <FormListItem
+                                    key={ct.val}
+                                    icon={ct.icon}
+                                    selected={theme === ct.val}
+                                    onClick={() => setTheme(ct.val)}
+                                >
+                                    {ct.title}
+                                </FormListItem>
+                            ))}
+                        </>
+                    )}
+                </Dropdown>
+            </OptionsRow>
+            {!isMobile() && <>
+                <OptionsRow name="layout-style" label={t("settings_appearance.ui_layout_style")}>
+                    <RadioWithIllustration
+                        currentValue={newLayout ? "new-layout" : "old-layout"}
+                        onChange={async newValue => {
+                            await setNewLayout(newValue === "new-layout");
+                            reloadFrontendApp();
+                        }}
+                        values={[
+                            { key: "old-layout", text: t("settings_appearance.ui_old_layout"), illustration: <LayoutIllustration /> },
+                            { key: "new-layout", text: t("settings_appearance.ui_new_layout"), illustration: <LayoutIllustration isNewLayout /> }
+                        ]}
+                    />
+                </OptionsRow>
+                <OptionsRow name="layout-orientation" label={t("settings_appearance.ui_layout_orientation")}>
+                    <RadioWithIllustration
+                        currentValue={layoutOrientation ?? "vertical"}
+                        onChange={setLayoutOrientation}
+                        values={[
+                            { key: "vertical", text: t("theme.layout-vertical-title"), illustration: <OrientationIllustration orientation="vertical" /> },
+                            { key: "horizontal", text: t("theme.layout-horizontal-title"), illustration: <OrientationIllustration orientation="horizontal" /> }
+                        ]}
+                    />
+                </OptionsRow>
+            </>}
         </OptionsSection>
     );
 }
@@ -225,149 +301,278 @@ function LayoutIllustration({ isNewLayout }: { isNewLayout?: boolean }) {
     );
 }
 
-function LayoutOrientation() {
-    const [ layoutOrientation, setLayoutOrientation ] = useTriliumOption("layoutOrientation", true);
+function OrientationIllustration({ orientation }: { orientation: "vertical" | "horizontal" }) {
+    const isHorizontal = orientation === "horizontal";
 
     return (
-        <OptionsSection title={t("theme.layout")}>
-            <FormRadioGroup
-                name="layout-orientation"
-                values={[
-                    {
-                        label: t("theme.layout-vertical-title"),
-                        inlineDescription: t("theme.layout-vertical-description"),
-                        value: "vertical"
-                    },
-                    {
-                        label: t("theme.layout-horizontal-title"),
-                        inlineDescription: t("theme.layout-horizontal-description"),
-                        value: "horizontal"
-                    }
-                ]}
-                currentValue={layoutOrientation} onChange={setLayoutOrientation}
+        <div className={`orientation-illustration ${orientation}`}>
+            {isHorizontal && (
+                <div className="tab-bar full-width">
+                    <div className="tab active" />
+                    <div className="tab" />
+                    <div className="tab" />
+                </div>
+            )}
+            {isHorizontal && (
+                <div className="launcher-bar horizontal">
+                    <Icon icon="bx bx-menu" />
+                    <Icon icon="bx bx-send" />
+                    <Icon icon="bx bx-file-blank" />
+                    <Icon icon="bx bx-search" />
+                </div>
+            )}
+            <div className="main-area">
+                {!isHorizontal && (
+                    <div className="launcher-bar vertical">
+                        <Icon icon="bx bx-menu" />
+                        <Icon icon="bx bx-send" />
+                        <Icon icon="bx bx-file-blank" />
+                        <Icon icon="bx bx-search" />
+                    </div>
+                )}
+                <div className="tree-pane">
+                    <div className="tree-content" />
+                </div>
+                <div className="content-pane">
+                    {!isHorizontal && (
+                        <div className="tab-bar">
+                            <div className="tab active" />
+                            <div className="tab" />
+                            <div className="tab" />
+                        </div>
+                    )}
+                    <div className="note-content" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function Fonts() {
+    const [ overrideThemeFonts, setOverrideThemeFonts ] = useTriliumOptionBool("overrideThemeFonts");
+    const isEnabled = overrideThemeFonts === true;
+
+    return (
+        <OptionsSection title={t("fonts.fonts")}>
+            <OptionsRowWithToggle
+                name="override-theme-fonts"
+                label={t("fonts.custom_fonts")}
+                description={t("fonts.not_all_fonts_available")}
+                currentValue={overrideThemeFonts}
+                onChange={setOverrideThemeFonts}
+            />
+
+            <Font label={t("fonts.main_font")} fontFamilyOption="mainFontFamily" fontSizeOption="mainFontSize" disabled={!isEnabled} />
+            <Font label={t("fonts.note_tree_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="treeFontFamily" fontSizeOption="treeFontSize" disabled={!isEnabled} />
+            <Font label={t("fonts.note_detail_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="detailFontFamily" fontSizeOption="detailFontSize" disabled={!isEnabled} />
+            <Font label={t("fonts.monospace_font")} description={t("fonts.monospace_font_description")} fontFamilyOption="monospaceFontFamily" fontSizeOption="monospaceFontSize" disabled={!isEnabled} isMonospace />
+
+            <OptionsRowWithButton
+                label={t("fonts.apply_changes")}
+                icon="bx bx-refresh"
+                onClick={reloadFrontendApp}
             />
         </OptionsSection>
     );
 }
 
-function ApplicationTheme() {
-    const [ theme, setTheme ] = useTriliumOption("theme", true);
-    const [ overrideThemeFonts, setOverrideThemeFonts ] = useTriliumOptionBool("overrideThemeFonts");
-
-    const [ themes, setThemes ] = useState<Theme[]>([]);
-
-    useEffect(() => {
-        server.get<Theme[]>("options/user-themes").then((userThemes) => {
-            setThemes([
-                ...BUILTIN_THEMES,
-                ...userThemes
-            ]);
-        });
-    }, []);
-
-    return (
-        <OptionsSection title={t("theme.title")}>
-            <div className="row">
-                <FormGroup name="theme" label={t("theme.theme_label")} className="col-md-6" style={{ marginBottom: 0 }}>
-                    <FormSelect
-                        values={themes} currentValue={theme} onChange={setTheme}
-                        keyProperty="val" titleProperty="title"
-                    />
-                </FormGroup>
-
-                <FormGroup className="side-checkbox col-md-6" name="override-theme-fonts">
-                    <FormCheckbox
-                        label={t("theme.override_theme_fonts_label")}
-                        currentValue={overrideThemeFonts} onChange={setOverrideThemeFonts} />
-                </FormGroup>
-            </div>
-        </OptionsSection>
-    );
+interface FontProps {
+    label: string;
+    description?: string;
+    sizeDescription?: string;
+    fontFamilyOption: OptionNames;
+    fontSizeOption: OptionNames;
+    disabled?: boolean;
+    isMonospace?: boolean;
 }
 
-function Fonts() {
-    return (
-        <OptionsSection title={t("fonts.fonts")}>
-            <Font title={t("fonts.main_font")} fontFamilyOption="mainFontFamily" fontSizeOption="mainFontSize" />
-            <Font title={t("fonts.note_tree_font")} fontFamilyOption="treeFontFamily" fontSizeOption="treeFontSize" />
-            <Font title={t("fonts.note_detail_font")} fontFamilyOption="detailFontFamily" fontSizeOption="detailFontSize" />
-            <Font title={t("fonts.monospace_font")} fontFamilyOption="monospaceFontFamily" fontSizeOption="monospaceFontSize" />
-
-            <FormText>{t("fonts.note_tree_and_detail_font_sizing")}</FormText>
-            <FormText>{t("fonts.not_all_fonts_available")}</FormText>
-
-            <p>
-                {t("fonts.apply_font_changes")} <Button text={t("fonts.reload_frontend")} size="micro" onClick={reloadFrontendApp} />
-            </p>
-        </OptionsSection>
-    );
-}
-
-function Font({ title, fontFamilyOption, fontSizeOption }: { title: string, fontFamilyOption: OptionNames, fontSizeOption: OptionNames }) {
+function Font({ label, description, sizeDescription, fontFamilyOption, fontSizeOption, disabled, isMonospace }: FontProps) {
     const [ fontFamily, setFontFamily ] = useTriliumOption(fontFamilyOption);
     const [ fontSize, setFontSize ] = useTriliumOption(fontSizeOption);
+    const [ showModal, setShowModal ] = useState(false);
+
+    // Find the current font entry to display
+    const currentFont = FONT_FAMILIES
+        .flatMap(group => group.items)
+        .find(item => item.value === fontFamily);
+    const displayLabel = currentFont?.label ?? currentFont?.value ?? fontFamily ?? "";
+
+    // Map option name to CSS variable
+    const themeCssVariable = {
+        mainFontFamily: "var(--main-font-family)",
+        treeFontFamily: "var(--tree-font-family)",
+        detailFontFamily: "var(--detail-font-family)",
+        monospaceFontFamily: "var(--monospace-font-family)"
+    }[fontFamilyOption] ?? "inherit";
+
+    // Get the CSS font-family value for preview
+    const getFontFamily = (value: string) => {
+        if (value === "theme") {
+            // Use the theme's CSS variable for this font option
+            return themeCssVariable;
+        }
+        if (value === "system") {
+            // Use the appropriate system font stack
+            return isMonospace ? SYSTEM_MONOSPACE_FONT_STACK : SYSTEM_SANS_SERIF_FONT_STACK;
+        }
+        return value;
+    };
 
     return (
         <>
-            <h5>{title}</h5>
-            <div className="row">
-                <FormGroup name="font-family" className="col-md-4" label={t("fonts.font_family")}>
-                    <FormSelectWithGroups
-                        values={FONT_FAMILIES}
-                        currentValue={fontFamily} onChange={setFontFamily}
-                        keyProperty="value" titleProperty="label"
-                    />
-                </FormGroup>
+            <button
+                type="button"
+                className="option-row option-row-link font-option-row"
+                onClick={() => setShowModal(true)}
+                disabled={disabled}
+            >
+                <div className="option-row-label">
+                    <label style={{ cursor: "pointer" }}>{label}</label>
+                    {description && <small>{description}</small>}
+                </div>
+                <div className="option-row-input font-option-preview">
+                    <span style={{ fontFamily: getFontFamily(fontFamily ?? ""), fontSize: `${fontSize}%` }}>{displayLabel}</span>
+                    <span className="bx bx-chevron-right" />
+                </div>
+            </button>
 
-                <FormGroup name="font-size" className="col-md-6" label={t("fonts.size")}>
-                    <FormTextBoxWithUnit
-                        name="tree-font-size"
-                        type="number" min={50} max={200} step={10}
-                        currentValue={fontSize} onBlur={setFontSize}
-                        unit={t("units.percentage")}
-                    />
-                </FormGroup>
-            </div>
+            <FontPickerModal
+                show={showModal}
+                onHidden={() => setShowModal(false)}
+                title={label}
+                fontFamily={fontFamily ?? ""}
+                fontSize={parseInt(fontSize ?? "100", 10)}
+                onFontFamilyChange={setFontFamily}
+                onFontSizeChange={(size) => setFontSize(String(size))}
+                getFontFamily={getFontFamily}
+                sizeDescription={sizeDescription}
+            />
         </>
     );
 }
 
+const PREVIEW_TEXT = "The quick brown fox jumps over the lazy dog. 0123456789";
+
+interface FontPickerModalProps {
+    show: boolean;
+    onHidden: () => void;
+    title: string;
+    fontFamily: string;
+    fontSize: number;
+    onFontFamilyChange: (value: string) => void;
+    onFontSizeChange: (value: number) => void;
+    getFontFamily: (value: string) => string | undefined;
+    sizeDescription?: string;
+}
+
+function FontPickerModal({ show, onHidden, title, fontFamily, fontSize, onFontFamilyChange, onFontSizeChange, getFontFamily, sizeDescription }: FontPickerModalProps) {
+    return createPortal(
+        <Modal
+            className="font-picker-modal"
+            title={title}
+            size="lg"
+            show={show}
+            onHidden={onHidden}
+        >
+            <div className="font-picker-content">
+                <div className="font-picker-list">
+                    <FormList fullHeight>
+                        {FONT_FAMILIES.map(group => (
+                            <Fragment key={group.title}>
+                                <FormListHeader text={group.title} />
+                                {group.items.map(item => (
+                                    <FormListItem
+                                        key={item.value}
+                                        onClick={() => onFontFamilyChange(item.value)}
+                                        checked={fontFamily === item.value}
+                                        selected={fontFamily === item.value}
+                                    >
+                                        <span style={{ fontFamily: getFontFamily(item.value) }}>
+                                            {item.label ?? item.value}
+                                        </span>
+                                    </FormListItem>
+                                ))}
+                            </Fragment>
+                        ))}
+                    </FormList>
+                </div>
+
+                <div className="font-picker-settings">
+                    <div className="font-size-control">
+                        <label>{t("fonts.size")}</label>
+                        <div className="font-size-slider">
+                            <Slider
+                                value={fontSize}
+                                onChange={onFontSizeChange}
+                                min={50}
+                                max={200}
+                                step={5}
+                            />
+                            <span className="font-size-value">{fontSize}%</span>
+                        </div>
+                        {sizeDescription && <small className="font-size-description">{sizeDescription}</small>}
+                    </div>
+
+                    <div className="font-preview">
+                        <label>{t("fonts.preview")}</label>
+                        <div
+                            className="font-preview-text"
+                            style={{
+                                fontFamily: getFontFamily(fontFamily),
+                                fontSize: `${fontSize}%`
+                            }}
+                        >
+                            {PREVIEW_TEXT}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Modal>,
+        document.body
+    );
+}
+
 function ElectronIntegration() {
-    const [ zoomFactor, setZoomFactor ] = useTriliumOption("zoomFactor");
+    const [ zoomFactor ] = useTriliumOption("zoomFactor");
     const [ nativeTitleBarVisible, setNativeTitleBarVisible ] = useTriliumOptionBool("nativeTitleBarVisible");
     const [ backgroundEffects, setBackgroundEffects ] = useTriliumOptionBool("backgroundEffects");
 
+    const zoomPercentage = Math.round(parseFloat(zoomFactor || "1") * 100);
+
     return (
         <OptionsSection title={t("electron_integration.desktop-application")}>
-            <FormGroup name="zoom-factor" label={t("electron_integration.zoom-factor")} description={t("zoom_factor.description")}>
-                <FormTextBox
+            <OptionsRow name="zoom-factor" label={t("electron_integration.zoom-factor")} description={t("zoom_factor.description")}>
+                <FormTextBoxWithUnit
                     type="number"
-                    min="0.3" max="2.0" step="0.1"
-                    currentValue={zoomFactor} onChange={setZoomFactor}
+                    min={50} max={200} step={10}
+                    currentValue={String(zoomPercentage)}
+                    onChange={(v) => zoomService.setZoomFactorAndSave(parseInt(v, 10) / 100)}
+                    unit={t("units.percentage")}
                 />
-            </FormGroup>
-            <hr/>
+            </OptionsRow>
 
-            <FormGroup name="native-title-bar" description={t("electron_integration.native-title-bar-description")}>
-                <FormCheckbox
-                    label={t("electron_integration.native-title-bar")}
-                    currentValue={nativeTitleBarVisible} onChange={setNativeTitleBarVisible}
-                />
-            </FormGroup>
+            <OptionsRowWithToggle
+                name="native-title-bar"
+                label={t("electron_integration.native-title-bar")}
+                description={t("electron_integration.native-title-bar-description")}
+                currentValue={nativeTitleBarVisible}
+                onChange={setNativeTitleBarVisible}
+            />
 
-            <FormGroup name="background-effects" description={t("electron_integration.background-effects-description")}>
-                <FormCheckbox
-                    label={<>
-                        {t("electron_integration.background-effects")}
-                        {" "}
-                        <PlatformIndicator windows="11" mac />
-                    </>}
-                    currentValue={backgroundEffects} onChange={setBackgroundEffects}
-                    disabled={nativeTitleBarVisible}
-                />
-            </FormGroup>
+            <OptionsRowWithToggle
+                name="background-effects"
+                label={<>{t("electron_integration.background-effects")} <PlatformIndicator windows="11" mac /></>}
+                description={t("electron_integration.background-effects-description")}
+                currentValue={backgroundEffects}
+                onChange={setBackgroundEffects}
+                disabled={nativeTitleBarVisible}
+            />
 
-            <Button text={t("electron_integration.restart-app-button")} onClick={restartDesktopApp} />
+            <OptionsRowWithButton
+                label={t("electron_integration.restart-app-button")}
+                icon="bx bx-refresh"
+                onClick={restartDesktopApp}
+            />
         </OptionsSection>
     );
 }
@@ -378,19 +583,25 @@ function Performance() {
     const [ backdropEffectsEnabled, setBackdropEffectsEnabled ] = useTriliumOptionBool("backdropEffectsEnabled");
 
     return <OptionsSection title={t("ui-performance.title")}>
-        <FormCheckbox
+        <OptionsRowWithToggle
+            name="motion-enabled"
             label={t("ui-performance.enable-motion")}
-            currentValue={motionEnabled} onChange={setMotionEnabled}
+            currentValue={motionEnabled}
+            onChange={setMotionEnabled}
         />
 
-        <FormCheckbox
+        <OptionsRowWithToggle
+            name="shadows-enabled"
             label={t("ui-performance.enable-shadows")}
-            currentValue={shadowsEnabled} onChange={setShadowsEnabled}
+            currentValue={shadowsEnabled}
+            onChange={setShadowsEnabled}
         />
 
-        {!isMobile() && <FormCheckbox
+        {!isMobile() && <OptionsRowWithToggle
+            name="backdrop-effects-enabled"
             label={t("ui-performance.enable-backdrop-effects")}
-            currentValue={backdropEffectsEnabled} onChange={setBackdropEffectsEnabled}
+            currentValue={backdropEffectsEnabled}
+            onChange={setBackdropEffectsEnabled}
         />}
 
         {isElectron() && <SmoothScrollEnabledOption />}
@@ -401,9 +612,12 @@ function Performance() {
 function SmoothScrollEnabledOption() {
     const [ smoothScrollEnabled, setSmoothScrollEnabled ] = useTriliumOptionBool("smoothScrollEnabled");
 
-    return <FormCheckbox
-        label={`${t("ui-performance.enable-smooth-scroll")} ${t("ui-performance.app-restart-required")}`}
-        currentValue={smoothScrollEnabled} onChange={setSmoothScrollEnabled}
+    return <OptionsRowWithToggle
+        name="smooth-scroll-enabled"
+        label={t("ui-performance.enable-smooth-scroll")}
+        description={t("ui-performance.app-restart-required")}
+        currentValue={smoothScrollEnabled}
+        onChange={setSmoothScrollEnabled}
     />;
 }
 
@@ -412,22 +626,21 @@ function MaxContentWidth() {
     const [centerContent, setCenterContent] = useTriliumOptionBool("centerContent");
 
     return (
-        <OptionsSection title={t("max_content_width.title")}>
-            <FormText>{t("max_content_width.default_description")}</FormText>
+        <OptionsSection title={t("max_content_width.title")} description={t("max_content_width.default_description")}>
+            <OptionsRow name="max-content-width" label={t("max_content_width.max_width_label")}>
+                <FormTextBoxWithUnit
+                    type="number" min={MIN_CONTENT_WIDTH} step="10"
+                    currentValue={maxContentWidth} onBlur={setMaxContentWidth}
+                    unit={t("max_content_width.max_width_unit")}
+                />
+            </OptionsRow>
 
-            <Column md={6}>
-                <FormGroup name="max-content-width" label={t("max_content_width.max_width_label")}>
-                    <FormTextBoxWithUnit
-                        type="number" min={MIN_CONTENT_WIDTH} step="10"
-                        currentValue={maxContentWidth} onBlur={setMaxContentWidth}
-                        unit={t("max_content_width.max_width_unit")}
-                    />
-                </FormGroup>
-            </Column>
-
-            <FormCheckbox label={t("max_content_width.centerContent")}
+            <OptionsRowWithToggle
+                name="center-content"
+                label={t("max_content_width.centerContent")}
                 currentValue={centerContent}
-                onChange={setCenterContent} />
+                onChange={setCenterContent}
+            />
         </OptionsSection>
     );
 }
@@ -437,9 +650,11 @@ function RibbonOptions() {
 
     return (
         <OptionsSection title={t('ribbon.widgets')}>
-            <FormCheckbox
+            <OptionsRowWithToggle
+                name="edited-notes-open-in-ribbon"
                 label={t('ribbon.edited_notes_message')}
-                currentValue={editedNotesOpenInRibbon} onChange={setEditedNotesOpenInRibbon}
+                currentValue={editedNotesOpenInRibbon}
+                onChange={setEditedNotesOpenInRibbon}
             />
         </OptionsSection>
     );

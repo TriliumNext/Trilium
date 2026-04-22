@@ -903,7 +903,7 @@ export default class TabRowWidget extends BasicWidget {
                 loadResults.isNoteReloaded(noteContext.noteId) ||
                 loadResults
                     .getAttributeRows()
-                    .find((attr) => ["workspace", "workspaceIconClass", "workspaceTabBackgroundColor"].includes(attr.name || "") && attributeService.isAffecting(attr, noteContext.note))
+                    .find((attr) => ["workspace", "iconClass", "workspaceIconClass", "workspaceTabBackgroundColor"].includes(attr.name || "") && attributeService.isAffecting(attr, noteContext.note))
             ) {
                 const $tab = this.getTabById(noteContext.ntxId);
 

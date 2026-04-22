@@ -96,8 +96,8 @@ Onze documentatie is beschikbaar in meerdere formaten:
   met zelfgehoste synchronisatieserver
   * er zijn [diensten van derden voor het hosten van de
     synchronisatieserver](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
-* [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
-  (publishing) notes to public internet
+* [Delen](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (publiceer) notities naar het internet (publieklijk)
 * Strong [note
   encryption](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
   with per-note granularity

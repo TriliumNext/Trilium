@@ -1,0 +1,34 @@
+.note-detail-markdown {
+    .note-detail-code-editor {
+        margin-top: 0 !important;
+
+        .cm-editor .cm-scroller {
+            padding-block: 0.25em;
+        }
+    }
+
+    .markdown-preview {
+        box-sizing: border-box;
+        height: 100%;
+        overflow: auto;
+        padding: 0.5em 1em;
+        user-select: text;
+
+        .mermaid-diagram,
+        .mermaid-diagram svg {
+            max-width: 100%;
+        }
+    }
+
+    .markdown-preview [data-source-line] {
+        border-left: 2px solid transparent;
+        padding-left: 0.5em;
+        margin-left: -0.5em;
+    }
+
+    [data-source-line].markdown-preview-active {
+        border-left-color: var(--main-text-color);
+    }
+
+}
+

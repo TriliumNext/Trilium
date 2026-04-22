@@ -84,6 +84,8 @@ module.exports = new WordCountWidget();
 
 After you make changes it is necessary to [restart Trilium](../../../Troubleshooting/Refreshing%20the%20application.md) so that the layout can be rebuilt.
 
+The widget only activates on text notes that have the `#wordCount` label. This label can be a [reference link](../../../Note%20Types/Text/Links/Internal%20\(reference\)%20links.md) to enable the widget for an entire subtree.
+
 At the bottom of the note you can see the resulting widget:
 
 <figure class="image"><img style="aspect-ratio:792/603;" src="Word count widget_image.png" width="792" height="603"></figure>

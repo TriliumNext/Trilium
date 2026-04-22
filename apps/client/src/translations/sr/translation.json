@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "O Trilium Belеškama",
-    "homepage": "Početna stranica:",
-    "app_version": "Verzija aplikacije:",
-    "db_version": "Verzija baze podataka:",
-    "sync_version": "Verzija sinhronizacije:",
-    "build_date": "Datum izgradnje:",
-    "build_revision": "Revizija izgradnje:",
     "data_directory": "Direktorijum sa podacima:"
   },
   "toast": {
@@ -76,7 +69,6 @@
     "also_delete_note": "Takođe obriši belešku"
   },
   "delete_notes": {
-    "delete_notes_preview": "Obriši pregled beleške",
     "close": "Zatvori",
     "delete_all_clones_description": "Obriši i sve klonove (može biti poništeno u skorašnjim izmenama)",
     "erase_notes_description": "Normalno (blago) brisanje samo označava beleške kao obrisane i one mogu biti vraćene (u dijalogu skorašnjih izmena) u određenom vremenskom periodu. Biranje ove opcije će momentalno obrisati beleške i ove beleške neće biti moguće vratiti.",
@@ -84,9 +76,7 @@
     "notes_to_be_deleted": "Sledeće beleške će biti obrisane ({{- noteCount}})",
     "no_note_to_delete": "Nijedna beleška neće biti obrisana (samo klonovi).",
     "broken_relations_to_be_deleted": "Sledeći odnosi će biti prekinuti i obrisani ({{- relationCount}})",
-    "cancel": "Otkaži",
-    "ok": "U redu",
-    "deleted_relation_text": "Beleška {{- note}} (za brisanje) je referencirana sa odnosom {{- relation}} koji potiče iz {{- source}}."
+    "cancel": "Otkaži"
   },
   "export": {
     "export_note_title": "Izvezi belešku",
@@ -250,28 +240,6 @@
     "no_changes_message": "Još uvek nema izmena...",
     "undelete_link": "poništi brisanje",
     "confirm_undelete": "Da li želite da poništite brisanje ove beleške i njenih podbeleški?"
-  },
-  "revisions": {
-    "note_revisions": "Revizije beleški",
-    "delete_all_revisions": "Obriši sve revizije ove beleške",
-    "delete_all_button": "Obriši sve revizije",
-    "help_title": "Pomoć za Revizije beleški",
-    "confirm_delete_all": "Da li želite da obrišete sve revizije ove beleške?",
-    "no_revisions": "Još uvek nema revizija za ovu belešku...",
-    "restore_button": "Vrati",
-    "confirm_restore": "Da li želite da vratite ovu reviziju? Ovo će prepisati trenutan naslov i sadržaj beleške sa ovom revizijom.",
-    "delete_button": "Obriši",
-    "confirm_delete": "Da li želite da obrišete ovu reviziju?",
-    "revisions_deleted": "Revizije beleške su obrisane.",
-    "revision_restored": "Revizija beleške je vraćena.",
-    "revision_deleted": "Revizija beleške je obrisana.",
-    "snapshot_interval": "Interval snimanja revizije beleške: {{seconds}}s.",
-    "maximum_revisions": "Ograničenje broja slika revizije beleške: {{number}}.",
-    "settings": "Podešavanja revizija beleški",
-    "download_button": "Preuzmi",
-    "mime": "MIME: ",
-    "file_size": "Veličina datoteke:",
-    "preview_not_available": "Pregled nije dostupan za ovaj tip beleške."
   },
   "sort_child_notes": {
     "sort_children_by": "Sortiranje podbeleški po...",

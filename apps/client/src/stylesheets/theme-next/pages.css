@@ -186,12 +186,7 @@ body.experimental-feature-new-layout .note-detail-content-widget-content.options
 }
 
 .options-section:not(.tn-no-card) {
-    margin-bottom: calc(var(--options-title-offset) + 26px) !important;
-    box-shadow: var(--card-box-shadow);
-    border: 1px solid var(--card-border-color) !important;
-    border-radius: 8px;
-    background: var(--card-background-color);
-    padding: var(--options-card-padding);
+    margin-bottom: 26px !important;
 }
 
 body.desktop .options-section:not(.tn-no-card) {
@@ -199,40 +194,70 @@ body.desktop .options-section:not(.tn-no-card) {
     max-width: var(--options-card-max-width);
 }
 
+.options-section-card {
+    box-shadow: var(--card-box-shadow);
+    border: 1px solid var(--card-border-color);
+    border-radius: 8px;
+    background: var(--card-background-color);
+    padding: var(--options-card-padding);
+}
+
 .note-detail-content-widget-content.options {
     --default-padding: 15px;
-    padding-top: calc(var(--default-padding) + var(--options-title-offset) + var(--options-title-font-size));
+    padding-top: var(--default-padding);
     padding-bottom: var(--default-padding);
 }
 
-.options-section:not(.tn-no-card) h4,
-.options-section:not(.tn-no-card) h5 {
+.options-section:not(.tn-no-card) h4 {
     text-transform: uppercase;
     letter-spacing: .4pt;
 }
-
 
 .options-section:not(.tn-no-card) h4 {
     font-size: var(--options-title-font-size);
     font-weight: 600;
     color: var(--launcher-pane-text-color);
-    margin-top: calc(-1 * var(--options-card-padding) - var(--options-title-font-size) - var(--options-title-offset)) !important;
-    margin-bottom: calc(var(--options-title-offset) + var(--options-card-padding)) !important;
-    margin-inline-start: calc(-1 * var(--options-card-padding));
+    margin-top: 0;
+    margin-bottom: var(--options-title-offset);
 }
 
-.options-section:not(.tn-no-card) h5 {
+.options-section:not(.tn-no-card) .options-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.options-section:not(.tn-no-card) .options-section-header h4 {
+    margin: 0;
+    margin-bottom: 0;
+}
+
+.options-section:not(.tn-no-card) .options-section-header .icon-action {
+    margin-inline-start: auto;
+}
+
+.options-section-description {
+    color: var(--muted-text-color);
+    font-size: 13px;
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.options-section-card h5 {
+    text-transform: uppercase;
+    letter-spacing: .4pt;
     font-size: var(--options-title-font-size);
     font-weight: bold;
     margin-top: 1em !important;
     margin-bottom: unset !important;
 }
 
-.options-section:not(.tn-no-card) h5:first-of-type {
+.options-section-card h5:first-of-type {
     margin-top: unset !important;
 }
 
-.options-section hr {
+.options-section-card hr {
     --bs-border-width: 2px;
 
     margin-inline-start: calc(var(--options-card-padding) * -1);
@@ -241,27 +266,26 @@ body.desktop .options-section:not(.tn-no-card) {
     color: var(--root-background);
 }
 
-.options-section p:last-of-type:not(:first-of-type),
-.options-section h4 + p:last-child,
-.options-section .existing-anonymized-databases {
+.options-section-card p:last-of-type:not(:first-of-type),
+.options-section-card .existing-anonymized-databases {
     margin-bottom: 0;
 }
 
-.options-section .form-group {
+.options-section-card .form-group {
     margin-bottom: 1em;
 }
 
-.options-section .form-group:last-child {
+.options-section-card .form-group:last-child {
     margin-bottom: 0;
 }
 
-.options-section ul {
+.options-section-card ul {
     margin: 0;
     padding: 0;
     margin-bottom: 1em;
 }
 
-.options-section label:not(.tn-checkbox):not(.tn-radio) {
+.options-section-card label:not(.tn-checkbox):not(.tn-radio) {
     margin-bottom: 6px;
 }
 
@@ -275,7 +299,7 @@ nav.options-section-tabs .nav-tabs {
     border-bottom: 0;
 }
 
-nav.options-section-tabs + .options-section {
+nav.options-section-tabs + .options-section .options-section-card {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
@@ -328,4 +352,10 @@ nav.options-section-tabs + .options-section {
 
 .etapi-options-section div {
     height: auto !important;
+}
+
+/* BACKUP */
+
+.options-section-card table a {
+    color: inherit;
 }

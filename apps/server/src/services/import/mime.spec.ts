@@ -124,6 +124,16 @@ describe("#getType", () => {
         ],
 
         [
+            "w/ codeImportedAsCode: true and 'text/markdown' mime type (override) – it should return 'code'",
+            [{codeImportedAsCode: true}, "text/markdown"], "code"
+        ],
+
+        [
+            "w/ codeImportedAsCode: true and 'application/javascript' mime type (override) – it should return 'code'",
+            [{codeImportedAsCode: true}, "application/javascript"], "code"
+        ],
+
+        [
             "w/ textImportedAsText: false and 'text/html' mime type – it should return 'file'",
             [{textImportedAsText: false}, "text/html"], "file"
         ],

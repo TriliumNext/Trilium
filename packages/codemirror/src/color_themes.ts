@@ -78,6 +78,16 @@ const themes: ThemeDefinition[] = [
         load: async () => (await import("@fsegurai/codemirror-theme-github-light")).githubLight
     },
     {
+        id: "high-contrast-dark",
+        name: "High Contrast Dark",
+        load: async () => (await import("@fsegurai/codemirror-theme-high-contrast-dark")).highContrastDark
+    },
+    {
+        id: "high-contrast-light",
+        name: "High Contrast Light",
+        load: async () => (await import("@fsegurai/codemirror-theme-high-contrast-light")).highContrastLight
+    },
+    {
         id: "gruvbox-dark",
         name: "Gruvbox Dark",
         load: async () => (await import("@fsegurai/codemirror-theme-gruvbox-dark")).gruvboxDark
@@ -96,6 +106,11 @@ const themes: ThemeDefinition[] = [
         id: "material-light",
         name: "Material Light",
         load: async () => (await import("@fsegurai/codemirror-theme-material-light")).materialLight
+    },
+    {
+        id: "material-ocean",
+        name: "Material Ocean",
+        load: async () => (await import("@fsegurai/codemirror-theme-material-ocean")).materialOcean
     },
     {
         id: "monokai",
@@ -121,6 +136,11 @@ const themes: ThemeDefinition[] = [
         id: "solarized-light",
         name: "Solarized Light",
         load: async () => (await import("@fsegurai/codemirror-theme-solarized-light")).solarizedLight
+    },
+    {
+        id: "synthwave-84",
+        name: "Synthwave '84",
+        load: async () => (await import("@fsegurai/codemirror-theme-synthwave-84")).synthwave84
     },
     {
         id: "tokyo-night-day",

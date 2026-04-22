@@ -1,13 +1,23 @@
 {
   "about": {
-    "app_version": "Versione dell'app:",
-    "db_version": "Versione DB:",
-    "sync_version": "Versione Sync:",
     "data_directory": "Cartella dati:",
-    "title": "Informazioni su Trilium Notes",
-    "build_date": "Data della build:",
-    "build_revision": "Revisione della build:",
-    "homepage": "Homepage:"
+    "version_label": "Versione:",
+    "version": "{{appVersion}} (database: {{dbVersion}},sync protocol: {{syncVersion}})",
+    "build_info": "Build: {{buildDate}}, revisione: <buildRevision />",
+    "contributors_label": "Collaboratori:",
+    "contributor_roles": {
+      "lead-dev": "sviluppatore capo",
+      "original-dev": "sviluppatore originale"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran ha fondato TriliumNext nel 2024, un fork della comunità creato dopo che Zadam si era ritirato dal progetto. Successivamente, Zadam ha trasferito il repository originale al team di TriliumNext, unendo nuovamente i due progetti in uno solo.",
+      "original-dev": "Il 25 dicembre 2017, Zadam ha rilasciato la prima versione beta di Trilium (scritto con una sola \"l\", a differenza del fiore). Insoddisfatto di altri sistemi di organizzazione note, ha creato una potente base di conoscenza gerarchica self-hosted che ha raccolto oltre 22.000 stelle su GitHub. Nel 2024, con l'aumentare degli impegni, ha messo il progetto in modalità di manutenzione."
+    },
+    "contributor_full_list": "Scopri tutta la community",
+    "github_tooltip": "Segnala bug, suggerisci nuove funzionalità o contribuisci su GitHub",
+    "license_tooltip": "Visualizza licenza",
+    "donate": "Fai una donazione",
+    "donate_tooltip": "Fai una donazione per sostenere questo progetto"
   },
   "toast": {
     "critical-error": {
@@ -41,7 +51,9 @@
     "link_title_arbitrary": "il titolo del collegamento può essere modificato arbitrariamente",
     "link_title": "Titolo del collegamento",
     "button_add_link": "Aggiungi il collegamento",
-    "help_on_links": "Aiuto sui collegamenti"
+    "help_on_links": "Aiuto sui collegamenti",
+    "anchor": "Ancoraggio (facoltativo)",
+    "anchor_none": "Nessuna (link alla nota)"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Modifica il prefisso del ramo",
@@ -88,17 +100,24 @@
     "also_delete_note": "Rimuove anche la nota"
   },
   "delete_notes": {
-    "ok": "OK",
     "close": "Chiudi",
-    "delete_notes_preview": "Anteprima di eliminazione delle note",
     "delete_all_clones_description": "Elimina anche tutti i cloni (può essere ripristinato nella sezione cambiamenti recenti)",
-    "erase_notes_description": "L'eliminazione normale (soft) marca le note come eliminate e potranno essere recuperate entro un certo lasso di tempo (dalla finestra dei cambiamenti recenti). Selezionando questa opzione le note si elimineranno immediatamente e non sarà possibile recuperarle.",
+    "erase_notes_description": "Cancella immediatamente le note invece di effettuare una cancellazione temporanea. Questa operazione non può essere annullata e comporterà il riavvio dell'applicazione.",
     "erase_notes_warning": "Elimina le note in modo permanente (non potrà essere disfatto), compresi tutti i cloni. Ciò forzerà un nuovo caricamento dell'applicazione.",
     "cancel": "Annulla",
-    "notes_to_be_deleted": "Le seguenti note saranno eliminate ({{notesCount}})",
+    "notes_to_be_deleted": "Note da eliminare ({{notesCount}})",
     "no_note_to_delete": "Nessuna nota sarà eliminata (solo i cloni).",
-    "broken_relations_to_be_deleted": "Le seguenti relazioni saranno interrotte ed eliminate ({{relationCount}})",
-    "deleted_relation_text": "La nota {{- note}} (da eliminare) è referenziata dalla relazione {{- relation}} originata da {{- source}}."
+    "broken_relations_to_be_deleted": "Relazioni interrotte ({{relationCount}})",
+    "title": "Eliminazione note",
+    "clones_label": "Cloni",
+    "delete_clones_description_one": "Elimina anche {{count}} altro clone. L'operazione può essere annullata nella pagina delle modifiche recenti.",
+    "delete_clones_description_many": "Elimina anche {{count}} altri cloni. L'operazione può essere annullata nella pagina delle modifiche recenti.",
+    "delete_clones_description_other": "Elimina anche {{count}} altri cloni. L'operazione può essere annullata nella pagina delle modifiche recenti.",
+    "erase_notes_label": "Elimina definitivamente",
+    "table_note_with_relation": "Nota relativa a",
+    "table_relation": "Relazione",
+    "table_points_to": "Punti verso (eliminato)",
+    "delete": "Eliminazione"
   },
   "info": {
     "okButton": "OK",
@@ -463,7 +482,8 @@
     "enable_daily_backup": "Abilita i backup giornalieri",
     "no_backup_yet": "Ancora nessuna archiviazione",
     "automatic_backup": "Backup Automatico",
-    "automatic_backup_description": "Trilium può eseguire automaticamente il backup del database:"
+    "automatic_backup_description": "Trilium può eseguire automaticamente il backup del database:",
+    "download": "Scarica"
   },
   "backend_log": {
     "refresh": "Aggiorna"
@@ -478,7 +498,6 @@
     "check_button": "Controllo dell'integrità del database",
     "checking_integrity": "Controllo dell'integrità del database in corso...",
     "title": "Controllo di Integrità del database",
-    "description": "Controllerà che il database non sia corrotto a livello SQLite. Può durare un po' di tempo, a seconda della grandezza del DB.",
     "integrity_check_failed": "Controllo di integrità fallito: {{results}}",
     "integrity_check_succeeded": "Controllo di integrità riuscito: nessun problema riscontrato."
   },
@@ -497,16 +516,13 @@
     "proxy_label": "Server Proxy per la sincronizzazione (opzionale)",
     "test_title": "Test di sincronizzazione",
     "timeout": "Timeout per la sincronizzazione",
-    "timeout_unit": "millisecondi",
     "save": "Salva",
     "help": "Aiuto",
     "server_address": "Indirizzo dell'istanza del server",
-    "note": "Nota",
-    "note_description": "Se si lascia vuota l'impostazione del proxy, verrà utilizzato il proxy di sistema (valido solo per le build desktop/electron).",
-    "special_value_description": "Un altro valore speciale è <code>noproxy</code> che forza l'ignoramento anche del proxy di sistema e rispetta <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
     "test_description": "Questo testerà la connessione e l'handshake con il server di sincronizzazione. Se il server di sincronizzazione non è inizializzato, questo lo imposterà per la sincronizzazione con il documento locale.",
     "test_button": "Test di sincronizzazione",
-    "handshake_failed": "Handshake del server di sincronizzazione non riuscito, errore: {{message}}"
+    "handshake_failed": "Handshake del server di sincronizzazione non riuscito, errore: {{message}}",
+    "timeout_description": "Quanto tempo aspettare prima di rinunciare con una connessione lenta. Aumenta questo intervallo se hai una rete instabile."
   },
   "search_engine": {
     "save_button": "Salva",
@@ -520,7 +536,7 @@
     "custom_name_label": "Nome del motore di ricerca personalizzato",
     "custom_name_placeholder": "Personalizza il nome del motore di ricerca",
     "custom_url_label": "L'URL del motore di ricerca personalizzato deve includere {keyword} come segnaposto per il termine di ricerca.",
-    "custom_url_placeholder": "Personalizza indirizzo url del motore di ricerca"
+    "custom_url_placeholder": "Personalizza indirizzo URL del motore di ricerca"
   },
   "sql_table_schemas": {
     "tables": "Tabelle"
@@ -538,12 +554,12 @@
     "new_tab": "Nuova scheda"
   },
   "toc": {
-    "table_of_contents": "Sommario",
+    "table_of_contents": "Tabella dei Contenuti",
     "options": "Opzioni",
     "no_headings": "Nessun titolo."
   },
   "table_of_contents": {
-    "title": "Sommario",
+    "title": "Tabella dei Contenuti",
     "description": "L'indice apparirà nelle note di testo quando la nota contiene più di un numero definito di titoli. È possibile personalizzare questo numero:",
     "unit": "titoli",
     "disable_info": "È anche possibile utilizzare questa opzione per disattivare efficacemente l'indice impostando un numero molto alto.",
@@ -593,7 +609,7 @@
     "collapseExpand": "collassa/espande il nodo",
     "notSet": "non impostato",
     "goBackForwards": "indietro/avanti nella cronologia",
-    "showJumpToNoteDialog": "mostra <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">finestra \"Vai a\"</a>",
+    "showJumpToNoteDialog": "mostra <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Vai a\"</a>",
     "title": "Scheda riassuntiva",
     "noteNavigation": "Nota navigazione",
     "scrollToActiveNote": "scorri fino alla nota attiva",
@@ -651,7 +667,6 @@
     "first-week-contains-first-thursday": "La prima settimana contiene il primo giovedì dell'anno",
     "first-week-has-minimum-days": "La prima settimana ha giorni ridotti",
     "min-days-in-first-week": "Giorni minimi nella prima settimana",
-    "first-week-info": "La prima settimana che contiene il primo giovedì dell'anno si basa su <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a> standard.",
     "first-week-warning": "La modifica delle opzioni della prima settimana può causare duplicati con le note settimanali esistenti e queste ultime non verranno aggiornate di conseguenza.",
     "formatting-locale": "Formato data e numero",
     "formatting-locale-auto": "In base alla lingua dell'applicazione",
@@ -699,7 +714,8 @@
     "box_size_small": "piccola (~ 10 righe)",
     "box_size_medium": "media (~ 30 righe)",
     "box_size_full": "completa (la casella mostra il testo completo)",
-    "button_include": "Includi nota"
+    "button_include": "Includi nota",
+    "box_size_expandable": "espandibile (nascosto per impostazione predefinita)"
   },
   "jump_to_note": {
     "search_placeholder": "Cerca una nota per nome oppure digita > per i comandi...",
@@ -740,33 +756,6 @@
     "no_changes_message": "Nessuna modifica ancora...",
     "undelete_link": "ripristinare",
     "confirm_undelete": "Vuoi ripristinare questa nota e le sue sotto-note?"
-  },
-  "revisions": {
-    "note_revisions": "Note Revisioni",
-    "delete_all_revisions": "Elimina tutte le revisioni di questa nota",
-    "delete_all_button": "Elimina tutte le revisioni",
-    "help_title": "Aiuto sulle revisioni delle note",
-    "confirm_delete_all": "Vuoi eliminare tutte le revisioni di questa nota?",
-    "no_revisions": "Ancora nessuna revisione per questa nota...",
-    "restore_button": "Ripristina",
-    "diff_on": "Mostra differenze",
-    "diff_off": "Mostra contenuto",
-    "diff_on_hint": "Clicca per mostrare la fonte della nota diff",
-    "diff_off_hint": "Clicca per visualizzare il contenuto della nota",
-    "diff_not_available": "Diff non è disponibile.",
-    "confirm_restore": "Vuoi ripristinare questa revisione? Questo sovrascriverà il titolo e il contenuto attuali della nota con questa revisione.",
-    "delete_button": "Elimina",
-    "confirm_delete": "Vuoi eliminare questa revisione?",
-    "revisions_deleted": "Le revisioni delle note sono state eliminate.",
-    "revision_restored": "La revisione della nota è stata ripristinata.",
-    "revision_deleted": "La revisione della nota è stata eliminata.",
-    "snapshot_interval": "Nota Intervallo di revisione istantanea: {{seconds}}.",
-    "maximum_revisions": "Nota Limite istantaneo di revisione: {{number}}.",
-    "settings": "Nota Impostazioni di revisione",
-    "download_button": "Scarica",
-    "mime": "MIME: ",
-    "file_size": "Dimensione del file:",
-    "preview_not_available": "L'anteprima non è disponibile per questo tipo di nota."
   },
   "sort_child_notes": {
     "sort_children_by": "Ordina i bambini per...",
@@ -853,7 +842,7 @@
     "archived": "Le note con questa etichetta non saranno visibili per impostazione predefinita nei risultati di ricerca (anche nelle finestre di dialogo Vai a, Aggiungi collegamento ecc.).",
     "run_on_instance": "Definire su quale istanza di Trilium eseguire questa operazione. L'impostazione predefinita è tutte le istanze.",
     "exclude_from_export": "le note (con la loro sottostruttura) non saranno incluse in nessuna esportazione di note",
-    "run": "definisce su quali eventi deve essere eseguito lo script. I valori possibili sono:\n<ul>\n<li>frontendStartup - quando il frontend Trilium viene avviato (o aggiornato), ma non su dispositivi mobili.</li>\n<li>mobileStartup - quando il frontend Trilium viene avviato (o aggiornato) su dispositivi mobili.</li>\n<li>backendStartup - quando viene avviato il backend Trilium</li>\n<li>hourly - eseguire una volta all'ora. È possibile utilizzare l'etichetta aggiuntiva <code>runAtHour</code> per specificare a che ora.</li>\n<li>daily - eseguire una volta al giorno</li>\n</ul>",
+    "run": "definisce su quali eventi deve essere eseguito lo script. I valori possibili sono:\n<ul>\n<li>frontendStartup - quando il frontend Trilium viene avviato (o aggiornato), ma non su dispositivi mobili.</li>\n<li>mobileStartup - quando il frontend Trilium viene avviato (o aggiornato) su dispositivi mobili.</li>\n<li>backendStartup - quando viene avviato il backend Trilium.</li>\n<li>hourly - eseguire una volta all'ora. È possibile utilizzare l'etichetta aggiuntiva <code>runAtHour</code> per specificare a che ora.</li>\n<li>daily - eseguire una volta al giorno.</li>\n</ul>",
     "run_at_hour": "A che ora deve essere eseguito. Deve essere utilizzato insieme a <code>#run=hourly</code>. Può essere definito più volte per più esecuzioni durante il giorno.",
     "disable_inclusion": "gli script con questa etichetta non saranno inclusi nell'esecuzione dello script principale.",
     "sorted": "mantiene le note figlie ordinate alfabeticamente per titolo",
@@ -1100,7 +1089,7 @@
     "show_help": "Mostra aiuto",
     "about": "Informazioni su Trilium Notes",
     "logout": "Esci",
-    "show-cheatsheet": "Mostra il foglietto illustrativo",
+    "show-cheatsheet": "Mostra la scheda riassuntiva",
     "toggle-zen-mode": "Modalità Zen",
     "new-version-available": "Nuovo aggiornamento disponibile",
     "download-update": "Ottieni la versione {{latestVersion}}",
@@ -1149,7 +1138,8 @@
     "export_as_image": "Esporta come immagine",
     "export_as_image_png": "PNG (raster)",
     "export_as_image_svg": "SVG (vector)",
-    "note_map": "Mappa"
+    "note_map": "Mappa",
+    "view_ocr_text": "Visualizza il testo OCR"
   },
   "onclick_button": {
     "no_click_handler": "Il widget pulsante '{{componentId}}' non ha un gestore di clic definito"
@@ -1247,7 +1237,10 @@
     "expand_first_level": "Espandi figli diretti",
     "expand_nth_level": "Espandi {{depth}} livelli",
     "expand_all_levels": "Espandi tutti i livelli",
-    "hide_child_notes": "Nascondi note secondarie nell'albero"
+    "hide_child_notes": "Nascondi note secondarie nell'albero",
+    "open_all_in_tabs": "Apri tutto",
+    "open_all_in_tabs_tooltip": "Apri tutti i risultati in nuove schede",
+    "open_all_confirm": "Verranno aperte {{count}} note in nuove schede. Vuoi continuare?"
   },
   "edited_notes": {
     "no_edited_notes_found": "Nessuna nota modificata per questo giorno...",
@@ -1301,7 +1294,8 @@
     "collapse": "Ritorna alle dimensioni normali",
     "title": "Nota Mappa",
     "fix-nodes": "Fissare i nodi",
-    "link-distance": "Distanza del collegamento"
+    "link-distance": "Distanza del collegamento",
+    "too-many-notes": "Questo sottoalbero contiene {{count}} note, un numero superiore al limite di {{max}} che può essere visualizzato nella mappa delle note."
   },
   "note_paths": {
     "title": "Percorsi delle note",
@@ -1439,7 +1433,8 @@
     "note_already_in_diagram": "Nota che \"{{title}}\" è già presente nel diagramma.",
     "enter_title_of_new_note": "Inserisci il titolo della nuova nota",
     "default_new_note_title": "nuova nota",
-    "click_on_canvas_to_place_new_note": "Clicca sulla tela per inserire una nuova nota"
+    "click_on_canvas_to_place_new_note": "Clicca sulla tela per inserire una nuova nota",
+    "rename_relation": "Rinomina relazione"
   },
   "vacuum_database": {
     "title": "Pulizia del database",
@@ -1457,10 +1452,7 @@
     "note_tree_font": "Carattere dell'albero delle note",
     "note_detail_font": "Nota Dettaglio Carattere",
     "monospace_font": "Monospace (codice) Font",
-    "note_tree_and_detail_font_sizing": "Si noti che le dimensioni dei caratteri dell'albero e dei dettagli sono relative all'impostazione della dimensione del carattere principale.",
     "not_all_fonts_available": "Non tutti i font elencati potrebbero essere disponibili sul tuo sistema.",
-    "apply_font_changes": "Per applicare le modifiche al carattere, fare clic su",
-    "reload_frontend": "ricarica frontend",
     "generic-fonts": "Caratteri generici",
     "sans-serif-system-fonts": "Caratteri di sistema sans-serif",
     "serif-system-fonts": "Caratteri di sistema Serif",
@@ -1541,16 +1533,31 @@
   },
   "images": {
     "images_section_title": "Immagini",
-    "download_images_automatically": "Scarica automaticamente le immagini per l'utilizzo offline.",
-    "download_images_description": "L'HTML incollato può contenere riferimenti a immagini online; Trilium troverà tali riferimenti e scaricherà le immagini in modo che siano disponibili offline.",
-    "enable_image_compression": "Abilita la compressione delle immagini",
-    "max_image_dimensions": "Larghezza/altezza massima di un'immagine (l'immagine verrà ridimensionata se supera questa impostazione).",
+    "download_images_automatically": "Scarica automaticamente le immagini",
+    "download_images_description": "Scarica le immagini online a cui si fa riferimento nel codice HTML incollato, in modo che siano disponibili offline.",
+    "enable_image_compression": "Compressione delle immagini",
+    "max_image_dimensions": "Dimensioni massime dell'immagine",
     "max_image_dimensions_unit": "pixel",
-    "jpeg_quality_description": "Qualità JPEG (10 - qualità peggiore, 100 - qualità migliore, 50 - 85 è consigliato)"
+    "jpeg_quality_description": "Il range consigliato è compreso tra 50 e 85. Valori più bassi riducono le dimensioni del file, mentre valori più alti preservano i dettagli.",
+    "enable_image_compression_description": "Comprimi e ridimensiona le immagini al momento del caricamento o dell'inserimento.",
+    "max_image_dimensions_description": "Le immagini che superano queste dimensioni verranno ridimensionate automaticamente.",
+    "jpeg_quality": "Qualità JPEG",
+    "ocr_section_title": "Estrazione di testo (OCR)",
+    "ocr_related_content_languages": "Lingue dei contenuti (utilizzate per l'estrazione del testo)",
+    "ocr_auto_process": "Elaborazione automatica dei nuovi file",
+    "ocr_auto_process_description": "Estrai automaticamente il testo dai file appena caricati o incollati.",
+    "ocr_min_confidence": "Livello minimo di confidenza",
+    "ocr_confidence_description": "Estrai solo il testo che supera questa soglia di affidabilità. Valori inferiori includono più testo, ma potrebbero risultare meno accurati.",
+    "batch_ocr_title": "Elabora i file esistenti",
+    "batch_ocr_description": "Estrai il testo da tutte le immagini, i PDF e i documenti Office presenti nei tuoi appunti. L'operazione potrebbe richiedere un po' di tempo a seconda del numero di file.",
+    "batch_ocr_start": "Avvia l'elaborazione in batch",
+    "batch_ocr_starting": "Avvio dell'elaborazione in batch...",
+    "batch_ocr_progress": "Elaborazione di {{processed}} su {{total}} file...",
+    "batch_ocr_completed": "Elaborazione in batch completata! Sono stati elaborati {{processed}} file.",
+    "batch_ocr_error": "Errore durante l'elaborazione in batch: {{error}}"
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Timeout cancellazione allegato",
-    "attachment_auto_deletion_description": "Gli allegati vengono eliminati (e cancellati) automaticamente se non vengono più menzionati nella nota dopo un timeout definito.",
     "erase_attachments_after": "Cancella gli allegati non utilizzati dopo:",
     "manual_erasing_description": "È anche possibile attivare la cancellazione manualmente (senza considerare il timeout definito sopra):",
     "erase_unused_attachments_now": "Cancella subito le note degli allegati non utilizzati",
@@ -1562,7 +1569,6 @@
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "Timeout cancellazione nota",
-    "note_erasure_description": "Le note eliminate (e gli attributi, le revisioni...) vengono inizialmente contrassegnate come eliminate ed è possibile recuperarle dalla finestra di dialogo Note recenti. Dopo un certo periodo di tempo, le note eliminate vengono \"cancellate\", il che significa che il loro contenuto non è più recuperabile. Questa impostazione consente di configurare l'intervallo di tempo tra l'eliminazione e la cancellazione definitiva della nota.",
     "erase_notes_after": "Cancella le note dopo:",
     "manual_erasing_description": "È anche possibile attivare la cancellazione manualmente (senza considerare il timeout definito sopra):",
     "erase_deleted_notes_now": "Cancella subito le note eliminate",
@@ -1654,12 +1660,15 @@
   "spellcheck": {
     "title": "Controllo ortografico",
     "description": "Queste opzioni sono valide solo per le versioni desktop; i browser utilizzeranno il proprio controllo ortografico nativo.",
-    "enable": "Abilita il controllo ortografico",
-    "language_code_label": "Codice/i della lingua",
-    "language_code_placeholder": "ad esempio \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "È possibile separare più lingue con una virgola, ad esempio \"en-US, de-DE, cs\". ",
-    "available_language_codes_label": "Codici lingua disponibili:",
-    "restart-required": "Le modifiche alle opzioni di controllo ortografico avranno effetto dopo il riavvio dell'applicazione."
+    "enable": "Controlla l'ortografia",
+    "language_code_label": "Lingue del controllo ortografico",
+    "restart-required": "Le modifiche alle opzioni di controllo ortografico avranno effetto dopo il riavvio dell'applicazione.",
+    "custom_dictionary_title": "Dizionario personalizzato",
+    "custom_dictionary_description": "Le parole aggiunte al dizionario vengono sincronizzate su tutti i tuoi dispositivi.",
+    "custom_dictionary_edit": "Parole personalizzate",
+    "custom_dictionary_edit_description": "Modifica l'elenco delle parole che non devono essere segnalate dal correttore ortografico. Le modifiche saranno visibili dopo il riavvio.",
+    "custom_dictionary_open": "Modifica il dizionario",
+    "related_description": "Configura le lingue del controllo ortografico e il dizionario personalizzato."
   },
   "api_log": {
     "close": "Vicino"
@@ -1718,7 +1727,8 @@
     "new-feature": "Nuovo",
     "collections": "Collezioni",
     "ai-chat": "Chat con IA",
-    "spreadsheet": "Foglio di calcolo"
+    "spreadsheet": "Foglio di calcolo",
+    "llm-chat": "Chat con IA"
   },
   "protect_note": {
     "toggle-on": "Proteggi la nota",
@@ -1879,7 +1889,8 @@
     "theme_none": "Nessuna evidenziazione della sintassi",
     "theme_group_light": "Temi chiari",
     "theme_group_dark": "Temi scuri",
-    "copy_title": "Copia negli appunti"
+    "copy_title": "Copia negli appunti",
+    "click_to_copy": "Clicca per copiare"
   },
   "classic_editor_toolbar": {
     "title": "Formattazione"
@@ -1939,7 +1950,7 @@
   },
   "content_language": {
     "title": "Lingue dei contenuti",
-    "description": "Seleziona una o più lingue che desideri visualizzare nella sezione \"Proprietà di base\" di una nota di testo di sola lettura o modificabile. Ciò consentirà funzionalità come il controllo ortografico o il supporto per la scrittura da destra a sinistra."
+    "description": "Seleziona una o più lingue che devono comparire nell'elenco di selezione delle lingue nella sezione \"Proprietà di base\" di una nota di testo in sola lettura o modificabile. Ciò consentirà di utilizzare funzioni quali il controllo ortografico, il supporto per la scrittura da destra a sinistra e l'estrazione del testo (OCR)."
   },
   "switch_layout_button": {
     "title_vertical": "Sposta il riquadro di modifica in basso",
@@ -2051,7 +2062,9 @@
     "title": "Opzioni sperimentali",
     "disclaimer": "Queste opzioni sono sperimentali e potrebbero causare instabilità. Usare con cautela.",
     "new_layout_name": "Nuovo layout",
-    "new_layout_description": "Prova il nuovo layout per un look più moderno e una maggiore usabilità. Soggetto a modifiche significative nelle prossime versioni."
+    "new_layout_description": "Prova il nuovo layout per un look più moderno e una maggiore usabilità. Soggetto a modifiche significative nelle prossime versioni.",
+    "llm_name": "Chat con IA / LLM",
+    "llm_description": "Attiva la barra laterale della chat con IA e le note della chat LLM basate su modelli linguistici di grandi dimensioni."
   },
   "server": {
     "unknown_http_error_title": "Errore di comunicazione con il server",
@@ -2244,6 +2257,173 @@
     "sample_user_journey": "Percorso dell'utente",
     "sample_xy": "XY",
     "sample_venn": "Venn",
-    "sample_ishikawa": "Ishikawa"
+    "sample_ishikawa": "Ishikawa",
+    "sample_treeview": "TreeView",
+    "sample_wardley": "Mappa di Wardley"
+  },
+  "llm_chat": {
+    "placeholder": "Scrivi un messaggio...",
+    "send": "Invia",
+    "sending": "Invio in corso...",
+    "empty_state": "Inizia una conversazione scrivendo un messaggio qui sotto.",
+    "searching_web": "Ricerca sul web...",
+    "web_search": "Ricerca sul web",
+    "note_tools": "Nota di accesso",
+    "sources": "Fonti",
+    "extended_thinking": "Riflessioni approfondite",
+    "legacy_models": "Modelli precedenti",
+    "thinking": "Sto riflettendo...",
+    "thought_process": "Processo mentale",
+    "tool_calls": "{{count}} chiamata/e di funzione",
+    "input": "Dati in ingresso",
+    "result": "Risultato",
+    "error": "Errore",
+    "tool_error": "fallito",
+    "total_tokens": "{{total}} gettoni",
+    "tokens_detail": "{{prompt}} prompt + {{completion}} completamento",
+    "tokens_used": "{{prompt}} prompt + {{completion}} completamento = {{total}} token",
+    "tokens_used_with_cost": "{{prompt}} prompt + {{completion}} completamento = {{total}} token (~${{cost}})",
+    "tokens_used_with_model": "{{model}}: {{prompt}} prompt + {{completion}} completamento = {{total}} token",
+    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} prompt + {{completion}} completamento = {{total}} token (~${{cost}})",
+    "tokens": "tokens",
+    "context_used": "{{percentage}}% utilizzato",
+    "note_context_enabled": "Clicca qui per disattivare il contesto della nota: {{title}}",
+    "note_context_disabled": "Clicca per includere la nota corrente nel contesto",
+    "no_provider_message": "Non è stato configurato alcun fornitore di IA. Aggiungine uno per iniziare a chattare.",
+    "add_provider": "Aggiungi un fornitore di IA",
+    "sources_summary": "{{count}} fonti provenienti da {{sites}} siti",
+    "stop": "Stop"
+  },
+  "sidebar_chat": {
+    "title": "Chat AI",
+    "launcher_title": "Apri Chat AI",
+    "new_chat": "Inizia una nuova chat",
+    "save_chat": "Salva la chat negli appunti",
+    "empty_state": "Avvia una conversazione",
+    "history": "Cronologia delle chat",
+    "recent_chats": "Conversazioni recenti",
+    "no_chats": "Nessuna conversazione precedente"
+  },
+  "llm": {
+    "settings_title": "AI / LLM",
+    "settings_description": "Configurare le integrazioni con l'intelligenza artificiale e i modelli linguistici di grandi dimensioni.",
+    "add_provider": "Aggiungi fornitore",
+    "add_provider_title": "Aggiungi un fornitore di IA",
+    "configured_providers": "Fornitori configurati",
+    "no_providers_configured": "Non sono stati ancora configurati fornitori.",
+    "provider_name": "Nome",
+    "provider_type": "Fornitore",
+    "actions": "Azioni",
+    "delete_provider": "Elimina",
+    "delete_provider_confirmation": "Sei sicuro di voler eliminare il provider \"{{name}}\"?",
+    "api_key": "Chiave API",
+    "api_key_placeholder": "Inserisci la tua chiave API",
+    "cancel": "Annulla",
+    "feature_not_enabled": "Abilita la funzione sperimentale LLM in Impostazioni → Avanzate → Funzioni sperimentali per utilizzare le integrazioni basate sull'intelligenza artificiale.",
+    "mcp_title": "MCP (Model Context Protocol)",
+    "mcp_enabled": "Server MCP",
+    "mcp_enabled_description": "Rendi pubblico un endpoint MCP (Model Context Protocol) in modo che gli assistenti di programmazione basati sull'intelligenza artificiale (ad esempio Claude Code, GitHub Copilot) possano leggere e modificare le tue note. L'endpoint è accessibile solo da localhost.",
+    "mcp_endpoint_title": "URL dell'endpoint",
+    "mcp_endpoint_description": "Aggiungi questo URL alla configurazione MCP del tuo assistente AI",
+    "tools": {
+      "search_notes": "Cerca nelle note",
+      "get_note": "Prendi nota",
+      "get_note_content": "Visualizza il contenuto della nota",
+      "update_note_content": "Aggiorna il contenuto della nota",
+      "append_to_note": "Aggiungi alla nota",
+      "create_note": "Crea nota",
+      "get_attributes": "Recupera gli attributi",
+      "get_attribute": "Ottieni attributo",
+      "set_attribute": "Imposta attributo",
+      "delete_attribute": "Elimina attributo",
+      "get_child_notes": "Recupera le note relative ai figli",
+      "get_subtree": "Ottieni sottostruttura",
+      "load_skill": "Carica skill",
+      "web_search": "Ricerca sul web",
+      "note_in_parent": "<Note/> in <Parent/>",
+      "get_attachment": "Scarica l'allegato",
+      "get_attachment_content": "Leggi il contenuto dell'allegato",
+      "rename_note": "Rinomina nota",
+      "delete_note": "Elimina nota",
+      "move_note": "Sposta nota",
+      "clone_note": "Clona nota"
+    }
+  },
+  "ocr": {
+    "extracted_text": "Testo estratto (OCR)",
+    "extracted_text_title": "Testo estratto (OCR)",
+    "loading_text": "Caricamento del testo OCR in corso...",
+    "no_text_available": "Non è disponibile alcun testo OCR",
+    "no_text_explanation": "Questo documento non è stato sottoposto a elaborazione OCR per l'estrazione del testo oppure non è stato trovato alcun testo.",
+    "failed_to_load": "Impossibile caricare il testo OCR",
+    "process_now": "Elaborazione OCR",
+    "processing": "Elaborazione in corso...",
+    "processing_started": "L'elaborazione OCR è stata avviata. Attendere qualche istante e aggiorna.",
+    "processing_complete": "Elaborazione OCR completata.",
+    "processing_failed": "Impossibile avviare l'elaborazione OCR",
+    "text_filtered_low_confidence": "L'OCR ha rilevato il testo con un livello di affidabilità del {{confidence}}%, ma è stato scartato perché la soglia minima impostata è del {{threshold}}%.",
+    "open_media_settings": "Apri Impostazioni",
+    "view_extracted_text": "Visualizza il testo estratto (OCR)"
+  },
+  "mind-map": {
+    "addChild": "Aggiungi figlio",
+    "addParent": "Aggiungi genitore",
+    "addSibling": "Aggiungi un fratello o una sorella",
+    "removeNode": "Rimuovi nodo",
+    "focus": "Modalità Focus",
+    "cancelFocus": "Annulla modalità Focus",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "link": "Collegamento",
+    "linkBidirectional": "Collegamento bidirezionale",
+    "clickTips": "Clicca sul nodo di destinazione",
+    "summary": "Sommario"
+  },
+  "search": {
+    "title": "Cerca",
+    "fuzzy_matching_label": "Tolleranza agli errori di battitura nella ricerca",
+    "fuzzy_matching_description": "Si applica alla ricerca rapida e alla ricerca completa. Trova parole simili quando non ci sono corrispondenze esatte.",
+    "autocomplete_fuzzy_label": "Tolleranza agli errori di battitura nel completamento automatico",
+    "autocomplete_fuzzy_description": "Influisce sui comandi \"Vai alla nota\" e sui selettori di note. È più lento, ma tollera gli errori di digitazione."
+  },
+  "revisions": {
+    "note_revisions": "Note sulle revisioni",
+    "delete_all_revisions": "Elimina tutte le revisioni di questa nota",
+    "delete_all_button": "Elimina tutte le revisioni",
+    "help_title": "Guida alle revisioni delle note",
+    "confirm_delete_all": "Vuoi eliminare tutte le revisioni di questa nota?",
+    "no_revisions": "Non ci sono ancora revisioni per questa nota...",
+    "restore_button": "Ripristina",
+    "highlight_changes": "Evidenzia le modifiche",
+    "diff_on": "Mostra le differenze",
+    "diff_off": "Mostra contenuto",
+    "diff_on_hint": "Clicca qui per visualizzare le differenze nel testo della nota",
+    "diff_off_hint": "Clicca qui per visualizzare il contenuto della nota",
+    "diff_not_available": "La funzione \"Diff\" non è disponibile.",
+    "confirm_restore": "Vuoi ripristinare questa revisione? In questo modo il titolo e il contenuto attuali della nota verranno sovrascritti con quelli di questa revisione.",
+    "delete_button": "Eliminazione",
+    "confirm_delete": "Vuoi eliminare questa revisione?",
+    "revisions_deleted": "Le revisioni delle note sono state eliminate.",
+    "revision_restored": "La revisione della nota è stata ripristinata.",
+    "revision_deleted": "La revisione della nota è stata eliminata.",
+    "snapshot_interval": "Nota: intervallo di aggiornamento dell'istantanea: {{seconds}} s.",
+    "maximum_revisions": "Limite delle istantanee delle revisioni delle note: {{number}}.",
+    "save_revision_now": "Salva subito una revisione",
+    "save_named_revision": "Salva revisione con nome...",
+    "snapshot_header": "Istantanea della revisione",
+    "snapshot_interval_value": "Intervallo: {{seconds}}s",
+    "snapshot_limit_value": "Limite: {{number}}",
+    "settings": "Impostazioni di revisione delle note",
+    "menu_tooltip": "Opzioni di revisione",
+    "download_button": "Scarica",
+    "mime": "MIME: ",
+    "file_size": "Dimensione del file:",
+    "preview_not_available": "L'anteprima non è disponibile per questo tipo di nota.",
+    "save_revision": "Salva revisione",
+    "save_revision_tooltip": "Salvare manualmente un'istantanea della nota corrente",
+    "description_placeholder": "Assegna un nome a questa revisione",
+    "revision_saved": "La modifica alla nota è stata salvata.",
+    "edit_description": "Modifica nome",
+    "description_updated": "Il nome della revisione è stato aggiornato."
   }
 }

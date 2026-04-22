@@ -55,7 +55,7 @@ runs:
     # Post deployment URL as PR comment
     - name: Comment PR with Preview URL
       if: github.event_name == 'pull_request'
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         COMMENT_BODY: ${{ inputs.comment_body }}
         PRODUCTION_URL: ${{ inputs.production_url }}

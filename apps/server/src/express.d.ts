@@ -17,6 +17,11 @@ export declare module "express-serve-static-core" {
             "user-agent"?: string;
         };
     }
+
+    interface Response {
+        /** Set to true to prevent apiResultHandler from double-handling the response (e.g., for SSE streams) */
+        triliumResponseHandled?: boolean;
+    }
 }
 
 export declare module "express-session" {

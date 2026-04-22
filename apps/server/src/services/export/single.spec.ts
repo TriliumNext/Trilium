@@ -14,4 +14,16 @@ describe("Note type mappings", () => {
             mime: "text/vnd.mermaid"
         });
     });
+
+    it("exports markdown code notes with a .md extension", () => {
+        // `mime-types` doesn't recognize Trilium's custom `text/x-markdown`;
+        // without the explicit fallback this was exporting as `.code`.
+        for (const mime of [ "text/x-markdown", "text/markdown", "text/x-gfm" ]) {
+            const note = buildNote({ type: "code", mime, title: "Doc" });
+            expect(mapByNoteType(note, "# hi", "markdown")).toMatchObject({
+                extension: "md",
+                mime
+            });
+        }
+    });
 });

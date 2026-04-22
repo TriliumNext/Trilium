@@ -39,7 +39,11 @@ export default class InternalLinkPlugin extends Plugin {
 class InsertInternalLinkCommand extends Command {
 
     refresh() {
-        this.isEnabled = !this.editor.isReadOnly;
+        const selection = this.editor.model.document.selection;
+        const position = selection.getFirstPosition();
+        const isInCodeBlock = position?.findAncestor("codeBlock");
+
+        this.isEnabled = !this.editor.isReadOnly && !isInCodeBlock;
     }
 
     execute() {

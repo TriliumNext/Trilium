@@ -21,7 +21,8 @@ export const NOTE_TYPE_ICONS = {
     doc: "bx bxs-file-doc",
     contentWidget: "bx bxs-widget",
     mindMap: "bx bx-sitemap",
-    spreadsheet: "bx bx-table"
+    spreadsheet: "bx bx-table",
+    llmChat: "bx bx-message-square-dots"
 };
 
 const FILE_MIME_MAPPINGS = {

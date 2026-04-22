@@ -25,6 +25,7 @@ interface NoteListProps {
     viewType: ViewTypeOptions | undefined;
     onReady?: (data: PrintReport) => void;
     onProgressChanged?(progress: number): void;
+    showTextRepresentation?: boolean;
 }
 
 type LazyLoadedComponent = ((props: ViewModeProps<any>) => VNode<any> | undefined);
@@ -67,7 +68,7 @@ export default function NoteList(props: Pick<NoteListProps, "displayOnlyCollecti
 
 export function SearchNoteList(props: Omit<NoteListProps, "isEnabled" | "viewType">) {
     const viewType = useNoteViewType(props.note);
-    return <CustomNoteList {...props} isEnabled={true} viewType={viewType} />;
+    return <CustomNoteList {...props} isEnabled={true} viewType={viewType} showTextRepresentation />;
 }
 
 export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, notePath, highlightedTokens, displayOnlyCollections, ntxId, onReady, onProgressChanged, ...restProps }: NoteListProps) {
@@ -179,11 +180,13 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
 
     // Refresh on alterations to the note subtree.
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (note && loadResults.getBranchRows().some(branch =>
-            branch.parentNoteId === note.noteId
-                || noteIds.includes(branch.parentNoteId ?? ""))
+        if (note && (
+            loadResults.getNoteReorderings().includes(note.noteId)
+            || loadResults.getBranchRows().some(branch =>
+                branch.parentNoteId === note.noteId
+                    || noteIds.includes(branch.parentNoteId ?? ""))
             || loadResults.getAttributeRows().some(attr => attr.name === "archived" && attr.noteId && noteIds.includes(attr.noteId))
-        ) {
+        )) {
             refreshNoteIds();
         }
     });

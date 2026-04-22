@@ -1,3 +1,234 @@
+/* Font Option Row */
+.font-option-row {
+    &:disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+}
+
+.font-option-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted-text-color);
+}
+
+/* Font Picker Modal */
+.font-picker-modal .modal-body {
+    padding: 0;
+}
+
+.font-picker-content {
+    display: flex;
+    height: 400px;
+}
+
+.font-picker-list {
+    width: 280px;
+    border-right: 1px solid var(--main-border-color);
+    overflow: hidden;
+
+    .dropdownWrapper {
+        height: 100%;
+    }
+
+    .dropdown-menu {
+        border: none;
+        border-radius: 0;
+    }
+
+    .dropdown-item {
+        font-size: 14px;
+    }
+}
+
+.font-picker-settings {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+}
+
+.font-size-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+        font-weight: 500;
+        color: var(--muted-text-color);
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+
+    .font-size-description {
+        color: var(--muted-text-color);
+        font-size: 12px;
+    }
+}
+
+.font-size-slider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .slider {
+        flex: 1;
+    }
+
+    .font-size-value {
+        min-width: 50px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.font-preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+
+    label {
+        font-weight: 500;
+        color: var(--muted-text-color);
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+}
+
+.font-preview-text {
+    flex: 1;
+    padding: 16px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    background: var(--main-background-color);
+    overflow: auto;
+    line-height: 1.6;
+}
+
+.orientation-illustration {
+    width: 170px;
+    height: 130px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    background: var(--root-background);
+    overflow: hidden;
+
+    > .tab-bar.full-width {
+        height: 12px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        padding: 0 4px;
+        background: var(--launcher-pane-background-color);
+
+        .tab {
+            width: 24px;
+            height: 8px;
+            background: var(--main-background-color);
+            border-radius: 4px 4px 0 0;
+            opacity: 0.4;
+
+            &.active {
+                height: 10px;
+                opacity: 1;
+            }
+        }
+    }
+
+    .launcher-bar {
+        background: var(--launcher-pane-vert-background-color);
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+
+        .tn-icon {
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        &.horizontal {
+            flex-direction: row;
+            height: 14px;
+            padding: 0 4px;
+            gap: 6px;
+        }
+
+        &.vertical {
+            flex-direction: column;
+            width: 24px;
+            padding: 4px 0;
+            gap: 4px;
+        }
+    }
+
+    .main-area {
+        display: flex;
+        flex-grow: 1;
+        min-height: 0;
+    }
+
+    .tree-pane {
+        width: 40px;
+        flex-shrink: 0;
+        padding: 8px 4px;
+
+        .tree-content {
+            height: 100%;
+            background: repeating-linear-gradient(
+                180deg,
+                var(--main-text-color) 0px,
+                var(--main-text-color) 4px,
+                transparent 4px,
+                transparent 8px
+            );
+            opacity: 0.15;
+            border-radius: 2px;
+        }
+    }
+
+    .content-pane {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+
+        .tab-bar {
+            height: 12px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            padding: 0 4px;
+
+            .tab {
+                width: 24px;
+                height: 8px;
+                background: var(--main-background-color);
+                border-radius: 4px 4px 0 0;
+                opacity: 0.4;
+
+                &.active {
+                    height: 10px;
+                    opacity: 1;
+                }
+            }
+        }
+
+        .note-content {
+            flex-grow: 1;
+            background: var(--main-background-color);
+            border-top-left-radius: 6px;
+            margin: 0;
+        }
+    }
+}
+
 .old-layout-illustration {
     width: 170px;
     height: 130px;

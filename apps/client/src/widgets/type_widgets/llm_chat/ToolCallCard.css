@@ -1,0 +1,113 @@
+/* Tool call specific styles (card/section structure is in ExpandableCard.css) */
+
+.llm-chat-tool-call-detail {
+    font-weight: 400;
+    color: var(--muted-text-color);
+}
+
+.llm-chat-tool-call-note-ref {
+    font-weight: 400;
+    margin-left: 0.25rem;
+}
+
+/* Section body (input + result) */
+.llm-chat-tool-call-input,
+.llm-chat-tool-call-result {
+    padding: 0.5rem 0.75rem;
+    max-height: 300px;
+    overflow: auto;
+}
+
+.llm-chat-tool-call-result {
+    border-top: 1px solid var(--main-border-color);
+}
+
+.expandable-section-body pre {
+    margin: 0;
+    padding: 0.5rem;
+    background: var(--main-background-color);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: var(--monospace-font-family, monospace);
+}
+
+.llm-chat-tool-call-input strong,
+.llm-chat-tool-call-result strong {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted-text-color);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+}
+
+/* Tool call key-value table */
+.llm-chat-tool-call-table {
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    background: var(--main-background-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.llm-chat-tool-call-table td {
+    padding: 0.25rem 0;
+    padding-right: 0.75rem;
+    vertical-align: top;
+}
+
+.llm-chat-tool-call-table tr:last-child td {
+    border-bottom: none;
+}
+
+.llm-chat-tool-call-table-key {
+    font-weight: 600;
+    white-space: nowrap;
+    width: 0;
+    color: var(--muted-text-color);
+}
+
+.llm-chat-tool-call-table-value pre {
+    margin: 0;
+    padding: 0;
+    background: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Nested tables */
+.llm-chat-tool-call-table-value .llm-chat-tool-call-table {
+    background: none;
+    width: auto;
+    min-width: 100%;
+}
+
+.llm-chat-tool-call-table-array {
+    display: flex;
+    flex-direction: column;
+}
+
+.llm-chat-tool-call-table-array > .llm-chat-tool-call-table {
+    background: none;
+}
+
+.llm-chat-tool-call-table-array > .llm-chat-tool-call-table + .llm-chat-tool-call-table {
+    border-top: 1px solid var(--main-border-color);
+}
+
+/* Tool call error styling */
+.llm-chat-tool-call-error .expandable-section-summary {
+    color: var(--danger-color, #dc3545);
+}
+
+.llm-chat-tool-call-error-badge {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--danger-color, #dc3545);
+    opacity: 0.8;
+}
+
+.llm-chat-tool-call-result-error pre {
+    color: var(--danger-color, #dc3545);
+}

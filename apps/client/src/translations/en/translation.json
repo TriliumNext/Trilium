@@ -1,13 +1,23 @@
 {
-  "about": {
-    "title": "About Trilium Notes",
-    "homepage": "Homepage:",
-    "app_version": "App version:",
-    "db_version": "DB version:",
-    "sync_version": "Sync version:",
-    "build_date": "Build date:",
-    "build_revision": "Build revision:",
-    "data_directory": "Data directory:"
+  "about": {   
+    "version_label": "Version:",
+    "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
+    "build_info": "Build: {{buildDate}}, revision: <buildRevision />",
+    "contributors_label": "Contributors:",
+    "contributor_roles": {
+      "lead-dev": "lead developer",
+      "original-dev": "original developer"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran founded TriliumNext in 2024, a community fork created after Zadam stepped back from the project. Zadam later transferred the original repository to the TriliumNext team, merging both projects back into one.",
+      "original-dev": "On 25th December 2017, Zadam released the first beta of Trilium (written with a single \"l\", unlike the flower). Dissatisfied with existing note organizers, he built a powerful self-hosted hierarchical knowledge base that gathered over 22,000 GitHub stars. In 2024, as life got busier, he placed the project into maintenance mode."
+    },
+    "contributor_full_list": "See the entire community",
+    "data_directory": "Data directory:",
+    "github_tooltip": "Report bugs, suggest features, or contribute on GitHub",
+    "license_tooltip": "View license",
+    "donate": "Donate",
+    "donate_tooltip": "Donate to support this project"
   },
   "toast": {
     "critical-error": {
@@ -41,6 +51,8 @@
     "link_title_mirrors": "link title mirrors the note's current title",
     "link_title_arbitrary": "link title can be changed arbitrarily",
     "link_title": "Link title",
+    "anchor": "Anchor (optional)",
+    "anchor_none": "None (link to note)",
     "button_add_link": "Add link"
   },
   "branch_prefix": {
@@ -88,17 +100,23 @@
     "also_delete_note": "Also delete the note"
   },
   "delete_notes": {
-    "delete_notes_preview": "Delete notes preview",
+    "title": "Delete notes",
     "close": "Close",
+    "clones_label": "Clones",
+    "delete_clones_description_one": "Also delete {{count}} other clone. Can be undone in recent changes.",
+    "delete_clones_description_other": "Also delete {{count}} other clones. Can be undone in recent changes.",
     "delete_all_clones_description": "Delete also all clones (can be undone in recent changes)",
-    "erase_notes_description": "Normal (soft) deletion only marks the notes as deleted and they can be undeleted (in recent changes dialog) within a period of time. Checking this option will erase the notes immediately and it won't be possible to undelete the notes.",
+    "erase_notes_label": "Erase permanently",
+    "erase_notes_description": "Erase notes immediately instead of soft deletion. This cannot be undone and will force application reload.",
     "erase_notes_warning": "Erase notes permanently (can't be undone), including all clones. This will force application reload.",
-    "notes_to_be_deleted": "Following notes will be deleted ({{notesCount}})",
+    "notes_to_be_deleted": "Notes to be deleted ({{notesCount}})",
     "no_note_to_delete": "No note will be deleted (only clones).",
-    "broken_relations_to_be_deleted": "Following relations will be broken and deleted ({{ relationCount}})",
+    "broken_relations_to_be_deleted": "Broken relations ({{relationCount}})",
+    "table_note_with_relation": "Note with relation",
+    "table_relation": "Relation",
+    "table_points_to": "Points to (deleted)",
     "cancel": "Cancel",
-    "ok": "OK",
-    "deleted_relation_text": "Note {{- note}} (to be deleted) is referenced by relation {{- relation}} originating from {{- source}}."
+    "delete": "Delete"
   },
   "export": {
     "export_note_title": "Export note",
@@ -209,6 +227,7 @@
     "box_size_small": "small (~ 10 lines)",
     "box_size_medium": "medium (~ 30 lines)",
     "box_size_full": "full (box shows complete text)",
+    "box_size_expandable": "expandable (collapsed by default)",
     "button_include": "Include note"
   },
   "info": {
@@ -278,6 +297,7 @@
     "confirm_delete_all": "Do you want to delete all revisions of this note?",
     "no_revisions": "No revisions for this note yet...",
     "restore_button": "Restore",
+    "highlight_changes": "Highlight changes",
     "diff_on": "Show diff",
     "diff_off": "Show content",
     "diff_on_hint": "Click to show note source diff",
@@ -291,11 +311,39 @@
     "revision_deleted": "Note revision has been deleted.",
     "snapshot_interval": "Note Revision Snapshot Interval: {{seconds}}s.",
     "maximum_revisions": "Note Revision Snapshot Limit: {{number}}.",
+    "save_revision_now": "Save a revision now",
+    "save_named_revision": "Save named revision...",
+    "snapshot_header": "Note revision snapshot",
+    "snapshot_interval_value": "Interval: {{seconds}}s",
+    "snapshot_limit_value": "Limit: {{number}}",
     "settings": "Note Revision Settings",
+    "menu_tooltip": "Revision options",
     "download_button": "Download",
     "mime": "MIME: ",
     "file_size": "File size:",
-    "preview_not_available": "Preview isn't available for this note type."
+    "preview_not_available": "Preview isn't available for this note type.",
+    "save_revision": "Save revision",
+    "save_revision_tooltip": "Manually save a snapshot of the current note",
+    "description_placeholder": "Name this revision",
+    "revision_saved": "Note revision has been saved.",
+    "edit_description": "Edit name",
+    "description_updated": "Revision name has been updated.",
+    "source_auto": "Auto-save",
+    "source_manual": "Manual save",
+    "source_etapi": "ETAPI",
+    "source_llm": "LLM",
+    "source_restore": "Restore",
+    "source_unknown": "Snapshot",
+    "date_today": "Today",
+    "date_yesterday": "Yesterday",
+    "date_this_week": "This week",
+    "date_this_month": "This month",
+    "source_description_auto": "Automatically saved by the system at regular intervals",
+    "source_description_manual": "Manually saved by the user",
+    "source_description_etapi": "Created via the External Trilium API",
+    "source_description_llm": "Created by the AI assistant",
+    "source_description_restore": "Saved before restoring a previous revision",
+    "source_description_unknown": "Source not available"
   },
   "sort_child_notes": {
     "sort_children_by": "Sort children by...",
@@ -369,7 +417,7 @@
     "calendar_root": "marks note which should be used as root for day notes. Only one should be marked as such.",
     "archived": "notes with this label won't be visible by default in search results (also in Jump To, Add Link dialogs etc).",
     "exclude_from_export": "notes (with their sub-tree) won't be included in any note export",
-    "run": "defines on which events script should run. Possible values are:\n<ul>\n<li>frontendStartup - when Trilium frontend starts up (or is refreshed), but not on mobile.</li>\n<li>mobileStartup - when Trilium frontend starts up (or is refreshed), on mobile.</li>\n<li>backendStartup - when Trilium backend starts up</li>\n<li>hourly - run once an hour. You can use additional label <code>runAtHour</code> to specify at which hour.</li>\n<li>daily - run once a day</li>\n</ul>",
+    "run": "defines on which events script should run. Possible values are:\n<ul>\n<li>frontendStartup - when Trilium frontend starts up (or is refreshed), but not on mobile.</li>\n<li>mobileStartup - when Trilium frontend starts up (or is refreshed), on mobile.</li>\n<li>backendStartup - when Trilium backend starts up.</li>\n<li>hourly - run once an hour. You can use additional label <code>runAtHour</code> to specify at which hour.</li>\n<li>daily - run once a day.</li>\n</ul>",
     "run_on_instance": "Define which trilium instance should run this on. Default to all instances.",
     "run_at_hour": "On which hour should this run. Should be used together with <code>#run=hourly</code>. Can be defined multiple times for more runs during the day.",
     "disable_inclusion": "scripts with this label won't be included into parent script execution.",
@@ -447,6 +495,8 @@
     "and_more": "... and {{count}} more.",
     "print_landscape": "When exporting to PDF, changes the orientation of the page to landscape instead of portrait.",
     "print_page_size": "When exporting to PDF, changes the size of the page. Supported values: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
+    "print_scale": "When exporting to PDF, changes the scale of the rendered content. Values range from 0.1 (10%) to 2 (200%), default is 1 (100%).",
+    "print_margins": "When exporting to PDF, sets page margins. Use <code>default</code>, <code>none</code>, <code>minimum</code>, or custom values as <code>top,right,bottom,left</code> in millimeters.",
     "color_type": "Color"
   },
   "attribute_editor": {
@@ -686,11 +736,17 @@
     "move_right": "Move right"
   },
   "note_actions": {
+    "word_wrap": "Word wrap",
+    "word_wrap_auto": "Auto",
+    "word_wrap_auto_description": "Follow the global setting",
+    "word_wrap_on": "On",
+    "word_wrap_off": "Off",
     "convert_into_attachment": "Convert into attachment",
     "re_render_note": "Re-render note",
     "search_in_note": "Search in note",
     "note_source": "Note source",
     "note_attachments": "Note attachments",
+    "view_ocr_text": "View OCR text",
     "open_note_externally": "Open note externally",
     "open_note_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
     "open_note_custom": "Open note custom",
@@ -701,6 +757,7 @@
     "print_note": "Print note",
     "view_revisions": "Note revisions...",
     "save_revision": "Save revision",
+    "save_named_revision": "Save named revision...",
     "advanced": "Advanced",
     "convert_into_attachment_failed": "Converting note '{{title}}' failed.",
     "convert_into_attachment_successful": "Note '{{title}}' has been converted to attachment.",
@@ -805,7 +862,11 @@
     "board": "Board",
     "presentation": "Presentation",
     "include_archived_notes": "Show archived notes",
-    "hide_child_notes": "Hide child notes in tree"
+    "hide_child_notes": "Hide child notes in tree",
+    "open_all_in_tabs": "Open all",
+    "open_all_in_tabs_tooltip": "Open all results in new tabs",
+    "open_all_confirm": "This will open {{count}} notes in new tabs. Continue?",
+    "open_all_too_many": "Too many results ({{count}}). Maximum is {{max}}."
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -841,6 +902,9 @@
     "no_inherited_attributes": "No inherited attributes.",
     "none": "none"
   },
+  "auto_link_attribute_list": {
+    "title": "System Attributes"
+  },
   "note_info_widget": {
     "note_id": "Note ID",
     "created": "Created",
@@ -859,7 +923,8 @@
     "collapse": "Collapse to normal size",
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
-    "link-distance": "Link distance"
+    "link-distance": "Link distance",
+    "too-many-notes": "This subtree contains {{count}} notes, which exceeds the limit of {{max}} that can be displayed in the note map."
   },
   "note_paths": {
     "title": "Note Paths",
@@ -1073,6 +1138,7 @@
     "edit_title": "Edit title",
     "rename_note": "Rename note",
     "enter_new_title": "Enter new note title:",
+    "rename_relation": "Rename relation",
     "remove_relation": "Remove relation",
     "confirm_remove_relation": "Are you sure you want to remove the relation?",
     "specify_new_relation_name": "Specify new relation name (allowed characters: alphanumeric, colon and underscore):",
@@ -1107,17 +1173,20 @@
   },
   "consistency_checks": {
     "title": "Consistency Checks",
+    "find_and_fix_label": "Find and fix consistency issues",
+    "find_and_fix_description": "Scan for and automatically repair any data consistency issues in the database.",
     "find_and_fix_button": "Find and fix consistency issues",
     "finding_and_fixing_message": "Finding and fixing consistency issues...",
     "issues_fixed_message": "Any consistency issue which may have been found is now fixed."
   },
   "database_anonymization": {
     "title": "Database Anonymization",
-    "full_anonymization": "Full Anonymization",
-    "full_anonymization_description": "This action will create a new copy of the database and anonymize it (remove all note content and leave only structure and some non-sensitive metadata) for sharing online for debugging purposes without fear of leaking your personal data.",
+    "description": "Create an anonymized copy of your database for sharing with developers when debugging issues, without exposing personal data.",
+    "full_anonymization": "Full anonymization",
+    "full_anonymization_description": "Creates a copy of the database with all note content removed, leaving only structure and non-sensitive metadata. Safe for sharing online when debugging issues.",
     "save_fully_anonymized_database": "Save fully anonymized database",
-    "light_anonymization": "Light Anonymization",
-    "light_anonymization_description": "This action will create a new copy of the database and do a light anonymization on it — specifically only content of all notes will be removed, but titles and attributes will remain. Additionally, custom JS frontend/backend script notes and custom widgets will remain. This provides more context to debug the issues.",
+    "light_anonymization": "Light anonymization",
+    "light_anonymization_description": "Creates a copy with note content removed, but titles, attributes, and custom scripts/widgets remain. Provides more context for debugging.",
     "choose_anonymization": "You can decide yourself if you want to provide a fully or lightly anonymized database. Even fully anonymized DB is very useful, however in some cases lightly anonymized database can speed up the process of bug identification and fixing.",
     "save_lightly_anonymized_database": "Save lightly anonymized database",
     "existing_anonymized_databases": "Existing anonymized databases",
@@ -1130,7 +1199,8 @@
   },
   "database_integrity_check": {
     "title": "Database Integrity Check",
-    "description": "This will check that the database is not corrupted on the SQLite level. It might take some time, depending on the DB size.",
+    "check_integrity_label": "Check database integrity",
+    "check_integrity_description": "Verify that the database is not corrupted on the SQLite level.",
     "check_button": "Check database integrity",
     "checking_integrity": "Checking database integrity...",
     "integrity_check_succeeded": "Integrity check succeeded - no problems found.",
@@ -1138,7 +1208,11 @@
   },
   "sync": {
     "title": "Sync",
+    "force_full_sync_label": "Force full sync",
+    "force_full_sync_description": "Trigger a complete synchronization with the sync server, re-uploading all changes.",
     "force_full_sync_button": "Force full sync",
+    "fill_entity_changes_label": "Fill entity changes",
+    "fill_entity_changes_description": "Rebuild entity change records. Use this if sync is missing some changes.",
     "fill_entity_changes_button": "Fill entity changes records",
     "full_sync_triggered": "Full sync triggered",
     "filling_entity_changes": "Filling entity changes rows...",
@@ -1146,8 +1220,13 @@
     "finished-successfully": "Sync finished successfully.",
     "failed": "Sync failed: {{message}}"
   },
+  "database": {
+    "title": "Database"
+  },
   "vacuum_database": {
     "title": "Vacuum Database",
+    "vacuum_label": "Vacuum database",
+    "vacuum_description": "Rebuild the database to reduce file size. No data will be changed.",
     "description": "This will rebuild the database which will typically result in a smaller database file. No data will be actually changed.",
     "button_text": "Vacuum database",
     "vacuuming_database": "Vacuuming database...",
@@ -1157,21 +1236,25 @@
     "title": "Experimental Options",
     "disclaimer": "These options are experimental and may cause instability. Use with caution.",
     "new_layout_name": "New Layout",
-    "new_layout_description": "Try out the new layout for a more modern look and improved usability. Subject to heavy change in the upcoming releases."
+    "new_layout_description": "Try out the new layout for a more modern look and improved usability. Subject to heavy change in the upcoming releases.",
+    "llm_name": "AI / LLM Chat",
+    "llm_description": "Enable the AI chat sidebar and LLM chat notes powered by large language models."
   },
   "fonts": {
     "theme_defined": "Theme defined",
     "fonts": "Fonts",
-    "main_font": "Main Font",
+    "custom_fonts": "Use custom fonts",
+    "main_font": "Interface text",
     "font_family": "Font family",
     "size": "Size",
-    "note_tree_font": "Note Tree Font",
-    "note_detail_font": "Note Detail Font",
-    "monospace_font": "Monospace (code) Font",
-    "note_tree_and_detail_font_sizing": "Note that tree and detail font sizing is relative to the main font size setting.",
-    "not_all_fonts_available": "Not all listed fonts may be available on your system.",
-    "apply_font_changes": "To apply font changes, click on",
-    "reload_frontend": "reload frontend",
+    "preview": "Preview",
+    "note_tree_font": "Note tree text",
+    "note_detail_font": "Document text",
+    "monospace_font": "Monospace text",
+    "monospace_font_description": "Used for code notes and code blocks",
+    "size_relative_to_general": "Size is relative to the general font size",
+    "not_all_fonts_available": "Not all listed fonts may be available on your system",
+    "apply_changes": "Reload to apply changes",
     "generic-fonts": "Generic fonts",
     "sans-serif-system-fonts": "Sans-serif system fonts",
     "serif-system-fonts": "Serif system fonts",
@@ -1200,15 +1283,18 @@
     "edited_notes_message": "Edited Notes ribbon tab will automatically open on day notes"
   },
   "theme": {
-    "title": "Application Theme",
-    "theme_label": "Theme",
+    "title": "User Interface",
+    "theme_label": "Application theme",
     "override_theme_fonts_label": "Override theme fonts",
-    "auto_theme": "Legacy (Follow system color scheme)",
-    "light_theme": "Legacy (Light)",
-    "dark_theme": "Legacy (Dark)",
-    "triliumnext": "Trilium (Follow system color scheme)",
-    "triliumnext-light": "Trilium (Light)",
-    "triliumnext-dark": "Trilium (Dark)",
+    "auto_theme": "Follow system color scheme",
+    "light_theme": "Light",
+    "dark_theme": "Dark",
+    "triliumnext": "Follow system color scheme",
+    "triliumnext-light": "Light",
+    "triliumnext-dark": "Dark",
+    "modern_themes": "Modern",
+    "legacy_themes": "Legacy",
+    "custom_themes": "Custom",
     "layout": "Layout",
     "layout-vertical-title": "Vertical",
     "layout-horizontal-title": "Horizontal",
@@ -1217,11 +1303,11 @@
   },
   "ui-performance": {
     "title": "Performance",
-    "enable-motion": "Enable transitions and animations",
-    "enable-shadows": "Enable shadows",
-    "enable-backdrop-effects": "Enable background effects for menus, popups and panels",
-    "enable-smooth-scroll": "Enable smooth scrolling",
-    "app-restart-required": "(a restart of the application is required for the change to take effect)"
+    "enable-motion": "Transitions and animations",
+    "enable-shadows": "Shadows",
+    "enable-backdrop-effects": "Background effects for menus, popups and panels",
+    "enable-smooth-scroll": "Smooth scrolling",
+    "app-restart-required": "Requires app restart"
   },
   "zoom_factor": {
     "title": "Zoom Factor (desktop build only)",
@@ -1230,11 +1316,13 @@
   "code_auto_read_only_size": {
     "title": "Automatic Read-Only Size",
     "description": "Automatic read-only note size is the size after which notes will be displayed in a read-only mode (for performance reasons).",
-    "label": "Automatic read-only size (code notes)",
+    "label": "Automatic read-only size",
     "unit": "characters"
   },
   "code-editor-options": {
-    "title": "Editor"
+    "title": "Editor",
+    "tab_width": "Tab width",
+    "tab_width_unit": "spaces"
   },
   "code_mime_types": {
     "title": "Available MIME types in the dropdown",
@@ -1252,66 +1340,104 @@
   },
   "images": {
     "images_section_title": "Images",
-    "download_images_automatically": "Download images automatically for offline use.",
-    "download_images_description": "Pasted HTML can contain references to online images, Trilium will find those references and download the images so that they are available offline.",
-    "enable_image_compression": "Enable image compression",
-    "max_image_dimensions": "Max width / height of an image (image will be resized if it exceeds this setting).",
+    "download_images_automatically": "Download images automatically",
+    "download_images_description": "Download referenced online images from pasted HTML so they are available offline.",
+    "enable_image_compression": "Image compression",
+    "enable_image_compression_description": "Compress and resize images when they are uploaded or pasted.",
+    "max_image_dimensions": "Max image dimensions",
+    "max_image_dimensions_description": "Images exceeding this size will be resized automatically.",
     "max_image_dimensions_unit": "pixels",
-    "jpeg_quality_description": "JPEG quality (10 - worst quality, 100 - best quality, 50 - 85 is recommended)"
+    "jpeg_quality": "JPEG quality",
+    "jpeg_quality_description": "Recommended range is 50–85. Lower values reduce file size, higher values preserve detail.",
+    "ocr_section_title": "Text Extraction (OCR)",
+    "ocr_related_content_languages": "Content languages (used for text extraction)",
+    "ocr_auto_process": "Auto-process new files",
+    "ocr_auto_process_description": "Automatically extract text from newly uploaded or pasted files.",
+    "ocr_min_confidence": "Minimum confidence",
+    "ocr_confidence_description": "Only extract text above this confidence threshold. Lower values include more text but may be less accurate.",
+    "batch_ocr_title": "Process Existing Files",
+    "batch_ocr_description": "Extract text from all existing images, PDFs, and Office documents in your notes. This may take some time depending on the number of files.",
+    "batch_ocr_start": "Start Batch Processing",
+    "batch_ocr_starting": "Starting batch processing...",
+    "batch_ocr_progress": "Processing {{processed}} of {{total}} files...",
+    "batch_ocr_completed": "Batch processing completed! Processed {{processed}} files.",
+    "batch_ocr_error": "Error during batch processing: {{error}}"
   },
   "attachment_erasure_timeout": {
-    "attachment_erasure_timeout": "Attachment Erasure Timeout",
-    "attachment_auto_deletion_description": "Attachments get automatically deleted (and erased) if they are not referenced by their note anymore after a defined time out.",
-    "erase_attachments_after": "Erase unused attachments after:",
-    "manual_erasing_description": "You can also trigger erasing manually (without considering the timeout defined above):",
-    "erase_unused_attachments_now": "Erase unused attachment notes now",
+    "attachment_erasure_timeout": "Unused Attachments",
+    "description": "Attachments that are no longer referenced by any note are considered unused and can be automatically erased after a period of time.",
+    "erase_attachments_after": "Erase unused attachments after",
+    "erase_attachments_after_description": "Time before unused attachments are permanently erased.",
+    "manual_erasing_description": "Trigger erasing manually, ignoring the timeout above.",
+    "erase_unused_attachments_now": "Erase unused attachments now",
     "unused_attachments_erased": "Unused attachments have been erased."
   },
   "network_connections": {
-    "network_connections_title": "Network Connections",
-    "check_for_updates": "Check for updates automatically"
+    "network_connections_title": "Network",
+    "check_for_updates": "Check for updates automatically",
+    "check_for_updates_description": "Checks for new versions on GitHub and shows a notification in the global menu when available."
   },
   "note_erasure_timeout": {
-    "note_erasure_timeout_title": "Note Erasure Timeout",
-    "note_erasure_description": "Deleted notes (and attributes, revisions...) are at first only marked as deleted and it is possible to recover them from Recent Notes dialog. After a period of time, deleted notes are \"erased\" which means their content is not recoverable anymore. This setting allows you to configure the length of the period between deleting and erasing the note.",
-    "erase_notes_after": "Erase notes after:",
-    "manual_erasing_description": "You can also trigger erasing manually (without considering the timeout defined above):",
+    "note_erasure_timeout_title": "Deleted Notes",
+    "description": "Deleted notes are first only marked as deleted and can be recovered from Recent Notes. After a period of time, they are permanently erased.",
+    "erase_notes_after": "Erase notes after",
+    "erase_notes_after_description": "Time before deleted notes are permanently erased.",
+    "manual_erasing_description": "Trigger erasing manually, ignoring the timeout above.",
     "erase_deleted_notes_now": "Erase deleted notes now",
     "deleted_notes_erased": "Deleted notes have been erased."
+  },
+  "revisions_snapshot": {
+    "title": "Note Revisions"
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "Note Revision Snapshot Interval",
     "note_revisions_snapshot_description": "The Note revision snapshot interval is the time after which a new note revision will be created for the note. See <doc>wiki</doc> for more info.",
-    "snapshot_time_interval_label": "Note revision snapshot time interval:"
+    "note_revisions_snapshot_description_short": "Time after which a new note revision will be created.",
+    "snapshot_time_interval_label": "Snapshot interval"
   },
   "revisions_snapshot_limit": {
     "note_revisions_snapshot_limit_title": "Note Revision Snapshot Limit",
     "note_revisions_snapshot_limit_description": "The note revision snapshot number limit refers to the maximum number of revisions that can be saved for each note. Where -1 means no limit, 0 means delete all revisions. You can set the maximum revisions for a single note through the #versioningLimit label.",
-    "snapshot_number_limit_label": "Note revision snapshot number limit:",
+    "note_revisions_snapshot_limit_description_short": "Max revisions per note. Use -1 for unlimited, 0 to disable.",
+    "snapshot_number_limit_label": "Maximum revisions",
     "snapshot_number_limit_unit": "snapshots",
     "erase_excess_revision_snapshots": "Erase excess revision snapshots now",
+    "erase_excess_revision_snapshots_description": "Delete revisions exceeding the limit for all notes.",
     "erase_excess_revision_snapshots_prompt": "Excess revision snapshots have been erased."
+  },
+  "search": {
+    "title": "Search",
+    "fuzzy_matching_label": "Typo tolerance in search",
+    "fuzzy_matching_description": "Affects quick search and full search. Finds similar words when exact matches are insufficient.",
+    "autocomplete_fuzzy_label": "Typo tolerance in autocomplete",
+    "autocomplete_fuzzy_description": "Affects jump-to-note and note selectors. Slower but tolerates typos."
   },
   "search_engine": {
     "title": "Search Engine",
-    "custom_search_engine_info": "Custom search engine requires both a name and a URL to be set. If either of these is not set, DuckDuckGo will be used as the default search engine.",
-    "predefined_templates_label": "Predefined search engine templates",
+    "custom_search_engine_info": "Used when searching the web for selected text. If not configured, DuckDuckGo will be used.",
+    "predefined_templates_label": "Presets",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
     "google": "Google",
-    "custom_name_label": "Custom search engine name",
-    "custom_name_placeholder": "Customize search engine name",
-    "custom_url_label": "Custom search engine URL should include {keyword} as a placeholder for the search term.",
-    "custom_url_placeholder": "Customize search engine url",
+    "custom_name_label": "Name",
+    "custom_name_placeholder": "Search engine name",
+    "custom_url_label": "URL",
+    "custom_url_description": "Use {keyword} as a placeholder for the search term.",
+    "custom_url_placeholder": "Search engine URL",
     "save_button": "Save"
   },
   "tray": {
     "title": "System Tray",
-    "enable_tray": "Enable tray (Trilium needs to be restarted for this change to take effect)"
+    "enable_tray": "Tray icon",
+    "enable_tray_description": "Trilium needs to be restarted for this change to take effect."
+  },
+  "text_editor": {
+    "title": "Editor"
   },
   "heading_style": {
-    "title": "Heading Style",
+    "title": "Heading style",
+    "description": "Visual style for headings in text notes.",
     "plain": "Plain",
     "underline": "Underline",
     "markdown": "Markdown-style"
@@ -1338,14 +1464,16 @@
   "text_auto_read_only_size": {
     "title": "Automatic Read-Only Size",
     "description": "Automatic read-only note size is the size after which notes will be displayed in a read-only mode (for performance reasons).",
-    "label": "Automatic read-only size (text notes)",
+    "label": "Automatic read-only size",
     "unit": "characters"
   },
   "custom_date_time_format": {
-    "title": "Custom Date/Time Format",
+    "title": "Date/time format",
     "description": "Customize the format of the date and time inserted via <shortcut /> or the toolbar. See <doc>Day.js docs</doc> for available format tokens.",
-    "format_string": "Format string:",
-    "formatted_time": "Formatted date/time:"
+    "description_short": "Customize the format of the date and time inserted via the toolbar.",
+    "preview": "Preview: {{preview}}",
+    "format_string": "Format string",
+    "formatted_time": "Formatted date/time"
   },
   "i18n": {
     "title": "Localization",
@@ -1360,20 +1488,20 @@
     "sunday": "Sunday",
     "first-week-of-the-year": "First week of the year",
     "first-week-contains-first-day": "First week contains first day of the year",
-    "first-week-contains-first-thursday": "First week contains first Thursday of the year",
+    "first-week-contains-first-thursday": "First week contains first Thursday (ISO 8601)",
     "first-week-has-minimum-days": "First week has minimum days",
     "min-days-in-first-week": "Minimum days in first week",
-    "first-week-info": "First week contains first Thursday of the year is based on <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a> standard.",
-    "first-week-warning": "Changing first week options may cause duplicate with existing Week Notes and the existing Week Notes will not be updated accordingly.",
+    "first-week-warning": "Changing this may cause duplicates with existing Week Notes.",
     "formatting-locale": "Date & number format",
     "formatting-locale-auto": "Based on the application's language"
   },
   "backup": {
+    "title": "Backup",
     "automatic_backup": "Automatic backup",
     "automatic_backup_description": "Trilium can back up the database automatically:",
-    "enable_daily_backup": "Enable daily backup",
-    "enable_weekly_backup": "Enable weekly backup",
-    "enable_monthly_backup": "Enable monthly backup",
+    "enable_daily_backup": "Backup daily",
+    "enable_weekly_backup": "Backup weekly",
+    "enable_monthly_backup": "Backup monthly",
     "backup_recommendation": "It's recommended to keep the backup turned on, but this can make application startup slow with large databases and/or slow storage devices.",
     "backup_now": "Backup now",
     "backup_database_now": "Backup database now",
@@ -1381,7 +1509,8 @@
     "date-and-time": "Date & time",
     "path": "Path",
     "database_backed_up_to": "Database has been backed up to {{backupFilePath}}",
-    "no_backup_yet": "no backup yet"
+    "no_backup_yet": "no backup yet",
+    "download": "Download"
   },
   "etapi": {
     "title": "ETAPI",
@@ -1416,11 +1545,15 @@
     "new_password": "New password",
     "new_password_confirmation": "New password confirmation",
     "change_password": "Change password",
-    "protected_session_timeout": "Protected Session Timeout",
-    "protected_session_timeout_description": "Protected session timeout is a time period after which the protected session is wiped from the browser's memory. This is measured from the last interaction with protected notes. See",
+    "change_password_description": "Update your current password",
+    "reset_password": "Reset password",
+    "reset_password_description": "Permanently lose access to protected notes",
+    "cancel": "Cancel",
+    "protected_session_timeout": "Protected Session",
+    "protected_session_timeout_description": "Time of inactivity before the session is cleared from browser memory. See",
     "wiki": "wiki",
     "for_more_info": "for more info.",
-    "protected_session_timeout_label": "Protected session timeout:",
+    "protected_session_timeout_label": "Auto-close session after",
     "reset_confirmation": "By resetting the password you will forever lose access to all your existing protected notes. Do you really want to reset the password?",
     "reset_success_message": "Password has been reset. Please set new password",
     "change_password_heading": "Change Password",
@@ -1479,26 +1612,28 @@
   "spellcheck": {
     "title": "Spell Check",
     "description": "These options apply only for desktop builds, browsers will use their own native spell check.",
-    "enable": "Enable spellcheck",
-    "language_code_label": "Language code(s)",
-    "language_code_placeholder": "for example \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "Multiple languages can be separated by comma, e.g. \"en-US, de-DE, cs\". ",
-    "available_language_codes_label": "Available language codes:",
-    "restart-required": "Changes to the spell check options will take effect after application restart."
+    "enable": "Check spelling",
+    "language_code_label": "Spell Check Languages",
+    "restart-required": "Changes to the spell check options will take effect after application restart.",
+    "custom_dictionary_title": "Custom Dictionary",
+    "custom_dictionary_description": "Words added to the dictionary are synced across all your devices.",
+    "custom_dictionary_edit": "Custom words",
+    "custom_dictionary_edit_description": "Edit the list of words that should not be flagged by the spell checker. Changes will be visible after a restart.",
+    "custom_dictionary_open": "Edit dictionary",
+    "related_description": "Configure spell check languages and custom dictionary."
   },
   "sync_2": {
-    "config_title": "Sync Configuration",
-    "server_address": "Server instance address",
-    "timeout": "Sync timeout",
-    "timeout_unit": "milliseconds",
-    "proxy_label": "Sync proxy server (optional)",
-    "note": "Note",
-    "note_description": "If you leave the proxy setting blank, the system proxy will be used (applies to desktop/electron build only).",
-    "special_value_description": "Another special value is <code>noproxy</code> which forces ignoring even the system proxy and respects <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
+    "config_title": "Sync Server",
+    "server_address": "Server address",
+    "server_address_description": "URL of the Trilium server to sync with.",
+    "timeout": "Connection timeout",
+    "timeout_description": "Time to wait before giving up on a slow connection.",
+    "proxy_label": "Proxy server",
+    "proxy_description": "Leave blank to use system proxy (desktop only). Use \"noproxy\" to bypass all proxies.",
     "save": "Save",
     "help": "Help",
-    "test_title": "Sync Test",
-    "test_description": "This will test the connection and handshake to the sync server. If the sync server isn't initialized, this will set it up to sync with the local document.",
+    "test_title": "Test Connection",
+    "test_description": "Test the connection to the sync server. If not initialized, this will set up syncing.",
     "test_button": "Test sync",
     "handshake_failed": "Sync server handshake failed, error: {{message}}"
   },
@@ -1581,6 +1716,7 @@
   "note_types": {
     "text": "Text",
     "code": "Code",
+    "markdown": "Markdown",
     "saved-search": "Saved Search",
     "relation-map": "Relation Map",
     "note-map": "Note Map",
@@ -1599,6 +1735,7 @@
     "geo-map": "Geo Map",
     "beta-feature": "Beta",
     "ai-chat": "AI Chat",
+    "llm-chat": "AI Chat",
     "task-list": "Task List",
     "new-feature": "New",
     "collections": "Collections",
@@ -1609,6 +1746,49 @@
     "toggle-off": "Unprotect the note",
     "toggle-on-hint": "Note is not protected, click to make it protected",
     "toggle-off-hint": "Note is protected, click to make it unprotected"
+  },
+  "llm_chat": {
+    "placeholder": "Type a message...",
+    "send": "Send",
+    "sending": "Sending...",
+    "empty_state": "Start a conversation by typing a message below.",
+    "searching_web": "Searching the web...",
+    "web_search": "Web search",
+    "note_tools": "Note access",
+    "sources": "Sources",
+    "sources_summary": "{{count}} sources from {{sites}} sites",
+    "extended_thinking": "Extended thinking",
+    "legacy_models": "Legacy models",
+    "thinking": "Thinking...",
+    "thought_process": "Thought process",
+    "tool_calls": "{{count}} tool call(s)",
+    "input": "Input",
+    "result": "Result",
+    "error": "Error",
+    "tool_error": "failed",
+    "total_tokens": "{{total}} tokens",
+    "tokens_detail": "{{prompt}} prompt + {{completion}} completion",
+    "tokens_used": "{{prompt}} prompt + {{completion}} completion = {{total}} tokens",
+    "tokens_used_with_cost": "{{prompt}} prompt + {{completion}} completion = {{total}} tokens (~${{cost}})",
+    "tokens_used_with_model": "{{model}}: {{prompt}} prompt + {{completion}} completion = {{total}} tokens",
+    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} prompt + {{completion}} completion = {{total}} tokens (~${{cost}})",
+    "tokens": "tokens",
+    "context_used": "{{percentage}}% used",
+    "note_context_enabled": "Click to disable note context: {{title}}",
+    "note_context_disabled": "Click to include current note in context",
+    "no_provider_message": "No AI provider configured. Add one to start chatting.",
+    "add_provider": "Add AI Provider",
+    "stop": "Stop"
+  },
+  "sidebar_chat": {
+    "title": "AI Chat",
+    "launcher_title": "Open AI Chat",
+    "new_chat": "Start new chat",
+    "save_chat": "Save chat to notes",
+    "empty_state": "Start a conversation",
+    "history": "Chat history",
+    "recent_chats": "Recent chats",
+    "no_chats": "No previous chats"
   },
   "shared_switch": {
     "shared": "Shared",
@@ -1679,7 +1859,7 @@
   "note_detail": {
     "could_not_find_typewidget": "Could not find typeWidget for type '{{type}}'",
     "printing": "Printing in progress...",
-    "printing_pdf": "Exporting to PDF in progress...",
+    "printing_pdf": "Preparing print preview...",
     "print_report_title": "Print report",
     "print_report_error_title": "Failed to print",
     "print_report_stack_trace": "Stack trace",
@@ -1757,6 +1937,8 @@
   },
   "entrypoints": {
     "note-revision-created": "Note revision has been created.",
+    "save-named-revision-title": "Save named revision",
+    "save-named-revision-message": "Enter a name for this revision (leave empty for no name):",
     "note-executed": "Note executed.",
     "sql-error": "Error occurred while executing SQL query: {{message}}"
   },
@@ -1794,6 +1976,9 @@
     "move-to-available-launchers": "Move to available launchers",
     "duplicate-launcher": "Duplicate launcher <kbd data-command=\"duplicateSubtree\">"
   },
+  "launcher_button_context_menu": {
+    "remove_from_launch_bar": "Remove from launch bar"
+  },
   "highlighting": {
     "title": "Code Blocks",
     "description": "Controls the syntax highlighting for code blocks inside text notes, code notes will not be affected.",
@@ -1804,7 +1989,10 @@
     "theme_none": "No syntax highlighting",
     "theme_group_light": "Light themes",
     "theme_group_dark": "Dark themes",
-    "copy_title": "Copy to clipboard"
+    "copy_title": "Copy to clipboard",
+    "click_to_copy": "Click to copy",
+    "tab_width": "Tab width",
+    "tab_width_unit": "spaces"
   },
   "classic_editor_toolbar": {
     "title": "Formatting"
@@ -1815,6 +2003,7 @@
   "editing": {
     "editor_type": {
       "label": "Formatting toolbar",
+      "toolbar_style": "Toolbar style",
       "floating": {
         "title": "Floating",
         "description": "editing tools appear near the cursor;"
@@ -1823,7 +2012,7 @@
         "title": "Fixed",
         "description": "editing tools appear in the \"Formatting\" ribbon tab."
       },
-      "multiline-toolbar": "Display the toolbar on multiple lines if it doesn't fit."
+      "multiline-toolbar": "Display the toolbar on multiple lines if it doesn't fit"
     }
   },
   "electron_context_menu": {
@@ -1840,6 +2029,9 @@
   "image_context_menu": {
     "copy_reference_to_clipboard": "Copy reference to clipboard",
     "copy_image_to_clipboard": "Copy image to clipboard"
+  },
+  "link": {
+    "failed_to_open": "Failed to open link '{{- href}}': {{- message}}"
   },
   "link_context_menu": {
     "open_note_in_new_tab": "Open note in a new tab",
@@ -1890,7 +2082,7 @@
     "days": "Days"
   },
   "share": {
-    "title": "Share Settings",
+    "title": "Share",
     "redirect_bare_domain": "Redirect bare domain to Share page",
     "redirect_bare_domain_description": "Redirect anonymous users to the Share page instead of showing Login",
     "show_login_link": "Show Login link in Share theme",
@@ -1921,7 +2113,7 @@
   },
   "content_language": {
     "title": "Content languages",
-    "description": "Select one or more languages that should appear in the language selection in the Basic Properties section of a read-only or editable text note. This will allow features such as spell-checking or right-to-left support."
+    "description": "Select one or more languages that should appear in the language selection in the Basic Properties section of a read-only or editable text note. This will allow features such as spell-checking, right-to-left support and text extraction (OCR)."
   },
   "switch_layout_button": {
     "title_vertical": "Move editing pane to the bottom",
@@ -1930,6 +2122,11 @@
   "toggle_read_only_button": {
     "unlock-editing": "Unlock editing",
     "lock-editing": "Lock editing"
+  },
+  "display_mode": {
+    "source": "Source view",
+    "split": "Split view",
+    "preview": "Preview"
   },
   "png_export_button": {
     "button_title": "Export diagram as PNG"
@@ -1954,12 +2151,12 @@
   },
   "editorfeatures": {
     "title": "Features",
-    "emoji_completion_enabled": "Enable Emoji auto-completion",
-    "emoji_completion_description": "If enabled, emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
-    "note_completion_enabled": "Enable note auto-completion",
-    "note_completion_description": "If enabled, links to notes can be created by typing `@` followed by the title of a note.",
-    "slash_commands_enabled": "Enable slash commands",
-    "slash_commands_description": "If enabled, editing commands such as inserting line breaks or headings can be toggled by typing `/`."
+    "emoji_completion_enabled": "Emoji auto-completion",
+    "emoji_completion_description": "Emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
+    "note_completion_enabled": "Note auto-completion",
+    "note_completion_description": "Links to notes can be created by typing `@` followed by the title of a note.",
+    "slash_commands_enabled": "Slash commands",
+    "slash_commands_description": "Editing commands such as inserting line breaks or headings can be toggled by typing `/`."
   },
   "table_view": {
     "new-row": "New row",
@@ -2021,6 +2218,22 @@
   "calendar_view": {
     "delete_note": "Delete note..."
   },
+  "ocr": {
+    "extracted_text": "Extracted Text (OCR)",
+    "extracted_text_title": "Extracted Text (OCR)",
+    "loading_text": "Loading OCR text...",
+    "no_text_available": "No OCR text available",
+    "no_text_explanation": "This note has not been processed for OCR text extraction or no text was found.",
+    "failed_to_load": "Failed to load OCR text",
+    "process_now": "Process OCR",
+    "processing": "Processing...",
+    "processing_started": "OCR processing has been started. Please wait a moment and refresh.",
+    "processing_complete": "OCR processing complete.",
+    "processing_failed": "Failed to start OCR processing",
+    "text_filtered_low_confidence": "OCR detected text with {{confidence}}% confidence, but it was discarded because your minimum threshold is {{threshold}}%.",
+    "open_media_settings": "Open Settings",
+    "view_extracted_text": "View extracted text (OCR)"
+  },
   "command_palette": {
     "tree-action-name": "Tree: {{name}}",
     "export_note_title": "Export Note",
@@ -2062,6 +2275,8 @@
     "related_code_blocks": "Color scheme for code blocks in text notes",
     "related_code_notes": "Color scheme for code notes",
     "ui": "User interface",
+    "ui_layout_style": "Layout style",
+    "ui_layout_orientation": "Launcher bar orientation",
     "ui_old_layout": "Old layout",
     "ui_new_layout": "New layout"
   },
@@ -2144,7 +2359,19 @@
     "note_paths_one": "{{count}} path",
     "note_paths_other": "{{count}} paths",
     "note_paths_title": "Note paths",
-    "code_note_switcher": "Change language mode"
+    "code_note_switcher": "Change language mode",
+    "tab_width": "Tab Width: {{width}}",
+    "tab_width_title": "Change tab width",
+    "tab_width_spaces": "{{count}} spaces",
+    "tab_width_spaces_short": "Spaces: {{width}}",
+    "tab_width_tabs": "Tabs: {{width}}",
+    "tab_width_use_default": "Use default ({{width}})",
+    "tab_width_use_default_style": "Use default ({{style}})",
+    "tab_width_display_header": "Display width",
+    "tab_width_reindent_header": "Re-indent content to",
+    "tab_width_style_header": "Indent using",
+    "tab_width_style_spaces": "Spaces",
+    "tab_width_style_tabs": "Tabs"
   },
   "attributes_panel": {
     "title": "Note Attributes"
@@ -2154,6 +2381,37 @@
     "empty_button": "Hide the panel",
     "toggle": "Toggle right panel",
     "custom_widget_go_to_source": "Go to source code"
+  },
+  "print_preview": {
+    "title": "Print preview",
+    "close": "Close",
+    "save": "Save as PDF",
+    "print": "Print",
+    "export_pdf": "Export as PDF",
+    "system_print": "Print using system dialog",
+    "destination": "Destination",
+    "destination_pdf": "Save as PDF",
+    "destination_printers": "Printers",
+    "destination_default": "Default",
+    "orientation": "Orientation",
+    "portrait": "Portrait",
+    "landscape": "Landscape",
+    "page_size": "Page size",
+    "scale": "Scale",
+    "margins": "Margins",
+    "render_error": "Unable to render PDF with the current settings. Please check the margins and scale.",
+    "margins_default": "Default",
+    "margins_none": "None",
+    "margins_minimum": "Minimum",
+    "margins_custom": "Custom",
+    "margin_top": "Top",
+    "margin_right": "Right",
+    "margin_bottom": "Bottom",
+    "margin_left": "Left",
+    "page_ranges": "Pages",
+    "page_ranges_hint": "Leave empty to print all pages.",
+    "page_ranges_invalid": "Invalid format. Use e.g. 1-5, 8, 11-13.",
+    "page_ranges_placeholder": "e.g. 1-5, 8, 11-13"
   },
   "pdf": {
     "attachments_one": "{{count}} attachment",
@@ -2229,6 +2487,71 @@
     "sample_user_journey": "User Journey",
     "sample_xy": "XY",
     "sample_venn": "Venn",
-    "sample_ishikawa": "Ishikawa"
+    "sample_ishikawa": "Ishikawa",
+    "sample_treeview": "TreeView",
+    "sample_wardley": "Wardley Map"
+  },
+  "mind-map": {
+    "addChild": "Add child",
+    "addParent": "Add parent",
+    "addSibling": "Add sibling",
+    "removeNode": "Remove node",
+    "focus": "Focus Mode",
+    "cancelFocus": "Cancel Focus Mode",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "link": "Link",
+    "linkBidirectional": "Bidirectional Link",
+    "clickTips": "Please click the target node",
+    "summary": "Summary"
+  },
+  "llm": {
+    "settings_title": "AI / LLM",
+    "settings_description": "Configure AI and Large Language Model integrations.",
+    "feature_not_enabled": "Enable the LLM experimental feature in Settings → Advanced → Experimental features to use AI integrations.",
+    "add_provider": "Add Provider",
+    "add_provider_title": "Add AI Provider",
+    "configured_providers": "Configured Providers",
+    "no_providers_configured": "No providers configured yet.",
+    "provider_name": "Name",
+    "provider_type": "Provider",
+    "actions": "Actions",
+    "delete_provider": "Delete",
+    "delete_provider_confirmation": "Are you sure you want to delete the provider \"{{name}}\"?",
+    "api_key": "API Key",
+    "api_key_placeholder": "Enter your API key",
+    "cancel": "Cancel",
+    "mcp_title": "MCP (Model Context Protocol)",
+    "mcp_enabled": "MCP server",
+    "mcp_enabled_description": "Expose a Model Context Protocol (MCP) endpoint so that AI coding assistants (e.g. Claude Code, GitHub Copilot) can read and modify your notes. The endpoint is only accessible from localhost.",
+    "mcp_endpoint_title": "Endpoint URL",
+    "mcp_endpoint_description": "Add this URL to your AI assistant's MCP configuration",
+    "tools": {
+      "search_notes": "Search notes",
+      "get_note": "Get note",
+      "get_note_content": "Get note content",
+      "update_note_content": "Update note content",
+      "append_to_note": "Append to note",
+      "create_note": "Create note",
+      "get_attributes": "Get attributes",
+      "get_attribute": "Get attribute",
+      "set_attribute": "Set attribute",
+      "delete_attribute": "Delete attribute",
+      "get_child_notes": "Get child notes",
+      "get_subtree": "Get subtree",
+      "load_skill": "Load skill",
+      "web_search": "Web search",
+      "note_in_parent": "<Note/> in <Parent/>",
+      "get_attachment": "Get attachment",
+      "get_attachment_content": "Read attachment content",
+      "rename_note": "Rename note",
+      "delete_note": "Delete note",
+      "move_note": "Move note",
+      "clone_note": "Clone note"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel"
   }
 }

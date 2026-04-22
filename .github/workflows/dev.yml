@@ -1,9 +1,13 @@
 name: Dev
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - "release/*"
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - "release/*"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,7 +30,7 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
         with:
@@ -74,7 +78,7 @@ jobs:
       - test_dev
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Update build info
@@ -109,7 +113,7 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

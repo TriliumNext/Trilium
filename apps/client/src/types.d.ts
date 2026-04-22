@@ -23,6 +23,7 @@ interface CustomGlobals {
     getReferenceLinkTitle: (href: string) => Promise<string>;
     getReferenceLinkTitleSync: (href: string) => string;
     getActiveContextNote: () => FNote | null;
+    getThemeStyle: () => "auto" | "light" | "dark";
     ESLINT: Library;
     appContext: AppContext;
     froca: Froca;
@@ -50,8 +51,9 @@ interface CustomGlobals {
     isElectron: boolean;
     isRtl: boolean;
     iconRegistry: IconRegistry;
-    themeCssUrl: string;
-    themeUseNextAsBase?: "next" | "next-light" | "next-dark";
+    theme: string;
+    themeBase?: "next" | "next-light" | "next-dark";
+    customThemeCssUrl?: string;
     iconPackCss: string;
     headingStyle: "plain" | "underline" | "markdown";
     layoutOrientation: "vertical" | "horizontal";

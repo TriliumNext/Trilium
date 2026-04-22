@@ -1,11 +1,12 @@
 import { CKTextEditor, ModelText } from "@triliumnext/ckeditor5";
 import { createPortal } from "preact/compat";
-import { useCallback, useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import { randomString } from "../../services/utils";
-import { useActiveNoteContext, useContentElement, useIsNoteReadOnly, useNoteProperty, useTextEditor, useTriliumOptionJson } from "../react/hooks";
+import { useActiveNoteContext, useContentElement, useIsNoteReadOnly, useMathRendering, useNoteProperty, useTextEditor, useTriliumOptionJson } from "../react/hooks";
 import Modal from "../react/Modal";
+import RawHtml from "../react/RawHtml";
 import { HighlightsListOptions } from "../type_widgets/options/text_notes";
 import RightPanelWidget from "./RightPanelWidget";
 
@@ -84,20 +85,11 @@ function AbstractHighlightsList<T extends RawHighlight>({ highlights, scrollToHi
                     {filteredHighlights.length > 0 ? (
                         <ol>
                             {filteredHighlights.map(highlight => (
-                                <li
+                                <HighlightItem
                                     key={highlight.id}
+                                    highlight={highlight}
                                     onClick={() => scrollToHighlight(highlight)}
-                                >
-                                    <span
-                                        style={{
-                                            fontWeight: highlight.attrs.bold ? "700" : undefined,
-                                            fontStyle: highlight.attrs.italic ? "italic" : undefined,
-                                            textDecoration: highlight.attrs.underline ? "underline" : undefined,
-                                            color: highlight.attrs.color,
-                                            backgroundColor: highlight.attrs.background
-                                        }}
-                                    >{highlight.text}</span>
-                                </li>
+                                />
                             ))}
                         </ol>
                     ) : (
@@ -109,6 +101,31 @@ function AbstractHighlightsList<T extends RawHighlight>({ highlights, scrollToHi
             </RightPanelWidget>
             {createPortal(<HighlightListOptionsModal shown={shown} setShown={setShown} />, document.body)}
         </>
+    );
+}
+
+function HighlightItem<T extends RawHighlight>({ highlight, onClick }: {
+    highlight: T;
+    onClick(): void;
+}) {
+    const contentRef = useRef<HTMLElement>(null);
+
+    useMathRendering(contentRef, [highlight.text]);
+
+    return (
+        <li onClick={onClick}>
+            <RawHtml
+                containerRef={contentRef}
+                style={{
+                    fontWeight: highlight.attrs.bold ? "700" : undefined,
+                    fontStyle: highlight.attrs.italic ? "italic" : undefined,
+                    textDecoration: highlight.attrs.underline ? "underline" : undefined,
+                    color: highlight.attrs.color,
+                    backgroundColor: highlight.attrs.background
+                }}
+                html={highlight.text}
+            />
+        </li>
     );
 }
 
@@ -201,9 +218,24 @@ function extractHighlightsFromTextEditor(editor: CKTextEditor) {
         };
 
         if (Object.values(attrs).some(Boolean)) {
+            // Get HTML content from DOM (includes nested elements like math)
+            let html = item.data;
+            try {
+                const modelPos = editor.model.createPositionAt(item.textNode, "before");
+                const viewPos = editor.editing.mapper.toViewPosition(modelPos);
+                const domPos = editor.editing.view.domConverter.viewPositionToDom(viewPos);
+                if (domPos?.parent instanceof HTMLElement) {
+                    // Get the formatting span's innerHTML (includes math elements)
+                    html = domPos.parent.innerHTML;
+                }
+            } catch {
+                // During change:data events, the view may not be fully synchronized with the model.
+                // Fall back to using the raw text data.
+            }
+
             result.push({
                 id: randomString(),
-                text: item.data,
+                text: html,
                 attrs,
                 textNode: item.textNode,
                 offset: item.startOffset
@@ -235,47 +267,65 @@ function ReadOnlyTextHighlightsList() {
     />;
 }
 
-function extractHighlightsFromStaticHtml(el: HTMLElement | null) {
+export function extractHighlightsFromStaticHtml(el: HTMLElement | null) {
     if (!el) return [];
 
-    const { color: defaultColor, backgroundColor: defaultBackgroundColor } = getComputedStyle(el);
-
-    const walker = document.createTreeWalker(
-        el,
-        NodeFilter.SHOW_TEXT,
-        null
-    );
-
     const highlights: DomHighlight[] = [];
+    const processedElements = new Set<Element>();
 
-    let node: Node | null;
-    while ((node = walker.nextNode())) {
-        const el = node.parentElement;
-        if (!el || !node.textContent?.trim()) continue;
+    // Find all elements with inline background-color or color styles
+    const styledElements = el.querySelectorAll<HTMLElement>('[style*="background-color"], [style*="color"]');
 
-        const style = getComputedStyle(el);
+    for (const styledEl of styledElements) {
+        if (processedElements.has(styledEl)) continue;
+        if (!styledEl.textContent?.trim()) continue;
 
-        if (
-            el.closest('strong, em, u') ||
-            style.color !== defaultColor ||
-            style.backgroundColor !== defaultBackgroundColor
-        ) {
-            const attrs: RawHighlight["attrs"] = {
-                bold: !!el.closest("strong"),
-                italic: !!el.closest("em"),
-                underline: !!el.closest("u"),
-                background: el.style.backgroundColor,
-                color: el.style.color
-            };
+        const attrs: RawHighlight["attrs"] = {
+            bold: !!styledEl.closest("strong"),
+            italic: !!styledEl.closest("em"),
+            underline: !!styledEl.closest("u"),
+            background: styledEl.style.backgroundColor,
+            color: styledEl.style.color
+        };
 
-            if (Object.values(attrs).some(Boolean)) {
-                highlights.push({
-                    id: randomString(),
-                    text: node.textContent,
-                    element: el,
-                    attrs
-                });
-            }
+        if (Object.values(attrs).some(Boolean)) {
+            processedElements.add(styledEl);
+
+            highlights.push({
+                id: randomString(),
+                text: styledEl.innerHTML,
+                element: styledEl,
+                attrs
+            });
+        }
+    }
+
+    // Also find bold, italic, underline elements
+    const formattingElements = el.querySelectorAll<HTMLElement>("strong, em, u, b, i");
+
+    for (const formattedEl of formattingElements) {
+        // Skip if already processed or inside a processed element
+        if (processedElements.has(formattedEl)) continue;
+        if (Array.from(processedElements).some(processed => processed.contains(formattedEl))) continue;
+        if (!formattedEl.textContent?.trim()) continue;
+
+        const attrs: RawHighlight["attrs"] = {
+            bold: formattedEl.matches("strong, b"),
+            italic: formattedEl.matches("em, i"),
+            underline: formattedEl.matches("u"),
+            background: formattedEl.style.backgroundColor,
+            color: formattedEl.style.color
+        };
+
+        if (Object.values(attrs).some(Boolean)) {
+            processedElements.add(formattedEl);
+
+            highlights.push({
+                id: randomString(),
+                text: formattedEl.innerHTML,
+                element: formattedEl,
+                attrs
+            });
         }
     }
 

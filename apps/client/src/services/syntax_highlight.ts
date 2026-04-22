@@ -33,6 +33,14 @@ export async function formatCodeBlocks($container: JQuery<HTMLElement>) {
             applySingleBlockSyntaxHighlight($(codeBlock), normalizedMimeType);
         }
     }
+
+    // Add click-to-copy for inline code (code elements not inside pre)
+    if (glob.device !== "print") {
+        const inlineCodeElements = $container.find("code:not(pre code)");
+        for (const inlineCode of inlineCodeElements) {
+            applyInlineCodeCopy($(inlineCode));
+        }
+    }
 }
 
 export function applyCopyToClipboardButton($codeBlock: JQuery<HTMLElement>) {
@@ -49,6 +57,23 @@ export function applyCopyToClipboardButton($codeBlock: JQuery<HTMLElement>) {
             }
         });
     $codeBlock.parent().append($copyButton);
+}
+
+export function applyInlineCodeCopy($inlineCode: JQuery<HTMLElement>) {
+    $inlineCode
+        .addClass("copyable-inline-code")
+        .attr("title", t("code_block.click_to_copy"))
+        .off("click")
+        .on("click", (e) => {
+            e.stopPropagation();
+
+            const text = $inlineCode.text();
+            if (!isShare) {
+                copyTextWithToast(text);
+            } else {
+                copyText(text);
+            }
+        });
 }
 
 /**

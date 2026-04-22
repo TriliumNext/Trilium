@@ -1,13 +1,6 @@
 {
   "about": {
-    "title": "Lisätietoja Trilium Notes:ista",
-    "homepage": "Kotisivu:",
-    "app_version": "Sovelluksen versio:",
-    "db_version": "Tietokannan versio:",
-    "build_date": "Koontipäivämäärä:",
-    "data_directory": "Datakansio:",
-    "sync_version": "Synkronoinnin versio:",
-    "build_revision": "Sovelluksen versio:"
+    "data_directory": "Datakansio:"
   },
   "toast": {
     "critical-error": {
@@ -62,12 +55,10 @@
     "also_delete_note": "Poista myös muistio"
   },
   "delete_notes": {
-    "delete_notes_preview": "Poista muistion esikatselu",
     "close": "Sulje",
     "notes_to_be_deleted": "Seuraavat muistiot tullaan poistamaan ({{notesCount}})",
     "no_note_to_delete": "Muistioita ei poisteta (vain kopiot).",
-    "cancel": "Peruuta",
-    "ok": "OK"
+    "cancel": "Peruuta"
   },
   "export": {
     "export_note_title": "Vie muistio",

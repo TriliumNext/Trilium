@@ -1,16 +1,10 @@
+import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons";
 import { gfm } from "@triliumnext/turndown-plugin-gfm";
 import Turnish, { type Rule } from "turnish";
 
 let instance: Turnish | null = null;
 
-// TODO: Move this to a dedicated file someday.
-export const ADMONITION_TYPE_MAPPINGS: Record<string, string> = {
-    note: "NOTE",
-    tip: "TIP",
-    important: "IMPORTANT",
-    caution: "CAUTION",
-    warning: "WARNING"
-};
+export { ADMONITION_TYPE_MAPPINGS };
 
 export const DEFAULT_ADMONITION_TYPE = ADMONITION_TYPE_MAPPINGS.note;
 

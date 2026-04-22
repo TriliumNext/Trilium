@@ -14,7 +14,7 @@ import QuickSearchWidget from "../quick_search";
 import { useGlobalShortcut, useLegacyWidget, useNoteLabel, useNoteRelationTarget } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteLauncher } from "./GenericButtons";
-import { LaunchBarActionButton, LaunchBarContext, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
+import { LaunchBarActionButton, LaunchBarContext, launcherContextMenuHandler, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
 export function CommandButton({ launcherNote }: LauncherNoteProps) {
     const { icon, title } = useLauncherIconAndTitle(launcherNote);
@@ -22,6 +22,7 @@ export function CommandButton({ launcherNote }: LauncherNoteProps) {
 
     return command && (
         <LaunchBarActionButton
+            launcherNote={launcherNote}
             icon={icon}
             text={title}
             triggerCommand={command as CommandNames}
@@ -74,6 +75,7 @@ export function ScriptLauncher({ launcherNote }: LauncherNoteProps) {
 
     return (
         <LaunchBarActionButton
+            launcherNote={launcherNote}
             icon={icon}
             text={title}
             onClick={launch}
@@ -93,7 +95,7 @@ export function TodayLauncher({ launcherNote }: LauncherNoteProps) {
     );
 }
 
-export function QuickSearchLauncherWidget() {
+export function QuickSearchLauncherWidget({ launcherNote }: LauncherNoteProps) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
     const widget = useMemo(() => new QuickSearchWidget(), []);
     const parentComponent = useContext(ParentComponent) as BasicWidget | null;
@@ -101,7 +103,7 @@ export function QuickSearchLauncherWidget() {
     parentComponent?.contentSized();
 
     return (
-        <div>
+        <div onContextMenu={launcherContextMenuHandler(launcherNote)}>
             {isEnabled && <LegacyWidgetRenderer widget={widget} />}
         </div>
     );
@@ -136,7 +138,7 @@ export function CustomWidget({ launcherNote }: LauncherNoteProps) {
     }, [ widgetNote ]);
 
     return (
-        <div>
+        <div onContextMenu={launcherContextMenuHandler(launcherNote)}>
             {widget && (
                 ("type" in widget && widget.type === "preact-launcher-widget")
                     ? <ReactWidgetRenderer widget={widget as LauncherWidgetDefinitionWithType} />

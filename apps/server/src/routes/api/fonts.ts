@@ -1,23 +1,6 @@
 import type { Request, Response } from "express";
 import optionService from "../../services/options.js";
-import type { OptionMap } from "@triliumnext/commons";
-
-const SYSTEM_SANS_SERIF = [
-    "system-ui",
-    "-apple-system",
-    "BlinkMacSystemFont",
-    "Segoe UI",
-    "Cantarell",
-    "Ubuntu",
-    "Noto Sans",
-    "Helvetica",
-    "Arial",
-    "sans-serif",
-    "Apple Color Emoji",
-    "Segoe UI Emoji"
-].join(",");
-
-const SYSTEM_MONOSPACE = ["ui-monospace", "SFMono-Regular", "SF Mono", "Consolas", "Source Code Pro", "Ubuntu Mono", "Menlo", "Liberation Mono", "monospace"].join(",");
+import { SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, type OptionMap } from "@triliumnext/commons";
 
 function getFontCss(req: Request, res: Response) {
     res.setHeader("Content-Type", "text/css");
@@ -44,19 +27,19 @@ function getFontFamily({ mainFontFamily, treeFontFamily, detailFontFamily, monos
 
     // System override
     if (mainFontFamily === "system") {
-        mainFontFamily = SYSTEM_SANS_SERIF;
+        mainFontFamily = SYSTEM_SANS_SERIF_FONT_STACK;
     }
 
     if (treeFontFamily === "system") {
-        treeFontFamily = SYSTEM_SANS_SERIF;
+        treeFontFamily = SYSTEM_SANS_SERIF_FONT_STACK;
     }
 
     if (detailFontFamily === "system") {
-        detailFontFamily = SYSTEM_SANS_SERIF;
+        detailFontFamily = SYSTEM_SANS_SERIF_FONT_STACK;
     }
 
     if (monospaceFontFamily === "system") {
-        monospaceFontFamily = SYSTEM_MONOSPACE;
+        monospaceFontFamily = SYSTEM_MONOSPACE_FONT_STACK;
     }
 
     // Apply the font override if not using theme fonts.

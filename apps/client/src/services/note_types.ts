@@ -1,6 +1,7 @@
 import type { NoteType } from "../entities/fnote.js";
 import type { MenuCommandItem, MenuItem, MenuItemBadge, MenuSeparatorItem } from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
+import { isExperimentalFeatureEnabled } from "./experimental_features.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import server from "./server.js";
@@ -26,7 +27,7 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
 
     // The default note type (always the first item)
     { type: "text", mime: "text/html", title: t("note_types.text"), icon: "bx-note" },
-    { type: "spreadsheet", mime: "application/json", title: t("note_types.spreadsheet"), icon: "bx-table", isBeta: true },
+    { type: "spreadsheet", mime: "application/json", title: t("note_types.spreadsheet"), icon: "bx-table", isBeta: true, isNew: true },
 
     // Text notes group
     { type: "book", mime: "", title: t("note_types.book"), icon: "bx-book" },
@@ -41,12 +42,14 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
     { type: "relationMap", mime: "application/json", title: t("note_types.relation-map"), icon: "bxs-network-chart" },
 
     // Misc note types
+    { type: "llmChat", mime: "application/json", title: t("note_types.llm-chat"), icon: "bx-message-square-dots", isBeta: true },
     { type: "render", mime: "", title: t("note_types.render-note"), icon: "bx-extension" },
     { type: "search", title: t("note_types.saved-search"), icon: "bx-file-find", static: true },
     { type: "webView", mime: "", title: t("note_types.web-view"), icon: "bx-globe-alt" },
 
     // Code notes
     { type: "code", mime: "text/plain", title: t("note_types.code"), icon: "bx-code" },
+    { type: "code", mime: "text/x-markdown", title: t("note_types.markdown"), icon: "bxl-markdown", isNew: true },
 
     // Reserved types (cannot be created by the user)
     { type: "contentWidget", mime: "", title: t("note_types.widget"), reserved: true },
@@ -92,11 +95,13 @@ async function getNoteTypeItems(command?: TreeCommandNames) {
 function getBlankNoteTypes(command?: TreeCommandNames): MenuItem<TreeCommandNames>[] {
     return NOTE_TYPES
         .filter((nt) => !nt.reserved && nt.type !== "book")
+        .filter((nt) => nt.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))
         .map((nt) => {
             const menuItem: MenuCommandItem<TreeCommandNames> = {
                 title: nt.title,
                 command,
                 type: nt.type,
+                mime: nt.mime,
                 uiIcon: `bx ${nt.icon}`,
                 badges: []
             };

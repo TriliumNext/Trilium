@@ -990,6 +990,7 @@
       background-color:var(--highlight-selected-bg-color);
       -webkit-backdrop-filter:var(--highlight-selected-backdrop-filter);
               backdrop-filter:var(--highlight-selected-backdrop-filter);
+      scroll-margin-top:50px;
     }
 
 .textLayer ::-moz-selection{
@@ -1023,6 +1024,19 @@
 
 .textLayer.selecting .endOfContent{
     top:0;
+  }
+
+.textLayerImages{
+  position:absolute;
+  inset:0;
+  -webkit-user-select:none;
+     -moz-user-select:none;
+          user-select:none;
+}
+
+.textLayerImages canvas{
+    position:absolute;
+    transform-origin:0% 0%;
   }
 
 .annotationLayer{
@@ -5330,6 +5344,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     transparent 79%
   );
   --menuitem-text-active-fg:var(--menu-text-color);
+  --menuitem-active-border-color:var(--menuitem-border-color);
   --menuitem-focus-bg:color-mix(
     in srgb,
     var(--menu-text-color),
@@ -5353,6 +5368,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   --menu-backdrop-filter:none;
   --csstools-light-dark-toggle--124:var(--csstools-color-scheme--light) #fbfbfe;
   --menu-text-color:var(--csstools-light-dark-toggle--124, #15141a);
+  --menu-text-disabled-color:var(--menu-text-color);
   --menuitem-text-hover-fg:var(--menu-text-color);
   --menuitem-hover-bg:color-mix(
     in srgb,
@@ -5360,6 +5376,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     transparent 86%
   );
   --menuitem-hover-background-blend-mode:normal;
+  --disabled-opacity:0.62;
 }
 
 @supports (color: light-dark(red, red)){
@@ -5413,14 +5430,18 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     --menu-box-shadow:none;
     --menu-backdrop-filter:none;
     --menu-text-color:ButtonText;
+    --menu-text-disabled-color:GrayText;
     --menu-border-color:CanvasText;
     --menuitem-border-color:none;
     --menuitem-hover-bg:SelectedItemText;
     --menuitem-text-hover-fg:SelectedItem;
     --menuitem-active-bg:SelectedItemText;
+    --menuitem-active-border-color:ButtonText;
     --menuitem-text-active-fg:SelectedItem;
+    --menuitem-focus-bg:ButtonFace;
     --menuitem-focus-outline-color:CanvasText;
     --menuitem-focus-border-color:none;
+    --disabled-opacity:1;
 }
   }
 
@@ -5451,12 +5472,12 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     --menu-mark-icon-size:16px;
   }
 
-.popupMenu  > li{
+.popupMenu  > button{
     display:flex;
     align-items:center;
-    list-style:none;
+    position:relative;
     width:100%;
-    height:24px;
+    height:26px;
     padding-inline:calc(var(--menu-mark-icon-size) + var(--menuitem-gap)) var(--menuitem-gap);
     gap:var(--menuitem-gap);
     box-sizing:border-box;
@@ -5465,7 +5486,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     background:transparent;
   }
 
-:is(.popupMenu > li):has(button.selected)::before{
+.selected:is(.popupMenu > button)::after{
       content:"";
       display:inline-block;
       width:11px;
@@ -5478,92 +5499,92 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
               mask-image:var(--menuitem-checkmark-icon);
       background-color:var(--menu-text-color);
       position:absolute;
-      margin-inline-start:-16px;
+      inset-inline-start:var(--menuitem-gap);
+      top:50%;
+      transform:translateY(-50%);
     }
 
-:is(.popupMenu > li):has(button:disabled){
-      opacity:0.62;
-      pointer-events:none;
+:is(.popupMenu > button):disabled{
+      opacity:var(--disabled-opacity);
     }
 
-:is(.popupMenu > li):hover{
-      background:var(--menuitem-hover-bg);
-      background-blend-mode:var(--menuitem-hover-background-blend-mode);
-    }
+.selected:is(.popupMenu > button):disabled::after{
+        background-color:var(--menu-text-disabled-color);
+      }
 
-:is(:is(.popupMenu > li):hover > button):not(.noIcon)::before{
+:is(.popupMenu > button):disabled:not(.noIcon)::before{
+        background-color:var(--menu-text-disabled-color);
+      }
+
+:is(.popupMenu > button):disabled  > span{
+        color:var(--menu-text-disabled-color);
+      }
+
+:is(.popupMenu > button):not(:disabled):hover{
+        background:var(--menuitem-hover-bg);
+        background-blend-mode:var(--menuitem-hover-background-blend-mode);
+      }
+
+:is(.popupMenu > button):not(:disabled):hover:not(.noIcon)::before{
           background-color:var(--menuitem-text-hover-fg);
         }
 
-:is(:is(.popupMenu > li):hover > button)  > span{
+:is(.popupMenu > button):not(:disabled):hover  > span{
           color:var(--menuitem-text-hover-fg);
         }
 
-:is(.popupMenu > li):hover:has(button.selected)::before{
-        background-color:var(--menuitem-text-hover-fg);
+.selected:is(.popupMenu > button):not(:disabled):hover::after{
+          background-color:var(--menuitem-text-hover-fg);
+        }
+
+:is(.popupMenu > button):not(:disabled):active{
+        background-color:var(--menuitem-active-bg);
+        border-color:var(--menuitem-active-border-color);
       }
 
-:is(.popupMenu > li):active{
-      background-color:var(--menuitem-active-bg);
-    }
+:is(.popupMenu > button):not(:disabled):active  > span{
+          color:var(--menuitem-text-active-fg);
+        }
 
-:is(.popupMenu > li):active  > button > span{
-        color:var(--menuitem-text-active-fg);
+:is(.popupMenu > button):not(:disabled):focus-visible{
+        border-color:var(--menuitem-focus-border-color);
+        background-color:var(--menuitem-focus-bg);
+        outline:2px solid var(--menuitem-focus-outline-color);
+        outline-offset:2px;
       }
 
-:is(.popupMenu > li):has( > button:focus-visible){
-      border-color:var(--menuitem-focus-border-color);
-      background-color:var(--menuitem-focus-bg);
-      outline:2px solid var(--menuitem-focus-outline-color);
-      outline-offset:2px;
+:is(.popupMenu > button):not(.noIcon)::before{
+      display:inline-block;
+      width:var(--menu-icon-size);
+      height:var(--menu-icon-size);
+      content:"";
+      -webkit-mask-size:cover;
+              mask-size:cover;
+      -webkit-mask-position:center;
+              mask-position:center;
+      background-color:var(--menu-text-color);
     }
 
-:is(.popupMenu > li)  > button{
+:is(.popupMenu > button)  > span{
       display:flex;
-      flex-direction:row;
       align-items:center;
+      align-self:stretch;
       width:100%;
-      height:auto;
-      padding:var(--menuitem-gap);
-      gap:var(--menuitem-gap);
-      background:transparent;
-      border:none;
+      min-width:-moz-max-content;
+      min-width:max-content;
+      text-align:start;
+      color:var(--menu-text-color);
+      -webkit-user-select:none;
+         -moz-user-select:none;
+              user-select:none;
+      padding-inline-start:6px;
+
+      font:menu;
+      font-size:13px;
+      font-style:normal;
+      font-weight:510;
+      line-height:normal;
     }
-
-:is(:is(.popupMenu > li) > button):not(.noIcon)::before{
-        display:inline-block;
-        width:var(--menu-icon-size);
-        height:var(--menu-icon-size);
-        content:"";
-        -webkit-mask-size:cover;
-                mask-size:cover;
-        -webkit-mask-position:center;
-                mask-position:center;
-        background-color:var(--menu-text-color);
-      }
-
-:is(:is(.popupMenu > li) > button):focus-visible{
-        outline:none;
-      }
-
-:is(:is(.popupMenu > li) > button)  > span{
-        display:inline-block;
-        width:-moz-max-content;
-        width:max-content;
-        height:auto;
-        text-align:start;
-        color:var(--menu-text-color);
-        -webkit-user-select:none;
-           -moz-user-select:none;
-                user-select:none;
-        padding-inline-start:6px;
-
-        font:menu;
-        font-size:13px;
-        font-style:normal;
-        font-weight:510;
-        line-height:normal;
-      }
 
 .treeView{
   --csstools-light-dark-toggle--125:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.8);
@@ -5812,6 +5833,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   --image-current-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--153, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--154, rgb(0 0 0 / 0.1));
   --csstools-light-dark-toggle--155:var(--csstools-color-scheme--light) rgb(0 202 219 / 0.08);
   --image-dragging-placeholder-bg:var(--csstools-light-dark-toggle--155, rgb(0 98 250 / 0.08));
+  --image-dragging-placeholder-border:var(--image-outline);
   --multiple-dragging-bg:white;
   --image-multiple-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color), var(--image-border-width) var(--image-border-width) 0 calc(var(--image-border-width) / 2) var(--multiple-dragging-bg), var(--image-border-width) var(--image-border-width) 0 calc(3 * var(--image-border-width) / 2) var(--image-current-border-color);
   --image-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color);
@@ -6000,6 +6022,8 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     --multiple-dragging-bg:Canvas;
     --multiple-dragging-indicator-bg:ButtonBorder;
     --multiple-dragging-text-color:Canvas;
+    --image-dragging-placeholder-bg:Canvas;
+    --image-dragging-placeholder-border:1px GrayText solid;
 }
   }
 
@@ -6062,10 +6086,11 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     }
 
 .viewsCloseButton:is(#viewsManager .viewsManagerButton){
-      width:32px;
-      height:32px;
+      width:26px;
+      height:26px;
       padding:4px;
       border-radius:8px;
+      background:none;
     }
 
 .viewsCloseButton:is(#viewsManager .viewsManagerButton)::before{
@@ -6085,7 +6110,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   }
 
 :is(#viewsManager #viewsManagerHeader) .viewsManagerLabel{
-      flex:0;
+      flex:1 1 auto;
       color:var(--text-color);
       text-align:center;
       height:-moz-fit-content;
@@ -6112,6 +6137,15 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
       width:auto;
       padding:12px 16px 12px 8px;
     }
+
+:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle):not(:has(#viewsManagerHeaderLabel ~ button:not([hidden])))::after{
+
+        content:"";
+        flex:0 0 auto;
+        width:32px;
+        height:32px;
+        pointer-events:none;
+      }
 
 :is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector{
         width:48px;
@@ -6165,22 +6199,22 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
           z-index:1;
         }
 
-#thumbnailsViewMenu:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > .popupMenu) > li > button)::before{
+#thumbnailsViewMenu:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > .popupMenu) > button)::before{
               -webkit-mask-image:var(--menuitem-thumbnailsView-icon);
                       mask-image:var(--menuitem-thumbnailsView-icon);
             }
 
-#outlinesViewMenu:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > .popupMenu) > li > button)::before{
+#outlinesViewMenu:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > .popupMenu) > button)::before{
               -webkit-mask-image:var(--menuitem-outlinesView-icon);
                       mask-image:var(--menuitem-outlinesView-icon);
             }
 
-#attachmentsViewMenu:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > .popupMenu) > li > button)::before{
+#attachmentsViewMenu:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > .popupMenu) > button)::before{
               -webkit-mask-image:var(--menuitem-attachmentsView-icon);
                       mask-image:var(--menuitem-attachmentsView-icon);
             }
 
-#layersViewMenu:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > .popupMenu) > li > button)::before{
+#layersViewMenu:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > .popupMenu) > button)::before{
               -webkit-mask-image:var(--menuitem-layersView-icon);
                       mask-image:var(--menuitem-layersView-icon);
             }
@@ -6253,19 +6287,34 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
         background-color:var(--status-actions-bg);
       }
 
-:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction)  > span.selected::before{
-          content:"";
-          display:inline-block;
+:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #viewsManagerStatusActionLabelContainer > button{
+          position:relative;
           width:var(--icon-size);
           height:var(--icon-size);
-          -webkit-mask-repeat:no-repeat;
-                  mask-repeat:no-repeat;
-          -webkit-mask-position:center;
-                  mask-position:center;
-          background-color:var(--indicator-color);
-          -webkit-mask-image:var(--pages-selected-icon);
-                  mask-image:var(--pages-selected-icon);
+          border:none;
+          padding:0;
+          flex:0 0 auto;
         }
+
+:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #viewsManagerStatusActionLabelContainer > button)::before{
+            content:"";
+            position:absolute;
+            inset:0;
+            -webkit-mask-repeat:no-repeat;
+                    mask-repeat:no-repeat;
+            -webkit-mask-position:center;
+                    mask-position:center;
+            background-color:var(--indicator-color);
+            -webkit-mask-image:var(--pages-selected-icon);
+                    mask-image:var(--pages-selected-icon);
+          }
+
+#viewsManagerStatusActionDeselectButton:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #viewsManagerStatusActionLabelContainer > button):focus-visible{
+            outline:2px solid var(--button-focus-outline-color);
+            border:1px solid var(--button-focus-border-color);
+            border-radius:2px;
+            outline-offset:1px;
+          }
 
 :is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #actionSelector{
           height:32px;
@@ -6408,6 +6457,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 
 :is(#viewsManager #viewsManagerContent) #thumbnailsView{
       --thumbnail-width:126px;
+      --gap-between-input-and-thumbnail:16px;
 
       display:flex;
       flex-flow:row wrap;
@@ -6444,6 +6494,10 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
           contain:strict;
         }
 
+.pasteMode:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView){
+        gap:var(--gap-between-input-and-thumbnail);
+      }
+
 .pasteMode:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView)  > .thumbnail{
           flex-direction:column;
         }
@@ -6473,14 +6527,24 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 
 :is(:is(#viewsManager #viewsManagerContent) #thumbnailsView)  > .thumbnail{
         --input-dim:16px;
-        --gap-between-input-and-thumbnail:16px;
+      }
+
+:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail):not(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail):has(input)){
+          --input-dim:0px;
+          --gap-between-input-and-thumbnail:0px;
+        }
+
+:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView)  > .thumbnail{
 
         display:inline-flex;
         justify-content:flex-end;
         align-items:center;
         flex-direction:row-reverse;
         gap:var(--gap-between-input-and-thumbnail);
-        width:190px;
+        width:calc(
+          var(--thumbnail-width) + 2 *
+            (var(--input-dim) + var(--gap-between-input-and-thumbnail))
+        );
         height:auto;
         position:relative;
         scroll-margin-top:20px;
@@ -6654,6 +6718,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 .placeholder:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer){
             background-color:var(--image-dragging-placeholder-bg);
             box-shadow:none !important;
+            outline:var(--image-dragging-placeholder-border);
           }
 
 .draggingThumbnail:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer){
@@ -6916,11 +6981,18 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   --csstools-light-dark-toggle--165:var(--csstools-color-scheme--light) #0df;
   --focus-ring-color:var(--csstools-light-dark-toggle--165, #0060df);
   --focus-ring-outline:2px solid var(--focus-ring-color);
+  --csstools-light-dark-toggle--166:var(--csstools-color-scheme--light) #37b847;
+  --new-badge-bg:var(--csstools-light-dark-toggle--166, #070);
+  --csstools-light-dark-toggle--167:var(--csstools-color-scheme--light) #15141a;
+  --new-badge-color:var(--csstools-light-dark-toggle--167, #fff);
+  --new-badge-border-color:light-dark(#fbfbfe / 40%, #15141a / 40%);
 }
 
 @supports (color: light-dark(red, red)){
 :root{
   --focus-ring-color:light-dark(#0060df, #0df);
+  --new-badge-bg:light-dark(#070, #37b847);
+  --new-badge-color:light-dark(#fff, #15141a);
 }
 }
 
@@ -6929,6 +7001,10 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 :root *{
   --csstools-light-dark-toggle--165:var(--csstools-color-scheme--light) #0df;
   --focus-ring-color:var(--csstools-light-dark-toggle--165, #0060df);
+  --csstools-light-dark-toggle--166:var(--csstools-color-scheme--light) #37b847;
+  --new-badge-bg:var(--csstools-light-dark-toggle--166, #070);
+  --csstools-light-dark-toggle--167:var(--csstools-color-scheme--light) #15141a;
+  --new-badge-color:var(--csstools-light-dark-toggle--167, #fff);
   }
 }
 
@@ -6947,8 +7023,29 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     --page-border:1px solid CanvasText;
     --spreadHorizontalWrapped-margin-LR:3.5px;
     --focus-ring-color:CanvasText;
+    --new-badge-bg:AccentColor;
+    --new-badge-color:ButtonFace;
+    --new-badge-border-color:CanvasText;
 }
   }
+
+.newBadge{
+  background-color:var(--new-badge-bg);
+  color:var(--new-badge-color);
+  border-radius:4px;
+  border:1px solid var(--new-badge-border-color);
+  padding-inline:4px;
+  margin-inline:4px;
+  font:menu;
+  font-size:12px;
+  font-style:normal;
+  font-weight:400;
+  line-height:normal;
+  flex:0 0 fit-content;
+  -webkit-user-select:none;
+     -moz-user-select:none;
+          user-select:none;
+}
 
 [data-main-rotation="90"]{
   transform:rotate(90deg) translateY(-100%);

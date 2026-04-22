@@ -6,6 +6,7 @@ import { InfoExtraProps } from "../widgets/dialogs/info.jsx";
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import { closeAllHeadlessAutocompletes } from "./autocomplete_core.js";
 import { focusSavedElement, saveFocusedElement } from "./focus.js";
+import keyboardActionsService from "./keyboard_actions.js";
 
 export async function openDialog($dialog: JQuery<HTMLElement>, closeActDialog = true, config?: Partial<Modal.Options>) {
     if (closeActDialog) {
@@ -24,7 +25,6 @@ export async function openDialog($dialog: JQuery<HTMLElement>, closeActDialog = 
         }
     });
 
-    const keyboardActionsService = (await import("./keyboard_actions.js")).default;
     keyboardActionsService.updateDisplayedShortcuts($dialog);
 
     return $dialog;

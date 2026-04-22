@@ -8,7 +8,7 @@ import Button from "../react/Button";
 import { Suggestion, triggerRecentNotes } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import froca from "../../services/froca";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent, useTriliumOption } from "../react/hooks";
 import { type BoxSize, CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
 
 export interface IncludeNoteOpts {
@@ -18,11 +18,13 @@ export interface IncludeNoteOpts {
 export default function IncludeNoteDialog() {
     const editorApiRef = useRef<CKEditorApi>(null);
     const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
-    const [boxSize, setBoxSize] = useState<string>("medium");
+    const [defaultBoxSize, setDefaultBoxSize] = useTriliumOption("includeNoteDefaultBoxSize");
+    const [boxSize, setBoxSize] = useState<string>(defaultBoxSize);
     const [shown, setShown] = useState(false);
 
     useTriliumEvent("showIncludeNoteDialog", ({ editorApi }) => {
         editorApiRef.current = editorApi;
+        setBoxSize(defaultBoxSize); // Reset to default when opening dialog
         setShown(true);
     });
 
@@ -35,10 +37,14 @@ export default function IncludeNoteDialog() {
             size="lg"
             onShown={() => triggerRecentNotes(autoCompleteRef.current)}
             onHidden={() => setShown(false)}
-            onSubmit={() => {
+            onSubmit={async () => {
                 if (!suggestion?.notePath || !editorApiRef.current) return;
                 setShown(false);
-                includeNote(suggestion.notePath, editorApiRef.current, boxSize as BoxSize);
+                await includeNote(suggestion.notePath, editorApiRef.current, boxSize as BoxSize);
+                // Save the selected box size as the new default
+                if (boxSize !== defaultBoxSize) {
+                    setDefaultBoxSize(boxSize);
+                }
             }}
             footer={<Button text={t("include_note.button_include")} keyboardShortcut="Enter" />}
             show={shown}
@@ -63,6 +69,7 @@ export default function IncludeNoteDialog() {
                         { label: t("include_note.box_size_small"), value: "small" },
                         { label: t("include_note.box_size_medium"), value: "medium" },
                         { label: t("include_note.box_size_full"), value: "full" },
+                        { label: t("include_note.box_size_expandable"), value: "expandable" },
                     ]}
                 />
             </FormGroup>

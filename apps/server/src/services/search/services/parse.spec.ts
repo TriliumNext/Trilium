@@ -285,7 +285,7 @@ describe("Invalid expressions", () => {
             searchContext
         });
 
-        expect(searchContext.error).toEqual(`Error near token "#second" in "#first = #second", it's possible to compare with constant only.`);
+        expect(searchContext.error).toEqual(`Error in "#first = #second": cannot compare with "#second". To search for a literal value, use quotes: "#second"`);
 
         searchContext = new SearchContext();
         searchContext.originalQuery = "#first = note.relations.second";
@@ -296,7 +296,7 @@ describe("Invalid expressions", () => {
             searchContext
         });
 
-        expect(searchContext.error).toEqual(`Error near token "note" in "#first = note.relations.second", it's possible to compare with constant only.`);
+        expect(searchContext.error).toEqual(`Error in "#first = note.relations.second": "note" is a reserved keyword. To search for a literal value, use quotes: "note"`);
 
         const rootExp = parse(
             {
@@ -317,6 +317,27 @@ describe("Invalid expressions", () => {
         expect(labelComparisonExp.attributeType).toEqual("label");
         expect(labelComparisonExp.attributeName).toEqual("first");
         expect(labelComparisonExp.comparator).toBeTruthy();
+
+        // Verify that quoted "note" keyword works (issue #8850)
+        const rootExp2 = parse(
+            {
+                fulltextTokens: [],
+                expressionTokens: [
+                    { token: "#clipType", inQuotes: false },
+                    { token: "=", inQuotes: false },
+                    { token: "note", inQuotes: true }
+                ],
+                searchContext: new SearchContext()
+            },
+            AndExp
+        );
+
+        assertIsArchived(rootExp2.subExpressions[0]);
+
+        const labelComparisonExp2 = expectExpression(rootExp2.subExpressions[2], LabelComparisonExp);
+        expect(labelComparisonExp2.attributeType).toEqual("label");
+        expect(labelComparisonExp2.attributeName).toEqual("cliptype");
+        expect(labelComparisonExp2.comparator).toBeTruthy();
     });
 
     it("searching by relation without note property", () => {

@@ -635,6 +635,7 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
     inset-inline-end: 0.35em;
 }
 
+.ck-content h1,
 .ck-content h2,
 .ck-content h3,
 .ck-content h4,
@@ -694,7 +695,7 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
     outline: none;
     box-shadow: 0 0 0 2px var(--link-selection-outline-color);
     background: var(--link-hover-background);
-} 
+}
 
 /* Reference link */
 
@@ -711,6 +712,15 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
 
 .ck-content a.reference-link:hover > span {
     text-decoration: underline;
+}
+
+.ck-content a.reference-link small {
+    margin-left: 0.25em;
+    opacity: 0.5;
+
+    >span {
+        font-size: 0.7em;
+    }
 }
 
 /*

@@ -36,6 +36,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     const [ language ] = useNoteLabel(note, "language");
     const [ textNoteEditorType ] = useTriliumOption("textNoteEditorType");
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
+    const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
     const isClassicEditor = isMobile() || textNoteEditorType === "ckeditor-classic";
     const initialized = useRef(deferred<void>());
     const spacedUpdate = useEditorSpacedUpdate({
@@ -60,6 +61,17 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         onContentChange(newContent) {
             contentRef.current = newContent;
             watchdogRef.current?.editor?.setData(newContent);
+
+            // Scroll to bookmark anchor if navigated with ?bookmark=...
+            const viewScope = noteContext?.viewScope;
+            if (viewScope?.bookmark) {
+                requestAnimationFrame(() => {
+                    const el = watchdogRef.current?.editor?.editing.view.getDomRoot()
+                        ?.querySelector(`[id="${CSS.escape(viewScope.bookmark!)}"]`);
+                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    viewScope.bookmark = undefined;
+                });
+            }
         },
         dataSaved(savedData) {
             // Store back the saved data in order to retrieve it in case the CKEditor crashes.
@@ -219,6 +231,10 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
 
     const onWatchdogStateChange = useWatchdogCrashHandling();
 
+    useEffect(() => {
+        document.body.style.setProperty("--code-block-tab-width", codeBlockTabWidth || "4");
+    }, [codeBlockTabWidth]);
+
     return (
         <>
             {note && !!templates && <CKEditorWithWatchdog
@@ -258,6 +274,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     // We are not using CKEditor's built-in watch dog content, instead we are using the data we store regularly in the spaced update (see `dataSaved`).
                     editor.setData(contentRef.current);
                     parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });
+
                 }}
             />}
 

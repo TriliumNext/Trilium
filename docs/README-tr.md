@@ -60,32 +60,35 @@ Dokümantasyonumuz birden fazla formatta mevcuttur:
 - Docker kurulumu
 - [TrilliumNext Güncelleme]
 - Basit Kavramlar ve Özellikler
-- [Patterns of Personal Knowledge
-  Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [Kişisel Bilgi Tabanı
+  Modelleri](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 Özellikler
 
-* Notes can be arranged into arbitrarily deep tree. Single note can be placed
-  into multiple places in the tree (see
+* Notlar keyfi derinlikte bir ağaç hiyerarşisinde yapılandırılabilir. Münferit
+  bir not, ağaç yapısı içinde birden fazla noktaya konumlandırılabilir (bkz.
   [cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
-* Rich WYSIWYG note editor including e.g. tables, images and
-  [math](https://docs.triliumnotes.org/user-guide/note-types/text) with markdown
-  [autoformat](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
-* Support for editing [notes with source
-  code](https://docs.triliumnotes.org/user-guide/note-types/code), including
-  syntax highlighting
-* Fast and easy [navigation between
-  notes](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
-  full text search and [note
+* Tablolar, resimler ve [matematiksel
+  formüller](https://docs.triliumnotes.org/user-guide/note-types/text) gibi
+  ögeleri barındıran, markdown [otomatik
+  formatlama](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
+  destekli zengin WYSIWYG not editörü
+* Söz dizimi vurgulama (syntax highlighting) dahil [kaynak kodlu
+  notların](https://docs.triliumnotes.org/user-guide/note-types/code)
+  düzenlenmesi için destek
+* Notlar arasında hızlı ve kolay
+  [gezinme](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
+  tam metin arama ve [not
   hoisting](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
-* Seamless [note
-  versioning](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+  (not yükseltme)
+* Sorunsuz [not
+  versiyonlama](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
 * Note
   [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
   can be used for note organization, querying and advanced
   [scripting](https://docs.triliumnotes.org/user-guide/scripts)
-* UI available in English, German, Spanish, French, Romanian, and Chinese
-  (simplified and traditional)
+* Arayüz; İngilizce, Almanca, İspanyolca, Fransızca, Rumence ve Çince
+  (basitleştirilmiş ve geleneksel) dillerinde mevcuttur
 * Direct [OpenID and TOTP
   integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
   more secure login

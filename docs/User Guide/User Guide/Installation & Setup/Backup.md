@@ -12,6 +12,10 @@ This is only very basic backup solution, and you're encouraged to add some bette
 
 Note that <a class="reference-link" href="Synchronization.md">Synchronization</a> provides also some backup capabilities by its nature of distributing the data to other computers.
 
+## Downloading backup
+
+You can download an existing backup by going to Settings > Backup > Existing backups > Download
+
 ## Restoring backup
 
 Let's assume you want to restore the weekly backup, here's how to do it:

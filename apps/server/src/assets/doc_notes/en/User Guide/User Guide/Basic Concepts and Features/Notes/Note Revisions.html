@@ -1,13 +1,116 @@
+<figure class="image">
+  <img style="aspect-ratio:2089/1515;" src="2_Note Revisions_image.png"
+  width="2089" height="1515">
+</figure>
 <p>Trilium supports seamless versioning of notes by storing snapshots ("revisions")
   of notes at regular intervals.</p>
-<h2>Note Revisions Snapshot Interval</h2>
+<h2>Displaying the revisions</h2>
+<ul>
+  <li>On the&nbsp;<a class="reference-link" href="#root/_help_IjZS7iK5EXtb">New Layout</a>,
+    press the <a href="#root/_help_8YBEPzcpUgxw">note context menu</a> and select <em>Note revisions…</em>
+  </li>
+  <li>On the old layout, press directly the
+    <img class="image_resized" style="aspect-ratio:27/25;width:2.32%;"
+    src="1_Note Revisions_image.png" width="27"
+    height="25">button in the&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;area.</li>
+</ul>
+<h2>Interaction</h2>
+<aside class="admonition note">
+  <p>This documentation matches the redesign of the note revisions dialog on
+    v0.103.0, older versions have a similar dialog but with some differences.</p>
+</aside>
+<ul>
+  <li>The full list of revisions are displayed on the left in reverse chronological
+    order.
+    <ul>
+      <li>The revisions are grouped by the date the revision was taken.</li>
+      <li>This list does not contain the <em>current state</em> of the note, so it
+        is possible to have notes with no revisions/snapshots saved.</li>
+    </ul>
+  </li>
+  <li>The icon of a revision indicates the <em>source</em> of that revision (e.g.
+    a
+    <img class="image_resized" style="aspect-ratio:20/21;width:2.49%;" src="Note Revisions_image.png"
+    width="20" height="21">icon for a manually saved revision).</li>
+  <li>Pressing the […] on the top-right of the dialog displays multiple options,
+    including:
+    <ul>
+      <li>Saving a new revision now.</li>
+      <li>Checking the interval and limit for this note (see below).</li>
+      <li>Deleting all the revisions of this note.</li>
+    </ul>
+  </li>
+  <li>For supported notes (text, code), changes are highlighted. This behavior
+    can be toggled via the <em>Highlight changes</em> at the top of the dialog.
+    <ul>
+      <li>The highlighted changes are relative to the <strong>current state of the note</strong>,
+        not to the revision prior to this one.</li>
+    </ul>
+  </li>
+  <li>For any given revision, the buttons on the top-right allow operating on
+    it:
+    <ul>
+      <li>Deleting the revision.</li>
+      <li>Downloading the revision locally.</li>
+      <li>Restoring the revision, which replaces the current content of the note
+        with the one from the revision. Another revision is saved containing the
+        current content of the note.</li>
+    </ul>
+  </li>
+</ul>
+<h2>Named revisions</h2>
+<p>Named revisions are a new feature of Trilium v0.103.0 which allows adding
+  a short description of what the changes in the snapshot contain.</p>
+<p>In the list of note revisions:</p>
+<ul>
+  <li>The name of the revision is displayed underneath the time of the revision
+    in the sidebar, as well as at the top of the dialog where it is displayed
+    in full.</li>
+  <li>Clicking on the edit button near the name of the revision allows it to
+    be changed.</li>
+</ul>
+<p>To create a named revision, either:</p>
+<ul>
+  <li>Go to the&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>,
+    select <em>Save named revision…</em>, enter the name of revision and confirm.</li>
+  <li>Use the corresponding <a href="#root/_help_A9Oc6YKKc65v">keyboard shortcut</a> or
+    the&nbsp;<a class="reference-link" href="#root/_help_F1r9QtzQLZqm">Jump to...</a>&nbsp;command
+    with the same name.</li>
+  <li>Save a revision normally, and adjust the name afterwards from the note
+    revision list.</li>
+</ul>
+<h2>When revisions are saved</h2>
+<p>Revisions are saved:</p>
+<ul>
+  <li>Automatically at a fixed interval. This behavior can be configured (see
+    below).</li>
+  <li>Manually, by:
+    <ul>
+      <li>Going to the press the <a href="#root/_help_8YBEPzcpUgxw">note context menu</a> and
+        select <em>Save revision.</em>
+      </li>
+      <li>Using the <em>Force Save Revision</em>  <a href="#root/_help_A9Oc6YKKc65v">keyboard shortcut</a>.</li>
+      <li>In the <em>Revisions</em> dialog, pressing the […] button in the top-right
+        and selecting <em>Save a revision now</em>.</li>
+    </ul>
+  </li>
+</ul>
+<p>Additionally, revisions can also come from somewhere else, and this is
+  indicated via the icon of the revision:</p>
+<ul>
+  <li>Generated externally, by&nbsp;<a class="reference-link" href="#root/_help_pgxEVkzLl1OP">ETAPI (REST API)</a>.</li>
+  <li>A modification created by&nbsp;<a class="reference-link" href="#root/_help_GBBMSlVSOIGP">AI</a>.</li>
+  <li>A revision is restored, causing the existing note content to be saved
+    as a revision to prevent potential data loss.</li>
+</ul>
+<h4>Snapshot interval</h4>
 <p>Time interval of taking note snapshot is configurable in the Options -&gt;
-  Other dialog. This provides a tradeoff between more revisions and more
+  Other dialog. This provides a trade-off between more revisions and more
   data to store.</p>
-<p>To turn off note versioning for a particular note (or subtree), add
+<p>To turn off note versioning for a particular note (or sub-tree), add
   <code
-  spellcheck="false">disableVersioning</code> <a href="#root/_help_zEY4DaJG4YT5">label</a>to the note.</p>
-<h2>Note Revision Snapshots Limit</h2>
+  spellcheck="false">disableVersioning</code> <a href="#root/_help_zEY4DaJG4YT5">label</a> to the note.</p>
+<h4>Maximum revisions</h4>
 <p>The limit on the number of note snapshots can be configured in the Options
   -&gt; Other dialog. The note revision snapshot number limit refers to the
   maximum number of revisions that can be saved for each note. Where -1 means
@@ -15,10 +118,5 @@
   for a single note through the <code spellcheck="false">versioningLimit=X</code> label.</p>
 <p>The note limit will not take effect immediately; it will only apply when
   the note is modified.</p>
-<p>You can click the <strong>Erase excess revision snapshots now</strong> button
-  to apply the changes immediately.</p>
-<p>Note revisions can be accessed through the button on the right of ribbon
-  toolbar.</p>
-<p>
-  <img src="Note Revisions_note-revisi.png">
-</p>
+<p>You can click the <em>Erase excess revision snapshots now</em> button to
+  apply the changes immediately.</p>

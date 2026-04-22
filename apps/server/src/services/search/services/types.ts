@@ -21,4 +21,6 @@ export interface SearchParams {
     limit?: number | null;
     debug?: boolean;
     fuzzyAttributeSearch?: boolean;
+    /** When true, skip the two-phase fuzzy fallback and use the single-token fast path. */
+    autocomplete?: boolean;
 }

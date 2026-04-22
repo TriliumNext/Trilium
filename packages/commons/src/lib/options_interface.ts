@@ -14,6 +14,41 @@ type KeyboardShortcutsOptions<T extends KeyboardActionNames> = {
 
 export type FontFamily = "theme" | "serif" | "sans-serif" | "monospace" | string;
 
+/**
+ * System sans-serif font stack for cross-platform compatibility.
+ * Used when the user selects "System default" for non-monospace fonts.
+ */
+export const SYSTEM_SANS_SERIF_FONT_STACK = [
+    "system-ui",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    "Segoe UI",
+    "Cantarell",
+    "Ubuntu",
+    "Noto Sans",
+    "Helvetica",
+    "Arial",
+    "sans-serif",
+    "Apple Color Emoji",
+    "Segoe UI Emoji"
+].join(",");
+
+/**
+ * System monospace font stack for cross-platform compatibility.
+ * Used when the user selects "System default" for monospace fonts.
+ */
+export const SYSTEM_MONOSPACE_FONT_STACK = [
+    "ui-monospace",
+    "SFMono-Regular",
+    "SF Mono",
+    "Consolas",
+    "Source Code Pro",
+    "Ubuntu Mono",
+    "Menlo",
+    "Liberation Mono",
+    "monospace"
+].join(",");
+
 export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActionNames> {
     openNoteContexts: string;
     lastDailyBackupDate: string;
@@ -23,6 +58,7 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     theme: string;
     syncServerHost: string;
     syncServerTimeout: string;
+    syncServerTimeoutTimeScale: number;
     syncProxy: string;
     mainFontFamily: FontFamily;
     treeFontFamily: FontFamily;
@@ -124,6 +160,9 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     disableTray: boolean;
     editedNotesOpenInRibbon: boolean;
     codeBlockWordWrap: boolean;
+    codeBlockTabWidth: number;
+    codeNoteTabWidth: number;
+    codeNoteIndentWithTabs: boolean;
     textNoteEditorMultilineToolbar: boolean;
     /** Whether keyboard auto-completion for emojis is triggered when typing `:`. */
     textNoteEmojiCompletionEnabled: boolean;
@@ -134,12 +173,33 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     backgroundEffects: boolean;
     newLayout: boolean;
 
+    // Search settings
+    /** Whether fuzzy matching is enabled in search (matches similar words when exact matches are insufficient). */
+    searchEnableFuzzyMatching: boolean;
+    /** Whether fuzzy matching is enabled for autocomplete (typing in search bar). Disabled by default for faster response. */
+    searchAutocompleteFuzzy: boolean;
+
     // Share settings
     redirectBareDomain: boolean;
     showLoginInShareTheme: boolean;
 
     seenCallToActions: string;
     experimentalFeatures: string;
+
+    // Include note settings
+    includeNoteDefaultBoxSize: "small" | "medium" | "full" | "expandable";
+
+    // AI / LLM
+    /** JSON array of configured LLM providers with their API keys */
+    llmProviders: string;
+    /** Whether the MCP (Model Context Protocol) server endpoint is enabled. */
+    mcpEnabled: boolean;
+
+    // OCR options
+    ocrEnabled: boolean;
+    ocrLanguage: string;
+    ocrAutoProcessImages: boolean;
+    ocrMinConfidence: string;
 }
 
 export type OptionNames = keyof OptionDefinitions;

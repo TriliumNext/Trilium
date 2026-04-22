@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Pienoiskuva sivusta { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Valitse sivu { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Valitse sivu { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Sivu { $page }/{ $total }
 
 ## Find panel button title and messages
 
@@ -645,15 +658,20 @@ pdfjs-toggle-views-manager-button =
     .title = Näytä/piilota sivupaneeli
 pdfjs-toggle-views-manager-notification-button =
     .title = Näytä/piilota sivupaneeli (dokumentissa on pienoiskuvat/sisällys/liitteitä/tasoja)
+pdfjs-toggle-views-manager-button1-label = Hallitse sivuja
 pdfjs-toggle-views-manager-button-label = Näytä/piilota sivupaneeli
 pdfjs-views-manager-sidebar =
     .aria-label = Sivupaneeli
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Sivupaneelin koon muuttaja
 pdfjs-views-manager-view-selector-button =
     .title = Näkymät
 pdfjs-views-manager-view-selector-button-label = Näkymät
 pdfjs-views-manager-pages-title = Sivut
 pdfjs-views-manager-outlines-title = Dokumentin sisällys
 pdfjs-views-manager-attachments-title = Liitteet
+pdfjs-views-manager-layers-title1 = Tasot
+    .title = Tasot (napsauta kahdesti nollataksesi tasot niiden oletustilaan)
 pdfjs-views-manager-layers-title = Tasot
 pdfjs-views-manager-pages-option-label = Sivut
 pdfjs-views-manager-outlines-option-label = Dokumentin sisällys
@@ -674,6 +692,7 @@ pdfjs-views-manager-pages-status-action-button-label = Hallitse
 pdfjs-views-manager-pages-status-copy-button-label = Kopioi
 pdfjs-views-manager-pages-status-cut-button-label = Leikkaa
 pdfjs-views-manager-pages-status-delete-button-label = Poista
+pdfjs-views-manager-pages-status-export-selected-button-label = Vie valitut…
 pdfjs-views-manager-pages-status-save-as-button-label = Tallenna nimellä…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -703,9 +722,22 @@ pdfjs-views-manager-status-warning-copy-label = Kopiointi epäonnistui. Päivit�
 pdfjs-views-manager-status-warning-delete-label = Poisto epäonnistui. Päivitä sivu ja yritä uudelleen.
 pdfjs-views-manager-status-warning-save-label = Tallentaminen epäonnistui. Päivitä sivu ja yritä uudelleen.
 pdfjs-views-manager-status-undo-button-label = Kumoa
+pdfjs-views-manager-status-done-button-label = Valmis
 pdfjs-views-manager-status-close-button =
     .title = Sulje
 pdfjs-views-manager-status-close-button-label = Sulje
+pdfjs-views-manager-paste-button-label = Liitä
+pdfjs-views-manager-paste-button-before =
+    .title = Liitä ennen ensimmäistä sivua
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Liitä sivun { $page } jälkeen
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = UUTTA
+pdfjs-toggle-views-manager-button1 =
+    .title = Hallitse sivuja
 
 ## Main menu for adding/removing signatures
 

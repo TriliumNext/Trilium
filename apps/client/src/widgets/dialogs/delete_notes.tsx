@@ -1,15 +1,22 @@
-import { useRef, useState, useEffect } from "preact/hooks";
-import { t } from "../../services/i18n.js";
-import FormCheckbox from "../react/FormCheckbox.js";
-import Modal from "../react/Modal.js";
+import "./delete_notes.css";
+
 import type { DeleteNotesPreview } from "@triliumnext/commons";
-import server from "../../services/server.js";
+import { useEffect, useRef, useState } from "preact/hooks";
+
 import froca from "../../services/froca.js";
-import FNote from "../../entities/fnote.js";
-import link from "../../services/link.js";
+import { t } from "../../services/i18n.js";
+import server from "../../services/server.js";
 import Button from "../react/Button.jsx";
-import Alert from "../react/Alert.jsx";
+import { Card, CardSection } from "../react/Card.js";
+import FormToggle from "../react/FormToggle.js";
 import { useTriliumEvent } from "../react/hooks.jsx";
+import Modal from "../react/Modal.js";
+import NoteLink from "../react/NoteLink.js";
+import OptionsRow from "../type_widgets/options/components/OptionsRow.js";
+
+interface CloneInfo {
+    totalCloneCount: number;
+}
 
 export interface ResolveOptions {
     proceed: boolean;
@@ -24,9 +31,9 @@ interface ShowDeleteNotesDialogOpts {
 }
 
 interface BrokenRelationData {
-    note: string;
-    relation: string;
-    source: string;
+    noteId: string;
+    relationName: string;
+    sourceNoteId: string;
 }
 
 export default function DeleteNotesDialog() {
@@ -34,20 +41,51 @@ export default function DeleteNotesDialog() {
     const [ deleteAllClones, setDeleteAllClones ] = useState(false);
     const [ eraseNotes, setEraseNotes ] = useState(!!opts.forceDeleteAllClones);
     const [ brokenRelations, setBrokenRelations ] = useState<DeleteNotesPreview["brokenRelations"]>([]);
-    const [ noteIdsToBeDeleted, setNoteIdsToBeDeleted ] = useState<DeleteNotesPreview["noteIdsToBeDeleted"]>([]);    
+    const [ noteIdsToBeDeleted, setNoteIdsToBeDeleted ] = useState<DeleteNotesPreview["noteIdsToBeDeleted"]>([]);
     const [ shown, setShown ] = useState(false);
+    const [ cloneInfo, setCloneInfo ] = useState<CloneInfo>({ totalCloneCount: 0 });
     const okButtonRef = useRef<HTMLButtonElement>(null);
 
     useTriliumEvent("showDeleteNotesDialog", (opts) => {
         setOpts(opts);
+        setDeleteAllClones(false);
+        setEraseNotes(!!opts.forceDeleteAllClones);
         setShown(true);
-    })
+    });
+
+    // Calculate clone information when branches change
+    useEffect(() => {
+        const { branchIdsToDelete } = opts;
+        if (!branchIdsToDelete || branchIdsToDelete.length === 0) {
+            setCloneInfo({ totalCloneCount: 0 });
+            return;
+        }
+
+        async function calculateCloneInfo() {
+            const branches = froca.getBranches(branchIdsToDelete!, true);
+            const uniqueNoteIds = [...new Set(branches.map(b => b.noteId))];
+            const notes = await froca.getNotes(uniqueNoteIds);
+
+            let totalCloneCount = 0;
+
+            for (const note of notes) {
+                const parentBranches = note.getParentBranches();
+                // Clones are additional parent branches beyond the one being deleted
+                const otherBranches = parentBranches.filter(b => !branchIdsToDelete!.includes(b.branchId));
+                totalCloneCount += otherBranches.length;
+            }
+
+            setCloneInfo({ totalCloneCount });
+        }
+
+        calculateCloneInfo();
+    }, [opts.branchIdsToDelete]);
 
     useEffect(() => {
         const { branchIdsToDelete, forceDeleteAllClones } = opts;
         if (!branchIdsToDelete || branchIdsToDelete.length === 0) {
             return;
-        }        
+        }
 
         server.post<DeleteNotesPreview>("delete-notes-preview", {
             branchIdsToDelete,
@@ -63,16 +101,16 @@ export default function DeleteNotesDialog() {
             className="delete-notes-dialog"
             size="xl"
             scrollable
-            title={t("delete_notes.delete_notes_preview")}
+            title={t("delete_notes.title")}
             onShown={() => okButtonRef.current?.focus()}
             onHidden={() => {
-                opts.callback?.({ proceed: false })
+                opts.callback?.({ proceed: false });
                 setShown(false);
             }}
             footer={<>
                 <Button text={t("delete_notes.cancel")}
                     onClick={() => setShown(false)} />
-                <Button text={t("delete_notes.ok")} kind="primary"
+                <Button text={t("delete_notes.delete")} kind="primary"
                     buttonRef={okButtonRef}
                     onClick={() => {
                         opts.callback?.({ proceed: true, deleteAllClones, eraseNotes });
@@ -81,92 +119,117 @@ export default function DeleteNotesDialog() {
             </>}
             show={shown}
         >
-            <FormCheckbox name="delete-all-clones" label={t("delete_notes.delete_all_clones_description")}
-                currentValue={deleteAllClones} onChange={setDeleteAllClones}
-            />
-            <FormCheckbox
-                name="erase-notes" label={t("delete_notes.erase_notes_warning")}
-                disabled={opts.forceDeleteAllClones}
-                currentValue={eraseNotes} onChange={setEraseNotes}
-            />
+            <Card>
+                <CardSection>
+                    <DeleteAllClonesOption
+                        cloneInfo={cloneInfo}
+                        deleteAllClones={deleteAllClones}
+                        setDeleteAllClones={setDeleteAllClones}
+                    />
+                    <OptionsRow
+                        name="erase-notes"
+                        label={t("delete_notes.erase_notes_label")}
+                        description={t("delete_notes.erase_notes_description")}
+                    >
+                        <FormToggle
+                            disabled={opts.forceDeleteAllClones}
+                            currentValue={eraseNotes}
+                            onChange={setEraseNotes}
+                        />
+                    </OptionsRow>
+                </CardSection>
+            </Card>
 
-            <DeletedNotes noteIdsToBeDeleted={noteIdsToBeDeleted} />
             <BrokenRelations brokenRelations={brokenRelations} />
+            <DeletedNotes noteIdsToBeDeleted={noteIdsToBeDeleted} />
         </Modal>
     );
 }
 
-function DeletedNotes({ noteIdsToBeDeleted }: { noteIdsToBeDeleted: DeleteNotesPreview["noteIdsToBeDeleted"] }) {
-    const [ noteLinks, setNoteLinks ] = useState<string[]>([]);
+interface DeleteAllClonesOptionProps {
+    cloneInfo: CloneInfo;
+    deleteAllClones: boolean;
+    setDeleteAllClones: (value: boolean) => void;
+}
 
-    useEffect(() => {
-        froca.getNotes(noteIdsToBeDeleted).then(async (notes: FNote[]) => {
-            const noteLinks: string[] = [];
+function DeleteAllClonesOption({ cloneInfo, deleteAllClones, setDeleteAllClones }: DeleteAllClonesOptionProps) {
+    const { totalCloneCount } = cloneInfo;
 
-            for (const note of notes) {
-                noteLinks.push((await link.createLink(note.noteId, { showNotePath: true })).html());
-            }
-
-            setNoteLinks(noteLinks);
-        });
-    }, [noteIdsToBeDeleted]);
-
-    if (noteIdsToBeDeleted.length) {
-        return (
-            <div className="delete-notes-list-wrapper" style={{paddingTop: "16px"}}>
-                <h4>{t("delete_notes.notes_to_be_deleted", { notesCount: noteIdsToBeDeleted.length })}</h4>
-    
-                <ul className="delete-notes-list" style={{ maxHeight: "200px", overflow: "auto"}}>
-                    {noteLinks.map((link, index) => (
-                        <li key={index} dangerouslySetInnerHTML={{ __html: link }} />
-                    ))}
-                </ul>
-            </div>
-        );
-    } else {
-        return (
-            <Alert type="info">
-                {t("delete_notes.no_note_to_delete")}
-            </Alert>
-        )
+    if (totalCloneCount === 0) {
+        return null;
     }
+
+    return (
+        <OptionsRow
+            name="delete-all-clones"
+            label={t("delete_notes.clones_label")}
+            description={t("delete_notes.delete_clones_description", { count: totalCloneCount })}
+        >
+            <FormToggle
+                currentValue={deleteAllClones}
+                onChange={setDeleteAllClones}
+            />
+        </OptionsRow>
+    );
+}
+
+function DeletedNotes({ noteIdsToBeDeleted }: { noteIdsToBeDeleted: DeleteNotesPreview["noteIdsToBeDeleted"] }) {
+    return (
+        <Card heading={t("delete_notes.notes_to_be_deleted", { notesCount: noteIdsToBeDeleted.length })}>
+            <CardSection noPadding={noteIdsToBeDeleted.length > 0}>
+                {noteIdsToBeDeleted.length ? (
+                    <ul className="preview-list">
+                        {noteIdsToBeDeleted.map((noteId) => (
+                            <li key={noteId}>
+                                <NoteLink notePath={noteId} showNotePath showNoteIcon />
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <span className="muted-text">{t("delete_notes.no_note_to_delete")}</span>
+                )}
+            </CardSection>
+        </Card>
+    );
 }
 
 function BrokenRelations({ brokenRelations }: { brokenRelations: DeleteNotesPreview["brokenRelations"] }) {
-    const [ notesWithBrokenRelations, setNotesWithBrokenRelations ] = useState<BrokenRelationData[]>([]);
-
-    useEffect(() => {
-        const noteIds = brokenRelations
-            .map(relation => relation.noteId)
-            .filter(noteId => noteId) as string[];
-        froca.getNotes(noteIds).then(async () => {
-            const notesWithBrokenRelations: BrokenRelationData[] = [];
-            for (const attr of brokenRelations) {
-                notesWithBrokenRelations.push({
-                    note: (await link.createLink(attr.value)).html(),
-                    relation: `<code>${attr.name}</code>`,
-                    source: (await link.createLink(attr.noteId)).html()
-                });
-            }
-            setNotesWithBrokenRelations(notesWithBrokenRelations);
-        });
-    }, [brokenRelations]);
-
-    if (brokenRelations.length) {
-        return (
-            <Alert type="danger" title={t("delete_notes.broken_relations_to_be_deleted", { relationCount: brokenRelations.length })}>
-                <ul className="broken-relations-list" style={{ maxHeight: "200px", overflow: "auto" }}>
-                    {brokenRelations.map((_, index) => {
-                        return (
-                            <li key={index}>
-                                <span dangerouslySetInnerHTML={{ __html: t("delete_notes.deleted_relation_text", notesWithBrokenRelations[index] as unknown as Record<string, string>) }} />
-                            </li>
-                        );
-                    })}
-                </ul>
-            </Alert>
-        );
-    } else {
-        return <></>;
+    if (!brokenRelations.length) {
+        return null;
     }
+
+    const relationsData: BrokenRelationData[] = brokenRelations
+        .filter((attr) => attr.value && attr.noteId)
+        .map((attr) => ({
+            noteId: attr.value!,
+            relationName: attr.name,
+            sourceNoteId: attr.noteId!
+        }));
+
+    return (
+        <Card heading={t("delete_notes.broken_relations_to_be_deleted", { relationCount: brokenRelations.length })}>
+            <CardSection noPadding>
+                <div style={{ overflowX: "auto" }}>
+                    <table className="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{t("delete_notes.table_note_with_relation")}</th>
+                                <th>{t("delete_notes.table_relation")}</th>
+                                <th>{t("delete_notes.table_points_to")}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {relationsData.map((relation, index) => (
+                                <tr key={index}>
+                                    <td><NoteLink notePath={relation.sourceNoteId} showNoteIcon /></td>
+                                    <td><code>{relation.relationName}</code></td>
+                                    <td><NoteLink notePath={relation.noteId} showNoteIcon /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </CardSection>
+        </Card>
+    );
 }

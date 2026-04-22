@@ -19,6 +19,16 @@
     "move-note-down": "Notu aşağıya kaydır",
     "create-note-into-inbox": "Eğer tanımlandıysa gelen kutusunda bir not veya günlük not oluşturun",
     "move-note-up-in-hierarchy": "Notu hiyerarşide yukarı taşı",
-    "move-note-down-in-hierarchy": "Notu hiyerarşide aşağı taşı"
+    "move-note-down-in-hierarchy": "Notu hiyerarşide aşağı taşı",
+    "edit-note-title": "Ağaç yapısından not detayına atla ve başlığı düzenle",
+    "edit-branch-prefix": "\"Dal önekini düzenle\" iletişim kutusunu göster",
+    "clone-notes-to": "Seçilen notları klonla",
+    "move-notes-to": "Seçilen notları taşı",
+    "note-clipboard": "Not panosu",
+    "copy-notes-to-clipboard": "Seçilmiş notları panoya kopyala",
+    "paste-notes-from-clipboard": "Panodan notları etkin nota yapıştırın",
+    "cut-notes-to-clipboard": "Seçilen notları panoya kes",
+    "select-all-notes-in-parent": "Geçerli nota seviyesinden tüm notaları seçin",
+    "add-note-above-to-the-selection": "Seçime yukarıdaki notu ekleyin"
   }
 }

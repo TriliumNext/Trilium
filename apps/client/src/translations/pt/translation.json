@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "Sobre o Trilium Notes",
-    "app_version": "Versão da App:",
-    "homepage": "Página inicial:",
-    "db_version": "Versão da base de dados:",
-    "sync_version": "Versão de sincronização:",
-    "build_date": "Data de compilação:",
-    "build_revision": "Revisão da compilação:",
     "data_directory": "Diretório de dados:"
   },
   "toast": {
@@ -88,7 +81,6 @@
     "also_delete_note": "Também apagar a nota"
   },
   "delete_notes": {
-    "delete_notes_preview": "Apagar pré-visualização de notas",
     "close": "Fechar",
     "delete_all_clones_description": "Apagar também todos os clones (pode ser desfeito em alterações recentes)",
     "erase_notes_description": "Apagar normal (suave) apenas marca as notas como apagadas, permitindo que sejam recuperadas (no diálogo de alterações recentes) num período. Se esta opção for marcada, as notas serão apagadas imediatamente e não será possível restaurá-las.",
@@ -96,9 +88,7 @@
     "notes_to_be_deleted": "As seguintes notas serão apagadas ({{notesCount}})",
     "no_note_to_delete": "Nenhuma nota será apagada (apenas os clones).",
     "broken_relations_to_be_deleted": "As seguintes relações serão quebradas e apagadas ({{ relationCount}})",
-    "cancel": "Cancelar",
-    "ok": "OK",
-    "deleted_relation_text": "A nota {{- note}} (a ser apagada) está referenciada pela relação {{- relation}} originada de {{- source}}."
+    "cancel": "Cancelar"
   },
   "export": {
     "export_note_title": "Exportar nota",
@@ -269,33 +259,6 @@
     "no_changes_message": "Nenhuma alteração ainda...",
     "undelete_link": "Restaurar",
     "confirm_undelete": "Deseja restaurar esta nota e as suas subnotas?"
-  },
-  "revisions": {
-    "note_revisions": "Versões da nota",
-    "delete_all_revisions": "Apagar todas as versões desta nota",
-    "delete_all_button": "Apagar todas as versões",
-    "help_title": "Ajuda sobre as versões da nota",
-    "confirm_delete_all": "Quer apagar todas as versões desta nota?",
-    "no_revisions": "Ainda não há versões para esta nota...",
-    "restore_button": "Recuperar",
-    "confirm_restore": "Deseja restaurar esta versão? Isto irá substituir o título e o conteúdo atuais da nota por esta versão.",
-    "delete_button": "Apagar",
-    "confirm_delete": "Deseja apagar esta versão?",
-    "revisions_deleted": "As versões da nota foram removidas.",
-    "revision_restored": "A versão da nota foi restaurada.",
-    "revision_deleted": "A versão da nota foi apagada.",
-    "snapshot_interval": "Intervalo de captura das versões da nota: {{seconds}}s.",
-    "maximum_revisions": "Limite de capturas das versões da nota: {{number}}.",
-    "settings": "Configurações de versões da nota",
-    "download_button": "Descarregar",
-    "mime": "MIME: ",
-    "file_size": "Tamanho do ficheiro:",
-    "preview_not_available": "A visualização não está disponível para este tipo de nota.",
-    "diff_on": "Mostrar diferenças",
-    "diff_off": "Mostrar conteúdos",
-    "diff_on_hint": "Carregar para mostrar diferenças da fonte da nota",
-    "diff_off_hint": "Carregar para mostrar conteúdos da nota",
-    "diff_not_available": "Diferenças não disponível."
   },
   "sort_child_notes": {
     "sort_children_by": "Ordenar notas filhas por...",
@@ -1091,7 +1054,6 @@
   },
   "database_integrity_check": {
     "title": "Verificação de Integridade da Base de Dados",
-    "description": "Isto verificará se a base de dados não está corrompida no nível SQLite. Pode levar algum tempo, dependendo do tamanho da base de dados.",
     "check_button": "Verificar integridade da base de dados",
     "checking_integrity": "A verificar integridade da base de dados…",
     "integrity_check_succeeded": "Verificação de integridade bem sucedida - nenhum problema encontrado.",
@@ -1123,10 +1085,7 @@
     "note_tree_font": "Fonte da Árvore de Notas",
     "note_detail_font": "Fonte Padrão da Nota",
     "monospace_font": "Fonte Monospace (código)",
-    "note_tree_and_detail_font_sizing": "Note que o tamanho da fonte da árvore e dos pormenores é relativo à configuração principal do tamanho de fonte.",
     "not_all_fonts_available": "Nem todas as fontes listadas podem estar disponíveis no seu sistema.",
-    "apply_font_changes": "Para aplicar as alterações de fonte, clique em",
-    "reload_frontend": "recarregar frontend",
     "generic-fonts": "Fontes genéricas",
     "sans-serif-system-fonts": "Fontes sem serifa de sistema",
     "serif-system-fonts": "Fontes serifadas de sistema",
@@ -1216,7 +1175,6 @@
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Tempo Limite para Apagar um Anexo",
-    "attachment_auto_deletion_description": "Os anexos são automaticamente apagados (e apagados) se já não forem referenciados pela sua nota após um tempo definido.",
     "erase_attachments_after": "Apagar anexos não utilizados após:",
     "manual_erasing_description": "Também pode ativar a apagar manualmente (sem considerar o timeout definido acima):",
     "erase_unused_attachments_now": "Apagar anexos não utilizados agora",
@@ -1228,7 +1186,6 @@
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "Tempo Limite para Apagar uma Nota",
-    "note_erasure_description": "Notas apagadas (e atributos, revisões...) inicialmente são apenas marcadas como apagadas e é possível recuperá-las a partir do diálogo de Notas Recentes. Depois de um tempo, as notas apagadas são \"apagadas\", o que significa que o seu conteúdo já não é recuperável. Esta configuração permite configurar o período entre apagar e apagar a nota.",
     "erase_notes_after": "Apagar notas após:",
     "manual_erasing_description": "Também pode ativar a apagar manualmente (sem considerar o timeout definido acima):",
     "erase_deleted_notes_now": "Apagar as notas apagadas agora",
@@ -1313,7 +1270,6 @@
     "first-week-contains-first-thursday": "Primeira semana que contenha a primeira quinta-feira do ano",
     "first-week-has-minimum-days": "Primeira semana que contenha um mínimo de dias",
     "min-days-in-first-week": "Mínimo de dias da primeira semana",
-    "first-week-info": "Primeira semana que contenha a primeira Quinta-feira do ano é baseado na <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
     "first-week-warning": "Alterar as opções de primeira semana pode causar duplicidade nas Notas Semanais existentes e estas Notas não serão atualizadas de acordo.",
     "formatting-locale": "Formato de data e número",
     "tuesday": "Terça-feira",
@@ -1435,20 +1391,13 @@
     "description": "Estas opções aplicam-se apenas às versões desktop; os navegadores usarão a sua própria verificação ortográfica nativa.",
     "enable": "Ativar verificação ortográfica",
     "language_code_label": "Código(s) de idioma",
-    "language_code_placeholder": "por exemplo \"en-US\", \"de-AT\", \"pt-BR\"",
-    "multiple_languages_info": "Múltiplos idiomas podem ser separados por vírgula, por exemplo: \"en-US, de-DE, pt-BR, cs\". ",
-    "available_language_codes_label": "Códigos de idioma disponíveis:",
     "restart-required": "As alterações nas opções de verificação ortográfica terão efeito após reiniciar a aplicação."
   },
   "sync_2": {
     "config_title": "Configuração da Sincronização",
     "server_address": "Endereço da instância do Servidor",
     "timeout": "Tempo limite da sincronização",
-    "timeout_unit": "milisegundos",
     "proxy_label": "Servidor proxy para sincronização (opcional)",
-    "note": "Nota",
-    "note_description": "Se deixar a configuração de proxy em branco, o proxy do sistema será usado (aplica-se apenas à versão desktop/Electron).",
-    "special_value_description": "Outro valor especial é <code>noproxy</code>, que força a ignorar até mesmo o proxy do sistema e respeita <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
     "save": "Gravar",
     "help": "Ajuda",
     "test_title": "Teste de Sincronização",

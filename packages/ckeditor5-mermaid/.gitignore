@@ -8,3 +8,6 @@ sample/ckeditor.dist.js
 # Ignore compiled TypeScript files.
 src/**/*.js
 src/**/*.d.ts
+
+.vitest-attachments
+tests/__screenshots__

@@ -121,3 +121,8 @@ iframe.pdf-view {
 .ck-content .ck-content-widget.footnote-section .ck-content-widget__type-around__button_after {
     display: none;
 }
+
+.ck-content .todo-list .todo-list__label > input:before {
+    background-color: var(--background-primary);
+    border-color: var(--text-primary) !important;
+}

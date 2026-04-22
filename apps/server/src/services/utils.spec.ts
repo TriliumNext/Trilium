@@ -705,3 +705,110 @@ describe("#slugify", () => {
         expect(result).toBe(expectedSlug);
     });
 });
+
+describe("#sanitizeSvg", () => {
+    it("should remove script elements", () => {
+        const maliciousSvg = '<svg><script>alert("XSS")</script><rect width="100" height="100"/></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><rect width="100" height="100"/></svg>');
+    });
+
+    it("should remove script elements with attributes", () => {
+        const maliciousSvg = '<svg><script type="text/javascript">alert("XSS")</script></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg></svg>');
+    });
+
+    it("should remove multiline script elements", () => {
+        const maliciousSvg = `<svg><script>
+            var x = 1;
+            alert(x);
+        </script></svg>`;
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg></svg>');
+    });
+
+    it("should remove onclick event handlers with double quotes", () => {
+        const maliciousSvg = '<svg><rect onclick="doEvil()" width="100"/></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><rect width="100"/></svg>');
+    });
+
+    it("should remove onclick event handlers with single quotes", () => {
+        const maliciousSvg = "<svg><rect onclick='doEvil()' width=\"100\"/></svg>";
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><rect width="100"/></svg>');
+    });
+
+    it("should remove onload event handlers", () => {
+        const maliciousSvg = '<svg onload="doEvil()"><rect width="100"/></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><rect width="100"/></svg>');
+    });
+
+    it("should remove onerror event handlers", () => {
+        const maliciousSvg = '<svg><image onerror="alert(1)" href="invalid.jpg"/></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><image href="invalid.jpg"/></svg>');
+    });
+
+    it("should remove onmouseover event handlers", () => {
+        const maliciousSvg = '<svg><rect onmouseover="alert(1)" width="100"/></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><rect width="100"/></svg>');
+    });
+
+    it("should remove event handlers without quotes", () => {
+        const maliciousSvg = '<svg><rect onclick=alert(1) width="100"/></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><rect width="100"/></svg>');
+    });
+
+    it("should replace javascript: URLs in href with #", () => {
+        const maliciousSvg = '<svg><a href="javascript:alert(1)"><text>Click me</text></a></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><a href="#"><text>Click me</text></a></svg>');
+    });
+
+    it("should replace javascript: URLs in xlink:href with #", () => {
+        const maliciousSvg = '<svg><a xlink:href="javascript:alert(1)"><text>Click me</text></a></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><a xlink:href="#"><text>Click me</text></a></svg>');
+    });
+
+    it("should preserve valid SVG content", () => {
+        const validSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" fill="blue"/><circle cx="50" cy="50" r="30" fill="red"/></svg>';
+        const result = utils.sanitizeSvg(validSvg);
+        expect(result).toBe(validSvg);
+    });
+
+    it("should preserve valid href URLs", () => {
+        const validSvg = '<svg><a href="https://example.com"><text>Link</text></a></svg>';
+        const result = utils.sanitizeSvg(validSvg);
+        expect(result).toBe(validSvg);
+    });
+
+    it("should handle multiple malicious elements", () => {
+        const maliciousSvg = '<svg onload="evil()"><script>evil()</script><rect onclick="bad()" width="100"/><a href="javascript:attack()">link</a></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><rect width="100"/><a href="#">link</a></svg>');
+    });
+
+    it("should handle empty SVG", () => {
+        const emptySvg = '<svg></svg>';
+        const result = utils.sanitizeSvg(emptySvg);
+        expect(result).toBe('<svg></svg>');
+    });
+
+    it("should be case insensitive for script tags", () => {
+        const maliciousSvg = '<svg><SCRIPT>alert(1)</SCRIPT><Script>alert(2)</Script></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg></svg>');
+    });
+
+    it("should be case insensitive for event handlers", () => {
+        const maliciousSvg = '<svg><rect ONCLICK="alert(1)" width="100"/></svg>';
+        const result = utils.sanitizeSvg(maliciousSvg);
+        expect(result).toBe('<svg><rect width="100"/></svg>');
+    });
+});

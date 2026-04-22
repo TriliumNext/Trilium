@@ -103,7 +103,8 @@
     "toggle-zen-mode": "Habilita/Deshabilita el modo Zen (IU mínima para edición sin distracciones)",
     "open-command-palette": "Abrir paleta de comandos",
     "clone-notes-to": "Clonar notas seleccionadas",
-    "move-notes-to": "Mover notas seleccionadas"
+    "move-notes-to": "Mover notas seleccionadas",
+    "save-named-revision": "Guardar una revisión nombrada de la nota activa"
   },
   "login": {
     "title": "Iniciar sesión",
@@ -200,7 +201,8 @@
   },
   "quarterNumber": "Cuarto {quarterNumber}",
   "special_notes": {
-    "search_prefix": "Buscar:"
+    "search_prefix": "Buscar:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "El servidor de sincronización no está configurado. Por favor configure primero la sincronización.",
@@ -242,7 +244,7 @@
     "shortcuts-title": "Atajos",
     "text-notes": "Notas de texto",
     "code-notes-title": "Notas de código",
-    "images-title": "Imágenes",
+    "images-title": "Medios",
     "spellcheck-title": "Corrección ortográfica",
     "password-title": "Contraseña",
     "multi-factor-authentication-title": "MFA",
@@ -258,7 +260,11 @@
     "jump-to-note-title": "Saltar a...",
     "command-palette": "Abrir paleta de comandos",
     "zen-mode": "Modo Zen",
-    "tab-switcher-title": "Conmutador de pestañas"
+    "tab-switcher-title": "Conmutador de pestañas",
+    "llm-chat-history-title": "Historial del chat de IA",
+    "custom-dictionary-title": "Diccionario personalizado",
+    "llm-title": "IA / LLM",
+    "sidebar-chat-title": "Chat de IA"
   },
   "notes": {
     "new-note": "Nueva nota",
@@ -292,7 +298,8 @@
   "migration": {
     "old_version": "La migración directa desde tu versión actual no está soportada. Por favor actualice a v0.60.4 primero y solo después a esta versión.",
     "error_message": "Error durante la migración a la versión {{version}}: {{stack}}",
-    "wrong_db_version": "La versión de la base de datos {{version}} es más nueva de lo que la aplicación espera {{targetVersion}}, lo que significa que fue creada por una versión más reciente e incompatible de Trilium. Actualice a la última versión de Trilium para resolver este problema."
+    "wrong_db_version": "La versión de la base de datos {{version}} es más nueva de lo que la aplicación espera {{targetVersion}}, lo que significa que fue creada por una versión más reciente e incompatible de Trilium. Actualice a la última versión de Trilium para resolver este problema.",
+    "invalid_db_version": "La versión de la base de datos no es un número válido. Esto usualmente indica una opción \"dbVersion\" corrupta en la base de datos. Por favor, restaure de una copia de seguridad."
   },
   "modals": {
     "error_title": "Error"
@@ -304,7 +311,10 @@
     "last-updated": "Última actualización en {{-date}}",
     "subpages": "Subpáginas:",
     "on-this-page": "En esta página",
-    "expand": "Expandir"
+    "expand": "Expandir",
+    "toggle-navigation": "Alternar navegación",
+    "toggle-toc": "Alternar tabla de contenido",
+    "logo-alt": "Logo"
   },
   "keyboard_action_names": {
     "jump-to-note": "Saltar a...",
@@ -401,7 +411,8 @@
     "toggle-ribbon-tab-note-paths": "Mostrar pestaña de la cinta de opciones: Rutas de nota",
     "toggle-ribbon-tab-similar-notes": "Mostrar pestaña de la cinta de opciones: Notas similares",
     "toggle-ribbon-tab-owned-attributes": "Mostrar pestaña de la cinta de opciones: Propiedades asignadas",
-    "toggle-ribbon-tab-promoted-attributes": "Mostrar pestaña de la cinta de opciones: Atributos destacados"
+    "toggle-ribbon-tab-promoted-attributes": "Mostrar pestaña de la cinta de opciones: Atributos destacados",
+    "save-named-revision": "Guardar revisión nombrada"
   },
   "hidden_subtree_templates": {
     "board_note_first": "Primera nota",
@@ -437,5 +448,21 @@
   },
   "desktop": {
     "instance_already_running": "Ya hay una instancia en ejecución, enfocando esa instancia en su lugar."
+  },
+  "password": {
+    "incorrect": "La contraseña que ha introducido es incorrecta."
+  },
+  "script": {
+    "wrong-environment": "No se puede ejecutar la nota \"{{- noteTitle}}\" ({{- noteId}}). Este es un script de {{- actualEnv}}, pero la ejecución se intentó en {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Error en {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" es una palabra clave reservada. Para buscar un valor literal, utilice comillas: \"{{- token}}\"",
+      "cannot-compare-with": "no se puede comparar con \"{{- token}}\". Para buscar un valor literal, utilice ccomillas: \"{{- token}}\"",
+      "misplaced-expression": "Expresión errónea o incompleta \"{{- token}}\"",
+      "fulltext-after-expression": "\"{{- token}}\" no es una expresión válida. Para buscar texto, colóquela antes de filtros de atributo (por ejemplo, \"{{- token}} #label\" en lugar de \"#label {{- token}}\").",
+      "unrecognized-expression": "Expresión no reconocida \"{{- token}}\""
+    }
   }
 }

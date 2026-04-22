@@ -18,6 +18,10 @@ async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: ErrorHand
         for (const renderNoteId of renderNoteIds) {
             const bundle = await server.postWithSilentInternalServerError<Bundle>(`script/bundle/${renderNoteId}`);
 
+            if (!bundle) {
+                throw new Error(`Script note '${renderNoteId}' could not be loaded. It may be protected and require an active protected session.`);
+            }
+
             const $scriptContainer = $("<div>");
             $el.append($scriptContainer);
 

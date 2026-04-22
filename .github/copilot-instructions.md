@@ -1,5 +1,7 @@
 # Trilium Notes - AI Coding Agent Instructions
 
+> **Note**: When updating this file, also update `CLAUDE.md` in the repository root to keep both AI coding assistants in sync.
+
 ## Project Overview
 
 Trilium Notes is a hierarchical note-taking application with advanced features like synchronization, scripting, and rich text editing. Built as a TypeScript monorepo using pnpm, it implements a three-layer caching architecture (Becca/Froca/Shaca) with a widget-based UI system and supports extensive user scripting capabilities.
@@ -115,6 +117,15 @@ class MyNoteWidget extends NoteContextAwareWidget {
 
 **Important**: Widgets use jQuery (`this.$widget`) for DOM manipulation. Don't mix React patterns here.
 
+### Reusable Preact Components
+Common UI components are available in `apps/client/src/widgets/react/` — prefer reusing these over creating custom implementations:
+- `NoItems` - Empty state placeholder with icon and message (use for "no results", "too many items", error states)
+- `ActionButton` - Consistent button styling with icon support
+- `FormTextBox` - Text input with validation and controlled input handling
+- `Slider` - Range slider with label
+- `Checkbox`, `RadioButton` - Form controls
+- `CollapsibleSection` - Expandable content sections
+
 ## Development Workflow
 
 ### Running & Testing
@@ -186,6 +197,14 @@ When adding query parameters to ETAPI endpoints (`apps/server/src/etapi/`), main
 
 **Auth note**: ETAPI uses basic auth with tokens. Internal API endpoints trust the frontend.
 
+### Adding New LLM Tools
+Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/` and automatically registered for both the LLM chat and MCP server.
+
+1. Add the tool definition in the appropriate module (`note_tools.ts`, `attribute_tools.ts`, `hierarchy_tools.ts`) or create a new module
+2. Each tool needs: `description`, `inputSchema` (Zod), `execute` function, and optionally `mutates: true` for write operations or `needsContext: true` for tools that need the current note context
+3. If creating a new module, wrap tools in `defineTools({...})` and add the registry to `allToolRegistries` in `tools/index.ts`
+4. Add a client-side friendly name in `apps/client/src/translations/en/translation.json` under `llm.tools.<tool_name>` — use **imperative tense** (e.g. "Search notes", "Create note", "Get attributes"), not present continuous
+
 ### Database Migrations
 - Add scripts in `apps/server/src/migrations/YYMMDD_HHMM__description.sql`
 - Update schema in `apps/server/src/assets/db/schema.sql`
@@ -212,6 +231,12 @@ When adding query parameters to ETAPI endpoints (`apps/server/src/etapi/`), main
 9. **Event subscription cleanup** - When subscribing to events in widgets, unsubscribe in `cleanup()` or `doDestroy()` to prevent memory leaks.
 
 10. **Attribute inheritance can be complex** - When checking for labels/relations, use `note.getOwnedAttribute()` for direct attributes or `note.getAttribute()` for inherited ones. Don't assume attributes are directly on the note.
+
+## MCP Server
+- Trilium exposes an MCP (Model Context Protocol) server at `http://localhost:8080/mcp`, configured in `.mcp.json`
+- The MCP server is **only available when the Trilium server is running** (`pnpm run server:start`)
+- It provides tools for reading, searching, and modifying notes directly from the AI assistant
+- Use it to interact with actual note data when developing or debugging note-related features
 
 ## TypeScript Configuration
 
@@ -275,6 +300,12 @@ View types are configured via `#viewType` label (e.g., `#viewType=table`). Each 
 - Register in `packages/ckeditor5/src/plugins.ts`
 - See `ckeditor5-admonition`, `ckeditor5-footnotes`, `ckeditor5-math`, `ckeditor5-mermaid` for examples
 
+### Updating PDF.js
+1. Update `pdfjs-dist` version in `packages/pdfjs-viewer/package.json`
+2. Run `npx tsx scripts/update-viewer.ts` from that directory
+3. Run `pnpm build` to verify success
+4. Commit all changes including updated viewer files
+
 ### Database Migrations
 - Add migration scripts in `apps/server/src/migrations/YYMMDD_HHMM__description.sql`
 - Update schema in `apps/server/src/assets/db/schema.sql`
@@ -299,8 +330,28 @@ Trilium provides powerful user scripting capabilities:
 - Translation files in `apps/client/src/translations/`
 - Use translation system via `t()` function
 - Automatic pluralization: Add `_other` suffix to translation keys (e.g., `item` and `item_other` for singular/plural)
+- When a translated string contains **interpolated components** (e.g. links, note references) whose order may vary across languages, use `<Trans>` from `react-i18next` instead of `t()`. This lets translators reorder components freely (e.g. `"<Note/> in <Parent/>"` vs `"in <Parent/>, <Note/>"`)
+- When adding a new locale, follow the step-by-step guide in `docs/Developer Guide/Developer Guide/Concepts/Internationalisation  Translations/Adding a new locale.md`
+
+#### Client vs Server Translation Usage
+- **Client-side**: `import { t } from "../services/i18n"` with keys in `apps/client/src/translations/en/translation.json`
+- **Server-side**: `import { t } from "i18next"` with keys in `apps/server/src/assets/translations/en/server.json`
+- **Interpolation**: Use `{{variable}}` for normal interpolation; use `{{- variable}}` (with hyphen) for **unescaped** interpolation when the value contains special characters like quotes that shouldn't be HTML-escaped
+
+### Storing User Preferences
+- **Do not use `localStorage`** for user preferences — Trilium has a synced options system that persists across devices
+- To add a new user preference:
+  1. Add the option type to `OptionDefinitions` in `packages/commons/src/lib/options_interface.ts`
+  2. Add a default value in `apps/server/src/services/options_init.ts` in the `defaultOptions` array
+  3. **Whitelist the option** in `apps/server/src/routes/api/options.ts` by adding it to `ALLOWED_OPTIONS` (required for client updates)
+  4. Use `useTriliumOption("optionName")` hook in React components to read/write the option
+- Available hooks: `useTriliumOption` (string), `useTriliumOptionBool`, `useTriliumOptionInt`, `useTriliumOptionJson`
+- See `docs/Developer Guide/Developer Guide/Concepts/Options/Creating a new option.md` for detailed documentation
 
 ## Testing Conventions
+
+- **Write concise tests**: Group related assertions together in a single test case rather than creating many one-shot tests
+- **Extract and test business logic**: When adding pure business logic (e.g., data transformations, migrations, validations), extract it as a separate function and always write unit tests for it
 
 ```typescript
 // ETAPI test pattern

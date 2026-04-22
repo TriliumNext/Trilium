@@ -1,4 +1,4 @@
-import type { AttachmentRow, AttributeType, CloneResponse, NoteRow, NoteType, RevisionRow } from "@triliumnext/commons";
+import type { AttachmentRow, AttributeType, CloneResponse, NoteRow, NoteType, RevisionRow, RevisionSource } from "@triliumnext/commons";
 import { dayjs, getNoteIcon } from "@triliumnext/commons";
 
 import cloningService from "../../services/cloning.js";
@@ -314,6 +314,18 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }
 
         return null;
+    }
+
+    /**
+     * Executes this note as a script. The note must be of type "Code: JS backend".
+     *
+     * @returns the return value of the executed script
+     */
+    executeScript() {
+        // Lazy require to avoid circular dependency (script.ts imports BNote as a type).
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const scriptService = require("../../services/script.js").default;
+        return scriptService.executeNote(this, { originEntity: this });
     }
 
     /**
@@ -790,6 +802,9 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.__attributeCache = null;
         this.__inheritableAttributeCache = null;
         this.__ancestorCache = null;
+
+        // Mark only this note's flat text as dirty for incremental index update
+        this.becca.dirtyNoteFlatText(this.noteId);
     }
 
     invalidateSubTree(path: string[] = []) {
@@ -1528,7 +1543,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return !(this.noteId in this.becca.notes) || this.isBeingDeleted;
     }
 
-    saveRevision(): BRevision {
+    saveRevision(opts: { description?: string; source?: RevisionSource } = {}): BRevision {
         return sql.transactional(() => {
             let noteContent = this.getContent();
 
@@ -1537,6 +1552,8 @@ class BNote extends AbstractBeccaEntity<BNote> {
                     noteId: this.noteId,
                     // title and text should be decrypted now
                     title: this.title,
+                    description: opts.description || "",
+                    source: opts.source || "auto",
                     type: this.type,
                     mime: this.mime,
                     isProtected: this.isProtected,

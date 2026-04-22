@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
         with:
@@ -66,7 +66,7 @@ jobs:
     runs-on: ${{ matrix.os.image }}
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
         with:
@@ -150,7 +150,7 @@ jobs:
           path: upload
 
       - name: Publish stable release
-        uses: softprops/action-gh-release@v2.6.1
+        uses: softprops/action-gh-release@v3.0.0
         with:
           draft: false
           body_path: docs/Release Notes/Release Notes/${{ github.ref_name }}.md

@@ -51,8 +51,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
             return "empty_note_id";
         }
 
-        if (origNoteId === "root" || origNoteId.startsWith("_") || opts?.preserveIds) {
-            // these "named" noteIds don't differ between Trilium instances
+        if (origNoteId === "root" || opts?.preserveIds) {
             return origNoteId;
         }
 
@@ -176,8 +175,12 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
     }
 
     function detectFileTypeAndMime(taskContext: TaskContext<"importNotes">, filePath: string) {
-        const mime = mimeService.getMime(filePath) || "application/octet-stream";
-        const type = mimeService.getType(taskContext.data || {}, mime);
+        const rawMime = mimeService.getMime(filePath) || "application/octet-stream";
+        const type = mimeService.getType(taskContext.data || {}, rawMime);
+        // Normalize aliased code MIMEs (e.g. `text/markdown` → `text/x-markdown`,
+        // `application/javascript` → `application/javascript;env=frontend`) so the
+        // stored MIME matches what the rest of the app expects.
+        const mime = (type === "code" && mimeService.normalizeMimeType(rawMime)) || rawMime;
 
         return { mime, type };
     }
@@ -660,13 +663,20 @@ export function readContent(zipfile: yauzl.ZipFile, entry: yauzl.Entry): Promise
 
 export function readZipFile(buffer: Buffer, processEntryCallback: (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => Promise<void>) {
     return new Promise<void>((res, rej) => {
-        yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false }, (err, zipfile) => {
+        yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false, decodeStrings: false }, (err, zipfile) => {
             if (err) rej(err);
             if (!zipfile) throw new Error("Unable to read zip file.");
 
             zipfile.readEntry();
             zipfile.on("entry", async (entry) => {
                 try {
+                    // yauzl with decodeStrings: false returns fileName as a Buffer.
+                    // We decode as UTF-8 to handle ZIP files that use UTF-8 filenames
+                    // without setting the general purpose bit flag 11 (language encoding flag).
+                    if (Buffer.isBuffer(entry.fileName)) {
+                        entry.fileName = (entry.fileName as Buffer).toString("utf-8");
+                    }
+
                     await processEntryCallback(zipfile, entry);
                 } catch (e) {
                     rej(e);

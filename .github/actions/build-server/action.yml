@@ -8,7 +8,7 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: pnpm/action-setup@v5
+  - uses: pnpm/action-setup@v6
   - name: Set up node & dependencies
     uses: actions/setup-node@v6
     with:

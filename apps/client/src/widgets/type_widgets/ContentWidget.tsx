@@ -4,7 +4,7 @@ import AppearanceSettings from "./options/appearance";
 import ShortcutSettings from "./options/shortcuts";
 import TextNoteSettings from "./options/text_notes";
 import CodeNoteSettings from "./options/code_notes";
-import ImageSettings from "./options/images";
+import MediaSettings from "./options/media";
 import SpellcheckSettings from "./options/spellcheck";
 import PasswordSettings from "./options/password";
 import MultiFactorAuthenticationSettings from "./options/multi_factor_authentication";
@@ -14,18 +14,19 @@ import SyncOptions from "./options/sync";
 import OtherSettings from "./options/other";
 import InternationalizationOptions from "./options/i18n";
 import AdvancedSettings from "./options/advanced";
+import LlmSettings from "./options/llm";
 import "./ContentWidget.css";
 import { t } from "../../services/i18n";
 import BackendLog from "./code/BackendLog";
 
-export type OptionPages = "_optionsAppearance" | "_optionsShortcuts" | "_optionsTextNotes" | "_optionsCodeNotes" | "_optionsImages" | "_optionsSpellcheck" | "_optionsPassword" | "_optionsMFA" | "_optionsEtapi" | "_optionsBackup" | "_optionsSync" | "_optionsOther" | "_optionsLocalization" | "_optionsAdvanced";
+export type OptionPages = "_optionsAppearance" | "_optionsShortcuts" | "_optionsTextNotes" | "_optionsCodeNotes" | "_optionsMedia" | "_optionsSpellcheck" | "_optionsPassword" | "_optionsMFA" | "_optionsEtapi" | "_optionsBackup" | "_optionsSync" | "_optionsOther" | "_optionsLocalization" | "_optionsAdvanced" | "_optionsLlm";
 
 const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", (props: TypeWidgetProps) => JSX.Element> = {
     _optionsAppearance: AppearanceSettings,
     _optionsShortcuts: ShortcutSettings,
     _optionsTextNotes: TextNoteSettings,
     _optionsCodeNotes: CodeNoteSettings,
-    _optionsImages: ImageSettings,
+    _optionsMedia: MediaSettings,
     _optionsSpellcheck: SpellcheckSettings,
     _optionsPassword: PasswordSettings,
     _optionsMFA: MultiFactorAuthenticationSettings,
@@ -35,6 +36,7 @@ const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", (props: TypeWidgetPro
     _optionsOther: OtherSettings,
     _optionsLocalization: InternationalizationOptions,
     _optionsAdvanced: AdvancedSettings,
+    _optionsLlm: LlmSettings,
     _backendLog: BackendLog
 }
 

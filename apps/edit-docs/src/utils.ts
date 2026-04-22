@@ -103,6 +103,14 @@ function waitForEnd(archive: Archiver, stream: WriteStream) {
     });
 }
 
+export async function createZipFromDirectory(dirPath: string, zipPath: string) {
+    const archive = archiver("zip", { zlib: { level: 5 } });
+    const outputStream = fsExtra.createWriteStream(zipPath);
+    archive.directory(dirPath, false);
+    archive.pipe(outputStream);
+    await waitForEnd(archive, outputStream);
+}
+
 export async function extractZip(zipFilePath: string, outputPath: string, ignoredFiles?: Set<string>) {
     const promise = deferred<void>();
     setTimeout(async () => {

@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "Trilium Notes에 대해서",
-    "homepage": "홈페이지:",
-    "app_version": "앱 버전:",
-    "db_version": "DB 버전:",
-    "sync_version": "동기화 버전:",
-    "build_date": "빌드 날짜:",
-    "build_revision": "빌드 리비전:",
     "data_directory": "데이터 경로:"
   },
   "toast": {
@@ -100,9 +93,6 @@
     "no_note_to_delete": "삭제되는 노트가 없습니다 (클론만 삭제됩니다).",
     "broken_relations_to_be_deleted": "다음 관계가 끊어지고 삭제됩니다({{ relationCount}})",
     "cancel": "취소",
-    "ok": "OK",
-    "deleted_relation_text": "삭제 예정인 노트 {{- note}} (은)는 {{- source}}에서 시작된 관계 {{- relation}}에 의해 참조되고 있습니다.",
-    "delete_notes_preview": "노트 미리보기 삭제",
     "close": "닫기",
     "delete_all_clones_description": "모든 복제본 삭제(최근 변경 사항에서 되돌릴 수 있습니다)"
   },

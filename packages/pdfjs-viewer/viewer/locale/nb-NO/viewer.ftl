@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniatyrbilde av side { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Velg side { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Velg side { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Side { $page } av { $total }
 
 ## Find panel button title and messages
 
@@ -645,15 +658,22 @@ pdfjs-toggle-views-manager-button =
     .title = Vis/skjul sidestolpe
 pdfjs-toggle-views-manager-notification-button =
     .title = Vis/skjul sidestolpe (dokumentet inneholder miniatyrbilder/disposisjon/vedlegg/lag)
+pdfjs-toggle-views-manager-button1-label = Behandle sider
 pdfjs-toggle-views-manager-button-label = Vis/skjul sidestolpe
 pdfjs-views-manager-sidebar =
     .aria-label = Sidestolpe
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Endre størrelse på sidestolpen
 pdfjs-views-manager-view-selector-button =
     .title = Visninger
 pdfjs-views-manager-view-selector-button-label = Visninger
 pdfjs-views-manager-pages-title = Sider
+pdfjs-views-manager-outlines-title1 = Dokumentoversikt
+    .title = Dokumentoversikt (dobbeltklikk for å utvide/skjule alle elementer)
 pdfjs-views-manager-outlines-title = Dokumentdisposisjon
 pdfjs-views-manager-attachments-title = Vedlegg
+pdfjs-views-manager-layers-title1 = Lag
+    .title = Lag (dobbeltklikk for å tilbakestille alle lag til standardtilstand)
 pdfjs-views-manager-layers-title = Lag
 pdfjs-views-manager-pages-option-label = Sider
 pdfjs-views-manager-outlines-option-label = Dokumentdisposisjon
@@ -674,6 +694,7 @@ pdfjs-views-manager-pages-status-action-button-label = Behandle
 pdfjs-views-manager-pages-status-copy-button-label = Kopier
 pdfjs-views-manager-pages-status-cut-button-label = Klipp ut
 pdfjs-views-manager-pages-status-delete-button-label = Slett
+pdfjs-views-manager-pages-status-export-selected-button-label = Eksporter valgte…
 pdfjs-views-manager-pages-status-save-as-button-label = Lagre som …
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -703,9 +724,22 @@ pdfjs-views-manager-status-warning-copy-label = Kunne ikke kopiere. Oppdater sid
 pdfjs-views-manager-status-warning-delete-label = Kunne ikke slette. Oppdater siden og prøv på nytt.
 pdfjs-views-manager-status-warning-save-label = Kunne ikke lagre. Oppdater siden og prøv på nytt.
 pdfjs-views-manager-status-undo-button-label = Angre
+pdfjs-views-manager-status-done-button-label = Ferdig
 pdfjs-views-manager-status-close-button =
     .title = Lukk
 pdfjs-views-manager-status-close-button-label = Lukk
+pdfjs-views-manager-paste-button-label = Lim inn
+pdfjs-views-manager-paste-button-before =
+    .title = Lim inn før første side
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Lim inn etter side { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NY
+pdfjs-toggle-views-manager-button1 =
+    .title = Behandle sider
 
 ## Main menu for adding/removing signatures
 

@@ -51,7 +51,7 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
             >
                 <ActionButton icon="bx bx-chevron-down" text="" />
                 <div class="card-header-title">{title}</div>
-                <div class="card-header-buttons">
+                <div class="card-header-buttons" onClick={e => e.stopPropagation()}>
                     {buttons}
                     {contextMenuItems && (
                         <ActionButton

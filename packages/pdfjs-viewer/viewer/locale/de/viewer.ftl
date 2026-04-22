@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniaturansicht von Seite { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Seite { $page } auswählen
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Seite { $page } auswählen
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Seite { $page } von { $total }
 
 ## Find panel button title and messages
 
@@ -645,15 +658,22 @@ pdfjs-toggle-views-manager-button =
     .title = Sidebar umschalten
 pdfjs-toggle-views-manager-notification-button =
     .title = Sidebar umschalten (Dokument enthält Miniaturansichten/Dokumentstruktur/Anhänge/Ebenen)
+pdfjs-toggle-views-manager-button1-label = Seiten verwalten
 pdfjs-toggle-views-manager-button-label = Sidebar umschalten
 pdfjs-views-manager-sidebar =
     .aria-label = Sidebar
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Größenanpassung der Sidebar
 pdfjs-views-manager-view-selector-button =
     .title = Ansichten
 pdfjs-views-manager-view-selector-button-label = Ansichten
 pdfjs-views-manager-pages-title = Seiten
+pdfjs-views-manager-outlines-title1 = Dokumentstruktur
+    .title = Dokumentstruktur (Doppelklick zum Ein- bzw. Ausblenden aller Einträge)
 pdfjs-views-manager-outlines-title = Dokumentstruktur
 pdfjs-views-manager-attachments-title = Anhänge
+pdfjs-views-manager-layers-title1 = Ebenen
+    .title = Ebenen (Doppelklick, um alle Ebenen auf den Standard-Zustand zurückzusetzen)
 pdfjs-views-manager-layers-title = Ebenen
 pdfjs-views-manager-pages-option-label = Seiten
 pdfjs-views-manager-outlines-option-label = Dokumentstruktur
@@ -674,6 +694,7 @@ pdfjs-views-manager-pages-status-action-button-label = Verwalten
 pdfjs-views-manager-pages-status-copy-button-label = Kopieren
 pdfjs-views-manager-pages-status-cut-button-label = Ausschneiden
 pdfjs-views-manager-pages-status-delete-button-label = Löschen
+pdfjs-views-manager-pages-status-export-selected-button-label = Ausgewählte exportieren…
 pdfjs-views-manager-pages-status-save-as-button-label = Speichern unter…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -703,10 +724,22 @@ pdfjs-views-manager-status-warning-copy-label = Kopieren nicht möglich. Aktuali
 pdfjs-views-manager-status-warning-delete-label = Löschen war nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
 pdfjs-views-manager-status-warning-save-label = Speichern nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
 pdfjs-views-manager-status-undo-button-label = Rückgängig
+pdfjs-views-manager-status-done-button-label = Fertig
 pdfjs-views-manager-status-close-button =
     .title = Schließen
 pdfjs-views-manager-status-close-button-label = Schließen
 pdfjs-views-manager-paste-button-label = Einfügen
+pdfjs-views-manager-paste-button-before =
+    .title = Vor der ersten Seite einfügen
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Nach Seite { $page } einfügen
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NEU
+pdfjs-toggle-views-manager-button1 =
+    .title = Seiten verwalten
 
 ## Main menu for adding/removing signatures
 

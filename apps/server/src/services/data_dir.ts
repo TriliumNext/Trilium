@@ -1,5 +1,3 @@
-"use strict";
-
 /*
  * This file resolves trilium data path in this order of priority:
  * - case A) if TRILIUM_DATA_DIR environment variable exists, then its value is used as the path
@@ -8,8 +6,8 @@
  * - case D) as a fallback if the previous step fails, we'll use home dir
  */
 
-import os from "os";
 import fs from "fs";
+import os from "os";
 import { join as pathJoin } from "path";
 
 const DIR_NAME = "trilium-data";
@@ -43,13 +41,14 @@ export function getTriliumDataDir(dataDirName: string) {
 
 export function getDataDirs(TRILIUM_DATA_DIR: string) {
     const dataDirs = {
-        TRILIUM_DATA_DIR: TRILIUM_DATA_DIR,
+        TRILIUM_DATA_DIR,
         DOCUMENT_PATH: process.env.TRILIUM_DOCUMENT_PATH || pathJoin(TRILIUM_DATA_DIR, "document.db"),
         BACKUP_DIR: process.env.TRILIUM_BACKUP_DIR || pathJoin(TRILIUM_DATA_DIR, "backup"),
         LOG_DIR: process.env.TRILIUM_LOG_DIR || pathJoin(TRILIUM_DATA_DIR, "log"),
         TMP_DIR: process.env.TRILIUM_TMP_DIR || pathJoin(TRILIUM_DATA_DIR, "tmp"),
         ANONYMIZED_DB_DIR: process.env.TRILIUM_ANONYMIZED_DB_DIR || pathJoin(TRILIUM_DATA_DIR, "anonymized-db"),
-        CONFIG_INI_PATH: process.env.TRILIUM_CONFIG_INI_PATH || pathJoin(TRILIUM_DATA_DIR, "config.ini")
+        CONFIG_INI_PATH: process.env.TRILIUM_CONFIG_INI_PATH || pathJoin(TRILIUM_DATA_DIR, "config.ini"),
+        OCR_CACHE_DIR: process.env.TRILIUM_OCR_CACHE_DIR || pathJoin(TRILIUM_DATA_DIR, "ocr-cache")
     } as const;
 
     createDirIfNotExisting(dataDirs.TMP_DIR);

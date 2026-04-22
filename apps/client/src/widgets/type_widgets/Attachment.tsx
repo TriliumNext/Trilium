@@ -27,8 +27,11 @@ import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
 import { useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
+import Modal from "../react/Modal";
 import NoteLink from "../react/NoteLink";
 import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
+import { TextPreview } from "./File";
+import { TextRepresentation } from "./ReadOnlyTextRepresentation";
 import { TypeWidgetProps } from "./type_widget";
 
 /**
@@ -141,12 +144,19 @@ export function AttachmentDetail({ note, viewScope }: TypeWidgetProps) {
 
 function AttachmentInfo({ attachment, isFullDetail }: { attachment: FAttachment, isFullDetail?: boolean }) {
     const contentWrapper = useRef<HTMLDivElement>(null);
+    const [ ocrModalShown, setOcrModalShown ] = useState(false);
+    const [ textContent, setTextContent ] = useState<string | null>(null);
+    const supportsOcr = attachment.role === "image" || attachment.role === "file";
 
     function refresh() {
         content_renderer.getRenderedContent(attachment, { imageHasZoom: isFullDetail })
             .then(({ $renderedContent }) => {
                 contentWrapper.current?.replaceChildren(...$renderedContent);
             });
+
+        if (attachment.role === "file") {
+            attachment.getBlob().then(blob => setTextContent(blob?.content ?? null));
+        }
     }
 
     useEffect(refresh, [ attachment ]);
@@ -181,7 +191,11 @@ function AttachmentInfo({ attachment, isFullDetail }: { attachment: FAttachment,
         <div className="attachment-detail-widget">
             <div className={`attachment-detail-wrapper ${isFullDetail ? "full-detail" : "list-view"} ${attachment.utcDateScheduledForErasureSince ? "scheduled-for-deletion" : ""}`}>
                 <div className="attachment-title-line">
-                    <AttachmentActions attachment={attachment} copyAttachmentLinkToClipboard={copyAttachmentLinkToClipboard} />
+                    <AttachmentActions
+                        attachment={attachment}
+                        copyAttachmentLinkToClipboard={copyAttachmentLinkToClipboard}
+                        onShowOcr={supportsOcr ? () => setOcrModalShown(true) : undefined}
+                    />
                     <h4 className="attachment-title">
                         {!isFullDetail ? (
                             <NoteLink
@@ -205,8 +219,25 @@ function AttachmentInfo({ attachment, isFullDetail }: { attachment: FAttachment,
                 </div>
 
                 {attachment.utcDateScheduledForErasureSince && <DeletionAlert utcDateScheduledForErasureSince={attachment.utcDateScheduledForErasureSince} />}
+                {textContent && <TextPreview content={textContent} />}
                 <div ref={contentWrapper} className="attachment-content-wrapper" />
             </div>
+
+            {supportsOcr && (
+                <Modal
+                    className="ocr-text-modal"
+                    title={t("ocr.extracted_text_title")}
+                    show={ocrModalShown}
+                    onHidden={() => setOcrModalShown(false)}
+                    size="lg"
+                    scrollable
+                >
+                    <TextRepresentation
+                        textUrl={`ocr/attachments/${attachment.attachmentId}/text`}
+                        processUrl={`ocr/process-attachment/${attachment.attachmentId}`}
+                    />
+                </Modal>
+            )}
         </div>
     );
 }
@@ -228,7 +259,7 @@ function DeletionAlert({ utcDateScheduledForErasureSince }: { utcDateScheduledFo
     );
 }
 
-function AttachmentActions({ attachment, copyAttachmentLinkToClipboard }: { attachment: FAttachment, copyAttachmentLinkToClipboard: () => void }) {
+function AttachmentActions({ attachment, copyAttachmentLinkToClipboard, onShowOcr }: { attachment: FAttachment, copyAttachmentLinkToClipboard: () => void, onShowOcr?: () => void }) {
     const isElectron = utils.isElectron();
     const fileUploadRef = useRef<HTMLInputElement>(null);
 
@@ -262,6 +293,12 @@ function AttachmentActions({ attachment, copyAttachmentLinkToClipboard }: { atta
                     icon="bx bx-link"
                     onClick={copyAttachmentLinkToClipboard}
                 >{t("attachments_actions.copy_link_to_clipboard")}</FormListItem>
+                {onShowOcr && (
+                    <FormListItem
+                        icon="bx bx-text"
+                        onClick={onShowOcr}
+                    >{t("ocr.view_extracted_text")}</FormListItem>
+                )}
                 <FormDropdownDivider />
 
                 <FormListItem

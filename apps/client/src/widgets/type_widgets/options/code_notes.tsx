@@ -8,48 +8,87 @@ import { useEffect, useMemo, useRef } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import mime_types from "../../../services/mime_types";
-import Column from "../../react/Column";
-import FormCheckbox from "../../react/FormCheckbox";
-import FormGroup from "../../react/FormGroup";
 import FormSelect from "../../react/FormSelect";
+import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useStaticTooltip, useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
-import AutoReadOnlySize from "./components/AutoReadOnlySize";
 import CheckboxList from "./components/CheckboxList";
+import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import codeNoteSample from "./samples/code_note.txt?raw";
 
 const SAMPLE_MIME = "application/typescript";
 
 export default function CodeNoteSettings() {
+    const [codeLineWrapEnabled, setCodeLineWrapEnabled] = useTriliumOptionBool("codeLineWrapEnabled");
+    const [codeNoteTabWidth] = useTriliumOption("codeNoteTabWidth");
+
     return (
         <>
-            <Editor />
-            <Appearance />
+            <Editor wordWrapping={codeLineWrapEnabled} setWordWrapping={setCodeLineWrapEnabled} />
+            <Appearance wordWrapping={codeLineWrapEnabled} indentSize={parseInt(codeNoteTabWidth) || 4} />
             <CodeMimeTypes />
-            <AutoReadOnlySize option="autoReadonlySizeCode" label={t("code_auto_read_only_size.label")} />
         </>
     );
 }
 
-function Editor() {
-    const [ vimKeymapEnabled, setVimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
+interface EditorProps {
+    wordWrapping: boolean;
+    setWordWrapping: (newValue: boolean) => void;
+}
+
+function Editor({ wordWrapping, setWordWrapping }: EditorProps) {
+    const [vimKeymapEnabled, setVimKeymapEnabled] = useTriliumOptionBool("vimKeymapEnabled");
+    const [autoReadonlySize, setAutoReadonlySize] = useTriliumOption("autoReadonlySizeCode");
+    const [codeNoteTabWidth, setCodeNoteTabWidth] = useTriliumOption("codeNoteTabWidth");
 
     return (
         <OptionsSection title={t("code-editor-options.title")}>
-            <FormGroup name="vim-keymap-enabled" description={t("vim_key_bindings.enable_vim_keybindings")}>
-                <FormCheckbox
-                    label={t("vim_key_bindings.use_vim_keybindings_in_code_notes")}
-                    currentValue={vimKeymapEnabled} onChange={setVimKeymapEnabled}
+            <OptionsRowWithToggle
+                name="word-wrap"
+                label={t("code_theme.word_wrapping")}
+                currentValue={wordWrapping}
+                onChange={setWordWrapping}
+            />
+
+            {/* Avoid using "code" in the name of numeric inputs to prevent KeepassXC from triggering. */}
+            <OptionsRow name="editor-tab-width" label={t("code-editor-options.tab_width")}>
+                <FormTextBoxWithUnit
+                    type="number" min={1} max={16} step={1}
+                    unit={t("code-editor-options.tab_width_unit")}
+                    currentValue={codeNoteTabWidth}
+                    onChange={setCodeNoteTabWidth}
+                    onBlur={setCodeNoteTabWidth}
                 />
-            </FormGroup>
+            </OptionsRow>
+
+            <OptionsRow name="source-readonly-threshold" label={t("code_auto_read_only_size.label")} description={t("text_auto_read_only_size.description")}>
+                <FormTextBoxWithUnit
+                    type="number" min={0}
+                    unit={t("text_auto_read_only_size.unit")}
+                    currentValue={autoReadonlySize}
+                    onBlur={setAutoReadonlySize}
+                />
+            </OptionsRow>
+
+            <OptionsRowWithToggle
+                name="vim-keymap-enabled"
+                label={t("vim_key_bindings.use_vim_keybindings_in_code_notes")}
+                description={t("vim_key_bindings.enable_vim_keybindings")}
+                currentValue={vimKeymapEnabled}
+                onChange={setVimKeymapEnabled}
+            />
         </OptionsSection>
     );
 }
 
-function Appearance() {
-    const [ codeNoteTheme, setCodeNoteTheme ] = useTriliumOption("codeNoteTheme");
-    const [ codeLineWrapEnabled, setCodeLineWrapEnabled ] = useTriliumOptionBool("codeLineWrapEnabled");
+interface AppearanceProps {
+    wordWrapping: boolean;
+    indentSize: number;
+}
+
+function Appearance({ wordWrapping, indentSize }: AppearanceProps) {
+    const [codeNoteTheme, setCodeNoteTheme] = useTriliumOption("codeNoteTheme");
 
     const themes = useMemo(() => {
         return ColorThemes.map(({ id, name }) => ({
@@ -60,30 +99,20 @@ function Appearance() {
 
     return (
         <OptionsSection title={t("code_theme.title")}>
-            <div className="row" style={{ marginBottom: "15px" }}>
-                <FormGroup name="color-scheme" label={t("code_theme.color-scheme")} className="col-md-6" style={{ marginBottom: 0 }}>
-                    <FormSelect
-                        values={themes}
-                        keyProperty="id" titleProperty="name"
-                        currentValue={codeNoteTheme} onChange={setCodeNoteTheme}
-                    />
-                </FormGroup>
+            <OptionsRow name="color-scheme" label={t("code_theme.color-scheme")}>
+                <FormSelect
+                    values={themes}
+                    keyProperty="id" titleProperty="name"
+                    currentValue={codeNoteTheme} onChange={setCodeNoteTheme}
+                />
+            </OptionsRow>
 
-                <Column className="side-checkbox">
-                    <FormCheckbox
-                        name="word-wrap"
-                        label={t("code_theme.word_wrapping")}
-                        currentValue={codeLineWrapEnabled} onChange={setCodeLineWrapEnabled}
-                    />
-                </Column>
-            </div>
-
-            <CodeNotePreview wordWrapping={codeLineWrapEnabled} themeName={codeNoteTheme} />
+            <CodeNotePreview wordWrapping={wordWrapping} themeName={codeNoteTheme} indentSize={indentSize} />
         </OptionsSection>
     );
 }
 
-function CodeNotePreview({ themeName, wordWrapping }: { themeName: string, wordWrapping: boolean }) {
+function CodeNotePreview({ themeName, wordWrapping, indentSize }: { themeName: string, wordWrapping: boolean, indentSize: number }) {
     const editorRef = useRef<CodeMirror>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -110,6 +139,13 @@ function CodeNotePreview({ themeName, wordWrapping }: { themeName: string, wordW
     }, [ wordWrapping ]);
 
     useEffect(() => {
+        const editor = editorRef.current;
+        if (!editor) return;
+        editor.setIndentSize(indentSize);
+        editor.setText(reindentSample(codeNoteSample, indentSize));
+    }, [ indentSize ]);
+
+    useEffect(() => {
         if (themeName?.startsWith(DEFAULT_PREFIX)) {
             const theme = getThemeById(themeName.substring(DEFAULT_PREFIX.length));
             if (theme) {
@@ -125,6 +161,15 @@ function CodeNotePreview({ themeName, wordWrapping }: { themeName: string, wordW
             style={{ margin: 0, height: "200px" }}
         />
     );
+}
+
+const SAMPLE_BASE_INDENT = 4;
+
+function reindentSample(sample: string, indentSize: number): string {
+    return sample.replace(/^( +)/gm, (match) => {
+        const level = match.length / SAMPLE_BASE_INDENT;
+        return " ".repeat(Math.round(level) * indentSize);
+    });
 }
 
 function CodeMimeTypes() {

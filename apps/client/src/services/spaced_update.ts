@@ -77,16 +77,22 @@ export default class SpacedUpdate {
         }
 
         if (Date.now() - this.lastUpdated > this.updateInterval) {
+            // Update these BEFORE the async call to prevent race conditions.
+            // Multiple setTimeout callbacks may be pending from recursive scheduleUpdate() calls.
+            // Without this, they would all pass the time check during the await and trigger multiple requests.
+            this.lastUpdated = Date.now();
+            this.changed = false;
+
             this.onStateChanged("saving");
             try {
                 await this.updater();
                 this.onStateChanged("saved");
-                this.changed = false;
             } catch (e) {
+                // Restore changed flag on error so a retry can happen
+                this.changed = true;
                 this.onStateChanged("error");
                 logError(getErrorMessage(e));
             }
-            this.lastUpdated = Date.now();
         } else {
             // update isn't triggered but changes are still pending, so we need to schedule another check
             this.scheduleUpdate();

@@ -4,6 +4,7 @@ import myScryptService from "./my_scrypt.js";
 import { randomSecureToken, toBase64 } from "../utils.js";
 import passwordEncryptionService from "./password_encryption.js";
 import { ChangePasswordResponse } from "@triliumnext/commons";
+import { t } from "i18next";
 
 function isPasswordSet() {
     return !!sql.getValue("SELECT value FROM options WHERE name = 'passwordVerificationHash'");
@@ -17,7 +18,7 @@ function changePassword(currentPassword: string, newPassword: string): ChangePas
     if (!passwordEncryptionService.verifyPassword(currentPassword)) {
         return {
             success: false,
-            message: "Given current password doesn't match hash"
+            message: t("password.incorrect")
         };
     }
 

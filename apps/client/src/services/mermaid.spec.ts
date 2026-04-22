@@ -32,4 +32,9 @@ describe("Mermaid", () => {
         `;
         expect(postprocessMermaidSvg(before)).toBe(after);
     });
+
+    it("replaces &nbsp; with numeric entity for valid XML", () => {
+        expect(postprocessMermaidSvg("<text>a&nbsp;b&nbsp;&nbsp;c</text>"))
+            .toBe("<text>a&#160;b&#160;&#160;c</text>");
+    });
 });

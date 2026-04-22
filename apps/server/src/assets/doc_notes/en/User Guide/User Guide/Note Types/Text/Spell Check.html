@@ -1,0 +1,86 @@
+<p>Trilium supports spell checking for your notes. How it works depends on
+  whether you're using the <strong>desktop application</strong> (Electron)
+  or accessing Trilium through a <strong>web browser</strong>.</p>
+<h2>Desktop</h2>
+<p>The desktop app uses Chromium's built-in spellchecker. You can configure
+  it from <em>Options</em> → <em>Spell Check</em>.</p>
+<h3>Enabling spell check</h3>
+<p>Toggle <em>Check spelling</em> to enable or disable the spellchecker. A
+  restart is required for changes to take effect — use the restart button
+  at the bottom of the section.</p>
+<h3>Choosing languages</h3>
+<p>When spell check is enabled, a <em>Spell Check Languages</em> section appears
+  listing all languages available on your system. Select one or more languages
+  by checking the boxes. The spellchecker will accept words that are valid
+  in <em>any</em> of the selected languages.</p>
+<p>The available languages depend on your operating system's installed language
+  packs. For example, on Windows you can add languages through <em>Options</em> → <em>Time &amp; Language</em> → <em>Language &amp; Region</em> → <em>Add a language</em>.</p>
+<aside
+class="admonition note">
+  <p>The changes take effect only after restarting the application.</p>
+  </aside>
+  <h3>Custom dictionary</h3>
+  <aside class="admonition tip">
+    <p>This function is available starting with Trilium v0.103.0.</p>
+  </aside>
+  <p>Words you add to the dictionary (e.g. via the right-click context menu
+    → "Add to dictionary") are stored in a <strong>synced note</strong> inside
+    Trilium. This means your custom dictionary automatically syncs across all
+    your devices.</p>
+  <p>You can view and edit the dictionary directly from <em>Settings</em> → <em>Spell Check</em> → <em>Custom Dictionary</em> → <em>Edit dictionary</em>.
+    This opens the underlying note, which contains one word per line. You can
+    add, remove, or modify entries as you like.</p>
+  <aside class="admonition note">
+    <p>Changes to the custom dictionary (whether from the editor or the context
+      menu) take effect after restarting the application.</p>
+  </aside>
+  <h4>How the custom dictionary works</h4>
+  <ul>
+    <li>When you right-click a misspelled word and choose "Add to dictionary",
+      the word is saved both to Electron's local spellchecker and to the synced
+      dictionary note.</li>
+    <li>On startup, Trilium loads all words from the dictionary note into the
+      spellchecker session.</li>
+    <li>If Trilium detects words in Electron's local dictionary but the dictionary
+      note is empty (e.g. on first use), it performs a <strong>one-time import</strong> of
+      those words into the note.</li>
+    <li>Words that are in Electron's local dictionary but <em>not</em> in the note
+      (e.g. you removed them manually) are cleaned up from the local dictionary
+      on startup.</li>
+  </ul>
+  <h4>Known limitations</h4>
+  <p>On Windows and macOS, Electron delegates "Add to dictionary" to the operating
+    system's user dictionary. This means:</p>
+  <ul>
+    <li>Words added via the context menu are also written to the OS-level dictionary
+      (e.g. <code spellcheck="false">%APPDATA%\Microsoft\Spelling\&lt;language&gt;\default.dic</code> on
+      Windows).</li>
+    <li><strong>Removing a word</strong> from the Trilium dictionary note prevents
+      it from being loaded into the spellchecker on next startup, but does <em>not</em> remove
+      it from the OS dictionary. The word may still be accepted by the OS spellchecker
+      until you remove it from the OS dictionary manually.</li>
+  </ul>
+  <h2>Web browser</h2>
+  <p>When accessing Trilium through a web browser, spell checking is handled
+    entirely by the browser itself. Trilium does not control the browser's
+    spellchecker — language selection, dictionaries, and all other settings
+    are managed through your browser's preferences.</p>
+  <p>The Spell Check settings page in Trilium will indicate that these options
+    apply only to desktop builds.</p>
+  <h2>Frequently asked questions</h2>
+  <h3>Do I need to restart after every change?</h3>
+  <p>Yes. Spell check language selection and the custom dictionary are loaded
+    once at startup. Any changes require a restart to take effect.</p>
+  <h3>Can I use multiple spell check languages at the same time?</h3>
+  <p>Yes. Select as many languages as you need from the checklist. The spellchecker
+    will accept words from any of the selected languages.</p>
+  <h3>My custom words disappeared after syncing to a new device — what happened?</h3>
+  <p>On the first launch of a new device, Trilium may import existing local
+    dictionary words into the note. If the note already has words from another
+    device (via sync), those are preserved. Make sure sync completes before
+    restarting the application on a new device.</p>
+  <h3>I removed a word from the dictionary note but it's still accepted</h3>
+  <p>This is likely due to the OS-level dictionary retaining the word (see
+    <a
+    href="#known-limitations">Known limitations</a>above). You can manually remove it from your operating
+      system's user dictionary.</p>

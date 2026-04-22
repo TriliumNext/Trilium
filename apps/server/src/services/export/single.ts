@@ -34,6 +34,21 @@ function exportSingleNote(taskContext: TaskContext<"export">, branch: BBranch, f
     taskContext.taskSucceeded(null);
 }
 
+/**
+ * Extension fallback for MIME types the `mime-types` package doesn't recognize —
+ * mostly Trilium's `text/x-` custom MIMEs.
+ */
+export function mapCodeMimeToExtension(mime: string): string | null {
+    switch (mime) {
+        case "text/x-markdown":
+        case "text/markdown":
+        case "text/x-gfm":
+            return "md";
+        default:
+            return null;
+    }
+}
+
 export function mapByNoteType(note: BNote, content: string | Buffer<ArrayBufferLike>, format: ExportFormat) {
     let payload, extension, mime;
 
@@ -60,7 +75,11 @@ export function mapByNoteType(note: BNote, content: string | Buffer<ArrayBufferL
         }
     } else if (note.type === "code") {
         payload = content;
-        extension = mimeTypes.extension(note.mime) || "code";
+        // Our own map wins over the `mime-types` lookup so markdown MIMEs get
+        // the conventional `.md` rather than `.mkd` (what the lib returns for
+        // `text/x-markdown`) or `.code` (what the fallback produced when the
+        // lib didn't recognize `text/markdown` at all).
+        extension = mapCodeMimeToExtension(note.mime) || mimeTypes.extension(note.mime) || "code";
         mime = note.mime;
     } else if (note.type === "canvas") {
         payload = content;

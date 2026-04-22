@@ -1,7 +1,7 @@
 {
     "get-started": {
         "title": "Ξεκινήστε",
-        "desktop_title": "Κατεβάστε την εφαρμογή desktop (v{{version}})",
+        "desktop_title": "Κατεβάστε την desktop εφαρμογή (v{{version}})",
         "architecture": "Αρχιτεκτονική:",
         "older_releases": "Δείτε παλαιότερες εκδόσεις",
         "server_title": "Ρυθμίστε έναν server για πρόσβαση σε πολλαπλές συσκευές"

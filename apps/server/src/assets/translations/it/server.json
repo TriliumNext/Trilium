@@ -94,7 +94,8 @@
     "toggle-ribbon-tab-note-map": "Mostra/Nascondi la mappa delle note",
     "toggle-ribbon-tab-note-info": "Mostra/Nascondi le informazioni sulla nota",
     "toggle-ribbon-tab-note-paths": "Mostra/Nascondi i percorsi della nota",
-    "toggle-ribbon-tab-similar-notes": "Mostra/Nascondi le note simili"
+    "toggle-ribbon-tab-similar-notes": "Mostra/Nascondi le note simili",
+    "save-named-revision": "Salva Revisione con Nome"
   },
   "hidden-subtree": {
     "options-title": "Opzioni",
@@ -102,7 +103,7 @@
     "shortcuts-title": "Scorciatoie",
     "text-notes": "Note di testo",
     "code-notes-title": "Note di codice",
-    "images-title": "Immagini",
+    "images-title": "Media",
     "spellcheck-title": "Controllo ortografico",
     "password-title": "Password",
     "multi-factor-authentication-title": "Autenticazione a più fattori",
@@ -148,7 +149,11 @@
     "script-launcher-title": "Scorciatoie degli script",
     "command-palette": "Apri tavolozza comandi",
     "zen-mode": "Modalità Zen",
-    "tab-switcher-title": "Selettore scheda"
+    "tab-switcher-title": "Selettore scheda",
+    "llm-chat-history-title": "Cronologia chat IA",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "Chat con IA",
+    "custom-dictionary-title": "Dizionario personalizzato"
   },
   "notes": {
     "new-note": "Nuova nota",
@@ -194,7 +199,10 @@
     "last-updated": "Ultimo aggiornamento il {{- date}}",
     "subpages": "Sottopagine:",
     "on-this-page": "In questa pagina",
-    "expand": "Espandi"
+    "expand": "Espandi",
+    "toggle-navigation": "Attiva/disattiva la navigazione",
+    "toggle-toc": "Mostra/Nascondi sommario",
+    "logo-alt": "Logo"
   },
   "keyboard_actions": {
     "back-in-note-history": "Naviga alla nota precedente della cronologia",
@@ -300,7 +308,8 @@
     "toggle-zen-mode": "Abilita/disabilita la modalità Zen (Interfaccia minimale per una scrittura senza distrazioni)",
     "toggle-left-note-tree-panel": "Mostra/Nascondi il pannello di sinistra (albero delle note)",
     "toggle-classic-editor-toolbar": "Mostra/Nascondi il pannello della formattazione per l'editor con la barra degli strumenti fissa",
-    "unhoist": "Rimuovi qualsiasi ancoraggio"
+    "unhoist": "Rimuovi qualsiasi ancoraggio",
+    "save-named-revision": "Salva una revisione con nome della nota attiva"
   },
   "desktop": {
     "instance_already_running": "C'è già una istanza in esecuzione, verrà mostrata."
@@ -400,7 +409,8 @@
   },
   "quarterNumber": "Quadrimestre n. {quarterNumber}",
   "special_notes": {
-    "search_prefix": "Ricerca:"
+    "search_prefix": "Ricerca:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "L'host del server di sincronizzazione non è impostato. Configurare prima la sincronizzazione.",
@@ -437,5 +447,21 @@
   "sql_init": {
     "db_not_initialized_desktop": "Database non inizializzato, seguire le istruzioni a schermo.",
     "db_not_initialized_server": "Database non inizializzato, visitare la pagina di configurazione - http://[host-del-tuo-server]:{{port}} per ricevere istruzioni su come inizializzare Trilium."
+  },
+  "script": {
+    "wrong-environment": "Impossibile eseguire la nota \"{{- noteTitle}}\" ({{- noteId}}). Si tratta di uno script {{- actualEnv}}, ma si è tentato di eseguirlo nell'ambiente {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Errore in {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" è una parola chiave riservata. Per cercare un valore letterale, usa le virgolette: \"{{- token}}\"",
+      "cannot-compare-with": "non è paragonabile a \"{{- token}}\". Per cercare un valore letterale, usa le virgolette: \"{{- token}}\"",
+      "misplaced-expression": "Espressione \"{{- token}}\" errata o incompleta",
+      "fulltext-after-expression": "\"{{- token}}\" non è un'espressione valida. Per cercare del testo, inseriscilo prima dei filtri degli attributi (ad esempio, \"{{- token}} #label\" invece di \"#label {{- token}}\").",
+      "unrecognized-expression": "Espressione non riconosciuta \"{{- token}}\""
+    }
+  },
+  "password": {
+    "incorrect": "La password inserita non è corretta."
   }
 }

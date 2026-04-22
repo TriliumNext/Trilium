@@ -35,27 +35,27 @@ personal.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-## ⏬ Download
-- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
+## ⏬ Descarrega
+- [Última versió](https://github.com/TriliumNext/Trilium/releases/latest) –
+  versió estable, recomanada per a la majoria d'usuaris.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
   unstable development version, updated daily with the latest features and
   fixes.
 
-## 📚 Documentation
+## 📚 Documentació
 
-**Visit our comprehensive documentation at
+**Visiteu la nostra documentació completa a
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
-Our documentation is available in multiple formats:
-- **Online Documentation**: Browse the full documentation at
+La nostra documentació està disponible en diversos formats:
+- **Documentació en línia**: Consulteu la documentació completa a
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
-- **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
-  this repository
+- **Ajuda a l'aplicació**: Premeu `F1` dins de Trilium per accedir directament a
+  la documentació a l'aplicació.
+- **GitHub**: Navega per la [Guia d'usuari](./User%20Guide/User%20Guide/)
+  d'aquest repositori
 
-### Quick Links
+### Enllaços ràpids
 - [Getting Started Guide](https://docs.triliumnotes.org/)
 - [Installation Instructions](https://docs.triliumnotes.org/user-guide/setup)
 - [Docker
@@ -88,8 +88,8 @@ Our documentation is available in multiple formats:
   [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
   can be used for note organization, querying and advanced
   [scripting](https://docs.triliumnotes.org/user-guide/scripts)
-* UI available in English, German, Spanish, French, Romanian, and Chinese
-  (simplified and traditional)
+* Interfície disponible en anglès, alemany, espanyol, francès, romanès i xinès
+  (simplificat i tradicional)
 * Direct [OpenID and TOTP
   integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
   more secure login

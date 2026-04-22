@@ -10,11 +10,11 @@ import { useChildNotes, useNote, useNoteIcon, useNoteLabelBoolean } from "../rea
 import NoteLink from "../react/NoteLink";
 import ResponsiveContainer from "../react/ResponsiveContainer";
 import { CustomNoteLauncher, launchCustomNoteLauncher } from "./GenericButtons";
-import { LaunchBarContext, LaunchBarDropdownButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
+import { LaunchBarContext, LaunchBarDropdownButton, launcherContextMenuHandler, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
 const PARENT_NOTE_ID = "_lbBookmarks";
 
-export default function BookmarkButtons() {
+export default function BookmarkButtons({ launcherNote }: LauncherNoteProps) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
     const style = useMemo<CSSProperties>(() => ({
         display: "flex",
@@ -22,20 +22,27 @@ export default function BookmarkButtons() {
         contain: "none"
     }), [ isHorizontalLayout ]);
     const childNotes = useChildNotes(PARENT_NOTE_ID);
+    const bookmarks = childNotes?.map(childNote => <SingleBookmark key={childNote.noteId} note={childNote} />);
+    const showContextMenu = launcherContextMenuHandler(launcherNote);
 
     return (
         <ResponsiveContainer
             desktop={
-                <div style={style}>
-                    {childNotes?.map(childNote => <SingleBookmark key={childNote.noteId} note={childNote} />)}
+                <div
+                    style={style}
+                    // Only trigger on empty container area; individual bookmark buttons handle their own context menu.
+                    onContextMenu={(e) => e.target === e.currentTarget && showContextMenu?.(e)}
+                >
+                    {bookmarks}
                 </div>
             }
             mobile={
                 <LaunchBarDropdownButton
+                    launcherNote={launcherNote}
                     icon="bx bx-bookmark"
                     title={t("bookmark_buttons.bookmarks")}
                 >
-                    {childNotes?.map(childNote => <SingleBookmark key={childNote.noteId} note={childNote} />)}
+                    {bookmarks}
                 </LaunchBarDropdownButton>
             }
         />
@@ -90,6 +97,7 @@ function BookmarkFolder({ note }: { note: FNote }) {
 
     return (
         <LaunchBarDropdownButton
+            launcherNote={note}
             icon={icon}
             title={title}
         >

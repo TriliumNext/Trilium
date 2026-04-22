@@ -21,6 +21,9 @@ export interface AttachmentRow {
     encoding?: "base64";
 }
 
+export const REVISION_SOURCES = ["auto", "manual", "etapi", "llm", "restore"] as const;
+export type RevisionSource = (typeof REVISION_SOURCES)[number];
+
 export interface RevisionRow {
     revisionId?: string;
     noteId: string;
@@ -28,6 +31,8 @@ export interface RevisionRow {
     mime: string;
     isProtected?: boolean;
     title: string;
+    description?: string;
+    source?: RevisionSource;
     blobId?: string;
     dateLastEdited?: string;
     dateCreated?: string;
@@ -72,6 +77,7 @@ export interface BlobRow {
     blobId: string;
     content: string | Buffer;
     contentLength: number;
+    textRepresentation?: string | null;
     dateModified: string;
     utcDateModified: string;
 }
@@ -122,7 +128,8 @@ export const ALLOWED_NOTE_TYPES = [
     "webView",
     "code",
     "mindMap",
-    "spreadsheet"
+    "spreadsheet",
+    "llmChat"
 ] as const;
 export type NoteType = (typeof ALLOWED_NOTE_TYPES)[number];
 

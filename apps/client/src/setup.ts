@@ -99,7 +99,7 @@ class SetupController {
     }
 
     private async finish() {
-        const syncServerHost = this.syncServerHostInput.value.trim();
+        const syncServerHost = this.syncServerHostInput.value.trim().replace(/\/+$/, "");
         const syncProxy = this.syncProxyInput.value.trim();
         const password = this.passwordInput.value;
 

@@ -1,7 +1,33 @@
+const MAX_LOG_DEPTH = 3;
+
+/**
+ * Creates a JSON replacer that handles circular references and limits depth.
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Cyclic_object_value#examples
+ */
+function getCircularReplacer() {
+    const ancestors: object[] = [];
+    return function (this: object, _key: string, value: unknown) {
+        if (typeof value !== "object" || value === null) {
+            return value;
+        }
+        while (ancestors.length > 0 && ancestors[ancestors.length - 1] !== this) {
+            ancestors.pop();
+        }
+        if (ancestors.includes(value)) {
+            return "[Circular]";
+        }
+        if (ancestors.length >= MAX_LOG_DEPTH) {
+            return "[Object]";
+        }
+        ancestors.push(value);
+        return value;
+    };
+}
+
 export function formatLogMessage(message: string | object) {
     if (typeof message === "object") {
         try {
-            return JSON.stringify(message, null, 4);
+            return JSON.stringify(message, getCircularReplacer(), 4);
         } catch (e) {
             return message.toString();
         }

@@ -1,5 +1,6 @@
 import { getNoteIcon } from "@triliumnext/commons";
 
+import bundleService from "../services/bundle.js";
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
@@ -18,7 +19,7 @@ const RELATION = "relation";
  * end user. Those types should be used only for checking against, they are
  * not for direct use.
  */
-export type NoteType = "file" | "image" | "search" | "noteMap" | "launcher" | "doc" | "contentWidget" | "text" | "relationMap" | "render" | "canvas" | "mermaid" | "book" | "webView" | "code" | "mindMap" | "spreadsheet";
+export type NoteType = "file" | "image" | "search" | "noteMap" | "launcher" | "doc" | "contentWidget" | "text" | "relationMap" | "render" | "canvas" | "mermaid" | "book" | "webView" | "code" | "mindMap" | "spreadsheet" | "llmChat";
 
 export interface NotePathRecord {
     isArchived: boolean;
@@ -233,6 +234,16 @@ export default class FNote {
 
     get isArchived() {
         return this.hasAttribute("label", "archived");
+    }
+
+    /**
+     * Returns true if the note's metadata (title, icon) should not be editable.
+     * This applies to system notes like options, help, and launch bar configuration.
+     */
+    get isMetadataReadOnly() {
+        return utils.isLaunchBarConfig(this.noteId)
+            || this.noteId.startsWith("_help_")
+            || this.noteId.startsWith("_options");
     }
 
     getChildNoteIds() {
@@ -1014,7 +1025,6 @@ export default class FNote {
         const env = this.getScriptEnv();
 
         if (env === "frontend") {
-            const bundleService = (await import("../services/bundle.js")).default;
             return await bundleService.getAndExecuteBundle(this.noteId);
         } else if (env === "backend") {
             await server.post(`script/run/${this.noteId}`);
@@ -1057,6 +1067,10 @@ export default class FNote {
 
     isTriliumSqlite() {
         return this.mime === "text/x-sqlite;schema=trilium";
+    }
+
+    isMarkdown() {
+        return this.type === "code" && (this.mime === "text/markdown" || this.mime === "text/x-markdown" || this.mime === "text/x-gfm");
     }
 
     isTriliumScript() {

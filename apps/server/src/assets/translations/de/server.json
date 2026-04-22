@@ -103,7 +103,8 @@
     "show-cheatsheet": "Übersicht der Tastenkombinationen anzeigen",
     "find-in-text": "Suchleiste umschalten",
     "toggle-classic-editor-toolbar": "Schalte um zum Formatierungs-Tab für den Editor mit fester Werkzeugleiste",
-    "toggle-zen-mode": "Zen-Modus ein-/ausschalten (reduzierte Benutzeroberfläche für ablenkungsfreies Arbeiten)"
+    "toggle-zen-mode": "Zen-Modus ein-/ausschalten (reduzierte Benutzeroberfläche für ablenkungsfreies Arbeiten)",
+    "save-named-revision": "Speichere eine benannte Revision der aktuellen Notiz"
   },
   "login": {
     "title": "Anmeldung",
@@ -198,7 +199,8 @@
     "december": "Dezember"
   },
   "special_notes": {
-    "search_prefix": "Suche:"
+    "search_prefix": "Suche:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "Der Synchronisations-Server-Host ist nicht konfiguriert. Bitte konfiguriere zuerst die Synchronisation.",
@@ -226,7 +228,7 @@
     "go-to-previous-note-title": "Zur vorherigen Notiz gehen",
     "go-to-next-note-title": "Zur nächsten Notiz gehen",
     "new-note-title": "Neue Notiz",
-    "search-notes-title": "Notizen durchsuchen",
+    "search-notes-title": "Suche Notiz",
     "calendar-title": "Kalender",
     "recent-changes-title": "neue Änderungen",
     "bookmarks-title": "Lesezeichen",
@@ -240,7 +242,7 @@
     "shortcuts-title": "Tastenkürzel",
     "text-notes": "Text Notizen",
     "code-notes-title": "Code Notizen",
-    "images-title": "Bilder",
+    "images-title": "Medien",
     "spellcheck-title": "Rechtschreibprüfung",
     "password-title": "Passwort",
     "etapi-title": "ETAPI",
@@ -256,7 +258,11 @@
     "inbox-title": "Posteingang",
     "zen-mode": "Zen-Modus",
     "command-palette": "Befehlspalette öffnen",
-    "tab-switcher-title": "Tabauswahl"
+    "tab-switcher-title": "Tabauswahl",
+    "llm-chat-history-title": "KI-Chat Historie",
+    "custom-dictionary-title": "Benutzerdefiniertes Verzeichnis",
+    "llm-title": "KI / LLM",
+    "sidebar-chat-title": "KI-Chat"
   },
   "notes": {
     "new-note": "Neue Notiz",
@@ -410,14 +416,16 @@
     "zoom-in": "Verkleinern",
     "reset-zoom-level": "Zoom zurücksetzen",
     "copy-without-formatting": "Kopieren ohne Formatierung",
-    "force-save-revision": "Speichern der Notizrevision erzwingen"
+    "force-save-revision": "Speichern der Notizrevision erzwingen",
+    "save-named-revision": "Speichere benannte Revision"
   },
   "weekdayNumber": "Woche {weekNumber}",
   "quarterNumber": "Quartal {quarterNumber}",
   "migration": {
     "old_version": "Eine direkte Migration von Ihrer aktuellen Version wird nicht unterstützt. Bitte führen Sie zunächst ein Upgrade auf die neueste Version v0.60.4 durch und erst dann auf diese Version.",
     "error_message": "Fehler bei der Migration zu Version {{version}}: {{stack}}",
-    "wrong_db_version": "Die Version der Datenbank ({{version}}) ist neuer als die von der Anwendung erwartete Version ({{targetVersion}}), was bedeutet, dass diese mit einer neueren und inkompatiblen Version von Trilium erstellt wurde. Führen Sie ein Upgrade auf die neueste Version von Trilium durch, um dieses Problem zu beheben."
+    "wrong_db_version": "Die Version der Datenbank ({{version}}) ist neuer als die von der Anwendung erwartete Version ({{targetVersion}}), was bedeutet, dass diese mit einer neueren und inkompatiblen Version von Trilium erstellt wurde. Führen Sie ein Upgrade auf die neueste Version von Trilium durch, um dieses Problem zu beheben.",
+    "invalid_db_version": "Die Datenbankversion ist nicht lesbar, Ursache davon ist normalerweise eine defekte \"dbVersion\" der Datenbank. Eine Wiederherstellung aus einem Backup ist erforderlich."
   },
   "modals": {
     "error_title": "Fehler"
@@ -429,7 +437,10 @@
     "last-updated": "Zuletzt aktualisiert am {{- date}}",
     "subpages": "Unterseiten:",
     "on-this-page": "Auf dieser Seite",
-    "expand": "Erweitern"
+    "expand": "Erweitern",
+    "toggle-navigation": "Navigation umschalten",
+    "toggle-toc": "Inhaltsverzeichnis umschalten",
+    "logo-alt": "Logo"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Datenbank nicht initialisiert, bitte folge den Anweisungen auf dem Bildschirm.",
@@ -437,5 +448,21 @@
   },
   "desktop": {
     "instance_already_running": "Es läuft bereits eine Instanz, bitte beachte stattdessen diese Instanz."
+  },
+  "password": {
+    "incorrect": "Das eingegebene Passwort ist nicht korrekt."
+  },
+  "script": {
+    "wrong-environment": "Kann die Notiz \"{{- noteTitle}}\" ({{- noteId}}) nicht ausführen. Dies ist ein {{- actualEnv}} Skript, aber die Ausführung wurde im {{- expectedEnv}} versucht."
+  },
+  "search": {
+    "error": {
+      "in-context": "Fehler in {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" ist ein reserviertes Stichwort. Um eine Wortgenaue Suche durchzuführen, verwende Anführungszeichen \"{{- token}}\"",
+      "cannot-compare-with": "Vergleich mit \"{{- token}}\" nicht möglich. Um eine Wortgenaue Suche durchzuführen, verwende Anführungszeichen \"{{- token}}\"",
+      "misplaced-expression": "Fehlplatzierter oder unvollständiger Ausdruck \"{{- token}}\"",
+      "fulltext-after-expression": "\"{{- token}}\" ist kein valider Ausdruck. Um einen Text zu suchen, platziere ihn vor den Attributfiltern (z.B. \"{{- token}} #label\" anstatt \"#label {{- token}}\").",
+      "unrecognized-expression": "Nicht erkannter Ausdruck \"{{- token}}\""
+    }
   }
 }

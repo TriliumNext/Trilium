@@ -5,7 +5,7 @@ import type { Request } from "express";
 
 import ValidationError from "../../errors/validation_error.js";
 import config from "../../services/config.js";
-import { changeLanguage, getLocales } from "../../services/i18n.js";
+import { changeLanguage } from "../../services/i18n.js";
 import log from "../../services/log.js";
 import optionService from "../../services/options.js";
 import searchService from "../../services/search/services/search.js";
@@ -14,6 +14,7 @@ interface UserTheme {
     val: string; // value of the theme, used in the URL
     title: string; // title of the theme, displayed in the UI
     noteId: string; // ID of the note containing the theme
+    icon: string; // icon class of the note
 }
 
 // options allowed to be updated directly in the Options dialog
@@ -29,9 +30,13 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "theme",
     "codeBlockTheme",
     "codeBlockWordWrap",
+    "codeBlockTabWidth",
     "codeNoteTheme",
+    "codeNoteTabWidth",
+    "codeNoteIndentWithTabs",
     "syncServerHost",
     "syncServerTimeout",
+    "syncServerTimeoutTimeScale",
     "syncProxy",
     "hoistedNoteId",
     "mainFontSize",
@@ -94,9 +99,12 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "textNoteEmojiCompletionEnabled",
     "textNoteCompletionEnabled",
     "textNoteSlashCommandsEnabled",
+    "includeNoteDefaultBoxSize",
     "layoutOrientation",
     "backgroundEffects",
     "allowedHtmlTags",
+    "searchEnableFuzzyMatching",
+    "searchAutocompleteFuzzy",
     "redirectBareDomain",
     "showLoginInShareTheme",
     "splitEditorOrientation",
@@ -104,7 +112,13 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "experimentalFeatures",
     "newLayout",
     "mfaEnabled",
-    "mfaMethod"
+    "mfaMethod",
+    // LLM options
+    "llmProviders",
+    "mcpEnabled",
+    // OCR options
+    "ocrAutoProcessImages",
+    "ocrMinConfidence"
 ]);
 
 function getOptions() {
@@ -170,24 +184,22 @@ function getUserThemes() {
     const ret: UserTheme[] = [];
 
     for (const note of notes) {
+        const title = note.getTitleOrProtected();
         let value = note.getOwnedLabelValue("appTheme");
 
         if (!value) {
-            value = note.title.toLowerCase().replace(/[^a-z0-9]/gi, "-");
+            value = title.toLowerCase().replace(/[^a-z0-9]/gi, "-");
         }
 
         ret.push({
             val: value,
-            title: note.title,
-            noteId: note.noteId
+            title,
+            noteId: note.noteId,
+            icon: note.getIcon()
         });
     }
 
     return ret;
-}
-
-function getSupportedLocales() {
-    return getLocales();
 }
 
 function isAllowed(name: string) {
@@ -201,6 +213,5 @@ export default {
     getOptions,
     updateOption,
     updateOptions,
-    getUserThemes,
-    getSupportedLocales
+    getUserThemes
 };

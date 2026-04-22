@@ -66,14 +66,49 @@ async function initNotSyncedOptions(initialized: boolean, opts: NotSyncedOpts = 
     optionService.createOption("textNoteEditorType", "ckeditor-classic", true);
 
     optionService.createOption("syncServerHost", opts.syncServerHost || "", false);
-    optionService.createOption("syncServerTimeout", "120000", false);
+    optionService.createOption("syncServerTimeout", "120", false); // 120 seconds (2 minutes)
     optionService.createOption("syncProxy", opts.syncProxy || "", false);
+}
+
+/**
+ * Migrates a sync timeout value from milliseconds to seconds.
+ * Values >= 1000 are assumed to be in milliseconds (since 1000+ seconds = 16+ minutes is unlikely).
+ * TimeSelector stores values in seconds; the scale is only used for display.
+ *
+ * @returns The value in seconds and preferred display scale, or null if no migration is needed.
+ */
+export function migrateSyncTimeoutFromMilliseconds(milliseconds: number): { value: number; scale: number } | null {
+    if (isNaN(milliseconds) || milliseconds < 1000) {
+        return null;
+    }
+
+    const seconds = Math.round(milliseconds / 1000);
+
+    // Value is always stored in seconds; scale determines display unit
+    if (seconds >= 60 && seconds % 60 === 0) {
+        return { value: seconds, scale: 60 }; // display as minutes
+    }
+    return { value: seconds, scale: 1 }; // display as seconds
 }
 
 /**
  * Contains all the default options that must be initialized on new and existing databases (at startup). The value can also be determined based on other options, provided they have already been initialized.
  */
 const defaultOptions: DefaultOption[] = [
+    {
+        name: "syncServerTimeoutTimeScale",
+        value: (optionsMap) => {
+            const timeout = parseInt(optionsMap.syncServerTimeout || "120", 10);
+            const migrated = migrateSyncTimeoutFromMilliseconds(timeout);
+            if (migrated) {
+                optionService.setOption("syncServerTimeout", String(migrated.value));
+                log.info(`Migrated syncServerTimeout from ${timeout}ms to ${migrated.value}s`);
+                return String(migrated.scale);
+            }
+            return "60"; // default to minutes
+        },
+        isSynced: false
+    },
     { name: "revisionSnapshotTimeInterval", value: "600", isSynced: true },
     { name: "revisionSnapshotTimeIntervalTimeScale", value: "60", isSynced: true }, // default to Minutes
     { name: "revisionSnapshotNumberLimit", value: "-1", isSynced: true },
@@ -96,6 +131,8 @@ const defaultOptions: DefaultOption[] = [
     { name: "autoFixConsistencyIssues", value: "true", isSynced: false },
     { name: "vimKeymapEnabled", value: "false", isSynced: false },
     { name: "codeLineWrapEnabled", value: "true", isSynced: false },
+    { name: "codeNoteTabWidth", value: "4", isSynced: true },
+    { name: "codeNoteIndentWithTabs", value: "false", isSynced: true },
     {
         name: "codeNotesMimeTypes",
         value: '["text/x-csrc","text/x-c++src","text/x-csharp","text/css","text/x-elixir","text/x-go","text/x-groovy","text/x-haskell","text/html","message/http","text/x-java","application/javascript;env=frontend","application/javascript;env=backend","application/json","text/x-kotlin","text/x-markdown","text/x-perl","text/x-php","text/x-python","text/x-ruby",null,"text/x-sql","text/x-sqlite;schema=trilium","text/x-swift","text/xml","text/x-yaml","text/x-sh","application/typescript"]',
@@ -181,6 +218,7 @@ const defaultOptions: DefaultOption[] = [
         isSynced: false
     },
     { name: "codeBlockWordWrap", value: "false", isSynced: true },
+    { name: "codeBlockTabWidth", value: "4", isSynced: true },
 
     // Text note configuration
     { name: "textNoteEditorType", value: "ckeditor-balloon", isSynced: true },
@@ -188,6 +226,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteEmojiCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteSlashCommandsEnabled", value: "true", isSynced: true },
+    { name: "includeNoteDefaultBoxSize", value: "medium", isSynced: true },
 
     // HTML import configuration
     { name: "layoutOrientation", value: "vertical", isSynced: false },
@@ -197,6 +236,10 @@ const defaultOptions: DefaultOption[] = [
         value: JSON.stringify(SANITIZER_DEFAULT_ALLOWED_TAGS),
         isSynced: true
     },
+
+    // Search settings
+    { name: "searchEnableFuzzyMatching", value: "true", isSynced: true },
+    { name: "searchAutocompleteFuzzy", value: "false", isSynced: true },
 
     // Share settings
     { name: "redirectBareDomain", value: "false", isSynced: true },
@@ -209,7 +252,15 @@ const defaultOptions: DefaultOption[] = [
         ]),
         isSynced: true
     },
-    { name: "experimentalFeatures", value: "[]", isSynced: true }
+    { name: "experimentalFeatures", value: "[]", isSynced: true },
+
+    // AI / LLM
+    { name: "llmProviders", value: "[]", isSynced: true },
+    { name: "mcpEnabled", value: "false", isSynced: false },
+
+    // OCR options
+    { name: "ocrAutoProcessImages", value: "false", isSynced: true },
+    { name: "ocrMinConfidence", value: "0.75", isSynced: true },
 ];
 
 /**

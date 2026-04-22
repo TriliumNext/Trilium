@@ -200,7 +200,8 @@
   },
   "quarterNumber": "第 {quarterNumber} 季度",
   "special_notes": {
-    "search_prefix": "搜索:"
+    "search_prefix": "搜索:",
+    "llm_chat_prefix": "对话："
   },
   "test_sync": {
     "not-configured": "同步服务器主机未配置。请先配置同步。",
@@ -242,7 +243,7 @@
     "shortcuts-title": "快捷键",
     "text-notes": "文本笔记",
     "code-notes-title": "代码笔记",
-    "images-title": "图片",
+    "images-title": "媒体",
     "spellcheck-title": "拼写检查",
     "password-title": "密码",
     "multi-factor-authentication-title": "多因素认证",
@@ -258,7 +259,11 @@
     "inbox-title": "收件箱",
     "command-palette": "打开命令面板",
     "zen-mode": "禅模式",
-    "tab-switcher-title": "标签切换器"
+    "tab-switcher-title": "标签切换器",
+    "llm-chat-history-title": "AI对话历史",
+    "sidebar-chat-title": "AI对话",
+    "custom-dictionary-title": "自定义词典",
+    "llm-title": "AI / LLM"
   },
   "notes": {
     "new-note": "新建笔记",
@@ -292,7 +297,8 @@
   "migration": {
     "old_version": "由您当前版本的直接迁移不被支持。请先升级到最新的 v0.60.4 然后再到这个版本。",
     "error_message": "迁移到版本 {{version}} 时发生错误: {{stack}}",
-    "wrong_db_version": "数据库的版本（{{version}}）新于应用期望的版本（{{targetVersion}}），这意味着它由一个更加新的且不兼容的 Trilium 所创建。升级到最新版的 Trilium 以解决此问题。"
+    "wrong_db_version": "数据库的版本（{{version}}）新于应用期望的版本（{{targetVersion}}），这意味着它由一个更加新的且不兼容的 Trilium 所创建。升级到最新版的 Trilium 以解决此问题。",
+    "invalid_db_version": "数据库版本不是一个有效的数字。这通常表示数据库中的 'dbVersion' 选项已损坏。请从备份中恢复。"
   },
   "modals": {
     "error_title": "错误"
@@ -401,7 +407,10 @@
     "last-updated": "最后更新于 {{- date}}",
     "subpages": "子页面：",
     "on-this-page": "本页内容",
-    "expand": "展开"
+    "expand": "展开",
+    "toggle-navigation": "切换导航",
+    "toggle-toc": "切换目录",
+    "logo-alt": "Logo"
   },
   "hidden_subtree_templates": {
     "text-snippet": "文本片段",
@@ -437,5 +446,21 @@
   },
   "desktop": {
     "instance_already_running": "已经有一个运行中的实例，正在将焦点切换到该实例。"
+  },
+  "search": {
+    "error": {
+      "in-context": "{{-context}} 中出错：{{-message}}",
+      "reserved-keyword": "\"{{- token}}\" 是一个保留关键字。要搜索字面值，请使用引号：\"{{- token}}\"",
+      "cannot-compare-with": "无法与“{{- token}}”进行比较。要搜索字面值，请使用引号：“{{- token}}”",
+      "misplaced-expression": "位置错误或不完整的表达式“{{- token}}”",
+      "fulltext-after-expression": "“{{- token}}”不是有效表达式。要搜索文本，请将其放在属性筛选器之前（例如，“{{- token}} #label”而不是“#label {{- token}}”）。",
+      "unrecognized-expression": "无法识别的表达式“{{- token}}”"
+    }
+  },
+  "password": {
+    "incorrect": "您输入的密码不正确。"
+  },
+  "script": {
+    "wrong-environment": "无法执行笔记“{{-noteTitle}}”（{{-noteId}}）。这是一个 {{-actualEnv}} 脚本，但尝试在 {{-expectedEnv}} 中执行。"
   }
 }

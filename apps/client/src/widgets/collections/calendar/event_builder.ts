@@ -75,7 +75,7 @@ export async function buildEventsForCalendar(note: FNote, e: EventSourceFuncArg)
 
 
         if (dateNote.hasChildren()) {
-            const childNoteIds = await dateNote.getSubtreeNoteIds();
+            const childNoteIds = dateNote.getChildNoteIds();
             for (const childNoteId of childNoteIds) {
                 childNoteToDateMapping[childNoteId] = startDate;
             }

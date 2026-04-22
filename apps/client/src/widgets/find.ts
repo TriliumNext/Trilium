@@ -195,7 +195,9 @@ export default class FindWidget extends NoteContextAwareWidget {
             return;
         }
 
-        if (!SUPPORTED_NOTE_TYPES.includes(this.note?.type ?? "")) {
+        const isSourceView = this.noteContext?.viewScope?.viewMode === "source";
+
+        if (!isSourceView && !SUPPORTED_NOTE_TYPES.includes(this.note?.type ?? "")) {
             return;
         }
 
@@ -204,7 +206,7 @@ export default class FindWidget extends NoteContextAwareWidget {
         const isReadOnly = await this.noteContext?.isReadOnly();
 
         let selectedText = "";
-        if (this.note?.type === "code" && this.noteContext) {
+        if ((this.note?.type === "code" || isSourceView) && this.noteContext) {
             const codeEditor = await this.noteContext.getCodeEditor();
             selectedText = codeEditor.getSelectedText();
         } else {
@@ -249,6 +251,11 @@ export default class FindWidget extends NoteContextAwareWidget {
     }
 
     async getHandler() {
+        // In source view, all note types render via a read-only CodeMirror editor.
+        if (this.noteContext?.viewScope?.viewMode === "source") {
+            return this.codeHandler;
+        }
+
         switch (this.note?.type) {
             case "render":
                 return this.htmlHandler;
@@ -362,7 +369,9 @@ export default class FindWidget extends NoteContextAwareWidget {
     }
 
     isEnabled() {
-        return super.isEnabled() && SUPPORTED_NOTE_TYPES.includes(this.note?.type ?? "");
+        return super.isEnabled()
+            && (SUPPORTED_NOTE_TYPES.includes(this.note?.type ?? "")
+                || this.noteContext?.viewScope?.viewMode === "source");
     }
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {

@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "O Trilium Notes",
-    "homepage": "Strona domowa:",
-    "app_version": "Wersja aplikacji:",
-    "db_version": "Wersja bazy danych:",
-    "sync_version": "Wersja synchronizacji:",
-    "build_date": "Data kompilacji:",
-    "build_revision": "Rewizja:",
     "data_directory": "Katalog danych:"
   },
   "toast": {
@@ -78,15 +71,12 @@
   "delete_notes": {
     "cancel": "Anuluj",
     "close": "Zamknij",
-    "delete_notes_preview": "Podgląd usuwania notatek",
     "delete_all_clones_description": "Usuń również wszystkie klony (można cofnąć w oknie Ostatnie zmiany)",
     "erase_notes_description": "Normalne (miękkie) usuwanie jedynie oznacza notatki jako usunięte i można je przywrócić (w oknie Ostatnie zmiany) przez pewien czas. Zaznaczenie tej opcji spowoduje natychmiastowe wymazanie notatek i nie będzie możliwe ich przywrócenie.",
     "erase_notes_warning": "Wymaż notatki trwale (nie można cofnąć), w tym wszystkie klony. Wymusi to przeładowanie aplikacji.",
     "notes_to_be_deleted": "Następujące notatki zostaną usunięte ({{notesCount}})",
     "no_note_to_delete": "Żadna notatka nie zostanie usunięta (tylko klony).",
-    "broken_relations_to_be_deleted": "Następujące relacje zostaną zerwane i usunięte ({{ relationCount}})",
-    "ok": "OK",
-    "deleted_relation_text": "Notatka {{- note}} (do usunięcia) jest powiązana relacją {{- relation}} pochodzącą z {{- source}}."
+    "broken_relations_to_be_deleted": "Następujące relacje zostaną zerwane i usunięte ({{ relationCount}})"
   },
   "export": {
     "close": "Zamknij",
@@ -798,33 +788,6 @@
     "undelete_link": "przywróć",
     "confirm_undelete": "Czy chcesz przywrócić tę notatkę i jej pod-notatki?"
   },
-  "revisions": {
-    "note_revisions": "Wersje notatki",
-    "delete_all_revisions": "Usuń wszystkie wersje tej notatki",
-    "delete_all_button": "Usuń wszystkie wersje",
-    "help_title": "Pomoc dotycząca wersji notatki",
-    "confirm_delete_all": "Czy chcesz usunąć wszystkie wersje tej notatki?",
-    "no_revisions": "Brak wersji dla tej notatki...",
-    "restore_button": "Przywróć",
-    "diff_on": "Pokaż różnice",
-    "diff_off": "Pokaż treść",
-    "diff_on_hint": "Kliknij, aby pokazać różnice w źródle notatki",
-    "diff_off_hint": "Kliknij, aby pokazać treść notatki",
-    "diff_not_available": "Różnice nie są dostępne.",
-    "confirm_restore": "Czy chcesz przywrócić tę wersję? Spowoduje to nadpisanie obecnego tytułu i treści notatki tą wersją.",
-    "delete_button": "Usuń",
-    "confirm_delete": "Czy chcesz usunąć tę wersję?",
-    "revisions_deleted": "Wersje notatki zostały usunięte.",
-    "revision_restored": "Wersja notatki została przywrócona.",
-    "revision_deleted": "Wersja notatki została usunięta.",
-    "snapshot_interval": "Interwał zrzutu wersji notatki: {{seconds}}s.",
-    "maximum_revisions": "Limit zrzutów wersji notatki: {{number}}.",
-    "settings": "Ustawienia wersji notatki",
-    "download_button": "Pobierz",
-    "mime": "MIME: ",
-    "file_size": "Rozmiar pliku:",
-    "preview_not_available": "Podgląd nie jest dostępny dla tego typu notatki."
-  },
   "sort_child_notes": {
     "sort_children_by": "Sortuj elementy podrzędne według...",
     "sorting_criteria": "Kryteria sortowania",
@@ -1320,7 +1283,6 @@
   },
   "database_integrity_check": {
     "title": "Sprawdzanie integralności bazy danych",
-    "description": "To sprawdzi, czy baza danych nie jest uszkodzona na poziomie SQLite. Może to zająć trochę czasu, w zależności od rozmiaru bazy danych.",
     "check_button": "Sprawdź integralność bazy danych",
     "checking_integrity": "Sprawdzanie integralności bazy danych...",
     "integrity_check_succeeded": "Sprawdzanie integralności powiodło się - nie znaleziono problemów.",
@@ -1352,10 +1314,7 @@
     "note_tree_font": "Czcionka drzewa notatek",
     "note_detail_font": "Czcionka szczegółów notatki",
     "monospace_font": "Czcionka o stałej szerokości (kod)",
-    "note_tree_and_detail_font_sizing": "Zauważ, że rozmiar czcionki drzewa i szczegółów jest względny do ustawienia rozmiaru głównej czcionki.",
     "not_all_fonts_available": "Nie wszystkie wymienione czcionki mogą być dostępne w twoim systemie.",
-    "apply_font_changes": "Aby zastosować zmiany czcionek, kliknij na",
-    "reload_frontend": "przeładuj frontend",
     "generic-fonts": "Czcionki ogólne",
     "sans-serif-system-fonts": "Systemowe czcionki bezszeryfowe",
     "serif-system-fonts": "Systemowe czcionki szeryfowe",
@@ -1445,7 +1404,6 @@
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Limit czasu wymazywania załączników",
-    "attachment_auto_deletion_description": "Załączniki są automatycznie usuwane (i wymazywane), jeśli nie są już powiązane z ich notatką po określonym czasie.",
     "erase_attachments_after": "Wymaż nieużywane załączniki po:",
     "manual_erasing_description": "Możesz również wywołać wymazywanie ręcznie (bez uwzględniania zdefiniowanego powyżej limitu czasu):",
     "erase_unused_attachments_now": "Wymaż nieużywane załączniki teraz",
@@ -1457,7 +1415,6 @@
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "Limit czasu wymazywania notatek",
-    "note_erasure_description": "Usunięte notatki (oraz atrybuty, wersje...) są początkowo tylko oznaczane jako usunięte i możliwe jest ich odzyskanie z okna Ostatnie notatki. Po pewnym czasie usunięte notatki są \"wymazywane\", co oznacza, że ich zawartość nie jest już możliwa do odzyskania. To ustawienie pozwala skonfigurować długość okresu między usunięciem a wymazaniem notatki.",
     "erase_notes_after": "Wymaż notatki po:",
     "manual_erasing_description": "Możesz również wywołać wymazywanie ręcznie (bez uwzględniania zdefiniowanego powyżej limitu czasu):",
     "erase_deleted_notes_now": "Wymaż usunięte notatki teraz",
@@ -1547,7 +1504,6 @@
     "first-week-contains-first-thursday": "Pierwszy tydzień zawiera pierwszy czwartek roku",
     "first-week-has-minimum-days": "Pierwszy tydzień ma minimalną liczbę dni",
     "min-days-in-first-week": "Minimalna liczba dni w pierwszym tygodniu",
-    "first-week-info": "Pierwszy tydzień zawiera pierwszy czwartek roku bazuje na standardzie <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
     "first-week-warning": "Zmiana opcji pierwszego tygodnia może spowodować duplikację istniejących notatek tygodniowych, a istniejące notatki tygodniowe nie zostaną odpowiednio zaktualizowane.",
     "formatting-locale": "Format daty i liczb",
     "formatting-locale-auto": "Na podstawie języka aplikacji"
@@ -1665,20 +1621,13 @@
     "description": "Te opcje dotyczą tylko wersji desktopowych, przeglądarki będą używać własnego natywnego sprawdzania pisowni.",
     "enable": "Włącz sprawdzanie pisowni",
     "language_code_label": "Kod(y) języka",
-    "language_code_placeholder": "na przykład \"pl-PL\", \"en-US\"",
-    "multiple_languages_info": "Wiele języków można oddzielić przecinkiem, np. \"en-US, de-DE, pl\". ",
-    "available_language_codes_label": "Dostępne kody języków:",
     "restart-required": "Zmiany w opcjach sprawdzania pisowni wejdą w życie po ponownym uruchomieniu aplikacji."
   },
   "sync_2": {
     "config_title": "Konfiguracja synchronizacji",
     "server_address": "Adres instancji serwera",
     "timeout": "Limit czasu synchronizacji",
-    "timeout_unit": "milisekund",
     "proxy_label": "Serwer proxy synchronizacji (opcjonalnie)",
-    "note": "Uwaga",
-    "note_description": "Jeśli pozostawisz ustawienie proxy puste, zostanie użyte proxy systemowe (dotyczy tylko wersji desktop/electron).",
-    "special_value_description": "Inną wartością specjalną jest <code>noproxy</code>, która wymusza ignorowanie nawet proxy systemowego i respektuje <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
     "save": "Zapisz",
     "help": "Pomoc",
     "test_title": "Test synchronizacji",

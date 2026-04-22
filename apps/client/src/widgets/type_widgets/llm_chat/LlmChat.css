@@ -1,0 +1,13 @@
+.llm-chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.llm-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 1rem;
+}

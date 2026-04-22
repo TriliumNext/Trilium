@@ -82,6 +82,7 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
     hi: () => import("@fullcalendar/core/locales/hi"),
     ga: null,
     cn: () => import("@fullcalendar/core/locales/zh-cn"),
+    cs: () => import("@fullcalendar/core/locales/cs"),
     tw: () => import("@fullcalendar/core/locales/zh-tw"),
     ro: () => import("@fullcalendar/core/locales/ro"),
     ru: () => import("@fullcalendar/core/locales/ru"),
@@ -143,7 +144,12 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
             const event = api.getEventById(noteId);
             const note = froca.getNoteFromCache(noteId);
             if (!event || !note) continue;
-            event.setProp("title", note.title);
+            // Only update the title if it has actually changed.
+            // setProp() triggers FullCalendar's eventChange callback, which would
+            // re-save the event's dates and cause unwanted side effects.
+            if (event.title !== note.title) {
+                event.setProp("title", note.title);
+            }
         }
     });
 
@@ -298,6 +304,12 @@ function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean, c
     }, [ note, componentId ]);
 
     const onEventChange = useCallback(async (e: EventChangeArg) => {
+        // Only process actual date/time changes, not other property changes (e.g., title via setProp).
+        const datesChanged = e.oldEvent.start?.getTime() !== e.event.start?.getTime()
+            || e.oldEvent.end?.getTime() !== e.event.end?.getTime()
+            || e.oldEvent.allDay !== e.event.allDay;
+        if (!datesChanged) return;
+
         const { startDate, endDate } = parseStartEndDateFromEvent(e.event);
         if (!startDate) return;
 

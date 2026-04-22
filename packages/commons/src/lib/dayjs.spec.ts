@@ -14,6 +14,8 @@ import { describe, expect, it } from "vitest";
 describe("dayjs", () => {
     it("all dayjs locales are valid", async () => {
         for (const locale of LOCALES) {
+            if (locale.contentOnly) continue;
+
             const dayjsLoader = DAYJS_LOADER[locale.id];
             expect(dayjsLoader, `Locale ${locale.id} missing.`).toBeDefined();
 

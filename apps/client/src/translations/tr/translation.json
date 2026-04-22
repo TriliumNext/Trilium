@@ -1,13 +1,23 @@
 {
   "about": {
-    "homepage": "Anasayfa:",
-    "app_version": "Uygulama versiyonu:",
-    "db_version": "Veritabanı versiyonu:",
-    "title": "Trilium Notes Hakkında",
-    "sync_version": "Eşleştirme versiyonu:",
     "data_directory": "Veri dizini:",
-    "build_date": "Derleme tarihi:",
-    "build_revision": "Derleme revizyonu:"
+    "version_label": "Sürüm:",
+    "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
+    "build_info": "Derleme: {{buildDate}}, revizyon: <buildRevision />",
+    "contributors_label": "Katkıda bulunanlar:",
+    "contributor_roles": {
+      "lead-dev": "baş geliştirici",
+      "original-dev": "asıl geliştirici"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran, Zadam'ın projeden çekilmesinden sonra oluşturulan bir topluluk fork'u olan TriliumNext'i 2024'te kurdu. Zadam daha sonra orijinal repoyu TriliumNext ekibine devrederek her iki projeyi yeniden birleştirdi.",
+      "original-dev": "25 Aralık 2017'de Zadam, Trilium'un (kapsamlı bir not alma ve kişisel bilgi tabanı uygulaması olup adını İngilizcedeki Trillium [üçyaprak] çiçeğinden aldı ve çiçeğin adının aksine tek bir \"l\" ile yazılır) ilk beta sürümünü yayımladı. Mevcut not düzenleyicilerden memnun kalmadığı için 22 binden fazla GitHub yıldızı toplayan güçlü, kendi sunucusunda barındırılabilen hiyerarşik bir bilgi tabanı oluşturdu. 2024 yılında hayatının yoğunlaşmasıyla birlikte projeyi bakım moduna aldı."
+    },
+    "contributor_full_list": "Tüm topluluğu görüntüle",
+    "github_tooltip": "GitHub üzerinden hata bildirin, yeni özellik önerin veya katkıda bulunun",
+    "license_tooltip": "Lisansı görüntüle",
+    "donate": "Bağış yap",
+    "donate_tooltip": "Bu projeyi desteklemek için bağış yapın"
   },
   "branch_prefix": {
     "save": "Kaydet",
@@ -21,12 +31,32 @@
   },
   "delete_notes": {
     "close": "Kapat",
-    "delete_notes_preview": "Not önizlemesini sil",
     "delete_all_clones_description": "Tüm klonları da sil (son değişikliklerden geri alınabilir)",
-    "erase_notes_description": "Normal (yazılımsal) silme işlemi, notları yalnızca silinmiş olarak işaretler ve belirli bir süre içinde (son değişiklikler iletişim kutusunda) geri alınabilir. Bu seçeneği işaretlemek, notları hemen siler ve notların geri alınması mümkün olmaz."
+    "erase_notes_description": "Normal (yazılımsal) silme işlemi, notları yalnızca silinmiş olarak işaretler ve belirli bir süre içinde (son değişiklikler iletişim kutusunda) geri alınabilir. Bu seçeneği işaretlemek, notları hemen siler ve notların geri alınması mümkün olmaz.",
+    "erase_notes_warning": "Notları, tüm kopyaları da dahil olmak üzere kalıcı olarak silin (geri alınamaz). Bu işlem, uygulamanın yeniden yüklenmesine neden olacaktır.",
+    "notes_to_be_deleted": "Aşağıdaki notlar silinecektir. ({{notesCount}})",
+    "no_note_to_delete": "Hiçbir not silinmeyecek (sadece kopyaları silinecek).",
+    "broken_relations_to_be_deleted": "Aşağıdaki ilişkiler koparılacak ve silinecektir ({{ relationCount}})",
+    "cancel": "İptal"
   },
   "export": {
-    "close": "Kapat"
+    "close": "Kapat",
+    "export_note_title": "Notu dışa aktar",
+    "export_type_subtree": "Bu not ve tüm torunları",
+    "format_html": "HTML - tüm biçimlendirmeyi koruduğu için önerilir",
+    "format_html_zip": "ZIP arşivindeki HTML dosyaları - tüm biçimlendirmeyi koruduğu için bu yöntem önerilir.",
+    "format_markdown": "Markdown - bu, biçimlendirmenin büyük kısmını korur.",
+    "format_opml": "OPML - yalnızca metin için anahat değişim biçimi. Biçimlendirme, resimler ve dosyalar dahil edilmez.",
+    "opml_version_1": "OPML v1.0 - yalnızca düz metin",
+    "opml_version_2": "OPML v2.0 - HTML de destekler",
+    "export_type_single": "Yalnızca bu not, alt öğeleri olmadan",
+    "export": "Dışa aktar",
+    "choose_export_type": "Lütfen önce dışa aktarma türünü seçin",
+    "export_status": "Dışa aktarma durumu",
+    "export_in_progress": "Dışa aktarma devam ediyor: {{progressCount}}",
+    "export_finished_successfully": "Dışa aktarma başarıyla tamamlandı.",
+    "format_pdf": "PDF - yazdırma veya paylaşım amaçları için.",
+    "share-format": "Web yayını için HTML - paylaşılan notlarda kullanılan temayı kullanır, ancak statik bir web sitesi olarak yayınlanabilir."
   },
   "import": {
     "chooseImportFile": "İçe aktarım dosyası",
@@ -58,7 +88,9 @@
     "widget-render-error": {
       "title": "Özel React widget'ı çizilirken sorun yaşandı"
     },
-    "scripting-error": "Kullanıcı tanımlı betik hatası: {{title}}"
+    "scripting-error": "Kullanıcı tanımlı betik hatası: {{title}}",
+    "widget-missing-parent": "Özel widget'ın zorunlu '{{property}}' özelliği tanımlanmamıştır.\n\nBu komut dosyasının bir kullanıcı arayüzü öğesi olmadan çalıştırılması gerekiyorsa, bunun yerine '#run=frontendStartup' kullanın.",
+    "open-script-note": "Komut dosyası notunu aç"
   },
   "add_link": {
     "add_link": "Bağlantı ekle",
@@ -103,5 +135,32 @@
     "are_you_sure_remove_note": "\"{{title}}\" notunu ilişki haritasından kaldırmak istediğinize emin misiniz?. ",
     "also_delete_note": "Notu da sil",
     "if_you_dont_check": "Bunu işaretlemezseniz, not yalnızca ilişki haritasından kaldırılacaktır."
+  },
+  "help": {
+    "title": "Özet tablo",
+    "editShortcuts": "Klavye kısayollarını düzenle",
+    "noteNavigation": "Not içinde gezinme",
+    "goUpDown": "Notlar listesinde yukarı/aşağı gitmek",
+    "collapseExpand": "düğümü daralt/genişlet",
+    "notSet": "ayarlanmamış",
+    "goBackForwards": "tarihte geri/ileri git",
+    "showJumpToNoteDialog": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Şuraya Git\" iletişim kutusunu göster</a>",
+    "scrollToActiveNote": "Aktif nota kaydır",
+    "jumpToParentNote": "Üst nota git",
+    "collapseWholeTree": "Tüm not ağacını daralt",
+    "collapseSubTree": "Alt ağacı daralt",
+    "tabShortcuts": "Sekme kısayolları",
+    "newTabNoteLink": "Not bağlantısı notu yeni sekmede açılır",
+    "newTabWithActivationNoteLink": "Not bağlantısına tıklandığında not yeni bir sekmede açılır ve etkinleştirilir",
+    "onlyInDesktop": "Yalnızca masaüstünde (Electron derlemesi)",
+    "openEmptyTab": "boş sekmeyi aç",
+    "closeActiveTab": "aktif sekmeyi kapat",
+    "activateNextTab": "sonraki sekmeyi etkinleştir",
+    "activatePreviousTab": "önceki sekmeyi etkinleştir",
+    "creatingNotes": "Not oluşturma",
+    "createNoteAfter": "etkin nottan sonra yeni not oluşturma",
+    "createNoteInto": "aktif nota yeni bir alt not oluşturun",
+    "editBranchPrefix": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">prefix</a> değerini aktif not klonunun düzenle",
+    "movingCloningNotes": "Notları taşıma / klonlama"
   }
 }

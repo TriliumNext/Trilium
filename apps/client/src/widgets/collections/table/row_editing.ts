@@ -51,6 +51,8 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                 if (type === "labels") {
                     if (typeof newValue === "boolean") {
                         newValue = newValue ? "true" : "false";
+                    } else if (typeof newValue === "number") {
+                        newValue = String(newValue);
                     }
                     setLabel(noteId, name, newValue);
                 } else if (type === "relations") {

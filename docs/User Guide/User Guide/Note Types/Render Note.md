@@ -69,4 +69,4 @@ It's possible to refresh the note via:
 
 ## Examples
 
-*   <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Weight%20Tracker.md">Weight Tracker</a> which is present in the <a class="reference-link" href="../Advanced%20Usage/Database/Demo%20Notes.md">Demo Notes</a>.
+*   <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Weight%20Tracker.md">[missing note]</a> which is present in the <a class="reference-link" href="../Advanced%20Usage/Database/Demo%20Notes.md">[missing note]</a>.

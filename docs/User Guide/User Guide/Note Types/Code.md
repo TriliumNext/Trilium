@@ -26,6 +26,37 @@ Note that the list of languages is not immediately refreshed, you'd have to manu
 
 The list of languages is also shared with the [Code blocks](Text/Developer-specific%20formatting/Code%20blocks.md) feature of [Text](Text.md) notes.
 
+## Word wrap
+
+Long lines can be displayed on multiple lines:
+
+*   Globally for all code notes, from <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes._
+*   For a particular note, by going to the menu in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> and selecting _Word wrap_ and selecting the appropriate option:
+    *   _Auto_, to respect the global word wrap for code notes.
+    *   _On_ or _Off_, to change the state of the word wrap for this note regardless of the global option.
+
+## Adjusting options using the status bar
+
+> [!NOTE]
+> This feature is only available for the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>. For the old layout, the tab width can be adjusted at note level using the `#tabWidth` attribute, but re-indentation is not available.
+
+The status bar at the bottom of the editor shows the current indentation settings and language. Clicking on the indentation indicator opens a menu with three sections:
+
+1.  **Indent Using** — switch between Spaces and Tabs. If a per-note override is active, a "Reset to default" option appears.
+2.  **Display Width** — choose from preset widths (1, 2, 3, 4, 6, 8). Changes are saved as a per-note `#tabWidth` label.
+3.  **Re-indent Content To** — convert existing indentation to a different style. For example, re-indent a file from 4 spaces to 2 spaces, or from spaces to tabs. This rewrites the leading whitespace on every line while preserving alignment remainders.
+
+Clicking the language indicator lets you change the note's MIME type.
+
+### Re-indentation
+
+When you re-indent content, the editor:
+
+*   Measures the visual column width of each line's leading whitespace using the current style
+*   Calculates indent levels and any alignment remainder
+*   Rebuilds the leading whitespace in the target style
+*   Preserves non-leading whitespace, blank lines, and content without indentation
+
 ## Color schemes
 
 Since Trilium 0.94.0 the colors of code notes can be customized by going <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → Code Notes and looking for the _Appearance_ section.

@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "ट्रिलियम नोट्स के बारें में",
-    "build_date": "निर्माण की तारीख:",
-    "app_version": "ऐप वर्ज़न:",
-    "db_version": "DB वर्ज़न:",
-    "build_revision": "बिल्ड रिविज़न:",
-    "homepage": "मुखपृष्ठ:",
-    "sync_version": "सिंक वर्शन:",
     "data_directory": "डेटा डायरेक्टरी:"
   },
   "toast": {
@@ -94,7 +87,6 @@
     "if_you_dont_check": "अगर आप इसे चेक नहीं करते हैं, तो नोट केवल रिलेशन मैप से हटाया जाएगा।"
   },
   "delete_notes": {
-    "delete_notes_preview": "नोट्स प्रिव्यू डिलीट करें",
     "close": "बंद करें",
     "delete_all_clones_description": "सभी क्लोन भी डिलीट करें (हाल के बदलावों में वापस ला सकते हैं)",
     "erase_notes_description": "सामान्य (सॉफ्ट) डिलीट करने पर नोट केवल 'डिलीटेड' मार्क होते हैं और उन्हें एक निश्चित समय के भीतर (हाल के बदलावों वाले डायलॉग में) वापस लाया जा सकता है। इस विकल्प को चुनने पर नोट तुरंत पूरी तरह मिटा दिए जाएंगे और उन्हें वापस लाना संभव नहीं होगा।",
@@ -102,9 +94,7 @@
     "notes_to_be_deleted": "निम्नलिखित नोट डिलीट कर दिए जाएंगे ({{notesCount}})",
     "no_note_to_delete": "कोई भी नोट डिलीट नहीं होगा (केवल क्लोन हटाए जाएंगे)।",
     "broken_relations_to_be_deleted": "निम्नलिखित रिलेशन टूट जाएंगे और डिलीट हो जाएंगे ({{relationCount}})",
-    "cancel": "रद्द करें",
-    "ok": "ठीक है",
-    "deleted_relation_text": "नोट {{- note}} (जिसे डिलीट किया जाना है) का संदर्भ {{- source}} से शुरू होने वाले रिलेशन {{- relation}} में दिया गया है।"
+    "cancel": "रद्द करें"
   },
   "branch_prefix": {
     "edit_branch_prefix": "ब्रांच प्रीफ़िक्स एडिट करें",
@@ -285,33 +275,6 @@
     "no_changes_message": "अभी तक कोई बदलाव नहीं..।",
     "undelete_link": "वापस लाएं",
     "confirm_undelete": "क्या आप इस नोट और इसके सब-नोट्स को वापस लाना चाहते हैं?"
-  },
-  "revisions": {
-    "note_revisions": "नोट रिविज़न",
-    "delete_all_revisions": "इस नोट के सभी रिविज़न डिलीट करें",
-    "delete_all_button": "सभी रिविज़न डिलीट करें",
-    "help_title": "नोट रिविज़न पर मदद",
-    "confirm_delete_all": "क्या आप इस नोट के सभी रिविज़न डिलीट करना चाहते हैं?",
-    "no_revisions": "इस नोट के लिए अभी तक कोई रिविज़न नहीं है..।",
-    "restore_button": "रिस्टोर करें",
-    "diff_on": "Diff दिखाएं",
-    "diff_off": "कंटेंट दिखाएं",
-    "diff_on_hint": "नोट सोर्स का अंतर (diff) देखने के लिए क्लिक करें",
-    "diff_off_hint": "नोट कंटेंट देखने के लिए क्लिक करें",
-    "diff_not_available": "Diff उपलब्ध नहीं है।",
-    "confirm_restore": "क्या आप इस रिविज़न को रिस्टोर करना चाहते हैं? इससे नोट का मौजूदा टाइटल और कंटेंट इस रिविज़न से बदल जाएगा।",
-    "delete_button": "डिलीट करें",
-    "confirm_delete": "क्या आप इस रिविज़न को डिलीट करना चाहते हैं?",
-    "revisions_deleted": "नोट रिविज़न डिलीट कर दिए गए हैं।",
-    "revision_restored": "नोट रिविज़न रिस्टोर कर दिया गया है।",
-    "revision_deleted": "नोट रिविज़न डिलीट कर दिया गया है।",
-    "snapshot_interval": "नोट रिविज़न स्नैपशॉट अंतराल: {{seconds}}s।",
-    "maximum_revisions": "नोट रिविज़न स्नैपशॉट लिमिट: {{number}}।",
-    "settings": "नोट रिविज़न सेटिंग्स",
-    "download_button": "डाउनलोड करें",
-    "mime": "MIME: ",
-    "file_size": "फ़ाइल साइज़:",
-    "preview_not_available": "इस नोट टाइप के लिए प्रिव्यू उपलब्ध नहीं है।"
   },
   "sort_child_notes": {
     "sort_children_by": "सब-नोट्स को इसके अनुसार सॉर्ट करें..।",
@@ -1110,7 +1073,6 @@
   },
   "database_integrity_check": {
     "title": "डेटाबेस इंटीग्रिटी चेक (Database Integrity Check)",
-    "description": "यह चेक करेगा कि डेटाबेस SQLite लेवल पर खराब तो नहीं हुआ है। डेटाबेस के साइज़ के हिसाब से इसमें कुछ समय लग सकता है।",
     "check_button": "डेटाबेस इंटीग्रिटी चेक करें",
     "checking_integrity": "डेटाबेस इंटीग्रिटी चेक की जा रही है..।",
     "integrity_check_succeeded": "इंटीग्रिटी चेक सफल रहा - कोई समस्या नहीं मिली।",
@@ -1148,10 +1110,7 @@
     "note_tree_font": "नोट ट्री फ़ॉन्ट",
     "note_detail_font": "नोट डिटेल फ़ॉन्ट",
     "monospace_font": "मोनोस्पेस (कोड) फ़ॉन्ट",
-    "note_tree_and_detail_font_sizing": "ध्यान दें कि ट्री और डिटेल फ़ॉन्ट का साइज़ मुख्य फ़ॉन्ट साइज़ के हिसाब से होता है।",
     "not_all_fonts_available": "हो सकता है कि लिस्ट में दिए गए सभी फ़ॉन्ट्स आपके सिस्टम पर न हों।",
-    "apply_font_changes": "फ़ॉन्ट के बदलाव लागू करने के लिए, यहाँ क्लिक करें",
-    "reload_frontend": "फ्रंटेंड रीलोड करें",
     "generic-fonts": "सामान्य फ़ॉन्ट्स",
     "sans-serif-system-fonts": "Sans-serif सिस्टम फ़ॉन्ट्स",
     "serif-system-fonts": "Serif सिस्टम फ़ॉन्ट्स",
@@ -1241,7 +1200,6 @@
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "अटैचमेंट मिटाने का समय (Erasure Timeout)",
-    "attachment_auto_deletion_description": "अगर अटैचमेंट का उनके नोट में कोई लिंक नहीं बचता, तो वे तय समय के बाद अपने-आप डिलीट (और मिटा) दिए जाते हैं।",
     "erase_attachments_after": "इतने समय बाद बिना इस्तेमाल वाले अटैचमेंट्स मिटाएं:",
     "manual_erasing_description": "आप इसे खुद भी मिटा सकते हैं (बिना ऊपर दिए समय का इंतज़ार किए):",
     "erase_unused_attachments_now": "बिना इस्तेमाल वाले अटैचमेंट नोट्स अभी मिटाएं",
@@ -1253,7 +1211,6 @@
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "नोट मिटाने का समय (Erasure Timeout)",
-    "note_erasure_description": "डिलीट किए गए नोट्स (और एट्रीब्यूट्स, रिवीजन्स...) पहले सिर्फ 'डिलीट' मार्क किए जाते हैं और उन्हें 'Recent Notes' से वापस लाया जा सकता है। कुछ समय बाद ये नोट्स 'मिटा' (erase) दिए जाते हैं जिसके बाद इन्हें वापस नहीं लाया जा सकता। यह सेटिंग डिलीट और मिटाने के बीच के समय को तय करती है।",
     "erase_notes_after": "इतने समय बाद नोट्स मिटाएं:",
     "manual_erasing_description": "आप नोट्स को खुद भी मिटा सकते हैं (बिना ऊपर दिए समय का इंतज़ार किए):",
     "erase_deleted_notes_now": "डिलीट किए गए नोट्स अभी मिटाएं",
@@ -1343,7 +1300,6 @@
     "first-week-contains-first-thursday": "पहले हफ्ते में साल का पहला गुरुवार शामिल है",
     "first-week-has-minimum-days": "पहले हफ्ते में कम-से-कम इतने दिन हों",
     "min-days-in-first-week": "पहले हफ्ते में न्यूनतम दिन",
-    "first-week-info": "\"पहले हफ्ते में साल का पहला गुरुवार\" ISO 8601 स्टैण्डर्ड पर आधारित है।",
     "first-week-warning": "पहले हफ्ते की सेटिंग्स बदलने से पुराने 'Week Notes' में गड़बड़ी हो सकती है।",
     "formatting-locale": "तारीख और नंबर फॉर्मेट",
     "formatting-locale-auto": "ऐप की भाषा के अनुसार"
@@ -1461,20 +1417,13 @@
     "description": "ये विकल्प सिर्फ़ डेस्कटॉप वर्जन के लिए हैं, ब्राउज़र अपना स्पेल चेक इस्तेमाल करेंगे।",
     "enable": "स्पेल चेक चालू करें",
     "language_code_label": "भाषा कोड (Language code)",
-    "language_code_placeholder": "जैसे \"en-US\", \"hi-IN\"",
-    "multiple_languages_info": "कई भाषाओं को कॉमा से अलग किया जा सकता है, जैसे \"en-US, hi-IN\"। ",
-    "available_language_codes_label": "उपलब्ध भाषा कोड:",
     "restart-required": "स्पेल चेक में बदलाव ऐप रीस्टार्ट करने के बाद ही दिखेंगे।"
   },
   "sync_2": {
     "config_title": "सिंक कॉन्फ़िगरेशन",
     "server_address": "सर्वर एड्रेस (Address)",
     "timeout": "सिंक समय-सीमा (Timeout)",
-    "timeout_unit": "मिलीसेकंड (milliseconds)",
     "proxy_label": "सिंक प्रॉक्सी सर्वर (वैकल्पिक)",
-    "note": "नोट",
-    "note_description": "अगर आप प्रॉक्सी खाली छोड़ते हैं, तो सिस्टम प्रॉक्सी का इस्तेमाल होगा।",
-    "special_value_description": "एक खास वैल्यू <code>noproxy</code> भी है जो सिस्टम प्रॉक्सी को नज़रअंदाज़ करने के लिए मजबूर करती है।",
     "save": "सेव करें",
     "help": "मदद",
     "test_title": "सिंक टेस्ट",

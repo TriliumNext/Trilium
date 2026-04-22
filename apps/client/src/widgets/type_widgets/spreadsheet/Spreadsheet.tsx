@@ -24,12 +24,12 @@ import UniverPresetSheetsSortEnUS from '@univerjs/preset-sheets-sort/locales/en-
 import { createUniver, FUniver, LocaleType, mergeLocales } from '@univerjs/presets';
 import { MutableRef, useEffect, useRef } from "preact/hooks";
 
-import { useColorScheme, useNoteLabelBoolean, useTriliumEvent } from "../../react/hooks";
+import { useColorScheme, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
 import usePersistence from "./persistence";
 
 export default function Spreadsheet(props: TypeWidgetProps) {
-    const [ readOnly ] = useNoteLabelBoolean(props.note, "readOnly");
+    const readOnly = useEffectiveReadOnly(props.note, props.noteContext);
 
     // Use readOnly as key to force full remount (and data reload) when it changes.
     return <SpreadsheetEditor key={String(readOnly)} {...props} readOnly={readOnly} />;

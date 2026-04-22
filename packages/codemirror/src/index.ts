@@ -34,7 +34,15 @@ export interface EditorConfig {
     /** Disables some of the nice-to-have features (bracket matching, syntax highlighting, indentation markers) in order to improve performance. */
     preferPerformance?: boolean;
     tabIndex?: number;
+    /** The number of spaces used for indentation (also used as the tab display width). Defaults to 4. */
+    indentSize?: number;
+    /** If true, indent using a tab character instead of spaces. Defaults to false. */
+    useTabs?: boolean;
     onContentChanged?: ContentChangedListener;
+}
+
+function buildIndentUnit(indentSize: number, useTabs: boolean) {
+    return useTabs ? "\t" : " ".repeat(indentSize);
 }
 
 export default class CodeMirror extends EditorView {
@@ -44,6 +52,7 @@ export default class CodeMirror extends EditorView {
     private historyCompartment: Compartment;
     private themeCompartment: Compartment;
     private lineWrappingCompartment: Compartment;
+    private indentUnitCompartment: Compartment;
     private searchHighlightCompartment: Compartment;
     private searchPlugin?: SearchHighlighter | null;
 
@@ -52,6 +61,7 @@ export default class CodeMirror extends EditorView {
         const historyCompartment = new Compartment();
         const themeCompartment = new Compartment();
         const lineWrappingCompartment = new Compartment();
+        const indentUnitCompartment = new Compartment();
         const searchHighlightCompartment = new Compartment();
 
         let extensions: Extension[] = [];
@@ -68,7 +78,10 @@ export default class CodeMirror extends EditorView {
             searchHighlightCompartment.of([]),
             highlightActiveLine(),
             lineNumbers(),
-            indentUnit.of(" ".repeat(4)),
+            indentUnitCompartment.of([
+                indentUnit.of(buildIndentUnit(config.indentSize ?? 4, !!config.useTabs)),
+                EditorState.tabSize.of(config.indentSize ?? 4)
+            ]),
             keymap.of([
                 ...preventCtrlEnterKeymap,
                 ...defaultKeymap,
@@ -91,14 +104,12 @@ export default class CodeMirror extends EditorView {
             ];
         }
 
+        extensions.push(EditorView.updateListener.of((v) => this.#onDocumentUpdated(v)));
+
         if (!config.readOnly) {
             // Logic specific to editable notes
             if (config.placeholder) {
                 extensions.push(placeholder(config.placeholder));
-            }
-
-            if (config.onContentChanged) {
-                extensions.push(EditorView.updateListener.of((v) => this.#onDocumentUpdated(v)));
             }
 
             extensions.push(historyCompartment.of(history()));
@@ -121,6 +132,7 @@ export default class CodeMirror extends EditorView {
         this.historyCompartment = historyCompartment;
         this.themeCompartment = themeCompartment;
         this.lineWrappingCompartment = lineWrappingCompartment;
+        this.indentUnitCompartment = indentUnitCompartment;
         this.searchHighlightCompartment = searchHighlightCompartment;
     }
 
@@ -128,6 +140,21 @@ export default class CodeMirror extends EditorView {
         if (v.docChanged) {
             this.config.onContentChanged?.();
         }
+        for (const listener of this.#updateListeners) listener(v);
+    }
+
+    #updateListeners: Array<(v: ViewUpdate) => void> = [];
+
+    /**
+     * Subscribe to view updates (doc changes, selection changes, viewport changes, etc.).
+     * Returns an unsubscribe function. The listener will not fire after the view is destroyed.
+     */
+    addUpdateListener(listener: (v: ViewUpdate) => void): () => void {
+        this.#updateListeners.push(listener);
+        return () => {
+            const i = this.#updateListeners.indexOf(listener);
+            if (i >= 0) this.#updateListeners.splice(i, 1);
+        };
     }
 
     getText() {
@@ -166,6 +193,27 @@ export default class CodeMirror extends EditorView {
         this.dispatch({
             effects: [ this.lineWrappingCompartment.reconfigure(wrapping ? EditorView.lineWrapping : []) ]
         });
+    }
+
+    setIndent(size: number, useTabs: boolean) {
+        if (!Number.isFinite(size) || size < 1) size = 4;
+        if (size > 16) size = 16;
+        this.config.indentSize = size;
+        this.config.useTabs = useTabs;
+        this.dispatch({
+            effects: [ this.indentUnitCompartment.reconfigure([
+                indentUnit.of(buildIndentUnit(size, useTabs)),
+                EditorState.tabSize.of(size)
+            ]) ]
+        });
+    }
+
+    setIndentSize(size: number) {
+        this.setIndent(size, !!this.config.useTabs);
+    }
+
+    setUseTabs(useTabs: boolean) {
+        this.setIndent(this.config.indentSize ?? 4, useTabs);
     }
 
     /**

@@ -1,0 +1,28 @@
+<p>The <code spellcheck="false">api.axios</code> library has been removed from
+  the backend scripting API.</p>
+<p>Scripts that attempt to use <code spellcheck="false">api.axios</code> will
+  now throw an error with migration instructions.</p>
+<h2>Reasoning</h2>
+<p>Axios was marked as deprecated at least since April 2024 in favor of the
+  native <code spellcheck="false">fetch()</code> API, which is available in
+  both browser and Node.js environments. After two years of deprecation,
+  the library was removed following the <a href="https://www.malwarebytes.com/blog/news/2026/03/axios-supply-chain-attack-chops-away-at-npm-trust">March 2026 npm supply chain compromise</a>,
+  where attackers published malicious versions that deployed a remote access
+  trojan. The Trilium's main developer almost got compromised, but <code spellcheck="false">pnpm</code> not
+  trusting unknown post-install scripts successfully avoided that.</p>
+<h2>Migration</h2>
+<p>Replace <code spellcheck="false">api.axios</code> calls with the native
+  <code
+  spellcheck="false">fetch()</code>API.</p>
+<h3><code spellcheck="false">GET</code> calls</h3>
+<p>Before (Axios):</p><pre><code class="language-application-javascript-env-backend">const response = await api.axios.get('https://api.example.com/data');
+const data = response.data;</code></pre>
+<p>After (<code spellcheck="false">fetch</code>):</p><pre><code class="language-application-javascript-env-backend">const response = await fetch('https://api.example.com/data');
+const data = await response.json();</code></pre>
+<h3><code spellcheck="false">POST</code> calls</h3>
+<p>Before (Axios):</p><pre><code class="language-application-javascript-env-backend">await api.axios.post('https://api.example.com/data', { key: 'value' });</code></pre>
+<p>After (fetch):</p><pre><code class="language-application-javascript-env-backend">await fetch('https://api.example.com/data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: 'value' })
+});</code></pre>

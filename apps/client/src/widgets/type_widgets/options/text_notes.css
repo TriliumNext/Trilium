@@ -1,0 +1,125 @@
+/* HeadingStyleSelector */
+.heading-style-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.heading-preview {
+    display: inline-flex;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    min-width: 40px;
+    position: relative;
+}
+
+.heading-preview-markdown .heading-prefix {
+    color: var(--muted-text-color);
+    font-weight: normal;
+    font-family: var(--font-family-monospace);
+}
+
+.heading-preview-underline {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.heading-preview-underline .heading-underline {
+    width: 100%;
+    height: 2px;
+    background-color: currentColor;
+    margin-top: 2px;
+}
+
+.heading-style-label {
+    flex: 1;
+}
+
+/* Toolbar type illustration */
+.toolbar-illustration {
+    width: 140px;
+    height: 100px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    background: var(--main-background-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+
+    .toolbar-bar {
+        display: flex;
+        gap: 4px;
+        padding: 6px 8px;
+        background: var(--left-pane-background-color);
+        border-bottom: 1px solid var(--main-border-color);
+        flex-shrink: 0;
+    }
+
+    .toolbar-icon {
+        width: 10px;
+        height: 10px;
+        background: var(--muted-text-color);
+        border-radius: 2px;
+        opacity: 0.5;
+
+        &.wide {
+            width: 20px;
+        }
+    }
+
+    .document-area {
+        flex: 1;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .text-line {
+        height: 6px;
+        background: var(--muted-text-color);
+        border-radius: 2px;
+        opacity: 0.25;
+    }
+
+    .text-line-with-selection {
+        display: flex;
+        gap: 2px;
+        height: 6px;
+
+        .text-segment {
+            background: var(--muted-text-color);
+            border-radius: 2px;
+            opacity: 0.25;
+        }
+
+        .text-selection {
+            width: 30%;
+            background: var(--accented-background-color);
+            border-radius: 2px;
+        }
+    }
+
+    .floating-toolbar {
+        position: absolute;
+        top: 32px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 3px;
+        padding: 4px 6px;
+        background: var(--tooltip-background-color);
+        border: 1px solid var(--main-border-color);
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+        .toolbar-icon {
+            width: 8px;
+            height: 8px;
+            background: var(--main-background-color);
+            opacity: 0.8;
+        }
+    }
+}

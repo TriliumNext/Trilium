@@ -1,27 +1,26 @@
-import { normalizeMimeTypeForCKEditor, type OptionNames } from "@triliumnext/commons";
+import "./text_notes.css";
+
+import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import { Themes } from "@triliumnext/highlightjs";
 import type { CSSProperties } from "preact/compat";
 import { useEffect, useMemo, useState } from "preact/hooks";
-import type React from "react";
-import { Trans } from "react-i18next";
 
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import { ensureMimeTypesForHighlighting, loadHighlightingTheme } from "../../../services/syntax_highlight";
 import { formatDateTime, toggleBodyClass } from "../../../services/utils";
-import Column from "../../react/Column";
-import FormCheckbox from "../../react/FormCheckbox";
 import FormGroup from "../../react/FormGroup";
-import FormRadioGroup from "../../react/FormRadioGroup";
+import Dropdown from "../../react/Dropdown";
+import { FormListItem } from "../../react/FormList";
 import { FormSelectGroup, FormSelectWithGroups } from "../../react/FormSelect";
 import FormText from "../../react/FormText";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
-import KeyboardShortcut from "../../react/KeyboardShortcut";
 import { getHtml } from "../../react/RawHtml";
-import AutoReadOnlySize from "./components/AutoReadOnlySize";
 import CheckboxList from "./components/CheckboxList";
+import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
+import RadioWithIllustration from "./components/RadioWithIllustration";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
@@ -30,12 +29,10 @@ export default function TextNoteSettings() {
         <>
             <FormattingToolbar />
             <EditorFeatures />
-            <HeadingStyle />
+            <Editor />
             <CodeBlockStyle />
             <TableOfContent />
             <HighlightsList />
-            <AutoReadOnlySize option="autoReadonlySizeText" label={t("text_auto_read_only_size.label")} />
-            <DateTimeFormatOptions />
         </>
     );
 }
@@ -46,74 +43,185 @@ function FormattingToolbar() {
 
     return (
         <OptionsSection title={t("editing.editor_type.label")}>
-            <FormRadioGroup
-                name="editor-type"
-                currentValue={textNoteEditorType} onChange={setTextNoteEditorType}
-                values={[
-                    {
-                        value: "ckeditor-balloon",
-                        label: t("editing.editor_type.floating.title"),
-                        inlineDescription: t("editing.editor_type.floating.description")
-                    },
-                    {
-                        value: "ckeditor-classic",
-                        label: t("editing.editor_type.fixed.title"),
-                        inlineDescription: t("editing.editor_type.fixed.description")
-                    }
-                ]}
-            />
+            <OptionsRow name="editor-type" label={t("editing.editor_type.toolbar_style")}>
+                <RadioWithIllustration
+                    currentValue={textNoteEditorType}
+                    onChange={setTextNoteEditorType}
+                    values={[
+                        {
+                            key: "ckeditor-balloon",
+                            text: t("editing.editor_type.floating.title"),
+                            illustration: <ToolbarIllustration type="floating" />
+                        },
+                        {
+                            key: "ckeditor-classic",
+                            text: t("editing.editor_type.fixed.title"),
+                            illustration: <ToolbarIllustration type="fixed" />
+                        }
+                    ]}
+                />
+            </OptionsRow>
 
-            <FormCheckbox
+            <OptionsRowWithToggle
                 name="multiline-toolbar"
                 label={t("editing.editor_type.multiline-toolbar")}
-                currentValue={textNoteEditorMultilineToolbar} onChange={setTextNoteEditorMultilineToolbar}
-                containerStyle={{ marginInlineStart: "1em" }}
+                currentValue={textNoteEditorMultilineToolbar}
+                onChange={setTextNoteEditorMultilineToolbar}
+                disabled={textNoteEditorType === "ckeditor-balloon"}
             />
         </OptionsSection>
     );
+}
+
+function ToolbarIllustration({ type }: { type: "floating" | "fixed" }) {
+    return (
+        <div className="toolbar-illustration">
+            {type === "fixed" && (
+                <div className="toolbar-bar">
+                    <ToolbarIcon />
+                    <ToolbarIcon />
+                    <ToolbarIcon />
+                    <ToolbarIcon wide />
+                    <ToolbarIcon />
+                    <ToolbarIcon />
+                </div>
+            )}
+
+            <div className="document-area">
+                <div className="text-line" style={{ width: "90%" }} />
+                <div className="text-line" style={{ width: "75%" }} />
+                <div className="text-line-with-selection">
+                    <span className="text-segment" style={{ width: "20%" }} />
+                    <span className="text-selection" />
+                    <span className="text-segment" style={{ width: "35%" }} />
+                </div>
+                <div className="text-line" style={{ width: "85%" }} />
+                <div className="text-line" style={{ width: "60%" }} />
+            </div>
+
+            {type === "floating" && (
+                <div className="floating-toolbar">
+                    <ToolbarIcon />
+                    <ToolbarIcon />
+                    <ToolbarIcon />
+                    <ToolbarIcon />
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ToolbarIcon({ wide }: { wide?: boolean }) {
+    return <div className={`toolbar-icon${wide ? " wide" : ""}`} />;
 }
 
 function EditorFeatures() {
+    const [emojiCompletionEnabled, setEmojiCompletionEnabled] = useTriliumOptionBool("textNoteEmojiCompletionEnabled");
+    const [noteCompletionEnabled, setNoteCompletionEnabled] = useTriliumOptionBool("textNoteCompletionEnabled");
+    const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
+
     return (
         <OptionsSection title={t("editorfeatures.title")}>
-            <EditorFeature name="emoji-completion-enabled" optionName="textNoteEmojiCompletionEnabled" label={t("editorfeatures.emoji_completion_enabled")} description={t("editorfeatures.emoji_completion_description")} />
-            <EditorFeature name="note-completion-enabled" optionName="textNoteCompletionEnabled" label={t("editorfeatures.note_completion_enabled")} description={t("editorfeatures.note_completion_description")} />
-            <EditorFeature name="slash-commands-enabled" optionName="textNoteSlashCommandsEnabled" label={t("editorfeatures.slash_commands_enabled")} description={t("editorfeatures.slash_commands_description")} />
+            <OptionsRowWithToggle
+                name="emoji-completion-enabled"
+                label={t("editorfeatures.emoji_completion_enabled")}
+                description={t("editorfeatures.emoji_completion_description")}
+                currentValue={emojiCompletionEnabled}
+                onChange={setEmojiCompletionEnabled}
+            />
+
+            <OptionsRowWithToggle
+                name="note-completion-enabled"
+                label={t("editorfeatures.note_completion_enabled")}
+                description={t("editorfeatures.note_completion_description")}
+                currentValue={noteCompletionEnabled}
+                onChange={setNoteCompletionEnabled}
+            />
+
+            <OptionsRowWithToggle
+                name="slash-commands-enabled"
+                label={t("editorfeatures.slash_commands_enabled")}
+                description={t("editorfeatures.slash_commands_description")}
+                currentValue={slashCommandsEnabled}
+                onChange={setSlashCommandsEnabled}
+            />
         </OptionsSection>
     );
 }
 
-function EditorFeature({ optionName, name, label, description }: { optionName: OptionNames, name: string, label: string, description: string }) {
-    const [ featureEnabled, setFeatureEnabled ] = useTriliumOptionBool(optionName);
-
-    return (
-        <FormCheckbox
-            name={name} label={label}
-            currentValue={featureEnabled} onChange={setFeatureEnabled}
-            hint={description}
-        />
-    );
-}
-
-function HeadingStyle() {
-    const [ headingStyle, setHeadingStyle ] = useTriliumOption("headingStyle");
+function Editor() {
+    const [headingStyle, setHeadingStyle] = useTriliumOption("headingStyle");
+    const [autoReadonlySize, setAutoReadonlySize] = useTriliumOption("autoReadonlySizeText");
+    const [customDateTimeFormat, setCustomDateTimeFormat] = useTriliumOption("customDateTimeFormat");
 
     useEffect(() => {
         toggleBodyClass("heading-style-", headingStyle);
-    }, [ headingStyle ]);
+    }, [headingStyle]);
 
     return (
-        <OptionsSection title={t("heading_style.title")}>
-            <FormRadioGroup
-                name="heading-style"
-                currentValue={headingStyle} onChange={setHeadingStyle}
-                values={[
-                    { value: "plain", label: t("heading_style.plain") },
-                    { value: "underline", label: t("heading_style.underline") },
-                    { value: "markdown", label: t("heading_style.markdown") }
-                ]}
-            />
+        <OptionsSection title={t("text_editor.title")}>
+            <OptionsRow name="heading-style" label={t("heading_style.title")} description={t("heading_style.description")}>
+                <HeadingStyleSelector currentValue={headingStyle} onChange={setHeadingStyle} />
+            </OptionsRow>
+
+            <OptionsRow name="auto-readonly-size-text" label={t("text_auto_read_only_size.label")} description={t("text_auto_read_only_size.description")}>
+                <FormTextBoxWithUnit
+                    type="number" min={0}
+                    unit={t("text_auto_read_only_size.unit")}
+                    currentValue={autoReadonlySize}
+                    onBlur={setAutoReadonlySize}
+                />
+            </OptionsRow>
+
+            <OptionsRow
+                name="custom-date-time-format"
+                label={t("custom_date_time_format.title")}
+                description={<>{t("custom_date_time_format.description_short")} {t("custom_date_time_format.preview", { preview: formatDateTime(new Date(), customDateTimeFormat) })}</>}
+            >
+                <FormTextBox
+                    placeholder="YYYY-MM-DD HH:mm"
+                    currentValue={customDateTimeFormat || "YYYY-MM-DD HH:mm"} onBlur={setCustomDateTimeFormat}
+                />
+            </OptionsRow>
         </OptionsSection>
+    );
+}
+
+const HEADING_STYLES = [
+    { value: "plain", labelKey: "heading_style.plain" },
+    { value: "underline", labelKey: "heading_style.underline" },
+    { value: "markdown", labelKey: "heading_style.markdown" }
+] as const;
+
+function HeadingStyleSelector({ currentValue, onChange }: { currentValue: string, onChange: (value: string) => void }) {
+    const currentStyle = HEADING_STYLES.find(s => s.value === currentValue) ?? HEADING_STYLES[0];
+
+    return (
+        <Dropdown text={t(currentStyle.labelKey)}>
+            {HEADING_STYLES.map(({ value, labelKey }) => (
+                <FormListItem
+                    key={value}
+                    onClick={() => onChange(value)}
+                    selected={currentValue === value}
+                >
+                    <div className="heading-style-preview">
+                        <HeadingPreview style={value} />
+                        <span className="heading-style-label">{t(labelKey)}</span>
+                    </div>
+                </FormListItem>
+            ))}
+        </Dropdown>
+    );
+}
+
+function HeadingPreview({ style }: { style: string }) {
+    const previewClass = `heading-preview heading-preview-${style}`;
+    return (
+        <span className={previewClass}>
+            {style === "markdown" && <span className="heading-prefix">## </span>}
+            Aa
+            {style === "underline" && <span className="heading-underline" />}
+        </span>
     );
 }
 
@@ -156,31 +264,40 @@ function CodeBlockStyle() {
     }, []);
     const [ codeBlockTheme, setCodeBlockTheme ] = useTriliumOption("codeBlockTheme");
     const [ codeBlockWordWrap, setCodeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
+    const [ codeBlockTabWidth, setCodeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
 
     return (
         <OptionsSection title={t("highlighting.title")}>
-            <div className="row" style={{ marginBottom: "15px" }}>
-                <FormGroup name="theme" className="col-md-6" label={t("highlighting.color-scheme")} style={{ marginBottom: 0 }}>
-                    <FormSelectWithGroups
-                        values={themes}
-                        keyProperty="val" titleProperty="title"
-                        currentValue={codeBlockTheme} onChange={(newTheme) => {
-                            loadHighlightingTheme(newTheme);
-                            setCodeBlockTheme(newTheme);
-                        }}
-                    />
-                </FormGroup>
+            <OptionsRow name="code-block-theme" label={t("highlighting.color-scheme")}>
+                <FormSelectWithGroups
+                    values={themes}
+                    keyProperty="val" titleProperty="title"
+                    currentValue={codeBlockTheme} onChange={(newTheme) => {
+                        loadHighlightingTheme(newTheme);
+                        setCodeBlockTheme(newTheme);
+                    }}
+                />
+            </OptionsRow>
 
-                <Column md={6} className="side-checkbox">
-                    <FormCheckbox
-                        name="word-wrap"
-                        label={t("code_block.word_wrapping")}
-                        currentValue={codeBlockWordWrap} onChange={setCodeBlockWordWrap}
-                    />
-                </Column>
-            </div>
+            <OptionsRowWithToggle
+                name="code-block-word-wrap"
+                label={t("code_block.word_wrapping")}
+                currentValue={codeBlockWordWrap}
+                onChange={setCodeBlockWordWrap}
+            />
 
-            <CodeBlockPreview theme={codeBlockTheme} wordWrap={codeBlockWordWrap} />
+            {/* Avoid using "code" in the name of numeric inputs to prevent KeepassXC from triggering. */}
+            <OptionsRow name="block-tab-width" label={t("code_block.tab_width")}>
+                <FormTextBoxWithUnit
+                    type="number" min={1} max={16} step={1}
+                    unit={t("code_block.tab_width_unit")}
+                    currentValue={codeBlockTabWidth}
+                    onChange={setCodeBlockTabWidth}
+                    onBlur={setCodeBlockTabWidth}
+                />
+            </OptionsRow>
+
+            <CodeBlockPreview theme={codeBlockTheme} wordWrap={codeBlockWordWrap} tabWidth={codeBlockTabWidth} />
         </OptionsSection>
     );
 }
@@ -196,13 +313,13 @@ greet(n); // Print "Hello World" for n times
  * @param {number} times    The number of times to print the \`Hello World!\` message.
  */
 function greet(times) {
-  for (let i = 0; i++; i < times) {
-    console.log("Hello World!");
-  }
+\tfor (let i = 0; i++; i < times) {
+\t\tconsole.log("Hello World!");
+\t}
 }
 `;
 
-function CodeBlockPreview({ theme, wordWrap }: { theme: string, wordWrap: boolean }) {
+function CodeBlockPreview({ theme, wordWrap, tabWidth }: { theme: string, wordWrap: boolean, tabWidth: string }) {
     const [ code, setCode ] = useState<string>(SAMPLE_CODE);
 
     useEffect(() => {
@@ -221,13 +338,12 @@ function CodeBlockPreview({ theme, wordWrap }: { theme: string, wordWrap: boolea
         }
     }, [theme]);
 
-    const codeStyle = useMemo<CSSProperties>(() => {
-        if (wordWrap) {
-            return { whiteSpace: "pre-wrap" };
-        }
-        return { whiteSpace: "pre"};
-
-    }, [ wordWrap ]);
+    const codeStyle: CSSProperties = useMemo(() => {
+        return {
+            whiteSpace: wordWrap ? "pre-wrap" : "pre",
+            tabSize: tabWidth || "4"
+        };
+    }, [ wordWrap, tabWidth ]);
 
     return (
         <div className="note-detail-readonly-text-content ck-content code-sample-wrapper">
@@ -300,38 +416,5 @@ export function HighlightsListOptions() {
                 currentValue={highlightsList} onChange={setHighlightsList}
             />
         </>
-    );
-}
-
-function DateTimeFormatOptions() {
-    const [ customDateTimeFormat, setCustomDateTimeFormat ] = useTriliumOption("customDateTimeFormat");
-
-    return (
-        <OptionsSection title={t("custom_date_time_format.title")}>
-            <FormText>
-                <Trans
-                    i18nKey="custom_date_time_format.description"
-                    components={{
-                        shortcut: <KeyboardShortcut actionName="insertDateTimeToText" /> as React.ReactElement,
-                        doc: <a href="https://day.js.org/docs/en/display/format" target="_blank" rel="noopener noreferrer" /> as React.ReactElement
-                    }}
-                />
-            </FormText>
-
-            <div className="row align-items-center">
-                <FormGroup name="custom-date-time-format" className="col-md-6" label={t("custom_date_time_format.format_string")}>
-                    <FormTextBox
-                        placeholder="YYYY-MM-DD HH:mm"
-                        currentValue={customDateTimeFormat || "YYYY-MM-DD HH:mm"} onChange={setCustomDateTimeFormat}
-                    />
-                </FormGroup>
-
-                <FormGroup name="formatted-date" className="col-md-6" label={t("custom_date_time_format.formatted_time")}>
-                    <div>
-                        {formatDateTime(new Date(), customDateTimeFormat)}
-                    </div>
-                </FormGroup>
-            </div>
-        </OptionsSection>
     );
 }

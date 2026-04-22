@@ -1,14 +1,16 @@
-import LoadResults from "./load_results.js";
-import froca from "./froca.js";
-import utils from "./utils.js";
-import options from "./options.js";
-import noteAttributeCache from "./note_attribute_cache.js";
-import FBranch, { type FBranchRow } from "../entities/fbranch.js";
-import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
+import type { OptionNames } from "@triliumnext/commons";
+
+import appContext from "../components/app_context.js";
 import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
+import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
+import FBranch, { type FBranchRow } from "../entities/fbranch.js";
 import type { default as FNote, FNoteRow } from "../entities/fnote.js";
 import type { EntityChange } from "../server_types.js";
-import type { OptionNames } from "@triliumnext/commons";
+import froca from "./froca.js";
+import LoadResults from "./load_results.js";
+import noteAttributeCache from "./note_attribute_cache.js";
+import options from "./options.js";
+import utils from "./utils.js";
 
 async function processEntityChanges(entityChanges: EntityChange[]) {
     const loadResults = new LoadResults(entityChanges);
@@ -63,7 +65,7 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
         if (entityName === "branches" && !((entity as FBranchRow).parentNoteId in froca.notes)) {
             missingNoteIds.push((entity as FBranchRow).parentNoteId);
         } else if (entityName === "attributes") {
-            let attributeEntity = entity as FAttributeRow;
+            const attributeEntity = entity as FAttributeRow;
             if (attributeEntity.type === "relation" && (attributeEntity.name === "template" || attributeEntity.name === "inherit") && !(attributeEntity.value in froca.notes)) {
                 missingNoteIds.push(attributeEntity.value);
             }
@@ -79,7 +81,6 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
             noteAttributeCache.invalidate();
         }
 
-        const appContext = (await import("../components/app_context.js")).default;
         await appContext.triggerEvent("entitiesReloaded", { loadResults });
     }
 }

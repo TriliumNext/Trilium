@@ -11,9 +11,9 @@ import { generateCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPP
 import log from "../services/log.js";
 import optionService from "../services/options.js";
 import protectedSessionService from "../services/protected_session.js";
-import { generateCsrfToken } from "./csrf_protection.js";
 import sql from "../services/sql.js";
 import { isDev, isElectron, isMac, isWindows11 } from "../services/utils.js";
+import { generateCsrfToken } from "./csrf_protection.js";
 
 type View = "desktop" | "mobile" | "print";
 
@@ -38,6 +38,7 @@ export function bootstrap(req: Request, res: Response) {
     const view = getView(req);
     const theme = options.theme;
     const themeNote = attributeService.getNoteWithLabel("appTheme", theme);
+    const themeUseNextAsBase = themeNote?.getAttributeValue("label", "appThemeBase") ?? undefined;
     const nativeTitleBarVisible = options.nativeTitleBarVisible === "true";
     const iconPacks = getIconPacks();
     const currentLocale = getCurrentLocale();
@@ -45,8 +46,9 @@ export function bootstrap(req: Request, res: Response) {
     res.send({
         device: view,
         csrfToken,
-        themeCssUrl: getThemeCssUrl(theme, themeNote),
-        themeUseNextAsBase: themeNote?.getAttributeValue("label", "appThemeBase"),
+        theme,
+        themeBase: themeUseNextAsBase,
+        customThemeCssUrl: getCustomThemeCssUrl(theme, themeNote),
         headingStyle: options.headingStyle,
         layoutOrientation: options.layoutOrientation,
         platform: process.platform,
@@ -117,25 +119,16 @@ function getView(req: Request): View {
     return "desktop";
 }
 
-function getThemeCssUrl(theme: string, themeNote: BNote | null) {
-    if (theme === "auto") {
-        return `${assetPath}/stylesheets/theme.css`;
-    } else if (theme === "light") {
-        // light theme is always loaded as baseline
-        return false;
-    } else if (theme === "dark") {
-        return `${assetPath}/stylesheets/theme-dark.css`;
-    } else if (theme === "next") {
-        return `${assetPath}/stylesheets/theme-next.css`;
-    } else if (theme === "next-light") {
-        return `${assetPath}/stylesheets/theme-next-light.css`;
-    } else if (theme === "next-dark") {
-        return `${assetPath}/stylesheets/theme-next-dark.css`;
-    } else if (!process.env.TRILIUM_SAFE_MODE && themeNote) {
+function getCustomThemeCssUrl(theme: string, themeNote: BNote | null) {
+    if (["auto", "light", "dark", "next", "next-light", "next-dark"].includes(theme)) {
+        return undefined;
+    }
+
+    if (!process.env.TRILIUM_SAFE_MODE && themeNote) {
         return `api/notes/download/${themeNote.noteId}`;
     }
-    // baseline light theme
-    return false;
+
+    return undefined;
 }
 
 function getAppCssNoteIds() {

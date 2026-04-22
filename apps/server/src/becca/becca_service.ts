@@ -106,7 +106,7 @@ function getNoteTitleArrayForPath(notePathArray: string[]) {
 function getNoteTitleForPath(notePathArray: string[]) {
     const titles = getNoteTitleArrayForPath(notePathArray);
 
-    return titles.join(" / ");
+    return titles.join(" › ");
 }
 
 export default {

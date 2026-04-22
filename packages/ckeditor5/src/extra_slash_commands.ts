@@ -1,11 +1,7 @@
 import type { Editor } from 'ckeditor5';
 import type { SlashCommandEditorConfig  } from 'ckeditor5-premium-features';
 import { icons as footnoteIcons } from '@triliumnext/ckeditor5-footnotes';
-import IconPageBreak from "@ckeditor/ckeditor5-icons/theme/icons/page-break.svg?raw";
-import IconAlignLeft from "@ckeditor/ckeditor5-icons/theme/icons/align-left.svg?raw";
-import IconAlignCenter from "@ckeditor/ckeditor5-icons/theme/icons/align-center.svg?raw";
-import IconAlignRight from "@ckeditor/ckeditor5-icons/theme/icons/align-right.svg?raw";
-import IconAlignJustify from "@ckeditor/ckeditor5-icons/theme/icons/align-justify.svg?raw";
+import { IconPageBreak, IconAlignLeft, IconAlignCenter, IconAlignRight, IconAlignJustify } from "@ckeditor/ckeditor5-icons";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
@@ -21,6 +17,8 @@ import internalLinkIcon from './icons/trilium.svg?raw';
 import noteIcon from './icons/note.svg?raw';
 import importMarkdownIcon from './icons/markdown-mark.svg?raw';
 import { icons as mathIcons, MathUI } from '@triliumnext/ckeditor5-math';
+import { BookmarkUI } from "ckeditor5";
+import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 
 type SlashCommandDefinition = SlashCommandEditorConfig["extraCommands"][number];
 
@@ -78,6 +76,19 @@ export default function buildExtraCommands(): SlashCommandDefinition[] {
             description: "Import a markdown file into this note",
             icon: importMarkdownIcon,
             commandName: MARKDOWN_IMPORT_COMMAND
+        },
+        {
+            id: "anchor",
+            title: "Anchor",
+            description: "Insert an anchor for internal linking",
+            aliases: [ "bookmark" ],
+            icon: bxBookmark,
+            execute: (editor: Editor) => {
+                // Defer to the next event loop tick so the slash command fully finishes
+                // its DOM/selection cleanup; _showFormView needs the view and mapper to
+                // be in a settled state for balloon positioning.
+                setTimeout(() => (editor.plugins.get(BookmarkUI) as any)._showFormView(), 0);
+            }
         }
     ];
 }

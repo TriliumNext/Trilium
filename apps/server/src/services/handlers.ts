@@ -6,6 +6,9 @@ import becca from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import oneTimeTimer from "./one_time_timer.js";
+import ocrService from "./ocr/ocr_service.js";
+import optionService from "./options.js";
+import log from "./log.js";
 import type BNote from "../becca/entities/bnote.js";
 import type AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 import type { DefinitionObject } from "./promoted_attribute_definition_interface.js";
@@ -137,8 +140,34 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
         }
     } else if (entityName === "notes") {
         runAttachedRelations(entity, "runOnNoteCreation", entity);
+
+        // Note: OCR processing for images is now handled in image.ts during image processing
+        // OCR processing for files remains here since they don't go through image processing
+        if (entity.type === 'file' && optionService.getOptionBool("ocrAutoProcessImages")) {
+            autoProcessOCR(entity.mime, () => ocrService.processNoteOCR(entity.noteId), `file note ${entity.noteId}`);
+        }
+    } else if (entityName === "attachments") {
+        // Image attachments are handled in image.ts after async image processing sets the real MIME type.
+        // Only handle non-image (file) attachments here.
+        if (entity.role === "file" && optionService.getOptionBool("ocrAutoProcessImages")) {
+            autoProcessOCR(entity.mime, () => ocrService.processAttachmentOCR(entity.attachmentId), `attachment ${entity.attachmentId}`);
+        }
     }
 });
+
+function autoProcessOCR(mime: string, process: () => Promise<unknown>, entityDescription: string) {
+    const supportedMimeTypes = ocrService.getAllSupportedMimeTypes();
+
+    if (mime && supportedMimeTypes.includes(mime)) {
+        process().then(result => {
+            if (result) {
+                log.info(`Automatically processed OCR for ${entityDescription} with MIME type ${mime}`);
+            }
+        }).catch(error => {
+            log.error(`Failed to automatically process OCR for ${entityDescription}: ${error}`);
+        });
+    }
+}
 
 eventService.subscribe(eventService.CHILD_NOTE_CREATED, ({ parentNote, childNote }) => {
     runAttachedRelations(parentNote, "runOnChildNoteCreation", childNote);

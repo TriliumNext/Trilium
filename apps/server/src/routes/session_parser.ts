@@ -99,6 +99,12 @@ export class SQLiteSessionStore extends Store {
 
 export const sessionStore = new SQLiteSessionStore();
 
+// Enable cross-site cookies only when CORS is configured with a specific
+// origin allowlist. A wildcard or unset origin means there's no trusted
+// cross-site consumer, so we keep the safer SameSite=Lax default.
+const corsAllowOrigin = (config["Network"]["corsAllowOrigin"] || "").trim();
+const allowCrossSiteCookie = corsAllowOrigin !== "" && corsAllowOrigin !== "*";
+
 const sessionParser: express.RequestHandler = session({
     secret: sessionSecret,
     resave: false, // true forces the session to be saved back to the session store, even if the session was never modified during the request.
@@ -107,6 +113,8 @@ const sessionParser: express.RequestHandler = session({
     cookie: {
         path: "/",
         httpOnly: true,
+        sameSite: allowCrossSiteCookie ? "none" : "lax",
+        secure: allowCrossSiteCookie,
         maxAge: config.Session.cookieMaxAge * 1000 // needs value in milliseconds
     },
     name: "trilium.sid",

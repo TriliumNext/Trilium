@@ -78,6 +78,13 @@ export default function buildLaunchBarConfig() {
             type: "launcher",
             command: "toggleZenMode",
             icon: "bx bxs-yin-yang"
+        },
+        {
+            id: "_lbSidebarChat",
+            title: t("hidden-subtree.sidebar-chat-title"),
+            type: "launcher",
+            builtinWidget: "sidebarChat",
+            icon: "bx bx-message-square-dots"
         }
     ];
 

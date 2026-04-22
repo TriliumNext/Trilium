@@ -828,6 +828,14 @@ function getDefaultKeyboardActions() {
             defaultShortcuts: [],
             description: t("keyboard_actions.force-save-revision"),
             scope: "window"
+        },
+        {
+            actionName: "saveNamedRevision",
+            friendlyName: t("keyboard_action_names.save-named-revision"),
+            iconClass: "bx bx-purchase-tag",
+            defaultShortcuts: [],
+            description: t("keyboard_actions.save-named-revision"),
+            scope: "window"
         }
     ];
 

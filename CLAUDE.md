@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Note**: When updating this file, also update `.github/copilot-instructions.md` to keep both AI coding assistants in sync.
+
 ## Overview
 
 Trilium Notes is a hierarchical note-taking application with advanced features like synchronization, scripting, and rich text editing. It's built as a TypeScript monorepo using pnpm, with multiple applications and shared packages.
@@ -66,6 +68,15 @@ Frontend uses a widget system (`apps/client/src/widgets/`):
 - `RightPanelWidget` - Widgets displayed in the right panel
 - Type-specific widgets in `type_widgets/` directory
 
+#### Reusable Preact Components
+Common UI components are available in `apps/client/src/widgets/react/` — prefer reusing these over creating custom implementations:
+- `NoItems` - Empty state placeholder with icon and message (use for "no results", "too many items", error states)
+- `ActionButton` - Consistent button styling with icon support
+- `FormTextBox` - Text input with validation and controlled input handling
+- `Slider` - Range slider with label
+- `Checkbox`, `RadioButton` - Form controls
+- `CollapsibleSection` - Expandable content sections
+
 #### API Architecture
 - **Internal API**: REST endpoints in `apps/server/src/routes/api/`
 - **ETAPI**: External API for third-party integrations (`apps/server/src/etapi/`)
@@ -108,6 +119,8 @@ Trilium supports multiple note types, each with specialized widgets:
 - Client tests can run in parallel
 - E2E tests use Playwright for both server and desktop apps
 - Build validation tests check artifact integrity
+- **Write concise tests**: Group related assertions together in a single test case rather than creating many one-shot tests
+- **Extract and test business logic**: When adding pure business logic (e.g., data transformations, migrations, validations), extract it as a separate function and always write unit tests for it
 
 ### Scripting System
 Trilium provides powerful user scripting capabilities:
@@ -118,12 +131,47 @@ Trilium provides powerful user scripting capabilities:
 ### Internationalization
 - Translation files in `apps/client/src/translations/`
 - Supported languages: English, German, Spanish, French, Romanian, Chinese
+- **Only add new translation keys to `en/translation.json`** — translations for other languages are managed via Weblate and will be contributed by the community
+- Third-party components (e.g., mind-map context menu) should use i18next `t()` for their labels, with the English strings added to `en/translation.json` under a dedicated namespace (e.g., `"mind-map"`)
+- When a translated string contains **interpolated components** (e.g. links, note references) whose order may vary across languages, use `<Trans>` from `react-i18next` instead of `t()`. This lets translators reorder components freely (e.g. `"<Note/> in <Parent/>"` vs `"in <Parent/>, <Note/>"`)
+- When adding a new locale, follow the step-by-step guide in `docs/Developer Guide/Developer Guide/Concepts/Internationalisation  Translations/Adding a new locale.md`
+- **Server-side translations** (e.g. hidden subtree titles) go in `apps/server/src/assets/translations/en/server.json`, not in the client `translation.json`
+
+#### Client vs Server Translation Usage
+- **Client-side**: `import { t } from "../services/i18n"` with keys in `apps/client/src/translations/en/translation.json`
+- **Server-side**: `import { t } from "i18next"` with keys in `apps/server/src/assets/translations/en/server.json`
+- **Interpolation**: Use `{{variable}}` for normal interpolation; use `{{- variable}}` (with hyphen) for **unescaped** interpolation when the value contains special characters like quotes that shouldn't be HTML-escaped
+
+### Electron Desktop App
+- Desktop entry point: `apps/desktop/src/main.ts`, window management: `apps/server/src/services/window.ts`
+- IPC communication: use `electron.ipcMain.on(channel, handler)` on server side, `electron.ipcRenderer.send(channel, data)` on client side
+- Electron-only features should check `isElectron()` from `apps/client/src/services/utils.ts` (client) or `utils.isElectron` (server)
 
 ### Security Considerations
 - Per-note encryption with granular protected sessions
 - CSRF protection for API endpoints
 - OpenID and TOTP authentication support
 - Sanitization of user-generated content
+
+### Client-Side API Restrictions
+- **Do not use `crypto.randomUUID()`** or other Web Crypto APIs that require secure contexts - Trilium can run over HTTP, not just HTTPS
+- Use `randomString()` from `apps/client/src/services/utils.ts` for generating IDs instead
+
+### Storing User Preferences
+- **Do not use `localStorage`** for user preferences — Trilium has a synced options system that persists across devices
+- To add a new user preference:
+  1. Add the option type to `OptionDefinitions` in `packages/commons/src/lib/options_interface.ts`
+  2. Add a default value in `apps/server/src/services/options_init.ts` in the `defaultOptions` array
+  3. **Whitelist the option** in `apps/server/src/routes/api/options.ts` by adding it to the `ALLOWED_OPTIONS` array — **without this, the API will reject changes with "Option 'X' is not allowed to be changed"**
+  4. If the option should be user-editable in the UI, add a control in the appropriate settings component (e.g., `apps/client/src/widgets/type_widgets/options/other.tsx`) and a translation key in `apps/client/src/translations/en/translation.json`
+  5. Use `useTriliumOption("optionName")` hook in React components to read/write the option
+- Available hooks: `useTriliumOption` (string), `useTriliumOptionBool`, `useTriliumOptionInt`, `useTriliumOptionJson`
+- See `docs/Developer Guide/Developer Guide/Concepts/Options/Creating a new option.md` for detailed documentation
+
+### Shared Types Policy
+- Types shared between client and server belong in `@triliumnext/commons` (`packages/commons/src/lib/`)
+- Import shared types directly from `@triliumnext/commons` - do not re-export them from app-specific modules
+- Keep app-specific types (e.g., `LlmProvider` for server, `StreamCallbacks` for client) in their respective apps
 
 ## Common Development Tasks
 
@@ -140,9 +188,50 @@ Trilium provides powerful user scripting capabilities:
 - Create new package in `packages/` following existing plugin structure
 - Register in `packages/ckeditor5/src/plugins.ts`
 
+### Adding Hidden System Notes
+The hidden subtree (`_hidden`) contains system notes with predictable IDs (prefixed with `_`). Defined in `apps/server/src/services/hidden_subtree.ts` via the `HiddenSubtreeItem` interface from `@triliumnext/commons`.
+
+1. Add the note definition to `buildHiddenSubtreeDefinition()` in `apps/server/src/services/hidden_subtree.ts`
+2. Add a translation key for the title in `apps/server/src/assets/translations/en/server.json` under `"hidden-subtree"`
+3. The note is auto-created on startup by `checkHiddenSubtree()` — uses deterministic IDs so all sync cluster instances generate the same structure
+4. Key properties: `id` (must start with `_`), `title`, `type`, `icon` (format: `bx-icon-name` without `bx ` prefix), `attributes`, `children`, `content`
+5. Use `enforceAttributes: true` to keep attributes in sync, `enforceBranches: true` for correct placement, `enforceDeleted: true` to remove deprecated notes
+6. For launcher bar entries, see `hidden_subtree_launcherbar.ts`; for templates, see `hidden_subtree_templates.ts`
+
+### Writing to Notes from Server Services
+- `note.setContent()` requires a CLS (Continuation Local Storage) context — wrap calls in `cls.init(() => { ... })` (from `apps/server/src/services/cls.ts`)
+- Operations called from Express routes already have CLS context; standalone services (schedulers, Electron IPC handlers) do not
+
+### Adding New LLM Tools
+Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/` and automatically registered for both the LLM chat and MCP server.
+
+1. Add the tool definition in the appropriate module (`note_tools.ts`, `attribute_tools.ts`, `attachment_tools.ts`, `hierarchy_tools.ts`) or create a new module
+2. Each tool needs: `description`, `inputSchema` (Zod), `execute` function, and optionally `mutates: true` for write operations
+3. If creating a new module, wrap tools in `defineTools({...})` and add the registry to `allToolRegistries` in `tools/index.ts`
+4. Add a client-side friendly name in `apps/client/src/translations/en/translation.json` under `llm.tools.<tool_name>` — use **imperative tense** (e.g. "Search notes", "Create note", "Get attributes"), not present continuous
+5. Use ETAPI (`apps/server/src/etapi/`) as inspiration for what fields to expose, but **do not import ETAPI mappers** — inline the field mappings directly in the tool so the LLM layer stays decoupled from the API layer
+
+### Updating PDF.js
+1. Update `pdfjs-dist` version in `packages/pdfjs-viewer/package.json`
+2. Run `npx tsx scripts/update-viewer.ts` from that directory
+3. Run `pnpm build` to verify success
+4. Commit all changes including updated viewer files
+
 ### Database Migrations
 - Add migration scripts in `apps/server/src/migrations/`
 - Update schema in `apps/server/src/assets/db/schema.sql`
+
+### Server-Side Static Assets
+- Static assets (templates, SQL, translations, etc.) go in `apps/server/src/assets/`
+- Access them at runtime via `RESOURCE_DIR` from `apps/server/src/services/resource_dir.ts` (e.g. `path.join(RESOURCE_DIR, "llm", "skills", "file.md")`)
+- **Do not use `import.meta.url`/`fileURLToPath`** to resolve file paths — the server is bundled into CJS for production, so `import.meta.url` will not point to the source directory
+- **Do not use `__dirname` with relative paths** from source files — after bundling, `__dirname` points to the bundle output, not the original source tree
+
+## MCP Server
+- Trilium exposes an MCP (Model Context Protocol) server at `http://localhost:8080/mcp`, configured in `.mcp.json`
+- The MCP server is **only available when the Trilium server is running** (`pnpm run server:start`)
+- It provides tools for reading, searching, and modifying notes directly from the AI assistant
+- Use it to interact with actual note data when developing or debugging note-related features
 
 ## Build System Notes
 - Uses pnpm for monorepo management

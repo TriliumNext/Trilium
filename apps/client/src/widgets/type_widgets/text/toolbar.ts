@@ -1,6 +1,6 @@
 import utils from "../../../services/utils.js";
 import options from "../../../services/options.js";
-import IconAlignCenter from "@ckeditor/ckeditor5-icons/theme/icons/align-center.svg?raw";
+import { IconAlignCenter } from "@ckeditor/ckeditor5-icons";
 
 const TEXT_FORMATTING_GROUP = {
     label: "Text formatting",

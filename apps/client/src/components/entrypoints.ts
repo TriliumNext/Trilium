@@ -2,6 +2,7 @@ import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons
 
 import { closeAllHeadlessAutocompletes } from "../services/autocomplete_core.js";
 import bundleService from "../services/bundle.js";
+import dialog from "../services/dialog.js";
 import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
@@ -215,6 +216,23 @@ export default class Entrypoints extends Component {
 
         await server.post(`notes/${noteId}/revision`);
 
+        toastService.showMessage(t("entrypoints.note-revision-created"));
+    }
+
+    async saveNamedRevisionCommand() {
+        const noteId = appContext.tabManager.getActiveContextNoteId();
+        if (!noteId) return;
+
+        const name = await dialog.prompt({
+            title: t("entrypoints.save-named-revision-title"),
+            message: t("entrypoints.save-named-revision-message"),
+            defaultValue: ""
+        });
+
+        // null means the user cancelled
+        if (name === null) return;
+
+        await server.post(`notes/${noteId}/revision`, { description: name || undefined });
         toastService.showMessage(t("entrypoints.note-revision-created"));
     }
 }

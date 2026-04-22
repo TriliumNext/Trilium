@@ -66,6 +66,172 @@
     "set-custom-color": "Set custom note colour"
   },
   "about": {
-    "title": "About Trilium Notes"
+    "data_directory": "Data directory:"
+  },
+  "toast": {
+    "critical-error": {
+      "title": "Critical error",
+      "message": "A critical error has occurred which prevents the client application from starting:\n\n{{message}}\n\nThis is most likely caused by a script failing in an unexpected way. Try starting the application in safe mode and addressing the issue."
+    },
+    "widget-error": {
+      "title": "Failed to initialise a widget",
+      "message-custom": "Custom widget from note with ID \"{{id}}\", titled \"{{title}}\" could not be initialised due to:\n\n{{message}}",
+      "message-unknown": "Unknown widget could not be initialised due to:\n\n{{message}}"
+    },
+    "bundle-error": {
+      "title": "Failed to load a custom script",
+      "message": "Script could not be executed due to:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Failed to obtain the list of widgets from the server"
+    },
+    "widget-render-error": {
+      "title": "Failed to render a custom React widget"
+    },
+    "widget-missing-parent": "Custom widget does not have mandatory '{{property}}' property defined.\n\nIf this script is meant to be run without a UI element, use '#run=frontendStartup' instead.",
+    "open-script-note": "Open script note",
+    "scripting-error": "Custom script error: {{title}}"
+  },
+  "add_link": {
+    "add_link": "Add link",
+    "help_on_links": "Help on links",
+    "note": "Note",
+    "search_note": "search for note by its name",
+    "link_title_mirrors": "link title mirrors the note's current title",
+    "link_title_arbitrary": "link title can be changed arbitrarily",
+    "link_title": "Link title",
+    "anchor": "Anchor (optional)",
+    "anchor_none": "None (link to note)",
+    "button_add_link": "Add link"
+  },
+  "delete_notes": {
+    "delete_clones_description_one": "Also delete {{count}} other clone. Can be undone in recent changes.",
+    "delete_clones_description_other": "Also delete {{count}} other clones. Can be undone in recent changes.",
+    "title": "Delete notes",
+    "close": "Close",
+    "clones_label": "Clones",
+    "delete_all_clones_description": "Delete also all clones (can be undone in recent changes)",
+    "erase_notes_label": "Erase permanently",
+    "erase_notes_description": "Erase notes immediately instead of soft deletion. This cannot be undone and will force application reload.",
+    "erase_notes_warning": "Erase notes permanently (can't be undone), including all clones. This will force application reload.",
+    "notes_to_be_deleted": "Notes to be deleted ({{notesCount}})",
+    "no_note_to_delete": "No note will be deleted (only clones).",
+    "broken_relations_to_be_deleted": "Broken relations ({{relationCount}})",
+    "table_note_with_relation": "Note with relation",
+    "table_relation": "Relation",
+    "table_points_to": "Points to (deleted)",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  },
+  "branch_prefix": {
+    "edit_branch_prefix": "Edit branch prefix",
+    "edit_branch_prefix_multiple": "Edit branch prefix for {{count}} branches",
+    "help_on_tree_prefix": "Help on Tree prefix",
+    "prefix": "Prefix: ",
+    "save": "Save",
+    "branch_prefix_saved": "Branch prefix has been saved.",
+    "branch_prefix_saved_multiple": "Branch prefix has been saved for {{count}} branches.",
+    "affected_branches": "Affected branches ({{count}}):"
+  },
+  "bulk_actions": {
+    "bulk_actions": "Bulk actions",
+    "affected_notes": "Affected notes",
+    "include_descendants": "Include descendants of the selected notes",
+    "available_actions": "Available actions",
+    "chosen_actions": "Chosen actions",
+    "execute_bulk_actions": "Execute bulk actions",
+    "bulk_actions_executed": "Bulk actions have been executed successfully.",
+    "none_yet": "None yet... add an action by clicking one of the available ones above.",
+    "labels": "Labels",
+    "relations": "Relations",
+    "notes": "Notes",
+    "other": "Other"
+  },
+  "clone_to": {
+    "clone_notes_to": "Clone notes to...",
+    "help_on_links": "Help on links",
+    "notes_to_clone": "Notes to clone",
+    "target_parent_note": "Target parent note",
+    "search_for_note_by_its_name": "search for note by its name",
+    "cloned_note_prefix_title": "Cloned note will be shown in note tree with given prefix",
+    "prefix_optional": "Prefix (optional)",
+    "clone_to_selected_note": "Clone to selected note",
+    "no_path_to_clone_to": "No path to clone to.",
+    "note_cloned": "Note \"{{clonedTitle}}\" has been cloned into \"{{targetTitle}}\""
+  },
+  "confirm": {
+    "confirmation": "Confirmation",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "are_you_sure_remove_note": "Are you sure you want to remove the note \"{{title}}\" from relation map? ",
+    "if_you_dont_check": "If you don't check this, the note will be only removed from the relation map.",
+    "also_delete_note": "Also delete the note"
+  },
+  "export": {
+    "export_note_title": "Export note",
+    "close": "Close",
+    "export_type_subtree": "This note and all of its descendants",
+    "format_html": "HTML - recommended as it keeps all format",
+    "format_html_zip": "HTML in ZIP archive - this is recommended since this preserves all the formatting.",
+    "format_markdown": "Markdown - this preserves most of the formatting.",
+    "format_opml": "OPML - outliner interchange format for text only. Formatting, images and files are not included.",
+    "opml_version_1": "OPML v1.0 - plain text only",
+    "opml_version_2": "OPML v2.0 - allows also HTML",
+    "export_type_single": "Only this note without its descendants",
+    "export": "Export",
+    "choose_export_type": "Choose export type first please",
+    "export_status": "Export status",
+    "export_in_progress": "Export in progress: {{progressCount}}",
+    "export_finished_successfully": "Export finished successfully.",
+    "format_pdf": "PDF - for printing or sharing purposes.",
+    "share-format": "HTML for web publishing - uses the same theme that is used shared notes, but can be published as a static website."
+  },
+  "help": {
+    "title": "Cheatsheet",
+    "collapseSubTree": "collapse sub-tree",
+    "activateNextTab": "activate next tab",
+    "editShortcuts": "Edit keyboard shortcuts",
+    "noteNavigation": "Note navigation",
+    "goUpDown": "go up/down in the list of notes",
+    "collapseExpand": "collapse/expand node",
+    "notSet": "not set",
+    "goBackForwards": "go back / forwards in the history",
+    "showJumpToNoteDialog": "show <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Jump to\" dialog</a>",
+    "scrollToActiveNote": "scroll to active note",
+    "jumpToParentNote": "jump to parent note",
+    "collapseWholeTree": "collapse whole note tree",
+    "tabShortcuts": "Tab shortcuts",
+    "newTabNoteLink": "on note link opens note in a new tab",
+    "newTabWithActivationNoteLink": "on note link opens and activates the note in a new tab",
+    "onlyInDesktop": "Only in desktop (Electron build)",
+    "openEmptyTab": "open empty tab",
+    "closeActiveTab": "close active tab",
+    "activatePreviousTab": "activate previous tab",
+    "creatingNotes": "Creating notes",
+    "createNoteAfter": "create new note after the active note",
+    "createNoteInto": "create new sub-note into active note",
+    "editBranchPrefix": "edit <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">prefix</a> of active note clone",
+    "movingCloningNotes": "Moving / cloning notes",
+    "moveNoteUpDown": "move note up/down in the note list",
+    "moveNoteUpHierarchy": "move note up in the hierarchy",
+    "multiSelectNote": "multi-select note above/below",
+    "selectAllNotes": "select all notes in the current level",
+    "selectNote": "select note",
+    "copyNotes": "copy active note (or current selection) into clipboard (used for <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">cloning</a>)",
+    "cutNotes": "cut current note (or current selection) into clipboard (used for moving notes)",
+    "pasteNotes": "paste note(s) as sub-note into active note (which is either move or clone depending on whether it was copied or cut into clipboard)",
+    "deleteNotes": "delete note / sub-tree",
+    "editingNotes": "Editing notes",
+    "editNoteTitle": "in tree pane will switch from tree pane into note title. Enter from note title will switch focus to text editor. <kbd>Ctrl+.</kbd> will switch back from editor to tree pane.",
+    "createEditLink": "create / edit external link",
+    "createInternalLink": "create internal link",
+    "followLink": "follow link under cursor",
+    "insertDateTime": "insert current date and time at caret position",
+    "jumpToTreePane": "jump away to the tree pane and scroll to active note",
+    "markdownAutoformat": "Markdown-like autoformatting",
+    "headings": "<code>##</code>, <code>###</code>, <code>####</code>  etc. followed by space for headings",
+    "bulletList": "<code>*</code> or <code>-</code> followed by space for bullet list",
+    "numberedList": "<code>1.</code> or <code>1)</code> followed by space for numbered list",
+    "blockQuote": "start a line with <code>></code> followed by space for block quote"
   }
 }

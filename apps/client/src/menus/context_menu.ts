@@ -39,6 +39,7 @@ export interface MenuCommandItem<T> {
     title: string;
     command?: T;
     type?: string;
+    mime?: string;
     /**
      * The icon to display in the menu item.
      *
