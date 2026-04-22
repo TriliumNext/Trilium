@@ -1,4 +1,11 @@
 .ck.ck-balloon-panel.codeblock-language-list .ck-dropdown__panel {
+    background-color: #fff;
     max-height: 300px;
     overflow-y: auto;
+}
+
+.ck.ck-dropdown__panel,
+.ck.ck-reset.ck-dropdown__panel,
+.ck.ck-dropdown__panel.ck-dropdown__panel-visible {
+    background-color: #fff !important;
 }
