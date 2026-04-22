@@ -104,7 +104,7 @@
     "http-proxy-agent": "9.0.0",
     "https-proxy-agent": "9.0.0",
     "i18next": "26.0.5",
-    "i18next-fs-backend": "2.6.3",
+    "i18next-fs-backend": "2.6.4",
     "image-type": "6.1.0",
     "ini": "6.0.0",
     "is-animated": "2.0.2",
