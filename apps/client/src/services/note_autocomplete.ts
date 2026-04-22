@@ -721,10 +721,15 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         },
     });
 
-    const unregisterGlobalCloser = registerHeadlessAutocompleteCloser(() => {
-        autocomplete.setIsOpen(false);
-        panelController.hide();
-    });
+    // Contained panels are part of the page content (e.g. Empty tab) and should
+    // not be dismissed by tab switches or other global navigation events.
+    // Only floating (non-contained) panels register a global closer.
+    const unregisterGlobalCloser = options.container
+        ? undefined
+        : registerHeadlessAutocompleteCloser(() => {
+              autocomplete.setIsOpen(false);
+              panelController.hide();
+          });
 
     const onCompositionStart = () => {
         isComposingInput = true;
@@ -821,7 +826,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     });
 
     const cleanup = () => {
-        unregisterGlobalCloser();
+        unregisterGlobalCloser?.();
         cleanupInputBindings();
         render(null, panelEl);
         panelController.destroy();
