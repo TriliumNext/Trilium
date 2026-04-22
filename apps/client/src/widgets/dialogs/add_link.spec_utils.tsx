@@ -37,7 +37,19 @@ export function setupAddLinkDialogMocks(state: AddLinkDialogTestState) {
     }));
 
     vi.doMock("../../services/ws", () => ({
+        default: {
+            subscribeToMessages: vi.fn(),
+            logError: state.logErrorSpy
+        },
         logError: state.logErrorSpy
+    }));
+
+    vi.doMock("../../services/froca", () => ({
+        default: {
+            getNote: vi.fn(async () => ({
+                getLabels: vi.fn(() => [])
+            }))
+        }
     }));
 
     vi.doMock("../../services/note_autocomplete", () => ({
