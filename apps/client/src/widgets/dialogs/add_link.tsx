@@ -3,6 +3,7 @@ import { useEffect,useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 
+import froca from "../../services/froca";
 import note_autocomplete, { Suggestion } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import { logError } from "../../services/ws";
