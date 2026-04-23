@@ -194,6 +194,12 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     llmProviders: string;
     /** Whether the MCP (Model Context Protocol) server endpoint is enabled. */
     mcpEnabled: boolean;
+    /**
+     * JSON array of configured web-search providers for the LLM agent
+     * (e.g. Exa, Tavily, SearXNG). Each entry is a {@code SearchProviderSetup}.
+     * When empty, the LLM agent falls back to each provider's built-in web search.
+     */
+    searchProviders: string;
 
     // OCR options
     ocrEnabled: boolean;

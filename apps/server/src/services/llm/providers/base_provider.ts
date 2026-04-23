@@ -9,6 +9,8 @@ import { generateText, type ModelMessage, stepCountIs, streamText, type ToolSet 
 import yaml from "js-yaml";
 
 import becca from "../../../becca/becca.js";
+import { getFirstSearchProvider } from "../../search_providers/index.js";
+import { addConfiguredSearchTool } from "../../search_providers/tool.js";
 import { getSkillsSummary } from "../skills/index.js";
 import { getNoteMeta,SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
@@ -157,7 +159,14 @@ export abstract class BaseProvider implements LlmProvider {
         const tools: ToolSet = {};
 
         if (config.enableWebSearch) {
-            this.addWebSearchTool(tools);
+            // Prefer a user-configured pluggable search provider (Exa/Tavily/SearXNG/…);
+            // otherwise fall back to each LLM provider's built-in web search.
+            const configuredSearch = getFirstSearchProvider();
+            if (configuredSearch) {
+                addConfiguredSearchTool(tools, configuredSearch);
+            } else {
+                this.addWebSearchTool(tools);
+            }
         }
 
         if (config.enableNoteTools) {
