@@ -288,7 +288,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
         return items.filter((row) => row !== null) as MenuItem<TreeCommandNames>[];
     }
 
-    async selectMenuItemHandler({ command, type, templateNoteId }: MenuCommandItem<TreeCommandNames>) {
+    async selectMenuItemHandler({ command, type, mime, templateNoteId }: MenuCommandItem<TreeCommandNames>) {
         const notePath = treeService.getNotePath(this.node);
 
         if (utils.isMobile()) {
@@ -305,6 +305,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                 target: "after",
                 targetBranchId: this.node.data.branchId,
                 type,
+                mime,
                 isProtected,
                 templateNoteId
             });
@@ -313,6 +314,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
 
             noteCreateService.createNote(parentNotePath, {
                 type,
+                mime,
                 isProtected: this.node.data.isProtected,
                 templateNoteId
             });

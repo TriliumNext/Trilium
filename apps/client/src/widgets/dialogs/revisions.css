@@ -3,72 +3,207 @@ body.mobile .revisions-dialog {
         height: 95vh;
     }
 
-    .modal-header {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.25em;
-        font-size: 0.9em;
-    }
-
-    .modal-title {
-        flex-grow: 1;
-        width: 100%;
-    }
-
-    .modal-body {
-        height: fit-content !important;
-        flex-direction: column;
-        padding: 0;
-    }
-
     .modal-footer {
         font-size: 0.9em;
-    }
-
-    .revision-list {
-        height: fit-content !important;
-        max-height: 20vh;
-        border-bottom: 1px solid var(--main-border-color) !important;
-        padding: 0 1em;
-        flex-shrink: 0;
-    }
-
-    .modal-body > .revision-content-wrapper {
-        flex-grow: 1;
-        max-width: unset !important;
-        height: 100%;
-        margin: 0;
-        display: block !important;
-    }
-
-    .modal-body > .revision-content-wrapper > div:first-of-type {
-        flex-direction: column;
     }
 
     .revision-title {
         font-size: 1rem;
     }
 
-    .revision-title-buttons {
-        text-align: center;
-        display: flex;
-        gap: 0.25em;
+    .revision-toolbar-actions {
         flex-wrap: wrap;
     }
 
     .revision-content {
         padding: 0.5em;
-        height: fit-content;
+    }
+}
+
+body.desktop .revisions-dialog {
+    .revision-list {
+        width: 300px;
+    }
+
+    .modal-content-with-sidebar {
+        height: 80vh;
     }
 }
 
 .revisions-dialog {
-    .revision-title-buttons {
+    .modal-body {
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-sidebar {
+        background-color: var(--card-background-color);
+    }
+
+    .modal-sidebar .dropdown-menu.static {
+        background-color: transparent !important;
+        border-radius: 0 !important;
+    }
+
+    .revision-toolbar {
         flex-shrink: 0;
+        border-bottom: 1px solid var(--main-border-color);
+        padding: 8px 20px;
+    }
+
+    .revision-title {
+        font-size: 1.2em;
+        margin: 8px 0;
+    }
+
+    .revision-toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .revision-menu-header {
+        font-weight: bold;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        opacity: 0.6;
+    }
+
+    .revision-content-wrapper {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .revision-content {
+        flex-grow: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 20px;
+    }
+
+    .no-items {
+        padding-block: 3em;
     }
 
     .revision-list {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow: auto;
+
+        .dropdown-item {
+            min-height: 2.5em;
+
+            >div {
+                padding-left: 0.25em;
+                min-width: 0;
+            }
+        }
+    }
+
+    .revision-item-description {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.85em;
+        opacity: 0.7;
+    }
+
+    .revision-group-header {
+        font-size: 0.75em;
+        font-weight: bold;
+        text-transform: uppercase;
+        opacity: 0.5;
+        padding: 6px 12px 2px;
+    }
+
+    .revision-item-meta {
+        font-size: 0.85em;
+        opacity: 0.7;
+    }
+
+
+    .revision-description-icon {
+        opacity: 0.5;
         flex-shrink: 0;
+    }
+
+    .revision-description-editor {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        margin: 3px 0;
+
+        input {
+            flex-grow: 1;
+        }
+    }
+
+    .revision-description-display {
+        display: flex;
+        align-items: center;
+        margin: 3px 0;
+        gap: 5px;
+        min-height: 24px;
+    }
+
+    .revision-description-text {
+        font-size: 0.9em;
+
+        &.empty {
+            opacity: 0.5;
+            font-style: italic;
+        }
+    }
+
+    .revision-diff-code {
+        font-family: var(--font-family-monospace, monospace);
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-width: 100%;
+        padding: 0;
+    }
+
+    /* HTML diff styles (htmldiff-js) */
+    .revision-diff-content {
+        ins {
+            text-decoration: none;
+
+            &.diffins,
+            &.diffmod {
+                background-color: color-mix(in srgb, var(--bs-success) 25%, transparent);
+            }
+        }
+
+        del {
+            text-decoration: line-through;
+
+            &.diffdel,
+            &.diffmod {
+                background-color: color-mix(in srgb, var(--bs-danger) 25%, transparent);
+            }
+        }
+
+        /* Image diff styles */
+        ins img,
+        del img {
+            border: 3px solid;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        del img {
+            border-color: var(--bs-danger);
+            opacity: 0.6;
+        }
+
+        ins img {
+            border-color: var(--bs-success);
+        }
     }
 
     .revision-content.type-file {

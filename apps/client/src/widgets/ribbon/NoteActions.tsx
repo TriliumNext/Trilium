@@ -75,7 +75,8 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     const noteType = useNoteProperty(note, "type") ?? "";
     const [viewType] = useNoteLabel(note, "viewType");
     const canBeConvertedToAttachment = note?.isEligibleForConversionToAttachment();
-    const isSearchable = ["text", "code", "book", "mindMap", "doc", "spreadsheet"].includes(noteType);
+    const isSourceView = noteContext?.viewScope?.viewMode === "source";
+    const isSearchable = isSourceView || ["text", "code", "book", "mindMap", "doc", "spreadsheet"].includes(noteType);
     const isInOptionsOrHelp = note?.noteId.startsWith("_options") || note?.noteId.startsWith("_help");
     const isExportableToImage = ["mermaid", "mindMap"].includes(noteType);
     const isContentAvailable = note.isContentAvailable();
@@ -152,6 +153,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
 
             <CommandItem command="showRevisions" icon="bx bx-history" text={t("note_actions.view_revisions")} />
             <CommandItem command="forceSaveRevision" icon="bx bx-save" disabled={isInOptionsOrHelp} text={t("note_actions.save_revision")} />
+            <CommandItem command="saveNamedRevision" icon="bx bx-purchase-tag" disabled={isInOptionsOrHelp} text={t("note_actions.save_named_revision")} />
 
             <FormDropdownDivider />
 

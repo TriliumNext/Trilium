@@ -1,13 +1,6 @@
 {
   "about": {
-    "title": "حول تريليوم للملاحظات",
-    "homepage": "الصفحة الرئيسية:",
-    "app_version": "اصدار التطبيق:",
-    "sync_version": "اصدار المزامنه:",
-    "build_date": "تاريخ الانشاء:",
-    "build_revision": "مراجعة الاصدار:",
-    "data_directory": "مجلد البيانات:",
-    "db_version": "اصدار قاعدة البيانات:"
+    "data_directory": "مجلد البيانات:"
   },
   "toast": {
     "critical-error": {

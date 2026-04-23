@@ -103,7 +103,8 @@
     "toggle-zen-mode": "Habilita/Deshabilita el modo Zen (IU mínima para edición sin distracciones)",
     "open-command-palette": "Abrir paleta de comandos",
     "clone-notes-to": "Clonar notas seleccionadas",
-    "move-notes-to": "Mover notas seleccionadas"
+    "move-notes-to": "Mover notas seleccionadas",
+    "save-named-revision": "Guardar una revisión nombrada de la nota activa"
   },
   "login": {
     "title": "Iniciar sesión",
@@ -260,7 +261,7 @@
     "command-palette": "Abrir paleta de comandos",
     "zen-mode": "Modo Zen",
     "tab-switcher-title": "Conmutador de pestañas",
-    "llm-chat-history-title": "Historial del chat de AI",
+    "llm-chat-history-title": "Historial del chat de IA",
     "custom-dictionary-title": "Diccionario personalizado",
     "llm-title": "IA / LLM",
     "sidebar-chat-title": "Chat de IA"
@@ -297,7 +298,8 @@
   "migration": {
     "old_version": "La migración directa desde tu versión actual no está soportada. Por favor actualice a v0.60.4 primero y solo después a esta versión.",
     "error_message": "Error durante la migración a la versión {{version}}: {{stack}}",
-    "wrong_db_version": "La versión de la base de datos {{version}} es más nueva de lo que la aplicación espera {{targetVersion}}, lo que significa que fue creada por una versión más reciente e incompatible de Trilium. Actualice a la última versión de Trilium para resolver este problema."
+    "wrong_db_version": "La versión de la base de datos {{version}} es más nueva de lo que la aplicación espera {{targetVersion}}, lo que significa que fue creada por una versión más reciente e incompatible de Trilium. Actualice a la última versión de Trilium para resolver este problema.",
+    "invalid_db_version": "La versión de la base de datos no es un número válido. Esto usualmente indica una opción \"dbVersion\" corrupta en la base de datos. Por favor, restaure de una copia de seguridad."
   },
   "modals": {
     "error_title": "Error"
@@ -409,7 +411,8 @@
     "toggle-ribbon-tab-note-paths": "Mostrar pestaña de la cinta de opciones: Rutas de nota",
     "toggle-ribbon-tab-similar-notes": "Mostrar pestaña de la cinta de opciones: Notas similares",
     "toggle-ribbon-tab-owned-attributes": "Mostrar pestaña de la cinta de opciones: Propiedades asignadas",
-    "toggle-ribbon-tab-promoted-attributes": "Mostrar pestaña de la cinta de opciones: Atributos destacados"
+    "toggle-ribbon-tab-promoted-attributes": "Mostrar pestaña de la cinta de opciones: Atributos destacados",
+    "save-named-revision": "Guardar revisión nombrada"
   },
   "hidden_subtree_templates": {
     "board_note_first": "Primera nota",

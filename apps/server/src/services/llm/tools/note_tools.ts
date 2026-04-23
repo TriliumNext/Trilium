@@ -116,7 +116,7 @@ export const noteTools = defineTools({
                 return { error: `Cannot update content for note type: ${note.type}` };
             }
 
-            note.saveRevision();
+            note.saveRevision({ source: "llm" });
             setNoteContentFromLlm(note, content);
             return {
                 success: true,
@@ -158,7 +158,7 @@ export const noteTools = defineTools({
                 newContent = existingContent + (existingContent.endsWith("\n") ? "" : "\n") + content;
             }
 
-            note.saveRevision();
+            note.saveRevision({ source: "llm" });
             note.setContent(newContent);
             return {
                 success: true,

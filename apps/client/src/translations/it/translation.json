@@ -1,13 +1,23 @@
 {
   "about": {
-    "app_version": "Versione dell'app:",
-    "db_version": "Versione DB:",
-    "sync_version": "Versione Sync:",
     "data_directory": "Cartella dati:",
-    "title": "Informazioni su Trilium Notes",
-    "build_date": "Data della build:",
-    "build_revision": "Revisione della build:",
-    "homepage": "Homepage:"
+    "version_label": "Versione:",
+    "version": "{{appVersion}} (database: {{dbVersion}},sync protocol: {{syncVersion}})",
+    "build_info": "Build: {{buildDate}}, revisione: <buildRevision />",
+    "contributors_label": "Collaboratori:",
+    "contributor_roles": {
+      "lead-dev": "sviluppatore capo",
+      "original-dev": "sviluppatore originale"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran ha fondato TriliumNext nel 2024, un fork della comunità creato dopo che Zadam si era ritirato dal progetto. Successivamente, Zadam ha trasferito il repository originale al team di TriliumNext, unendo nuovamente i due progetti in uno solo.",
+      "original-dev": "Il 25 dicembre 2017, Zadam ha rilasciato la prima versione beta di Trilium (scritto con una sola \"l\", a differenza del fiore). Insoddisfatto di altri sistemi di organizzazione note, ha creato una potente base di conoscenza gerarchica self-hosted che ha raccolto oltre 22.000 stelle su GitHub. Nel 2024, con l'aumentare degli impegni, ha messo il progetto in modalità di manutenzione."
+    },
+    "contributor_full_list": "Scopri tutta la community",
+    "github_tooltip": "Segnala bug, suggerisci nuove funzionalità o contribuisci su GitHub",
+    "license_tooltip": "Visualizza licenza",
+    "donate": "Fai una donazione",
+    "donate_tooltip": "Fai una donazione per sostenere questo progetto"
   },
   "toast": {
     "critical-error": {
@@ -41,7 +51,9 @@
     "link_title_arbitrary": "il titolo del collegamento può essere modificato arbitrariamente",
     "link_title": "Titolo del collegamento",
     "button_add_link": "Aggiungi il collegamento",
-    "help_on_links": "Aiuto sui collegamenti"
+    "help_on_links": "Aiuto sui collegamenti",
+    "anchor": "Ancoraggio (facoltativo)",
+    "anchor_none": "Nessuna (link alla nota)"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Modifica il prefisso del ramo",
@@ -2373,5 +2385,45 @@
     "fuzzy_matching_description": "Si applica alla ricerca rapida e alla ricerca completa. Trova parole simili quando non ci sono corrispondenze esatte.",
     "autocomplete_fuzzy_label": "Tolleranza agli errori di battitura nel completamento automatico",
     "autocomplete_fuzzy_description": "Influisce sui comandi \"Vai alla nota\" e sui selettori di note. È più lento, ma tollera gli errori di digitazione."
+  },
+  "revisions": {
+    "note_revisions": "Note sulle revisioni",
+    "delete_all_revisions": "Elimina tutte le revisioni di questa nota",
+    "delete_all_button": "Elimina tutte le revisioni",
+    "help_title": "Guida alle revisioni delle note",
+    "confirm_delete_all": "Vuoi eliminare tutte le revisioni di questa nota?",
+    "no_revisions": "Non ci sono ancora revisioni per questa nota...",
+    "restore_button": "Ripristina",
+    "highlight_changes": "Evidenzia le modifiche",
+    "diff_on": "Mostra le differenze",
+    "diff_off": "Mostra contenuto",
+    "diff_on_hint": "Clicca qui per visualizzare le differenze nel testo della nota",
+    "diff_off_hint": "Clicca qui per visualizzare il contenuto della nota",
+    "diff_not_available": "La funzione \"Diff\" non è disponibile.",
+    "confirm_restore": "Vuoi ripristinare questa revisione? In questo modo il titolo e il contenuto attuali della nota verranno sovrascritti con quelli di questa revisione.",
+    "delete_button": "Eliminazione",
+    "confirm_delete": "Vuoi eliminare questa revisione?",
+    "revisions_deleted": "Le revisioni delle note sono state eliminate.",
+    "revision_restored": "La revisione della nota è stata ripristinata.",
+    "revision_deleted": "La revisione della nota è stata eliminata.",
+    "snapshot_interval": "Nota: intervallo di aggiornamento dell'istantanea: {{seconds}} s.",
+    "maximum_revisions": "Limite delle istantanee delle revisioni delle note: {{number}}.",
+    "save_revision_now": "Salva subito una revisione",
+    "save_named_revision": "Salva revisione con nome...",
+    "snapshot_header": "Istantanea della revisione",
+    "snapshot_interval_value": "Intervallo: {{seconds}}s",
+    "snapshot_limit_value": "Limite: {{number}}",
+    "settings": "Impostazioni di revisione delle note",
+    "menu_tooltip": "Opzioni di revisione",
+    "download_button": "Scarica",
+    "mime": "MIME: ",
+    "file_size": "Dimensione del file:",
+    "preview_not_available": "L'anteprima non è disponibile per questo tipo di nota.",
+    "save_revision": "Salva revisione",
+    "save_revision_tooltip": "Salvare manualmente un'istantanea della nota corrente",
+    "description_placeholder": "Assegna un nome a questa revisione",
+    "revision_saved": "La modifica alla nota è stata salvata.",
+    "edit_description": "Modifica nome",
+    "description_updated": "Il nome della revisione è stato aggiornato."
   }
 }

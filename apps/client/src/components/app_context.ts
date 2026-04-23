@@ -281,6 +281,7 @@ export type CommandMappings = {
     backInNoteHistory: CommandData;
     forwardInNoteHistory: CommandData;
     forceSaveRevision: CommandData;
+    saveNamedRevision: CommandData;
     scrollToActiveNote: CommandData;
     quickSearch: CommandData;
     collapseTree: CommandData;

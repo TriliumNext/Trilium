@@ -1,0 +1,82 @@
+:where(.property-sheet) {
+    --border-radius: 8px;
+}
+
+.property-sheet {
+    dl {
+        background: var(--card-background-color);
+
+        dt {
+            opacity: .75;
+        }
+
+        dd {
+            user-select: text;
+        }
+    }
+}
+
+.property-sheet-container.wide .property-sheet {
+        display: table;
+        border-spacing: 0 2px;
+        border-collapse: separate;
+
+        dl {
+            display: table-row;
+            --_br: var(--border-radius);
+            
+            &:first-child {
+                clip-path: inset(0 round var(--_br) var(--_br) 0 0);
+            }
+
+            &:last-child {
+                clip-path: inset(0 round 0 0 var(--_br) var(--_br));
+            }
+        }
+
+        dt, dd {
+            display: table-cell;
+            padding: 10px 16px;
+            vertical-align: top;
+        }
+
+        dt {
+            white-space: nowrap;
+            font-weight: normal;
+        }
+
+        dl {
+            width: 100%;
+    }
+}
+
+.property-sheet-container.narrow .property-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    dl {
+        margin: 0;
+        padding: 16px 20px;
+
+        &:first-child {
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        &:last-child {
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+        }
+
+        dt {
+            margin-bottom: 8px;
+            font-size: .85em;
+            font-weight: 550;
+            text-transform: uppercase;
+            letter-spacing: .75pt;
+        }
+        
+        dd {
+            margin: 0;
+        }
+    }
+}

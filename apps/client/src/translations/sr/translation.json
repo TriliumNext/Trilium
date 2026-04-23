@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "O Trilium Belеškama",
-    "homepage": "Početna stranica:",
-    "app_version": "Verzija aplikacije:",
-    "db_version": "Verzija baze podataka:",
-    "sync_version": "Verzija sinhronizacije:",
-    "build_date": "Datum izgradnje:",
-    "build_revision": "Revizija izgradnje:",
     "data_directory": "Direktorijum sa podacima:"
   },
   "toast": {

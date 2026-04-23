@@ -77,7 +77,7 @@ function getAttributeNames(type: string, nameLike: string) {
         }
     }
 
-    names = names.filter((name) => !["internalLink", "imageLink", "includeNoteLink", "relationMapLink"].includes(name));
+    names = names.filter((name) => !["internalLink", "imageLink", "includeNoteLink", "relationMapLink", "internalBookmark"].includes(name));
 
     names.sort((a, b) => {
         const aPrefix = a.toLowerCase().startsWith(nameLike);

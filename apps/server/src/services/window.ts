@@ -5,14 +5,21 @@ import url from "url";
 import app_info from "./app_info.js";
 import cls from "./cls.js";
 import customDictionary from "./custom_dictionary.js";
-import { initPrintingHandlers } from "./printing.js";
 import keyboardActionsService from "./keyboard_actions.js";
 import log from "./log.js";
 import optionService from "./options.js";
 import port from "./port.js";
+import { initPrintingHandlers } from "./printing.js";
 import { RESOURCE_DIR } from "./resource_dir.js";
 import sqlInit from "./sql_init.js";
-import { isMac, isWindows } from "./utils.js";
+import { isDev, isMac, isWindows } from "./utils.js";
+
+// In dev mode, disable Chromium's HTTP cache so stale assets cached from a
+// previous production run (which served `max-age: 1y` headers) don't shadow
+// freshly built dev output. Must be set before the app's `ready` event.
+if (isDev) {
+    electron.app.commandLine.appendSwitch("disable-http-cache");
+}
 
 // Prevent the window being garbage collected
 let mainWindow: BrowserWindow | null;

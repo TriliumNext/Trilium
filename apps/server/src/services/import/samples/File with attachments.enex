@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-export SYSTEM "http://xml.evernote.com/pub/evernote-export2.dtd">
+<en-export export-date="20260417T081355Z" application="Evernote/Windows" version="6.x">
+<note><title>TEST1</title><content><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+
+<en-note><div>TXT</div><div><en-media hash="698d51a19d8a121ce581499d7b701668" type="text/plain"/><en-media hash="bcbe3365e6ac95ea2c0343a2395834dd" type="application/octet-stream"/><br/></div></en-note>]]></content><created>20260417T081156Z</created><updated>20260417T081307Z</updated><note-attributes><source>desktop.win</source><source-application>evernote.win32</source-application></note-attributes><resource><data encoding="base64">
+MTEx
+</data><mime>text/plain</mime><resource-attributes><source-url>file://D:\Users\leon\Desktop\attachments1.txt</source-url><file-name>attachments1.txt</file-name><attachment>true</attachment></resource-attributes></resource><resource><data encoding="base64">
+MjIy
+</data><mime>application/octet-stream</mime><resource-attributes><source-url>file://D:\Users\leon\Desktop\attachments2</source-url><file-name>attachments2</file-name><attachment>true</attachment></resource-attributes></resource></note><note><title>TEST2</title><content><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+
+<en-note><div>NO&nbsp;attachments</div></en-note>]]></content><created>20260417T081317Z</created><updated>20260417T081345Z</updated><note-attributes><source>desktop.win</source><source-application>evernote.win32</source-application></note-attributes></note><note><title>TEST3</title><content><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+
+<en-note>
+111
+</en-note>]]></content><created>20260417T081337Z</created><updated>20260417T081340Z</updated><note-attributes><source>desktop.win</source><source-application>evernote.win32</source-application></note-attributes></note></en-export>

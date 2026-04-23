@@ -97,7 +97,7 @@ function getType(options: TaskData<"importNotes">, mime: string): NoteType {
         case options?.textImportedAsText && ["text/html", "text/markdown", "text/x-markdown", "text/mdx"].includes(mimeLc):
             return "text";
 
-        case options?.codeImportedAsCode && CODE_MIME_TYPES.has(mimeLc):
+        case options?.codeImportedAsCode && (CODE_MIME_TYPES.has(mimeLc) || CODE_MIME_TYPES_OVERRIDE.has(mimeLc)):
             return "code";
 
         case mime.startsWith("image/"):

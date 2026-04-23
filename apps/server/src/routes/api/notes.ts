@@ -351,7 +351,12 @@ function forceSaveRevision(req: Request<{ noteId: string }>) {
         throw new ValidationError(`Note revision of a protected note cannot be created outside of a protected session.`);
     }
 
-    note.saveRevision();
+    const description = typeof req.body?.description === "string" ? req.body.description : "";
+    const revision = note.saveRevision({ description, source: "manual" });
+
+    return {
+        revisionId: revision.revisionId
+    };
 }
 
 function convertNoteToAttachment(req: Request<{ noteId: string }>) {

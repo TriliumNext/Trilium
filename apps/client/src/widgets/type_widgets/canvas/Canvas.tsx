@@ -1,7 +1,7 @@
 import { Excalidraw } from "@excalidraw/excalidraw";
 import { TypeWidgetProps } from "../type_widget";
 import "@excalidraw/excalidraw/index.css";
-import { useColorScheme, useNoteLabelBoolean, useTriliumOption } from "../../react/hooks";
+import { useColorScheme, useEffectiveReadOnly, useTriliumOption } from "../../react/hooks";
 import { useCallback, useMemo, useRef } from "preact/hooks";
 import { type ExcalidrawImperativeAPI, type AppState } from "@excalidraw/excalidraw/types";
 import options from "../../../services/options";
@@ -18,7 +18,7 @@ window.EXCALIDRAW_ASSET_PATH = `${window.location.pathname}/node_modules/@excali
 
 export default function Canvas({ note, noteContext }: TypeWidgetProps) {
     const apiRef = useRef<ExcalidrawImperativeAPI>(null);
-    const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const colorScheme = useColorScheme();
     const [ locale ] = useTriliumOption("locale");
     const persistence = useCanvasPersistence(note, noteContext, apiRef, colorScheme, isReadOnly);

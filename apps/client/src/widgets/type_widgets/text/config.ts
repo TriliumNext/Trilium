@@ -133,6 +133,15 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             defaultProtocol: "https://",
             allowedProtocols: ALLOWED_PROTOCOLS
         },
+        bookmark: {
+            toolbar: [
+                "bookmarkPreview",
+                "|",
+                "editBookmark",
+                "copyAnchorLink",
+                "removeBookmark"
+            ]
+        },
         emoji: {
             definitionsUrl: window.glob.isDev
                 ? new URL(import.meta.url).origin + emojiDefinitionsUrl

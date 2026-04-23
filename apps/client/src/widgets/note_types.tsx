@@ -12,7 +12,7 @@ import { TypeWidgetProps } from "./type_widgets/type_widget";
  * A `NoteType` altered by the note detail widget, taking into consideration whether the note is editable or not and adding special note types such as an empty one,
  * for protected session or attachment information.
  */
-export type ExtendedNoteType = Exclude<NoteType, "launcher" | "text" | "code" | "llmChat"> | "empty" | "readOnlyCode" | "readOnlyText" | "readOnlyOCRText" | "editableText" | "editableCode" | "attachmentDetail" | "attachmentList" |  "protectedSession" | "sqlConsole" | "llmChat";
+export type ExtendedNoteType = Exclude<NoteType, "launcher" | "text" | "code" | "llmChat"> | "empty" | "readOnlyCode" | "readOnlyText" | "readOnlyOCRText" | "editableText" | "editableCode" | "attachmentDetail" | "attachmentList" |  "protectedSession" | "sqlConsole" | "markdown" | "llmChat";
 
 export type TypeWidget = ((props: TypeWidgetProps) => VNode | JSX.Element | undefined);
 type NoteTypeView = () => (Promise<{ default: TypeWidget } | TypeWidget> | TypeWidget);
@@ -145,6 +145,12 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
     sqlConsole: {
         view: () => import("./type_widgets/SqlConsole"),
         className: "sql-console-widget-container",
+        isFullHeight: true
+    },
+    markdown: {
+        view: () => import("./type_widgets/code/Markdown"),
+        className: "note-detail-markdown",
+        printable: true,
         isFullHeight: true
     },
     spreadsheet: {

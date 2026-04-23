@@ -1,13 +1,6 @@
 {
   "about": {
-    "title": "Lisätietoja Trilium Notes:ista",
-    "homepage": "Kotisivu:",
-    "app_version": "Sovelluksen versio:",
-    "db_version": "Tietokannan versio:",
-    "build_date": "Koontipäivämäärä:",
-    "data_directory": "Datakansio:",
-    "sync_version": "Synkronoinnin versio:",
-    "build_revision": "Sovelluksen versio:"
+    "data_directory": "Datakansio:"
   },
   "toast": {
     "critical-error": {

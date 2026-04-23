@@ -7,13 +7,6 @@
     "copy_title": "Copiar para a área de transferência"
   },
   "about": {
-    "title": "Sobre o Trilium Notes",
-    "homepage": "Página inicial:",
-    "app_version": "Versão do App:",
-    "db_version": "Versão do banco de dados:",
-    "sync_version": "Versão de sincronização:",
-    "build_date": "Data de compilação:",
-    "build_revision": "Revisão da compilação:",
     "data_directory": "Diretório de dados:"
   },
   "toast": {

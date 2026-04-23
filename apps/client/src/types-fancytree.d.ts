@@ -269,6 +269,8 @@ declare namespace Fancytree {
         lazy: boolean;
         /** Alternative description used as hover banner */
         tooltip: string;
+        /** `<li>` element wrapping this node. `null` if the node has not been rendered yet. */
+        li: HTMLLIElement | null;
         /** Outer element of single nodes */
         span: HTMLElement;
         /** Outer element of single nodes for table extension */

@@ -103,7 +103,8 @@
     "toggle-book-properties": "Airíonna an Bhailiúcháin a Athrú",
     "toggle-classic-editor-toolbar": "Athraigh an cluaisín Formáidithe don eagarthóir leis an mbarra uirlisí socraithe",
     "export-as-pdf": "Easpórtáil an nóta reatha mar PDF",
-    "toggle-zen-mode": "Cumasaíonn/díchumasaíonn sé an mód zen (comhad úsáideora íosta le haghaidh eagarthóireacht níos dírithe)"
+    "toggle-zen-mode": "Cumasaíonn/díchumasaíonn sé an mód zen (comhad úsáideora íosta le haghaidh eagarthóireacht níos dírithe)",
+    "save-named-revision": "Sábháil athbhreithniú ainmnithe den nóta gníomhach"
   },
   "keyboard_action_names": {
     "back-in-note-history": "Ar ais i Stair na Nótaí",
@@ -200,7 +201,8 @@
     "zoom-in": "Zúmáil Isteach",
     "reset-zoom-level": "Athshocraigh Leibhéal Súmála",
     "copy-without-formatting": "Cóipeáil Gan Formáidiú",
-    "force-save-revision": "Athbhreithniú Sábháilte Fórsála"
+    "force-save-revision": "Athbhreithniú Sábháilte Fórsála",
+    "save-named-revision": "Sábháil Athbhreithniú Ainmnithe"
   },
   "login": {
     "title": "Logáil Isteach",
@@ -394,7 +396,8 @@
   "migration": {
     "old_version": "Ní thacaítear le haistriú díreach ó do leagan reatha. Uasghrádaigh go dtí an leagan is déanaí v0.60.4 ar dtús agus ansin go dtí an leagan seo amháin.",
     "error_message": "Earráid le linn imirce go leagan {{version}}: {{stack}}",
-    "wrong_db_version": "Tá leagan an bhunachair shonraí ({{version}}) níos nuaí ná mar a bhfuil súil ag an bhfeidhmchlár leis ({{targetVersion}}), rud a chiallaíonn gur cruthaíodh é le leagan níos nuaí agus neamh-chomhoiriúnach de Trilium. Uasghrádaigh go dtí an leagan is déanaí de Trilium chun an fhadhb seo a réiteach."
+    "wrong_db_version": "Tá leagan an bhunachair shonraí ({{version}}) níos nuaí ná mar a bhfuil súil ag an bhfeidhmchlár leis ({{targetVersion}}), rud a chiallaíonn gur cruthaíodh é le leagan níos nuaí agus neamh-chomhoiriúnach de Trilium. Uasghrádaigh go dtí an leagan is déanaí de Trilium chun an fhadhb seo a réiteach.",
+    "invalid_db_version": "Ní uimhir bhailí í an leagan bunachar sonraí. De ghnáth léiríonn sé seo go bhfuil an rogha 'dbVersion' truaillithe sa bhunachar sonraí. Athchóirigh ó chúltaca le do thoil."
   },
   "modals": {
     "error_title": "Earráid"
@@ -458,5 +461,8 @@
       "fulltext-after-expression": "Ní abairt bhailí í \"{{- token}}\". Chun téacs a chuardach, cuir é roimh scagairí tréithe (m.sh., \"{{- token}} #label\" in ionad \"#label {{- token}}\").",
       "unrecognized-expression": "Sloinneadh neamhaitheanta \"{{- token}}\""
     }
+  },
+  "password": {
+    "incorrect": "Tá an focal faire a chuir tú isteach mícheart."
   }
 }

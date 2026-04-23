@@ -175,8 +175,12 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
     }
 
     function detectFileTypeAndMime(taskContext: TaskContext<"importNotes">, filePath: string) {
-        const mime = mimeService.getMime(filePath) || "application/octet-stream";
-        const type = mimeService.getType(taskContext.data || {}, mime);
+        const rawMime = mimeService.getMime(filePath) || "application/octet-stream";
+        const type = mimeService.getType(taskContext.data || {}, rawMime);
+        // Normalize aliased code MIMEs (e.g. `text/markdown` → `text/x-markdown`,
+        // `application/javascript` → `application/javascript;env=frontend`) so the
+        // stored MIME matches what the rest of the app expects.
+        const mime = (type === "code" && mimeService.normalizeMimeType(rawMime)) || rawMime;
 
         return { mime, type };
     }

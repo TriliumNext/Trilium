@@ -11,20 +11,20 @@
     "url": "https://triliumnotes.org"
   },
   "scripts": {
-    "dev": "cross-env TRILIUM_PORT=37742 TRILIUM_DATA_DIR=data tsx ../../scripts/electron-start.mts src/main.ts",
+    "dev": "cross-env TRILIUM_PORT=37742 TRILIUM_DATA_DIR=data TRILIUM_ELECTRON_DATA_DIR=data-electron-37742 tsx ../../scripts/electron-start.mts src/main.ts",
     "start-no-dir": "cross-env TRILIUM_PORT=37743 tsx ../../scripts/electron-start.mts src/main.ts",
     "build": "tsx scripts/build.ts",
-    "start-prod": "pnpm build && cross-env TRILIUM_DATA_DIR=data TRILIUM_PORT=37841 ELECTRON_IS_DEV=0 electron dist",
+    "start-prod": "pnpm build && cross-env TRILIUM_DATA_DIR=data TRILIUM_ELECTRON_DATA_DIR=data-electron-37841 TRILIUM_PORT=37841 ELECTRON_IS_DEV=0 electron dist",
     "start-prod-no-dir": "pnpm build && cross-env TRILIUM_PORT=37841 ELECTRON_IS_DEV=0 electron dist",
     "electron-forge:make": "pnpm build && electron-forge make dist",
     "electron-forge:make-flatpak": "pnpm build && DEBUG=* electron-forge make dist --targets=@electron-forge/maker-flatpak",
     "electron-forge:package": "pnpm build && electron-forge package dist",
     "electron-forge:start": "pnpm build && electron-forge start dist",
-    "e2e": "pnpm build && cross-env TRILIUM_INTEGRATION_TEST=memory-no-store TRILIUM_PORT=8082 TRILIUM_DATA_DIR=data-e2e ELECTRON_IS_DEV=0 playwright test"
+    "e2e": "pnpm build && cross-env TRILIUM_INTEGRATION_TEST=memory-no-store TRILIUM_PORT=8082 TRILIUM_DATA_DIR=data-e2e TRILIUM_ELECTRON_DATA_DIR=data-e2e-electron-8082 ELECTRON_IS_DEV=0 playwright test"
   },
   "dependencies": {
     "@electron/remote": "2.1.3",
-    "better-sqlite3": "12.8.0",
+    "better-sqlite3": "12.9.0",
     "electron-debug": "4.1.0",
     "electron-dl": "4.0.0",
     "electron-squirrel-startup": "1.0.1"
@@ -44,7 +44,7 @@
     "@triliumnext/server": "workspace:*",
     "@types/electron-squirrel-startup": "1.0.2",
     "copy-webpack-plugin": "14.0.0",
-    "electron": "41.2.0",
+    "electron": "41.2.1",
     "prebuild-install": "7.1.3"
   }
 }

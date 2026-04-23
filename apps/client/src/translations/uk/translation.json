@@ -20,14 +20,7 @@
     "affected_branches": "Уражені гілки ({{count}}):"
   },
   "about": {
-    "app_version": "Версія програми:",
-    "db_version": "Версія БД:",
-    "build_date": "Дата збірки:",
-    "build_revision": "Ревізія збірки:",
-    "data_directory": "Каталог даних:",
-    "homepage": "Домашня сторінка:",
-    "title": "Про Trilium Notes",
-    "sync_version": "Версія синхронізації:"
+    "data_directory": "Каталог даних:"
   },
   "global_menu": {
     "about": "Про Trilium Notes",

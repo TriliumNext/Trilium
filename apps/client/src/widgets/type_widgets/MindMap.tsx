@@ -12,7 +12,7 @@ import { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import utils from "../../services/utils";
-import { useColorScheme, useEditorSpacedUpdate, useNoteLabelBoolean, useSyncedRef, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
+import { useColorScheme, useEditorSpacedUpdate, useEffectiveReadOnly, useSyncedRef, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
 import { refToJQuerySelector } from "../react/react_utils";
 import { TypeWidgetProps } from "./type_widget";
 
@@ -46,7 +46,7 @@ function buildMindElixirLangPack(): LangPack {
 export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     const apiRef = useRef<MindElixirInstance>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
 
 
     const spacedUpdate = useEditorSpacedUpdate({

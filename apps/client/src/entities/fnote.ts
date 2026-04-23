@@ -1069,6 +1069,10 @@ export default class FNote {
         return this.mime === "text/x-sqlite;schema=trilium";
     }
 
+    isMarkdown() {
+        return this.type === "code" && (this.mime === "text/markdown" || this.mime === "text/x-markdown" || this.mime === "text/x-gfm");
+    }
+
     isTriliumScript() {
         return this.mime.startsWith("application/javascript");
     }

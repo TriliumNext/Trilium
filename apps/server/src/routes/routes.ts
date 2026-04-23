@@ -186,6 +186,7 @@ function register(app: express.Application) {
     apiRoute(GET, "/api/revisions/:revisionId", revisionsApiRoute.getRevision);
     apiRoute(GET, "/api/revisions/:revisionId/blob", revisionsApiRoute.getRevisionBlob);
     apiRoute(DEL, "/api/revisions/:revisionId", revisionsApiRoute.eraseRevision);
+    apiRoute(PATCH, "/api/revisions/:revisionId", revisionsApiRoute.updateRevisionDescription);
     apiRoute(PST, "/api/revisions/:revisionId/restore", revisionsApiRoute.restoreRevision);
     route(GET, "/api/revisions/:revisionId/image/:filename", [auth.checkApiAuthOrElectron], imageRoute.returnImageFromRevision);
 

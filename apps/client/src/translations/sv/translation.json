@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "Om Trilium Notes",
-    "homepage": "Hemsida:",
-    "app_version": "App version:",
-    "db_version": "DB version:",
-    "sync_version": "Sync version:",
-    "build_date": "Bygg datum:",
-    "build_revision": "Bygg version:",
     "data_directory": "Data sökväg:"
   },
   "toast": {

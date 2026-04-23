@@ -10,7 +10,7 @@ import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
 import { PRODUCT_NAME } from "./app-info";
 import port from "@triliumnext/server/src/services/port.js";
-import { join } from "path";
+import { join, resolve } from "path";
 import { deferred, LOCALES } from "../../../packages/commons/src";
 
 async function main() {
@@ -101,10 +101,16 @@ async function main() {
 
 /**
  * Returns a unique user data directory for Electron so that single instance locks between legitimately different instances such as different port or data directory can still act independently, but we are focusing the main window otherwise.
+ *
+ * When running in portable mode, set TRILIUM_ELECTRON_DATA_DIR (e.g. via the trilium-portable script)
+ * so that no Electron files are written to the system's roaming profile (e.g. %APPDATA% on Windows).
  */
 function getUserData() {
-    const name = `${app.getName()}-${port}`;
-    return join(app.getPath("appData"), name);
+    if (process.env.TRILIUM_ELECTRON_DATA_DIR) {
+        return resolve(process.env.TRILIUM_ELECTRON_DATA_DIR);
+    }
+
+    return join(app.getPath("appData"), `${app.getName()}-${port}`);
 }
 
 async function onReady() {

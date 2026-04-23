@@ -17,6 +17,8 @@ import internalLinkIcon from './icons/trilium.svg?raw';
 import noteIcon from './icons/note.svg?raw';
 import importMarkdownIcon from './icons/markdown-mark.svg?raw';
 import { icons as mathIcons, MathUI } from '@triliumnext/ckeditor5-math';
+import { BookmarkUI } from "ckeditor5";
+import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 
 type SlashCommandDefinition = SlashCommandEditorConfig["extraCommands"][number];
 
@@ -74,6 +76,19 @@ export default function buildExtraCommands(): SlashCommandDefinition[] {
             description: "Import a markdown file into this note",
             icon: importMarkdownIcon,
             commandName: MARKDOWN_IMPORT_COMMAND
+        },
+        {
+            id: "anchor",
+            title: "Anchor",
+            description: "Insert an anchor for internal linking",
+            aliases: [ "bookmark" ],
+            icon: bxBookmark,
+            execute: (editor: Editor) => {
+                // Defer to the next event loop tick so the slash command fully finishes
+                // its DOM/selection cleanup; _showFormView needs the view and mapper to
+                // be in a settled state for balloon positioning.
+                setTimeout(() => (editor.plugins.get(BookmarkUI) as any)._showFormView(), 0);
+            }
         }
     ];
 }

@@ -16,7 +16,7 @@
   "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.33.0",
   "devDependencies": {
-    "@redocly/cli": "2.26.0",
+    "@redocly/cli": "2.28.1",
     "archiver": "7.0.1",
     "fs-extra": "11.3.4",
     "js-yaml": "4.1.1",

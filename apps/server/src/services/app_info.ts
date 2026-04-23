@@ -6,7 +6,7 @@ import { MAX_MIGRATION_VERSION } from "../migrations/migrations.js";
 import build from "./build.js";
 import dataDir from "./data_dir.js";
 
-const SYNC_VERSION = 38;
+const SYNC_VERSION = 39;
 const CLIPPER_PROTOCOL_VERSION = "1.0";
 
 export default {

@@ -1,14 +1,14 @@
 import { useEffect, useRef } from "preact/hooks";
 import { EditorConfig, default as VanillaCodeMirror } from "@triliumnext/codemirror";
 import { useSyncedRef } from "../../react/hooks";
-import { RefObject } from "preact";
+import { Ref } from "preact";
 
 export interface CodeMirrorProps extends Omit<EditorConfig, "parent"> {
     content?: string;
     mime: string;
     className?: string;
-    editorRef?: RefObject<VanillaCodeMirror>;
-    containerRef?: RefObject<HTMLPreElement>;
+    editorRef?: Ref<VanillaCodeMirror>;
+    containerRef?: Ref<HTMLPreElement>;
     onInitialized?: () => void;
 }
 
@@ -25,9 +25,8 @@ export default function CodeMirror({ className, content, mime, editorRef: extern
             ...extraOpts
         });
         codeEditorRef.current = codeEditor;
-        if (externalEditorRef) {
-            externalEditorRef.current = codeEditor;
-        }
+        if (typeof externalEditorRef === "function") externalEditorRef(codeEditor);
+        else if (externalEditorRef) externalEditorRef.current = codeEditor;
         onInitialized?.();
 
         return () => codeEditor.destroy();

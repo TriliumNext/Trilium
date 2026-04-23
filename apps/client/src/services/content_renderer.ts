@@ -1,6 +1,7 @@
 import "./content_renderer.css";
 
-import { normalizeMimeTypeForCKEditor, type TextRepresentationResponse } from "@triliumnext/commons";
+import { normalizeMimeTypeForCKEditor, renderToHtml, type TextRepresentationResponse } from "@triliumnext/commons";
+import DOMPurify from "dompurify";
 import { h, render } from "preact";
 import WheelZoom from 'vanilla-js-wheel-zoom';
 
@@ -8,7 +9,7 @@ import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
-import renderText from "./content_renderer_text.js";
+import renderText, { postProcessRichContent, renderChildrenList } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
 import openService from "./open.js";
@@ -54,6 +55,8 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 
     if (type === "text" || type === "book") {
         await renderText(entity, $renderedContent, options);
+    } else if (type === "markdown") {
+        await renderMarkdown(entity, $renderedContent, options);
     } else if (type === "code") {
         await renderCode(entity, $renderedContent);
     } else if (["image", "canvas", "mindMap", "spreadsheet"].includes(type)) {
@@ -117,6 +120,31 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         $renderedContent,
         type
     };
+}
+
+/**
+ * Renders a markdown note by converting its source to CKEditor-compatible HTML,
+ * then running the same post-render pipeline as text notes (included notes,
+ * math, reference links, Mermaid, code highlight) so the preview matches what
+ * the user sees in the Markdown note type's preview pane.
+ */
+async function renderMarkdown(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions) {
+    const blob = await note.getBlob();
+    const source = blob?.content ?? "";
+
+    if (!source.trim()) {
+        if (note instanceof FNote && !options.noChildrenList) {
+            await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
+        }
+        return;
+    }
+
+    const html = renderToHtml(source, note.title, {
+        sanitize: (dirty) => DOMPurify.sanitize(dirty),
+        wikiLink: { formatHref: (id) => `#root/${id}` }
+    });
+    $renderedContent.append($('<div class="ck-content">').html(html));
+    await postProcessRichContent(note, $renderedContent, options);
 }
 
 /**
@@ -330,6 +358,8 @@ function getRenderingType(entity: FNote | FAttachment) {
 
     if (type === "file" && mime === "application/pdf") {
         type = "pdf";
+    } else if (type === "code" && entity instanceof FNote && entity.isMarkdown()) {
+        type = "markdown";
     } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime) && !isIconPack) {
         type = "code";
     } else if (type === "file" && mime && mime.startsWith("audio/")) {

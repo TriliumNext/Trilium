@@ -101,8 +101,10 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/x-gdscript": async () => (await import('./languages/gdscript.js')).gdscript,
     "text/x-gfm": async () => {
         const { markdown, markdownLanguage } = (await import('@codemirror/lang-markdown'));
+        const { languages } = (await import('@codemirror/language-data'));
         return markdown({
-            base: markdownLanguage
+            base: markdownLanguage,
+            codeLanguages: languages
         });
     },
     "text/x-go": async () => (await import('@codemirror/legacy-modes/mode/go')).go,
@@ -124,7 +126,11 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/x-livescript": async () => (await import('@codemirror/legacy-modes/mode/livescript')).liveScript,
     "text/x-lua": async () => (await import('@codemirror/legacy-modes/mode/lua')).lua,
     "text/x-mariadb": async () => (await import('@codemirror/legacy-modes/mode/sql')).sqlite,
-    "text/x-markdown": async () => ((await import('@codemirror/lang-markdown')).markdown()),
+    "text/x-markdown": async () => {
+        const { markdown } = (await import('@codemirror/lang-markdown'));
+        const { languages } = (await import('@codemirror/language-data'));
+        return markdown({ codeLanguages: languages });
+    },
     "text/x-mathematica": async () => (await import('@codemirror/legacy-modes/mode/mathematica')).mathematica,
     "text/x-modelica": async () => (await import('@codemirror/legacy-modes/mode/modelica')).modelica,
     "text/x-mscgen": async () => (await import('@codemirror/legacy-modes/mode/mscgen')).mscgen,

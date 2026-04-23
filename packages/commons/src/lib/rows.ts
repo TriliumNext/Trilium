@@ -21,6 +21,9 @@ export interface AttachmentRow {
     encoding?: "base64";
 }
 
+export const REVISION_SOURCES = ["auto", "manual", "etapi", "llm", "restore"] as const;
+export type RevisionSource = (typeof REVISION_SOURCES)[number];
+
 export interface RevisionRow {
     revisionId?: string;
     noteId: string;
@@ -28,6 +31,8 @@ export interface RevisionRow {
     mime: string;
     isProtected?: boolean;
     title: string;
+    description?: string;
+    source?: RevisionSource;
     blobId?: string;
     dateLastEdited?: string;
     dateCreated?: string;

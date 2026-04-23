@@ -9,7 +9,8 @@ export default function ScrollPadding() {
     const isEnabled = ["text", "code"].includes(note?.type ?? "")
         && viewScope?.viewMode === "default"
         && note?.isContentAvailable()
-        && !note?.isTriliumSqlite();
+        && !note?.isTriliumSqlite()
+        && !note?.isMarkdown();
 
     const refreshHeight = () => {
         if (!ref.current) return;

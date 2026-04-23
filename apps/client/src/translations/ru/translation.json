@@ -1,13 +1,6 @@
 {
   "about": {
-    "app_version": "Версия приложения:",
-    "db_version": "Версия базы данных:",
-    "sync_version": "Версия синхронизации:",
-    "build_date": "Дата сборки:",
-    "build_revision": "Номер сборки:",
-    "data_directory": "Каталог с данными:",
-    "title": "О Trilium Notes",
-    "homepage": "Домашняя страница:"
+    "data_directory": "Каталог с данными:"
   },
   "toast": {
     "critical-error": {

@@ -103,7 +103,8 @@
     "add-include-note-to-text": "ノートを埋め込むダイアログを開く",
     "toggle-promoted-attributes": "プロモート属性切り替え",
     "force-save-revision": "アクティブノートの新しいノートリヴィジョンを強制する",
-    "toggle-classic-editor-toolbar": "固定ツールバーエディターの書式設定タブ切り替え"
+    "toggle-classic-editor-toolbar": "固定ツールバーエディターの書式設定タブ切り替え",
+    "save-named-revision": "アクティブなノートの変更履歴を名前を付けて保存"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -200,7 +201,8 @@
     "force-save-revision": "強制保存リビジョン",
     "add-include-note-to-text": "埋め込みノートを追加",
     "toggle-ribbon-tab-classic-editor": "リボンタブのクラシックエディターに切り替える",
-    "toggle-ribbon-tab-promoted-attributes": "リボンタブ切り替え：プロモート属性"
+    "toggle-ribbon-tab-promoted-attributes": "リボンタブ切り替え：プロモート属性",
+    "save-named-revision": "変更履歴を名前を付けて保存"
   },
   "login": {
     "title": "ログイン",
@@ -382,7 +384,8 @@
   "migration": {
     "old_version": "現在のバージョンからの直接的な移行はサポートされていません。まず最新のv0.60.4にアップグレードしてから、このバージョンにアップグレードしてください。",
     "error_message": "バージョン {{version}} への移行中にエラーが発生しました: {{stack}}",
-    "wrong_db_version": "データベースのバージョン（{{version}}）は、アプリケーションが想定しているバージョン（{{targetVersion}}）よりも新しく、互換性のないバージョンによって作成された可能性があります。この問題を解決するには、Triliumを最新バージョンにアップグレードしてください。"
+    "wrong_db_version": "データベースのバージョン（{{version}}）は、アプリケーションが想定しているバージョン（{{targetVersion}}）よりも新しく、互換性のないバージョンによって作成された可能性があります。この問題を解決するには、Triliumを最新バージョンにアップグレードしてください。",
+    "invalid_db_version": "データベースのバージョン番号が無効です。これは通常、データベース内の 'dbVersion' オプションが破損していることを示しています。バックアップから復元してください。"
   },
   "modals": {
     "error_title": "エラー"

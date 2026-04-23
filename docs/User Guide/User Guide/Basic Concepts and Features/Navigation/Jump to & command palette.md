@@ -1,5 +1,5 @@
-# Jump to...
-<figure class="image image-style-align-center"><img style="aspect-ratio:991/403;" src="1_Jump to_image.png" width="991" height="403"></figure>
+# Jump to & command palette
+<figure class="image image-style-align-center"><img style="aspect-ratio:991/403;" src="1_Jump to &amp; command palette_.png" width="991" height="403"></figure>
 
 ## Jump to Note
 
@@ -7,7 +7,7 @@ The _Jump to Note_ function allows easy navigation between notes by searching fo
 
 To enter the “Jump to” dialog:
 
-*   In the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a>, press ![](2_Jump%20to_image.png) button.
+*   In the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a>, press ![](2_Jump%20to%20&%20command%20palette_.png) button.
 *   Using the keyboard, press <kbd>Ctrl</kbd> + <kbd>J</kbd>.
 
 In addition to searching for notes, it is also possible to search for commands. See the dedicated section below for more information.
@@ -28,7 +28,7 @@ Alternatively you can click on the "time" icon on the right.
 
 ## Command Palette
 
-<figure class="image image-style-align-center"><img style="aspect-ratio:982/524;" src="Jump to_image.png" width="982" height="524"></figure>
+<figure class="image image-style-align-center"><img style="aspect-ratio:982/524;" src="Jump to &amp; command palette_.png" width="982" height="524"></figure>
 
 The command palette is a feature which allows easy execution of various commands that can be found throughout the application, such as from menus or keyboard shortcuts. This feature integrates directly into the “Jump to” dialog.
 

@@ -1,12 +1,5 @@
 {
   "about": {
-    "homepage": "Trang chủ:",
-    "title": "Về Trilium Notes",
-    "app_version": "Phiên bản:",
-    "db_version": "Phiên bản DB:",
-    "sync_version": "Phiên bản liên kết:",
-    "build_date": "Ngày build:",
-    "build_revision": "Xây dựng bản sửa đổi:",
     "data_directory": "Đường dẫn dữ liệu:"
   },
   "add_link": {

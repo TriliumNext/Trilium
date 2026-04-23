@@ -3,6 +3,7 @@ import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
+import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
 import utils from "../../services/utils";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
 import Dropdown, { DropdownProps } from "../react/Dropdown";
@@ -22,7 +23,13 @@ export interface LauncherNoteProps {
     launcherNote: FNote;
 }
 
-export function LaunchBarActionButton({ className, ...props }: Omit<ActionButtonProps, "noIconActionClass" | "titlePosition">) {
+/** Builds the default right-click handler that shows the launch-bar icon context menu (with the "Remove from launch bar" entry). Used by widgets that render a raw element rather than going through {@link LaunchBarActionButton} / {@link LaunchBarDropdownButton}. */
+export function launcherContextMenuHandler(launcherNote: FNote | null | undefined) {
+    if (!launcherNote) return undefined;
+    return (e: MouseEvent) => showLauncherContextMenu(launcherNote, e);
+}
+
+export function LaunchBarActionButton({ className, launcherNote, onContextMenu, ...props }: Omit<ActionButtonProps, "noIconActionClass" | "titlePosition"> & { launcherNote?: FNote }) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
 
     return (
@@ -30,14 +37,19 @@ export function LaunchBarActionButton({ className, ...props }: Omit<ActionButton
             className={clsx("button-widget launcher-button", className)}
             noIconActionClass
             titlePosition={getTitlePosition(isHorizontalLayout)}
+            onContextMenu={onContextMenu ?? launcherContextMenuHandler(launcherNote)}
             {...props}
         />
     );
 }
 
-export function LaunchBarDropdownButton({ children, icon, dropdownOptions, ...props }: Pick<DropdownProps, "title" | "children" | "onShown" | "dropdownOptions" | "dropdownRef"> & { icon: string }) {
+export function LaunchBarDropdownButton({ children, icon, dropdownOptions, launcherNote, buttonProps, ...props }: Pick<DropdownProps, "title" | "children" | "onShown" | "dropdownOptions" | "dropdownRef" | "buttonProps"> & { icon: string, launcherNote?: FNote }) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
     const titlePosition = getTitlePosition(isHorizontalLayout);
+
+    const resolvedButtonProps = launcherNote && !buttonProps?.onContextMenu
+        ? { ...buttonProps, onContextMenu: launcherContextMenuHandler(launcherNote) }
+        : buttonProps;
 
     return (
         <Dropdown
@@ -54,6 +66,7 @@ export function LaunchBarDropdownButton({ children, icon, dropdownOptions, ...pr
                 }
             }}
             mobileBackdrop
+            buttonProps={resolvedButtonProps}
             {...props}
         >{children}</Dropdown>
     );

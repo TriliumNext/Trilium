@@ -15,7 +15,7 @@ interface CustomTitleBarButton {
 
 export interface ModalProps {
     className: string;
-    title: string | ComponentChildren;
+    title?: string | ComponentChildren;
     customTitleBarButtons?: (CustomTitleBarButton | null)[];
     size: "xl" | "lg" | "md" | "sm";
     children: ComponentChildren;
@@ -77,9 +77,19 @@ export interface ModalProps {
      * If true, the modal will not focus itself after becoming visible.
      */
     noFocus?: boolean;
+    /**
+     * Content to display as a full-height sidebar on the left side of the modal.
+     * When set, the modal layout switches to a horizontal split with the sidebar
+     * spanning the entire height alongside the header, body and footer.
+     */
+    sidebar?: ComponentChildren;
+    /**
+     * Indicates if the dialog will be displayed as a full page on mobile devices.
+     */
+    isFullPageOnMobile?: boolean;
 }
 
-export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus }: ModalProps) {
+export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, isFullPageOnMobile }: ModalProps) {
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
     const modalInstanceRef = useRef<BootstrapModal>();
     const elementToFocus = useRef<Element | null>();
@@ -143,46 +153,61 @@ export default function Modal({ children, className, size, title, customTitleBar
 
     return (
         <div className={`modal fade mx-auto ${className}`} tabIndex={-1} style={dialogStyle} role="dialog" ref={modalRef}>
-            {(show || keepInDom) && <div className={`modal-dialog modal-${size} ${scrollable ? "modal-dialog-scrollable" : ""}`} style={documentStyle} role="document">
-                <div className="modal-content">
-                    <div className="modal-header">
-                        {!title || typeof title === "string" ? (
-                            <h5 className="modal-title">{title ?? <>&nbsp;</>}</h5>
+            {(show || keepInDom) && <div className={clsx("modal-dialog", `modal-${size}`, {"modal-dialog-scrollable": scrollable, "modal-dialog-full-page-on-mobile": isFullPageOnMobile, "modal-content-with-sidebar": sidebar})} style={documentStyle} role="document">
+                <div className={clsx("modal-content", sidebar && "modal-content-with-sidebar")}>
+                    {sidebar && <div className="modal-sidebar">
+                        {title && <div className="modal-sidebar-header">
+                            <h5>{title}</h5>
+                        </div>}
+                        {sidebar}
+                    </div>}
+                    <ModalMain sidebar={!!sidebar}>
+                        <div className="modal-header">
+                            {!title || typeof title === "string" ? (
+                                <h5 className="modal-title">{title ?? <>&nbsp;</>}</h5>
+                            ) : (
+                                title
+                            )}
+                            {header}
+                            {helpPageId && (
+                                <button className="help-button" type="button" data-in-app-help={helpPageId} title={t("modal.help_title")}>?</button>
+                            )}
+
+                            {titleBarButtons?.filter((b) => b !== null).map((titleBarButton) => (
+                                <button type="button"
+                                    className={clsx("custom-title-bar-button bx", titleBarButton.iconClassName)}
+                                    title={titleBarButton.title}
+                                    onClick={titleBarButton.onClick} />
+                            ))}
+
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label={t("modal.close")} />
+
+                        </div>
+
+                        {onSubmit ? (
+                            <form ref={formRef} onSubmit={(e) => {
+                                e.preventDefault();
+                                onSubmit();
+                            }}>
+                                <ModalInner footer={footer} bodyStyle={bodyStyle} footerStyle={footerStyle} footerAlignment={footerAlignment}>{children}</ModalInner>
+                            </form>
                         ) : (
-                            title
+                            <ModalInner footer={footer} bodyStyle={bodyStyle} footerStyle={footerStyle} footerAlignment={footerAlignment}>
+                                {children}
+                            </ModalInner>
                         )}
-                        {header}
-                        {helpPageId && (
-                            <button className="help-button" type="button" data-in-app-help={helpPageId} title={t("modal.help_title")}>?</button>
-                        )}
-
-                        {titleBarButtons?.filter((b) => b !== null).map((titleBarButton) => (
-                            <button type="button"
-                                className={clsx("custom-title-bar-button bx", titleBarButton.iconClassName)}
-                                title={titleBarButton.title}
-                                onClick={titleBarButton.onClick} />
-                        ))}
-
-                        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label={t("modal.close")} />
-
-                    </div>
-
-                    {onSubmit ? (
-                        <form ref={formRef} onSubmit={(e) => {
-                            e.preventDefault();
-                            onSubmit();
-                        }}>
-                            <ModalInner footer={footer} bodyStyle={bodyStyle} footerStyle={footerStyle} footerAlignment={footerAlignment}>{children}</ModalInner>
-                        </form>
-                    ) : (
-                        <ModalInner footer={footer} bodyStyle={bodyStyle} footerStyle={footerStyle} footerAlignment={footerAlignment}>
-                            {children}
-                        </ModalInner>
-                    )}
+                    </ModalMain>
                 </div>
             </div>}
         </div>
     );
+}
+
+function ModalMain({ sidebar, children }: { sidebar: boolean; children: ComponentChildren }) {
+    if (sidebar) {
+        return <div className="modal-main">{children}</div>;
+    }
+    return <>{children}</>;
 }
 
 function ModalInner({ children, footer, footerAlignment, bodyStyle, footerStyle: _footerStyle }: Pick<ModalProps, "children" | "footer" | "footerAlignment" | "bodyStyle" | "footerStyle">) {

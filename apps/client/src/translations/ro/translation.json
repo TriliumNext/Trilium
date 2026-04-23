@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "Despre Trilium Notes",
-    "homepage": "Site web:",
-    "app_version": "Versiune aplicație:",
-    "db_version": "Versiune bază de date:",
-    "sync_version": "Versiune sincronizare:",
-    "build_date": "Data compilării:",
-    "build_revision": "Revizia compilării:",
     "data_directory": "Directorul de date:"
   },
   "abstract_bulk_action": {

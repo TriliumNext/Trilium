@@ -45,8 +45,8 @@ Trilium Notes بولسا ھەقسىز، ئوچۇق كودلۇق، سىستېما
 
 ## ھۆججەتلەر📚
 
-بىزنىڭ تولۇق قوللانمىمىزنى كۆرۈڭ:
-[docs.triliumnotes.org](https://docs.triliumnotes.org/)
+**بىزنىڭ تولۇق قوللانمىمىزنى كۆرۈڭ:
+docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
 بىزنىڭ قوللانمىمىزنىڭ بىر قانچە خىل شەكىلدىكى نۇسخىلىرى بار:
 - **تور قوللانمىسى**：بىزنىڭ تولۇق قوللانمىمىزنى مۇشۇ شەكىلدە كۆرۈڭ:
@@ -175,78 +175,82 @@ zadam/Trilium نۇسخىسىدىن TriliumNext/Notes غا كۆچۈش ئۈچۈن 
   - `General `Matrix ئۆيىمۇ [XMPP](xmpp:discuss@trilium.thisgreat.party?join) غا
     ئۇلانغان
 - [GitHub Discussions](https://github.com/TriliumNext/Trilium/discussions)
-  (ئاسىنكرون مۇنازىرە).
-- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
-  reports and feature requests.)
+  (ئاسىنكرون مۇنازىرە.)
+- [GitHub Issues](https://github.com/TriliumNext/Trilium/issues) (خاتالىق مەلۇم
+  قىلىش ۋە ئىقتىدار ئېھتىياجىنى ئوتتۇرىغا قويۇش.)
 
-## 🏗 Installation
+## 🏗 قاچىلاش
 
 ### Windows / MacOS
 
-Download the binary release for your platform from the [latest release
-page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the package
-and run the `trilium` executable.
+[ئەڭ يېڭى نەشرى بېتى](https://github.com/TriliumNext/Trilium/releases/latest)دىن
+سۇپىڭىزغا ماس كېلىدىغان سىستېما ھۆججىتىنى چۈشۈرۈڭ، پرېستىن يەشكەندىن كېيىن
+`trilium` ئىجرا ھۆججىتىنى قوزغىتىڭ.
 
 ### Linux
 
-If your distribution is listed in the table below, use your distribution's
-package.
+ئەگەر سىز ئىشلىتىۋاتقان نەشرى تۆۋەندىكى جەدۋەلدە بولسا، شۇ نەشرىنىڭ يۇمشاق دېتال
+بوغچىسىنى ئىشلىتىڭ.
 
-[![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+[![بوغچىلاش
+ھالىتى](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
 
-You may also download the binary release for your platform from the [latest
-release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
-package and run the `trilium` executable.
+سىز يەنە [ئەڭ يېڭى ئېلان قىلىنغان
+بەت](https://github.com/TriliumNext/Trilium/releases/latest)تىن مۇناسىپ سۇپىنىڭ
+سىستېما ھۆججىتىنى چۈشۈرۈپ، پرېستىن يېشىپ بولغاندىن كېيىن `trilium` ئىجرا
+ھۆججىتىنى قوزغاتسىڭىز بولىدۇ.
 
-TriliumNext is also provided as a Flatpak, but not yet published on FlatHub.
+TriliumNext يەنە Flatpak نۇسخىسى بىلەن تەمىنلەيدۇ، ئەمما تېخى FlatHub غا
+چىقىرىلمىدى.
 
-### Browser (any OS)
+### Browser (ھەرقانداق مەشغۇلات سىستېمىسى)
 
-If you use a server installation (see below), you can directly access the web
-interface (which is almost identical to the desktop app).
+ئەگەر سىزدە (تۆۋەندىكىدەك) مۇلازىمىتىر قاچىلانمىسى بولسا، تور كۆرۈنمە يۈزىنى
+بىۋاسىتە ساقىلالايسىز (ئۇ بىر تەرەپ قىلغۇچ دېتالى بىلەن ئاساسەن ئوخشاش）.
 
-Currently only the latest versions of Chrome & Firefox are supported (and
-tested).
+نۆۋەتتە پەقەت Chrome ۋە Firefox نىڭ ئەڭ يېڭى نەشرىنىلا قوللايدۇ (ھەمدە ئەمەلىي
+سىناقتىن ئۆتكەن).
 
-### Mobile
+### كۆچمە ئۈسكۈنە
 
-To use TriliumNext on a mobile device, you can use a mobile web browser to
-access the mobile interface of a server installation (see below).
+ئەگەر كۆچمە ئۈسكۈنىلەردە TriliumNext نى ئىشلەتمەكچى بولسىڭىز، كۆچمە كۆرگۈچ
+ئارقىلىق مۇلازىمىتىرغا قاچىلانغان كۆچمە نۇسخا كۆرۈنمە يۈزىنى زىيارەت قىلالايسىز
+(تۆۋەنگە قاراڭ).
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
-information on mobile app support.
+كۆچمە دېتال قوللاشقا ئائىت تېخىمۇ كۆپ ئۇچۇرلار ئۈچۈن،
+https://github.com/TriliumNext/Trilium/issues/4962 مەسىلە بېتىگە قاراڭ.
 
-If you prefer a native Android app, you can use
-[TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
-Report bugs and missing features at [their
-repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
-disable automatic updates on your server installation (see below) when using
-TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+ئەگەر سىز ئەسلى Android دېتالىنى ئىشلىتىشكە ئامراق بولسىڭىز،
+[TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)
+نى ئىشلەتسىڭىز بولىدۇ. مەسىلە ياكى كەم بولغان ئىقتىدارلارنى مەلۇم قىلماقچى
+بولسىڭىز، [ئۇنىڭ ئامبىرى](https://github.com/FliegendeWurst/TriliumDroid) غا
+مەرھەمەت.
 
 ### Server
 
-To install TriliumNext on your own server (including via Docker from
-[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
-installation docs](https://docs.triliumnotes.org/user-guide/setup/server).
+ئەگەر ئۆزىڭىزنىڭ مۇلازىمىتىرىغا TriliumNext نى قاچىلىماقچى بولسىڭىز ([Docker
+Hub](https://hub.docker.com/r/triliumnext/trilium) دىن Docker ئارقىلىق
+ئورۇنلاشتۇرۇشنىمۇ ئۆز ئىچىگە ئالىدۇ)، [مۇلازىمىتىر قاچىلاش
+ھۆججىتى](https://docs.triliumnotes.org/user-guide/setup/server) گە ئەمەل قىلىڭ.
 
 
-## 💻 Contribute
+## 💻 تۆھپە قوشۇش
 
-### Translations
+### تەرجىمە
 
-If you are a native speaker, help us translate Trilium by heading over to our
-[Weblate page](https://hosted.weblate.org/engage/trilium/).
+ئەگەر سىز شۇ تىلنىڭ ئىگىسى بولسىڭىز، بىزنىڭ [Weblate
+بېتىمىز](https://hosted.weblate.org/engage/trilium/)گە كىرىپ Trilium نىڭ تەرجىمە
+قىلىنىشىغا ياردەم بېرىشىڭىزنى قارشى ئالىمىز.
 
-Here's the language coverage we have so far:
+تۆۋەندىكىسى نۆۋەتتىكى تىللارنىڭ قاپلىنىش ئەھۋالى:
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[![تەرجىمە
+ئەھۋالى](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
-### Code
+### پروگرامما كودى
 
-Download the repository, install dependencies using `pnpm` and then run the
-server (available at http://localhost:8080):
+ئامبارنى چۈشۈرۈڭ، `pnpm` ئارقىلىق بېقىندى زاپچاسلارنى قاچىلاڭ، ئاندىن
+مۇلازىمىتىرنى قوزغىتىڭ (مۇلازىمەت ئادرېسى: http://localhost:8080):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -254,10 +258,10 @@ pnpm install
 pnpm run server:start
 ```
 
-### Documentation
+### ھۆججەت
 
-Download the repository, install dependencies using `pnpm` and then run the
-environment required to edit the documentation:
+ئامبارنى چۈشۈرۈڭ، `pnpm` ئارقىلىق بېقىندى زاپچاسلارنى قاچىلاڭ، ئاندىن ھۆججەت
+تەھرىرلەشكە ئېھتىياجلىق مۇھىتنى قوزغىتىڭ:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -265,9 +269,9 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-### Building the Executable
-Download the repository, install dependencies using `pnpm` and then build the
-desktop app for Windows:
+### ئىجرا قىلىنىدىغان ھۆججەتنى قۇرۇش
+ئامبارنى چۈشۈرۈڭ، `pnpm` ئارقىلىق بېقىندى زاپچاسلارنى قاچىلاڭ، ئاندىن Windows
+ئۈچۈن ئۈستەلئۈستى ئەپىنى قۇرۇپ چىقىڭ:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -275,71 +279,78 @@ pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-For more details, see the [development
-docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
+تېخىمۇ كۆپ تەپسىلاتلار ئۈچۈن [تەتقىقات
+ھۆججەت](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide)گە
+قاراڭ.
 
-### Developer Documentation
+### تەتقىقاتچى ھۆججەتلىرى
 
-Please view the [documentation
-guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-for details. If you have more questions, feel free to reach out via the links
-described in the "Discuss with us" section above.
+تەپسىلاتلار ئۈچۈن [ھۆججەت
+يېتەكچىسى](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)گە
+قاراڭ. ئەگەر تېخىمۇ كۆپ سوئاللىرىڭىز بولسا، ئۈستىدىكى "بىز بىلەن ئالاقىلىشىڭ"
+بۆلىكىدە تەمىنلەنگەن ئۇلىنىشلار ئارقىلىق بىز بىلەن ئالاقىلىشىڭنى قارشى ئالىمىز.
 
-## 👏 Shoutouts
+## 👏 مىننەتدارلىق
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
-* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
+* ئەپنىڭ ئەسلى ئۇقۇم لاھىيەسى ۋە ئەمەلگە ئاشۇرۇلۇشىغا تۆھپە قوشقان
+  [zadam](https://github.com/zadam).
+* ئەپ سىنبەلگىسىنى لاھىيەلىگەن [Sarah
+  Hussein](https://github.com/Sarah-Hussein).
+* خەلقئارالاشتۇرۇش خىزمىتىگە تۆھپە قوشقان [nriver](https://github.com/nriver).
+* Canvas جەھەتتىكى ئەسلى ئىجادىي خىزمەتلىرى ئۈچۈن [Thomas
+  Frei](https://github.com/thfrei).
+* ئەسلى گرامماتىكا گەۋدىلەندۈرۈش كىچىك زاپچاسلارنى ئاپتورى
+  [antoniotejada](https://github.com/nriver).
+* GitHub مەسىلىلىرى ۋە مۇنازىرىلىرىگە ئاپتوماتىك جاۋاب قايتۇرۇش بىلەن تەمىنلىگەن
+  [Dosu](https://dosu.dev/).
+* سىستېما تەخسىسى سىنبەلگىسى ئۈچۈن [Tabler Icons](https://tabler.io/icons)
+  ئىشلىتىلدى.
 
-Trilium would not be possible without the technologies behind it:
+ئارقا سەپتىكى تېخنىكىلارنىڭ قوللىشى بولمىسا، Trilium تۈرىنى ئەمەلگە ئاشۇرغىلى
+بولمايتتى:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
-  Used in [relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [link
-  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) —— تېكىستلىك خاتىرىلەرنىڭ
+  ئارقا سىپىدىكى كۆرۈنۈشچان تەھرىرلىگۈچ. بىز بۇ يۇقىرى دەرىجىلىك ئىقتىدارلارنى
+  ئىشلىتىش ھوقۇقىغا ئېرىشكەنلىكىمىزدىن تولىمۇ مىننەتدارمىز.
+* [CodeMirror](https://github.com/codemirror/CodeMirror) —— كۆپلىگەن پروگرامما
+  تىللىرىنى قوللايدىغان كود تەھرىرلىگۈچ.
+* [Excalidraw](https://github.com/excalidraw/excalidraw) —— (Canvas) خاتىرىسىدە
+  ئىشلىتىلىدىغان چەكسىز ئاق دوسكا.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— تەپەككۇر
+  خەرىتىسى ئىقتىدارى بىلەن تەمىنلەيدۇ.
+* [Leaflet](https://github.com/Leaflet/Leaflet) —— جۇغراپىيەلىك خەرىتىلەرنى
+  تەسۋىرلەش (Render) ئۈچۈن ئىشلىتىلىدۇ.
+* [Tabulator](https://github.com/olifolkerd/tabulator) —— توپلاملاردىكى ئۆزئارا
+  تەسىرلىشىدىغان جەدۋەللەر ئۈچۈن ئىشلىتىلىدۇ.
+* [FancyTree](https://github.com/mar10/fancytree) —— ئىقتىدارى مول بولغان
+  دەرەخسىمان كونترول كۇتۇپخانىسى، ئۇنىڭغا تەڭ كېلىدىغان باشقا بىر كۇتۇپخانا يوق.
+* [jsPlumb](https://github.com/jsplumb/jsplumb) —— كۆرۈنۈشچان ئۇلىنىش
+  كۇتۇپخانىسى. مۇناسىۋەت خەرىتىسى
+  (https://docs.triliumnotes.org/user-guide/note-types/relation-map) ۋە ئۇلىنىش
+  خەرىتىسى
+  (https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+  ئۈچۈن ئىشلىتىلىدۇ
 
-## 🤝 Support
+## 🤝 بىزنى قوللاش
 
-Trilium is built and maintained with [hundreds of hours of
-work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
-support keeps it open-source, improves features, and covers costs such as
-hosting.
+Trilium نى ئېچىش ۋە ئاسراشقا [يۈزلىگەن سائەت
+خىزمەت](https://github.com/TriliumNext/Trilium/graphs/commit-activity)
+سىڭدۈرۈلگەن. سىزنىڭ قوللىشىڭىز ئۇنىڭ ئوچۇق كودلۇق خاراكتېرىگە كاپالەتلىك قىلىدۇ،
+ئىقتىدارلىرىنىڭ ياخشىلىنىشىنى ئىلگىرى سۈرىدۇ ھەمدە مۇلازىمېتىر تەننەرخى قاتارلىق
+چىقىملارنى قامدايدۇ.
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+تۆۋەندىكى ئۇسۇللار ئارقىلىق بۇ ئەپنىڭ ئاساسلىق ئاچقۇچىسى
+([eliandoran](https://github.com/eliandoran)) نى قوللاشنى ئويلىشىپ كۆرۈڭ:
 
 - [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 License
+## 🔑 ئىجازەتنامە شەرتلىرى
 
-Copyright 2017-2025 zadam, Elian Doran, and other contributors
+نەشر ھوقۇقى 2017–2025 zadam، Elian Doran ۋە باشقا تۆھپىكارلارغا تەۋە
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version.
+بۇ پىروگرامما ئەركىن يۇمشاق دېتال: سىز ئەركىن يۇمشاق دېتال فوندى جەمئىيىتى (Free
+Software Foundation) ئېلان قىلغان GNU Affero ئومۇمىي ئاممىۋى ئىجازەتنامىسى (GNU
+AGPL) نىڭ 3-نەشرى ياكى (تاللىشىڭىزغا ئاساسەن) ھەر قانداق كېيىنكى نەشرىنىڭ
+شەرتلىرىگە ئاساسەن، بۇ پىروگراممىنى قايتا تارقىتسىڭىز ياكى ئۆزگەرتسىڭىز بولىدۇ.

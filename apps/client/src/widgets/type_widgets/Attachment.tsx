@@ -30,6 +30,7 @@ import Icon from "../react/Icon";
 import Modal from "../react/Modal";
 import NoteLink from "../react/NoteLink";
 import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
+import { TextPreview } from "./File";
 import { TextRepresentation } from "./ReadOnlyTextRepresentation";
 import { TypeWidgetProps } from "./type_widget";
 
@@ -144,6 +145,7 @@ export function AttachmentDetail({ note, viewScope }: TypeWidgetProps) {
 function AttachmentInfo({ attachment, isFullDetail }: { attachment: FAttachment, isFullDetail?: boolean }) {
     const contentWrapper = useRef<HTMLDivElement>(null);
     const [ ocrModalShown, setOcrModalShown ] = useState(false);
+    const [ textContent, setTextContent ] = useState<string | null>(null);
     const supportsOcr = attachment.role === "image" || attachment.role === "file";
 
     function refresh() {
@@ -151,6 +153,10 @@ function AttachmentInfo({ attachment, isFullDetail }: { attachment: FAttachment,
             .then(({ $renderedContent }) => {
                 contentWrapper.current?.replaceChildren(...$renderedContent);
             });
+
+        if (attachment.role === "file") {
+            attachment.getBlob().then(blob => setTextContent(blob?.content ?? null));
+        }
     }
 
     useEffect(refresh, [ attachment ]);
@@ -213,6 +219,7 @@ function AttachmentInfo({ attachment, isFullDetail }: { attachment: FAttachment,
                 </div>
 
                 {attachment.utcDateScheduledForErasureSince && <DeletionAlert utcDateScheduledForErasureSince={attachment.utcDateScheduledForErasureSince} />}
+                {textContent && <TextPreview content={textContent} />}
                 <div ref={contentWrapper} className="attachment-content-wrapper" />
             </div>
 

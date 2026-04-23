@@ -14,6 +14,7 @@ import { createImageSrcUrl, isMobile, openInAppHelpFromUrl } from "../../service
 import { ViewTypeOptions } from "../collections/interface";
 import { buildSaveSqlToNoteHandler } from "../FloatingButtonsDefinitions";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
+import { ButtonGroup } from "../react/Button";
 import { FormFileUploadActionButton, FormFileUploadFormListItem, FormFileUploadProps } from "../react/FormFileUpload";
 import { FormListItem } from "../react/FormList";
 import { useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
@@ -72,7 +73,7 @@ export default function NoteActionsCustom(props: NoteActionsCustomProps) {
             <AddChildButton {...innerProps} />
             <RunActiveNoteButton {...innerProps } />
             <SwitchSplitOrientationButton {...innerProps} />
-            <ToggleReadOnlyButton {...innerProps} />
+            <DisplayModeSwitcher {...innerProps} />
             <SaveToNoteButton {...innerProps} />
             <RefreshButton {...innerProps} />
             <CopyReferenceToClipboardButton {...innerProps} />
@@ -189,28 +190,66 @@ function RefreshButton({ note, noteType, isDefaultViewMode, parentComponent, not
 
 function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: NoteActionsCustomInnerProps) {
     const isShown = note.type === "mermaid" && !cachedIsMobile && note.isContentAvailable() && isDefaultViewMode;
+    const [ displayMode ] = useNoteLabel(note, "displayMode");
     const [ splitEditorOrientation, setSplitEditorOrientation ] = useTriliumOption("splitEditorOrientation");
     const upcomingOrientation = splitEditorOrientation === "horizontal" ? "vertical" : "horizontal";
+    const effectiveMode = displayMode === "source" || displayMode === "split" || displayMode === "preview"
+        ? displayMode
+        : isReadOnly ? "preview" : "split";
 
     return isShown && <NoteAction
         text={upcomingOrientation === "vertical" ? t("switch_layout_button.title_vertical") : t("switch_layout_button.title_horizontal")}
         icon={upcomingOrientation === "vertical" ? "bx bxs-dock-bottom" : "bx bxs-dock-left"}
         onClick={() => setSplitEditorOrientation(upcomingOrientation)}
-        disabled={isReadOnly}
+        disabled={effectiveMode !== "split"}
     />;
 }
 
-export function ToggleReadOnlyButton({ note, isDefaultViewMode }: NoteActionsCustomInnerProps) {
-    const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
-    const isSavedSqlite = note.isTriliumSqlite() && !note.isHiddenCompletely();
-    const isEnabled = ([ "mermaid", "mindMap", "canvas", "spreadsheet" ].includes(note.type) || isSavedSqlite)
-            && note.isContentAvailable() && isDefaultViewMode;
+function DisplayModeSwitcher({ note, isDefaultViewMode }: NoteActionsCustomInnerProps) {
+    const [ displayMode, setDisplayMode ] = useNoteLabel(note, "displayMode");
+    const isEnabled = (note.isMarkdown() || note.type === "mermaid") && note.isContentAvailable() && isDefaultViewMode;
+    if (!isEnabled) return null;
 
-    return isEnabled && <NoteAction
-        text={isReadOnly ? t("toggle_read_only_button.unlock-editing") : t("toggle_read_only_button.lock-editing")}
-        icon={isReadOnly ? "bx bx-lock-open-alt" : "bx bx-lock-alt"}
-        onClick={() => setReadOnly(!isReadOnly)}
-    />;
+    const mode = displayMode === "source" || displayMode === "preview" ? displayMode : "split";
+    const buttons: Array<{ value: "source" | "split" | "preview"; icon: string; text: string }> = [
+        { value: "source", icon: "bx bx-code", text: t("display_mode.source") },
+        { value: "split", icon: "bx bxs-dock-left", text: t("display_mode.split") },
+        { value: "preview", icon: "bx bx-show", text: t("display_mode.preview") }
+    ];
+
+    if (cachedIsMobile) {
+        return (
+            <div className="note-actions-custom-display-mode">
+                {buttons.map(({ value, icon, text }) => (
+                    <NoteAction
+                        key={value}
+                        icon={icon}
+                        text={text}
+                        active={mode === value}
+                        onClick={() => setDisplayMode(value)}
+                    />
+                ))}
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <div className="note-actions-custom-spacer" />
+            <ButtonGroup size="sm">
+                {buttons.map(({ value, icon, text }) => (
+                    <NoteAction
+                        key={value}
+                        icon={icon}
+                        text={text}
+                        active={mode === value}
+                        onClick={() => setDisplayMode(value)}
+                    />
+                ))}
+            </ButtonGroup>
+            <div className="note-actions-custom-spacer" />
+        </>
+    );
 }
 
 function RunActiveNoteButton({ noteMime }: NoteActionsCustomInnerProps) {
@@ -268,12 +307,12 @@ function AddChildButton({ parentComponent, noteType, ntxId, isReadOnly }: NoteAc
 }
 //#endregion
 
-function NoteAction({ text, ...props }: Pick<ActionButtonProps, "text" | "icon" | "disabled" | "triggerCommand"> & {
+function NoteAction({ text, active, ...props }: Pick<ActionButtonProps, "text" | "icon" | "disabled" | "triggerCommand" | "active"> & {
     onClick?: ((e: MouseEvent) => void) | undefined;
 }) {
     return (cachedIsMobile
         ? <FormListItem {...props}>{text}</FormListItem>
-        : <ActionButton text={text} {...props} />
+        : <ActionButton text={text} active={active} {...props} />
     );
 }
 

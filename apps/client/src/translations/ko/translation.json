@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "Trilium Notes에 대해서",
-    "homepage": "홈페이지:",
-    "app_version": "앱 버전:",
-    "db_version": "DB 버전:",
-    "sync_version": "동기화 버전:",
-    "build_date": "빌드 날짜:",
-    "build_revision": "빌드 리비전:",
     "data_directory": "데이터 경로:"
   },
   "toast": {

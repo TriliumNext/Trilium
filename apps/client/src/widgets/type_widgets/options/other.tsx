@@ -177,7 +177,7 @@ function RevisionSettings() {
     const [ revisionSnapshotNumberLimit, setRevisionSnapshotNumberLimit ] = useTriliumOption("revisionSnapshotNumberLimit");
 
     return (
-        <OptionsSection title={t("revisions.title")}>
+        <OptionsSection title={t("revisions_snapshot.title")}>
             <OptionsRow name="revision-snapshot-time-interval" label={t("revisions_snapshot_interval.snapshot_time_interval_label")} description={t("revisions_snapshot_interval.note_revisions_snapshot_description_short")}>
                 <TimeSelector
                     name="revision-snapshot-time-interval"

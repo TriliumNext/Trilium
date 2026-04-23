@@ -94,7 +94,8 @@ const enum KeyboardActionNamesEnum {
     zoomIn,
     zoomReset,
     copyWithoutFormatting,
-    forceSaveRevision
+    forceSaveRevision,
+    saveNamedRevision
 }
 
 export type KeyboardActionNames = keyof typeof KeyboardActionNamesEnum;

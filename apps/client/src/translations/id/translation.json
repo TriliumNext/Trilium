@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "Tentang Trilium Notes",
-    "homepage": "Halaman utama:",
-    "app_version": "Versi Aplikasi:",
-    "db_version": "Versi DB:",
-    "sync_version": "Versi sinkronisasi:",
-    "build_date": "Tanggal pembuatan:",
-    "build_revision": "Revisi pembuatan:",
     "data_directory": "Direktori data:"
   },
   "toast": {

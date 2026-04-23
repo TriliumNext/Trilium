@@ -47,6 +47,7 @@ export default async function buildApp() {
         // set CORS header
         if (config["Network"]["corsAllowOrigin"]) {
             res.header("Access-Control-Allow-Origin", config["Network"]["corsAllowOrigin"]);
+            res.header("Access-Control-Allow-Credentials", "true");
         }
         if (config["Network"]["corsAllowMethods"]) {
             res.header("Access-Control-Allow-Methods", config["Network"]["corsAllowMethods"]);

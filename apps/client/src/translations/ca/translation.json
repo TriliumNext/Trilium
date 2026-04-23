@@ -1,10 +1,4 @@
 {
-  "about": {
-    "title": "Sobre Trilium Notes",
-    "homepage": "Pàgina principal:",
-    "app_version": "Versió de l'aplicació:",
-    "db_version": "Versió de la base de dades:"
-  },
   "add_link": {
     "note": "Nota"
   },

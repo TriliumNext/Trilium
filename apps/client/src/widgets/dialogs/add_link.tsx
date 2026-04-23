@@ -5,6 +5,7 @@ import FormRadioGroup from "../react/FormRadioGroup";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 import { useRef, useState, useEffect } from "preact/hooks";
 import tree from "../../services/tree";
+import froca from "../../services/froca";
 import note_autocomplete, { Suggestion } from "../../services/note_autocomplete";
 import { logError } from "../../services/ws";
 import FormGroup from "../react/FormGroup.js";
@@ -24,6 +25,9 @@ export default function AddLinkDialog() {
     const [ linkTitle, setLinkTitle ] = useState("");
     const [ linkType, setLinkType ] = useState<LinkType>();
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
+    const [ bookmarks, setBookmarks ] = useState<string[]>([]);
+    const [ selectedBookmark, setSelectedBookmark ] = useState("");
+    const [ noteTitle, setNoteTitle ] = useState("");
     const [ shown, setShown ] = useState(false);
     const hasSubmittedRef = useRef(false);
 
@@ -41,26 +45,34 @@ export default function AddLinkDialog() {
     }, [ opts ]);
 
     async function setDefaultLinkTitle(noteId: string) {
-        const noteTitle = await tree.getNoteTitle(noteId);
-        setLinkTitle(noteTitle);
-    }
-
-    function resetExternalLink() {
-        if (linkType === "external-link") {
-            setLinkType("reference-link");
-        }
+        const title = await tree.getNoteTitle(noteId);
+        setNoteTitle(title);
+        setLinkTitle(title);
     }
 
     useEffect(() => {
+        const resetExternalLink = () =>
+            setLinkType((prev) => prev === "external-link" ? "reference-link" : prev);
+
         if (!suggestion) {
             resetExternalLink();
+            setBookmarks([]);
+            setSelectedBookmark("");
             return;
         }
+
+        let cancelled = false;
 
         if (suggestion.notePath) {
             const noteId = tree.getNoteIdFromUrl(suggestion.notePath);
             if (noteId) {
                 setDefaultLinkTitle(noteId);
+                froca.getNote(noteId).then((note) => {
+                    if (cancelled) return;
+                    const bkms = note?.getLabels("internalBookmark").map((l) => l.value) ?? [];
+                    setBookmarks(bkms);
+                    setSelectedBookmark("");
+                });
             }
             resetExternalLink();
         }
@@ -69,7 +81,17 @@ export default function AddLinkDialog() {
             setLinkTitle(suggestion.externalLink);
             setLinkType("external-link");
         }
+
+        return () => { cancelled = true; };
     }, [suggestion]);
+
+    useEffect(() => {
+        if (selectedBookmark) {
+            setLinkTitle(`${noteTitle} - ${selectedBookmark}`);
+        } else {
+            setLinkTitle(noteTitle);
+        }
+    }, [selectedBookmark, noteTitle]);
 
     function onShown() {
         const $autocompleteEl = refToJQuerySelector(autocompleteRef);
@@ -114,8 +136,11 @@ export default function AddLinkDialog() {
                     hasSubmittedRef.current = false;
 
                     if (suggestion.notePath) {
-                        // Handle note link
-                        opts.addLink(suggestion.notePath, linkType === "reference-link" ? null : linkTitle);
+                        // Handle note link, optionally with a bookmark anchor
+                        const path = selectedBookmark
+                            ? `${suggestion.notePath}?bookmark=${encodeURIComponent(selectedBookmark)}`
+                            : suggestion.notePath;
+                        opts.addLink(path, linkType === "reference-link" ? null : linkTitle);
                     } else if (suggestion.externalLink) {
                         // Handle external link
                         opts.addLink(suggestion.externalLink, linkTitle, true);
@@ -123,6 +148,9 @@ export default function AddLinkDialog() {
                 }
 
                 setSuggestion(null);
+                setBookmarks([]);
+                setSelectedBookmark("");
+                setNoteTitle("");
                 setShown(false);
             }}
             show={shown}
@@ -137,6 +165,21 @@ export default function AddLinkDialog() {
                     }}
                 />
             </FormGroup>
+
+            {bookmarks.length > 0 && (
+                <FormGroup label={t("add_link.anchor")} name="anchor">
+                    <select
+                        className="form-select"
+                        value={selectedBookmark}
+                        onChange={(e) => setSelectedBookmark((e.target as HTMLSelectElement).value)}
+                    >
+                        <option value="">{t("add_link.anchor_none")}</option>
+                        {bookmarks.map((bk) => (
+                            <option key={bk} value={bk}>{bk}</option>
+                        ))}
+                    </select>
+                </FormGroup>
+            )}
 
             {!opts?.hasSelection && (
                 <div className="add-link-title-settings">

@@ -1,5 +1,5 @@
 import { Application } from "express";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, it } from "vitest";
 import supertest from "supertest";
 import { createNote, login } from "./utils.js";
 import config from "../../src/services/config.js";

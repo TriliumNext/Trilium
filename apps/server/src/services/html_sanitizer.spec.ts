@@ -50,4 +50,26 @@ describe("sanitize", () => {
             </figure>`;
         expect(html_sanitizer.sanitize(dirty)).toBe(clean);
     });
+
+    describe("bookmark anchors", () => {
+        it("preserves id attribute on empty <a> tags (CKEditor bookmarks)", () => {
+            const dirty = `<a id="my-bookmark"></a>`;
+            expect(html_sanitizer.sanitize(dirty)).toBe(dirty);
+        });
+
+        it("preserves id attribute on <a> tags with bookmark class", () => {
+            const dirty = `<a id="chapter-1" class="ck-bookmark"></a>`;
+            expect(html_sanitizer.sanitize(dirty)).toBe(dirty);
+        });
+
+        it("strips id attribute from non-anchor tags to prevent DOM clobbering", () => {
+            const dirty = `<div id="loginForm">content</div>`;
+            expect(html_sanitizer.sanitize(dirty)).toBe(`<div>content</div>`);
+        });
+
+        it("strips id attribute from <img> tags to prevent DOM clobbering", () => {
+            const dirty = `<img id="someId" src="test.png" />`;
+            expect(html_sanitizer.sanitize(dirty)).toBe(`<img src="test.png" />`);
+        });
+    });
 });

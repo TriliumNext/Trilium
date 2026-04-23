@@ -6,6 +6,15 @@
 
 // Migrations should be kept in descending order, so the latest migration is first.
 const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Add description column to revisions table for manual revision comments
+    {
+        version: 238,
+        sql: /*sql*/`
+            ALTER TABLE revisions ADD COLUMN description TEXT DEFAULT '' NOT NULL;
+            ALTER TABLE revisions ADD COLUMN source TEXT DEFAULT 'auto' NOT NULL;
+        `,
+        ignoreErrors: true
+    },
     // Clean up obsolete keyboard shortcut options from renamed actions
     {
         version: 237,

@@ -1,24 +1,30 @@
 /* h1 should not be used at all since semantically that's a note title */
-.note-detail-readonly-text h1 { font-size: 1.8em; }
-.note-detail-readonly-text h2 { font-size: 1.6em; }
-.note-detail-readonly-text h3 { font-size: 1.4em; }
-.note-detail-readonly-text h4 { font-size: 1.2em; }
-.note-detail-readonly-text h5 { font-size: 1.1em; }
-.note-detail-readonly-text h6 { font-size: 1.0em; }
+.note-detail-readonly-text-content {
+    h1 { font-size: 1.8em; }
+    h2 { font-size: 1.6em; }
+    h3 { font-size: 1.4em; }
+    h4 { font-size: 1.2em; }
+    h5 { font-size: 1.1em; }
+    h6 { font-size: 1.0em; }
+}
 
-body.heading-style-markdown .note-detail-readonly-text h1::before { content: "#\2004"; color: var(--muted-text-color); }
-body.heading-style-markdown .note-detail-readonly-text h2::before { content: "##\2004"; color: var(--muted-text-color); }
-body.heading-style-markdown .note-detail-readonly-text h3::before { content: "###\2004"; color: var(--muted-text-color); }
-body.heading-style-markdown .note-detail-readonly-text h4:not(.include-note-title)::before { content: "####\2004"; color: var(--muted-text-color); }
-body.heading-style-markdown .note-detail-readonly-text h5::before { content: "#####\2004"; color: var(--muted-text-color); }
-body.heading-style-markdown .note-detail-readonly-text h6::before { content: "######\2004"; color: var(--muted-text-color); }
+body.heading-style-markdown .note-detail-readonly-text-content {
+    h1::before { content: "#\2004"; color: var(--muted-text-color); }
+    h2::before { content: "##\2004"; color: var(--muted-text-color); }
+    h3::before { content: "###\2004"; color: var(--muted-text-color); }
+    h4:not(.include-note-title)::before { content: "####\2004"; color: var(--muted-text-color); }
+    h5::before { content: "#####\2004"; color: var(--muted-text-color); }
+    h6::before { content: "######\2004"; color: var(--muted-text-color); }
+}
 
-body.heading-style-underline .note-detail-readonly-text h1 { border-bottom: 1px solid var(--main-border-color); }
-body.heading-style-underline .note-detail-readonly-text h2 { border-bottom: 1px solid var(--main-border-color); }
-body.heading-style-underline .note-detail-readonly-text h3 { border-bottom: 1px solid var(--main-border-color); }
-body.heading-style-underline .note-detail-readonly-text h4:not(.include-note-title) { border-bottom: 1px solid var(--main-border-color); }
-body.heading-style-underline .note-detail-readonly-text h5 { border-bottom: 1px solid var(--main-border-color); }
-body.heading-style-underline .note-detail-readonly-text h6 { border-bottom: 1px solid var(--main-border-color); }
+body.heading-style-underline .note-detail-readonly-text-content {
+    h1 { border-bottom: 1px solid var(--main-border-color); }
+    h2 { border-bottom: 1px solid var(--main-border-color); }
+    h3 { border-bottom: 1px solid var(--main-border-color); }
+    h4:not(.include-note-title) { border-bottom: 1px solid var(--main-border-color); }
+    h5 { border-bottom: 1px solid var(--main-border-color); }
+    h6 { border-bottom: 1px solid var(--main-border-color); }
+}
 
 .note-detail-readonly-text {
     padding-inline-start: 24px;

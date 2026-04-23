@@ -1,6 +1,6 @@
 import "./TableOfContents.css";
 
-import { attributeChangeAffectsHeading, CKTextEditor, ModelElement } from "@triliumnext/ckeditor5";
+import { attributeChangeAffectsHeading, CKTextEditor, ModelElement, type ModelNode } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -230,7 +230,7 @@ function extractTocFromTextEditor(editor: CKTextEditor) {
             // Fallback to plain text if DOM conversion fails
             if (!text) {
                 text = Array.from( item.getChildren() )
-                    .map( c => c.is( '$text' ) ? c.data : '' )
+                    .map( (c: ModelNode) => c.is( '$text' ) ? c.data : '' )
                     .join( '' );
             }
 

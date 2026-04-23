@@ -104,14 +104,12 @@ export default class CodeMirror extends EditorView {
             ];
         }
 
+        extensions.push(EditorView.updateListener.of((v) => this.#onDocumentUpdated(v)));
+
         if (!config.readOnly) {
             // Logic specific to editable notes
             if (config.placeholder) {
                 extensions.push(placeholder(config.placeholder));
-            }
-
-            if (config.onContentChanged) {
-                extensions.push(EditorView.updateListener.of((v) => this.#onDocumentUpdated(v)));
             }
 
             extensions.push(historyCompartment.of(history()));
@@ -142,6 +140,21 @@ export default class CodeMirror extends EditorView {
         if (v.docChanged) {
             this.config.onContentChanged?.();
         }
+        for (const listener of this.#updateListeners) listener(v);
+    }
+
+    #updateListeners: Array<(v: ViewUpdate) => void> = [];
+
+    /**
+     * Subscribe to view updates (doc changes, selection changes, viewport changes, etc.).
+     * Returns an unsubscribe function. The listener will not fire after the view is destroyed.
+     */
+    addUpdateListener(listener: (v: ViewUpdate) => void): () => void {
+        this.#updateListeners.push(listener);
+        return () => {
+            const i = this.#updateListeners.indexOf(listener);
+            if (i >= 0) this.#updateListeners.splice(i, 1);
+        };
     }
 
     getText() {

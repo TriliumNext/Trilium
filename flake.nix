@@ -67,6 +67,31 @@
             filter = fullCleanSourceFilter;
             src = src;
           };
+
+        # Minimal source used for pnpm2nix's dependency-fetching derivation.
+        # Only the files pnpm actually needs to resolve and fetch dependencies
+        # are included, so unrelated source changes don't bust the deps cache.
+        workspaceSourceFilter =
+          name: type:
+          let
+            baseName = baseNameOf (toString name);
+            rootStr = toString ./.;
+            relPath = lib.removePrefix "${rootStr}/" (toString name);
+            inPatches = relPath == "patches" || lib.hasPrefix "patches/" relPath;
+          in
+          (lib.cleanSourceFilter name type)
+          && baseName != "node_modules"
+          && (
+            type == "directory"
+            || baseName == "package.json"
+            || baseName == "pnpm-workspace.yaml"
+            || baseName == "pnpm-lock.yaml"
+            || inPatches
+          );
+        workspaceSource = lib.cleanSourceWith {
+          filter = workspaceSourceFilter;
+          src = ./.;
+        };
         packageJson = builtins.fromJSON (builtins.readFile ./package.json);
         packageJsonDesktop = builtins.fromJSON (builtins.readFile ./apps/desktop/package.json);
 
@@ -86,7 +111,7 @@
             packageJSON = ./package.json;
             pnpmLockYaml = ./pnpm-lock.yaml;
 
-            workspace = fullCleanSource ./.;
+            workspace = workspaceSource;
             pnpmWorkspaceYaml = ./pnpm-workspace.yaml;
 
             inherit nodejs pnpm;

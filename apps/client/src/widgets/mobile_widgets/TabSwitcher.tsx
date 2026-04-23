@@ -14,7 +14,7 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import type { ViewMode, ViewScope } from "../../services/link";
 import { NoteContent } from "../collections/legacy/ListOrGridView";
-import { LaunchBarActionButton } from "../launch_bar/launch_bar_widgets";
+import { LaunchBarActionButton, LauncherNoteProps } from "../launch_bar/launch_bar_widgets";
 import { ICON_MAPPINGS } from "../note_bars/CollectionProperties";
 import ActionButton from "../react/ActionButton";
 import { useActiveNoteContext, useNoteIcon, useTriliumEvents } from "../react/hooks";
@@ -30,13 +30,14 @@ const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
     ocr: "bx bx-text"
 };
 
-export default function TabSwitcher() {
+export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
     const [ shown, setShown ] = useState(false);
     const mainNoteContexts = useMainNoteContexts();
 
     return (
         <>
             <LaunchBarActionButton
+                launcherNote={launcherNote}
                 className="mobile-tab-switcher"
                 icon="bx bx-rectangle"
                 text="Tabs"

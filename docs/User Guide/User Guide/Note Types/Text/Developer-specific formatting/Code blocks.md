@@ -36,6 +36,7 @@ In order to configure this new feature, a section has been added in Options → 
 
 *   It is possible to disable the syntax highlighting for all the notes by selecting “No syntax highlighting” in the “Color scheme” option.
 *   Word wrapping is disabled by default, but can be configured from the same section.
+*   The tab width can also be adjusted from Options.
 
 > [!NOTE]
 > **Context regarding syntax highlighting**

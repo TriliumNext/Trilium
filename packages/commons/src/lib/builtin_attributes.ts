@@ -91,6 +91,7 @@ export default [
     { type: "label", name: "printPageSize" },
     { type: "label", name: "printScale" },
     { type: "label", name: "printMargins" },
+    { type: "label", name: "internalBookmark" },
 
     // relation names
     { type: "relation", name: "internalLink" },

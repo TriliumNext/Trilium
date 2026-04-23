@@ -162,17 +162,23 @@
         "description_x64": "كۆپىنچە Linux تارقاتما نۇسخىلىرىغا ماس كېلىدۇ، x86_64 ئارخىتېكتۇرىسى بىلەن ماسلىشىشچانلىقى بار.",
         "description_arm64": "ARM ئارخىتېكتۇرىسىنى ئاساس قىلغان Linux تارقاتما نۇسخىلىرىغا ماس كېلىدۇ، aarch64 ئارخىتېكتۇرىسى بىلەن ماسلىشىشچانلىقى بار.",
         "quick_start": "ئۆزىڭىز ئىشلىتىۋاتقان تارقاتما نۇسخاغا ئاساسەن مۇۋاپىق بولغان يۇمشاق دېتال فورماتىنى تاللاڭ:",
-        "download_deb": ".deb"
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_zip": "Portable (.zip)",
+        "download_nixpkgs": "nixpkgs"
     },
     "download_helper_desktop_macos": {
         "description_x64": "macOS Monterey ياكى ئۇنىڭدىن كېيىنكى سىستېما ئىجرا قىلىنىدىغان Intel يادرولۇق Mac كومپيۇتېرلىرىغا ماس كېلىدۇ.",
         "description_arm64": "M1 ۋە M2 ئۆزەكلىرى سەپلەنگەن Apple Silicon Mac كومپيۇتېرلىرىغا ماس كېلىدۇ.",
         "quick_start": "Homebrew ئارقىلىق قاچىلاش:",
-        "download_dmg": "قاچىلاش پروگراممىسىنى چۈشۈرۈش (.dmg)"
+        "download_dmg": "قاچىلاش پروگراممىسىنى چۈشۈرۈش (.dmg)",
+        "title_x64": "Intel بىر تەرەپ قىلغۇچلىرىغا ماس كېلىدىغان macOS",
+        "title_arm64": "Apple Silicon (ئالما ئۆزەكلىرى) گە ماس كېلىدىغان macOS"
     },
     "download_helper_server_docker": {
         "title": "Docker ئارقىلىق ئۆزىڭىز قۇرۇپ ئىشلىتىش (Self-hosted)",
-        "description": "Docker كونتېينېرى (Container) ئارقىلىق Windows، Linux ياكى macOS سىستېمىلىرىغا ئاسانلا ئورۇنلاشتۇرۇشقا بولىدۇ."
+        "description": "Docker كونتېينېرى (Container) ئارقىلىق Windows، Linux ياكى macOS سىستېمىلىرىغا ئاسانلا ئورۇنلاشتۇرۇشقا بولىدۇ.",
+        "download_dockerhub": "Docker Hub"
     },
     "download_helper_server_linux": {
         "title": "Linuxدا ئۆزىڭىز قۇرۇپ ئىشلىتىش (Self-hosted)",
@@ -181,9 +187,12 @@
     "download_helper_server_hosted": {
         "description": "Trilium Notes نىڭ بېكەت تۇرالغۇسى PikaPods تەرىپىدىن تەمىنلىنىدۇ، بۇ ھەقلىق مۇلازىمەت قولايلىق زىيارەت ۋە باشقۇرۇش ئىقتىدارلىرىغا ئىگە. مەزكۇر مۇلازىمەت بىلەن Trilium گۇرۇپپىسى ئوتتۇرىسىدا بىۋاسىتە باغلىنىش يوق.",
         "download_pikapod": "PikaPods تا تەڭشەش",
-        "download_triliumcc": "يەنە trilium.cc غا كىرسىڭىزمۇ بولىدۇ"
+        "download_triliumcc": "يەنە trilium.cc غا كىرسىڭىزمۇ بولىدۇ",
+        "title": "ھەقلىق مۇلازىمەت بىلەن تەمىنلەش"
     },
     "resources": {
-        "title": "مەنبەلەر"
+        "title": "مەنبەلەر",
+        "download": "چۈشۈرۈش",
+        "website": "تور بېكەت"
     }
 }

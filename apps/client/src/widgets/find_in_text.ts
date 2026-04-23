@@ -63,7 +63,7 @@ export default class FindInText {
                 const findResultElement = editorEl?.querySelectorAll(".ck-find-result");
                 const scrollingContainer = editorEl?.closest('.scrolling-container');
                 const containerTop = scrollingContainer?.getBoundingClientRect().top ?? 0;
-                const closestIndex = Array.from(findResultElement ?? []).findIndex((el) => el.getBoundingClientRect().top >= containerTop);
+                const closestIndex = Array.from(findResultElement ?? []).findIndex((el: Element) => el.getBoundingClientRect().top >= containerTop);
                 currentFound = closestIndex >= 0 ? closestIndex : 0;
             }
         }

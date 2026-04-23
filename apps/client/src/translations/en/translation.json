@@ -1,13 +1,23 @@
 {
-  "about": {
-    "title": "About Trilium Notes",
-    "homepage": "Homepage:",
-    "app_version": "App version:",
-    "db_version": "DB version:",
-    "sync_version": "Sync version:",
-    "build_date": "Build date:",
-    "build_revision": "Build revision:",
-    "data_directory": "Data directory:"
+  "about": {   
+    "version_label": "Version:",
+    "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
+    "build_info": "Build: {{buildDate}}, revision: <buildRevision />",
+    "contributors_label": "Contributors:",
+    "contributor_roles": {
+      "lead-dev": "lead developer",
+      "original-dev": "original developer"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran founded TriliumNext in 2024, a community fork created after Zadam stepped back from the project. Zadam later transferred the original repository to the TriliumNext team, merging both projects back into one.",
+      "original-dev": "On 25th December 2017, Zadam released the first beta of Trilium (written with a single \"l\", unlike the flower). Dissatisfied with existing note organizers, he built a powerful self-hosted hierarchical knowledge base that gathered over 22,000 GitHub stars. In 2024, as life got busier, he placed the project into maintenance mode."
+    },
+    "contributor_full_list": "See the entire community",
+    "data_directory": "Data directory:",
+    "github_tooltip": "Report bugs, suggest features, or contribute on GitHub",
+    "license_tooltip": "View license",
+    "donate": "Donate",
+    "donate_tooltip": "Donate to support this project"
   },
   "toast": {
     "critical-error": {
@@ -41,6 +51,8 @@
     "link_title_mirrors": "link title mirrors the note's current title",
     "link_title_arbitrary": "link title can be changed arbitrarily",
     "link_title": "Link title",
+    "anchor": "Anchor (optional)",
+    "anchor_none": "None (link to note)",
     "button_add_link": "Add link"
   },
   "branch_prefix": {
@@ -285,6 +297,7 @@
     "confirm_delete_all": "Do you want to delete all revisions of this note?",
     "no_revisions": "No revisions for this note yet...",
     "restore_button": "Restore",
+    "highlight_changes": "Highlight changes",
     "diff_on": "Show diff",
     "diff_off": "Show content",
     "diff_on_hint": "Click to show note source diff",
@@ -298,11 +311,39 @@
     "revision_deleted": "Note revision has been deleted.",
     "snapshot_interval": "Note Revision Snapshot Interval: {{seconds}}s.",
     "maximum_revisions": "Note Revision Snapshot Limit: {{number}}.",
+    "save_revision_now": "Save a revision now",
+    "save_named_revision": "Save named revision...",
+    "snapshot_header": "Note revision snapshot",
+    "snapshot_interval_value": "Interval: {{seconds}}s",
+    "snapshot_limit_value": "Limit: {{number}}",
     "settings": "Note Revision Settings",
+    "menu_tooltip": "Revision options",
     "download_button": "Download",
     "mime": "MIME: ",
     "file_size": "File size:",
-    "preview_not_available": "Preview isn't available for this note type."
+    "preview_not_available": "Preview isn't available for this note type.",
+    "save_revision": "Save revision",
+    "save_revision_tooltip": "Manually save a snapshot of the current note",
+    "description_placeholder": "Name this revision",
+    "revision_saved": "Note revision has been saved.",
+    "edit_description": "Edit name",
+    "description_updated": "Revision name has been updated.",
+    "source_auto": "Auto-save",
+    "source_manual": "Manual save",
+    "source_etapi": "ETAPI",
+    "source_llm": "LLM",
+    "source_restore": "Restore",
+    "source_unknown": "Snapshot",
+    "date_today": "Today",
+    "date_yesterday": "Yesterday",
+    "date_this_week": "This week",
+    "date_this_month": "This month",
+    "source_description_auto": "Automatically saved by the system at regular intervals",
+    "source_description_manual": "Manually saved by the user",
+    "source_description_etapi": "Created via the External Trilium API",
+    "source_description_llm": "Created by the AI assistant",
+    "source_description_restore": "Saved before restoring a previous revision",
+    "source_description_unknown": "Source not available"
   },
   "sort_child_notes": {
     "sort_children_by": "Sort children by...",
@@ -716,6 +757,7 @@
     "print_note": "Print note",
     "view_revisions": "Note revisions...",
     "save_revision": "Save revision",
+    "save_named_revision": "Save named revision...",
     "advanced": "Advanced",
     "convert_into_attachment_failed": "Converting note '{{title}}' failed.",
     "convert_into_attachment_successful": "Note '{{title}}' has been converted to attachment.",
@@ -859,6 +901,9 @@
     "title": "Inherited Attributes",
     "no_inherited_attributes": "No inherited attributes.",
     "none": "none"
+  },
+  "auto_link_attribute_list": {
+    "title": "System Attributes"
   },
   "note_info_widget": {
     "note_id": "Note ID",
@@ -1341,7 +1386,7 @@
     "erase_deleted_notes_now": "Erase deleted notes now",
     "deleted_notes_erased": "Deleted notes have been erased."
   },
-  "revisions": {
+  "revisions_snapshot": {
     "title": "Note Revisions"
   },
   "revisions_snapshot_interval": {
@@ -1671,6 +1716,7 @@
   "note_types": {
     "text": "Text",
     "code": "Code",
+    "markdown": "Markdown",
     "saved-search": "Saved Search",
     "relation-map": "Relation Map",
     "note-map": "Note Map",
@@ -1891,6 +1937,8 @@
   },
   "entrypoints": {
     "note-revision-created": "Note revision has been created.",
+    "save-named-revision-title": "Save named revision",
+    "save-named-revision-message": "Enter a name for this revision (leave empty for no name):",
     "note-executed": "Note executed.",
     "sql-error": "Error occurred while executing SQL query: {{message}}"
   },
@@ -1927,6 +1975,9 @@
     "move-to-visible-launchers": "Move to visible launchers",
     "move-to-available-launchers": "Move to available launchers",
     "duplicate-launcher": "Duplicate launcher <kbd data-command=\"duplicateSubtree\">"
+  },
+  "launcher_button_context_menu": {
+    "remove_from_launch_bar": "Remove from launch bar"
   },
   "highlighting": {
     "title": "Code Blocks",
@@ -2071,6 +2122,11 @@
   "toggle_read_only_button": {
     "unlock-editing": "Unlock editing",
     "lock-editing": "Lock editing"
+  },
+  "display_mode": {
+    "source": "Source view",
+    "split": "Split view",
+    "preview": "Preview"
   },
   "png_export_button": {
     "button_title": "Export diagram as PNG"
@@ -2493,5 +2549,9 @@
       "move_note": "Move note",
       "clone_note": "Clone note"
     }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel"
   }
 }

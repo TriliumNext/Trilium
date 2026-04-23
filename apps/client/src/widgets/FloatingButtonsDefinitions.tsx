@@ -20,7 +20,8 @@ import tree from "../services/tree";
 import { createImageSrcUrl, openInAppHelpFromUrl } from "../services/utils";
 import { ViewTypeOptions } from "./collections/interface";
 import ActionButton, { ActionButtonProps } from "./react/ActionButton";
-import { useIsNoteReadOnly, useNoteLabelBoolean, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
+import { ButtonGroup } from "./react/Button";
+import { useIsNoteReadOnly, useNoteLabel, useNoteLabelBoolean, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
 import NoteLink from "./react/NoteLink";
 import RawHtml from "./react/RawHtml";
 
@@ -47,8 +48,9 @@ export type FloatingButtonsList = ((context: FloatingButtonContext) => false | V
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
     RefreshBackendLogButton,
-    SwitchSplitOrientationButton,
     ToggleReadOnlyButton,
+    SwitchSplitOrientationButton,
+    DisplayModeSwitcher,
     EditButton,
     ShowTocWidgetButton,
     ShowHighlightsListWidgetButton,
@@ -80,9 +82,13 @@ function RefreshBackendLogButton({ note, parentComponent, noteContext, isDefault
 }
 
 function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: FloatingButtonContext) {
-    const isEnabled = note.type === "mermaid" && note.isContentAvailable() && !isReadOnly && isDefaultViewMode;
+    const [ displayMode ] = useNoteLabel(note, "displayMode");
     const [ splitEditorOrientation, setSplitEditorOrientation ] = useTriliumOption("splitEditorOrientation");
     const upcomingOrientation = splitEditorOrientation === "horizontal" ? "vertical" : "horizontal";
+    const effectiveMode = displayMode === "source" || displayMode === "split" || displayMode === "preview"
+        ? displayMode
+        : isReadOnly ? "preview" : "split";
+    const isEnabled = note.type === "mermaid" && note.isContentAvailable() && effectiveMode === "split" && isDefaultViewMode;
 
     return isEnabled && <FloatingButton
         text={upcomingOrientation === "vertical" ? t("switch_layout_button.title_vertical") : t("switch_layout_button.title_horizontal")}
@@ -94,7 +100,7 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: F
 function ToggleReadOnlyButton({ note, isDefaultViewMode }: FloatingButtonContext) {
     const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
     const isSavedSqlite = note.isTriliumSqlite() && !note.isHiddenCompletely();
-    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || isSavedSqlite)
+    const isEnabled = ([ "mindMap", "canvas", "spreadsheet" ].includes(note.type) || isSavedSqlite)
             && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && <FloatingButton
@@ -102,6 +108,33 @@ function ToggleReadOnlyButton({ note, isDefaultViewMode }: FloatingButtonContext
         icon={isReadOnly ? "bx bx-lock-open-alt" : "bx bx-lock-alt"}
         onClick={() => setReadOnly(!isReadOnly)}
     />;
+}
+
+function DisplayModeSwitcher({ note, isDefaultViewMode }: FloatingButtonContext) {
+    const [ displayMode, setDisplayMode ] = useNoteLabel(note, "displayMode");
+    const isEnabled = (note.isMarkdown() || note.type === "mermaid") && note.isContentAvailable() && isDefaultViewMode;
+    if (!isEnabled) return false;
+
+    const mode = displayMode === "source" || displayMode === "preview" ? displayMode : "split";
+    const buttons: Array<{ value: "source" | "split" | "preview"; icon: string; text: string }> = [
+        { value: "source", icon: "bx bx-code", text: t("display_mode.source") },
+        { value: "split", icon: "bx bxs-dock-left", text: t("display_mode.split") },
+        { value: "preview", icon: "bx bx-show", text: t("display_mode.preview") }
+    ];
+
+    return (
+        <ButtonGroup size="sm">
+            {buttons.map(({ value, icon, text }) => (
+                <FloatingButton
+                    key={value}
+                    icon={icon}
+                    text={text}
+                    active={mode === value}
+                    onClick={() => setDisplayMode(value)}
+                />
+            ))}
+        </ButtonGroup>
+    );
 }
 
 function EditButton({ note, noteContext }: FloatingButtonContext) {

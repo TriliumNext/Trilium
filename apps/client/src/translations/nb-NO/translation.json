@@ -1,13 +1,6 @@
 {
   "about": {
-    "title": "Om Trilium Notes",
-    "app_version": "App versjon:",
-    "db_version": "DB versjon:",
-    "sync_version": "Synk versjon:",
-    "build_date": "Byggdato:",
-    "build_revision": "Bygg versjon:",
-    "data_directory": "Datamappe:",
-    "homepage": "Hjemmeside:"
+    "data_directory": "Datamappe:"
   },
   "experimental_features": {
     "new_layout_description": "Prøv det nye grensesnittet for et mer moderne utseende og forbedret brukervenlighet. Det må påregnes betydelige endringer i kommende versjoner."

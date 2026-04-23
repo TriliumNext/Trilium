@@ -2,6 +2,7 @@ import "./code.css";
 
 import { default as VanillaCodeMirror, getThemeById } from "@triliumnext/codemirror";
 import { NoteType } from "@triliumnext/commons";
+import { Ref } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext, { CommandListenerData } from "../../../components/app_context";
@@ -31,9 +32,11 @@ export interface EditableCodeProps extends TypeWidgetProps, Omit<CodeEditorProps
     /** Invoked after the content of the note has been uploaded to the server, using a spaced update. */
     dataSaved?: () => void;
     placeholder?: string;
+    /** Optional external ref to the underlying CodeMirror `EditorView`. Populated once the editor has initialized. */
+    editorRef?: Ref<VanillaCodeMirror>;
 }
 
-export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent }: TypeWidgetProps) {
+export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
     const [ content, setContent ] = useState("");
     const blob = useNoteBlob(note);
     const [ noteTabWidth ] = useNoteLabelInt(note, "tabWidth");
@@ -54,6 +57,7 @@ export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent }: TypeWi
     return (
         <CodeEditor
             ntxId={ntxId} parentComponent={parentComponent}
+            editorRef={editorRef}
             className="note-detail-readonly-code-content"
             content={content}
             mime={note.mime}
@@ -81,9 +85,14 @@ function formatViewSource(note: FNote, content: string) {
     return content;
 }
 
-export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentComponent, updateInterval, noteType = "code", onContentChanged, dataSaved, placeholder, ...editorProps }: EditableCodeProps) {
+export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentComponent, updateInterval, noteType = "code", onContentChanged, dataSaved, placeholder, editorRef: externalEditorRef, ...editorProps }: EditableCodeProps) {
     const editorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useRef<HTMLPreElement>(null);
+    const combinedEditorRef = (view: VanillaCodeMirror | null) => {
+        editorRef.current = view;
+        if (typeof externalEditorRef === "function") externalEditorRef(view);
+        else if (externalEditorRef) externalEditorRef.current = view;
+    };
     const [ vimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
     const [ noteTabWidth ] = useNoteLabelInt(note, "tabWidth");
     const [ noteUseTabs ] = useNoteLabelOptionalBool(note, "indentWithTabs");
@@ -122,7 +131,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
         <>
             <CodeEditor
                 ntxId={ntxId} parentComponent={parentComponent}
-                editorRef={editorRef} containerRef={containerRef}
+                editorRef={combinedEditorRef} containerRef={containerRef}
                 mime={mime ?? "text/plain"}
                 className="note-detail-code-editor"
                 placeholder={placeholder ?? t("editable_code.placeholder")}
@@ -217,11 +226,13 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
         indentSize={editorProps.indentSize ?? (parseInt(codeNoteTabWidth) || 4)}
         useTabs={editorProps.useTabs ?? codeNoteIndentWithTabs}
         onInitialized={() => {
-            if (externalContainerRef && containerRef.current) {
-                externalContainerRef.current = containerRef.current;
+            if (containerRef.current) {
+                if (typeof externalContainerRef === "function") externalContainerRef(containerRef.current);
+                else if (externalContainerRef) externalContainerRef.current = containerRef.current;
             }
-            if (externalEditorRef && codeEditorRef.current) {
-                externalEditorRef.current = codeEditorRef.current;
+            if (codeEditorRef.current) {
+                if (typeof externalEditorRef === "function") externalEditorRef(codeEditorRef.current);
+                else if (externalEditorRef) externalEditorRef.current = codeEditorRef.current;
             }
             initialized.current.resolve();
             onInitialized?.();

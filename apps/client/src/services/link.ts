@@ -60,6 +60,8 @@ export interface ViewScope {
      */
     tocPreviousVisible?: boolean;
     tocCollapsedHeadings?:  Set<string>;
+    /** When set, scrolls to a bookmark anchor within the note after navigation. */
+    bookmark?: string;
 }
 
 interface CreateLinkOptions {
@@ -244,7 +246,7 @@ export function parseNavigationStateFromUrl(url: string | undefined) {
                 hoistedNoteId = value;
             } else if (name === "searchString") {
                 searchString = value; // supports triggering search from URL, e.g. #?searchString=blabla
-            } else if (["viewMode", "attachmentId"].includes(name)) {
+            } else if (["viewMode", "attachmentId", "bookmark"].includes(name)) {
                 (viewScope as any)[name] = value;
             } else if (name === "popup") {
                 openInPopup = true;
@@ -432,6 +434,13 @@ async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | n
     const title = await getReferenceLinkTitle(href);
     $el.text(title);
 
+    if (viewScope?.bookmark) {
+        $el.append($("<small>").append(
+            $("<span>").addClass("bx bx-bookmark"),
+            document.createTextNode(viewScope.bookmark)
+        ));
+    }
+
     if (note) {
         const icon = await getLinkIcon(noteId, viewScope.viewMode);
 
@@ -457,8 +466,8 @@ async function getReferenceLinkTitle(href: string) {
 
         return attachment ? attachment.title : "[missing attachment]";
     }
-    return note.title;
 
+    return note.title;
 }
 
 function getReferenceLinkTitleSync(href: string) {
@@ -481,8 +490,12 @@ function getReferenceLinkTitleSync(href: string) {
 
         return attachment ? attachment.title : "[missing attachment]";
     }
-    return note.title;
 
+    if (viewScope?.bookmark) {
+        return `${note.title} - ${viewScope.bookmark}`;
+    }
+
+    return note.title;
 }
 
 if (glob.device !== "print") {

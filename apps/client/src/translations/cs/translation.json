@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "O Trilium Notes",
-    "homepage": "Domovská stránka:",
-    "app_version": "Verze aplikace:",
-    "db_version": "Verze DB:",
-    "sync_version": "Verze synchronizace:",
-    "build_date": "Datum sestavení:",
-    "build_revision": "Revize sestavení:",
     "data_directory": "Datový adresář:"
   },
   "toast": {

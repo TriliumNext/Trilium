@@ -25,6 +25,15 @@ export type GetTextEditorCallback = (editor: CKTextEditor) => void;
 
 export type SaveState = "saved" | "saving" | "unsaved" | "error";
 
+const READ_ONLY_CAPABLE_TYPES: string[] = [
+    "text",
+    "code",
+    "mermaid",
+    "canvas",
+    "mindMap",
+    "spreadsheet"
+];
+
 export interface NoteContextDataMap {
     toc: HeadingContext;
     pdfPages: {
@@ -303,8 +312,12 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return false;
         }
 
-        // "readOnly" is a state valid only for text/code notes
-        if (!this.note || (this.note.type !== "text" && this.note.type !== "code")) {
+        if (!this.note) {
+            return false;
+        }
+
+        // Note types that support a read-only state (via the #readOnly label, source view, or auto-readonly).
+        if (!READ_ONLY_CAPABLE_TYPES.includes(this.note.type)) {
             return false;
         }
 
@@ -318,6 +331,11 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         if (this.viewScope?.viewMode === "source") {
             return true;
+        }
+
+        // Auto read-only based on content size is only configurable for text/code.
+        if (this.note.type !== "text" && this.note.type !== "code") {
+            return false;
         }
 
         // Store the initial decision about read-only status in the viewScope

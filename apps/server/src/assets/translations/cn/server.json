@@ -297,7 +297,8 @@
   "migration": {
     "old_version": "由您当前版本的直接迁移不被支持。请先升级到最新的 v0.60.4 然后再到这个版本。",
     "error_message": "迁移到版本 {{version}} 时发生错误: {{stack}}",
-    "wrong_db_version": "数据库的版本（{{version}}）新于应用期望的版本（{{targetVersion}}），这意味着它由一个更加新的且不兼容的 Trilium 所创建。升级到最新版的 Trilium 以解决此问题。"
+    "wrong_db_version": "数据库的版本（{{version}}）新于应用期望的版本（{{targetVersion}}），这意味着它由一个更加新的且不兼容的 Trilium 所创建。升级到最新版的 Trilium 以解决此问题。",
+    "invalid_db_version": "数据库版本不是一个有效的数字。这通常表示数据库中的 'dbVersion' 选项已损坏。请从备份中恢复。"
   },
   "modals": {
     "error_title": "错误"
@@ -455,5 +456,11 @@
       "fulltext-after-expression": "“{{- token}}”不是有效表达式。要搜索文本，请将其放在属性筛选器之前（例如，“{{- token}} #label”而不是“#label {{- token}}”）。",
       "unrecognized-expression": "无法识别的表达式“{{- token}}”"
     }
+  },
+  "password": {
+    "incorrect": "您输入的密码不正确。"
+  },
+  "script": {
+    "wrong-environment": "无法执行笔记“{{-noteTitle}}”（{{-noteId}}）。这是一个 {{-actualEnv}} 脚本，但尝试在 {{-expectedEnv}} 中执行。"
   }
 }

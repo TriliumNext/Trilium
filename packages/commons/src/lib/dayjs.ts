@@ -7,6 +7,7 @@ import "dayjs/plugin/isoWeek";
 import "dayjs/plugin/isSameOrAfter";
 import "dayjs/plugin/isSameOrBefore";
 import "dayjs/plugin/quarterOfYear";
+import "dayjs/plugin/relativeTime";
 import "dayjs/plugin/utc";
 
 //#region Plugins
@@ -17,6 +18,7 @@ import isoWeek from "dayjs/plugin/isoWeek.js";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter.js";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore.js";
 import quarterOfYear from "dayjs/plugin/quarterOfYear.js";
+import relativeTime from "dayjs/plugin/relativeTime.js";
 import utc from "dayjs/plugin/utc.js";
 import { DISPLAYABLE_LOCALE_IDS, LOCALE_IDS } from "./i18n.js";
 
@@ -27,6 +29,7 @@ dayjs.extend(isoWeek);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(quarterOfYear);
+dayjs.extend(relativeTime);
 dayjs.extend(utc);
 //#endregion
 
