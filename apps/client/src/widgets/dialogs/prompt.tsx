@@ -1,11 +1,12 @@
 import { useRef, useState } from "preact/hooks";
+
 import { t } from "../../services/i18n";
 import Button from "../react/Button";
-import Modal from "../react/Modal";
-import FormTextBox from "../react/FormTextBox";
 import FormGroup from "../react/FormGroup";
-import { refToJQuerySelector } from "../react/react_utils";
+import FormTextBox from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
+import Modal from "../react/Modal";
+import { refToJQuerySelector } from "../react/react_utils";
 
 // JQuery here is maintained for compatibility with existing code.
 interface ShownCallbackData {
@@ -40,7 +41,7 @@ export default function PromptDialog() {
         opts.current = newOpts;
         setValue(newOpts.defaultValue ?? "");
         setShown(true);
-    })
+    });
 
     return (
         <Modal
@@ -60,7 +61,7 @@ export default function PromptDialog() {
                 answerRef.current?.select();
             }}
             onSubmit={() => {
-                submitValue.current = value;
+                submitValue.current = answerRef.current?.value || value;
                 setShown(false);
             }}
             onHidden={() => {

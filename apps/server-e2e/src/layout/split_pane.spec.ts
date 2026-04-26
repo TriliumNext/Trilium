@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
+
 import App from "../support/app";
 
 const TEXT_NOTE_TITLE = "Text notes";
@@ -32,8 +33,7 @@ test("Open the note in the correct split pane", async ({ page, context }) => {
     await noteContent.focus();
 
     // Click the search result in the second split.
-    await resultsSelector.locator(".aa-suggestion", { hasText: CODE_NOTE_TITLE })
-        .nth(1).click();
+    await app.getNoteAutocompleteSuggestion(resultsSelector, CODE_NOTE_TITLE).click();
 
     await expect(split2).toContainText(CODE_NOTE_TITLE);
 });

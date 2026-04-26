@@ -71,6 +71,27 @@ function getAttributeNames(type: string, nameLike: string) {
         [type, `%${nameLike}%`]
     );
 
+    // Also include attribute definitions (e.g. 'relation:*' or 'label:*') which are saved as type='label'
+    if (type === "relation" || type === "label") {
+        const prefix = `${type}:`;
+        const defNames = sql.getColumn<string>(
+            /*sql*/`SELECT DISTINCT name
+                FROM attributes
+                WHERE isDeleted = 0
+                    AND type = 'label'
+                    AND name LIKE ?`,
+            [`${prefix}%${nameLike}%`]
+        );
+        for (const dn of defNames) {
+            if (dn.startsWith(prefix)) {
+                const stripped = dn.substring(prefix.length);
+                if (!names.includes(stripped)) {
+                    names.push(stripped);
+                }
+            }
+        }
+    }
+
     for (const attr of BUILTIN_ATTRIBUTES) {
         if (attr.type === type && attr.name.toLowerCase().includes(nameLike) && !names.includes(attr.name)) {
             names.push(attr.name);

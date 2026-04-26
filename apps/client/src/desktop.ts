@@ -1,5 +1,3 @@
-import "autocomplete.js/index_jquery.js";
-
 import type ElectronRemote from "@electron/remote";
 import type Electron from "electron";
 

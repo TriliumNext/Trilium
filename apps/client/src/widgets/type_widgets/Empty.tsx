@@ -25,8 +25,9 @@ function NoteSearch({ ntxId }: { ntxId: string | null }) {
 
     // Show recent notes.
     useEffect(() => {
-        const $autoComplete = refToJQuerySelector(autocompleteRef);
-        note_autocomplete.showRecentNotes($autoComplete);
+        queueMicrotask(() => {
+            note_autocomplete.showRecentNotes(refToJQuerySelector(autocompleteRef));
+        });
     }, []);
 
     return (

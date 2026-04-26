@@ -1,6 +1,7 @@
 import appContext from "../../components/app_context.js";
 import attributeAutocompleteService from "../../services/attribute_autocomplete.js";
 import type { Attribute } from "../../services/attribute_parser.js";
+import { HEADLESS_AUTOCOMPLETE_PANEL_SELECTOR } from "../../services/autocomplete_core.js";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features.js";
 import { focusSavedElement, saveFocusedElement } from "../../services/focus.js";
 import froca from "../../services/froca.js";
@@ -384,13 +385,13 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
             }
         });
         this.$inputName.on("change", () => this.userEditedAttribute());
-        this.$inputName.on("autocomplete:closed", () => this.userEditedAttribute());
 
         this.$inputName.on("focus", () => {
             attributeAutocompleteService.initAttributeNameAutocomplete({
                 $el: this.$inputName,
                 attributeType: () => (["relation", "relation-definition"].includes(this.attrType || "") ? "relation" : "label"),
-                open: true
+                open: true,
+                onValueChange: () => this.userEditedAttribute(),
             });
         });
 
@@ -403,12 +404,12 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
             }
         });
         this.$inputValue.on("change", () => this.userEditedAttribute());
-        this.$inputValue.on("autocomplete:closed", () => this.userEditedAttribute());
         this.$inputValue.on("focus", () => {
             attributeAutocompleteService.initLabelValueAutocomplete({
                 $el: this.$inputValue,
                 open: true,
-                nameCallback: () => String(this.$inputName.val())
+                nameCallback: () => String(this.$inputName.val()),
+                onValueChange: () => this.userEditedAttribute(),
             });
         });
 
@@ -489,7 +490,9 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
         this.$relatedNotesMoreNotes = this.$relatedNotesContainer.find(".related-notes-more-notes");
 
         $(window).on("mousedown", (e) => {
-            if (!$(e.target).closest(this.$widget[0]).length && !$(e.target).closest(".algolia-autocomplete").length && !$(e.target).closest("#context-menu-container").length) {
+            if (!$(e.target).closest(this.$widget[0]).length
+                && !$(e.target).closest(HEADLESS_AUTOCOMPLETE_PANEL_SELECTOR).length
+                && !$(e.target).closest("#context-menu-container").length) {
                 this.hide();
             }
         });

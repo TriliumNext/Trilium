@@ -27,6 +27,7 @@ export default class App {
     readonly currentNoteSplitContent: Locator;
     readonly sidebar: Locator;
     private isMobile: boolean = false;
+    private readonly noteAutocompleteSuggestionSelector = ".aa-suggestion:not(.create-note-action):not(.search-notes-action):not(.command-action):not(.external-link-action)";
 
     constructor(page: Page, context: BrowserContext) {
         this.page = page;
@@ -76,10 +77,17 @@ export default class App {
 
         const resultsSelector = this.currentNoteSplit.locator(".note-detail-empty-results");
         await expect(resultsSelector).toContainText(noteTitle);
-        const suggestionSelector = resultsSelector.locator(".aa-suggestion")
-            .nth(1); // Select the second one (best candidate), as the first one is "Create a new note"
+        const suggestionSelector = resultsSelector
+            .locator(this.noteAutocompleteSuggestionSelector, { hasText: noteTitle })
+            .first();
         await expect(suggestionSelector).toContainText(noteTitle);
         await suggestionSelector.click();
+    }
+
+    getNoteAutocompleteSuggestion(resultsContainer: Locator, noteTitle: string) {
+        return resultsContainer
+            .locator(this.noteAutocompleteSuggestionSelector, { hasText: noteTitle })
+            .first();
     }
 
     async goToSettings() {
