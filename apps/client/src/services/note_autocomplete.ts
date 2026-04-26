@@ -603,6 +603,9 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         autocomplete.setActiveItemId(null);
 
         fetchResolvedSuggestions("", options).then((items) => {
+            if (inputEl.value.trim() !== "") {
+                return;
+            }
             autocomplete.setCollections([{ source, items }]);
             autocomplete.setActiveItemId(items.length > 0 ? 0 : null);
             autocomplete.setIsOpen(items.length > 0);

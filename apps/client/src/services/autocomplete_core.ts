@@ -93,6 +93,11 @@ export function createAutocomplete<TItem extends BaseItem>(
         }
     }
 
+    // Request generation counter: incremented by both fetchAndUpdate and
+    // setCollections so that late-resolving async fetches don't overwrite
+    // newer state (e.g. openRecentNotes resolving after a search query).
+    let requestGeneration = 0;
+
     function getItems(): TItem[] {
         return state.collections.length > 0 ? state.collections[0].items : [];
     }
@@ -102,6 +107,7 @@ export function createAutocomplete<TItem extends BaseItem>(
     }
 
     async function fetchAndUpdate() {
+        const generation = ++requestGeneration;
         const sources = getSources({ query: state.query });
         if (sources.length === 0) {
             return;
@@ -109,6 +115,13 @@ export function createAutocomplete<TItem extends BaseItem>(
 
         const source = sources[0];
         const items = await source.getItems({ query: state.query });
+
+        // Discard stale results if a newer request or setCollections call
+        // has been made while we were awaiting.
+        if (generation !== requestGeneration) {
+            return;
+        }
+
         state.collections = [{ source, items }];
         if (state.activeItemId !== null && state.activeItemId >= items.length) {
             state.activeItemId = items.length > 0 ? items.length - 1 : null;
@@ -133,6 +146,8 @@ export function createAutocomplete<TItem extends BaseItem>(
         },
 
         setCollections(collections: AutocompleteCollection<TItem>[]) {
+            // Bump generation so any in-flight fetchAndUpdate is discarded.
+            requestGeneration++;
             state.collections = collections;
             // Clamp activeItemId
             const items = getItems();
