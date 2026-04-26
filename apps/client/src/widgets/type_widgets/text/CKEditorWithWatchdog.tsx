@@ -1,4 +1,4 @@
-import { CKTextEditor, ClassicEditor, EditorWatchdog, PopupEditor, TemplateDefinition,type WatchdogConfig } from "@triliumnext/ckeditor5";
+import { CKTextEditor, ClassicEditor, EditorWatchdog, PopupEditor, TemplateDefinition, type EventInfo, type NotificationShowEventData, type WatchdogConfig } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { HTMLProps, RefObject, useEffect, useImperativeHandle, useRef, useState } from "preact/compat";
 
@@ -25,7 +25,7 @@ interface CKEditorWithWatchdogProps extends Pick<HTMLProps<HTMLDivElement>, "cla
     isClassicEditor?: boolean;
     watchdogRef: RefObject<EditorWatchdog>;
     watchdogConfig?: WatchdogConfig;
-    onNotificationWarning?: (evt: any, data: any) => void;
+    onNotificationWarning?: (evt: EventInfo, data: NotificationShowEventData) => void;
     onWatchdogStateChange?: (watchdog: EditorWatchdog) => void;
     onChange: () => void;
     /** Called upon whenever a new CKEditor instance is initialized, whether it's the first initialization, after a crash or after a config change that requires it (e.g. content language). */

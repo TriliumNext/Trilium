@@ -2,12 +2,35 @@ import "ckeditor5/ckeditor5.css";
 // Premium features CSS loaded dynamically with the plugins
 // import 'ckeditor5-premium-features/ckeditor5-premium-features.css';
 import "./theme/code_block_toolbar.css";
-import { COMMON_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
-import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } from "ckeditor5";
+import {
+    COMMON_PLUGINS,
+    CORE_PLUGINS,
+    POPUP_EDITOR_PLUGINS,
+} from "./plugins.js";
+import {
+    BalloonEditor,
+    DecoupledEditor,
+    FindAndReplaceEditing,
+    FindCommand,
+} from "ckeditor5";
 import "./translation_overrides.js";
+import type { CodeFormatter } from "./plugins/format_codeblock/types.js";
 export { default as EditorWatchdog } from "./custom_watchdog";
 export { loadPremiumPlugins } from "./plugins.js";
-export type { EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, ModelText, WatchdogConfig, WatchdogState } from "ckeditor5";
+export type {
+    EditorConfig,
+    EventInfo,
+    MentionFeed,
+    MentionFeedObjectItem,
+    ModelNode,
+    ModelPosition,
+    ModelElement,
+    ModelText,
+    NotificationShowEventData,
+    WatchdogConfig,
+    WatchdogState,
+} from "ckeditor5";
+export type { CodeFormatter as CodeFormatterConfig } from "./plugins/format_codeblock/types.js";
 export type { TemplateDefinition } from "ckeditor5-premium-features";
 export { default as buildExtraCommands } from "./extra_slash_commands.js";
 export { default as getCkLocale } from "./i18n.js";
@@ -35,7 +58,6 @@ export type FindCommandResult = ReturnType<FindCommand["execute"]>;
  * The text editor that can be used for editing attributes and relations.
  */
 export class AttributeEditor extends BalloonEditor {
-
     static override get builtinPlugins() {
         return CORE_PLUGINS;
     }
@@ -66,20 +88,21 @@ declare module "ckeditor5" {
     }
 
     interface EditorConfig {
+        codeFormatter?: CodeFormatter;
         syntaxHighlighting?: {
             loadHighlightJs: () => Promise<any>;
             mapLanguageName(mimeType: string): string;
             defaultMimeType: string;
             enabled: boolean;
-        },
+        };
         moveBlockUp?: {
             keystroke: string[];
-        },
+        };
         moveBlockDown?: {
             keystroke: string[];
-        },
+        };
         clipboard?: {
             copy(text: string): void;
-        }
+        };
     }
 }

@@ -74,6 +74,7 @@
     "rrule": "2.8.1",
     "svg-pan-zoom": "3.6.2",
     "tabulator-tables": "6.4.0",
+    "prettier": "^3.5.3",
     "vanilla-js-wheel-zoom": "9.0.4"
   },
   "devDependencies": {

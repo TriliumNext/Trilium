@@ -56,6 +56,34 @@ Should you encounter any issues after the migration, try running Trilium in safe
 Simply click anywhere inside the code block and press again the code block button in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>:  
 ![](2_Code%20blocks_image.png)
 
+## Formatting a code block
+
+Trilium can automatically format (pretty-print) the code inside a code block using [Prettier](https://prettier.io/). To trigger formatting, click inside the code block and press the _Format code block_ button in the toolbar.
+
+<img class="image_resized" style="aspect-ratio:373/110;width:38.38%;" src="3_Code blocks_image.png" width="373" height="110">
+
+### Supported languages
+
+Formatting is powered by Prettier and is available for the following languages (for now):
+
+| Language | MIME type |
+| --- | --- |
+| JavaScript (frontend) | `application/javascript;env=frontend` |
+| JavaScript (backend) | `application/javascript;env=backend` |
+| JSX | `text/jsx` |
+| TypeScript | `application/typescript` |
+| TSX | `text/typescript-jsx` |
+| JSON | `application/json` |
+| CSS | `text/css` |
+| Less | `text/x-less` |
+| SCSS | `text/x-scss` |
+| HTML | `text/html` |
+| YAML | `text/x-yaml` |
+| Markdown | `text/x-markdown` |
+
+> [!NOTE]
+> Formatting is **not available** when the language of the code block is set to _Auto-detected_ or _Plain text_. Make sure to explicitly select a supported language for the code block before using this feature.
+
 ## Adjusting the list of languages
 
 The code blocks feature shares the list of languages with the <a class="reference-link" href="../../Code.md">Code</a> note type.

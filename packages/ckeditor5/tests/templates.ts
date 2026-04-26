@@ -2,7 +2,8 @@ import { it } from "vitest";
 import { describe } from "vitest";
 import { ClassicEditor } from "../src/index.js";
 import { type BalloonEditor, type ButtonView, type Editor } from "ckeditor5";
-import { beforeEach } from "vitest";
+import { Template } from "ckeditor5-premium-features";
+import { beforeEach, afterEach } from "vitest";
 import { expect } from "vitest";
 
 describe("Text snippets", () => {
@@ -13,10 +14,9 @@ describe("Text snippets", () => {
         editorElement = document.createElement( 'div' );
 		document.body.appendChild( editorElement );
 
-        console.log("Trigger each");
-
         editor = await ClassicEditor.create(editorElement, {
             licenseKey: "GPL",
+            plugins: [ Template ],
             toolbar: {
                 items: [
                     "insertTemplate"
@@ -25,8 +25,13 @@ describe("Text snippets", () => {
         });
     });
 
+    afterEach(async () => {
+        await editor.destroy();
+        editorElement.remove();
+    });
+
     it("uses correct translations", () => {
-        const itemsWithButtonView = Array.from(editor.ui.view.toolbar?.items)
+        const itemsWithButtonView = Array.from(editor.ui.view.toolbar!.items)
             .filter(item => "buttonView" in item)
             .map(item => (item.buttonView as ButtonView).label);
 
@@ -34,4 +39,3 @@ describe("Text snippets", () => {
         expect(itemsWithButtonView).toContain("Insert text snippet");
     });
 });
-

@@ -5,6 +5,9 @@
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
+  "scripts": {
+    "test": "vitest"
+  },
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/ckeditor5-admonition": "workspace:*",
@@ -14,5 +17,10 @@
     "@triliumnext/ckeditor5-mermaid": "workspace:*",
     "ckeditor5": "48.0.0",
     "ckeditor5-premium-features": "48.0.0"
+  },
+  "devDependencies": {
+    "@smithy/middleware-retry": "4.4.44",
+    "@types/jquery": "4.0.0",
+    "prettier": "^3.5.3"
   }
 }

@@ -9,6 +9,8 @@ import { default as mimeTypesService, getHighlightJsNameForMime } from "../../..
 import noteAutocompleteService, { type Suggestion } from "../../../services/note_autocomplete.js";
 import options from "../../../services/options.js";
 import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
+import { FormatterRegistry } from "../../../services/code_formatter.js";
+import { PrettierFormatter } from "../../../services/prettier_formatter.js";
 import { buildToolbarConfig } from "./toolbar.js";
 
 export const OPEN_SOURCE_LICENSE_KEY = "GPL";
@@ -28,6 +30,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
     const config: EditorConfig = {
         licenseKey,
         placeholder: t("editable_text.placeholder"),
+        codeFormatter: buildCodeFormatterConfig(),
         codeBlock: {
             languages: buildListOfLanguages()
         },
@@ -244,6 +247,12 @@ function buildListOfLanguages() {
     ];
 }
 
+function buildCodeFormatterConfig() {
+    const registry = new FormatterRegistry();
+    registry.register(new PrettierFormatter());
+    return registry;
+}
+
 function getLicenseKey() {
     const premiumLicenseKey = import.meta.env.VITE_CKEDITOR_KEY;
     if (!premiumLicenseKey) {
@@ -267,3 +276,4 @@ function getDisabledPlugins() {
 
     return disabledPlugins;
 }
+

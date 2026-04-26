@@ -7723,6 +7723,14 @@
                                                     "mime": "image/png",
                                                     "position": 10,
                                                     "dataFileName": "2_Code blocks_image.png"
+                                                },
+                                                {
+                                                    "attachmentId": "xF9kPL2mQr3T",
+                                                    "title": "image.png",
+                                                    "role": "image",
+                                                    "mime": "image/png",
+                                                    "position": 10,
+                                                    "dataFileName": "3_Code blocks_image.png"
                                                 }
                                             ]
                                         }

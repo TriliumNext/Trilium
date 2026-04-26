@@ -1,22 +1,37 @@
-import { BalloonToolbarShowEvent, CodeBlock, Plugin, ViewDocumentFragment, WidgetToolbarRepository, type ViewNode } from "ckeditor5";
+import {
+    CodeBlock,
+    Plugin,
+    ViewDocumentFragment,
+    WidgetToolbarRepository,
+    type ViewNode,
+} from "ckeditor5";
 import CodeBlockLanguageDropdown from "./code_block_language_dropdown";
 import CopyToClipboardButton from "./copy_to_clipboard_button";
+import FormatCodeblockButton from "./format_codeblock/format_codeblock_button";
 
 export default class CodeBlockToolbar extends Plugin {
-
     static get requires() {
-        return [ WidgetToolbarRepository, CodeBlock, CodeBlockLanguageDropdown, CopyToClipboardButton ] as const;
+        return [
+            WidgetToolbarRepository,
+            CodeBlock,
+            CodeBlockLanguageDropdown,
+            CopyToClipboardButton,
+            FormatCodeblockButton,
+        ] as const;
     }
 
     afterInit() {
         const editor = this.editor;
-        const widgetToolbarRepository = editor.plugins.get(WidgetToolbarRepository);
+        const widgetToolbarRepository = editor.plugins.get(
+            WidgetToolbarRepository,
+        );
 
         widgetToolbarRepository.register("codeblock", {
             items: [
                 "codeBlockDropdown",
                 "|",
-                "copyToClipboard"
+                "copyToClipboard",
+                "formatCodeblock",
             ],
             balloonClassName: "ck-toolbar-container codeblock-language-list",
             getRelatedElement(selection) {
@@ -25,7 +40,8 @@ export default class CodeBlockToolbar extends Plugin {
                     return null;
                 }
 
-                let parent: ViewNode | ViewDocumentFragment | null = selectionPosition.parent;
+                let parent: ViewNode | ViewDocumentFragment | null =
+                    selectionPosition.parent;
                 while (parent) {
                     if (parent.is("element", "pre")) {
                         return parent;
@@ -35,20 +51,26 @@ export default class CodeBlockToolbar extends Plugin {
                 }
 
                 return null;
-            }
+            },
         });
 
         // Hide balloon toolbar when in a code block
         if (editor.plugins.has("BalloonToolbar")) {
-            editor.listenTo(editor.plugins.get('BalloonToolbar'), 'show', (evt) => {
-                const firstPosition = editor.model.document.selection.getFirstPosition();
-                const isInCodeBlock = firstPosition?.findAncestor('codeBlock');
+            editor.listenTo(
+                editor.plugins.get("BalloonToolbar"),
+                "show",
+                (evt) => {
+                    const firstPosition =
+                        editor.model.document.selection.getFirstPosition();
+                    const isInCodeBlock =
+                        firstPosition?.findAncestor("codeBlock");
 
-                if (isInCodeBlock) {
-                    evt.stop(); // Prevent the balloon toolbar from showing
-                }
-            }, { priority: 'high' });
+                    if (isInCodeBlock) {
+                        evt.stop(); // Prevent the balloon toolbar from showing
+                    }
+                },
+                { priority: "high" },
+            );
         }
     }
-
 }

@@ -1,6 +1,7 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
+import { webdriverio } from "@vitest/browser-webdriverio";
 import * as path from 'path';
 
 export default defineConfig(() => ({
@@ -32,5 +33,20 @@ export default defineConfig(() => ({
         content: "src/theme/ck-content.css"
       }
     },
+  },
+  test: {
+    browser: {
+      enabled: true,
+      provider: webdriverio(),
+      headless: true,
+      ui: false,
+      instances: [{ browser: 'chrome' }]
+    },
+    include: [
+      'tests/**/*.[jt]s'
+    ],
+    globals: true,
+    watch: false,
+    passWithNoTests: true
   },
 }));
