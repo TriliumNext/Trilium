@@ -21,10 +21,16 @@
 }
 
 body.read-only-document {
-    /* TODO: find a more elegant way to display a PDF in a read only view */
-    --toolbar-height: 0;
-    .toolbar,
+    #editorModeButtons,
+    #editorModeSeparator,
     .editToolbar {
+        display: none !important;
+    }
+}
+
+body.no-toolbar {
+    --toolbar-height: 0;
+    .toolbar {
         display: none !important;
     }
 }

@@ -187,7 +187,8 @@
   "migration": {
     "old_version": "La migrazione diretta dalla tua versione attuale non è supportata. Aggiorna prima all'ultima versione v0.60.4 e solo dopo a questa versione.",
     "error_message": "Errore durante la migrazione alla versione {{version}}: {{stack}}",
-    "wrong_db_version": "La versione del database ({{version}}) è più recente di quanto l'applicazione si aspetti ({{targetVersion}}), il che significa che è stato creato da una versione più nuova e incompatibile di Trilium. Aggiorna Trilium all'ultima versione per risolvere questo problema."
+    "wrong_db_version": "La versione del database ({{version}}) è più recente di quanto l'applicazione si aspetti ({{targetVersion}}), il che significa che è stato creato da una versione più nuova e incompatibile di Trilium. Aggiorna Trilium all'ultima versione per risolvere questo problema.",
+    "invalid_db_version": "La versione del database non è un numero valido. Questo di solito indica che l'opzione «dbVersion» nel database è danneggiata. Si prega di ripristinare il sistema da un backup."
   },
   "modals": {
     "error_title": "Errore"

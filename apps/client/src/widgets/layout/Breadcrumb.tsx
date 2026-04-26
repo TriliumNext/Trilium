@@ -187,6 +187,15 @@ interface BreadcrumbSeparatorProps {
 }
 
 function BreadcrumbSeparator(props: BreadcrumbSeparatorProps) {
+    const notePathComponents = (props.notePath ?? "").split("/");
+    const parentNoteId = notePathComponents.at(-1);
+    const parentNote = useNote(parentNoteId);
+    const [ subtreeHidden ] = useNoteLabelBoolean(parentNote, "subtreeHidden");
+
+    if (subtreeHidden && !props.activeNotePath) {
+        return null;
+    }
+
     return (
         <Dropdown
             text={<Icon icon="bx bxs-chevron-right" />}

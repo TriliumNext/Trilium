@@ -69,8 +69,16 @@ export function TextRepresentation({ textUrl, processUrl }: TextRepresentationPr
                 const result = response.result;
                 const minConfidence = response.minConfidence ?? 0;
 
+                // Check if this is an image-based PDF (no text extracted)
+                if (result && !result.text && result.processingType === 'pdf') {
+                    toast.showPersistent({
+                        id: `ocr-pdf-unsupported-${randomString(8)}`,
+                        icon: "bx bx-info-circle",
+                        message: t("ocr.image_based_pdf_not_supported"),
+                        timeout: 15000
+                    });
                 // Check if text was filtered due to low confidence
-                if (result && !result.text && result.confidence > 0 && minConfidence > 0) {
+                } else if (result && !result.text && result.confidence > 0 && minConfidence > 0) {
                     const confidencePercent = Math.round(result.confidence * 100);
                     const thresholdPercent = Math.round(minConfidence * 100);
                     toast.showPersistent({

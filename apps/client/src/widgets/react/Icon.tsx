@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { HTMLAttributes } from "preact";
 
-interface IconProps extends Pick<HTMLAttributes<HTMLSpanElement>, "className" | "onClick" | "title"> {
+interface IconProps extends Pick<HTMLAttributes<HTMLSpanElement>, "className" | "onClick" | "title" | "style"> {
     icon?: string;
     className?: string;
 }

@@ -158,6 +158,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     {
                         title: hasSubtreeHidden ? t("tree-context-menu.show-subtree") : t("tree-context-menu.hide-subtree"),
                         uiIcon: "bx bx-show",
+                        enabled: isNotRoot,
                         handler: async () => {
                             const note = await froca.getNote(this.node.data.noteId);
                             if (!note) return;

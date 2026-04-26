@@ -31,6 +31,8 @@ import NoItems from "../react/NoItems";
 import { RawHtmlBlock, SanitizedHtml } from "../react/RawHtml";
 import PdfViewer from "../type_widgets/file/PdfViewer";
 
+const DIFFABLE_TYPES = ["text", "code", "mermaid"];
+
 export default function RevisionsDialog() {
     const [ note, setNote ] = useState<FNote>();
     const [ noteContent, setNoteContent ] = useState<string>();
@@ -358,7 +360,7 @@ function RevisionToolbar({ revisionItem, showDiff, setShowDiff, setShown, onRevi
     onRevisionDeleted?: () => void,
     onDescriptionUpdated?: (revisionId: string, description: string) => void,
 }) {
-    const canShowDiff = ["text", "code", "mermaid"].includes(revisionItem?.type ?? "");
+    const canShowDiff = DIFFABLE_TYPES.includes(revisionItem?.type ?? "");
     const canInteract = revisionItem && (!revisionItem.isProtected || protected_session_holder.isProtectedSessionAvailable());
     const [ editingDescription, setEditingDescription ] = useState(false);
     const [ descriptionDraft, setDescriptionDraft ] = useState("");
@@ -529,7 +531,7 @@ function RevisionContent({ noteContent, revisionItem, fullRevision, showDiff }: 
         return <></>;
     }
 
-    if (showDiff) {
+    if (showDiff && DIFFABLE_TYPES.includes(revisionItem.type)) {
         return <RevisionContentDiff noteContent={noteContent} itemContent={content} itemType={revisionItem.type}/>;
     }
     switch (revisionItem.type) {

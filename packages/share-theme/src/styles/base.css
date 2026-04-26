@@ -122,6 +122,27 @@ iframe.pdf-view {
     display: none;
 }
 
+/* Markdown footnotes (marked-footnote plugin) */
+.ck-content section.footnotes[data-footnotes] {
+    border-top: 1px solid #c4c4c4;
+    margin: 1em 0;
+    padding: 10px;
+    font-size: 0.9em;
+}
+
+.ck-content section.footnotes[data-footnotes] .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+}
+
+.ck-content section.footnotes[data-footnotes] li:target p {
+    background: #eee;
+    border-radius: 2px;
+}
+
 .ck-content .todo-list .todo-list__label > input:before {
     background-color: var(--background-primary);
     border-color: var(--text-primary) !important;

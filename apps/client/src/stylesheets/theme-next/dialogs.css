@@ -373,15 +373,23 @@ div.tn-tool-dialog {
 /* Keyboard shortcut */
 .help-dialog .help-cards kbd,
 .ck-content kbd {
-    box-shadow: var(--help-kbd-shortcut-shadow);
-    margin: 0 4px;
-    border: none;
-    border-radius: 4px;
-    padding: 2px 10px;
+    display: inline-block;
+    margin: 0 2px 2px !important;
+    border: 1px solid var(--help-kbd-shortcut-border);
+    border-radius: 5px;
+    padding: 2px 8px;
     background: var(--help-kbd-shortcut-background);
+    box-shadow:
+        0 2px 0 var(--help-kbd-shortcut-border),
+        inset 0 -1px 0 var(--help-kbd-shortcut-border);
     color: var(--help-kbd-shortcut-color);
-    font-weight: 500;
+    font-family: var(--main-font-family) !important;
+    font-size: 0.75em;
+    font-weight: normal;
+    line-height: 1.4;
     letter-spacing: 0.5pt;
+    vertical-align: 1px;
+    white-space: nowrap;
 }
 
 .help-dialog .help-cards kbd:first-child {

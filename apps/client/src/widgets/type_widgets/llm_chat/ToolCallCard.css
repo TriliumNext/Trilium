@@ -5,6 +5,17 @@
     color: var(--muted-text-color);
 }
 
+.llm-chat-tool-call-count {
+    font-weight: 400;
+    color: var(--muted-text-color);
+    margin-left: 0.35rem;
+}
+
+/* Folded group — separate the first nested row from the group header. */
+.llm-chat-tool-call-group[open] > .expandable-section-body > .expandable-section:first-child {
+    border-top: 1px solid var(--main-border-color);
+}
+
 .llm-chat-tool-call-note-ref {
     font-weight: 400;
     margin-left: 0.25rem;

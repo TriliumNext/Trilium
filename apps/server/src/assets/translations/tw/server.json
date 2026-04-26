@@ -103,7 +103,8 @@
     "find-in-text": "切換搜尋面板",
     "toggle-classic-editor-toolbar": "切換固定工具列編輯器的格式分頁",
     "export-as-pdf": "匯出目前筆記為 PDF",
-    "toggle-zen-mode": "啟用 / 禁用禪模式（極簡界面以專注編輯）"
+    "toggle-zen-mode": "啟用 / 禁用禪模式（極簡界面以專注編輯）",
+    "save-named-revision": "儲存目前筆記的命名修訂"
   },
   "login": {
     "title": "登入",
@@ -300,7 +301,8 @@
     "find-in-text": "在文字中尋找",
     "toggle-left-pane": "切換左側面板",
     "toggle-full-screen": "切換全螢幕",
-    "command-palette": "命令面板"
+    "command-palette": "命令面板",
+    "save-named-revision": "儲存命名修訂"
   },
   "weekdayNumber": "第 {weekNumber} 週",
   "quarterNumber": "第 {quarterNumber} 季度",
@@ -394,7 +396,8 @@
   "migration": {
     "old_version": "您目前的版本不支援直接遷移。請先更新至最新的 v0.60.4 然後再到此版本。",
     "error_message": "遷移至版本 {{version}} 時發生錯誤：{{stack}}",
-    "wrong_db_version": "資料庫版本（{{version}}）比程式預期（{{targetVersion}}）新，這意味著它由一個更新且不相容的 Trilium 版本所創建。升級至最新版的 Trilium 以解決此問題。"
+    "wrong_db_version": "資料庫版本（{{version}}）比程式預期（{{targetVersion}}）新，這意味著它由一個更新且不相容的 Trilium 版本所創建。升級至最新版的 Trilium 以解決此問題。",
+    "invalid_db_version": "資料庫版本號不是有效的數字。這通常表示資料庫中的「dbVersion」選項已損毀。請從備份還原。"
   },
   "modals": {
     "error_title": "錯誤"
@@ -455,5 +458,11 @@
       "fulltext-after-expression": "\"{{- token}}\" 不是有效的表達式。若要搜尋文字，請將其置於屬性篩選條件之前（例如：\"{{- token}} #label\"，而非 \"#label {{- token}}\"）。",
       "unrecognized-expression": "無法辨識的表達式 \"{{- token}}\""
     }
+  },
+  "password": {
+    "incorrect": "您輸入的密碼不正確。"
+  },
+  "script": {
+    "wrong-environment": "無法執行筆記「{{- noteTitle}}」（{{- noteId}}）。這是一個 {{- actualEnv}} 腳本，但嘗試在 {{- expectedEnv}} 中執行。"
   }
 }

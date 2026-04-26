@@ -17,6 +17,9 @@
 .delete-notes-dialog .preview-list li {
     padding: 6px 16px;
     border-bottom: 1px solid var(--main-border-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .delete-notes-dialog .preview-list li:last-child {

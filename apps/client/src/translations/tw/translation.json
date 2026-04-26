@@ -1290,13 +1290,15 @@
   },
   "tray": {
     "title": "系統匣",
-    "enable_tray": "系統匣圖示"
+    "enable_tray": "系統匣圖示",
+    "enable_tray_description": "需重新啟動 Trilium 才能使此變更生效。"
   },
   "heading_style": {
     "title": "標題風格",
     "plain": "純文字",
     "underline": "下劃線",
-    "markdown": "Markdown 風格"
+    "markdown": "Markdown 風格",
+    "description": "文字筆記中標題的視覺樣式。"
   },
   "highlights_list": {
     "title": "高亮列表",
@@ -1320,7 +1322,7 @@
   "text_auto_read_only_size": {
     "title": "自動唯讀大小",
     "description": "自動唯讀筆記大小是超過該大小後，筆記將以唯讀模式顯示（出於性能考慮）。",
-    "label": "自動唯讀大小（文字筆記）",
+    "label": "自動唯讀大小",
     "unit": "字元"
   },
   "i18n": {
@@ -1331,10 +1333,10 @@
     "monday": "星期一",
     "first-week-of-the-year": "年度第一週",
     "first-week-contains-first-day": "年度第一週包含第一天",
-    "first-week-contains-first-thursday": "年度第一週包含第一個週四",
+    "first-week-contains-first-thursday": "第一週包含第一個週四 (ISO 8601)",
     "first-week-has-minimum-days": "第一週有最少天數",
     "min-days-in-first-week": "第一週的最少天數",
-    "first-week-warning": "變更第一週選項可能導致與現有的「週筆記」重複，現有的「週筆記」將不會相應更新。",
+    "first-week-warning": "變更此選項可能導致與現有的「週筆記」重複。",
     "formatting-locale": "日期和數字格式",
     "tuesday": "週二",
     "wednesday": "週三",
@@ -1346,9 +1348,9 @@
   "backup": {
     "automatic_backup": "自動備份",
     "automatic_backup_description": "Trilium 可以自動備份資料庫：",
-    "enable_daily_backup": "啟用每日備份",
-    "enable_weekly_backup": "啟用每週備份",
-    "enable_monthly_backup": "啟用每月備份",
+    "enable_daily_backup": "每日備份",
+    "enable_weekly_backup": "每週備份",
+    "enable_monthly_backup": "每月備份",
     "backup_recommendation": "建議打開備份功能，但這可能會使有大型資料庫和 / 或慢速儲存設備的應用程式啟動變慢。",
     "backup_now": "立即備份",
     "backup_database_now": "立即備份資料庫",
@@ -1357,7 +1359,8 @@
     "path": "路徑",
     "database_backed_up_to": "資料庫已備份至 {{backupFilePath}}",
     "no_backup_yet": "尚無備份",
-    "download": "下載"
+    "download": "下載",
+    "title": "備份"
   },
   "etapi": {
     "title": "ETAPI",
@@ -1392,8 +1395,8 @@
     "new_password": "新密碼",
     "new_password_confirmation": "新密碼確認",
     "change_password": "更改密碼",
-    "protected_session_timeout": "受保護的作業階段超時",
-    "protected_session_timeout_description": "受保護的作業階段超時是一個時間段，超時後受保護的作業階段會從瀏覽器記憶體中清除。這是從最後一次存取受保護的筆記時開始計時的。更多資訊請見",
+    "protected_session_timeout": "受保護的作業階段",
+    "protected_session_timeout_description": "瀏覽器記憶體中的會話在多長時間未活動後會被清除。更多資訊請見",
     "wiki": "維基",
     "for_more_info": "更多資訊。",
     "reset_confirmation": "重設密碼後將不再能查看所有目前受保護的筆記。您真的要重設密碼嗎？",
@@ -1403,7 +1406,11 @@
     "set_password": "設定密碼",
     "password_mismatch": "新密碼不一致。",
     "password_changed_success": "密碼已更改。按 OK 後 Trilium 將重新載入。",
-    "protected_session_timeout_label": "受保護的作業階段超時："
+    "protected_session_timeout_label": "自動結束作業階段時間",
+    "change_password_description": "更新您目前的密碼",
+    "reset_password": "重設密碼",
+    "reset_password_description": "將永久無法存取受保護的筆記",
+    "cancel": "取消"
   },
   "shortcuts": {
     "keyboard_shortcuts": "快捷鍵",
@@ -1433,17 +1440,19 @@
     "related_description": "設定拼寫檢查語言及自訂字典。"
   },
   "sync_2": {
-    "config_title": "同步設定",
+    "config_title": "同步伺服器",
     "server_address": "伺服器地址",
-    "timeout": "同步超時（單位：毫秒）",
-    "proxy_label": "同步代理伺服器（可選）",
+    "timeout": "連線超時",
+    "proxy_label": "代理伺服器",
     "save": "儲存",
     "help": "說明",
-    "test_title": "同步測試",
+    "test_title": "測試連線",
     "test_description": "測試和同步伺服器之間的連接。如果同步伺服器沒有初始化，這會將本地文件同步至同步伺服器上。",
     "test_button": "測試同步",
     "handshake_failed": "同步伺服器握手失敗，錯誤：{{message}}",
-    "timeout_description": "在放棄慢速同步連線前應等待多久。若網路不穩定，請延長等待時間。"
+    "timeout_description": "在放棄慢速連線前應等待多久。",
+    "server_address_description": "要同步的 Trilium 伺服器網址。",
+    "proxy_description": "若要使用系統代理伺服器，請留空（僅限桌面版）。若要繞過所有代理伺服器，請輸入「noproxy」。"
   },
   "api_log": {
     "close": "關閉"
@@ -1697,7 +1706,8 @@
   "entrypoints": {
     "note-revision-created": "已新增筆記修訂。",
     "note-executed": "已執行筆記。",
-    "sql-error": "執行 SQL 查詢時發生錯誤：{{message}}"
+    "sql-error": "執行 SQL 查詢時發生錯誤：{{message}}",
+    "save-named-revision-title": "儲存命名修訂"
   },
   "branches": {
     "cannot-move-notes-here": "無法將筆記移動至這裡。",
@@ -1802,10 +1812,12 @@
     "note_revisions_snapshot_description_short": "經過這段時間後，系統將建立新的筆記修訂版本。"
   },
   "custom_date_time_format": {
-    "title": "自訂日期 / 時間格式",
+    "title": "日期 / 時間格式",
     "description": "透過 <shortcut /> 或工具列自訂插入日期和時間的格式。有關可用的格式及符號，請參閱 <doc>Day.js docs</doc>。",
-    "format_string": "格式化字串：",
-    "formatted_time": "格式化日期 / 時間："
+    "format_string": "格式化字串",
+    "formatted_time": "格式化日期 / 時間",
+    "description_short": "透過工具列自訂插入的日期與時間格式。",
+    "preview": "預覽：{{preview}}"
   },
   "multi_factor_authentication": {
     "title": "多重身份驗證（MFA）",
@@ -2466,5 +2478,8 @@
     "fuzzy_matching_description": "適用於快速搜尋和完整搜尋。當精確匹配結果不足時，會搜尋相似的詞彙。",
     "autocomplete_fuzzy_label": "自動完成功能中的拼寫容錯",
     "autocomplete_fuzzy_description": "影響「跳轉至筆記」及「選取筆記」的功能。速度較慢，但能容忍輸入錯誤。"
+  },
+  "text_editor": {
+    "title": "編輯器"
   }
 }

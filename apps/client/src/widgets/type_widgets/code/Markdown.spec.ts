@@ -3,18 +3,23 @@ import { describe, expect, it } from "vitest";
 import { renderWithSourceLines } from "./Markdown.js";
 
 describe("renderWithSourceLines", () => {
-    function extractLines(html: string): number[] {
+    function extractLines(src: string): number[] {
+        const { html } = renderWithSourceLines(src);
         return [ ...html.matchAll(/data-source-line="(\d+)"/g) ].map((m) => parseInt(m[1], 10));
     }
 
-    it("returns empty string for empty input", () => {
-        expect(renderWithSourceLines("")).toBe("");
+    function html(src: string): string {
+        return renderWithSourceLines(src).html;
+    }
+
+    it("returns empty html for empty input", () => {
+        expect(html("")).toBe("");
     });
 
     it("tags a single block as line 1", () => {
-        const html = renderWithSourceLines("hello");
-        expect(extractLines(html)).toEqual([ 1 ]);
-        expect(html).toContain("hello");
+        const result = html("hello");
+        expect(extractLines("hello")).toEqual([ 1 ]);
+        expect(result).toContain("hello");
     });
 
     it("assigns correct source lines to consecutive blocks separated by blank lines", () => {
@@ -26,7 +31,7 @@ describe("renderWithSourceLines", () => {
             "Another one."     // line 5
         ].join("\n");
 
-        expect(extractLines(renderWithSourceLines(src))).toEqual([ 1, 3, 5 ]);
+        expect(extractLines(src)).toEqual([ 1, 3, 5 ]);
     });
 
     it("counts multi-line blocks so subsequent blocks get the right line", () => {
@@ -39,19 +44,18 @@ describe("renderWithSourceLines", () => {
             "after"            // 6
         ].join("\n");
 
-        expect(extractLines(renderWithSourceLines(src))).toEqual([ 1, 6 ]);
+        expect(extractLines(src)).toEqual([ 1, 6 ]);
     });
 
     it("renders standard markdown constructs inside the wrappers", () => {
-        const html = renderWithSourceLines("## Heading\n\n- item\n");
-        expect(html).toContain("<h2>Heading</h2>");
-        expect(html).toContain("<ul>");
-        expect(html).toContain("<li>item</li>");
+        const result = html("## Heading\n\n- item\n");
+        expect(result).toContain("<h2>Heading</h2>");
+        expect(result).toContain("<ul>");
+        expect(result).toContain("<li>item</li>");
     });
 
     it("keeps H1 as H1 in the preview (no title-row context to avoid)", () => {
-        const html = renderWithSourceLines("# Top level");
-        expect(html).toContain("<h1>Top level</h1>");
+        expect(html("# Top level")).toContain("<h1>Top level</h1>");
     });
 
     it("preserves reference-style links across per-block parsing", () => {
@@ -61,33 +65,47 @@ describe("renderWithSourceLines", () => {
             "[t]: https://example.com"
         ].join("\n");
 
-        const html = renderWithSourceLines(src);
-        expect(html).toContain('href="https://example.com"');
+        expect(html(src)).toContain('href="https://example.com"');
     });
 
     it("normalizes fenced code languages to CKEditor MIME identifiers for syntax highlighting", () => {
-        const html = renderWithSourceLines("```javascript\nconst x = 1;\n```");
-        expect(html).toMatch(/class="language-application-javascript-env-(backend|frontend)"/);
+        expect(html("```javascript\nconst x = 1;\n```")).toMatch(/class="language-application-javascript-env-(backend|frontend)"/);
     });
 
     it("produces CKEditor admonition markup for GFM callouts", () => {
-        const html = renderWithSourceLines("> [!NOTE]\n> heads up");
-        expect(html).toContain('<aside class="admonition note">');
+        expect(html("> [!NOTE]\n> heads up")).toContain('<aside class="admonition note">');
     });
 
     it("preserves the `mermaid` fence language so the mermaid rewrite can match it", () => {
-        const html = renderWithSourceLines("```mermaid\ngraph TD;\nA-->B;\n```");
-        expect(html).toContain('class="language-mermaid"');
+        expect(html("```mermaid\ngraph TD;\nA-->B;\n```")).toContain('class="language-mermaid"');
     });
 
     it("produces math-tex spans for inline math", () => {
-        const html = renderWithSourceLines("Energy: $e=mc^2$.");
-        expect(html).toContain('<span class="math-tex">');
+        expect(html("Energy: $e=mc^2$.")).toContain('<span class="math-tex">');
     });
 
     it("renders [[wikilinks]] with hash-router hrefs so the preview navigates correctly", () => {
-        const html = renderWithSourceLines("See [[abc123]] for details.");
-        expect(html).toContain('class="reference-link"');
-        expect(html).toContain('href="#root/abc123"');
+        const result = html("See [[abc123]] for details.");
+        expect(result).toContain('class="reference-link"');
+        expect(result).toContain('href="#root/abc123"');
+    });
+
+    it("extracts headings with correct levels and lines", () => {
+        const src = [
+            "# Title",         // line 1
+            "",                // line 2
+            "text",            // line 3
+            "",                // line 4
+            "## Section",      // line 5
+            "",                // line 6
+            "### Sub"          // line 7
+        ].join("\n");
+
+        const { headings } = renderWithSourceLines(src);
+        expect(headings).toEqual([
+            { id: "md-heading-0", level: 1, text: "Title", line: 1 },
+            { id: "md-heading-1", level: 2, text: "Section", line: 5 },
+            { id: "md-heading-2", level: 3, text: "Sub", line: 7 }
+        ]);
     });
 });

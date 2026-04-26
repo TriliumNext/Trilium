@@ -25,11 +25,11 @@ Even if Markdown is now specially treated by having a preview mechanism, Trilium
 The following features are supported by Trilium's Markdown format and will show up in the preview pane:
 
 *   All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes)
-*   Code blocks with syntax highlight (e.g. ` ```js `) and automatic syntax highlight
+*   Code blocks with syntax highlight. Note that the language must be specified for syntax highlight to apply (e.g. ` ```js `).
 *   <a class="reference-link" href="Text/Block%20quotes%20%26%20admonitions.md">Block quotes &amp; admonitions</a>
-*   <a class="reference-link" href="Text/Math%20Equations.md">Math Equations</a>
+*   <a class="reference-link" href="Text/Math%20Equations.md">Math Equations</a> (both inline and block)
 *   <a class="reference-link" href="Mermaid%20Diagrams.md">Mermaid Diagrams</a> using ` ```mermaid `
-*   <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> (no builtin Markdown syntax, but HTML syntax works just fine):
+*   <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> (no built-in Markdown syntax, but HTML syntax works just fine):
     
     ```
     <section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable">
@@ -41,6 +41,25 @@ The following features are supported by Trilium's Markdown format and will show 
     ```
     [[Hg8TS5ZOxti6]]
     ```
+*   <a class="reference-link" href="Text/Footnotes.md">Footnotes</a> are also supported via the corresponding Markdown syntax:
+    
+    ```
+    This is [^1], while this is [^2].
+    
+    [^1]: the first footnote
+    [^2]: the second footnote
+    ```
+
+### Other features
+
+*   The <a class="reference-link" href="Text/Table%20of%20contents.md">Table of contents</a> will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> based on the Markdown-level headings.
+    *   This feature is available only on the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>.
+
+### Shared notes
+
+When a Markdown note is [shared publicly](../Advanced%20Usage/Sharing.md), it will be rendered with extended formatting just like <a class="reference-link" href="Text.md">Text</a> notes.
+
+Most of the features described previously should be supported. If you face any issues, feel free to [report it](../Troubleshooting/Reporting%20issues.md) alongside a sample Markdown file.
 
 ## Creating Markdown notes
 

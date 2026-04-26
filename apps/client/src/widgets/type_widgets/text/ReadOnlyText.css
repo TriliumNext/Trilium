@@ -1,11 +1,18 @@
-/* h1 should not be used at all since semantically that's a note title */
 .note-detail-readonly-text-content {
+    /* h1 should not be used at all since semantically that's a note title */
     h1 { font-size: 1.8em; }
     h2 { font-size: 1.6em; }
     h3 { font-size: 1.4em; }
     h4 { font-size: 1.2em; }
     h5 { font-size: 1.1em; }
     h6 { font-size: 1.0em; }
+
+    .mermaid-diagram,
+    .mermaid-diagram svg,
+    img {
+        max-width: 100%;
+        height: auto;
+    }
 }
 
 body.heading-style-markdown .note-detail-readonly-text-content {

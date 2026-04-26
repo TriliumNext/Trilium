@@ -156,7 +156,7 @@ content = content.replaceAll(headingRe, (...match) => {
     </div>
     <div id="right-pane">
         <div id="main">
-            <div id="content" class="type-<%= note.type %><% if (note.type === "text") { %> ck-content<% } %><% if (isEmpty) { %> no-content<% } %>">
+            <div id="content" class="type-<%= note.type %><% if (note.type === "text" || (note.type === "code" && note.mime === "text/x-markdown")) { %> ck-content<% } %><% if (isEmpty) { %> no-content<% } %>">
                 <%- renderSnippets("content:start") %>
                     <h1 id="title"><%= note.title %></h1>
                 <% if (isEmpty && (!note.hasVisibleChildren() && note.type !== "book")) { %>

@@ -8,6 +8,32 @@
   which is a customization of <a href="https://mozilla.github.io/pdf.js/">Mozilla's PDF.js viewer</a> (also
   built-in in the Mozilla Firefox browser). Versions prior to that render
   PDFs using the browser's default PDF viewer.</p>
+<h2>Features</h2>
+<ul>
+  <li>
+    <p>The last page viewed and scroll position is maintained in between restarts
+      or note navigations.</p>
+  </li>
+  <li>
+    <p>Annotations (text, highlights) as well as comments. These are saved automatically.</p>
+  </li>
+  <li>
+    <p>Forms can be filled.</p>
+  </li>
+  <li>
+    <p>Can be printed or downloaded.</p>
+  </li>
+  <li>
+    <p>Can be saved as a <a href="#root/pOsGYCXsbNQG/tC7s2alapj8V/_help_KC1HB96bqqHX">template</a> and
+      the content of the PDF will be copied over to the new note. This is especially
+      useful in combination with annotations or filled forms.</p>
+  </li>
+  <li>
+    <p>Integrates with the sidebar in the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_IjZS7iK5EXtb">New Layout</a>,
+      by displaying the list of pages with thumbnails, table of contents and
+      a listing of the annotations.</p>
+  </li>
+</ul>
 <h2>Storing last position and settings</h2>
 <p>For every PDF, Trilium will remember the following information:</p>
 <ul>
@@ -29,6 +55,18 @@ class="admonition tip">
     annotation buttons on the right side of the PDF toolbar (
     <img src="1_PDFs_image.png"
     width="120" height="32">).</p>
+  <p>Since v0.103.0:</p>
+  <ul>
+    <li>Annotations are disabled if the note is marked as&nbsp;<a class="reference-link"
+      href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_CoFPLs3dRlXc">Read-Only Notes</a>.</li>
+    <li
+   >Comments can also be added, which is similar to highlights but also attach
+      a text.</li>
+      <li>The&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_RnaPdbciOfeq">Right Sidebar</a>&nbsp;also
+        displays a list of annotations (highlights, comments), but only in the&nbsp;
+        <a
+        class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_IjZS7iK5EXtb">New Layout</a>.</li>
+  </ul>
   <h3>Supported annotations</h3>
   <p>The following annotation methods are supported:</p>
   <ul>
@@ -82,33 +120,43 @@ class="admonition tip">
     <li>Table of contents/outline
       <ul>
         <li>All the headings and “bookmarks” will be displayed hierarchially.</li>
-        <li>The heading on the current page is also highlighted (note that it can
+        <li
+       >The heading on the current page is also highlighted (note that it can
           be slightly offset depending on how many headings are on the same page).</li>
-        <li>Clicking on a heading will jump to the corresponding position in the PDF.</li>
+    <li
+   >Clicking on a heading will jump to the corresponding position in the PDF.</li>
       </ul>
-    </li>
-    <li>Pages
-      <ul>
-        <li>A preview of all the pages with a small thumbnail.</li>
-        <li>Clicking on a page will automatically navigate to that page.</li>
+      </li>
+      <li>Pages
+        <ul>
+          <li>A preview of all the pages with a small thumbnail.</li>
+          <li>Clicking on a page will automatically navigate to that page.</li>
+        </ul>
+      </li>
+      <li>Annotations
+        <ul>
+          <li>Highlight and comment annotations are listed here.</li>
+          <li>For the old layout, this feature is not directly available, however there
+            is a listing of comments directly in the PDF toolbar.</li>
+        </ul>
+      </li>
+      <li>Attachments
+        <ul>
+          <li>If the PDF has its own attachments (not to be confused with Trilium's&nbsp;
+            <a
+            class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>), they will be displayed in a list.</li>
+          <li>Some information such as the name and size of the attachment are displayed.</li>
+          <li
+         >It's possible to download the attachment by clicking on the download button.</li>
       </ul>
-    </li>
-    <li>Attachments
-      <ul>
-        <li>If the PDF has its own attachments (not to be confused with Trilium's&nbsp;
-          <a
-          class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>), they will be displayed in a list.</li>
-        <li>Some information such as the name and size of the attachment are displayed.</li>
-        <li>It's possible to download the attachment by clicking on the download button.</li>
-      </ul>
-    </li>
-    <li>Layers
-      <ul>
-        <li>A less common feature, if the PDF has toggle-able layers, these layers
-          will be displayed in a list here.</li>
-        <li>It's possible to toggle the visibility for each individual layer.</li>
-      </ul>
-    </li>
+      </li>
+      <li>Layers
+        <ul>
+          <li>A less common feature, if the PDF has toggle-able layers, these layers
+            will be displayed in a list here.</li>
+          <li>It's possible to toggle the visibility for each individual layer.</li>
+        </ul>
+      </li>
   </ul>
   <h2>Share functionality</h2>
   <p>PDFs can also be shared using the&nbsp;<a class="reference-link" href="#root/_help_R9pX4DGra2Vt">Sharing</a>&nbsp;feature.

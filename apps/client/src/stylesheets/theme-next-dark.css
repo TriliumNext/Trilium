@@ -278,9 +278,9 @@
     --help-card-background: var(--card-background-color);
     --help-card-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
     --help-card-heading-color: #959595;
-    --help-kbd-shortcut-color: white;
-    --help-kbd-shortcut-background: #676767;
-    --help-kbd-shortcut-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    --help-kbd-shortcut-color: #e0e0e0;
+    --help-kbd-shortcut-background: #4a4a4a;
+    --help-kbd-shortcut-border: #3a3a3a;
     --help-code-color: inherit;
     --help-code-background: #565656;
 

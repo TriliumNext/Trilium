@@ -19,6 +19,8 @@ import Component from "./component.js";
 export interface SetNoteOpts {
     triggerSwitchEvent?: unknown;
     viewScope?: ViewScope;
+    /** If true, skip closing the currently active dialog. Used when opening a note into a stackable popup (e.g. quick-edit) that must not dismiss the dialog it was launched from. */
+    keepActiveDialog?: boolean;
 }
 
 export type GetTextEditorCallback = (editor: CKTextEditor) => void;
@@ -49,6 +51,10 @@ export interface NoteContextDataMap {
     pdfLayers: {
         layers: PdfLayer[];
         toggleLayer(layerId: string, visible: boolean): void;
+    };
+    pdfAnnotations: {
+        annotations: PdfAnnotationInfo[];
+        scrollToAnnotation(annotationId: string, pageNumber: number): void;
     };
     saveState: {
         state: SaveState;
@@ -127,7 +133,9 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         await this.triggerEvent("beforeNoteSwitch", { noteContext: this });
 
-        closeActiveDialog();
+        if (!opts.keepActiveDialog) {
+            closeActiveDialog();
+        }
 
         this.notePath = resolvedNotePath;
         this.viewScope = opts.viewScope;
@@ -317,7 +325,8 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         }
 
         // Note types that support a read-only state (via the #readOnly label, source view, or auto-readonly).
-        if (!READ_ONLY_CAPABLE_TYPES.includes(this.note.type)) {
+        const isPdf = this.note.type === "file" && this.note.mime === "application/pdf";
+        if (!isPdf && !READ_ONLY_CAPABLE_TYPES.includes(this.note.type)) {
             return false;
         }
 

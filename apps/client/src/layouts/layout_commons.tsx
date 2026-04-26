@@ -47,12 +47,12 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<ProtectedSessionPasswordDialog />)
         .child(<RevisionsDialog />)
         .child(<DeleteNotesDialog />)
+        .child(<PrintPreviewDialog />)
         .child(<InfoDialog />)
         .child(<ConfirmDialog />)
         .child(<PromptDialog />)
         .child(<IncorrectCpuArchDialog />)
         .child(<PopupEditorDialog />)
-        .child(<PrintPreviewDialog />)
         .child(<CallToActionDialog />)
         .child(<ToastContainer />);
 }

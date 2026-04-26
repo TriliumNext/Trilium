@@ -30,6 +30,7 @@ const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
 export default function PopupEditor() {
     const [ shown, setShown ] = useState(false);
+    const [ stacked, setStacked ] = useState(false);
     const parentComponent = useContext(ParentComponent);
     const [ noteContext, setNoteContext ] = useState(new NoteContext("_popup-editor"));
     const isMobile = utils.isMobile();
@@ -40,6 +41,7 @@ export default function PopupEditor() {
 
     useTriliumEvent("openInPopup", async ({ noteIdOrPath }) => {
         const noteContext = new NoteContext("_popup-editor");
+        setStacked(!!document.querySelector(".modal.show"));
 
         const noteId = tree.getNoteIdAndParentIdFromUrl(noteIdOrPath);
         if (!noteId.noteId) return;
@@ -51,7 +53,8 @@ export default function PopupEditor() {
             viewScope: {
                 // Override auto-readonly notes to be editable, but respect user's choice to have a read-only note.
                 readOnlyTemporarilyDisabled: !hasUserSetNoteReadOnly
-            }
+            },
+            keepActiveDialog: true
         });
 
         // Events triggered at note context level (e.g. the save indicator) would not work since the note context has no parent component. Propagate events to parent component so that they can be handled properly.
@@ -63,7 +66,20 @@ export default function PopupEditor() {
     // Add a global class to be able to handle issues with z-index due to rendering in a popup.
     useEffect(() => {
         document.body.classList.toggle("popup-editor-open", shown);
-    }, [shown]);
+        document.body.classList.toggle("popup-editor-stacked", shown && stacked);
+    }, [shown, stacked]);
+
+    // When stacked on top of another modal, raise this popup's own backdrop above
+    // the underlying modal. Bootstrap does not auto-increment z-index for stacked
+    // modals, and the appended `.modal-backdrop` is not individually addressable.
+    useEffect(() => {
+        if (!shown || !stacked) return;
+        const backdrops = document.querySelectorAll(".modal-backdrop");
+        const popupBackdrop = backdrops[backdrops.length - 1] as HTMLElement | undefined;
+        if (!popupBackdrop) return;
+        popupBackdrop.classList.add("popup-editor-backdrop");
+        return () => popupBackdrop.classList.remove("popup-editor-backdrop");
+    }, [shown, stacked]);
 
     return (
         <NoteContextContext.Provider value={noteContext}>

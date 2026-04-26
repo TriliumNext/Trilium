@@ -219,12 +219,12 @@
     "access_info": "Per accedere alle informazioni di debug, eseguire la query e fare clic su \"Mostra registro backend\" nell'angolo in alto a sinistra."
   },
   "database_anonymization": {
-    "light_anonymization": "Anonimizzazione parziale",
+    "light_anonymization": "Anonimizzazione leggera",
     "title": "Anonimizzazione dei database",
     "full_anonymization": "Anonimizzazione completa",
-    "full_anonymization_description": "Questa azione creerà una nuova copia del database e la renderà anonima (rimuovendo tutto il contenuto delle note e lasciando solo la struttura e alcuni metadati non sensibili) per poterla condividere online a scopo di debug senza timore di divulgare i tuoi dati personali.",
+    "full_anonymization_description": "Crea una copia del database da cui vengono rimossi tutti i contenuti delle note, lasciando solo la struttura e i metadati non sensibili. È sicuro da condividere online durante la risoluzione dei problemi.",
     "save_fully_anonymized_database": "Salva database completamente anonimizzato",
-    "light_anonymization_description": "Questa azione creerà una nuova copia del database e lo anonimizzerà in parzialmente — in particolare, solo il contenuto delle note sarà rimosso, ma i titoli e gli attributi rimarranno. Inoltre, note con script personalizzati JS di frontend/backend e widget personalizzati lasciando rimarranno. Ciò mette a disposizione più contesto per il debug dei problemi.",
+    "light_anonymization_description": "Crea una copia in cui il contenuto delle note viene rimosso, mentre i titoli, gli attributi e gli script/widget personalizzati rimangono invariati. Fornisce maggiori informazioni di contesto per il debug.",
     "choose_anonymization": "Puoi decidere da solo se fornire un database completamente o parzialmente anonimizzato. Anche un database completamente anonimizzato è molto utile, sebbene in alcuni casi i database parzialmente anonimizzati possono accelerare il processo di identificazione dei bug e la loro correzione.",
     "no_anonymized_database_yet": "Ancora nessun database anonimizzato.",
     "save_lightly_anonymized_database": "Salva database leggermente anonimizzato",
@@ -233,7 +233,8 @@
     "existing_anonymized_databases": "Database anonimizzati esistenti",
     "creating_fully_anonymized_database": "Creazione di un database completamente anonimizzato...",
     "creating_lightly_anonymized_database": "Creazione di un database leggermente anonimizzato...",
-    "error_creating_anonymized_database": "Impossibile creare un database anonimo, controllare i log del backend per i dettagli"
+    "error_creating_anonymized_database": "Impossibile creare un database anonimo, controllare i log del backend per i dettagli",
+    "description": "Crea una copia anonimizzata del tuo database da condividere con gli sviluppatori durante la risoluzione dei problemi, senza divulgare dati personali."
   },
   "cpu_arch_warning": {
     "title": "Per favore scarica la versione ARM64",
@@ -246,12 +247,12 @@
   },
   "editorfeatures": {
     "title": "Caratteristiche",
-    "emoji_completion_enabled": "Abilita il completamento automatico delle Emoji",
-    "note_completion_enabled": "Abilita il completamento automatico delle note",
-    "emoji_completion_description": "Se abilitata, è possibile inserire facilmente gli emoji nel testo digitando `:`, seguito dal nome dell'emoji.",
-    "note_completion_description": "Se abilitato, è possibile creare collegamenti alle note digitando `@` seguito dal titolo di una nota.",
-    "slash_commands_enabled": "Abilita i comandi slash",
-    "slash_commands_description": "Se abilitato, i comandi di modifica come l'inserimento di interruzioni di riga o intestazioni possono essere attivati digitando `/`."
+    "emoji_completion_enabled": "Completamento automatico delle emoji",
+    "note_completion_enabled": "Suggerimenti automatici",
+    "emoji_completion_description": "È possibile inserire facilmente gli emoji nel testo digitando `:`, seguito dal nome dell'emoji.",
+    "note_completion_description": "È possibile creare collegamenti alle note digitando `@` seguito dal titolo di una nota.",
+    "slash_commands_enabled": "Comandi Slash",
+    "slash_commands_description": "È possibile attivare o disattivare comandi di modifica come l'inserimento di interruzioni di riga o di intestazioni digitando `/`."
   },
   "table_view": {
     "new-row": "Nuova riga",
@@ -363,7 +364,7 @@
   },
   "editing": {
     "editor_type": {
-      "multiline-toolbar": "Mostra la barra degli strumenti su più linee se non entra.",
+      "multiline-toolbar": "Visualizza la barra degli strumenti su più righe se non entra",
       "label": "Barra degli strumenti di formattazione",
       "floating": {
         "title": "Galleggiante",
@@ -372,7 +373,8 @@
       "fixed": {
         "title": "Fisso",
         "description": "gli strumenti di modifica vengono visualizzati nella scheda \"Formattazione\" della barra multifunzione."
-      }
+      },
+      "toolbar_style": "Stile della barra degli strumenti"
     }
   },
   "edit_button": {
@@ -470,8 +472,8 @@
     "column-already-exists": "Questa colonna esiste già nella bacheca."
   },
   "backup": {
-    "enable_weekly_backup": "Abilita le archiviazioni settimanali",
-    "enable_monthly_backup": "Abilita le archiviazioni mensili",
+    "enable_weekly_backup": "Backup settimanali",
+    "enable_monthly_backup": "Backup mensili",
     "backup_recommendation": "Si raccomanda di mantenere attive le archiviazioni, sebbene ciò possa rendere l'avvio dell'applicazione lento con database grandi e/o dispositivi di archiviazione lenti.",
     "backup_now": "Archivia adesso",
     "backup_database_now": "Archivia il database adesso",
@@ -479,11 +481,12 @@
     "date-and-time": "Data e ora",
     "path": "Percorso",
     "database_backed_up_to": "Il database è stato archiviato in {{backupFilePath}}",
-    "enable_daily_backup": "Abilita i backup giornalieri",
+    "enable_daily_backup": "Backup giornalieri",
     "no_backup_yet": "Ancora nessuna archiviazione",
     "automatic_backup": "Backup Automatico",
     "automatic_backup_description": "Trilium può eseguire automaticamente il backup del database:",
-    "download": "Scarica"
+    "download": "Scarica",
+    "title": "Backup"
   },
   "backend_log": {
     "refresh": "Aggiorna"
@@ -492,14 +495,18 @@
     "find_and_fix_button": "Trova e correggi i problemi di coerenza",
     "finding_and_fixing_message": "In cerca e correzione dei problemi di coerenza...",
     "issues_fixed_message": "Qualsiasi problema di coerenza che possa essere stato trovato ora è corretto.",
-    "title": "Controlli di coerenza"
+    "title": "Controlli di coerenza",
+    "find_and_fix_label": "Individuare e risolvere i problemi di coerenza",
+    "find_and_fix_description": "Esegue una scansione e risolve automaticamente eventuali problemi di coerenza dei dati nel database."
   },
   "database_integrity_check": {
     "check_button": "Controllo dell'integrità del database",
     "checking_integrity": "Controllo dell'integrità del database in corso...",
     "title": "Controllo di Integrità del database",
     "integrity_check_failed": "Controllo di integrità fallito: {{results}}",
-    "integrity_check_succeeded": "Controllo di integrità riuscito: nessun problema riscontrato."
+    "integrity_check_succeeded": "Controllo di integrità riuscito: nessun problema riscontrato.",
+    "check_integrity_label": "Verifica l'integrità del database",
+    "check_integrity_description": "Verifica che il database non sia danneggiato a livello di SQLite."
   },
   "sync": {
     "title": "Sincronizza",
@@ -509,34 +516,41 @@
     "full_sync_triggered": "Sincronizzazione completa attivata",
     "filling_entity_changes": "Il riempimento delle righe modifica l'entità...",
     "sync_rows_filled_successfully": "Sincronizzazione righe compilate correttamente",
-    "finished-successfully": "Sincronizzazione completata con successo."
+    "finished-successfully": "Sincronizzazione completata con successo.",
+    "force_full_sync_label": "Esegui sincronizzazione completa",
+    "force_full_sync_description": "Avvia una sincronizzazione completa con il server di sincronizzazione, ricaricando tutte le modifiche.",
+    "fill_entity_changes_label": "Riempimento modifiche entità",
+    "fill_entity_changes_description": "Ricostruisci i record delle modifiche alle entità. Utilizza questa opzione se la sincronizzazione non ha rilevato alcune modifiche."
   },
   "sync_2": {
-    "config_title": "Configurazione per la Sincronizzazione",
-    "proxy_label": "Server Proxy per la sincronizzazione (opzionale)",
-    "test_title": "Test di sincronizzazione",
-    "timeout": "Timeout per la sincronizzazione",
+    "config_title": "Server di sincronizzazione",
+    "proxy_label": "Server proxy",
+    "test_title": "Verifica connessione",
+    "timeout": "Timeout della connessione",
     "save": "Salva",
     "help": "Aiuto",
-    "server_address": "Indirizzo dell'istanza del server",
-    "test_description": "Questo testerà la connessione e l'handshake con il server di sincronizzazione. Se il server di sincronizzazione non è inizializzato, questo lo imposterà per la sincronizzazione con il documento locale.",
+    "server_address": "Indirizzo del server",
+    "test_description": "Verifica la connessione al server di sincronizzazione. Se non è stata ancora inizializzata, questa operazione avvierà la sincronizzazione.",
     "test_button": "Test di sincronizzazione",
     "handshake_failed": "Handshake del server di sincronizzazione non riuscito, errore: {{message}}",
-    "timeout_description": "Quanto tempo aspettare prima di rinunciare con una connessione lenta. Aumenta questo intervallo se hai una rete instabile."
+    "timeout_description": "Tempo di attesa prima di rinunciare su una connessione lenta.",
+    "server_address_description": "URL del server Trilium con cui effettuare la sincronizzazione.",
+    "proxy_description": "Lasciare vuoto per utilizzare il proxy di sistema (solo versione desktop). Utilizzare \"noproxy\" per bypassare tutti i proxy."
   },
   "search_engine": {
     "save_button": "Salva",
     "title": "Motore di ricerca",
-    "custom_search_engine_info": "Il motore di ricerca personalizzato richiede l'impostazione sia di un nome che di un URL. Se uno di questi non viene impostato, DuckDuckGo verrà utilizzato come motore di ricerca predefinito.",
-    "predefined_templates_label": "Modelli predefiniti per motori di ricerca",
+    "custom_search_engine_info": "Da utilizzare per effettuare ricerche sul web in base al testo selezionato. Se non viene configurato, verrà utilizzato DuckDuckGo.",
+    "predefined_templates_label": "Impostazioni predefinite",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
     "google": "Google",
-    "custom_name_label": "Nome del motore di ricerca personalizzato",
-    "custom_name_placeholder": "Personalizza il nome del motore di ricerca",
-    "custom_url_label": "L'URL del motore di ricerca personalizzato deve includere {keyword} come segnaposto per il termine di ricerca.",
-    "custom_url_placeholder": "Personalizza indirizzo URL del motore di ricerca"
+    "custom_name_label": "Nome",
+    "custom_name_placeholder": "Nome del motore di ricerca",
+    "custom_url_label": "URL",
+    "custom_url_placeholder": "URL del motore di ricerca",
+    "custom_url_description": "Utilizza {keyword} come segnaposto per il termine di ricerca."
   },
   "sql_table_schemas": {
     "tables": "Tabelle"
@@ -567,13 +581,15 @@
   },
   "tray": {
     "title": "Vassoio di Sistema",
-    "enable_tray": "Abilita il vassoio (Trilium necessita di essere riavviato affinché la modifica abbia effetto)"
+    "enable_tray": "Icona nella barra delle applicazioni",
+    "enable_tray_description": "Per rendere effettiva questa modifica, è necessario riavviare Trilium."
   },
   "heading_style": {
-    "title": "Stile dell'Intestazione",
+    "title": "Stile dell'intestazione",
     "plain": "Semplice",
     "underline": "Sottolineato",
-    "markdown": "Stile Markdown"
+    "markdown": "Stile Markdown",
+    "description": "Stile visivo per i titoli nelle note di testo."
   },
   "highlights_list": {
     "title": "Elenco dei punti salienti",
@@ -664,10 +680,10 @@
     "sunday": "Domenica",
     "first-week-of-the-year": "Prima settimana dell'anno",
     "first-week-contains-first-day": "La prima settimana contiene il primo giorno dell'anno",
-    "first-week-contains-first-thursday": "La prima settimana contiene il primo giovedì dell'anno",
+    "first-week-contains-first-thursday": "La prima settimana comprende il primo giovedì (ISO 8601)",
     "first-week-has-minimum-days": "La prima settimana ha giorni ridotti",
     "min-days-in-first-week": "Giorni minimi nella prima settimana",
-    "first-week-warning": "La modifica delle opzioni della prima settimana può causare duplicati con le note settimanali esistenti e queste ultime non verranno aggiornate di conseguenza.",
+    "first-week-warning": "Modificare questa impostazione potrebbe causare la creazione di duplicati rispetto alle Note settimanali esistenti.",
     "formatting-locale": "Formato data e numero",
     "formatting-locale-auto": "In base alla lingua dell'applicazione",
     "title": "Localizzazione",
@@ -907,7 +923,9 @@
     "print_page_size": "Quando si esporta in PDF, modifica le dimensioni della pagina. Valori supportati: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
     "color_type": "Colore",
     "share_root": "segna la nota che viene servita su /share root.",
-    "textarea": "Testo su più righe"
+    "textarea": "Testo su più righe",
+    "print_scale": "Durante l'esportazione in PDF, modifica la scala del contenuto visualizzato. I valori vanno da 0,1 (10%) a 2 (200%); il valore predefinito è 1 (100%).",
+    "print_margins": "Quando si esporta in PDF, imposta i margini della pagina. Utilizza <code>predefinito</code>, <code>nessuno</code>, <code>minimo</code> o valori personalizzati come <code>superiore, destro, inferiore, sinistro</code> in millimetri."
   },
   "attribute_editor": {
     "help_text_body1": "Per aggiungere un'etichetta, basta digitare ad esempio <code>#rock</code> oppure, se si desidera aggiungere anche un valore, ad esempio <code>#year = 2020</code>",
@@ -1139,7 +1157,13 @@
     "export_as_image_png": "PNG (raster)",
     "export_as_image_svg": "SVG (vector)",
     "note_map": "Mappa",
-    "view_ocr_text": "Visualizza il testo OCR"
+    "view_ocr_text": "Visualizza il testo OCR",
+    "word_wrap": "Rientro automatico",
+    "word_wrap_auto": "Auto",
+    "word_wrap_auto_description": "Segui l'impostazione globale",
+    "word_wrap_on": "On",
+    "word_wrap_off": "Off",
+    "save_named_revision": "Salva revisione con nome..."
   },
   "onclick_button": {
     "no_click_handler": "Il widget pulsante '{{componentId}}' non ha un gestore di clic definito"
@@ -1441,18 +1465,20 @@
     "description": "Questa operazione ricostruirà il database, generando in genere un file di dimensioni inferiori. In realtà, nessun dato verrà modificato.",
     "button_text": "Pulizia del database",
     "vacuuming_database": "Aspirazione del database...",
-    "database_vacuumed": "Il database è stato svuotato"
+    "database_vacuumed": "Il database è stato svuotato",
+    "vacuum_label": "Database Vacuum",
+    "vacuum_description": "Ricostruisci il database per ridurre le dimensioni dei file. I dati non subiranno alcuna modifica."
   },
   "fonts": {
     "theme_defined": "Tema definito",
     "fonts": "Caratteri",
-    "main_font": "Carattere principale",
+    "main_font": "Testo dell'interfaccia",
     "font_family": "Famiglia di caratteri",
     "size": "Misurare",
-    "note_tree_font": "Carattere dell'albero delle note",
-    "note_detail_font": "Nota Dettaglio Carattere",
-    "monospace_font": "Monospace (codice) Font",
-    "not_all_fonts_available": "Non tutti i font elencati potrebbero essere disponibili sul tuo sistema.",
+    "note_tree_font": "Testo dell'albero Note",
+    "note_detail_font": "Testo del documento",
+    "monospace_font": "Testo monospazio",
+    "not_all_fonts_available": "Non tutti i caratteri elencati potrebbero essere disponibili sul tuo sistema",
     "generic-fonts": "Caratteri generici",
     "sans-serif-system-fonts": "Caratteri di sistema sans-serif",
     "serif-system-fonts": "Caratteri di sistema Serif",
@@ -1461,7 +1487,12 @@
     "serif": "Serif",
     "sans-serif": "Sans Serif",
     "monospace": "Monospaziatura",
-    "system-default": "Predefinito del sistema"
+    "system-default": "Predefinito del sistema",
+    "custom_fonts": "Utilizza caratteri personalizzati",
+    "preview": "Anteprima",
+    "monospace_font_description": "Utilizzato per note di codice e blocchi di codice",
+    "size_relative_to_general": "La dimensione è relativa alla dimensione generale del carattere",
+    "apply_changes": "Aggiorna la pagina per applicare le modifiche"
   },
   "max_content_width": {
     "title": "Larghezza del contenuto",
@@ -1481,28 +1512,31 @@
     "edited_notes_message": "La scheda della barra multifunzione Note modificate si aprirà automaticamente nelle note giornaliere"
   },
   "theme": {
-    "title": "Tema dell'applicazione",
-    "theme_label": "Tema",
+    "title": "Interfaccia utente",
+    "theme_label": "Tema dell'applicazione",
     "override_theme_fonts_label": "Ignora i font del tema",
-    "auto_theme": "Legacy (seguire lo schema dei colori del sistema)",
-    "light_theme": "Eredità (Luce)",
-    "dark_theme": "Eredità (Oscuro)",
-    "triliumnext": "Trilium (seguire lo schema dei colori del sistema)",
-    "triliumnext-light": "Trilium (Luce)",
-    "triliumnext-dark": "Trilium (scuro)",
+    "auto_theme": "Segui la combinazione di colori del sistema",
+    "light_theme": "Chiara",
+    "dark_theme": "Scura",
+    "triliumnext": "Segui la combinazione di colori del sistema",
+    "triliumnext-light": "Chiara",
+    "triliumnext-dark": "Scura",
     "layout": "Disposizione",
     "layout-vertical-title": "Verticale",
     "layout-horizontal-title": "Orizzontale",
     "layout-vertical-description": "la barra di avvio è a sinistra (impostazione predefinita)",
-    "layout-horizontal-description": "la barra di avvio si trova sotto la barra delle schede, che ora è a larghezza intera."
+    "layout-horizontal-description": "la barra di avvio si trova sotto la barra delle schede, che ora è a larghezza intera.",
+    "modern_themes": "Moderna",
+    "legacy_themes": "Legacy",
+    "custom_themes": "Personalizzata"
   },
   "ui-performance": {
     "title": "Prestazione",
-    "enable-motion": "Abilita transizioni e animazioni",
-    "enable-shadows": "Abilita le ombre",
-    "enable-backdrop-effects": "Abilita gli effetti di sfondo per menu, popup e pannelli",
-    "enable-smooth-scroll": "Abilita lo scorrimento fluido",
-    "app-restart-required": "(per rendere effettiva la modifica è necessario riavviare l'applicazione)"
+    "enable-motion": "Transizioni e animazioni",
+    "enable-shadows": "Ombre",
+    "enable-backdrop-effects": "Effetti di sfondo per menu, finestre a comparsa e pannelli",
+    "enable-smooth-scroll": "Scorrimento fluido",
+    "app-restart-required": "È necessario riavviare l'app"
   },
   "zoom_factor": {
     "title": "Fattore di zoom (solo versione desktop)",
@@ -1511,11 +1545,13 @@
   "code_auto_read_only_size": {
     "title": "Dimensione automatica di sola lettura",
     "description": "La dimensione automatica delle note in sola lettura è la dimensione dopo la quale le note verranno visualizzate in modalità di sola lettura (per motivi di prestazioni).",
-    "label": "Dimensione automatica di sola lettura (note sul codice)",
+    "label": "Dimensione automatica in sola lettura",
     "unit": "caratteri"
   },
   "code-editor-options": {
-    "title": "Redattore"
+    "title": "Redattore",
+    "tab_width": "Larghezza della scheda",
+    "tab_width_unit": "spazi"
   },
   "code_mime_types": {
     "title": "Tipi MIME disponibili nel menu a discesa",
@@ -1557,47 +1593,57 @@
     "batch_ocr_error": "Errore durante l'elaborazione in batch: {{error}}"
   },
   "attachment_erasure_timeout": {
-    "attachment_erasure_timeout": "Timeout cancellazione allegato",
-    "erase_attachments_after": "Cancella gli allegati non utilizzati dopo:",
-    "manual_erasing_description": "È anche possibile attivare la cancellazione manualmente (senza considerare il timeout definito sopra):",
-    "erase_unused_attachments_now": "Cancella subito le note degli allegati non utilizzati",
-    "unused_attachments_erased": "Gli allegati non utilizzati sono stati cancellati."
+    "attachment_erasure_timeout": "Allegati non utilizzati",
+    "erase_attachments_after": "Cancella gli allegati non utilizzati dopo",
+    "manual_erasing_description": "Avvia la cancellazione manuale, ignorando il timeout sopra indicato.",
+    "erase_unused_attachments_now": "Elimina subito gli allegati non utilizzati",
+    "unused_attachments_erased": "Gli allegati non utilizzati sono stati cancellati.",
+    "description": "Gli allegati a cui non fa più riferimento nessuna nota vengono considerati inutilizzati e possono essere cancellati automaticamente dopo un certo periodo di tempo.",
+    "erase_attachments_after_description": "Tempo che intercorre prima che gli allegati inutilizzati vengano cancellati definitivamente."
   },
   "network_connections": {
-    "network_connections_title": "Connessioni di rete",
-    "check_for_updates": "Controlla automaticamente gli aggiornamenti"
+    "network_connections_title": "Rete",
+    "check_for_updates": "Controlla automaticamente gli aggiornamenti",
+    "check_for_updates_description": "Verifica la presenza di nuove versioni su GitHub e, se disponibili, visualizza una notifica nel menu globale."
   },
   "note_erasure_timeout": {
-    "note_erasure_timeout_title": "Timeout cancellazione nota",
-    "erase_notes_after": "Cancella le note dopo:",
-    "manual_erasing_description": "È anche possibile attivare la cancellazione manualmente (senza considerare il timeout definito sopra):",
+    "note_erasure_timeout_title": "Note eliminate",
+    "erase_notes_after": "Cancella le note dopo",
+    "manual_erasing_description": "Avvia la cancellazione manuale, ignorando il timeout sopra indicato.",
     "erase_deleted_notes_now": "Cancella subito le note eliminate",
-    "deleted_notes_erased": "Le note eliminate sono state eliminate."
+    "deleted_notes_erased": "Le note eliminate sono state eliminate.",
+    "description": "Le note eliminate vengono inizialmente contrassegnate solo come eliminate e possono essere recuperate dalla sezione \"Note recenti\". Dopo un certo periodo di tempo, vengono cancellate definitivamente.",
+    "erase_notes_after_description": "Tempo che intercorre prima che le note eliminate vengano cancellate definitivamente."
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "Nota Intervallo di istantanea della revisione",
     "note_revisions_snapshot_description": "L'intervallo di snapshot della revisione della nota è il tempo dopo il quale verrà creata una nuova revisione per la nota. Per maggiori informazioni, consultare <doc>wiki</doc>.",
-    "snapshot_time_interval_label": "Nota intervallo di tempo per l'istantanea della revisione:"
+    "snapshot_time_interval_label": "Intervallo tra gli snapshot",
+    "note_revisions_snapshot_description_short": "Intervallo di tempo trascorso il quale verrà creata una nuova versione della nota."
   },
   "revisions_snapshot_limit": {
     "note_revisions_snapshot_limit_title": "Nota Limite di Snapshot di Revisione",
     "note_revisions_snapshot_limit_description": "Il limite del numero di snapshot di revisione della nota si riferisce al numero massimo di revisioni che possono essere salvate per ciascuna nota. Dove -1 significa nessun limite, 0 significa eliminare tutte le revisioni. È possibile impostare il numero massimo di revisioni per una singola nota tramite l'etichetta #versioningLimit.",
-    "snapshot_number_limit_label": "Nota limite del numero di istantanee di revisione:",
+    "snapshot_number_limit_label": "Numero massimo di revisioni",
     "snapshot_number_limit_unit": "istantanee",
     "erase_excess_revision_snapshots": "Cancella subito gli snapshot di revisione in eccesso",
-    "erase_excess_revision_snapshots_prompt": "Gli snapshot di revisione in eccesso sono stati cancellati."
+    "erase_excess_revision_snapshots_prompt": "Gli snapshot di revisione in eccesso sono stati cancellati.",
+    "note_revisions_snapshot_limit_description_short": "Numero massimo di revisioni per nota. Impostare -1 per numero illimitato, 0 per disabilitare.",
+    "erase_excess_revision_snapshots_description": "Elimina le revisioni che superano il limite per tutte le note."
   },
   "text_auto_read_only_size": {
     "title": "Dimensione automatica di sola lettura",
     "description": "La dimensione automatica delle note in sola lettura è la dimensione dopo la quale le note verranno visualizzate in modalità di sola lettura (per motivi di prestazioni).",
-    "label": "Dimensione automatica di sola lettura (note di testo)",
+    "label": "Dimensione automatica in sola lettura",
     "unit": "caratteri"
   },
   "custom_date_time_format": {
-    "title": "Formato data/ora personalizzato",
+    "title": "Formato data/ora",
     "description": "Personalizza il formato della data e dell'ora inserite tramite <shortcut /> o la barra degli strumenti. Consulta la <doc>documentazione Day.js</doc> per i token di formato disponibili.",
-    "format_string": "Stringa di formato:",
-    "formatted_time": "Data/ora formattata:"
+    "format_string": "Stringa di formattazione",
+    "formatted_time": "Data/ora formattata",
+    "description_short": "Personalizza il formato della data e dell'ora inserite tramite la barra degli strumenti.",
+    "preview": "Anteprima: {{preview}}"
   },
   "options_widget": {
     "options_status": "Stato delle opzioni",
@@ -1611,18 +1657,22 @@
     "new_password": "Nuova password",
     "new_password_confirmation": "Conferma della nuova password",
     "change_password": "Cambiare la password",
-    "protected_session_timeout": "Timeout della sessione protetta",
-    "protected_session_timeout_description": "Il timeout della sessione protetta è un periodo di tempo dopo il quale la sessione protetta viene cancellata dalla memoria del browser. Questo periodo viene calcolato a partire dall'ultima interazione con le note protette. Vedi",
+    "protected_session_timeout": "Sessione protetta",
+    "protected_session_timeout_description": "Tempo di inattività prima che la sessione venga cancellata dalla memoria del browser. Vedi",
     "wiki": "wiki",
     "for_more_info": "per maggiori informazioni.",
-    "protected_session_timeout_label": "Timeout della sessione protetta:",
+    "protected_session_timeout_label": "Chiudi automaticamente la sessione dopo",
     "reset_confirmation": "Reimpostando la password perderai per sempre l'accesso a tutte le tue note protette. Vuoi davvero reimpostare la password?",
     "reset_success_message": "La password è stata resettata. Imposta una nuova password",
     "change_password_heading": "Cambiare la password",
     "set_password_heading": "Imposta password",
     "set_password": "Imposta password",
     "password_mismatch": "Le nuove password non sono tutte uguali.",
-    "password_changed_success": "La password è stata modificata. Trilium verrà ricaricato dopo aver premuto OK."
+    "password_changed_success": "La password è stata modificata. Trilium verrà ricaricato dopo aver premuto OK.",
+    "change_password_description": "Aggiorna la tua password attuale",
+    "reset_password": "Reimposta password",
+    "reset_password_description": "Perdere definitivamente l'accesso alle note protette",
+    "cancel": "Annulla"
   },
   "multi_factor_authentication": {
     "title": "Autenticazione a più fattori",
@@ -1728,7 +1778,8 @@
     "collections": "Collezioni",
     "ai-chat": "Chat con IA",
     "spreadsheet": "Foglio di calcolo",
-    "llm-chat": "Chat con IA"
+    "llm-chat": "Chat con IA",
+    "markdown": "Markdown"
   },
   "protect_note": {
     "toggle-on": "Proteggi la nota",
@@ -1783,7 +1834,7 @@
   "note_detail": {
     "could_not_find_typewidget": "Impossibile trovare typeWidget per il tipo '{{type}}'",
     "printing": "Stampa in corso...",
-    "printing_pdf": "Esportazione in PDF in corso...",
+    "printing_pdf": "Preparazione dell'anteprima di stampa...",
     "print_report_title": "Stampa rapporto",
     "print_report_collection_content_one": "{{count}} la note nella raccolta non può essere stampata perché non è supportata o è protetta.",
     "print_report_collection_content_many": "{{count}} le note nella raccolta non possono essere stampate perché non sono supportate o sono protette.",
@@ -1843,7 +1894,9 @@
   "entrypoints": {
     "note-revision-created": "La revisione della nota è stata creata.",
     "note-executed": "Nota eseguita.",
-    "sql-error": "Si è verificato un errore durante l'esecuzione della query SQL: {{message}}"
+    "sql-error": "Si è verificato un errore durante l'esecuzione della query SQL: {{message}}",
+    "save-named-revision-title": "Salva revisione con nome",
+    "save-named-revision-message": "Inserisci un nome per questa revisione (lascia vuoto se non vuoi assegnarne uno):"
   },
   "branches": {
     "cannot-move-notes-here": "Impossibile spostare le note qui.",
@@ -1890,7 +1943,9 @@
     "theme_group_light": "Temi chiari",
     "theme_group_dark": "Temi scuri",
     "copy_title": "Copia negli appunti",
-    "click_to_copy": "Clicca per copiare"
+    "click_to_copy": "Clicca per copiare",
+    "tab_width": "Larghezza della scheda",
+    "tab_width_unit": "spazi"
   },
   "classic_editor_toolbar": {
     "title": "Formattazione"
@@ -1919,7 +1974,7 @@
     "days": "Giorni"
   },
   "share": {
-    "title": "Impostazioni di condivisione",
+    "title": "Condividi",
     "redirect_bare_domain": "Reindirizza il dominio nudo alla pagina di condivisione",
     "redirect_bare_domain_description": "Reindirizza gli utenti anonimi alla pagina Condividi invece di mostrare l'accesso",
     "show_login_link": "Mostra il collegamento di accesso nel tema Condividi",
@@ -2016,7 +2071,7 @@
     "background_effects_title": "Gli effetti di sfondo sono ora stabili",
     "background_effects_message": "Su dispositivi Windows e macOS, gli effetti di sfondo sono ora stabili. Gli effetti di sfondo aggiungono un tocco di colore all'interfaccia utente sfocando lo sfondo dietro di essa.",
     "background_effects_button": "Abilita gli effetti di sfondo",
-    "dismiss": "Chiudi",
+    "dismiss": "Ignora",
     "new_layout_title": "Nuovo layout",
     "new_layout_message": "Abbiamo introdotto un layout modernizzato per Trilium. La barra multifunzione è stata rimossa e integrata perfettamente nell'interfaccia principale, con una nuova barra di stato e sezioni espandibili (come gli attributi promossi) che assumono le funzioni chiave.\n\nIl nuovo layout è abilitato di default e può essere temporaneamente disabilitato tramite Opzioni → Aspetto.",
     "new_layout_button": "Maggiori informazioni"
@@ -2029,7 +2084,9 @@
     "related_code_notes": "Schema di colori per le note del codice",
     "ui": "Interfaccia utente",
     "ui_old_layout": "Vecchio layout",
-    "ui_new_layout": "Nuovo layout"
+    "ui_new_layout": "Nuovo layout",
+    "ui_layout_style": "Stile di impaginazione",
+    "ui_layout_orientation": "Orientamento della barra di avvio"
   },
   "units": {
     "percentage": "%"
@@ -2132,7 +2189,19 @@
     "note_paths_many": "{{count}} percorsi",
     "note_paths_other": "{{count}} percorsi",
     "note_paths_title": "Nota percorsi",
-    "code_note_switcher": "Cambia modalità lingua"
+    "code_note_switcher": "Cambia modalità lingua",
+    "tab_width": "Larghezza della scheda: {{width}}",
+    "tab_width_title": "Modifica la larghezza della scheda",
+    "tab_width_spaces": "{{count}} spazi",
+    "tab_width_spaces_short": "Spazi: {{width}}",
+    "tab_width_tabs": "Schede: {{width}}",
+    "tab_width_use_default": "Usa le impostazioni predefinite ({{width}})",
+    "tab_width_use_default_style": "Usa lo stile predefinito ({{style}})",
+    "tab_width_display_header": "Larghezza dello schermo",
+    "tab_width_reindent_header": "Riorganizzare il contenuto in modo che",
+    "tab_width_style_header": "Rientrare utilizzando",
+    "tab_width_style_spaces": "Spazi",
+    "tab_width_style_tabs": "Schede"
   },
   "attributes_panel": {
     "title": "Attributi delle note"
@@ -2424,6 +2493,80 @@
     "description_placeholder": "Assegna un nome a questa revisione",
     "revision_saved": "La modifica alla nota è stata salvata.",
     "edit_description": "Modifica nome",
-    "description_updated": "Il nome della revisione è stato aggiornato."
+    "description_updated": "Il nome della revisione è stato aggiornato.",
+    "source_auto": "Salvataggio automatico",
+    "source_manual": "Salvataggio manuale",
+    "source_etapi": "ETAPI",
+    "source_llm": "LLM",
+    "source_restore": "Ripristina",
+    "source_unknown": "Snapshot",
+    "date_today": "Oggi",
+    "date_yesterday": "Ieri",
+    "date_this_week": "Questa settimana",
+    "date_this_month": "Questo mese",
+    "source_description_auto": "Salvato automaticamente dal sistema a intervalli regolari",
+    "source_description_manual": "Salvato manualmente dall'utente",
+    "source_description_etapi": "Creato tramite l'API esterna di Trilium",
+    "source_description_llm": "Creato dall'assistente AI",
+    "source_description_restore": "Salvato prima di ripristinare una revisione precedente",
+    "source_description_unknown": "Fonte non disponibile"
+  },
+  "auto_link_attribute_list": {
+    "title": "Attributi di sistema"
+  },
+  "database": {
+    "title": "Database"
+  },
+  "revisions_snapshot": {
+    "title": "Note sulle revisioni"
+  },
+  "text_editor": {
+    "title": "Redattore"
+  },
+  "launcher_button_context_menu": {
+    "remove_from_launch_bar": "Rimuovi dalla barra di avvio"
+  },
+  "link": {
+    "failed_to_open": "Impossibile aprire il link '{{- href}}': {{- message}}"
+  },
+  "display_mode": {
+    "source": "Visualizza sorgente",
+    "split": "Visualizzazione divisa",
+    "preview": "Anteprima"
+  },
+  "print_preview": {
+    "title": "Anteprima di stampa",
+    "close": "Chiudi",
+    "save": "Salva come PDF",
+    "print": "Stampa",
+    "export_pdf": "Esporta in PDF",
+    "system_print": "Stampa tramite la finestra di dialogo di sistema",
+    "destination": "Destinazione",
+    "destination_pdf": "Salva come PDF",
+    "destination_printers": "Stampanti",
+    "destination_default": "Predefinito",
+    "orientation": "Orientamento",
+    "portrait": "Verticale",
+    "landscape": "Orizzontale",
+    "page_size": "Dimensione della pagina",
+    "scale": "Scala",
+    "margins": "Margini",
+    "render_error": "Impossibile generare il PDF con le impostazioni attuali. Controlla i margini e la scala.",
+    "margins_default": "Predefinito",
+    "margins_none": "Nessuno",
+    "margins_minimum": "Minimo",
+    "margins_custom": "Personalizzato",
+    "margin_top": "Superiore",
+    "margin_right": "Destra",
+    "margin_bottom": "Inferiore",
+    "margin_left": "Sinistra",
+    "page_ranges": "Pagine",
+    "page_ranges_hint": "Lasciare vuoto per stampare tutte le pagine.",
+    "page_ranges_invalid": "Formato non valido. Utilizza ad esempio: 1-5, 8, 11-13.",
+    "page_ranges_placeholder": "ad es. 1-5, 8, 11-13"
+  },
+  "common": {
+    "save": "Salva",
+    "cancel": "Annulla"
   }
 }

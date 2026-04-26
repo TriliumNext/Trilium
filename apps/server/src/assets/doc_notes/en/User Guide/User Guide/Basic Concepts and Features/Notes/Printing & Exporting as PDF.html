@@ -5,7 +5,7 @@
 </figure>
 <p>Trilium allows printing notes to a real printer, or generating a structured
   PDF for a single note or for multiple notes through&nbsp;<a class="reference-link"
-  href="#root/pOsGYCXsbNQG/_help_GTwFsgaA0lCt">Collections</a>.</p>
+  href="#root/_help_GTwFsgaA0lCt">Collections</a>.</p>
 <p>Note that not all note types are printable as of now. We do plan to increase
   the coverage of supported note types in the future.</p>
 <p>Printing and exporting as PDF are not perfect. Due to technical limitations,
@@ -20,10 +20,10 @@
 <p>On the desktop application of Trilium it is possible to export a note
   as PDF. To print a note:</p>
 <ul>
-  <li>Press the menu button in the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;area
+  <li>Press the menu button in the&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;area
     and select <em>Print note</em>.</li>
-  <li>Alternatively, printing can be triggered from a <a href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/_help_A9Oc6YKKc65v">keyboard shortcut</a> (unassigned
-    by default) or through the <a href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/wArbEsdSae6g/_help_F1r9QtzQLZqm">command palette</a>.</li>
+  <li>Alternatively, printing can be triggered from a <a href="#root/_help_A9Oc6YKKc65v">keyboard shortcut</a> (unassigned
+    by default) or through the <a href="#root/_help_F1r9QtzQLZqm">command palette</a>.</li>
 </ul>
 <p>This will trigger the print preview screen next.</p>
 <h3>Print preview &amp; print options</h3>
@@ -32,11 +32,9 @@
   <li>
     <p>The printer to use</p>
     <ul>
-      <li>
-        <p><em>Save as PDF</em> generates a PDF that is structured (maintains a table
-          of contents, keeps the text selectable). Prefer this over other virtual
-          PDF printers that ship with the operating system.</p>
-      </li>
+      <li><em>Save as PDF</em> generates a PDF that is structured (maintains a table
+        of contents, keeps the text selectable). Prefer this over other virtual
+        PDF printers that ship with the operating system.</li>
     </ul>
   </li>
   <li>
@@ -71,7 +69,7 @@
     spellcheck="false">#printScale</code>, <code spellcheck="false">#printMargins</code>).</p>
   <p>This means that the print settings will be restored when printing the
     same note. There are no default settings that can be configured for all
-    the notes, but this can be achieved via <a href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_bwZpz2ajCEwO">inheritable attributes</a>.</p>
+    the notes, but this can be achieved via <a href="#root/_help_bwZpz2ajCEwO">inheritable attributes</a>.</p>
 </aside>
 <h2>Printing on the browser</h2>
 <p>This feature allows printing of notes. It works on both the desktop client,
@@ -116,8 +114,7 @@
 <ol>
   <li>First create a collection.</li>
   <li>Configure it to use&nbsp;<a class="reference-link" href="#root/_help_mULW0Q3VojwY">List View</a>.</li>
-  <li
- >Print the collection note normally.</li>
+  <li>Print the collection note normally.</li>
 </ol>
 <p>The resulting collection will contain all the children of the collection,
   while maintaining the hierarchy.</p>
@@ -134,9 +131,9 @@
   href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;and assigning a key combination
   for:</p>
 <ul>
-  <li class="ck-list-marker-italic"><em>Print Active Note</em>
+  <li><em>Print Active Note</em>
   </li>
-  <li class="ck-list-marker-italic"><em>Export Active Note as PDF</em>
+  <li><em>Export Active Note as PDF</em>
   </li>
 </ul>
 <h2>Constraints &amp; limitations</h2>
@@ -212,13 +209,12 @@
 <p>To remark:</p>
 <ul>
   <li>Multiple CSS notes can be add by using multiple <code spellcheck="false">~printCss</code> relations.</li>
-  <li
- >If the note pointing to the <code spellcheck="false">printCss</code> doesn't
+  <li>If the note pointing to the <code spellcheck="false">printCss</code> doesn't
     have the right note type or mime type, it will be ignored.</li>
-    <li>If migrating from a previous version where&nbsp;<a class="reference-link"
-      href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>, there's no need for
-      <code
-      spellcheck="false">@media print {</code> since the style-sheet is used only for printing.</li>
+  <li>If migrating from a previous version where&nbsp;<a class="reference-link"
+    href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>, there's no need for
+    <code
+    spellcheck="false">@media print {</code> since the style-sheet is used only for printing.</li>
 </ul>
 <h2>Under the hood</h2>
 <p>Both printing and exporting as PDF use the same mechanism: a note is rendered
@@ -232,13 +228,7 @@
   understand why a particular note doesn't render well. The mechanism for
   rendering is similar to the one used in&nbsp;<a class="reference-link"
   href="#root/_help_0ESUbbAxVnoK">Note List</a>.</p>
-<ol class="footnote-section footnotes"
-data-footnote-section="" role="doc-endnotes">
-  <li class="footnote-item" data-footnote-item="" data-footnote-index="1"
-  data-footnote-id="sr779u3zm6" role="doc-endnote" id="fnsr779u3zm6"><span class="footnote-back-link" data-footnote-back-link="" data-footnote-id="sr779u3zm6"><sup><strong><a href="#fnrefsr779u3zm6">^</a></strong></sup></span>
-    <div
-    class="footnote-content" data-footnote-content="">
-      <p>&nbsp;</p>
-      </div>
+<ol>
+  <li><sup><strong><a href="#fnrefsr779u3zm6">^</a></strong></sup>
   </li>
 </ol>

@@ -22,6 +22,8 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
      * If set, enables editable mode which includes persistence of user settings, annotations as well as specific features such as sending table of contents data for the sidebar.
      */
     editable?: boolean;
+    /** If set, hides the toolbar. Defaults to `true` (visible). */
+    toolbar?: boolean;
     /** If set, disables text selection in the rendered PDF. */
     disableSelection?: boolean;
 }
@@ -29,7 +31,7 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
 /**
  * Reusable component displaying a PDF. The PDF needs to be provided via a URL.
  */
-export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad, editable, disableSelection }: PdfViewerProps) {
+export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad, editable, toolbar = true, disableSelection }: PdfViewerProps) {
     const iframeRef = useSyncedRef(externalIframeRef, null);
     const [ locale ] = useTriliumOption("locale");
     const [ newLayout ] = useTriliumOptionBool("newLayout");
@@ -40,7 +42,7 @@ export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad
             ref={iframeRef}
             class="pdf-preview"
             style={{width: "100%", height: "100%"}}
-            src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&lang=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}`}
+            src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}`}
             onLoad={() => {
                 injectStyles();
                 onLoad?.();

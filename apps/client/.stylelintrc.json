@@ -1,0 +1,26 @@
+{
+  "languageOptions": {
+    "directionality": {
+      "block": "top-to-bottom",
+      "inline": "left-to-right"
+    }
+  },
+  "rules": {
+    "property-layout-mappings": ["flow-relative", {
+      "ignoreProperties": [
+        "top", "bottom",
+        "width", "height",
+        "min-width", "min-height",
+        "max-width", "max-height",
+        "margin-top", "margin-bottom",
+        "padding-top", "padding-bottom",
+        "border-top", "border-top-width", "border-top-style", "border-top-color",
+        "border-bottom", "border-bottom-width", "border-bottom-style", "border-bottom-color",
+        "scroll-margin-top", "scroll-margin-bottom",
+        "scroll-padding-top", "scroll-padding-bottom",
+        "overflow-x", "overflow-y",
+        "contain-intrinsic-width", "contain-intrinsic-height"
+      ]
+    }]
+  }
+}

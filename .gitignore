@@ -51,3 +51,5 @@ upload
 site/
 apps/*/coverage
 scripts/translation/.language*.json
+
+.claude

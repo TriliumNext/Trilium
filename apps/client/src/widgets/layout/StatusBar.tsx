@@ -24,9 +24,9 @@ import { useActiveNoteContext, useLegacyImperativeHandlers, useNoteLabel, useNot
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
 import { ParentComponent } from "../react/react_utils";
+import AutoLinkAttributesTab from "../ribbon/AutoLinkAttributesTab";
 import { ContentLanguagesModal, NoteTypeCodeNoteList, NoteTypeOptionsModal, useLanguageSwitcher, useMimeTypes } from "../ribbon/BasicPropertiesTab";
 import AttributeEditor, { AttributeEditorImperativeHandlers } from "../ribbon/components/AttributeEditor";
-import AutoLinkAttributesTab from "../ribbon/AutoLinkAttributesTab";
 import InheritedAttributesTab from "../ribbon/InheritedAttributesTab";
 import { NoteSizeWidget, useNoteMetadata } from "../ribbon/NoteInfoTab";
 import { NotePathsWidget, useSortedNotePaths } from "../ribbon/NotePathsTab";
@@ -397,7 +397,8 @@ function AttributesPane({ note, noteContext, attributesShown, setAttributesShown
         <BottomPanel title={t("attributes_panel.title")}
             className="attribute-list"
             visible={attributesShown}
-            setVisible={setAttributesShown}>
+            setVisible={setAttributesShown}
+            helpPage="zEY4DaJG4YT5">
 
             <span class="attributes-panel-label">{t("inherited_attribute_list.title")}</span>
             <InheritedAttributesTab {...context} emptyListString="inherited_attribute_list.none" />
@@ -583,12 +584,14 @@ interface BottomPanelParams {
     visible: boolean;
     setVisible?: (visible: boolean) => void;
     className?: string;
+    helpPage?: string;
 }
 
-function BottomPanel({ children, title, visible, setVisible, className }: BottomPanelParams) {
+function BottomPanel({ children, title, visible, setVisible, className, helpPage }: BottomPanelParams) {
     return <div className={clsx("bottom-panel", className, {"hidden-ext": !visible})}>
         <div className="bottom-panel-title-bar">
             <span className="bottom-panel-title-bar-caption">{title}</span>
+            {helpPage && <button class="icon-action bx bx-question-mark" onClick={() => openInAppHelpFromUrl(helpPage)} title={t("open-help-page")} />}
             <button class="icon-action bx bx-x" onClick={() => setVisible?.(false)} />
         </div>
         <div class={clsx("bottom-panel-content")}>

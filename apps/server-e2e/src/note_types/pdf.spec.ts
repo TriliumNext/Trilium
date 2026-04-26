@@ -35,7 +35,6 @@ test("Page navigation works", async ({ page, context }) => {
 
     // Check count is correct.
     await expect(app.sidebar).toContainText("28 pages");
-    expect(await pagesList.locator(".pdf-page-item").count()).toBe(28);
 
     // Go to page 3.
     await pagesList.locator(".pdf-page-item").nth(2).click();

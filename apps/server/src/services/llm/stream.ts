@@ -3,19 +3,38 @@
  */
 
 import type { LlmStreamChunk } from "@triliumnext/commons";
+import type { LanguageModelUsage } from "ai";
 
 import type { ModelPricing, StreamResult } from "./types.js";
 
+// Cache pricing assumes Anthropic's 5-min ephemeral rates (writes 1.25× input, reads 0.1× input).
+// OpenAI/Gemini bill caches differently but the gap is small compared to the current behaviour
+// of treating cached tokens at full input price.
+const CACHE_WRITE_MULTIPLIER = 1.25;
+const CACHE_READ_MULTIPLIER = 0.1;
+
 /**
  * Calculate estimated cost in USD based on token usage and pricing.
+ * Accounts for cache read/write pricing tiers when the provider reports them;
+ * reasoning tokens are already included in `outputTokens` per the AI SDK.
  */
-function calculateCost(inputTokens: number, outputTokens: number, pricing?: ModelPricing): number | undefined {
+function calculateCost(usage: LanguageModelUsage, pricing?: ModelPricing): number | undefined {
     if (!pricing) return undefined;
 
-    const inputCost = (inputTokens / 1_000_000) * pricing.input;
-    const outputCost = (outputTokens / 1_000_000) * pricing.output;
+    const details = usage.inputTokenDetails;
+    const cacheReadTokens = details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
+    const cacheWriteTokens = details?.cacheWriteTokens ?? 0;
+    const noCacheInputTokens = details?.noCacheTokens
+        ?? Math.max(0, (usage.inputTokens ?? 0) - cacheReadTokens - cacheWriteTokens);
+    const outputTokens = usage.outputTokens ?? 0;
 
-    return inputCost + outputCost;
+    const M = 1_000_000;
+    return (
+        (noCacheInputTokens / M) * pricing.input
+        + (cacheReadTokens / M) * pricing.input * CACHE_READ_MULTIPLIER
+        + (cacheWriteTokens / M) * pricing.input * CACHE_WRITE_MULTIPLIER
+        + (outputTokens / M) * pricing.output
+    );
 }
 
 export interface StreamOptions {
@@ -85,7 +104,7 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
         // Get usage information after stream completes
         const usage = await result.usage;
         if (usage && typeof usage.inputTokens === "number" && typeof usage.outputTokens === "number") {
-            const cost = calculateCost(usage.inputTokens, usage.outputTokens, options.pricing);
+            const cost = calculateCost(usage, options.pricing);
             yield {
                 type: "usage",
                 usage: {
