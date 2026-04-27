@@ -9,6 +9,7 @@ import appContext from "../../../components/app_context";
 import { buildSelectedBackgroundColor } from "../../../components/touch_bar";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
+import { copyImageElementToClipboard } from "../../../services/image";
 import link, { parseNavigationStateFromUrl } from "../../../services/link";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
@@ -258,6 +259,8 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                         setupImageOpening(containerRef.current, false);
                     }
 
+                    setupImageClipboardCopy(editor);
+
                     initialized.current.resolve();
                     // Restore the data, either on the first render or if the editor crashes.
                     // We are not using CKEditor's built-in watch dog content, instead we are using the data we store regularly in the spaced update (see `dataSaved`).
@@ -336,6 +339,46 @@ function useWatchdogCrashHandling() {
     }, []);
 
     return onWatchdogStateChange;
+}
+
+function setupImageClipboardCopy(editor: CKTextEditor) {
+    editor.editing.view.document.on("copy", (evt, data) => {
+        const imageElement = getSelectedImageElement(editor);
+
+        if (!imageElement || (!utils.isElectron() && (!navigator.clipboard?.write || typeof ClipboardItem === "undefined"))) {
+            return;
+        }
+
+        data.preventDefault();
+        evt.stop();
+
+        void copyImageElementToClipboard(imageElement);
+    }, { priority: "high" });
+}
+
+function getSelectedImageElement(editor: CKTextEditor) {
+    const selectedElement = editor.model.document.selection.getSelectedElement();
+
+    if (!selectedElement || ![ "imageBlock", "imageInline" ].includes(selectedElement.name)) {
+        return null;
+    }
+
+    const viewElement = editor.editing.mapper.toViewElement(selectedElement);
+    if (!viewElement) {
+        return null;
+    }
+
+    const domElement = editor.editing.view.domConverter.mapViewToDom(viewElement);
+
+    if (domElement instanceof HTMLImageElement) {
+        return domElement;
+    }
+
+    if (!(domElement instanceof HTMLElement)) {
+        return null;
+    }
+
+    return domElement.querySelector("img");
 }
 
 function onNotificationWarning(data, evt) {
