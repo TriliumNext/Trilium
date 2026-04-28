@@ -93,6 +93,20 @@ cat > "$circle_mask_svg" <<'EOF'
 EOF
 trap 'rm -f "$circle_mask_svg"' EXIT
 
+# Build iOS mobile icon
+# iOS 14+ accepts a single 1024×1024 PNG and generates all sizes automatically.
+# The icon must be RGB (no alpha channel); transparency is rejected by the App
+# Store and displays with a black background on device.
+ios_appicon_dir="$script_dir/../../apps/mobile/ios/App/App/Assets.xcassets/AppIcon.appiconset"
+ios_canvas=1024
+ios_logo=$(( ios_canvas * 2 / 3 ))
+inkscape -w $ios_logo -h $ios_logo "$source_icon_dir/icon-color.svg" \
+  -o "$ios_appicon_dir/_tmp_fg.png"
+magick "$ios_appicon_dir/_tmp_fg.png" -background "$background_color" \
+  -gravity center -extent ${ios_canvas}x${ios_canvas} -alpha remove -alpha off \
+  "$ios_appicon_dir/AppIcon-512@2x.png"
+rm "$ios_appicon_dir/_tmp_fg.png"
+
 declare -A launcher_sizes=( [mdpi]=48 [hdpi]=72 [xhdpi]=96 [xxhdpi]=144 [xxxhdpi]=192 )
 declare -A foreground_sizes=( [mdpi]=108 [hdpi]=162 [xhdpi]=216 [xxhdpi]=324 [xxxhdpi]=432 )
 

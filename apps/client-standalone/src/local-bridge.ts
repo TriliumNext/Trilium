@@ -2,6 +2,39 @@ import LocalServerWorker from "./local-server-worker?worker";
 let localWorker: Worker | null = null;
 const pending = new Map();
 
+const LOCAL_API_PREFIXES = ["/bootstrap", "/api/", "/sync/", "/search/"];
+
+export function isLocalApiRequest(url: URL): boolean {
+    return LOCAL_API_PREFIXES.some(p => url.pathname.startsWith(p));
+}
+
+export async function localFetch(request: Request): Promise<Response> {
+    startLocalServerWorker();
+
+    const id = Math.random().toString(36).slice(2);
+    const headersObj: Record<string, string> = {};
+    for (const [k, v] of request.headers.entries()) headersObj[k] = v;
+
+    const body = (request.method === "GET" || request.method === "HEAD")
+        ? null
+        : await request.arrayBuffer();
+
+    const response = await new Promise<{ status: number; headers: Record<string, string>; body?: ArrayBuffer }>((resolve, reject) => {
+        pending.set(id, { resolve, reject });
+        localWorker!.postMessage({
+            type: "LOCAL_REQUEST",
+            id,
+            request: { url: request.url, method: request.method, headers: headersObj, body }
+        }, body ? [body] : []);
+    });
+
+    const respHeaders = new Headers();
+    if (response.headers) {
+        for (const [k, v] of Object.entries(response.headers)) respHeaders.set(k, v);
+    }
+    return new Response(response.body ?? null, { status: response.status || 200, headers: respHeaders });
+}
+
 function showFatalErrorDialog(message: string) {
     alert(message);
 }

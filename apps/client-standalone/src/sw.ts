@@ -179,6 +179,13 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
+    // In dev mode, let the browser handle all non-API requests directly.
+    // Custom URL scheme handlers (e.g. capacitor://) are not accessible via
+    // fetch() from within a service worker context on iOS WKWebView.
+    if (isDev) {
+        return;
+    }
+
     // HTML files: network-first to ensure updates are reflected immediately
     if (event.request.mode === "navigate" || url.pathname.endsWith(".html")) {
         event.respondWith(networkFirst(event.request));

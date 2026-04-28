@@ -54,3 +54,7 @@ scripts/translation/.language*.json
 
 # AI
 .claude
+
+# Capacitor regenerates this on every `cap sync` and produces different
+# output on Windows vs macOS, causing constant churn — keep it local.
+apps/mobile/ios/App/CapApp-SPM/Package.swift

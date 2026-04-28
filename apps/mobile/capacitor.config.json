@@ -4,13 +4,15 @@
   "webDir": "../client-standalone/dist",
   "server": {
     "androidScheme": "https",
+    "iosScheme": "https",
     "hostname": "localhost"
   },
+  "ios": {
+    "limitsNavigationsToAppBoundDomains": true
+  },
   "plugins": {
-    "SplashScreen": {
-      "launchAutoHide": true,
-      "launchShowDuration": 2000,
-      "launchFadeOutDuration": 300
+    "Keyboard": {
+      "resize": "native"
     }
   }
 }
