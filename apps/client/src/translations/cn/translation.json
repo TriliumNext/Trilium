@@ -1,6 +1,23 @@
 {
   "about": {
-    "data_directory": "数据目录："
+    "data_directory": "数据目录：",
+    "version_label": "版本：",
+    "version": "{{appVersion}}（数据库：{{dbVersion}}，同步协议：{{syncVersion}}）",
+    "build_info": "创建: {{buildDate}}, 修订: <buildRevision />",
+    "contributors_label": "贡献者：",
+    "contributor_roles": {
+      "lead-dev": "首席开发者",
+      "original-dev": "原始开发者"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran 于 2024 年创立了 TriliumNext，这是在 Zadam 从该项目退出后创建的一个社区分支。Zadam 后来将原始仓库转移给 TriliumNext 团队，将两个项目合并回一个。",
+      "original-dev": "2017年12月25日，Zadam发布了Trilium的第一个测试版（写作时只用一个“l”，不同于那种花）。由于对现有的笔记整理工具不满意，他构建了一个强大的自托管层次化知识库，该项目在GitHub上获得了超过22,000颗星。到了2024年，随着生活变得更加忙碌，他将该项目置于维护模式。"
+    },
+    "contributor_full_list": "查看整个社区",
+    "github_tooltip": "在 GitHub 上报告错误、提出功能建议或贡献代码",
+    "license_tooltip": "查看许可证",
+    "donate": "捐赠",
+    "donate_tooltip": "捐款支持这个项目"
   },
   "toast": {
     "critical-error": {
@@ -2352,7 +2369,12 @@
     "download_button": "下载",
     "mime": "MIME 类型： ",
     "file_size": "文件大小：",
-    "preview_not_available": "无法预览此类型的笔记。"
+    "preview_not_available": "无法预览此类型的笔记。",
+    "highlight_changes": "高亮变更",
+    "save_revision_now": "立即保存修订",
+    "save_named_revision": "保存已命名的修订...",
+    "snapshot_header": "笔记修订快照",
+    "snapshot_interval_value": "间隔：{{seconds}}秒"
   },
   "database": {
     "title": "数据库"

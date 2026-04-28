@@ -1,14 +1,12 @@
 import "./ChatMessage.css";
 
+import { type LlmCitation, renderToHtml } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
-import { Marked } from "marked";
-import { useEffect, useMemo, useRef } from "preact/hooks";
+import { useMemo } from "preact/hooks";
 
-import { type LlmCitation, createWikiLinkExtension } from "@triliumnext/commons";
-
-import link from "../../../services/link.js";
 import { t } from "../../../services/i18n.js";
 import utils from "../../../services/utils.js";
+import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { ExpandableCard, ExpandableSection } from "./ExpandableCard.js";
 import { type ContentBlock, getMessageText, type StoredMessage, type TextBlock, type ToolCallBlock } from "./llm_chat_types.js";
 import ToolCallCard from "./ToolCallCard.js";
@@ -19,41 +17,20 @@ function shortenNumber(n: number): string {
     return n.toString();
 }
 
-// Configure marked for safe rendering with client-side URL format
-const markedInstance = new Marked({
-    breaks: true, // Convert \n to <br>
-    gfm: true // GitHub Flavored Markdown
-});
-markedInstance.use({
-    extensions: [createWikiLinkExtension({ formatHref: (id) => `#root/${id}` })]
-});
-
-/** Parse markdown to HTML. */
+/** Parse markdown to HTML using the shared rendering pipeline. */
 function renderMarkdown(markdown: string): string {
-    return markedInstance.parse(markdown) as string;
+    return renderToHtml(markdown, "", {
+        sanitize: (h) => DOMPurify.sanitize(h),
+        wikiLink: { formatHref: (id) => `#root/${id}` },
+        demoteH1: false
+    });
 }
 
-/** Renders markdown content with reference link title loading. */
+/** Renders markdown content using the shared read-only text pipeline (math, syntax highlighting, mermaid, etc.). */
 function MarkdownContent({ html, isStreaming }: { html: string; isStreaming?: boolean }) {
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!containerRef.current) return;
-
-        const referenceLinks = containerRef.current.querySelectorAll<HTMLAnchorElement>("a.reference-link");
-        for (const el of referenceLinks) {
-            link.loadReferenceLinkTitle($(el), el.href);
-        }
-    }, [html]);
-
     return (
         <>
-            <div
-                ref={containerRef}
-                className="llm-chat-markdown"
-                // eslint-disable-next-line react/no-danger
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
-            />
+            <ReadOnlyTextContent html={html} className="llm-chat-markdown" />
             {isStreaming && <span className="llm-chat-cursor" />}
         </>
     );
@@ -213,7 +190,7 @@ export default function ChatMessage({ message, isStreaming }: Props) {
                         {message.usage.cost != null && (
                             <>
                                 <span className="llm-chat-usage-separator">·</span>
-                                <span className="llm-chat-usage-cost">~${message.usage.cost.toFixed(4)}</span>
+                                <span className="llm-chat-usage-cost">~${message.usage.cost.toFixed(2)}</span>
                             </>
                         )}
                     </>

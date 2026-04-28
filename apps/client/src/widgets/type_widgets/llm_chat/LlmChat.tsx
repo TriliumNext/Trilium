@@ -55,7 +55,7 @@ export default function LlmChat({ note, ntxId, noteContext }: TypeWidgetProps) {
 
     return (
         <div className="llm-chat-container">
-            <div className="llm-chat-messages">
+            <div className="llm-chat-messages" ref={chat.scrollContainerRef}>
                 {chat.messages.length === 0 && !chat.isStreaming && (
                     <NoItems
                         icon="bx bx-conversation"

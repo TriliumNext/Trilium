@@ -1,6 +1,23 @@
 {
   "about": {
-    "data_directory": "Datenverzeichnis:"
+    "data_directory": "Datenverzeichnis:",
+    "version_label": "Version:",
+    "version": "{{appVersion}} (Datenbankversion: {{dbVersion}}, Synchroniserungsprotokoll {{syncVersion}})",
+    "build_info": "Erstelldatum: {{buildDate}}, Revision: <buildRevision />",
+    "contributors_label": "Mitwirkende:",
+    "contributor_roles": {
+      "lead-dev": "Leitender Entwickler:",
+      "original-dev": "Orginaler Entwickler"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran began mit der Entwicklung von TrilliumNext im Jahr 2024, nachdem Zadam, der orginale Erfinder, von dem Projekt zurücktrat. Später übergab Zadam das orginale Projekt an das TrilliumNext Team, damit beide Projekte zu eins verschmelzen konnten.",
+      "original-dev": "Am 25. Dezember 2017 veröffentlichte Zadam die erste Betaversion von Trilium - anders als die Blume, geschrieben mit einem \"l\". Da er unzufrieden mit dem aktuellen Stand von Notizprogrammen war, entschied er sich, selbst eine hierachie-basierte, soveräne Wissensdatenbank aufzubauen, welche über 22.000 Github Sterne bekan. Jedoch musste er das Projekt durch persönliche Gründe in den Wartungsmodus versetzen."
+    },
+    "contributor_full_list": "Die gesamte Community anschauen",
+    "github_tooltip": "Fehler melden, Features vorschlagen oder auf Github mitwirken",
+    "license_tooltip": "Lizenz ansehen",
+    "donate": "Spenden",
+    "donate_tooltip": "Spende, um Trillium zu unterstützen"
   },
   "toast": {
     "critical-error": {
@@ -34,7 +51,9 @@
     "link_title_mirrors": "Der Linktitel spiegelt den aktuellen Titel der Notiz wider",
     "link_title_arbitrary": "Der Linktitel kann beliebig geändert werden",
     "link_title": "Linktitel",
-    "button_add_link": "Link hinzufügen"
+    "button_add_link": "Link hinzufügen",
+    "anchor": "Anker (optional)",
+    "anchor_none": "Link zu Notiz"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Zweigpräfix bearbeiten",
@@ -83,7 +102,7 @@
   "delete_notes": {
     "close": "Schließen",
     "delete_all_clones_description": "auch alle Klone löschen (kann bei letzte Änderungen rückgängig gemacht werden)",
-    "erase_notes_description": "Beim normalen (vorläufigen) Löschen werden die Notizen nur als gelöscht markiert und sie können innerhalb eines bestimmten Zeitraums (im Dialogfeld „Letzte Änderungen“) wiederhergestellt werden. Wenn du diese Option aktivierst, werden die Notizen sofort gelöscht und es ist nicht möglich, die Notizen wiederherzustellen.",
+    "erase_notes_description": "Lösche Notizen sofort. Diese Aktion kann nicht rückgängig gemacht werden und erfordert einen Neustart der Applikation.",
     "erase_notes_warning": "Notizen dauerhaft löschen (kann nicht rückgängig gemacht werden), einschließlich aller Klone. Dadurch wird ein Neuladen der Anwendung erzwungen.",
     "notes_to_be_deleted": "({{notesCount}}) Notizen werden gelöscht",
     "no_note_to_delete": "Es werden keine Notizen gelöscht (nur Klone).",
@@ -96,7 +115,8 @@
     "erase_notes_label": "Permanent löschen",
     "table_note_with_relation": "Notiz mit Beziehung",
     "table_relation": "Beziehung",
-    "delete": "Löschen"
+    "delete": "Löschen",
+    "table_points_to": "Zeigt auf (gelöscht)"
   },
   "export": {
     "export_note_title": "Notiz exportieren",
@@ -207,7 +227,8 @@
     "box_size_small": "klein (~ 10 Zeilen)",
     "box_size_medium": "mittel (~ 30 Zeilen)",
     "box_size_full": "vollständig (Feld zeigt vollständigen Text)",
-    "button_include": "Notiz beifügen"
+    "button_include": "Notiz beifügen",
+    "box_size_expandable": "ausklappbar (standardmäßig zusammengeklappt)"
   },
   "info": {
     "modalTitle": "Infonachricht",
@@ -1217,9 +1238,10 @@
     "deleted_notes_erased": "Gelöschte Notizen wurden gelöscht."
   },
   "revisions_snapshot_interval": {
-    "note_revisions_snapshot_interval_title": "Snapshot-Intervall für Notizrevisionen",
-    "note_revisions_snapshot_description": "Das Snapshot-Zeitintervall für Notizrevisionen ist die Zeit, nach der eine neue Notizrevision erstellt wird. Weitere Informationen findest du im <doc>Wiki</doc>.",
-    "snapshot_time_interval_label": "Snapshot Intervall"
+    "note_revisions_snapshot_interval_title": "Schnappschuss-Intervall für Notizrevisionen",
+    "note_revisions_snapshot_description": "Das Schnappschuss-Zeitintervall für Notizrevisionen ist die Zeit, nach der eine neue Notizrevision erstellt wird. Weitere Informationen finden Sie im <doc>Wiki</doc>.",
+    "snapshot_time_interval_label": "Schnappschuss Intervall",
+    "note_revisions_snapshot_description_short": "Zeit, nachdem eine neue Notizrevision erstellt wird."
   },
   "revisions_snapshot_limit": {
     "note_revisions_snapshot_limit_title": "Limit für Notizrevision-Snapshots",
@@ -2304,5 +2326,61 @@
     "loading_text": "Lädt OCR Text...",
     "extracted_text_title": "Extrahierter Text (OCR)",
     "extracted_text": "Extrahierter Text (OCR)"
+  },
+  "revisions": {
+    "note_revisions": "Notizrevisionen",
+    "delete_all_revisions": "Lösche alle Revisionen dieser Notiz",
+    "delete_all_button": "Lösche alle Revisionen",
+    "help_title": "Hilfe zu Notizrevisionen",
+    "confirm_delete_all": "Möchten Sie alle Revisionen dieser Notiz löschen?",
+    "no_revisions": "Keine Revisionen für diese Notiz vorhanden...",
+    "restore_button": "Wiederherstellen",
+    "highlight_changes": "Änderungen hervorheben",
+    "diff_on": "Zeige Unterschiede",
+    "diff_off": "Zeige Inhalt",
+    "diff_on_hint": "Klicken, um Notizquellenunterschied anzuzeigen",
+    "diff_off_hint": "Klicken, um Notizinhalt anzuzeigen",
+    "diff_not_available": "Keine Unterschiede verfügbar.",
+    "confirm_restore": "Möchten sie diese Revision wiederherstellen? Diese Aktion überschreibt den aktuellen Titel und Inhalt der Notiz mit dieser Revision.",
+    "delete_button": "Löschen",
+    "confirm_delete": "Möchten Sie diese Revision löschen?",
+    "revisions_deleted": "Notiz-Revisionen wurden gelöscht.",
+    "revision_restored": "Notiz-Revisionen wurden wiederhergestellt.",
+    "revision_deleted": "Revision wurde gelöscht.",
+    "snapshot_interval": "Speicherintervall für Revisionsverlauf: {{seconds}} Sek.",
+    "maximum_revisions": "Maximale Anzahl an gespeicherten Revisionen einer Notiz: {{number}}.",
+    "save_revision_now": "Eine Revision jetzt speichern",
+    "save_named_revision": "Eine benannte Revision speichern...",
+    "snapshot_header": "Notizrevision Schnappschuss",
+    "snapshot_interval_value": "Speicherintervall: {{seconds}}s",
+    "snapshot_limit_value": "Grenze: {{number}}",
+    "settings": "Notizrevisionen-Einstellungen",
+    "menu_tooltip": "Revisionoptionen",
+    "download_button": "Herunterladen",
+    "mime": "MIME: ",
+    "file_size": "Dateigröße:",
+    "preview_not_available": "Keine Vorschau für diesen Notiztyp verfügbar.",
+    "save_revision": "Revision speichern",
+    "save_revision_tooltip": "Einen Schnappschus dieser Notiz speichern",
+    "description_placeholder": "Diese Revisionen benennen",
+    "revision_saved": "Notizrevision wurde gespeichert.",
+    "edit_description": "Name bearbeiten",
+    "description_updated": "Revisionsname wurde aktualisiert.",
+    "source_auto": "Automatisches Speichern",
+    "source_manual": "Manuelles Speichern",
+    "source_etapi": "ETAPI",
+    "source_llm": "LLM",
+    "source_restore": "Wiederherstellen",
+    "source_unknown": "Schnappschuss",
+    "date_today": "Heute",
+    "date_yesterday": "Gestern",
+    "date_this_week": "Diese Woche",
+    "date_this_month": "Dieser Monat",
+    "source_description_auto": "Automatisch vom System im Intervall gespeichert",
+    "source_description_manual": "Manuell vom Benutzer gespeichert",
+    "source_description_etapi": "Über die External Trilium API erstellt.",
+    "source_description_llm": "Von KI Assistenten erstellt",
+    "source_description_restore": "Gespeichert vor dem Wiederherstellen einer vorherigen Revision",
+    "source_description_unknown": "Quelle nicht verfügbar"
   }
 }

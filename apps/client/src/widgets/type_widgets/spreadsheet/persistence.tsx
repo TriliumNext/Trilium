@@ -18,7 +18,7 @@ interface SpreadsheetViewState {
     scrollCol?: number;
 }
 
-export default function usePersistence(note: FNote, noteContext: NoteContext | null | undefined, apiRef: MutableRef<FUniver | undefined>, containerRef: MutableRef<HTMLDivElement | null>, readOnly: boolean) {
+export default function usePersistence(note: FNote, noteContext: NoteContext | null | undefined, apiRef: MutableRef<FUniver | undefined>, containerRef: MutableRef<HTMLDivElement | null>) {
     const changeListener = useRef<IDisposable>(null);
     const pendingContent = useRef<string | null>(null);
 
@@ -69,12 +69,7 @@ export default function usePersistence(note: FNote, noteContext: NoteContext | n
 
     function applyContent(univerAPI: FUniver, newContent: string) {
         const viewState = saveViewState(univerAPI);
-
-        // Dispose the existing workbook.
         const existingWorkbook = univerAPI.getActiveWorkbook();
-        if (existingWorkbook) {
-            univerAPI.disposeUnit(existingWorkbook.getId());
-        }
 
         let workbookData: Partial<IWorkbookData> = {};
         if (newContent) {
@@ -89,12 +84,12 @@ export default function usePersistence(note: FNote, noteContext: NoteContext | n
             }
         }
 
+        // Create the new workbook BEFORE disposing the old one so the formula
+        // engine transitions cleanly without a gap where stale state could leak.
         const workbook = univerAPI.createWorkbook(workbookData);
-        if (readOnly) {
-            workbook.disableSelection();
-            const permission = workbook.getPermission();
-            permission.setWorkbookEditPermission(workbook.getId(), false);
-            permission.setPermissionDialogVisible(false);
+
+        if (existingWorkbook) {
+            univerAPI.disposeUnit(existingWorkbook.getId());
         }
 
         restoreViewState(workbook, viewState);

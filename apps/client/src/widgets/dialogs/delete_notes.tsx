@@ -1,7 +1,10 @@
 import "./delete_notes.css";
 
 import type { DeleteNotesPreview } from "@triliumnext/commons";
+import { CSSProperties } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import type React from "react";
+import { List, type RowComponentProps } from "react-window";
 
 import froca from "../../services/froca.js";
 import { t } from "../../services/i18n.js";
@@ -173,18 +176,42 @@ function DeleteAllClonesOption({ cloneInfo, deleteAllClones, setDeleteAllClones 
     );
 }
 
+const ROW_HEIGHT = 36;
+const VIRTUALIZE_THRESHOLD = 100;
+const MAX_LIST_HEIGHT = 400;
+
+function DeletedNoteRow({ index, style, noteIds }: RowComponentProps<{ noteIds: string[] }>) {
+    return (
+        <li style={style as CSSProperties} key={noteIds[index]}>
+            <NoteLink notePath={noteIds[index]} showNotePath showNoteIcon />
+        </li>
+    ) as React.ReactElement;
+}
+
 function DeletedNotes({ noteIdsToBeDeleted }: { noteIdsToBeDeleted: DeleteNotesPreview["noteIdsToBeDeleted"] }) {
     return (
         <Card heading={t("delete_notes.notes_to_be_deleted", { notesCount: noteIdsToBeDeleted.length })}>
             <CardSection noPadding={noteIdsToBeDeleted.length > 0}>
                 {noteIdsToBeDeleted.length ? (
-                    <ul className="preview-list">
-                        {noteIdsToBeDeleted.map((noteId) => (
-                            <li key={noteId}>
-                                <NoteLink notePath={noteId} showNotePath showNoteIcon />
-                            </li>
-                        ))}
-                    </ul>
+                    noteIdsToBeDeleted.length > VIRTUALIZE_THRESHOLD ? (
+                        <List
+                            className="preview-list"
+                            tagName="ul"
+                            rowComponent={DeletedNoteRow}
+                            rowCount={noteIdsToBeDeleted.length}
+                            rowHeight={ROW_HEIGHT}
+                            rowProps={{ noteIds: noteIdsToBeDeleted }}
+                            style={{ maxHeight: MAX_LIST_HEIGHT }}
+                        />
+                    ) : (
+                        <ul className="preview-list">
+                            {noteIdsToBeDeleted.map((noteId) => (
+                                <li key={noteId}>
+                                    <NoteLink notePath={noteId} showNotePath showNoteIcon />
+                                </li>
+                            ))}
+                        </ul>
+                    )
                 ) : (
                     <span className="muted-text">{t("delete_notes.no_note_to_delete")}</span>
                 )}

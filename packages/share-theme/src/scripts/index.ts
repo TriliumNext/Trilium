@@ -37,7 +37,7 @@ document.addEventListener(
     () => {
         const noteType = determineNoteType();
 
-        if (noteType === "text") {
+        if (noteType === "text" || document.querySelector("#content.ck-content")) {
             setupTextNote();
         }
 

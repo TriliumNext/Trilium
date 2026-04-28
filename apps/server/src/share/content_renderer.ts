@@ -1,5 +1,5 @@
 import { sanitizeUrl } from "@braintree/sanitize-url";
-import { renderSpreadsheetToHtml } from "@triliumnext/commons";
+import { renderSpreadsheetToHtml, renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons";
 import { highlightAuto } from "@triliumnext/highlightjs";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
@@ -14,6 +14,7 @@ import type BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
 import assetPath, { assetUrlFragment } from "../services/asset_path.js";
 import { generateCss, getIconPacks, MIME_TO_EXTENSION_MAPPINGS, ProcessedIconPack } from "../services/icon_packs.js";
+import htmlSanitizer from "../services/html_sanitizer.js";
 import log from "../services/log.js";
 import options from "../services/options.js";
 import utils, { getResourceDir, isDev, safeExtractMessageAndStackFromError } from "../services/utils.js";
@@ -275,6 +276,8 @@ export function getContent(note: SNote | BNote) {
 
     if (note.type === "text") {
         renderText(result, note);
+    } else if (note.type === "code" && note.mime === "text/x-markdown") {
+        renderMarkdown(result, note);
     } else if (note.type === "code") {
         renderCode(result);
     } else if (note.type === "mermaid") {
@@ -452,6 +455,38 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
 }
 
 /**
+ * Renders a markdown code note by converting the markdown source to HTML
+ * using the shared {@link renderMarkdownToHtml} pipeline.
+ */
+function renderMarkdown(result: Result, note: SNote | BNote) {
+    if (typeof result.content !== "string" || !result.content?.trim()) {
+        result.isEmpty = true;
+        return;
+    }
+
+    let html = renderMarkdownToHtml(result.content, note.title, {
+        sanitize: htmlSanitizer.sanitize,
+        wikiLink: { formatHref: (id) => `./${id}` }
+    });
+
+    // Apply syntax highlighting to code blocks, same as renderText.
+    const parseOpts: Partial<Options> = { blockTextElements: {} };
+    const document = parse(html, parseOpts);
+    for (const codeEl of document.querySelectorAll("pre code")) {
+        if (codeEl.classList.contains("language-mermaid")
+            || codeEl.classList.contains("language-text-x-trilium-auto")) {
+            continue;
+        }
+
+        const highlightResult = highlightAuto(codeEl.text);
+        codeEl.innerHTML = highlightResult.value;
+        codeEl.classList.add("hljs");
+    }
+
+    result.content = document.innerHTML;
+}
+
+/**
  * Renders a code note.
  */
 export function renderCode(result: Result) {
@@ -484,7 +519,7 @@ function renderImage(result: Result, note: SNote | BNote) {
 
 function renderFile(note: SNote | BNote, result: Result) {
     if (note.mime === "application/pdf") {
-        result.content = `<iframe class="pdf-view" src="../pdfjs/web/viewer.html?file=../../../share/api/notes/${note.noteId}/view"></iframe>`;
+        result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }

@@ -179,14 +179,21 @@ body.experimental-feature-new-layout.mobile div.similar-notes-widget div.similar
         display: flex;
         padding: 6px 12px;
         background: var(--bottom-panel-title-bar-background-color);
-        justify-content: space-between;
         align-items: center;
+        gap: 4px;
 
         .bottom-panel-title-bar-caption {
+            flex-grow: 1;
             text-transform: uppercase;
             letter-spacing: .3pt;
             font-weight: 600;
             font-size: .85em;
+        }
+
+        .icon-action {
+            --icon-button-size: 24px;
+            --icon-button-icon-ratio: 0.8;
+            border-radius: 50%;
         }
     }
 

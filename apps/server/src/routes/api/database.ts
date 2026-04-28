@@ -78,7 +78,13 @@ function downloadBackup(req: Request, res: Response) {
         return;
     }
 
-    res.download(resolvedPath, path.basename(resolvedPath));
+    const mtime = fs.statSync(resolvedPath).mtime;
+    const dateStr = mtime.toISOString().slice(0, 19)
+        .replaceAll(":", "-")
+        .replace("T", "_");
+    const ext = path.extname(resolvedPath);
+    const baseName = path.basename(resolvedPath, ext);
+    res.download(resolvedPath, `${baseName}_${dateStr}${ext}`);
 }
 
 export default {

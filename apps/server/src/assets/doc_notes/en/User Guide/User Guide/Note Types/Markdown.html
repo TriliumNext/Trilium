@@ -32,46 +32,63 @@
 <p>The following features are supported by Trilium's Markdown format and
   will show up in the preview pane:</p>
 <ul>
-  <li>
-    <p>All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes)</p>
-  </li>
-  <li>
-    <p>Code blocks with syntax highlight (e.g. <code spellcheck="false">```js</code>)
-      and automatic syntax highlight</p>
-  </li>
-  <li>
-    <p><a class="reference-link" href="#root/_help_NwBbFdNZ9h7O">Block quotes &amp; admonitions</a>
-    </p>
-  </li>
-  <li>
-    <p><a class="reference-link" href="#root/_help_YfYAtQBcfo5V">Math Equations</a>
-    </p>
-  </li>
-  <li>
-    <p><a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>&nbsp;using
-      <code
-      spellcheck="false">```mermaid</code>
-    </p>
-  </li>
-  <li>
-    <p><a class="reference-link" href="#root/_help_nBAXQFj20hS1">Include Note</a>&nbsp;(no
-      builtin Markdown syntax, but HTML syntax works just fine):</p><pre><code class="language-text-x-trilium-auto">&lt;section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable"&gt;
+  <li>All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes)</li>
+  <li
+ >Code blocks with syntax highlight. Note that the language must be specified
+    for syntax highlight to apply (e.g. <code spellcheck="false">```js</code>).</li>
+    <li
+   ><a class="reference-link" href="#root/_help_NwBbFdNZ9h7O">Block quotes &amp; admonitions</a>
+      </li>
+      <li><a class="reference-link" href="#root/_help_YfYAtQBcfo5V">Math Equations</a>&nbsp;(both
+        inline and block)</li>
+      <li><a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>&nbsp;using
+        <code
+        spellcheck="false">```mermaid</code>
+      </li>
+      <li>
+        <p><a class="reference-link" href="#root/_help_nBAXQFj20hS1">Include Note</a>&nbsp;(no
+          built-in Markdown syntax, but HTML syntax works just fine):</p><pre><code class="language-text-x-trilium-auto">&lt;section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable"&gt;
     &amp;nbsp;
 &lt;/section&gt;n</code></pre>
-  </li>
-  <li>
-    <p><a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;via
-      its HTML syntax, or through a <em>Wikilinks</em>-like format (only&nbsp;
-      <a
-      class="reference-link" href="#root/_help_m1lbrzyKDaRB">Note ID</a>):</p><pre><code class="language-text-x-trilium-auto">[[Hg8TS5ZOxti6]]</code></pre>
+      </li>
+      <li>
+        <p><a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;via
+          its HTML syntax, or through a <em>Wikilinks</em>-like format (only&nbsp;
+          <a
+          class="reference-link" href="#root/_help_m1lbrzyKDaRB">Note ID</a>):</p><pre><code class="language-text-x-trilium-auto">[[Hg8TS5ZOxti6]]</code></pre>
+      </li>
+      <li>
+        <p><a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/_help_AgjCISero73a">Footnotes</a>&nbsp;are
+          also supported via the corresponding Markdown syntax:</p><pre><code class="language-text-x-trilium-auto">This is [^1], while this is [^2].
+
+[^1]: the first footnote
+[^2]: the second footnote</code></pre>
+      </li>
+</ul>
+<h3>Other features</h3>
+<ul>
+  <li>The&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/_help_BFvAtE74rbP6">Table of contents</a>&nbsp;will
+    be displayed in the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_RnaPdbciOfeq">Right Sidebar</a>&nbsp;based
+    on the Markdown-level headings.
+    <ul>
+      <li>This feature is available only on the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_IjZS7iK5EXtb">New Layout</a>.</li>
+    </ul>
   </li>
 </ul>
+<h3>Shared notes</h3>
+<p>When a Markdown note is <a href="#root/pOsGYCXsbNQG/tC7s2alapj8V/_help_R9pX4DGra2Vt">shared publicly</a>,
+  it will be rendered with extended formatting just like&nbsp;<a class="reference-link"
+  href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_iPIMuisry3hd">Text</a>&nbsp;notes.</p>
+<p>Most of the features described previously should be supported. If you
+  face any issues, feel free to <a href="#root/pOsGYCXsbNQG/BgmBlOIl72jZ/_help_wy8So3yZZlH9">report it</a> alongside
+  a sample Markdown file.</p>
 <h2>Creating Markdown notes</h2>
 <p>There are two ways to create a Markdown note:</p>
 <ol>
   <li>Create a new note (e.g. in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>)
     and select the type <em>Markdown</em>, just like all the other note types.</li>
-  <li>Create a note of type&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;and
+  <li
+ >Create a note of type&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;and
     select as the language either <em>Markdown</em> or <em>GitHub-Flavored Markdown</em>.
     This maintains compatibility with your existing notes prior to the introduction
     of this feature.</li>

@@ -105,7 +105,7 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
             const content = note.getContent();
 
             if (
-                ["text", "code", "mermaid", "canvas", "relationMap", "mindMap", "webView"].includes(note.type) &&
+                note.hasStringContent() &&
                 typeof content === "string" &&
                 // if the note has already content we're not going to overwrite it with template's one
                 (!content || content.trim().length === 0) &&

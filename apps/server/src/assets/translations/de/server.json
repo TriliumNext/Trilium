@@ -103,7 +103,8 @@
     "show-cheatsheet": "Übersicht der Tastenkombinationen anzeigen",
     "find-in-text": "Suchleiste umschalten",
     "toggle-classic-editor-toolbar": "Schalte um zum Formatierungs-Tab für den Editor mit fester Werkzeugleiste",
-    "toggle-zen-mode": "Zen-Modus ein-/ausschalten (reduzierte Benutzeroberfläche für ablenkungsfreies Arbeiten)"
+    "toggle-zen-mode": "Zen-Modus ein-/ausschalten (reduzierte Benutzeroberfläche für ablenkungsfreies Arbeiten)",
+    "save-named-revision": "Speichere eine benannte Revision der aktuellen Notiz"
   },
   "login": {
     "title": "Anmeldung",
@@ -415,14 +416,16 @@
     "zoom-in": "Verkleinern",
     "reset-zoom-level": "Zoom zurücksetzen",
     "copy-without-formatting": "Kopieren ohne Formatierung",
-    "force-save-revision": "Speichern der Notizrevision erzwingen"
+    "force-save-revision": "Speichern der Notizrevision erzwingen",
+    "save-named-revision": "Speichere benannte Revision"
   },
   "weekdayNumber": "Woche {weekNumber}",
   "quarterNumber": "Quartal {quarterNumber}",
   "migration": {
     "old_version": "Eine direkte Migration von Ihrer aktuellen Version wird nicht unterstützt. Bitte führen Sie zunächst ein Upgrade auf die neueste Version v0.60.4 durch und erst dann auf diese Version.",
     "error_message": "Fehler bei der Migration zu Version {{version}}: {{stack}}",
-    "wrong_db_version": "Die Version der Datenbank ({{version}}) ist neuer als die von der Anwendung erwartete Version ({{targetVersion}}), was bedeutet, dass diese mit einer neueren und inkompatiblen Version von Trilium erstellt wurde. Führen Sie ein Upgrade auf die neueste Version von Trilium durch, um dieses Problem zu beheben."
+    "wrong_db_version": "Die Version der Datenbank ({{version}}) ist neuer als die von der Anwendung erwartete Version ({{targetVersion}}), was bedeutet, dass diese mit einer neueren und inkompatiblen Version von Trilium erstellt wurde. Führen Sie ein Upgrade auf die neueste Version von Trilium durch, um dieses Problem zu beheben.",
+    "invalid_db_version": "Die Datenbankversion ist nicht lesbar, Ursache davon ist normalerweise eine defekte \"dbVersion\" der Datenbank. Eine Wiederherstellung aus einem Backup ist erforderlich."
   },
   "modals": {
     "error_title": "Fehler"

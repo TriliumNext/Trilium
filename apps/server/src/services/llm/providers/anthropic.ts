@@ -12,17 +12,17 @@ import { BaseProvider, buildModelList } from "./base_provider.js";
 const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
     // ===== Current Models =====
     {
+        id: "claude-opus-4-7",
+        name: "Claude Opus 4.7",
+        pricing: { input: 5, output: 25 },
+        contextWindow: 1000000
+    },
+    {
         id: "claude-sonnet-4-6",
         name: "Claude Sonnet 4.6",
         pricing: { input: 3, output: 15 },
         contextWindow: 1000000,
         isDefault: true
-    },
-    {
-        id: "claude-opus-4-6",
-        name: "Claude Opus 4.6",
-        pricing: { input: 5, output: 25 },
-        contextWindow: 1000000
     },
     {
         id: "claude-haiku-4-5-20251001",
@@ -31,6 +31,13 @@ const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
         contextWindow: 200000
     },
     // ===== Legacy Models =====
+    {
+        id: "claude-opus-4-6",
+        name: "Claude Opus 4.6",
+        pricing: { input: 5, output: 25 },
+        contextWindow: 1000000,
+        isLegacy: true
+    },
     {
         id: "claude-sonnet-4-5-20250929",
         name: "Claude Sonnet 4.5",

@@ -149,6 +149,23 @@ span[style] {
 }
 /* #endregion */
 
+/* #region Spreadsheet */
+.spreadsheet-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--print-font-size);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+.spreadsheet-table td {
+    border: 0.5pt solid #ccc;
+    padding: 2pt 4pt;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* #endregion */
+
 /* #region Page breaks */
 .page-break {
     page-break-after: always;

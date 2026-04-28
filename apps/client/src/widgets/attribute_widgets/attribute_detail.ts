@@ -11,7 +11,7 @@ import promotedAttributeDefinitionParser from "../../services/promoted_attribute
 import server from "../../services/server.js";
 import shortcutService from "../../services/shortcuts.js";
 import SpacedUpdate from "../../services/spaced_update.js";
-import utils from "../../services/utils.js";
+import utils, { openInAppHelpFromUrl } from "../../services/utils.js";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
 
 const TPL = /*html*/`
@@ -206,7 +206,14 @@ const ATTR_TITLES: Record<string, string> = {
     "relation-definition": t("attribute_detail.relation_definition")
 };
 
-const ATTR_HELP: Record<string, Record<string, string>> = {
+interface AttrHelpEntry {
+    description: string;
+    helpPage?: string;
+}
+
+type AttrHelpMap = Record<string, Record<string, string | AttrHelpEntry>>;
+
+const ATTR_HELP: AttrHelpMap = {
     label: {
         disableVersioning: t("attribute_detail.disable_versioning"),
         calendarRoot: t("attribute_detail.calendar_root"),
@@ -229,8 +236,8 @@ const ATTR_HELP: Record<string, Record<string, string>> = {
         cssClass: t("attribute_detail.css_class"),
         iconClass: t("attribute_detail.icon_class"),
         pageSize: t("attribute_detail.page_size"),
-        customRequestHandler: t("attribute_detail.custom_request_handler"),
-        customResourceProvider: t("attribute_detail.custom_resource_provider"),
+        customRequestHandler: { description: t("attribute_detail.custom_request_handler"), helpPage: "J5Ex1ZrMbyJ6" },
+        customResourceProvider: { description: t("attribute_detail.custom_resource_provider"), helpPage: "J5Ex1ZrMbyJ6" },
         widget: t("attribute_detail.widget"),
         workspace: t("attribute_detail.workspace"),
         workspaceIconClass: t("attribute_detail.workspace_icon_class"),
@@ -655,9 +662,21 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
         const attrName = String(this.$inputName.val());
 
         if (this.attrType && this.attrType in ATTR_HELP && attrName && attrName in ATTR_HELP[this.attrType]) {
+            const entry = ATTR_HELP[this.attrType][attrName];
+            const description = typeof entry === "string" ? entry : entry.description;
+            const helpPage = typeof entry === "string" ? undefined : entry.helpPage;
+
+            const $td = $("<td colspan=2>").append($("<strong>").text(attrName)).append(" - ").append(description);
+
+            if (helpPage) {
+                const $helpButton = $(`<button class="icon-action bx bx-help-circle" type="button" style="margin-left: 5px; vertical-align: middle;" />`);
+                $helpButton.on("click", () => openInAppHelpFromUrl(helpPage));
+                $td.append($helpButton);
+            }
+
             this.$attrHelp
                 .empty()
-                .append($("<td colspan=2>").append($("<strong>").text(attrName)).append(" - ").append(ATTR_HELP[this.attrType][attrName]))
+                .append($td)
                 .show();
         } else {
             this.$attrHelp.empty().hide();

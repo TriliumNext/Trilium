@@ -13,9 +13,17 @@ body.experimental-feature-new-layout #right-pane {
             justify-content: flex-start;
             --icon-button-size: 26px;
 
+            .icon-action {
+                flex-shrink: 0;
+                transition: transform 0.15s ease;
+            }
+
             .card-header-title {
                 padding-inline: 0;
                 flex-grow: 1;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
             }
         }
 
@@ -28,13 +36,33 @@ body.experimental-feature-new-layout #right-pane {
             border-bottom: 0;
         }
 
-        &.collapsed .card-header > .tn-icon {
+        &.collapsed .card-header > .icon-action {
             transform: rotate(-90deg);
         }
     }
 
     .card.grow:not(.collapsed) {
-        flex-grow: 1;
+        flex: 1;
+        flex-shrink: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+
+        .body-wrapper {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card-body {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
     }
 
     .gutter-vertical + .card .card-header {

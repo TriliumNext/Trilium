@@ -30,6 +30,7 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
     return (
         <div
             ref={containerRef}
+            id={id}
             class={clsx("card widget", {
                 collapsed: !expanded,
                 grow

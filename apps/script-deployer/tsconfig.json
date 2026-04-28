@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "preserve",
+    "moduleResolution": "bundler",
+    "module": "esnext"
+  },
+  "include": ["src", "scripts", "../server/src/express.d.ts"]
+}

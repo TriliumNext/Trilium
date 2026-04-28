@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "dayjs": "1.11.20",
-    "marked": "18.0.0"
+    "marked": "18.0.2",
+    "marked-footnote": "1.4.0"
   }
 }

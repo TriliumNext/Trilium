@@ -5,6 +5,15 @@ PDFs file can be uploaded in Trilium, where they will be displayed without the n
 
 Since v0.102.0, PDFs will be rendered using Trilium's built-in PDF viewer, which is a customization of [Mozilla's PDF.js viewer](https://mozilla.github.io/pdf.js/) (also built-in in the Mozilla Firefox browser). Versions prior to that render PDFs using the browser's default PDF viewer.
 
+## Features
+
+*   The last page viewed and scroll position is maintained in between restarts or note navigations.
+*   Annotations (text, highlights) as well as comments. These are saved automatically.
+*   Forms can be filled.
+*   Can be printed or downloaded.
+*   Can be saved as a [template](../../Advanced%20Usage/Templates.md) and the content of the PDF will be copied over to the new note. This is especially useful in combination with annotations or filled forms.
+*   Integrates with the sidebar in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>, by displaying the list of pages with thumbnails, table of contents and a listing of the annotations.
+
 ## Storing last position and settings
 
 For every PDF, Trilium will remember the following information:
@@ -21,6 +30,12 @@ This makes it useful when reading large documents since the position is remember
 ## Annotations
 
 Since v0.102.0 it's possible to annotate PDFs. To do so, look for the annotation buttons on the right side of the PDF toolbar (<img src="1_PDFs_image.png" width="120" height="32">).
+
+Since v0.103.0:
+
+*   Annotations are disabled if the note is marked as <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>.
+*   Comments can also be added, which is similar to highlights but also attach a text.
+*   The <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> also displays a list of annotations (highlights, comments), but only in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>.
 
 ### Supported annotations
 
@@ -71,6 +86,9 @@ When a PDF file is opened in Trilium the <a class="reference-link" href="../../
 *   Pages
     *   A preview of all the pages with a small thumbnail.
     *   Clicking on a page will automatically navigate to that page.
+*   Annotations
+    *   Highlight and comment annotations are listed here.
+    *   For the old layout, this feature is not directly available, however there is a listing of comments directly in the PDF toolbar.
 *   Attachments
     *   If the PDF has its own attachments (not to be confused with Trilium's <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>), they will be displayed in a list.
     *   Some information such as the name and size of the attachment are displayed.

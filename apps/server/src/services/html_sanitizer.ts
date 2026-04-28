@@ -42,7 +42,9 @@ function sanitize(dirtyHtml: string) {
         allowedTags: allowedTags as string[],
         allowedAttributes: {
             "*": ["class", "style", "title", "src", "href", "hash", "disabled", "align", "alt", "center", "data-*"],
-            a: ["id"], // CKEditor bookmark anchors use <a id="name"></a>
+            a: ["id"],
+            h2: ["id"],
+            li: ["id"],
             input: ["type", "checked"],
             img: ["width", "height"],
             code: [ "spellcheck" ]

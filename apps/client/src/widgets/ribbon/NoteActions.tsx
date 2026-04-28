@@ -76,13 +76,15 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     const [viewType] = useNoteLabel(note, "viewType");
     const canBeConvertedToAttachment = note?.isEligibleForConversionToAttachment();
     const isSourceView = noteContext?.viewScope?.viewMode === "source";
-    const isSearchable = isSourceView || ["text", "code", "book", "mindMap", "doc", "spreadsheet"].includes(noteType);
+    const isSearchable = isSourceView || ["text", "code", "book", "mindMap", "doc", "spreadsheet"].includes(noteType)
+        || (noteType === "file" && note.mime === "application/pdf");
     const isInOptionsOrHelp = note?.noteId.startsWith("_options") || note?.noteId.startsWith("_help");
     const isExportableToImage = ["mermaid", "mindMap"].includes(noteType);
     const isContentAvailable = note.isContentAvailable();
     const isPrintable = isContentAvailable && (
-        ["text", "code"].includes(noteType) ||
-        (noteType === "book" && ["presentation", "list", "table"].includes(viewType ?? ""))
+        ["text", "code", "spreadsheet"].includes(noteType) ||
+        (noteType === "book" && ["presentation", "list", "table"].includes(viewType ?? "")) ||
+        (noteType === "file" && note.mime === "application/pdf")
     );
     const isElectron = getIsElectron();
     const isMac = getIsMac();

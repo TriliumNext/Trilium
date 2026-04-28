@@ -16,6 +16,7 @@ import { useActiveNoteContext, useLegacyWidget, useNoteProperty, useTriliumEvent
 import NoItems from "../react/NoItems";
 import LegacyRightPanelWidget from "../right_panel_widget";
 import HighlightsList from "./HighlightsList";
+import PdfAnnotations from "./pdf/PdfAnnotations";
 import PdfAttachments from "./pdf/PdfAttachments";
 import PdfLayers from "./pdf/PdfLayers";
 import PdfPages from "./pdf/PdfPages";
@@ -75,7 +76,7 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent) {
     const definitions: RightPanelWidgetDefinition[] = [
         {
             el: <TableOfContents />,
-            enabled: (noteType === "text" || noteType === "doc" || isPdf),
+            enabled: (noteType === "text" || noteType === "doc" || isPdf || !!note?.isMarkdown()),
         },
         {
             el: <PdfPages />,
@@ -87,6 +88,10 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent) {
         },
         {
             el: <PdfLayers />,
+            enabled: isPdf,
+        },
+        {
+            el: <PdfAnnotations />,
             enabled: isPdf,
         },
         {

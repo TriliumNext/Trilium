@@ -1,6 +1,23 @@
 {
   "about": {
-    "data_directory": "資料目錄："
+    "data_directory": "資料目錄：",
+    "version_label": "版本：",
+    "version": "{{appVersion}}（資料庫：{{dbVersion}}，同步協定：{{syncVersion}}）",
+    "build_info": "建置日期：{{buildDate}}，修訂版本：<buildRevision />",
+    "contributors_label": "貢獻者：",
+    "contributor_roles": {
+      "lead-dev": "首席開發者",
+      "original-dev": "原始開發者"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran 於 2024 年創立了 TriliumNext，這是 Zadam 退出該專案後所建立的社群分支。後來，Zadam 將原始儲存庫移交給 TriliumNext 團隊，將兩個專案重新合併為一。",
+      "original-dev": "2017年12月25日，Zadam 發布了 Trilium（與花名不同，此處僅寫一個「l」）的首個測試版。由於對現有的筆記管理工具感到不滿，他開發了一個功能強大的自託管式分層知識庫，該專案在 GitHub 上獲得了超過 22,000 顆星。2024 年，隨著生活日益繁忙，他將該專案轉為維護模式。"
+    },
+    "contributor_full_list": "查看整個社群",
+    "github_tooltip": "在 GitHub 上回報錯誤、提出功能建議或貢獻程式碼",
+    "license_tooltip": "查看許可證",
+    "donate": "捐款",
+    "donate_tooltip": "捐款支持此專案"
   },
   "toast": {
     "critical-error": {
@@ -422,7 +439,9 @@
     "print_landscape": "匯出為 PDF 時，將頁面方向更改為橫向而非縱向。",
     "print_page_size": "在匯出 PDF 時更改頁面大小。支援的值：<code>A0</code>、<code>A1</code>、<code>A2</code>、<code>A3</code>、<code>A4</code>、<code>A5</code>、<code>A6</code>、<code>Legal</code>、<code>Letter</code>、<code>Tabloid</code>、<code>Ledger</code>。",
     "color_type": "顏色",
-    "textarea": "多行文字"
+    "textarea": "多行文字",
+    "print_scale": "匯出為 PDF 時，調整渲染內容的縮放比例。數值範圍為 0.1（10%）至 2（200%），預設值為 1（100%）。",
+    "print_margins": "在匯出為 PDF 時，設定頁面邊距。請使用 <code>default</code>、<code>none</code>、<code>minimum</code>，或自訂值，或以 <code>top,right,bottom,left</code> 的形式以毫米為單位指定。"
   },
   "attribute_editor": {
     "help_text_body1": "要新增標籤，只需輸入例如 <code>#rock</code> 或者如果您還想新增值，則例如 <code>#year = 2020</code>",
@@ -682,7 +701,13 @@
     "export_as_image_png": "PNG (點陣)",
     "export_as_image_svg": "SVG (向量)",
     "note_map": "筆記地圖",
-    "view_ocr_text": "顯示 OCR 文字"
+    "view_ocr_text": "顯示 OCR 文字",
+    "word_wrap": "自動換行",
+    "word_wrap_auto": "自動",
+    "word_wrap_auto_description": "遵循全域設定",
+    "word_wrap_on": "開啟",
+    "word_wrap_off": "關閉",
+    "save_named_revision": "儲存命名修訂…"
   },
   "onclick_button": {
     "no_click_handler": "按鈕元件'{{componentId}}'沒有定義點擊時的處理方式"
@@ -1051,15 +1076,17 @@
     "title": "檢查一致性",
     "find_and_fix_button": "尋找並修復一致性問題",
     "finding_and_fixing_message": "正在尋找並修復一致性問題…",
-    "issues_fixed_message": "一致性問題應該已被修復。"
+    "issues_fixed_message": "一致性問題應該已被修復。",
+    "find_and_fix_label": "尋找並修復一致性問題",
+    "find_and_fix_description": "掃描並自動修復資料庫中的任何資料一致性問題。"
   },
   "database_anonymization": {
     "title": "資料庫匿名化",
     "full_anonymization": "完全匿名化",
-    "full_anonymization_description": "此操作將新增一個新的資料庫副本並進行匿名化處理（刪除所有筆記內容，僅保留結構和一些非敏感元數據），用來分享至網上做除錯而無需擔心洩漏您的個人資料。",
+    "full_anonymization_description": "建立資料庫的副本，並移除所有筆記內容，僅保留結構與非敏感的元資料。在除錯時，此副本可安全地用於線上分享。",
     "save_fully_anonymized_database": "儲存完全匿名化的資料庫",
     "light_anonymization": "輕度匿名化",
-    "light_anonymization_description": "此操作將新增一個新的資料庫副本，並對其進行輕度匿名化處理——僅刪除所有筆記的內容，但保留標題和屬性。此外，自訂 JS 前端 / 後端腳本筆記和自訂元件將保留。這提供了更多上下文以除錯問題。",
+    "light_anonymization_description": "建立一份已移除筆記內容的副本，但標題、屬性以及自訂腳本/小工具仍會保留。此舉可為除錯提供更多背景資訊。",
     "choose_anonymization": "您可以自行決定是提供完全匿名化還是輕度匿名化的資料庫。即使是完全匿名化的資料庫也非常有用，但在某些情況下，輕度匿名化的資料庫可以加快錯誤識別和修復的過程。",
     "save_lightly_anonymized_database": "儲存輕度匿名化的資料庫",
     "existing_anonymized_databases": "現有的匿名化資料庫",
@@ -1068,14 +1095,17 @@
     "error_creating_anonymized_database": "無法新增匿名化資料庫，請檢查後端日誌以取得詳細資訊",
     "successfully_created_fully_anonymized_database": "成功新增完全匿名化的資料庫，路徑為 {{anonymizedFilePath}}",
     "successfully_created_lightly_anonymized_database": "成功新增輕度匿名化的資料庫，路徑為 {{anonymizedFilePath}}",
-    "no_anonymized_database_yet": "尚無匿名化資料庫。"
+    "no_anonymized_database_yet": "尚無匿名化資料庫。",
+    "description": "建立資料庫的匿名化副本，以便在除錯時與開發人員分享，同時避免洩露個人資料。"
   },
   "database_integrity_check": {
     "title": "資料庫完整性檢查",
     "check_button": "檢查資料庫完整性",
     "checking_integrity": "正在檢查資料庫完整性…",
     "integrity_check_succeeded": "完整性檢查成功——未發現問題。",
-    "integrity_check_failed": "完整性檢查失敗: {{results}}"
+    "integrity_check_failed": "完整性檢查失敗: {{results}}",
+    "check_integrity_label": "檢查資料庫完整性",
+    "check_integrity_description": "請確認資料庫在 SQLite 層級上是否已損毀。"
   },
   "sync": {
     "title": "同步",
@@ -1085,25 +1115,31 @@
     "filling_entity_changes": "正在填充實體變更列…",
     "sync_rows_filled_successfully": "同步列填充成功",
     "finished-successfully": "已完成同步。",
-    "failed": "同步失敗：{{message}}"
+    "failed": "同步失敗：{{message}}",
+    "force_full_sync_label": "強制全量同步",
+    "force_full_sync_description": "觸發與同步伺服器的完整同步，重新上傳所有變更。",
+    "fill_entity_changes_label": "填入實體變更",
+    "fill_entity_changes_description": "重建實體變更記錄。若同步過程遺漏了某些變更，請使用此功能。"
   },
   "vacuum_database": {
     "title": "清理資料庫",
     "description": "這會重建資料庫，通常會減少佔用空間，不會刪除數據。",
     "button_text": "清理資料庫",
     "vacuuming_database": "正在清理資料庫…",
-    "database_vacuumed": "已清理資料庫"
+    "database_vacuumed": "已清理資料庫",
+    "vacuum_label": "清理資料庫",
+    "vacuum_description": "重建資料庫以縮小檔案大小。資料內容不會有任何變更。"
   },
   "fonts": {
     "theme_defined": "跟隨主題",
     "fonts": "字型",
-    "main_font": "主字型",
+    "main_font": "界面字型",
     "font_family": "字型",
     "size": "大小",
     "note_tree_font": "筆記樹字型",
-    "note_detail_font": "筆記內容字型",
-    "monospace_font": "等寬（程式碼）字型",
-    "not_all_fonts_available": "並非所有列出的字型都在您的系統上可用。",
+    "note_detail_font": "文件字型",
+    "monospace_font": "等寬字型",
+    "not_all_fonts_available": "並非所有列出的字型都在您的系統上可用",
     "generic-fonts": "通用字型",
     "sans-serif-system-fonts": "無襯線系統字型",
     "serif-system-fonts": "襯線系統字型",
@@ -1112,7 +1148,12 @@
     "serif": "襯線",
     "sans-serif": "無襯線",
     "monospace": "等寬",
-    "system-default": "系統預設"
+    "system-default": "系統預設",
+    "custom_fonts": "使用自訂字型",
+    "preview": "預覽",
+    "monospace_font_description": "用於程式碼註解和程式碼區塊",
+    "size_relative_to_general": "字體大小取決於整體字體大小",
+    "apply_changes": "重新載入以套用變更"
   },
   "max_content_width": {
     "title": "內容寬度",
@@ -1132,20 +1173,23 @@
     "edited_notes_message": "日記筆記中自動打開編輯過的筆記功能區分頁"
   },
   "theme": {
-    "title": "主題",
-    "theme_label": "主題",
+    "title": "使用者介面",
+    "theme_label": "應用程式主題",
     "override_theme_fonts_label": "更改主題字型",
     "layout": "佈局",
     "layout-vertical-title": "垂直",
     "layout-horizontal-title": "水平",
     "layout-vertical-description": "啟動欄位於左側（預設）",
     "layout-horizontal-description": "啟動欄位於分頁欄下方，分頁欄現在是全寬的。",
-    "auto_theme": "傳統（遵循系統配色方案）",
-    "light_theme": "傳統（淺色）",
-    "dark_theme": "傳統（深色）",
-    "triliumnext": "Trilium（遵循系統配色方案）",
-    "triliumnext-light": "Trilium（淺色）",
-    "triliumnext-dark": "Trilium（深色）"
+    "auto_theme": "遵循系統配色方案",
+    "light_theme": "淺色",
+    "dark_theme": "深色",
+    "triliumnext": "遵循系統配色方案",
+    "triliumnext-light": "淺色",
+    "triliumnext-dark": "深色",
+    "modern_themes": "現代",
+    "legacy_themes": "傳統",
+    "custom_themes": "自訂"
   },
   "zoom_factor": {
     "title": "縮放係數（僅桌面版有效）",
@@ -1154,7 +1198,7 @@
   "code_auto_read_only_size": {
     "title": "自動唯讀大小",
     "description": "自動唯讀大小是指筆記超過設定的大小後自動設定為唯讀模式（為性能考慮）。",
-    "label": "自動唯讀大小（程式碼筆記）",
+    "label": "自動唯讀大小",
     "unit": "字元"
   },
   "code_mime_types": {
@@ -1197,54 +1241,64 @@
     "batch_ocr_error": "批次處理期間發生錯誤：{{error}}"
   },
   "attachment_erasure_timeout": {
-    "attachment_erasure_timeout": "附件清理超時",
-    "manual_erasing_description": "您還可以手動觸發清理（而不考慮上述定義的超時時間）：",
-    "erase_unused_attachments_now": "立即清理未使用的附件筆記",
+    "attachment_erasure_timeout": "未使用的附件",
+    "manual_erasing_description": "手動觸發清理，不考慮超時。",
+    "erase_unused_attachments_now": "立即清理未使用的附件",
     "unused_attachments_erased": "已刪除未使用的附件。",
-    "erase_attachments_after": "在此時間後刪除未使用的附件："
+    "erase_attachments_after": "在此時間後刪除未使用的附件",
+    "description": "任何不再被任何筆記引用的附件，將被視為未使用，並可在一段時間後自動刪除。",
+    "erase_attachments_after_description": "未使用的附件在永久刪除前的保留時間。"
   },
   "network_connections": {
-    "network_connections_title": "網絡連接",
-    "check_for_updates": "自動檢查更新"
+    "network_connections_title": "網絡",
+    "check_for_updates": "自動檢查更新",
+    "check_for_updates_description": "於 GitHub 檢查是否有新版本，並在有新版本時於全域選單中顯示通知。"
   },
   "note_erasure_timeout": {
-    "note_erasure_timeout_title": "筆記清理超時",
-    "manual_erasing_description": "您還可以手動觸發清理（而不考慮上述定義的超時時間）：",
+    "note_erasure_timeout_title": "已刪除的筆記",
+    "manual_erasing_description": "手動觸發清理，不考慮超時。",
     "erase_deleted_notes_now": "立即清理已刪除的筆記",
     "deleted_notes_erased": "已清理已刪除的筆記。",
-    "erase_notes_after": "在此時間後刪除筆記："
+    "erase_notes_after": "在此時間後刪除筆記",
+    "description": "刪除的筆記最初僅標記為已刪除，可從「最近的筆記」中還原。經過一段時間後，這些筆記將會被永久刪除。",
+    "erase_notes_after_description": "被刪除的筆記在永久清除前保留的時間。"
   },
   "revisions_snapshot_limit": {
     "note_revisions_snapshot_limit_title": "筆記歷史快照限制",
     "note_revisions_snapshot_limit_description": "筆記歷史快照數限制指的是每個筆記可以儲存的最大歷史記錄數量。其中 -1 表示沒有限制，0 表示刪除所有歷史記錄。您可以透過 #versioningLimit 標籤設定單個筆記的最大歷史記錄數量。",
-    "snapshot_number_limit_label": "筆記歷史快照數量限制：",
+    "snapshot_number_limit_label": "快照數量限制",
     "erase_excess_revision_snapshots": "立即刪除多餘的歷史快照",
     "erase_excess_revision_snapshots_prompt": "多餘的歷史快照已被刪除。",
-    "snapshot_number_limit_unit": "快照"
+    "snapshot_number_limit_unit": "快照",
+    "note_revisions_snapshot_limit_description_short": "每則筆記的最大修訂次數。輸入 -1 表示無限制，輸入 0 則停用此功能。",
+    "erase_excess_revision_snapshots_description": "刪除所有筆記中超過數量限制的修訂版本。"
   },
   "search_engine": {
     "title": "搜尋引擎",
-    "custom_search_engine_info": "自訂搜尋引擎需要設定名稱和 URL。如果這兩者之一未設定，將預設使用 DuckDuckGo 作為搜尋引擎。",
-    "predefined_templates_label": "預定義搜尋引擎模板",
+    "custom_search_engine_info": "用於在網路上搜尋選取的文字。若未設定，將使用 DuckDuckGo。",
+    "predefined_templates_label": "模板",
     "bing": "Bing",
     "baidu": "百度",
     "duckduckgo": "DuckDuckGo",
     "google": "Google",
-    "custom_name_label": "自訂搜尋引擎名稱",
-    "custom_name_placeholder": "自訂搜尋引擎名稱",
-    "custom_url_label": "自訂搜尋引擎 URL 應包含 {keyword} 作為搜尋詞的佔位符。",
-    "custom_url_placeholder": "自訂搜尋引擎 URL",
-    "save_button": "儲存"
+    "custom_name_label": "名稱",
+    "custom_name_placeholder": "搜尋引擎名稱",
+    "custom_url_label": "網址",
+    "custom_url_placeholder": "搜尋引擎 URL",
+    "save_button": "儲存",
+    "custom_url_description": "使用 {keyword} 作為搜尋詞的佔位符。"
   },
   "tray": {
     "title": "系統匣",
-    "enable_tray": "啟用系統匣圖示（需要重啟生效）"
+    "enable_tray": "系統匣圖示",
+    "enable_tray_description": "需重新啟動 Trilium 才能使此變更生效。"
   },
   "heading_style": {
     "title": "標題風格",
     "plain": "純文字",
     "underline": "下劃線",
-    "markdown": "Markdown 風格"
+    "markdown": "Markdown 風格",
+    "description": "文字筆記中標題的視覺樣式。"
   },
   "highlights_list": {
     "title": "高亮列表",
@@ -1268,7 +1322,7 @@
   "text_auto_read_only_size": {
     "title": "自動唯讀大小",
     "description": "自動唯讀筆記大小是超過該大小後，筆記將以唯讀模式顯示（出於性能考慮）。",
-    "label": "自動唯讀大小（文字筆記）",
+    "label": "自動唯讀大小",
     "unit": "字元"
   },
   "i18n": {
@@ -1279,10 +1333,10 @@
     "monday": "星期一",
     "first-week-of-the-year": "年度第一週",
     "first-week-contains-first-day": "年度第一週包含第一天",
-    "first-week-contains-first-thursday": "年度第一週包含第一個週四",
+    "first-week-contains-first-thursday": "第一週包含第一個週四 (ISO 8601)",
     "first-week-has-minimum-days": "第一週有最少天數",
     "min-days-in-first-week": "第一週的最少天數",
-    "first-week-warning": "變更第一週選項可能導致與現有的「週筆記」重複，現有的「週筆記」將不會相應更新。",
+    "first-week-warning": "變更此選項可能導致與現有的「週筆記」重複。",
     "formatting-locale": "日期和數字格式",
     "tuesday": "週二",
     "wednesday": "週三",
@@ -1294,9 +1348,9 @@
   "backup": {
     "automatic_backup": "自動備份",
     "automatic_backup_description": "Trilium 可以自動備份資料庫：",
-    "enable_daily_backup": "啟用每日備份",
-    "enable_weekly_backup": "啟用每週備份",
-    "enable_monthly_backup": "啟用每月備份",
+    "enable_daily_backup": "每日備份",
+    "enable_weekly_backup": "每週備份",
+    "enable_monthly_backup": "每月備份",
     "backup_recommendation": "建議打開備份功能，但這可能會使有大型資料庫和 / 或慢速儲存設備的應用程式啟動變慢。",
     "backup_now": "立即備份",
     "backup_database_now": "立即備份資料庫",
@@ -1305,7 +1359,8 @@
     "path": "路徑",
     "database_backed_up_to": "資料庫已備份至 {{backupFilePath}}",
     "no_backup_yet": "尚無備份",
-    "download": "下載"
+    "download": "下載",
+    "title": "備份"
   },
   "etapi": {
     "title": "ETAPI",
@@ -1340,8 +1395,8 @@
     "new_password": "新密碼",
     "new_password_confirmation": "新密碼確認",
     "change_password": "更改密碼",
-    "protected_session_timeout": "受保護的作業階段超時",
-    "protected_session_timeout_description": "受保護的作業階段超時是一個時間段，超時後受保護的作業階段會從瀏覽器記憶體中清除。這是從最後一次存取受保護的筆記時開始計時的。更多資訊請見",
+    "protected_session_timeout": "受保護的作業階段",
+    "protected_session_timeout_description": "瀏覽器記憶體中的會話在多長時間未活動後會被清除。更多資訊請見",
     "wiki": "維基",
     "for_more_info": "更多資訊。",
     "reset_confirmation": "重設密碼後將不再能查看所有目前受保護的筆記。您真的要重設密碼嗎？",
@@ -1351,7 +1406,11 @@
     "set_password": "設定密碼",
     "password_mismatch": "新密碼不一致。",
     "password_changed_success": "密碼已更改。按 OK 後 Trilium 將重新載入。",
-    "protected_session_timeout_label": "受保護的作業階段超時："
+    "protected_session_timeout_label": "自動結束作業階段時間",
+    "change_password_description": "更新您目前的密碼",
+    "reset_password": "重設密碼",
+    "reset_password_description": "將永久無法存取受保護的筆記",
+    "cancel": "取消"
   },
   "shortcuts": {
     "keyboard_shortcuts": "快捷鍵",
@@ -1381,17 +1440,19 @@
     "related_description": "設定拼寫檢查語言及自訂字典。"
   },
   "sync_2": {
-    "config_title": "同步設定",
+    "config_title": "同步伺服器",
     "server_address": "伺服器地址",
-    "timeout": "同步超時（單位：毫秒）",
-    "proxy_label": "同步代理伺服器（可選）",
+    "timeout": "連線超時",
+    "proxy_label": "代理伺服器",
     "save": "儲存",
     "help": "說明",
-    "test_title": "同步測試",
+    "test_title": "測試連線",
     "test_description": "測試和同步伺服器之間的連接。如果同步伺服器沒有初始化，這會將本地文件同步至同步伺服器上。",
     "test_button": "測試同步",
     "handshake_failed": "同步伺服器握手失敗，錯誤：{{message}}",
-    "timeout_description": "在放棄慢速同步連線前應等待多久。若網路不穩定，請延長等待時間。"
+    "timeout_description": "在放棄慢速連線前應等待多久。",
+    "server_address_description": "要同步的 Trilium 伺服器網址。",
+    "proxy_description": "若要使用系統代理伺服器，請留空（僅限桌面版）。若要繞過所有代理伺服器，請輸入「noproxy」。"
   },
   "api_log": {
     "close": "關閉"
@@ -1645,7 +1706,8 @@
   "entrypoints": {
     "note-revision-created": "已新增筆記修訂。",
     "note-executed": "已執行筆記。",
-    "sql-error": "執行 SQL 查詢時發生錯誤：{{message}}"
+    "sql-error": "執行 SQL 查詢時發生錯誤：{{message}}",
+    "save-named-revision-title": "儲存命名修訂"
   },
   "branches": {
     "cannot-move-notes-here": "無法將筆記移動至這裡。",
@@ -1739,18 +1801,23 @@
     "button_exit": "退出禪模式"
   },
   "code-editor-options": {
-    "title": "編輯器"
+    "title": "編輯器",
+    "tab_width": "制表符寬度",
+    "tab_width_unit": "空格"
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "筆記歷史快照間隔",
     "note_revisions_snapshot_description": "筆記歷史快照間隔是建立新筆記修訂的時間。如需詳細資訊，請參閱 <doc>wiki</doc>。",
-    "snapshot_time_interval_label": "筆記歷史快照時間間隔："
+    "snapshot_time_interval_label": "快照時間間隔",
+    "note_revisions_snapshot_description_short": "經過這段時間後，系統將建立新的筆記修訂版本。"
   },
   "custom_date_time_format": {
-    "title": "自訂日期 / 時間格式",
+    "title": "日期 / 時間格式",
     "description": "透過 <shortcut /> 或工具列自訂插入日期和時間的格式。有關可用的格式及符號，請參閱 <doc>Day.js docs</doc>。",
-    "format_string": "格式化字串：",
-    "formatted_time": "格式化日期 / 時間："
+    "format_string": "格式化字串",
+    "formatted_time": "格式化日期 / 時間",
+    "description_short": "透過工具列自訂插入的日期與時間格式。",
+    "preview": "預覽：{{preview}}"
   },
   "multi_factor_authentication": {
     "title": "多重身份驗證（MFA）",
@@ -1999,11 +2066,11 @@
   },
   "ui-performance": {
     "title": "效能",
-    "enable-motion": "啟用轉場與動畫",
-    "enable-shadows": "啟用陰影",
-    "enable-backdrop-effects": "啟用選單、彈出視窗和面板的背景特效",
-    "enable-smooth-scroll": "啟用平滑滾動",
-    "app-restart-required": "（需要重啟程式以套用更改）"
+    "enable-motion": "轉場與動畫",
+    "enable-shadows": "陰影",
+    "enable-backdrop-effects": "選單、彈出視窗和面板的背景特效",
+    "enable-smooth-scroll": "平滑滾動",
+    "app-restart-required": "需要重啟程式"
   },
   "pagination": {
     "total_notes": "{{count}} 筆記",
@@ -2388,6 +2455,31 @@
     "date_today": "今天",
     "date_yesterday": "昨天",
     "date_this_week": "這週",
-    "date_this_month": "這個月"
+    "date_this_month": "這個月",
+    "source_description_auto": "由系統定期自動儲存",
+    "source_description_manual": "由使用者手動儲存",
+    "source_description_etapi": "透過外部 Trilium API 建立",
+    "source_description_llm": "由 AI 助理所創建",
+    "source_description_restore": "在還原至先前版本之前已儲存",
+    "source_description_unknown": "來源不可用"
+  },
+  "auto_link_attribute_list": {
+    "title": "系統屬性"
+  },
+  "database": {
+    "title": "資料庫"
+  },
+  "revisions_snapshot": {
+    "title": "筆記歷史版本"
+  },
+  "search": {
+    "title": "搜尋",
+    "fuzzy_matching_label": "搜尋中的拼寫容錯",
+    "fuzzy_matching_description": "適用於快速搜尋和完整搜尋。當精確匹配結果不足時，會搜尋相似的詞彙。",
+    "autocomplete_fuzzy_label": "自動完成功能中的拼寫容錯",
+    "autocomplete_fuzzy_description": "影響「跳轉至筆記」及「選取筆記」的功能。速度較慢，但能容忍輸入錯誤。"
+  },
+  "text_editor": {
+    "title": "編輯器"
   }
 }

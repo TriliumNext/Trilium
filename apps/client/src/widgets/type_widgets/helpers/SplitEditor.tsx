@@ -98,8 +98,7 @@ export default function SplitEditor({ note, noteContext, error, splitOptions, pr
     useEffect(() => {
         if (mode !== "split" || !utils.isDesktop() || !containerRef.current) return;
         // Only the visible (non-display:none) panes participate in the split.
-        const elements = (Array.from(containerRef.current.children) as HTMLElement[])
-            .filter(el => el.offsetParent !== null);
+        const elements = (Array.from(containerRef.current.children) as HTMLElement[]);
         const splitInstance = Split(elements, {
             rtl: glob.isRtl,
             sizes: [ 50, 50 ],
@@ -113,7 +112,7 @@ export default function SplitEditor({ note, noteContext, error, splitOptions, pr
 
     const layoutClass = mode === "source" ? "split-source-only"
         : mode === "preview" ? "split-read-only"
-        : `split-${splitEditorOrientation}`;
+            : `split-${splitEditorOrientation}`;
 
     return (
         <div ref={containerRef} className={`note-detail-split note-detail-printable ${layoutClass} ${className ?? ""}`}>

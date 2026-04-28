@@ -1,6 +1,23 @@
 {
   "about": {
-    "data_directory": "Veri dizini:"
+    "data_directory": "Veri dizini:",
+    "version_label": "Sürüm:",
+    "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
+    "build_info": "Derleme: {{buildDate}}, revizyon: <buildRevision />",
+    "contributors_label": "Katkıda bulunanlar:",
+    "contributor_roles": {
+      "lead-dev": "baş geliştirici",
+      "original-dev": "asıl geliştirici"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran, Zadam'ın projeden çekilmesinden sonra oluşturulan bir topluluk fork'u olan TriliumNext'i 2024'te kurdu. Zadam daha sonra orijinal repoyu TriliumNext ekibine devrederek her iki projeyi yeniden birleştirdi.",
+      "original-dev": "25 Aralık 2017'de Zadam, Trilium'un (kapsamlı bir not alma ve kişisel bilgi tabanı uygulaması olup adını İngilizcedeki Trillium [üçyaprak] çiçeğinden aldı ve çiçeğin adının aksine tek bir \"l\" ile yazılır) ilk beta sürümünü yayımladı. Mevcut not düzenleyicilerden memnun kalmadığı için 22 binden fazla GitHub yıldızı toplayan güçlü, kendi sunucusunda barındırılabilen hiyerarşik bir bilgi tabanı oluşturdu. 2024 yılında hayatının yoğunlaşmasıyla birlikte projeyi bakım moduna aldı."
+    },
+    "contributor_full_list": "Tüm topluluğu görüntüle",
+    "github_tooltip": "GitHub üzerinden hata bildirin, yeni özellik önerin veya katkıda bulunun",
+    "license_tooltip": "Lisansı görüntüle",
+    "donate": "Bağış yap",
+    "donate_tooltip": "Bu projeyi desteklemek için bağış yapın"
   },
   "branch_prefix": {
     "save": "Kaydet",

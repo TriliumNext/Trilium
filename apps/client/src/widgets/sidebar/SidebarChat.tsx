@@ -279,7 +279,7 @@ export default function SidebarChat() {
             }
         >
             <div className="sidebar-chat-container">
-                <div className="sidebar-chat-messages">
+                <div className="sidebar-chat-messages" ref={chat.scrollContainerRef}>
                     {chat.messages.length === 0 && !chat.isStreaming && (
                         <NoItems
                             icon="bx bx-conversation"

@@ -20,10 +20,18 @@
         "note_structure_description": "Notlar hiyerarşik olarak düzenlenebilir. Her not 'alt notlar' içerebildiği için klasörlere ihtiyaç duyulmaz. Tek bir not, hiyerarşinin birden fazla noktasına eklenebilir.",
         "attributes_description": "Notlar arasında ilişkiler kurun veya kolay kategorizasyon için etiketler ekleyin. Tablolarda ve panolarda kullanılabilen yapılandırılmış bilgileri eklemek için öne çıkan öznitelikleri kullanın.",
         "hoisting_description": "Kişisel ve iş notlarınızı bir çalışma alanı altında gruplandırarak kolayca ayırın; bu sayede not ağacınız yalnızca belirli bir not kümesini gösterecek şekilde odaklanacaktır.",
-        "attributes_title": "Not etiketleri ve ilişkileri"
+        "attributes_title": "Not etiketleri ve ilişkileri",
+        "hoisting_title": "İş alanları ve yükseltme"
     },
     "productivity_benefits": {
         "title": "Üretkenlik ve güvenlik",
-        "revisions_title": "Note düzenlemeleri"
+        "revisions_title": "Note düzenlemeleri",
+        "revisions_content": "Notlar arka planda düzenli olarak kaydedilir ve revizyonlar aracılığıyla geçmişe göz atılabilir ya da istenmeyen değişiklikler geri alınabilir. Revizyonlar ayrıca isteğe bağlı olarak da oluşturulabilir.",
+        "sync_title": "Senkronizasyon",
+        "sync_content": "Notlarınızı birden fazla cihaz arasında kolayca senkronize etmek ve cep telefonunuzdan bir PWA kullanarak erişmek için kendi sunucunuzu (self-hosted) veya bir bulut örneğini (cloud instance) kullanın.",
+        "protected_notes_title": "Korumalı notlar",
+        "protected_notes_content": "Hassas kişisel verilerinizi, notları şifreleyerek ve şifre korumalı bir oturumla kilitleyerek güven altına alın.",
+        "jump_to_title": "Hızlı arama ve komutlar",
+        "jump_to_content": "Notlar veya kullanıcı arayüzü komutları arasında, başlık araması yaparak hiyerarşik yapıda hızla geçiş yapın; yazım hatalarını ve küçük farklılıkları fuzzy matching (bulanık eşleme) ile tolere edin."
     }
 }

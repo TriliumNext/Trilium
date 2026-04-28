@@ -1,3 +1,5 @@
+import "./print_preview.css";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
@@ -7,6 +9,8 @@ import { dynamicRequire, isElectron } from "../../services/utils";
 import Button, { ButtonGroup } from "../react/Button";
 import Dropdown from "../react/Dropdown";
 import { FormListHeader, FormListItem } from "../react/FormList";
+import FormSelect from "../react/FormSelect";
+import FormTextBox, { FormTextBoxWithUnit } from "../react/FormTextBox";
 import { useNoteLabelBoolean, useNoteLabelWithDefault, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import Slider from "../react/Slider";
@@ -71,7 +75,6 @@ function isValidPageRanges(value: string): boolean {
 }
 
 export interface PrintPreviewData {
-    pdfBuffer: Uint8Array;
     note: FNote;
     notePath: string;
 }
@@ -92,7 +95,7 @@ export default function PrintPreviewDialog() {
     const bufferRef = useRef<Uint8Array>();
     const notePathRef = useRef("");
     const pdfUrlRef = useRef<string>();
-    const generationRef = useRef(0);
+
 
     const [landscape, setLandscape] = useNoteLabelBoolean(note, "printLandscape");
     const [pageSize, setPageSize] = useNoteLabelWithDefault(note, "printPageSize", "Letter");
@@ -109,8 +112,6 @@ export default function PrintPreviewDialog() {
     // any other value is the system printer name to use for silent printing.
     const [printers, setPrinters] = useState<PrinterInfo[]>([]);
     const [destination, setDestination] = useState<string>(DESTINATION_PDF);
-
-    const skipNextRegenRef = useRef(false);
 
     useEffect(() => {
         if (!shown || !isElectron()) return;
@@ -137,15 +138,11 @@ export default function PrintPreviewDialog() {
     }, []);
 
     useTriliumEvent("showPrintPreview", (data: PrintPreviewData) => {
-        // When the dialog is already open, it manages its own regeneration via
-        // a persistent IPC listener. Ignore duplicate events from NoteDetail's
-        // listener to avoid overwriting the preview with stale data.
         if (shown) return;
 
-        skipNextRegenRef.current = true;
         setNote(data.note);
         notePathRef.current = data.notePath;
-        updatePreview(data.pdfBuffer);
+        setLoading(true);
         setShown(true);
     });
 
@@ -157,8 +154,6 @@ export default function PrintPreviewDialog() {
         const { ipcRenderer } = dynamicRequire("electron");
 
         const onResult = (_e: any, { buffer, error }: { buffer?: Uint8Array; error?: string }) => {
-            if (generationRef.current <= 0) return;
-
             toast.closePersistent("printing");
             if (error) {
                 setLoading(false);
@@ -188,7 +183,6 @@ export default function PrintPreviewDialog() {
     const regeneratePreview = useCallback((opts: PreviewOpts) => {
         if (!isElectron()) return;
 
-        ++generationRef.current;
         setLoading(true);
         const { ipcRenderer } = dynamicRequire("electron");
         ipcRenderer.send("export-as-pdf-preview", {
@@ -201,20 +195,23 @@ export default function PrintPreviewDialog() {
         });
     }, []);
 
+    const isFirstGenerationRef = useRef(true);
+
     useEffect(() => {
         if (!shown || !pageRangesValid) return;
-        if (skipNextRegenRef.current) {
-            skipNextRegenRef.current = false;
-            return;
-        }
+
+        const delay = isFirstGenerationRef.current ? 0 : 800;
+        isFirstGenerationRef.current = false;
+
         const handle = setTimeout(() => {
             regeneratePreview({ landscape, pageSize, scale, margins: marginsStr, pageRanges: pageRanges.trim() });
-        }, 400);
+        }, delay);
         return () => clearTimeout(handle);
     }, [shown, landscape, pageSize, scale, marginsStr, pageRanges, pageRangesValid, regeneratePreview]);
 
     function handleClose() {
         setShown(false);
+        isFirstGenerationRef.current = true;
         toast.closePersistent("print-preview-error");
         if (pdfUrlRef.current) {
             URL.revokeObjectURL(pdfUrlRef.current);
@@ -278,7 +275,7 @@ export default function PrintPreviewDialog() {
             size="xl"
             show={shown}
             onHidden={handleClose}
-            bodyStyle={{ height: "78vh", padding: 0, display: "flex" }}
+            stackable
             footerAlignment="between"
             footer={
                 <>
@@ -305,7 +302,7 @@ export default function PrintPreviewDialog() {
                 </>
             }
         >
-            <div style={{ padding: "16px", minWidth: "250px", overflowY: "auto" }}>
+            <div class="print-preview-settings">
                 <OptionsSection>
                     <OptionsRow name="destination" label={t("print_preview.destination")}>
                         <Dropdown
@@ -356,16 +353,14 @@ export default function PrintPreviewDialog() {
                     </OptionsRow>
 
                     <OptionsRow name="pageSize" label={t("print_preview.page_size")}>
-                        <select
-                            class="form-select form-select-sm"
-                            value={pageSize}
-                            onChange={(e) => setPageSize((e.target as HTMLSelectElement).value)}
+                        <FormSelect
+                            values={PAGE_SIZES.map((size) => ({ key: size, title: size }))}
+                            keyProperty="key"
+                            titleProperty="title"
+                            currentValue={pageSize}
+                            onChange={setPageSize}
                             disabled={loading}
-                        >
-                            {PAGE_SIZES.map((size) => (
-                                <option key={size} value={size}>{size}</option>
-                            ))}
-                        </select>
+                        />
                     </OptionsRow>
 
                     <OptionsRow name="scale" label={t("print_preview.scale")} description={`${Math.round(scale * 100)}%`}>
@@ -379,17 +374,19 @@ export default function PrintPreviewDialog() {
                     </OptionsRow>
 
                     <OptionsRow name="margins" label={t("print_preview.margins")}>
-                        <select
-                            class="form-select form-select-sm"
-                            value={marginPreset}
-                            onChange={(e) => setMarginsStr(serializeMargins((e.target as HTMLSelectElement).value as MarginPreset | "custom", customMargins))}
+                        <FormSelect
+                            values={[
+                                { key: "default", title: t("print_preview.margins_default") },
+                                { key: "none", title: t("print_preview.margins_none") },
+                                { key: "minimum", title: t("print_preview.margins_minimum") },
+                                { key: "custom", title: t("print_preview.margins_custom") },
+                            ]}
+                            keyProperty="key"
+                            titleProperty="title"
+                            currentValue={marginPreset}
+                            onChange={(value) => setMarginsStr(serializeMargins(value as MarginPreset | "custom", customMargins))}
                             disabled={loading}
-                        >
-                            <option value="default">{t("print_preview.margins_default")}</option>
-                            <option value="none">{t("print_preview.margins_none")}</option>
-                            <option value="minimum">{t("print_preview.margins_minimum")}</option>
-                            <option value="custom">{t("print_preview.margins_custom")}</option>
-                        </select>
+                        />
                     </OptionsRow>
 
                     {marginPreset === "custom" && (
@@ -401,26 +398,24 @@ export default function PrintPreviewDialog() {
                         label={t("print_preview.page_ranges")}
                         description={!pageRangesValid ? t("print_preview.page_ranges_invalid") : t("print_preview.page_ranges_hint")}
                     >
-                        <input
-                            type="text"
-                            class={`form-control form-control-sm ${!pageRangesValid ? "is-invalid" : ""}`}
-                            value={pageRanges}
+                        <FormTextBox
+                            className={`print-preview-page-ranges ${!pageRangesValid ? "is-invalid" : ""}`}
+                            currentValue={pageRanges}
                             placeholder={t("print_preview.page_ranges_placeholder")}
-                            onInput={(e) => setPageRanges((e.target as HTMLInputElement).value)}
+                            onChange={(value) => setPageRanges(value)}
                             disabled={loading}
-                            style={{ width: "140px" }}
                         />
                     </OptionsRow>
                 </OptionsSection>
             </div>
 
-            <div style={{ flex: 1, position: "relative" }}>
+            <div class="print-preview-pane">
                 {loading && (
-                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1, backgroundColor: "var(--modal-bg-color, rgba(255,255,255,0.8))" }}>
-                        <span class="bx bx-loader-circle bx-spin" style={{ fontSize: "2rem" }} />
+                    <div class="print-preview-loading-overlay">
+                        <span class="bx bx-loader-circle bx-spin" />
                     </div>
                 )}
-                {pdfUrl && <PdfViewer pdfUrl={pdfUrl} disableSelection />}
+                {pdfUrl && <PdfViewer pdfUrl={pdfUrl} toolbar={false} disableSelection />}
             </div>
         </Modal>
     );
@@ -439,42 +434,37 @@ function MarginEditor({ margins, onChange, disabled }: {
     onChange: (side: keyof CustomMargins, value: number) => void;
     disabled: boolean;
 }) {
-    const spinnerStyle = { width: "130px" };
-
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", padding: "8px 0" }}>
-            <MarginSpinner label={t("print_preview.margin_top")} value={margins.top} onChange={(v) => onChange("top", v)} disabled={disabled} style={spinnerStyle} />
-            <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
-                <MarginSpinner label={t("print_preview.margin_left")} value={margins.left} onChange={(v) => onChange("left", v)} disabled={disabled} style={spinnerStyle} />
-                <MarginSpinner label={t("print_preview.margin_right")} value={margins.right} onChange={(v) => onChange("right", v)} disabled={disabled} style={spinnerStyle} />
+        <div class="margin-editor">
+            <MarginSpinner label={t("print_preview.margin_top")} value={margins.top} onChange={(v) => onChange("top", v)} disabled={disabled} />
+            <div class="margin-editor-row">
+                <MarginSpinner label={t("print_preview.margin_left")} value={margins.left} onChange={(v) => onChange("left", v)} disabled={disabled} />
+                <MarginSpinner label={t("print_preview.margin_right")} value={margins.right} onChange={(v) => onChange("right", v)} disabled={disabled} />
             </div>
-            <MarginSpinner label={t("print_preview.margin_bottom")} value={margins.bottom} onChange={(v) => onChange("bottom", v)} disabled={disabled} style={spinnerStyle} />
+            <MarginSpinner label={t("print_preview.margin_bottom")} value={margins.bottom} onChange={(v) => onChange("bottom", v)} disabled={disabled} />
         </div>
     );
 }
 
-function MarginSpinner({ label, value, onChange, disabled, style }: {
+function MarginSpinner({ label, value, onChange, disabled }: {
     label: string;
     value: number;
     onChange: (value: number) => void;
     disabled: boolean;
-    style?: Record<string, string>;
 }) {
     return (
-        <div class="input-group input-group-sm" style={style}>
-            <input
-                type="number"
-                class="form-control form-control-sm"
-                title={label}
-                aria-label={label}
-                value={value}
-                min={0}
-                max={100}
-                step={1}
-                onChange={(e) => onChange(Math.min(100, (e.target as HTMLInputElement).valueAsNumber || 0))}
-                disabled={disabled}
-            />
-            <span class="input-group-text">mm</span>
-        </div>
+        <FormTextBoxWithUnit
+            type="number"
+            className="margin-spinner"
+            title={label}
+            aria-label={label}
+            currentValue={String(value)}
+            min={0}
+            max={100}
+            step={1}
+            onChange={(val) => onChange(Math.min(100, parseInt(val, 10) || 0))}
+            disabled={disabled}
+            unit="mm"
+        />
     );
 }

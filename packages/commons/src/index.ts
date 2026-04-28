@@ -16,6 +16,7 @@ export * from "./lib/dayjs.js";
 export * from "./lib/notes.js";
 export * from "./lib/week_utils.js";
 export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";
+export * from "./lib/spreadsheet/extract_text.js";
 export * from "./lib/spreadsheet/render_to_html.js";
 export * from "./lib/llm_api.js";
 export * from "./lib/marked_extensions.js";

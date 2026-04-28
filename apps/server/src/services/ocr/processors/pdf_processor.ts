@@ -22,10 +22,11 @@ export class PDFProcessor extends FileProcessor {
 
         const pdf = await getDocumentProxy(new Uint8Array(buffer));
         const { totalPages, text } = await extractText(pdf, { mergePages: true });
+        const trimmed = text.trim();
 
         return {
-            text: text.trim(),
-            confidence: 0.99,
+            text: trimmed,
+            confidence: trimmed.length > 0 ? 0.99 : 0,
             extractedAt: new Date().toISOString(),
             language: options.language || "eng",
             pageCount: totalPages

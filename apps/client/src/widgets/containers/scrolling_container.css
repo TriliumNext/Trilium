@@ -23,7 +23,7 @@ body.mobile .scrolling-container {
     --content-margin-inline: 8px;
 }
 
-.note-split.type-code:not(.mime-text-x-sqlite) {
+.note-split.type-code:not(.mime-text-x-sqlite, .mime-text-x-markdown) {
     &> .scrolling-container {
         background-color: var(--code-background-color);
         --scrollbar-background-color: var(--main-background-color);

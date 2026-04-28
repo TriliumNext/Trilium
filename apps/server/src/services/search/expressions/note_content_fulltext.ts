@@ -83,7 +83,7 @@ class NoteContentFulltextExp extends Expression {
         for (const row of sql.iterateRows<SearchRow>(`
                 SELECT noteId, type, mime, content, isProtected
                 FROM notes JOIN blobs USING (blobId)
-                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
                   AND isDeleted = 0
                   AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
             this.findInText(row, inputNoteSet, resultNoteSet);

@@ -9,6 +9,27 @@ import { isShare } from "./utils.js";
 
 let highlightingLoaded = false;
 
+// Highlight.js can spend tens of milliseconds per block (php/c# are especially slow).
+// The Markdown live preview replaces the entire rendered DOM on every keystroke, so the
+// same unchanged code blocks would otherwise be re-highlighted continuously. Cache the
+// output keyed by (language, text) so repeat renders short-circuit to a plain innerHTML
+// assignment. FIFO eviction keeps memory bounded without needing an LRU.
+const HIGHLIGHT_CACHE_MAX = 256;
+const highlightCache = new Map<string, string>();
+
+function getCachedHighlight(language: string, text: string) {
+    return highlightCache.get(`${language}\x00${text}`);
+}
+
+function setCachedHighlight(language: string, text: string, value: string) {
+    const key = `${language}\x00${text}`;
+    if (highlightCache.size >= HIGHLIGHT_CACHE_MAX) {
+        const oldest = highlightCache.keys().next().value;
+        if (oldest !== undefined) highlightCache.delete(oldest);
+    }
+    highlightCache.set(key, value);
+}
+
 /**
  * Identifies all the code blocks (as `pre code`) under the specified hierarchy and uses the highlight.js library to obtain the highlighted text which is then applied on to the code blocks.
  * Additionally, adds a "Copy to clipboard" button.
@@ -83,6 +104,12 @@ export async function applySingleBlockSyntaxHighlight($codeBlock: JQuery<HTMLEle
     $codeBlock.parent().toggleClass("hljs");
     const text = $codeBlock.text();
 
+    const cached = getCachedHighlight(normalizedMimeType, text);
+    if (cached !== undefined) {
+        $codeBlock.html(cached);
+        return;
+    }
+
     let highlightedText: HighlightResult | AutoHighlightResult | null = null;
     if (normalizedMimeType === mime_types.MIME_TYPE_AUTO && !isShare) {
         await ensureMimeTypesForHighlighting();
@@ -97,6 +124,7 @@ export async function applySingleBlockSyntaxHighlight($codeBlock: JQuery<HTMLEle
     }
 
     if (highlightedText) {
+        setCachedHighlight(normalizedMimeType, text, highlightedText.value);
         $codeBlock.html(highlightedText.value);
     }
 }

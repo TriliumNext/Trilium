@@ -105,6 +105,9 @@ export abstract class BaseProvider implements LlmProvider {
             parts.push(
                 `When referring to notes in your responses, use the wiki-link format [[noteId]] to create clickable internal links. Use the note ID (not the title) from tool results. The link will automatically display the note's title and icon, so don't repeat the title in your text. For example: "You can find more details in [[ZjSfLhzlqNY6]]" instead of "You can find more details in the Meeting Notes note ([[ZjSfLhzlqNY6]])".`
             );
+            parts.push(
+                `Do not create, modify, or delete notes unless the user explicitly asks you to (e.g. "create a note", "save this to a note"). The chat supports rich Markdown rendering including code blocks, math equations, mermaid diagrams, and tables — so always present content directly in your response rather than creating a note for it. For example, if asked to "visualize an algorithm", render a mermaid diagram in the chat, don't create a note.`
+            );
         } else if (config.contextNoteId) {
             parts.push(
                 `You can see the current note's metadata above, but you cannot search or access other notes. If the user asks about other notes, inform them that "Note access" is disabled and they need to enable it in the chat settings (click on the model name dropdown and toggle "Note access").`
@@ -121,6 +124,32 @@ export abstract class BaseProvider implements LlmProvider {
                 `You do not have access to web search. If the user asks for current/real-time information, news, or anything that requires searching the web, inform them that "Web search" is disabled and they need to enable it in the chat settings (click on the model name dropdown and toggle "Web search").`
             );
         }
+
+        // Parallel tool-call hint
+        if (config.enableNoteTools || config.enableWebSearch) {
+            parts.push(
+                `When you need several independent pieces of information, issue the tool calls in parallel within the same turn instead of waiting for each result before requesting the next. Only chain calls sequentially when a later call genuinely depends on the output of an earlier one.`
+            );
+        }
+
+        // Markdown formatting hints
+        parts.push(
+            `Your responses are rendered as Markdown with extended features. Use them when appropriate:\n\n`
+                + `**Admonitions** — GitHub-style callout blocks. Use sparingly, only when a plain paragraph would under-sell the point:\n`
+                + `- \`> [!NOTE]\` — neutral side information worth highlighting\n`
+                + `- \`> [!TIP]\` — an optional improvement or shortcut\n`
+                + `- \`> [!IMPORTANT]\` — information the user should not miss\n`
+                + `- \`> [!WARNING]\` — something that may cause problems or surprise\n`
+                + `- \`> [!CAUTION]\` — a destructive or irreversible action\n`
+                + `Syntax: the marker must be on its own line, and every content line must start with \`>\`.\n\n`
+                + `**Math equations** — KaTeX (LaTeX subset). Use \`$...$\` for inline math and \`$$...$$\` for display (block) math. Example: \`$E = mc^2$\` or:\n`
+                + `$$\n\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}\n$$\n\n`
+                + `**Mermaid diagrams** — use a fenced code block with the \`mermaid\` language tag. Example:\n`
+                + "```mermaid\ngraph LR\n    A --> B\n```\n\n"
+                + `**Code blocks** — use fenced code blocks with a language tag for syntax highlighting (e.g. \`\`\`js, \`\`\`python).\n\n`
+                + `**Footnotes** — use \`[^1]\` in text and \`[^1]: explanation\` at the bottom.\n\n`
+                + `**Task lists** — use \`- [ ]\` for unchecked and \`- [x]\` for checked items.`
+        );
 
         return parts.length > 0 ? parts.join("\n\n") : undefined;
     }

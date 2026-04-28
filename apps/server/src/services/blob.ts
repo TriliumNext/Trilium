@@ -51,7 +51,8 @@ function processContent(content: Buffer | string | null, isProtected: boolean, i
 }
 
 function calculateContentHash({ blobId, content, textRepresentation }: Blob) {
-    return hash(`${blobId}|${content.toString()}|${textRepresentation ?? ""}`);
+    const textRepresentationSegment = textRepresentation ? `|${textRepresentation}` : "";
+    return hash(`${blobId}|${content.toString()}${textRepresentationSegment}`);
 }
 
 export default {

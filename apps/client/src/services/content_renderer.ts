@@ -256,7 +256,7 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
         const url = `../../api/${entityType}/${entityId}/open`;
         const $viewer = $(`<div style="height: 100%">`);
         const PdfViewer = (await import("../widgets/type_widgets/file/PdfViewer")).default;
-        render(h(PdfViewer, {pdfUrl: url, editable: false}), $viewer.get(0)!);
+        render(h(PdfViewer, {pdfUrl: url, editable: false, toolbar: false}), $viewer.get(0)!);
 
         $content.append($viewer);
 

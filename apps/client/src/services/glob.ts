@@ -75,8 +75,6 @@ function setupGlobs() {
         requireCss(`api/notes/download/${appCssNoteId}`, false);
     }
 
-    utils.initHelpButtons($(window));
-
     $("body").on("click", "a.external", function () {
         window.open($(this).attr("href"), "_blank");
 

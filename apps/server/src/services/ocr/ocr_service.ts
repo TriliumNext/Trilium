@@ -17,6 +17,7 @@ export interface OCRResult {
     extractedAt: string;
     language?: string;
     pageCount?: number;
+    processingType?: string;
 }
 
 export interface OCRProcessingOptions {
@@ -116,6 +117,7 @@ class OCRService {
         }
 
         const result = await processor.extractText(fileBuffer, { ...options, mimeType });
+        result.processingType = processor.getProcessingType();
 
         log.info(`OCR extraction completed. Confidence: ${Math.round(result.confidence * 100)}%, Text length: ${result.text.length}`);
         return result;

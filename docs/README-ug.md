@@ -45,8 +45,8 @@ Trilium Notes بولسا ھەقسىز، ئوچۇق كودلۇق، سىستېما
 
 ## ھۆججەتلەر📚
 
-بىزنىڭ تولۇق قوللانمىمىزنى كۆرۈڭ:
-[docs.triliumnotes.org](https://docs.triliumnotes.org/)
+**بىزنىڭ تولۇق قوللانمىمىزنى كۆرۈڭ:
+docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
 بىزنىڭ قوللانمىمىزنىڭ بىر قانچە خىل شەكىلدىكى نۇسخىلىرى بار:
 - **تور قوللانمىسى**：بىزنىڭ تولۇق قوللانمىمىزنى مۇشۇ شەكىلدە كۆرۈڭ:
@@ -175,9 +175,9 @@ zadam/Trilium نۇسخىسىدىن TriliumNext/Notes غا كۆچۈش ئۈچۈن 
   - `General `Matrix ئۆيىمۇ [XMPP](xmpp:discuss@trilium.thisgreat.party?join) غا
     ئۇلانغان
 - [GitHub Discussions](https://github.com/TriliumNext/Trilium/discussions)
-  (ئاسىنكرون مۇنازىرە).
+  (ئاسىنكرون مۇنازىرە.)
 - [GitHub Issues](https://github.com/TriliumNext/Trilium/issues) (خاتالىق مەلۇم
-  قىلىش ۋە ئىقتىدار ئېھتىياجىنى ئوتتۇرىغا قويۇش).
+  قىلىش ۋە ئىقتىدار ئېھتىياجىنى ئوتتۇرىغا قويۇش.)
 
 ## 🏗 قاچىلاش
 
@@ -185,7 +185,7 @@ zadam/Trilium نۇسخىسىدىن TriliumNext/Notes غا كۆچۈش ئۈچۈن 
 
 [ئەڭ يېڭى نەشرى بېتى](https://github.com/TriliumNext/Trilium/releases/latest)دىن
 سۇپىڭىزغا ماس كېلىدىغان سىستېما ھۆججىتىنى چۈشۈرۈڭ، پرېستىن يەشكەندىن كېيىن
-`trilium` ئىجرا ھۆججىتىنى قوزغىتىڭ.）
+`trilium` ئىجرا ھۆججىتىنى قوزغىتىڭ.
 
 ### Linux
 
@@ -197,8 +197,8 @@ zadam/Trilium نۇسخىسىدىن TriliumNext/Notes غا كۆچۈش ئۈچۈن 
 
 سىز يەنە [ئەڭ يېڭى ئېلان قىلىنغان
 بەت](https://github.com/TriliumNext/Trilium/releases/latest)تىن مۇناسىپ سۇپىنىڭ
-سىستېما ھۆججىتىنى چۈشۈرۈپ، پرېستىن يېشىپ بولغاندىن كېيىن trilium ئىجرا ھۆججىتىنى
-قوزغاتسىڭىز بولىدۇ.
+سىستېما ھۆججىتىنى چۈشۈرۈپ، پرېستىن يېشىپ بولغاندىن كېيىن `trilium` ئىجرا
+ھۆججىتىنى قوزغاتسىڭىز بولىدۇ.
 
 TriliumNext يەنە Flatpak نۇسخىسى بىلەن تەمىنلەيدۇ، ئەمما تېخى FlatHub غا
 چىقىرىلمىدى.
@@ -206,7 +206,7 @@ TriliumNext يەنە Flatpak نۇسخىسى بىلەن تەمىنلەيدۇ، ئ
 ### Browser (ھەرقانداق مەشغۇلات سىستېمىسى)
 
 ئەگەر سىزدە (تۆۋەندىكىدەك) مۇلازىمىتىر قاچىلانمىسى بولسا، تور كۆرۈنمە يۈزىنى
-بىۋاسىتە ساقىلالايسىز (ئۇ بىر تەرەپ قىلغۇچ دېتالى بىلەن ئاساسەن ئوخشاش）
+بىۋاسىتە ساقىلالايسىز (ئۇ بىر تەرەپ قىلغۇچ دېتالى بىلەن ئاساسەن ئوخشاش）.
 
 نۆۋەتتە پەقەت Chrome ۋە Firefox نىڭ ئەڭ يېڭى نەشرىنىلا قوللايدۇ (ھەمدە ئەمەلىي
 سىناقتىن ئۆتكەن).
@@ -329,7 +329,7 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   (https://docs.triliumnotes.org/user-guide/note-types/relation-map) ۋە ئۇلىنىش
   خەرىتىسى
   (https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
-  ئۈچۈن ئىشلىتىلىدۇ.
+  ئۈچۈن ئىشلىتىلىدۇ
 
 ## 🤝 بىزنى قوللاش
 

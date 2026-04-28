@@ -1,3 +1,4 @@
+import { renderSpreadsheetToHtml } from "@triliumnext/commons";
 import { render } from "preact";
 import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 
@@ -94,28 +95,36 @@ function SingleNoteRenderer({ note, onReady }: RendererProps) {
 
     useLayoutEffect(() => {
         async function load() {
-            if (note.type === "text") {
-                await import("@triliumnext/ckeditor5/src/theme/ck-content.css");
-            }
-            const { $renderedContent } = await content_renderer.getRenderedContent(note, { noChildrenList: true });
             const container = containerRef.current!;
-            container.replaceChildren(...$renderedContent);
 
-            // Wait for all images to load.
-            const images = Array.from(container.querySelectorAll("img"));
-            await Promise.all(
-                images.map(img => {
-                    if (img.complete) return Promise.resolve();
-                    return new Promise<void>(resolve => {
-                        img.addEventListener("load", () => resolve(), { once: true });
-                        img.addEventListener("error", () => resolve(), { once: true });
-                    });
-                })
-            );
+            if (note.type === "spreadsheet") {
+                // Render spreadsheet as HTML tables instead of an image.
+                const blob = await note.getBlob();
+                const html = renderSpreadsheetToHtml(blob?.content ?? "");
+                container.innerHTML = html;
+            } else {
+                if (note.type === "text") {
+                    await import("@triliumnext/ckeditor5/src/theme/ck-content.css");
+                }
+                const { $renderedContent } = await content_renderer.getRenderedContent(note, { noChildrenList: true });
+                container.replaceChildren(...$renderedContent);
 
-            // Initialize mermaid.
-            if (note.type === "text") {
-                await applyInlineMermaid(container);
+                // Wait for all images to load.
+                const images = Array.from(container.querySelectorAll("img"));
+                await Promise.all(
+                    images.map(img => {
+                        if (img.complete) return Promise.resolve();
+                        return new Promise<void>(resolve => {
+                            img.addEventListener("load", () => resolve(), { once: true });
+                            img.addEventListener("error", () => resolve(), { once: true });
+                        });
+                    })
+                );
+
+                // Initialize mermaid.
+                if (note.type === "text") {
+                    await applyInlineMermaid(container);
+                }
             }
 
             // Check custom CSS.

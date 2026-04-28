@@ -308,6 +308,7 @@ export interface OCRProcessResponse {
         extractedAt: string;
         language?: string;
         pageCount?: number;
+        processingType?: string;
     };
     /** The minimum confidence threshold that was applied (0-1 scale). */
     minConfidence?: number;

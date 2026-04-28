@@ -31,7 +31,24 @@
     "search_notes": "Cuardaigh nótaí"
   },
   "about": {
-    "data_directory": "Eolaire sonraí:"
+    "data_directory": "Eolaire sonraí:",
+    "version_label": "Leagan:",
+    "version": "{{appVersion}} (bunachar sonraí: {{dbVersion}}, prótacal sioncrónaithe: {{syncVersion}})",
+    "build_info": "Tógáil: {{buildDate}}, athbhreithniú: <buildRevision />",
+    "contributors_label": "Rannpháirtithe:",
+    "contributor_roles": {
+      "lead-dev": "príomhfhorbróir",
+      "original-dev": "forbróir bunaidh"
+    },
+    "role_brief_history": {
+      "lead-dev": "Bhunaigh Elian Doran TriliumNext sa bhliain 2024, forc pobail a cruthaíodh tar éis do Zadam éirí as an tionscadal. Ina dhiaidh sin, aistrigh Zadam an stór bunaidh chuig foireann TriliumNext, ag cumasc an dá thionscadal ar ais in aon tionscadal amháin.",
+      "original-dev": "Ar an 25 Nollaig 2017, d’eisigh Zadam an chéad béite de Trilium (scríofa le \"l\" aonair, murab ionann agus an bláth). Gan a bheith sásta leis na heagraithe nótaí a bhí ann cheana féin, thóg sé bonn eolais ordlathach cumhachtach féin-óstáilte a bhailigh breis is 22,000 réalta GitHub. Sa bhliain 2024, de réir mar a bhí an saol ag éirí níos gnóthaí, chuir sé an tionscadal i mód cothabhála."
+    },
+    "contributor_full_list": "Féach ar an bpobal ar fad",
+    "github_tooltip": "Tuairiscigh fabhtanna, mol gnéithe, nó cuir le chéile ar GitHub",
+    "license_tooltip": "Féach ar an gceadúnas",
+    "donate": "Tabhair Síntiús",
+    "donate_tooltip": "Tabhair síntiús chun tacú leis an tionscadal seo"
   },
   "toast": {
     "critical-error": {

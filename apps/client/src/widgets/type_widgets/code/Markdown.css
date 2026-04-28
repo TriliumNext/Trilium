@@ -13,11 +13,6 @@
         overflow: auto;
         padding: 0.5em 1em;
         user-select: text;
-
-        .mermaid-diagram,
-        .mermaid-diagram svg {
-            max-width: 100%;
-        }
     }
 
     .markdown-preview [data-source-line] {

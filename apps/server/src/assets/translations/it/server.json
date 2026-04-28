@@ -94,7 +94,8 @@
     "toggle-ribbon-tab-note-map": "Mostra/Nascondi la mappa delle note",
     "toggle-ribbon-tab-note-info": "Mostra/Nascondi le informazioni sulla nota",
     "toggle-ribbon-tab-note-paths": "Mostra/Nascondi i percorsi della nota",
-    "toggle-ribbon-tab-similar-notes": "Mostra/Nascondi le note simili"
+    "toggle-ribbon-tab-similar-notes": "Mostra/Nascondi le note simili",
+    "save-named-revision": "Salva Revisione con Nome"
   },
   "hidden-subtree": {
     "options-title": "Opzioni",
@@ -186,7 +187,8 @@
   "migration": {
     "old_version": "La migrazione diretta dalla tua versione attuale non è supportata. Aggiorna prima all'ultima versione v0.60.4 e solo dopo a questa versione.",
     "error_message": "Errore durante la migrazione alla versione {{version}}: {{stack}}",
-    "wrong_db_version": "La versione del database ({{version}}) è più recente di quanto l'applicazione si aspetti ({{targetVersion}}), il che significa che è stato creato da una versione più nuova e incompatibile di Trilium. Aggiorna Trilium all'ultima versione per risolvere questo problema."
+    "wrong_db_version": "La versione del database ({{version}}) è più recente di quanto l'applicazione si aspetti ({{targetVersion}}), il che significa che è stato creato da una versione più nuova e incompatibile di Trilium. Aggiorna Trilium all'ultima versione per risolvere questo problema.",
+    "invalid_db_version": "La versione del database non è un numero valido. Questo di solito indica che l'opzione «dbVersion» nel database è danneggiata. Si prega di ripristinare il sistema da un backup."
   },
   "modals": {
     "error_title": "Errore"
@@ -307,7 +309,8 @@
     "toggle-zen-mode": "Abilita/disabilita la modalità Zen (Interfaccia minimale per una scrittura senza distrazioni)",
     "toggle-left-note-tree-panel": "Mostra/Nascondi il pannello di sinistra (albero delle note)",
     "toggle-classic-editor-toolbar": "Mostra/Nascondi il pannello della formattazione per l'editor con la barra degli strumenti fissa",
-    "unhoist": "Rimuovi qualsiasi ancoraggio"
+    "unhoist": "Rimuovi qualsiasi ancoraggio",
+    "save-named-revision": "Salva una revisione con nome della nota attiva"
   },
   "desktop": {
     "instance_already_running": "C'è già una istanza in esecuzione, verrà mostrata."
@@ -458,5 +461,8 @@
       "fulltext-after-expression": "\"{{- token}}\" non è un'espressione valida. Per cercare del testo, inseriscilo prima dei filtri degli attributi (ad esempio, \"{{- token}} #label\" invece di \"#label {{- token}}\").",
       "unrecognized-expression": "Espressione non riconosciuta \"{{- token}}\""
     }
+  },
+  "password": {
+    "incorrect": "La password inserita non è corretta."
   }
 }

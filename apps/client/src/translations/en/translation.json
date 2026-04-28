@@ -434,8 +434,8 @@
     "css_class": "value of this label is then added as CSS class to the node representing given note in the tree. This can be useful for advanced theming. Can be used in template notes.",
     "icon_class": "value of this label is added as a CSS class to the icon on the tree which can help visually distinguish the notes in the tree. Example might be bx bx-home - icons are taken from boxicons. Can be used in template notes.",
     "page_size": "number of items per page in note listing",
-    "custom_request_handler": "see <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Custom request handler</a>",
-    "custom_resource_provider": "see <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Custom request handler</a>",
+    "custom_request_handler": "custom request handler",
+    "custom_resource_provider": "custom resource provider",
     "widget": "marks this note as a custom widget which will be added to the Trilium component tree",
     "workspace": "marks this note as a workspace which allows easy hoisting",
     "workspace_icon_class": "defines box icon CSS class which will be used in tab when hoisted to this note",
@@ -1508,7 +1508,7 @@
     "existing_backups": "Existing backups",
     "date-and-time": "Date & time",
     "path": "Path",
-    "database_backed_up_to": "Database has been backed up to {{backupFilePath}}",
+    "database_backed_up_to": "Database has been backed up to {{- backupFilePath}}",
     "no_backup_yet": "no backup yet",
     "download": "Download"
   },
@@ -2231,6 +2231,7 @@
     "processing_complete": "OCR processing complete.",
     "processing_failed": "Failed to start OCR processing",
     "text_filtered_low_confidence": "OCR detected text with {{confidence}}% confidence, but it was discarded because your minimum threshold is {{threshold}}%.",
+    "image_based_pdf_not_supported": "This PDF appears to be image-based (scanned). Text extraction from image-based PDFs is not yet supported.",
     "open_media_settings": "Open Settings",
     "view_extracted_text": "View extracted text (OCR)"
   },
@@ -2421,7 +2422,9 @@
     "pages_one": "{{count}} page",
     "pages_other": "{{count}} pages",
     "pages_alt": "Page {{pageNumber}}",
-    "pages_loading": "Loading..."
+    "pages_loading": "Loading...",
+    "annotations_one": "{{count}} annotation",
+    "annotations_other": "{{count}} annotations"
   },
   "platform_indicator": {
     "available_on": "Available on {{platform}}"
@@ -2553,5 +2556,8 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel"
+  },
+  "spreadsheet": {
+    "read-only": "This note is read-only."
   }
 }

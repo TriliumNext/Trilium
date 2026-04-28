@@ -196,6 +196,17 @@ function createNewNote(params: NoteParams): {
         throw new Error(error);
     }
 
+    // When creating from a template, inherit the template's type and mime if not explicitly provided.
+    // This ensures binary types (PDF, images, etc.) get the correct mime from the start.
+    if (params.templateNoteId) {
+        const templateNote = becca.getNote(params.templateNoteId);
+        if (templateNote) {
+            if (!params.mime) {
+                params.mime = templateNote.mime;
+            }
+        }
+    }
+
     return sql.transactional(() => {
         let note, branch, isEntityEventsDisabled;
 
@@ -250,6 +261,15 @@ function createNewNote(params: NoteParams): {
             const templateNote = becca.getNote(params.templateNoteId);
             if (!templateNote) {
                 throw new Error(`Template note '${params.templateNoteId}' does not exist.`);
+            }
+
+            // for binary content types (PDF, images, etc.), copy the template's content directly
+            // since the event handler in handlers.ts only handles string content
+            if (!templateNote.hasStringContent()) {
+                const templateContent = templateNote.getContent();
+                if (templateContent) {
+                    note.setContent(templateContent);
+                }
             }
 
             note.addRelation("template", params.templateNoteId);

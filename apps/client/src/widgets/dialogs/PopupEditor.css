@@ -1,7 +1,14 @@
 /** Reduce the z-index of modals so that ckeditor popups are properly shown on top of it. */
-body.popup-editor-open > .modal-backdrop { z-index: 998; }
-body.popup-editor-open .popup-editor-dialog { z-index: 999; }
-body.popup-editor-open .ck-clipboard-drop-target-line { z-index: 1000; }
+body.popup-editor-open:not(.popup-editor-stacked) > .modal-backdrop { z-index: 998; }
+body.popup-editor-open:not(.popup-editor-stacked) .popup-editor-dialog { z-index: 999; }
+body.popup-editor-open:not(.popup-editor-stacked) .ck-clipboard-drop-target-line { z-index: 1000; }
+
+/** When stacked on top of another Bootstrap modal (e.g. opened from a dialog's help button),
+    raise the popup and its own backdrop above the underlying modal (Bootstrap defaults are
+    backdrop 1050, dialog 1055 — no native stacking increment). */
+body.popup-editor-stacked .popup-editor-dialog { z-index: 1100; }
+body.popup-editor-stacked .ck-clipboard-drop-target-line { z-index: 1101; }
+.modal-backdrop.popup-editor-backdrop { z-index: 1099; }
 
 body.desktop .modal.popup-editor-dialog .modal-dialog {
     max-width: 75vw;

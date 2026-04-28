@@ -103,7 +103,8 @@
     "find-in-text": "在文本中查找",
     "back-in-note-history": "导航到历史记录中的上一个笔记",
     "forward-in-note-history": "导航到历史记录的下一个笔记",
-    "scroll-to-active-note": "滚动笔记树到当前笔记"
+    "scroll-to-active-note": "滚动笔记树到当前笔记",
+    "save-named-revision": "保存活动笔记的命名修订"
   },
   "login": {
     "title": "登录",
@@ -398,7 +399,8 @@
     "open-developer-tools": "打开开发者工具",
     "find-in-text": "在文本中查找",
     "toggle-left-pane": "切换左侧面板",
-    "toggle-full-screen": "切换全屏模式"
+    "toggle-full-screen": "切换全屏模式",
+    "save-named-revision": "保存已命名的修订"
   },
   "share_theme": {
     "site-theme": "网站主题",

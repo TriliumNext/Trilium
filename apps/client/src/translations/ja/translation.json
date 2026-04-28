@@ -1,6 +1,23 @@
 {
   "about": {
-    "data_directory": "データの場所:"
+    "data_directory": "データの場所:",
+    "version_label": "バージョン:",
+    "version": "{{appVersion}} (データベース: {{dbVersion}}、同期プロトコル: {{syncVersion}})",
+    "build_info": "ビルド: {{buildDate}}、リビジョン: <buildRevision />",
+    "contributors_label": "貢献者:",
+    "contributor_roles": {
+      "lead-dev": "リード開発者",
+      "original-dev": "オリジナル開発者"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran は、Zadam がプロジェクトから離脱した後に作成されたコミュニティフォークである TriliumNext を2024年に設立しました。その後、Zadam は元のリポジトリを TriliumNext チームに譲渡し、両プロジェクトは再び統合されました。",
+      "original-dev": "2017年12月25日、Zadam は Trilium（花の名前とは異なり、\"l\" は1つ）の最初のベータ版をリリースしました。既存のノート管理ツールに満足できなかった彼は、強力な自己ホスト型の階層型知識ベースを構築し、GitHub で22,000以上のスターを獲得しました。2024年、生活が忙しくなったため、彼はプロジェクトをメンテナンスモードに移行しました。"
+    },
+    "contributor_full_list": "コミュニティ全体を見る",
+    "github_tooltip": "バグの報告、機能の提案、またはGitHubでの貢献",
+    "license_tooltip": "ライセンスを表示",
+    "donate": "寄付",
+    "donate_tooltip": "このプロジェクトを支援するために寄付をお願いします"
   },
   "toast": {
     "critical-error": {
@@ -997,7 +1014,7 @@
     "existing_backups": "既存のバックアップ",
     "date-and-time": "日時",
     "path": "パス",
-    "database_backed_up_to": "データベースは{{backupFilePath}}にバックアップされました",
+    "database_backed_up_to": "データベースは {{- backupFilePath}} にバックアップされました",
     "no_backup_yet": "バックアップがありません",
     "download": "ダウンロード",
     "title": "バックアップ"
@@ -1142,8 +1159,8 @@
     "css_class": "このラベルの値は、ツリー内の特定のノートを表すノードにCSSクラスとして追加されます。これは高度なテーマ設定に役立ちます。テンプレートノートで使用できます。",
     "icon_class": "このラベルの値は、ツリー上のアイコンにCSSクラスとして追加され、ツリー内のノートを視覚的に区別するのに役立ちます。例えば、bx bx-home のように、アイコンは boxicons から取得されます。テンプレートノートで使用できます。",
     "page_size": "ノートリストの1ページあたりの項目数",
-    "custom_request_handler": "<a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">カスタムリクエストハンドラー</a>を参照してください",
-    "custom_resource_provider": "<a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">カスタムリクエストハンドラー</a>を参照してください",
+    "custom_request_handler": "カスタムリクエストハンドラー",
+    "custom_resource_provider": "カスタムリソースプロバイダー",
     "widget": "このノートをカスタムウィジェットとしてマークし、Trilium コンポーネントツリーに追加します",
     "workspace": "このノートをワークスペースとしてマークし、簡単にホイストできるようにします",
     "workspace_icon_class": "このノートにホイストされたときにタブで使用されるボックスアイコンのCSSクラスを定義します",
@@ -2176,7 +2193,8 @@
     "layers_other": "{{count}} 層",
     "pages_other": "{{count}} ページ",
     "pages_alt": "ページ {{pageNumber}}",
-    "pages_loading": "読み込み中..."
+    "pages_loading": "読み込み中...",
+    "annotations_other": "{{count}} 注釈"
   },
   "platform_indicator": {
     "available_on": "{{platform}} で利用可能"
@@ -2397,7 +2415,8 @@
     "view_extracted_text": "抽出されたテキスト（OCR）を表示",
     "processing_complete": "OCR 処理が完了しました。",
     "text_filtered_low_confidence": "OCR は {{confidence}}% の信頼度でテキストを検出しましたが、最小しきい値が {{threshold}}% であるため、破棄されました。",
-    "open_media_settings": "設定を開く"
+    "open_media_settings": "設定を開く",
+    "image_based_pdf_not_supported": "この PDF は画像ベース（スキャン画像）のようです。画像ベースの PDF からのテキスト抽出は、現時点ではサポートされていません。"
   },
   "database": {
     "title": "データベース"
@@ -2519,5 +2538,8 @@
   "common": {
     "save": "保存",
     "cancel": "キャンセル"
+  },
+  "spreadsheet": {
+    "read-only": "このノートは読み取り専用です。"
   }
 }
