@@ -18,18 +18,28 @@ export default function ProtectedSessionLockScreen() {
 
         if (cachedRootNote) {
             requestIdRef.current++;
-            setIsRootProtected(cachedRootNote.isProtected);
+            setIsRootProtected(cachedRootNote.isProtected ?? false);
             return;
         }
 
         const requestId = ++requestIdRef.current;
-        froca.getNote("root", true).then((rootNote) => {
-            if (requestId !== requestIdRef.current) {
-                return;
-            }
+        froca.getNote("root")
+            .then((rootNote) => {
+                if (requestId !== requestIdRef.current) {
+                    return;
+                }
 
-            setIsRootProtected(rootNote?.isProtected ?? false);
-        });
+                setIsRootProtected(rootNote?.isProtected ?? false);
+            })
+            .catch((error: unknown) => {
+                if (requestId !== requestIdRef.current) {
+                    return;
+                }
+
+                const message = error instanceof Error ? error.message : String(error);
+                window.logError(`Failed to load root note protection state: ${message}`);
+                setIsRootProtected(false);
+            });
     }, []);
 
     useEffect(() => {
