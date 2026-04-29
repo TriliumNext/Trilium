@@ -866,8 +866,8 @@ importers:
         specifier: 0.2.5
         version: 0.2.5
       turnish:
-        specifier: 1.8.0
-        version: 1.8.0
+        specifier: 1.10.0
+        version: 1.10.0
       unescape:
         specifier: 1.0.1
         version: 1.0.1
@@ -13252,8 +13252,8 @@ packages:
     resolution: {integrity: sha512-I8yFsfRzmzK0WV1pNNOA4A7y4RDfFxPRxb3t+e3ui14qSGOxGtiSP6GjeX+Y6CHb7HYaFj7ECUD7VE5kQMZWGQ==}
     engines: {node: '>=18', npm: '>=9'}
 
-  turnish@1.8.0:
-    resolution: {integrity: sha512-r1K94mbU5FHwvHKsPrTejuxoQTyKrddeWNzxS53Dnu+33DJLZJzfAHmo7GhdxBvhrHYCfv/diYvpq2VCGSGa+w==}
+  turnish@1.10.0:
+    resolution: {integrity: sha512-yXG7oo1ckLEDlhENs1PcxBWKYETE+srLwKr1JqF36JfKXq8IdOYwTGpsjJAiQZ16UpG1YHGHhAKApQkREf2Lqw==}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -29292,7 +29292,7 @@ snapshots:
     dependencies:
       '@mixmark-io/domino': 2.2.0
 
-  turnish@1.8.0:
+  turnish@1.10.0:
     dependencies:
       '@adobe/css-tools': 4.4.4
       '@mixmark-io/domino': 2.2.0
