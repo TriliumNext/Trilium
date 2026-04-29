@@ -22,6 +22,7 @@ import NoteTitleWidget from "../widgets/note_title.js";
 import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
+import ProtectedSessionLockScreen from "../widgets/ProtectedSessionLockScreen.jsx";
 import QuickSearchWidget from "../widgets/quick_search.js";
 import ScrollPadding from "../widgets/scroll_padding";
 import SearchResult from "../widgets/search_result.jsx";
@@ -94,7 +95,8 @@ export default class MobileLayout {
                         .child(<GlobalMenuWidget isHorizontalLayout />)
                         .id("launcher-pane"))
             )
-            .child(<CloseZenModeButton />);
+            .child(<CloseZenModeButton />)
+            .child(<ProtectedSessionLockScreen />);
         applyModals(rootContainer);
         return rootContainer;
     }

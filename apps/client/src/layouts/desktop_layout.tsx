@@ -37,6 +37,7 @@ import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
 import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
+import ProtectedSessionLockScreen from "../widgets/ProtectedSessionLockScreen.jsx";
 import QuickSearchWidget from "../widgets/quick_search.js";
 import ReadOnlyNoteInfoBar from "../widgets/ReadOnlyNoteInfoBar.jsx";
 import { FixedFormattingToolbar } from "../widgets/ribbon/FormattingToolbar.jsx";
@@ -187,6 +188,7 @@ export default class DesktopLayout {
             )
             .optChild(launcherPaneIsHorizontal && isNewLayout, <StatusBar />)
             .child(<CloseZenModeButton />)
+            .child(<ProtectedSessionLockScreen />)
 
             // Desktop-specific dialogs.
             .child(<PasswordNoteSetDialog />)
