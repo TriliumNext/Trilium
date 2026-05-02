@@ -14,4 +14,8 @@ describe("shortcuts options model", () => {
             "Ctrl+,"
         ]);
     });
+
+    it("preserves comma keys when the shortcut uses whitespace around modifiers", () => {
+        expect(parseShortcutInput("Ctrl + ,")).toEqual(["Ctrl +,"]);
+    });
 });

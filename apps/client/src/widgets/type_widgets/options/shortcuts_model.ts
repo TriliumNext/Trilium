@@ -1,8 +1,8 @@
 export function parseShortcutInput(shortcutInput: string) {
     return shortcutInput
-        .replaceAll("+,", "+Comma")
+        .replace(/\+\s*,/g, "+Comma")
         .split(",")
-        .map((shortcut) => shortcut.replaceAll("+Comma", "+,").trim())
+        .map((shortcut) => shortcut.replace(/\+Comma/g, "+,").trim())
         .filter((shortcut) => !!shortcut);
 }
 
