@@ -114,7 +114,7 @@
     "mime-types": "3.0.2",
     "multer": "2.1.1",
     "normalize-strings": "1.1.1",
-    "officeparser": "6.1.0",
+    "officeparser": "6.1.1",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
     "sanitize-filename": "1.6.4",
