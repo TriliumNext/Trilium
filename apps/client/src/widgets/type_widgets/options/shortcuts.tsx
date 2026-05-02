@@ -13,6 +13,7 @@ import dialog from "../../../services/dialog";
 import { useTriliumEvent } from "../../react/hooks";
 import "./shortcuts.css";
 import NoItems from "../../react/NoItems";
+import { getShortcutOptionValue } from "./shortcuts_model";
 
 export default function ShortcutSettings() {
     const [ keyboardShortcuts, setKeyboardShortcuts ] = useState<KeyboardShortcut[]>([]);
@@ -116,7 +117,6 @@ function filterKeyboardAction(action: KeyboardShortcut, filter: string) {
 
     return action.actionName.toLowerCase().includes(filter) ||
         (action.friendlyName && action.friendlyName.toLowerCase().includes(filter)) ||
-        (action.defaultShortcuts ?? []).some((shortcut) => shortcut.toLowerCase().includes(filter)) ||
         (action.effectiveShortcuts ?? []).some((shortcut) => shortcut.toLowerCase().includes(filter)) ||
         (action.description && action.description.toLowerCase().includes(filter));
 }
@@ -128,7 +128,6 @@ function KeyboardShortcutTable({ filteredKeyboardActions, filter }: { filteredKe
                 <tr class="text-nowrap">
                     <th>{t("shortcuts.action_name")}</th>
                     <th>{t("shortcuts.shortcuts")}</th>
-                    <th>{t("shortcuts.default_shortcuts")}</th>
                     <th>{t("shortcuts.description")}</th>
                 </tr>
             </thead>
@@ -137,7 +136,7 @@ function KeyboardShortcutTable({ filteredKeyboardActions, filter }: { filteredKe
                  ? filteredKeyboardActions.map(action => (
                     <tr>
                         {"separator" in action ?
-                            <td class="separator" colspan={4} style={{
+                            <td class="separator" colspan={3} style={{
                                 backgroundColor: "var(--accented-background-color)",
                                 fontWeight: "bold"
                             }}>
@@ -149,7 +148,6 @@ function KeyboardShortcutTable({ filteredKeyboardActions, filter }: { filteredKe
                                 <td>
                                     <ShortcutEditor keyboardShortcut={action} />
                                 </td>
-                                <td>{action.defaultShortcuts?.join(", ")}</td>
                                 <td>{action.description}</td>
                             </>
                         )}
@@ -157,7 +155,7 @@ function KeyboardShortcutTable({ filteredKeyboardActions, filter }: { filteredKe
                 ))
                 : (
                     <tr>
-                        <td colspan={4} class="text-center">
+                        <td colspan={3} class="text-center">
                             <NoItems
                                 icon="bx bx-filter-alt"
                                 text={t("shortcuts.no_results", { filter })}
@@ -172,20 +170,22 @@ function KeyboardShortcutTable({ filteredKeyboardActions, filter }: { filteredKe
 
 function ShortcutEditor({ keyboardShortcut: action }: { keyboardShortcut: ActionKeyboardShortcut }) {
     const originalShortcut = (action.effectiveShortcuts ?? []).join(", ");
+    const [ shortcutInput, setShortcutInput ] = useState(originalShortcut);
+
+    useEffect(() => {
+        setShortcutInput(originalShortcut);
+    }, [ originalShortcut ]);
+
+    function saveShortcutInput(newShortcut: string) {
+        const optionName = getOptionName(action.actionName);
+        options.save(optionName, getShortcutOptionValue(newShortcut));
+    }
 
     return (
         <FormTextBox
-            currentValue={originalShortcut}
-            onBlur={(newShortcut) => {
-                const { actionName } = action;
-                const optionName = getOptionName(actionName);
-                const newShortcuts = newShortcut
-                    .replace("+,", "+Comma")
-                    .split(",")
-                    .map((shortcut) => shortcut.replace("+Comma", "+,"))
-                    .filter((shortcut) => !!shortcut);
-                options.save(optionName, JSON.stringify(newShortcuts));
-            }}
+            currentValue={shortcutInput}
+            onChange={setShortcutInput}
+            onBlur={saveShortcutInput}
         />
     )
 }
