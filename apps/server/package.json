@@ -40,7 +40,7 @@
     "js-yaml": "4.1.1",
     "node-html-parser": "7.1.0",
     "sucrase": "3.35.1",
-    "unpdf": "1.6.0"
+    "unpdf": "1.6.2"
   },
   "devDependencies": {
     "@braintree/sanitize-url": "7.1.2",
