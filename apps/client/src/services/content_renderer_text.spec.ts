@@ -129,4 +129,22 @@ describe("Text content renderer", () => {
         expect(items[0].textContent).toBe("Child note 1");
         expect(items[1].textContent).toBe("Child note 3");
     });
+
+    it("removes embedded style tags from trimmed previews", async () => {
+        const contentEl = document.createElement("div");
+        const note = buildNote({
+            title: "Imported HTML note",
+            content: trimIndentation`
+                <style>
+                    li { margin-bottom: 8pt; }
+                </style>
+                <p>Preview text</p>
+            `
+        });
+
+        await renderText(note, $(contentEl), { trim: true });
+
+        expect(contentEl.querySelector("style")).toBeNull();
+        expect(contentEl.textContent).toContain("Preview text");
+    });
 });
