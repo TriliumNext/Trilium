@@ -16,17 +16,8 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
     if (blob && !isHtmlEmpty(blob.content)) {
         $renderedContent.append($('<div class="ck-content">').html(blob.content));
         await postProcessRichContent(note, $renderedContent, options);
-        removeEmbeddedStylesFromTrimmedPreview($renderedContent[0], options);
     } else if (note instanceof FNote && !options.noChildrenList) {
         await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
-    }
-}
-
-function removeEmbeddedStylesFromTrimmedPreview(renderedContent: HTMLElement, options: RenderOptions) {
-    if (!options.trim) return;
-
-    for (const styleEl of renderedContent.querySelectorAll("style")) {
-        styleEl.remove();
     }
 }
 
@@ -63,6 +54,10 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
 
     await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
     await formatCodeBlocks($renderedContent);
+
+    if (options.trim) {
+        $renderedContent.find("style").remove();
+    }
 }
 
 async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<string>) {
