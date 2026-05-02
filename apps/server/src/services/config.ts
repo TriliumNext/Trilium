@@ -128,6 +128,8 @@ export interface TriliumConfig {
         oauthIssuerName: string;
         /** URL to the OAuth provider's icon/logo */
         oauthIssuerIcon: string;
+        /** Timeout in milliseconds for OAuth/OIDC HTTP requests (discovery, token exchange, userinfo). Default: 30000 */
+        oauthHttpTimeout: number;
     };
     /** Logging configuration */
     Logging: {
@@ -447,6 +449,17 @@ const configMapping = {
             aliasEnvVars: ['TRILIUM_OAUTH_ISSUER_ICON'],
             iniGetter: () => getIniSection("MultiFactorAuthentication")?.oauthIssuerIcon,
             defaultValue: ''
+        },
+        oauthHttpTimeout: {
+            standardEnvVar: 'TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT',
+            aliasEnvVars: ['TRILIUM_OAUTH_HTTP_TIMEOUT'],
+            iniGetter: () => getIniSection("MultiFactorAuthentication")?.oauthHttpTimeout,
+            defaultValue: 30000,
+            transformer: (value: unknown) => {
+                const parsed = parseInt(String(value));
+                // express-openid-connect requires httpTimeout >= 500
+                return Number.isFinite(parsed) && parsed >= 500 ? parsed : 30000;
+            }
         }
     },
     Logging: {
@@ -507,7 +520,8 @@ const config: TriliumConfig = {
         oauthClientSecret: getConfigValue(configMapping.MultiFactorAuthentication.oauthClientSecret),
         oauthIssuerBaseUrl: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerBaseUrl),
         oauthIssuerName: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerName),
-        oauthIssuerIcon: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerIcon)
+        oauthIssuerIcon: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerIcon),
+        oauthHttpTimeout: getConfigValue(configMapping.MultiFactorAuthentication.oauthHttpTimeout)
     },
     Logging: {
         retentionDays: getConfigValue(configMapping.Logging.retentionDays)
@@ -565,6 +579,7 @@ const config: TriliumConfig = {
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL : OAuth issuer URL
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME    : OAuth provider name
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON    : OAuth provider icon
+ * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT   : OAuth HTTP timeout in ms (default 30000)
  *
  * Logging Section:
  * - TRILIUM_LOGGING_RETENTIONDAYS        : Log retention period in days
@@ -590,6 +605,7 @@ const config: TriliumConfig = {
  * - TRILIUM_OAUTH_ISSUER_BASE_URL        : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL
  * - TRILIUM_OAUTH_ISSUER_NAME            : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME
  * - TRILIUM_OAUTH_ISSUER_ICON            : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON
+ * - TRILIUM_OAUTH_HTTP_TIMEOUT           : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT
  *
  * Logging (with underscore):
  * - TRILIUM_LOGGING_RETENTION_DAYS       : Same as TRILIUM_LOGGING_RETENTIONDAYS
