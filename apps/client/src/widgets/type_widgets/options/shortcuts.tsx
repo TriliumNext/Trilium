@@ -134,7 +134,7 @@ function KeyboardShortcutTable({ filteredKeyboardActions, filter }: { filteredKe
             <tbody>
                 {filteredKeyboardActions.length > 0
                  ? filteredKeyboardActions.map(action => (
-                    <tr>
+                    <tr key={"separator" in action ? `separator-${action.separator}` : action.actionName}>
                         {"separator" in action ?
                             <td class="separator" colspan={3} style={{
                                 backgroundColor: "var(--accented-background-color)",
