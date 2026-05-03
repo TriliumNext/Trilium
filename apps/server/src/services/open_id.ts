@@ -60,6 +60,60 @@ function getOAuthStatus() {
     };
 }
 
+/**
+ * Express middleware that refreshes the OIDC access token in-place when it is expired.
+ *
+ * Why this exists: express-openid-connect stores `access_token` and `refresh_token` in the
+ * appSession cookie but does not auto-refresh on expiry. Without this middleware:
+ *   - The access token sitting in the cookie goes stale after the IdP-configured TTL
+ *     (typically 1 hour) even though the appSession cookie itself lives for 21 days.
+ *   - Any future Trilium feature that wants to call an IdP-protected API on the user's
+ *     behalf would silently fail.
+ *   - We have no signal when the IdP has revoked the user's session — refresh is the
+ *     only way to learn about revocation between login and the next manual logout.
+ *
+ * Behavior:
+ *   - Skipped entirely when the user is not OIDC-authenticated, when the access token is
+ *     still valid, or when no refresh token is present (e.g. the IdP didn't issue one
+ *     because the chosen `oauthScope` didn't include `offline_access` and `access_type=offline`
+ *     was ignored by the provider).
+ *   - On refresh failure, logs and proceeds. The local trilium.sid session is the source
+ *     of truth for "is this user logged in," so a transient IdP outage doesn't kick the
+ *     user out. `invalid_grant` (revoked / expired refresh token) is logged at info level
+ *     so it shows up in normal logs without being alarming — handling revocation as a
+ *     hard logout is a future-PR decision.
+ */
+function refreshOidcTokenIfNeeded(req: Request, res: Response, next: NextFunction) {
+    if (!req.oidc?.isAuthenticated() || !req.session?.loggedIn) {
+        return next();
+    }
+
+    const accessToken = req.oidc.accessToken;
+    if (!accessToken || !accessToken.isExpired()) {
+        return next();
+    }
+
+    if (!req.oidc.refreshToken) {
+        // No refresh token available — usually means the chosen scope/provider didn't issue one.
+        // Nothing to do; the access token will remain expired until the user re-authenticates.
+        return next();
+    }
+
+    req.oidc
+        .refresh()
+        .then(() => next())
+        .catch((err: unknown) => {
+            const oauthError = (err as { error?: string })?.error;
+            const message = err instanceof Error ? err.message : String(err);
+            if (oauthError === 'invalid_grant') {
+                log.info(`OIDC refresh token rejected by IdP (invalid_grant): ${message}. Local session continues until cookie expiry.`);
+            } else {
+                log.info(`OIDC token refresh failed: ${message}. Continuing with expired access token.`);
+            }
+            next();
+        });
+}
+
 async function isTokenValid(req: Request, res: Response, next: NextFunction) {
     const userStatus = openIDEncryption.isSubjectIdentifierSaved();
 
@@ -193,4 +247,5 @@ export default {
     clearSavedUser,
     isTokenValid,
     isUserSaved,
+    refreshOidcTokenIfNeeded,
 };
