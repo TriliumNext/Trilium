@@ -61,27 +61,46 @@ function getOAuthStatus() {
 }
 
 /**
+ * In-flight refresh promises keyed by trilium.sid session ID, so concurrent expired-token
+ * requests share a single network call to the IdP. Without this, refresh-token rotation
+ * (Authentik, Auth0, Okta default) breaks under load: the first request consumes the RT,
+ * the rest see invalid_grant on a stale RT and would (per the policy below) be force-logged
+ * out — exactly the spurious-logout failure mode reported in oauth2-proxy#1992,
+ * openai/codex#10332, and similar issues.
+ */
+const inFlightRefreshes = new Map<string, Promise<void>>();
+
+/** Test-only: clear the in-flight refresh cache between cases. Not exported in the default. */
+export function _resetInFlightRefreshesForTesting() {
+    inFlightRefreshes.clear();
+}
+
+/**
  * Express middleware that refreshes the OIDC access token in-place when it is expired.
  *
  * Why this exists: express-openid-connect stores `access_token` and `refresh_token` in the
  * appSession cookie but does not auto-refresh on expiry. Without this middleware:
- *   - The access token sitting in the cookie goes stale after the IdP-configured TTL
- *     (typically 1 hour) even though the appSession cookie itself lives for 21 days.
- *   - Any future Trilium feature that wants to call an IdP-protected API on the user's
- *     behalf would silently fail.
- *   - We have no signal when the IdP has revoked the user's session — refresh is the
- *     only way to learn about revocation between login and the next manual logout.
+ *   - The access token goes stale after the IdP-configured TTL (typically 1 hour) even
+ *     though the appSession cookie itself lives for 21 days.
+ *   - Any Trilium feature that calls an IdP-protected API on the user's behalf would
+ *     silently fail with stale credentials.
+ *   - We have no signal when the IdP has revoked the user's session — a successful refresh
+ *     is the only way to learn revocation between login and the next manual logout.
  *
  * Behavior:
- *   - Skipped entirely when the user is not OIDC-authenticated, when the access token is
- *     still valid, or when no refresh token is present (e.g. the IdP didn't issue one
- *     because the chosen `oauthScope` didn't include `offline_access` and `access_type=offline`
- *     was ignored by the provider).
- *   - On refresh failure, logs and proceeds. The local trilium.sid session is the source
- *     of truth for "is this user logged in," so a transient IdP outage doesn't kick the
- *     user out. `invalid_grant` (revoked / expired refresh token) is logged at info level
- *     so it shows up in normal logs without being alarming — handling revocation as a
- *     hard logout is a future-PR decision.
+ *   - Skipped when the user is not OIDC-authenticated, the access token is still valid,
+ *     or no refresh token is present (the chosen `oauthScope` didn't include `offline_access`
+ *     and the provider ignored `access_type=offline`).
+ *   - On `invalid_grant` (RFC 6749: refresh token revoked / expired / consent withdrawn /
+ *     auth policy changed): marks the local session as not-authenticated. The downstream
+ *     `auth.checkAuth` middleware sees `!req.session.loggedIn` and redirects to /login.
+ *     This matches Auth0/Okta/Logto guidance that invalid_grant is terminal — the user
+ *     must re-authenticate.
+ *   - On other errors (network blip, IdP 5xx, etc.): logs and proceeds. The local
+ *     trilium.sid session is the source of truth for "is this user logged in," so a
+ *     transient IdP outage doesn't bounce the user.
+ *   - Concurrent requests with the same trilium.sid share one in-flight refresh promise,
+ *     preventing refresh-token-rotation races.
  */
 function refreshOidcTokenIfNeeded(req: Request, res: Response, next: NextFunction) {
     if (!req.oidc?.isAuthenticated() || !req.session?.loggedIn) {
@@ -94,22 +113,32 @@ function refreshOidcTokenIfNeeded(req: Request, res: Response, next: NextFunctio
     }
 
     if (!req.oidc.refreshToken) {
-        // No refresh token available — usually means the chosen scope/provider didn't issue one.
-        // Nothing to do; the access token will remain expired until the user re-authenticates.
         return next();
     }
 
-    req.oidc
-        .refresh()
+    const sessionId = req.sessionID;
+    let refreshPromise = inFlightRefreshes.get(sessionId);
+    if (!refreshPromise) {
+        refreshPromise = req.oidc
+            .refresh()
+            .then(() => undefined)
+            .finally(() => {
+                inFlightRefreshes.delete(sessionId);
+            });
+        inFlightRefreshes.set(sessionId, refreshPromise);
+    }
+
+    refreshPromise
         .then(() => next())
         .catch((err: unknown) => {
             const oauthError = (err as { error?: string })?.error;
             const message = err instanceof Error ? err.message : String(err);
             if (oauthError === 'invalid_grant') {
-                log.info(`OIDC refresh token rejected by IdP (invalid_grant): ${message}. Local session continues until cookie expiry.`);
-            } else {
-                log.info(`OIDC token refresh failed: ${message}. Continuing with expired access token.`);
+                log.info(`OIDC refresh token rejected by IdP (invalid_grant): ${message}. Forcing re-authentication.`);
+                req.session.loggedIn = false;
+                return next();
             }
+            log.info(`OIDC token refresh failed: ${message}. Continuing with expired access token.`);
             next();
         });
 }
