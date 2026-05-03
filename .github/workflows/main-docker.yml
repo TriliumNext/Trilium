@@ -9,7 +9,18 @@ on:
       - "bin/**"
     tags:
       - "v*"
+  pull_request:
+    branches:
+      - main
+      - "release/*"
+    paths-ignore:
+      - "docs/**"
+      - "bin/**"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   GHCR_REGISTRY: ghcr.io
@@ -106,6 +117,7 @@ jobs:
 
   build:
     name: Build Docker images
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       fail-fast: false
       matrix:
@@ -170,6 +182,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=tag
+            type=ref,event=pr
             type=sha
           flavor: |
             latest=false
@@ -213,6 +226,7 @@ jobs:
 
   merge:
     name: Merge manifest lists
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     needs:
       - build
@@ -239,6 +253,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
         with:
           registry: ${{ env.DOCKERHUB_REGISTRY }}
@@ -253,6 +268,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=tag
+            type=ref,event=pr
             type=sha
           flavor: |
             latest=false
@@ -270,6 +286,8 @@ jobs:
 
       - name: Create and push multi-arch manifest
         working-directory: /tmp/digests
+        env:
+          IS_PR: ${{ github.event_name == 'pull_request' }}
         run: |
           GHCR_IMAGE="${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}"
           DOCKERHUB_IMAGE="${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}"
@@ -281,13 +299,16 @@ jobs:
           done
 
           # Create multi-arch manifest for each tag from metadata, plus copy to DockerHub
+          # (DockerHub copy is skipped for PR builds — PR previews live on GHCR only)
           while IFS= read -r TAG; do
             echo "Creating manifest: ${TAG}"
             crane index append ${MANIFEST_ARGS} -t "${TAG}"
 
-            SUFFIX="${TAG#*:}"
-            echo "Copying to DockerHub: ${DOCKERHUB_IMAGE}:${SUFFIX}"
-            crane copy "${TAG}" "${DOCKERHUB_IMAGE}:${SUFFIX}"
+            if [[ "${IS_PR}" != "true" ]]; then
+              SUFFIX="${TAG#*:}"
+              echo "Copying to DockerHub: ${DOCKERHUB_IMAGE}:${SUFFIX}"
+              crane copy "${TAG}" "${DOCKERHUB_IMAGE}:${SUFFIX}"
+            fi
           done <<< "${{ steps.meta.outputs.tags }}"
 
           # For stable releases (tags without hyphens), also create stable + latest
@@ -304,10 +325,16 @@ jobs:
 
       - name: Inspect manifests
         run: |
-          REF_NAME="${GITHUB_REF#refs/heads/}"
-          REF_NAME="${REF_NAME#refs/tags/}"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            REF_NAME="pr-${{ github.event.pull_request.number }}"
+          else
+            REF_NAME="${GITHUB_REF#refs/heads/}"
+            REF_NAME="${REF_NAME#refs/tags/}"
+          fi
           echo "=== GHCR ==="
           crane manifest "${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME}"
-          echo ""
-          echo "=== DockerHub ==="
-          crane manifest "${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME}"
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo ""
+            echo "=== DockerHub ==="
+            crane manifest "${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME}"
+          fi
