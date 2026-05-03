@@ -165,7 +165,16 @@ function generateOAuthConfig() {
                         totpEnabled: false,
                         ssoEnabled: true
                     };
-                    resolve();
+                    // Explicit save: afterCallback runs inside a Promise chain and the redirect is
+                    // issued by the express-openid-connect middleware *after* this function returns,
+                    // so we can't rely on res.end-triggered auto-save fully completing in time.
+                    req.session.save((saveErr) => {
+                        if (saveErr) {
+                            log.error(`Failed to save session after OIDC regeneration: ${saveErr}`);
+                            return reject(saveErr);
+                        }
+                        resolve();
+                    });
                 });
             });
 
