@@ -117,7 +117,7 @@ function generateOAuthConfig() {
         clientSecret: config.MultiFactorAuthentication.oauthClientSecret,
         authorizationParams: {
             response_type: "code",
-            scope: "openid profile email",
+            scope: config.MultiFactorAuthentication.oauthScope,
             access_type: "offline",
             prompt: "consent",
         },

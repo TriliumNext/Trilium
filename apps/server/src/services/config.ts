@@ -130,6 +130,8 @@ export interface TriliumConfig {
         oauthIssuerIcon: string;
         /** Timeout in milliseconds for OAuth/OIDC HTTP requests (discovery, token exchange, userinfo). Default: 30000 */
         oauthHttpTimeout: number;
+        /** Space-separated OIDC scopes requested at login. Default: 'openid profile email' */
+        oauthScope: string;
     };
     /** Logging configuration */
     Logging: {
@@ -460,6 +462,19 @@ const configMapping = {
                 // express-openid-connect requires httpTimeout >= 500
                 return Number.isFinite(parsed) && parsed >= 500 ? parsed : 30000;
             }
+        },
+        oauthScope: {
+            standardEnvVar: 'TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE',
+            aliasEnvVars: ['TRILIUM_OAUTH_SCOPE'],
+            iniGetter: () => getIniSection("MultiFactorAuthentication")?.oauthScope,
+            defaultValue: 'openid profile email',
+            transformer: (value: unknown) => {
+                const trimmed = String(value).trim();
+                if (!trimmed) return 'openid profile email';
+                // 'openid' is required by the spec; silently prepend if a user forgot it.
+                const tokens = trimmed.split(/\s+/);
+                return tokens.includes('openid') ? trimmed : `openid ${trimmed}`;
+            }
         }
     },
     Logging: {
@@ -521,7 +536,8 @@ const config: TriliumConfig = {
         oauthIssuerBaseUrl: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerBaseUrl),
         oauthIssuerName: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerName),
         oauthIssuerIcon: getConfigValue(configMapping.MultiFactorAuthentication.oauthIssuerIcon),
-        oauthHttpTimeout: getConfigValue(configMapping.MultiFactorAuthentication.oauthHttpTimeout)
+        oauthHttpTimeout: getConfigValue(configMapping.MultiFactorAuthentication.oauthHttpTimeout),
+        oauthScope: getConfigValue(configMapping.MultiFactorAuthentication.oauthScope)
     },
     Logging: {
         retentionDays: getConfigValue(configMapping.Logging.retentionDays)
@@ -580,6 +596,7 @@ const config: TriliumConfig = {
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME    : OAuth provider name
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON    : OAuth provider icon
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT   : OAuth HTTP timeout in ms (default 30000)
+ * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE         : Space-separated OIDC scopes (default 'openid profile email')
  *
  * Logging Section:
  * - TRILIUM_LOGGING_RETENTIONDAYS        : Log retention period in days
@@ -606,6 +623,7 @@ const config: TriliumConfig = {
  * - TRILIUM_OAUTH_ISSUER_NAME            : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME
  * - TRILIUM_OAUTH_ISSUER_ICON            : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON
  * - TRILIUM_OAUTH_HTTP_TIMEOUT           : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT
+ * - TRILIUM_OAUTH_SCOPE                  : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE
  *
  * Logging (with underscore):
  * - TRILIUM_LOGGING_RETENTION_DAYS       : Same as TRILIUM_LOGGING_RETENTIONDAYS
