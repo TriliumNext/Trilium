@@ -36,7 +36,7 @@
     "@modelcontextprotocol/sdk": "^1.12.1",
     "ai": "6.0.168",
     "better-sqlite3": "12.9.0",
-    "html-to-text": "9.0.5",
+    "html-to-text": "10.0.0",
     "js-yaml": "4.1.1",
     "node-html-parser": "7.1.0",
     "sucrase": "3.35.1",
