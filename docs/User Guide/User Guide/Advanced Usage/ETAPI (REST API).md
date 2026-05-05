@@ -2,6 +2,9 @@
 > [!TIP]
 > For a quick start, consult the <a class="reference-link" href="ETAPI%20(REST%20API)/API%20Reference.dat">API Reference</a>.
 
+> [!NOTE]
+> Desktop app default ETAPI/server URL is `http://localhost:37840` in production (`http://localhost:37740` in development). The `http://localhost:8080` examples are for the server app and should be adjusted to match your setup.
+
 ETAPI is Trilium's public/external REST API. It is available since Trilium v0.50.
 
 ## API clients
@@ -55,7 +58,7 @@ SERVER=http://localhost:8080
 
 # Download a note by ID
 NOTE_ID="i6ra4ZshJhgN"
-curl "$SERVER/etapi/notes/$NOTE_ID/content" -H "Authorization: $TOKEN" 
+curl "$SERVER/etapi/notes/$NOTE_ID/content" -H "Authorization: $TOKEN"
 ```
 
 Make sure to replace the values of:
