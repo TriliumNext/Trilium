@@ -55,7 +55,7 @@
     "force-graph": "1.51.4",
     "htmldiff-js": "1.0.5",
     "i18next": "26.0.8",
-    "i18next-http-backend": "3.0.6",
+    "i18next-http-backend": "4.0.0",
     "jquery": "4.0.0",
     "jquery.fancytree": "2.38.5",
     "jsplumb": "2.15.6",
