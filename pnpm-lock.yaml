@@ -286,8 +286,8 @@ importers:
         specifier: 0.20.1
         version: 0.20.1(@types/react-dom@19.1.6(@types/react@19.1.7))(@types/react@19.1.7)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rxjs@7.8.2)
       '@zumer/snapdom':
-        specifier: 2.9.0
-        version: 2.9.0
+        specifier: 2.12.0
+        version: 2.12.0
       autocomplete.js:
         specifier: 0.38.1
         version: 0.38.1
@@ -5893,6 +5893,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@univerjs-pro/collaboration-client-ui@0.20.1':
     resolution: {integrity: sha512-uPwtmx+/smG/Vcu7tfktNeSMdP6tY1l+o0lsaCJBe5pSaooDEQI6qe8qCX2Ndt7Ij11w/kleKHF3mcQHL2HNbA==}
@@ -6665,8 +6666,8 @@ packages:
     resolution: {integrity: sha512-0fztsk/0ryJ+2PPr9EyXS5/Co7OK8q3zY/xOoozEWaUsL5x+C0cyZ4YyMuUffOO2Dx/rAdq4JMPqW0VUtm+vzA==}
     engines: {bun: '>=0.7.0', deno: '>=1.0.0', node: '>=18.0.0'}
 
-  '@zumer/snapdom@2.9.0':
-    resolution: {integrity: sha512-ksDM5gXQmu1isBof/YumD2HeIHf4ImTMfba9xE4JyDbARhcZCWHFdjW8oZV3hSKdWpQILEspNq5MrAfwEfzpIw==}
+  '@zumer/snapdom@2.12.0':
+    resolution: {integrity: sha512-TdLGu+1RkKI3JKfMFvn1gRPD/rl8hrAeN6aFjjd0w7S39nulbd94ChxSlfH7nSCm8kzuQkeWFxIsij4+Mk1RDg==}
 
   abbrev@1.1.1:
     resolution: {integrity: sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==}
@@ -13624,10 +13625,12 @@ packages:
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   validate-npm-package-license@3.0.4:
@@ -21476,7 +21479,7 @@ snapshots:
 
   '@zip.js/zip.js@2.8.11': {}
 
-  '@zumer/snapdom@2.9.0': {}
+  '@zumer/snapdom@2.12.0': {}
 
   abbrev@1.1.1: {}
 
