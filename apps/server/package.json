@@ -94,7 +94,7 @@
     "express": "5.2.1",
     "express-http-proxy": "2.1.2",
     "express-openid-connect": "2.20.2",
-    "express-rate-limit": "8.4.1",
+    "express-rate-limit": "8.5.1",
     "express-session": "1.19.0",
     "file-uri-to-path": "2.0.0",
     "fs-extra": "11.3.4",
