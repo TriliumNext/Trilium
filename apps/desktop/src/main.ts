@@ -13,7 +13,12 @@ import port from "@triliumnext/server/src/services/port.js";
 import { join, resolve } from "path";
 import { deferred, LOCALES } from "../../../packages/commons/src";
 
+let startupDeepLink: string | null = null;
+const pendingDeepLinks: string[] = [];
+
 async function main() {
+    startupDeepLink = findDeepLinkArg(process.argv);
+
     const userDataPath = getUserData();
     app.setPath("userData", userDataPath);
 
@@ -69,8 +74,15 @@ async function main() {
         globalShortcut.unregisterAll();
     });
 
-    app.on("second-instance", (event, commandLine) => {
+    app.on("second-instance", (_event: unknown, commandLine: string[]) => {
         const lastFocusedWindow = windowService.getLastFocusedWindow();
+        const deepLink = findDeepLinkArg(commandLine);
+
+        if (deepLink) {
+            openDeepLink(deepLink);
+            return;
+        }
+
         if (commandLine.includes("--new-window")) {
             windowService.createExtraWindow("");
         } else if (lastFocusedWindow) {
@@ -80,6 +92,11 @@ async function main() {
             lastFocusedWindow.show();
             lastFocusedWindow.focus();
         }
+    });
+
+    app.on("open-url", (event: { preventDefault: () => void }, url: string) => {
+        event.preventDefault();
+        openDeepLink(url);
     });
 
     await initializeTranslations();
@@ -114,6 +131,8 @@ function getUserData() {
 }
 
 async function onReady() {
+    app.setAsDefaultProtocolClient("trilium");
+
     //    app.setAppUserModelId('com.github.zadam.trilium');
 
     // if db is not initialized -> setup process
@@ -137,6 +156,13 @@ async function onReady() {
     }
 
     await windowService.registerGlobalShortcuts();
+
+    if (startupDeepLink) {
+        openDeepLink(startupDeepLink);
+        startupDeepLink = null;
+    }
+
+    flushPendingDeepLinks();
 }
 
 function getElectronLocale() {
@@ -148,6 +174,61 @@ function getElectronLocale() {
     if (formattingLocale && !correspondingLocale?.rtl) return formattingLocale;
 
     return uiLocale || "en"
+}
+
+function findDeepLinkArg(args: string[]) {
+    return args.find((arg) => arg?.startsWith("trilium://")) || null;
+}
+
+function parseDeepLinkNoteId(deepLink: string) {
+    try {
+        const parsed = new URL(deepLink);
+        if (parsed.protocol !== "trilium:") {
+            return null;
+        }
+
+        if (parsed.hostname !== "note") {
+            return null;
+        }
+
+        const noteId = decodeURIComponent(parsed.pathname.replace(/^\/+/, ""));
+        if (!noteId || !/^[A-Za-z0-9_]{4,}$/.test(noteId)) {
+            return null;
+        }
+
+        return noteId;
+    } catch {
+        return null;
+    }
+}
+
+function openDeepLink(deepLink: string) {
+    const noteId = parseDeepLinkNoteId(deepLink);
+    if (!noteId) {
+        return;
+    }
+
+    const targetWindow = windowService.getLastFocusedWindow() || windowService.getMainWindow();
+    if (!targetWindow || targetWindow.isDestroyed()) {
+        pendingDeepLinks.push(deepLink);
+        return;
+    }
+
+    if (targetWindow.isMinimized()) {
+        targetWindow.restore();
+    }
+    targetWindow.show();
+    targetWindow.focus();
+    targetWindow.webContents.send("openInSameTab", noteId);
+}
+
+function flushPendingDeepLinks() {
+    const pending = [...pendingDeepLinks];
+    pendingDeepLinks.length = 0;
+
+    for (const deepLink of pending) {
+        openDeepLink(deepLink);
+    }
 }
 
 main();
