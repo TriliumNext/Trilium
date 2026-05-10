@@ -53,7 +53,8 @@ export function parseColor(color: string) {
     try {
         return Color(color.toLowerCase());
     } catch (ex) {
-        console.error(ex);
+        // Silently ignore invalid color strings; return undefined instead of logging errors.
+        return undefined;
     }
 }
 
