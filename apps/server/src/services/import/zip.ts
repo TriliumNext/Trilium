@@ -3,6 +3,7 @@
 import { ALLOWED_NOTE_TYPES, type NoteType } from "@triliumnext/commons";
 import path from "path";
 import type { Stream } from "stream";
+import chardet from "chardet";
 import yauzl from "yauzl";
 
 import becca from "../../becca/becca.js";
@@ -560,6 +561,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
         }
     }
 
+    // Detect filename encoding once for the whole ZIP (e.g. GBK for Chinese Windows ZIPs)
+    const filenameEncoding = await detectZipFilenameEncoding(fileBuffer);
+
     // we're running two passes in order to obtain critical information first (meta file and root)
     const topLevelItems = new Set<string>();
     await readZipFile(fileBuffer, async (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => {
@@ -578,7 +582,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
         topLevelItems.add(topLevelPath);
 
         zipfile.readEntry();
-    });
+    }, filenameEncoding);
 
     topLevelPath = (topLevelItems.size > 1 ? "" : topLevelItems.values().next().value ?? "");
 
@@ -595,7 +599,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
 
         taskContext.increaseProgressCount();
         zipfile.readEntry();
-    });
+    }, filenameEncoding);
 
     for (const noteId of createdNoteIds) {
         const note = becca.getNote(noteId);
@@ -661,7 +665,39 @@ export function readContent(zipfile: yauzl.ZipFile, entry: yauzl.Entry): Promise
     });
 }
 
-export function readZipFile(buffer: Buffer, processEntryCallback: (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => Promise<void>) {
+/**
+ * Detects the filename encoding used in a ZIP file by collecting all
+ * non-UTF-8-flagged entry names and running charset detection on them.
+ * Returns the detected encoding label (usable with TextDecoder), or "utf-8" as fallback.
+ */
+function detectZipFilenameEncoding(buffer: Buffer): Promise<string> {
+    return new Promise<string>((res, rej) => {
+        yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false, decodeStrings: false }, (err, zipfile) => {
+            if (err) return rej(err);
+            if (!zipfile) return rej(new Error("Unable to read zip file."));
+
+            const samples: Buffer[] = [];
+            zipfile.readEntry();
+            zipfile.on("entry", (entry) => {
+                const isUtf8Flagged = !!(entry.generalPurposeBitFlag & 0x800);
+                if (!isUtf8Flagged && Buffer.isBuffer(entry.fileName)) {
+                    samples.push(entry.fileName as Buffer);
+                }
+                zipfile.readEntry();
+            });
+            zipfile.on("end", () => {
+                if (samples.length === 0) {
+                    return res("utf-8");
+                }
+                const combined = Buffer.concat(samples);
+                const detected = chardet.detect(combined);
+                res(detected || "utf-8");
+            });
+        });
+    });
+}
+
+export function readZipFile(buffer: Buffer, processEntryCallback: (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => Promise<void>, filenameEncoding?: string) {
     return new Promise<void>((res, rej) => {
         yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false, decodeStrings: false }, (err, zipfile) => {
             if (err) rej(err);
@@ -670,11 +706,10 @@ export function readZipFile(buffer: Buffer, processEntryCallback: (zipfile: yauz
             zipfile.readEntry();
             zipfile.on("entry", async (entry) => {
                 try {
-                    // yauzl with decodeStrings: false returns fileName as a Buffer.
-                    // We decode as UTF-8 to handle ZIP files that use UTF-8 filenames
-                    // without setting the general purpose bit flag 11 (language encoding flag).
                     if (Buffer.isBuffer(entry.fileName)) {
-                        entry.fileName = (entry.fileName as Buffer).toString("utf-8");
+                        const isUtf8Flagged = !!(entry.generalPurposeBitFlag & 0x800);
+                        const encoding = isUtf8Flagged ? "utf-8" : (filenameEncoding || "utf-8");
+                        entry.fileName = decodeBuffer(entry.fileName as Buffer, encoding);
                     }
 
                     await processEntryCallback(zipfile, entry);
@@ -685,6 +720,15 @@ export function readZipFile(buffer: Buffer, processEntryCallback: (zipfile: yauz
             zipfile.on("end", res);
         });
     });
+}
+
+function decodeBuffer(buf: Buffer, encoding: string): string {
+    try {
+        return new TextDecoder(encoding).decode(buf);
+    } catch {
+        // Fallback if the encoding label isn't supported by TextDecoder
+        return buf.toString("utf-8");
+    }
 }
 
 function resolveNoteType(type: string | undefined): NoteType {

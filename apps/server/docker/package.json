@@ -1,5 +1,10 @@
 {
     "dependencies": {
         "better-sqlite3": "12.9.0"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "better-sqlite3"
+        ]
     }
 }

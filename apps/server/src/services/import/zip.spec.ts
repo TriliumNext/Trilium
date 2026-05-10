@@ -76,6 +76,15 @@ describe("processNoteContent", () => {
         expect(importedNote.title).toBe("测试");
     });
 
+    it("can import ZIP with GBK-encoded filenames (Chinese Windows)", async () => {
+        const { rootNote } = await testImport("gbk-support.zip");
+        const children = rootNote.getChildNotes().map((n) => n.title);
+        expect(children).toContain("测试文件.txt");
+        expect(children).toContain("中文目录");
+        const dirNote = rootNote.getChildNotes().find((n) => n.title === "中文目录")!;
+        expect(dirNote.getChildNotes().map((n) => n.title)).toContain("子文件.txt");
+    });
+
     it("can import old geomap notes", async () => {
         const { importedNote } = await testImport("geomap.zip");
         expect(importedNote.type).toBe("book");
