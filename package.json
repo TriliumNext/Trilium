@@ -79,7 +79,7 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.59.0",
     "vite": "8.0.10",
-    "vite-plugin-dts": "4.5.4",
+    "vite-plugin-dts": "5.0.0",
     "vitest": "4.1.5"
   },
   "license": "AGPL-3.0-only",
