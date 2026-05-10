@@ -543,11 +543,6 @@ body.mobile .dropdown .dropdown-submenu {
     font-family: var(--monospace-font-family) !important;
 }
 
-body .cm-editor .cm-gutters {
-    background-color: inherit !important;
-    border-inline-end: none;
-}
-
 body .cm-editor .cm-placeholder {
     color: #999 !important;
 }
