@@ -8,6 +8,7 @@ import { openNoteContextMenu } from "./context_menu";
 import { t } from "../../../services/i18n";
 import UserAttributesDisplay from "../../attribute_widgets/UserAttributesList";
 import { useTriliumEvent } from "../../react/hooks";
+import { calculateTaskProgress, type TaskProgress } from "./task_utils";
 
 export const CARD_CLIPBOARD_TYPE = "trilium/board-card";
 
@@ -40,11 +41,41 @@ export default function Card({
     const isArchived = note.isArchived;
     const [ isVisible, setVisible ] = useState(true);
     const [ title, setTitle ] = useState(note.title);
+    const [ taskProgress, setTaskProgress ] = useState<TaskProgress | null>(null);
+    const taskProgressRequestId = useRef(0);
+
+    const loadTaskProgress = useCallback(() => {
+        const requestId = ++taskProgressRequestId.current;
+
+        if (note.type !== "text") {
+            setTaskProgress(null);
+            return;
+        }
+
+        note.getContent()
+            .then(content => {
+                if (requestId !== taskProgressRequestId.current) {
+                    return;
+                }
+
+                setTaskProgress(typeof content === "string" ? calculateTaskProgress(content) : null);
+            })
+            .catch(error => {
+                if (requestId === taskProgressRequestId.current) {
+                    console.error(`Failed to load checklist progress for note '${note.noteId}':`, error);
+                    setTaskProgress(null);
+                }
+            });
+    }, [ note ]);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const row = loadResults.getEntityRow("notes", note.noteId);
         if (row) {
             setTitle(row.title);
+        }
+
+        if (row?.type !== note.type || loadResults.isNoteContentReloaded(note.noteId)) {
+            loadTaskProgress();
         }
     });
 
@@ -89,6 +120,14 @@ export default function Card({
     }, [ note ]);
 
     useEffect(() => {
+        loadTaskProgress();
+
+        return () => {
+            taskProgressRequestId.current++;
+        };
+    }, [ loadTaskProgress ]);
+
+    useEffect(() => {
         setVisible(!isDragging);
     }, [ isDragging ]);
 
@@ -118,6 +157,19 @@ export default function Card({
                         onClick={handleEdit}
                     />
                     <UserAttributesDisplay note={note} ignoredAttributes={[api.statusAttribute]} />
+                    {taskProgress && (
+                        <div
+                            className="task-progress"
+                            title={t("board_view.task-progress", { completed: taskProgress.completed, total: taskProgress.total })}
+                            aria-label={t("board_view.task-progress", { completed: taskProgress.completed, total: taskProgress.total })}
+                        >
+                            <span className="task-progress-label">
+                                <span className="icon bx bx-check-square" />
+                                {taskProgress.completed}/{taskProgress.total}
+                            </span>
+                            <progress value={taskProgress.completed} max={taskProgress.total} />
+                        </div>
+                    )}
                 </>
             ) : (
                 <TitleEditor

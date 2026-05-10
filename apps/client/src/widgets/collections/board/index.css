@@ -190,6 +190,50 @@ body.mobile .board-view-container .board-add-column {
   background-color: var(--main-background-color);
 }
 
+.board-view-container .board-note .task-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: 0.5em;
+  color: var(--muted-text-color);
+  font-size: 0.85em;
+}
+
+.board-view-container .board-note .task-progress-label {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.board-view-container .board-note .task-progress-label .icon {
+  margin-inline-end: 0.2em;
+}
+
+.board-view-container .board-note .task-progress progress {
+  flex-grow: 1;
+  min-width: 0;
+  height: 0.45em;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--accented-background-color);
+  overflow: hidden;
+}
+
+.board-view-container .board-note .task-progress progress::-webkit-progress-bar {
+  background-color: var(--accented-background-color);
+  border-radius: 999px;
+}
+
+.board-view-container .board-note .task-progress progress::-webkit-progress-value {
+  background-color: var(--muted-text-color);
+  border-radius: 999px;
+}
+
+.board-view-container .board-note .task-progress progress::-moz-progress-bar {
+  background-color: var(--muted-text-color);
+  border-radius: 999px;
+}
+
 .board-view-container .board-note:hover {
   box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
 }
