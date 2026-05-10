@@ -246,10 +246,16 @@ function CodeBlockStyle() {
         const output: FormSelectGroup<ThemeData>[] = [
             {
                 title: "",
-                items: [{
-                    val: "none",
-                    title: t("code_block.theme_none")
-                }]
+                items: [
+                    {
+                        val: "system",
+                        title: "System"
+                    },
+                    {
+                        val: "none",
+                        title: t("code_block.theme_none")
+                    }
+                ]
             },
             {
                 title: t("code_block.theme_group_light"),

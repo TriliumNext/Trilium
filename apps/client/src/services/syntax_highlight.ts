@@ -165,6 +165,10 @@ export async function loadHighlightingTheme(themeName: string) {
     let theme: Theme | null = null;
     if (glob.device === "print") {
         theme = Themes.vs;
+    } else if (themeName === "system") {
+        const { getEffectiveThemeStyle } = await import("./theme.js");
+        const effectiveTheme = getEffectiveThemeStyle();
+        theme = effectiveTheme === "dark" ? Themes["stackoverflow-dark"] : Themes["stackoverflow-light"];
     } else if (themeName.includes(themePrefix)) {
         theme = Themes[themeName.substring(themePrefix.length)];
     }

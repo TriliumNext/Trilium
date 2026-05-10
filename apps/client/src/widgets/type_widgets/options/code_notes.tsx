@@ -91,10 +91,16 @@ function Appearance({ wordWrapping, indentSize }: AppearanceProps) {
     const [codeNoteTheme, setCodeNoteTheme] = useTriliumOption("codeNoteTheme");
 
     const themes = useMemo(() => {
-        return ColorThemes.map(({ id, name }) => ({
-            id: `default:${id}`,
-            name
-        }));
+        return [
+            {
+                id: "system",
+                name: "System"
+            },
+            ...ColorThemes.map(({ id, name }) => ({
+                id: `default:${id}`,
+                name
+            }))
+        ];
     }, []);
 
     return (
@@ -146,12 +152,22 @@ function CodeNotePreview({ themeName, wordWrapping, indentSize }: { themeName: s
     }, [ indentSize ]);
 
     useEffect(() => {
-        if (themeName?.startsWith(DEFAULT_PREFIX)) {
-            const theme = getThemeById(themeName.substring(DEFAULT_PREFIX.length));
-            if (theme) {
-                editorRef.current?.setTheme(theme);
+        const resolveTheme = async () => {
+            let actualThemeName = themeName;
+            if (actualThemeName === "system") {
+                const { getEffectiveThemeStyle } = await import("../../../services/theme.js");
+                actualThemeName = getEffectiveThemeStyle() === "dark" ? "default:vs-code-dark" : "default:vs-code-light";
             }
-        }
+
+            if (actualThemeName?.startsWith(DEFAULT_PREFIX)) {
+                const theme = getThemeById(actualThemeName.substring(DEFAULT_PREFIX.length));
+                if (theme) {
+                    editorRef.current?.setTheme(theme);
+                }
+            }
+        };
+
+        void resolveTheme();
     }, [ themeName ]);
 
     return (

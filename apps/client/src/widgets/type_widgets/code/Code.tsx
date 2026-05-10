@@ -179,17 +179,31 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
 
     // React to theme changes.
     useEffect(() => {
-        if (codeEditorRef.current && codeNoteTheme.startsWith(DEFAULT_PREFIX)) {
-            const theme = getThemeById(codeNoteTheme.substring(DEFAULT_PREFIX.length));
-            if (theme) {
-                codeEditorRef.current.setTheme(theme).then(() => {
-                    const editor = containerRef.current?.querySelector(".cm-editor");
-                    if (!editor) return;
-                    const style = window.getComputedStyle(editor);
-                    setBackgroundColor(style.backgroundColor);
-                });
-            }
+        if (!codeEditorRef.current) {
+            return;
         }
+
+        const resolveTheme = async () => {
+            let actualThemeName = codeNoteTheme;
+            if (actualThemeName === "system") {
+                const { getEffectiveThemeStyle } = await import("../../../services/theme.js");
+                actualThemeName = getEffectiveThemeStyle() === "dark" ? "default:vs-code-dark" : "default:vs-code-light";
+            }
+
+            if (actualThemeName.startsWith(DEFAULT_PREFIX)) {
+                const theme = getThemeById(actualThemeName.substring(DEFAULT_PREFIX.length));
+                if (theme) {
+                    codeEditorRef.current!.setTheme(theme).then(() => {
+                        const editor = containerRef.current?.querySelector(".cm-editor");
+                        if (!editor) return;
+                        const style = window.getComputedStyle(editor);
+                        setBackgroundColor(style.backgroundColor);
+                    });
+                }
+            }
+        };
+
+        void resolveTheme();
     }, [ codeEditorRef, codeNoteTheme ]);
 
     useTriliumEvent("executeWithCodeEditor", async ({ resolve, ntxId: eventNtxId }) => {
