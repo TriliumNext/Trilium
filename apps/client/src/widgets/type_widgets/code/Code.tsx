@@ -167,6 +167,7 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
     const initialized = useRef($.Deferred());
     const [ codeLineWrapEnabled ] = useTriliumOptionBool("codeLineWrapEnabled");
     const [ codeNoteTheme ] = useTriliumOption("codeNoteTheme");
+    const [ appTheme ] = useTriliumOption("theme");
     const [ codeNoteTabWidth ] = useTriliumOption("codeNoteTabWidth");
     const [ codeNoteIndentWithTabs ] = useTriliumOptionBool("codeNoteIndentWithTabs");
 
@@ -204,7 +205,7 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
         };
 
         void resolveTheme();
-    }, [ codeEditorRef, codeNoteTheme ]);
+    }, [ codeEditorRef, codeNoteTheme, appTheme ]);
 
     useTriliumEvent("executeWithCodeEditor", async ({ resolve, ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId) return;

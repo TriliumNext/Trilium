@@ -249,7 +249,7 @@ function CodeBlockStyle() {
                 items: [
                     {
                         val: "system",
-                        title: "System"
+                        title: t("common.system")
                     },
                     {
                         val: "none",

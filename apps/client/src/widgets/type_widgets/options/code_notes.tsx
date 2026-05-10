@@ -94,7 +94,7 @@ function Appearance({ wordWrapping, indentSize }: AppearanceProps) {
         return [
             {
                 id: "system",
-                name: "System"
+                name: t("common.system")
             },
             ...ColorThemes.map(({ id, name }) => ({
                 id: `default:${id}`,
@@ -121,6 +121,7 @@ function Appearance({ wordWrapping, indentSize }: AppearanceProps) {
 function CodeNotePreview({ themeName, wordWrapping, indentSize }: { themeName: string, wordWrapping: boolean, indentSize: number }) {
     const editorRef = useRef<CodeMirror>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const [ appTheme ] = useTriliumOption("theme");
 
     useEffect(() => {
         if (!containerRef.current) {
@@ -168,7 +169,7 @@ function CodeNotePreview({ themeName, wordWrapping, indentSize }: { themeName: s
         };
 
         void resolveTheme();
-    }, [ themeName ]);
+    }, [ themeName, appTheme ]);
 
     return (
         <div

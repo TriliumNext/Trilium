@@ -5,6 +5,7 @@ import { copyText, copyTextWithToast } from "./clipboard_ext.js";
 import { t } from "./i18n.js";
 import mime_types from "./mime_types.js";
 import options from "./options.js";
+import { getEffectiveThemeStyle } from "./theme.js";
 import { isShare } from "./utils.js";
 
 let highlightingLoaded = false;
@@ -166,7 +167,6 @@ export async function loadHighlightingTheme(themeName: string) {
     if (glob.device === "print") {
         theme = Themes.vs;
     } else if (themeName === "system") {
-        const { getEffectiveThemeStyle } = await import("./theme.js");
         const effectiveTheme = getEffectiveThemeStyle();
         theme = effectiveTheme === "dark" ? Themes["stackoverflow-dark"] : Themes["stackoverflow-light"];
     } else if (themeName.includes(themePrefix)) {
