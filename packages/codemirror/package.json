@@ -19,7 +19,7 @@
     "@codemirror/legacy-modes": "6.5.2",
     "@codemirror/search": "6.7.0",
     "@codemirror/state": "6.6.0",
-    "@codemirror/view": "6.41.1",
+    "@codemirror/view": "6.42.1",
     "@eslint/js": "10.0.1",
     "@fsegurai/codemirror-theme-abcdef": "6.2.5",
     "@fsegurai/codemirror-theme-abyss": "6.2.5",
