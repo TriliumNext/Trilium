@@ -13,7 +13,7 @@
     "@types/fs-extra": "11.0.4",
     "copy-webpack-plugin": "14.0.0",
     "electron": "41.3.0",
-    "fs-extra": "11.3.4"
+    "fs-extra": "11.3.5"
   },
   "scripts": {
     "build": "tsx scripts/build.ts",
