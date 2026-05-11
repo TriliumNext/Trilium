@@ -12,7 +12,7 @@ overrides:
   preact: 10.29.1
   roughjs: 4.6.6
   '@types/express-serve-static-core': 5.1.1
-  node-abi: 4.29.0
+  node-abi: 4.31.0
   flat@<5.0.1: '>=5.0.1'
   debug@>=3.2.0 <3.2.7: '>=3.2.7'
   nanoid@<3.3.8: '>=3.3.8'
@@ -10968,8 +10968,8 @@ packages:
   nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
 
-  node-abi@4.29.0:
-    resolution: {integrity: sha512-bGc7hHz6lrdpMqH3XqfiHc5PKzEhjgUj6OLpTXynkLi9JZKyMByI/tdpm4Liu6O2BjtE1lakBWXjOQS1EnSQLQ==}
+  node-abi@4.31.0:
+    resolution: {integrity: sha512-Erq5w/t3syw3s4sDsUaX4QttIdBPsGKTT1DTRsCkTonGggczhlDKm/wDX3o+HPJpQ41EjXCbcmXf0tgr5YZJXw==}
     engines: {node: '>=22.12.0'}
 
   node-addon-api@7.1.1:
@@ -16191,7 +16191,7 @@ snapshots:
       detect-libc: 2.1.2
       fs-extra: 10.1.0
       got: 11.8.6
-      node-abi: 4.29.0
+      node-abi: 4.31.0
       node-api-version: 0.2.1
       ora: 5.4.1
       read-binary-file-arch: 1.0.6
@@ -16206,7 +16206,7 @@ snapshots:
     dependencies:
       '@malept/cross-spawn-promise': 2.0.0
       debug: 4.4.3
-      node-abi: 4.29.0
+      node-abi: 4.31.0
       node-api-version: 0.2.1
       node-gyp: 12.2.0
       read-binary-file-arch: 1.0.6
@@ -26643,7 +26643,7 @@ snapshots:
 
   nice-try@1.0.5: {}
 
-  node-abi@4.29.0:
+  node-abi@4.31.0:
     dependencies:
       semver: 7.7.4
 
@@ -27374,7 +27374,7 @@ snapshots:
       minimist: 1.2.8
       mkdirp-classic: 0.5.3
       napi-build-utils: 2.0.0
-      node-abi: 4.29.0
+      node-abi: 4.31.0
       pump: 3.0.3
       rc: 1.2.8
       simple-get: 4.0.1
