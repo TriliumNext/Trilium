@@ -96,7 +96,7 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@10.33.4",
+  "packageManager": "pnpm@11.0.8",
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",
