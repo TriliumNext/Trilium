@@ -4,6 +4,7 @@ import type FAttachment from "../entities/fattachment.js";
 import attributes from "../services/attributes.js";
 import { executeBulkActions } from "../services/bulk_action.js";
 import clipboard from "../services/clipboard.js";
+import { copyTextWithToast } from "../services/clipboard_ext.js";
 import dialogService from "../services/dialog.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
@@ -26,7 +27,7 @@ let lastTargetNode: HTMLElement | null = null;
 
 // This will include all commands that implement ContextMenuCommandData, but it will not work if it additional options are added via the `|` operator,
 // so they need to be added manually.
-export type TreeCommandNames = FilteredCommandNames<ContextMenuCommandData> | "openBulkActionsDialog" | "searchInSubtree";
+export type TreeCommandNames = FilteredCommandNames<ContextMenuCommandData> | "openBulkActionsDialog" | "searchInSubtree" | "copyAppLinkToClipboard";
 
 export default class TreeContextMenu implements SelectMenuItemEventListener<TreeCommandNames> {
     private treeWidget: NoteTreeWidget;
@@ -176,6 +177,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     { kind: "separator" },
 
                     { title: t("tree-context-menu.copy-note-path-to-clipboard"), command: "copyNotePathToClipboard", uiIcon: "bx bx-directions", enabled: true },
+                    { title: t("tree-context-menu.copy-app-link-to-clipboard"), command: "copyAppLinkToClipboard", uiIcon: "bx bx-link", enabled: isNotRoot },
                     { title: t("tree-context-menu.recent-changes-in-subtree"), command: "recentChangesInSubtree", uiIcon: "bx bx-history", enabled: noSelectedNotes && notOptionsOrHelp }
                 ].filter(Boolean) as MenuItem<TreeCommandNames>[]
             },
@@ -353,6 +355,8 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             toastService.showMessage(t("tree-context-menu.converted-to-attachments", { count: converted }));
         } else if (command === "copyNotePathToClipboard") {
             navigator.clipboard.writeText(`#${  notePath}`);
+        } else if (command === "copyAppLinkToClipboard") {
+            copyTextWithToast(`trilium://note/${encodeURIComponent(this.node.data.noteId)}`);
         } else if (command) {
             this.treeWidget.triggerCommand<TreeCommandNames>(command, {
                 node: this.node,

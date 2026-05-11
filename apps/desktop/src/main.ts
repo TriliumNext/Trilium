@@ -13,6 +13,9 @@ import port from "@triliumnext/server/src/services/port.js";
 import { join, resolve } from "path";
 import { deferred, LOCALES } from "../../../packages/commons/src";
 
+const APP_PROTOCOL = "trilium";
+let pendingAppLinkNoteId: string | null = null;
+
 async function main() {
     const userDataPath = getUserData();
     app.setPath("userData", userDataPath);
@@ -27,6 +30,9 @@ async function main() {
     // Adds debug features like hotkeys for triggering dev tools and reload
     electronDebug();
     electronDl({ saveAs: true });
+
+    registerAppProtocol();
+    pendingAppLinkNoteId = getNoteIdFromAppLinkArgs(process.argv);
 
     // needed for excalidraw export https://github.com/zadam/trilium/issues/4271
     app.commandLine.appendSwitch("enable-experimental-web-platform-features");
@@ -69,7 +75,18 @@ async function main() {
         globalShortcut.unregisterAll();
     });
 
+    app.on("open-url", (event, appLink) => {
+        event.preventDefault();
+        openAppLink(appLink);
+    });
+
     app.on("second-instance", (event, commandLine) => {
+        const noteId = getNoteIdFromAppLinkArgs(commandLine);
+        if (noteId) {
+            openNoteById(noteId);
+            return;
+        }
+
         const lastFocusedWindow = windowService.getLastFocusedWindow();
         if (commandLine.includes("--new-window")) {
             windowService.createExtraWindow("");
@@ -99,6 +116,64 @@ async function main() {
     serverInitializedPromise.resolve();
 }
 
+function registerAppProtocol() {
+    if (process.defaultApp && process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient(APP_PROTOCOL, process.execPath, [resolve(process.argv[1])]);
+        return;
+    }
+
+    app.setAsDefaultProtocolClient(APP_PROTOCOL);
+}
+
+function getNoteIdFromAppLinkArgs(commandLine: string[]) {
+    return commandLine.map(getNoteIdFromAppLink).find(Boolean) ?? null;
+}
+
+function getNoteIdFromAppLink(appLink: string) {
+    try {
+        const parsedUrl = new URL(appLink);
+        if (parsedUrl.protocol !== `${APP_PROTOCOL}:`) {
+            return null;
+        }
+
+        if (parsedUrl.hostname === "note") {
+            return decodeURIComponent(parsedUrl.pathname.replace(/^\/+/, ""));
+        }
+
+        const notePath = parsedUrl.pathname.replace(/^\/+/, "");
+        if (notePath.startsWith("note/")) {
+            return decodeURIComponent(notePath.slice("note/".length));
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
+}
+
+function openAppLink(appLink: string) {
+    const noteId = getNoteIdFromAppLink(appLink);
+    if (noteId) {
+        openNoteById(noteId);
+    }
+}
+
+function openNoteById(noteId: string) {
+    const targetWindow = windowService.getLastFocusedWindow() ?? windowService.getMainWindow();
+    if (!targetWindow || targetWindow.isDestroyed()) {
+        pendingAppLinkNoteId = noteId;
+        return;
+    }
+
+    if (targetWindow.isMinimized()) {
+        targetWindow.restore();
+    }
+
+    targetWindow.show();
+    targetWindow.focus();
+    targetWindow.loadURL(`http://127.0.0.1:${port}/#root/${encodeURIComponent(noteId)}`);
+}
+
 /**
  * Returns a unique user data directory for Electron so that single instance locks between legitimately different instances such as different port or data directory can still act independently, but we are focusing the main window otherwise.
  *
@@ -122,6 +197,11 @@ async function onReady() {
         await sqlInit.dbReady;
 
         await windowService.createMainWindow(app);
+
+        if (pendingAppLinkNoteId) {
+            openNoteById(pendingAppLinkNoteId);
+            pendingAppLinkNoteId = null;
+        }
 
         if (process.platform === "darwin") {
             app.on("activate", async () => {
