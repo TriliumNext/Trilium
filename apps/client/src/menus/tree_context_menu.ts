@@ -176,6 +176,17 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     { kind: "separator" },
 
                     { title: t("tree-context-menu.copy-note-path-to-clipboard"), command: "copyNotePathToClipboard", uiIcon: "bx bx-directions", enabled: true },
+                    {
+                        title: t("tree-context-menu.copy-desktop-note-url-to-clipboard"),
+                        uiIcon: "bx bx-link-external",
+                        enabled: true,
+                        handler: () => {
+                            const currentNotePath = treeService.getNotePath(this.node);
+                            const encodedNotePath = currentNotePath.split("/").map(segment => encodeURIComponent(segment)).join("/");
+                            navigator.clipboard.writeText(`trilium://${encodedNotePath}`);
+                            toastService.showMessage(t("clipboard.copied"));
+                        }
+                    },
                     { title: t("tree-context-menu.recent-changes-in-subtree"), command: "recentChangesInSubtree", uiIcon: "bx bx-history", enabled: noSelectedNotes && notOptionsOrHelp }
                 ].filter(Boolean) as MenuItem<TreeCommandNames>[]
             },

@@ -13,6 +13,9 @@ import port from "@triliumnext/server/src/services/port.js";
 import { join, resolve } from "path";
 import { deferred, LOCALES } from "../../../packages/commons/src";
 
+const TRILIUM_PROTOCOL = "trilium";
+let pendingProtocolNotePath = getProtocolNotePath(process.argv);
+
 async function main() {
     const userDataPath = getUserData();
     app.setPath("userData", userDataPath);
@@ -71,7 +74,16 @@ async function main() {
 
     app.on("second-instance", (event, commandLine) => {
         const lastFocusedWindow = windowService.getLastFocusedWindow();
-        if (commandLine.includes("--new-window")) {
+        const protocolNotePath = getProtocolNotePath(commandLine);
+
+        if (protocolNotePath) {
+            const targetWindow = lastFocusedWindow ?? BrowserWindow.getAllWindows().find(win => !win.isDestroyed());
+            if (targetWindow) {
+                openProtocolNoteInWindow(targetWindow, protocolNotePath);
+            } else {
+                pendingProtocolNotePath = protocolNotePath;
+            }
+        } else if (commandLine.includes("--new-window")) {
             windowService.createExtraWindow("");
         } else if (lastFocusedWindow) {
             if (lastFocusedWindow.isMinimized()) {
@@ -115,13 +127,18 @@ function getUserData() {
 
 async function onReady() {
     //    app.setAppUserModelId('com.github.zadam.trilium');
+    registerProtocolClient();
 
     // if db is not initialized -> setup process
     // if db is initialized, then we need to wait until the migration process is finished
     if (sqlInit.isDbInitialized()) {
         await sqlInit.dbReady;
 
-        await windowService.createMainWindow(app);
+        const mainWindow = await windowService.createMainWindow(app);
+        if (pendingProtocolNotePath) {
+            openProtocolNoteInWindow(mainWindow, pendingProtocolNotePath);
+            pendingProtocolNotePath = null;
+        }
 
         if (process.platform === "darwin") {
             app.on("activate", async () => {
@@ -137,6 +154,61 @@ async function onReady() {
     }
 
     await windowService.registerGlobalShortcuts();
+}
+
+function registerProtocolClient() {
+    if (process.defaultApp && process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient(TRILIUM_PROTOCOL, process.execPath, [resolve(process.argv[1])]);
+        return;
+    }
+
+    app.setAsDefaultProtocolClient(TRILIUM_PROTOCOL);
+}
+
+function getProtocolNotePath(args: string[]) {
+    const protocolArg = args.find(arg => /^trilium:/i.test(arg.trim()));
+    if (!protocolArg) {
+        return null;
+    }
+
+    return parseProtocolNotePath(protocolArg);
+}
+
+function parseProtocolNotePath(protocolUrl: string) {
+    const withoutProtocol = protocolUrl.trim().replace(/^trilium:\/*/i, "");
+    const [rawNotePath] = withoutProtocol.split(/[?#]/);
+    let notePath = rawNotePath || "";
+
+    try {
+        notePath = decodeURIComponent(notePath);
+    } catch {
+        return null;
+    }
+
+    notePath = notePath.replace(/^\/+/, "");
+
+    return notePath || null;
+}
+
+function openProtocolNoteInWindow(targetWindow: BrowserWindow, notePath: string) {
+    if (targetWindow.isDestroyed()) {
+        return;
+    }
+
+    if (targetWindow.isMinimized()) {
+        targetWindow.restore();
+    }
+
+    targetWindow.show();
+    targetWindow.focus();
+
+    const openNote = () => targetWindow.webContents.send("openInSameTab", notePath);
+
+    if (targetWindow.webContents.isLoading()) {
+        targetWindow.webContents.once("did-finish-load", openNote);
+    } else {
+        openNote();
+    }
 }
 
 function getElectronLocale() {
