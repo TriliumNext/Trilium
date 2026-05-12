@@ -116,17 +116,20 @@ function getUserData() {
 async function onReady() {
     //    app.setAppUserModelId('com.github.zadam.trilium');
 
+    const noteIdArg = process.argv.find(arg => arg.startsWith("--open-note="));
+    const noteId = noteIdArg ? noteIdArg.split("=")[1] : undefined;
+
     // if db is not initialized -> setup process
     // if db is initialized, then we need to wait until the migration process is finished
     if (sqlInit.isDbInitialized()) {
         await sqlInit.dbReady;
 
-        await windowService.createMainWindow(app);
+        await windowService.createMainWindow(app, noteId);
 
         if (process.platform === "darwin") {
             app.on("activate", async () => {
                 if (BrowserWindow.getAllWindows().length === 0) {
-                    await windowService.createMainWindow(app);
+                    await windowService.createMainWindow(app, noteId);
                 }
             });
         }
@@ -138,6 +141,7 @@ async function onReady() {
 
     await windowService.registerGlobalShortcuts();
 }
+
 
 function getElectronLocale() {
     const uiLocale = options.getOptionOrNull("locale");

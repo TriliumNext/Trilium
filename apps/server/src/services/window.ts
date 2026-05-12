@@ -84,7 +84,7 @@ electron.ipcMain.on("add-word-to-dictionary", (event, word: string) => {
 
 initPrintingHandlers();
 
-async function createMainWindow(app: App) {
+async function createMainWindow(app: App, noteId?: string) {
     if ("setUserTasks" in app) {
         app.setUserTasks([
             {
@@ -131,12 +131,19 @@ async function createMainWindow(app: App) {
     mainWindowState.manage(mainWindow);
 
     mainWindow.setMenuBarVisibility(false);
-    mainWindow.loadURL(`http://127.0.0.1:${port}`);
+    
+    let url = `http://127.0.0.1:${port}`;
+    if (noteId) {
+        url += `#${noteId}`;
+    }
+    
+    mainWindow.loadURL(url);
     mainWindow.on("closed", () => (mainWindow = null));
 
     configureWebContents(mainWindow.webContents, spellcheckEnabled);
     trackWindowFocus(mainWindow);
 }
+
 
 function getWindowExtraOpts() {
     const extraOpts: Partial<BrowserWindowConstructorOptions> = {};
