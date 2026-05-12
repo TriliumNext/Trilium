@@ -50,6 +50,9 @@ function initOnElectron() {
     const electron: typeof Electron = utils.dynamicRequire("electron");
     electron.ipcRenderer.on("globalShortcut", async (event, actionName) => appContext.triggerCommand(actionName));
     electron.ipcRenderer.on("openInSameTab", async (event, noteId) => appContext.tabManager.openInSameTab(noteId));
+    electron.ipcRenderer.on("open-note-by-id", async (event, noteId: string) => {
+        await appContext.tabManager.openInSameTab(noteId);
+    });
     const electronRemote: typeof ElectronRemote = utils.dynamicRequire("@electron/remote");
     const currentWindow = electronRemote.getCurrentWindow();
     const style = window.getComputedStyle(document.body);
