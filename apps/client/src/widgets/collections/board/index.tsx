@@ -1,6 +1,6 @@
 import "./index.css";
 
-import { createContext, TargetedKeyboardEvent } from "preact";
+import { createContext, Fragment, TargetedKeyboardEvent } from "preact";
 import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -14,7 +14,6 @@ import Icon from "../../react/Icon";
 import NoteAutocomplete from "../../react/NoteAutocomplete";
 import { onWheelHorizontalScroll } from "../../widget_utils";
 import { ViewModeProps } from "../interface";
-import Api from "./api";
 import BoardApi from "./api";
 import Column from "./column";
 import { ColumnMap, getBoardData } from "./data";
@@ -48,6 +47,7 @@ export const BoardViewContext = createContext<BoardViewContextData | undefined>(
 
 export default function BoardView({ note: parentNote, noteIds, viewConfig, saveConfig }: ViewModeProps<BoardViewData>) {
     const [ statusAttributeWithPrefix ] = useNoteLabelWithDefault(parentNote, "board:groupBy", "status");
+    const [ doneColumnsRaw ] = useNoteLabelWithDefault(parentNote, "board:doneColumns", "Done,done,Completed,completed");
     const [ includeArchived ] = useNoteLabelBoolean(parentNote, "includeArchived");
     const [ byColumn, setByColumn ] = useState<ColumnMap>();
     const [ columns, setColumns ] = useState<string[]>();
@@ -57,7 +57,6 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     const [ dropPosition, setDropPosition ] = useState<{ column: string, index: number } | null>(null);
     const [ draggedColumn, setDraggedColumn ] = useState<{ column: string, index: number } | null>(null);
     const [ columnDropPosition, setColumnDropPosition ] = useState<number | null>(null);
-    const [ columnHoverIndex, setColumnHoverIndex ] = useState<number | null>(null);
     const [ branchIdToEdit, setBranchIdToEdit ] = useState<string>();
     const [ columnNameToEdit, setColumnNameToEdit ] = useState<string>();
     const api = useMemo(() => {
@@ -158,12 +157,53 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         if (draggedColumn && columnDropPosition !== null) {
             handleColumnDrop(draggedColumn.index, columnDropPosition);
         }
-        setColumnHoverIndex(null);
     }, [draggedColumn, columnDropPosition, handleColumnDrop]);
+
+    const progress = useMemo(() => {
+        if (!byColumn) {
+            return null;
+        }
+
+        const totalItems = Array.from(byColumn.values()).reduce((sum, cards) => sum + cards.length, 0);
+        if (totalItems === 0) {
+            return {
+                totalItems,
+                completedItems: 0,
+                percentage: 0
+            };
+        }
+
+        const doneColumns = new Set(doneColumnsRaw
+            .split(",")
+            .map(column => column.trim())
+            .filter(Boolean)
+            .map(column => column.toLowerCase()));
+
+        const completedItems = Array.from(byColumn.entries())
+            .filter(([ column ]) => doneColumns.has(column.toLowerCase()))
+            .reduce((sum, [ , cards ]) => sum + cards.length, 0);
+
+        return {
+            totalItems,
+            completedItems,
+            percentage: Math.round((completedItems / totalItems) * 100)
+        };
+    }, [byColumn, doneColumnsRaw]);
 
     return (
         <div className="board-view">
             <CollectionProperties note={parentNote} />
+            {progress && (
+                <div className="board-progress" aria-label={t("board_view.progress_label")}>
+                    <div className="board-progress-header">
+                        <span>{t("board_view.progress_label")}</span>
+                        <span>{t("board_view.progress_count", { completed: progress.completedItems, total: progress.totalItems })}</span>
+                    </div>
+                    <div className="board-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percentage}>
+                        <div className="board-progress-fill" style={{ width: `${progress.percentage}%` }} />
+                    </div>
+                </div>
+            )}
             <BoardViewContext.Provider value={boardViewContext}>
                 {byColumn && columns && <div
                     className="board-view-container"
@@ -172,7 +212,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                     onWheel={onWheelHorizontalScroll}
                 >
                     {columns.map((column, index) => (
-                        <>
+                        <Fragment key={column}>
                             {columnDropPosition === index && (
                                 <div className="column-drop-placeholder show" />
                             )}
@@ -186,7 +226,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                                 onColumnHover={handleColumnHover}
                                 isAnyColumnDragging={!!draggedColumn}
                             />
-                        </>
+                        </Fragment>
                     ))}
                     {columnDropPosition === columns?.length && draggedColumn && (
                         <div className="column-drop-placeholder show" />
@@ -250,7 +290,7 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, mode, is
     isNewItem?: boolean;
     mode?: "normal" | "multiline" | "relation";
 }) {
-    const inputRef = useRef<any>(null);
+    const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
     const focusElRef = useRef<Element>(null);
     const dismissOnNextRefreshRef = useRef(false);
     const shouldDismiss = useRef(false);

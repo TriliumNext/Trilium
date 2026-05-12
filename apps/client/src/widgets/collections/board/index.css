@@ -10,6 +10,37 @@
   --card-padding: 0.6em;
 }
 
+.board-progress {
+  margin: 6px var(--content-margin-inline) 2px;
+  padding: 0.45em 0.55em;
+  border: 1px solid var(--main-border-color);
+  border-radius: 6px;
+  background-color: var(--accented-background-color);
+}
+
+.board-progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85em;
+  color: var(--muted-text-color);
+  margin-bottom: 0.25em;
+}
+
+.board-progress-track {
+  width: 100%;
+  height: 0.5em;
+  border-radius: 999px;
+  background-color: var(--main-border-color);
+  overflow: hidden;
+}
+
+.board-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--main-text-color);
+  transition: width 0.2s ease;
+}
+
 .board-view-container {
   height: 100%;
   display: flex;
