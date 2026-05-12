@@ -131,7 +131,11 @@ function getUserData() {
 }
 
 async function onReady() {
-    app.setAsDefaultProtocolClient("trilium");
+    if (!app.isPackaged) {
+        app.setAsDefaultProtocolClient("trilium", process.execPath, [resolve(process.argv[1])]);
+    } else {
+        app.setAsDefaultProtocolClient("trilium");
+    }
 
     //    app.setAppUserModelId('com.github.zadam.trilium');
 
