@@ -13,26 +13,48 @@ import port from "@triliumnext/server/src/services/port.js";
 import { join, resolve } from "path";
 import { deferred, LOCALES } from "../../../packages/commons/src";
 
+const TRILIUM_PROTOCOL = "trilium";
+let pendingNoteId: string | null = null;
+
+function extractNoteIdFromArgs(args: string[]): string | null {
+    const protocolArg = args.find(arg => arg.startsWith(`${TRILIUM_PROTOCOL}://`));
+    if (!protocolArg) return null;
+    try {
+        const url = new URL(protocolArg);
+        return url.hostname || url.pathname.replace(/^\/+/, "") || null;
+    } catch {
+        return null;
+    }
+}
+
 async function main() {
     const userDataPath = getUserData();
     app.setPath("userData", userDataPath);
 
     const serverInitializedPromise = deferred<void>();
 
-    // Prevent Trilium starting twice on first install and on uninstall for the Windows installer.
     if ((require("electron-squirrel-startup")).default) {
         process.exit(0);
     }
 
-    // Adds debug features like hotkeys for triggering dev tools and reload
+    // Register protocol handler before app is ready
+    if (process.defaultApp) {
+        if (process.argv.length >= 2) {
+            app.setAsDefaultProtocolClient(TRILIUM_PROTOCOL, process.execPath, [resolve(process.argv[1])]);
+        }
+    } else {
+        app.setAsDefaultProtocolClient(TRILIUM_PROTOCOL);
+    }
+
+    // Capture note ID from launch args
+    pendingNoteId = extractNoteIdFromArgs(process.argv);
+
     electronDebug();
     electronDl({ saveAs: true });
 
-    // needed for excalidraw export https://github.com/zadam/trilium/issues/4271
     app.commandLine.appendSwitch("enable-experimental-web-platform-features");
     app.commandLine.appendSwitch("lang", getElectronLocale());
 
-    // Disable smooth scroll if the option is set
     const smoothScrollEnabled = options.getOptionOrNull("smoothScrollEnabled");
     if (smoothScrollEnabled === "false") {
         app.commandLine.appendSwitch("disable-smooth-scrolling");
@@ -40,19 +62,10 @@ async function main() {
 
     if (process.platform === "linux") {
         app.setName(PRODUCT_NAME);
-
-        // Electron 36 crashes with "Using GTK 2/3 and GTK 4 in the same process is not supported" on some distributions.
-        // See https://github.com/electron/electron/issues/46538 for more info.
         app.commandLine.appendSwitch("gtk-version", "3");
-
-        // Enable global shortcuts in Flatpak
-        // the app runs in a Wayland session.
         app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
     }
 
-    // Quit when all windows are closed, except on macOS. There, it's common
-    // for applications and their menu bar to stay active until the user quits
-    // explicitly with Cmd + Q.
     app.on("window-all-closed", () => {
         if (process.platform !== "darwin") {
             app.quit();
@@ -70,27 +83,30 @@ async function main() {
     });
 
     app.on("second-instance", (event, commandLine) => {
+        const noteId = extractNoteIdFromArgs(commandLine);
         const lastFocusedWindow = windowService.getLastFocusedWindow();
+
         if (commandLine.includes("--new-window")) {
             windowService.createExtraWindow("");
         } else if (lastFocusedWindow) {
-            if (lastFocusedWindow.isMinimized()) {
-                lastFocusedWindow.restore();
-            }
+            if (lastFocusedWindow.isMinimized()) lastFocusedWindow.restore();
             lastFocusedWindow.show();
             lastFocusedWindow.focus();
+        }
+
+        if (noteId && lastFocusedWindow) {
+            lastFocusedWindow.webContents.send("open-note-by-id", noteId);
         }
     });
 
     await initializeTranslations();
 
-    const isPrimaryInstance = (await import("electron")).app.requestSingleInstanceLock();
+    const isPrimaryInstance = app.requestSingleInstanceLock();
     if (!isPrimaryInstance) {
         console.info(t("desktop.instance_already_running"));
         process.exit(0);
     }
 
-    // this is to disable electron warning spam in the dev console (local development only)
     process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
 
     const startTriliumServer = (await import("@triliumnext/server/src/www.js")).default;
@@ -99,29 +115,27 @@ async function main() {
     serverInitializedPromise.resolve();
 }
 
-/**
- * Returns a unique user data directory for Electron so that single instance locks between legitimately different instances such as different port or data directory can still act independently, but we are focusing the main window otherwise.
- *
- * When running in portable mode, set TRILIUM_ELECTRON_DATA_DIR (e.g. via the trilium-portable script)
- * so that no Electron files are written to the system's roaming profile (e.g. %APPDATA% on Windows).
- */
 function getUserData() {
     if (process.env.TRILIUM_ELECTRON_DATA_DIR) {
         return resolve(process.env.TRILIUM_ELECTRON_DATA_DIR);
     }
-
     return join(app.getPath("appData"), `${app.getName()}-${port}`);
 }
 
 async function onReady() {
-    //    app.setAppUserModelId('com.github.zadam.trilium');
-
-    // if db is not initialized -> setup process
-    // if db is initialized, then we need to wait until the migration process is finished
     if (sqlInit.isDbInitialized()) {
         await sqlInit.dbReady;
 
-        await windowService.createMainWindow(app);
+        const mainWindow = await windowService.createMainWindow(app);
+
+        if (pendingNoteId) {
+            const noteId = pendingNoteId;
+            pendingNoteId = null;
+            // Wait for renderer to be ready before sending IPC (no hardcoded timeout)
+            mainWindow.webContents.once("did-finish-load", () => {
+                mainWindow.webContents.send("open-note-by-id", noteId);
+            });
+        }
 
         if (process.platform === "darwin") {
             app.on("activate", async () => {
@@ -144,10 +158,9 @@ function getElectronLocale() {
     const formattingLocale = options.getOptionOrNull("formattingLocale");
     const correspondingLocale = LOCALES.find(l => l.id === uiLocale);
 
-    // For RTL, we have to force the UI locale to align the window buttons properly.
     if (formattingLocale && !correspondingLocale?.rtl) return formattingLocale;
 
-    return uiLocale || "en"
+    return uiLocale || "en";
 }
 
 main();
