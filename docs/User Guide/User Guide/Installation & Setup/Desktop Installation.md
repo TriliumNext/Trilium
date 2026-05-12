@@ -19,10 +19,10 @@ Trilium offers various startup scripts to customize your experience:
 Trilium registers the `trilium://` URL scheme with your operating system so external applications (task managers, browsers, scripts) can open or focus a specific note. The URL format is:
 
 ```
-trilium://<noteId>
+trilium://note/<noteId>
 ```
 
-For example, clicking `trilium://abc123def456` launches Trilium (or focuses the running instance) and switches to the note with that ID. Use `root` to jump to the top of the tree.
+For example, clicking `trilium://note/abc123def456` launches Trilium (or focuses the running instance) and switches to the note with that ID. To copy an app link from within Trilium, right-click any note in the tree and choose **Copy app link to clipboard**.
 
 On Windows and Linux, you can pass `--new-window` alongside the URL on the command line to open the note in a fresh window instead of the focused one.
 

@@ -26,7 +26,7 @@ let lastTargetNode: HTMLElement | null = null;
 
 // This will include all commands that implement ContextMenuCommandData, but it will not work if it additional options are added via the `|` operator,
 // so they need to be added manually.
-export type TreeCommandNames = FilteredCommandNames<ContextMenuCommandData> | "openBulkActionsDialog" | "searchInSubtree";
+export type TreeCommandNames = FilteredCommandNames<ContextMenuCommandData> | "openBulkActionsDialog" | "searchInSubtree" | "copyAppLinkToClipboard";
 
 export default class TreeContextMenu implements SelectMenuItemEventListener<TreeCommandNames> {
     private treeWidget: NoteTreeWidget;
@@ -176,6 +176,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     { kind: "separator" },
 
                     { title: t("tree-context-menu.copy-note-path-to-clipboard"), command: "copyNotePathToClipboard", uiIcon: "bx bx-directions", enabled: true },
+                    { title: t("tree-context-menu.copy-app-link-to-clipboard"), command: "copyAppLinkToClipboard", uiIcon: "bx bx-link", enabled: isNotRoot && utils.isElectron() },
                     { title: t("tree-context-menu.recent-changes-in-subtree"), command: "recentChangesInSubtree", uiIcon: "bx bx-history", enabled: noSelectedNotes && notOptionsOrHelp }
                 ].filter(Boolean) as MenuItem<TreeCommandNames>[]
             },
@@ -353,6 +354,10 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             toastService.showMessage(t("tree-context-menu.converted-to-attachments", { count: converted }));
         } else if (command === "copyNotePathToClipboard") {
             navigator.clipboard.writeText(`#${  notePath}`);
+        } else if (command === "copyAppLinkToClipboard") {
+            const noteId = this.node.data.noteId;
+            navigator.clipboard.writeText(`trilium://note/${encodeURIComponent(noteId)}`);
+            toastService.showMessage(t("tree-context-menu.app-link-copied"));
         } else if (command) {
             this.treeWidget.triggerCommand<TreeCommandNames>(command, {
                 node: this.node,

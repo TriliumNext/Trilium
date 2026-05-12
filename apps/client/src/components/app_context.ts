@@ -176,6 +176,7 @@ export type CommandMappings = {
     toggleArchivedNotes: CommandData;
     sortChildNotes: ContextMenuCommandData;
     copyNotePathToClipboard: ContextMenuCommandData;
+    copyAppLinkToClipboard: ContextMenuCommandData;
     recentChangesInSubtree: ContextMenuCommandData;
     cutNotesToClipboard: ContextMenuCommandData;
     copyNotesToClipboard: ContextMenuCommandData;

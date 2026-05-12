@@ -1695,6 +1695,8 @@
     "recent-changes-in-subtree": "Recent changes in subtree",
     "convert-to-attachment": "Convert to attachment",
     "copy-note-path-to-clipboard": "Copy note path to clipboard",
+    "copy-app-link-to-clipboard": "Copy app link to clipboard",
+    "app-link-copied": "App link copied to clipboard",
     "protect-subtree": "Protect subtree",
     "unprotect-subtree": "Unprotect subtree",
     "copy-clone": "Copy / clone",
