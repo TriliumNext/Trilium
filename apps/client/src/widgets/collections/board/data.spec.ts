@@ -1,9 +1,22 @@
 import { describe, expect,it } from "vitest";
 
 import FBranch from "../../../entities/fbranch";
+import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
-import { calculateBoardProgress, getBoardData } from "./data";
+import { calculateBoardProgress, ColumnMap, getBoardData } from "./data";
+
+function makeColumnMap(columns: Array<[string, number]>): ColumnMap {
+    return new Map(
+        columns.map(([name, count]) => [
+            name,
+            Array.from({ length: count }, () => ({
+                branch: {} as FBranch,
+                note: {} as FNote
+            }))
+        ])
+    );
+}
 
 describe("Board data", () => {
     it("deduplicates cloned notes", async () => {
@@ -32,10 +45,10 @@ describe("Board data", () => {
     });
 
     it("calculates progress based on done columns", () => {
-        const byColumn = new Map<string, unknown[]>([
-            [ "Done", [ {}, {} ] ],
-            [ "In Progress", [ {} ] ],
-            [ "Completed", [ {} ] ]
+        const byColumn = makeColumnMap([
+            [ "Done", 2 ],
+            [ "In Progress", 1 ],
+            [ "Completed", 1 ]
         ]);
 
         const progress = calculateBoardProgress(byColumn, "Done,completed");
@@ -44,8 +57,21 @@ describe("Board data", () => {
         expect(progress.percentage).toBe(75);
     });
 
+    it("normalizes done columns and board columns with trim/case-insensitive matching", () => {
+        const byColumn = makeColumnMap([
+            [ "Done ", 2 ],
+            [ " in progress", 1 ],
+            [ " COMPLETED ", 1 ]
+        ]);
+
+        const progress = calculateBoardProgress(byColumn, " done , completed ");
+        expect(progress.totalItems).toBe(4);
+        expect(progress.completedItems).toBe(3);
+        expect(progress.percentage).toBe(75);
+    });
+
     it("returns zero progress for empty boards", () => {
-        const byColumn = new Map<string, unknown[]>();
+        const byColumn = new Map<string, { branch: FBranch; note: FNote }[]>() as ColumnMap;
         const progress = calculateBoardProgress(byColumn, "Done");
 
         expect(progress.totalItems).toBe(0);

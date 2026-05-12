@@ -60,7 +60,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     const [ branchIdToEdit, setBranchIdToEdit ] = useState<string>();
     const [ columnNameToEdit, setColumnNameToEdit ] = useState<string>();
     const api = useMemo(() => {
-        return new Api(byColumn, columns ?? [], parentNote, statusAttributeWithPrefix, viewConfig ?? {}, saveConfig, setBranchIdToEdit );
+        return new BoardApi(byColumn, columns ?? [], parentNote, statusAttributeWithPrefix, viewConfig ?? {}, saveConfig, setBranchIdToEdit );
     }, [ byColumn, columns, parentNote, statusAttributeWithPrefix, viewConfig, saveConfig, setBranchIdToEdit ]);
     const boardViewContext = useMemo<BoardViewContextData>(() => ({
         api,
@@ -82,25 +82,26 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         dropTarget, setDropTarget
     ]);
 
-    function refresh() {
+    const refresh = useCallback(() => {
         getBoardData(parentNote, statusAttributeWithPrefix, viewConfig ?? {}, includeArchived).then(({ byColumn, newPersistedData, isInRelationMode }) => {
             setByColumn(byColumn);
             setIsRelationMode(isInRelationMode);
 
             if (newPersistedData) {
-                viewConfig = { ...newPersistedData };
                 saveConfig(newPersistedData);
             }
 
+            const effectiveViewConfig = newPersistedData ?? viewConfig ?? {};
+
             // Use the order from persistedData.columns, then add any new columns found
-            const orderedColumns = viewConfig?.columns?.map(col => col.value) || [];
+            const orderedColumns = effectiveViewConfig.columns?.map(col => col.value) ?? [];
             const allColumns = Array.from(byColumn.keys());
             const newColumns = allColumns.filter(col => !orderedColumns.includes(col));
             setColumns([...orderedColumns, ...newColumns]);
         });
-    }
+    }, [includeArchived, parentNote, saveConfig, statusAttributeWithPrefix, viewConfig]);
 
-    useEffect(refresh, [ parentNote, noteIds, viewConfig, statusAttributeWithPrefix ]);
+    useEffect(refresh, [noteIds, refresh]);
 
     const handleColumnDrop = useCallback((fromIndex: number, toIndex: number) => {
         const newColumns = api.reorderColumn(fromIndex, toIndex);
@@ -176,7 +177,14 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                         <span>{t("board_view.progress_label")}</span>
                         <span>{t("board_view.progress_count", { completed: progress.completedItems, total: progress.totalItems })}</span>
                     </div>
-                    <div className="board-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percentage}>
+                    <div
+                        className="board-progress-track"
+                        role="progressbar"
+                        aria-label={t("board_view.progress_label")}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={progress.percentage}
+                    >
                         <div className="board-progress-fill" style={{ width: `${progress.percentage}%` }} />
                     </div>
                 </div>

@@ -13,11 +13,15 @@ export interface BoardProgress {
     percentage: number;
 }
 
-export function calculateBoardProgress(byColumn: Map<string, unknown[]>, doneColumnsRaw: string): BoardProgress {
-    const totalItems = Array.from(byColumn.values()).reduce((sum, cards) => sum + cards.length, 0);
+export function calculateBoardProgress(byColumn: ColumnMap, doneColumnsRaw: string): BoardProgress {
+    let totalItems = 0;
+    for (const cards of byColumn.values()) {
+        totalItems += cards.length;
+    }
+
     if (totalItems === 0) {
         return {
-            totalItems,
+            totalItems: 0,
             completedItems: 0,
             percentage: 0
         };
@@ -25,13 +29,16 @@ export function calculateBoardProgress(byColumn: Map<string, unknown[]>, doneCol
 
     const doneColumns = new Set(doneColumnsRaw
         .split(",")
-        .map(column => column.trim())
-        .filter(Boolean)
-        .map(column => column.toLowerCase()));
+        .map(column => column.trim().toLowerCase())
+        .filter(Boolean));
 
-    const completedItems = Array.from(byColumn.entries())
-        .filter(([ column ]) => doneColumns.has(column.toLowerCase()))
-        .reduce((sum, [ , cards ]) => sum + cards.length, 0);
+    let completedItems = 0;
+    for (const [ column, cards ] of byColumn.entries()) {
+        if (!doneColumns.has(column.trim().toLowerCase())) {
+            continue;
+        }
+        completedItems += cards.length;
+    }
 
     return {
         totalItems,
