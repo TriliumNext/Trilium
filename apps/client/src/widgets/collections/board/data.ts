@@ -7,6 +7,39 @@ export type ColumnMap = Map<string, {
     note: FNote;
 }[]>;
 
+export interface BoardProgress {
+    totalItems: number;
+    completedItems: number;
+    percentage: number;
+}
+
+export function calculateBoardProgress(byColumn: Map<string, unknown[]>, doneColumnsRaw: string): BoardProgress {
+    const totalItems = Array.from(byColumn.values()).reduce((sum, cards) => sum + cards.length, 0);
+    if (totalItems === 0) {
+        return {
+            totalItems,
+            completedItems: 0,
+            percentage: 0
+        };
+    }
+
+    const doneColumns = new Set(doneColumnsRaw
+        .split(",")
+        .map(column => column.trim())
+        .filter(Boolean)
+        .map(column => column.toLowerCase()));
+
+    const completedItems = Array.from(byColumn.entries())
+        .filter(([ column ]) => doneColumns.has(column.toLowerCase()))
+        .reduce((sum, [ , cards ]) => sum + cards.length, 0);
+
+    return {
+        totalItems,
+        completedItems,
+        percentage: Math.round((completedItems / totalItems) * 100)
+    };
+}
+
 export async function getBoardData(parentNote: FNote, groupByColumn: string, persistedData: BoardViewData, includeArchived: boolean) {
     const byColumn: ColumnMap = new Map();
 

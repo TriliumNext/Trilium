@@ -16,7 +16,7 @@ import { onWheelHorizontalScroll } from "../../widget_utils";
 import { ViewModeProps } from "../interface";
 import BoardApi from "./api";
 import Column from "./column";
-import { ColumnMap, getBoardData } from "./data";
+import { calculateBoardProgress, ColumnMap, getBoardData } from "./data";
 
 export interface BoardViewData {
     columns?: BoardColumnData[];
@@ -164,30 +164,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
             return null;
         }
 
-        const totalItems = Array.from(byColumn.values()).reduce((sum, cards) => sum + cards.length, 0);
-        if (totalItems === 0) {
-            return {
-                totalItems,
-                completedItems: 0,
-                percentage: 0
-            };
-        }
-
-        const doneColumns = new Set(doneColumnsRaw
-            .split(",")
-            .map(column => column.trim())
-            .filter(Boolean)
-            .map(column => column.toLowerCase()));
-
-        const completedItems = Array.from(byColumn.entries())
-            .filter(([ column ]) => doneColumns.has(column.toLowerCase()))
-            .reduce((sum, [ , cards ]) => sum + cards.length, 0);
-
-        return {
-            totalItems,
-            completedItems,
-            percentage: Math.round((completedItems / totalItems) * 100)
-        };
+        return calculateBoardProgress(byColumn, doneColumnsRaw);
     }, [byColumn, doneColumnsRaw]);
 
     return (

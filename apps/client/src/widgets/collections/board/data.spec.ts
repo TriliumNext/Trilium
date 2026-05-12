@@ -3,7 +3,7 @@ import { describe, expect,it } from "vitest";
 import FBranch from "../../../entities/fbranch";
 import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
-import { getBoardData } from "./data";
+import { calculateBoardProgress, getBoardData } from "./data";
 
 describe("Board data", () => {
     it("deduplicates cloned notes", async () => {
@@ -29,5 +29,27 @@ describe("Board data", () => {
         const data = await getBoardData(parentNote, "status", {}, false);
         const noteIds = [...data.byColumn.values()].flat().map(item => item.note.noteId);
         expect(noteIds.length).toBe(3);
+    });
+
+    it("calculates progress based on done columns", () => {
+        const byColumn = new Map<string, unknown[]>([
+            [ "Done", [ {}, {} ] ],
+            [ "In Progress", [ {} ] ],
+            [ "Completed", [ {} ] ]
+        ]);
+
+        const progress = calculateBoardProgress(byColumn, "Done,completed");
+        expect(progress.totalItems).toBe(4);
+        expect(progress.completedItems).toBe(3);
+        expect(progress.percentage).toBe(75);
+    });
+
+    it("returns zero progress for empty boards", () => {
+        const byColumn = new Map<string, unknown[]>();
+        const progress = calculateBoardProgress(byColumn, "Done");
+
+        expect(progress.totalItems).toBe(0);
+        expect(progress.completedItems).toBe(0);
+        expect(progress.percentage).toBe(0);
     });
 });
