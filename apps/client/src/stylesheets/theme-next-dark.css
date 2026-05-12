@@ -48,6 +48,11 @@
     --icon-button-hover-background: var(--hover-item-background-color);
     --icon-button-hover-color: var(--hover-item-text-color);
 
+    --opaque-icon-button-background: #646464d7;
+    --opaque-icon-button-color: var(--icon-button-color);
+    --opaque-icon-button-hover-background-color: #868686b2;
+    --opaque-icon-button-hover-color: var(--icon-button-hover-color);
+
     --muted-text-color: #bbb;
 
     --input-background-color: #ffffff12;
@@ -240,7 +245,7 @@
     --bottom-panel-background-color: #11111180;
     --bottom-panel-title-bar-background-color: #3F3F3F80;
 
-    --status-bar-border-color: var(--main-border-color);
+    --status-bar-border-color: #ffffff17;
 
     --scrollbar-thumb-color: #fdfdfd5c;
     --scrollbar-thumb-hover-color: #ffffff7d;
@@ -273,7 +278,9 @@
     --tooltip-background-color: rgba(67, 67, 67, 0.86);
     --tooltip-foreground-color: #ffffffeb;
     --tooltip-shadow-color: rgba(0, 0, 0, 0.4);
-
+    
+    --note-tooltip-background-color: #3d3d3d;
+    
     --help-background-color: var(--menu-background-color);
     --help-card-background: var(--card-background-color);
     --help-card-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
@@ -381,4 +388,8 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 .note-book-card.with-hue {
     --card-background-color: hsl(var(--custom-color-hue), 6%, 21%);
     --card-background-hover-color: hsl(var(--custom-color-hue), 8%, 25%);
+}
+
+.note-tooltip.with-hue {
+    --tooltip-background-color: hsl(var(--custom-color-hue), 8.8%, 24%);
 }

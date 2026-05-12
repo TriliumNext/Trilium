@@ -88,11 +88,12 @@
 
 /* Dropdown body */
 :root .ck.ck-dropdown__panel,
-:root .ck-balloon-panel {
+:root .ck.ck-balloon-panel:not(.ck-tooltip) {
     --ck-editor-popup-padding: 4px;
 
     --ck-color-panel-background: var(--menu-background-color);
     --ck-color-panel-border: var(--ck-editor-popup-border-color);
+    --ck-rounded-corners-radius: 6px;
 
     box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
     outline: transparent !important;
@@ -156,15 +157,15 @@
 
 /* Tooltip */
 :root div.ck.ck-balloon-panel.ck-tooltip {
-    --ck-color-panel-background: var(--toast-background); /* Arrow */
-    border-color: transparent !important;
-    border-radius: 6px !important;
-    padding: 0 10px 2px 10px;
-    background-color: var(--toast-background) !important;
-}
+    --ck-rounded-corners-radius: var(--tooltip-border-radius);
+    --ck-balloon-border-width: 0;
+    --ck-color-panel-background: var(--tooltip-background-color);
+    --ck-color-tooltip-text: var(--tooltip-foreground-color);
 
-:root div.ck.ck-balloon-panel.ck-tooltip * {
-    color: var(--toast-text-color) !important;
+    backdrop-filter: var(--tooltip-backdrop-filter);
+    padding: var(--tooltip-padding);
+    box-shadow: var(--tooltip-box-shadow);
+    font-size: var(--tooltip-font-size);
 }
 
 /* Dropdown list item */
@@ -197,7 +198,7 @@
 
 /* List item checkmark container */
 
-:root .ck.ck-list-item-button .ck-list-item-button__check-holder {
+:root .ck.ck-list-item-button .ck.ck-list-item-button__check-holder {
     margin-inline-start: var(--ck-spacing-small);
     margin-inline-end: var(--menu-padding-size);
 }
@@ -275,13 +276,13 @@
     min-height: 2rem !important;
 }
 
-.ck-fontsize-option.text-tiny   {--size: .75em;}
-.ck-fontsize-option.text-small  {--size: .85em;}
-.ck-fontsize-option.text-big    {--size: 1.4em;}
-.ck-fontsize-option.text-huge   {--size: 1.8em;}
+.ck-fontsize-option.text-tiny   {--_size: .75em;}
+.ck-fontsize-option.text-small  {--_size: .85em;}
+.ck-fontsize-option.text-big    {--_size: 1.4em;}
+.ck-fontsize-option.text-huge   {--_size: 1.8em;}
 
-:root .ck-fontsize-option .ck-button__label {
-    font-size: var(--size);
+:root .ck-fontsize-option .ck.ck-button__label {
+    font-size: var(--_size);
 }
 
 /* Color picker dropdown */
@@ -349,7 +350,7 @@
 .ck-tn-admonition-caution {     --icon: "\eac7";    --accent: var(--admonition-caution-accent-color);}
 .ck-tn-admonition-warning {     --icon: "\eac5";    --accent: var(--admonition-warning-accent-color);}
 
-:root .ck.ck-tn-admonition-option .ck-button__label {
+:root .ck.ck-tn-admonition-option span.ck-button__label {
     display: inline-flex;
     align-items: center;
     width: 100%;
@@ -370,9 +371,28 @@
     color: var(--accent);
 }
 
+/* Code dropdown */
+
+.ck.ck-dropdown.ck-code-block-dropdown .ck-dropdown__panel,
+.ck.ck-toolbar-container.codeblock-language-list .ck.ck-dropdown__panel {
+    --_panel-height: 400px;
+
+    overflow: hidden;
+    max-height: var(--_panel-height);
+}
+
+.ck-code-block-dropdown .ck-dropdown__panel .ck-list,
+.ck.ck-toolbar-container.codeblock-language-list .ck.ck-dropdown__panel .ck-list {
+    overflow: auto;
+    max-height: calc(var(--_panel-height) - var(--ck-editor-popup-padding) * 2 - 2px);
+}
+
 /* Text snippet dropdown */
 
 div.ck-template-form {
+    --ck-template-icon-size: 38px;
+    --ck-color-list-button-hover-background: var(--hover-item-background-color);
+
     padding: 8px;
 }
 
@@ -380,10 +400,28 @@ div.ck-template-form .ck-labeled-field-view {
     margin-bottom: 8px;
 }
 
+:root div.ck.ck-template-form .ck.ck-search__results {
+    border-top: 0;
+}
+
+:root .ck.ck-template-form > .ck-search__results > .ck.ck-list.ck-template-list {
+    padding-top: 0;
+}
+
 /* Template item */
 
-:root div.ck-template-form li.ck-list__item button.ck-template-button {
-    padding: 4px 8px;
+:root .ck.ck-template-form > .ck-search__results > .ck.ck-list.ck-template-list > .ck.ck-list__item:not(.ck-hidden) ~ .ck.ck-list__item {
+    margin-top: 2px; /* Item gap */
+}
+
+:root .ck.ck-template-form > .ck-search__results > .ck.ck-list.ck-template-list > .ck.ck-list__item > .ck.ck-button {
+    --ck-spacing-large: 8px; /* The gap between the icon and the text */
+
+    padding: 2px 8px;
+}
+
+:root .ck.ck-template-form > .ck-search__results > .ck.ck-list.ck-template-list > .ck.ck-list__item > .ck.ck-button:not(:focus) {
+    border-color: transparent;
 }
 
 /* Template icon */
@@ -391,25 +429,51 @@ div.ck-template-form .ck-labeled-field-view {
     --ck-spacing-medium: 2px;
 }
 
-:root div.ck-template-form  .note-icon {
-    color: var(--menu-item-icon-color);
+:root div.ck-template-form .ck-icon foreignObject {
+    position: relative;
+
+    &::before {
+        display: block;
+        content: "";
+        position: absolute;
+        inset: 2px;
+        border-radius: 50%;
+        background: var(--note-icon-hover-background-color);
+        z-index: -1;
+    }
+} 
+
+:root div.ck-template-form .ck-icon .note-icon {
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    color: var(--note-icon-color);
 }
 
 /* Template name */
 div.ck-template-form .ck-template-form__text-part {
     color: var(--hover-item-text-color);
+
     font-size: .9rem;
 }
 
 div.ck-template-form .ck-template-form__text-part mark {
-    background: unset;
+    --ck-color-highlight-background: transparent;
+    
     color: var(--quick-search-result-highlight-color);
+    text-decoration: underline;
     font-weight: bold;
 }
 
 /* Template description */
 :root div.ck-template-form .ck-template-form__description {
-    opacity: .5;
+    --ck-spacing-tiny: 0; /* Used for the top margin */
+
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap !important;
     font-size: .9em;
 }
 
@@ -514,7 +578,7 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
     margin-top: var(--ck-input-label-height);
 }
 
-.ck.ck-form__header {
+:root .ck.ck-form__header {
     border-bottom: none;
 }
 

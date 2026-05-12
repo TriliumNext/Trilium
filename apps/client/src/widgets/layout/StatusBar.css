@@ -1,6 +1,5 @@
-.component.status-bar {
+.status-bar {
     contain: none;
-    border-top: 1px solid var(--status-bar-border-color);
 
     > .status-bar-main-row {
         min-height: 28px;
@@ -199,6 +198,7 @@ body.experimental-feature-new-layout.mobile div.similar-notes-widget div.similar
 
     .bottom-panel-content {
         border-bottom: 1px solid var(--main-border-color);
+        border-end-start-radius: var(--center-pane-border-radius);
         background: var(--bottom-panel-background-color);
         padding: 8px 12px;
         max-height: 40vh;

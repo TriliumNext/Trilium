@@ -101,10 +101,22 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
 
 /* #endregion */
 
+#horizontal-main-container {
+    /* The default start-start and end-start border radius for the note split.
+     * Updated automatically according to the layout. */
+    --note-split-top-border-radius: var(--center-pane-border-radius);
+    --note-split-bottom-border-radius: var(--center-pane-border-radius);
+}
+
 /* Matches when the left pane is collapsed */
 #horizontal-main-container.left-pane-hidden {
-    --center-pane-border-radius: 0;
+    --note-split-top-border-radius: 0;
     --tab-first-item-horiz-offset: 5px;
+}
+
+/* Matches when a status bar panel is open */
+body.experimental-feature-new-layout #horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
+    --note-split-bottom-border-radius: 0;
 }
 
 /* Add a border to the vertical launch bar if collapsed. */
@@ -344,13 +356,12 @@ body[dir=ltr] #launcher-container {
 }
 
 .tooltip .tooltip-inner {
-    padding: 6px 10px !important;
-    box-shadow:
-        -1px -1px 2px var(--tooltip-shadow-color),
-        2px 2px 8px var(--tooltip-shadow-color) !important;
+    padding: var(--tooltip-padding) !important;
+    box-shadow: var(--tooltip-box-shadow) !important;
     border: unset !important;
-    border-radius: 6px;
-    backdrop-filter: blur(5px);
+    border-radius: var(--tooltip-border-radius);
+    backdrop-filter: var(--tooltip-backdrop-filter);
+    font-size: var(--tooltip-font-size);
     color: var(--tooltip-foreground-color) !important;
 }
 
@@ -1294,7 +1305,7 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
 }
 
 body.layout-vertical #rest-pane > .classic-toolbar-widget {
-    border-start-start-radius: var(--center-pane-border-radius);
+    border-start-start-radius: var(--note-split-top-border-radius);
 }
 
 body.layout-vertical #rest-pane > .classic-toolbar-widget {
@@ -1307,16 +1318,30 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
 
 .classic-toolbar-widget:not(.hidden-ext) + #vertical-main-container {
     /* Remove the center panel border radius when the toolbar is visible */
-    --center-pane-border-radius: 0;
+    --note-split-top-border-radius: 0;
 }
 
 /*
  * CENTER PANE
  */
 
+ /* Note split */
+ body.desktop.experimental-feature-new-layout .vertical-layout #center-pane .note-split {
+    border-bottom: 1px solid var(--status-bar-border-color);
+ }
+
  /* The first visible note split */
 .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
-    border-start-start-radius: var(--center-pane-border-radius);
+    border-start-start-radius: var(--note-split-top-border-radius);
+
+    body.desktop.experimental-feature-new-layout & {
+        border-end-start-radius: var(--note-split-bottom-border-radius);
+
+        > .scrolling-container {
+            /* Use clip-path to force rounded bottom corner for the note content */
+            clip-path: inset(0px round 0 0 0 var(--note-split-bottom-border-radius));
+        }
+    }
 }
 
 #center-pane .note-split {
@@ -1873,6 +1898,11 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 #right-pane {
     background: var(--right-pane-background-color);
 }
+
+/* New layout: status bar delimiter */
+body.desktop.experimental-feature-new-layout .vertical-layout #right-pane {
+    border-bottom: 1px solid var(--status-bar-border-color);
+ }
 
 #right-pane > * {
     animation: fade-in 200ms ease-in;
