@@ -177,8 +177,10 @@ However, common label and relation searches have shortcut syntax:
 
 ```
 #publicationYear = 1954
-#author.title *=* Tolkien
+~author.title *=* Tolkien
 ```
+
+(Labels use the `#` prefix, relations use `~`. See the examples earlier in this page where `~author.title *=* Tolkien` is used consistently.)
 
 ### Separating Full-Text and Attribute Parts
 
