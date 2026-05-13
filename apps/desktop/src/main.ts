@@ -136,10 +136,16 @@ async function main() {
         // Without a note ID we just create an empty extra window (existing
         // behaviour). The note is delivered after the new window loads.
         if (commandLine.includes("--new-window")) {
+            // Snapshot windows before creation so we can find the new one
+            // deterministically (windowService.allWindows is updated on the
+            // `focus` event, which may not have fired by the time
+            // createExtraWindow's promise resolves).
+            const windowsBefore = new Set(BrowserWindow.getAllWindows());
             await windowService.createExtraWindow("");
             if (noteId) {
-                const allWindows = windowService.getAllWindows();
-                const extraWindow = allWindows[allWindows.length - 1];
+                const extraWindow = BrowserWindow.getAllWindows().find(
+                    (w) => !windowsBefore.has(w),
+                );
                 if (extraWindow) {
                     extraWindow.webContents.once("did-finish-load", () => {
                         focusAndOpenNote(extraWindow, noteId);

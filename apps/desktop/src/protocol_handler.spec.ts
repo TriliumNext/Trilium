@@ -28,6 +28,14 @@ describe("protocol_handler", () => {
             expect(extractNoteIdFromUrl("trilium://note/abc%5F123")).toBe("abc_123");
         });
 
+        it("preserves the case of mixed-case note IDs", () => {
+            // Trilium IDs from `utils.randomString(12)` are case-sensitive.
+            // The URL constructor lowercases the hostname, but our IDs live
+            // in the path component, which is preserved verbatim.
+            expect(extractNoteIdFromUrl("trilium://note/AbC123def456")).toBe("AbC123def456");
+            expect(extractNoteIdFromUrl("trilium:///note/AbC123def456")).toBe("AbC123def456");
+        });
+
         it("returns null when the path prefix is missing (legacy trilium://<id> not supported)", () => {
             expect(extractNoteIdFromUrl("trilium://abc123def456")).toBeNull();
         });
