@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
 import BoardApi from "./api";
@@ -8,6 +8,7 @@ import { openNoteContextMenu } from "./context_menu";
 import { t } from "../../../services/i18n";
 import UserAttributesDisplay from "../../attribute_widgets/UserAttributesList";
 import { useTriliumEvent } from "../../react/hooks";
+import { calculateChecklistProgress, ChecklistProgress, formatRepeatPattern, getDueDateStatus, DueDateStatus } from "./data";
 
 export const CARD_CLIPBOARD_TYPE = "trilium/board-card";
 
@@ -40,6 +41,29 @@ export default function Card({
     const isArchived = note.isArchived;
     const [ isVisible, setVisible ] = useState(true);
     const [ title, setTitle ] = useState(note.title);
+    const [ checklistProgress, setChecklistProgress ] = useState<ChecklistProgress | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (note.type === "text") {
+            note.getContent().then((content) => {
+                if (!cancelled) {
+                    setChecklistProgress(calculateChecklistProgress(content));
+                }
+            }).catch(() => {
+                // Silently ignore content fetch errors
+            });
+        } else {
+            setChecklistProgress(null);
+        }
+        return () => { cancelled = true; };
+    }, [note]);
+
+    const dueDate = note.getLabelValue("dueDate");
+    const dueDateStatus = useMemo(() => getDueDateStatus(dueDate), [dueDate]);
+
+    const repeatPattern = note.getLabelValue("repeat");
+    const formattedRepeat = useMemo(() => formatRepeatPattern(repeatPattern), [repeatPattern]);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const row = loadResults.getEntityRow("notes", note.noteId);
@@ -117,7 +141,39 @@ export default function Card({
                         title={t("board_view.edit-note-title")}
                         onClick={handleEdit}
                     />
-                    <UserAttributesDisplay note={note} ignoredAttributes={[api.statusAttribute]} />
+                    {(checklistProgress && checklistProgress.total > 0) && (
+                        <div className="board-card-checklist">
+                            <div
+                                className="board-card-checklist-track"
+                                role="progressbar"
+                                aria-label={t("board_view.checklist_progress")}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-valuenow={checklistProgress.percentage}
+                            >
+                                <div
+                                    className="board-card-checklist-fill"
+                                    style={{ width: `${checklistProgress.percentage}%` }}
+                                />
+                            </div>
+                            <span className="board-card-checklist-count">
+                                {checklistProgress.checked}/{checklistProgress.total}
+                            </span>
+                        </div>
+                    )}
+                    {(dueDateStatus !== "unknown") && (
+                        <span className={`board-card-due-date status-${dueDateStatus}`}>
+                            <span class={`icon ${dueDateStatus === "overdue" ? "bx bx-error-circle" : dueDateStatus === "today" ? "bx bx-time" : "bx bx-calendar"}`} />
+                            {dueDate}
+                        </span>
+                    )}
+                    {formattedRepeat && (
+                        <span className="board-card-repeat" title={t("board_view.repeat_pattern", { pattern: formattedRepeat })}>
+                            <span class="icon bx bx-repost" />
+                            {formattedRepeat}
+                        </span>
+                    )}
+                    <UserAttributesDisplay note={note} ignoredAttributes={[api.statusAttribute, "dueDate", "repeat"]} />
                 </>
             ) : (
                 <TitleEditor

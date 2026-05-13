@@ -7,6 +7,117 @@ export type ColumnMap = Map<string, {
     note: FNote;
 }[]>;
 
+export interface ChecklistProgress {
+    total: number;
+    checked: number;
+    percentage: number;
+}
+
+export interface BoardProgress {
+    totalItems: number;
+    completedItems: number;
+    percentage: number;
+}
+
+export type DueDateStatus = "overdue" | "today" | "upcoming" | "unknown";
+
+export type RepeatPattern = "daily" | "weekly" | "monthly" | "quarterly" | "yearly" | "weekdays" | "weekends";
+
+const CHECKBOX_REGEX = /^\s*[-*]\s*\[([ xX])\]/gm;
+
+export function calculateChecklistProgress(content: string | null | undefined): ChecklistProgress | null {
+    if (!content) {
+        return null;
+    }
+
+    const matches = content.match(CHECKBOX_REGEX);
+    if (!matches || matches.length === 0) {
+        return null;
+    }
+
+    const total = matches.length;
+    const checked = matches.filter((m) => m.includes("[x") || m.includes("[X")).length;
+    const percentage = total === 0 ? 0 : Math.round((checked / total) * 100);
+
+    return { total, checked, percentage };
+}
+
+export function calculateBoardProgress(byColumn: ColumnMap, doneColumnsRaw: string): BoardProgress {
+    let totalItems = 0;
+    for (const cards of byColumn.values()) {
+        totalItems += cards.length;
+    }
+
+    if (totalItems === 0) {
+        return {
+            totalItems: 0,
+            completedItems: 0,
+            percentage: 0
+        };
+    }
+
+    const doneColumns = new Set(doneColumnsRaw
+        .split(",")
+        .map((column) => column.trim().toLowerCase())
+        .filter(Boolean));
+
+    let completedItems = 0;
+    for (const [column, cards] of byColumn.entries()) {
+        if (!doneColumns.has(column.trim().toLowerCase())) {
+            continue;
+        }
+        completedItems += cards.length;
+    }
+
+    return {
+        totalItems,
+        completedItems,
+        percentage: Math.round((completedItems / totalItems) * 100)
+    };
+}
+
+export function getDueDateStatus(dueDateStr: string | null | undefined): DueDateStatus {
+    if (!dueDateStr) {
+        return "unknown";
+    }
+
+    const dueDate = new Date(dueDateStr);
+    if (Number.isNaN(dueDate.getTime())) {
+        return "unknown";
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const due = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+
+    if (due < today) {
+        return "overdue";
+    } else if (due.getTime() === today.getTime()) {
+        return "today";
+    }
+    return "upcoming";
+}
+
+export function formatRepeatPattern(pattern: string | null | undefined): string | null {
+    if (!pattern) {
+        return null;
+    }
+
+    const patterns: Record<string, string> = {
+        daily: "Daily",
+        weekly: "Weekly",
+        monthly: "Monthly",
+        quarterly: "Quarterly",
+        yearly: "Yearly",
+        weekdays: "Weekdays",
+        weekends: "Weekends",
+        biweekly: "Bi-weekly"
+    };
+
+    return patterns[pattern.trim().toLowerCase()] || pattern;
+}
+
 export async function getBoardData(parentNote: FNote, groupByColumn: string, persistedData: BoardViewData, includeArchived: boolean) {
     const byColumn: ColumnMap = new Map();
 

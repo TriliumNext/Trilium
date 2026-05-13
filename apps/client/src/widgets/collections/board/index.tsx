@@ -1,6 +1,4 @@
-import "./index.css";
-
-import { createContext, TargetedKeyboardEvent } from "preact";
+import { createContext, Fragment, TargetedKeyboardEvent } from "preact";
 import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -14,10 +12,9 @@ import Icon from "../../react/Icon";
 import NoteAutocomplete from "../../react/NoteAutocomplete";
 import { onWheelHorizontalScroll } from "../../widget_utils";
 import { ViewModeProps } from "../interface";
-import Api from "./api";
 import BoardApi from "./api";
 import Column from "./column";
-import { ColumnMap, getBoardData } from "./data";
+import { calculateBoardProgress, ColumnMap, getBoardData } from "./data";
 
 export interface BoardViewData {
     columns?: BoardColumnData[];
@@ -48,6 +45,7 @@ export const BoardViewContext = createContext<BoardViewContextData | undefined>(
 
 export default function BoardView({ note: parentNote, noteIds, viewConfig, saveConfig }: ViewModeProps<BoardViewData>) {
     const [ statusAttributeWithPrefix ] = useNoteLabelWithDefault(parentNote, "board:groupBy", "status");
+    const [ doneColumnsRaw ] = useNoteLabelWithDefault(parentNote, "board:doneColumns", "Done,done,Completed,completed");
     const [ includeArchived ] = useNoteLabelBoolean(parentNote, "includeArchived");
     const [ byColumn, setByColumn ] = useState<ColumnMap>();
     const [ columns, setColumns ] = useState<string[]>();
@@ -61,7 +59,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     const [ branchIdToEdit, setBranchIdToEdit ] = useState<string>();
     const [ columnNameToEdit, setColumnNameToEdit ] = useState<string>();
     const api = useMemo(() => {
-        return new Api(byColumn, columns ?? [], parentNote, statusAttributeWithPrefix, viewConfig ?? {}, saveConfig, setBranchIdToEdit );
+        return new BoardApi(byColumn, columns ?? [], parentNote, statusAttributeWithPrefix, viewConfig ?? {}, saveConfig, setBranchIdToEdit );
     }, [ byColumn, columns, parentNote, statusAttributeWithPrefix, viewConfig, saveConfig, setBranchIdToEdit ]);
     const boardViewContext = useMemo<BoardViewContextData>(() => ({
         api,
@@ -83,25 +81,26 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         dropTarget, setDropTarget
     ]);
 
-    function refresh() {
+    const refresh = useCallback(() => {
         getBoardData(parentNote, statusAttributeWithPrefix, viewConfig ?? {}, includeArchived).then(({ byColumn, newPersistedData, isInRelationMode }) => {
             setByColumn(byColumn);
             setIsRelationMode(isInRelationMode);
 
             if (newPersistedData) {
-                viewConfig = { ...newPersistedData };
                 saveConfig(newPersistedData);
             }
 
+            const effectiveViewConfig = newPersistedData ?? viewConfig ?? {};
+
             // Use the order from persistedData.columns, then add any new columns found
-            const orderedColumns = viewConfig?.columns?.map(col => col.value) || [];
+            const orderedColumns = effectiveViewConfig.columns?.map(col => col.value) ?? [];
             const allColumns = Array.from(byColumn.keys());
             const newColumns = allColumns.filter(col => !orderedColumns.includes(col));
             setColumns([...orderedColumns, ...newColumns]);
         });
-    }
+    }, [includeArchived, parentNote, saveConfig, statusAttributeWithPrefix, viewConfig]);
 
-    useEffect(refresh, [ parentNote, noteIds, viewConfig, statusAttributeWithPrefix ]);
+    useEffect(refresh, [noteIds, refresh]);
 
     const handleColumnDrop = useCallback((fromIndex: number, toIndex: number) => {
         const newColumns = api.reorderColumn(fromIndex, toIndex);
@@ -124,10 +123,12 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
             loadResults.getBranchRows().some(branch => noteIds.includes(branch.noteId!)) ||
             // React to changes in note icon or color.
             loadResults.getAttributeRows().some(attr => [ "iconClass", "color" ].includes(attr.name ?? "") && noteIds.includes(attr.noteId ?? "")) ||
+            // React to changes in dueDate, repeat labels on board cards
+            loadResults.getAttributeRows().some(attr => [ "dueDate", "repeat" ].includes(attr.name ?? "") && noteIds.includes(attr.noteId ?? "")) ||
             // React to attachment change
             loadResults.getAttachmentRows().some(att => att.ownerId === parentNote.noteId && att.title === "board.json") ||
-            // React to changes in "groupBy"
-            loadResults.getAttributeRows().some(attr => attr.name === "board:groupBy" && attr.noteId === parentNote.noteId);
+            // React to changes in "groupBy" or "doneColumns"
+            loadResults.getAttributeRows().some(attr => [ "board:groupBy", "board:doneColumns" ].includes(attr.name ?? "") && attr.noteId === parentNote.noteId);
 
         if (hasRelevantChanges) {
             refresh();
@@ -161,9 +162,34 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         setColumnHoverIndex(null);
     }, [draggedColumn, columnDropPosition, handleColumnDrop]);
 
+    const progress = useMemo(() => {
+        if (!byColumn) {
+            return null;
+        }
+        return calculateBoardProgress(byColumn, doneColumnsRaw);
+    }, [byColumn, doneColumnsRaw]);
+
     return (
         <div className="board-view">
             <CollectionProperties note={parentNote} />
+            {progress && (
+                <div className="board-progress" aria-label={t("board_view.progress_label")}>
+                    <div className="board-progress-header">
+                        <span>{t("board_view.progress_label")}</span>
+                        <span>{t("board_view.progress_count", { completed: progress.completedItems, total: progress.totalItems })}</span>
+                    </div>
+                    <div
+                        className="board-progress-track"
+                        role="progressbar"
+                        aria-label={t("board_view.progress_label")}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={progress.percentage}
+                    >
+                        <div className="board-progress-fill" style={{ width: `${progress.percentage}%` }} />
+                    </div>
+                </div>
+            )}
             <BoardViewContext.Provider value={boardViewContext}>
                 {byColumn && columns && <div
                     className="board-view-container"
@@ -172,7 +198,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                     onWheel={onWheelHorizontalScroll}
                 >
                     {columns.map((column, index) => (
-                        <>
+                        <Fragment key={column}>
                             {columnDropPosition === index && (
                                 <div className="column-drop-placeholder show" />
                             )}
@@ -186,7 +212,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                                 onColumnHover={handleColumnHover}
                                 isAnyColumnDragging={!!draggedColumn}
                             />
-                        </>
+                        </Fragment>
                     ))}
                     {columnDropPosition === columns?.length && draggedColumn && (
                         <div className="column-drop-placeholder show" />
