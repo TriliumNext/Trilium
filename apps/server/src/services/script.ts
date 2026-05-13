@@ -137,8 +137,10 @@ function getParams(params?: ScriptParams) {
 }
 
 function getScriptBundleForFrontend(note: BNote, script?: string, params?: ScriptParams) {
-    // Warn the user if they're trying to run a backend script in the frontend
-    if (note.isJavaScript() && note.getScriptEnv() === "backend") {
+    // Warn the user if they're trying to run a backend script in the frontend.
+    // Skip this check when an override script is provided (e.g. from runOnFrontend),
+    // since the override is already meant for the frontend.
+    if (!script && note.isJavaScript() && note.getScriptEnv() === "backend") {
         log.info(`Cannot execute note ${note.noteId} "${note.title}" in frontend, note is of type "Code: JS backend"`);
 
         const message = t("script.wrong-environment", {

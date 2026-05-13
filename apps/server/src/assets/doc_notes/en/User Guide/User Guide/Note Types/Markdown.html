@@ -32,122 +32,122 @@
 <p>The following features are supported by Trilium's Markdown format and
   will show up in the preview pane:</p>
 <ul>
-  <li>All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes).</li>
-  <li
- >Basic HTML is also supported (e.g. collapsible blocks using <code spellcheck="false">&lt;details&gt;</code> and
-    <code
-    spellcheck="false">&lt;summary&gt;</code>).</li>
-      <li>Code blocks with syntax highlight.
-        <ul>
-          <li>The language must be specified for syntax highlight to be applied (e.g.
-            <code
-            spellcheck="false">```js</code>).</li>
-          <li>Code blocks will respect the text wrapping from the&nbsp;<a class="reference-link"
-            href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_iPIMuisry3hd">Text</a>&nbsp;section
-            in&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_4TIF1oA4VQRO">Options</a>.</li>
-        </ul>
-      </li>
-      <li><a class="reference-link" href="#root/_help_NwBbFdNZ9h7O">Block quotes &amp; admonitions</a>
-      </li>
-      <li><a class="reference-link" href="#root/_help_YfYAtQBcfo5V">Math Equations</a>&nbsp;(both
-        inline and block)</li>
-      <li><a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>&nbsp;using
+  <li>
+    <p>All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes).</p>
+  </li>
+  <li>
+    <p>Basic HTML is also supported (e.g. collapsible blocks using <code spellcheck="false">&lt;details&gt;</code> and
+      <code
+      spellcheck="false">&lt;summary&gt;</code>).</p>
+  </li>
+  <li>
+    <p>Code blocks with syntax highlight.</p>
+    <ul>
+      <li>The language must be specified for syntax highlight to be applied (e.g.
         <code
-        spellcheck="false">```mermaid</code>
-      </li>
-      <li>
-        <p><a class="reference-link" href="#root/_help_nBAXQFj20hS1">Include Note</a>&nbsp;(no
-          built-in Markdown syntax, but HTML syntax works just fine):</p><pre><code class="language-text-html">&lt;section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable"&gt;
+        spellcheck="false">```js</code>).</li>
+      <li>Code blocks will respect the text wrapping from the&nbsp;<a class="reference-link"
+        href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;section in&nbsp;<a class="reference-link"
+        href="#root/_help_4TIF1oA4VQRO">Options</a>.</li>
+    </ul>
+  </li>
+  <li>
+    <p><a class="reference-link" href="#root/_help_NwBbFdNZ9h7O">Block quotes &amp; admonitions</a>
+    </p>
+  </li>
+  <li>
+    <p><a class="reference-link" href="#root/_help_YfYAtQBcfo5V">Math Equations</a>&nbsp;(both
+      inline and block)</p>
+  </li>
+  <li>
+    <p><a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>&nbsp;using
+      <code
+      spellcheck="false">```mermaid</code>
+    </p>
+  </li>
+  <li>
+    <p><a class="reference-link" href="#root/_help_nBAXQFj20hS1">Include Note</a>&nbsp;(no
+      built-in Markdown syntax, but HTML syntax works just fine):</p><pre><code class="language-text-html">&lt;section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable"&gt;
     &amp;nbsp;
 &lt;/section&gt;</code></pre>
-        <ul>
-          <li>These can also be quickly created via the <code spellcheck="false">/include</code> command
-            or via a dedicated keyboard shortcut (not assigned by default).</li>
-        </ul>
-      </li>
-      <li>
-        <p><a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;via
-          its HTML syntax, or through a <em>Wikilinks</em>-like format (only&nbsp;
-          <a
-          class="reference-link" href="#root/_help_m1lbrzyKDaRB">Note ID</a>):</p><pre><code class="language-text-x-markdown">[[Hg8TS5ZOxti6]]</code></pre>
-      </li>
-      <li>
-        <p><a class="reference-link" href="#root/_help_AgjCISero73a">Footnotes</a>&nbsp;are
-          also supported via the corresponding Markdown syntax:</p><pre><code class="language-text-x-markdown">This is [^1], while this is [^2].
+    <ul>
+      <li>These can also be quickly created via the <code spellcheck="false">/include</code> command
+        or via a dedicated keyboard shortcut (not assigned by default).</li>
+    </ul>
+  </li>
+  <li>
+    <p><a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;via
+      its HTML syntax, or through a <em>Wikilinks</em>-like format (only&nbsp;
+      <a
+      class="reference-link" href="#root/_help_m1lbrzyKDaRB">Note ID</a>):</p><pre><code class="language-text-x-gfm">[[Hg8TS5ZOxti6]]</code></pre>
+  </li>
+  <li>
+    <p><a class="reference-link" href="#root/_help_AgjCISero73a">Footnotes</a>&nbsp;are
+      also supported via the corresponding Markdown syntax:</p><pre><code class="language-text-x-gfm">This is [^1], while this is [^2].
 
 [^1]: the first footnote
 [^2]: the second footnote</code></pre>
-        <ul>
-          <li>These can also be quickly created using the <code spellcheck="false">/footnote</code> command.</li>
-        </ul>
-      </li>
+    <ul>
+      <li>These can also be quickly created using the <code spellcheck="false">/footnote</code> command.</li>
+    </ul>
+  </li>
 </ul>
 <h3>Links</h3>
 <p>Multiple types of links are supported:</p>
 <ul>
   <li>
-    <p>Web URLs can be written with the standard Markdown syntax:</p><pre><code class="language-text-x-markdown">[Wikipedia](https://www.wikipedia.org)</code></pre>
+    <p>Web URLs can be written with the standard Markdown syntax:</p><pre><code class="language-text-x-gfm">[Wikipedia](https://www.wikipedia.org)</code></pre>
   </li>
   <li>
-    <p><a href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/QEAPj01N5f7w/_help_hrZ1D00cLbal">Reference link</a> to
-      other notes with dynamic title, either by manually entering the note ID
-      or via the <em>Add link</em> dialog:</p><pre><code class="language-text-x-markdown">[[B9oMG6rFvvfq]]</code></pre>
+    <p><a href="#root/_help_hrZ1D00cLbal">Reference link</a> to other notes with dynamic
+      title, either by manually entering the note ID or via the <em>Add link</em> dialog:</p><pre><code class="language-text-x-gfm">[[B9oMG6rFvvfq]]</code></pre>
   </li>
   <li>
-    <p><a href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/QEAPj01N5f7w/_help_hrZ1D00cLbal">Reference link</a> to
-      other notes with a custom text:</p><pre><code class="language-text-x-markdown">[This is a link](#root/LhtnZxtVsUMp)</code></pre>
+    <p><a href="#root/_help_hrZ1D00cLbal">Reference link</a> to other notes with a custom
+      text:</p><pre><code class="language-text-x-gfm">[This is a link](#root/LhtnZxtVsUMp)</code></pre>
   </li>
 </ul>
 <p>To create a link, either:</p>
 <ul>
   <li>Type it manually using the syntax described above.</li>
-  <li>Use the <em>Add link</em> dialog by pressing <kbd spellcheck="false">Ctrl</kbd>+
-    <kbd
-    spellcheck="false">L</kbd>or typing the <code spellcheck="false">/link</code> command.</li>
+  <li>Use the <em>Add link</em> dialog by pressing <kbd>Ctrl</kbd>+<kbd>L</kbd> or
+    typing the <code spellcheck="false">/link</code> command.</li>
 </ul>
 <h3>Keyboard shortcuts</h3>
 <p>The Markdown notes share some of the keyboard shortcuts from&nbsp;<a class="reference-link"
-  href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_iPIMuisry3hd">Text</a>&nbsp;notes:</p>
+  href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes:</p>
 <ul>
-  <li><em>Cut to note</em> (<kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">X</kbd>)
-    which cuts the selection into a new child note.</li>
-  <li><em>Add link</em> (<kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">L</kbd>)
-    which shows the dialog to create external or reference links.</li>
-  <li><em>Insert date/time</em> (<kbd spellcheck="false">Alt</kbd>+<kbd spellcheck="false">T</kbd>)
-    which respects the same formatting as text notes.</li>
+  <li><em>Cut to note</em> (<kbd>Ctrl</kbd>+<kbd>X</kbd>) which cuts the selection
+    into a new child note.</li>
+  <li><em>Add link</em> (<kbd>Ctrl</kbd>+<kbd>L</kbd>) which shows the dialog
+    to create external or reference links.</li>
+  <li><em>Insert date/time</em> (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects
+    the same formatting as text notes.</li>
   <li><em>Include note</em> (not assigned by default), which triggers the same
     dialog to insert notes as the one for text notes.</li>
 </ul>
 <p>In addition, the following formatting keyboard shortcuts are available:</p>
 <ul>
-  <li><kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">B</kbd> to toggle <strong>bold</strong>.</li>
-  <li
- ><kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">I</kbd> to toggle <em>italic</em>.</li>
-    <li
-   ><kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">M</kbd> to wrap
-      the current selection in an inline math (<code spellcheck="false">$</code>).</li>
-      <li
-     ><kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">Shift</kbd>+
-        <kbd
-        spellcheck="false">X</kbd>to toggle <del>strikethrough</del>.</li>
+  <li><kbd>Ctrl</kbd>+<kbd>B</kbd> to toggle <strong>bold</strong>.</li>
+  <li><kbd>Ctrl</kbd>+<kbd>I</kbd> to toggle <em>italic</em>.</li>
+  <li><kbd>Ctrl</kbd>+<kbd>M</kbd> to wrap the current selection in an inline
+    math (<code spellcheck="false">$</code>).</li>
+  <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> to toggle <del>strikethrough</del>.</li>
 </ul>
 <h3>Images &amp; attachments</h3>
 <p>Images can be inserted into the document in four different methods:</p>
 <ul>
   <li>Drag &amp; drop directly into the editor area.</li>
   <li>Pasting an image from clipboard.</li>
-  <li>Pasting a reference to another <a href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_0vhv7lsOLy82">attachment</a> (e.g. <em>Copy reference to clipboard</em> button).</li>
-  <li
- >Use the <code spellcheck="false">/image</code> slash command.</li>
+  <li>Pasting a reference to another <a href="#root/_help_0vhv7lsOLy82">attachment</a> (e.g. <em>Copy reference to clipboard</em> button).</li>
+  <li>Use the <code spellcheck="false">/image</code> slash command.</li>
 </ul>
-<p>An image reference to an attachment looks like this:</p><pre><code class="language-text-x-markdown">![Name.jpeg](api/attachments/z50RceuHXe9J/image/image)</code></pre>
+<p>An image reference to an attachment looks like this:</p><pre><code class="language-text-x-gfm">![Name.jpeg](api/attachments/z50RceuHXe9J/image/image)</code></pre>
 <h3>Slash commands</h3>
-<p>Just like&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_iPIMuisry3hd">Text</a>&nbsp;notes,
+<p>Just like&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes,
   Markdown notes support a selection of slash commands:</p>
 <ul>
-  <li>Creating <a href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/_help_NwBbFdNZ9h7O">admonitions</a> (e.g.
-    <code
-    spellcheck="false">/tip</code>)</li>
+  <li>Creating <a href="#root/_help_NwBbFdNZ9h7O">admonitions</a> (e.g. <code spellcheck="false">/tip</code>)</li>
   <li>Uploading images (<code spellcheck="false">/image</code>).</li>
   <li>Inserting the current date &amp; time (<code spellcheck="false">/date</code>).</li>
 </ul>
@@ -174,8 +174,7 @@
 <ol>
   <li>Create a new note (e.g. in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>)
     and select the type <em>Markdown</em>, just like all the other note types.</li>
-  <li
- >Create a note of type&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;and
+  <li>Create a note of type&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;and
     select as the language either <em>Markdown</em> or <em>GitHub-Flavored Markdown</em>.
     This maintains compatibility with your existing notes prior to the introduction
     of this feature.</li>
@@ -212,7 +211,7 @@
   as handling of attachments).</p>
 <p>When exporting Markdown files as ZIP, choosing HTML or Markdown as the
   export format makes no difference as that only affects&nbsp;<a class="reference-link"
-  href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_iPIMuisry3hd">Text</a>&nbsp;notes.</p>
+  href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes.</p>
 <p>If the Markdown note contains attachments, a ZIP export will rewrite the
   links to attachments so that they are replaced with a relative path to
   the attachment. On import, the links are re-written back.</p>

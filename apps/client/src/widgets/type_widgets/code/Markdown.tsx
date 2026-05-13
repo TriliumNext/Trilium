@@ -5,7 +5,7 @@ import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
 import { Marked, type Tokens } from "marked";
 import { createContext } from "preact";
-import { useContext, useEffect, useMemo, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useMemo, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import NoteContext from "../../../components/note_context";
@@ -18,7 +18,7 @@ import server from "../../../services/server";
 import { removeIndividualBinding } from "../../../services/shortcuts";
 import tree from "../../../services/tree";
 import utils, { isDesktop } from "../../../services/utils";
-import { useLegacyImperativeHandlers } from "../../react/hooks";
+import { useLegacyImperativeHandlers, useTriliumEvent } from "../../react/hooks";
 import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
@@ -87,7 +87,7 @@ export default function Markdown(props: TypeWidgetProps) {
 
     useSyncedScrolling(editorView, previewEl);
     useSyncedHighlight(editorView, previewEl, html);
-    usePublishToc(props.noteContext, editorView, headings);
+    usePublishToc(props.noteContext, editorView, headings, props.note);
     useImageDrop(props.note, editorView);
     useTextCommands(props.parentComponent, editorView);
     useSlashCommands(props.parentComponent, editorView, props.note);
@@ -133,10 +133,11 @@ function MarkdownPreview({ ntxId }: { ntxId: TypeWidgetProps["ntxId"] }) {
 function usePublishToc(
     noteContext: NoteContext | undefined,
     editorView: VanillaCodeMirror | null,
-    headings: MarkdownHeading[]
+    headings: MarkdownHeading[],
+    note: FNote
 ) {
-    useEffect(() => {
-        if (!noteContext) return;
+    const publish = useCallback(() => {
+        if (!noteContext || noteContext.noteId !== note.noteId) return;
         noteContext.setContextData("toc", {
             headings,
             scrollToHeading(heading) {
@@ -150,7 +151,19 @@ function usePublishToc(
                 editorView.scrollDOM.scrollTo({ top: targetTop, behavior: "smooth" });
             }
         });
-    }, [ noteContext, headings, editorView ]);
+    }, [ noteContext, headings, editorView, note.noteId ]);
+
+    // Publish when headings or editor change.
+    useEffect(() => { publish(); }, [ publish ]);
+
+    // Re-publish after note switches: context data is cleared when the noteId
+    // changes, so when our note becomes active again we need to restore it.
+    // The noteId guard in publish() prevents overwriting another widget's ToC.
+    useTriliumEvent("noteSwitched", ({ noteContext: ctx }) => {
+        if (ctx === noteContext) {
+            publish();
+        }
+    });
 }
 //#endregion
 
@@ -448,10 +461,7 @@ function useSlashCommands(parentComponent: TypeWidgetProps["parentComponent"], e
     useEffect(() => {
         if (!editorView) return;
 
-        Promise.all([
-            import("@codemirror/autocomplete"),
-            import("@codemirror/state")
-        ]).then(([{ autocompletion }, { StateEffect }]) => {
+        import("@codemirror/autocomplete").then(({ autocompletion }) => {
             const ext = autocompletion({
                 override: [(ctx) => {
                     const match = ctx.matchBefore(/(?:^|(?<=\s))\/\w*/);
@@ -578,7 +588,7 @@ function useSlashCommands(parentComponent: TypeWidgetProps["parentComponent"], e
                 activateOnTyping: true
             });
 
-            editorView.dispatch({ effects: StateEffect.appendConfig.of(ext) });
+            editorView.setNamedExtension("slashCommands", ext);
         });
     }, [editorView, parentComponent, note.noteId]);
 }

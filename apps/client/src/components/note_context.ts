@@ -137,24 +137,25 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             closeActiveDialog();
         }
 
+        const previousNoteId = this.noteId;
+
         this.notePath = resolvedNotePath;
         this.viewScope = opts.viewScope;
         ({ noteId: this.noteId, parentNoteId: this.parentNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath));
 
-        // Clear context data when switching notes and notify subscribers
-        const oldKeys = Array.from(this.contextData.keys());
-        this.contextData.clear();
-        if (oldKeys.length > 0) {
-            // Notify subscribers asynchronously to avoid blocking navigation
-            window.setTimeout(() => {
-                for (const key of oldKeys) {
-                    this.triggerEvent("contextDataChanged", {
-                        noteContext: this,
-                        key,
-                        value: undefined
-                    });
-                }
-            }, 0);
+        // Clear context data only when actually switching to a different note.
+        // Context data (e.g. ToC headings) is tied to the note content, so it
+        // remains valid when only the viewScope changes for the same note.
+        if (this.noteId !== previousNoteId) {
+            const oldKeys = Array.from(this.contextData.keys());
+            this.contextData.clear();
+            for (const key of oldKeys) {
+                this.triggerEvent("contextDataChanged", {
+                    noteContext: this,
+                    key,
+                    value: undefined
+                });
+            }
         }
 
         this.saveToRecentNotes(resolvedNotePath);

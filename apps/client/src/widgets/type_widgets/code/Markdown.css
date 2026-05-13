@@ -27,3 +27,22 @@
 
 }
 
+/* Markdown preview content blocks in split-view */
+.note-detail-split.split-horizontal .note-detail-split-preview > .note-detail-readonly-text-content > div {     
+    max-width: var(--preferred-max-content-width);
+
+    body.prefers-centered-content & {
+        margin: auto;
+    }
+}
+
+/* The Markdown notes are a particular case when it comes to handling the max content width.
+ * By default, is full-width, unless in preview mode. */
+.note-split.mime-text-x-markdown:has(.note-detail-split.split-read-only) {
+    --max-content-width: var(--preferred-max-content-width);
+
+    .scrolling-container {
+        /* Reverses .full-height rule */
+        display: block;
+    }
+}

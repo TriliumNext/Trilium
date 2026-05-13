@@ -11,9 +11,12 @@
     }
 }
 
-body.prefers-centered-content .note-list-widget:not(.full-height) {
-    /* Horizontally center the widget in its parent when the "Keep content centered" option is on */
-    margin-inline: auto;
+body.prefers-centered-content {
+    .note-list-widget:not(.full-height),
+    .note-split.type-text .note-list-widget {
+        /* Horizontally center the widget in its parent when the "Keep content centered" option is on */
+        margin-inline: auto;
+    }
 }
 
 .note-list-widget.full-height,

@@ -43,16 +43,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1774171918,
-        "narHash": "sha256-0OBrtBnowvYP/YMKh7GB1GX22ORK+2X771EVgT+1tsk=",
+        "lastModified": 1778690633,
+        "narHash": "sha256-aCw5ZrbO02VTuF+Pf6APotGvDR0dH+0N1HqocK1UhU8=",
         "owner": "TriliumNext",
         "repo": "pnpm2nix-nzbr",
-        "rev": "536d67261ffe7c91cb286c8581cc799a1b61e969",
+        "rev": "31d00012c26b14303702a35885ccc97943888366",
         "type": "github"
       },
       "original": {
         "owner": "TriliumNext",
-        "ref": "fix/optional_dependencies_filtering",
+        "ref": "main",
         "repo": "pnpm2nix-nzbr",
         "type": "github"
       }

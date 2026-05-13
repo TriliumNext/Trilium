@@ -27,6 +27,7 @@ The following features are supported by Trilium's Markdown format and will show 
 *   All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes).
 *   Basic HTML is also supported (e.g. collapsible blocks using `<details>` and `<summary>`).
 *   Code blocks with syntax highlight.
+    
     *   The language must be specified for syntax highlight to be applied (e.g. ` ```js `).
     *   Code blocks will respect the text wrapping from the <a class="reference-link" href="Text.md">Text</a> section in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>.
 *   <a class="reference-link" href="Text/Block%20quotes%20%26%20admonitions.md">Block quotes &amp; admonitions</a>
@@ -43,12 +44,12 @@ The following features are supported by Trilium's Markdown format and will show 
     *   These can also be quickly created via the `/include` command or via a dedicated keyboard shortcut (not assigned by default).
 *   <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> via its HTML syntax, or through a _Wikilinks_\-like format (only <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">Note ID</a>):
     
-    ```markdown
+    ```gfm
     [[Hg8TS5ZOxti6]]
     ```
 *   <a class="reference-link" href="Text/Footnotes.md">Footnotes</a> are also supported via the corresponding Markdown syntax:
     
-    ```markdown
+    ```gfm
     This is [^1], while this is [^2].
     
     [^1]: the first footnote
@@ -63,40 +64,40 @@ Multiple types of links are supported:
 
 *   Web URLs can be written with the standard Markdown syntax:
     
-    ```markdown
+    ```gfm
     [Wikipedia](https://www.wikipedia.org)
     ```
 *   [Reference link](Text/Links/Internal%20\(reference\)%20links.md) to other notes with dynamic title, either by manually entering the note ID or via the _Add link_ dialog:
     
-    ```markdown
+    ```gfm
     [[B9oMG6rFvvfq]]
     ```
 *   [Reference link](Text/Links/Internal%20\(reference\)%20links.md) to other notes with a custom text:
     
-    ```markdown
+    ```gfm
     [This is a link](#root/LhtnZxtVsUMp)
     ```
 
 To create a link, either:
 
 *   Type it manually using the syntax described above.
-*   Use the _Add link_ dialog by pressing <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">L</kbd> or typing the `/link` command.
+*   Use the _Add link_ dialog by pressing <kbd>Ctrl</kbd>+<kbd>L</kbd> or typing the `/link` command.
 
 ### Keyboard shortcuts
 
 The Markdown notes share some of the keyboard shortcuts from <a class="reference-link" href="Text.md">Text</a> notes:
 
-*   _Cut to note_ (<kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">X</kbd>) which cuts the selection into a new child note.
-*   _Add link_ (<kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">L</kbd>) which shows the dialog to create external or reference links.
-*   _Insert date/time_ (<kbd spellcheck="false">Alt</kbd>+<kbd spellcheck="false">T</kbd>) which respects the same formatting as text notes.
+*   _Cut to note_ (<kbd>Ctrl</kbd>+<kbd>X</kbd>) which cuts the selection into a new child note.
+*   _Add link_ (<kbd>Ctrl</kbd>+<kbd>L</kbd>) which shows the dialog to create external or reference links.
+*   _Insert date/time_ (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects the same formatting as text notes.
 *   _Include note_ (not assigned by default), which triggers the same dialog to insert notes as the one for text notes.
 
 In addition, the following formatting keyboard shortcuts are available:
 
-*   <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">B</kbd> to toggle **bold**.
-*   <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">I</kbd> to toggle _italic_.
-*   <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">M</kbd> to wrap the current selection in an inline math (`$`).
-*   <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">Shift</kbd>+<kbd spellcheck="false">X</kbd> to toggle ~~strikethrough~~.
+*   <kbd>Ctrl</kbd>+<kbd>B</kbd> to toggle **bold**.
+*   <kbd>Ctrl</kbd>+<kbd>I</kbd> to toggle _italic_.
+*   <kbd>Ctrl</kbd>+<kbd>M</kbd> to wrap the current selection in an inline math (`$`).
+*   <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> to toggle ~~strikethrough~~.
 
 ### Images & attachments
 
@@ -109,7 +110,7 @@ Images can be inserted into the document in four different methods:
 
 An image reference to an attachment looks like this:
 
-```markdown
+```gfm
 ![Name.jpeg](api/attachments/z50RceuHXe9J/image/image)
 ```
 

@@ -1,17 +1,17 @@
 import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
-import { t } from "i18next";
-
-import { app, globalShortcut, BrowserWindow } from "electron";
-import sqlInit from "@triliumnext/server/src/services/sql_init.js";
-import windowService from "@triliumnext/server/src/services/window.js";
-import tray from "@triliumnext/server/src/services/tray.js";
 import options from "@triliumnext/server/src/services/options.js";
+import port from "@triliumnext/server/src/services/port.js";
+import sqlInit from "@triliumnext/server/src/services/sql_init.js";
+import tray from "@triliumnext/server/src/services/tray.js";
+import windowService from "@triliumnext/server/src/services/window.js";
+import { app, BrowserWindow,globalShortcut } from "electron";
 import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
-import { PRODUCT_NAME } from "./app-info";
-import port from "@triliumnext/server/src/services/port.js";
+import { t } from "i18next";
 import { join, resolve } from "path";
+
 import { deferred, LOCALES } from "../../../packages/commons/src";
+import { PRODUCT_NAME } from "./app-info";
 import {
     TRILIUM_PROTOCOL,
     extractNoteIdFromArgs,
@@ -51,6 +51,16 @@ function focusAndOpenNote(window: BrowserWindow, noteId: string) {
 }
 
 async function main() {
+    // Ignore EPIPE errors on stdout/stderr — these occur when the parent process
+    // pipe breaks (e.g. after system suspend with Snap packaging).
+    for (const stream of [process.stdout, process.stderr]) {
+        stream?.on("error", (err: NodeJS.ErrnoException) => {
+            if (err.code !== "EPIPE") {
+                throw err;
+            }
+        });
+    }
+
     const userDataPath = getUserData();
     app.setPath("userData", userDataPath);
 
@@ -250,7 +260,7 @@ function getElectronLocale() {
     // For RTL, we have to force the UI locale to align the window buttons properly.
     if (formattingLocale && !correspondingLocale?.rtl) return formattingLocale;
 
-    return uiLocale || "en"
+    return uiLocale || "en";
 }
 
 main();

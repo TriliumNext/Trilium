@@ -1,7 +1,7 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
 import { defaultHighlightStyle, StreamLanguage, syntaxHighlighting, indentUnit, bracketMatching, foldGutter, codeFolding } from "@codemirror/language";
-import { Compartment, EditorSelection, EditorState, type Extension } from "@codemirror/state";
+import { Compartment, EditorSelection, EditorState, StateEffect, type Extension } from "@codemirror/state";
 import { highlightSelectionMatches } from "@codemirror/search";
 import { vim } from "@replit/codemirror-vim";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
@@ -55,6 +55,7 @@ export default class CodeMirror extends EditorView {
     private indentUnitCompartment: Compartment;
     private searchHighlightCompartment: Compartment;
     private searchPlugin?: SearchHighlighter | null;
+    private namedCompartments = new Map<string, Compartment>();
 
     constructor(config: EditorConfig) {
         const languageCompartment = new Compartment();
@@ -275,6 +276,22 @@ export default class CodeMirror extends EditorView {
                 effects: this.searchHighlightCompartment.reconfigure([])
             });
             this.searchPlugin = null;
+        }
+    }
+
+    /**
+     * Adds or reconfigures a named extension. If the extension has already been
+     * added under this name, it is reconfigured in place (no duplicate config error).
+     * This is safe to call repeatedly (e.g. from React effects or during hot-reload).
+     */
+    setNamedExtension(name: string, ext: Extension) {
+        let compartment = this.namedCompartments.get(name);
+        if (compartment) {
+            this.dispatch({ effects: compartment.reconfigure(ext) });
+        } else {
+            compartment = new Compartment();
+            this.namedCompartments.set(name, compartment);
+            this.dispatch({ effects: StateEffect.appendConfig.of(compartment.of(ext)) });
         }
     }
 

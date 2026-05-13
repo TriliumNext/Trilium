@@ -926,7 +926,8 @@
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
     "link-distance": "Link distance",
-    "too-many-notes": "This subtree contains {{count}} notes, which exceeds the limit of {{max}} that can be displayed in the note map."
+    "too-many-notes": "There are {{count}} notes here. Showing them all may slow things down.",
+    "show-anyway": "Show map"
   },
   "note_paths": {
     "title": "Note Paths",

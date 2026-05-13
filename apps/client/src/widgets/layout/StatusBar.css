@@ -9,6 +9,10 @@
         padding-inline: 0.25em;
         font-size: 0.85em;
 
+        body.layout-horizontal & {
+            border-top: 1px solid var(--main-border-color);
+        }
+
         > .breadcrumb {
             flex-grow: 1;
             --icon-button-size: 23px;

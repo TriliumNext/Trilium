@@ -173,7 +173,7 @@
 }
 
 /* Add a gap between consecutive buttons */
-.note-detail-content-widget-content.options button.btn + button.btn {
+.note-detail-content-widget-content.options *:not(.btn-group) > button.btn + button.btn {
     margin-inline-start: 8px;
 }
 
