@@ -9,6 +9,7 @@ import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import AddProviderModal, { type LlmProviderConfig, PROVIDER_TYPES } from "./llm/AddProviderModal";
+import AddSearchProviderModal, { type SearchProviderConfig, SEARCH_PROVIDER_TYPES } from "./llm/AddSearchProviderModal";
 
 export default function LlmSettings() {
     if (!isExperimentalFeatureEnabled("llm")) {
@@ -22,6 +23,7 @@ export default function LlmSettings() {
     return (
         <>
             <ProviderSettings />
+            <SearchProviderSettings />
             <McpSettings />
         </>
     );
@@ -77,6 +79,102 @@ function ProviderSettings() {
                 onSave={handleAddProvider}
             />
         </OptionsSection>
+    );
+}
+
+function SearchProviderSettings() {
+    const [providersJson, setProvidersJson] = useTriliumOption("searchProviders");
+    const providers = useMemo<SearchProviderConfig[]>(() => {
+        try {
+            return providersJson ? JSON.parse(providersJson) : [];
+        } catch {
+            return [];
+        }
+    }, [providersJson]);
+    const setProviders = useCallback((newProviders: SearchProviderConfig[]) => {
+        setProvidersJson(JSON.stringify(newProviders));
+    }, [setProvidersJson]);
+    const [showAddModal, setShowAddModal] = useState(false);
+
+    const handleAddProvider = useCallback((newProvider: SearchProviderConfig) => {
+        setProviders([...providers, newProvider]);
+    }, [providers, setProviders]);
+
+    const handleDeleteProvider = useCallback(async (providerId: string, providerName: string) => {
+        if (!(await dialog.confirm(t("llm.delete_search_provider_confirmation", { name: providerName })))) {
+            return;
+        }
+        setProviders(providers.filter(p => p.id !== providerId));
+    }, [providers, setProviders]);
+
+    return (
+        <OptionsSection title={t("llm.search_provider_title")}>
+            <p className="form-text">{t("llm.search_provider_description")}</p>
+
+            <Button
+                size="small"
+                icon="bx bx-plus"
+                text={t("llm.add_search_provider")}
+                onClick={() => setShowAddModal(true)}
+            />
+
+            <hr />
+
+            <h5>{t("llm.configured_search_providers")}</h5>
+            <SearchProviderList
+                providers={providers}
+                onDelete={handleDeleteProvider}
+            />
+
+            <AddSearchProviderModal
+                show={showAddModal}
+                onHidden={() => setShowAddModal(false)}
+                onSave={handleAddProvider}
+            />
+        </OptionsSection>
+    );
+}
+
+interface SearchProviderListProps {
+    providers: SearchProviderConfig[];
+    onDelete: (providerId: string, providerName: string) => Promise<void>;
+}
+
+function SearchProviderList({ providers, onDelete }: SearchProviderListProps) {
+    if (!providers.length) {
+        return <div>{t("llm.no_search_providers_configured")}</div>;
+    }
+
+    return (
+        <div style={{ overflow: "auto" }}>
+            <table className="table table-stripped">
+                <thead>
+                    <tr>
+                        <th>{t("llm.provider_name")}</th>
+                        <th>{t("llm.provider_type")}</th>
+                        <th>{t("llm.actions")}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {providers.map((provider) => {
+                        const providerType = SEARCH_PROVIDER_TYPES.find(p => p.id === provider.provider);
+                        return (
+                            <tr key={provider.id}>
+                                <td>{provider.name}</td>
+                                <td>{providerType?.name || provider.provider}</td>
+                                <td>
+                                    <ActionButton
+                                        icon="bx bx-trash"
+                                        text={t("llm.delete_search_provider")}
+                                        onClick={() => onDelete(provider.id, provider.name)}
+                                    />
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
     );
 }
 

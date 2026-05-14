@@ -257,6 +257,7 @@ const defaultOptions: DefaultOption[] = [
     // AI / LLM
     { name: "llmProviders", value: "[]", isSynced: true },
     { name: "mcpEnabled", value: "false", isSynced: false },
+    { name: "searchProviders", value: "[]", isSynced: true },
 
     // OCR options
     { name: "ocrAutoProcessImages", value: "false", isSynced: true },
