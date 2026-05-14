@@ -785,6 +785,14 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
                 if (attr.value) {
                     this.__flatTextCache += `=${attr.value}`;
+
+                    if (attr.type === "relation") {
+                        const targetNote = this.becca.notes[attr.value];
+
+                        if (targetNote) {
+                            this.__flatTextCache += ` ${targetNote.title}`;
+                        }
+                    }
                 }
 
                 this.__flatTextCache += " ";

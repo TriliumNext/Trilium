@@ -478,7 +478,7 @@ function parse({ fulltextTokens, expressionTokens, searchContext, leadingOperato
 
     let exp = AndExp.of([
         searchContext.includeArchivedNotes ? null : new PropertyComparisonExp(searchContext, "isarchived", "=", "false"),
-        getAncestorExp(searchContext),
+        getRelationFiltersExp(searchContext),
         getFulltext(fulltextTokens, searchContext, leadingOperator),
         expression
     ]);
@@ -508,14 +508,31 @@ function parse({ fulltextTokens, expressionTokens, searchContext, leadingOperato
     return exp;
 }
 
-function getAncestorExp({ ancestorNoteId, ancestorDepth, includeHiddenNotes }: SearchContext) {
-    if (ancestorNoteId && ancestorNoteId !== "root") {
-        return new AncestorExp(ancestorNoteId, ancestorDepth);
-    } else if (!includeHiddenNotes) {
-        return new NotExp(new IsHiddenExp());
-    }
-    return null;
+function getRelationFiltersExp(searchContext: SearchContext) {
+    const expressions: Expression[] = [];
 
+    if (!searchContext.includeHiddenNotes) {
+        expressions.push(new NotExp(new IsHiddenExp()));
+    }
+
+    if (searchContext.ancestorNoteId && searchContext.ancestorNoteId !== "root") {
+        expressions.push(new AncestorExp(searchContext.ancestorNoteId, searchContext.ancestorDepth));
+    }
+
+    for (const filter of searchContext.relationFilters) {
+        if (filter.name === "ancestor") {
+            if (filter.value && filter.value !== "root" && filter.value !== searchContext.ancestorNoteId) {
+                // If there are multiple ancestors, they are all treated with the same depth for now
+                // which is not ideal but matches current architecture.
+                expressions.push(new AncestorExp(filter.value, searchContext.ancestorDepth));
+            }
+        } else if (filter.name && filter.value) {
+            const noteIdSubExp = new PropertyComparisonExp(searchContext, "noteid", "=", filter.value);
+            expressions.push(new RelationWhereExp(filter.name, noteIdSubExp));
+        }
+    }
+
+    return expressions.length > 0 ? new AndExp(expressions) : null;
 }
 
 export default parse;

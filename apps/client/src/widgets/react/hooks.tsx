@@ -631,6 +631,78 @@ export function useNoteLabel(note: FNote | undefined | null, labelName: FilterLa
     ] as const;
 }
 
+export function useNoteAttributeValue(note: FNote | undefined | null, type: "label" | "relation", name: string, attributeId?: string): [string | null | undefined, (newValue: string | null | undefined) => void] {
+    const [ value, setValue ] = useState<string | null | undefined>(attributeId ? note?.getOwnedAttributes().find(a => a.attributeId === attributeId)?.value : note?.getAttributeValue(type, name));
+
+    useEffect(() => {
+        const val = attributeId ? note?.getOwnedAttributes().find(a => a.attributeId === attributeId)?.value : note?.getAttributeValue(type, name);
+        setValue(val ?? null);
+    }, [ note, attributeId, name, type ]);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        for (const attr of loadResults.getAttributeRows()) {
+            if (attributeId) {
+                if (attr.attributeId === attributeId) {
+                    setValue(attr.isDeleted ? null : attr.value);
+                    break;
+                }
+            } else if (attr.type === type && attr.name === name && attributes.isAffecting(attr, note)) {
+                setValue(attr.isDeleted ? null : attr.value);
+                break;
+            }
+        }
+    });
+
+    const setter = useCallback((newValue: string | null | undefined) => {
+        if (!note) return;
+        if (attributeId) {
+            if (newValue === null) {
+                server.remove(`notes/${note.noteId}/attributes/${attributeId}`);
+            } else {
+                server.put(`notes/${note.noteId}/attribute`, { attributeId, type, name, value: newValue });
+            }
+        } else {
+            attributes.setAttribute(note, type, name, newValue);
+        }
+    }, [note, attributeId, type, name]);
+
+    return [value, setter];
+}
+
+export function useNoteAttribute(note: FNote | undefined | null, attributeId: string): [ { name: string, value: string } | null, (name: string, value: string) => void ] {
+    const [ attr, setAttr ] = useState<{ name: string, value: string } | null>(null);
+
+    const refresh = useCallback(() => {
+        const a = note?.getOwnedAttributes().find(a => a.attributeId === attributeId);
+        setAttr(a ? { name: a.name, value: a.value } : null);
+    }, [ note, attributeId ]);
+
+    useEffect(refresh, [ note, attributeId ]);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const attrRow = loadResults.getAttributeRows().find(a => a.attributeId === attributeId);
+        if (attrRow) {
+            if (attrRow.isDeleted) {
+                setAttr(null);
+            } else {
+                setAttr({ name: attrRow.name, value: attrRow.value });
+            }
+        }
+    });
+
+    const setter = useCallback(async (name: string, value: string) => {
+        if (!note) return;
+        await server.put(`notes/${note.noteId}/attribute`, {
+            attributeId,
+            name,
+            value,
+            type: "relation"
+        });
+    }, [ note, attributeId ]);
+
+    return [ attr, setter ];
+}
+
 export function useNoteLabelWithDefault(note: FNote | undefined | null, labelName: FilterLabelsByType<string>, defaultValue: string): [string, (newValue: string | null | undefined) => void] {
     const [ labelValue, setLabelValue ] = useNoteLabel(note, labelName);
     return [ labelValue ?? defaultValue, setLabelValue];

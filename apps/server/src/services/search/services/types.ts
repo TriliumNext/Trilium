@@ -23,4 +23,5 @@ export interface SearchParams {
     fuzzyAttributeSearch?: boolean;
     /** When true, skip the two-phase fuzzy fallback and use the single-token fast path. */
     autocomplete?: boolean;
+    relationFilters?: { name: string, value: string }[];
 }

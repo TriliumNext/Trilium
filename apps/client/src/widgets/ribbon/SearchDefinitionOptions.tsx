@@ -13,7 +13,7 @@ import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
 import FormTextBox from "../react/FormTextBox";
 import HelpRemoveButtons from "../react/HelpRemoveButtons";
-import { useNoteLabel, useNoteRelation, useSpacedUpdate, useTooltip } from "../react/hooks";
+import { useNoteAttribute, useNoteAttributeValue, useNoteLabel, useNoteRelation, useSpacedUpdate, useTooltip } from "../react/hooks";
 import Icon from "../react/Icon";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 
@@ -25,6 +25,7 @@ export interface SearchOption {
     tooltip?: string;
     component: (props: SearchOptionProps) => VNode;
     defaultValue?: string;
+    isMulti?: boolean;
     additionalAttributesToDelete?: { type: "label" | "relation", name: string }[];
 }
 
@@ -33,6 +34,7 @@ interface SearchOptionProps {
     refreshResults: () => void;
     attributeName: string;
     attributeType: "label" | "relation";
+    attribute?: any;
     additionalAttributesToDelete?: { type: "label" | "relation", name: string }[];
     defaultValue?: string;
     error?: { message: string };
@@ -61,7 +63,16 @@ export const SEARCH_OPTIONS: SearchOption[] = [
         icon: "bx bx-filter-alt",
         label: t("search_definition.ancestor"),
         component: AncestorOption,
+        isMulti: true,
         additionalAttributesToDelete: [ { type: "label", name: "ancestorDepth" } ]
+    },
+    {
+        attributeName: "relation",
+        attributeType: "relation",
+        icon: "bx bx-link",
+        label: t("search_definition.relation"),
+        component: RelationOption,
+        isMulti: true
     },
     {
         attributeName: "fastSearch",
@@ -107,7 +118,7 @@ export const SEARCH_OPTIONS: SearchOption[] = [
     }
 ];
 
-function SearchOption({ note, className, title, titleIcon, children, help, attributeName, attributeType, additionalAttributesToDelete }: {
+function SearchOption({ note, className, title, titleIcon, children, help, attributeName, attributeType, additionalAttributesToDelete, attribute }: {
     note: FNote;
     className?: string;
     title: string,
@@ -116,7 +127,8 @@ function SearchOption({ note, className, title, titleIcon, children, help, attri
     help?: ComponentChildren,
     attributeName: string,
     attributeType: AttributeType,
-    additionalAttributesToDelete?: { type: "label" | "relation", name: string }[]
+    additionalAttributesToDelete?: { type: "label" | "relation", name: string }[],
+    attribute?: any
 }) {
     return (
         <tr className={clsx(attributeName, className)}>
@@ -129,7 +141,12 @@ function SearchOption({ note, className, title, titleIcon, children, help, attri
                 help={help}
                 removeText={t("abstract_search_option.remove_this_search_option")}
                 onRemove={() => {
-                    removeOwnedAttributesByNameOrType(note, attributeType, attributeName);
+                    if (attribute) {
+                        server.remove(`notes/${note.noteId}/attributes/${attribute.attributeId}`);
+                    } else {
+                        removeOwnedAttributesByNameOrType(note, attributeType, attributeName);
+                    }
+
                     if (additionalAttributesToDelete) {
                         for (const { type, name } of additionalAttributesToDelete) {
                             removeOwnedAttributesByNameOrType(note, type, name);
@@ -232,8 +249,8 @@ function SearchScriptOption({ note, ...restProps }: SearchOptionProps) {
     </SearchOption>;
 }
 
-function AncestorOption({ note, ...restProps}: SearchOptionProps) {
-    const [ ancestor, setAncestor ] = useNoteRelation(note, "ancestor");
+function AncestorOption({ note, attribute, ...restProps}: SearchOptionProps) {
+    const [ ancestor, setAncestor ] = useNoteAttributeValue(note, "relation", "ancestor", attribute?.attributeId);
     const [ depth, setDepth ] = useNoteLabel(note, "ancestorDepth");
 
     const options = useMemo(() => {
@@ -251,7 +268,7 @@ function AncestorOption({ note, ...restProps}: SearchOptionProps) {
 
     return <SearchOption
         title={t("ancestor.label")}
-        note={note} {...restProps}
+        note={note} attribute={attribute} {...restProps}
     >
         <div style={{display: "flex", alignItems: "center"}}>
             <NoteAutocomplete
@@ -266,6 +283,29 @@ function AncestorOption({ note, ...restProps}: SearchOptionProps) {
                 keyProperty="value" titleProperty="label"
                 currentValue={depth ?? ""} onChange={(value) => setDepth(value ? value : null)}
                 style={{ flexShrink: 3 }}
+            />
+        </div>
+    </SearchOption>;
+}
+
+function RelationOption({ note, attribute, ...restProps }: SearchOptionProps) {
+    const [ attr, setAttr ] = useNoteAttribute(note, attribute.attributeId);
+
+    return <SearchOption
+        title={t("search_definition.relation")}
+        note={note} attribute={attribute} {...restProps}
+    >
+        <div style={{display: "flex", alignItems: "center"}}>
+            <FormTextBox
+                placeholder={t("search_definition.relation_name")}
+                currentValue={attr?.name ?? ""}
+                onChange={name => setAttr(name, attr?.value ?? "")}
+                style={{ width: "150px", marginInlineEnd: "10px" }}
+            />
+            <NoteAutocomplete
+                noteId={attr?.value}
+                noteIdChanged={noteId => setAttr(attr?.name ?? "", noteId ?? "")}
+                placeholder={t("search_definition.relation_target")}
             />
         </div>
     </SearchOption>;

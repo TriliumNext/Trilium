@@ -46,15 +46,20 @@ function searchFromNote(note: BNote): SearchNoteResult {
     } else {
         const searchContext = new SearchContext({
             fastSearch: note.hasLabel("fastSearch"),
-            ancestorNoteId: note.getRelationValue("ancestor") || undefined,
-            ancestorDepth: note.getLabelValue("ancestorDepth") || undefined,
             includeArchivedNotes: note.hasLabel("includeArchivedNotes"),
             orderBy: note.getLabelValue("orderBy") || undefined,
             orderDirection: note.getLabelValue("orderDirection") || undefined,
             limit: parseInt(note.getLabelValue("limit") || "0", 10),
             debug: note.hasLabel("debug"),
-            fuzzyAttributeSearch: false
+            fuzzyAttributeSearch: false,
+            relationFilters: note.getRelations()
+                .filter(r => r.name !== "searchScript")
+                .map(r => ({ name: r.name, value: r.value }))
         });
+
+        if (note.hasLabel("ancestorDepth")) {
+            searchContext.ancestorDepth = note.getLabelValue("ancestorDepth") || undefined;
+        }
 
         searchResultNoteIds = findResultsWithQuery(searchString, searchContext).map((sr) => sr.noteId);
 

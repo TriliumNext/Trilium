@@ -27,6 +27,7 @@ class SearchContext {
     fulltextQuery: string;
     dbLoadNeeded: boolean;
     error: string | null;
+    relationFilters: { name: string, value: string }[];
 
     constructor(params: SearchParams = {}) {
         this.fastSearch = !!params.fastSearch;
@@ -46,6 +47,7 @@ class SearchContext {
         this.orderBy = params.orderBy;
         this.orderDirection = params.orderDirection;
         this.limit = params.limit;
+        this.relationFilters = params.relationFilters || [];
         this.debug = params.debug;
         this.debugInfo = null;
         this.fuzzyAttributeSearch = !!params.fuzzyAttributeSearch;

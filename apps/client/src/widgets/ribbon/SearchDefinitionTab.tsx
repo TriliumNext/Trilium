@@ -35,13 +35,17 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
         if (!note) return;
 
         const availableOptions: SearchOption[] = [];
-        const activeOptions: SearchOption[] = [];
+        const activeOptions: { option: SearchOption, attribute: any }[] = [];
 
         for (const searchOption of SEARCH_OPTIONS) {
-            const attr = note.getAttribute(searchOption.attributeType, searchOption.attributeName);
-            if (attr) {
-                activeOptions.push(searchOption);
-            } else {
+            const attrs = note.getOwnedAttributes(searchOption.attributeType, searchOption.attributeName);
+            if (attrs.length > 0) {
+                for (const attr of attrs) {
+                    activeOptions.push({ option: searchOption, attribute: attr });
+                }
+            }
+
+            if (!attrs.length || searchOption.isMulti) {
                 availableOptions.push(searchOption);
             }
         }
@@ -87,11 +91,21 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
                                 <td className="title-column">{t("search_definition.add_search_option")}</td>
                                 <td colSpan={2} className="add-search-option">
                                     <ResponsiveContainer
-                                        desktop={searchOptions?.availableOptions.map(({ icon, label, tooltip, attributeName, attributeType, defaultValue }) => (
+                                        desktop={searchOptions?.availableOptions.map((option) => (
                                             <Button
-                                                key={`${attributeType}-${attributeName}`}
-                                                size="small" icon={icon} text={label} title={tooltip}
-                                                onClick={() => attributes.setAttribute(note, attributeType, attributeName, defaultValue ?? "")}
+                                                key={`${option.attributeType}-${option.attributeName}`}
+                                                size="small" icon={option.icon} text={option.label} title={option.tooltip}
+                                                onClick={() => {
+                                                    if (option.isMulti) {
+                                                        server.post(`notes/${note.noteId}/attributes`, {
+                                                            type: option.attributeType,
+                                                            name: option.attributeName,
+                                                            value: option.defaultValue ?? ""
+                                                        });
+                                                    } else {
+                                                        attributes.setAttribute(note, option.attributeType, option.attributeName, option.defaultValue ?? "");
+                                                    }
+                                                }}
                                             />
                                         ))}
                                         mobile={
@@ -101,13 +115,23 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
                                                 dropdownContainerClassName="mobile-bottom-menu" mobileBackdrop
                                                 noSelectButtonStyle
                                             >
-                                                {searchOptions?.availableOptions.map(({ icon, label, tooltip, attributeName, attributeType, defaultValue }) => (
+                                                {searchOptions?.availableOptions.map((option) => (
                                                     <FormListItem
-                                                        key={`${attributeType}-${attributeName}`}
-                                                        icon={icon}
-                                                        description={tooltip}
-                                                        onClick={() => attributes.setAttribute(note, attributeType, attributeName, defaultValue ?? "")}
-                                                    >{label}</FormListItem>
+                                                        key={`${option.attributeType}-${option.attributeName}`}
+                                                        icon={option.icon}
+                                                        description={option.tooltip}
+                                                        onClick={() => {
+                                                            if (option.isMulti) {
+                                                                server.post(`notes/${note.noteId}/attributes`, {
+                                                                    type: option.attributeType,
+                                                                    name: option.attributeName,
+                                                                    value: option.defaultValue ?? ""
+                                                                });
+                                                            } else {
+                                                                attributes.setAttribute(note, option.attributeType, option.attributeName, option.defaultValue ?? "");
+                                                            }
+                                                        }}
+                                                    >{option.label}</FormListItem>
                                                 ))}
                                             </Dropdown>
                                         }
@@ -118,16 +142,18 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
                             </tr>
                         </tbody>
                         <tbody className="search-options">
-                            {searchOptions?.activeOptions.map(({ attributeType, attributeName, component, additionalAttributesToDelete, defaultValue }) => {
-                                const Component = component;
+                            {searchOptions?.activeOptions.map(({ option, attribute }) => {
+                                const Component = option.component;
                                 return <Component
-                                    attributeName={attributeName}
-                                    attributeType={attributeType}
+                                    key={attribute.attributeId}
+                                    attributeName={option.attributeName}
+                                    attributeType={option.attributeType}
+                                    attribute={attribute}
                                     note={note}
                                     refreshResults={refreshResults}
                                     error={error}
-                                    additionalAttributesToDelete={additionalAttributesToDelete}
-                                    defaultValue={defaultValue}
+                                    additionalAttributesToDelete={option.additionalAttributesToDelete}
+                                    defaultValue={option.defaultValue}
                                 />;
                             })}
                         </tbody>
