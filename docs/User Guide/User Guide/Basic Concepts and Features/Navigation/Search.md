@@ -68,6 +68,8 @@ The options available are:
 *   `#book #publicationYear >= 1950 #publicationYear < 1960`: Use numeric operators to find all books published in the 1950s.
 *   `#dateNote >= TODAY-30`: Find notes with the "dateNote" label within the last 30 days. Supported date values include NOW +- seconds, TODAY +- days, MONTH +- months, YEAR +- years.
 *   `~author.title *=* Tolkien`: Find notes related to an author whose title contains "Tolkien".
+*   `~internallink.title = Tolkien`: Find notes with internal link to a note with exact title "Tolkien"
+*   `~?.title = Tolkien`: Find notes with any relation - incl. internal links - to a note with exact title "Tolkien"
 *   `#publicationYear %= '19[0-9]{2}'`: Use the '%=' operator to match a regular expression (regex). This feature has been available since Trilium 0.52.
 *   `note.content %= '\\d{2}:\\d{2} (PM|AM)'`: Find notes that mention a time. Backslashes in a regex must be escaped.
 
@@ -101,6 +103,7 @@ Trilium supports fuzzy search operators that find results with typos or spelling
 *   `note.parents.title = 'Books'`: Find notes with a parent named "Books".
 *   `note.parents.parents.title = 'Books'`: Find notes with a grandparent named "Books".
 *   `note.ancestors.title = 'Books'`: Find notes with an ancestor named "Books".
+*   `~?.ancestors.title = Tolkien`: Find notes with any relation - incl. internal links - to notes, whose ancestor has exact title "Tolkien".
 *   `note.children.title = 'sub-note'`: Find notes with a child named "sub-note".
 
 ### Search with Note Properties
