@@ -46,7 +46,7 @@
     "force-graph": "1.51.4",
     "globals": "17.4.0",
     "i18next": "26.0.8",
-    "i18next-http-backend": "3.0.4",
+    "i18next-http-backend": "3.0.5",
     "aes-js": "3.1.2",
     "jquery": "4.0.0",
     "jquery.fancytree": "2.38.5",
