@@ -194,6 +194,14 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     llmProviders: string;
     /** Whether the MCP (Model Context Protocol) server endpoint is enabled. */
     mcpEnabled: boolean;
+    /** Web search engine for the LLM agent: "provider" | "tavily" | "searxng" */
+    llmWebSearchEngine: string;
+    /** Tavily API key for web search */
+    llmTavilyApiKey: string;
+    /** SearXNG instance URL for web search */
+    llmSearxngUrl: string;
+    /** Timeout in seconds for web search requests */
+    llmSearchTimeout: string;
 
     // OCR options
     ocrEnabled: boolean;

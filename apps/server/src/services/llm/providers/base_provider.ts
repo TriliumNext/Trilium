@@ -13,6 +13,8 @@ import { getSkillsSummary } from "../skills/index.js";
 import { getNoteMeta,SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
+import { addTavilySearchTool, addSearxngSearchTool } from "../web_search_tools.js";
+import optionService from "../../options.js";
 
 const DEFAULT_MAX_TOKENS = 8096;
 const TITLE_MAX_TOKENS = 30;
@@ -186,7 +188,28 @@ export abstract class BaseProvider implements LlmProvider {
         const tools: ToolSet = {};
 
         if (config.enableWebSearch) {
-            this.addWebSearchTool(tools);
+            const searchEngine = optionService.getOptionOrNull("llmWebSearchEngine") || "provider";
+            const timeoutSec = parseInt(optionService.getOptionOrNull("llmSearchTimeout") || "15", 10);
+            const timeoutMs = (timeoutSec > 0 ? timeoutSec : 15) * 1000;
+
+            let customToolAdded = false;
+            if (searchEngine === "tavily") {
+                const apiKey = optionService.getOptionOrNull("llmTavilyApiKey");
+                if (apiKey) {
+                    addTavilySearchTool(tools, apiKey, timeoutMs);
+                    customToolAdded = true;
+                }
+            } else if (searchEngine === "searxng") {
+                const instanceUrl = optionService.getOptionOrNull("llmSearxngUrl");
+                if (instanceUrl) {
+                    addSearxngSearchTool(tools, instanceUrl, timeoutMs);
+                    customToolAdded = true;
+                }
+            }
+
+            if (!customToolAdded) {
+                this.addWebSearchTool(tools);
+            }
         }
 
         if (config.enableNoteTools) {

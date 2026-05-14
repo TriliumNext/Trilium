@@ -22,6 +22,7 @@ export default function LlmSettings() {
     return (
         <>
             <ProviderSettings />
+            <WebSearchSettings />
             <McpSettings />
         </>
     );
@@ -83,6 +84,66 @@ function ProviderSettings() {
 function getMcpEndpointUrl() {
     const port = window.location.port || (window.location.protocol === "https:" ? "443" : "80");
     return `${window.location.protocol}//localhost:${port}/mcp`;
+}
+
+function WebSearchSettings() {
+    const [searchEngine, setSearchEngine] = useTriliumOption("llmWebSearchEngine");
+    const [tavilyApiKey, setTavilyApiKey] = useTriliumOption("llmTavilyApiKey");
+    const [searxngUrl, setSearxngUrl] = useTriliumOption("llmSearxngUrl");
+    const [searchTimeout, setSearchTimeout] = useTriliumOption("llmSearchTimeout");
+
+    return (
+        <OptionsSection title={t("llm.web_search_title")}>
+            <p className="form-text">{t("llm.web_search_description")}</p>
+
+            <OptionsRow name="web-search-engine" label={t("llm.web_search_engine")} description={t("llm.web_search_engine_description")}>
+                <select
+                    className="form-select"
+                    value={searchEngine || "provider"}
+                    onChange={(e) => setSearchEngine((e.target as HTMLSelectElement).value)}
+                >
+                    <option value="provider">{t("llm.web_search_provider_default")}</option>
+                    <option value="tavily">Tavily</option>
+                    <option value="searxng">SearXNG</option>
+                </select>
+            </OptionsRow>
+
+            {searchEngine === "tavily" && (
+                <OptionsRow name="tavily-api-key" label={t("llm.tavily_api_key")} description={t("llm.tavily_api_key_description")}>
+                    <input
+                        type="password"
+                        className="form-control"
+                        value={tavilyApiKey || ""}
+                        onChange={(e) => setTavilyApiKey((e.target as HTMLInputElement).value)}
+                        placeholder="tvly-..."
+                    />
+                </OptionsRow>
+            )}
+
+            {searchEngine === "searxng" && (
+                <OptionsRow name="searxng-url" label={t("llm.searxng_url")} description={t("llm.searxng_url_description")}>
+                    <input
+                        type="url"
+                        className="form-control"
+                        value={searxngUrl || ""}
+                        onChange={(e) => setSearxngUrl((e.target as HTMLInputElement).value)}
+                        placeholder="http://localhost:8888"
+                    />
+                </OptionsRow>
+            )}
+
+            <OptionsRow name="search-timeout" label={t("llm.search_timeout")} description={t("llm.search_timeout_description")}>
+                <input
+                    type="number"
+                    className="form-control"
+                    min="1"
+                    max="120"
+                    value={searchTimeout || "15"}
+                    onChange={(e) => setSearchTimeout((e.target as HTMLInputElement).value)}
+                />
+            </OptionsRow>
+        </OptionsSection>
+    );
 }
 
 function McpSettings() {
