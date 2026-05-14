@@ -14,7 +14,7 @@
     "start-prod-no-dir": "pnpm build && pnpm vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "0.18.0",
+    "@excalidraw/excalidraw": "0.18.1",
     "@fullcalendar/core": "6.1.20",
     "@fullcalendar/daygrid": "6.1.20",
     "@fullcalendar/interaction": "6.1.20",
