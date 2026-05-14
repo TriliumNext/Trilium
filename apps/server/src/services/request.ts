@@ -62,6 +62,9 @@ async function exec<T>(opts: ExecOpts): Promise<T> {
 
             if (opts.auth) {
                 headers["trilium-cred"] = Buffer.from(`dummy:${opts.auth.password}`).toString("base64");
+                if (opts.auth.totpToken) {
+                    headers["trilium-totp"] = opts.auth.totpToken;
+                }
             }
 
             const request = (await client).request({

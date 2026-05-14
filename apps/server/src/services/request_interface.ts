@@ -14,6 +14,7 @@ export interface ExecOpts {
     cookieJar?: CookieJar;
     auth?: {
         password?: string;
+        totpToken?: string;
     };
     timeout: number;
     body?: string | {};

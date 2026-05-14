@@ -141,6 +141,10 @@
                 <label for="password"><%= t("setup_sync-from-server.password") %></label>
                 <input type="password" id="password" class="form-control" placeholder="<%= t("setup_sync-from-server.password-placeholder") %>">
             </div>
+            <div id="totp-section" class="form-group" style="margin-bottom: 8px; display: none;">
+                <label for="totp-token"><%= t("setup_sync-from-server.totp-token") %></label>
+                <input type="text" id="totp-token" class="form-control" placeholder="<%= t("setup_sync-from-server.totp-token-placeholder") %>" autocomplete="one-time-code">
+            </div>
 
             <button type="button" data-action="back" class="btn btn-secondary"><%= t("setup_sync-from-server.back") %></button>
 

@@ -1,15 +1,17 @@
-import etapiTokenService from "./etapi_tokens.js";
-import log from "./log.js";
-import sqlInit from "./sql_init.js";
-import { isElectron } from "./utils.js";
-import passwordEncryptionService from "./encryption/password_encryption.js";
+import type { NextFunction, Request, Response } from "express";
+
+import attributes from "./attributes.js";
 import config from "./config.js";
 import passwordService from "./encryption/password.js";
-import totp from "./totp.js";
+import passwordEncryptionService from "./encryption/password_encryption.js";
+import recoveryCodeService from "./encryption/recovery_codes.js";
+import etapiTokenService from "./etapi_tokens.js";
+import log from "./log.js";
 import openID from "./open_id.js";
 import options from "./options.js";
-import attributes from "./attributes.js";
-import type { NextFunction, Request, Response } from "express";
+import sqlInit from "./sql_init.js";
+import totp from "./totp.js";
+import { isElectron } from "./utils.js";
 
 let noAuthentication = false;
 refreshAuth();
@@ -161,9 +163,28 @@ function checkCredentials(req: Request, res: Response, next: NextFunction) {
     if (!passwordEncryptionService.verifyPassword(password)) {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
         log.info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
-    } else {
-        next();
+        return;
     }
+
+    // Verify TOTP if enabled
+    if (totp.isTotpEnabled()) {
+        const totpHeader = req.headers["trilium-totp"];
+        const totpToken = Array.isArray(totpHeader) ? totpHeader[0] : totpHeader;
+        if (typeof totpToken !== "string" || !totpToken) {
+            res.setHeader("Content-Type", "text/plain").status(401).send("TOTP token is required");
+            log.info(`WARNING: Missing or invalid TOTP token from ${req.ip}, rejecting.`);
+            return;
+        }
+
+        // Accept TOTP code or recovery code
+        if (!totp.validateTOTP(totpToken) && !recoveryCodeService.verifyRecoveryCode(totpToken)) {
+            res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect TOTP token");
+            log.info(`WARNING: Wrong TOTP token from ${req.ip}, rejecting.`);
+            return;
+        }
+    }
+
+    next();
 }
 
 export default {

@@ -1,13 +1,13 @@
-import syncService from "./sync.js";
-import log from "./log.js";
-import sqlInit from "./sql_init.js";
-import optionService from "./options.js";
-import syncOptions from "./sync_options.js";
-import request from "./request.js";
-import appInfo from "./app_info.js";
-import { timeLimit } from "./utils.js";
 import becca from "../becca/becca.js";
 import type { SetupStatusResponse, SetupSyncSeedResponse } from "./api-interface.js";
+import appInfo from "./app_info.js";
+import log from "./log.js";
+import optionService from "./options.js";
+import request from "./request.js";
+import sqlInit from "./sql_init.js";
+import syncService from "./sync.js";
+import syncOptions from "./sync_options.js";
+import { timeLimit } from "./utils.js";
 
 async function hasSyncServerSchemaAndSeed() {
     const response = await requestToSyncServer<SetupStatusResponse>("GET", "/api/setup/status");
@@ -55,13 +55,13 @@ async function requestToSyncServer<T>(method: string, path: string, body?: strin
             url: syncOptions.getSyncServerHost() + path,
             body,
             proxy: syncOptions.getSyncProxy(),
-            timeout: timeout
+            timeout
         }),
         timeout
     )) as T;
 }
 
-async function setupSyncFromSyncServer(syncServerHost: string, syncProxy: string, password: string) {
+async function setupSyncFromSyncServer(syncServerHost: string, syncProxy: string, password: string, totpToken?: string) {
     if (sqlInit.isDbInitialized()) {
         return {
             result: "failure",
@@ -76,7 +76,7 @@ async function setupSyncFromSyncServer(syncServerHost: string, syncProxy: string
         const resp = await request.exec<SetupSyncSeedResponse>({
             method: "get",
             url: `${syncServerHost}/api/setup/sync-seed`,
-            auth: { password },
+            auth: { password, totpToken },
             proxy: syncProxy,
             timeout: 30000 // seed request should not take long
         });
@@ -111,10 +111,30 @@ function getSyncSeedOptions() {
     return [becca.getOption("documentId"), becca.getOption("documentSecret")];
 }
 
+async function checkRemoteTotpStatus(syncServerHost: string): Promise<{ totpEnabled: boolean }> {
+    // Validate URL scheme to mitigate SSRF
+    if (!syncServerHost.startsWith("http://") && !syncServerHost.startsWith("https://")) {
+        return { totpEnabled: false };
+    }
+
+    try {
+        const resp = await request.exec<{ totpEnabled?: boolean }>({
+            method: "get",
+            url: `${syncServerHost}/api/setup/status`,
+            proxy: null,
+            timeout: 10000
+        });
+        return { totpEnabled: !!resp?.totpEnabled };
+    } catch {
+        return { totpEnabled: false };
+    }
+}
+
 export default {
     hasSyncServerSchemaAndSeed,
     triggerSync,
     sendSeedToSyncServer,
     setupSyncFromSyncServer,
-    getSyncSeedOptions
+    getSyncSeedOptions,
+    checkRemoteTotpStatus
 };

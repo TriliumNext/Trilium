@@ -17,6 +17,9 @@ class SetupController {
     private syncServerHostInput: HTMLInputElement;
     private syncProxyInput: HTMLInputElement;
     private passwordInput: HTMLInputElement;
+    private totpTokenInput: HTMLInputElement;
+    private totpSection: HTMLElement;
+    private totpEnabled = false;
     private sections: Record<SetupStep, HTMLElement>;
 
     constructor(rootNode: HTMLElement, syncInProgress: boolean) {
@@ -29,6 +32,8 @@ class SetupController {
         this.syncServerHostInput = mustGetElement("sync-server-host", HTMLInputElement);
         this.syncProxyInput = mustGetElement("sync-proxy", HTMLInputElement);
         this.passwordInput = mustGetElement("password", HTMLInputElement);
+        this.totpTokenInput = mustGetElement("totp-token", HTMLInputElement);
+        this.totpSection = mustGetElement("totp-section", HTMLElement);
         this.sections = {
             "setup-type": mustGetElement("setup-type-section", HTMLElement),
             "new-document-in-progress": mustGetElement("new-document-in-progress-section", HTMLElement),
@@ -55,6 +60,10 @@ class SetupController {
                 this.render();
             });
         }
+
+        this.syncServerHostInput.addEventListener("blur", () => {
+            void this.checkTotpStatus();
+        });
 
         for (const backButton of document.querySelectorAll<HTMLElement>("[data-action='back']")) {
             backButton.addEventListener("click", () => {
@@ -87,9 +96,40 @@ class SetupController {
         }
     }
 
+    private async checkTotpStatus() {
+        const syncServerHost = this.syncServerHostInput.value.trim();
+
+        if (!syncServerHost) {
+            this.setTotpEnabled(false);
+            return;
+        }
+
+        try {
+            const resp = await $.post("api/setup/check-server-totp", {
+                syncServerHost
+            });
+
+            this.setTotpEnabled(!!resp.totpEnabled);
+        } catch {
+            // If we can't reach the server, don't show the TOTP field yet.
+            this.setTotpEnabled(false);
+        }
+    }
+
+    private setTotpEnabled(enabled: boolean) {
+        this.totpEnabled = enabled;
+
+        if (!enabled) {
+            this.totpTokenInput.value = "";
+        }
+
+        this.render();
+    }
+
     private back() {
         this.setStep("setup-type");
         this.setupType = "";
+        this.setTotpEnabled(false);
 
         for (const input of this.setupTypeInputs) {
             input.checked = false;
@@ -113,11 +153,21 @@ class SetupController {
             return;
         }
 
+        await this.checkTotpStatus();
+
+        const totpToken = this.totpTokenInput.value.trim();
+
+        if (this.totpEnabled && !totpToken) {
+            showAlert("TOTP token can't be empty when two-factor authentication is enabled");
+            return;
+        }
+
         // not using server.js because it loads too many dependencies
         const resp = await $.post("api/setup/sync-from-server", {
             syncServerHost,
             syncProxy,
-            password
+            password,
+            totpToken
         });
 
         if (resp.result === "success") {
@@ -139,11 +189,8 @@ class SetupController {
             section.style.display = step === this.step ? "" : "none";
         }
 
+        this.totpSection.style.display = this.totpEnabled ? "" : "none";
         this.setupTypeNextButton.disabled = !this.setupType;
-    }
-
-    private getSelectedSetupType(): SetupType {
-        return (this.setupTypeInputs.find((input) => input.checked)?.value ?? "") as SetupType;
     }
 
     private startSyncPolling() {
@@ -196,7 +243,7 @@ function mustGetElement<T extends typeof HTMLElement>(id: string, ctor: T): Inst
     return element as InstanceType<T>;
 }
 
-addEventListener("DOMContentLoaded", (event) => {
+addEventListener("DOMContentLoaded", () => {
     const rootNode = document.getElementById("setup-dialog");
     if (!rootNode || !(rootNode instanceof HTMLElement)) return;
 

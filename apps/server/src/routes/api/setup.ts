@@ -1,16 +1,19 @@
-"use strict";
 
-import sqlInit from "../../services/sql_init.js";
-import setupService from "../../services/setup.js";
-import log from "../../services/log.js";
-import appInfo from "../../services/app_info.js";
+
 import type { Request } from "express";
+
+import appInfo from "../../services/app_info.js";
+import log from "../../services/log.js";
+import setupService from "../../services/setup.js";
+import sqlInit from "../../services/sql_init.js";
+import totp from "../../services/totp.js";
 
 function getStatus() {
     return {
         isInitialized: sqlInit.isDbInitialized(),
         schemaExists: sqlInit.schemaExists(),
-        syncVersion: appInfo.syncVersion
+        syncVersion: appInfo.syncVersion,
+        totpEnabled: totp.isTotpEnabled()
     };
 }
 
@@ -19,9 +22,9 @@ async function setupNewDocument() {
 }
 
 function setupSyncFromServer(req: Request) {
-    const { syncServerHost, syncProxy, password } = req.body;
+    const { syncServerHost, syncProxy, password, totpToken } = req.body;
 
-    return setupService.setupSyncFromSyncServer(syncServerHost, syncProxy, password);
+    return setupService.setupSyncFromSyncServer(syncServerHost, syncProxy, password, totpToken);
 }
 
 function saveSyncSeed(req: Request) {
@@ -82,10 +85,26 @@ function getSyncSeed() {
     };
 }
 
+async function checkServerTotpStatus(req: Request) {
+    const { syncServerHost } = req.body;
+
+    if (!syncServerHost) {
+        return { totpEnabled: false };
+    }
+
+    try {
+        const resp = await setupService.checkRemoteTotpStatus(syncServerHost);
+        return { totpEnabled: !!resp.totpEnabled };
+    } catch {
+        return { totpEnabled: false };
+    }
+}
+
 export default {
     getStatus,
     setupNewDocument,
     setupSyncFromServer,
     getSyncSeed,
-    saveSyncSeed
+    saveSyncSeed,
+    checkServerTotpStatus
 };
