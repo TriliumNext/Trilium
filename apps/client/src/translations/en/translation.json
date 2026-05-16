@@ -1468,7 +1468,9 @@
     "description": "Table of contents will appear in text notes when the note has more than a defined number of headings. You can customize this number:",
     "unit": "headings",
     "disable_info": "You can also use this option to effectively disable TOC by setting a very high number.",
-    "shortcut_info": "You can configure a keyboard shortcut for quickly toggling the right pane (including TOC) in the Options -> Shortcuts (name 'toggleRightPane')."
+    "shortcut_info": "You can configure a keyboard shortcut for quickly toggling the right pane (including TOC) in the Options -> Shortcuts (name 'toggleRightPane').",
+    "active_heading_enabled": "Show active heading",
+    "active_heading_description": "While reading a note, sync the table of contents with the currently viewed heading."
   },
   "text_auto_read_only_size": {
     "title": "Automatic Read-Only Size",
@@ -1921,7 +1923,9 @@
   "toc": {
     "table_of_contents": "Table of Contents",
     "options": "Options",
-    "no_headings": "No headings."
+    "no_headings": "No headings.",
+    "modal_title": "Configure Table of Contents",
+    "menu_configure": "Configure table of contents..."
   },
   "watched_file_update_status": {
     "file_last_modified": "File <code class=\"file-path\"></code> has been last modified on <span class=\"file-last-modified\"></span>.",
