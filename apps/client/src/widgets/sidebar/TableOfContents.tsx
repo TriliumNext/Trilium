@@ -322,7 +322,7 @@ interface DomHeading extends RawHeading {
 function ReadOnlyTextTableOfContents() {
     const { noteContext } = useActiveNoteContext();
     const contentEl = useContentElement(noteContext);
-    const [ headings, setHeadings ] = useState<DomHeading[] >([]);
+    const [ headings, setHeadings ] = useState<DomHeading[]>([]);
     const [tocActiveHeadingEnabled] = useTriliumOptionBool("tocActiveHeadingEnabled");
 
     useEffect(() => {
