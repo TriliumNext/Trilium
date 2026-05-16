@@ -2,9 +2,8 @@ import cls from "@triliumnext/server/src/services/cls.js";
 import windowService from "@triliumnext/server/src/services/window.js";
 import archiver, { type Archiver } from "archiver";
 import electron from "electron";
-import type { WriteStream } from "fs";
+import { createWriteStream, type WriteStream } from "fs";
 import fs from "fs/promises";
-import fsExtra from "fs-extra";
 import path from "path";
 
 import { deferred, type DeferredPromise } from "../../../packages/commons/src/index.js";
@@ -81,14 +80,14 @@ async function createImportZip(path: string) {
 
     archive.directory(path, "/");
 
-    const outputStream = fsExtra.createWriteStream(inputFile);
+    const outputStream = createWriteStream(inputFile);
     archive.pipe(outputStream);
     await waitForEnd(archive, outputStream);
 
     try {
-        return await fsExtra.readFile(inputFile);
+        return await fs.readFile(inputFile);
     } finally {
-        await fsExtra.rm(inputFile);
+        await fs.rm(inputFile);
     }
 }
 
@@ -103,7 +102,7 @@ function waitForEnd(archive: Archiver, stream: WriteStream) {
 
 export async function createZipFromDirectory(dirPath: string, zipPath: string) {
     const archive = archiver("zip", { zlib: { level: 5 } });
-    const outputStream = fsExtra.createWriteStream(zipPath);
+    const outputStream = createWriteStream(zipPath);
     archive.directory(dirPath, false);
     archive.pipe(outputStream);
     await waitForEnd(archive, outputStream);
@@ -121,7 +120,7 @@ export async function extractZip(zipFilePath: string, outputPath: string, ignore
                 const destPath = path.join(outputPath, entry.fileName);
                 const fileContent = await readContent();
 
-                await fsExtra.mkdirs(path.dirname(destPath));
+                await fs.mkdir(path.dirname(destPath), { recursive: true });
                 await fs.writeFile(destPath, fileContent);
             }
         });

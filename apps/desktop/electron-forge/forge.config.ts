@@ -1,8 +1,7 @@
 import type { ForgeConfig } from "@electron-forge/shared-types";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 import { LOCALES } from "@triliumnext/commons";
-import { existsSync } from "fs";
-import fs from "fs-extra";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, unlinkSync } from "fs";
 import path, { join } from "path";
 
 import packageJson from "../package.json" with { type: "json" };
@@ -56,18 +55,21 @@ const config: ForgeConfig = {
             (buildPath, _electronVersion, platform, _arch, callback) => {
                 // Only move resources on non-macOS platforms
                 if (platform !== "darwin") {
-                    for (const resource of extraResourcesForPlatform) {
-                        const baseName = path.basename(resource);
-                        const sourcePath = path.join(buildPath, "resources", baseName);
+                    try {
+                        for (const resource of extraResourcesForPlatform) {
+                            const baseName = path.basename(resource);
+                            const sourcePath = path.join(buildPath, "resources", baseName);
 
-                        // prettier-ignore
-                        const destPath = (baseName !== "256x256.png")
-                            ? path.join(buildPath, baseName)
-                            : path.join(buildPath, "icon.png");
+                            // prettier-ignore
+                            const destPath = (baseName !== "256x256.png")
+                                ? path.join(buildPath, baseName)
+                                : path.join(buildPath, "icon.png");
 
-                        fs.move(sourcePath, destPath)
-                            .then(() => callback())
-                            .catch((err) => callback(err));
+                            renameSync(sourcePath, destPath);
+                        }
+                        callback();
+                    } catch (err) {
+                        callback(err as Error);
                     }
                 } else {
                     callback();
@@ -206,12 +208,12 @@ const config: ForgeConfig = {
                     : [ path.join(outputPath, 'locales') ];
 
                 for (const localeDir of localeDirs) {
-                    if (!fs.existsSync(localeDir)) {
+                    if (!existsSync(localeDir)) {
                         console.log(`No locales directory found in '${localeDir}'.`);
                         process.exit(2);
                     }
 
-                    const files = fs.readdirSync(localeDir);
+                    const files = readdirSync(localeDir);
 
                     for (const file of files) {
                         if (!file.endsWith(extension)) {
@@ -232,9 +234,9 @@ const config: ForgeConfig = {
 
                         const filePath = path.join(localeDir, file);
                         if (isMac) {
-                            fs.rm(filePath, { recursive: true });
+                            rmSync(filePath, { recursive: true });
                         } else {
-                            fs.unlinkSync(filePath);
+                            unlinkSync(filePath);
                         }
 
                         removedLocales.push(file);
@@ -269,7 +271,7 @@ const config: ForgeConfig = {
         // Gather all the artifacts produced by the makers and copy them to a common upload directory.
         async postMake(_, makeResults) {
             const outputDir = path.join(__dirname, "..", "upload");
-            fs.mkdirpSync(outputDir);
+            mkdirSync(outputDir, { recursive: true });
             for (const makeResult of makeResults) {
                 for (const artifactPath of makeResult.artifacts) {
                     // Ignore certain artifacts.
@@ -287,7 +289,7 @@ const config: ForgeConfig = {
 
                     const outputPath = path.join(outputDir, fileName);
                     console.log(`[Artifact] ${artifactPath} -> ${outputPath}`);
-                    fs.copyFileSync(artifactPath, outputPath);
+                    copyFileSync(artifactPath, outputPath);
                 }
             }
         }
@@ -318,7 +320,7 @@ function getExtraResourcesForPlatform() {
 }
 
 function getELFArch(file: string) {
-    const buf = fs.readFileSync(file);
+    const buf = readFileSync(file);
 
     if (buf[0] !== 0x7f || buf[1] !== 0x45 || buf[2] !== 0x4c || buf[3] !== 0x46) {
         throw new Error("Not an ELF file");

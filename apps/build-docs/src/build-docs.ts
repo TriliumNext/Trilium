@@ -44,9 +44,8 @@ const stubImageProvider: ImageProvider = {
 };
 import archiver from "archiver";
 import { execSync } from "child_process";
-import { readFileSync } from "fs";
+import { createWriteStream, readFileSync } from "fs";
 import * as fs from "fs/promises";
-import * as fsExtra from "fs-extra";
 import yaml from "js-yaml";
 import { dirname, join, resolve } from "path";
 
@@ -145,9 +144,7 @@ async function exportDocs(
         const ignoredSet = ignoredFiles ? new Set(ignoredFiles) : undefined;
         await extractZip(zipFilePath, outputPath, ignoredSet);
     } finally {
-        if (await fsExtra.exists(zipFilePath)) {
-            await fsExtra.rm(zipFilePath);
-        }
+        await fs.rm(zipFilePath, { force: true });
     }
 }
 
@@ -162,7 +159,7 @@ async function importAndExportDocs(sourcePath: string, outputSubDir: string) {
         const { waitForStreamToFinish } = await import("@triliumnext/server/src/services/utils.js");
         const branch = note.getParentBranches()[0];
         const taskContext = new TaskContext("no-progress-reporting", "export", null);
-        const fileOutputStream = fsExtra.createWriteStream(zipFilePath);
+        const fileOutputStream = createWriteStream(zipFilePath);
         await zipExportService.exportToZip(taskContext, branch, "share", fileOutputStream);
         await waitForStreamToFinish(fileOutputStream);
 
@@ -170,9 +167,7 @@ async function importAndExportDocs(sourcePath: string, outputSubDir: string) {
         const outputPath = outputSubDir ? join(OUTPUT_DIR, outputSubDir) : OUTPUT_DIR;
         await extractZip(zipFilePath, outputPath);
     } finally {
-        if (await fsExtra.exists(zipFilePath)) {
-            await fsExtra.rm(zipFilePath);
-        }
+        await fs.rm(zipFilePath, { force: true });
     }
 }
 
@@ -253,16 +248,16 @@ async function createImportZip(path: string) {
     console.log("Archive path is ", resolve(path));
     archive.directory(path, "/");
 
-    const outputStream = fsExtra.createWriteStream(inputFile);
+    const outputStream = createWriteStream(inputFile);
     archive.pipe(outputStream);
     archive.finalize();
     const { waitForStreamToFinish } = await import("@triliumnext/server/src/services/utils.js");
     await waitForStreamToFinish(outputStream);
 
     try {
-        return await fsExtra.readFile(inputFile);
+        return await fs.readFile(inputFile);
     } finally {
-        await fsExtra.rm(inputFile);
+        await fs.rm(inputFile);
     }
 }
 
@@ -279,7 +274,7 @@ export async function extractZip(
             const destPath = join(outputPath, entry.fileName);
             const fileContent = await readContent();
 
-            await fsExtra.mkdirs(dirname(destPath));
+            await fs.mkdir(dirname(destPath), { recursive: true });
             await fs.writeFile(destPath, fileContent);
         }
     });

@@ -48,7 +48,11 @@
     "github_tooltip": "Tuairiscigh fabhtanna, mol gnéithe, nó cuir le chéile ar GitHub",
     "license_tooltip": "Féach ar an gceadúnas",
     "donate": "Tabhair Síntiús",
-    "donate_tooltip": "Tabhair síntiús chun tacú leis an tionscadal seo"
+    "donate_tooltip": "Tabhair síntiús chun tacú leis an tionscadal seo",
+    "channel": {
+      "nightly": "Gach oíche",
+      "standalone": "Neamhspleách"
+    }
   },
   "toast": {
     "critical-error": {
@@ -696,7 +700,7 @@
     "import_files": "Iompórtáil comhaid",
     "export_note": "Nóta easpórtála",
     "delete_note": "Scrios nóta",
-    "print_note": "Priontáil nóta",
+    "print_note": "Priontáil nóta...",
     "view_revisions": "Tabhair faoi deara athbhreithnithe...",
     "save_revision": "Sábháil athbhreithniú",
     "advanced": "Ardleibhéil",
@@ -714,7 +718,8 @@
     "word_wrap_auto_description": "Lean an suíomh domhanda",
     "word_wrap_on": "Ar",
     "word_wrap_off": "As",
-    "save_named_revision": "Sábháil athbhreithniú ainmnithe..."
+    "save_named_revision": "Sábháil athbhreithniú ainmnithe...",
+    "print_or_export_to_pdf": "Priontáil/onnmhairigh go PDF..."
   },
   "onclick_button": {
     "no_click_handler": "Níl aon láimhseálaí cliceáil sainithe ag an ngiuirléid cnaipe '{{componentId}}'"
@@ -874,7 +879,8 @@
     "title": "Léarscáil Nótaí",
     "fix-nodes": "Deisigh nóid",
     "link-distance": "Fad naisc",
-    "too-many-notes": "Tá {{count}} nótaí sa fho-chrann seo, rud a sháraíonn an teorainn {{max}} is féidir a thaispeáint sa léarscáil nótaí."
+    "too-many-notes": "Tá {{count}} nótaí anseo. D’fhéadfadh sé go mbeadh moill ar rudaí má thaispeántar iad go léir.",
+    "show-anyway": "Taispeáin léarscáil"
   },
   "note_paths": {
     "title": "Cosáin Nótaí",
@@ -1210,7 +1216,13 @@
     "layout-horizontal-description": "Tá barra an lainseálaí faoin mbarra cluaisín, tá an barra cluaisín lánleithead anois.",
     "modern_themes": "Nua-Aimseartha",
     "legacy_themes": "Oidhreacht",
-    "custom_themes": "Saincheaptha"
+    "custom_themes": "Saincheaptha",
+    "recommended": "Molta",
+    "color_scheme": "Scéim dathanna",
+    "color_scheme_system": "Córas",
+    "color_scheme_light": "Solas",
+    "color_scheme_dark": "Dorcha",
+    "color_scheme_custom_disabled": "Ní féidir an scéim dathanna a shárú le haghaidh téamaí saincheaptha"
   },
   "ui-performance": {
     "title": "Feidhmíocht",
@@ -2255,11 +2267,11 @@
     "pages_other": "{{count}} leathanaigh",
     "pages_alt": "Leathanach {{pageNumber}}",
     "pages_loading": "Ag lódáil...",
-    "annotations_one": "{{count}} nóta",
-    "annotations_two": "{{count}} nótaí",
-    "annotations_few": "{{count}} nótaí",
-    "annotations_many": "{{count}} nótaí",
-    "annotations_other": "{{count}} nótaí"
+    "annotations_one": "{{count}} nóta mínithe",
+    "annotations_two": "{{count}} nótaí mínithe",
+    "annotations_few": "{{count}} nótaí mínithe",
+    "annotations_many": "{{count}} nótaí mínithe",
+    "annotations_other": "{{count}} nótaí mínithe"
   },
   "platform_indicator": {
     "available_on": "Ar fáil ar {{platform}}"
@@ -2610,5 +2622,82 @@
   },
   "spreadsheet": {
     "read-only": "Is nóta inléite amháin atá ann."
+  },
+  "markdown_editor": {
+    "image_upload_failed": "Ní féidir íomhá \"{{name}}\" a uaslódáil."
+  },
+  "markdown_slash_commands": {
+    "date": "Cuir isteach an dáta agus an t-am reatha",
+    "include": "Cuir nóta eile san áireamh",
+    "image": "Uaslódáil agus cuir isteach íomhá",
+    "link": "Cuir nasc nóta isteach",
+    "math": "Cuir bloc cothromóid matamaitice isteach",
+    "footnote": "Cuir nóta fonóta isteach",
+    "mermaid": "Cuir léaráid Maighdean Mhara isteach",
+    "admonition": "Cuir rabhadh {{type}} isteach"
+  },
+  "mobile_note_navigator": {
+    "back": "Téigh suas leibhéal amháin",
+    "loading": "Ag lódáil...",
+    "empty": "Níl aon pháistí ag an nóta seo.",
+    "children_count_one": "{{count}} nóta",
+    "children_count_two": "{{count}} nótaí",
+    "children_count_few": "{{count}} nótaí",
+    "children_count_many": "{{count}} nótaí",
+    "children_count_other": "{{count}} nótaí",
+    "add_child": "Cuir nóta linbh leis",
+    "more_actions": "Tuilleadh gníomhartha"
+  },
+  "setup": {
+    "heading": "Tosaigh le Trilium",
+    "new-document": "Bonn eolais nua",
+    "new-document-description": "Tosaigh le bunachar eolais glan agus tosaigh láithreach.",
+    "sync-from-desktop": "Ceangail aip deisce",
+    "sync-from-desktop-description": "Níl ach aip deisce Trilium ag rith agat ar ghléas eile. Déanfaidh an gléas seo a chuid sonraí a shioncronú ón aip deisce sin.",
+    "sync-from-server": "Ceangail le freastalaí atá ann cheana féin",
+    "sync-from-server-description": "Tá freastalaí Trilium agat ag rith in áit eile (féinóstáilte nó sa scamall). Déanfaidh an gléas seo a chuid sonraí a shioncronú ón bhfreastalaí sin.",
+    "next": "Ar Aghaidh",
+    "init-in-progress": "Túsú doiciméad ar siúl",
+    "redirecting": "Atreorófar chuig an bhfeidhmchlár thú go luath.",
+    "title": "Socrú",
+    "sync-from-server-page-description": "Cuir isteach sonraí do fhreastalaí thíos chun do spás oibre atá ann cheana a nascadh.",
+    "sync-in-progress-title": "Sioncrónú ar siúl",
+    "sync-in-progress-description": "Tá do ghléas ceangailte anois agus tá míreanna á sioncrónú.",
+    "sync-in-progress-banner": "D’fhéadfadh sé seo tamall a thógáil ag brath ar mhéid do nótaí. Ná haistrigh go feidhmchlár eile go dtí go mbeidh an sioncrónú críochnaithe.",
+    "button-back": "Ar ais",
+    "button-finish-setup": "Críochnaigh an socrú",
+    "sync-step-connecting": "Ag ceangal leis an bhfreastalaí",
+    "sync-step-syncing": "Sonraí á sioncrónú",
+    "sync-step-finalizing": "Roghanna a shocrú",
+    "create-new-document-options-title": "Cén chaoi ar mhaith leat tosú?",
+    "create-new-document-options-with-demo": "Le hábhar taispeána",
+    "create-new-document-options-with-demo-description": "Iniúchadh a dhéanamh ar Trilium le hábhar samplach.",
+    "create-new-document-options-empty": "Folamh",
+    "create-new-document-options-empty-description": "Tosaigh le bunachar eolais bán. Is féidir leat nótaí taispeána a allmhairiú níos déanaí.",
+    "create-new-document-title": "Ag ullmhú do bhunachar eolais",
+    "create-new-document-description": "Ní thógfaidh sé seo ach nóiméad.",
+    "sync-illustration-this-device": "An gléas seo",
+    "sync-illustration-desktop-app": "D'aip deisce",
+    "sync-illustration-server": "Do fhreastalaí",
+    "sync-from-desktop-step1": "Oscail sampla de Trilium Notes ar do dheasc.",
+    "sync-from-desktop-step2": "Ón Roghchlár Trilium, cliceáil Roghanna.",
+    "sync-from-desktop-step3": "Cliceáil ar an gcatagóir Sioncrónaigh sa chrann nótaí.",
+    "sync-from-desktop-step4": "Athraigh seoladh an fhreastalaí chun go mbeidh sé ag pointeáil chuig ceann de na seoltaí ar dheis agus cliceáil Sábháil.",
+    "sync-from-desktop-step5": "Cliceáil an cnaipe \"Tástáil sioncrónaithe\" chun a fhíorú go bhfuil an nasc rathúil.",
+    "sync-from-desktop-warning": "Cinntigh go bhfuil an dá fheiste ar an líonra céanna.",
+    "sync-from-desktop-waiting": "Ag fanacht le nasc...",
+    "advanced-options": "Roghanna ardleibhéil",
+    "sync-failed": "Theip ar shioncrónú: {{message}}",
+    "server-host": "Seoladh freastalaí Trilium",
+    "server-host-placeholder": "https://<ainm óstach>:<port>",
+    "server-password": "Pasfhocal",
+    "proxy-server": "Freastalaí seachfhreastalaí (roghnach)",
+    "proxy-server-placeholder": "https://<ainm óstach>:<port>",
+    "proxy-instruction": "Má fhágann tú an socrú seachfhreastalaí bán, úsáidfear seachfhreastalaí an chórais.",
+    "dismiss-error": "Díbhe earráid",
+    "wrong-password": "Pasfhocal mícheart. Déan iarracht arís.",
+    "language": "Teanga",
+    "continue": "Lean ar aghaidh",
+    "your-ip-addresses": "Seoltaí don fheiste seo"
   }
 }

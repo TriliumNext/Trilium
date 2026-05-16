@@ -1,7 +1,6 @@
 import { execSync } from "child_process";
 import { build as esbuild } from "esbuild";
-import { cpSync, existsSync, rmSync, writeFileSync } from "fs";
-import { copySync, emptyDirSync, mkdirpSync } from "fs-extra";
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { delimiter, join } from "path";
 
 export default class BuildHelper {
@@ -15,7 +14,8 @@ export default class BuildHelper {
         this.projectDir = join(this.rootDir, projectPath);
         this.outDir = join(this.projectDir, "dist");
 
-        emptyDirSync(this.outDir);
+        rmSync(this.outDir, { recursive: true, force: true });
+        mkdirSync(this.outDir, { recursive: true });
     }
 
     copy(projectDirPath: string, outDirPath: string) {
@@ -27,9 +27,9 @@ export default class BuildHelper {
         }
 
         if (outDirPath.endsWith("/")) {
-            mkdirpSync(join(outDirPath));
+            mkdirSync(join(this.outDir, outDirPath), { recursive: true });
         }
-        copySync(sourcePath, join(this.outDir, outDirPath), { dereference: true });
+        cpSync(sourcePath, join(this.outDir, outDirPath), { recursive: true, dereference: true });
     }
 
     deleteFromOutput(path: string) {
@@ -105,7 +105,7 @@ export default class BuildHelper {
     triggerBuildAndCopyTo(projectToBuild: string, destPath: string) {
         const projectDir = join(this.rootDir, projectToBuild);
         execSync("pnpm build", { cwd: projectDir, stdio: "inherit" });
-        copySync(join(projectDir, "dist"), join(this.projectDir, "dist", destPath));
+        cpSync(join(projectDir, "dist"), join(this.projectDir, "dist", destPath), { recursive: true });
     }
 
     copyNodeModules(nodeModules: string[]) {
@@ -116,7 +116,7 @@ export default class BuildHelper {
             ]);
 
             const destDir = join(this.outDir, "node_modules", moduleName);
-            mkdirpSync(destDir);
+            mkdirSync(destDir, { recursive: true });
             cpSync(sourceDir, destDir, { recursive: true, dereference: true });
         }
     }
@@ -125,7 +125,7 @@ export default class BuildHelper {
         const fullPath = join(this.outDir, relativePath);
         const dirPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
         if (dirPath) {
-            mkdirpSync(dirPath);
+            mkdirSync(dirPath, { recursive: true });
         }
         writeFileSync(fullPath, JSON.stringify(data, null, 4), "utf-8");
     }

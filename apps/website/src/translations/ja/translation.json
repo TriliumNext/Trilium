@@ -161,7 +161,8 @@
         "download_flatpak": ".flatpak",
         "download_zip": "ポータブル (.zip)",
         "download_nixpkgs": "nixpkgs",
-        "download_aur": "AUR"
+        "download_aur": "AUR",
+        "download_appimage": ".AppImage"
     },
     "download_helper_desktop_macos": {
         "title_x64": "Intel 向け macOS",

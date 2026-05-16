@@ -35,7 +35,7 @@ conhecimento pessoais.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-## ⏬ Transferir
+## ⏬ Descarregar
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
   stable version, recommended for most users.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –

@@ -5,7 +5,6 @@ import cls from "@triliumnext/server/src/services/cls.js";
 import type { NoteMetaFile } from "@triliumnext/server/src/services/meta/note_meta.js";
 import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
 import fs from "fs/promises";
-import fsExtra from "fs-extra";
 import yaml from "js-yaml";
 import path from "path";
 
@@ -154,8 +153,8 @@ async function exportData(noteId: string, format: ExportFormat, outputPath: stri
     const zipFilePath = "output.zip";
 
     try {
-        await fsExtra.remove(outputPath);
-        await fsExtra.mkdir(outputPath);
+        await fs.rm(outputPath, { recursive: true, force: true });
+        await fs.mkdir(outputPath, { recursive: true });
 
         // First export as zip.
         const { zipExportService } = (await import("@triliumnext/core"));
@@ -213,9 +212,7 @@ async function exportData(noteId: string, format: ExportFormat, outputPath: stri
         await zipExportService.exportToZipFile(noteId, format, zipFilePath, exportOpts);
         await extractZip(zipFilePath, outputPath, ignoredFiles);
     } finally {
-        if (await fsExtra.exists(zipFilePath)) {
-            await fsExtra.rm(zipFilePath);
-        }
+        await fs.rm(zipFilePath, { force: true });
     }
 
     const minifyMeta = (format === "html" || format === "share");

@@ -127,7 +127,8 @@
     "december": "ديسمبر"
   },
   "special_notes": {
-    "search_prefix": "بحث:"
+    "search_prefix": "بحث:",
+    "llm_chat_prefix": "محادثة:"
   },
   "hidden-subtree": {
     "calendar-title": "تقويم",
@@ -136,7 +137,7 @@
     "options-title": "خيارات",
     "appearance-title": "المظهر",
     "shortcuts-title": "أختصارات",
-    "images-title": "صور",
+    "images-title": "وسائط",
     "password-title": "كلمة المرور",
     "backup-title": "نسخة أحتياطية",
     "sync-title": "مزامنة",
@@ -178,7 +179,14 @@
     "localization": "اللغة والمنطقة",
     "go-to-previous-note-title": "اذهب الى الملاحظة السابقة",
     "go-to-next-note-title": "اذهب الى الملاحظة التالية",
-    "open-today-journal-note-title": "فتح ملاحظة مجلة اليوم"
+    "open-today-journal-note-title": "فتح ملاحظة مجلة اليوم",
+    "llm-chat-history-title": "سجل محادثة الذكاء الاصطناعي",
+    "custom-dictionary-title": "قاموس مخصص",
+    "command-palette": "فتح لوحة الأوامر",
+    "zen-mode": "وضع التركيز (Zen Mode)",
+    "llm-title": "الذكاء الاصطناعي / نموذج اللغة الكبير (LLM)",
+    "tab-switcher-title": "مبدّل علامات التبويب (Tab Switcher)",
+    "sidebar-chat-title": "محادثة الذكاء الاصطناعي"
   },
   "tray": {
     "bookmarks": "العلامات المرجعية",
@@ -200,14 +208,17 @@
     "site-theme": "المظهر العام للموقع",
     "image_alt": "صورة المقال",
     "on-this-page": "في هذه السفحة",
-    "last-updated": "اخر تحديث {{- date}}"
+    "last-updated": "اخر تحديث {{- date}}",
+    "toggle-navigation": "تبديل شريط التنقل",
+    "toggle-toc": "تبديل جدول المحتويات",
+    "logo-alt": "شعار"
   },
   "hidden_subtree_templates": {
     "description": "الوصف",
     "calendar": "التقويم",
     "table": "جدول",
     "geolocation": "الموقع الجغرافي",
-    "board": "لوحة",
+    "board": "لوحةلوحة كانبان",
     "status": "الحالة",
     "board_status_done": "تمت",
     "start-time": "وقت البدء",
@@ -247,11 +258,13 @@
   "share_page": {
     "parent": "الأصل:",
     "child-notes": "الملاحظات الفرعية:",
-    "no-content": "لاتحتوي هذة الملاحظة على محتوى."
+    "no-content": "لاتحتوي هذة الملاحظة على محتوى.",
+    "clipped-from": "تم اقتباس هذه الملاحظة أصلًا من ‎{{- url}}‎"
   },
   "notes": {
     "duplicate-note-suffix": "(مكرر)",
-    "new-note": "ملاحظة جديدة"
+    "new-note": "ملاحظة جديدة",
+    "duplicate-note-title": "{{- noteTitle }}{{ duplicateNoteSuffix }}"
   },
   "keyboard_action_names": {
     "jump-to-note": "انتقل الى ...",
@@ -359,6 +372,46 @@
   "quarterNumber": "الربع {رقم الربع}",
   "pdf": {
     "export_filter": "مستند PDF (.pdf)",
-    "unable-to-export-title": "تعذر التصدير كملف PDF"
+    "unable-to-export-title": "تعذر التصدير كملف PDF",
+    "unable-to-export-message": "تعذّر تصدير الملاحظة الحالية إلى ملف PDF.",
+    "unable-to-save-message": "تعذّر الكتابة إلى الملف المحدد. حاول مرة أخرى أو اختر وجهة أخرى.",
+    "unable-to-print": "تعذّر طباعة الملاحظة"
+  },
+  "test_sync": {
+    "not-configured": "لم يتم إعداد مضيف مزامنة الخادم. يرجى إعداد المزامنة أولًا.",
+    "successful": "تم الاتصال بخادم المزامنة بنجاح، وبدأت عملية المزامنة."
+  },
+  "backend_log": {
+    "log-does-not-exist": "ملف سجل الخلفية '{{ fileName }}' غير موجود (حتى الآن).",
+    "reading-log-failed": "فشل قراءة ملف سجل الخلفية '{{ fileName }}'."
+  },
+  "content_renderer": {
+    "note-cannot-be-displayed": "لا يمكن عرض هذا النوع من الملاحظات."
+  },
+  "migration": {
+    "old_version": "لا يتم دعم الترقية المباشرة من الإصدار الحالي. يرجى الترقية أولًا إلى أحدث إصدار v0.60.4 ثم الترقية إلى هذا الإصدار.",
+    "error_message": "حدث خطأ أثناء الترحيل إلى الإصدار {{version}}: {{stack}}",
+    "wrong_db_version": "إصدار قاعدة البيانات ({{version}}) أحدث من الإصدار الذي يتوقعه التطبيق ({{targetVersion}})، مما يعني أنه تم إنشاؤه بواسطة إصدار أحدث وغير متوافق من Trilium. يرجى الترقية إلى أحدث إصدار من Trilium لحل هذه المشكلة.",
+    "invalid_db_version": "إصدار قاعدة البيانات ليس رقمًا صالحًا. يشير هذا عادةً إلى تلف في خيار 'dbVersion' داخل قاعدة البيانات. يرجى الاستعادة من نسخة احتياطية."
+  },
+  "sql_init": {
+    "db_not_initialized_desktop": "لم تتم تهيئة قاعدة البيانات، يرجى اتباع التعليمات الظاهرة على الشاشة.",
+    "db_not_initialized_server": "لم تتم تهيئة قاعدة البيانات، يرجى زيارة صفحة الإعداد: http://[your-server-host]:{{port}} للاطلاع على تعليمات تهيئة Trilium."
+  },
+  "desktop": {
+    "instance_already_running": "هناك نسخة قيد التشغيل بالفعل، سيتم التركيز على تلك النسخة بدلًا من تشغيل نسخة جديدة."
+  },
+  "script": {
+    "wrong-environment": "لا يمكن تنفيذ الملاحظة \"{{- noteTitle}}\" ({{- noteId}}). هذا سكربت خاص بـ {{- actualEnv}}، لكن تم محاولة تشغيله في بيئة {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "خطأ في {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" هي كلمة محجوزة. للبحث عن قيمة حرفية، استخدم علامات الاقتباس: \"{{- token}}\"",
+      "cannot-compare-with": "لا يمكن المقارنة مع \"{{- token}}\". للبحث عن قيمة حرفية، استخدم علامات الاقتباس: \"{{- token}}\"",
+      "misplaced-expression": "تعبير \"{{- token}}\" غير مكتمل أو في غير موضعه الصحيح",
+      "fulltext-after-expression": "\"{{- token}}\" ليس تعبيرًا صالحًا. للبحث عن نص، ضع النص قبل فلاتر الخصائص (مثل: \"{{- token}} #label\" بدلًا من \"#label {{- token}}\").",
+      "unrecognized-expression": "التعبير \"{{- token}}\" غير معروف"
+    }
   }
 }

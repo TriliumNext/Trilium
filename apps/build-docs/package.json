@@ -20,9 +20,8 @@
     "@triliumnext/server": "workspace:*"
   },
   "devDependencies": {
-    "@redocly/cli": "2.30.4",
+    "@redocly/cli": "2.30.5",
     "archiver": "7.0.1",
-    "fs-extra": "11.3.4",
     "js-yaml": "4.1.1",
     "typedoc": "0.28.19",
     "typedoc-plugin-missing-exports": "4.1.3"

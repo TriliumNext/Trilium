@@ -17,7 +17,11 @@
     "github_tooltip": "Signalez des bugs, proposez des fonctionnalités ou contribuez sur GitHub",
     "license_tooltip": "Voir la licence",
     "donate": "Faire un don",
-    "donate_tooltip": "Faites un don pour soutenir ce projet"
+    "donate_tooltip": "Faites un don pour soutenir ce projet",
+    "channel": {
+      "nightly": "Nightly",
+      "standalone": "Web autonome"
+    }
   },
   "toast": {
     "critical-error": {
@@ -102,7 +106,7 @@
   "delete_notes": {
     "close": "Fermer",
     "delete_all_clones_description": "Supprimer aussi les clones (peut être annulé dans des modifications récentes)",
-    "erase_notes_description": "Effacer immédiatement les notes sans avoir la possibilité de les restaurer . Cette action est irréversible et entraînera un rechargement de l'application.",
+    "erase_notes_description": "Efface immédiatement les notes, sans possibilité de les restaurer.",
     "erase_notes_warning": "Efface les notes de manière permanente (ne peut pas être annulée), y compris les clones. L'application va être rechargée.",
     "notes_to_be_deleted": "Notes à supprimer ({{notesCount}})",
     "no_note_to_delete": "Aucune note ne sera supprimée (uniquement les clones).",
@@ -2509,14 +2513,6 @@
   "revisions_snapshot": {
     "title": "Révisions de la note"
   },
-  "standalone": {
-    "warning_tooltip": "Vous utilisez Trilium en mode autonome. Certaines fonctionnalités ne sont pas disponibles et vous pourriez rencontrer des problèmes ou des pertes de données. Pour une meilleure expérience, utilisez l’application de bureau ou un serveur auto-hébergé.",
-    "badge_label": "Autonome"
-  },
-  "mobile": {
-    "badge_label": "Mobile",
-    "warning_tooltip": "Vous utilisez Trilium en mode mobile. Certaines fonctionnalités ne sont pas disponibles. Pour une meilleure expérience, utilisez l’application de bureau ou l’affichage bureau."
-  },
   "markdown_editor": {
     "image_upload_failed": "Impossible de téléverser l’image \"{{name}}\"."
   },
@@ -2616,7 +2612,7 @@
     "sync-from-desktop": "Connecter une application de bureau",
     "sync-from-desktop-description": "Une application de bureau Trilium est en cours d’exécution sur un autre appareil. Cet appareil synchronisera ses données à partir de cette application.",
     "sync-from-server": "Se connecter à un serveur existant",
-    "sync-from-server-description": "Vous avez un serveur Trilium en fonctionnement ailleurs (auto-hébergé ou dans le cloud). Cet appareil synchronisera ses données à partir de ce serveur.",
+    "sync-from-server-description": "Vous avez un serveur Trilium en fonctionnement (auto-hébergé ou dans le cloud). Cet appareil synchronisera ses données depuis ce serveur.",
     "next": "Suivant",
     "init-in-progress": "Initialisation en cours",
     "redirecting": "Vous allez bientôt être redirigé vers l’application.",
@@ -2658,7 +2654,8 @@
     "wrong-password": "Mot de passe incorrect. Veuillez réessayer.",
     "language": "Langue",
     "continue": "Continuer",
-    "your-ip-addresses": "Adresses pour cet appareil"
+    "your-ip-addresses": "Adresses pour cet appareil",
+    "sync-in-progress-banner": "La synchronisation peut prendre quelques instants selon le volume de vos notes. Merci de rester sur cette application jusqu’à la fin de l’opération."
   },
   "common": {
     "save": "Enregistrer",

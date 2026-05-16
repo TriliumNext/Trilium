@@ -119,10 +119,6 @@ body.mobile #root-widget.virtual-keyboard-opened #mobile-bottom-bar {
     padding-bottom: var(--mobile-bottom-offset);
 }
 
-body.desktop #root-widget {
-    padding-bottom: env(safe-area-inset-bottom);
-}
-
 body.desktop #root-widget.horizontal-layout {
     padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
     background-color: var(--launcher-pane-background-color);
@@ -1734,7 +1730,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         inset-inline-start: 0;
         height: 100dvh;
         width: 85vw;
-        padding-top: env(safe-area-inset-top);
+        padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
         transform: translateX(-100%);
         transition: transform 250ms ease-in-out;
         background: var(--main-background-color);

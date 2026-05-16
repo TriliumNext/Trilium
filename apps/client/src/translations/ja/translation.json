@@ -17,7 +17,11 @@
     "github_tooltip": "バグの報告、機能の提案、またはGitHubでの貢献",
     "license_tooltip": "ライセンスを表示",
     "donate": "寄付",
-    "donate_tooltip": "このプロジェクトを支援するために寄付をお願いします"
+    "donate_tooltip": "このプロジェクトを支援するために寄付をお願いします",
+    "channel": {
+      "nightly": "ナイトリー",
+      "standalone": "スタンドアロン"
+    }
   },
   "toast": {
     "critical-error": {
@@ -2551,14 +2555,6 @@
   "spreadsheet": {
     "read-only": "このノートは読み取り専用です。"
   },
-  "standalone": {
-    "badge_label": "スタンドアロン",
-    "warning_tooltip": "Trilium をスタンドアロンモードで実行しています。一部の機能が利用できず、問題が発生したり、データが失われる可能性があります。最適なエクスペリエンスを得るには、デスクトップアプリケーションまたはセルフホスト型サーバーをご利用ください。"
-  },
-  "mobile": {
-    "badge_label": "モバイル",
-    "warning_tooltip": "Trilium はモバイルモードで実行されています。一部の機能は利用できません。最適な使用体験のためには、デスクトップアプリケーションまたはデスクトップレイアウトをご利用ください。"
-  },
   "markdown_editor": {
     "image_upload_failed": "画像 \"{{name}}\" をアップロードできません。"
   },
@@ -2629,6 +2625,7 @@
     "wrong-password": "パスワードが間違っています。もう一度お試しください。",
     "language": "言語",
     "continue": "続行",
-    "your-ip-addresses": "このデバイスのアドレス"
+    "your-ip-addresses": "このデバイスのアドレス",
+    "sync-in-progress-banner": "ノートのサイズによっては、同期に時間がかかる場合があります。同期が完了するまで、他のアプリケーションに切り替えないでください。"
   }
 }
