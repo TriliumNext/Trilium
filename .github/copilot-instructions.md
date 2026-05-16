@@ -163,7 +163,7 @@ pnpm desktop:build                              # Build desktop application
 ### Test Organization
 - **Server tests** (`apps/server/spec/`): Must run sequentially (shared database state)
 - **Client tests** (`apps/client/src/`): Can run in parallel
-- **E2E tests** (`packages/trilium-e2e/`): Shared Playwright tests, run via `pnpm --filter server e2e` or `pnpm --filter client-standalone e2e`
+- **E2E tests** (`packages/trilium-e2e/`): Shared Playwright tests, run via `pnpm --filter server e2e` or `pnpm --filter standalone e2e`
 - **ETAPI tests** (`apps/server/spec/etapi/`): External API contract tests
 
 **Pattern**: When adding new API endpoints, add tests in `spec/etapi/` following existing patterns (see `search.spec.ts`).

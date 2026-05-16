@@ -48,7 +48,7 @@ The four main apps share `packages/trilium-core/` for business logic but differ 
 - **client** (`apps/client/`): Preact frontend with jQuery widget system. Shared UI layer used by both server and desktop.
 - **server** (`apps/server/`): Node.js backend (Express, better-sqlite3). Serves the client and provides REST/WebSocket APIs.
 - **desktop** (`apps/desktop/`): Electron wrapper around server + client, running both in a single process.
-- **standalone** (`apps/client-standalone/` + `apps/standalone-desktop/`): Runs the entire stack in the browser — server logic compiled to WASM via sql.js, executed in a service worker. No Node.js dependency at runtime.
+- **standalone** (`apps/standalone/` + `apps/standalone-desktop/`): Runs the entire stack in the browser — server logic compiled to WASM via sql.js, executed in a service worker. No Node.js dependency at runtime.
 
 ## Monorepo Structure
 
@@ -57,7 +57,7 @@ apps/
   client/               # Preact frontend (shared by server, desktop, standalone)
   server/               # Node.js backend (Express, better-sqlite3)
   desktop/              # Electron (bundles server + client)
-  client-standalone/    # Standalone client (WASM + service workers, no Node.js)
+  standalone/           # Standalone client (WASM + service workers, no Node.js)
   standalone-desktop/   # Standalone desktop variant
   web-clipper/          # Browser extension
   website/              # Project website
@@ -155,7 +155,7 @@ Fluent builder pattern: `.child()`, `.class()`, `.css()` chaining with position-
 
 ### Platform Abstraction
 
-`packages/trilium-core/src/services/platform.ts` defines `PlatformProvider` interface with implementations in `apps/desktop/`, `apps/server/`, and `apps/client-standalone/`. Singleton via `initPlatform()`/`getPlatform()`.
+`packages/trilium-core/src/services/platform.ts` defines `PlatformProvider` interface with implementations in `apps/desktop/`, `apps/server/`, and `apps/standalone/`. Singleton via `initPlatform()`/`getPlatform()`.
 
 **PlatformProvider** provides:
 - `crash(message)` — Platform-specific fatal error handling
@@ -263,7 +263,7 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 
 - **Server tests** (`apps/server/spec/`): Vitest, must run sequentially (shared DB), forks pool, max 6 workers
 - **Client tests** (`apps/client/src/`): Vitest with happy-dom environment, can run in parallel
-- **E2E tests** (`packages/trilium-e2e/`): Shared Playwright tests, run via `pnpm --filter server e2e` or `pnpm --filter client-standalone e2e`
+- **E2E tests** (`packages/trilium-e2e/`): Shared Playwright tests, run via `pnpm --filter server e2e` or `pnpm --filter standalone e2e`
 - **ETAPI tests** (`apps/server/spec/etapi/`): External API contract tests
 
 ## Documentation

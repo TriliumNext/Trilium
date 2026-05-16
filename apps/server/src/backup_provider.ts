@@ -28,7 +28,13 @@ export default class ServerBackupService extends BackupService {
             });
     }
 
-    // regularBackup() inherited from BackupService - uses getContext().init()
+    override scheduleBackups(): void {
+        // Run regular backups every 4 hours
+        setInterval(() => this.regularBackup(), 4 * 60 * 60 * 1000);
+
+        // Kickoff first backup soon after startup
+        setTimeout(() => this.regularBackup(), 5 * 60 * 1000);
+    }
 
     override async backupNow(name: string): Promise<string> {
         // we don't want to back up DB in the middle of sync with potentially inconsistent DB state

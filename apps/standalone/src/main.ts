@@ -1,4 +1,4 @@
-import { attachServiceWorkerBridge, startLocalServerWorker } from "./local-bridge.js";
+import { attachServiceWorkerBridge, registerNativeHttpHandler, startLocalServerWorker } from "./local-bridge.js";
 
 async function waitForServiceWorkerControl(): Promise<void> {
     if (!("serviceWorker" in navigator) || !navigator.serviceWorker) {
@@ -57,6 +57,13 @@ async function bootstrap() {
     window.global = globalThis;
 
     try {
+        // When running inside a Capacitor WebView, register the native HTTP
+        // handler so outbound sync requests bypass CORS and cookie restrictions.
+        if ("Capacitor" in window) {
+            const { capacitorHttpHandler } = await import("./services/capacitor_http_handler.js");
+            registerNativeHttpHandler(capacitorHttpHandler);
+        }
+
         // 1) Start local worker ASAP (so /bootstrap is fast)
         startLocalServerWorker();
 

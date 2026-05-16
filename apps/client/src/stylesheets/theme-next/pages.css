@@ -145,7 +145,6 @@
  */
 
  :root {
-    --options-card-min-width: 500px;
     --options-card-max-width: 900px;
     --options-card-padding: 17px;
     --options-title-font-size: .75rem;
@@ -190,11 +189,11 @@ body.experimental-feature-new-layout .note-detail-content-widget-content.options
 }
 
 body.desktop .options-section:not(.tn-no-card) {
-    min-width: var(--options-card-min-width);
     max-width: var(--options-card-max-width);
 }
 
 .options-section-card {
+    container-type: inline-size;
     box-shadow: var(--card-box-shadow);
     border: 1px solid var(--card-border-color);
     border-radius: 8px;
@@ -287,21 +286,6 @@ body.desktop .options-section:not(.tn-no-card) {
 
 .options-section-card label:not(.tn-checkbox):not(.tn-radio) {
     margin-bottom: 6px;
-}
-
-nav.options-section-tabs {
-    min-width: var(--options-card-min-width);
-    max-width: var(--options-card-max-width);
-    margin: auto;
-}
-
-nav.options-section-tabs .nav-tabs {
-    border-bottom: 0;
-}
-
-nav.options-section-tabs + .options-section .options-section-card {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
 }
 
 /* Appeareance */

@@ -4,11 +4,11 @@ on:
   # Trigger on push to main branch
   push:
     branches:
-      - standalone
+      - main
     # Only run when app files change
     paths:
       - 'apps/client/**'
-      - 'apps/client-standalone/**'
+      - 'apps/standalone/**'
       - 'packages/trilium-core/**'
       - '.github/workflows/deploy-app.yml'
 
@@ -19,7 +19,7 @@ on:
   pull_request:
     paths:
       - 'apps/client/**'
-      - 'apps/client-standalone/**'
+      - 'apps/standalone/**'
       - 'packages/trilium-core/**'
       - '.github/workflows/deploy-app.yml'
 jobs:
@@ -55,7 +55,7 @@ jobs:
         run: pnpm run chore:update-build-info
 
       - name: Trigger build of app
-        run: pnpm --filter=client-standalone build
+        run: pnpm --filter=standalone build
 
       - name: Deploy
         uses: ./.github/actions/deploy-to-cloudflare-pages
@@ -64,7 +64,7 @@ jobs:
           project_name: "trilium-app"
           comment_body: "🖥️ App preview is ready"
           production_url: "https://app.triliumnotes.org"
-          deploy_dir: "apps/client-standalone/dist"
+          deploy_dir: "apps/standalone/dist"
           cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           github_token: ${{ secrets.GITHUB_TOKEN }}

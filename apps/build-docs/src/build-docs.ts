@@ -21,6 +21,9 @@ class StubBackupService extends BackupService {
             setOption: () => {}
         });
     }
+    scheduleBackups(): void {
+        // No scheduled backups in build-docs
+    }
     async backupNow(_name: string): Promise<string> {
         throw new Error("Backup not supported in build-docs");
     }

@@ -1,12 +1,4 @@
 {
-  "standalone": {
-    "badge_label": "Standalone",
-    "warning_tooltip": "You are running Trilium in standalone mode. Some features are not available, and you may experience issues or data loss. Use the desktop application or self-hosted server for the best experience."
-  },
-  "mobile": {
-    "badge_label": "Mobile",
-    "warning_tooltip": "You are running Trilium in mobile mode. Some features are not available. Use the desktop application or desktop layout for the best experience."
-  },
   "about": {
     "version_label": "Version:",
     "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
@@ -21,6 +13,10 @@
       "original-dev": "On 25th December 2017, Zadam released the first beta of Trilium (written with a single \"l\", unlike the flower). Dissatisfied with existing note organizers, he built a powerful self-hosted hierarchical knowledge base that gathered over 22,000 GitHub stars. In 2024, as life got busier, he placed the project into maintenance mode."
     },
     "contributor_full_list": "See the entire community",
+    "channel": {
+      "nightly": "Nightly",
+      "standalone": "Standalone"
+    },
     "data_directory": "Data directory:",
     "github_tooltip": "Report bugs, suggest features, or contribute on GitHub",
     "license_tooltip": "View license",
@@ -2552,6 +2548,7 @@
     "sync-from-server-page-description": "Enter your server details below to connect your existing workspace.",
     "sync-in-progress-title": "Sync in progress",
     "sync-in-progress-description": "Your device is now connected and items are being synchronized.",
+    "sync-in-progress-banner": "This may take a while depending on the size of your notes. Please do not switch to another application until the sync is complete.",
     "button-back": "Back",
     "button-finish-setup": "Finish setup",
     "sync-step-connecting": "Connecting to server",

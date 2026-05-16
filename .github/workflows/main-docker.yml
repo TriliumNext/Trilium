@@ -2,12 +2,13 @@ on:
   push:
     branches:
       - "main"
-      - "standalone"
-      - "feature/update**"
-      - "feature/server_esm**"
-    paths-ignore:
-      - "docs/**"
-      - "bin/**"
+    paths:
+      - "apps/server/**"
+      - "apps/client/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/main-docker.yml"
     tags:
       - "v*"
   workflow_dispatch:

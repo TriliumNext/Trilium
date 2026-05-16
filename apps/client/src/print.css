@@ -1,4 +1,4 @@
-@import "boxicons/css/boxicons.min.css";
+@import "./stylesheets/boxicons-compat.css";
 
 :root {
     --print-font-size: 11pt;

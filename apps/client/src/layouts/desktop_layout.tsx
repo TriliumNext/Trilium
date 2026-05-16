@@ -30,7 +30,6 @@ import SpacerWidget from "../widgets/launch_bar/SpacerWidget.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
-import StandaloneWarningBar from "../widgets/layout/StandaloneWarningBar.jsx";
 import StatusBar from "../widgets/layout/StatusBar.jsx";
 import NoteIconWidget from "../widgets/note_icon.jsx";
 import NoteTitleWidget from "../widgets/note_title.jsx";
@@ -91,7 +90,6 @@ export default class DesktopLayout {
                     .optChild(launcherPaneIsHorizontal, <LeftPaneToggle isHorizontalLayout={true} />)
                     .child(<TabHistoryNavigationButtons />)
                     .child(new TabRowWidget().class("full-width"))
-                    .optChild(glob.isStandalone, <StandaloneWarningBar />)
                     .optChild(isNewLayout, <RightPaneToggle />)
                     .optChild(customTitleBarButtons, <TitleBarButtons />)
                     .css("height", "40px")
@@ -119,7 +117,6 @@ export default class DesktopLayout {
                                     .class("tab-row-container")
                                     .child(<TabHistoryNavigationButtons />)
                                     .child(new TabRowWidget())
-                                    .optChild(glob.isStandalone, <StandaloneWarningBar />)
                                     .optChild(isNewLayout, <RightPaneToggle />)
                                     .optChild(customTitleBarButtons, <TitleBarButtons />)
                                     .css("height", "40px")
@@ -192,8 +189,7 @@ export default class DesktopLayout {
             .child(<CloseZenModeButton />)
 
             // Desktop-specific dialogs.
-            .child(<PasswordNoteSetDialog />)
-            .child(<UploadAttachmentsDialog />);
+            .child(<PasswordNoteSetDialog />);
 
         applyModals(rootContainer);
         return rootContainer;

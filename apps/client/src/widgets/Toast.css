@@ -5,7 +5,7 @@
     align-items: center;
     position: absolute;
     width: 100%;
-    top: calc(env(safe-area-inset-top) + 20px);
+    top: calc(var(--safe-area-inset-top, env(safe-area-inset-top)) + 20px);
     pointer-events: none;
     contain: none;
 }

@@ -60,6 +60,7 @@ let BrowserExecutionContext: typeof import('./lightweight/cls_provider').default
 let BrowserCryptoProvider: typeof import('./lightweight/crypto_provider').default;
 let BrowserZipProvider: typeof import('./lightweight/zip_provider').default;
 let FetchRequestProvider: typeof import('./lightweight/request_provider').default;
+let BridgedRequestProvider: typeof import('./lightweight/bridged_request_provider').default;
 let StandalonePlatformProvider: typeof import('./lightweight/platform_provider').default;
 let StandaloneLogService: typeof import('./lightweight/log_provider').default;
 let StandaloneBackupService: typeof import('./lightweight/backup_provider').default;
@@ -76,6 +77,7 @@ let router: BrowserRouter | null = null;
 let initPromise: Promise<void> | null = null;
 let initError: Error | null = null;
 let queryString = "";
+let useNativeHttp = false;
 
 /**
  * Check whether a file exists at the OPFS root. Used to decide whether the
@@ -287,6 +289,9 @@ async function loadModules(): Promise<void> {
     translationProvider = translationModule.default;
     createConfiguredRouter = routesModule.createConfiguredRouter;
 
+    // Loaded separately to avoid breaking Promise.all tuple inference
+    BridgedRequestProvider = (await import('./lightweight/bridged_request_provider.js')).default;
+
     // Create instances
     sqlProvider = new BrowserSqlProvider();
     messagingProvider = new WorkerMessagingProvider();
@@ -311,7 +316,13 @@ async function initialize(): Promise<void> {
             // First, load all modules dynamically
             await loadModules();
 
-            console.log("[Worker] Initializing SQLite WASM...");
+            // Initialize log service as early as possible so subsequent
+            // initialization steps are persisted to the OPFS log file.
+            const logService = new StandaloneLogService();
+            await logService.initialize();
+            logService.info("[Worker] Log service initialized with OPFS");
+
+            logService.info("[Worker] Initializing SQLite WASM...");
             await sqlProvider!.initWasm();
 
             // Try to install the SAHPool VFS (preferred: supports WAL, much faster)
@@ -320,7 +331,7 @@ async function initialize(): Promise<void> {
                 await sqlProvider!.installSahPool();
                 sahPoolAvailable = true;
             } catch (e) {
-                console.warn("[Worker] SAHPool VFS not available, will fall back to legacy OPFS or in-memory:", e);
+                logService.info(`[Worker] SAHPool VFS not available, will fall back to legacy OPFS or in-memory: ${e}`);
             }
 
             // Integration test mode is baked in at build time via the
@@ -339,32 +350,27 @@ async function initialize(): Promise<void> {
             } else if (sahPoolAvailable) {
                 // SAHPool available — migrate from legacy OPFS if needed, then open
                 await migrateFromLegacyOpfs(dbName);
-                console.log("[Worker] SAHPool available, loading persistent database (WAL mode)...");
+                logService.info("[Worker] SAHPool available, loading persistent database (WAL mode)...");
                 sqlProvider!.loadFromSahPool(dbName);
             } else if (sqlProvider!.isOpfsAvailable()) {
                 // Fall back to legacy OPFS VFS (no WAL, slower writes).
                 // This only kicks in if SAHPool installation failed for some
                 // reason but SharedArrayBuffer + legacy OPFS are both available.
-                console.warn("[Worker] SAHPool unavailable; using legacy OPFS VFS (no WAL mode).");
+                logService.info("[Worker] SAHPool unavailable; using legacy OPFS VFS (no WAL mode).");
                 sqlProvider!.loadFromOpfs(dbName);
             } else {
                 // Fall back to in-memory database (non-persistent).
                 // SAHPool only needs a Worker + OPFS API, so reaching this
                 // branch means the environment lacks OPFS entirely.
-                console.warn("[Worker] OPFS not available, using in-memory database (data will not persist)");
+                logService.info("[Worker] OPFS not available, using in-memory database (data will not persist)");
                 sqlProvider!.loadFromMemory();
             }
 
-            console.log("[Worker] Database loaded");
+            logService.info("[Worker] Database loaded");
 
-            console.log("[Worker] Loading @triliumnext/core...");
+            logService.info("[Worker] Loading @triliumnext/core...");
             const schemaModule = await import("@triliumnext/core/src/assets/schema.sql?raw");
             coreModule = await import("@triliumnext/core");
-
-            // Initialize log service with OPFS persistence
-            const logService = new StandaloneLogService();
-            await logService.initialize();
-            console.log("[Worker] Log service initialized with OPFS");
 
             await coreModule.initializeCore({
                 executionContext: new BrowserExecutionContext(),
@@ -372,7 +378,7 @@ async function initialize(): Promise<void> {
                 zip: new BrowserZipProvider(),
                 zipExportProviderFactory: (await import("./lightweight/zip_export_provider_factory.js")).standaloneZipExportProviderFactory,
                 messaging: messagingProvider!,
-                request: new FetchRequestProvider(),
+                request: useNativeHttp ? new BridgedRequestProvider() : new FetchRequestProvider(),
                 platform: new StandalonePlatformProvider(queryString),
                 log: logService,
                 backup: new StandaloneBackupService(coreModule!.options),
@@ -397,18 +403,18 @@ async function initialize(): Promise<void> {
             });
             coreModule.ws.init();
 
-            console.log("[Worker] Supported routes", Object.keys(coreModule.routes));
+            logService.info(`[Worker] Supported routes: ${Object.keys(coreModule.routes).join(", ")}`);
 
             // Create and configure the router
             router = createConfiguredRouter();
-            console.log("[Worker] Router configured");
+            logService.info("[Worker] Router configured");
 
             // initializeDb runs initDbConnection inside an execution context,
             // which resolves dbReady — required before beccaLoaded can settle.
             coreModule.sql_init.initializeDb();
 
             if (coreModule.sql_init.isDbInitialized()) {
-                console.log("[Worker] Database already initialized, loading becca...");
+                logService.info("[Worker] Database already initialized, loading becca...");
                 await coreModule.becca_loader.beccaLoaded;
 
                 // `initTranslations` runs before `initSql` inside `initializeCore`
@@ -421,16 +427,16 @@ async function initialize(): Promise<void> {
                 // sees the right language.
                 const dbLocale = coreModule.options.getOptionOrNull("locale");
                 if (dbLocale && dbLocale !== "en") {
-                    console.log(`[Worker] Reconciling i18next locale to "${dbLocale}" from DB`);
+                    logService.info(`[Worker] Reconciling i18next locale to "${dbLocale}" from DB`);
                     await coreModule.i18n.changeLanguage(dbLocale);
                 }
             } else {
-                console.log("[Worker] Database not initialized, skipping becca load (will be loaded during DB initialization)");
+                logService.info("[Worker] Database not initialized, skipping becca load (will be loaded during DB initialization)");
             }
 
             coreModule.scheduler.startScheduler();
 
-            console.log("[Worker] Initialization complete");
+            logService.info("[Worker] Initialization complete");
         } catch (error) {
             initError = error instanceof Error ? error : new Error(String(error));
             console.error("[Worker] Initialization failed:", initError);
@@ -479,6 +485,7 @@ self.onmessage = async (event) => {
 
     if (msg.type === "INIT") {
         queryString = msg.queryString || "";
+        useNativeHttp = msg.useNativeHttp || false;
         if (!initReceived) {
             initReceived = true;
             console.log("[Worker] Starting initialization...");

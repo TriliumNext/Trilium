@@ -118,7 +118,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
             >
                 {itemsAtStart}
 
-                {note.type === "code" && <CodeProperties note={note} />}
+                {(note.type === "code" || note.noteId === "_backendLog") && <CodeProperties note={note} />}
 
                 {isReadOnly && <>
                     <CommandItem icon="bx bx-pencil" text={t("read-only-info.edit-note")}

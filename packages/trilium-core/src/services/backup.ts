@@ -37,6 +37,12 @@ export default abstract class BackupService {
     }
 
     /**
+     * Schedule automatic backups.
+     * Platform-specific: server uses timers, standalone/mobile is a no-op.
+     */
+    abstract scheduleBackups(): void;
+
+    /**
      * Get list of existing backups.
      */
     abstract getExistingBackups(): Promise<DatabaseBackup[]>;

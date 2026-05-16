@@ -1,5 +1,6 @@
 import syncService from "./sync.js";
 import { getLog } from "./log.js";
+import * as cls from "./context.js";
 import sqlInit from "./sql_init.js";
 import optionService from "./options.js";
 import syncOptions from "./sync_options.js";
@@ -24,12 +25,16 @@ async function hasSyncServerSchemaAndSeed() {
 function triggerSync() {
     getLog().info("Triggering sync.");
 
-    // it's ok to not wait for it here
-    syncService.sync().then((res) => {
-        if (res.success) {
-            sqlInit.setDbAsInitialized();
-        }
-    });
+    // Sync runs as fire-and-forget — it's not awaited by the caller.
+    // Wrap in its own CLS context so it doesn't depend on the caller's
+    // context, which may be cleaned up before sync finishes.
+    cls.getContext().init(() =>
+        syncService.sync().then((res) => {
+            if (res.success) {
+                sqlInit.setDbAsInitialized();
+            }
+        })
+    );
 }
 
 async function sendSeedToSyncServer() {

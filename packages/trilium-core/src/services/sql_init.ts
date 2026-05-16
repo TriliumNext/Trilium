@@ -107,11 +107,7 @@ function initializeDb() {
     getContext().init(initDbConnection);
 
     dbReady.then(() => {
-        // Run regular backups every 4 hours
-        setInterval(() => getBackup().regularBackup(), 4 * 60 * 60 * 1000);
-
-        // Kickoff first backup soon after start up
-        setTimeout(() => getBackup().regularBackup(), 5 * 60 * 1000);
+        getBackup().scheduleBackups();
 
         // Optimize is usually inexpensive no-op, so running it semi-frequently is not a big deal
         setTimeout(() => optimize(), 60 * 60 * 1000);

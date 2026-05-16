@@ -13,7 +13,7 @@ import contributors from "../../../../../contributors.json";
 import { t } from "../../services/i18n.js";
 import openService from "../../services/open.js";
 import server from "../../services/server.js";
-import utils from "../../services/utils.js";
+import utils, { isStandalone } from "../../services/utils.js";
 import { formatDateTime } from "../../utils/formatters.js";
 import { useTooltip, useTriliumEvent } from "../react/hooks.jsx";
 import Modal from "../react/Modal.js";
@@ -22,8 +22,8 @@ import { PropertySheet, PropertySheetItem } from "../react/PropertySheet.js";
 export default function AboutDialog() {
     const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
     const [isShown, setIsShown] = useState(false);
-    const [isNightly, setNightly] = useState(false);
-    const [icon, setIcon] = useState("default");
+    const [channel, setChannel] = useState<"stable" | "nightly" | "standalone">(isStandalone ? "standalone" : "stable");
+    const [icon, setIcon] = useState(isStandalone ? "nightly" : "default");
     const [altIcon, setAltIcon] = useState<string | null>(null);
 
     const hasLoaded = useRef(false);
@@ -32,7 +32,7 @@ export default function AboutDialog() {
         if (!hasLoaded.current) {
             const info = await server.get<AppInfo>("app-info");
             if (info.appVersion.includes("test")) {
-                setNightly(true);
+                setChannel("nightly");
                 setIcon("nightly");
             }
             setAppInfo(info);
@@ -72,7 +72,7 @@ export default function AboutDialog() {
 
     return (
         <Modal
-            className={clsx(["about-dialog", {"nightly": isNightly}])}
+            className={clsx(["about-dialog", channel])}
             size="md"
             isFullPageOnMobile
             show={isShown}
@@ -81,7 +81,7 @@ export default function AboutDialog() {
             <div className="about-dialog-content">
 
                 <div className={"icon"} data-icon={altIcon ?? icon} />
-                <h2>Trilium Notes {isNightly && <span className="channel-name">Nightly</span>}</h2>
+                <h2>Trilium Notes {channel !== "stable" && <span className="channel-name">{t(`about.channel.${channel}`)}</span>}</h2>
                 <a className="tn-link" href="https://triliumnotes.org/" target="_blank" rel="noopener noreferrer">
                     triliumnotes.org
                 </a>

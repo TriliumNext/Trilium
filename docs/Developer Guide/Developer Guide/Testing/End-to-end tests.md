@@ -13,7 +13,7 @@ Shared E2E tests live in `packages/trilium-e2e/`. Server-specific tests are in `
 
 Run E2E tests via:
 - `pnpm --filter server e2e` (server)
-- `pnpm --filter client-standalone e2e` (standalone)
+- `pnpm --filter standalone e2e` (standalone)
 - `pnpm --filter desktop e2e` (desktop/Electron)
 
 ## First-time run

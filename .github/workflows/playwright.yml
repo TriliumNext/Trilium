@@ -5,9 +5,27 @@ on:
     branches:
       - main
       - hotfix
-    paths-ignore:
-      - "apps/website/**"
+    paths:
+      - "apps/client/**"
+      - "apps/server/**"
+      - "apps/desktop/**"
+      - "apps/standalone/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/playwright.yml"
+      - ".github/actions/build-server/**"
   pull_request:
+    paths:
+      - "apps/client/**"
+      - "apps/server/**"
+      - "apps/desktop/**"
+      - "apps/standalone/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/playwright.yml"
+      - ".github/actions/build-server/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -123,20 +141,20 @@ jobs:
         run: pnpm exec playwright install --with-deps
 
       - name: Build standalone
-        run: TRILIUM_INTEGRATION_TEST=memory pnpm --filter client-standalone build
+        run: TRILIUM_INTEGRATION_TEST=memory pnpm --filter standalone build
 
       - name: Start standalone preview server
         run: |
-          cd apps/client-standalone
+          cd apps/standalone
           pnpm vite preview --port $TRILIUM_PORT --host 127.0.0.1 &
           sleep 5
 
       - name: Standalone end-to-end tests
-        run: pnpm --filter client-standalone e2e
+        run: pnpm --filter standalone e2e
 
       - name: Upload test report
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: standalone e2e report ${{ matrix.name }}
-          path: apps/client-standalone/test-output
+          path: apps/standalone/test-output

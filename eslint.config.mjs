@@ -83,7 +83,7 @@ const playwrightConfig = {
   files: [
     "packages/trilium-e2e/src/**/*.spec.ts",
     "apps/server/e2e/**/*.spec.ts",
-    "apps/client-standalone/e2e/**/*.spec.ts",
+    "apps/standalone/e2e/**/*.spec.ts",
     "apps/desktop/e2e/**/*.spec.ts"
   ],
   plugins: { playwright },

@@ -1,13 +1,16 @@
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
-import { t } from "../../services/i18n";
-import FormGroup from "../react/FormGroup";
-import NoteAutocomplete from "../react/NoteAutocomplete";
 import "./Empty.css";
-import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
-import note_autocomplete from "../../services/note_autocomplete";
+
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
+
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
+import { t } from "../../services/i18n";
+import note_autocomplete from "../../services/note_autocomplete";
 import search from "../../services/search";
+import { isMobile } from "../../services/utils";
+import FormGroup from "../react/FormGroup";
+import NoteAutocomplete from "../react/NoteAutocomplete";
+import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
 import { TypeWidgetProps } from "./type_widget";
 
 export default function Empty({ ntxId }: TypeWidgetProps) {
@@ -16,10 +19,30 @@ export default function Empty({ ntxId }: TypeWidgetProps) {
             <WorkspaceSwitcher />
             <NoteSearch ntxId={ntxId ?? null} />
         </>
-    )
+    );
 }
 
 function NoteSearch({ ntxId }: { ntxId: string | null }) {
+    if (isMobile()) {
+        return <MobileNoteSearch />;
+    }
+
+    return <DesktopNoteSearch ntxId={ntxId} />;
+}
+
+function MobileNoteSearch() {
+    return (
+        <div
+            className="empty-tab-search-mobile"
+            onClick={() => appContext.triggerCommand("jumpToNote")}
+        >
+            <span className="bx bx-search empty-tab-search-mobile-icon" />
+            <span className="empty-tab-search-mobile-placeholder">{t("empty.search_placeholder")}</span>
+        </div>
+    );
+}
+
+function DesktopNoteSearch({ ntxId }: { ntxId: string | null }) {
     const resultsContainerRef = useRef<HTMLDivElement>(null);
     const autocompleteRef = useRef<HTMLInputElement>(null);
 

@@ -111,6 +111,26 @@ jobs:
           name: TriliumNotes ${{ matrix.os.name }} ${{ matrix.arch }}
           path: apps/desktop/upload
 
+  nightly-mobile:
+    if: ${{ github.repository == vars.REPO_MAIN && github.event_name != 'pull_request' }}
+    name: Build mobile nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build mobile APK
+        uses: ./.github/actions/build-mobile
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v3.0.0
+        with:
+          make_latest: false
+          prerelease: true
+          draft: false
+          files: apps/mobile/android/app/build/outputs/apk/debug/*.apk
+          tag_name: nightly
+          name: Mobile Nightly
+
   nightly-server:
     if: ${{ github.repository == vars.REPO_MAIN }}
     name: Deploy server nightly

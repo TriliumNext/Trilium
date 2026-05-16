@@ -2,6 +2,34 @@ import LocalServerWorker from "./local-server-worker?worker";
 let localWorker: Worker | null = null;
 const pending = new Map();
 
+/**
+ * Handler for outbound HTTP requests from the worker.
+ * When registered, the worker's BridgedRequestProvider sends HTTP_REQUEST
+ * messages here instead of using fetch() directly. The handler performs the
+ * actual HTTP call (e.g. via a native networking layer) and returns the result.
+ */
+export type NativeHttpHandler = (request: {
+    method: string;
+    url: string;
+    headers: Record<string, string>;
+    body?: string;
+    responseType?: string;
+}) => Promise<{
+    status: number;
+    headers: Record<string, string>;
+    body: string;
+}>;
+
+let nativeHttpHandler: NativeHttpHandler | null = null;
+
+/**
+ * Register a handler for outbound HTTP requests from the worker.
+ * Must be called before startLocalServerWorker().
+ */
+export function registerNativeHttpHandler(handler: NativeHttpHandler) {
+    nativeHttpHandler = handler;
+}
+
 function showFatalErrorDialog(message: string) {
     alert(message);
 }
@@ -9,7 +37,11 @@ function showFatalErrorDialog(message: string) {
 export function startLocalServerWorker() {
     if (localWorker) return localWorker;
     localWorker = new LocalServerWorker();
-    localWorker.postMessage({ type: "INIT", queryString: location.search });
+    localWorker.postMessage({
+        type: "INIT",
+        queryString: location.search,
+        useNativeHttp: nativeHttpHandler != null
+    });
 
     // Handle worker errors during initialization
     localWorker.onerror = (event) => {
@@ -48,6 +80,27 @@ export function startLocalServerWorker() {
             window.dispatchEvent(new CustomEvent("trilium:ws-message", {
                 detail: msg.message
             }));
+            return;
+        }
+
+        // Relay outbound HTTP requests to the registered native handler
+        if (msg?.type === "HTTP_REQUEST" && nativeHttpHandler) {
+            const { id, request } = msg;
+            nativeHttpHandler(request)
+                .then((response) => {
+                    localWorker!.postMessage({
+                        type: "HTTP_RESPONSE",
+                        id,
+                        ...response
+                    });
+                })
+                .catch((err) => {
+                    localWorker!.postMessage({
+                        type: "HTTP_RESPONSE",
+                        id,
+                        error: err instanceof Error ? err.message : String(err)
+                    });
+                });
             return;
         }
 

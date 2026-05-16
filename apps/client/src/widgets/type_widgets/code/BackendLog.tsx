@@ -4,13 +4,15 @@ import CodeMirror from "@triliumnext/codemirror";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import server from "../../../services/server";
-import { useTriliumEvent } from "../../react/hooks";
+import { useNote, useNoteLabelOptionalBool, useTriliumEvent } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
 import { CodeEditor } from "./Code";
 
 export default function BackendLog({ ntxId, parentComponent }: TypeWidgetProps) {
     const [ content, setContent ] = useState<string>();
     const editorRef = useRef<CodeMirror>(null);
+    const note = useNote("_backendLog");
+    const [ noteWrapLines ] = useNoteLabelOptionalBool(note, "wrapLines");
 
     function refresh() {
         server.get<string>("backend-log").then(content => {
@@ -40,6 +42,7 @@ export default function BackendLog({ ntxId, parentComponent }: TypeWidgetProps) 
                 mime="text/plain"
                 readOnly
                 preferPerformance
+                {...(noteWrapLines != null && { lineWrapping: noteWrapLines })}
             />
         </div>
     );

@@ -1,7 +1,7 @@
 {
   "appId": "org.triliumnotes.trilium",
   "appName": "Trilium Notes",
-  "webDir": "../client-standalone/dist",
+  "webDir": "../standalone/dist",
   "server": {
     "androidScheme": "https",
     "hostname": "localhost"

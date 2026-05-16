@@ -17,6 +17,10 @@ export default class StandaloneBackupService extends BackupService {
         super(options);
     }
 
+    override scheduleBackups(): void {
+        // No scheduled backups on standalone/mobile
+    }
+
     private isOpfsAvailable(): boolean {
         if (this.opfsAvailable === null) {
             this.opfsAvailable = typeof navigator !== "undefined"
