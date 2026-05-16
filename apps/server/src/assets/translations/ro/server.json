@@ -124,47 +124,6 @@
     "password": "Parolă",
     "password-confirmation": "Confirmarea parolei"
   },
-  "setup": {
-    "heading": "Instalarea Trilium Notes",
-    "init-in-progress": "Se inițializează documentul",
-    "new-document": "Sunt un utilizator nou și doresc să creez un document Trilium pentru notițele mele",
-    "next": "Mai departe",
-    "redirecting": "În scurt timp veți fi redirecționat la aplicație.",
-    "sync-from-desktop": "Am deja o instanță de desktop și aș dori o sincronizare cu aceasta",
-    "sync-from-server": "Am deja o instanță de server și doresc o sincronizare cu aceasta",
-    "title": "Inițializare"
-  },
-  "setup_sync-from-desktop": {
-    "description": "Acești pași trebuie urmați de pe aplicația de desktop:",
-    "heading": "Sincronizare cu aplicația desktop",
-    "step1": "Deschideți aplicația Trilium Notes pentru desktop.",
-    "step2": "Din meniul Trilium, dați clic pe Opțiuni.",
-    "step3": "Clic pe categoria „Sincronizare”.",
-    "step4": "Schimbați adresa server-ului către: {{- host}} și apăsați „Salvează”.",
-    "step5": "Clic pe butonul „Testează sincronizarea” pentru a verifica dacă conexiunea a fost făcută cu succes.",
-    "step6": "După ce ați completat pașii, dați click {{- link}}.",
-    "step6-here": "aici"
-  },
-  "setup_sync-from-server": {
-    "back": "Înapoi",
-    "finish-setup": "Finalizează inițializarea",
-    "heading": "Sincronizare cu server-ul",
-    "instructions": "Introduceți adresa server-ului Trilium și credențialele în secțiunea de jos. Astfel se va descărca întregul document Trilium de pe server și se va configura sincronizarea cu acesta. În funcție de dimensiunea documentului și viteza rețelei, acest proces poate dura.",
-    "note": "De remarcat:",
-    "password": "Parolă",
-    "proxy-instruction": "Dacă lăsați câmpul de proxy nesetat, proxy-ul de sistem va fi folosit (valabil doar pentru aplicația de desktop)",
-    "proxy-server": "Server-ul proxy (opțional)",
-    "proxy-server-placeholder": "https://<sistem>:<port>",
-    "server-host": "Adresa server-ului Trilium",
-    "server-host-placeholder": "https://<sistem>:<port>",
-    "password-placeholder": "Parolă"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sincronizare în curs",
-    "outstanding-items": "Elemente de sincronizat:",
-    "outstanding-items-default": "-",
-    "successful": "Sincronizarea a fost configurată cu succes. Poate dura ceva timp pentru a finaliza sincronizarea inițială. După efectuarea ei se va redirecționa către pagina de autentificare."
-  },
   "share_404": {
     "heading": "Pagină negăsită",
     "title": "Pagină negăsită"

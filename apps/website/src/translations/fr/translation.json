@@ -17,7 +17,7 @@
     "organization_benefits": {
         "title": "Organisation",
         "note_structure_title": "Structure des notes",
-        "note_structure_description": "Les notes peuvent être organisées hiérarchiquement. Il n'est pas nécessaire de créer des dossiers, car chaque note peut contenir des sous-notes. Une même note peut être ajoutée à plusieurs endroits de la hiérarchie.",
+        "note_structure_description": "Les notes peuvent être organisées de façon hiérarchique. Les dossiers ne sont pas nécessaires, car chaque note peut contenir des notes enfants. Une même note peut ajoutée à plusieurs endroits de la hiérarchie.",
         "attributes_title": "Noter les étiquettes et les relations",
         "attributes_description": "Utilisez des relations entre les notes ou ajoutez des étiquettes pour faciliter la catégorisation. Utilisez les attributs promus pour saisir des informations structurées utilisables dans des tableaux et des tableaux de bord.",
         "hoisting_title": "Espaces de travail et focalisation",
@@ -34,7 +34,7 @@
         "jump_to_title": "Recherche rapide et commandes",
         "jump_to_content": "Accédez rapidement à des notes ou commandes de l’interface dans toute la hiérarchie en recherchant leur titre, avec une correspondance approximative pour gérer les fautes de frappe ou légères variations.",
         "search_title": "Recherche puissante",
-        "search_content": "Ou recherchez du texte à l’intérieur des notes et affinez les résultats en filtrant par note parente ou par profondeur.",
+        "search_content": "Ou recherchez du texte à l’intérieur des notes et affinez les résultats en filtrant par note parent ou par profondeur.",
         "web_clipper_title": "Web clipper",
         "web_clipper_content": "Récupérez des pages Web (ou des captures d'écran) et placez-les directement dans Trilium à l'aide de l'extension de navigateur \"Web Clipper\"."
     },
@@ -63,7 +63,7 @@
         "server_question": "Ai-je besoin d'un serveur pour utiliser Trilium ?",
         "server_answer": "Non, le serveur permet l'accès via un navigateur web et gère la synchronisation si vous possédez plusieurs appareils. Pour commencer, il suffit de télécharger l'application de bureau et de l'utiliser.",
         "scaling_question": "Dans quelle mesure l'application s'adapte-t-elle à une grande quantité de notes ?",
-        "scaling_answer": "Selon l'utilisation, l'application devrait pouvoir gérer au moins 100 000 notes sans problème. Notez que la synchronisation peut parfois échouer lors du téléchargement de nombreux fichiers volumineux (1 Go par fichier), car Trilium est davantage conçu comme une base de connaissances que comme un espace de stockage de fichiers (comme NextCloud, par exemple).",
+        "scaling_answer": "Selon l'utilisation qui en est faite, l'application devrait pouvoir gérer sans problème au moins 100 000 notes. Veuillez noter que le processus de synchronisation peut parfois échouer en cas de téléchargement de nombreux fichiers volumineux (1 Go par fichier), car Trilium est davantage conçu comme une application de base de connaissances que comme un espace de stockage de fichiers (à l'instar de NextCloud, par exemple).",
         "network_share_question": "Puis-je partager ma base de données sur un lecteur réseau ?",
         "network_share_answer": "Non, il est généralement déconseillé de partager une base de données SQLite sur un lecteur réseau. Bien que cela puisse parfois fonctionner, il existe un risque de corruption de la base de données en raison de verrous de fichiers imparfaits sur le réseau.",
         "security_question": "Comment mes données sont-elles protégées?",
@@ -119,7 +119,8 @@
         "download_flatpak": ".flatpak",
         "download_zip": "Portable (.zip)",
         "download_nixpkgs": "nixpkgs",
-        "download_aur": "AUR"
+        "download_aur": "AUR",
+        "download_appimage": ".AppImage"
     },
     "download_helper_desktop_macos": {
         "title_x64": "macOS pour Intel",

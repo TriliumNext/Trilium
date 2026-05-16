@@ -58,9 +58,16 @@ export interface CommandData {
  * Represents a set of commands that are triggered from the context menu, providing information such as the selected note.
  */
 export interface ContextMenuCommandData extends CommandData {
-    node: Fancytree.FancytreeNode;
+    /**
+     * Fancytree node for the target when the command originated from the
+     * Fancytree-based note tree. Omitted when dispatched from node-free UIs
+     * (e.g. the mobile drill-down navigator) — handlers should prefer the
+     * explicit `noteId` / `branchId` / `notePath` fields below.
+     */
+    node?: Fancytree.FancytreeNode;
     notePath?: string;
     noteId?: string;
+    branchId?: string;
     selectedOrActiveBranchIds: string[];
     selectedOrActiveNoteIds?: string[];
 }

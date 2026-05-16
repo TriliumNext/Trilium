@@ -206,7 +206,7 @@ export interface Api {
      * Instance name identifies particular Trilium instance. It can be useful for scripts
      * if some action needs to happen on only one specific instance.
      */
-    getInstanceName(): string;
+    getInstanceName(): string | null;
 
     /**
      * @returns date in YYYY-MM-DD format

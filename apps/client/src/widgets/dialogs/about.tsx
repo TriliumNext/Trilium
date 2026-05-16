@@ -1,21 +1,23 @@
-import Modal from "../react/Modal.js";
+import "./about.css";
+
+import type { AppInfo, Contributor, ContributorList } from "@triliumnext/commons";
+import clsx from "clsx";
+import type { ComponentChildren } from "preact";
+import { memo,useMemo } from "preact/compat";
+import { useCallback, useRef,useState } from "preact/hooks";
+import { Fragment } from "preact/jsx-runtime";
+import type React from "react";
+import { Trans } from "react-i18next";
+
+import contributors from "../../../../../contributors.json";
 import { t } from "../../services/i18n.js";
-import { formatDateTime } from "../../utils/formatters.js";
+import openService from "../../services/open.js";
 import server from "../../services/server.js";
 import utils from "../../services/utils.js";
-import openService from "../../services/open.js";
-import { useState, useCallback, useRef } from "preact/hooks";
-import type { AppInfo, Contributor, ContributorList } from "@triliumnext/commons";
+import { formatDateTime } from "../../utils/formatters.js";
 import { useTooltip, useTriliumEvent } from "../react/hooks.jsx";
+import Modal from "../react/Modal.js";
 import { PropertySheet, PropertySheetItem } from "../react/PropertySheet.js";
-import "./about.css";
-import { Trans } from "react-i18next";
-import type React from "react";
-import contributors from "../../../../../contributors.json"; 
-import { Fragment } from "preact/jsx-runtime";
-import type { ComponentChildren } from "preact";
-import { useMemo, memo } from "preact/compat";
-import clsx from "clsx";
 
 export default function AboutDialog() {
     const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
@@ -55,17 +57,17 @@ export default function AboutDialog() {
                     setAltIcon(null);
                 }
             }
-        }
+        };
     };
 
     /* Cache the contributor list to prevent its rerendering.
      * When the icon changes, it triggers a rerender of the dialog. If this happens while an
      * element with a tooltip is hovered, its tooltip will break. */
-    const CachedContributors = useMemo(() => memo(function CachedContributors() {
-        return <Contributors 
+    const CachedContributors = useMemo(() => memo(() => {
+        return <Contributors
             data={contributors as ContributorList}
             onHover={createContributorHoverHandler()}
-            />
+        />;
     }), []);
 
     return (
@@ -76,8 +78,8 @@ export default function AboutDialog() {
             show={isShown}
             onHidden={() => setIsShown(false)}
         >
-           <div className="about-dialog-content">
-               
+            <div className="about-dialog-content">
+
                 <div className={"icon"} data-icon={altIcon ?? icon} />
                 <h2>Trilium Notes {isNightly && <span className="channel-name">Nightly</span>}</h2>
                 <a className="tn-link" href="https://triliumnotes.org/" target="_blank" rel="noopener noreferrer">
@@ -112,23 +114,25 @@ export default function AboutDialog() {
                         </a>
                     </PropertySheetItem>
 
-                    <PropertySheetItem label={t("about.data_directory")}>
-                        <div style={{wordBreak: "break-all"}}>
-                            {appInfo?.dataDirectory && (<DirectoryLink directory={appInfo.dataDirectory} />)}
-                        </div>
-                    </PropertySheetItem>
+                    {appInfo?.dataDirectory && (
+                        <PropertySheetItem label={t("about.data_directory")}>
+                            <div style={{wordBreak: "break-all"}}>
+                                <DirectoryLink directory={appInfo.dataDirectory} />
+                            </div>
+                        </PropertySheetItem>
+                    )}
                 </PropertySheet>
-           </div>
+            </div>
 
-           <footer>
-                <FooterLink 
+            <footer>
+                <FooterLink
                     text="GitHub"
                     url="https://github.com/TriliumNext/Trilium"
                     tooltip={t("about.github_tooltip")}>
 
-                    <i className='bx bxl-github'></i>
+                    <i className='bx bxl-github' />
                 </FooterLink>
-                
+
                 <FooterLink
                     text="AGPL 3.0"
                     url="https://docs.triliumnotes.org/user-guide/misc/license"
@@ -144,9 +148,9 @@ export default function AboutDialog() {
                     tooltip={t("about.donate_tooltip")}
                     className="donate-link">
 
-                    <i className='bx bx-heart' ></i>
+                    <i className='bx bx-heart'  />
                 </FooterLink>
-           </footer>
+            </footer>
         </Modal>
     );
 }
@@ -160,19 +164,18 @@ function RevisionLink({appInfo}: {appInfo: AppInfo | null}) {
 }
 
 function FooterLink(props: {children: ComponentChildren, text: string, url: string, tooltip: string, className?: string}) {
-    
     const linkRef = useRef<HTMLAnchorElement>(null);
 
     useTooltip(linkRef, {
         title: props.tooltip,
         delay: 250,
         placement: "bottom"
-    })
-    
+    });
+
     return <a ref={linkRef} href={props.url} className={props.className} target="_blank" rel="noopener noreferrer" draggable={false}>
         {props.children}
         {props.text}
-    </a>
+    </a>;
 }
 
 type HoverCallback = (contributor: Contributor, isHovering: boolean, part: "name" | "role") => void;
@@ -181,10 +184,10 @@ function Contributors({data, onHover}: {data: ContributorList, onHover?: HoverCa
     return data.contributors.map((c, index, array) => {
         return <Fragment key={c.name}>
             <ContributorListItem data={c} onHover={onHover} />
-            
+
             {/* Add a comma between items */}
             {(index < array.length - 1) ? ", " : ". "}
-        </Fragment>
+        </Fragment>;
     });
 }
 
@@ -208,7 +211,7 @@ function ContributorListItem({data, onHover}: {data: Contributor, onHover?: Hove
             rel="noopener noreferrer"
             onMouseEnter={() => onHover?.(data, true, "name")}
             onMouseLeave={() => onHover?.(data, false, "name")}>
-    
+
             {data.fullName ?? data.name}
         </a>
 
@@ -216,10 +219,10 @@ function ContributorListItem({data, onHover}: {data: Contributor, onHover?: Hove
             ref={roleRef}
             onMouseEnter={() => onHover?.(data, true, "role")}
             onMouseLeave={() => onHover?.(data, false, "role")}>
-            
+
             (<span className="contributor-role">{roleString}</span>)
-        </span>} 
-    </>
+        </span>}
+    </>;
 }
 
 function DirectoryLink({ directory }: { directory: string}) {
@@ -229,8 +232,7 @@ function DirectoryLink({ directory }: { directory: string}) {
             openService.openDirectory(directory);
         };
 
-        return <a className="tn-link selectable-text" href="#" onClick={onClick}>{directory}</a>
-    } else {
-        return <span className="selectable-text">{directory}</span>;
+        return <a className="tn-link selectable-text" href="#" onClick={onClick}>{directory}</a>;
     }
+    return <span className="selectable-text">{directory}</span>;
 }

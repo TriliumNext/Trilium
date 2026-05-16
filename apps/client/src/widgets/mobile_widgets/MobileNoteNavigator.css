@@ -1,0 +1,321 @@
+.mobile-note-navigator {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    contain: content;
+}
+
+.mobile-navigator-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    background: var(--main-background-color);
+}
+
+.mobile-navigator-hoisted-badge {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-inline-start: auto;
+    margin-inline-end: 4px;
+    --badge-radius: 12px;
+    --color: var(--input-background-color);
+    color: var(--main-text-color);
+}
+
+.mobile-navigator-hoisted-badge .text {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mobile-navigator-hoisted-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mobile-navigator-hoisted-close {
+    flex: 0 0 auto;
+    font-size: 1.3em;
+    opacity: 0.6;
+}
+
+.mobile-navigator-back {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 40px;
+    padding: 6px 10px 6px 4px;
+    background: none;
+    border: none;
+    color: var(--main-text-color);
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    max-width: 100%;
+}
+
+.mobile-navigator-back:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.mobile-navigator-back.invisible {
+    visibility: hidden;
+}
+
+.mobile-navigator-back-icon {
+    flex: 0 0 auto;
+    font-size: 1.5em;
+}
+
+.mobile-navigator-back-title {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: start;
+}
+
+.mobile-navigator-scroll {
+    position: relative;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.mobile-navigator-scroll.is-pending .mobile-navigator-body {
+    visibility: hidden;
+}
+
+.mobile-navigator-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8em;
+    color: var(--muted-text-color, var(--main-text-color));
+    pointer-events: none;
+}
+
+.mobile-navigator-current-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--main-border-color);
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    color: var(--main-text-color);
+}
+
+.mobile-navigator-current-tile:active {
+    filter: brightness(0.95);
+}
+
+.mobile-navigator-current-tile.is-archived {
+    opacity: 0.7;
+}
+
+.mobile-navigator-children-label {
+    padding: 14px 16px 6px;
+    font-size: 0.75em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-text-color, var(--main-text-color));
+    opacity: 0.7;
+}
+
+.mobile-navigator-current-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 32px;
+}
+
+.mobile-navigator-current-icon {
+    flex: 0 0 auto;
+    font-size: 1.3em;
+}
+
+.mobile-navigator-current-title {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.15em;
+    font-weight: 600;
+}
+
+.mobile-navigator-current-action {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 1.2em;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-navigator-current-action:active {
+    background: var(--hover-item-background-color);
+}
+
+.mobile-navigator-current-preview {
+    position: relative;
+    font-size: 0.92em;
+    line-height: 1.35;
+    color: var(--muted-text-color, var(--main-text-color));
+    pointer-events: none;
+}
+
+/* Constrain height on the inner `.note-book-content` itself — that's the element
+   watched by the shared `contentSizeObserver`, so `scrollHeight > clientHeight`
+   there is what toggles `note-book-content-overflowing`. */
+.mobile-navigator-current-preview .note-book-content {
+    max-height: 140px;
+    overflow: hidden;
+}
+
+/* Hide stale content during the brief window between commit and the new content
+   being rendered into the DOM, so the preview doesn't flash the previous note's
+   content before the new one arrives. */
+.mobile-navigator-current-preview .note-book-content:not(.note-book-content-ready) {
+    visibility: hidden;
+}
+
+/* Mirror NoteList's approach: a mask gradient applied only when
+   `.note-book-content-overflowing` is toggled on by the shared
+   `contentSizeObserver` in ListOrGridView.tsx (scrollHeight > clientHeight).
+   This fades the bottom only when the preview is actually truncated. */
+.mobile-navigator-current-preview .note-book-content.note-book-content-overflowing {
+    mask-image: linear-gradient(to bottom, black calc(100% - 32px), transparent 100%);
+    mask-repeat: no-repeat;
+    mask-size: 100% 100%;
+}
+
+.mobile-navigator-current-preview:empty,
+.mobile-navigator-current-preview .note-book-content:empty {
+    display: none;
+}
+
+/* Collapse the whole preview (and its flex gap) when the rendered content is empty,
+   so pure folders don't show a blank row beneath the title. */
+.mobile-navigator-current-tile:has(.note-book-content-ready:empty) .mobile-navigator-current-preview {
+    display: none;
+}
+
+.mobile-navigator-current-preview .note-book-content {
+    max-width: 100%;
+}
+
+.mobile-navigator-current-preview img,
+.mobile-navigator-current-preview video {
+    max-width: 100%;
+    height: auto;
+}
+
+.mobile-navigator-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-navigator-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--main-border-color);
+    color: var(--main-text-color);
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-navigator-row:active {
+    background: var(--hover-item-background-color);
+}
+
+.mobile-navigator-row.is-active {
+    border-inline-start: 3px solid var(--main-text-color);
+    padding-inline-start: 11px;
+}
+
+.mobile-navigator-row.is-archived {
+    opacity: 0.55;
+}
+
+/* Colored notes: `--custom-color` is set by the theme on `.use-note-color`
+   (see css_class_manager.createClassForColor). Apply it to the title/icon. */
+.mobile-navigator-row.use-note-color .mobile-navigator-row-title,
+.mobile-navigator-row.use-note-color .mobile-navigator-row-icon,
+.mobile-navigator-current-tile.use-note-color .mobile-navigator-current-title,
+.mobile-navigator-current-tile.use-note-color .mobile-navigator-current-icon {
+    color: var(--custom-color, inherit);
+}
+
+.mobile-navigator-row.is-pending {
+    cursor: progress;
+}
+
+.mobile-navigator-preloader {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.mobile-navigator-row-icon {
+    flex: 0 0 auto;
+    font-size: 1.2em;
+}
+
+.mobile-navigator-row-title {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1em;
+}
+
+.mobile-navigator-row-chevron {
+    flex: 0 0 auto;
+    font-size: 1.4em;
+    opacity: 0.5;
+}
+
+.mobile-navigator-row-hidden-badge {
+    flex: 0 0 auto;
+    min-width: 1.6em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accented-background-color, var(--hover-item-background-color));
+    color: var(--muted-text-color, var(--main-text-color));
+    font-size: 0.75em;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.2;
+}

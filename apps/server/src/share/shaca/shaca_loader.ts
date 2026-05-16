@@ -1,15 +1,14 @@
-"use strict";
+import { events as eventService } from "@triliumnext/core";
 
-import sql from "../sql.js";
-import shaca from "./shaca.js";
 import log from "../../services/log.js";
-import SNote from "./entities/snote.js";
-import SBranch from "./entities/sbranch.js";
-import SAttribute from "./entities/sattribute.js";
-import SAttachment from "./entities/sattachment.js";
 import shareRoot from "../share_root.js";
-import eventService from "../../services/events.js";
+import sql from "../sql.js";
 import type { SAttachmentRow, SAttributeRow, SBranchRow, SNoteRow } from "./entities/rows.js";
+import SAttachment from "./entities/sattachment.js";
+import SAttribute from "./entities/sattribute.js";
+import SBranch from "./entities/sbranch.js";
+import SNote from "./entities/snote.js";
+import shaca from "./shaca.js";
 
 function load() {
     const start = Date.now();

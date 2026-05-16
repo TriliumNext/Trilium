@@ -261,9 +261,13 @@ export class CustomMarkdownRenderer extends Renderer {
             if (ADMONITION_TYPE_MAPPINGS[type]) {
                 const bodyWithoutHeader = body
                     .replace(/^<p>\[\!([A-Z]+)\]\s*/, "<p>")
-                    .replace(/^<p><\/p>/, "");
+                    .replace(/^<p><\/p>/, "")
+                    .trim();
 
-                return `<aside class="admonition ${type}">${bodyWithoutHeader.trim()}</aside>`;
+                // Empty admonition (`> [!NOTE]` with no body) — keep a non-breaking space
+                // so the callout still renders its title/icon row instead of collapsing.
+                const inner = bodyWithoutHeader || "&nbsp;";
+                return `<aside class="admonition ${type}">${inner}</aside>`;
             }
         }
 

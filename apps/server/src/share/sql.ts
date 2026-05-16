@@ -1,6 +1,7 @@
 "use strict";
 
 import Database from "better-sqlite3";
+import { getIntegrationTestDbPath } from "../core_assets.js";
 import dataDir from "../services/data_dir.js";
 import sql_init from "../services/sql_init.js";
 
@@ -8,7 +9,17 @@ let dbConnection!: Database.Database;
 let dbConnectionReady = false;
 
 sql_init.dbReady.then(() => {
-    dbConnection = new Database(dataDir.DOCUMENT_PATH, {
+    // The share module opens its own read-only connection to the on-disk
+    // database for isolation from the main read/write connection. In
+    // integration test mode `dataDir.DOCUMENT_PATH` doesn't contain a real
+    // database (the main connection is in-memory, loaded from a fixture
+    // buffer), so we open the fixture file directly. getIntegrationTestDbPath
+    // handles bundled-vs-source path resolution; see core_assets.ts.
+    const dbPath = process.env.TRILIUM_INTEGRATION_TEST
+        ? getIntegrationTestDbPath()
+        : dataDir.DOCUMENT_PATH;
+
+    dbConnection = new Database(dbPath, {
         readonly: true,
         nativeBinding: process.env.BETTERSQLITE3_NATIVE_PATH || undefined
     });

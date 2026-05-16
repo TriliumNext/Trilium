@@ -12,6 +12,7 @@ async function main() {
     // Copy assets.
     build.copy("src/assets", "assets/");
     build.copy("/apps/server/src/assets", "assets/");
+    build.copy("/packages/trilium-core/src/assets/schema.sql", "assets/schema.sql");
     build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 

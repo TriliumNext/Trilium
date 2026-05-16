@@ -202,7 +202,7 @@
               "apps/dump-db"
               "apps/edit-docs"
               "apps/server"
-              "apps/server-e2e"
+              "packages/trilium-e2e"
             ];
 
             desktopItems = lib.optionals (app == "desktop") [

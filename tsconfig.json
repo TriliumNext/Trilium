@@ -13,10 +13,13 @@
       "path": "./apps/server"
     },
     {
-      "path": "./apps/server-e2e"
+      "path": "./packages/trilium-e2e"
     },
     {
       "path": "./apps/client"
+    },
+    {
+      "path": "./apps/build-docs"
     },
     {
       "path": "./apps/desktop"

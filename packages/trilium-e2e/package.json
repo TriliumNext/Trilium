@@ -1,0 +1,9 @@
+{
+  "name": "@triliumnext/trilium-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {},
+  "devDependencies": {
+    "dotenv": "17.4.2"
+  }
+}

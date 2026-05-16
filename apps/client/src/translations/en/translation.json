@@ -1,4 +1,12 @@
 {
+  "standalone": {
+    "badge_label": "Standalone",
+    "warning_tooltip": "You are running Trilium in standalone mode. Some features are not available, and you may experience issues or data loss. Use the desktop application or self-hosted server for the best experience."
+  },
+  "mobile": {
+    "badge_label": "Mobile",
+    "warning_tooltip": "You are running Trilium in mobile mode. Some features are not available. Use the desktop application or desktop layout for the best experience."
+  },
   "about": {
     "version_label": "Version:",
     "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
@@ -241,11 +249,24 @@
     "search_placeholder": "Search for note by its name or type > for commands...",
     "search_button": "Search in full text"
   },
+  "markdown_editor": {
+    "image_upload_failed": "Cannot upload image \"{{name}}\"."
+  },
   "markdown_import": {
     "dialog_title": "Markdown import",
     "modal_body_text": "Because of browser sandbox it's not possible to directly read clipboard from JavaScript. Please paste the Markdown to import to textarea below and click on Import button",
     "import_button": "Import",
     "import_success": "Markdown content has been imported into the document."
+  },
+  "markdown_slash_commands": {
+    "date": "Insert current date and time",
+    "include": "Include another note",
+    "image": "Upload and insert an image",
+    "link": "Insert a note link",
+    "math": "Insert a math equation block",
+    "footnote": "Insert a footnote",
+    "mermaid": "Insert a Mermaid diagram",
+    "admonition": "Insert {{type}} admonition"
   },
   "move_to": {
     "dialog_title": "Move notes to ...",
@@ -1864,6 +1885,15 @@
     "subtree-hidden-moved-description-collection": "This collection hides its child notes in the tree.",
     "subtree-hidden-moved-description-other": "Child notes are hidden in the tree for this note."
   },
+  "mobile_note_navigator": {
+    "back": "Go up one level",
+    "loading": "Loading...",
+    "empty": "This note has no children.",
+    "children_count_one": "{{count}} note",
+    "children_count_other": "{{count}} notes",
+    "add_child": "Add child note",
+    "more_actions": "More actions"
+  },
   "title_bar_buttons": {
     "window-on-top": "Keep Window on Top"
   },
@@ -2506,6 +2536,57 @@
     "sample_ishikawa": "Ishikawa",
     "sample_treeview": "TreeView",
     "sample_wardley": "Wardley Map"
+  },
+  "setup": {
+    "heading": "Get started with Trilium",
+    "new-document": "New knowledge base",
+    "new-document-description": "Start with a clean knowledge base and begin right away.",
+    "sync-from-desktop": "Connect a desktop app",
+    "sync-from-desktop-description": "You only have a Trilium desktop app running on another device. This device will sync its data from that desktop app.",
+    "sync-from-server": "Connect to an existing server",
+    "sync-from-server-description": "You have a Trilium server running elsewhere (either self-hosted or in the cloud). This device will sync its data from that server.",
+    "next": "Next",
+    "init-in-progress": "Document initialization in progress",
+    "redirecting": "You will be shortly redirected to the application.",
+    "title": "Setup",
+    "sync-from-server-page-description": "Enter your server details below to connect your existing workspace.",
+    "sync-in-progress-title": "Sync in progress",
+    "sync-in-progress-description": "Your device is now connected and items are being synchronized.",
+    "button-back": "Back",
+    "button-finish-setup": "Finish setup",
+    "sync-step-connecting": "Connecting to server",
+    "sync-step-syncing": "Syncing data",
+    "sync-step-finalizing": "Setting up options",
+    "create-new-document-options-title": "How would you like to start?",
+    "create-new-document-options-with-demo": "With demo content",
+    "create-new-document-options-with-demo-description": "Explore Trilium with example content.",
+    "create-new-document-options-empty": "Empty",
+    "create-new-document-options-empty-description": "Start with a blank knowledge base. You can import demo notes later.",
+    "create-new-document-title": "Preparing your knowledge base",
+    "create-new-document-description": "This will only take a moment.",
+    "sync-illustration-this-device": "This device",
+    "sync-illustration-desktop-app": "Your desktop app",
+    "sync-illustration-server": "Your server",
+    "sync-from-desktop-step1": "Open your desktop instance of Trilium Notes.",
+    "sync-from-desktop-step2": "From the Trilium Menu, click Options.",
+    "sync-from-desktop-step3": "Click on Sync category in the note tree.",
+    "sync-from-desktop-step4": "Change server instance address to point to one of the addresses on the right and click Save.",
+    "sync-from-desktop-step5": "Click the \"Test sync\" button to verify connection is successful.",
+    "sync-from-desktop-warning": "Make sure both devices are on the same network.",
+    "sync-from-desktop-waiting": "Waiting for connection...",
+    "advanced-options": "Advanced options",
+    "sync-failed": "Failed to sync: {{message}}",
+    "server-host": "Trilium server address",
+    "server-host-placeholder": "https://<hostname>:<port>",
+    "server-password": "Password",
+    "proxy-server": "Proxy server (optional)",
+    "proxy-server-placeholder": "https://<hostname>:<port>",
+    "proxy-instruction": "If you leave proxy setting blank, system proxy will be used.",
+    "dismiss-error": "Dismiss error",
+    "wrong-password": "Incorrect password. Please try again.",
+    "language": "Language",
+    "continue": "Continue",
+    "your-ip-addresses": "Addresses for this device"
   },
   "mind-map": {
     "addChild": "Add child",

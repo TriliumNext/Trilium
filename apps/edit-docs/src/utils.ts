@@ -1,5 +1,4 @@
 import cls from "@triliumnext/server/src/services/cls.js";
-import TaskContext from "@triliumnext/server/src/services/task_context.js";
 import windowService from "@triliumnext/server/src/services/window.js";
 import archiver, { type Archiver } from "archiver";
 import electron from "electron";
@@ -62,15 +61,14 @@ export function startElectron(callback: () => void): DeferredPromise<void> {
 
 export async function importData(path: string) {
     const buffer = await createImportZip(path);
-    const importService = (await import("@triliumnext/server/src/services/import/zip.js")).default;
+    const { zipImportService, TaskContext, becca } = (await import("@triliumnext/core"));
     const context = new TaskContext("no-progress-reporting", "importNotes", null);
-    const becca = (await import("@triliumnext/server/src/becca/becca.js")).default;
 
     const rootNote = becca.getRoot();
     if (!rootNote) {
         throw new Error("Missing root note for import.");
     }
-    await importService.importZip(context, buffer, rootNote, {
+    await zipImportService.importZip(context, buffer, rootNote, {
         preserveIds: true
     });
 }
@@ -114,19 +112,18 @@ export async function createZipFromDirectory(dirPath: string, zipPath: string) {
 export async function extractZip(zipFilePath: string, outputPath: string, ignoredFiles?: Set<string>) {
     const promise = deferred<void>();
     setTimeout(async () => {
-        // Then extract the zip.
-        const { readZipFile, readContent } = (await import("@triliumnext/server/src/services/import/zip.js"));
-        await readZipFile(await fs.readFile(zipFilePath), async (zip, entry) => {
+        const { getZipProvider } = (await import("@triliumnext/core"));
+        const zipProvider = getZipProvider();
+        const buffer = await fs.readFile(zipFilePath);
+        await zipProvider.readZipFile(buffer, async (entry, readContent) => {
             // We ignore directories since they can appear out of order anyway.
             if (!entry.fileName.endsWith("/") && !ignoredFiles?.has(entry.fileName)) {
                 const destPath = path.join(outputPath, entry.fileName);
-                const fileContent = await readContent(zip, entry);
+                const fileContent = await readContent();
 
                 await fsExtra.mkdirs(path.dirname(destPath));
                 await fs.writeFile(destPath, fileContent);
             }
-
-            zip.readEntry();
         });
         promise.resolve();
     }, 1000);

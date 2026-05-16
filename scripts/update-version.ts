@@ -26,11 +26,11 @@ function getVersion(packageJsonPath: string) {
 function main() {
     const version = getVersion(join(__dirname, "..", "package.json"));
 
-    for (const appName of ["server", "client", "desktop", "edit-docs"]) {
+    for (const appName of ["server", "client", "client-standalone", "desktop", "edit-docs"]) {
         patchPackageJson(join(__dirname, "..", "apps", appName, "package.json"), version);
     }
 
-    for (const packageName of ["commons", "pdfjs-viewer"]) {
+    for (const packageName of ["commons", "pdfjs-viewer", "trilium-core"]) {
         patchPackageJson(join(__dirname, "..", "packages", packageName, "package.json"), version);
     }
 }

@@ -1,0 +1,50 @@
+import { dayjs, Dayjs, Locale, LOCALE_IDS, LOCALES, setDayjsLocale } from "@triliumnext/commons";
+import sql_init from "./sql_init";
+import options from "./options";
+import i18next from "i18next";
+import hidden_subtree from "./hidden_subtree";
+
+export type TranslationProvider = (i18nextInstance: typeof i18next, locale: LOCALE_IDS) => Promise<void>;
+
+export async function initTranslations(translationProvider: TranslationProvider) {
+    const locale = getCurrentLanguage();
+
+    await translationProvider(i18next, locale);
+
+    // Initialize dayjs locale.
+    await setDayjsLocale(locale);
+}
+
+export function ordinal(date: Dayjs) {
+    return dayjs(date)
+        .format("Do");
+}
+
+function getCurrentLanguage(): LOCALE_IDS {
+    let language: string | null = null;
+    if (sql_init.isDbInitialized()) {
+        language = options.getOptionOrNull("locale");
+        if (!language) {
+            console.info("Language option not found, falling back to en.");
+        }
+    }
+
+    return (language ?? "en") as LOCALE_IDS;
+}
+
+export async function changeLanguage(locale: string) {
+    await i18next.changeLanguage(locale);
+    hidden_subtree.checkHiddenSubtree(true, { restoreNames: true });
+}
+
+export function getCurrentLocale() {
+    if (!sql_init.isDbInitialized()) {
+        // If DB is not initialized, we cannot get the locale from options, so we return English as a default.
+        return LOCALES.find(l => l.id === "en")!;
+    }
+
+    const localeId = options.getOptionOrNull("locale") ?? "en";
+    const currentLocale = LOCALES.find(l => l.id === localeId);
+    if (!currentLocale) return LOCALES.find(l => l.id === "en")!;
+    return currentLocale;
+}

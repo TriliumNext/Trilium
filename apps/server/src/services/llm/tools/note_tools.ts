@@ -2,10 +2,10 @@
  * LLM tools for note operations (search, read, create, update, append).
  */
 
+import { markdownImportService as markdownImport } from "@triliumnext/core";
 import { z } from "zod";
 
 import becca from "../../../becca/becca.js";
-import markdownImport from "../../import/markdown.js";
 import noteService from "../../notes.js";
 import SearchContext from "../../search/search_context.js";
 import searchService from "../../search/services/search.js";

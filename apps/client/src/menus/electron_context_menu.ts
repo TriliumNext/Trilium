@@ -95,11 +95,15 @@ function setupContextMenu() {
             items.push({
                 title: t("electron_context_menu.copy-link"),
                 uiIcon: "bx bx-copy",
-                handler: () => {
-                    electron.clipboard.write({
-                        bookmark: params.linkText,
-                        text: params.linkURL
-                    });
+                handler: async () => {
+                    const linkText = params.linkText || params.linkURL;
+                    const html = `<a href="${utils.escapeHtml(params.linkURL)}">${utils.escapeHtml(linkText)}</a>`;
+                    await navigator.clipboard.write([
+                        new ClipboardItem({
+                            "text/html": new Blob([html], { type: "text/html" }),
+                            "text/plain": new Blob([params.linkURL], { type: "text/plain" })
+                        })
+                    ]);
                 }
             });
         }

@@ -224,47 +224,6 @@
     "password-confirmation": "Deimhniú pasfhocail",
     "button": "Socraigh pasfhocal"
   },
-  "setup": {
-    "heading": "Socrú Trilium Notes",
-    "new-document": "Is úsáideoir nua mé, agus ba mhaith liom doiciméad Trilium nua a chruthú do mo nótaí",
-    "sync-from-desktop": "Tá cás deisce agam cheana féin, agus ba mhaith liom sioncrónú a shocrú leis",
-    "sync-from-server": "Tá sampla freastalaí agam cheana féin, agus ba mhaith liom sioncrónú a shocrú leis",
-    "next": "Ar Aghaidh",
-    "init-in-progress": "Túsú doiciméad ar siúl",
-    "redirecting": "Atreorófar chuig an bhfeidhmchlár thú go luath.",
-    "title": "Socrú"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sioncrónaigh ón Deasc",
-    "description": "Ní mór an socrú seo a thionscnamh ón deasc:",
-    "step1": "Oscail sampla de Trilium Notes ar do dheasc.",
-    "step2": "Ón Roghchlár Trilium, cliceáil Roghanna.",
-    "step3": "Cliceáil ar an gcatagóir Sioncrónaigh.",
-    "step4": "Athraigh seoladh an fhreastalaí go: {{- host}} agus cliceáil Sábháil.",
-    "step5": "Cliceáil an cnaipe \"Tástáil sioncrónaithe\" chun a fhíorú go bhfuil an nasc rathúil.",
-    "step6": "Nuair a bheidh na céimeanna seo críochnaithe agat, cliceáil {{- link}}.",
-    "step6-here": "anseo"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sioncrónaigh ón bhFreastalaí",
-    "instructions": "Cuir isteach seoladh agus dintiúir freastalaí Trilium thíos le do thoil. Íoslódálfaidh sé seo an doiciméad Trilium iomlán ón bhfreastalaí agus socróidh sé sioncrónú leis. Ag brath ar mhéid an doiciméid agus luas do nasc, d'fhéadfadh sé seo tamall a thógáil.",
-    "server-host": "Seoladh freastalaí Trilium",
-    "server-host-placeholder": "https://<ainm óstach>:<port>",
-    "proxy-server": "Freastalaí seachfhreastalaí (roghnach)",
-    "proxy-server-placeholder": "https://<ainm óstach>:<port>",
-    "note": "Nóta:",
-    "proxy-instruction": "Má fhágann tú an socrú seachfhreastalaí bán, úsáidfear seachfhreastalaí an chórais (baineann sé leis an bhfeidhmchlár deisce amháin)",
-    "password": "Pasfhocal",
-    "password-placeholder": "Pasfhocal",
-    "back": "Ar ais",
-    "finish-setup": "Críochnaigh an socrú"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sioncrónú ar siúl",
-    "successful": "Tá an sioncrónú socraithe i gceart. Tógfaidh sé tamall go mbeidh an sioncrónú tosaigh críochnaithe. Nuair a bheidh sé déanta, atreorófar chuig an leathanach logála isteach thú.",
-    "outstanding-items": "Míreanna sioncrónaithe gan réiteach:",
-    "outstanding-items-default": "N/B"
-  },
   "share_404": {
     "title": "Níor aimsíodh",
     "heading": "Níor aimsíodh"

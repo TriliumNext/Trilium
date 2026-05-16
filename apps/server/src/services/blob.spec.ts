@@ -1,7 +1,6 @@
+import type { BlobRow } from "@triliumnext/commons";
+import { blob as blobService } from "@triliumnext/core";
 import { describe, expect, it } from "vitest";
-
-import blobService from "./blob.js";
-import type { Blob } from "./blob-interface.js";
 
 // These tests lock the exact output of calculateContentHash against known inputs.
 // The hash is written to entity_changes.hash and shipped to sync peers — any
@@ -10,10 +9,9 @@ import type { Blob } from "./blob-interface.js";
 // change breaks these expectations, update the expected values AND ensure a
 // migration or sync-compatibility plan is in place.
 describe("calculateContentHash", () => {
-    const baseBlob: Blob = {
+    const baseBlob: Pick<BlobRow, "blobId" | "content" | "textRepresentation"> = {
         blobId: "blob001",
-        content: "hello world",
-        utcDateModified: "2026-01-01 00:00:00.000Z"
+        content: "hello world"
     };
 
     it("hashes a blob without textRepresentation to the locked value (no trailing separator)", () => {

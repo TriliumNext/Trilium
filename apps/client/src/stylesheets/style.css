@@ -1751,6 +1751,10 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         max-height: unset;
         max-width: unset;
 
+        .modal-header {
+            margin-top: env(safe-area-inset-top);
+        }
+
         .modal-content {
             border-radius: 0;
             border: 0;

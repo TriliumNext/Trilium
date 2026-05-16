@@ -1,5 +1,5 @@
-import { sanitizeUrl } from "@braintree/sanitize-url";
 import { renderSpreadsheetToHtml, renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons";
+import { icon_packs as iconPackService, sanitize, utils } from "@triliumnext/core";
 import { highlightAuto } from "@triliumnext/highlightjs";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
@@ -13,11 +13,9 @@ import BAttachment from '../becca/entities/battachment.js';
 import type BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
 import assetPath, { assetUrlFragment } from "../services/asset_path.js";
-import { generateCss, getIconPacks, MIME_TO_EXTENSION_MAPPINGS, ProcessedIconPack } from "../services/icon_packs.js";
-import htmlSanitizer from "../services/html_sanitizer.js";
 import log from "../services/log.js";
 import options from "../services/options.js";
-import utils, { getResourceDir, isDev, safeExtractMessageAndStackFromError } from "../services/utils.js";
+import { getResourceDir, isDev } from "../services/utils.js";
 import SAttachment from "./shaca/entities/sattachment.js";
 import SBranch from "./shaca/entities/sbranch.js";
 import type SNote from "./shaca/entities/snote.js";
@@ -32,7 +30,7 @@ const templateCache: Map<string, string> = new Map();
  */
 export interface Result {
     header: string;
-    content: string | Buffer | undefined;
+    content: string | Uint8Array | undefined;
     /** Set to `true` if the provided content should be rendered as empty. */
     isEmpty?: boolean;
 }
@@ -71,7 +69,7 @@ function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
     return getSharedSubTreeRoot(parentBranch.getParentNote());
 }
 
-export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[], iconPacks: ProcessedIconPack[]) {
+export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[], iconPacks: iconPackService.ProcessedIconPack[]) {
     const subRoot: Subroot = {
         branch: parentBranch,
         note: parentBranch.getNote()
@@ -97,7 +95,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
         faviconUrl: `${basePath}favicon.ico`,
         ancestors,
         isStatic: true,
-        iconPackCss: iconPacks.map(p => generateCss(p, `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`))
+        iconPackCss: iconPacks.map(p => iconPackService.generateCss(p, `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`))
             .filter(Boolean)
             .join("\n\n"),
         iconPackSupportedPrefixes: iconPacks.map(p => p.prefix)
@@ -138,7 +136,7 @@ export function renderNoteContent(note: SNote) {
 
     const customLogoId = note.getRelation("shareLogo")?.value;
     const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
-    const iconPacks = getIconPacks().filter(p => p.builtin || !!shaca.notes[p.manifestNoteId]);
+    const iconPacks = iconPackService.getIconPacks().filter(p => p.builtin || !!shaca.notes[p.manifestNoteId]);
 
     return renderNoteContentInternal(note, {
         subRoot,
@@ -149,8 +147,8 @@ export function renderNoteContent(note: SNote) {
         ancestors,
         isStatic: false,
         faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
-        iconPackCss: iconPacks.map(p => generateCss(p, p.builtin
-            ? `assets/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+        iconPackCss: iconPacks.map(p => iconPackService.generateCss(p, p.builtin
+            ? `assets/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
             : `api/attachments/${p.fontAttachmentId}/download`
         ))
             .filter(Boolean)
@@ -225,7 +223,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
                     return ejs.render(content, opts, { includer });
                 }
             } catch (e: unknown) {
-                const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
+                const [errMessage, errStack] = utils.safeExtractMessageAndStackFromError(e);
                 log.error(`Rendering user provided share template (${templateId}) threw exception ${errMessage} with stacktrace: ${errStack}`);
             }
         }
@@ -307,7 +305,7 @@ function renderIndex(result: Result) {
     for (const childNote of rootNote.getChildNotes()) {
         const isExternalLink = childNote.hasLabel("shareExternalLink");
         const rawHref = childNote.getLabelValue("shareExternalLink") ?? "";
-        const href = isExternalLink ? escapeHtml(sanitizeUrl(rawHref)) : `./${childNote.shareId}`;
+        const href = isExternalLink ? escapeHtml(sanitize.sanitizeUrl(rawHref)) : `./${childNote.shareId}`;
         const target = isExternalLink ? `target="_blank" rel="noopener noreferrer"` : "";
         result.content += `<li><a class="${childNote.type}" href="${href}" ${target}>${childNote.escapedTitle}</a></li>`;
     }
@@ -412,7 +410,7 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
         if (linkedNote) {
             const isExternalLink = linkedNote.hasLabel("shareExternalLink");
             const rawHref = linkedNote.getLabelValue("shareExternalLink") ?? "";
-            const href = isExternalLink ? sanitizeUrl(rawHref) : `./${linkedNote.shareId}`;
+            const href = isExternalLink ? sanitize.sanitizeUrl(rawHref) : `./${linkedNote.shareId}`;
             if (href) {
                 linkEl.setAttribute("href", href);
             }
@@ -466,8 +464,8 @@ function renderMarkdown(result: Result, note: SNote | BNote) {
         return;
     }
 
-    let html = renderMarkdownToHtml(result.content, note.title, {
-        sanitize: htmlSanitizer.sanitize,
+    const html = renderMarkdownToHtml(result.content, note.title, {
+        sanitize: sanitize.sanitizeHtml,
         wikiLink: { formatHref: (id) => `./${id}` }
     });
 
@@ -539,7 +537,7 @@ function renderWebView(note: SNote | BNote, result: Result) {
     const url = note.getLabelValue("webViewSrc");
     if (!url) return;
 
-    result.content = `<iframe class="webview" src="${sanitizeUrl(url)}" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>`;
+    result.content = `<iframe class="webview" src="${sanitize.sanitizeUrl(url)}" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>`;
 }
 
 export default {

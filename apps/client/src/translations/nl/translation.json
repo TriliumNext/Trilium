@@ -6,11 +6,18 @@
     "build_info": "Build: {{buildDate}}, revisie: <buildRevision />",
     "contributors_label": "Collaborateuren:",
     "contributor_roles": {
-      "original-dev": "Originele ontwikkelaar"
+      "original-dev": "Originele ontwikkelaar",
+      "lead-dev": "hoofd programmeur"
     },
     "role_brief_history": {
-      "lead-dev": "Elian Doran heeft TriliumNext opgericht in 2014 nadat Zadam, de originele oprichter, zich terugtrok uit het project. Later heeft Zadam de originele repository overgedragen over aan het TriliumNext team, waarbij beide projecten uiteindelijk zijn samengevoegd."
-    }
+      "lead-dev": "Elian Doran heeft TriliumNext opgericht in 2014 nadat Zadam, de originele oprichter, zich terugtrok uit het project. Later heeft Zadam de originele repository overgedragen over aan het TriliumNext team, waarbij beide projecten uiteindelijk zijn samengevoegd.",
+      "original-dev": "Op 25 december 2017 werd door Zadam de eerste beta van Trilium (met één \"l\", in tegenstelling tot de bloem) uitgegeven. Ontevreden over bestaande notitie toepassingen, bouwde hij een krachtige, zelf-gehoste, hiërarchische kennisbank die meer dan 22 000 GitHub sterren verzamelde. In 2024, wanneer het leven drukker werd, plaatste hij het project in onderhoudsmodus."
+    },
+    "contributor_full_list": "Zie de hele gemeenschap",
+    "github_tooltip": "Meld fouten, stel functionaliteiten voor, of draag bij op GitHub",
+    "license_tooltip": "Bekijk de gebruiksovereenkomst",
+    "donate": "Donneer",
+    "donate_tooltip": "Donneer om dit project te steunen"
   },
   "toast": {
     "critical-error": {
@@ -44,7 +51,9 @@
     "link_title_mirrors": "De link titel is hetzelfde als de notitie's huidige titel",
     "link_title": "Link titel",
     "button_add_link": "Link toevoegen",
-    "link_title_arbitrary": "snelkoppelingsnaam kan willekeurig worden aangepast"
+    "link_title_arbitrary": "snelkoppelingsnaam kan willekeurig worden aangepast",
+    "anchor": "Anker (optioneel)",
+    "anchor_none": "Geen (koppeling naar notitie)"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Bewerk branch prefix",

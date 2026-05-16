@@ -1,7 +1,7 @@
 import { getTesseractCode } from '@triliumnext/commons';
+import { blob as blobService } from '@triliumnext/core';
 
 import becca from '../../becca/becca.js';
-import blobService from '../blob.js';
 import entityChangesService from '../entity_changes.js';
 import log from '../log.js';
 import options from '../options.js';
@@ -175,7 +175,7 @@ class OCRService {
         mime: string;
         blobId: string | undefined;
         languageNoteId: string;
-        getContent: () => string | Buffer;
+        getContent: () => string | Uint8Array;
     }, options: OCRProcessingOptions = {}): Promise<OCRResult | null> {
         const { entityId, entityType, category, mime, blobId, languageNoteId } = entity;
 
@@ -371,8 +371,7 @@ class OCRService {
         const hash = blobService.calculateContentHash({
             blobId: blob.blobId,
             content: blob.content,
-            textRepresentation: blob.textRepresentation,
-            utcDateModified: blob.utcDateModified!
+            textRepresentation: blob.textRepresentation
         });
         entityChangesService.putEntityChange({
             entityName: "blobs",

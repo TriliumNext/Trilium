@@ -224,47 +224,6 @@
     "button": "パスワードの設定",
     "password-confirmation": "パスワードの再入力"
   },
-  "setup": {
-    "heading": "Trilium Notes セットアップ",
-    "new-document": "私は新しいユーザーで、ノートを取るために新しいTriliumドキュメントを作成したい",
-    "sync-from-desktop": "すでにデスクトップ版のインスタンスがあり、同期を設定したい",
-    "sync-from-server": "すでにサーバー版のインスタンスがあり、同期を設定したい",
-    "init-in-progress": "ドキュメントの初期化処理を実行中",
-    "redirecting": "まもなくアプリケーションにリダイレクトされます。",
-    "next": "次へ",
-    "title": "セットアップ"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "デスクトップから同期",
-    "description": "このセットアップはデスクトップインスタンスから開始する必要があります:",
-    "step1": "Trilium Notes のデスクトップインスタンスを開きます。",
-    "step2": "Triliumメニューから、設定をクリックします。",
-    "step3": "同期をクリックします。",
-    "step4": "サーバーインスタンスアドレスを {{- host}} に変更し、保存をクリックします。",
-    "step5": "「同期テスト」をクリックして、接続が成功したか確認してください。",
-    "step6": "これらのステップを完了したら、{{- link}} をクリックしてください。",
-    "step6-here": "ここ"
-  },
-  "setup_sync-from-server": {
-    "heading": "サーバーから同期",
-    "instructions": "Triliumサーバーのアドレスと認証情報を下記に入力してください。これにより、Triliumドキュメント全体がサーバーからダウンロードされ、同期が設定されます。ドキュメントのサイズと接続速度によっては、時間がかかる場合があります。",
-    "server-host": "Triliumサーバーのアドレス",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server": "プロキシサーバー（オプション）",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "proxy-instruction": "プロキシ設定を空欄にすると、システムプロキシが使用されます（デスクトップアプリケーションにのみ適用されます）",
-    "password": "パスワード",
-    "password-placeholder": "パスワード",
-    "finish-setup": "セットアップ完了",
-    "back": "戻る",
-    "note": "ノート:"
-  },
-  "setup_sync-in-progress": {
-    "heading": "同期中",
-    "successful": "同期が正しく設定されました。最初の同期が完了するまでしばらく時間がかかります。完了すると、ログインページにリダイレクトされます。",
-    "outstanding-items": "同期が未完了のアイテム:",
-    "outstanding-items-default": "N/A"
-  },
   "weekdays": {
     "monday": "月曜日",
     "tuesday": "火曜日",

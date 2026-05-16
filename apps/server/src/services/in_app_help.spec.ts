@@ -1,6 +1,9 @@
-import { describe, expect, expectTypeOf, it } from "vitest";
-import { parseNoteMeta } from "./in_app_help.js";
+import { describe, expect, it } from "vitest";
+
+import NodejsInAppHelpProvider from "../in_app_help_provider.js";
 import type NoteMeta from "./meta/note_meta.js";
+
+const provider = new NodejsInAppHelpProvider();
 
 describe("In-app help", () => {
     it("preserves custom folder icon", () => {
@@ -29,7 +32,7 @@ describe("In-app help", () => {
             children: []
         };
 
-        const item = parseNoteMeta(meta, "/");
+        const item = provider.parseNoteMeta(meta, "/");
         const icon = item?.attributes?.find((a) => a.name === "iconClass");
         expect(icon?.value).toBe("bx bx-star");
     });
@@ -60,7 +63,7 @@ describe("In-app help", () => {
             children: []
         };
 
-        const item = parseNoteMeta(meta, "/");
+        const item = provider.parseNoteMeta(meta, "/");
         expect(item).toBeFalsy();
     });
 });

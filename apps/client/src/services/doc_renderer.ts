@@ -52,7 +52,7 @@ async function processContent(url: string, $content: JQuery<HTMLElement>) {
     const dir = url.substring(0, url.lastIndexOf("/"));
 
     // Images are relative to the docnote but that will not work when rendered in the application since the path breaks.
-    $content.find("img").each((i, el) => {
+    $content.find("img").each((_i, el) => {
         const $img = $(el);
         $img.attr("src", `${dir}/${$img.attr("src")}`);
     });
@@ -73,7 +73,17 @@ function getUrl(docNameValue: string | null, language: string) {
 
     // Cannot have spaces in the URL due to how JQuery.load works.
     docNameValue = docNameValue.replaceAll(" ", "%20");
+    // The user guide is available only in English, so make sure we are requesting correctly since 404s in standalone client are treated differently.
+    if (docNameValue.includes("User%20Guide")) language = "en";
+    return `${getBasePath()}/doc_notes/${language}/${docNameValue}.html`;
+}
 
-    const basePath = window.glob.isDev ? `${window.glob.assetPath  }/..` : window.glob.assetPath;
-    return `${basePath}/doc_notes/${language}/${docNameValue}.html`;
+function getBasePath() {
+    if (window.glob.isStandalone) {
+        return `server-assets`;
+    }
+    if (window.glob.isDev) {
+        return `${window.glob.assetPath}/..`;
+    }
+    return window.glob.assetPath;
 }

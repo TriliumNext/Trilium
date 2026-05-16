@@ -1,13 +1,14 @@
-import type { Router, Request, Response, NextFunction } from "express";
-import eu from "./etapi_utils.js";
-import sql from "../services/sql.js";
+import type { NextFunction,Request, Response, Router } from "express";
+
 import appInfo from "../services/app_info.js";
+import sql from "../services/sql.js";
+import eu from "./etapi_utils.js";
 
 interface MetricsData {
     version: {
         app: string;
         db: number;
-        node: string;
+        node?: string;
         sync: number;
         buildDate: string;
         buildRevision: string;
@@ -45,7 +46,7 @@ function formatPrometheusMetrics(data: MetricsData): string {
     const lines: string[] = [];
 
     // Helper function to add a metric
-    const addMetric = (name: string, value: number | null, help: string, type: string = 'gauge', labels: Record<string, string> = {}) => {
+    const addMetric = (name: string, value: number | null, help: string, type: string = 'gauge', labels: Record<string, string | undefined> = {}) => {
         if (value === null) return;
 
         lines.push(`# HELP ${name} ${help}`);
@@ -233,8 +234,8 @@ function register(router: Router): void {
             } else if (format === 'prometheus') {
                 const prometheusText = formatPrometheusMetrics(metrics);
                 res.status(200)
-                   .set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
-                   .send(prometheusText);
+                    .set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
+                    .send(prometheusText);
             } else {
                 throw new eu.EtapiError(400, "INVALID_FORMAT", "Supported formats: 'prometheus' (default), 'json'");
             }

@@ -1,16 +1,18 @@
+import "./export.css";
+
 import { useState } from "preact/hooks";
+
+import froca from "../../services/froca";
 import { t } from "../../services/i18n";
+import open from "../../services/open";
+import toastService, { type ToastOptionsWithRequiredId } from "../../services/toast";
 import tree from "../../services/tree";
+import utils, { isStandalone } from "../../services/utils";
+import ws from "../../services/ws";
 import Button from "../react/Button";
 import FormRadioGroup from "../react/FormRadioGroup";
-import Modal from "../react/Modal";
-import "./export.css";
-import ws from "../../services/ws";
-import toastService, { type ToastOptionsWithRequiredId } from "../../services/toast";
-import utils from "../../services/utils";
-import open from "../../services/open";
-import froca from "../../services/froca";
 import { useTriliumEvent } from "../react/hooks";
+import Modal from "../react/Modal";
 
 interface ExportDialogProps {
     branchId?: string | null;
@@ -79,7 +81,7 @@ export default function ExportDialog() {
                         values={[
                             { value: "html", label: t("export.format_html_zip") },
                             { value: "markdown", label: t("export.format_markdown") },
-                            { value: "share", label: t("export.share-format") },
+                            !isStandalone && { value: "share", label: t("export.share-format") },
                             { value: "opml", label: t("export.format_opml") }
                         ]}
                     />

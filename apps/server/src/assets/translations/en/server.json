@@ -227,47 +227,6 @@
     "password-confirmation": "Password confirmation",
     "button": "Set password"
   },
-  "setup": {
-    "heading": "Trilium Notes setup",
-    "new-document": "I'm a new user, and I want to create a new Trilium document for my notes",
-    "sync-from-desktop": "I have a desktop instance already, and I want to set up sync with it",
-    "sync-from-server": "I have a server instance already, and I want to set up sync with it",
-    "next": "Next",
-    "init-in-progress": "Document initialization in progress",
-    "redirecting": "You will be shortly redirected to the application.",
-    "title": "Setup"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sync from Desktop",
-    "description": "This setup needs to be initiated from the desktop instance:",
-    "step1": "Open your desktop instance of Trilium Notes.",
-    "step2": "From the Trilium Menu, click Options.",
-    "step3": "Click on Sync category.",
-    "step4": "Change server instance address to: {{- host}} and click Save.",
-    "step5": "Click \"Test sync\" button to verify connection is successful.",
-    "step6": "Once you've completed these steps, click {{- link}}.",
-    "step6-here": "here"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sync from Server",
-    "instructions": "Please enter Trilium server address and credentials below. This will download the whole Trilium document from server and setup sync to it. Depending on the document size and your connection speed, this may take a while.",
-    "server-host": "Trilium server address",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server": "Proxy server (optional)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Note:",
-    "proxy-instruction": "If you leave proxy setting blank, system proxy will be used (applies to the desktop application only)",
-    "password": "Password",
-    "password-placeholder": "Password",
-    "back": "Back",
-    "finish-setup": "Finish setup"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sync in progress",
-    "successful": "Sync has been correctly set up. It will take some time for the initial sync to finish. Once it's done, you'll be redirected to the login page.",
-    "outstanding-items": "Outstanding sync items:",
-    "outstanding-items-default": "N/A"
-  },
   "share_404": {
     "title": "Not found",
     "heading": "Not found"

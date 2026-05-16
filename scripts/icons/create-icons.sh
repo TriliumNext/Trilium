@@ -77,3 +77,60 @@ magick "./png/256x256-dev.png" -background "#ffffff" -gravity center -extent 640
 server_dir="$script_dir/../../apps/server"
 cp "$desktop_forge_dir/app-icon/icon.ico" "$server_dir/src/assets/icon.ico"
 cp "$desktop_forge_dir/app-icon/icon-dev.ico" "$server_dir/src/assets/icon-dev.ico"
+
+# Build Android mobile icons
+# Legacy launcher: 48/72/96/144/192 px. Adaptive foreground: 108dp canvas with
+# ~66% safe zone (Android masks the outer ring), scaled per density.
+mobile_res_dir="$script_dir/../../apps/mobile/android/app/src/main/res"
+background_color="#FAFAFA"
+
+# Circular mask rendered via Inkscape for crisp antialiasing at icon sizes.
+circle_mask_svg=$(mktemp --suffix=.svg)
+cat > "$circle_mask_svg" <<'EOF'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="50" fill="white"/>
+</svg>
+EOF
+trap 'rm -f "$circle_mask_svg"' EXIT
+
+declare -A launcher_sizes=( [mdpi]=48 [hdpi]=72 [xhdpi]=96 [xxhdpi]=144 [xxxhdpi]=192 )
+declare -A foreground_sizes=( [mdpi]=108 [hdpi]=162 [xhdpi]=216 [xxhdpi]=324 [xxxhdpi]=432 )
+
+for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+  launcher_size=${launcher_sizes[$density]}
+  foreground_size=${foreground_sizes[$density]}
+  mipmap_dir="$mobile_res_dir/mipmap-$density"
+  mkdir -p "$mipmap_dir"
+
+  # Adaptive foreground: logo at 50% of the 108dp canvas. The 72dp (66%) safe
+  # zone is the hard clip boundary — any launcher mask (circle, squircle,
+  # teardrop) can trim up to it, so we leave extra margin inside.
+  fg_logo=$(( foreground_size / 2 ))
+  inkscape -w $fg_logo -h $fg_logo "$source_icon_dir/icon-color.svg" -o "$mipmap_dir/_tmp_fg.png"
+  magick "$mipmap_dir/_tmp_fg.png" -background none -gravity center \
+    -extent ${foreground_size}x${foreground_size} "$mipmap_dir/ic_launcher_foreground.png"
+  rm "$mipmap_dir/_tmp_fg.png"
+
+  # Monochrome layer for Android 13+ themed icons. Android ignores RGB and
+  # uses only the alpha channel, tinting it with the system theme color.
+  inkscape -w $fg_logo -h $fg_logo "$source_icon_dir/icon-black.svg" -o "$mipmap_dir/_tmp_mono.png"
+  magick "$mipmap_dir/_tmp_mono.png" -background none -gravity center \
+    -extent ${foreground_size}x${foreground_size} "$mipmap_dir/ic_launcher_monochrome.png"
+  rm "$mipmap_dir/_tmp_mono.png"
+
+  # Legacy square launcher (logo on solid background)
+  sq_logo=$(( launcher_size * 2 / 3 ))
+  inkscape -w $sq_logo -h $sq_logo "$source_icon_dir/icon-color.svg" -o "$mipmap_dir/_tmp.png"
+  magick "$mipmap_dir/_tmp.png" -background "$background_color" -gravity center \
+    -extent ${launcher_size}x${launcher_size} "$mipmap_dir/ic_launcher.png"
+
+  # Legacy round launcher: Inkscape-rendered circle used as alpha mask.
+  # Extract the mask's alpha channel (circle=opaque, bg=transparent) and copy
+  # it onto the square icon.
+  inkscape -w $launcher_size -h $launcher_size "$circle_mask_svg" \
+    -o "$mipmap_dir/_tmp_mask.png"
+  magick "$mipmap_dir/ic_launcher.png" \
+    \( "$mipmap_dir/_tmp_mask.png" -alpha extract \) \
+    -compose CopyOpacity -composite "$mipmap_dir/ic_launcher_round.png"
+  rm "$mipmap_dir/_tmp.png" "$mipmap_dir/_tmp_mask.png"
+done

@@ -5,7 +5,7 @@ import { existsSync } from "fs";
 import fs from "fs-extra";
 import path, { join } from "path";
 
-import packageJson from "../package.json" assert { type: "json" };
+import packageJson from "../package.json" with { type: "json" };
 import { PRODUCT_NAME } from "../src/app-info.js";
 
 const ELECTRON_FORGE_DIR = __dirname;

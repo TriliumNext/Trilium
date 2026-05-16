@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import becca from "../becca/becca.js";
-import BAttachment from "../becca/entities/battachment.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import { randomString } from "./utils.js";
 import BAttribute from "../becca/entities/battribute.js";
@@ -66,19 +65,11 @@ describe("findBookmarks", () => {
     });
 });
 
-function makeAttachment(noteId: string, opts: { id?: string; role?: string; scheduledForErasure?: boolean } = {}) {
-    const attachment = new BAttachment({
-        attachmentId: opts.id ?? randomString(10),
-        ownerId: noteId,
-        title: "test-image.png",
-        role: opts.role ?? "image",
-        mime: "image/png"
-    });
-    attachment.save = vi.fn();
-    if (opts.scheduledForErasure) {
-        attachment.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
+/** Helper to mock `save` on all attachments created via `buildNote`. */
+function mockAttachmentSaves(note: ReturnType<typeof buildNote>) {
+    for (const att of note.getAttachments()) {
+        att.save = vi.fn();
     }
-    return attachment;
 }
 
 describe("checkImageAttachments", () => {
@@ -88,9 +79,9 @@ describe("checkImageAttachments", () => {
 
     describe("HTML content", () => {
         it("keeps referenced attachments alive", () => {
-            const note = buildNote({ title: "Test" });
-            const att = makeAttachment(note.noteId);
-            note.getAttachments = () => [att];
+            const note = buildNote({ title: "Test", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
 
             const content = `<p>Hello</p><img src="api/attachments/${att.attachmentId}/image/test.png">`;
             checkImageAttachments(note, content);
@@ -99,9 +90,9 @@ describe("checkImageAttachments", () => {
         });
 
         it("schedules unreferenced attachments for erasure", () => {
-            const note = buildNote({ title: "Test" });
-            const att = makeAttachment(note.noteId);
-            note.getAttachments = () => [att];
+            const note = buildNote({ title: "Test", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
 
             checkImageAttachments(note, "<p>No images here</p>");
 
@@ -110,9 +101,10 @@ describe("checkImageAttachments", () => {
         });
 
         it("cancels erasure when attachment is re-referenced", () => {
-            const note = buildNote({ title: "Test" });
-            const att = makeAttachment(note.noteId, { scheduledForErasure: true });
-            note.getAttachments = () => [att];
+            const note = buildNote({ title: "Test", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+            att.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
 
             const content = `<img src="api/attachments/${att.attachmentId}/image/test.png">`;
             checkImageAttachments(note, content);
@@ -122,9 +114,9 @@ describe("checkImageAttachments", () => {
         });
 
         it("detects attachment IDs in href reference links", () => {
-            const note = buildNote({ title: "Test" });
-            const att = makeAttachment(note.noteId, { role: "file" });
-            note.getAttachments = () => [att];
+            const note = buildNote({ title: "Test", attachments: [{ title: "test.png", role: "file", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
 
             const content = `<a href="#root/${note.noteId}?viewMode=attachments&attachmentId=${att.attachmentId}">file</a>`;
             checkImageAttachments(note, content);
@@ -135,9 +127,9 @@ describe("checkImageAttachments", () => {
 
     describe("Markdown content", () => {
         it("keeps referenced attachments alive via markdown image syntax", () => {
-            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
-            const att = makeAttachment(note.noteId);
-            note.getAttachments = () => [att];
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
 
             const content = `# Hello\n\n![test](api/attachments/${att.attachmentId}/image/test.png)`;
             checkImageAttachments(note, content);
@@ -146,9 +138,9 @@ describe("checkImageAttachments", () => {
         });
 
         it("schedules unreferenced attachments for erasure", () => {
-            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
-            const att = makeAttachment(note.noteId);
-            note.getAttachments = () => [att];
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
 
             checkImageAttachments(note, "# No images\n\nJust text.");
 
@@ -157,9 +149,10 @@ describe("checkImageAttachments", () => {
         });
 
         it("cancels erasure when attachment is re-referenced", () => {
-            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
-            const att = makeAttachment(note.noteId, { scheduledForErasure: true });
-            note.getAttachments = () => [att];
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+            att.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
 
             const content = `![img](api/attachments/${att.attachmentId}/image/test.png)`;
             checkImageAttachments(note, content);
@@ -169,9 +162,9 @@ describe("checkImageAttachments", () => {
         });
 
         it("detects attachment IDs in markdown link syntax", () => {
-            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
-            const att = makeAttachment(note.noteId, { role: "file" });
-            note.getAttachments = () => [att];
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [{ title: "test.png", role: "file", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
 
             const content = `[my file](#root/${note.noteId}?viewMode=attachments&attachmentId=${att.attachmentId})`;
             checkImageAttachments(note, content);
@@ -180,11 +173,10 @@ describe("checkImageAttachments", () => {
         });
 
         it("handles multiple attachments in markdown content", () => {
-            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
-            const att1 = makeAttachment(note.noteId);
-            const att2 = makeAttachment(note.noteId);
-            const att3 = makeAttachment(note.noteId);
-            note.getAttachments = () => [att1, att2, att3];
+            const imgAtt = { title: "test.png", role: "image", mime: "image/png" };
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [imgAtt, imgAtt, imgAtt] });
+            mockAttachmentSaves(note);
+            const [att1, att2, att3] = note.getAttachments();
 
             const content = [
                 `![img1](api/attachments/${att1.attachmentId}/image/a.png)`,
@@ -204,12 +196,13 @@ describe("checkImageAttachments", () => {
     describe("foreign attachment copying", () => {
         it("replaces foreign attachment IDs in HTML content", () => {
             const note = buildNote({ title: "Test" });
-            const foreignNote = buildNote({ title: "Foreign" });
-
-            const foreignAtt = makeAttachment(foreignNote.noteId, { id: "foreignAtt1" });
+            const foreignNote = buildNote({ title: "Foreign", attachments: [{ id: "foreignAtt1", title: "test.png", role: "image", mime: "image/png" }] });
+            const foreignAtt = foreignNote.getAttachments()[0];
             foreignAtt.copy = () => {
-                const copy = makeAttachment(note.noteId);
+                const copyNote = buildNote({ title: "CopyHolder", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+                const copy = copyNote.getAttachments()[0];
                 copy.blobId = foreignAtt.blobId;
+                copy.setContent = vi.fn();
                 return copy;
             };
             foreignAtt.getContent = () => Buffer.from("image data");
@@ -225,12 +218,13 @@ describe("checkImageAttachments", () => {
 
         it("replaces foreign attachment IDs in markdown content", () => {
             const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
-            const foreignNote = buildNote({ title: "Foreign" });
-
-            const foreignAtt = makeAttachment(foreignNote.noteId, { id: "foreignAtt2" });
+            const foreignNote = buildNote({ title: "Foreign", attachments: [{ id: "foreignAtt2", title: "test.png", role: "image", mime: "image/png" }] });
+            const foreignAtt = foreignNote.getAttachments()[0];
             foreignAtt.copy = () => {
-                const copy = makeAttachment(note.noteId);
+                const copyNote = buildNote({ title: "CopyHolder", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+                const copy = copyNote.getAttachments()[0];
                 copy.blobId = foreignAtt.blobId;
+                copy.setContent = vi.fn();
                 return copy;
             };
             foreignAtt.getContent = () => Buffer.from("image data");
@@ -249,6 +243,8 @@ describe("checkImageAttachments", () => {
 describe("saveLinks", () => {
     beforeEach(() => {
         becca.reset();
+        // Restore getAttachments in case a previous test replaced it with a mock
+        becca.getAttachments = vi.fn().mockReturnValue([]);
     });
 
     function makeLinkRelation(noteId: string, name: string, targetNoteId: string) {

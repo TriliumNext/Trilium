@@ -124,47 +124,6 @@
     "password-confirmation": "確認密碼",
     "button": "設定密碼"
   },
-  "setup": {
-    "heading": "Trilium 筆記設定",
-    "new-document": "我是新用戶，我想為我的筆記建立一個新的 Trilium 文件",
-    "sync-from-desktop": "我已經擁有桌面版本，想設定與它進行同步",
-    "sync-from-server": "我已經擁有伺服器版本，想設定與它進行同步",
-    "next": "下一步",
-    "init-in-progress": "文件正在初始化",
-    "redirecting": "您即將被重新導向至應用程式。",
-    "title": "設定"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "從桌面版同步",
-    "description": "此設定需要從桌面版本啟動：",
-    "step1": "打開您的桌面版 Trilium 筆記。",
-    "step2": "從 Trilium 選單中，點擊「選項」。",
-    "step3": "點擊「同步」類別。",
-    "step4": "將伺服器版網址更改為：{{- host}} 並點擊儲存。",
-    "step5": "點擊「測試同步」以驗證連接是否成功。",
-    "step6": "完成這些步驟後，點擊 {{- link}}。",
-    "step6-here": "這裡"
-  },
-  "setup_sync-from-server": {
-    "heading": "從伺服器同步",
-    "instructions": "請在下方輸入 Trilium 伺服器網址和密碼。這將從伺服器下載整個 Trilium 數據庫檔案並同步。取決於數據庫大小和您的連接速度，這可能需要一段時間。",
-    "server-host": "Trilium 伺服器網址",
-    "server-host-placeholder": "https://<主機名稱>:<端口>",
-    "proxy-server": "代理伺服器（可選）",
-    "proxy-server-placeholder": "https://<主機名稱>:<端口>",
-    "note": "注意：",
-    "proxy-instruction": "如果您將代理設定留空，將使用系統代理（僅適用於桌面版）",
-    "password": "密碼",
-    "password-placeholder": "密碼",
-    "back": "返回",
-    "finish-setup": "完成設定"
-  },
-  "setup_sync-in-progress": {
-    "heading": "正在同步",
-    "successful": "已正確設定同步。初次同步可能需要一些時間。完成後，您將被重新導向至登入頁面。",
-    "outstanding-items": "未完成的同步項目：",
-    "outstanding-items-default": "無"
-  },
   "share_404": {
     "title": "未找到",
     "heading": "未找到"

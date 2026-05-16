@@ -220,47 +220,6 @@
     "password-confirmation": "Potvrzení hesla",
     "button": "Nastavit heslo"
   },
-  "setup": {
-    "heading": "Nastavení Trilium Notes",
-    "new-document": "Jsem nový uživatel a chci vytvořit nový dokument Trilium pro své poznámky",
-    "sync-from-desktop": "Již mám instanci na počítači a chci s ní nastavit synchronizaci",
-    "sync-from-server": "Již mám instanci na serveru a chci s ní nastavit synchronizaci",
-    "next": "Další",
-    "init-in-progress": "Inicializace dokumentu probíhá",
-    "redirecting": "Budete brzy přesměrováni do aplikace.",
-    "title": "Nastavení"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Synchronizace z počítače",
-    "description": "Toto nastavení musí být zahájeno z instance na počítači:",
-    "step1": "Otevřete svou instanci Trilium Notes na počítači.",
-    "step2": "V menu Trilium klikněte na Nastavení.",
-    "step3": "Klikněte na kategorii Synchronizace.",
-    "step4": "Změňte adresu instance serveru na: {{- host}} a klikněte na Uložit.",
-    "step5": "Klikněte na tlačítko „Testovat synchronizaci“ pro ověření úspěšného připojení.",
-    "step6": "Jakmile tyto kroky dokončíte, klikněte na {{- link}}.",
-    "step6-here": "zde"
-  },
-  "setup_sync-from-server": {
-    "heading": "Synchronizace ze serveru",
-    "instructions": "Níže prosím zadejte adresu serveru Trilium a přihlašovací údaje. To stáhne celý dokument Trilium ze serveru a nastaví jeho synchronizaci. V závislosti na velikosti dokumentu a rychlosti vašeho připojení to může trvat nějakou dobu.",
-    "server-host": "Adresa serveru Trilium",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server": "Proxy server (volitelné)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Poznámka:",
-    "proxy-instruction": "Pokud ponecháte nastavení proxy prázdné, bude použita systémová proxy (platí pouze pro počítačovou aplikaci)",
-    "password": "Heslo",
-    "password-placeholder": "Heslo",
-    "back": "Zpět",
-    "finish-setup": "Dokončit nastavení"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Synchronizace probíhá",
-    "successful": "Synchronizace byla správně nastavena. Prvotní synchronizace bude trvat nějaký čas. Jakmile bude hotovo, budete přesměrováni na přihlašovací stránku.",
-    "outstanding-items": "Neodeslané položky synchronizace:",
-    "outstanding-items-default": "N/A"
-  },
   "share_404": {
     "title": "Nenalezeno",
     "heading": "Nenalezeno"

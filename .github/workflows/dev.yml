@@ -3,10 +3,12 @@ on:
   push:
     branches:
       - main
+      - standalone
       - "release/*"
   pull_request:
     branches:
       - main
+      - standalone
       - "release/*"
 
 concurrency:
@@ -63,13 +65,20 @@ jobs:
           path: apps/server/test-output/vitest/html/
           retention-days: 30
 
+      - name: Run the client-standalone tests
+        # Runs the same trilium-core spec set as the server suite, but in
+        # happy-dom + sql.js WASM via BrowserSqlProvider (see
+        # apps/client-standalone/src/test_setup.ts). Catches differences
+        # between the Node-side and browser-side runtimes.
+        run: pnpm run --filter=client-standalone test
+
       - name: Run CKEditor e2e tests
         run: |
           pnpm run --filter=ckeditor5-mermaid test
           pnpm run --filter=ckeditor5-math test
 
       - name: Run the rest of the tests
-        run: pnpm run --filter=\!client --filter=\!server --filter=\!ckeditor5-mermaid --filter=\!ckeditor5-math test
+        run: pnpm run --filter=\!client --filter=\!client-standalone --filter=\!server --filter=\!ckeditor5-mermaid --filter=\!ckeditor5-math test
 
   build_docker:
     name: Build Docker image

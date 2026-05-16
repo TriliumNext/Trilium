@@ -86,19 +86,22 @@
     "attributes-labels-and-relations": "سمات ( تسميات و علاقات)",
     "render-active-note": "عرض ( اعادة عرض) الملاحظة المؤرشفة",
     "show-help": "فتح دليل التعليمات",
-    "copy-without-formatting": "نسخ النص المحدد بدون تنسيق"
-  },
-  "setup_sync-from-server": {
-    "note": "ملاحظة:",
-    "password": "كلمة المرور",
-    "password-placeholder": "كلمة المرور",
-    "back": "رجوع",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "finish-setup": "اكمال التثبيت",
-    "heading": "مزامنة من الخادم",
-    "server-host": "عنوان خادم تريليوم",
-    "proxy-server": "خادم وكيل (اختياري)"
+    "copy-without-formatting": "نسخ النص المحدد بدون تنسيق",
+    "toggle-archived-notes": "إظهار/إخفاء الملاحظات المؤرشفة في شجرة الملاحظات",
+    "toggle-tray": "إظهار/إخفاء التطبيق من شريط النظام (System Tray)",
+    "show-cheatsheet": "عرض نافذة منبثقة (Modal) تحتوي على اختصارات لوحة المفاتيح الشائعة",
+    "add-link-to-text": "فتح نافذة لإضافة رابط إلى النص",
+    "follow-link-under-cursor": "اتباع الرابط الموجود عند موضع المؤشر",
+    "insert-date-and-time-to-text": "إدراج التاريخ والوقت الحالي في النص",
+    "paste-markdown-into-text": "لصق محتوى Markdown من الحافظة داخل ملاحظة نصية",
+    "cut-into-note": "قصّ التحديد من الملاحظة الحالية وإنشاء ملاحظة فرعية بالنص المحدد",
+    "add-include-note-to-text": "فتح نافذة لإدراج ملاحظة",
+    "save-named-revision": "حفظ نسخة مُعنونة من الملاحظة النشطة",
+    "toggle-classic-editor-toolbar": "تبديل تبويب التنسيق لمحرر النص مع شريط أدوات ثابت",
+    "export-as-pdf": "تصدير الملاحظة الحالية كملف PDF",
+    "toggle-zen-mode": "تفعيل/تعطيل وضع التركيز (Zen Mode) الذي يوفر واجهة مبسطة للكتابة المركّزة",
+    "toggle-right-pane": "تبديل عرض اللوحة اليمنى، والتي تتضمن جدول المحتويات والإبرازات",
+    "force-save-revision": "فرض إنشاء / حفظ نسخة مراجعة جديدة للملاحظة النشطة"
   },
   "weekdays": {
     "monday": "الاثنين",
@@ -241,22 +244,6 @@
     "password-confirmation": "تاكيد كلمة المرور",
     "button": "تعين كلمة المرور"
   },
-  "setup": {
-    "next": "التالي",
-    "title": "تثبيت",
-    "heading": "تثبيت تريليوم للملاحظات",
-    "init-in-progress": "جار تهيئة المستند"
-  },
-  "setup_sync-from-desktop": {
-    "step6-here": "هنا",
-    "heading": "مزامنة من سطح المكتب",
-    "step3": "انقر على صنف المزامنة."
-  },
-  "setup_sync-in-progress": {
-    "outstanding-items-default": "غير متوفر",
-    "heading": "المزامنة جارية",
-    "outstanding-items": "عناصر المزامنة المعلقة:"
-  },
   "share_page": {
     "parent": "الأصل:",
     "child-notes": "الملاحظات الفرعية:",
@@ -358,7 +345,11 @@
     "toggle-ribbon-tab-promoted-attributes": "عرض/ اخفاء تبويب السمات المعززة",
     "toggle-ribbon-tab-note-map": "عرض/اخفاء تبويب خريطة الملاحظات",
     "toggle-ribbon-tab-similar-notes": "عرض/اخفاء شريط الملاحظات المشابهة",
-    "export-active-note-as-pdf": "تصدير الملاحظة النشطة كملفPDF"
+    "export-active-note-as-pdf": "تصدير الملاحظة النشطة كملفPDF",
+    "toggle-archived-notes": "تبديل عرض الملاحظات المؤرشفة",
+    "insert-date-and-time-to-text": "إدراج التاريخ والوقت في النص",
+    "toggle-ribbon-tab-note-info": "تبديل تبويب الشريط: معلومات الملاحظة",
+    "toggle-ribbon-tab-note-paths": "تبديل تبويب الشريط: مسارات الملاحظة"
   },
   "share_404": {
     "title": "غير موجود",

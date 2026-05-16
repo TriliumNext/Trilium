@@ -220,47 +220,6 @@
     "password-confirmation": "Confirmar Palavra-passe",
     "button": "Definir palavra-passe"
   },
-  "setup": {
-    "heading": "Trilium Notes setup",
-    "new-document": "Sou um novo utilizador e quero criar um documento Trilium para as minhas notas",
-    "sync-from-desktop": "Já tenho uma instância no desktop e quero configurar a sincronização com ela",
-    "sync-from-server": "Já tenho uma instância no servidor e quero configurar a sincronização com ela",
-    "next": "Avançar",
-    "init-in-progress": "Inicialização do documento em andamento",
-    "redirecting": "Será redirecionado para a aplicação brevemente.",
-    "title": "Configuração"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sincronizar com Desktop",
-    "description": "Esta configuração deve ser iniciada a partir da instância do desktop:",
-    "step1": "Abra a sua instância do Trilium Notes no desktop.",
-    "step2": "No menu do Trilium, clique em Opções.",
-    "step3": "Clique na categoria Sincronização.",
-    "step4": "Altere o endereço da instância do servidor para: {{- host}} e clique em Gravar.",
-    "step5": "Clique no botão \"Testar sincronização\" para verificar se a conexão foi bem-sucedida.",
-    "step6": "Depois de concluir estas etapas, clique em {{- link}}.",
-    "step6-here": "aqui"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sincronizar do Servidor",
-    "instructions": "Por favor, insira abaixo o endereço e as credenciais do servidor Trilium. Isto descarragará de todo o documento Trilium do servidor e configurará a sincronização com ele. Dependendo do tamanho do documento e da velocidade da conexão, isto pode levar algum tempo.",
-    "server-host": "Endereço do servidor Trilium",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server": "Servidor proxy (opcional)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Nota:",
-    "proxy-instruction": "Se deixar o campo de proxy em branco, o proxy do sistema será usado (aplicável apenas à aplicação desktop)",
-    "password": "Palavra-passe",
-    "password-placeholder": "Palavra-passe",
-    "back": "Voltar",
-    "finish-setup": "Terminar configuração"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sincronização em andamento",
-    "successful": "A sincronização foi configurada corretamente. Levará algum tempo para que a sincronização inicial seja concluída. Quando terminar, será redirecionado para a página de login.",
-    "outstanding-items": "Elementos de sincronização pendentes:",
-    "outstanding-items-default": "N/A"
-  },
   "share_404": {
     "title": "Não encontrado",
     "heading": "Não encontrado"

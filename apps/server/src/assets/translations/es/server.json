@@ -125,47 +125,6 @@
     "password-confirmation": "Confirmación de contraseña",
     "button": "Establecer contraseña"
   },
-  "setup": {
-    "heading": "Configuración de Trilium Notes",
-    "new-document": "Soy un usuario nuevo y quiero crear un nuevo documento de Trilium para mis notas",
-    "sync-from-desktop": "Ya tengo una instancia de escritorio y quiero configurar la sincronización con ella",
-    "sync-from-server": "Ya tengo una instancia de servidor y quiero configurar la sincronización con ella",
-    "next": "Siguiente",
-    "init-in-progress": "Inicialización del documento en curso",
-    "redirecting": "En breve será redirigido a la aplicación.",
-    "title": "Configuración"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sincronizar desde el escritorio",
-    "description": "Esta configuración debe iniciarse desde la instancia de escritorio:",
-    "step1": "Abra su instancia de escritorio de Trilium Notes.",
-    "step2": "En el menú Trilium, dé clic en Opciones.",
-    "step3": "Dé clic en la categoría Sincronizar.",
-    "step4": "Cambie la dirección de la instancia del servidor a: {{- host}} y dé clic en Guardar.",
-    "step5": "Dé clic en el botón \"Probar sincronización\" para verificar que la conexión fue exitosa.",
-    "step6": "Una vez que haya completado estos pasos, dé clic en {{- link}}.",
-    "step6-here": "aquí"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sincronización desde el servidor",
-    "instructions": "Por favor, ingrese la dirección y las credenciales del servidor Trilium a continuación. Esto descargará todo el documento de Trilium desde el servidor y configurará la sincronización. Dependiendo del tamaño del documento y de la velocidad de su conexión, esto puede tardar un poco.",
-    "server-host": "Dirección del servidor Trilium",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server": "Servidor proxy (opcional)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Nota:",
-    "proxy-instruction": "Si deja la configuración de proxy en blanco, se utilizará el proxy del sistema (aplica únicamente a la aplicación de escritorio)",
-    "password": "Contraseña",
-    "password-placeholder": "Contraseña",
-    "back": "Atrás",
-    "finish-setup": "Finalizar la configuración"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sincronización en progreso",
-    "successful": "La sincronización se ha configurado correctamente. La sincronización inicial tardará algún tiempo en finalizar. Una vez hecho esto, será redirigido a la página de inicio de sesión.",
-    "outstanding-items": "Elementos de sincronización destacados:",
-    "outstanding-items-default": "N/A"
-  },
   "share_404": {
     "title": "No encontrado",
     "heading": "No encontrado"

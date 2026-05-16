@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": [
+      "ES2022",
+      "dom",
+      "dom.iterable"
+    ],
+    "types": [
+      "vitest/globals",
+      "happy-dom"
+    ]
+  },
+  "include": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts"
+  ]
+}

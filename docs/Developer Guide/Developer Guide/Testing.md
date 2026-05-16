@@ -26,11 +26,13 @@ apps/
 │   └── src/**/*.spec.ts       # Server tests
 ├── client/
 │   └── src/**/*.spec.ts       # Client tests
-└── server-e2e/
-│   └── tests/**/*.spec.ts     # E2E tests
+├── server/
+│   └── e2e/**/*.spec.ts       # Server-specific E2E tests
 └── desktop/
-    └── e2e
-        └── tests/**/*.spec.ts # E2E tests
+    └── e2e/**/*.spec.ts       # Desktop E2E tests
+packages/
+└── trilium-e2e/
+    └── src/**/*.spec.ts       # Shared E2E tests
 ```
 
 ## Running tests

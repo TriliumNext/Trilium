@@ -16,7 +16,7 @@ export interface AttachmentRow {
     isDeleted?: boolean;
     deleteId?: string;
     contentLength?: number;
-    content?: Buffer | string;
+    content?: Uint8Array | string;
     /** If set to `"base64"`, the `content` string will be decoded from base64 to binary before storage. */
     encoding?: "base64";
 }
@@ -75,7 +75,7 @@ export interface EtapiTokenRow {
 
 export interface BlobRow {
     blobId: string;
-    content: string | Buffer;
+    content: string | Uint8Array;
     contentLength: number;
     textRepresentation?: string | null;
     dateModified: string;
@@ -146,6 +146,6 @@ export interface NoteRow {
     dateModified?: string;
     utcDateCreated?: string;
     utcDateModified?: string;
-    content?: string | Buffer;
+    content?: string | Uint8Array;
 }
 

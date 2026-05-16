@@ -125,47 +125,6 @@
     "password-confirmation": "密码确认",
     "button": "设置密码"
   },
-  "setup": {
-    "heading": "TriliumNext笔记设置",
-    "new-document": "我是新用户，我想为我的笔记创建一个新的Trilium文档",
-    "sync-from-desktop": "我已经有一个桌面实例，我想设置与它的同步",
-    "sync-from-server": "我已经有一个服务器实例，我想设置与它的同步",
-    "next": "下一步",
-    "init-in-progress": "文档初始化进行中",
-    "redirecting": "您将很快被重定向到应用程序。",
-    "title": "设置"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "从桌面同步",
-    "description": "此设置需要从桌面实例开始：",
-    "step1": "打开您的TriliumNext笔记桌面实例。",
-    "step2": "从Trilium菜单中，点击“选项”。",
-    "step3": "点击“同步”类别。",
-    "step4": "将服务器实例地址更改为：{{- host}} 并点击保存。",
-    "step5": "点击“测试同步”按钮以验证连接是否成功。",
-    "step6": "完成这些步骤后，点击{{- link}}。",
-    "step6-here": "这里"
-  },
-  "setup_sync-from-server": {
-    "heading": "从服务器同步",
-    "instructions": "请在下面输入Trilium服务器地址和凭据。这将从服务器下载整个Trilium文档并设置与它的同步。根据文档大小和您的连接的速度，这可能需要一段时间。",
-    "server-host": "Trilium服务器地址",
-    "server-host-placeholder": "https://<主机名称>:<端口>",
-    "proxy-server": "代理服务器（可选）",
-    "proxy-server-placeholder": "https://<主机名称>:<端口>",
-    "note": "注意：",
-    "proxy-instruction": "如果您将代理设置留空，将使用系统代理（仅适用于桌面应用）",
-    "password": "密码",
-    "password-placeholder": "密码",
-    "back": "返回",
-    "finish-setup": "完成设置"
-  },
-  "setup_sync-in-progress": {
-    "heading": "同步中",
-    "successful": "同步已被正确设置。初始同步完成可能需要一些时间。完成后，您将被重定向到登录页面。",
-    "outstanding-items": "未完成的同步项目：",
-    "outstanding-items-default": "无"
-  },
   "share_404": {
     "title": "未找到",
     "heading": "未找到"

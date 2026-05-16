@@ -1061,6 +1061,74 @@ export function useNoteTreeDrag(containerRef: MutableRef<HTMLElement | null | un
     }, [ containerRef, callback ]);
 }
 
+/**
+ * Long-press + contextmenu handler bundle. `contextmenu` covers desktop right-click and
+ * Android Chrome long-press; explicit touch handlers cover iOS/WKWebView where
+ * `contextmenu` doesn't fire on long-press.
+ *
+ * Returns props to spread onto the target element: `onContextMenu`, `onTouchStart`,
+ * `onTouchMove`, `onTouchEnd`, `onTouchCancel`. When a long-press fires, the
+ * follow-up synthesized click is suppressed via `preventDefault` on `touchend`.
+ */
+export function useLongPressContextMenu(handler: (e: MouseEvent) => void, holdMs = 400) {
+    const timerRef = useRef<number | null>(null);
+    const firedRef = useRef(false);
+
+    const clear = useCallback(() => {
+        if (timerRef.current !== null) {
+            window.clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+    }, []);
+
+    useEffect(() => clear, [clear]);
+
+    const onTouchStart = useCallback(
+        (e: TouchEvent) => {
+            firedRef.current = false;
+            clear();
+            const touch = e.touches[0];
+            if (!touch) return;
+            const pageX = touch.pageX;
+            const pageY = touch.pageY;
+            const target = e.target;
+            timerRef.current = window.setTimeout(() => {
+                firedRef.current = true;
+                handler({
+                    pageX,
+                    pageY,
+                    target,
+                    preventDefault: () => {},
+                    stopPropagation: () => {}
+                } as unknown as MouseEvent);
+            }, holdMs);
+        },
+        [handler, holdMs, clear]
+    );
+
+    const onTouchMove = useCallback(() => clear(), [clear]);
+
+    const onTouchEnd = useCallback(
+        (e: TouchEvent) => {
+            clear();
+            if (firedRef.current) {
+                // Suppress the synthesized click that would otherwise follow touchend.
+                e.preventDefault();
+                firedRef.current = false;
+            }
+        },
+        [clear]
+    );
+
+    return {
+        onContextMenu: handler,
+        onTouchStart,
+        onTouchMove,
+        onTouchEnd,
+        onTouchCancel: clear
+    };
+}
+
 export function useResizeObserver(ref: RefObject<HTMLElement>, callback: () => void) {
     const resizeObserver = useRef<ResizeObserver>(null);
     useEffect(() => {

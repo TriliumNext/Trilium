@@ -1,21 +1,26 @@
 import "./Markdown.css";
 
+import { autocompletion } from "@codemirror/autocomplete";
+import { syntaxTree } from "@codemirror/language";
+import type { SyntaxNode } from "@lezer/common";
 import VanillaCodeMirror from "@triliumnext/codemirror";
 import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
 import { Marked, type Tokens } from "marked";
 import { createContext } from "preact";
-import { useCallback, useContext, useEffect, useMemo, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
+import { t } from "../../../services/i18n";
 import keyboard_actions from "../../../services/keyboard_actions";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
 import server from "../../../services/server";
 import { removeIndividualBinding } from "../../../services/shortcuts";
+import toast from "../../../services/toast";
 import tree from "../../../services/tree";
 import utils, { isDesktop } from "../../../services/utils";
 import { useLegacyImperativeHandlers, useTriliumEvent } from "../../react/hooks";
@@ -250,6 +255,31 @@ function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTMLDivElem
     }, [ view, preview, html ]);
 }
 
+/**
+ * Uploads the image as a note attachment and inserts a markdown image reference at `pos` (or the cursor).
+ * Mirrors CKEditor's image upload adapter: on failure, surfaces the server's error message as a
+ * toast, falling back to a generic "Cannot upload" message for network errors.
+ */
+async function uploadImageAndInsert(view: VanillaCodeMirror, note: FNote, file: File, pos?: number) {
+    let detail: string | undefined;
+    try {
+        const result = await server.upload(
+            `notes/${note.noteId}/attachments/upload`,
+            file, undefined, "POST"
+        ) as { uploaded?: boolean; url?: string; message?: string };
+        if (result?.uploaded && result.url) {
+            insertText(view, `![${file.name}](${result.url})`, pos);
+            return;
+        }
+        detail = result?.message;
+    } catch (e) {
+        detail = e instanceof Error ? e.message : undefined;
+    }
+
+    const base = t("markdown_editor.image_upload_failed", { name: file.name });
+    toast.showError(detail ? `${base} ${detail}` : base);
+}
+
 /** Inserts text at the given position (or cursor) and moves the cursor to the end of the inserted text. */
 function insertText(view: VanillaCodeMirror, text: string, pos?: number) {
     const from = pos ?? view.state.selection.main.head;
@@ -458,139 +488,136 @@ function useMarkdownKeymap(editorView: VanillaCodeMirror | null) {
  * Typing `/` at the start of a line (or after whitespace) shows a menu of commands.
  */
 function useSlashCommands(parentComponent: TypeWidgetProps["parentComponent"], editorView: VanillaCodeMirror | null, note: FNote) {
+    // Held in refs so the slash-command closures always read the current note
+    // and parent component without re-registering the autocomplete extension —
+    // `appendConfig` would otherwise stack a duplicate extension on each switch.
+    const noteRef = useRef(note);
+    const parentRef = useRef(parentComponent);
+    useEffect(() => { noteRef.current = note; }, [note]);
+    useEffect(() => { parentRef.current = parentComponent; }, [parentComponent]);
+
     useEffect(() => {
         if (!editorView) return;
 
-        import("@codemirror/autocomplete").then(({ autocompletion }) => {
-            const ext = autocompletion({
-                override: [(ctx) => {
-                    const match = ctx.matchBefore(/(?:^|(?<=\s))\/\w*/);
-                    if (!match) return null;
+        const ext = autocompletion({
+            override: [(ctx) => {
+                const match = ctx.matchBefore(/(?:^|(?<=\s))\/\w*/);
+                if (!match) return null;
 
-                    // Suppress inside fenced code blocks (``` ... ```).
-                    const textBefore = ctx.state.sliceDoc(0, match.from);
-                    const fenceCount = (textBefore.match(/^(`{3,}|~{3,})/gm) ?? []).length;
-                    if (fenceCount % 2 !== 0) return null;
+                // Suppress slash menu inside fenced/indented code blocks and inline code spans —
+                // a leading `/` there is part of the code, not a command trigger.
+                for (let node: SyntaxNode | null = syntaxTree(ctx.state).resolveInner(ctx.pos, -1); node; node = node.parent) {
+                    if (node.name.includes("Code")) return null;
+                }
 
-                    return {
-                        from: match.from,
-                        options: [
-                            {
-                                label: "/date",
-                                detail: "Insert current date and time",
-                                apply(view, _completion, from, to) {
-                                    view.dispatch({ changes: { from, to } });
-                                    parentComponent?.triggerCommand("insertDateTimeToText");
+                return {
+                    from: match.from,
+                    options: [
+                        {
+                            label: "/date",
+                            detail: t("markdown_slash_commands.date"),
+                            apply(view, _completion, from, to) {
+                                view.dispatch({ changes: { from, to } });
+                                parentRef.current?.triggerCommand("insertDateTimeToText");
+                            }
+                        },
+                        {
+                            label: "/include",
+                            detail: t("markdown_slash_commands.include"),
+                            apply(view, _completion, from, to) {
+                                view.dispatch({ changes: { from, to } });
+                                parentRef.current?.triggerCommand("addIncludeNoteToText");
+                            }
+                        },
+                        {
+                            label: "/image",
+                            detail: t("markdown_slash_commands.image"),
+                            apply(view, _completion, from, to) {
+                                view.dispatch({ changes: { from, to } });
+                                const input = document.createElement("input");
+                                input.type = "file";
+                                input.accept = "image/*";
+                                input.addEventListener("change", () => {
+                                    const file = input.files?.[0];
+                                    if (file) uploadImageAndInsert(editorView, noteRef.current, file);
+                                });
+                                input.click();
+                            }
+                        },
+                        {
+                            label: "/link",
+                            detail: t("markdown_slash_commands.link"),
+                            apply(view, _completion, from, to) {
+                                view.dispatch({ changes: { from, to } });
+                                parentRef.current?.triggerCommand("addLinkToText");
+                            }
+                        },
+                        {
+                            label: "/math",
+                            detail: t("markdown_slash_commands.math"),
+                            apply(view, _completion, from, to) {
+                                const placeholder = "\\text{equation}";
+                                const template = `$$\n${placeholder}\n$$`;
+                                view.dispatch({
+                                    changes: { from, to, insert: template },
+                                    selection: { anchor: from + 3, head: from + 3 + placeholder.length }
+                                });
+                            }
+                        },
+                        {
+                            label: "/footnote",
+                            detail: t("markdown_slash_commands.footnote"),
+                            apply(view, _completion, from, to) {
+                                const doc = view.state.doc.toString();
+                                let maxFootnote = 0;
+                                for (const m of doc.matchAll(/\[\^(\d+)\]/g)) {
+                                    maxFootnote = Math.max(maxFootnote, parseInt(m[1], 10));
                                 }
-                            },
-                            {
-                                label: "/include",
-                                detail: "Include another note",
-                                apply(view, _completion, from, to) {
-                                    view.dispatch({ changes: { from, to } });
-                                    parentComponent?.triggerCommand("addIncludeNoteToText");
-                                }
-                            },
-                            {
-                                label: "/link",
-                                detail: "Insert a note link",
-                                apply(view, _completion, from, to) {
-                                    view.dispatch({ changes: { from, to } });
-                                    parentComponent?.triggerCommand("addLinkToText");
-                                }
-                            },
-                            {
-                                label: "/math",
-                                detail: "Insert a math equation block",
-                                apply(view, _completion, from, to) {
-                                    const placeholder = "\\text{equation}";
-                                    const template = `$$\n${placeholder}\n$$`;
-                                    view.dispatch({
-                                        changes: { from, to, insert: template },
-                                        selection: { anchor: from + 3, head: from + 3 + placeholder.length }
-                                    });
-                                }
-                            },
-                            {
-                                label: "/footnote",
-                                detail: "Insert a footnote",
-                                apply(view, _completion, from, to) {
-                                    const doc = view.state.doc.toString();
-                                    let maxFootnote = 0;
-                                    for (const m of doc.matchAll(/\[\^(\d+)\]/g)) {
-                                        maxFootnote = Math.max(maxFootnote, parseInt(m[1], 10));
-                                    }
-                                    const n = maxFootnote + 1;
-                                    const ref = `[^${n}]`;
-                                    const def = `\n\n[^${n}]: `;
-                                    const docEnd = view.state.doc.length;
-                                    const newDocEnd = docEnd - (to - from) + ref.length + def.length;
-                                    view.dispatch({
-                                        changes: [
-                                            { from, to, insert: ref },
-                                            { from: docEnd, insert: def }
-                                        ],
-                                        selection: { anchor: newDocEnd }
-                                    });
-                                }
-                            },
-                            {
-                                label: "/mermaid",
-                                detail: "Insert a Mermaid diagram",
-                                apply(view, _completion, from, to) {
-                                    const placeholder = "graph TD\n    A --> B";
-                                    const template = `\`\`\`mermaid\n${placeholder}\n\`\`\``;
-                                    view.dispatch({
-                                        changes: { from, to, insert: template },
-                                        selection: { anchor: from + 11, head: from + 11 + placeholder.length }
-                                    });
-                                }
-                            },
-                            {
-                                label: "/image",
-                                detail: "Upload an image attachment",
-                                apply(view, _completion, from, to) {
-                                    view.dispatch({ changes: { from, to } });
-
-                                    const input = document.createElement("input");
-                                    input.type = "file";
-                                    input.accept = "image/*";
-                                    input.onchange = async () => {
-                                        const file = input.files?.[0];
-                                        if (!file) return;
-
-                                        const result = await server.upload(
-                                            `notes/${note.noteId}/attachments/upload`,
-                                            file, undefined, "POST"
-                                        ) as { uploaded: boolean; url?: string };
-                                        if (!result?.uploaded || !result.url) return;
-
-                                        insertText(editorView, `![${file.name}](${result.url})`);
-                                        editorView.focus();
-                                    };
-                                    input.click();
-                                }
-                            },
-                            ...["note", "tip", "important", "caution", "warning"].map((admonitionType) => ({
-                                label: `/${admonitionType}`,
-                                detail: `Insert ${admonitionType} admonition`,
-                                apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
-                                    const template = `> [!${admonitionType.toUpperCase()}]\n> `;
-                                    view.dispatch({
-                                        changes: { from, to, insert: template },
-                                        selection: { anchor: from + template.length }
-                                    });
-                                }
-                            }))
-                        ]
-                    };
-                }],
-                activateOnTyping: true
-            });
-
-            editorView.setNamedExtension("slashCommands", ext);
+                                const n = maxFootnote + 1;
+                                const ref = `[^${n}]`;
+                                const def = `\n\n[^${n}]: `;
+                                const docEnd = view.state.doc.length;
+                                const newDocEnd = docEnd - (to - from) + ref.length + def.length;
+                                view.dispatch({
+                                    changes: [
+                                        { from, to, insert: ref },
+                                        { from: docEnd, insert: def }
+                                    ],
+                                    selection: { anchor: newDocEnd }
+                                });
+                            }
+                        },
+                        {
+                            label: "/mermaid",
+                            detail: t("markdown_slash_commands.mermaid"),
+                            apply(view, _completion, from, to) {
+                                const placeholder = "graph TD\n    A --> B";
+                                const template = `\`\`\`mermaid\n${placeholder}\n\`\`\``;
+                                view.dispatch({
+                                    changes: { from, to, insert: template },
+                                    selection: { anchor: from + 11, head: from + 11 + placeholder.length }
+                                });
+                            }
+                        },
+                        ...["note", "tip", "important", "caution", "warning"].map((admonitionType) => ({
+                            label: `/${admonitionType}`,
+                            detail: t("markdown_slash_commands.admonition", { type: admonitionType }),
+                            apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
+                                const template = `> [!${admonitionType.toUpperCase()}]\n> `;
+                                view.dispatch({
+                                    changes: { from, to, insert: template },
+                                    selection: { anchor: from + template.length }
+                                });
+                            }
+                        }))
+                    ]
+                };
+            }],
+            activateOnTyping: true
         });
-    }, [editorView, parentComponent, note.noteId]);
+
+        editorView.setNamedExtension("slashCommands", ext);
+    }, [editorView]);
 }
 //#endregion
 
@@ -605,16 +632,6 @@ function useImageDrop(note: FNote, editorView: VanillaCodeMirror | null) {
 
         const dom = editorView.dom;
 
-        async function uploadAndInsert(file: File, pos?: number) {
-            const result = await server.upload(
-                `notes/${note.noteId}/attachments/upload`,
-                file, undefined, "POST"
-            ) as { uploaded: boolean; url?: string };
-            if (!result?.uploaded || !result.url || !editorView) return;
-
-            insertText(editorView, `![${file.name}](${result.url})`, pos);
-        }
-
         function handleDrop(e: DragEvent) {
             const files = e.dataTransfer?.files;
             if (!files?.length) return;
@@ -627,7 +644,7 @@ function useImageDrop(note: FNote, editorView: VanillaCodeMirror | null) {
 
             const dropPos = editorView.posAtCoords({ x: e.clientX, y: e.clientY }) ?? undefined;
             for (const file of imageFiles) {
-                uploadAndInsert(file, dropPos);
+                uploadImageAndInsert(editorView!, note, file, dropPos);
             }
         }
 
@@ -661,7 +678,7 @@ function useImageDrop(note: FNote, editorView: VanillaCodeMirror | null) {
 
             e.preventDefault();
             for (const file of imageFiles) {
-                uploadAndInsert(file);
+                uploadImageAndInsert(editorView!, note, file);
             }
         }
 
@@ -680,7 +697,7 @@ function useImageDrop(note: FNote, editorView: VanillaCodeMirror | null) {
             dom.removeEventListener("paste", handlePaste);
             dom.removeEventListener("dragover", handleDragOver);
         };
-    }, [editorView, note.noteId]);
+    }, [editorView, note]);
 }
 //#endregion
 

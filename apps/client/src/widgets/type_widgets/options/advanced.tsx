@@ -1,7 +1,7 @@
 import { AnonymizedDbResponse, DatabaseAnonymizeResponse, DatabaseCheckIntegrityResponse } from "@triliumnext/commons";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
-import { type ExperimentalFeatureId,experimentalFeatures } from "../../../services/experimental_features";
+import { getAvailableExperimentalFeatures, type ExperimentalFeatureId } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
@@ -162,7 +162,7 @@ function ExistingAnonymizedDatabases({ databases }: { databases: AnonymizedDbRes
 
 function ExperimentalOptions() {
     const [enabledFeatures, setEnabledFeatures] = useTriliumOptionJson<ExperimentalFeatureId[]>("experimentalFeatures", true);
-    const filteredFeatures = useMemo(() => experimentalFeatures.filter(e => e.id !== "new-layout"), []);
+    const filteredFeatures = useMemo(() => getAvailableExperimentalFeatures().filter(e => e.id !== "new-layout"), []);
 
     const toggleFeature = useCallback((featureId: ExperimentalFeatureId, enabled: boolean) => {
         if (enabled) {

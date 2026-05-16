@@ -1,11 +1,11 @@
+import appContext from "../components/app_context.js";
+import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
+import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
+import FBlob, { type FBlobRow } from "../entities/fblob.js";
 import FBranch, { type FBranchRow } from "../entities/fbranch.js";
 import FNote, { type FNoteRow } from "../entities/fnote.js";
-import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
-import server from "./server.js";
-import appContext from "../components/app_context.js";
-import FBlob, { type FBlobRow } from "../entities/fblob.js";
-import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
 import type { Froca } from "./froca-interface.js";
+import server from "./server.js";
 
 interface SubtreeResponse {
     notes: FNoteRow[];
@@ -44,8 +44,9 @@ class FrocaImpl implements Froca {
     }
 
     async loadInitialTree() {
-        const resp = await server.get<SubtreeResponse>("tree");
+        if (!glob.dbInitialized) return;
 
+        const resp = await server.get<SubtreeResponse>("tree");
         // clear the cache only directly before adding new content which is important for e.g., switching to protected session
         this.#clear();
         this.addResp(resp);
@@ -77,7 +78,7 @@ class FrocaImpl implements Froca {
         for (const noteRow of noteRows) {
             const { noteId } = noteRow;
 
-            let note = this.notes[noteId];
+            const note = this.notes[noteId];
 
             if (note) {
                 note.update(noteRow);
@@ -240,9 +241,8 @@ class FrocaImpl implements Froca {
                     console.trace(`Can't find note '${noteId}'`);
 
                     return null;
-                } else {
-                    return this.notes[noteId];
                 }
+                return this.notes[noteId];
             })
             .filter((note) => !!note) as FNote[];
     }
@@ -263,9 +263,8 @@ class FrocaImpl implements Froca {
                     console.trace(`Can't find note '${noteId}'`);
 
                     return null;
-                } else {
-                    return this.notes[noteId];
                 }
+                return this.notes[noteId];
             })
             .filter((note) => !!note) as FNote[];
     }
@@ -338,11 +337,10 @@ class FrocaImpl implements Froca {
             attachmentRows = await server.getWithSilentNotFound<FAttachmentRow[]>(`attachments/${attachmentId}/all`);
         } catch (e: any) {
             if (silentNotFoundError) {
-                logInfo(`Attachment '${attachmentId}' not found, but silentNotFoundError is enabled: ` + e.message);
+                logInfo(`Attachment '${attachmentId}' not found, but silentNotFoundError is enabled: ${e.message}`);
                 return null;
-            } else {
-                throw e;
             }
+            throw e;
         }
 
         const attachments = this.processAttachmentRows(attachmentRows);

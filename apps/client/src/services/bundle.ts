@@ -1,5 +1,7 @@
+import { ScriptParams } from "@triliumnext/commons";
 import { h, VNode } from "preact";
 
+import FNote from "../entities/fnote.js";
 import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import RightPanelWidget from "../widgets/right_panel_widget.js";
 import type { Entity } from "./frontend_script_api.js";
@@ -26,7 +28,7 @@ type WithNoteId<T> = T & {
 };
 export type Widget = WithNoteId<(LegacyWidget | WidgetDefinitionWithType)>;
 
-async function getAndExecuteBundle(noteId: string, originEntity: Entity | null = null, script: string | null = null, params: string | null = null) {
+async function getAndExecuteBundle(noteId: string, originEntity: FNote | null = null, script: string | null = null, params: ScriptParams | null = null) {
     const bundle = await server.post<Bundle>(`script/bundle/${noteId}`, {
         script,
         params

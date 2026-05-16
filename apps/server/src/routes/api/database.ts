@@ -1,12 +1,11 @@
 import { BackupDatabaseNowResponse, DatabaseCheckIntegrityResponse } from "@triliumnext/commons";
+import { becca_loader, getBackup, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from "express";
-import fs from "fs";
+import fs, { readFileSync } from "fs";
 import path from "path";
 
-import becca_loader from "../../becca/becca_loader.js";
-import ValidationError from "../../errors/validation_error.js";
+import { getIntegrationTestDbPath } from "../../core_assets.js";
 import anonymizationService from "../../services/anonymization.js";
-import backupService from "../../services/backup.js";
 import consistencyChecksService from "../../services/consistency_checks.js";
 import dataDir from "../../services/data_dir.js";
 import log from "../../services/log.js";
@@ -14,12 +13,12 @@ import sql from "../../services/sql.js";
 import sql_init from "../../services/sql_init.js";
 
 function getExistingBackups() {
-    return backupService.getExistingBackups();
+    return getBackup().getExistingBackups();
 }
 
 async function backupDatabase() {
     return {
-        backupFile: await backupService.backupNow("now")
+        backupFile: await getBackup().backupNow("now")
     } satisfies BackupDatabaseNowResponse;
 }
 
@@ -34,7 +33,13 @@ function findAndFixConsistencyIssues() {
 }
 
 async function rebuildIntegrationTestDatabase() {
-    sql.rebuildIntegrationTestDatabase();
+    // Reload the integration test database fixture into the in-memory SQL
+    // backend, then re-init schema-dependent state and the becca cache.
+    // Test-mode only — registered in routes.ts under the same env-var guard.
+    // getIntegrationTestDbPath() handles the bundled-vs-source path
+    // resolution; see core_assets.ts.
+    const fixtureBytes = readFileSync(getIntegrationTestDbPath());
+    sql.rebuildFromBuffer(fixtureBytes);
     sql_init.initializeDb();
     becca_loader.load();
 }

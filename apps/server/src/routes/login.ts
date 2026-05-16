@@ -1,18 +1,15 @@
-import crypto from "crypto";
-import utils from "../services/utils.js";
-import optionService from "../services/options.js";
-import myScryptService from "../services/encryption/my_scrypt.js";
-import log from "../services/log.js";
-import passwordService from "../services/encryption/password.js";
-import assetPath, { assetUrlFragment } from "../services/asset_path.js";
-import appPath from "../services/app_path.js";
-import ValidationError from "../errors/validation_error.js";
+import { ValidationError, password_encryption } from "@triliumnext/core";
+import { i18n } from "@triliumnext/core";
 import type { Request, Response } from 'express';
-import totp from '../services/totp.js';
-import recoveryCodeService from '../services/encryption/recovery_codes.js';
-import openID from '../services/open_id.js';
+
+import appPath from "../services/app_path.js";
+import assetPath, { assetUrlFragment } from "../services/asset_path.js";
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
-import { getCurrentLocale } from "../services/i18n.js";
+import passwordService from "../services/encryption/password.js";
+import recoveryCodeService from '../services/encryption/recovery_codes.js';
+import log from "../services/log.js";
+import openID from '../services/open_id.js';
+import totp from '../services/totp.js';
 
 function loginPage(req: Request, res: Response) {
     // Login page is triggered twice. Once here, and another time (see sendLoginError) if the password is failed.
@@ -23,10 +20,10 @@ function loginPage(req: Request, res: Response) {
         ssoEnabled: openID.isOpenIDEnabled(),
         ssoIssuerName: openID.getSSOIssuerName(),
         ssoIssuerIcon: openID.getSSOIssuerIcon(),
-        assetPath: assetPath,
+        assetPath,
         assetPathFragment: assetUrlFragment,
-        appPath: appPath,
-        currentLocale: getCurrentLocale()
+        appPath,
+        currentLocale: i18n.getCurrentLocale()
     });
 }
 
@@ -35,11 +32,11 @@ function setPasswordPage(req: Request, res: Response) {
         error: false,
         assetPath,
         appPath,
-        currentLocale: getCurrentLocale()
+        currentLocale: i18n.getCurrentLocale()
     });
 }
 
-function setPassword(req: Request, res: Response) {
+async function setPassword(req: Request, res: Response) {
     if (passwordService.isPasswordSet()) {
         throw new ValidationError("Password has been already set");
     }
@@ -61,12 +58,12 @@ function setPassword(req: Request, res: Response) {
             error,
             assetPath,
             appPath,
-            currentLocale: getCurrentLocale()
+            currentLocale: i18n.getCurrentLocale()
         });
         return;
     }
 
-    passwordService.setPassword(password1);
+    await passwordService.setPassword(password1);
 
     res.redirect("login");
 }
@@ -101,7 +98,7 @@ function setPassword(req: Request, res: Response) {
  *       '401':
  *         description: Password / TOTP mismatch
  */
-function login(req: Request, res: Response) {
+async function login(req: Request, res: Response) {
     if (openID.isOpenIDEnabled()) {
         res.oidc.login({
             returnTo: '/',
@@ -123,7 +120,7 @@ function login(req: Request, res: Response) {
         }
     }
 
-    if (!verifyPassword(submittedPassword)) {
+    if (!(await password_encryption.verifyPassword(submittedPassword))) {
         sendLoginError(req, res, 'password');
         return;
     }
@@ -156,18 +153,6 @@ function verifyTOTP(submittedTotpToken: string) {
     return recoveryCodeValidates;
 }
 
-function verifyPassword(submittedPassword: string) {
-    const hashed_password = utils.fromBase64(optionService.getOption("passwordVerificationHash"));
-
-    const guess_hashed = myScryptService.getVerificationHash(submittedPassword);
-
-    // Use constant-time comparison to prevent timing attacks
-    if (hashed_password.length !== guess_hashed.length) {
-        return false;
-    }
-    return crypto.timingSafeEqual(guess_hashed, hashed_password);
-}
-
 function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' = 'password') {
     // note that logged IP address is usually meaningless since the traffic should come from a reverse proxy
     if (totp.isTotpEnabled()) {
@@ -181,10 +166,10 @@ function sendLoginError(req: Request, res: Response, errorType: 'password' | 'to
         wrongTotp: errorType === 'totp',
         totpEnabled: totp.isTotpEnabled(),
         ssoEnabled: openID.isOpenIDEnabled(),
-        assetPath: assetPath,
+        assetPath,
         assetPathFragment: assetUrlFragment,
-        appPath: appPath,
-        currentLocale: getCurrentLocale()
+        appPath,
+        currentLocale: i18n.getCurrentLocale()
     });
 }
 

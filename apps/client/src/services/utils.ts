@@ -135,6 +135,8 @@ export function isElectron() {
     return !!(window && window.process && window.process.type);
 }
 
+export const isStandalone = window.glob.isStandalone;
+
 /**
  * Returns `true` if the client is running as a PWA, otherwise `false`.
  */
@@ -145,6 +147,14 @@ export function isPWA() {
         || window.navigator.standalone
         || window.navigator.windowControlsOverlay
     );
+}
+
+/**
+ * Returns `true` when running inside the native Capacitor mobile app wrapper.
+ * PWAs and regular browsers return `false`.
+ */
+export function isMobileApp() {
+    return !!window.Capacitor?.isNativePlatform?.();
 }
 
 export function isMac() {
@@ -776,7 +786,7 @@ function compareVersions(v1: string, v2: string): number {
 /**
  * Compares two semantic version strings and returns `true` if the latest version is greater than the current version.
  */
-function isUpdateAvailable(latestVersion: string | null | undefined, currentVersion: string): boolean {
+export function isUpdateAvailable(latestVersion: string | null | undefined, currentVersion: string): boolean {
     if (!latestVersion) {
         return false;
     }
@@ -861,6 +871,10 @@ export function getErrorMessage(e: unknown) {
     }
     return "Unknown error";
 
+}
+
+export function replaceHtmlEscapedSlashes(str: string) {
+    return str.replace(/&#x2F;/g, "/");
 }
 
 /**

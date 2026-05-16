@@ -79,6 +79,9 @@ export default class CodeMirror extends EditorView {
             searchHighlightCompartment.of([]),
             highlightActiveLine(),
             lineNumbers(),
+            themeCompartment.of([
+                syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+            ]),
             indentUnitCompartment.of([
                 indentUnit.of(buildIndentUnit(config.indentSize ?? 4, !!config.useTabs)),
                 EditorState.tabSize.of(config.indentSize ?? 4)
@@ -94,9 +97,6 @@ export default class CodeMirror extends EditorView {
         if (!config.preferPerformance) {
             extensions = [
                 ...extensions,
-                themeCompartment.of([
-                    syntaxHighlighting(defaultHighlightStyle, { fallback: true })
-                ]),
                 highlightSelectionMatches(),
                 bracketMatching(),
                 codeFolding(),

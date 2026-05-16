@@ -54,7 +54,23 @@ export default class BuildHelper {
                 "pdfjs-dist",
                 "./xhr-sync-worker.js",
                 "vite",
-                "tesseract.js"
+                "tesseract.js",
+                // Test fixtures referenced via require.resolve from
+                // integration-test-only code paths in apps/server. These
+                // paths are gated at runtime by TRILIUM_INTEGRATION_TEST and
+                // never reached in production, but esbuild can't see through
+                // the gate during static analysis. Marking them external
+                // suppresses the spurious "require.resolve not external"
+                // warning without affecting the bundle behavior.
+                "@triliumnext/core/src/test/*",
+                // schema.sql is read via core_assets.ts, which prefers a
+                // bundled copy at RESOURCE_DIR/schema.sql (placed there by
+                // apps/server/scripts/build.ts) and only falls back to
+                // require.resolve in dev/test mode. In bundled production
+                // the require.resolve branch is unreachable, but esbuild
+                // still sees the static string and warns. External marker
+                // suppresses the warning without changing runtime behavior.
+                "@triliumnext/core/src/assets/*"
             ],
             metafile: true,
             splitting: false,

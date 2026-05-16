@@ -13,7 +13,6 @@ import type FNote from "../entities/fnote.js";
 import contextMenu from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import branchService from "../services/branches.js";
-import clipboard from "../services/clipboard.js";
 import dialogService from "../services/dialog.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
@@ -24,8 +23,6 @@ import type LoadResults from "../services/load_results.js";
 import type { AttributeRow, BranchRow } from "../services/load_results.js";
 import noteCreateService from "../services/note_create.js";
 import options from "../services/options.js";
-import protectedSessionService from "../services/protected_session.js";
-import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
 import shortcutService from "../services/shortcuts.js";
 import toastService from "../services/toast.js";
@@ -1594,7 +1591,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 hotKeyMap[shortcutService.normalizeShortcut(shortcut)] = (node) => {
                     const notePath = treeService.getNotePath(node);
 
-                    this.triggerCommand(action.actionName, { node, notePath });
+                    this.triggerCommand(action.actionName, {
+                        node,
+                        notePath,
+                        noteId: node.data.noteId,
+                        selectedOrActiveBranchIds: this.getSelectedOrActiveBranchIds(node),
+                        selectedOrActiveNoteIds: this.getSelectedOrActiveNoteIds(node)
+                    });
 
                     return false;
                 };
@@ -1614,32 +1617,6 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const nodes = this.getSelectedOrActiveNodes(node);
 
         return nodes.map((node) => node.data.noteId);
-    }
-
-    async deleteNotesCommand({ node }: CommandListenerData<"deleteNotes">) {
-        const branchIds = this.getSelectedOrActiveBranchIds(node).filter((branchId) => !branchId.startsWith("virt-")); // search results can't be deleted
-
-        if (!branchIds.length) {
-            return;
-        }
-
-        await branchService.deleteNotes(branchIds);
-
-        this.clearSelectedNodes();
-    }
-
-    async editBranchPrefixCommand({ node }: CommandListenerData<"editBranchPrefix">) {
-        const branchIds = this.getSelectedOrActiveBranchIds(node).filter((branchId) => !branchId.startsWith("virt-"));
-
-        if (!branchIds.length) {
-            return;
-        }
-
-        // Trigger the event with the selected branch IDs
-        appContext.triggerEvent("editBranchPrefix", {
-            selectedOrActiveBranchIds: branchIds,
-            node
-        });
     }
 
     canBeMovedUpOrDown(node: Fancytree.FancytreeNode) {
@@ -1666,7 +1643,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     }
 
     async moveNoteDownCommand({ node }: CommandListenerData<"moveNoteDown">) {
-        if (!this.canBeMovedUpOrDown(node)) {
+        if (!node || !this.canBeMovedUpOrDown(node)) {
             return;
         }
 
@@ -1679,10 +1656,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     }
 
     moveNoteUpInHierarchyCommand({ node }: CommandListenerData<"moveNoteUpInHierarchy">) {
+        if (!node) return;
         branchService.moveNodeUpInHierarchy(node);
     }
 
     moveNoteDownInHierarchyCommand({ node }: CommandListenerData<"moveNoteDownInHierarchy">) {
+        if (!node) return;
         const toNode = node.getPrevSibling();
 
         if (toNode !== null) {
@@ -1746,70 +1725,15 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         this.collapseTree(node);
     }
 
-    async recentChangesInSubtreeCommand({ node }: CommandListenerData<"recentChangesInSubtree">) {
-        this.triggerCommand("showRecentChanges", { ancestorNoteId: node.data.noteId });
-    }
-
     selectAllNotesInParentCommand({ node }: CommandListenerData<"selectAllNotesInParent">) {
+        if (!node) return;
         for (const child of node.getParent().getChildren()) {
             child.setSelected(true);
         }
     }
 
-    copyNotesToClipboardCommand({ node }: CommandListenerData<"copyNotesToClipboard">) {
-        clipboard.copy(this.getSelectedOrActiveBranchIds(node));
-    }
-
-    cutNotesToClipboardCommand({ node }: CommandListenerData<"cutNotesToClipboard">) {
-        clipboard.cut(this.getSelectedOrActiveBranchIds(node));
-    }
-
-    pasteNotesFromClipboardCommand({ node }: CommandListenerData<"pasteNotesFromClipboard">) {
-        clipboard.pasteInto(node.data.branchId);
-    }
-
-    pasteNotesAfterFromClipboardCommand({ node }: CommandListenerData<"pasteNotesAfterFromClipboard">) {
-        clipboard.pasteAfter(node.data.branchId);
-    }
-
-    async exportNoteCommand({ node }: CommandListenerData<"exportNote">) {
-        const notePath = treeService.getNotePath(node);
-
-        this.triggerCommand("showExportDialog", { notePath, defaultType: "subtree" });
-    }
-
-    async importIntoNoteCommand({ node }: CommandListenerData<"importIntoNote">) {
-        this.triggerCommand("showImportDialog", { noteId: node.data.noteId });
-    }
-
     editNoteTitleCommand() {
         appContext.triggerCommand("focusOnTitle");
-    }
-
-    protectSubtreeCommand({ node }: CommandListenerData<"protectSubtree">) {
-        protectedSessionService.protectNote(node.data.noteId, true, true);
-    }
-
-    unprotectSubtreeCommand({ node }: CommandListenerData<"unprotectSubtree">) {
-        protectedSessionService.protectNote(node.data.noteId, false, true);
-    }
-
-    duplicateSubtreeCommand({ node }: CommandListenerData<"duplicateSubtree">) {
-        const nodesToDuplicate = this.getSelectedOrActiveNodes(node);
-
-        for (const nodeToDuplicate of nodesToDuplicate) {
-            const note = froca.getNoteFromCache(nodeToDuplicate.data.noteId);
-
-            if (note?.isProtected && !protectedSessionHolder.isProtectedSessionAvailable()) {
-                continue;
-            }
-
-            const branch = froca.getBranch(nodeToDuplicate.data.branchId);
-
-            if (branch?.parentNoteId) {
-                noteCreateService.duplicateSubtree(nodeToDuplicate.data.noteId, branch.parentNoteId);
-            }
-        }
     }
 
     moveLauncherToVisibleCommand({ selectedOrActiveBranchIds }: CommandListenerData<"moveLauncherToVisible">) {
@@ -1833,18 +1757,22 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     }
 
     addNoteLauncherCommand({ node }: CommandListenerData<"addNoteLauncher">) {
+        if (!node) return;
         this.createLauncherNote(node, "note");
     }
 
     addScriptLauncherCommand({ node }: CommandListenerData<"addScriptLauncher">) {
+        if (!node) return;
         this.createLauncherNote(node, "script");
     }
 
     addWidgetLauncherCommand({ node }: CommandListenerData<"addWidgetLauncher">) {
+        if (!node) return;
         this.createLauncherNote(node, "customWidget");
     }
 
     addSpacerLauncherCommand({ node }: CommandListenerData<"addSpacerLauncher">) {
+        if (!node) return;
         this.createLauncherNote(node, "spacer");
     }
 

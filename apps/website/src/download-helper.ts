@@ -81,6 +81,9 @@ export function getDownloadMatrix(t: TFunction<"translation", undefined>): Downl
                         recommended: true,
                         name: t("download_helper_desktop_linux.download_rpm")
                     },
+                    AppImage: {
+                        name: t("download_helper_desktop_linux.download_appimage")
+                    },
                     flatpak: {
                         name: t("download_helper_desktop_linux.download_flatpak")
                     },

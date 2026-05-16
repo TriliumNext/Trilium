@@ -27,6 +27,9 @@
     },
     {
       "path": "../../packages/commons/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/trilium-core/tsconfig.lib.json"
     }
   ]
 }

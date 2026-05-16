@@ -1,0 +1,20 @@
+.component.standalone-badge {
+    contain: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    margin-inline: 4px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: default;
+    background-color: color-mix(in srgb, var(--color-warning, #e6a700) 15%, transparent);
+    color: var(--color-warning, #e6a700);
+    border: 1px solid color-mix(in srgb, var(--color-warning, #e6a700) 30%, transparent);
+
+    .bx {
+        font-size: 1.1em;
+    }
+}

@@ -1,11 +1,11 @@
-import log from "../services/log.js";
-import fileService from "./api/files.js";
-import scriptService from "../services/script.js";
-import cls from "../services/cls.js";
-import sql from "../services/sql.js";
-import becca from "../becca/becca.js";
+import { routeHelpers, scriptService, utils } from "@triliumnext/core";
 import type { Request, Response, Router } from "express";
-import { safeExtractMessageAndStackFromError, normalizeCustomHandlerPattern } from "../services/utils.js";
+
+import becca from "../becca/becca.js";
+import { namespace } from "../cls_provider.js";
+import cls from "../services/cls.js";
+import log from "../services/log.js";
+import sql from "../services/sql.js";
 
 function handleRequest(req: Request, res: Response) {
 
@@ -27,7 +27,7 @@ function handleRequest(req: Request, res: Response) {
     // splitPath.map(segment => encodeURIComponent(segment)).join("/")
     // might be safer
 
-    const path = splitPath.join("/")
+    const path = splitPath.join("/");
 
     const attributeIds = sql.getColumn<string>("SELECT attributeId FROM attributes WHERE isDeleted = 0 AND type = 'label' AND name IN ('customRequestHandler', 'customResourceProvider')");
 
@@ -39,7 +39,7 @@ function handleRequest(req: Request, res: Response) {
         }
 
         // Get normalized patterns to handle both trailing slash cases
-        const patterns = normalizeCustomHandlerPattern(attr.value);
+        const patterns = utils.normalizeCustomHandlerPattern(attr.value);
         let match: RegExpMatchArray | null = null;
 
         try {
@@ -52,7 +52,7 @@ function handleRequest(req: Request, res: Response) {
                 }
             }
         } catch (e: unknown) {
-            const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
+            const [errMessage, errStack] = utils.safeExtractMessageAndStackFromError(e);
             log.error(`Testing path for label '${attr.attributeId}', regex '${attr.value}' failed with error: ${errMessage}, stack: ${errStack}`);
             continue;
         }
@@ -73,12 +73,12 @@ function handleRequest(req: Request, res: Response) {
                     res
                 });
             } catch (e: unknown) {
-                const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
+                const [errMessage, errStack] = utils.safeExtractMessageAndStackFromError(e);
                 log.error(`Custom handler '${note.noteId}' failed with: ${errMessage}, ${errStack}`);
                 res.setHeader("Content-Type", "text/plain").status(500).send(errMessage);
             }
         } else if (attr.name === "customResourceProvider") {
-            fileService.downloadNoteInt(attr.noteId, res);
+            routeHelpers.downloadNoteInt(attr.noteId, res);
         } else {
             throw new Error(`Unrecognized attribute name '${attr.name}'`);
         }
@@ -96,8 +96,8 @@ function register(router: Router) {
     // explicitly no CSRF middleware since it's meant to allow integration from external services
 
     router.all("/custom/*path", (req: Request, res: Response, _next) => {
-        cls.namespace.bindEmitter(req);
-        cls.namespace.bindEmitter(res);
+        namespace.bindEmitter(req);
+        namespace.bindEmitter(res);
 
         cls.init(() => handleRequest(req, res));
     });

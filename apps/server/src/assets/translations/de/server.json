@@ -124,47 +124,6 @@
     "password-confirmation": "Passwortbestätigung",
     "button": "Passwort festlegen"
   },
-  "setup": {
-    "heading": "Trilium Notes Setup",
-    "new-document": "Ich bin ein neuer Benutzer und möchte ein neues Trilium-Dokument für meine Notizen erstellen",
-    "sync-from-desktop": "Ich habe bereits eine Desktop-Instanz und möchte die Synchronisierung damit einrichten",
-    "sync-from-server": "Ich habe bereits eine Server-Instanz und möchte die Synchronisierung damit einrichten",
-    "next": "Weiter",
-    "init-in-progress": "Dokumenteninitialisierung läuft",
-    "redirecting": "Du wirst in Kürze zur Anwendung weitergeleitet.",
-    "title": "Setup"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Synchronisation vom Desktop",
-    "description": "Dieses Setup muss von der Desktop-Instanz aus initiiert werden:",
-    "step1": "Öffne deine Trilium Notes Desktop-Instanz.",
-    "step2": "Klicke im Trilium-Menü auf Optionen.",
-    "step3": "Klicke auf die Kategorie Synchronisation.",
-    "step4": "Ändere die Server-Instanzadresse auf: {{- host}} und klicke auf Speichern.",
-    "step5": "Klicke auf den Button \"Test-Synchronisation\", um zu überprüfen, ob die Verbindung erfolgreich ist.",
-    "step6": "Sobald du diese Schritte abgeschlossen hast, klicke auf {{- link}}.",
-    "step6-here": "hier"
-  },
-  "setup_sync-from-server": {
-    "heading": "Synchronisation vom Server",
-    "instructions": "Bitte gib unten die Trilium-Server-Adresse und die Zugangsdaten ein. Dies wird das gesamte Trilium-Dokument vom Server herunterladen und die Synchronisation einrichten. Je nach Dokumentgröße und Verbindungsgeschwindigkeit kann dies eine Weile dauern.",
-    "server-host": "Trilium Server-Adresse",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server": "Proxy-Server (optional)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Hinweis:",
-    "proxy-instruction": "Wenn du die Proxy-Einstellung leer lässt, wird der System-Proxy verwendet (gilt nur für die Desktop-Anwendung)",
-    "password": "Passwort",
-    "password-placeholder": "Passwort",
-    "back": "Zurück",
-    "finish-setup": "Setup abschließen"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Synchronisation läuft",
-    "successful": "Die Synchronisation wurde erfolgreich eingerichtet. Es wird eine Weile dauern, bis die erste Synchronisation abgeschlossen ist. Sobald dies erledigt ist, wirst du zur Anmeldeseite weitergeleitet.",
-    "outstanding-items": "Ausstehende Synchronisationselemente:",
-    "outstanding-items-default": "N/A"
-  },
   "share_404": {
     "title": "Nicht gefunden",
     "heading": "Nicht gefunden"

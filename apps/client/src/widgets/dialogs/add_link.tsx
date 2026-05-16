@@ -14,6 +14,25 @@ import { useTriliumEvent } from "../react/hooks";
 
 type LinkType = "reference-link" | "external-link" | "hyper-link";
 
+function findAnchorIds(content: string): string[] {
+    const re = /<a\b([^>]*)>(<\/a>)?/g;
+    const ids: string[] = [];
+    let match;
+
+    while ((match = re.exec(content))) {
+        const attrs = match[1];
+        if (/\bhref\s*=/.test(attrs)) continue;
+
+        const idMatch = /\bid\s*=\s*"([^"]+)"/.exec(attrs) ?? /\bid\s*=\s*'([^']+)'/.exec(attrs);
+        if (!idMatch) continue;
+
+        const id = idMatch[1];
+        if (!ids.includes(id)) ids.push(id);
+    }
+
+    return ids;
+}
+
 export interface AddLinkOpts {
     text: string;
     hasSelection: boolean;
@@ -67,12 +86,25 @@ export default function AddLinkDialog() {
             const noteId = tree.getNoteIdFromUrl(suggestion.notePath);
             if (noteId) {
                 setDefaultLinkTitle(noteId);
-                froca.getNote(noteId).then((note) => {
-                    if (cancelled) return;
-                    const bkms = note?.getLabels("internalBookmark").map((l) => l.value) ?? [];
+                (async () => {
+                    const note = await froca.getNote(noteId);
+                    if (cancelled || !note) return;
+
+                    let bkms = note.getLabels("internalBookmark").map((l) => l.value);
+
+                    // Fall back to scanning the note content for anchors if no labels
+                    // are present (e.g. notes that predate the bookmark-label feature).
+                    if (bkms.length === 0 && note.type === "text") {
+                        const content = await note.getContent();
+                        if (cancelled) return;
+                        if (typeof content === "string") {
+                            bkms = findAnchorIds(content);
+                        }
+                    }
+
                     setBookmarks(bkms);
                     setSelectedBookmark("");
-                });
+                })();
             }
             resetExternalLink();
         }

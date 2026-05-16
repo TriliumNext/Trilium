@@ -232,16 +232,21 @@ async function createSetupWindow() {
     setupWindow = new BrowserWindow({
         width,
         height,
+        useContentSize: true,
         resizable: false,
+        autoHideMenuBar: true,
         title: "Trilium Notes Setup",
         icon: getIcon(),
+        // Background effects (Mica on Windows, vibrancy on macOS)
+        ...(isWindows && { backgroundMaterial: "mica" as const }),
+        ...(isMac && { transparent: true, visualEffectState: "active" as const, vibrancy: "under-window" as const, titleBarStyle: "hiddenInset" as const }),
         webPreferences: {
             // necessary for e.g. utils.isElectron()
-            nodeIntegration: true
+            nodeIntegration: true,
+            contextIsolation: false
         }
     });
-
-    setupWindow.setMenuBarVisibility(false);
+    setupWindow.removeMenu();
     setupWindow.loadURL(`http://127.0.0.1:${port}`);
     setupWindow.on("closed", () => (setupWindow = null));
 }

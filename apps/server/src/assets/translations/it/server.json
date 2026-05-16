@@ -335,47 +335,6 @@
     "password-confirmation": "Conferma della password",
     "button": "Imposta password"
   },
-  "setup": {
-    "heading": "Configurazione di Trilium Notes",
-    "new-document": "Sono un nuovo utente, e desidero creare un nuovo documento Trilium per le mie note",
-    "sync-from-desktop": "Ho già una istanza desktop, e desidero configurare la sincronizzazione con quest'ultima",
-    "sync-from-server": "Ho già una istanza server, e desidero configurare la sincronizzazione con quest'ultima",
-    "next": "Avanti",
-    "init-in-progress": "Inizializzazione del documento in corso",
-    "redirecting": "Sarai reindirizzato a breve all'applicazione.",
-    "title": "Configurazione"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sincronizza dal desktop",
-    "description": "Questa configurazione deve essere iniziata dalla istanza desktop:",
-    "step1": "Apri la tua istanza desktop di Trilium Notes.",
-    "step2": "Dal menù di Trilium, seleziona \"Opzioni\".",
-    "step3": "Clicca sulla categoria \"Sincronizzazione\".",
-    "step4": "Imposta \"{{- host}}\" come l'indirizzo dell'istanza server e clicca \"Salva\".",
-    "step5": "Clicca \"Prova sincronizzazione\" per verificare la connessione.",
-    "step6": "Dopo aver completato questi passaggi, clicca {{- link}}.",
-    "step6-here": "qui"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sincronizza dal server",
-    "instructions": "Inserire l'indirizzo e le credenziali del server Trilium. L'intero documento Trilium verrà scaricato dal server, e sarà configurata la sincronizzazione allo stesso. L'operazione potrebbe impiegare un po' di tempo, in base alla velocità della connessione e alla dimensione del documento.",
-    "server-host": "Indirizzo del server Trilium",
-    "server-host-placeholder": "https://<nome host>:<porta>",
-    "proxy-server": "Server proxy (facoltativo)",
-    "proxy-server-placeholder": "https://<nome host>:<porta>",
-    "note": "Note:",
-    "proxy-instruction": "Se il campo del proxy viene lasciato vuoto, il proxy di sistema verrà utilizzato (si applica solo all'applicazione desktop)",
-    "password": "Password",
-    "password-placeholder": "Password",
-    "back": "Indietro",
-    "finish-setup": "Termina configurazione"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sincronizzazione in corso",
-    "successful": "La sincronizzazione è stata configurata correttamente. Ci potrebbe volere un po' di tempo prima che la sincronizzazione iniziale termini. Appena sarà terminata, sarai ri-indirizzato alla pagina di accesso.",
-    "outstanding-items": "Elementi eccezionali in sincronizzazione:",
-    "outstanding-items-default": "N/A"
-  },
   "share_404": {
     "title": "Pagina non trovata",
     "heading": "Pagina non trovata"

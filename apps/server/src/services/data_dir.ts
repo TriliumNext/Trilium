@@ -6,9 +6,9 @@
  * - case D) as a fallback if the previous step fails, we'll use home dir
  */
 
-import fs from "fs";
-import os from "os";
-import { join as pathJoin } from "path";
+import fs from "node:fs";
+import os from "node:os";
+import { join as pathJoin } from "node:path";
 
 const DIR_NAME = "trilium-data";
 const FOLDER_PERMISSIONS = 0o700;

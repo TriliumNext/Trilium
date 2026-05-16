@@ -46,7 +46,7 @@ function main() {
     const rootPackageJson = join(scriptDir, "..", "package.json");
     patchPackageJson(rootPackageJson);
 
-    for (const app of ["server", "client", "desktop"]) {
+    for (const app of ["server", "client", "client-standalone", "desktop"]) {
         const appPackageJsonPath = join(scriptDir, "..", "apps", app, "package.json");
         patchPackageJson(appPackageJsonPath);
     }
