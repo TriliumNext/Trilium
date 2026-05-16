@@ -176,6 +176,52 @@ function buildHeadingTree(headings: RawHeading[]): HeadingsWithNesting[] {
 
     return root.children;
 }
+
+function useActiveHeading<T extends RawHeading>({ headings, scrollingContainer, getHeadingElement }: {
+    headings: T[];
+    getHeadingElement: (heading: T) => HTMLElement | null;
+    scrollingContainer: HTMLElement | null | undefined;
+}) {
+    const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!scrollingContainer) return;
+        const activeLineY = scrollingContainer.getBoundingClientRect().top + 200;
+        let timeoutId: number | undefined;
+
+        function updateActiveHeading() {
+            let activeHeading: T | null = null;
+
+            for (const heading of headings) {
+                const headingEl = getHeadingElement(heading);
+
+                if (headingEl && headingEl.getBoundingClientRect().top <= activeLineY) {
+                    activeHeading = heading;
+                } else {
+                    break;
+                }
+            }
+
+            setActiveHeadingId(activeHeading?.id ?? null);
+        }
+
+        function handleScroll() {
+            window.clearTimeout(timeoutId);
+            timeoutId = window.setTimeout(updateActiveHeading, 100);
+        }
+
+        scrollingContainer.addEventListener("scroll", handleScroll);
+
+        updateActiveHeading();
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            scrollingContainer.removeEventListener("scroll", handleScroll);
+        };
+    }, [headings, scrollingContainer, getHeadingElement]);
+
+    return scrollingContainer ? activeHeadingId : null;
+}
 //#endregion
 
 //#region Editable text (CKEditor)
@@ -375,49 +421,3 @@ function extractTocFromStaticHtml(el: HTMLElement | null) {
     return headings;
 }
 //#endregion
-
-function useActiveHeading<T extends RawHeading>({ headings, scrollingContainer, getHeadingElement }: {
-    headings: T[];
-    getHeadingElement: (heading: T) => HTMLElement | null;
-    scrollingContainer: HTMLElement | null | undefined;
-}) {
-    const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!scrollingContainer) return;
-        const activeLineY = scrollingContainer.getBoundingClientRect().top + 200;
-        let timeoutId: number | undefined;
-
-        function updateActiveHeading() {
-            let activeHeading: T | null = null;
-
-            for (const heading of headings) {
-                const headingEl = getHeadingElement(heading);
-
-                if (headingEl && headingEl.getBoundingClientRect().top <= activeLineY) {
-                    activeHeading = heading;
-                } else {
-                    break;
-                }
-            }
-
-            setActiveHeadingId(activeHeading?.id ?? null);
-        }
-
-        function handleScroll() {
-            window.clearTimeout(timeoutId);
-            timeoutId = window.setTimeout(updateActiveHeading, 100);
-        }
-
-        scrollingContainer.addEventListener("scroll", handleScroll);
-
-        updateActiveHeading();
-
-        return () => {
-            window.clearTimeout(timeoutId);
-            scrollingContainer.removeEventListener("scroll", handleScroll);
-        };
-    }, [headings, scrollingContainer, getHeadingElement]);
-
-    return scrollingContainer ? activeHeadingId : null;
-}
