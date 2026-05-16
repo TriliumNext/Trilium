@@ -57,7 +57,7 @@
     "scrypt-js": "3.0.1",
     "jsplumb": "2.15.6",
     "katex": "0.16.45",
-    "knockout": "3.5.1",
+    "knockout": "3.5.3",
     "leaflet": "1.9.4",
     "leaflet-gpx": "2.2.0",
     "mark.js": "8.11.1",

@@ -991,8 +991,8 @@ importers:
         specifier: 0.16.45
         version: 0.16.45
       knockout:
-        specifier: 3.5.1
-        version: 3.5.1
+        specifier: 3.5.3
+        version: 3.5.3
       leaflet:
         specifier: 1.9.4
         version: 1.9.4
@@ -10303,8 +10303,8 @@ packages:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
 
-  knockout@3.5.1:
-    resolution: {integrity: sha512-wRJ9I4az0QcsH7A4v4l0enUpkS++MBx0BnL/68KaLzJg7x1qmbjSlwEoCNol7KTYZ+pmtI7Eh2J0Nu6/2Z5J/Q==}
+  knockout@3.5.3:
+    resolution: {integrity: sha512-6iPv8M/xDPYfsiKyEyIPcSYBt8L+FZoJS/frLT8Nq3n9kMvP+WZ6ZPehYZV5c22Qc64Ie7unmTqYqgSdCB1Taw==}
 
   kolorist@1.8.0:
     resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
@@ -25748,7 +25748,7 @@ snapshots:
 
   kleur@4.1.5: {}
 
-  knockout@3.5.1: {}
+  knockout@3.5.3: {}
 
   kolorist@1.8.0: {}
 
