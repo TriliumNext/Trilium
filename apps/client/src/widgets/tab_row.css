@@ -245,3 +245,32 @@ body.desktop .tab-row-widget .note-tab .note-tab-close:hover {
 .tab-row-widget-scrolling-container::-webkit-scrollbar {
     display: none;
 }
+
+/* Split tab segments */
+.tab-row-widget .note-tab .note-tab-segment {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    z-index: 60;
+}
+
+.tab-row-widget .note-tab .note-tab-segment:hover {
+    background-color: var(--hover-item-background-color);
+}
+
+.tab-row-widget .note-tab .note-tab-segment[active] {
+    font-weight: bold;
+}
+
+.tab-row-widget .note-tab .note-tab-separator {
+    flex: 0 0 1px;
+    width: 1px;
+    height: 60%;
+    background-color: var(--main-border-color);
+    z-index: 60;
+}
