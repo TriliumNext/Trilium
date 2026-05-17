@@ -838,8 +838,8 @@ importers:
         specifier: 0.2.5
         version: 0.2.5
       turnish:
-        specifier: 1.8.0
-        version: 1.8.0
+        specifier: 1.11.1
+        version: 1.11.1
       vite:
         specifier: 8.0.13
         version: 8.0.13(@types/node@24.12.4)(esbuild@0.28.0)(jiti@2.7.0)(less@4.1.3)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.9.0)
@@ -13445,8 +13445,8 @@ packages:
     resolution: {integrity: sha512-I8yFsfRzmzK0WV1pNNOA4A7y4RDfFxPRxb3t+e3ui14qSGOxGtiSP6GjeX+Y6CHb7HYaFj7ECUD7VE5kQMZWGQ==}
     engines: {node: '>=18', npm: '>=9'}
 
-  turnish@1.8.0:
-    resolution: {integrity: sha512-r1K94mbU5FHwvHKsPrTejuxoQTyKrddeWNzxS53Dnu+33DJLZJzfAHmo7GhdxBvhrHYCfv/diYvpq2VCGSGa+w==}
+  turnish@1.11.1:
+    resolution: {integrity: sha512-9e80slAyaIl7eOt10USsmPcxB1ACiluiQrPVMkg1VAfMScCfMwVkYEQhDZZazU5OmONHdSp3W5/OCGVAOywBRA==}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -29421,7 +29421,7 @@ snapshots:
     dependencies:
       '@mixmark-io/domino': 2.2.0
 
-  turnish@1.8.0:
+  turnish@1.11.1:
     dependencies:
       '@adobe/css-tools': 4.4.4
       '@mixmark-io/domino': 2.2.0
