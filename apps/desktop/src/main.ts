@@ -271,6 +271,11 @@ async function main() {
             }
         });
         win.setMenuBarVisibility(false);
+
+        // Enable @electron/remote for this window (required for client-side Electron APIs)
+        const remoteMain = await import("@electron/remote/main/index.js");
+        remoteMain.enable(win.webContents);
+
         win.loadURL(`http://127.0.0.1:${port}/?dbId=${workspaceId}`);
         registerWindowDb(win.webContents.id, workspaceId);
 
