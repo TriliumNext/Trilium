@@ -235,6 +235,26 @@ async function main() {
             }
         }, getCoreLog()), workspaceId);
 
+        // If the database is empty (new workspace), initialize it with schema
+        const { sql_init: sqlInit } = await import("@triliumnext/core");
+        const { namespace: clsNamespace } = await import("@triliumnext/server/src/cls_provider.js");
+
+        const needsInit = clsNamespace.runAndReturn(() => {
+            clsNamespace.set("dbId", workspaceId);
+            return !sqlInit.isDbInitialized();
+        });
+
+        if (needsInit) {
+            await clsNamespace.runPromise(async () => {
+                clsNamespace.set("dbId", workspaceId);
+                await sqlInit.createInitialDatabase(true); // skip demo content
+            });
+            // Resolve the workspace-specific dbReady since createInitialDatabase
+            // calls initDbConnection() internally (which resolves the default dbReady).
+            // We need to also resolve the workspace's deferred so loadDatabase can proceed.
+            sqlInit.getDbReady(workspaceId).resolve();
+        }
+
         await becca_loader.loadDatabase(workspaceId);
 
         // Create a new window for this workspace
