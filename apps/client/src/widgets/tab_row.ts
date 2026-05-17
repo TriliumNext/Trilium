@@ -1,6 +1,7 @@
 import "./tab_row.css";
 
 import Draggabilly, { type MoveVector } from "draggabilly";
+import { h } from "preact";
 
 import appContext, { type CommandListenerData, type CommandNames, type EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
@@ -11,6 +12,8 @@ import { t } from "../services/i18n.js";
 import keyboardActionService from "../services/keyboard_actions.js";
 import utils from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
+import { renderReactWidget } from "./react/react_utils.js";
+import Tab from "./tab_row/Tab.js";
 import { setupHorizontalScrollViaWheel } from "./widget_utils.js";
 
 const isDesktop = utils.isDesktop();
@@ -25,15 +28,6 @@ const TAB_SIZE_SMALL = 84;
 const TAB_SIZE_SMALLER = 60;
 const TAB_SIZE_MINI = 48;
 
-const TAB_TPL = `
-<div class="note-tab">
-  <div class="note-tab-wrapper">
-    <div class="note-tab-drag-handle"></div>
-    <div class="note-tab-icon"></div>
-    <div class="note-tab-title"></div>
-    <div class="note-tab-close bx bx-x" title="${t("tab_row.close_tab")}"></div>
-  </div>
-</div>`;
 
 const CONTAINER_ANCHOR_TPL = `<div class="tab-row-container-anchor"></div>`;
 
@@ -288,7 +282,7 @@ export default class TabRowWidget extends BasicWidget {
     }
 
     addTab(ntxId: string) {
-        const $tab = $(TAB_TPL).attr("data-ntx-id", ntxId);
+        const $tab = renderReactWidget(this, h(Tab, { ntxId, title: t("tab_row.new_tab") }));
 
         keyboardActionService.updateDisplayedShortcuts($tab);
 
