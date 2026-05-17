@@ -12,7 +12,7 @@ import appInfo from "./services/app_info";
 import { type PlatformProvider, initPlatform } from "./services/platform";
 import { type ZipProvider, initZipProvider } from "./services/zip_provider";
 import { type ZipExportProviderFactory, initZipExportProviderFactory } from "./services/export/zip_export_provider_factory";
-import { type InAppHelpProvider, initInAppHelp } from "./services/in_app_help";
+import { InAppHelpProvider, initInAppHelp } from "./services/in_app_help";
 import { type ImageProvider, initImageProvider } from "./services/image_provider";
 
 export { default as LogService, getLog } from "./services/log";
@@ -104,7 +104,7 @@ export { default as content_hash } from "./services/content_hash";
 export { default as sync_mutex } from "./services/sync_mutex";
 export { default as setup } from "./services/setup";
 export { getPlatform, type PlatformProvider } from "./services/platform";
-export type { InAppHelpProvider } from "./services/in_app_help";
+export { InAppHelpProvider } from "./services/in_app_help";
 export { type ImageProvider, type ImageFormat, type ProcessedImage, getImageProvider } from "./services/image_provider";
 export { default as imageService } from "./services/image";
 export { t } from "i18next";

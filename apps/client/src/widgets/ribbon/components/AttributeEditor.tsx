@@ -27,9 +27,7 @@ type AttributeCommandNames = FilteredCommandNames<CommandData>;
 
 const HELP_TEXT = `
 <p>${t("attribute_editor.help_text_body1")}</p>
-
 <p>${t("attribute_editor.help_text_body2")}</p>
-
 <p>${t("attribute_editor.help_text_body3")}</p>`;
 
 const mentionSetup: MentionFeed[] = [

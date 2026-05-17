@@ -82,6 +82,7 @@ export default [
     { type: "label", name: "hideHighlightWidget" },
     { type: "label", name: "iconPack", isDangerous: true },
     { type: "label", name: "docName", isDangerous: true },
+    { type: "label", name: "docUrl", isDangerous: true },
 
     { type: "label", name: "tabWidth" },
     { type: "label", name: "indentWithTabs" },

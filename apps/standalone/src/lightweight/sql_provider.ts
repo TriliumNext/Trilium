@@ -224,9 +224,6 @@ export default class BrowserSqlProvider implements DatabaseProvider {
     private initError?: Error;
     private statementCache: Map<string, WasmStatement> = new Map();
 
-    // OPFS state tracking
-    private opfsDbPath?: string;
-
     // SAHPool state tracking
     private sahPoolUtil?: SAHPoolUtil;
     private sahPoolDbName?: string;
@@ -301,10 +298,10 @@ export default class BrowserSqlProvider implements DatabaseProvider {
      * Must be called after `initWasm()` and before `loadFromSahPool()`.
      * This is async because it acquires OPFS file handles.
      *
-     * Unlike the legacy OPFS VFS, SAHPool does **not** require SharedArrayBuffer
-     * or COOP/COEP headers — it only needs OPFS itself (a Worker context with
-     * `navigator.storage.getDirectory`). This makes it usable in Capacitor's
-     * Android WebView, which doesn't support cross-origin isolation.
+     * SAHPool does **not** require SharedArrayBuffer or COOP/COEP headers — it
+     * only needs OPFS itself (a Worker context with `navigator.storage.getDirectory`).
+     * This makes it usable in Capacitor's Android WebView, which doesn't support
+     * cross-origin isolation.
      *
      * @param options.directory - OPFS directory for the pool (default: auto-derived from VFS name)
      * @param options.initialCapacity - Minimum number of file slots (default: 6)
@@ -349,7 +346,7 @@ export default class BrowserSqlProvider implements DatabaseProvider {
     /**
      * Load or create a database using the SAHPool VFS.
      * This is the preferred method for persistent storage — it supports WAL mode
-     * and is significantly faster than the legacy OPFS VFS.
+     * and is significantly faster than alternatives.
      *
      * @param dbName - Virtual filename within the pool (e.g., "/trilium.db").
      *                 Must start with a slash.
@@ -369,9 +366,8 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         try {
             this.db = new this.sahPoolUtil.OpfsSAHPoolDb(dbName);
             this.sahPoolDbName = dbName;
-            this.opfsDbPath = undefined;
 
-            // SAHPool supports WAL mode — the key advantage over legacy OPFS VFS
+            // SAHPool supports WAL mode
             this.db.exec("PRAGMA journal_mode = WAL");
             this.db.exec("PRAGMA synchronous = NORMAL");
 
@@ -391,97 +387,11 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         return this.sahPoolDbName !== undefined;
     }
 
-    // ==================== Legacy OPFS Support ====================
-
     /**
-     * Check if the legacy OPFS VFS is available.
-     * This requires:
-     * - Running in a Worker context
-     * - Browser support for OPFS APIs
-     * - COOP/COEP headers sent by the server (for SharedArrayBuffer)
-     *
-     * @returns true if legacy OPFS VFS is available for use
-     */
-    isOpfsAvailable(): boolean {
-        this.ensureSqlite3();
-        // SQLite WASM automatically installs the OPFS VFS if the environment supports it
-        // We can check for its presence via sqlite3_vfs_find or the OpfsDb class
-        return this.sqlite3!.oo1.OpfsDb !== undefined;
-    }
-
-    /**
-     * Load or create a database stored in OPFS for persistent storage.
-     *
-     * **Prefer `loadFromSahPool()` over this method** — it supports WAL mode
-     * and is significantly faster. This method is kept for migration purposes.
-     * The database will persist across browser sessions.
-     *
-     * Requires COOP/COEP headers to be set by the server:
-     * - Cross-Origin-Opener-Policy: same-origin
-     * - Cross-Origin-Embedder-Policy: require-corp
-     *
-     * @param path - The path for the database file in OPFS (e.g., "/trilium.db")
-     *               Paths without a leading slash are treated as relative to OPFS root.
-     *               Leading directories are created automatically.
-     * @param options - Additional options
-     * @throws Error if OPFS VFS is not available
-     *
-     * @example
-     * ```typescript
-     * const provider = new BrowserSqlProvider();
-     * await provider.initWasm();
-     * if (provider.isOpfsAvailable()) {
-     *     provider.loadFromOpfs("/my-database.db");
-     * } else {
-     *     console.warn("OPFS not available, using in-memory database");
-     *     provider.loadFromMemory();
-     * }
-     * ```
-     */
-    loadFromOpfs(path: string, options: { createIfNotExists?: boolean } = {}): void {
-        this.ensureSqlite3();
-
-        if (!this.isOpfsAvailable()) {
-            throw new Error(
-                "OPFS VFS is not available. This requires:\n" +
-                "1. Running in a Worker context\n" +
-                "2. Browser support for OPFS (Chrome 102+, Firefox 111+, Safari 17+)\n" +
-                "3. COOP/COEP headers from the server:\n" +
-                "   Cross-Origin-Opener-Policy: same-origin\n" +
-                "   Cross-Origin-Embedder-Policy: require-corp"
-            );
-        }
-
-        console.log(`[BrowserSqlProvider] Loading database from OPFS: ${path}`);
-        const startTime = performance.now();
-
-        try {
-            // OpfsDb automatically creates directories in the path
-            // Mode 'c' = create if not exists
-            const mode = options.createIfNotExists !== false ? 'c' : '';
-            this.db = new this.sqlite3!.oo1.OpfsDb(path, mode);
-            this.opfsDbPath = path;
-            this.sahPoolDbName = undefined;
-
-            // Configure the database for legacy OPFS
-            // Note: WAL mode is not supported by the legacy OPFS VFS
-            this.db.exec("PRAGMA journal_mode = DELETE");
-            this.db.exec("PRAGMA synchronous = NORMAL");
-
-            const loadTime = performance.now() - startTime;
-            console.log(`[BrowserSqlProvider] OPFS database loaded in ${loadTime.toFixed(2)}ms`);
-        } catch (e) {
-            const error = e instanceof Error ? e : new Error(String(e));
-            console.error(`[BrowserSqlProvider] Failed to load OPFS database: ${error.message}`);
-            throw error;
-        }
-    }
-
-    /**
-     * Check if the currently open database is stored in OPFS (legacy or SAHPool).
+     * Check if the currently open database is stored in OPFS (via SAHPool).
      */
     get isUsingOpfs(): boolean {
-        return this.opfsDbPath !== undefined || this.sahPoolDbName !== undefined;
+        return this.sahPoolDbName !== undefined;
     }
 
     /**
@@ -489,7 +399,7 @@ export default class BrowserSqlProvider implements DatabaseProvider {
      * Returns undefined if not using OPFS.
      */
     get currentOpfsPath(): string | undefined {
-        return this.opfsDbPath ?? this.sahPoolDbName;
+        return this.sahPoolDbName;
     }
 
     /**
@@ -509,15 +419,13 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         return tableExists !== undefined;
     }
 
-    // ==================== End OPFS Support ====================
-
     loadFromFile(_path: string, _isReadOnly: boolean): void {
         // Browser environment doesn't have direct file system access.
         // Use SAHPool or OPFS for persistent storage.
         throw new Error(
             "loadFromFile is not supported in browser environment. " +
             "Use loadFromMemory() for temporary databases, loadFromBuffer() to load from data, " +
-            "loadFromSahPool() (preferred) or loadFromOpfs() for persistent storage."
+            "or loadFromSahPool() for persistent storage."
         );
     }
 
@@ -525,8 +433,7 @@ export default class BrowserSqlProvider implements DatabaseProvider {
      * Create an empty in-memory database.
      * Data will be lost when the page is closed.
      *
-     * For persistent storage, use loadFromOpfs() instead.
-     * To load demo data, call initializeDemoDatabase() after this.
+     * For persistent storage, use loadFromSahPool() instead.
      */
     loadFromMemory(): void {
         this.ensureSqlite3();
@@ -534,7 +441,6 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         const startTime = performance.now();
 
         this.db = new this.sqlite3!.oo1.DB(":memory:", "c");
-        this.opfsDbPath = undefined;
         this.sahPoolDbName = undefined;
         this.db.exec("PRAGMA journal_mode = WAL");
 
@@ -557,7 +463,6 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             // once we swap connections. Drop them so callers re-prepare.
             this.clearStatementCache();
             this.db = new this.sqlite3!.oo1.DB({ filename: ":memory:", flags: "c" });
-            this.opfsDbPath = undefined;
             this.sahPoolDbName = undefined;
 
             const rc = this.sqlite3!.capi.sqlite3_deserialize(
@@ -702,8 +607,6 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             this.db = undefined;
         }
 
-        // Reset OPFS / SAHPool state
-        this.opfsDbPath = undefined;
         this.sahPoolDbName = undefined;
     }
 
@@ -735,7 +638,7 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         if (!this.db) {
             throw new Error(
                 "Database not opened. Call loadFromMemory(), loadFromBuffer(), " +
-                "loadFromSahPool(), or loadFromOpfs() first."
+                "loadFromSahPool() first."
             );
         }
     }

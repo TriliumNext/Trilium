@@ -4,21 +4,19 @@
 <p>Since v0.103.0, Trilium has built-in support for OCR. The extracted text
   can be:</p>
 <ul>
-  <li>Integrated with&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/wArbEsdSae6g/_help_eIg8jdvaoNNd">Search</a>,
+  <li>Integrated with&nbsp;<a class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>,
     to quickly find the image or file based on snippets of text.</li>
-  <li>Integrated with the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/_help_GBBMSlVSOIGP">AI</a>&nbsp;feature,
+  <li>Integrated with the&nbsp;<a class="reference-link" href="#root/_help_GBBMSlVSOIGP">AI</a>&nbsp;feature,
     which allows the agent to access the content of a non-text note.</li>
-  <li
- >Manually accessed for other purposes (e.g. copying into a note or sending
+  <li>Manually accessed for other purposes (e.g. copying into a note or sending
     it somewhere else).</li>
 </ul>
 <h2>Supported formats</h2>
 <p>OCR in Trilium supports the following formats:</p>
 <h3>Images</h3>
 <ul>
-  <li>Both <a href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_W8vYD3Q1zjCR">individual image notes</a> and
-    <a
-    href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/_help_mT0HEkOsz6i1">attachments in text files</a>are supported.</li>
+  <li>Both <a href="#root/_help_W8vYD3Q1zjCR">individual image notes</a> and <a href="#root/_help_mT0HEkOsz6i1">attachments in text files</a> are
+    supported.</li>
   <li>Supported formats: JPEG, PNG, GIF, BMP, TIFF, WebP.</li>
   <li>Currently only single-page TIFFs are supported. If you have multi-page
     TIFFs consider splitting them into individual images.</li>
@@ -46,9 +44,9 @@
     Presentation), created by editors such as LibreOffice and OpenOffice.</li>
 </ul>
 <h2>Configuring and triggering OCR</h2>
-<p>The OCR can be configured by going to&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_4TIF1oA4VQRO">Options</a>&nbsp;→&nbsp;
+<p>The OCR can be configured by going to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→&nbsp;
   <a
-  class="reference-link" href="#root/_hidden/_options/_help__optionsMedia">Media</a>&nbsp;and looking for the <em>Text Extraction (OCR) </em>section.</p>
+  class="reference-link" href="#root/_hidden/_options/_help__optionsMedia">Media</a>&nbsp;and looking for the <em>Text Extraction (OCR)</em> section.</p>
 <p>There are three ways to trigger the OCR:</p>
 <ul>
   <li>By enabling <em>Auto-process new files</em> which will process only the
@@ -73,45 +71,44 @@
   by the default language.</p>
 <p>To configure the languages that are supported by the OCR, simply go to&nbsp;
   <a
-  class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_4TIF1oA4VQRO">Options</a>&nbsp;→&nbsp;<a class="reference-link" href="#root/_hidden/_options/_help__optionsLocalization">Language &amp; Region</a>&nbsp;and
+  class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→&nbsp;<a class="reference-link" href="#root/_hidden/_options/_help__optionsLocalization">Language &amp; Region</a>&nbsp;and
     adjust the <em>Content languages</em>.</p>
 <p>When there are no content languages defined, the user interface <em>Language</em> is
   used instead.</p>
 <p>After making this change, the automatic processing or manual reprocessing
   will take into consideration the new languages.</p>
 <p>To enforce the detection in a particular language for a given note, use
-  the <code spellcheck="false">language</code>  <a href="#root/pOsGYCXsbNQG/tC7s2alapj8V/_help_zEY4DaJG4YT5">attribute</a>,
-  similar to <a href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/_help_veGu4faJErEM">text content language</a>.
-  For&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_0vhv7lsOLy82">Attachments</a>,
-  it's not possible to manually adjust the language.</p>
-<aside class="admonition note">
+  the <code spellcheck="false">language</code>  <a href="#root/_help_zEY4DaJG4YT5">attribute</a>,
+  similar to <a href="#root/_help_veGu4faJErEM">text content language</a>. For&nbsp;
+  <a
+  class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>, it's not possible to manually adjust the language.</p>
+<aside
+class="admonition note">
   <p>The trained data for each language is not packaged with Trilium, as that
     would require a significant amount of space that might not be otherwise
     needed. As such, when the trained data will be downloaded automatically
     via <a href="https://github.com/naptha/tesseract.js/">Tesseract.js</a>.</p>
   <p>The downloaded trained data is located in the&nbsp;<a class="reference-link"
-    href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/_help_tAassRL4RSQL">Data directory</a>,
-    in the <code spellcheck="false">ocr-cache</code> directory.</p>
-</aside>
-<h2>Viewing extracted content for a single note</h2>
-<p>To access the extracted content of a note:</p>
-<ul>
-  <li>For&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_W8vYD3Q1zjCR">File</a>&nbsp;notes,
-    go to the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;→ <em>Advanced</em> → <em>View OCR Text</em>.</li>
-  <li
- >For&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_0vhv7lsOLy82">Attachments</a>&nbsp;(e.g.&nbsp;
-    <a
-    class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/_help_mT0HEkOsz6i1">Images</a>&nbsp;in&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_iPIMuisry3hd">Text</a>&nbsp;notes),
-      double-click the attachment to view the details, press the […] button at
-      the left and select <em>View extracted text (OCR)</em>.</li>
-</ul>
-<p>This section allows:</p>
-<ul>
-  <li>Viewing the extracted text, which can be copied elsewhere if needed or
-    just to check the quality of the extraction.</li>
-  <li>If the note has not been extracted yet, pressing <em>Process OCR </em>will
-    process it in the background. If the extraction confidence is lower than
-    the minimum confidence, there will be a notification.</li>
-  <li>Similarly, if the minimum confidence was changed in settings, it is possible
-    to press the <em>Process OCR </em>button again to extract the text again.</li>
-</ul>
+    href="#root/_help_tAassRL4RSQL">Data directory</a>, in the <code spellcheck="false">ocr-cache</code> directory.</p>
+  </aside>
+  <h2>Viewing extracted content for a single note</h2>
+  <p>To access the extracted content of a note:</p>
+  <ul>
+    <li>For&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>&nbsp;notes,
+      go to the&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;→ <em>Advanced</em> → <em>View OCR Text</em>.</li>
+    <li>For&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>&nbsp;(e.g.&nbsp;
+      <a
+      class="reference-link" href="#root/_help_mT0HEkOsz6i1">Images</a>&nbsp;in&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes),
+        double-click the attachment to view the details, press the […] button at
+        the left and select <em>View extracted text (OCR)</em>.</li>
+  </ul>
+  <p>This section allows:</p>
+  <ul>
+    <li>Viewing the extracted text, which can be copied elsewhere if needed or
+      just to check the quality of the extraction.</li>
+    <li>If the note has not been extracted yet, pressing <em>Process OCR</em> will
+      process it in the background. If the extraction confidence is lower than
+      the minimum confidence, there will be a notification.</li>
+    <li>Similarly, if the minimum confidence was changed in settings, it is possible
+      to press the <em>Process OCR</em> button again to extract the text again.</li>
+  </ul>

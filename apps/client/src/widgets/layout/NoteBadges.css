@@ -20,6 +20,7 @@
         &.read-only-badge {--color: var(--badge-read-only-background-color);}
         &.share-badge {--color: var(--badge-share-background-color);}
         &.clipped-note-badge {--color: var(--badge-clipped-note-background-color);}
+        &.doc-url-badge {--color: var(--badge-doc-url-background-color);}
         &.execute-badge {--color: var(--badge-execute-background-color);}
         &.save-status-badge {
             --default-opacity: 0.4;

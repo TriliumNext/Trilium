@@ -12,6 +12,10 @@ export function getBaseUrl(): string {
     return process.env["BASE_URL"] || `http://127.0.0.1:${port}`;
 }
 
+export function isStandalone(testInfo: { project: { name: string } }): boolean {
+    return testInfo.project.name.includes("standalone");
+}
+
 interface DropdownLocator extends Locator {
     selectOptionByText: (text: string) => Promise<void>;
 }
@@ -92,12 +96,20 @@ export default class App {
     async goToNoteInNewTab(noteTitle: string) {
         const autocomplete = this.currentNoteSplit.locator(".note-autocomplete");
         await expect(autocomplete).toBeVisible();
-        await autocomplete.fill(noteTitle);
+        // The algolia autocomplete listens to keyboard events. `fill()` only
+        // dispatches `input`, which doesn't reliably open the dropdown — clear
+        // and type with real key events instead.
+        await autocomplete.click();
+        await autocomplete.clear();
+        await autocomplete.pressSequentially(noteTitle);
 
-        const resultsSelector = this.currentNoteSplit.locator(".note-detail-empty-results");
-        await expect(resultsSelector).toContainText(noteTitle);
-        const suggestionSelector = resultsSelector.locator(".aa-suggestion")
-            .nth(1); // Select the second one (best candidate), as the first one is "Create a new note"
+        // The second suggestion is the best candidate; the first is "Create a
+        // new note". Asserting on the suggestion itself (instead of the parent
+        // `.note-detail-empty-results`, which also contains the recent-notes
+        // list) ensures the dropdown actually opened.
+        const suggestionSelector = this.currentNoteSplit
+            .locator(".note-detail-empty-results .aa-suggestion")
+            .nth(1);
         await expect(suggestionSelector).toContainText(noteTitle);
         await suggestionSelector.click();
     }
@@ -133,7 +145,12 @@ export default class App {
      * Adds a new tab by cliking on the + button near the tab bar.
      */
     async addNewTab() {
+        const tabs = this.tabBar.locator(".note-tab-wrapper");
+        const before = await tabs.count();
         await this.page.locator('[data-trigger-command="openNewTab"]').click();
+        // `openNewTabCommand` doesn't await tab creation, so wait until the
+        // new tab is actually in the DOM before returning.
+        await expect(tabs).toHaveCount(before + 1);
     }
 
     /**

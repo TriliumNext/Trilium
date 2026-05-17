@@ -66,9 +66,7 @@ const pdfjsServePlugin = (): Plugin => ({
                     json: "application/json"
                 };
                 res.setHeader("Content-Type", mimeTypes[ext] || "application/octet-stream");
-                // Match isolation headers from main page for iframe compatibility
                 res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-                res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
                 fs.createReadStream(filePath).pipe(res);
             } else {
                 next();
@@ -257,16 +255,16 @@ export default defineConfig(() => ({
             ]
         },
         headers: {
-            // Required for SharedArrayBuffer which is needed by SQLite WASM OPFS VFS
-            // See: https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep
-            "Cross-Origin-Opener-Policy": "same-origin",
-            "Cross-Origin-Embedder-Policy": "require-corp"
+            // COOP is kept for security (prevents window.opener attacks).
+            // COEP is intentionally omitted: SAHPool (our primary SQLite VFS) does not
+            // require SharedArrayBuffer/COEP, and omitting it allows cross-origin iframes
+            // (e.g. in-app help pointing to docs.triliumnotes.org).
+            "Cross-Origin-Opener-Policy": "same-origin"
         }
     },
     preview: {
         headers: {
-            "Cross-Origin-Opener-Policy": "same-origin",
-            "Cross-Origin-Embedder-Policy": "require-corp"
+            "Cross-Origin-Opener-Policy": "same-origin"
         }
     },
     optimizeDeps: {

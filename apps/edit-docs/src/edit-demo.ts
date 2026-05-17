@@ -1,5 +1,4 @@
-import { createZipFromDirectory, extractZip, importData, initializeDatabase, startElectron } from "./utils.js";
-import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
+import { createZipFromDirectory, extractZip, importData, initializeEditDocsCore, startElectron } from "./utils.js";
 import debounce from "@triliumnext/client/src/services/debounce.js";
 import cls from "@triliumnext/server/src/services/cls.js";
 import fs from "fs/promises";
@@ -17,14 +16,15 @@ async function main() {
         setTimeout(() => registerHandlers(), 10_000);
     });
 
-    await initializeTranslations();
-    await initializeDatabase(true);
+    await initializeEditDocsCore();
 
-    // Wait for becca to be loaded before importing data
-    const { becca_loader } = await import("@triliumnext/core");
-    await becca_loader.beccaLoaded;
-
+    // Create the in-memory database schema and resolve dbReady (requires CLS context)
+    const { sql_init, becca_loader } = await import("@triliumnext/core");
     cls.init(async () => {
+        cls.ignoreEntityChangeIds();
+        await sql_init.createInitialDatabase(true);
+        await becca_loader.beccaLoaded;
+
         await importData(DEMO_ZIP_DIR_PATH);
         setOptions();
         initializedPromise.resolve();

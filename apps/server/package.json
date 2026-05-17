@@ -38,7 +38,7 @@
     "ai": "6.0.184",
     "better-sqlite3": "12.10.0",
     "html-to-text": "9.0.5",
-    "i18next": "26.0.8",
+    "i18next": "26.1.0",
     "i18next-fs-backend": "2.6.5",
     "js-yaml": "4.1.1",
     "unpdf": "1.6.2"
@@ -87,7 +87,7 @@
     "express": "5.2.1",
     "express-http-proxy": "2.1.2",
     "express-openid-connect": "2.20.2",
-    "express-rate-limit": "8.4.1",
+    "express-rate-limit": "8.5.1",
     "express-session": "1.19.0",
     "file-uri-to-path": "2.0.0",
     "helmet": "8.1.0",
@@ -117,7 +117,7 @@
     "time2fa": "1.4.2",
     "tmp": "0.2.5",
     "turnish": "1.8.0",
-    "vite": "8.0.10",
+    "vite": "8.0.12",
     "xml2js": "0.6.2",
     "yauzl": "3.3.0"
   }

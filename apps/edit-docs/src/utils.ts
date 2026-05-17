@@ -1,26 +1,71 @@
-import cls from "@triliumnext/server/src/services/cls.js";
+import { BackupService, type ImageProvider,initializeCore } from "@triliumnext/core";
+import ClsHookedExecutionContext from "@triliumnext/server/src/cls_provider.js";
+import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
+import ServerPlatformProvider from "@triliumnext/server/src/platform_provider.js";
 import windowService from "@triliumnext/server/src/services/window.js";
+import WebSocketMessagingProvider from "@triliumnext/server/src/services/ws_messaging_provider.js";
+import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
+import NodejsZipProvider from "@triliumnext/server/src/zip_provider.js";
 import archiver, { type Archiver } from "archiver";
 import electron from "electron";
-import { createWriteStream, type WriteStream } from "fs";
+import { createWriteStream, readFileSync, type WriteStream } from "fs";
 import fs from "fs/promises";
 import path from "path";
 
 import { deferred, type DeferredPromise } from "../../../packages/commons/src/index.js";
 
-export function initializeDatabase(skipDemoDb: boolean): Promise<void> {
-    return new Promise<void>((resolve) => {
-        import("@triliumnext/server/src/services/sql_init.js").then((m) => {
-            const sqlInit = m.default;
-            cls.init(async () => {
-                if (!sqlInit.isDbInitialized()) {
-                    sqlInit.createInitialDatabase(skipDemoDb).then(() => resolve());
-                } else {
-                    sqlInit.dbReady.resolve();
-                    resolve();
-                }
-            });
-        });
+// Stub backup service (not used in edit-docs, but required by initializeCore)
+class StubBackupService extends BackupService {
+    constructor() {
+        super({ getOption: () => "", getOptionBool: () => false, setOption: () => {} });
+    }
+    scheduleBackups(): void {}
+    async backupNow(_name: string): Promise<string> {
+        throw new Error("Backup not supported in edit-docs");
+    }
+    async getExistingBackups() {
+        return [];
+    }
+    async getBackupContent(_filePath: string): Promise<Uint8Array | null> {
+        return null;
+    }
+}
+
+// Stub image provider (not used in edit-docs, but required by initializeCore)
+const stubImageProvider: ImageProvider = {
+    getImageType: () => null,
+    processImage: async () => {
+        throw new Error("Image processing not supported in edit-docs");
+    }
+};
+
+export async function initializeEditDocsCore() {
+    const dbProvider = new BetterSqlite3Provider();
+    dbProvider.loadFromMemory();
+
+    const { serverZipExportProviderFactory } = await import("@triliumnext/server/src/services/export/zip/factory.js");
+
+    await initializeCore({
+        dbConfig: {
+            provider: dbProvider,
+            isReadOnly: false,
+            async onTransactionCommit() {
+                const ws = (await import("@triliumnext/server/src/services/ws.js")).default;
+                ws.sendTransactionEntityChangesToAllClients();
+            },
+            onTransactionRollback: () => {}
+        },
+        crypto: new NodejsCryptoProvider(),
+        zip: new NodejsZipProvider(),
+        zipExportProviderFactory: serverZipExportProviderFactory,
+        executionContext: new ClsHookedExecutionContext(),
+        platform: new ServerPlatformProvider(),
+        schema: readFileSync(require.resolve("@triliumnext/core/src/assets/schema.sql"), "utf-8"),
+        translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslationsWithParams,
+        messaging: new WebSocketMessagingProvider(),
+        getDemoArchive: async () => null,
+        backup: new StubBackupService(),
+        image: stubImageProvider
     });
 }
 

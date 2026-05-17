@@ -2373,6 +2373,8 @@
     "shared_unshare": "Remove share",
     "clipped_note": "Web clip",
     "clipped_note_description": "This note was originally taken from {{url}}.\n\nClick to navigate to the source webpage.",
+    "doc_url": "Online docs",
+    "doc_url_description": "Click to view this page on the online documentation website.",
     "execute_script": "Run script",
     "execute_script_description": "This note is a script note. Click to execute the script.",
     "execute_sql": "Run SQL",

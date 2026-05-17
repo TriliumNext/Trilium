@@ -1,6 +1,6 @@
 import { expect,test } from "@playwright/test";
 
-import App from "../support/app";
+import App, { isStandalone } from "../support/app";
 
 const NOTE_TITLE = "Trilium Integration Test DB";
 
@@ -30,7 +30,9 @@ test("Can drag tabs around", async ({ page, context }) => {
     await expect(await app.getTab(0)).toContainText(NOTE_TITLE);
 });
 
-test("Can drag tab to new window", async ({ page, context }) => {
+test("Can drag tab to new window", async ({ page, context }, testInfo) => {
+    test.skip(isStandalone(testInfo), "Standalone does not support multiple windows");
+
     const app = new App(page, context);
     await app.goto();
 
@@ -80,11 +82,13 @@ test("Tabs are restored in right order", async ({ page, context }) => {
     await expect(app.noteTreeActiveNote).toContainText("Text notes");
     await recentNotesSaved;
 
-    // Refresh the page and check the order.
+    // Refresh the page and check the order. Asserting on the wrapper
+    // collection (rather than each tab individually) waits for all three
+    // titles to populate — restoration renders the active tab first and
+    // fills in the others asynchronously.
     await app.goto( { preserveTabs: true });
-    await expect(await app.getTab(0)).toContainText("Code notes");
-    await expect(await app.getTab(1)).toContainText("Text notes");
-    await expect(await app.getTab(2)).toContainText("Mermaid");
+    await expect(app.tabBar.locator(".note-tab-wrapper"))
+        .toHaveText([/Code notes/, /Text notes/, /Mermaid/]);
 
     // Check the note tree has the right active node.
     await expect(app.noteTreeActiveNote).toContainText("Text notes");

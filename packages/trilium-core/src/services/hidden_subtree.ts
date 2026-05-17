@@ -299,14 +299,14 @@ function checkHiddenSubtree(force = false, extraOpts: CheckHiddenExtraOpts = {})
 
     getSql().transactional(() => {
         checkHiddenSubtreeRecursively("root", hiddenSubtreeDefinition, extraOpts);
-    });
 
-    try {
-        cleanUpHelp(helpSubtree);
-    } catch (e) {
-        // Non-critical operation should something go wrong.
-        console.error(e);
-    }
+        try {
+            cleanUpHelp(helpSubtree);
+        } catch (e) {
+            // Non-critical operation should something go wrong.
+            console.error(e);
+        }
+    });
 }
 
 /**
