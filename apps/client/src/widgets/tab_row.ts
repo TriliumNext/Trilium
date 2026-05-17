@@ -46,7 +46,6 @@ const TAB_ROW_TPL = `
 export default class TabRowWidget extends BasicWidget {
 
     private isDragging?: boolean;
-    private showNoteIcons?: boolean;
     private draggabillies!: Draggabilly[];
     private draggabillyDragging?: Draggabilly | null;
 
@@ -69,9 +68,6 @@ export default class TabRowWidget extends BasicWidget {
         this.$tabContainer = this.$widget.find(".tab-row-widget-container");
         this.$scrollButtonLeft = this.$widget.children(".tab-scroll-button-left");
         this.$scrollButtonRight = this.$widget.children(".tab-scroll-button-right");
-
-        const documentStyle = window.getComputedStyle(document.documentElement);
-        this.showNoteIcons = documentStyle.getPropertyValue("--tab-note-icons") === "true";
 
         this.draggabillies = [];
 
@@ -282,8 +278,7 @@ export default class TabRowWidget extends BasicWidget {
     }
 
     addTab(ntxId: string) {
-        const segments = [{ ntxId, title: t("tab_row.new_tab") }];
-        const $tab = renderReactWidget(this, h(Tab, { ntxId, segments }));
+        const $tab = renderReactWidget(this, h(Tab, { ntxId }));
 
         keyboardActionService.updateDisplayedShortcuts($tab);
 
@@ -293,7 +288,6 @@ export default class TabRowWidget extends BasicWidget {
         this.$containerAnchor.before($tab);
         this.setVisibility();
         this.setTabCloseEvent($tab);
-        this.setSegmentClickEvents($tab);
         this.cleanUpPreviouslyDraggedTabs();
         this.layoutTabs();
         this.setupDraggabilly();
@@ -320,84 +314,6 @@ export default class TabRowWidget extends BasicWidget {
         });
     }
 
-    setSegmentClickEvents($tab: JQuery<HTMLElement>) {
-        $tab.on("click", ".note-tab-segment", (e) => {
-            e.stopPropagation();
-            const segmentNtxId = $(e.currentTarget).attr("data-ntx-id");
-            if (segmentNtxId) {
-                appContext.tabManager.activateNoteContext(segmentNtxId);
-            }
-        });
-    }
-
-    updateTabSegments(mainNtxId: string) {
-        const $tab = this.getTabById(mainNtxId);
-        if (!$tab.length) {
-            return;
-        }
-
-        const mainContext = appContext.tabManager.getNoteContextById(mainNtxId);
-        const subContexts = mainContext.getSubContexts();
-        const hasSplits = subContexts.length > 1;
-
-        $tab.toggleClass("note-tab-split", hasSplits);
-
-        const $wrapper = $tab.find(".note-tab-wrapper");
-        // Remove existing segments and separators
-        $wrapper.find(".note-tab-segment, .note-tab-separator").remove();
-
-        // Insert segments before the close button
-        const $closeBtn = $wrapper.find(".note-tab-close");
-        for (let i = 0; i < subContexts.length; i++) {
-            const subContext = subContexts[i];
-            if (i > 0) {
-                $closeBtn.before($('<div class="note-tab-separator"/>'));
-            }
-            const $segment = $(`<div class="note-tab-segment" data-ntx-id="${subContext.ntxId}">
-                <div class="note-tab-icon"></div>
-                <div class="note-tab-title"></div>
-            </div>`);
-            $closeBtn.before($segment);
-
-            this.updateSegment($segment, subContext);
-        }
-
-        this.updateActiveSegment($tab);
-    }
-
-    async updateSegment($segment: JQuery<HTMLElement>, noteContext: NoteContext) {
-        const { note } = noteContext;
-        const title = note
-            ? (await noteContext.getNavigationTitle()) ?? note.title
-            : t("tab_row.new_tab");
-
-        $segment.attr("title", title ?? "");
-        $segment.find(".note-tab-title").text(title ?? "");
-
-        if (note) {
-            let noteIcon = "";
-            if (this.showNoteIcons) {
-                noteIcon = note.getIcon();
-            } else {
-                const hoistedNote = froca.getNoteFromCache(noteContext.hoistedNoteId);
-                if (hoistedNote) {
-                    noteIcon = hoistedNote.getWorkspaceIconClass();
-                }
-            }
-            if (noteIcon) {
-                $segment.find(".note-tab-icon").removeClass().addClass("note-tab-icon").addClass(noteIcon);
-            }
-        }
-    }
-
-    updateActiveSegment($tab: JQuery<HTMLElement>) {
-        const activeContext = appContext.tabManager.getActiveContext();
-        $tab.find(".note-tab-segment").removeAttr("active");
-        if (activeContext) {
-            $tab.find(`.note-tab-segment[data-ntx-id='${activeContext.ntxId}']`).attr("active", "");
-        }
-    }
-
     get activeTabEl() {
         return this.$widget.find(".note-tab[active]")[0];
     }
@@ -420,17 +336,11 @@ export default class TabRowWidget extends BasicWidget {
             if (tabEl) tabEl.setAttribute("active", "");
         }
 
-        // Update active segment highlighting
-        if (tabEl) {
-            this.updateActiveSegment($(tabEl));
-        }
     }
 
     newNoteContextCreatedEvent({ noteContext }: EventData<"newNoteContextCreated">) {
         if (!noteContext.mainNtxId && noteContext.ntxId) {
             this.addTab(noteContext.ntxId);
-        } else if (noteContext.mainNtxId) {
-            this.updateTabSegments(noteContext.mainNtxId);
         }
     }
 
@@ -450,12 +360,6 @@ export default class TabRowWidget extends BasicWidget {
         return this.tabEls.map((el) => el.getAttribute("data-ntx-id"));
     }
 
-    updateTitle($tab: JQuery<HTMLElement>, title: string) {
-        $tab.attr("title", title);
-        // Update the title in the first segment (single-split case)
-        $tab.find(".note-tab-segment .note-tab-title").first().text(title);
-    }
-
     getTabById(ntxId: string | null) {
         return this.$widget.find(`.note-tab[data-ntx-id='${ntxId}']`);
     }
@@ -466,20 +370,7 @@ export default class TabRowWidget extends BasicWidget {
 
     noteContextRemovedEvent({ ntxIds }: EventData<"noteContextRemoved">) {
         for (const ntxId of ntxIds) {
-            // Check if this is a main tab or a split within a tab
-            const $tab = this.$widget.find(`.note-tab[data-ntx-id='${ntxId}']`);
-            if ($tab.length) {
-                this.removeTab(ntxId);
-            } else {
-                // It might be a split segment - find the parent tab and update segments
-                const $segment = this.$widget.find(`.note-tab-segment[data-ntx-id='${ntxId}']`);
-                if ($segment.length) {
-                    const mainNtxId = $segment.closest(".note-tab").attr("data-ntx-id");
-                    if (mainNtxId) {
-                        this.updateTabSegments(mainNtxId);
-                    }
-                }
-            }
+            this.removeTab(ntxId);
         }
     }
 
@@ -689,13 +580,12 @@ export default class TabRowWidget extends BasicWidget {
         this.updateTab($tab, noteContext);
     }
 
-    async updateTab($tab: JQuery<HTMLElement>, noteContext: NoteContext) {
+    updateTab($tab: JQuery<HTMLElement>, noteContext: NoteContext) {
         if (!$tab.length) {
             return;
         }
 
         for (const clazz of Array.from($tab[0].classList)) {
-            // create copy to safely iterate over while removing classes
             if (clazz !== "note-tab" && clazz !== "note-tab-split") {
                 $tab.removeClass(clazz);
             }
@@ -711,29 +601,8 @@ export default class TabRowWidget extends BasicWidget {
             }
         }
 
-        const subContexts = noteContext.getSubContexts();
-
-        if (subContexts.length > 1) {
-            this.updateTabSegments(noteContext.ntxId!);
-        } else {
-            // Single context — update the first (only) segment
-            const $segment = $tab.find(".note-tab-segment");
-            if ($segment.length) {
-                this.updateSegment($segment, noteContext);
-            }
-
-            const { note } = noteContext;
-
-            if (!note) {
-                this.updateTitle($tab, t("tab_row.new_tab"));
-                return;
-            }
-
-            const title = await noteContext.getNavigationTitle();
-            if (title) {
-                this.updateTitle($tab, title);
-            }
-
+        const { note } = noteContext;
+        if (note) {
             $tab.addClass(note.getCssClass());
             $tab.addClass(utils.getNoteTypeClass(note.type));
             $tab.addClass(utils.getMimeTypeClass(note.mime));
