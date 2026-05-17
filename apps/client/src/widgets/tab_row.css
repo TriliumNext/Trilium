@@ -1,0 +1,247 @@
+.tab-row-widget {
+    display:flex;
+    box-sizing: border-box;
+    position: relative;
+    width: 100%;
+    background: var(--main-background-color);
+    user-select: none;
+}
+
+.tab-row-widget.full-width {
+    background: var(--launcher-pane-background-color);
+}
+
+.tab-row-widget * {
+    box-sizing: inherit;
+    font: inherit;
+}
+
+.tab-row-widget .tab-row-widget-container {
+    box-sizing: border-box;
+    position: relative;
+    height: 100%;
+}
+
+.tab-row-widget .note-tab {
+    position: absolute;
+    left: 0;
+    width: 240px;
+    border: 0;
+    margin: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.note-new-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 36px;
+    height: 36px;
+    padding: 1px;
+    font-size: 24px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.note-new-tab:hover {
+    background-color: var(--accented-background-color);
+    border-radius: var(--button-border-radius);
+}
+
+.tab-row-filler {
+    box-sizing: border-box;
+    -webkit-app-region: drag;
+    min-width: var(--min-filler-width);
+    flex-grow: 1;
+}
+
+.tab-row-container-anchor{
+    position: absolute;
+    left: 0;
+    width: 0px;
+    height: 36px;
+    border: 0;
+    margin: 0;
+    z-index: 1;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+body.mobile .tab-row-filler {
+    display: none;
+}
+
+.tab-row-widget .note-tab[active] {
+    z-index: 5;
+}
+
+.tab-row-widget .note-tab,
+.tab-row-widget .note-tab * {
+    cursor: default;
+}
+
+.tab-row-widget .note-tab.note-tab-was-just-added {
+    top: 10px;
+    animation: note-tab-was-just-added 120ms forwards ease-in-out;
+}
+
+.tab-row-widget .note-tab .note-tab-wrapper {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 36px;
+    padding: 7px 5px 7px 11px;
+    border-radius: 8px;
+    overflow: hidden;
+    pointer-events: all;
+    color: var(--inactive-tab-text-color);
+    --tab-background-color: var(--workspace-tab-background-color);
+    background-color: var(--tab-background-color, var(--inactive-tab-background-color));
+}
+
+.tab-row-widget .note-tab[active] .note-tab-wrapper {
+    font-weight: bold;
+    color: var(--active-tab-text-color);
+    background-color : var(--tab-background-color, var(--active-tab-background-color));
+}
+
+.tab-row-widget .note-tab[is-mini] .note-tab-wrapper {
+    padding-inline-start: 2px;
+    padding-inline-end: 2px;
+}
+
+.tab-row-widget .note-tab .note-tab-title {
+    flex: 1;
+    vertical-align: top;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.tab-row-widget .note-tab .note-tab-icon {
+    position: relative;
+    padding-inline-end: 3px;
+}
+
+.tab-row-widget .note-tab[is-small] .note-tab-title {
+    margin-inline-start: 0;
+}
+
+.tab-row-widget .note-tab .note-tab-drag-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    z-index: 50;
+}
+
+.tab-row-widget .note-tab .note-tab-close {
+    flex: 0 0 22px;
+    border-radius: 50%;
+    z-index: 100;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.tab-scroll-button-left, .tab-scroll-button-right {
+    display: none;
+    flex: 0 0 36px;
+    height: 36px;
+    padding: 1px 1px 1px 1px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.tab-scroll-button-left {
+    color: var(--active-tab-text-color);
+    box-shadow: inset -1px 0 0 0 var(--main-border-color);
+}
+
+.tab-scroll-button-right {
+    color: var(--active-tab-text-color);
+    box-shadow: inset 1px 0 0 0 var(--main-border-color);
+}
+
+.tab-scroll-button-left.disabled,
+.tab-scroll-button-right.disabled {
+    color: var(--inactive-tab-text-color);
+    box-shadow: none;
+    pointer-events: none;
+}
+
+.tab-scroll-button-left:hover,
+.tab-scroll-button-right:hover {
+    background-color: var(--tab-background-color, var(--inactive-tab-hover-background-color));
+}
+
+.tab-row-widget .note-tab:hover .note-tab-wrapper {
+    background-color: var(--tab-background-color, var(--inactive-tab-hover-background-color));
+}
+
+.tab-row-widget .note-tab[active]:hover .note-tab-wrapper {
+    background-color: var(--tab-background-color, var(--active-tab-hover-background-color));
+}
+
+body.desktop .tab-row-widget .note-tab .note-tab-close:hover {
+    background-color: var(--hover-item-background-color);
+    color: var(--hover-item-text-color);
+}
+
+.tab-row-widget .note-tab[is-smaller] .note-tab-close {
+    margin-inline-start: auto;
+}
+.tab-row-widget .note-tab[is-mini]:not([active]) .note-tab-close {
+    display: none;
+}
+.tab-row-widget .note-tab[is-mini][active] .note-tab-close {
+    margin-inline-start: auto;
+    margin-inline-end: auto;
+}
+@-moz-keyframes note-tab-was-just-added {
+    to {
+        top: 0;
+    }
+}
+@-webkit-keyframes note-tab-was-just-added {
+    to {
+        top: 0;
+    }
+}
+@-o-keyframes note-tab-was-just-added {
+    to {
+        top: 0;
+    }
+}
+@keyframes note-tab-was-just-added {
+    to {
+        top: 0;
+    }
+}
+.tab-row-widget.tab-row-widget-is-sorting .note-tab:not(.note-tab-is-dragging),
+.tab-row-widget:not(.tab-row-widget-is-sorting) .note-tab.note-tab-was-just-dragged {
+    transition: transform 120ms ease-in-out;
+}
+.tab-row-widget-wrapper {
+    display: flex;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+}
+
+.tab-row-widget-scrolling-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none; /* Firefox */
+}
+
+/* Chrome/Safari */
+.tab-row-widget-scrolling-container::-webkit-scrollbar {
+    display: none;
+}
