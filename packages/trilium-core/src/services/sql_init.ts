@@ -16,6 +16,18 @@ import passwordService from "./encryption/password";
 
 export const dbReady = deferred<void>();
 
+/**
+ * Registry of per-database readiness deferreds for multi-database mode.
+ * The default `dbReady` is used when no `dbId` is specified.
+ */
+const dbReadyMap = new Map<string, ReturnType<typeof deferred<void>>>();
+
+export function getDbReady(dbId?: string) {
+    if (!dbId) return dbReady;
+    if (!dbReadyMap.has(dbId)) dbReadyMap.set(dbId, deferred<void>());
+    return dbReadyMap.get(dbId)!;
+}
+
 let schema: string;
 let getDemoArchive: (() => Promise<Uint8Array | null>) | null = null;
 
@@ -45,7 +57,7 @@ function isDbInitialized() {
     }
 }
 
-async function initDbConnection() {
+async function initDbConnection(dbId?: string) {
     if (!isDbInitialized()) {
         return;
     }
@@ -70,7 +82,7 @@ async function initDbConnection() {
         PRIMARY KEY (tmpID)
     );`);
 
-    dbReady.resolve();
+    getDbReady(dbId).resolve();
 }
 
 function setDbAsInitialized() {
@@ -103,10 +115,10 @@ function optimize() {
     log.info(`Optimization finished in ${Date.now() - start}ms.`);
 }
 
-function initializeDb() {
-    getContext().init(initDbConnection);
+function initializeDb(dbId?: string) {
+    getContext().init(() => initDbConnection(dbId));
 
-    dbReady.then(() => {
+    getDbReady(dbId).then(() => {
         getBackup().scheduleBackups();
 
         // Optimize is usually inexpensive no-op, so running it semi-frequently is not a big deal
@@ -234,4 +246,4 @@ async function createDatabaseForSync(options: OptionRow[], syncServerHost = "", 
     log.info("Schema and not synced options generated.");
 }
 
-export default { isDbInitialized, createDatabaseForSync, setDbAsInitialized, schemaExists, getDbSize, initDbConnection, dbReady, initializeDb, createInitialDatabase };
+export default { isDbInitialized, createDatabaseForSync, setDbAsInitialized, schemaExists, getDbSize, initDbConnection, dbReady, getDbReady, initializeDb, createInitialDatabase };

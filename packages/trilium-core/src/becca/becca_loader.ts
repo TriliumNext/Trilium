@@ -3,9 +3,10 @@ import eventService from "../services/events";
 
 import entityConstructor from "../becca/entity_constructor.js";
 import { getLog } from "../services/log.js";
-import { dbReady } from "../services/sql_init.js";
+import { dbReady, getDbReady } from "../services/sql_init.js";
 import ws from "../services/ws.js";
-import becca from "./becca.js";
+import becca, { beccaInstances } from "./becca.js";
+import Becca from "./becca-interface.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";
@@ -288,10 +289,42 @@ eventService.subscribeBeccaLoader(eventService.ENTER_PROTECTED_SESSION, () => {
 
 eventService.subscribeBeccaLoader(eventService.LEAVE_PROTECTED_SESSION, load);
 
+/**
+ * Load an additional database into its own Becca instance (multi-database mode).
+ * Must be called after the database's `initSql(instance, dbId)` has completed.
+ */
+export async function loadDatabase(dbId: string): Promise<void> {
+    const instance = new Becca();
+    beccaInstances.set(dbId, instance);
+
+    await getDbReady(dbId);
+
+    const { initStartupOptions } = await import("../services/options_init.js");
+
+    getContext().init(() => {
+        getContext().set("dbId", dbId);
+        load();
+        getSql().transactional(() => initStartupOptions());
+    });
+}
+
+/**
+ * Unload a database's Becca instance and remove it from the registry.
+ */
+export function unloadDatabase(dbId: string): void {
+    const instance = beccaInstances.get(dbId);
+    if (instance) {
+        instance.reset();
+        beccaInstances.delete(dbId);
+    }
+}
+
 export { load, reload };
 
 export default {
     load,
     reload,
+    loadDatabase,
+    unloadDatabase,
     beccaLoaded
 };

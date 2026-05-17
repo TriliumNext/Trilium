@@ -19,6 +19,7 @@ type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
 export default class WebSocketMessagingProvider implements MessagingProvider {
     private webSocketServer!: WebSocketServer;
     private clientMap = new Map<string, WebSocket>();
+    private clientDbMap = new Map<string, string>(); // clientId → dbId
     private clientMessageHandler?: ClientMessageHandler;
 
     init(httpServer: HttpServer, sessionParser: express.RequestHandler) {
@@ -42,10 +43,23 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
             (ws as any).id = id;
             this.clientMap.set(id, ws);
 
-            console.log(`websocket client connected`);
+            // Extract dbId from query string if provided (e.g. ws://...?dbId=xyz)
+            const url = new URL(req.url || "", "http://localhost");
+            const dbId = url.searchParams.get("dbId");
+            if (dbId) {
+                this.clientDbMap.set(id, dbId);
+            }
+
+            console.log(`websocket client connected${dbId ? ` (db: ${dbId})` : ""}`);
 
             ws.on("message", async (messageJson) => {
                 const message = JSON.parse(messageJson as any);
+
+                // Allow clients to register their dbId after connection
+                if (message.type === "register-db" && message.dbId) {
+                    this.clientDbMap.set(id, message.dbId);
+                    return;
+                }
 
                 if (this.clientMessageHandler) {
                     await this.clientMessageHandler(id, message);
@@ -54,6 +68,7 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
 
             ws.on("close", () => {
                 this.clientMap.delete(id);
+                this.clientDbMap.delete(id);
             });
         });
 
@@ -70,19 +85,26 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
         this.clientMessageHandler = handler;
     }
 
-    sendMessageToAllClients(message: WebSocketMessage): void {
+    sendMessageToAllClients(message: WebSocketMessage, dbId?: string): void {
         const jsonStr = JSON.stringify(message);
 
         if (this.webSocketServer) {
             if (message.type !== "sync-failed" && message.type !== "api-log-messages") {
-                log.info(`Sending message to all clients: ${jsonStr}`);
+                log.info(`Sending message to ${dbId ? `db:${dbId}` : "all"} clients: ${jsonStr}`);
             }
 
-            this.webSocketServer.clients.forEach((client) => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(jsonStr);
+            for (const [clientId, ws] of this.clientMap) {
+                if (ws.readyState !== WebSocket.OPEN) continue;
+
+                // If dbId is specified, only send to clients registered to that database.
+                // Clients without a registered dbId (legacy/default) receive all messages.
+                if (dbId) {
+                    const clientDb = this.clientDbMap.get(clientId);
+                    if (clientDb && clientDb !== dbId) continue;
                 }
-            });
+
+                ws.send(jsonStr);
+            }
         }
     }
 

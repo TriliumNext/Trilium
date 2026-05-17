@@ -174,6 +174,89 @@ async function main() {
     await startTriliumServer();
     console.log("Server loaded");
 
+    // Register the current database as a workspace on first run
+    const { ensureCurrentDbRegistered, loadRegistry, addWorkspace, removeWorkspace } = await import("./workspace_registry.js");
+    ensureCurrentDbRegistered(dataDirs.TRILIUM_DATA_DIR);
+
+    // Workspace management IPC handlers
+    const { ipcMain, dialog } = await import("electron");
+    const { registerWindowDb } = (await import("@triliumnext/server/src/routes/electron.js"));
+
+    ipcMain.handle("get-workspaces", () => loadRegistry());
+
+    ipcMain.handle("add-workspace", (_event, name: string, dataDir: string) => {
+        return addWorkspace(name, dataDir);
+    });
+
+    ipcMain.handle("remove-workspace", (_event, id: string) => {
+        removeWorkspace(id);
+    });
+
+    ipcMain.handle("pick-directory", async () => {
+        const result = await dialog.showOpenDialog({
+            properties: ["openDirectory", "createDirectory"]
+        });
+        return result.filePaths[0] || null;
+    });
+
+    ipcMain.handle("open-workspace", async (_event, workspaceId: string) => {
+        const registry = loadRegistry();
+        const workspace = registry.workspaces.find(w => w.id === workspaceId);
+        if (!workspace) {
+            throw new Error(`Workspace ${workspaceId} not found`);
+        }
+
+        const { initSql, getLog: getCoreLog } = await import("@triliumnext/core");
+        const { SqlService } = await import("@triliumnext/core/src/services/sql/sql.js");
+        const { default: becca_loader } = await import("@triliumnext/core/src/becca/becca_loader.js");
+
+        // Create a new database provider for the workspace
+        const wsDbProvider = new BetterSqlite3Provider();
+        const wsDocPath = path.join(workspace.dataDir, "document.db");
+        wsDbProvider.loadFromFile(wsDocPath, false);
+
+        const ws = (await import("@triliumnext/server/src/services/ws.js")).default;
+        const cls = (await import("@triliumnext/server/src/services/cls.js")).default;
+        const entity_changes = (await import("@triliumnext/server/src/services/entity_changes.js")).default;
+
+        await initSql(new SqlService({
+            provider: wsDbProvider,
+            isReadOnly: false,
+            async onTransactionCommit() {
+                ws.sendTransactionEntityChangesToAllClients();
+            },
+            async onTransactionRollback() {
+                const entityChangeIds = cls.getAndClearEntityChangeIds();
+                if (entityChangeIds.length > 0) {
+                    getCoreLog().info("Transaction rollback dirtied the becca, forcing reload.");
+                    becca_loader.load();
+                }
+                entity_changes.recalculateMaxEntityChangeId();
+            }
+        }, getCoreLog()), workspaceId);
+
+        await becca_loader.loadDatabase(workspaceId);
+
+        // Create a new window for this workspace
+        const { BrowserWindow } = await import("electron");
+        const win = new BrowserWindow({
+            width: 1000,
+            height: 800,
+            title: `Trilium Notes - ${workspace.name}`,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+                spellcheck: true,
+                webviewTag: true
+            }
+        });
+        win.setMenuBarVisibility(false);
+        win.loadURL(`http://127.0.0.1:${port}/?dbId=${workspaceId}`);
+        registerWindowDb(win.webContents.id, workspaceId);
+
+        return { success: true };
+    });
+
     serverInitializedPromise.resolve();
 }
 

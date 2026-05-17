@@ -31,6 +31,7 @@ interface CustomGlobals extends BootstrapDefinition {
     SEARCH_HELP_TEXT: string;
     activeDialog: JQuery<HTMLElement> | null;
     componentId: string;
+    dbId?: string;
     linter: typeof lint;
 }
 

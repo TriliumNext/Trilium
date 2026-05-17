@@ -49,6 +49,7 @@ import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.jsx";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.jsx";
 import TitleBarButtons from "../widgets/title_bar_buttons.jsx";
+import WorkspaceSelector from "../widgets/workspace_selector.jsx";
 import TocWidget from "../widgets/toc.js";
 import WatchedFileUpdateStatusWidget from "../widgets/watched_file_update_status.js";
 import { applyModals } from "./layout_commons.js";
@@ -87,6 +88,7 @@ export default class DesktopLayout {
                 new FlexContainer("row")
                     .class("tab-row-container")
                     .child(new FlexContainer("row").id("tab-row-left-spacer"))
+                    .optChild(isElectron, <WorkspaceSelector />)
                     .optChild(launcherPaneIsHorizontal, <LeftPaneToggle isHorizontalLayout={true} />)
                     .child(<TabHistoryNavigationButtons />)
                     .child(new TabRowWidget().class("full-width"))
@@ -115,6 +117,7 @@ export default class DesktopLayout {
                             .optChild(!fullWidthTabBar,
                                 new FlexContainer("row")
                                     .class("tab-row-container")
+                                    .optChild(isElectron, <WorkspaceSelector />)
                                     .child(<TabHistoryNavigationButtons />)
                                     .child(new TabRowWidget())
                                     .optChild(isNewLayout, <RightPaneToggle />)

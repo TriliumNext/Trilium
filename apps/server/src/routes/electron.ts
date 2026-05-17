@@ -6,14 +6,41 @@ import { Session, SessionData } from "express-session";
 import { parse as parseQuery } from "qs";
 import EventEmitter from "events";
 
+import { namespace } from "../cls_provider.js";
+
 type MockedResponse = Response<any, Record<string, any>, number>;
+
+/**
+ * Maps Electron webContentsId to a database ID for multi-database routing.
+ * When a window is registered with a dbId, all IPC requests from that window
+ * will have the dbId set in CLS context so getSql()/becca route correctly.
+ */
+const windowToDbId = new Map<number, string>();
+
+export function registerWindowDb(webContentsId: number, dbId: string) {
+    windowToDbId.set(webContentsId, dbId);
+}
+
+export function unregisterWindowDb(webContentsId: number) {
+    windowToDbId.delete(webContentsId);
+}
 
 function init(app: Application) {
     electron.ipcMain.on("server-request", (event, arg) => {
         const req = new FakeRequest(arg);
         const res = new FakeResponse(event, arg);
+        const dbId = windowToDbId.get(event.sender.id);
 
-        return app.router(req as any, res as any, () => {});
+        // Wrap in CLS context (matches what route_api.ts does for HTTP requests)
+        namespace.runAndReturn(() => {
+            if (dbId) {
+                namespace.set("dbId", dbId);
+            }
+            namespace.set("componentId", arg.headers?.["trilium-component-id"]);
+            namespace.set("hoistedNoteId", arg.headers?.["trilium-hoisted-note-id"] || "root");
+            namespace.set("localNowDateTime", arg.headers?.["trilium-local-now-datetime"]);
+            return app.router(req as any, res as any, () => {});
+        });
     });
 }
 

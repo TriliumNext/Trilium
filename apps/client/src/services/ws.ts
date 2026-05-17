@@ -237,11 +237,18 @@ async function consumeFrontendUpdateData() {
 
 function connectWebSocket() {
     const loc = window.location;
-    const webSocketUri = `${loc.protocol === "https:" ? "wss:" : "ws:"}//${loc.host}${loc.pathname}`;
+    const dbId = glob.dbId;
+    const wsQuery = dbId ? `?dbId=${encodeURIComponent(dbId)}` : "";
+    const webSocketUri = `${loc.protocol === "https:" ? "wss:" : "ws:"}//${loc.host}${loc.pathname}${wsQuery}`;
 
     // use wss for secure messaging
     const ws = new WebSocket(webSocketUri);
-    ws.onopen = () => console.debug(utils.now(), `Connected to server ${webSocketUri} with WebSocket`);
+    ws.onopen = () => {
+        console.debug(utils.now(), `Connected to server ${webSocketUri} with WebSocket`);
+        if (dbId) {
+            ws.send(JSON.stringify({ type: "register-db", dbId }));
+        }
+    };
     ws.onmessage = handleWebSocketMessage;
     // we're not handling ws.onclose here because reconnection is done in sendPing()
 

@@ -1,0 +1,81 @@
+.workspace-selector {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-left: 8px;
+    margin-right: 4px;
+    contain: none;
+    -webkit-app-region: no-drag;
+}
+
+.workspace-selector-trigger {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--main-text-color);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.workspace-selector-trigger:hover {
+    background: var(--hover-item-background-color);
+}
+
+.workspace-chevron {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.workspace-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    min-width: 200px;
+    padding: 4px;
+    background: var(--menu-background-color, var(--main-background-color));
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.workspace-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--main-text-color);
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+}
+
+.workspace-item:hover {
+    background: var(--hover-item-background-color);
+}
+
+.workspace-item.active {
+    background: var(--active-item-background-color);
+    font-weight: 500;
+}
+
+.workspace-icon {
+    font-size: 16px;
+    opacity: 0.7;
+}
+
+.workspace-divider {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--main-border-color);
+}

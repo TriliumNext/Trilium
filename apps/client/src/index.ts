@@ -42,6 +42,12 @@ async function setupGlob() {
         device: json.device || getDevice()
     };
     window.glob.getThemeStyle = getThemeStyle;
+
+    // Extract dbId from URL for multi-database routing
+    const dbIdParam = new URLSearchParams(window.location.search).get("dbId");
+    if (dbIdParam) {
+        window.glob.dbId = dbIdParam;
+    }
 }
 
 function getDevice() {

@@ -41,6 +41,7 @@ async function getHeaders(headers?: Headers) {
         "trilium-component-id": glob.componentId,
         "trilium-local-now-datetime": utils.localNowDateTime(),
         "trilium-hoisted-note-id": activeNoteContext ? activeNoteContext.hoistedNoteId : null,
+        "trilium-db-id": glob.dbId || null,
         "x-csrf-token": glob.csrfToken
     };
 

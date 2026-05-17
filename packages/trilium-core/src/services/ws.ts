@@ -34,7 +34,12 @@ function init() {
 
 function sendMessageToAllClients(message: WebSocketMessage) {
     if (messagingProvider) {
-        messagingProvider.sendMessageToAllClients(message);
+        // Scope to the current database context if available
+        let dbId: string | undefined;
+        try {
+            dbId = cls.getContext().get<string>("dbId");
+        } catch { /* no CLS context */ }
+        messagingProvider.sendMessageToAllClients(message, dbId);
     }
 }
 

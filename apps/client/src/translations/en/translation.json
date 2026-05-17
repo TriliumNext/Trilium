@@ -2078,6 +2078,10 @@
     "open_note_in_new_window": "Open note in a new window",
     "open_note_in_popup": "Quick edit"
   },
+  "workspaces": {
+    "switch_workspace": "Switch workspace",
+    "add_workspace": "Add workspace"
+  },
   "electron_integration": {
     "desktop-application": "Desktop Application",
     "native-title-bar": "Native title bar",

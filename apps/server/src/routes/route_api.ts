@@ -92,6 +92,7 @@ function internalRoute<P extends ParamsDictionary>(method: HttpMethod, path: str
                 cls.set("componentId", req.headers["trilium-component-id"]);
                 cls.set("localNowDateTime", req.headers["trilium-local-now-datetime"]);
                 cls.set("hoistedNoteId", req.headers["trilium-hoisted-note-id"] || "root");
+                cls.set("dbId", req.headers["trilium-db-id"]);
 
                 const cb = () => routeHandler(req, res, next);
 

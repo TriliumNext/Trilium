@@ -34,10 +34,11 @@ export type ClientMessageHandler = (clientId: string, message: any) => void | Pr
 
 export interface MessagingProvider {
     /**
-     * Send a message to all connected clients.
+     * Send a message to all connected clients, optionally scoped to a specific database.
+     * When `dbId` is provided, only clients registered to that database receive the message.
      * This is the primary method used by core services like TaskContext.
      */
-    sendMessageToAllClients(message: WebSocketMessage): void;
+    sendMessageToAllClients(message: WebSocketMessage, dbId?: string): void;
 
     /**
      * Send a message to a specific client by ID.
