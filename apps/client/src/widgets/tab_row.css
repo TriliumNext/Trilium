@@ -259,11 +259,11 @@ body.desktop .tab-row-widget .note-tab .note-tab-close:hover {
     z-index: 60;
 }
 
-.tab-row-widget .note-tab .note-tab-segment:hover {
+.tab-row-widget .note-tab.note-tab-split .note-tab-segment:hover {
     background-color: var(--hover-item-background-color);
 }
 
-.tab-row-widget .note-tab .note-tab-segment[active] {
+.tab-row-widget .note-tab.note-tab-split .note-tab-segment[active] {
     font-weight: bold;
 }
 
