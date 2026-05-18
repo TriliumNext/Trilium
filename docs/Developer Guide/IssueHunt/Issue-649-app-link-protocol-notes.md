@@ -4,12 +4,17 @@ This document captures a practical implementation note for issue [#649](https://
 
 ## Target URL Shape
 
-- Canonical format: `trilium://note/<noteId>`
+- Preferred format: `triliumnext://note/<noteId>`
+- Compatibility fallback: `trilium://note/<noteId>`
 - Optional query extensions for future use:
   - `?focus=true`
   - `?newWindow=true`
 
 ## Entry Points
+
+- Register protocol handlers with the operating system during app setup:
+  - Electron `app.setAsDefaultProtocolClient(...)`
+  - Installer registration for supported platforms
 
 - Cold start (desktop app not running):
   - Parse command-line arguments and extract protocol URL.
@@ -29,11 +34,10 @@ This document captures a practical implementation note for issue [#649](https://
 - Resolve note ID and select note in tree.
 - Activate existing tab if already open.
 - Fallback:
-  - show non-blocking warning when note cannot be resolved.
+  - Show non-blocking warning when note cannot be resolved.
 
 ## Security Constraints
 
 - No arbitrary command execution.
 - No shell passthrough from protocol payload.
 - Length limits for parsed URL and note ID.
-
