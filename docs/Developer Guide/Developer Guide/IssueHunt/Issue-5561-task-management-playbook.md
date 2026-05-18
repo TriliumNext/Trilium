@@ -11,9 +11,9 @@ This note proposes a staged implementation approach for issue [#5561](https://gi
 ## Phase 1 - Core Data Model
 
 - Introduce task attributes:
-  - `task.status` (`todo`, `in_progress`, `done`, `blocked`)
-  - `task.dueDate` (ISO date string)
-  - `task.priority` (`low`, `normal`, `high`)
+  - `task:status` (`todo`, `in_progress`, `done`, `blocked`)
+  - `task:dueDate` (ISO date string)
+  - `task:priority` (`low`, `normal`, `high`)
 - Keep attributes optional to avoid migration breakage.
 
 ## Phase 2 - Basic UX
@@ -42,4 +42,3 @@ This note proposes a staged implementation approach for issue [#5561](https://gi
 
 - Full Kanban board in the first iteration.
 - Multi-user assignment workflow in phase 1.
-
