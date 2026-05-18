@@ -9,7 +9,7 @@ Current architecture assumes a single trusted user for many scripting and UI beh
 ## Phase A - Identity and Session Foundations
 
 - Define user identity model and stable user IDs.
-- Isolate session state per authenticated user.
+- Isolate session state per authenticated user, with session records linked to user IDs.
 - Add server-side guardrails for user-scoped resources.
 
 ## Phase B - Authorization Surface
@@ -18,7 +18,7 @@ Current architecture assumes a single trusted user for many scripting and UI beh
   - owner
   - shared read
   - shared write
-- Enforce authorization in ETAPI and sync endpoints.
+- Enforce authorization in core services first (note/resource services), then ETAPI and sync endpoints.
 
 ## Phase C - Script Safety
 
@@ -36,5 +36,5 @@ Current architecture assumes a single trusted user for many scripting and UI beh
 
 - No cross-user data leak in note metadata, history, or attachments.
 - Authorization checks are consistent across desktop and server APIs.
+- Search results and search indexes remain fully isolated per authorized user scope.
 - Backward compatibility for existing single-user setups.
-
