@@ -82,7 +82,7 @@
     "debounce": "3.0.0",
     "debug": "4.4.3",
     "ejs": "5.0.2",
-    "electron": "41.6.1",
+    "electron": "42.1.0",
     "electron-window-state": "5.0.3",
     "express": "5.2.1",
     "express-http-proxy": "2.1.2",
