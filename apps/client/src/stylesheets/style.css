@@ -1091,6 +1091,20 @@ svg.ck-icon.note-icon {
     background-color: var(--accented-background-color);
 }
 
+
+
+.ck-content > *,
+.ck-content .ck-tn-current-ancestor > * {
+    transition: opacity 150ms ease;
+}
+
+/* In Zen Mode, while the editor is focused, dim every block that is neither the
+   current block nor an ancestor of it. */
+body.zen .ck-content.ck-tn-focus > :not(.ck-tn-current-block):not(.ck-tn-current-ancestor),
+body.zen .ck-content.ck-tn-focus .ck-tn-current-ancestor > :not(.ck-tn-current-block):not(.ck-tn-current-ancestor) {
+    opacity: 0.5;
+}
+
 .ck-content .image > figcaption {
     color: var(--main-text-color) !important;
     background-color: var(--accented-background-color) !important;
@@ -2838,3 +2852,4 @@ iframe.print-iframe {
 .tn-unknown-task-state .todo-list__label input[type="checkbox"] {
     outline: 3px solid var(--task-checkbox-unknown-state-color);
 }
+
