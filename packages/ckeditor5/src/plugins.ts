@@ -38,6 +38,7 @@ import AdmonitionToolbar from "./plugins/admonition_toolbar.js";
 import IncludeNoteBoxSizeDropdown from "./plugins/include_note_box_size_dropdown.js";
 import IncludeNoteToolbar from "./plugins/include_note_toolbar.js";
 import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multistate.js";
+import CurrentBlockHighlight from "./plugins/current_block_highlight.js";
 
 /**
  * Plugins that are specific to Trilium and not part of the CKEditor 5 core, included in both text editors but not in the attribute editor.
@@ -67,6 +68,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     IncludeNoteToolbar,
     TodoListMultistate,
     CopyAnchorLinkButton,
+    CurrentBlockHighlight,
 ];
 
 /**
