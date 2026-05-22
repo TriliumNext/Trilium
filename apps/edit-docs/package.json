@@ -13,7 +13,7 @@
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/desktop": "workspace:*",
     "copy-webpack-plugin": "14.0.0",
-    "electron": "41.6.1"
+    "electron": "42.1.0"
   },
   "scripts": {
     "build": "tsx scripts/build.ts",
