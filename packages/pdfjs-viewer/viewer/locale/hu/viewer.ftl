@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = { $page }. oldal kiválasztása
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = { $page }. oldal kiválasztása
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = { $page }. / { $total } oldal
@@ -654,12 +650,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Oldalsáv be/ki
 pdfjs-toggle-views-manager-notification-button =
     .title = Oldalsáv be/ki (a dokumentum bélyegképeket/vázlatot/mellékleteket/rétegeket tartalmaz)
 pdfjs-toggle-views-manager-button1-label = Oldalak kezelése
-pdfjs-toggle-views-manager-button-label = Oldalsáv be/ki
 pdfjs-views-manager-sidebar =
     .aria-label = Oldalsáv
 pdfjs-views-manager-sidebar-resizer =
@@ -668,9 +661,11 @@ pdfjs-views-manager-view-selector-button =
     .title = Nézetek
 pdfjs-views-manager-view-selector-button-label = Nézetek
 pdfjs-views-manager-pages-title = Oldalak
-pdfjs-views-manager-outlines-title = Dokumentumvázlat
+pdfjs-views-manager-outlines-title1 = Dokumentumvázlat
+    .title = Dokumentumvázlat (dupla kattintás az összes elem kinyitásához/becsukásához)
 pdfjs-views-manager-attachments-title = Mellékletek
-pdfjs-views-manager-layers-title = Rétegek
+pdfjs-views-manager-layers-title1 = Rétegek
+    .title = Rétegek (dupla kattintás az összes réteg eredeti állapotba való visszaállításához)
 pdfjs-views-manager-pages-option-label = Oldalak
 pdfjs-views-manager-outlines-option-label = Dokumentumvázlat
 pdfjs-views-manager-attachments-option-label = Mellékletek
@@ -690,7 +685,7 @@ pdfjs-views-manager-pages-status-action-button-label = Kezelés
 pdfjs-views-manager-pages-status-copy-button-label = Másolás
 pdfjs-views-manager-pages-status-cut-button-label = Kivágás
 pdfjs-views-manager-pages-status-delete-button-label = Törlés
-pdfjs-views-manager-pages-status-save-as-button-label = Mentés másként…
+pdfjs-views-manager-pages-status-export-selected-button-label = Kiválasztottak exportálása…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =
@@ -730,6 +725,10 @@ pdfjs-views-manager-paste-button-before =
 #   $page (Number) - the page number after which the paste button is.
 pdfjs-views-manager-paste-button-after =
     .title = Beillesztés a(z) { $page }. oldal után
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = ÚJ
+pdfjs-views-manager-waiting-for-file = Fájl feltöltése…
 pdfjs-toggle-views-manager-button1 =
     .title = Oldalak kezelése
 

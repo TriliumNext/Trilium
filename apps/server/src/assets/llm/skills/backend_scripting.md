@@ -7,6 +7,22 @@ Backend scripts run in Node.js on the server. They have direct access to notes i
 1. Create a Code note with language "JS backend".
 2. The script can be run manually (Execute button) or triggered automatically.
 
+## Async code — IMPORTANT
+
+The script body runs inside a **regular (non-async) function**, so **top-level `await` is NOT allowed**. Writing `await` directly at the top level fails with: *"await is only valid in async functions and the top level bodies of modules"*.
+
+To use `await`, wrap the awaited code in an async IIFE:
+
+```javascript
+(async () => {
+    const response = await fetch('https://api.example.com/data');
+    const data = await response.json();
+    api.log(JSON.stringify(data));
+})();
+```
+
+Note that most `api.*` methods (e.g. `api.getNote`, `api.searchForNotes`, `api.createTextNote`) are **synchronous** and do not need `await` at all. Only genuinely async operations like `fetch()` require the wrapper above.
+
 ## Script API (`api` global)
 
 ### Note retrieval
@@ -49,10 +65,13 @@ Backend scripts run in Node.js on the server. They have direct access to notes i
 - `api.cheerio` - **DEPRECATED**, use `api.htmlParser` instead
 
 ### HTTP Requests
-Use the native `fetch()` API for HTTP requests:
+Use the native `fetch()` API for HTTP requests. Since `fetch()` is async and top-level `await` is not allowed (see "Async code" above), wrap it in an async IIFE:
 ```javascript
-const response = await fetch('https://api.example.com/data');
-const data = await response.json();
+(async () => {
+    const response = await fetch('https://api.example.com/data');
+    const data = await response.json();
+    api.log(JSON.stringify(data));
+})();
 ```
 
 Note: `api.axios` was removed in 2026 due to a supply chain security incident. Use `fetch()` instead.

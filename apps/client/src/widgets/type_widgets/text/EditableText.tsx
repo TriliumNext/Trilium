@@ -1,4 +1,5 @@
 import "./EditableText.css";
+import "./LinkEmbed.css";
 
 import { CKTextEditor, EditorWatchdog, TemplateDefinition } from "@triliumnext/ckeditor5";
 import { deferred } from "@triliumnext/commons";
@@ -19,6 +20,7 @@ import TouchBar, { TouchBarButton, TouchBarGroup, TouchBarSegmentedControl } fro
 import { TypeWidgetProps } from "../type_widget";
 import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
+import linkEmbedService from "../../../services/link_embed";
 import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 
 /**
@@ -133,6 +135,25 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             });
         },
         loadIncludedNote,
+        // Link embed functionality
+        addLinkEmbedToTextCommand() {
+            if (!editorApiRef.current) return;
+            parentComponent?.triggerCommand("showLinkEmbedDialog", {
+                editorApi: editorApiRef.current,
+            });
+        },
+        async fetchLinkMetadata(url: string) {
+            return await linkEmbedService.fetchMetadata(url);
+        },
+        detectEmbedType(url: string) {
+            return linkEmbedService.detectEmbedType(url);
+        },
+        renderLinkEmbed(container, metadata, editable) {
+            linkEmbedService.renderEmbedPreview(container, metadata, editable);
+        },
+        renderLinkMention(container, metadata, editable) {
+            linkEmbedService.renderMentionPreview(container, metadata, editable);
+        },
         // Creating notes in @-completion
         async createNoteForReferenceLink(title: string) {
             const notePath = noteContext?.notePath;

@@ -320,6 +320,12 @@
     --calendar-coll-event-hover-filter: brightness(1.25);
     --callendar-coll-event-archived-sripe-color: #00000026;
     --calendar-coll-today-background-color: #ffffff08;
+
+    --task-checkbox-without-state-background: #ffffff26;
+    --task-checkbox-with-state-background: #ffffff3b;
+    --task-checkbox-done-color: #408b40;
+    --task-checkbox-unknown-state-color: orange;
+    --task-checkbox-glyph-color: white;
 }
 
 /*
@@ -398,4 +404,8 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 
 .note-tooltip.with-hue {
     --tooltip-background-color: hsl(var(--custom-color-hue), 8.8%, 24%);
+}
+
+[data-trilium-task-state] {
+    --task-state-adjusted-color: hsl(var(--task-state-hue), 40%, 50%);
 }

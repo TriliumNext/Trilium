@@ -5,27 +5,35 @@ on:
     branches:
       - main
       - hotfix
-    paths:
-      - "apps/client/**"
-      - "apps/server/**"
-      - "apps/desktop/**"
-      - "apps/standalone/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - "package.json"
-      - ".github/workflows/playwright.yml"
-      - ".github/actions/build-server/**"
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - "LICENSE"
+      - ".github/workflows/mobile.yml"
+      - "apps/web-clipper/**"
+      - "apps/website/**"
+      - "apps/db-compare/**"
+      - "apps/dump-db/**"
+      - "apps/edit-docs/**"
+      - "apps/build-docs/**"
+      - "apps/icon-pack-builder/**"
+      - "apps/client/src/translations/**"
+      - "apps/server/src/assets/translations/**"
   pull_request:
-    paths:
-      - "apps/client/**"
-      - "apps/server/**"
-      - "apps/desktop/**"
-      - "apps/standalone/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - "package.json"
-      - ".github/workflows/playwright.yml"
-      - ".github/actions/build-server/**"
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - "LICENSE"
+      - ".github/workflows/mobile.yml"
+      - "apps/web-clipper/**"
+      - "apps/website/**"
+      - "apps/db-compare/**"
+      - "apps/dump-db/**"
+      - "apps/edit-docs/**"
+      - "apps/build-docs/**"
+      - "apps/icon-pack-builder/**"
+      - "apps/client/src/translations/**"
+      - "apps/server/src/assets/translations/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -128,7 +136,7 @@ jobs:
           filter: tree:0
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 24

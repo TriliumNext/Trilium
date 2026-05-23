@@ -4,7 +4,7 @@
   "private": true,
   "description": "Desktop version of Trilium which imports the demo database (presented to new users at start-up) or the user guide and other documentation and saves the modifications for committing.",
   "dependencies": {
-    "archiver": "7.0.1",
+    "archiver": "8.0.0",
     "better-sqlite3": "12.10.0"
   },
   "devDependencies": {
@@ -13,7 +13,7 @@
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/desktop": "workspace:*",
     "copy-webpack-plugin": "14.0.0",
-    "electron": "41.3.0"
+    "electron": "41.7.0"
   },
   "scripts": {
     "build": "tsx scripts/build.ts",

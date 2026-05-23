@@ -131,7 +131,8 @@
         "title_arm64": "نظام لينكس على ARM",
         "description_x64": "لأغلب توزيعات لينكس، متوافق مع معمارية x86_64.",
         "description_arm64": "لتوزيعات لينكس المعتمدة على ARM، متوافق مع معمارية aarch64.",
-        "quick_start": "اختر صيغة الحزمة المناسبة وفقًا لتوزيعة نظامك:"
+        "quick_start": "اختر صيغة الحزمة المناسبة وفقًا لتوزيعة نظامك:",
+        "download_appimage": ".AppImage"
     },
     "download_helper_server_docker": {
         "download_ghcr": "ghcr.io",
@@ -151,7 +152,9 @@
         "text": "تنزيل الان ",
         "platform_small": "لاجل{{platform}}",
         "linux_small": "لLinux",
-        "linux_big": "اصدار v {{version}} لنظام لينكس"
+        "linux_big": "اصدار v {{version}} لنظام لينكس",
+        "platform_big": "الإصدار v{{version}} لـ {{platform}}",
+        "more_platforms": "منصات إضافية وإعداد الخادم"
     },
     "faq": {
         "title": "الاسئلة المتكررة",
@@ -195,5 +198,11 @@
         "icon_packs": "حِزم الأيقونات",
         "download": "تنزيل",
         "website": "موقغ الويب"
+    },
+    "header": {
+        "get-started": "ابدأ",
+        "documentation": "التوثيق",
+        "resources": "الموارد",
+        "support-us": "ادعمنا"
     }
 }

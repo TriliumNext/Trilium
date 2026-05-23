@@ -12,9 +12,3 @@
         padding: 0.5em 1em;
     }
 }
-
-.llm-chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 1rem;
-}

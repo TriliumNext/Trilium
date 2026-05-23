@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Выбраць старонку { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Выбраць старонку { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Старонка { $page } з { $total }
@@ -658,12 +654,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Паказаць/схаваць бакавую панэль
 pdfjs-toggle-views-manager-notification-button =
     .title = Паказаць/схаваць бакавую панэль (дакумент мае мініяцюры/змест/далучэнні/пласты)
 pdfjs-toggle-views-manager-button1-label = Кіраванне старонкамі
-pdfjs-toggle-views-manager-button-label = Паказаць/схаваць бакавую панэль
 pdfjs-views-manager-sidebar =
     .aria-label = Бакавая панэль
 pdfjs-views-manager-sidebar-resizer =
@@ -672,9 +665,11 @@ pdfjs-views-manager-view-selector-button =
     .title = Выгляд
 pdfjs-views-manager-view-selector-button-label = Выгляд
 pdfjs-views-manager-pages-title = Старонкі
-pdfjs-views-manager-outlines-title = Структура дакумента
+pdfjs-views-manager-outlines-title1 = Структура дакумента
+    .title = Структура дакумента (націсніце двойчы, каб разгарнуць/згарнуць усе элементы)
 pdfjs-views-manager-attachments-title = Далучэнні
-pdfjs-views-manager-layers-title = Пласты
+pdfjs-views-manager-layers-title1 = Пласты
+    .title = Пласты (націсніце двойчы каб скінуць у прадвызначаны стан)
 pdfjs-views-manager-pages-option-label = Старонкі
 pdfjs-views-manager-outlines-option-label = Структура дакумента
 pdfjs-views-manager-attachments-option-label = Далучэнні
@@ -695,7 +690,7 @@ pdfjs-views-manager-pages-status-action-button-label = Кіраваць
 pdfjs-views-manager-pages-status-copy-button-label = Капіяваць
 pdfjs-views-manager-pages-status-cut-button-label = Выразаць
 pdfjs-views-manager-pages-status-delete-button-label = Выдаліць
-pdfjs-views-manager-pages-status-save-as-button-label = Захаваць як…
+pdfjs-views-manager-pages-status-export-selected-button-label = Экспартаваць выбранае…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =
@@ -738,6 +733,10 @@ pdfjs-views-manager-paste-button-before =
 #   $page (Number) - the page number after which the paste button is.
 pdfjs-views-manager-paste-button-after =
     .title = Уставіць пасля старонкі { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = НОВАЕ
+pdfjs-views-manager-waiting-for-file = Зацягваецца файл…
 pdfjs-toggle-views-manager-button1 =
     .title = Кіраванне старонкамі
 

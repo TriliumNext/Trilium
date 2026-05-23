@@ -82,6 +82,12 @@ Additionally, shorter aliases are available for common configurations (see Alter
 | --- | --- | --- | --- |
 | `TRILIUM_LOGGING_RETENTIONDAYS` | integer | 90 | Number of days to retain log files |
 
+### Development Section
+
+| Environment Variable | Type | Default | Description |
+| --- | --- | --- | --- |
+| `TRILIUM_MANUAL_DB_MIGRATION` | boolean | false | If `true`, the application will not start if automatic database migrations are pending and would modify the database schema. |
+
 ## Alternative Environment Variables
 
 The following alternative environment variable names are also supported and work identically to their longer counterparts:

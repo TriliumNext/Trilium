@@ -587,8 +587,12 @@ function RevisionContentDiff({ noteContent, itemContent, itemType }: {
     itemContent: string | Uint8Array | undefined,
     itemType: string
 }) {
-    if (!noteContent || typeof itemContent !== "string") {
-        return <div className="revision-diff-content">{t("revisions.diff_not_available")}</div>;
+    if (typeof itemContent !== "string") {
+        return (
+            <div className="revision-diff-content">
+                <NoItems icon="bx bx-low-vision" text={t("revisions.diff_not_available")} />
+            </div>
+        );
     }
 
     let diffHtml: string;
@@ -597,7 +601,7 @@ function RevisionContentDiff({ noteContent, itemContent, itemType }: {
         diffHtml = HtmlDiff.execute(noteContent, itemContent);
     } else {
         // Use word diff for code/mermaid (plain text)
-        const diff = diffWords(noteContent, itemContent);
+        const diff = diffWords(noteContent ?? "", itemContent);
         diffHtml = diff.map(part => {
             if (part.added) {
                 return `<span class="revision-diff-added">${utils.escapeHtml(part.value)}</span>`;
@@ -606,6 +610,11 @@ function RevisionContentDiff({ noteContent, itemContent, itemType }: {
             }
             return utils.escapeHtml(part.value);
         }).join("");
+    }
+
+    // Diff returned no results, meaning that they are identical.
+    if (!diffHtml) {
+        return <NoItems className="revision-diff-content" icon="bx bx-copy" text={t("revisions.diff_identical")} />;
     }
 
     return <SanitizedHtml

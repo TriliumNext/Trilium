@@ -22,11 +22,15 @@ traduzione](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://ho
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes è un'applicazione per appunti ad organizzazione gerarchica,
@@ -191,7 +195,7 @@ Se la tua distribuzione è elencata nella tabella sottostante, utilizza il
 pacchetto della tua distribuzione.
 
 [![Stato del
-Packaging](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+Packaging](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 È anche possibile scaricare la versione binaria per la propria piattaforma dalla
 [pagina delle ultime
@@ -268,6 +272,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Alternatively, if you have Nix installed:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Compilare l'eseguibile
 Scarica la repository, installa le dipendenze eseguendo `pnpm` e compila
 l'applicazione desktop per Windows:
@@ -288,6 +303,34 @@ documentazione](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%
 per i dettagli. Se hai altre domande, sentiti libero di contattarci tramite i
 collegamenti presenti nella precedente sezione "Discuti con noi".
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Riconoscimenti
 
 * [zadam](https://github.com/zadam) per l'idea originale e l'implementazione
@@ -300,16 +343,13 @@ collegamenti presenti nella precedente sezione "Discuti con noi".
   canvas.
 * [antoniotejada](https://github.com/nriver) per lo strumento originale di
   colorazione della sintassi.
-* [Dosu](https://dosu.dev/) per averci fornito le risposte automatiche alle
-  questioni e alle discussioni su GitHub.
 * [Tabler Icons](https://tabler.io/icons) per le icone della barra delle
   applicazioni.
 
 Trilium non sarebbe possibile senza le tecnologie che lo supportano:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - l'editor visivo dietro
-  le note di testo. Siamo grati per averci offerto una serie di funzionalità
-  premium.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
+  text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - editor di codice con
   supporto per un'ampia gamma di linguaggi.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - la lavagna infinita

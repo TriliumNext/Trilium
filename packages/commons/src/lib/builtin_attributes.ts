@@ -115,8 +115,8 @@ export default [
     { type: "relation", name: "widget", isDangerous: true },
     { type: "relation", name: "renderNote", isDangerous: true },
     { type: "relation", name: "shareCss" },
-    { type: "relation", name: "shareJs" },
-    { type: "relation", name: "shareHtml" },
-    { type: "relation", name: "shareTemplate" },
+    { type: "relation", name: "shareJs", isDangerous: true },
+    { type: "relation", name: "shareHtml", isDangerous: true },
+    { type: "relation", name: "shareTemplate", isDangerous: true },
     { type: "relation", name: "shareFavicon" }
 ];

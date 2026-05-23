@@ -6,7 +6,7 @@ import windowService from "@triliumnext/server/src/services/window.js";
 import WebSocketMessagingProvider from "@triliumnext/server/src/services/ws_messaging_provider.js";
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import NodejsZipProvider from "@triliumnext/server/src/zip_provider.js";
-import archiver, { type Archiver } from "archiver";
+import { type Archiver, ZipArchive } from "archiver";
 import electron from "electron";
 import { createWriteStream, readFileSync, type WriteStream } from "fs";
 import fs from "fs/promises";
@@ -119,7 +119,7 @@ export async function importData(path: string) {
 
 async function createImportZip(path: string) {
     const inputFile = "input.zip";
-    const archive = archiver("zip", {
+    const archive = new ZipArchive({
         zlib: { level: 0 }
     });
 
@@ -146,7 +146,7 @@ function waitForEnd(archive: Archiver, stream: WriteStream) {
 }
 
 export async function createZipFromDirectory(dirPath: string, zipPath: string) {
-    const archive = archiver("zip", { zlib: { level: 5 } });
+    const archive = new ZipArchive({ zlib: { level: 5 } });
     const outputStream = createWriteStream(zipPath);
     archive.directory(dirPath, false);
     archive.pipe(outputStream);

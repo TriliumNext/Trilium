@@ -25,6 +25,10 @@
     "role_brief_history": {
       "lead-dev": "Elian Doran fundou o TriliumNext em 2024, um fork da comunidade criado depois que Zadam se afastou do projeto. Posteriormente, Zadam transferiu o repositório original para a equipe do TriliumNext, fundindo os dois projetos em um só.",
       "original-dev": "Em 25 de dezembro de 2017, Zadam lançou a primeira versão beta do Trilium (escrito com um único \"l\", ao contrário da flor). Insatisfeito com os organizadores de notas existentes, ele construiu uma poderosa base de conhecimento hierárquica auto-hospedada que acumulou mais de 22.000 estrelas no GitHub. Em 2024, com a vida cada vez mais corrida, ele colocou o projeto em modo de manutenção."
+    },
+    "channel": {
+      "nightly": "Noturno",
+      "standalone": "Autônomo"
     }
   },
   "toast": {
@@ -47,8 +51,9 @@
     "widget-render-error": {
       "title": "Falha ao renderizar um widget React personalizado"
     },
-    "widget-missing-parent": "O widget personalizado não possui a propriedade obrigatória '{{property}}' definida.",
-    "open-script-note": "Abrir nota de script"
+    "widget-missing-parent": "O widget personalizado não tem a propriedade obrigatória «{{property}}» definida.\n\nSe este script se destinar a ser executado sem um elemento da interface do utilizador, utilize «#run=frontendStartup» em vez disso.",
+    "open-script-note": "Abrir nota de script",
+    "scripting-error": "Erro de script personalizado: {{title}}"
   },
   "add_link": {
     "add_link": "Adicionar link",
@@ -61,7 +66,7 @@
     "button_add_link": "Adicionar link"
   },
   "branch_prefix": {
-    "prefix": "Prefixo: ",
+    "prefix": "Prefixo",
     "save": "Salvar",
     "edit_branch_prefix": "Editar Prefixo do Branch",
     "help_on_tree_prefix": "Ajuda sobre o prefixo da árvore de notas",
@@ -140,7 +145,7 @@
     "collapseExpand": "recolher/expandir nó",
     "notSet": "não definido",
     "goBackForwards": "voltar / avançar no histórico",
-    "showJumpToNoteDialog": "mostrar diálogo <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Ir para\"</a>",
+    "showJumpToNoteDialog": "Mostrar <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\"> caixa de diálogo “Ir para”</a>",
     "scrollToActiveNote": "rolar até a nota atual",
     "jumpToParentNote": "ir para a nota pai",
     "collapseWholeTree": "recolher toda a árvore de notas",
@@ -195,7 +200,7 @@
     "chooseImportFile": "Escolher arquivo para importar",
     "importDescription": "O conteúdo do(s) arquivo(s) selecionado(s) será importado como nota(s) filha(s) em",
     "options": "Opções",
-    "safeImportTooltip": "Arquivos de exportação Trilium<code> .zip</code> podem conter scripts executáveis que podem apresentar comportamentos prejudiciais. A importação segura desativará a execução automática de todos os scripts importados. Desmarque “Importação segura” apenas se o arquivo de importação contiver scripts executáveis e você confiar totalmente no conteúdo do arquivo importado.",
+    "safeImportTooltip": "Arquivos de exportação Trilium <code> .zip</code> podem conter scripts executáveis que podem apresentar comportamentos prejudiciais. A importação segura desativará a execução automática de todos os scripts importados. Desmarque “Importação segura” apenas se o arquivo de importação contiver scripts executáveis e você confiar totalmente no conteúdo do arquivo importado.",
     "safeImport": "Importação segura",
     "explodeArchivesTooltip": "Se esta opção estiver marcada, o Trilium irá ler arquivos <code>.zip</code>, <code>.enex</code> e <code>.opml</code> e criar notas a partir dos arquivos contidos nesses arquivos compactados. Se estiver desmarcada, o Trilium irá anexar os próprios arquivos compactados à nota.",
     "explodeArchives": "Ler conteúdos de arquivos <code>.zip</code>, <code>.enex</code> e <code>.opml</code>.",
@@ -357,7 +362,7 @@
     "calendar_root": "marca a nota que deve ser usada como raiz para notas diárias. Apenas uma deve ser marcada assim.",
     "archived": "notas com este rótulo não serão exibidas por padrão nos resultados de busca (também nos diálogos Ir para, Adicionar link, etc).",
     "exclude_from_export": "notas (junto com sua subárvore) não serão incluídas em nenhuma exportação de notas",
-    "run": "define em quais eventos o script deve ser executado. Os valores possíveis são:\n<ul>\n<li>frontendStartup - quando o frontend do Trilium inicia (ou é atualizado), mas não no celular.</li>\n<li>mobileStartup - quando o frontend do Trilium inicia (ou é atualizado), no celular.</li>\n<li>backendStartup - quando o backend do Trilium inicia</li>\n<li>hourly - executa uma vez por hora. Você pode usar o rótulo adicional <code>runAtHour</code> para especificar em qual hora.</li>\n<li>daily - executa uma vez por dia</li>\n</ul>",
+    "run": "define em que eventos o script deve ser executado. Os valores possíveis são:\n<ul>\n<li>frontendStartup - quando o frontend do Trilium é iniciado (ou atualizado), mas não em dispositivos móveis.</li>\n<li>mobileStartup - quando o frontend do Trilium é iniciado (ou atualizado) em dispositivos móveis.</li>\n<li>backendStartup - quando o backend do Trilium é iniciado.</li>\n<li>hourly - executar uma vez por hora. Pode utilizar o rótulo adicional <code>runAtHour</code> para especificar a que horas.</li>\n<li>daily - executar uma vez por dia.</li>\n</ul>",
     "run_on_instance": "Define em qual instância do Trilium isso deve ser executado. Por padrão, todas as instâncias.",
     "run_at_hour": "Em qual hora isso deve ser executado. Deve ser usado junto com <code>#run=hourly</code>. Pode ser definido várias vezes para executar mais de uma vez ao dia.",
     "disable_inclusion": "scripts com este rótulo não serão incluídos na execução do script pai.",
@@ -796,7 +801,7 @@
     "view_revisions": "Revisões da nota…",
     "advanced": "Avançado",
     "export_as_image": "Exportar como imagem",
-    "export_as_image_png": "PNG (raster)",
+    "export_as_image_png": "PNG (rasterizado)",
     "export_as_image_svg": "SVG (vetorial)",
     "note_map": "Mapa de notas",
     "word_wrap_on": "Ligado",
@@ -1270,7 +1275,7 @@
     "download_images_automatically": "Baixar imagens automaticamente",
     "download_images_description": "HTML colado pode conter referências a imagens on-line, Trilium vai buscar estas referências e baixar as imagens para que eles estejam disponíveis off-line.",
     "enable_image_compression": "Habilitar compressão de imagem",
-    "max_image_dimensions": "Largura/altura máxima de uma imagem (a imagem será redimensionada se exceder este valor).",
+    "max_image_dimensions": "Largura/altura máxima de uma imagem (a imagem será redimensionada se exceder este valor)",
     "max_image_dimensions_unit": "pixels",
     "jpeg_quality_description": "A faixa recomendada é de 50 a 85. Valores mais baixos reduzem o tamanho do arquivo, enquanto valores mais altos preservam os detalhes."
   },
@@ -1421,7 +1426,8 @@
     "code": "Código",
     "saved-search": "Pesquisa Salva",
     "spreadsheet": "Planilha",
-    "markdown": "Markdown"
+    "markdown": "Markdown",
+    "ai-chat": "Chat com IA"
   },
   "protect_note": {
     "toggle-on": "Proteger a nota",
@@ -1869,7 +1875,7 @@
     "protected_session_timeout_description": "O tempo limite da sessão protegida é o período após o qual a sessão protegida é apagada da memória do navegador. Esse tempo é contado a partir da última interação com notas protegidas. Veja",
     "wiki": "wiki",
     "for_more_info": "para mais informações.",
-    "protected_session_timeout_label": "Tempo limite da sessão protegida:",
+    "protected_session_timeout_label": "Fechar sessão automaticamente após",
     "reset_confirmation": "Ao redefinir a senha, você perderá para sempre o acesso a todas as suas notas protegidas existentes. Tem certeza de que deseja redefinir a senha?",
     "reset_success_message": "A senha foi redefinida. Por favor, defina uma nova senha",
     "change_password_heading": "Alterar Senha",
@@ -2013,7 +2019,7 @@
     "shared_unshare": "Remover compartilhamento",
     "clipped_note": "Recorte da web",
     "clipped_note_description": "Esta nota foi originalmente obtida de {{url}}.\n\nClique para navegar até a página de origem.",
-    "execute_script": "Executar script",
+    "execute_script": "Rodar script",
     "execute_script_description": "Esta nota é uma nota de script. Clique para executar o script.",
     "execute_sql": "Executar SQL",
     "execute_sql_description": "Esta nota é uma nota SQL. Clique para executar a consulta SQL.",
@@ -2075,7 +2081,7 @@
     "menu_run_mobile_startup": "Quando a interface móvel é iniciada"
   },
   "media": {
-    "loop": "Loop",
+    "loop": "Ciclo",
     "rotate": "Rotacionar"
   },
   "mermaid": {
@@ -2100,11 +2106,13 @@
     "sample_git": "Git",
     "sample_gantt": "Gantt",
     "sample_wardley": "Mapa de Wardley",
-    "sample_treeview": "TreeView",
+    "sample_treeview": "Visualização em árvore",
     "sample_c4": "C4",
     "sample_entity_relationship": "Relação de Entidade",
     "sample_diagrams": "Exemplos de diagramas:",
-    "placeholder": "Digite o conteúdo do seu diagrama Mermaid ou use um dos diagramas de exemplo abaixo."
+    "placeholder": "Digite o conteúdo do seu diagrama Mermaid ou use um dos diagramas de exemplo abaixo.",
+    "sample_treemap": "Mapa de Árvore",
+    "sample_user_journey": "Jornada do Usuário"
   },
   "llm_chat": {
     "send": "Enviar",

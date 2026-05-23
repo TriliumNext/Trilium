@@ -33,6 +33,7 @@ import senderRoute from "./api/sender.js";
 import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
 // API routes
+import linkEmbedRoute from "./api/link_embed.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute from "./login.js";
@@ -176,6 +177,7 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
 
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);
+    asyncApiRoute(GET, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
 
     shareRoutes.register(router);
 

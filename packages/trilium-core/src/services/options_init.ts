@@ -69,6 +69,7 @@ export async function initNotSyncedOptions(initialized: boolean, opts: NotSynced
     optionService.createOption("syncServerHost", opts.syncServerHost || "", false);
     optionService.createOption("syncServerTimeout", "120", false); // 120 seconds (2 minutes)
     optionService.createOption("syncProxy", opts.syncProxy || "", false);
+    optionService.createOption("syncIncomplete", "false", false);
 }
 
 /**
@@ -198,6 +199,9 @@ const defaultOptions: DefaultOption[] = [
         },
         isSynced: false
     },
+    { name: "codeNoteThemeMatchesApp", value: "false", isSynced: false },
+    { name: "codeNoteThemeLight", value: "default:vs-code-light", isSynced: false },
+    { name: "codeNoteThemeDark", value: "default:vs-code-dark", isSynced: false },
     { name: "motionEnabled", value: "true", isSynced: false },
     { name: "shadowsEnabled", value: "true", isSynced: false },
     { name: "backdropEffectsEnabled", value: "true", isSynced: false },
@@ -224,6 +228,9 @@ const defaultOptions: DefaultOption[] = [
         },
         isSynced: false
     },
+    { name: "codeBlockThemeMatchesApp", value: "false", isSynced: false },
+    { name: "codeBlockThemeLight", value: "default:stackoverflow-light", isSynced: false },
+    { name: "codeBlockThemeDark", value: "default:stackoverflow-dark", isSynced: false },
     { name: "codeBlockWordWrap", value: "false", isSynced: true },
     { name: "codeBlockTabWidth", value: "4", isSynced: true },
 

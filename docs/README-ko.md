@@ -22,11 +22,15 @@
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 오픈 소스 크로스 플랫폼 계층적 메모 작성 애플리케이션입니다.
@@ -163,7 +167,7 @@ zadam/trilium 버전과 호환됩니다. 이후 버전의 TriliumNext/Trilium은
 사용하시는 배포판이 아래 표에 나와 있다면 해당 배포판의 패키지를 사용하십시오.
 
 [![패키징
-상태](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+상태](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 또한 [최신 릴리스 페이지](https://github.com/TriliumNext/Trilium/releases/latest)에서 해당
 플랫폼용 바이너리 릴리스를 다운로드하고 패키지의 압축을 풀고 `trilium` 실행 파일을 실행할 수도 있습니다.
@@ -229,6 +233,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Alternatively, if you have Nix installed:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### 실행 파일 빌드
 저장소를 다운로드하고 `pnpm`을 사용하여 종속성을 설치한 다음 Windows용 데스크톱 앱을 빌드하세요.
 ```shell
@@ -248,6 +263,34 @@ docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/De
 가이드](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)를
 참조하십시오. 추가 질문이 있으시면 위의 "문의하기" 섹션에 설명된 링크를 통해 언제든지 문의해 주십시오.
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Shoutouts
 
 * [zadam](https://github.com/zadam)은 애플리케이션의 원래 개념과 구현에 대한 공로를 인정받았습니다.
@@ -255,13 +298,12 @@ docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/De
 * [nriver](https://github.com/nriver) 국제화에 공헌.
 * [Thomas Frei](https://github.com/thfrei) 캔버스에 대한 독창적인 작업.
 * [antoniotejada](https://github.com/nriver) 구문 강조 위젯의 원본.
-* [Dosu](https://dosu.dev/) GitHub 이슈 및 토론에 대한 자동 응답을 제공.
 * [Tabler Icons](https://tabler.io/icons) 시스템 트레이 아이콘.
 
 트릴리움은 다음의 기반 기술들이 없었다면 불가능했을 것입니다:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - 텍스트 노트의 시각적 편집기입니다. 프리미엄
-  기능을 제공해주셔서 감사합니다.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
+  text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - 수많은 언어를 지원하는 코드 편집기.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - Canvas 노트에서 사용되는 무한
   화이트보드입니다.

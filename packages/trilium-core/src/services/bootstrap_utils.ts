@@ -2,6 +2,7 @@ import { BootstrapDefinition } from "@triliumnext/commons";
 import { getSql } from "./sql";
 import protected_session from "./protected_session";
 import { generateCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPPINGS } from "./icon_packs";
+import { generateTaskStateCss } from "./task_states";
 import optionService from "./options";
 import { getCurrentLocale } from "./i18n";
 import attributes from "./attributes";
@@ -62,10 +63,12 @@ export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "ico
 
     return {
         iconRegistry: generateIconRegistry(iconPacks),
-        iconPackCss: iconPacks
-            .map(p => generateCss(p, p.builtin
+        iconPackCss: [
+            ...iconPacks.map(p => generateCss(p, p.builtin
                 ? `${assetPath}/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
-                : `api/attachments/download/${p.fontAttachmentId}`))
+                : `api/attachments/download/${p.fontAttachmentId}`)),
+            generateTaskStateCss()
+        ]
             .filter(Boolean)
             .join("\n\n"),
     };

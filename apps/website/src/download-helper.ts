@@ -1,4 +1,5 @@
 import { TFunction } from 'i18next';
+
 import rootPackageJson from '../../../package.json' with { type: "json" };
 
 export type App = "desktop" | "server";
@@ -92,7 +93,7 @@ export function getDownloadMatrix(t: TFunction<"translation", undefined>): Downl
                     },
                     nixpkgs: {
                         name: t("download_helper_desktop_linux.download_nixpkgs"),
-                        url: "https://search.nixos.org/packages?query=trilium-next"
+                        url: "https://search.nixos.org/packages?query=trilium-desktop"
                     },
                     aur: {
                         name: t("download_helper_desktop_linux.download_aur"),
@@ -180,7 +181,7 @@ export function getDownloadMatrix(t: TFunction<"translation", undefined>): Downl
                 }
             }
         }
-    }
+    };
 };
 
 export function buildDownloadUrl(t: TFunction<"translation", undefined>, app: App, platform: Platform, format: string, architecture: Architecture): string {
@@ -191,9 +192,8 @@ export function buildDownloadUrl(t: TFunction<"translation", undefined>, app: Ap
             `https://github.com/TriliumNext/Trilium/releases/download/v${version}/TriliumNotes-v${version}-${platform}-${architecture}.${format}`;
     } else if (app === "server") {
         return downloadMatrix.server[platform]?.downloads[format].url ?? "#";
-    } else {
-        return "#";
     }
+    return "#";
 }
 
 export async function getArchitecture(): Promise<Architecture | null> {
@@ -220,9 +220,8 @@ export function getPlatform(): Platform | null {
         return "macos";
     } else if (userAgent.includes('windows') || userAgent.includes('win32')) {
         return "windows";
-    } else {
-        return "linux";
     }
+    return "linux";
 }
 
 export async function getRecommendedDownload(t: TFunction<"translation", undefined>): Promise<RecommendedDownload | null> {
@@ -251,5 +250,5 @@ export async function getRecommendedDownload(t: TFunction<"translation", undefin
         platform,
         url,
         name
-    }
+    };
 }

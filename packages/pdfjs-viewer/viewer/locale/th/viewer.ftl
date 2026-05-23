@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = เลือกหน้า { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = เลือกหน้า { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = หน้า { $page } จาก { $total }
@@ -638,23 +634,22 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = เปิด/ปิดแถบข้าง
 pdfjs-toggle-views-manager-notification-button =
     .title = เปิด/ปิดแถบข้าง (เอกสารมีภาพย่อ/เค้าร่าง/ไฟล์แนบ/เลเยอร์)
 pdfjs-toggle-views-manager-button1-label = จัดการหน้า
-pdfjs-toggle-views-manager-button-label = เปิด/ปิดแถบข้าง
 pdfjs-views-manager-sidebar =
     .aria-label = แถบข้าง
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = ตัวปรับขนาดแถบข้าง
 pdfjs-views-manager-view-selector-button =
     .title = มุมมอง
 pdfjs-views-manager-view-selector-button-label = มุมมอง
 pdfjs-views-manager-pages-title = หน้า
-pdfjs-views-manager-outlines-title = เค้าร่างเอกสาร
+pdfjs-views-manager-outlines-title1 = โครงร่างเอกสาร
+    .title = โครงร่างเอกสาร (คลิกสองครั้งเพื่อขยาย/ยุบรายการทั้งหมด)
 pdfjs-views-manager-attachments-title = ไฟล์แนบ
 pdfjs-views-manager-layers-title1 = เลเยอร์
     .title = เลเยอร์ (คลิกสองครั้งเพื่อล้างค่าเลเยอร์ทั้งหมดกลับสู่สถานะเริ่มต้น)
-pdfjs-views-manager-layers-title = เลเยอร์
 pdfjs-views-manager-pages-option-label = หน้า
 pdfjs-views-manager-outlines-option-label = เค้าร่างเอกสาร
 pdfjs-views-manager-attachments-option-label = ไฟล์แนบ
@@ -671,7 +666,6 @@ pdfjs-views-manager-pages-status-copy-button-label = คัดลอก
 pdfjs-views-manager-pages-status-cut-button-label = ตัด
 pdfjs-views-manager-pages-status-delete-button-label = ลบ
 pdfjs-views-manager-pages-status-export-selected-button-label = ส่งออกรายการที่เลือก…
-pdfjs-views-manager-pages-status-save-as-button-label = บันทึกเป็น…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label = ตัด { $count } หน้าแล้ว
@@ -702,6 +696,7 @@ pdfjs-views-manager-paste-button-after =
 # Badge used to promote a new feature in the UI, keep it as short as possible.
 # It's spelled uppercase for English, but it can be translated as usual.
 pdfjs-new-badge-content = ใหม่
+pdfjs-views-manager-waiting-for-file = กำลังอัปโหลดไฟล์…
 pdfjs-toggle-views-manager-button1 =
     .title = จัดการหน้า
 

@@ -21,6 +21,7 @@ import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
 import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
+import { LinkEmbedOpts } from "../widgets/dialogs/link_embed.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
 import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
@@ -234,6 +235,7 @@ export type CommandMappings = {
     showProtectedSessionPasswordDialog: CommandData;
     showUploadAttachmentsDialog: CommandData & { noteId: string };
     showIncludeNoteDialog: CommandData & IncludeNoteOpts;
+    showLinkEmbedDialog: CommandData & LinkEmbedOpts;
     showAddLinkDialog: CommandData & AddLinkOpts;
     showPasteMarkdownDialog: CommandData & MarkdownImportOpts;
     closeProtectedSessionPasswordDialog: CommandData;

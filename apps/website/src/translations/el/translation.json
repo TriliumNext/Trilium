@@ -112,7 +112,8 @@
     "header": {
         "get-started": "Ξεκινήστε",
         "support-us": "Υποστηρίξτε μας",
-        "documentation": "Τεκμηρίωση"
+        "documentation": "Τεκμηρίωση",
+        "resources": "Πόροι"
     },
     "footer": {
         "copyright_and_the": " και ",
@@ -135,7 +136,7 @@
     },
     "contribute": {
         "title": "Άλλοι τρόποι συνεισφοράς",
-        "way_translate": "Μεταφράστε την εφαρμογή στη μητρική σας γλώσσα μέσω του <Link>Weblate </Link>.",
+        "way_translate": "Μεταφράστε την εφαρμογή στη μητρική σας γλώσσα μέσω του <Link>Weblate</Link>.",
         "way_community": "Αλληλεπιδράστε με την κοινότητα στο <Discussions>GitHub Συζητήσεις </Discussions> ή στο <Matrix>Matrix </Matrix>.",
         "way_reports": "Αναφέρετε σφάλματα μέσω <Link>GitHub issues </Link>.",
         "way_document": "Βελτιώστε την τεκμηρίωση ενημερώνοντάς μας για κενά στην τεκμηρίωση ή συνεισφέροντες οδηγούς, συχνές ερωτήσεις ή παραδείγματα.",
@@ -166,7 +167,8 @@
         "download_flatpak": ".flatpak",
         "download_zip": "Portable (.zip)",
         "download_nixpkgs": "nixpkgs",
-        "download_aur": "AUR"
+        "download_aur": "AUR",
+        "download_appimage": ". AppImage"
     },
     "download_helper_desktop_macos": {
         "title_x64": "macOS για Intel",
@@ -196,5 +198,12 @@
         "description": "Trilium Notes φιλοξενείται στο PikaPods, μια πληρωμένη υπηρεσία για εύκολη πρόσβαση και διαχείριση. Όχι άμεσα συνδεδεμένη με την ομάδα Trilium.",
         "download_pikapod": "Ρύθμιση σε PikaPods",
         "download_triliumcc": "Εναλλακτικά δείτε trilium.cc"
+    },
+    "resources": {
+        "title": "Πόροι",
+        "icon_packs": "Πακέτα εικονιδίων",
+        "icon_packs_intro": "Επεκτείνετε την επιλογή των διαθέσιμων εικονιδίων για τις σημειώσεις σας χρησιμοποιώντας ένα πακέτο εικονιδίων. Για περισσότερες πληροφορίες σχετικά με τα πακέτα εικονιδίων, δείτε την επίσημη τεκμηρίωση <DocumentationLink></DocumentationLink>.",
+        "download": "Λήψη",
+        "website": "Ιστοσελίδα"
     }
 }

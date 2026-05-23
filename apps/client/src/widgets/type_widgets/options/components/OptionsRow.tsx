@@ -38,11 +38,12 @@ interface OptionsRowLinkProps {
     label: string;
     description?: string;
     href: string;
+    onClick?: (e: MouseEvent) => void;
 }
 
-export function OptionsRowLink({ label, description, href }: OptionsRowLinkProps) {
+export function OptionsRowLink({ label, description, href, onClick }: OptionsRowLinkProps) {
     return (
-        <a href={href} className="option-row option-row-link no-tooltip-preview">
+        <a href={href} className="option-row option-row-link no-tooltip-preview" onClick={onClick}>
             <div className="option-row-label">
                 <label style={{ cursor: "pointer" }}>{label}</label>
                 {description && <small className="option-row-description">{description}</small>}

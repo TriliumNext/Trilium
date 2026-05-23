@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Valitse sivu { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Valitse sivu { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Sivu { $page }/{ $total }
@@ -654,12 +650,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Näytä/piilota sivupaneeli
 pdfjs-toggle-views-manager-notification-button =
     .title = Näytä/piilota sivupaneeli (dokumentissa on pienoiskuvat/sisällys/liitteitä/tasoja)
 pdfjs-toggle-views-manager-button1-label = Hallitse sivuja
-pdfjs-toggle-views-manager-button-label = Näytä/piilota sivupaneeli
 pdfjs-views-manager-sidebar =
     .aria-label = Sivupaneeli
 pdfjs-views-manager-sidebar-resizer =
@@ -668,11 +661,11 @@ pdfjs-views-manager-view-selector-button =
     .title = Näkymät
 pdfjs-views-manager-view-selector-button-label = Näkymät
 pdfjs-views-manager-pages-title = Sivut
-pdfjs-views-manager-outlines-title = Dokumentin sisällys
+pdfjs-views-manager-outlines-title1 = Dokumentin sisällys
+    .title = Dokumentin sisällys (napsauta kahdesti laajentaaksesi/supistaaksesi kohteet)
 pdfjs-views-manager-attachments-title = Liitteet
 pdfjs-views-manager-layers-title1 = Tasot
     .title = Tasot (napsauta kahdesti nollataksesi tasot niiden oletustilaan)
-pdfjs-views-manager-layers-title = Tasot
 pdfjs-views-manager-pages-option-label = Sivut
 pdfjs-views-manager-outlines-option-label = Dokumentin sisällys
 pdfjs-views-manager-attachments-option-label = Liitteet
@@ -693,7 +686,6 @@ pdfjs-views-manager-pages-status-copy-button-label = Kopioi
 pdfjs-views-manager-pages-status-cut-button-label = Leikkaa
 pdfjs-views-manager-pages-status-delete-button-label = Poista
 pdfjs-views-manager-pages-status-export-selected-button-label = Vie valitut…
-pdfjs-views-manager-pages-status-save-as-button-label = Tallenna nimellä…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =

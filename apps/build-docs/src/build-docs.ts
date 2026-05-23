@@ -42,7 +42,7 @@ const stubImageProvider: ImageProvider = {
         throw new Error("Image processing not supported in build-docs");
     }
 };
-import archiver from "archiver";
+import { ZipArchive } from "archiver";
 import { execSync } from "child_process";
 import { createWriteStream, readFileSync } from "fs";
 import * as fs from "fs/promises";
@@ -241,7 +241,7 @@ export async function importData(path: string) {
 
 async function createImportZip(path: string) {
     const inputFile = "input.zip";
-    const archive = archiver("zip", {
+    const archive = new ZipArchive({
         zlib: { level: 0 }
     });
 

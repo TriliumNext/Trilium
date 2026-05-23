@@ -39,7 +39,10 @@ function download(url: string) {
 }
 
 export function downloadFileNote(note: FNote, parentComponent: Component | null, ntxId: string | null | undefined) {
-    if (note.type === "file" && note.mime === "application/pdf" && parentComponent) {
+    if (parentComponent && (
+        (note.type === "file" && note.mime === "application/pdf")
+        || note.noteId === "_backendLog"
+    )) {
         // Special handling, manages its own downloading process.
         parentComponent.triggerEvent("customDownload", { ntxId });
         return;

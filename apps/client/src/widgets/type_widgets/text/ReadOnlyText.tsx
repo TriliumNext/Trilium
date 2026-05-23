@@ -12,6 +12,7 @@ import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
 import { getLocaleById } from "../../../services/i18n";
+import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { useNoteBlob, useNoteLabel, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
@@ -103,6 +104,7 @@ export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: e
         rewriteMermaidDiagramsInContainer(container);
         applyInlineMermaid(container);
         applyIncludedNotes(container);
+        applyLinkEmbeds(container);
         applyMath(container);
         applyReferenceLinks(container);
         formatCodeBlocks($(container));

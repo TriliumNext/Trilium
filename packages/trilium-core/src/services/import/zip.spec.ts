@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import archiver from "archiver";
+import { ZipArchive } from "archiver";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -41,7 +41,7 @@ async function testImportBuffer(buffer: Buffer) {
 }
 
 async function createZipBuffer(files: Record<string, string | Buffer>): Promise<Buffer> {
-    const archive = archiver("zip");
+    const archive = new ZipArchive();
     const chunks: Buffer[] = [];
     const passthrough = new PassThrough();
     passthrough.on("data", (chunk: Buffer) => chunks.push(chunk));

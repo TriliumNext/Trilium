@@ -330,7 +330,7 @@ corsAllowOrigin=https://ini-cors.com
 
             // Sync defaults
             expect(config.Sync.syncServerHost).toBe("");
-            expect(config.Sync.syncServerTimeout).toBe("120000");
+            expect(config.Sync.syncServerTimeout).toBe("");
             expect(config.Sync.syncProxy).toBe("");
 
             // OAuth defaults

@@ -99,6 +99,7 @@ const TPL = /*html*/`
 </div>`;
 
 const SUPPORTED_NOTE_TYPES = ["text", "code", "render", "mindMap", "doc"];
+const SUPPORTED_NOTE_IDS = ["_backendLog"];
 export default class FindWidget extends NoteContextAwareWidget {
 
     private searchTerm: string | null;
@@ -197,7 +198,8 @@ export default class FindWidget extends NoteContextAwareWidget {
 
         const isSourceView = this.noteContext?.viewScope?.viewMode === "source";
 
-        if (!isSourceView && !SUPPORTED_NOTE_TYPES.includes(this.note?.type ?? "")) {
+        const isSupportedNoteId = SUPPORTED_NOTE_IDS.includes(this.note?.noteId ?? "");
+        if (!isSourceView && !isSupportedNoteId && !SUPPORTED_NOTE_TYPES.includes(this.note?.type ?? "")) {
             return;
         }
 
@@ -206,7 +208,7 @@ export default class FindWidget extends NoteContextAwareWidget {
         const isReadOnly = await this.noteContext?.isReadOnly();
 
         let selectedText = "";
-        if ((this.note?.type === "code" || isSourceView) && this.noteContext) {
+        if ((this.note?.type === "code" || isSupportedNoteId || isSourceView) && this.noteContext) {
             const codeEditor = await this.noteContext.getCodeEditor();
             selectedText = codeEditor.getSelectedText();
         } else {
@@ -253,6 +255,11 @@ export default class FindWidget extends NoteContextAwareWidget {
     async getHandler() {
         // In source view, all note types render via a read-only CodeMirror editor.
         if (this.noteContext?.viewScope?.viewMode === "source") {
+            return this.codeHandler;
+        }
+
+        // Notes that use a CodeMirror editor but aren't of type "code".
+        if (SUPPORTED_NOTE_IDS.includes(this.note?.noteId ?? "")) {
             return this.codeHandler;
         }
 
@@ -371,6 +378,7 @@ export default class FindWidget extends NoteContextAwareWidget {
     isEnabled() {
         return super.isEnabled()
             && (SUPPORTED_NOTE_TYPES.includes(this.note?.type ?? "")
+                || SUPPORTED_NOTE_IDS.includes(this.note?.noteId ?? "")
                 || this.noteContext?.viewScope?.viewMode === "source");
     }
 

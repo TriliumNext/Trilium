@@ -21,11 +21,15 @@ releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes 是一款免費且開源、跨平台的階層式筆記應用程式，專注於建立大型個人知識庫。
@@ -137,7 +141,7 @@ TriliumNext 版本已提升同步版本號（與上述不再相容）。
 
 如果您的發行版如下表所列，請使用該發行版的套件。
 
-[![打包狀態](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+[![打包狀態](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 您也可以從[最新釋出頁面](https://github.com/TriliumNext/Trilium/releases/latest)下載對應平台的二進位檔，解壓縮後執行
 `trilium` 可執行檔。
@@ -199,6 +203,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+或者，如果您已安裝 Nix：
+```shell
+# 直接執行
+nix run .#edit-docs
+
+# 或安裝至您的設定檔
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### 建置桌面可執行檔
 下載儲存庫，使用 `pnpm` 安裝相依套件，然後為 Windows 建置桌面應用：
 ```shell
@@ -214,6 +229,34 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 
 請參閱[文件指南](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)。若有更多疑問，歡迎透過上方「與我們交流」章節所列連結與我們聯繫。
 
+## 💖 贊助者
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 鳴謝
 
 * [zadam](https://github.com/zadam) 為本應用程式的原始概念與實作。
@@ -221,13 +264,11 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [nriver](https://github.com/nriver) 對其在國際化方面的貢獻。
 * [Thomas Frei](https://github.com/thfrei) 對 Canvas 原始作品的貢獻。
 * [antoniotejada](https://github.com/nriver) 為原始語法高亮小工具的貢獻。
-* [Dosu](https://dosu.dev/) 為我們提供 GitHub 問題與討論的自動化回應。
 * [Tabler Icons](https://tabler.io/icons) 用於系統匣圖示。
 
 若無其背後的技術支撐，Trilium 便無法開發完成：
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) ——
-  文字筆記背後的視覺化編輯器。我們衷心感謝獲贈這套進階功能套件。
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) —— 文字筆記背後所採用的視覺化編輯器。
 * [CodeMirror](https://github.com/codemirror/CodeMirror) —— 支援大量語言的程式碼編輯器。
 * [Excalidraw](https://github.com/excalidraw/excalidraw) —— 畫布筆記中使用的無限白板。
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— 提供心智圖功能。

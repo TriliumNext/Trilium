@@ -17,7 +17,11 @@
     "github_tooltip": "Reportar errores, sugerir características o contribuir en GitHub",
     "license_tooltip": "Ver licencia",
     "donate": "Donar",
-    "donate_tooltip": "Donar para apoyar este proyecto"
+    "donate_tooltip": "Donar para apoyar este proyecto",
+    "channel": {
+      "nightly": "Nocturno",
+      "standalone": "Autónomo"
+    }
   },
   "toast": {
     "critical-error": {
@@ -58,12 +62,13 @@
   "branch_prefix": {
     "edit_branch_prefix": "Editar prefijo de rama",
     "help_on_tree_prefix": "Ayuda sobre el prefijo del árbol",
-    "prefix": "Prefijo: ",
+    "prefix": "Prefijo",
     "save": "Guardar",
     "branch_prefix_saved": "Se ha guardado el prefijo de rama.",
     "edit_branch_prefix_multiple": "Editar prefijo de rama para {{count}} ramas",
     "branch_prefix_saved_multiple": "El prefijo de rama se ha guardado para {{count}} ramas.",
-    "affected_branches": "Ramas afectadas ({{count}}):"
+    "affected_branches": "Ramas afectadas ({{count}}):",
+    "preview_in_tree": "Vista previa en el árbol"
   },
   "bulk_actions": {
     "bulk_actions": "Acciones en bloque",

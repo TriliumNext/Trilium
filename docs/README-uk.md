@@ -22,11 +22,15 @@
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes — це безкоштовний кросплатформний ієрархічний додаток для ведення
@@ -190,7 +194,7 @@ TriliumNext/Trilium](#-installation) як завжди, і він викорис
 дистрибутива.
 
 [![Стан
-упаковки](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+упаковки](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 Ви також можете завантажити бінарний реліз для вашої платформи зі сторінки
 [останнього релізу](https://github.com/TriliumNext/Trilium/releases/latest),
@@ -266,6 +270,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Alternatively, if you have Nix installed:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Створення виконуваного файлу
 Завантажте репозиторій, встановіть залежності за допомогою `pnpm`, а потім
 зберіть настільний додаток для Windows:
@@ -286,6 +301,34 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 для отримання детальної інформації. Якщо у вас виникнуть додаткові запитання,
 звертайтеся до нас за посиланнями, описаними в розділі «Обговоріть з нами» вище.
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Привітання
 
 * [zadam](https://github.com/zadam) за оригінальну концепцію та реалізацію
@@ -296,15 +339,12 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Thomas Frei](https://github.com/thfrei) за його оригінальну роботу на Canvas.
 * [antoniotejada](https://github.com/nriver) для оригінального віджета
   підсвічування синтаксису.
-* [Dosu](https://dosu.dev/) за надання нам автоматичних відповідей на проблеми
-  та обговорення GitHub.
 * [Tabler Icons](https://tabler.io/icons) для значків у системному треї.
 
 Trilium був би неможливим без технологій, що лежать в його основі:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) – візуальний редактор
-  текстових нотаток. Ми вдячні за те, що нам запропонували набір
-  преміум-функцій.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
+  text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) – редактор коду з
   підтримкою величезної кількості мов програмування.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) – нескінченна дошка, що

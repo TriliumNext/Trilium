@@ -1,9 +1,10 @@
-import { CKTextEditor, ClassicEditor, EditorWatchdog, PopupEditor, TemplateDefinition,type WatchdogConfig } from "@triliumnext/ckeditor5";
+import { CKTextEditor, ClassicEditor, EditorWatchdog, PopupEditor, TemplateDefinition, type WatchdogConfig } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { HTMLProps, RefObject, useEffect, useImperativeHandle, useRef, useState } from "preact/compat";
 
 import froca from "../../../services/froca";
 import link from "../../../services/link";
+import linkEmbedService, { type EmbedMetadata } from "../../../services/link_embed";
 import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption } from "../../react/hooks";
 import { buildConfig, BuildEditorOptions } from "./config";
 
@@ -18,6 +19,8 @@ export interface CKEditorApi {
     addHtmlToEditor(html: string): void;
     addIncludeNote(noteId: string, boxSize?: BoxSize): void;
     addImage(noteId: string): Promise<void>;
+    addLinkEmbed(metadata: EmbedMetadata): void;
+    addLinkMention(metadata: EmbedMetadata): void;
 }
 
 interface CKEditorWithWatchdogProps extends Pick<HTMLProps<HTMLDivElement>, "className" | "tabIndex"> {
@@ -140,11 +143,55 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                 editor?.execute("insertImage", { source: src });
             });
         },
+        addLinkEmbed(metadata: EmbedMetadata) {
+            const editor = watchdogRef.current?.editor;
+            if (!editor) return;
+
+            editor.model.change((writer) => {
+                editor.model.insertContent(
+                    writer.createElement("linkEmbed", {
+                        url: metadata.url,
+                        embedType: metadata.embedType,
+                        title: metadata.title,
+                        description: metadata.description,
+                        favicon: metadata.favicon,
+                        siteName: metadata.siteName,
+                        image: metadata.image
+                    })
+                );
+            });
+        },
+        addLinkMention(metadata: EmbedMetadata) {
+            const editor = watchdogRef.current?.editor;
+            if (!editor) return;
+
+            editor.model.change((writer) => {
+                editor.model.insertContent(
+                    writer.createElement("linkMention", {
+                        url: metadata.url,
+                        title: metadata.title,
+                        favicon: metadata.favicon
+                    })
+                );
+            });
+        },
     }));
 
     useLegacyImperativeHandlers({
         async loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | null = null) {
             await link.loadReferenceLinkTitle($el, href);
+        },
+        async fetchLinkMetadata(url: string) {
+            return await linkEmbedService.fetchMetadata(url);
+        },
+        detectEmbedType(url: string) {
+            return linkEmbedService.detectEmbedType(url);
+        },
+        renderLinkEmbed(container: HTMLElement, metadata: EmbedMetadata) {
+            linkEmbedService.renderEmbedPreview(container, metadata, true);
+        },
+        renderLinkMention(container: HTMLElement, metadata: EmbedMetadata) {
+            linkEmbedService.renderMentionPreview(container, metadata, true);
         }
     });
 
