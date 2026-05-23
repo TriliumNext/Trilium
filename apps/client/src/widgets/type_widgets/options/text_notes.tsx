@@ -364,8 +364,9 @@ function TableOfContent() {
 
     return (
         <OptionsSection title={t("table_of_contents.title")}>
-            <TableOfContentOptions />
-
+            {isNewLayout && (
+                <TableOfContentOptions />
+            )}
             {!isNewLayout && (
                 <>
                     <FormText>{t("table_of_contents.description")}</FormText>
