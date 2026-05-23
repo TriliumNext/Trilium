@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Chọn trang { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Chọn trang { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Trang { $page } / { $total }
@@ -638,12 +634,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Bật/tắt thanh lề
 pdfjs-toggle-views-manager-notification-button =
     .title = Bật tắt thanh lề (tài liệu bao gồm hình thu nhỏ/phác thảo/tập tin đính kèm/lớp)
 pdfjs-toggle-views-manager-button1-label = Quản lý trang
-pdfjs-toggle-views-manager-button-label = Bật/tắt thanh lề
 pdfjs-views-manager-sidebar =
     .aria-label = Thanh lề
 pdfjs-views-manager-sidebar-resizer =
@@ -654,11 +647,9 @@ pdfjs-views-manager-view-selector-button-label = Chế độ hiển thị
 pdfjs-views-manager-pages-title = Trang
 pdfjs-views-manager-outlines-title1 = Bản phác thảo tài liệu
     .title = Bản phác thảo tài liệu (nhấp đúp chuột để mở rộng/thu gọn tất cả các mục)
-pdfjs-views-manager-outlines-title = Bản phác thảo tài liệu
 pdfjs-views-manager-attachments-title = Đính kèm
 pdfjs-views-manager-layers-title1 = Lớp
     .title = Lớp (nhấp đúp chuột để đặt lại tất cả các lớp về trạng thái mặc định.)
-pdfjs-views-manager-layers-title = Lớp
 pdfjs-views-manager-pages-option-label = Trang
 pdfjs-views-manager-outlines-option-label = Bản phác thảo tài liệu
 pdfjs-views-manager-attachments-option-label = Đính kèm
@@ -675,7 +666,6 @@ pdfjs-views-manager-pages-status-copy-button-label = Sao chép
 pdfjs-views-manager-pages-status-cut-button-label = Cắt
 pdfjs-views-manager-pages-status-delete-button-label = Dán
 pdfjs-views-manager-pages-status-export-selected-button-label = Xuất các mục đã chọn…
-pdfjs-views-manager-pages-status-save-as-button-label = Lưu thành…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label = Đã cắt { $count } trang
@@ -706,6 +696,7 @@ pdfjs-views-manager-paste-button-after =
 # Badge used to promote a new feature in the UI, keep it as short as possible.
 # It's spelled uppercase for English, but it can be translated as usual.
 pdfjs-new-badge-content = MỚI
+pdfjs-views-manager-waiting-for-file = Đang tải lên tập tin…
 pdfjs-toggle-views-manager-button1 =
     .title = Quản lý trang
 

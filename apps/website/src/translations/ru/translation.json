@@ -175,7 +175,8 @@
         "download_rpm": ".rpm",
         "download_flatpak": ".flatpak",
         "download_nixpkgs": "nixpkgs",
-        "download_aur": "AUR"
+        "download_aur": "AUR",
+        "download_appimage": ".AppImage"
     },
     "download_helper_server_linux": {
         "title": "Свой сервер на Linux",

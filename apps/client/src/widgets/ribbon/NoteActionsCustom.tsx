@@ -76,6 +76,7 @@ export default function NoteActionsCustom(props: NoteActionsCustomProps) {
             <DisplayModeSwitcher {...innerProps} />
             <SaveToNoteButton {...innerProps} />
             <RefreshButton {...innerProps} />
+            {innerProps.note.noteId === "_backendLog" && <DownloadFileButton {...innerProps} />}
             <CopyReferenceToClipboardButton {...innerProps} />
             <InAppHelpButton {...innerProps} />
             <NoteActionsCustomInner {...innerProps} />

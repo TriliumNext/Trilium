@@ -4,8 +4,7 @@
  */
 
 import type { LlmMessage } from "@triliumnext/commons";
-import type { LanguageModel } from "ai";
-import { generateText, type ModelMessage, stepCountIs, streamText, type ToolSet } from "ai";
+import { generateText, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type ToolSet } from "ai";
 import yaml from "js-yaml";
 
 import becca from "../../../becca/becca.js";
@@ -89,14 +88,6 @@ export abstract class BaseProvider implements LlmProvider {
             parts.push(basePrompt);
         }
 
-        // Context note hint
-        if (config.contextNoteId) {
-            const noteHint = buildNoteHint(config.contextNoteId);
-            if (noteHint) {
-                parts.push(noteHint);
-            }
-        }
-
         // Note tools hint
         if (config.enableNoteTools) {
             parts.push(
@@ -156,22 +147,53 @@ export abstract class BaseProvider implements LlmProvider {
 
     /**
      * Build the ModelMessage array from LlmMessages (no provider-specific options).
+     *
+     * Only user/assistant turns are included here — the system prompt is passed
+     * separately via the `system` option of `streamText` (see `buildSystemMessage`),
+     * which is resilient against prompt injection.
      */
-    protected buildMessages(chatMessages: LlmMessage[], systemPrompt: string | undefined): ModelMessage[] {
-        const coreMessages: ModelMessage[] = [];
+    protected buildMessages(chatMessages: LlmMessage[]): ModelMessage[] {
+        return chatMessages.map(m => ({
+            role: m.role as "user" | "assistant",
+            content: m.content
+        }));
+    }
 
-        if (systemPrompt) {
-            coreMessages.push({ role: "system", content: systemPrompt });
+    /**
+     * Attach the current-note metadata hint to the last user message.
+     *
+     * The hint is deliberately kept OUT of the system prompt: it changes whenever
+     * the context note changes, and the system prompt carries the provider's
+     * prompt-cache breakpoint — embedding volatile content there would invalidate
+     * the cached system+tools prefix on every note edit. The last user message is
+     * regenerated every turn and never cached, so it is the right home for it.
+     */
+    protected applyNoteHint(chatMessages: LlmMessage[], config: LlmProviderConfig): LlmMessage[] {
+        if (!config.contextNoteId) {
+            return chatMessages;
         }
 
-        for (const m of chatMessages) {
-            coreMessages.push({
-                role: m.role as "user" | "assistant",
-                content: m.content
-            });
+        const noteHint = buildNoteHint(config.contextNoteId);
+        if (!noteHint) {
+            return chatMessages;
         }
 
-        return coreMessages;
+        const lastUserIndex = chatMessages.map(m => m.role).lastIndexOf("user");
+        if (lastUserIndex === -1) {
+            return chatMessages;
+        }
+
+        return chatMessages.map((m, i) =>
+            i === lastUserIndex ? { ...m, content: `${noteHint}\n\n${m.content}` } : m
+        );
+    }
+
+    /**
+     * Build the value for the `system` option of `streamText`. Subclasses can
+     * override to attach provider-specific metadata (e.g. cache control).
+     */
+    protected buildSystemMessage(systemPrompt: string | undefined): string | SystemModelMessage | undefined {
+        return systemPrompt;
     }
 
     /**
@@ -200,13 +222,21 @@ export abstract class BaseProvider implements LlmProvider {
 
     chat(messages: LlmMessage[], config: LlmProviderConfig): StreamResult {
         const systemPrompt = this.buildSystemPrompt(messages, config);
-        const chatMessages = messages.filter(m => m.role !== "system");
-        const coreMessages = this.buildMessages(chatMessages, systemPrompt);
+        const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
+        const coreMessages = this.buildMessages(chatMessages);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
             model: this.createModel(config.model || this.defaultModel),
+            system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
-            maxOutputTokens: config.maxTokens || DEFAULT_MAX_TOKENS
+            maxOutputTokens: config.maxTokens || DEFAULT_MAX_TOKENS,
+            // Reject any system message smuggled into `messages` (prompt injection guard).
+            allowSystemInMessages: false,
+            // The AI SDK's default onError handler dumps the raw error object straight
+            // to stdout, bypassing Trilium's logger. The error is still delivered through
+            // `fullStream`, where `streamToChunks` turns it into a detailed message that
+            // the chat route logs — so suppress the unstructured stdout dump here.
+            onError: () => {}
         };
 
         const tools = this.buildTools(config);

@@ -17,7 +17,7 @@
     "organization_benefits": {
         "title": "Organisation",
         "note_structure_title": "Structure des notes",
-        "note_structure_description": "Les notes peuvent être organisées de façon hiérarchique. Les dossiers ne sont pas nécessaires, car chaque note peut contenir des notes enfants. Une même note peut ajoutée à plusieurs endroits de la hiérarchie.",
+        "note_structure_description": "Les notes peuvent être organisées de façon hiérarchique. Pas besoin de dossiers, puisque chaque note peut contenir des notes enfants. Une même note peut également être placée à plusieurs endroits dans cette hiérarchie.",
         "attributes_title": "Noter les étiquettes et les relations",
         "attributes_description": "Utilisez des relations entre les notes ou ajoutez des étiquettes pour faciliter la catégorisation. Utilisez les attributs promus pour saisir des informations structurées utilisables dans des tableaux et des tableaux de bord.",
         "hoisting_title": "Espaces de travail et focalisation",
@@ -164,7 +164,7 @@
     },
     "collections": {
         "calendar_title": "Calendrier",
-        "calendar_description": "Organisez vos événements personnels ou professionnels grâce à un calendrier compatible avec les événements d'une journée ou de plusieurs jours. Visualisez vos événements en un coup d'œil grâce aux vues hebdomadaire, mensuelle et annuelle. Ajoutez ou déplacez facilement des événements.",
+        "calendar_description": "Organisez vos événements personnels ou professionnels dans un calendrier, avec prise en charge des événements sur une ou plusieurs journées. Visualisez-les en un coup d’œil en vue semaine, mois ou année, et ajoutez ou déplacez-les facilement par glisser-déposer.",
         "table_title": "Tableau",
         "table_description": "Affichez et modifiez les informations relatives aux notes dans une structure tabulaire, avec différents types de colonnes (texte, nombre, cases à cocher, date et heure, liens, couleurs) et la prise en charge des relations. Vous pouvez également afficher les notes sous forme d'arborescence à l'intérieur du tableau.",
         "board_title": "Tableau de bord",

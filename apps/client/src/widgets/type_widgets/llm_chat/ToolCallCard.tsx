@@ -4,6 +4,7 @@ import { Trans } from "react-i18next";
 
 import { t } from "../../../services/i18n.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
+import { EditNoteContentDiff, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 import { ExpandableCard, ExpandableSection } from "./ExpandableCard.js";
 import type { ToolCall } from "./llm_chat_types.js";
 
@@ -53,6 +54,9 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
 
 function toolNameIcon(toolName: string): string {
     if (toolName.includes("search")) return "bx bx-search";
+    // Specific note-content tools, checked before the generic "note" match below.
+    if (toolName === "set_note_content" || toolName === "update_note_content") return "bx bx-sync";
+    if (toolName === "edit_note_content") return "bx bx-pencil";
     if (toolName.includes("note")) return "bx bx-note";
     if (toolName.includes("attribute")) return "bx bx-purchase-tag";
     if (toolName.includes("attachment")) return "bx bx-paperclip";
@@ -183,17 +187,29 @@ function ToolCallLabel({ toolCall }: { toolCall: ToolCall }) {
 function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
     const hasError = toolCall.isError;
 
+    // The `edit_note_content` tool gets a fancy unified diff instead of a raw input table.
+    const noteContentEdits = toolCall.toolName === "edit_note_content"
+        ? parseNoteContentEdits(toolCall.input?.edits)
+        : null;
+
     return (
         <ExpandableSection
             icon={toolCallIcon(toolCall)}
             label={<ToolCallLabel toolCall={toolCall} />}
             className={hasError ? "llm-chat-tool-call-error" : ""}
+            open={noteContentEdits ? isSmallEdit(noteContentEdits) : undefined}
         >
             <div className="llm-chat-tool-call-input">
-                <strong>{t("llm_chat.input")}</strong>
-                <KeyValueTable data={toolCall.input} />
+                {noteContentEdits ? (
+                    <EditNoteContentDiff edits={noteContentEdits} />
+                ) : (
+                    <>
+                        <strong>{t("llm_chat.input")}</strong>
+                        <KeyValueTable data={toolCall.input} />
+                    </>
+                )}
             </div>
-            {toolCall.result && (
+            {toolCall.result && (!noteContentEdits || hasError) && (
                 <div className={`llm-chat-tool-call-result ${hasError ? "llm-chat-tool-call-result-error" : ""}`}>
                     <strong>{hasError ? t("llm_chat.error") : t("llm_chat.result")}</strong>
                     <KeyValueTable data={toolCall.result} />
@@ -248,7 +264,7 @@ function groupByToolName(toolCalls: ToolCall[]): Array<ToolCall | ToolCall[]> {
 export default function ToolCallCard({ toolCalls }: { toolCalls: ToolCall[] }) {
     const groups = groupByToolName(toolCalls);
     return (
-        <ExpandableCard>
+        <ExpandableCard className="llm-chat-tool-call-card">
             {groups.map((group, idx) => (
                 Array.isArray(group)
                     ? <ToolCallGroupSection key={idx} toolCalls={group} />

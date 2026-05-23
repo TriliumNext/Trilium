@@ -17,7 +17,11 @@
     "github_tooltip": "Meld fouten, stel functionaliteiten voor, of draag bij op GitHub",
     "license_tooltip": "Bekijk de gebruiksovereenkomst",
     "donate": "Donneer",
-    "donate_tooltip": "Donneer om dit project te steunen"
+    "donate_tooltip": "Donneer om dit project te steunen",
+    "channel": {
+      "nightly": "Nachtelijke",
+      "standalone": "Zelfstandig"
+    }
   },
   "toast": {
     "critical-error": {
@@ -60,14 +64,17 @@
     "save": "Opslaan",
     "branch_prefix_saved": "Branch prefix is opgeslagen.",
     "help_on_tree_prefix": "Help bij boomvoorvoegsel",
-    "prefix": "Voorvoegsel: ",
+    "prefix": "Voorvoegsel",
     "edit_branch_prefix_multiple": "Bewerk zijtakvoorvoegsel voor {{count}} zijtakken",
     "branch_prefix_saved_multiple": "Vertakkingsvoorvoegsel opgeslagen voor {{count}} vertakkingen.",
-    "affected_branches": "Aangetaste takken ({{count}}):"
+    "affected_branches": "Aangetaste takken ({{count}}):",
+    "preview_in_tree": "Voorbeeld in de boom",
+    "description": "Voorvoegsel voor enkel de notitie titel in deze tak. Andere takken behouden de originele titel.",
+    "cancel": "Annuleren"
   },
   "bulk_actions": {
     "bulk_actions": "Bulk acties",
-    "affected_notes": "Getroffen notities",
+    "affected_notes": "Beïnvloede notities",
     "available_actions": "Beschikbare acties",
     "chosen_actions": "Kies acties",
     "execute_bulk_actions": "Bulk acties uitvoeren",
@@ -130,6 +137,45 @@
   "clone_to": {
     "clone_notes_to": "Kloon de notities naar...",
     "help_on_links": "Hulp op links",
-    "notes_to_clone": "Notities om te klonen"
+    "notes_to_clone": "Notities om te klonen",
+    "target_parent_note": "Doel oudernotitie",
+    "search_for_note_by_its_name": "zoek naar een notitie op naam",
+    "cloned_note_prefix_title": "De gekloonde notitie zal in de notitieboom getoond worden met het opgegeven voorvoegsel",
+    "prefix_optional": "Voorvoegsel (optioneel)",
+    "clone_to_selected_note": "Kloon naar de aangeduide notitie",
+    "no_path_to_clone_to": "Geen pad om naar te klonen.",
+    "note_cloned": "De notitie \"{{clonedTitle}}\" werd gekloond naar \"{{targetTitle}}\""
+  },
+  "confirm": {
+    "confirmation": "Bevestiging",
+    "cancel": "Annuleren",
+    "ok": "OK",
+    "are_you_sure_remove_note": "Weet u zeker dat u de notitie \"{{title}}\" uit het relatie overzicht wil verwijderen? ",
+    "if_you_dont_check": "Als u dit niet aanvinkt, zal de notitie alleen uit het relatie overzicht verwijderd worden.",
+    "also_delete_note": "Verwijder ook de notitie"
+  },
+  "delete_notes": {
+    "title": "Verwijder notities",
+    "close": "Sluiten",
+    "clones_label": "Klonen",
+    "delete_clones_description_one": "Verwijder ook {{count}}  kloon. Kan ongedaan gemaakt worden bij recente aanpassingen.",
+    "delete_clones_description_other": "Verwijder ook {{count}} klonen. Kan ongedaan gemaakt worden bij recente aanpassingen.",
+    "delete_all_clones_description": "Verwijder ook alle klonen (kan ongedaan gemaakt worden bij recente aanpassingen)",
+    "erase_notes_label": "Definitief verwijderen",
+    "erase_notes_description": "Verwijder notities onmiddellijk in plaats van uitgesteld verwijderen. Dit kan niet ongedaan gemaakt worden en forceert het herladen van de toepassing.",
+    "erase_notes_warning": "Verwijder notities onmiddellijk (dit kan niet ongedaan gemaakt worden), inclusief alle klonen. Dit forceert het herladen van de toepassing.",
+    "notes_to_be_deleted": "Notities te verwijderen ({{notesCount}})",
+    "no_note_to_delete": "Geen notities worden verwijderd (enkel klonen).",
+    "broken_relations_to_be_deleted": "Gebroken relaties ({{relationCount}})",
+    "table_note_with_relation": "Notitie met relatie",
+    "table_relation": "Relatie",
+    "table_points_to": "Verwijst naar (verwijderd)",
+    "cancel": "Annuleren",
+    "delete": "Verwijderen"
+  },
+  "export": {
+    "export_note_title": "Notitie exporteren",
+    "close": "Sluiten",
+    "export_type_subtree": "Deze notitie en al haar afstammelingen"
   }
 }

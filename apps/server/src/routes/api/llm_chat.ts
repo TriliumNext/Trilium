@@ -63,6 +63,9 @@ async function streamChat(req: Request, res: Response) {
         const pricing = provider.getModelPricing(modelId);
         const modelDisplayName = provider.getAvailableModels().find(m => m.id === modelId)?.name || modelId;
         for await (const chunk of streamToChunks(result, { model: modelDisplayName, pricing })) {
+            if (chunk.type === "error") {
+                log.error(`LLM chat stream error (model ${modelDisplayName}): ${chunk.error}`);
+            }
             res.write(`data: ${JSON.stringify(chunk)}\n\n`);
             // Flush immediately to ensure real-time streaming
             if (typeof flushableRes.flush === "function") {
@@ -81,6 +84,7 @@ async function streamChat(req: Request, res: Response) {
         }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        log.error(`LLM chat stream failed: ${safeExtractMessageAndStackFromError(error)}`);
         res.write(`data: ${JSON.stringify({ type: "error", error: errorMessage })}\n\n`);
     } finally {
         res.end();

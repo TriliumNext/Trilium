@@ -1,0 +1,64 @@
+/* Unified diff rendering for the `edit_note_content` tool call. */
+
+.llm-diff {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.llm-diff-edit {
+    border: 1px solid var(--main-border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.llm-diff-edit-header {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--muted-text-color);
+    background: var(--accented-background-color);
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.llm-diff-hunk {
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.llm-diff-line {
+    display: flex;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.llm-diff-gutter {
+    flex: 0 0 1.5rem;
+    text-align: center;
+    user-select: none;
+    color: var(--muted-text-color);
+    opacity: 0.7;
+}
+
+.llm-diff-text {
+    flex: 1 1 auto;
+}
+
+.llm-diff-line-add {
+    background: rgba(100, 200, 100, 0.2);
+}
+
+.llm-diff-line-add .llm-diff-gutter {
+    color: rgb(60, 160, 60);
+    opacity: 1;
+}
+
+.llm-diff-line-remove {
+    background: rgba(255, 100, 100, 0.18);
+}
+
+.llm-diff-line-remove .llm-diff-gutter {
+    color: rgb(200, 70, 70);
+    opacity: 1;
+}

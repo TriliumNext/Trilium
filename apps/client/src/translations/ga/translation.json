@@ -94,11 +94,14 @@
     "edit_branch_prefix": "Cuir réimír na brainse in eagar",
     "edit_branch_prefix_multiple": "Cuir réimír brainse in eagar do bhrainse {{count}}",
     "help_on_tree_prefix": "Cabhair maidir le réimír Crann",
-    "prefix": "Réimír: ",
+    "prefix": "Réimír",
     "save": "Sábháil",
     "branch_prefix_saved": "Tá réimír na brainse sábháilte.",
     "branch_prefix_saved_multiple": "Tá réimír brainse sábháilte do {{count}} brainse.",
-    "affected_branches": "Brainsí atá buailte ({{count}}):"
+    "affected_branches": "Brainsí atá buailte ({{count}}):",
+    "preview_in_tree": "Réamhamharc sa chrann",
+    "description": "Cuirtear leis an teideal nóta sa bhrainse seo amháin. Coinníonn brainsí eile an teideal bunaidh.",
+    "cancel": "Cealaigh"
   },
   "bulk_actions": {
     "bulk_actions": "Gníomhartha mórchóir",
@@ -2003,7 +2006,12 @@
   "code_theme": {
     "title": "Dealramh",
     "word_wrapping": "Timfhilleadh focal",
-    "color-scheme": "Scéim dathanna"
+    "color-scheme": "Scéim dathanna",
+    "theme_mode": "Mód téama",
+    "match_app_appearance": "Meaitseáil cuma an aip",
+    "always_use_one_theme": "Bain úsáid as téama amháin i gcónaí",
+    "light_theme": "Téama éadrom",
+    "dark_theme": "Téama dorcha"
   },
   "cpu_arch_warning": {
     "title": "Íoslódáil leagan ARM64 le do thoil",
@@ -2189,7 +2197,9 @@
     "save_status_error": "Theip ar shábháil",
     "save_status_saving_tooltip": "Tá athruithe á sábháil.",
     "save_status_unsaved_tooltip": "Tá athruithe neamhshábháilte ann. Sábhálfar iad go huathoibríoch i gceann nóiméid.",
-    "save_status_error_tooltip": "Tharla earráid agus an nóta á shábháil. Más féidir, déan iarracht ábhar an nóta a chóipeáil in áit eile agus an feidhmchlár a athlódáil."
+    "save_status_error_tooltip": "Tharla earráid agus an nóta á shábháil. Más féidir, déan iarracht ábhar an nóta a chóipeáil in áit eile agus an feidhmchlár a athlódáil.",
+    "doc_url": "Doiciméid ar líne",
+    "doc_url_description": "Cliceáil chun an leathanach seo a fheiceáil ar shuíomh Gréasáin na ndoiciméad ar líne."
   },
   "status_bar": {
     "language_title": "Athraigh teanga an ábhair",
@@ -2480,7 +2490,10 @@
       "delete_note": "Scrios nóta",
       "move_note": "Bog nóta",
       "clone_note": "Clónáil nóta"
-    }
+    },
+    "base_url": "Bun-URL",
+    "base_url_description": "Roghnach. Sáraigh an pointe deiridh réamhshocraithe API — úsáideach do mhúnlaí féinóstáilte (Ollama, LM Studio, vLLM) nó do sheachfhreastalaithe.",
+    "base_url_invalid": "Ní mór don bhun-URL a bheith ina URL bailí http:// nó https://"
   },
   "ocr": {
     "extracted_text": "Téacs Bainte (OCR)",
@@ -2600,7 +2613,8 @@
     "source_description_etapi": "Cruthaithe tríd an API Seachtrach Trilium",
     "source_description_llm": "Cruthaithe ag an gcúntóir AI",
     "source_description_restore": "Sábháilte roimh athchóiriú an athbhreithnithe roimhe seo",
-    "source_description_unknown": "Foinse gan fáil"
+    "source_description_unknown": "Foinse gan fáil",
+    "diff_identical": "Tá an t-athbhreithniú seo mar an gcéanna le hábhar an nóta reatha."
   },
   "auto_link_attribute_list": {
     "title": "Tréithe an Chórais"

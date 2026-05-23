@@ -105,7 +105,8 @@
         "description_x64": "Für die meisten Linux-Distributionen, kompatibel mit der x86_64-Architektur.",
         "description_arm64": "Für ARM-basierte Linux-Distributionen, kompatibel mit der aarch64-Architektur.",
         "quick_start": "Wählen Sie je nach Ihrer Distribution ein geeignetes Paketformat aus:",
-        "download_deb": ".deb"
+        "download_deb": ".deb",
+        "download_appimage": ".AppImage"
     },
     "download_helper_server_linux": {
         "title": "Self-hosted auf Linux",

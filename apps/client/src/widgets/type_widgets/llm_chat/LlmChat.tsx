@@ -4,10 +4,9 @@ import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import { useEditorSpacedUpdate } from "../../react/hooks.js";
-import NoItems from "../../react/NoItems.js";
 import { TypeWidgetProps } from "../type_widget.js";
 import ChatInputBar from "./ChatInputBar.js";
-import ChatMessage from "./ChatMessage.js";
+import ChatMessageList from "./ChatMessageList.js";
 import type { LlmChatContent } from "./llm_chat_types.js";
 import { useLlmChat } from "./useLlmChat.js";
 
@@ -55,42 +54,11 @@ export default function LlmChat({ note, ntxId, noteContext }: TypeWidgetProps) {
 
     return (
         <div className="llm-chat-container">
-            <div className="llm-chat-messages" ref={chat.scrollContainerRef}>
-                {chat.messages.length === 0 && !chat.isStreaming && (
-                    <NoItems
-                        icon="bx bx-conversation"
-                        text={t("llm_chat.empty_state")}
-                    />
-                )}
-                {chat.messages.map(msg => (
-                    <ChatMessage key={msg.id} message={msg} />
-                ))}
-                {chat.isStreaming && chat.streamingThinking && (
-                    <ChatMessage
-                        message={{
-                            id: "streaming-thinking",
-                            role: "assistant",
-                            content: chat.streamingThinking,
-                            createdAt: new Date().toISOString(),
-                            type: "thinking"
-                        }}
-                        isStreaming
-                    />
-                )}
-                {chat.isStreaming && chat.streamingBlocks.length > 0 && (
-                    <ChatMessage
-                        message={{
-                            id: "streaming",
-                            role: "assistant",
-                            content: chat.streamingBlocks,
-                            createdAt: new Date().toISOString(),
-                            citations: chat.pendingCitations.length > 0 ? chat.pendingCitations : undefined
-                        }}
-                        isStreaming
-                    />
-                )}
-                <div ref={chat.messagesEndRef} />
-            </div>
+            <ChatMessageList
+                chat={chat}
+                className="llm-chat-messages"
+                emptyStateText={t("llm_chat.empty_state")}
+            />
             <ChatInputBar
                 chat={chat}
                 onWebSearchChange={triggerSave}

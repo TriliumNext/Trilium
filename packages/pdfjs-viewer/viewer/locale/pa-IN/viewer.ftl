@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = { $page } ਸਫ਼ੇ ਨੂੰ ਚੁਣੋ
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = { $page } ਸਫ਼ੇ ਨੂੰ ਚੁਣੋ
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = { $total } ਵਿੱਚੋਂ { $page } ਸਫ਼ਾ
@@ -654,12 +650,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = ਬਾਹੀ ਬਦਲੋ
 pdfjs-toggle-views-manager-notification-button =
     .title = ਬਾਹੀ ਨੂੰ ਬਦਲੋ (ਦਸਤਾਵੇਜ਼ ਥੰਮਨੇਲ/ਆਨਲਾਈਨਅਟੈਚਮੈਂਟ/ਪਰਤਾਂ ਰੱਖਦਾ ਹੈ)
 pdfjs-toggle-views-manager-button1-label = ਸਫ਼ਿਆਂ ਦਾ ਇੰਤਜ਼ਾਮ
-pdfjs-toggle-views-manager-button-label = ਬਾਹੀ ਨੂੰ ਬਦਲੋ
 pdfjs-views-manager-sidebar =
     .aria-label = ਬਾਹੀ
 pdfjs-views-manager-sidebar-resizer =
@@ -668,9 +661,11 @@ pdfjs-views-manager-view-selector-button =
     .title = ਵੇਖੋ
 pdfjs-views-manager-view-selector-button-label = ਵੇਖੋ
 pdfjs-views-manager-pages-title = ਸਫ਼ੇ
-pdfjs-views-manager-outlines-title = ਦਸਤਾਵੇਜ਼ ਆਉਟਲਾਈਨ
+pdfjs-views-manager-outlines-title1 = ਦਸਤਾਵੇਜ਼ ਖਾਕਾ
+    .title = ਦਸਤਾਵੇਜ਼ ਖਾਕਾ (ਸਾਰੀਆਂ ਚੀਜ਼ਾਂ ਨੂੰ ਫੈਲਾਉਣ/ਸਮੇਟਣ ਲਈ ਦੋ ਵਾਰ ਕਲਿੱਕ ਕਰੋ)
 pdfjs-views-manager-attachments-title = ਅਟੈਚਮੈਂਟਾਂ
-pdfjs-views-manager-layers-title = ਪਰਤਾਂ
+pdfjs-views-manager-layers-title1 = ਲੇਅਰ
+    .title = ਲੇਅਰ (ਸਾਰੀਆਂ ਲੇਅਰਾਂ ਨੂੰ ਮੂਲ ਹਾਲਤ ਵਿੱਚ ਲੈ ਜਾਣ ਲਈ ਦੋ ਵਾਰ ਕਲਿੱਕ ਕਰੋ)
 pdfjs-views-manager-pages-option-label = ਸਫ਼ੇ
 pdfjs-views-manager-outlines-option-label = ਦਸਤਾਵੇਜ਼ ਆਉਟਲਾਈਨ
 pdfjs-views-manager-attachments-option-label = ਅਟੈਚਮੈਂਟਾਂ
@@ -690,7 +685,7 @@ pdfjs-views-manager-pages-status-action-button-label = ਬੰਦੋਬਸਤ
 pdfjs-views-manager-pages-status-copy-button-label = ਕਾਪੀ ਕਰੋ
 pdfjs-views-manager-pages-status-cut-button-label = ਕੱਟੋ
 pdfjs-views-manager-pages-status-delete-button-label = ਹਟਾਓ
-pdfjs-views-manager-pages-status-save-as-button-label = …ਵਜੋਂ ਸੰਭਾਲੋ
+pdfjs-views-manager-pages-status-export-selected-button-label = …ਚੁਣੇ ਨੂੰ ਐਕਸਪੋਰਟ ਕਰੋ
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =
@@ -730,6 +725,9 @@ pdfjs-views-manager-paste-button-before =
 #   $page (Number) - the page number after which the paste button is.
 pdfjs-views-manager-paste-button-after =
     .title = { $page } ਸਫ਼ੇ ਦੇ ਬਾਅਦ ਚੇਪੋ
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = ਨਵਾਂ
 pdfjs-toggle-views-manager-button1 =
     .title = ਸਫ਼ਿਆਂ ਦਾ ਇੰਤਜ਼ਾਮ
 

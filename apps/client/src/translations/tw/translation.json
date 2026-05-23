@@ -17,7 +17,11 @@
     "github_tooltip": "在 GitHub 上回報錯誤、提出功能建議或貢獻程式碼",
     "license_tooltip": "查看許可證",
     "donate": "捐款",
-    "donate_tooltip": "捐款支持此專案"
+    "donate_tooltip": "捐款支持此專案",
+    "channel": {
+      "nightly": "每夜版",
+      "standalone": "獨立版"
+    }
   },
   "toast": {
     "critical-error": {
@@ -58,12 +62,15 @@
   "branch_prefix": {
     "edit_branch_prefix": "編輯分支前綴",
     "help_on_tree_prefix": "有關樹前綴的說明",
-    "prefix": "前綴： ",
+    "prefix": "前綴",
     "save": "儲存",
     "branch_prefix_saved": "已儲存分支前綴。",
     "edit_branch_prefix_multiple": "編輯 {{count}} 個分支的前綴",
     "branch_prefix_saved_multiple": "已為 {{count}} 個分支儲存分支前綴。",
-    "affected_branches": "受影響的分支 ({{count}}):"
+    "affected_branches": "受影響的分支 ({{count}}):",
+    "preview_in_tree": "在樹中預覽",
+    "description": "僅在此分支中的筆記標題之前加上文字。其他分支則保留原始標題。",
+    "cancel": "取消"
   },
   "bulk_actions": {
     "bulk_actions": "批次操作",
@@ -190,7 +197,8 @@
     "title": "列表",
     "newTabNoteLink": "在新分頁開啟筆記連結",
     "newTabWithActivationNoteLink": "在新分頁開啟並切換至筆記連結",
-    "editShortcuts": "編輯鍵盤快捷鍵"
+    "editShortcuts": "編輯鍵盤快捷鍵",
+    "toggleArchivedNotes": "顯示/隱藏已歸檔的筆記"
   },
   "import": {
     "importIntoNote": "匯入至筆記",
@@ -2558,5 +2566,17 @@
   },
   "spreadsheet": {
     "read-only": "此筆記為唯讀。"
+  },
+  "markdown_editor": {
+    "image_upload_failed": "無法上傳圖片 \"{{name}}\"。"
+  },
+  "markdown_slash_commands": {
+    "date": "插入當前日期和時間",
+    "include": "加入另一則筆記",
+    "image": "上傳並插入圖片",
+    "link": "插入筆記連結",
+    "math": "插入數學方程式區塊",
+    "footnote": "插入腳註",
+    "mermaid": "插入美人魚圖"
   }
 }

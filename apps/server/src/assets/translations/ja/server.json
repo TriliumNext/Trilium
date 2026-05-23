@@ -311,7 +311,18 @@
     "llm-chat-history-title": "AI チャット履歴",
     "llm-title": "AI / LLM",
     "sidebar-chat-title": "AI チャット",
-    "custom-dictionary-title": "カスタム辞書"
+    "custom-dictionary-title": "カスタム辞書",
+    "task-states-title": "タスクの状態",
+    "task-state-none": "なし",
+    "task-state-doing": "進行中",
+    "task-state-done": "完了",
+    "task-state-maybe": "未定",
+    "task-state-cancelled": "キャンセル",
+    "task-state-attr-state-id": "識別子（必須）",
+    "task-state-attr-markdown-symbol": "マークダウン記号",
+    "task-state-attr-is-completed": "完了としてカウント",
+    "task-state-attr-color": "色",
+    "task-state-attr-is-hidden": "リストから非表示"
   },
   "notes": {
     "new-note": "新しいノート",

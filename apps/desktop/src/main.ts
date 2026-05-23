@@ -164,6 +164,7 @@ async function main() {
         log: new ServerLogService(),
         backup: new ServerBackupService(options),
         image: (await import("@triliumnext/server/src/services/image_provider.js")).serverImageProvider,
+        config,
         extraAppInfo: {
             nodeVersion: process.version,
             dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)

@@ -22,11 +22,15 @@ aistriúcháin](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https:
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Is feidhmchlár saor in aisce agus foinse oscailte, tras-ardán, ordlathach é
@@ -197,7 +201,7 @@ Más liostaithe sa tábla thíos atá do dháileadh, bain úsáid as pacáiste d
 dháilte.
 
 [![Stádas
-pacáistithe](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+pacáistithe](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 Féadfaidh tú an scaoileadh dénártha do d'ardán a íoslódáil ón [leathanach
 scaoileadh is déanaí](https://github.com/TriliumNext/Trilium/releases/latest)
@@ -273,6 +277,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Nó, má tá Nix suiteáilte agat:
+```shell
+# Rith go díreach
+nix run .#edit-docs
+
+# Nó suiteáil chuig do phróifíl
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Ag Tógáil an Inrite
 Íoslódáil an stórlann, suiteáil spleáchais ag baint úsáide as `pnpm` agus ansin
 tóg an aip deisce do Windows:
@@ -294,6 +309,34 @@ le haghaidh tuilleadh sonraí. Má tá tuilleadh ceisteanna agat, bíodh leisce 
 teagmháil a dhéanamh linn trí na naisc a bhfuil cur síos orthu sa chuid "Pléigh
 Linn" thuas.
 
+## 💖 Urraitheoirí
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Glaonna amach
 
 * [zadam](https://github.com/zadam) as an gcoincheap bunaidh agus cur i bhfeidhm
@@ -304,15 +347,12 @@ Linn" thuas.
 * [Thomas Frei](https://github.com/thfrei) as a shaothar bunaidh ar an Chanbhás.
 * [antoniotejada](https://github.com/nriver) don ghiuirléid aibhsithe comhréire
   bunaidh.
-* [Dosu](https://dosu.dev/) as na freagraí uathoibrithe a sholáthar dúinn ar
-  shaincheisteanna agus ar phlé GitHub.
 * [Deilbhíní Tábla](https://tabler.io/icons) do na deilbhíní sa tráidire córais.
 
 Ní bheadh Trilium indéanta gan na teicneolaíochtaí atá taobh thiar de:
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - an t-eagarthóir amhairc
-  atá taobh thiar de nótaí téacs. Táimid buíoch as sraith de na gnéithe préimhe
-  a bheith curtha ar fáil dúinn.
+  atá taobh thiar de nótaí téacs.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - eagarthóir cóid le
   tacaíocht do líon ollmhór teangacha.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - an clár bán gan

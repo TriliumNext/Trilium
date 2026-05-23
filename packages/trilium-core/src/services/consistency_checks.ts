@@ -898,6 +898,22 @@ class ConsistencyChecks {
     }
 
     async runChecks() {
+        // When sync is configured but hasn't fully completed yet (e.g. the app
+        // was closed mid-sync and restarted), the local database may be missing
+        // notes, branches, or blobs that simply haven't arrived yet.  Running
+        // consistency checks in this state would incorrectly treat the missing
+        // data as corruption and "fix" it — deleting branches, re-parenting
+        // notes to root, erasing attachments — then push those destructive
+        // changes back to the sync server, propagating the damage.
+        //
+        // The `syncIncomplete` option is set to "true" when a sync pull begins
+        // and cleared to "false" only after sync fully converges.  While it is
+        // set, we skip consistency checks entirely.
+        if (optionsService.getOptionOrNull("syncIncomplete") === "true") {
+            getLog().info("Skipping consistency checks because sync is incomplete");
+            return;
+        }
+
         let elapsedTimeMs;
 
         await syncMutexService.doExclusively(() => {

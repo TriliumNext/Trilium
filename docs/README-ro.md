@@ -22,11 +22,15 @@ traducerilor](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes este o aplicație gratuită și open-source pentru notițe structurate
@@ -189,7 +193,7 @@ Dacă distribuția dvs. de Linux este listată în tabelul de mai jos, puteți f
 pachetul specific acelei distribuții.
 
 [![Stare
-împachetare](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+împachetare](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 De asemenea puteți descărca release-ul binar de pe [pagina ultimului
 release](https://github.com/TriliumNext/Trilium/releases/latest), dezarhivați
@@ -263,6 +267,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Alternatively, if you have Nix installed:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Compilarea executabilului
 Descărcați repository-ul, instalați dependințele utilizând `pnpm` și compilați
 aplicația de desktop pentru Windows:
@@ -283,6 +298,34 @@ Urmărți
 pentru mai multe detalii. Dacă aveți întrebări, puteți să ne contactați folosind
 legăturile descrise în secțiunea „Discutați cu noi” de mai sus.
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Mențiuni
 
 * [zadam](https://github.com/zadam) pentru conceptul și implementarea originală
@@ -294,15 +337,12 @@ legăturile descrise în secțiunea „Discutați cu noi” de mai sus.
   notițele de tip schiță.
 * [antoniotejada](https://github.com/nriver) pentru implementarea originală a
   widget-ului de evidențiere al sintaxei.
-* [Dosu](https://dosu.dev/) pentru răspunsurile automate la issue-urile de pe
-  GitHub și discuții.
 * [Tabler Icons](https://tabler.io/icons) pentru iconițele din bara de sistem.
 
 Trilium nu ar fi fost posibil fără tehnologiile pe care este bazat:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - editorul vizual din
-  spatele notițelor de tip text. Suntem recunoscători pentru setul de
-  funcționalități premium.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
+  text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - editorul de cod cu
   suport pentru foarte multe limbaje de programare.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - tehnologia de

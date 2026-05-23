@@ -1,14 +1,14 @@
 import type { FileStream, ZipArchive, ZipEntry, ZipProvider } from "@triliumnext/core/src/services/zip_provider.js";
-import archiver, { type Archiver } from "archiver";
+import { ZipArchive as ArchiverZip } from "archiver";
 import fs from "fs";
 import type { Stream } from "stream";
 import * as yauzl from "yauzl";
 
 class NodejsZipArchive implements ZipArchive {
-    readonly #archive: Archiver;
+    readonly #archive: ArchiverZip;
 
     constructor() {
-        this.#archive = archiver("zip", {
+        this.#archive = new ArchiverZip({
             zlib: { level: 9 }
         });
     }

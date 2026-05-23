@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Vælg side { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Vælg side { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Side { $page } af { $total }
@@ -654,21 +650,16 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Slå sidepanel til eller fra
 pdfjs-toggle-views-manager-notification-button =
     .title = Slå sidepanel til eller fra (dokumentet indeholder miniaturer/disposition/vedhæftede filer/lag)
 pdfjs-toggle-views-manager-button1-label = Håndter sider
-pdfjs-toggle-views-manager-button-label = Slå sidepanel til eller fra
 pdfjs-views-manager-sidebar =
     .aria-label = Sidepanel
 pdfjs-views-manager-view-selector-button =
     .title = Visninger
 pdfjs-views-manager-view-selector-button-label = Visninger
 pdfjs-views-manager-pages-title = Sider
-pdfjs-views-manager-outlines-title = Dokument-disposition
 pdfjs-views-manager-attachments-title = Vedhæftede filer
-pdfjs-views-manager-layers-title = Lag
 pdfjs-views-manager-pages-option-label = Sider
 pdfjs-views-manager-paste-button-before =
     .title = Indsæt før første side

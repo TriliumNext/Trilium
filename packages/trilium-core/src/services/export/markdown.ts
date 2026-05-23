@@ -1,8 +1,13 @@
-import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons";
+import { ADMONITION_TYPE_MAPPINGS, type TaskStateDef } from "@triliumnext/commons";
 import { gfm } from "@triliumnext/turndown-plugin-gfm";
 import Turnish, { type Rule } from "turnish";
 
+import { getTaskStates } from "../task_states.js";
+
 let instance: Turnish | null = null;
+
+/** Task states for the current `toMarkdown` invocation, consulted by the list-item filter. */
+let currentTaskStates: TaskStateDef[] = [];
 
 export { ADMONITION_TYPE_MAPPINGS };
 
@@ -26,6 +31,8 @@ const fencedCodeBlockFilter: Rule = {
 };
 
 function toMarkdown(content: string) {
+    currentTaskStates = getTaskStates();
+
     if (instance === null) {
         instance = new Turnish({
             headingStyle: "atx",
@@ -226,8 +233,16 @@ function buildListItemFilter(): Rule {
                 const index = Array.prototype.indexOf.call(parent.children, node);
                 prefix = `${start ? Number(start) + index : index + 1}.  `;
             } else if (parent.classList.contains("todo-list")) {
-                const isChecked = node.querySelector("input[type=checkbox]:checked");
-                prefix = (isChecked ? "- [x] " : "- [ ] ");
+                const state = (node as HTMLElement).getAttribute("data-trilium-task-state");
+                const stateMarker = state
+                    ? currentTaskStates.find((s) => s.name === state)?.markdownSymbol
+                    : undefined;
+                if (stateMarker) {
+                    prefix = `- [${stateMarker}] `;
+                } else {
+                    const isChecked = node.querySelector("input[type=checkbox]:checked");
+                    prefix = (isChecked ? "- [x] " : "- [ ] ");
+                }
             }
 
             const result = prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '');

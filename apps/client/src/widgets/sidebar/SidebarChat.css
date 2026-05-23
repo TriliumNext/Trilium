@@ -18,10 +18,8 @@
     }
 }
 
+/* Scroll-container essentials (flex/min-height/overflow) come from .chat-message-list. */
 .sidebar-chat-messages {
-    flex: 1;
-    min-height: 0; /* Allow flex shrinking for scroll containment */
-    overflow-y: auto;
     padding: 0.5rem;
     display: flex;
     flex-direction: column;
@@ -37,10 +35,6 @@
 .sidebar-chat-messages .llm-chat-message {
     padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
-}
-
-.sidebar-chat-messages .llm-chat-message-role {
-    font-size: 0.75rem;
 }
 
 .sidebar-chat-messages .llm-chat-tool-activity {

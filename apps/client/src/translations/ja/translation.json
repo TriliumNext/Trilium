@@ -63,11 +63,14 @@
     "save": "保存",
     "edit_branch_prefix": "ブランチ接頭辞の編集",
     "help_on_tree_prefix": "ツリー接頭辞に関するヘルプ",
-    "prefix": "接頭辞: ",
+    "prefix": "接頭辞",
     "branch_prefix_saved": "ブランチの接頭辞が保存されました。",
     "edit_branch_prefix_multiple": "{{count}} ブランチのブランチ接頭辞を編集",
     "branch_prefix_saved_multiple": "{{count}} ブランチのブランチ接頭辞が保存されました。",
-    "affected_branches": "影響を受けるブランチ {{count}}:"
+    "affected_branches": "影響を受けるブランチ {{count}}:",
+    "preview_in_tree": "ツリーでプレビュー",
+    "description": "このブランチのノートタイトルにのみ追加されます。他のブランチでは元のタイトルが保持されます。",
+    "cancel": "キャンセル"
   },
   "global_menu": {
     "menu": "メニュー",
@@ -1460,7 +1463,12 @@
   "code_theme": {
     "title": "外観",
     "word_wrapping": "単語の折り返し",
-    "color-scheme": "カラースキーム"
+    "color-scheme": "カラースキーム",
+    "theme_mode": "テーマモード",
+    "match_app_appearance": "アプリの外観を統一",
+    "always_use_one_theme": "常に同じテーマを使用",
+    "light_theme": "ライトテーマ",
+    "dark_theme": "ダークテーマ"
   },
   "cpu_arch_warning": {
     "title": "ARM64版をダウンロードしてください",
@@ -2157,7 +2165,9 @@
     "save_status_error": "保存に失敗しました",
     "save_status_saving_tooltip": "変更を保存しています。",
     "save_status_unsaved_tooltip": "未保存の変更があります。すぐに自動的に保存されます。",
-    "save_status_error_tooltip": "ノートの保存中にエラーが発生しました。可能であれば、ノートの内容を別の場所にコピーして、アプリケーションを再読み込みしてください。"
+    "save_status_error_tooltip": "ノートの保存中にエラーが発生しました。可能であれば、ノートの内容を別の場所にコピーして、アプリケーションを再読み込みしてください。",
+    "doc_url": "オンラインドキュメント",
+    "doc_url_description": "クリックすると、オンラインドキュメントサイトでこのページが表示されます。"
   },
   "status_bar": {
     "language_title": "コンテンツの言語を変更",
@@ -2343,7 +2353,9 @@
     "no_provider_message": "AI プロバイダーが設定されていません。チャットを開始するには、プロバイダーを追加してください。",
     "add_provider": "AI プロバイダーを追加",
     "sources_summary": "{{count}} 件のソースを {{sites}} サイトから取得",
-    "stop": "停止"
+    "stop": "停止",
+    "edit_index": "{{total}} 件中 {{index}} 件目を編集",
+    "retry": "再試行"
   },
   "sidebar_chat": {
     "title": "AI チャット",
@@ -2394,7 +2406,7 @@
       "search_notes": "ノートを検索",
       "get_note": "ノートを取得",
       "get_note_content": "ノートの内容を取得",
-      "update_note_content": "ノートの内容を更新",
+      "update_note_content": "ノートを書き直す",
       "append_to_note": "ノートに追記",
       "create_note": "ノートを作成",
       "get_attributes": "複数の属性を取得",
@@ -2411,8 +2423,13 @@
       "rename_note": "ノート名を変更",
       "delete_note": "ノートを削除",
       "move_note": "ノートを移動",
-      "clone_note": "ノートをクローン"
-    }
+      "clone_note": "ノートをクローン",
+      "set_note_content": "ノートを書き直す",
+      "edit_note_content": "ノートを編集"
+    },
+    "base_url": "ベース URL",
+    "base_url_description": "オプション。デフォルトの API エンドポイントを上書きします — これは、セルフホスト型モデル（Ollama、LM Studio、vLLM）やプロキシを使用する場合に便利です。",
+    "base_url_invalid": "ベース URL は、有効な http:// または https:// 形式の URL である必要があります"
   },
   "ocr": {
     "extracted_text": "抽出されたテキスト（OCR）",
@@ -2442,7 +2459,8 @@
     "autocomplete_fuzzy_description": "ノートへのジャンプとノートの選択に影響します。処理速度は低下しますが、入力ミスを許容します。"
   },
   "text_editor": {
-    "title": "エディター"
+    "title": "エディター",
+    "related_task_states": "to-do リストのカスタムチェックボックスの状態"
   },
   "link": {
     "failed_to_open": "'{{- href}}' のリンクを開けなせんでした: {{- message}}"
@@ -2532,7 +2550,8 @@
     "source_description_etapi": "外部 Trilium API 経由で作成",
     "source_description_llm": "AI アシスタントにより作成",
     "source_description_restore": "以前の変更履歴を復元する前に保存しました",
-    "source_description_unknown": "ソースが利用できません"
+    "source_description_unknown": "ソースが利用できません",
+    "diff_identical": "今回の改訂内容は、現在のノートの内容と同一です。"
   },
   "revisions_snapshot": {
     "title": "ノートの変更履歴"
@@ -2627,5 +2646,20 @@
     "continue": "続行",
     "your-ip-addresses": "このデバイスのアドレス",
     "sync-in-progress-banner": "ノートのサイズによっては、同期に時間がかかる場合があります。同期が完了するまで、他のアプリケーションに切り替えないでください。"
+  },
+  "text-editor": {
+    "checkbox-tooltip": "右クリックでさらに多くのタスクの状態を表示\n{{shortcut}} を押すと、状態を順に切り替え",
+    "edit-states-tooltip": "タスクの状態を編集",
+    "unknown-task-state": "未定義のカスタムタスクの状態",
+    "task-state-dropped": "次の理由により、カスタムタスクの状態定義 \"{{title}}\" {{id}} を破棄しました: {{reason}}",
+    "validation-errors": {
+      "undefined-name": "未定義の識別子",
+      "invalid-name": "無効な識別子",
+      "duplicate-name": "重複した識別子",
+      "missing-title": "タイトルがありません",
+      "missing-icon": "アイコンがありません",
+      "invalid-symbol": "マークダウン記号は \"[\", \" \", \"X\", \"]\" を除き 1 文字である必要があります",
+      "duplicate-symbol": "重複したマークダウン記号"
+    }
   }
 }

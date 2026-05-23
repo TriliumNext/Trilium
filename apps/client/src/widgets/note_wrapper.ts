@@ -19,25 +19,21 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
     setNoteContextEvent({ noteContext }: EventData<"setNoteContext">) {
         this.noteContext = noteContext;
-
         this.refresh();
     }
 
     noteSwitchedAndActivatedEvent({ noteContext }: EventData<"setNoteContext">) {
         this.noteContext = noteContext;
-
         this.refresh();
     }
 
     noteSwitchedEvent({ noteContext }: EventData<"setNoteContext">) {
         this.noteContext = noteContext;
-
         this.refresh();
     }
 
     activeContextChangedEvent({ noteContext }: EventData<"setNoteContext">) {
         this.noteContext = noteContext;
-
         this.refresh();
     }
 

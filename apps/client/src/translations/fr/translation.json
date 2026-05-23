@@ -62,12 +62,15 @@
   "branch_prefix": {
     "edit_branch_prefix": "Modifier le préfixe de branche",
     "help_on_tree_prefix": "Aide sur le préfixe de l'arbre",
-    "prefix": "Préfixe : ",
+    "prefix": "Préfixe",
     "save": "Sauvegarder",
     "branch_prefix_saved": "Le préfixe de la branche a été enregistré.",
     "edit_branch_prefix_multiple": "Modifier le préfixe pour {{count}} branches",
     "branch_prefix_saved_multiple": "Le préfixe de la branche a été sauvegardé pour {{count}} branches.",
-    "affected_branches": "Branches impactées ({{count}}):"
+    "affected_branches": "Branches impactées ({{count}}):",
+    "preview_in_tree": "Aperçu dans l’arborescence",
+    "description": "Préfixé au titre de la note dans cette branche uniquement. Les autres branches conservent le titre d’origine.",
+    "cancel": "Annuler"
   },
   "bulk_actions": {
     "bulk_actions": "Actions groupées",
@@ -272,7 +275,7 @@
   "password_not_set": {
     "title": "Le mot de passe n'est pas défini",
     "body1": "Les notes protégées sont cryptées à l'aide d'un mot de passe utilisateur, mais le mot de passe n'a pas encore été défini.",
-    "body2": "Pour pouvoir protéger les notes, cliquez sur le bouton ci-dessous pour ouvrir la boîte de dialogue Options et définir votre mot de passe.",
+    "body2": "Pour pouvoir protéger les notes, cliquez sur le bouton ci-dessous pour ouvrir la boîte de dialogue Paramètres et définir votre mot de passe.",
     "go_to_password_options": "Accéder aux options de mot de passe"
   },
   "prompt": {
@@ -363,7 +366,7 @@
     "relation": "Détail de la relation",
     "relation_definition": "Détail de la définition de la relation",
     "disable_versioning": "désactive la gestion automatique des versions. Utile pour les notes volumineuses mais sans importance - par ex. grandes bibliothèques JS utilisées pour les scripts",
-    "calendar_root": "indique la note qui doit être utilisée comme racine pour les notes journalières. Une seule note doit être marquée comme telle.",
+    "calendar_root": "indique la note qui doit être utilisée comme racine pour les notes du jour. Une seule note doit être marquée comme telle.",
     "archived": "les notes portant ce label ne seront pas visibles par défaut dans les résultats de recherche (ou dans les boîtes de dialogue Aller à, Ajouter un lien, etc.).",
     "exclude_from_export": "les notes (avec leurs sous-arbres) ne seront incluses dans aucune exportation de notes",
     "run": "définit sur quels événements le script doit s'exécuter. Les valeurs possibles sont :\n<ul>\n<li>frontendStartup - lorsque l'interface Trilium démarre (ou est actualisée), mais pas sur mobile.</li>\n<li>mobileStartup - lorsque l'interface Trilium démarre (ou est actualisée), sur mobile.</li>\n<li>backendStartup - lorsque le backend de Trilium démarre.</li>\n<li>hourly - exécute le script une fois par heure. Vous pouvez utiliser le label supplémentaire <code>runAtHour</code> pour spécifier l'heure d’exécution.</li>\n<li>daily - exécute le script une fois par jour.</li>\n</ul>",
@@ -508,7 +511,7 @@
     "delete_matched_notes": "Supprimer les notes correspondantes",
     "delete_matched_notes_description": "Cela supprimera les notes correspondantes.",
     "undelete_notes_instruction": "Après la suppression, il est possible de les restaurer à partir de la boîte de dialogue Modifications récentes.",
-    "erase_notes_instruction": "Pour effacer définitivement les notes, après leur suppression, allez dans Options → Autres et cliquez sur le bouton \"Effacer immédiatement les notes supprimées\"."
+    "erase_notes_instruction": "Pour effacer définitivement les notes, après leur suppression, allez dans Paramètres → Autres et cliquez sur le bouton \"Effacer immédiatement les notes supprimées\"."
   },
   "delete_revisions": {
     "delete_note_revisions": "Supprimer les versions de notes",
@@ -594,7 +597,7 @@
     "fri": "Ven",
     "sat": "Sam",
     "sun": "Dim",
-    "cannot_find_day_note": "Note journalière introuvable",
+    "cannot_find_day_note": "Note du jour introuvable",
     "january": "Janvier",
     "february": "Février",
     "march": "Mars",
@@ -637,7 +640,7 @@
   },
   "global_menu": {
     "menu": "Menu",
-    "options": "Options",
+    "options": "Paramètres",
     "open_new_window": "Ouvrir une nouvelle fenêtre",
     "switch_to_mobile_version": "Passer à la version mobile",
     "switch_to_desktop_version": "Passer à la version de bureau",
@@ -653,7 +656,7 @@
     "open_sql_console": "Ouvrir la Console SQL",
     "open_sql_console_history": "Ouvrir l'Historique de la console SQL",
     "open_search_history": "Ouvrir l'Historique de recherche",
-    "show_backend_log": "Afficher le Journal back-end",
+    "show_backend_log": "Afficher les logs du backend",
     "reload_hint": "Recharger l'interface peut aider à résoudre certains problèmes visuels sans redémarrer l'application.",
     "reload_frontend": "Recharger l'interface",
     "show_hidden_subtree": "Afficher le Sous-arbre caché",
@@ -664,7 +667,7 @@
     "toggle-zen-mode": "Zen Mode",
     "new-version-available": "Nouvelle mise à jour disponible",
     "download-update": "Obtenir la version {{latestVersion}}",
-    "search_notes": "Rechercher notes"
+    "search_notes": "Rechercher des notes"
   },
   "zen_mode": {
     "button_exit": "Sortir du Zen mode"
@@ -709,7 +712,7 @@
     "export_as_image": "Exporter en tant qu'image",
     "export_as_image_png": "PNG",
     "export_as_image_svg": "SVG (vectoriel)",
-    "note_map": "Note Carte",
+    "note_map": "Carte des notes",
     "word_wrap": "Retour à la ligne",
     "word_wrap_auto": "Auto",
     "word_wrap_auto_description": "Suivre le paramètre global",
@@ -870,9 +873,9 @@
   "note_map": {
     "open_full": "Développer au maximum",
     "collapse": "Réduire à la taille normale",
-    "title": "Carte de la Note",
+    "title": "Carte des notes",
     "fix-nodes": "Réparer les nœuds",
-    "link-distance": "Distance du lien",
+    "link-distance": "Longueur des liens",
     "too-many-notes": "Il y a {{count}} notes ici. Les afficher toutes pourrait ralentir le chargement.",
     "show-anyway": "Afficher la carte"
   },
@@ -955,7 +958,7 @@
   "debug": {
     "debug": "Debug",
     "debug_info": "Debug imprimera des informations supplémentaires dans la console pour faciliter le débogage des requêtes complexes.",
-    "access_info": "Pour accéder aux informations de débogage, exécutez la requête et cliquez sur \"Afficher le journal backend\" dans le coin supérieur gauche."
+    "access_info": "Pour accéder aux informations de débogage, exécutez la requête et cliquez sur \"Afficher les logs du backend\" dans le coin supérieur gauche."
   },
   "fast_search": {
     "fast_search": "Recherche rapide",
@@ -1183,13 +1186,13 @@
   "ribbon": {
     "widgets": "Ruban de widgets",
     "promoted_attributes_message": "L'onglet du ruban Attributs promus s'ouvrira automatiquement si la note possède des attributs mis en avant",
-    "edited_notes_message": "L'onglet du ruban Notes modifiées s'ouvrira automatiquement sur les notes journalières"
+    "edited_notes_message": "L’onglet du ruban \"Notes modifiées\" s’ouvrira automatiquement sur les notes du jour"
   },
   "theme": {
     "title": "Interface utilisateur",
     "theme_label": "Thème de l'application",
     "override_theme_fonts_label": "Remplacer les polices du thème",
-    "triliumnext": "Suit le thème du système",
+    "triliumnext": "Suit le schéma de couleurs du système",
     "triliumnext-light": "Clair",
     "triliumnext-dark": "Sombre",
     "layout": "Disposition",
@@ -1197,18 +1200,18 @@
     "layout-horizontal-title": "Horizontal",
     "layout-vertical-description": "la barre de raccourcis est à gauche (défaut)",
     "layout-horizontal-description": "la barre de raccourcis est sous la barre des onglets, cette-dernière est s'affiche en pleine largeur.",
-    "auto_theme": "Suit le thème du système",
+    "auto_theme": "Suit le schéma de couleurs du système",
     "light_theme": "Clair",
     "dark_theme": "Sombre",
     "modern_themes": "Moderne",
     "legacy_themes": "Historique",
     "custom_themes": "Personnalisé",
     "recommended": "Recommandé",
-    "color_scheme": "Palette de couleurs",
+    "color_scheme": "Schéma de couleurs",
     "color_scheme_system": "Système",
     "color_scheme_light": "Clair",
     "color_scheme_dark": "Sombre",
-    "color_scheme_custom_disabled": "La modification de la palette de couleurs n'est pas disponible pour les thèmes personnalisés"
+    "color_scheme_custom_disabled": "Le schéma de couleurs est non modifiable sur les thèmes personnalisés"
   },
   "zoom_factor": {
     "title": "Facteur de zoom (version bureau uniquement)",
@@ -1335,13 +1338,13 @@
     "bg_color": "Texte avec couleur de fond",
     "visibility_title": "Visibilité de la Liste des Mises en évidence",
     "visibility_description": "Vous pouvez masquer le widget des mises en évidence par note en ajoutant un label #hideHighlightWidget.",
-    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour basculer rapidement vers le volet droit (comprenant les Mises en évidence) dans Options -> Raccourcis (nom « toggleRightPane »)."
+    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour basculer rapidement vers le volet droit (comprenant les Mises en évidence) dans Paramètres -> Raccourcis (nom « toggleRightPane »)."
   },
   "table_of_contents": {
     "title": "Table des matières",
     "description": "La table des matières apparaîtra dans les notes textuelles lorsque la note comporte plus d'un nombre défini de titres. Vous pouvez personnaliser ce nombre :",
     "disable_info": "Vous pouvez également utiliser cette option pour désactiver la table des matières en définissant un nombre très élevé.",
-    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour afficher/masquer le volet de droite (y compris la table des matières) dans Options -> Raccourcis (nom « toggleRightPane »).",
+    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour afficher/masquer le volet de droite (y compris la table des matières) dans Paramètres -> Raccourcis (nom « toggleRightPane »).",
     "unit": "titres"
   },
   "text_auto_read_only_size": {
@@ -1555,7 +1558,7 @@
     "code": "Code",
     "saved-search": "Recherche enregistrée",
     "relation-map": "Carte des relations",
-    "note-map": "Carte de notes",
+    "note-map": "Carte des notes",
     "render-note": "Rendu Html",
     "mermaid-diagram": "Diagramme Mermaid",
     "canvas": "Canevas",
@@ -1709,7 +1712,7 @@
   "toc": {
     "table_of_contents": "Table des matières",
     "options": "Options",
-    "no_headings": "Pas d'en-tête."
+    "no_headings": "Aucun titre défini."
   },
   "watched_file_update_status": {
     "file_last_modified": "Le fichier <code class=\"file-path\"></code> a été modifié pour la dernière fois le <span class=\"file-last-modified\"></span>.",
@@ -1775,11 +1778,11 @@
   },
   "highlighting": {
     "description": "Contrôle la coloration syntaxique des blocs de code à l'intérieur des notes texte, les notes de code ne seront pas affectées.",
-    "color-scheme": "Jeu de couleurs",
+    "color-scheme": "Schéma de couleurs",
     "title": "Blocs de code"
   },
   "code_block": {
-    "word_wrapping": "Saut à la ligne automatique suivant la largeur",
+    "word_wrapping": "Retour à la ligne automatique",
     "theme_none": "Pas de coloration syntaxique",
     "theme_group_light": "Thèmes clairs",
     "theme_group_dark": "Thèmes sombres",
@@ -2024,14 +2027,14 @@
     "background_effects_button": "Activer les effets d'arrière-plan",
     "dismiss": "Rejeter",
     "new_layout_title": "Nouvelle mise en page",
-    "new_layout_message": "Nous avons introduit une mise en page modernisée pour Trilium. Le ruban a été supprimé et intégré de manière transparente dans l'interface principale, avec une nouvelle barre d'état et des sections extensibles (telles que les attributs promus) reprenant les fonctions clés.\n\nLa nouvelle mise en page est activée par défaut et peut être temporairement désactivée via Options → Apparence.",
+    "new_layout_message": "Nous avons introduit une mise en page modernisée pour Trilium. Le ruban a été supprimé et intégré de manière transparente dans l'interface principale, avec une nouvelle barre d'état et des sections extensibles (telles que les attributs promus) reprenant les fonctions clés.\n\nLa nouvelle mise en page est activée par défaut et peut être temporairement désactivée via Paramètres → Apparence.",
     "new_layout_button": "Plus d'infos"
   },
   "settings": {
     "related_settings": "Paramètres associés"
   },
   "settings_appearance": {
-    "related_code_blocks": "Schéma de coloration syntaxique pour les blocs de code dans les notes de texte",
+    "related_code_blocks": "Schéma de couleurs des blocs de code dans les notes de texte",
     "related_code_notes": "Schéma de couleurs pour les notes de code",
     "ui": "Interface utilisateur",
     "ui_old_layout": "Ancien",
@@ -2091,8 +2094,13 @@
   },
   "code_theme": {
     "title": "Apparence",
-    "word_wrapping": "Retour à la ligne automatique",
-    "color-scheme": "Jeu de couleurs"
+    "word_wrapping": "Retour à la ligne",
+    "color-scheme": "Schéma de couleurs",
+    "light_theme": "Clair",
+    "theme_mode": "Thème",
+    "dark_theme": "Sombre",
+    "match_app_appearance": "Suivre l'apparence de l'application",
+    "always_use_one_theme": "Thème unique"
   },
   "cpu_arch_warning": {
     "title": "Veuillez télécharger la version ARM64",
@@ -2195,7 +2203,9 @@
     "no_provider_message": "Aucun fournisseur d'IA configuré. Ajoutez en un pour commencer à discuter.",
     "add_provider": "Ajouter un fournisseur d'IA",
     "sources_summary": "{{count}} sources provenant de {{sites}} sites",
-    "stop": "Arrêter"
+    "stop": "Arrêter",
+    "retry": "Réessayer",
+    "edit_index": "Modification {{index}} sur {{total}}"
   },
   "sidebar_chat": {
     "title": "discussion IA",
@@ -2256,7 +2266,9 @@
     "save_status_error": "L'enregistrement a échoué",
     "save_status_saving_tooltip": "Les modifications sont en cours d'enregistrement.",
     "save_status_unsaved_tooltip": "Il y a des changements non enregistrés. Ils seront enregistrés automatiquement dans un instant.",
-    "save_status_error_tooltip": "Une erreur s'est produite lors de l'enregistrement de la note. Si possible, essayez de copier le contenu de la note ailleurs et de recharger l'application."
+    "save_status_error_tooltip": "Une erreur s'est produite lors de l'enregistrement de la note. Si possible, essayez de copier le contenu de la note ailleurs et de recharger l'application.",
+    "doc_url": "Docs en ligne",
+    "doc_url_description": "Cliquez pour consulter cette page dans la documentation en ligne."
   },
   "right_pane": {
     "toggle": "Afficher/Masquer le panneau de droite",
@@ -2364,8 +2376,8 @@
     "summary": "Résumé"
   },
   "llm": {
-    "settings_title": "AI / LLM",
-    "settings_description": "Configurer les intégrations AI et les LLM (Large Language Model).",
+    "settings_title": "IA / LLM",
+    "settings_description": "Configurer les intégrations IA et les LLM (Large Language Model).",
     "add_provider": "Ajouter le fournisseur",
     "add_provider_title": "Ajouter le fournisseur d'IA",
     "configured_providers": "Fournisseurs configurés",
@@ -2381,32 +2393,37 @@
     "tools": {
       "note_in_parent": "<Note/> dans <Parent/>",
       "search_notes": "Rechercher des notes",
-      "get_note": "Obtenir une note",
-      "get_note_content": "Obtenir le contenu d'une note",
+      "get_note": "Récupérer une note",
+      "get_note_content": "Lire le contenu d'une note",
       "update_note_content": "Mettre à jour le contenu d'une note",
-      "append_to_note": "Ajouter à une note",
-      "create_note": "Créer une note",
-      "get_attributes": "Obtenir les attributs",
-      "get_attribute": "Obtenir l’attribut",
-      "set_attribute": "Définir l’attribut",
-      "delete_attribute": "Supprimer l’attribut",
-      "get_child_notes": "Obtenir les notes enfant",
-      "get_subtree": "Obtenir le sous-arbre",
+      "append_to_note": "Ajouter du texte à une note",
+      "create_note": "Créer une nouvelle note",
+      "get_attributes": "Récupérer les attributs",
+      "get_attribute": "Lire l'attribut",
+      "set_attribute": "Définir l'attribut",
+      "delete_attribute": "Supprimer l'attribut",
+      "get_child_notes": "Récupérer les notes enfants",
+      "get_subtree": "Récupérer l'arborescence (sous-arbre)",
       "load_skill": "Charger la compétence",
-      "web_search": "Recherche web",
-      "get_attachment": "Obtenir une pièce jointe",
+      "web_search": "Recherche sur le web",
+      "get_attachment": "Récupérer une pièce jointe",
       "get_attachment_content": "Lire le contenu de la pièce jointe",
       "rename_note": "Renommer la note",
       "delete_note": "Supprimer la note",
       "move_note": "Déplacer la note",
-      "clone_note": "Dupliquer la note"
+      "clone_note": "Cloner la note",
+      "set_note_content": "Remplacer le contenu d'une note",
+      "edit_note_content": "Modifier le contenu d'une note"
     },
     "feature_not_enabled": "Activez la fonctionnalité expérimentale LLM dans Paramètres → Avancé → Fonctionnalités expérimentales pour utiliser les intégrations d’IA.",
     "mcp_title": "MCP (Model Context Protocol)",
-    "mcp_enabled": "serveur MCP",
-    "mcp_enabled_description": "Active un point de terminaison Model Context Protocol (MCP) pour que les assistants de codage IA (par ex. Claude Code, GitHub Copilot) puissent lire et modifier vos notes. Ce point de terminaison n’est accessible que depuis le localhost.",
+    "mcp_enabled": "Serveur MCP",
+    "mcp_enabled_description": "Expose un point de terminaison MCP (Model Context Protocol) afin que les assistants IA (ex : Claude Code, GitHub Copilot) puissent lire et modifier vos notes. Ce point n'est accessible qu'en local.",
     "mcp_endpoint_title": "URL du point de terminaison",
-    "mcp_endpoint_description": "Ajoutez cette URL à la configuration MCP de votre assistant IA"
+    "mcp_endpoint_description": "Ajoutez cette URL à la configuration MCP de votre assistant IA",
+    "base_url": "URL de base",
+    "base_url_description": "Optionnel. Permet de remplacer l'endpoint API par défaut (utile pour les modèles auto-hébergés comme Ollama, LM Studio, vLLM ou proxies).",
+    "base_url_invalid": "L'URL de base doit être une adresse valide (commençant par http:// ou https://)"
   },
   "status_bar": {
     "language_title": "Changer de langue",
@@ -2502,13 +2519,14 @@
     "mime": "MIME : ",
     "source_etapi": "ETAPI",
     "source_llm": "LLM",
-    "source_unknown": "Instantané"
+    "source_unknown": "Instantané",
+    "diff_identical": "Cette révision est identique au contenu actuel de la note."
   },
   "database": {
     "title": "Base de données"
   },
   "launcher_button_context_menu": {
-    "remove_from_launch_bar": "Supprimer de la barre de raccourcis"
+    "remove_from_launch_bar": "Retirer de la barre de raccourcis"
   },
   "revisions_snapshot": {
     "title": "Révisions de la note"
@@ -2534,7 +2552,8 @@
     "autocomplete_fuzzy_description": "Affecte l’accès rapide aux notes et les sélecteurs de notes. Plus lent, mais tolère les fautes de frappe."
   },
   "text_editor": {
-    "title": "Éditeur"
+    "title": "Éditeur",
+    "related_task_states": "États personnalisés des cases à cocher (To-do)"
   },
   "mobile_note_navigator": {
     "back": "Remonter d’un niveau",
@@ -2606,13 +2625,13 @@
     "title": "Attributs système"
   },
   "setup": {
-    "heading": "Commencer avec Trilium",
+    "heading": "Démarrer avec Trilium",
     "new-document": "Nouvelle base de connaissances",
-    "new-document-description": "Commencez avec une base de connaissances vide et démarrez immédiatement.",
+    "new-document-description": "Partez d'une base vierge pour commencer sans attendre.",
     "sync-from-desktop": "Connecter une application de bureau",
-    "sync-from-desktop-description": "Une application de bureau Trilium est en cours d’exécution sur un autre appareil. Cet appareil synchronisera ses données à partir de cette application.",
+    "sync-from-desktop-description": "Vous utilisez l'application de bureau Trilium sur un autre appareil. Cet appareil synchronisera ses données avec cette application.",
     "sync-from-server": "Se connecter à un serveur existant",
-    "sync-from-server-description": "Vous avez un serveur Trilium en fonctionnement (auto-hébergé ou dans le cloud). Cet appareil synchronisera ses données depuis ce serveur.",
+    "sync-from-server-description": "Vous utilisez déjà un serveur Trilium ailleurs (auto-hébergé ou dans le cloud). Cet appareil synchronisera ses données avec ce serveur.",
     "next": "Suivant",
     "init-in-progress": "Initialisation en cours",
     "redirecting": "Vous allez bientôt être redirigé vers l’application.",
@@ -2636,7 +2655,7 @@
     "sync-illustration-desktop-app": "Votre application de bureau",
     "sync-illustration-server": "Votre serveur",
     "sync-from-desktop-step1": "Ouvrez votre application Trilium Notes.",
-    "sync-from-desktop-step2": "Dans le menu, cliquez sur Options.",
+    "sync-from-desktop-step2": "Dans le menu, cliquez sur Paramètres.",
     "sync-from-desktop-step3": "Cliquez sur la catégorie Synchronisation.",
     "sync-from-desktop-step4": "Modifiez l’adresse de l’instance du serveur dans le champ de droite.",
     "sync-from-desktop-step5": "Cliquez sur le bouton « Tester la synchronisation » pour vérifier que la connexion fonctionne.",
@@ -2663,5 +2682,20 @@
   },
   "spreadsheet": {
     "read-only": "Cette note est en lecture seule."
+  },
+  "text-editor": {
+    "checkbox-tooltip": "Clic droit pour plus d'états.\nAppuyez sur {{shortcut}} pour changer d'état.",
+    "edit-states-tooltip": "Modifier les états des tâches",
+    "unknown-task-state": "État personnalisé non défini",
+    "task-state-dropped": "L'état \"{{title}}\" {{id}} a été supprimé pour la raison suivante : {{reason}}",
+    "validation-errors": {
+      "undefined-name": "identifiant non défini",
+      "invalid-name": "identifiant invalide",
+      "duplicate-name": "identifiant en double",
+      "missing-title": "titre manquant",
+      "missing-icon": "icône manquante",
+      "invalid-symbol": "le symbole Markdown doit être un seul caractère (sauf \"[\", \"X\" et \"]\")",
+      "duplicate-symbol": "symbole Markdown en double"
+    }
   }
 }

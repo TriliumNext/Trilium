@@ -53,28 +53,77 @@ body[data-note-type="text"] .ck-content {
     print-color-adjust: exact;
 }
 
+/* Checkboxes */
 @supports selector(.todo-list__label__description:has(*)) and (height: 1lh) {
+    /* Registering these as <length> resolves the `lh` unit to an absolute
+       length at the .todo-list__label__description element. The pseudo-elements
+       then inherit that frozen value, so changing the glyph's font-size on
+       ::after no longer feeds back into the box dimensions. */
+    @property --box-size {
+        syntax: "<length>";
+        inherits: true;
+        initial-value: 0px;
+    }
+    @property --box-vert-offset {
+        syntax: "<length>";
+        inherits: true;
+        initial-value: 0px;
+    }
+
+    /* Prevent variables from bleeding into nested items */
+    .ck-content .todo-list .todo-list {
+        --task-state-glyph: initial;
+        --task-state-glyph-font-family: initial;
+        --task-state-color: initial;
+    }
+    
+    :where(.ck-content .todo-list li:where(:not([data-trilium-task-state]), [data-trilium-task-state="done"]):has(> .todo-list__label input[type="checkbox"]:checked)) {
+        --task-state-glyph: "";
+        --task-state-glyph-font-family: boxicons;
+    }
+
     .ck-content .todo-list__label__description {
         /* The percentage of the line height that the check box occupies */
         --box-ratio: 0.75;
         /* The size of the gap between the check box and the caption */
         --box-text-gap: 0.25em;
+        
+        /* The percentage of the box size that the glyph occupies. */
+        --glyph-ratio: .70;
 
         --box-size: calc(1lh * var(--box-ratio));
         --box-vert-offset: calc((1lh - var(--box-size)) / 2);
 
         display: inline-block;
         padding-inline-start: calc(var(--box-size) + var(--box-text-gap));
-        /* Source: https://pictogrammers.com/library/mdi/icon/checkbox-blank-outline/ */
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3e%3cpath d='M19%2c3H5C3.89%2c3 3%2c3.89 3%2c5V19A2%2c2 0 0%2c0 5%2c21H19A2%2c2 0 0%2c0 21%2c19V5C21%2c3.89 20.1%2c3 19%2c3M19%2c5V19H5V5H19Z' /%3e%3c/svg%3e");
-        background-position: 0 var(--box-vert-offset);
-        background-size: var(--box-size);
-        background-repeat: no-repeat;
+        position: relative;
     }
 
-    .ck-content .todo-list__label:has(input[type="checkbox"]:checked) .todo-list__label__description {
-        /* Source: https://pictogrammers.com/library/mdi/icon/checkbox-outline/ */
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3e%3cpath d='M19%2c3H5A2%2c2 0 0%2c0 3%2c5V19A2%2c2 0 0%2c0 5%2c21H19A2%2c2 0 0%2c0 21%2c19V5A2%2c2 0 0%2c0 19%2c3M19%2c5V19H5V5H19M10%2c17L6%2c13L7.41%2c11.58L10%2c14.17L16.59%2c7.58L18%2c9' /%3e%3c/svg%3e");
+    .ck-content .todo-list__label__description::before,
+    .ck-content .todo-list__label__description::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: var(--box-vert-offset);
+        width: var(--box-size);
+        height: var(--box-size);
+    }
+
+    .ck-content .todo-list__label__description::before {
+        --_border-tickness: 1pt;
+        outline: var(--_border-tickness) solid black;
+        outline-offset: calc(0pt - var(--_border-tickness));
+        border-radius: 2pt;
+    }
+
+    .ck-content .todo-list__label__description::after {
+        content: var(--task-state-glyph);
+        line-height: var(--box-size);
+        vertical-align: middle;
+        text-align: center;
+        font-family: var(--task-state-glyph-font-family);
+        font-size: calc(var(--box-size) * var(--glyph-ratio));
+        color: var(--task-state-color);
     }
 
     .ck-content .todo-list__label input[type="checkbox"] {

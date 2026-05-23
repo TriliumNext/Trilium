@@ -34,7 +34,7 @@ runs:
     - name: Deploy to Cloudflare Pages
       id: deploy
       if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
-      uses: cloudflare/wrangler-action@v3
+      uses: cloudflare/wrangler-action@v4
       with:
         apiToken: ${{ inputs.cloudflare_api_token }}
         accountId: ${{ inputs.cloudflare_account_id }}
@@ -46,7 +46,7 @@ runs:
     - name: Deploy Preview to Cloudflare Pages
       id: preview-deployment
       if: github.event_name == 'pull_request'
-      uses: cloudflare/wrangler-action@v3
+      uses: cloudflare/wrangler-action@v4
       with:
         apiToken: ${{ inputs.cloudflare_api_token }}
         accountId: ${{ inputs.cloudflare_account_id }}

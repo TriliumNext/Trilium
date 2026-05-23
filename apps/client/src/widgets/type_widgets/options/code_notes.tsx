@@ -1,6 +1,6 @@
 import "./code_notes.css";
 
-import CodeMirror, { ColorThemes, getThemeById } from "@triliumnext/codemirror";
+import CodeMirror, { ColorThemes, getThemeById, type ThemeVariant } from "@triliumnext/codemirror";
 import { default as codeNoteMimeTypes } from "@triliumnext/codemirror/src/syntax_highlighting";
 import { MimeType } from "@triliumnext/commons";
 import { byMimeType as codeBlockMimeTypes } from "@triliumnext/highlightjs/src/syntax_highlighting";
@@ -10,11 +10,12 @@ import { t } from "../../../services/i18n";
 import mime_types from "../../../services/mime_types";
 import FormSelect from "../../react/FormSelect";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
-import { useStaticTooltip, useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
+import { useColorScheme, useStaticTooltip, useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import CheckboxList from "./components/CheckboxList";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
+import ThemeModeSelector from "./components/ThemeModeSelector";
 import codeNoteSample from "./samples/code_note.txt?raw";
 
 const SAMPLE_MIME = "application/typescript";
@@ -87,27 +88,64 @@ interface AppearanceProps {
     indentSize: number;
 }
 
+function useFilteredThemes(variant?: ThemeVariant) {
+    return useMemo(() => {
+        return ColorThemes
+            .filter((theme) => !variant || theme.variant === variant)
+            .map(({ id, name }) => ({
+                id: `default:${id}`,
+                name
+            }));
+    }, [variant]);
+}
+
 function Appearance({ wordWrapping, indentSize }: AppearanceProps) {
     const [codeNoteTheme, setCodeNoteTheme] = useTriliumOption("codeNoteTheme");
+    const [matchesApp, setMatchesApp] = useTriliumOptionBool("codeNoteThemeMatchesApp");
+    const [lightTheme, setLightTheme] = useTriliumOption("codeNoteThemeLight");
+    const [darkTheme, setDarkTheme] = useTriliumOption("codeNoteThemeDark");
 
-    const themes = useMemo(() => {
-        return ColorThemes.map(({ id, name }) => ({
-            id: `default:${id}`,
-            name
-        }));
-    }, []);
+    const colorScheme = useColorScheme();
+    const allThemes = useFilteredThemes();
+    const lightThemes = useFilteredThemes("light");
+    const darkThemes = useFilteredThemes("dark");
+
+    const effectiveTheme = matchesApp
+        ? (colorScheme === "dark" ? darkTheme : lightTheme)
+        : codeNoteTheme;
 
     return (
-        <OptionsSection title={t("code_theme.title")}>
-            <OptionsRow name="color-scheme" label={t("code_theme.color-scheme")}>
-                <FormSelect
-                    values={themes}
-                    keyProperty="id" titleProperty="name"
-                    currentValue={codeNoteTheme} onChange={setCodeNoteTheme}
-                />
-            </OptionsRow>
+        <OptionsSection title={t("code_theme.title")} className="code-block-appearance">
+            <ThemeModeSelector matchesApp={matchesApp} onMatchesAppChange={setMatchesApp} />
 
-            <CodeNotePreview wordWrapping={wordWrapping} themeName={codeNoteTheme} indentSize={indentSize} />
+            {matchesApp ? (
+                <>
+                    <OptionsRow name="light-theme" label={t("code_theme.light_theme")}>
+                        <FormSelect
+                            values={lightThemes}
+                            keyProperty="id" titleProperty="name"
+                            currentValue={lightTheme} onChange={setLightTheme}
+                        />
+                    </OptionsRow>
+                    <OptionsRow name="dark-theme" label={t("code_theme.dark_theme")}>
+                        <FormSelect
+                            values={darkThemes}
+                            keyProperty="id" titleProperty="name"
+                            currentValue={darkTheme} onChange={setDarkTheme}
+                        />
+                    </OptionsRow>
+                </>
+            ) : (
+                <OptionsRow name="color-scheme" label={t("code_theme.color-scheme")}>
+                    <FormSelect
+                        values={allThemes}
+                        keyProperty="id" titleProperty="name"
+                        currentValue={codeNoteTheme} onChange={setCodeNoteTheme}
+                    />
+                </OptionsRow>
+            )}
+
+            <CodeNotePreview wordWrapping={wordWrapping} themeName={effectiveTheme} indentSize={indentSize} />
         </OptionsSection>
     );
 }

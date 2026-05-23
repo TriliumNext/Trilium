@@ -14,13 +14,15 @@ export interface LlmProviderSetup {
     name: string;
     provider: string;
     apiKey: string;
+    /** Optional override for the SDK's default API endpoint (e.g. for self-hosted Ollama, vLLM, or proxies). */
+    baseURL?: string;
 }
 
 /** Factory functions for creating provider instances */
-const providerFactories: Record<string, (apiKey: string) => LlmProvider> = {
-    anthropic: (apiKey) => new AnthropicProvider(apiKey),
-    openai: (apiKey) => new OpenAiProvider(apiKey),
-    google: (apiKey) => new GoogleProvider(apiKey)
+const providerFactories: Record<string, (apiKey: string, baseURL?: string) => LlmProvider> = {
+    anthropic: (apiKey, baseURL) => new AnthropicProvider(apiKey, baseURL),
+    openai: (apiKey, baseURL) => new OpenAiProvider(apiKey, baseURL),
+    google: (apiKey, baseURL) => new GoogleProvider(apiKey, baseURL)
 };
 
 /** Cache of instantiated providers by their config ID */
@@ -73,7 +75,7 @@ export function getProvider(providerId?: string): LlmProvider {
         throw new Error(`Unknown LLM provider type: ${config.provider}. Available: ${Object.keys(providerFactories).join(", ")}`);
     }
 
-    const provider = factory(config.apiKey);
+    const provider = factory(config.apiKey, config.baseURL);
     cachedProviders[config.id] = provider;
     return provider;
 }

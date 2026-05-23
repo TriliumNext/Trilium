@@ -302,6 +302,7 @@ export function isHtmlEmpty(html: string) {
     return (
         !html.includes("<img") &&
         !html.includes("<section") &&
+        !html.includes("link-mention") &&
         // the line below will actually attempt to load images so better to check for images first
         $("<div>").html(html).text().trim().length === 0
     );
@@ -930,6 +931,7 @@ export default {
     createImageSrcUrl,
     downloadAsSvg,
     downloadAsPng,
+    triggerDownload,
     compareVersions,
     isUpdateAvailable,
     isLaunchBarConfig

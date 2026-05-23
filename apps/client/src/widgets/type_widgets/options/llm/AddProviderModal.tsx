@@ -1,5 +1,5 @@
 import { createPortal } from "preact/compat";
-import { useState, useRef } from "preact/hooks";
+import { useMemo, useRef, useState } from "preact/hooks";
 import Modal from "../../../react/Modal";
 import FormGroup from "../../../react/FormGroup";
 import FormSelect from "../../../react/FormSelect";
@@ -11,18 +11,32 @@ export interface LlmProviderConfig {
     name: string;
     provider: string;
     apiKey: string;
+    baseURL?: string;
 }
 
 export interface ProviderType {
     id: string;
     name: string;
+    defaultBaseUrl: string;
 }
 
 export const PROVIDER_TYPES: ProviderType[] = [
-    { id: "anthropic", name: "Anthropic" },
-    { id: "openai", name: "OpenAI" },
-    { id: "google", name: "Google Gemini" }
+    { id: "anthropic", name: "Anthropic", defaultBaseUrl: "https://api.anthropic.com/v1" },
+    { id: "openai", name: "OpenAI", defaultBaseUrl: "https://api.openai.com/v1" },
+    { id: "google", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta" }
 ];
+
+function isValidBaseUrl(value: string): boolean {
+    if (!value) {
+        return true;
+    }
+    try {
+        const parsed = new URL(value);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+        return false;
+    }
+}
 
 interface AddProviderModalProps {
     show: boolean;
@@ -33,19 +47,28 @@ interface AddProviderModalProps {
 export default function AddProviderModal({ show, onHidden, onSave }: AddProviderModalProps) {
     const [selectedProvider, setSelectedProvider] = useState(PROVIDER_TYPES[0].id);
     const [apiKey, setApiKey] = useState("");
+    const [baseUrl, setBaseUrl] = useState("");
     const formRef = useRef<HTMLFormElement>(null);
 
+    const providerType = useMemo(
+        () => PROVIDER_TYPES.find(p => p.id === selectedProvider),
+        [selectedProvider]
+    );
+    const trimmedBaseUrl = baseUrl.trim();
+    const baseUrlIsValid = isValidBaseUrl(trimmedBaseUrl);
+    const canSubmit = !!apiKey.trim() && baseUrlIsValid;
+
     function handleSubmit() {
-        if (!apiKey.trim()) {
+        if (!canSubmit) {
             return;
         }
 
-        const providerType = PROVIDER_TYPES.find(p => p.id === selectedProvider);
         const newProvider: LlmProviderConfig = {
             id: `${selectedProvider}_${Date.now()}`,
             name: providerType?.name || selectedProvider,
             provider: selectedProvider,
-            apiKey: apiKey.trim()
+            apiKey: apiKey.trim(),
+            ...(trimmedBaseUrl && { baseURL: trimmedBaseUrl })
         };
 
         onSave(newProvider);
@@ -56,6 +79,7 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
     function resetForm() {
         setSelectedProvider(PROVIDER_TYPES[0].id);
         setApiKey("");
+        setBaseUrl("");
     }
 
     function handleCancel() {
@@ -77,7 +101,7 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
                     <button type="button" className="btn btn-secondary" onClick={handleCancel}>
                         {t("llm.cancel")}
                     </button>
-                    <button type="submit" className="btn btn-primary" disabled={!apiKey.trim()}>
+                    <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
                         {t("llm.add_provider")}
                     </button>
                 </>
@@ -90,6 +114,23 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
                     titleProperty="name"
                     currentValue={selectedProvider}
                     onChange={setSelectedProvider}
+                />
+            </FormGroup>
+
+            <FormGroup
+                name="base-url"
+                label={t("llm.base_url")}
+                description={
+                    !baseUrlIsValid
+                        ? <span className="text-danger">{t("llm.base_url_invalid")}</span>
+                        : t("llm.base_url_description")
+                }
+            >
+                <FormTextBox
+                    type="text"
+                    currentValue={baseUrl}
+                    onChange={setBaseUrl}
+                    placeholder={providerType?.defaultBaseUrl}
                 />
             </FormGroup>
 

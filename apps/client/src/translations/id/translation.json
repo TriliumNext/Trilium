@@ -1,11 +1,20 @@
 {
   "about": {
-    "data_directory": "Direktori data:"
+    "data_directory": "Direktori data:",
+    "version_label": "Versi:",
+    "role_brief_history": {
+      "lead-dev": "Elian Doran menemukan TriliumNext pada tahun 2024, sebuah fork komunitas yang tercipta setelah Zadam mengundurkan diri dari proyek tersebut. Zadam kemudian memindahtangankan repository asli kepada tim TriliumNext, menggabungkan kedua proyek menjadi satu."
+    },
+    "contributor_full_list": "Lihat keseluruhan komunitas",
+    "github_tooltip": "Laporkan bugs, usulkan fitur, atau berkontribusi di GitHub",
+    "license_tooltip": "Lihat lisensi",
+    "donate": "Donasi",
+    "donate_tooltip": "Donasi untuk mendukung proyek ini"
   },
   "toast": {
     "critical-error": {
-      "title": "Eror kritikal",
-      "message": "Telah terjadi eror kritikal yang mencegah aplikasi klien untuk memulai:\n\n{{message}}\n\nHal ini kemungkinan besar disebabkan oleh skrip yang gagal secara tidak terduga. Coba jalankan aplikasi dalam mode aman dan atasi masalahnya."
+      "title": "Kesalahan kritis",
+      "message": "Telah terjadi kesalahan kritis yang mencegah aplikasi klien untuk memulai:\n\n{{message}}\n\nHal ini kemungkinan besar disebabkan oleh skrip yang gagal secara tidak terduga. Coba jalankan aplikasi dalam mode aman dan atasi masalahnya."
     },
     "widget-error": {
       "title": "Gagal menginisialisasi widget",
@@ -14,7 +23,7 @@
     },
     "bundle-error": {
       "title": "Gagal memuat skrip kustom",
-      "message": "Skrip tidak dapat dijalankan:\n\n{{message}}"
+      "message": "Skrip tidak dapat dijalankan karena:\n\n{{message}}"
     },
     "widget-list-error": {
       "title": "Gagal mendapatkan daftar widget dari server"

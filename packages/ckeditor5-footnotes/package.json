@@ -19,14 +19,14 @@
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
-    "@typescript-eslint/eslint-plugin": "8.59.3",
-    "@typescript-eslint/parser": "8.59.3",
+    "@typescript-eslint/eslint-plugin": "8.59.4",
+    "@typescript-eslint/parser": "8.59.4",
     "@vitest/browser": "4.1.6",
     "@vitest/coverage-istanbul": "4.1.6",
-    "ckeditor5": "48.0.1",
-    "eslint": "10.3.0",
+    "ckeditor5": "48.1.1",
+    "eslint": "10.4.0",
     "eslint-config-ckeditor5": ">=9.1.0",
-    "stylelint": "17.11.0",
+    "stylelint": "17.11.1",
     "stylelint-config-ckeditor5": ">=9.1.0",
     "typescript": "6.0.3",
     "vite-plugin-svgo": "2.0.0",
@@ -34,7 +34,7 @@
     "webdriverio": "9.27.1"
   },
   "peerDependencies": {
-    "ckeditor5": "48.0.1"
+    "ckeditor5": "48.1.1"
   },
   "scripts": {
     "lint": "eslint \"**/*.{js,ts}\" --quiet",
