@@ -21,7 +21,7 @@ import { TypeWidgetProps } from "../type_widget";
 import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
 import linkEmbedService from "../../../services/link_embed";
-import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
+import { loadIncludedNote, refreshIncludedNote, setupImageAnnotationButton, setupImageOpening } from "./utils";
 
 /**
  * The editor can operate into two distinct modes:
@@ -289,6 +289,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     if (containerRef.current) {
                         setupImageOpening(containerRef.current, false);
                     }
+                    setupImageAnnotationButton(editor);
 
                     initialized.current.resolve();
                     // Restore the data, either on the first render or if the editor crashes.

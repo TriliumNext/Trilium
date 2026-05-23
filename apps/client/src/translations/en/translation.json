@@ -2069,6 +2069,14 @@
     "search_in_trilium": "Search for \"{{term}}\" in Trilium",
     "search_online": "Search for \"{{term}}\" with {{searchEngine}}"
   },
+  "image_annotation": {
+    "annotate": "Annotate",
+    "back": "Back",
+    "done": "Done",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "unsaved": "Unsaved"
+  },
   "image_context_menu": {
     "copy_reference_to_clipboard": "Copy reference to clipboard",
     "copy_image_to_clipboard": "Copy image to clipboard"
