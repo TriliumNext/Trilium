@@ -245,7 +245,7 @@ function EditableTextTableOfContents() {
     const { note, noteContext } = useActiveNoteContext();
     const textEditor = useTextEditor(noteContext);
     const [ headings, setHeadings ] = useState<CKHeading[]>([]);
-    const [ scrollingContainer, setscrollingContainer ] = useState<HTMLElement | null>(null);
+    const [ scrollingContainer, setScrollingContainer ] = useState<HTMLElement | null>(null);
     const [ tocActiveHeadingEnabled ] = useTriliumOptionBool("tocActiveHeadingEnabled");
 
     useEffect(() => {
@@ -276,12 +276,12 @@ function EditableTextTableOfContents() {
 
     useEffect(() => {
         if (!tocActiveHeadingEnabled || !textEditor) {
-            setscrollingContainer(null);
+            setScrollingContainer(null);
             return;
         }
 
         const container = textEditor.editing.view.getDomRoot()?.closest(".scrolling-container") as HTMLElement | null;
-        setscrollingContainer(container);
+        setScrollingContainer(container);
     }, [tocActiveHeadingEnabled, textEditor]);
 
     const getHeadingElement = useCallback((heading: CKHeading) => {
@@ -388,7 +388,7 @@ function ReadOnlyTextTableOfContents() {
     const contentEl = useContentElement(noteContext);
     const [ headings, setHeadings ] = useState<DomHeading[]>([]);
     const [tocActiveHeadingEnabled] = useTriliumOptionBool("tocActiveHeadingEnabled");
-    const [ scrollingContainer, setscrollingContainer ] = useState<HTMLElement | null>(null);
+    const [ scrollingContainer, setScrollingContainer ] = useState<HTMLElement | null>(null);
 
     useEffect(() => {
         if (!contentEl) return;
@@ -409,12 +409,12 @@ function ReadOnlyTextTableOfContents() {
 
     useEffect(() => {
         if (!tocActiveHeadingEnabled || !contentEl) {
-            setscrollingContainer(null);
+            setScrollingContainer(null);
             return;
         }
 
         const container = contentEl.closest(".scrolling-container") as HTMLElement;
-        setscrollingContainer(container);
+        setScrollingContainer(container);
     }, [tocActiveHeadingEnabled, contentEl]);    
 
     const getHeadingElement = useCallback((heading: DomHeading) => heading.element, []);
