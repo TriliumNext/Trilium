@@ -71,7 +71,10 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
             {
                 id: "_llmChat",
                 title: t("hidden-subtree.llm-chat-history-title"),
-                type: "doc",
+                type: "book",
+                attributes: [
+                    { type: "label", name: "viewType", value: "grid" }
+                ],
                 icon: "bx-message-square-dots"
             },
             {

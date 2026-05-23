@@ -1823,7 +1823,8 @@
     "empty_state": "Start a conversation",
     "history": "Chat history",
     "recent_chats": "Recent chats",
-    "no_chats": "No previous chats"
+    "no_chats": "No previous chats",
+    "view_all_chats": "View all chats"
   },
   "shared_switch": {
     "shared": "Shared",

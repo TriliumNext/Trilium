@@ -108,4 +108,54 @@ describe("renderWithSourceLines", () => {
             { id: "md-heading-2", level: 3, text: "Sub", line: 7 }
         ]);
     });
+
+    it("renders inline markdown formatting in heading text", () => {
+        const src = [
+            "## **Bold heading**",
+            "",
+            "## *Italic heading*",
+            "",
+            "## `Code in heading`",
+            "",
+            "## Heading with **bold** and `code`",
+            "",
+            "## Heading with ~~strikethrough~~",
+            "",
+            "## Heading with [a link](https://example.com)"
+        ].join("\n");
+
+        const { headings } = renderWithSourceLines(src);
+        expect(headings[0].text).toBe("<strong>Bold heading</strong>");
+        expect(headings[1].text).toBe("<em>Italic heading</em>");
+        expect(headings[2].text).toBe("<code>Code in heading</code>");
+        expect(headings[3].text).toBe("Heading with <strong>bold</strong> and <code>code</code>");
+        expect(headings[4].text).toBe("Heading with <del>strikethrough</del>");
+        expect(headings[5].text).toBe('Heading with <a href="https://example.com">a link</a>');
+    });
+
+    it("sanitizes XSS vectors in heading text", () => {
+        const src = [
+            "## <script>alert('XSS via script tag')</script>",
+            "",
+            '## <button onclick="alert(\'clicked!\')">Click me</button>',
+            "",
+            '## <img src="x" onerror="alert(\'img onerror XSS\')">',
+            "",
+            '## <a href="javascript:alert(\'javascript: URL\')">Innocent link</a>',
+            "",
+            '## <svg onload="alert(\'SVG onload XSS\')"><rect width="100" height="100"/></svg>',
+            "",
+            "## <details><summary>Collapsible</summary><script>alert('inside details')</script></details>"
+        ].join("\n");
+
+        const { headings } = renderWithSourceLines(src);
+
+        for (const h of headings) {
+            expect(h.text).not.toMatch(/<script/i);
+            expect(h.text).not.toMatch(/onerror/i);
+            expect(h.text).not.toMatch(/onclick/i);
+            expect(h.text).not.toMatch(/onload/i);
+            expect(h.text).not.toMatch(/javascript:/i);
+        }
+    });
 });

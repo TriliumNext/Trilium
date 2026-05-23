@@ -611,6 +611,60 @@ function findMarkdownInternalLinks(content: string, foundLinks: FoundLink[]) {
     }
 }
 
+/**
+ * Extract internal-link note IDs from an llmChat note's JSON content.
+ *
+ * Two sources are scanned:
+ * 1. `[[noteId]]` wiki-links inside assistant text blocks
+ * 2. `noteId` / `parentNoteId` fields in tool-call inputs
+ */
+export function findLlmChatLinks(content: string, foundLinks: FoundLink[]) {
+    let parsed: { messages?: unknown[] };
+    try {
+        parsed = JSON.parse(content);
+    } catch {
+        return;
+    }
+
+    if (!Array.isArray(parsed.messages)) {
+        return;
+    }
+
+    const wikiLinkRe = /\[\[([a-zA-Z0-9_]+)\]\]/g;
+
+    for (const msg of parsed.messages) {
+        if (typeof msg !== "object" || msg === null) continue;
+        const { role, content: msgContent } = msg as Record<string, unknown>;
+
+        if (role !== "assistant" || !Array.isArray(msgContent)) continue;
+
+        for (const block of msgContent) {
+            if (typeof block !== "object" || block === null) continue;
+            const b = block as Record<string, unknown>;
+
+            if (b.type === "text" && typeof b.content === "string") {
+                let match;
+                while ((match = wikiLinkRe.exec(b.content))) {
+                    foundLinks.push({ name: "internalLink", value: match[1] });
+                }
+            } else if (b.type === "tool_call") {
+                const toolCall = b.toolCall as Record<string, unknown> | undefined;
+                if (!toolCall || typeof toolCall !== "object") continue;
+
+                const input = toolCall.input as Record<string, unknown> | undefined;
+                if (input && typeof input === "object") {
+                    if (typeof input.noteId === "string" && input.noteId) {
+                        foundLinks.push({ name: "internalLink", value: input.noteId });
+                    }
+                    if (typeof input.parentNoteId === "string" && input.parentNoteId) {
+                        foundLinks.push({ name: "internalLink", value: input.parentNoteId });
+                    }
+                }
+            }
+        }
+    }
+}
+
 function findIncludeNoteLinks(content: string, foundLinks: FoundLink[]) {
     const re = /<section class="include-note[^>]+data-note-id="([a-zA-Z0-9_]+)"[^>]*>/g;
     let match;
@@ -824,7 +878,7 @@ function saveAttachments(note: BNote, content: string) {
 
 
 export function saveLinks(note: BNote, content: string | Uint8Array) {
-    if ((note.type !== "text" && note.type !== "relationMap" && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
+    if ((note.type !== "text" && note.type !== "relationMap" && note.type !== "llmChat" && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
         return {
             forceFrontendReload: false,
             content
@@ -850,6 +904,8 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
         ({ forceFrontendReload, content } = checkImageAttachments(note, content));
     } else if (note.type === "relationMap" && typeof content === "string") {
         findRelationMapLinks(content, foundLinks);
+    } else if (note.type === "llmChat" && typeof content === "string") {
+        findLlmChatLinks(content, foundLinks);
     } else {
         throw new Error(`Unrecognized type '${note.type}'`);
     }

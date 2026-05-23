@@ -52,7 +52,7 @@
     "add-link-to-text": "Ouvrir la boîte de dialogue pour ajouter un lien dans le texte",
     "follow-link-under-cursor": "Suivre le lien sous le curseur",
     "insert-date-and-time-to-text": "Insérer la date et l'heure dans le texte",
-    "paste-markdown-into-text": "Coller du texte au format Markdown dans la note depuis le presse-papiers",
+    "paste-markdown-into-text": "Coller le Markdown depuis le presse-papiers dans la note de texte",
     "cut-into-note": "Coupe la sélection depuis la note actuelle et crée une note enfant avec le texte sélectionné",
     "add-include-note-to-text": "Ouvrir la boîte de dialogue pour Inclure une note",
     "edit-readonly-note": "Éditer une note en lecture seule",
@@ -231,7 +231,7 @@
     "task-state-cancelled": "Annulé",
     "task-state-attr-state-id": "Identifiant (obligatoire)",
     "task-state-attr-markdown-symbol": "Symbole Markdown",
-    "task-state-attr-is-completed": "Marque comme terminé",
+    "task-state-attr-is-completed": "Compte comme terminé",
     "task-state-attr-color": "Couleur",
     "task-state-attr-is-hidden": "Masqué de la liste"
   },
@@ -268,7 +268,8 @@
     "old_version": "La migration directe à partir de votre version actuelle n'est pas prise en charge. Veuillez d'abord mettre à jour vers la version v0.60.4, puis vers cette nouvelle version.",
     "error_message": "Erreur lors de la migration vers la version {{version}}: {{stack}}",
     "wrong_db_version": "La version de la base de données ({{version}}) est plus récente que ce que l'application supporte actuellement ({{targetVersion}}), ce qui signifie qu'elle a été créée par une version plus récente et incompatible de Trilium. Mettez à jour vers la dernière version de Trilium pour résoudre ce problème.",
-    "invalid_db_version": "La version de la base de données n'est pas un nombre valide. Cela indique généralement que l'option « dbVersion » de la base de données est corrompue. Veuillez restaurer la base à partir d'une sauvegarde."
+    "invalid_db_version": "La version de la base de données n'est pas un nombre valide. Cela indique généralement que l'option « dbVersion » de la base de données est corrompue. Veuillez restaurer la base à partir d'une sauvegarde.",
+    "automatic_migrations_disabled": "Les migrations automatiques de base de données sont désactivées via la variable d'environnement TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}"
   },
   "modals": {
     "error_title": "Erreur"

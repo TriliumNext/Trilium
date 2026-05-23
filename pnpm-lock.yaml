@@ -73,6 +73,10 @@ overrides:
   '@hono/node-server@<1.19.13': '>=1.19.13'
   basic-ftp@=5.2.0: '>=5.2.1'
 
+patchedDependencies:
+  '@ckeditor/ckeditor5-code-block': 1530be090e4f5235e197fb6208a8e8230e3355d5633fc7cad2b2e892659e9c04
+  '@ckeditor/ckeditor5-mention': 70377e48a04e2f45abba79aa35f3d5527ec7aa7ffce44056f9957a49a24a4a60
+
 importers:
 
   .:
@@ -2502,7 +2506,7 @@ packages:
     engines: {node: '>=14'}
 
   '@electron/node-gyp@https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2':
-    resolution: {gitHosted: true, integrity: sha512-MXgzlTDEEndJB3TBbvd5uFQO/8gaINo1Hfen8vef5rq/VHVPeB63uuv/uO5+8GFsAJ/rauu6XB79S6K4+aXc+w==, tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
     version: 10.2.0-electron.1
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -13893,7 +13897,7 @@ snapshots:
       '@ckeditor/ckeditor5-upload': 48.1.1
       '@ckeditor/ckeditor5-utils': 48.1.1
 
-  '@ckeditor/ckeditor5-code-block@48.1.1':
+  '@ckeditor/ckeditor5-code-block@48.1.1(patch_hash=1530be090e4f5235e197fb6208a8e8230e3355d5633fc7cad2b2e892659e9c04)':
     dependencies:
       '@ckeditor/ckeditor5-clipboard': 48.1.1
       '@ckeditor/ckeditor5-core': 48.1.1
@@ -14021,7 +14025,7 @@ snapshots:
     dependencies:
       '@ckeditor/ckeditor5-core': 48.1.1
       '@ckeditor/ckeditor5-icons': 48.1.1
-      '@ckeditor/ckeditor5-mention': 48.1.1
+      '@ckeditor/ckeditor5-mention': 48.1.1(patch_hash=70377e48a04e2f45abba79aa35f3d5527ec7aa7ffce44056f9957a49a24a4a60)
       '@ckeditor/ckeditor5-typing': 48.1.1
       '@ckeditor/ckeditor5-ui': 48.1.1
       '@ckeditor/ckeditor5-utils': 48.1.1
@@ -14301,7 +14305,7 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 48.1.1
       '@ckeditor/ckeditor5-widget': 48.1.1
 
-  '@ckeditor/ckeditor5-mention@48.1.1':
+  '@ckeditor/ckeditor5-mention@48.1.1(patch_hash=70377e48a04e2f45abba79aa35f3d5527ec7aa7ffce44056f9957a49a24a4a60)':
     dependencies:
       '@ckeditor/ckeditor5-core': 48.1.1
       '@ckeditor/ckeditor5-engine': 48.1.1
@@ -14316,7 +14320,7 @@ snapshots:
       '@ckeditor/ckeditor5-engine': 48.1.1
       '@ckeditor/ckeditor5-icons': 48.1.1
       '@ckeditor/ckeditor5-image': 48.1.1
-      '@ckeditor/ckeditor5-mention': 48.1.1
+      '@ckeditor/ckeditor5-mention': 48.1.1(patch_hash=70377e48a04e2f45abba79aa35f3d5527ec7aa7ffce44056f9957a49a24a4a60)
       '@ckeditor/ckeditor5-ui': 48.1.1
       '@ckeditor/ckeditor5-utils': 48.1.1
       '@ckeditor/ckeditor5-widget': 48.1.1
@@ -14450,7 +14454,7 @@ snapshots:
       '@ckeditor/ckeditor5-core': 48.1.1
       '@ckeditor/ckeditor5-heading': 48.1.1
       '@ckeditor/ckeditor5-icons': 48.1.1
-      '@ckeditor/ckeditor5-mention': 48.1.1
+      '@ckeditor/ckeditor5-mention': 48.1.1(patch_hash=70377e48a04e2f45abba79aa35f3d5527ec7aa7ffce44056f9957a49a24a4a60)
       '@ckeditor/ckeditor5-style': 48.1.1
       '@ckeditor/ckeditor5-template': 48.1.1
       '@ckeditor/ckeditor5-ui': 48.1.1
@@ -14521,7 +14525,7 @@ snapshots:
   '@ckeditor/ckeditor5-track-changes@48.1.1':
     dependencies:
       '@ckeditor/ckeditor5-clipboard': 48.1.1
-      '@ckeditor/ckeditor5-code-block': 48.1.1
+      '@ckeditor/ckeditor5-code-block': 48.1.1(patch_hash=1530be090e4f5235e197fb6208a8e8230e3355d5633fc7cad2b2e892659e9c04)
       '@ckeditor/ckeditor5-collaboration-core': 48.1.1
       '@ckeditor/ckeditor5-comments': 48.1.1
       '@ckeditor/ckeditor5-core': 48.1.1
@@ -21025,7 +21029,7 @@ snapshots:
       '@ckeditor/ckeditor5-ckfinder': 48.1.1
       '@ckeditor/ckeditor5-clipboard': 48.1.1
       '@ckeditor/ckeditor5-cloud-services': 48.1.1
-      '@ckeditor/ckeditor5-code-block': 48.1.1
+      '@ckeditor/ckeditor5-code-block': 48.1.1(patch_hash=1530be090e4f5235e197fb6208a8e8230e3355d5633fc7cad2b2e892659e9c04)
       '@ckeditor/ckeditor5-core': 48.1.1
       '@ckeditor/ckeditor5-easy-image': 48.1.1
       '@ckeditor/ckeditor5-editor-balloon': 48.1.1
@@ -21053,7 +21057,7 @@ snapshots:
       '@ckeditor/ckeditor5-list': 48.1.1
       '@ckeditor/ckeditor5-markdown-gfm': 48.1.1
       '@ckeditor/ckeditor5-media-embed': 48.1.1
-      '@ckeditor/ckeditor5-mention': 48.1.1
+      '@ckeditor/ckeditor5-mention': 48.1.1(patch_hash=70377e48a04e2f45abba79aa35f3d5527ec7aa7ffce44056f9957a49a24a4a60)
       '@ckeditor/ckeditor5-minimap': 48.1.1
       '@ckeditor/ckeditor5-page-break': 48.1.1
       '@ckeditor/ckeditor5-paragraph': 48.1.1

@@ -1,4 +1,5 @@
 import "./Markdown.css";
+import "./MarkdownCommons.css";
 
 import { autocompletion } from "@codemirror/autocomplete";
 import { syntaxTree } from "@codemirror/language";
@@ -724,10 +725,12 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
         line += (token.raw.match(/\n/g) ?? []).length;
         if (!NON_RENDERED_TOKENS.has(token.type)) lines.push(startLine);
         if (token.type === "heading") {
+            const rawText = token.text ?? "";
+            const inlineHtml = DOMPurify.sanitize(marked.parseInline(rawText) as string);
             headings.push({
                 id: `md-heading-${headingIdx++}`,
                 level: (token as { depth: number }).depth,
-                text: token.text ?? "",
+                text: inlineHtml,
                 line: startLine
             });
         }

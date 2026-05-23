@@ -26,7 +26,7 @@
     "productivity_benefits": {
         "title": "Productivité et sécurité",
         "revisions_title": "Révisions de note",
-        "revisions_content": "Les notes sont sauvegardées périodiquement en arrière-plan, et les révisions peuvent être utilisées pour consulter l’historique ou annuler des modifications accidentelles. Il est également possible de créer des révisions à la demande.",
+        "revisions_content": "Les notes sont enregistrées régulièrement en arrière-plan. Les révisions ainsi créées permettent de consulter les modifications ou d'annuler des erreurs, et peuvent aussi être créées manuellement.",
         "sync_title": "Synchronisation",
         "sync_content": "Utilisez une instance auto-hébergée ou cloud pour synchroniser facilement vos notes sur plusieurs appareils, et pour y accéder à partir de votre téléphone mobile en utilisant un PWA.",
         "protected_notes_title": "Notes protégées",

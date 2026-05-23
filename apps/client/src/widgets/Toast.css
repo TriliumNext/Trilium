@@ -25,6 +25,7 @@
 
 .toast-body {
     white-space: preserve-breaks;
+    user-select: text;
     overflow: hidden;
 }
 

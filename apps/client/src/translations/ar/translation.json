@@ -504,7 +504,9 @@
     "failed": "فشل في المزامنة: {{message}}",
     "fill_entity_changes_button": "ملء سجلات تغييرات الكيانات",
     "filling_entity_changes": "جار ملء صفوف تغييرات الكيانات",
-    "sync_rows_filled_successfully": "تمة تعبئة بيانات المزامنة بنجاح"
+    "sync_rows_filled_successfully": "تمة تعبئة بيانات المزامنة بنجاح",
+    "force_full_sync_label": "فرض مزامنة كاملة",
+    "fill_entity_changes_label": "تعبئة تغييرات الكيانات"
   },
   "fonts": {
     "fonts": "خطوط",
@@ -524,7 +526,9 @@
     "sans-serif-system-fonts": "خطوط النظام بدون زخرفة",
     "monospace-system-fonts": "خطوط النظام احادية المسافة",
     "handwriting-system-fonts": "خطوط النظام باسلوب الكتابة اليدوية",
-    "preview": "معاينة"
+    "preview": "معاينة",
+    "custom_fonts": "استخدام خطوط مخصصة",
+    "apply_changes": "إعادة التحميل لتطبيق التغييرات"
   },
   "confirm": {
     "confirmation": "تأكيد",
@@ -750,7 +754,9 @@
     "recommended": "موصى به",
     "color_scheme_system": "نظام",
     "color_scheme_light": "فاتح",
-    "color_scheme_dark": "داكن"
+    "color_scheme_dark": "داكن",
+    "auto_theme": "اتباع مخطط ألوان النظام",
+    "triliumnext": "اتباع مخطط ألوان النظام"
   },
   "ui-performance": {
     "title": "أداء",
@@ -771,7 +777,12 @@
     "max_image_dimensions_unit": "بكسل",
     "enable_image_compression": "تمكين ضغط الصورة",
     "jpeg_quality": "جودة JPEG",
-    "ocr_min_confidence": "الحد الأدنى من الثقة"
+    "ocr_min_confidence": "الحد الأدنى من الثقة",
+    "ocr_section_title": "استخراج النص (OCR)",
+    "ocr_auto_process": "معالجة الملفات الجديدة تلقائيًا",
+    "batch_ocr_title": "معالجة الملفات الموجودة",
+    "batch_ocr_start": "بدء المعالجة الدفعية",
+    "batch_ocr_starting": "جارٍ بدء المعالجة الدفعية..."
   },
   "revisions_snapshot_limit": {
     "snapshot_number_limit_unit": "لقطات",
@@ -853,7 +864,8 @@
     "protected_session_timeout_label": "انتهت مدة الجلسة المحمية:",
     "protected_session_timeout": "انتهاء مهلة الجلسة المحمية",
     "new_password_confirmation": "تاكيد كلمة المرور الجديدة",
-    "cancel": "الغاء"
+    "cancel": "الغاء",
+    "change_password_description": "تحديث كلمة المرور الحالية الخاصة بك"
   },
   "shortcuts": {
     "shortcuts": "أختصارات",
@@ -908,7 +920,9 @@
   "code_theme": {
     "title": "المظهر",
     "word_wrapping": "التفاف النص",
-    "color-scheme": "نظام الالوان"
+    "color-scheme": "نظام الالوان",
+    "match_app_appearance": "مطابقة مظهر التطبيق",
+    "always_use_one_theme": "استخدام سمة واحدة دائمًا"
   },
   "table_view": {
     "sort-column-ascending": "تصاعدي",
@@ -1238,7 +1252,12 @@
     "view_revisions": "إصدارات الملاحظة...",
     "note_map": "خريطة الملاحظة",
     "export_as_image_png": "PNG (صورة نقطية)",
-    "export_as_image_svg": "SVG (صورة متجهية)"
+    "export_as_image_svg": "SVG (صورة متجهية)",
+    "view_ocr_text": "عرض نص OCR",
+    "save_named_revision": "حفظ نسخة باسم...",
+    "print_or_export_to_pdf": "طباعة / تصدير إلى PDF...",
+    "open_note_on_server": "فتح الملاحظة على الخادم",
+    "word_wrap_auto_description": "اتباع الإعداد العام"
   },
   "update_available": {
     "update_available": "تحديث متوفر"
@@ -1326,7 +1345,8 @@
     "cannot_match_transform": "تعذر مطابقة التحويل: {{transform}}",
     "rename_relation": "إعادة تسمية العلاقة",
     "confirm_remove_relation": "هل أنت متأكد أنك تريد إزالة العلاقة؟",
-    "specify_new_relation_name": "حدد اسم العلاقة الجديد (الأحرف المسموح بها: أحرف أبجدية رقمية، النقطتان الرأسيتان (:)، والشرطة السفلية (_)):"
+    "specify_new_relation_name": "حدد اسم العلاقة الجديد (الأحرف المسموح بها: أحرف أبجدية رقمية، النقطتان الرأسيتان (:)، والشرطة السفلية (_)):",
+    "enter_title_of_new_note": "أدخل عنوان الملاحظة الجديدة"
   },
   "consistency_checks": {
     "title": "فحوصات التناسق"
@@ -1395,7 +1415,8 @@
     "configure_launchbar": "تهيئة شريط الاطلاق"
   },
   "entrypoints": {
-    "note-executed": "تم تنفيذ الملاحظة."
+    "note-executed": "تم تنفيذ الملاحظة.",
+    "save-named-revision-title": "حفظ نسخة باسم"
   },
   "branches": {
     "delete-status": "حالة الحذف",
@@ -1413,7 +1434,8 @@
     "theme_group_dark": "الثيمات الغامقة",
     "copy_title": "نسخ الى الحافظة",
     "theme_none": "بدون تمييز الصياغة",
-    "tab_width_unit": "المسافات"
+    "tab_width_unit": "المسافات",
+    "click_to_copy": "انقر للنسخ"
   },
   "link_context_menu": {
     "open_note_in_popup": "تحرير سريع"
@@ -1437,7 +1459,8 @@
   },
   "note_language": {
     "not_set": "غير محدد",
-    "configure-languages": "لغات التهيئة"
+    "configure-languages": "لغات التهيئة",
+    "help-on-languages": "مساعدة حول لغات المحتوى..."
   },
   "content_language": {
     "title": "لغات المحتوى"
@@ -1533,7 +1556,8 @@
     "title": "فحص سلامة قاعدة البيانات",
     "check_button": "التحقق من سلامة قاعدة البيانات",
     "checking_integrity": "جار التحقق من سلامة قاعدة البيانات...",
-    "integrity_check_failed": "فشل التحقق من السلامة: {{results}}"
+    "integrity_check_failed": "فشل التحقق من السلامة: {{results}}",
+    "check_integrity_label": "التحقق من سلامة قاعدة البيانات"
   },
   "watched_file_update_status": {
     "upload_modified_file": "رفع الملف المعدل",
@@ -1566,14 +1590,16 @@
     "add_new_label_definition": "اضافة تعريف لتسمية جديدة",
     "add_new_relation_definition": "اضافة تعريف لعلاقة جديدة",
     "add_new_relation": "اضافة علاقة جديدة <kbd data-command=\"addNewRelation\">",
-    "placeholder": "اكتب التسميات والعلاقات هنا"
+    "placeholder": "اكتب التسميات والعلاقات هنا",
+    "add_new_label": "إضافة تسمية جديدة <kbd data-command=\"addNewLabel\"></kbd>"
   },
   "zen_mode": {
     "button_exit": "الخروج من وضع Zen"
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "مهلة مسح المرفقات",
-    "erase_attachments_after": "حذف المرفقات الغير مستخدمة بعد:"
+    "erase_attachments_after": "حذف المرفقات الغير مستخدمة بعد:",
+    "erase_unused_attachments_now": "حذف المرفقات غير المستخدمة الآن"
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "مهلة مسح الملاحظة",
@@ -1635,7 +1661,10 @@
     "placeholder": "اكتب عنوان الملاحظة هنا...",
     "note_type_switcher_templates": "قالب",
     "note_type_switcher_collection": "مجموعة",
-    "promoted_attributes": "الخصائص المُروَّجة"
+    "promoted_attributes": "الخصائص المُروَّجة",
+    "created_on": "تم الإنشاء في <Value />",
+    "last_modified": "تم التعديل في <Value />",
+    "note_type_switcher_label": "التبديل من {{type}} إلى:"
   },
   "image_context_menu": {
     "copy_reference_to_clipboard": "نسخ المرجع الى الحافظة",
@@ -1724,12 +1753,16 @@
     "execute_script": "تشغيل السكربت",
     "execute_sql": "تشغيل SQL",
     "shared_unshare": "إزالة المشاركة",
-    "save_status_error": "فشل الحفظ"
+    "save_status_error": "فشل الحفظ",
+    "shared_copy_to_clipboard": "نسخ الرابط إلى الحافظة",
+    "shared_open_in_browser": "فتح الرابط في المتصفح",
+    "save_status_saving_tooltip": "جارٍ حفظ التغييرات."
   },
   "breadcrumb": {
     "hoisted_badge": "مُفعَّل عليه التركيز",
     "hoisted_badge_title": "إلغاء التركيز",
-    "workspace_badge": "مساحة العمل"
+    "workspace_badge": "مساحة العمل",
+    "create_new_note": "إنشاء ملاحظة فرعية جديدة"
   },
   "pdf": {
     "pages_loading": "تحميل...",
@@ -1752,7 +1785,8 @@
     "type_app_theme": "سِمة مخصصة",
     "menu_docs": "فتح التوثيق",
     "menu_run": "تشغيل تلقائي",
-    "menu_theme_base": "قاعدة السِمة"
+    "menu_theme_base": "قاعدة السِمة",
+    "menu_change_to_frontend_script": "التبديل إلى سكربت الواجهة الأمامية"
   },
   "media": {
     "loop": "حلقة",
@@ -1816,7 +1850,11 @@
     "note_tools": "وصول الملاحظة",
     "extended_thinking": "تفكير موسّع",
     "legacy_models": "النماذج القديمة",
-    "thought_process": "عملية التفكير"
+    "thought_process": "عملية التفكير",
+    "placeholder": "اكتب رسالة...",
+    "searching_web": "جارٍ البحث في الويب...",
+    "add_provider": "إضافة مزوّد ذكاء اصطناعي",
+    "edit_index": "تحرير {{index}} من {{total}}"
   },
   "llm": {
     "provider_name": "اسم",
@@ -1830,8 +1868,17 @@
     "mcp_enabled": "خادم MCP",
     "mcp_endpoint_title": "رابط نقطة النهاية",
     "tools": {
-      "search_notes": "بحث في الملاحظات"
-    }
+      "search_notes": "بحث في الملاحظات",
+      "get_note_content": "الحصول على محتوى الملاحظة",
+      "append_to_note": "إضافة إلى الملاحظة",
+      "get_child_notes": "الحصول على الملاحظات الفرعية",
+      "get_attachment_content": "قراءة محتوى المرفق"
+    },
+    "settings_title": "الذكاء الاصطناعي / نموذج اللغة الكبير",
+    "add_provider_title": "إضافة مزوّد ذكاء اصطناعي",
+    "no_providers_configured": "لم يتم إعداد أي مزوّدين بعد.",
+    "api_key_placeholder": "أدخل مفتاح API الخاص بك",
+    "mcp_title": "بروتوكول سياق النموذج (MCP)"
   },
   "markdown_editor": {
     "image_upload_failed": "لا يمكن رفع الصورة \"{{name}}\"."
@@ -1863,14 +1910,23 @@
     "focus": "وضع التركيز",
     "moveUp": "تحريك للأعلى",
     "moveDown": "تحريك للاسفل",
-    "linkBidirectional": "رابط ثنائي الاتجاه"
+    "linkBidirectional": "رابط ثنائي الاتجاه",
+    "cancelFocus": "إلغاء وضع التركيز"
   },
   "ocr": {
     "processing": "جارٍ المعالجة...",
-    "process_now": "معالجة التعرف الضوئي على النص (OCR)"
+    "process_now": "معالجة التعرف الضوئي على النص (OCR)",
+    "extracted_text": "نص مُستخرج (OCR)",
+    "extracted_text_title": "نص مُستخرج (OCR)",
+    "loading_text": "جارٍ تحميل نص OCR...",
+    "processing_complete": "اكتمل معالجة OCR.",
+    "no_text_available": "لا يوجد نص OCR متاح",
+    "view_extracted_text": "عرض النص المستخرج (OCR)"
   },
   "search": {
-    "title": "بحث"
+    "title": "بحث",
+    "fuzzy_matching_label": "تحمّل الأخطاء الإملائية في البحث",
+    "autocomplete_fuzzy_label": "تحمّل الأخطاء الإملائية في الإكمال التلقائي"
   },
   "database": {
     "title": "قاعدة بيانات"
@@ -1881,7 +1937,17 @@
   "status_bar": {
     "tab_width_style_spaces": "المسافات",
     "tab_width_style_tabs": "علامات التبويب",
-    "note_paths_title": "مسارات الملاحظة"
+    "note_paths_title": "مسارات الملاحظة",
+    "tab_width_title": "تغيير عرض التبويب",
+    "tab_width_use_default": "استخدام الافتراضي ({{width}})",
+    "tab_width_use_default_style": "استخدام الافتراضي ({{style}})",
+    "tab_width_reindent_header": "إعادة تنسيق المسافة البادئة إلى",
+    "backlinks_title_zero": "عرض الرابط الخلفي",
+    "backlinks_title_one": "عرض الروابط الخلفية",
+    "backlinks_title_two": "عرض الرابطان الخلفيان",
+    "backlinks_title_few": "عرض الروابط الخلفية",
+    "backlinks_title_many": "عرض رابط الخلفي",
+    "backlinks_title_other": "عرض رابط خلفي"
   },
   "print_preview": {
     "close": "اغلاق",
@@ -1902,7 +1968,12 @@
     "print": "طباعة",
     "destination": "الوجهة",
     "destination_printers": "الطابعات",
-    "destination_default": "افتراضي"
+    "destination_default": "افتراضي",
+    "save": "حفظ كملف PDF",
+    "export_pdf": "تصدير كملف PDF",
+    "destination_pdf": "حفظ كملف PDF",
+    "page_ranges_placeholder": "مثال: 1-5، 8، 11-13",
+    "system_print": "الطباعة باستخدام مربع حوار النظام"
   },
   "display_mode": {
     "preview": "معاينة"
@@ -1912,7 +1983,9 @@
     "cancel": "الغاء"
   },
   "mobile_note_navigator": {
-    "loading": "جار التحميل..."
+    "loading": "جار التحميل...",
+    "add_child": "إضافة ملاحظة فرعية",
+    "back": "الانتقال مستوى واحد للأعلى"
   },
   "setup": {
     "next": "التالي",
@@ -1923,7 +1996,22 @@
     "language": "لغة",
     "continue": "استمر",
     "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server-placeholder": "https://<hostname>:<port>"
+    "proxy-server-placeholder": "https://<hostname>:<port>",
+    "new-document": "قاعدة معرفة جديدة",
+    "sync-in-progress-title": "المزامنة قيد التنفيذ",
+    "sync-step-connecting": "‎جارٍ الاتصال بالخادم",
+    "sync-step-finalizing": "جارٍ إعداد الخيارات",
+    "create-new-document-options-with-demo": "مع محتوى تجريبي",
+    "sync-illustration-desktop-app": "تطبيق سطح المكتب الخاص بك",
+    "sync-from-desktop-waiting": "في انتظار الاتصال...",
+    "server-host": "‎عنوان خادم Trilium",
+    "proxy-server": "خادم وكيل (اختياري)",
+    "heading": "ابدأ مع Trilium",
+    "sync-from-desktop": "ربط تطبيق سطح المكتب",
+    "init-in-progress": "جارٍ تهيئة المستند",
+    "create-new-document-title": "جارٍ تجهيز قاعدة المعرفة الخاصة بك",
+    "sync-failed": "فشل المزامنة: {{message}}",
+    "your-ip-addresses": "عناوين هذا الجهاز"
   },
   "calendar_view": {
     "delete_note": "جار حذف الملاحظة..."
@@ -1937,12 +2025,14 @@
   },
   "experimental_features": {
     "title": "الخيارات التجريبية",
-    "new_layout_name": "تخطيط جديد"
+    "new_layout_name": "تخطيط جديد",
+    "llm_name": "دردشة الذكاء الاصطناعي / نموذج اللغة الكبير"
   },
   "settings_appearance": {
     "ui": "واجهة المستخدم",
     "ui_old_layout": "التخطيط القديم",
-    "ui_new_layout": "التخطيط الجديد"
+    "ui_new_layout": "التخطيط الجديد",
+    "ui_layout_orientation": "اتجاه شريط الإطلاق"
   },
   "attributes_panel": {
     "title": "خصائص الملاحظة"
@@ -1966,6 +2056,33 @@
   "sidebar_chat": {
     "title": "دردشة الذكاء الاصطناعي",
     "history": "سجل المحادثة",
-    "recent_chats": "المحادثات الأخيرة"
+    "recent_chats": "المحادثات الأخيرة",
+    "launcher_title": "فتح دردشة الذكاء الاصطناعي",
+    "new_chat": "بدء محادثة جديدة",
+    "empty_state": "بدء محادثة",
+    "no_chats": "لا توجد محادثات سابقة",
+    "save_chat": "حفظ المحادثة في الملاحظات"
+  },
+  "text-editor": {
+    "edit-states-tooltip": "تعديل حالات المهام",
+    "validation-errors": {
+      "duplicate-symbol": "رمز Markdown مكرر"
+    },
+    "unknown-task-state": "حالة مهمة مخصصة غير مُعرّفة"
+  },
+  "note-color": {
+    "set-custom-color": "تعيين لون مخصص للملاحظة"
+  },
+  "popup-editor": {
+    "maximize": "التبديل إلى المحرر الكامل"
+  },
+  "right_pane": {
+    "custom_widget_go_to_source": "الانتقال إلى الشيفرة المصدرية"
+  },
+  "launcher_button_context_menu": {
+    "remove_from_launch_bar": "إزالة من شريط التشغيل"
+  },
+  "spreadsheet": {
+    "read-only": "هذه الملاحظة للقراءة فقط."
   }
 }

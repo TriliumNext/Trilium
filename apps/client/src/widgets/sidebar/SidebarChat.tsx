@@ -3,13 +3,14 @@ import "./SidebarChat.css";
 import type { Dropdown as BootstrapDropdown } from "bootstrap";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import appContext from "../../components/app_context.js";
 import dateNoteService, { type RecentLlmChat } from "../../services/date_notes.js";
 import { t } from "../../services/i18n.js";
 import server from "../../services/server.js";
 import { formatDateTime } from "../../utils/formatters";
 import ActionButton from "../react/ActionButton.js";
 import Dropdown from "../react/Dropdown.js";
-import { FormListItem } from "../react/FormList.js";
+import { FormDropdownDivider, FormListItem } from "../react/FormList.js";
 import { useActiveNoteContext, useNote, useNoteProperty, useSpacedUpdate } from "../react/hooks.js";
 import ChatInputBar from "../type_widgets/llm_chat/ChatInputBar.js";
 import ChatMessageList from "../type_widgets/llm_chat/ChatMessageList.js";
@@ -200,6 +201,11 @@ export default function SidebarChat() {
         }
     }, []);
 
+    const handleViewAllChats = useCallback(() => {
+        historyDropdownRef.current?.hide();
+        appContext.tabManager.openInNewTab("_llmChat", "_llmChat", true);
+    }, []);
+
     const handleSelectChat = useCallback(async (noteId: string) => {
         historyDropdownRef.current?.hide();
 
@@ -267,6 +273,13 @@ export default function SidebarChat() {
                                 </FormListItem>
                             ))
                         )}
+                        <FormDropdownDivider />
+                        <FormListItem
+                            icon="bx bx-folder-open"
+                            onClick={handleViewAllChats}
+                        >
+                            {t("sidebar_chat.view_all_chats")}
+                        </FormListItem>
                     </Dropdown>
                     <ActionButton
                         icon="bx bx-save"

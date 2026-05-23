@@ -184,7 +184,7 @@
     "followLink": "suivre le lien sous le curseur",
     "insertDateTime": "insérer la date et l'heure courante à la position du curseur",
     "jumpToTreePane": "passer au volet de l'arborescence et aller jusqu'à la note active",
-    "markdownAutoformat": "Mise en forme automatique (comme Markdown)",
+    "markdownAutoformat": "Auto-formatage style Markdown",
     "headings": "<code>##</code>, <code>###</code>, <code>####</code>  etc. suivi d'un espace pour les titres",
     "bulletList": "<code>*</code> ou <code>-</code> suivi d'un espace pour une liste à puces",
     "numberedList": "<code>1.</code> ou <code>1)</code> suivi d'un espace pour une liste numérotée",
@@ -382,7 +382,7 @@
     "auto_read_only_disabled": "les notes textuelles/de code peuvent être automatiquement mises en mode lecture lorsqu'elles sont trop volumineuses. Vous pouvez désactiver ce comportement note par note en ajoutant ce label à la note",
     "app_css": "marque les notes CSS qui sont chargées dans l'application Trilium et peuvent ainsi être utilisées pour modifier l'apparence de Trilium.",
     "app_theme": "marque les notes CSS qui sont des thèmes Trilium complets et sont donc disponibles dans les options Trilium.",
-    "app_theme_base": "définir sur \"next\" afin d'utiliser le thème TriliumNext comme base pour un thème personnalisé à la place de l'ancien thème.",
+    "app_theme_base": "définir sur \"next\" afin d'utiliser le thème TriliumNext comme base pour un thème personnalisé à la place du thème classique.",
     "css_class": "la valeur de ce label est ensuite ajoutée en tant que classe CSS au nœud représentant la note donnée dans l'arborescence. Cela peut être utile pour les thèmes avancés. Peut être utilisé dans les notes modèle.",
     "icon_class": "la valeur de ce label est ajoutée en tant que classe CSS à l'icône dans l'arbre, ce qui peut aider à distinguer visuellement les notes dans l'arborescence. Un exemple pourrait être bx bx-home - les icônes sont extraites de boxicons. Peut être utilisé dans les notes modèle.",
     "page_size": "nombre d'éléments par page dans la liste de notes",
@@ -701,7 +701,7 @@
     "export_note": "Exporter la note",
     "delete_note": "Supprimer la note",
     "print_note": "Imprimer la note...",
-    "save_revision": "Enregistrer la révision",
+    "save_revision": "Enregistrer une révision",
     "convert_into_attachment_failed": "La conversion de la note '{{title}}' a échoué.",
     "convert_into_attachment_successful": "La note '{{title}}' a été convertie en pièce jointe.",
     "convert_into_attachment_prompt": "Êtes-vous sûr de vouloir convertir la note '{{title}}' en une pièce jointe de la note parent ?",
@@ -1204,7 +1204,7 @@
     "light_theme": "Clair",
     "dark_theme": "Sombre",
     "modern_themes": "Moderne",
-    "legacy_themes": "Historique",
+    "legacy_themes": "Classique",
     "custom_themes": "Personnalisé",
     "recommended": "Recommandé",
     "color_scheme": "Schéma de couleurs",
@@ -1240,22 +1240,22 @@
   "images": {
     "images_section_title": "Images",
     "download_images_automatically": "Télécharger automatiquement les images",
-    "download_images_description": "Téléchargez les images en ligne référencées dans le HTML collé afin qu'elles soient disponibles hors connexion.",
+    "download_images_description": "Télécharge les images externes du HTML collé pour les rendre disponibles hors connexion.",
     "enable_image_compression": "Compression des images",
     "max_image_dimensions": "Dimensions maximales d'une image",
     "jpeg_quality_description": "La plage recommandée est entre 50 et 85. Des valeurs plus faibles réduisent la taille du fichier, des valeurs plus élevées préservent les détails.",
     "max_image_dimensions_unit": "pixels",
     "jpeg_quality": "Qualité JPEG",
-    "enable_image_compression_description": "Compresser et redimensionner les images lors de leur téléchargement ou de leur copie.",
+    "enable_image_compression_description": "Compresse et redimensionne les images lors de leur téléversement ou de leur collage.",
     "max_image_dimensions_description": "Les images dépassant cette taille seront automatiquement redimensionnées.",
     "ocr_section_title": "Extraction de texte (OCR)",
     "ocr_related_content_languages": "Langues du contenu (utilisées pour l’extraction de texte)",
     "ocr_auto_process": "Traiter automatiquement les nouveaux fichiers",
-    "ocr_auto_process_description": "Extraire automatiquement le texte des fichiers nouvellement importés ou collés.",
+    "ocr_auto_process_description": "Extrait automatiquement le texte des fichiers nouvellement téléversés ou collés.",
     "ocr_min_confidence": "Seuil de confiance minimal",
-    "ocr_confidence_description": "N’extraire que le texte dont la confiance est supérieure à ce seuil. Des valeurs plus faibles incluent davantage de texte, mais peuvent être moins précises.",
+    "ocr_confidence_description": "N’extrait que le texte dont la confiance est supérieure à ce seuil. Des valeurs plus faibles incluent davantage de texte, mais peuvent être moins précises.",
     "batch_ocr_title": "Traiter les fichiers existants",
-    "batch_ocr_description": "Extraire le texte de toutes les images, PDF et documents Office existants dans vos notes. Cette opération peut prendre du temps en fonction du nombre de fichiers.",
+    "batch_ocr_description": "Extrait le texte de toutes les images, PDF et documents Office existants dans vos notes. Cela peut prendre du temps selon le nombre de fichiers.",
     "batch_ocr_start": "Démarrer le traitement par lot",
     "batch_ocr_starting": "Démarrage du traitement par lot…",
     "batch_ocr_progress": "Traitement de {{processed}} sur {{total}} fichiers…",
@@ -1782,7 +1782,7 @@
     "title": "Blocs de code"
   },
   "code_block": {
-    "word_wrapping": "Retour à la ligne automatique",
+    "word_wrapping": "Retour à la ligne",
     "theme_none": "Pas de coloration syntaxique",
     "theme_group_light": "Thèmes clairs",
     "theme_group_dark": "Thèmes sombres",
@@ -2010,7 +2010,7 @@
     "search_notes_description": "Ouvrir la recherche avancée",
     "search_subtree_title": "Rechercher dans la sous-arborescence",
     "search_subtree_description": "Rechercher dans la sous-arborescence actuelle",
-    "search_history_title": "Afficher l'historique de recherche",
+    "search_history_title": "Afficher l'historique des recherches",
     "search_history_description": "Afficher les recherches précédentes",
     "configure_launch_bar_title": "Configurer la barre de lancement",
     "configure_launch_bar_description": "Ouvrir la configuration de la barre de lancement pour ajouter ou supprimer des éléments."
@@ -2020,7 +2020,7 @@
   },
   "call_to_action": {
     "next_theme_title": "Essayez le nouveau thème Trilium",
-    "next_theme_message": "Vous utilisez actuellement le thème hérité de l'ancienne version, souhaitez-vous essayer le nouveau thème ?",
+    "next_theme_message": "Vous utilisez actuellement le thème classique, souhaitez-vous essayer le nouveau thème ?",
     "next_theme_button": "Essayez le nouveau thème",
     "background_effects_title": "Les effets d'arrière-plan sont désormais stables",
     "background_effects_message": "Sur les appareils Windows et macOS les effets d'arrière-plan sont désormais stables. Ils ajoutent une touche de couleur à l'interface utilisateur en floutant l'arrière-plan.",
@@ -2031,7 +2031,7 @@
     "new_layout_button": "Plus d'infos"
   },
   "settings": {
-    "related_settings": "Paramètres associés"
+    "related_settings": "Autres paramètres"
   },
   "settings_appearance": {
     "related_code_blocks": "Schéma de couleurs des blocs de code dans les notes de texte",
@@ -2069,12 +2069,12 @@
     "unknown_widget": "Widget inconnu pour « {{id}} »."
   },
   "note_language": {
-    "not_set": "Langage non défini",
+    "not_set": "Aucune langue définie",
     "configure-languages": "Configurer les langues...",
-    "help-on-languages": "Aide sur les langues de contenu..."
+    "help-on-languages": "Aide sur les langues du contenu..."
   },
   "content_language": {
-    "title": "Contenu des langues",
+    "title": "Langues du contenu",
     "description": "Sélectionnez une ou plusieurs langues qui doivent apparaître dans la liste de sélection de langues, située dans la section Propriétés de base d'une note de type texte. Cela permettra d'activer des fonctionnalités telles que la vérification orthographique, le support du texte de droite à gauche (RTL) et l'extraction de texte (OCR)."
   },
   "switch_layout_button": {
@@ -2492,12 +2492,12 @@
     "snapshot_header": "Instantané de révision de la note",
     "snapshot_interval_value": "Intervalle : {{seconds}}s",
     "snapshot_limit_value": "Limite : {{number}}",
-    "settings": "Paramètres de révision des notes",
+    "settings": "Paramètres des révisions de notes",
     "menu_tooltip": "Options de révision",
     "download_button": "Télécharger",
     "file_size": "Taille du fichier :",
     "preview_not_available": "L'aperçu n'est pas disponible pour ce type de note.",
-    "save_revision": "Enregistrer la révision",
+    "save_revision": "Enregistrer une révision",
     "save_revision_tooltip": "Enregistrer manuellement un instantané de la note actuelle",
     "description_placeholder": "Nommer cette révision",
     "revision_saved": "La révision de la note a été enregistrée.",
@@ -2553,7 +2553,7 @@
   },
   "text_editor": {
     "title": "Éditeur",
-    "related_task_states": "États personnalisés des cases à cocher (To-do)"
+    "related_task_states": "Personnaliser les statuts des listes de tâches"
   },
   "mobile_note_navigator": {
     "back": "Remonter d’un niveau",

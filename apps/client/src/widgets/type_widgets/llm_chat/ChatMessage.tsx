@@ -1,4 +1,5 @@
 import "./ChatMessage.css";
+import "../code/MarkdownCommons.css";
 
 import { type LlmCitation, renderToHtml } from "@triliumnext/commons";
 import DOMPurify from "dompurify";

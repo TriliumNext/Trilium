@@ -83,6 +83,10 @@ overrides:
   "@hono/node-server@<1.19.13": ">=1.19.13"
   "basic-ftp@=5.2.0": ">=5.2.1"
 
+patchedDependencies:
+  "@ckeditor/ckeditor5-mention": patches/@ckeditor__ckeditor5-mention.patch
+  "@ckeditor/ckeditor5-code-block": patches/@ckeditor__ckeditor5-code-block.patch
+
 allowBuilds:
   better-sqlite3: true
   core-js: false

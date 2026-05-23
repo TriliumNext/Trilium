@@ -225,24 +225,6 @@
     margin: 1em 0;
 }
 
-.llm-chat-markdown table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 0.75em 0;
-}
-
-.llm-chat-markdown th,
-.llm-chat-markdown td {
-    border: 1px solid var(--main-border-color);
-    padding: 0.5em 0.75em;
-    text-align: left;
-}
-
-.llm-chat-markdown th {
-    background: var(--accented-background-color);
-    font-weight: 600;
-}
-
 .llm-chat-markdown strong {
     font-weight: 600;
 }

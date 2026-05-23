@@ -196,7 +196,9 @@
     "task-state-done": "تم",
     "task-state-maybe": "ربما",
     "task-state-cancelled": "تم الالغاء",
-    "task-state-attr-color": "لون"
+    "task-state-attr-color": "لون",
+    "task-state-attr-is-completed": "يُحسب كمكتمل",
+    "task-state-attr-is-hidden": "مخفي من القائمة"
   },
   "tray": {
     "bookmarks": "العلامات المرجعية",
