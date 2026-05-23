@@ -94,7 +94,7 @@ function AbstractTableOfContents<T extends RawHeading>({ headings, scrollToHeadi
     scrollToHeading(heading: T): void;
     activeHeadingId?: string | null;
 }) {
-    const tocRef  = useRef<HTMLLIElement>(null);
+    const tocRef = useRef<HTMLLIElement>(null);
     const nestedHeadings = buildHeadingTree(headings);
 
     useEffect(() => {
