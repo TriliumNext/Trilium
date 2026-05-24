@@ -143,7 +143,7 @@ function handleException(e: unknown | Error, method: HttpMethod, path: string, r
 
 }
 
-export function createUploadMiddleware(): RequestHandler {
+function buildMulter(): multer.Multer {
     const multerOptions: multer.Options = {
         fileFilter: (req: express.Request, file, cb) => {
             // UTF-8 file names are not well decoded by multer/busboy, so we handle the conversion on our side.
@@ -159,17 +159,31 @@ export function createUploadMiddleware(): RequestHandler {
         };
     }
 
-    return multer(multerOptions).single("upload");
+    return multer(multerOptions);
 }
 
-const uploadMiddleware = createUploadMiddleware();
+export function createUploadMiddleware(): RequestHandler {
+    return buildMulter().single("upload");
+}
 
-export const uploadMiddlewareWithErrorHandling = function (req: express.Request, res: express.Response, next: express.NextFunction) {
-    uploadMiddleware(req, res, (err) => {
-        if (err?.code === "LIMIT_FILE_SIZE") {
-            res.setHeader("Content-Type", "text/plain").status(400).send(`Cannot upload file because it excceeded max allowed file size of ${MAX_ALLOWED_FILE_SIZE_MB} MiB`);
-        } else {
-            next();
-        }
-    });
-};
+export function createMultiUploadMiddleware(fieldName: string): RequestHandler {
+    return buildMulter().array(fieldName);
+}
+
+function wrapWithSizeError(middleware: RequestHandler): RequestHandler {
+    return (req, res, next) => {
+        middleware(req, res, (err) => {
+            if (err?.code === "LIMIT_FILE_SIZE") {
+                res.setHeader("Content-Type", "text/plain").status(400).send(`Cannot upload file because it exceeded max allowed file size of ${MAX_ALLOWED_FILE_SIZE_MB} MiB`);
+            } else {
+                next();
+            }
+        });
+    };
+}
+
+export const uploadMiddlewareWithErrorHandling = wrapWithSizeError(createUploadMiddleware());
+
+export function createMultiUploadMiddlewareWithErrorHandling(fieldName: string): RequestHandler {
+    return wrapWithSizeError(createMultiUploadMiddleware(fieldName));
+}
