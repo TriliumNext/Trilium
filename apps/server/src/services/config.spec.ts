@@ -140,6 +140,8 @@ describe("Config Service", () => {
             process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL = "https://issuer.standard.com";
             process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME = "Standard Auth";
             process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON = "standard-icon.png";
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT = "45000";
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "openid profile email groups";
 
             let { default: config } = await import("./config.js");
 
@@ -149,6 +151,8 @@ describe("Config Service", () => {
             expect(config.MultiFactorAuthentication.oauthIssuerBaseUrl).toBe("https://issuer.standard.com");
             expect(config.MultiFactorAuthentication.oauthIssuerName).toBe("Standard Auth");
             expect(config.MultiFactorAuthentication.oauthIssuerIcon).toBe("standard-icon.png");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(45000);
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email groups");
 
             // Clear and test with alias naming
             Object.keys(process.env).forEach(key => {
@@ -156,14 +160,16 @@ describe("Config Service", () => {
                     delete process.env[key];
                 }
             });
-            
+
             process.env.TRILIUM_OAUTH_BASE_URL = "https://oauth.alias.com";
             process.env.TRILIUM_OAUTH_CLIENT_ID = "alias-client-id";
             process.env.TRILIUM_OAUTH_CLIENT_SECRET = "alias-secret";
             process.env.TRILIUM_OAUTH_ISSUER_BASE_URL = "https://issuer.alias.com";
             process.env.TRILIUM_OAUTH_ISSUER_NAME = "Alias Auth";
             process.env.TRILIUM_OAUTH_ISSUER_ICON = "alias-icon.png";
-            
+            process.env.TRILIUM_OAUTH_HTTP_TIMEOUT = "15000";
+            process.env.TRILIUM_OAUTH_SCOPE = "openid email";
+
             vi.resetModules();
             config = (await import("./config.js")).default;
 
@@ -173,6 +179,8 @@ describe("Config Service", () => {
             expect(config.MultiFactorAuthentication.oauthIssuerBaseUrl).toBe("https://issuer.alias.com");
             expect(config.MultiFactorAuthentication.oauthIssuerName).toBe("Alias Auth");
             expect(config.MultiFactorAuthentication.oauthIssuerIcon).toBe("alias-icon.png");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(15000);
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid email");
         });
 
         it("should handle all Sync environment variables correctly", async () => {
@@ -340,9 +348,102 @@ corsAllowOrigin=https://ini-cors.com
             expect(config.MultiFactorAuthentication.oauthIssuerBaseUrl).toBe("https://accounts.google.com");
             expect(config.MultiFactorAuthentication.oauthIssuerName).toBe("Google");
             expect(config.MultiFactorAuthentication.oauthIssuerIcon).toBe("");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(30000);
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email");
 
             // Logging defaults
             expect(config.Logging.retentionDays).toBe(90);
+        });
+    });
+
+    describe("OAuth HTTP timeout transformer", () => {
+        it("accepts valid timeouts at or above the 500 ms minimum", async () => {
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT = "500";
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(500);
+        });
+
+        it("falls back to the 30000 ms default when the value is below the library minimum", async () => {
+            // express-openid-connect requires httpTimeout >= 500
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT = "100";
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(30000);
+        });
+
+        it("falls back to 30000 ms when the value is non-numeric", async () => {
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT = "not-a-number";
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(30000);
+        });
+
+        it("falls back to 30000 ms when the value is negative", async () => {
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT = "-1";
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(30000);
+        });
+
+        it("reads the timeout from INI when no env var is set", async () => {
+            vi.mocked(fs.readFileSync).mockImplementation((path) => {
+                if (String(path).includes("config-sample.ini")) {
+                    return "" as any;
+                }
+                return `
+[MultiFactorAuthentication]
+oauthHttpTimeout=12000
+                ` as any;
+            });
+
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(12000);
+        });
+    });
+
+    describe("OAuth scope transformer", () => {
+        it("returns the user-provided scope when 'openid' is present", async () => {
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "openid profile email offline_access";
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email offline_access");
+        });
+
+        it("prepends 'openid' when the user forgets the required scope", async () => {
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "profile email";
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email");
+        });
+
+        it("does not prepend when 'openid' is anywhere in the token list", async () => {
+            // 'openid' is the *first* token after a leading space; transformer trims and tokenizes.
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "  profile openid email  ";
+            const { default: config } = await import("./config.js");
+            // Trimmed, no prepend needed since openid is in the list.
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("profile openid email");
+        });
+
+        it("falls back to the default when the configured scope is empty/whitespace", async () => {
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "   ";
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email");
+        });
+
+        it("does not match a partial token (e.g. 'openidx' should still trigger prepend)", async () => {
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "openidx profile";
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid openidx profile");
+        });
+
+        it("reads the scope from INI when no env var is set", async () => {
+            vi.mocked(fs.readFileSync).mockImplementation((path) => {
+                if (String(path).includes("config-sample.ini")) {
+                    return "" as any;
+                }
+                return `
+[MultiFactorAuthentication]
+oauthScope=openid groups
+                ` as any;
+            });
+
+            const { default: config } = await import("./config.js");
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid groups");
         });
     });
 });
