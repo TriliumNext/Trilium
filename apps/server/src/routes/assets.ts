@@ -35,6 +35,12 @@ async function register(app: express.Application) {
     if (process.env.NODE_ENV === "development") {
         const { createServer: createViteServer } = await import("vite");
         const clientDir = path.join(srcRoot, "../client");
+        // Vite 5+ rejects any Host other than localhost. Allow extra hosts
+        // (reverse-proxy / LAN dev access) via comma-separated env var.
+        const extraAllowedHosts = (process.env.TRILIUM_DEV_ALLOWED_HOSTS ?? "")
+            .split(",")
+            .map((h) => h.trim())
+            .filter(Boolean);
         const vite = await createViteServer({
             server: {
                 middlewareMode: true,
@@ -43,7 +49,8 @@ async function register(app: express.Application) {
                     // multiple dev instances (e.g. server on 8080, desktop on
                     // 37742) don't all fight over Vite's default port 24678.
                     port: port + 10
-                }
+                },
+                ...(extraAllowedHosts.length > 0 && { allowedHosts: extraAllowedHosts })
             },
             appType: "spa",
             configFile: path.join(clientDir, "vite.config.mts"),
