@@ -23,6 +23,8 @@ import databaseRoute from "./api/database.js";
 import etapiTokensApiRoutes from "./api/etapi_tokens.js";
 import filesRoute from "./api/files.js";
 import fontsRoute from "./api/fonts.js";
+// API routes
+import linkEmbedRoute from "./api/link_embed.js";
 import llmChatRoute from "./api/llm_chat.js";
 import llmSpecialNotesRoute from "./api/llm_special_notes.js";
 import loginApiRoute from "./api/login.js";
@@ -30,14 +32,13 @@ import metricsRoute from "./api/metrics.js";
 import ocrRoute from "./api/ocr.js";
 import recoveryCodes from './api/recovery_codes.js';
 import senderRoute from "./api/sender.js";
+import shareTargetRoute from "./api/share_target.js";
 import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
-// API routes
-import linkEmbedRoute from "./api/link_embed.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, createMultiUploadMiddlewareWithErrorHandling, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
 // page routes
 import setupRoute from "./setup.js";
 
@@ -175,6 +176,16 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/sender/login", [loginRateLimiter], loginApiRoute.token, apiResultHandler);
     asyncRoute(PST, "/api/sender/image", [auth.checkEtapiToken, uploadMiddlewareWithErrorHandling], senderRoute.uploadImage, apiResultHandler);
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
+
+    // PWA Web Share Target. No CSRF token possible (the browser's share UI posts this form),
+    // but session auth + SameSite=Lax cookies prevent cross-origin POSTs from carrying credentials.
+    asyncRoute(
+        PST,
+        "/share-target",
+        [auth.checkAuth, createMultiUploadMiddlewareWithErrorHandling("files")],
+        shareTargetRoute.handleShare,
+        null
+    );
 
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);
     asyncApiRoute(GET, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);

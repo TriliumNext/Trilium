@@ -12,7 +12,7 @@ import path from "path";
 import favicon from "serve-favicon";
 import type serveStatic from "serve-static";
 
-import assets from "./routes/assets.js";
+import assets, { getClientDir } from "./routes/assets.js";
 import custom from "./routes/custom.js";
 import error_handlers from "./routes/error_handlers.js";
 import mcpRoutes from "./routes/mcp.js";
@@ -30,7 +30,11 @@ export default async function buildApp() {
     const app = express();
 
     const publicDir = isDev ? path.join(getResourceDir(), "../dist/public") : path.join(getResourceDir(), "public");
-    const publicAssetsDir = path.join(publicDir, "assets");
+    // Static client assets (manifest, icons, robots). getClientDir() resolves to the
+    // client source dir in dev and the built public dir in prod; both keep these under
+    // `assets/`. Using it (instead of publicDir) lets the PWA manifest resolve in dev,
+    // where dist/public is not built.
+    const publicAssetsDir = path.join(getClientDir(), "assets");
     const assetsDir = RESOURCE_DIR;
 
     // view engine setup
