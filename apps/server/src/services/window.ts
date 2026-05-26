@@ -88,6 +88,34 @@ async function createExtraWindow(extraWindowHash: string) {
     trackWindowFocus(win);
 }
 
+async function createWorkspaceWindow(workspaceName: string, dbId: string) {
+    const spellcheckEnabled = optionService.getOptionBool("spellCheckEnabled");
+
+    const { BrowserWindow } = await import("electron");
+
+    const win = new BrowserWindow({
+        width: 1000,
+        height: 800,
+        title: `Trilium Notes - ${workspaceName}`,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: PRELOAD_SCRIPT,
+            spellcheck: spellcheckEnabled,
+            webviewTag: true
+        },
+        ...getWindowExtraOpts(),
+        icon: getIcon()
+    });
+
+    win.setMenuBarVisibility(false);
+    win.loadURL(`trilium-app://app/?dbId=${encodeURIComponent(dbId)}`);
+
+    configureWebContents(win.webContents, spellcheckEnabled);
+
+    trackWindowFocus(win);
+}
+
 electron.ipcMain.on("create-extra-window", (event, arg) => {
     createExtraWindow(arg.extraWindowHash);
 });
@@ -601,6 +629,7 @@ function getAllWindows() {
 export default {
     createMainWindow,
     createExtraWindow,
+    createWorkspaceWindow,
     createSetupWindow,
     closeSetupWindow,
     registerGlobalShortcuts,

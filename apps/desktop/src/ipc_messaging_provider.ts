@@ -48,17 +48,26 @@ export default class IpcMessagingProvider implements MessagingProvider {
         this.clientMessageHandler = handler;
     }
 
-    sendMessageToAllClients(message: WebSocketMessage): void {
+    sendMessageToAllClients(message: WebSocketMessage, dbId?: string): void {
         // Match the WS provider's log-filtering so noisy sync-failed /
         // api-log-messages traffic doesn't flood the log.
         if (message.type !== "sync-failed" && message.type !== "api-log-messages") {
-            log.info(`Sending message to all windows: ${JSON.stringify(message)}`);
+            log.info(`Sending message to ${dbId ? `db:${dbId}` : "all"} windows: ${JSON.stringify(message)}`);
         }
 
         for (const win of electron.BrowserWindow.getAllWindows()) {
-            if (!win.isDestroyed()) {
-                win.webContents.send(IPC_TO_RENDERER, message);
+            if (win.isDestroyed()) continue;
+            // Multi-workspace: each renderer is loaded as
+            // `trilium-app://app/?dbId=<workspace>`. Scope the broadcast to
+            // matching windows so a transaction in workspace A doesn't ping
+            // workspace B's UI. Windows without a dbId (the default workspace
+            // window) still receive every broadcast — preserves single-DB
+            // behaviour exactly.
+            if (dbId !== undefined) {
+                const windowDbId = getWindowDbId(win);
+                if (windowDbId && windowDbId !== dbId) continue;
             }
+            win.webContents.send(IPC_TO_RENDERER, message);
         }
     }
 
@@ -93,5 +102,21 @@ function safeParse(message: string): unknown {
     } catch (err) {
         log.error(`IPC messaging: discarding non-JSON renderer message: ${err}`);
         return undefined;
+    }
+}
+
+/**
+ * Reads the dbId of a workspace window straight from its current URL — the
+ * window is loaded as `trilium-app://app/?dbId=<workspace>` by
+ * `createWorkspaceWindow`, so the query string is the single source of truth
+ * and no extra registry has to stay in sync.
+ */
+function getWindowDbId(win: electron.BrowserWindow): string | null {
+    try {
+        const url = win.webContents.getURL();
+        if (!url) return null;
+        return new URL(url).searchParams.get("dbId");
+    } catch {
+        return null;
     }
 }

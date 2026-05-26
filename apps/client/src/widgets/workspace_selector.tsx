@@ -1,21 +1,10 @@
 import "./workspace_selector.css";
 
+import type { WorkspaceRegistry } from "@triliumnext/commons";
 import { useEffect, useState } from "preact/hooks";
 
 import { t } from "../services/i18n";
-import { dynamicRequire, isElectron } from "../services/utils";
-
-interface Workspace {
-    id: string;
-    name: string;
-    dataDir: string;
-    lastAccessed: string;
-}
-
-interface WorkspaceRegistry {
-    workspaces: Workspace[];
-    activeWorkspaceId: string | null;
-}
+import { isElectron } from "../services/utils";
 
 export default function WorkspaceSelector() {
     if (!isElectron()) {
@@ -28,10 +17,7 @@ export default function WorkspaceSelector() {
     const currentDbId = glob.dbId;
 
     useEffect(() => {
-        const ipcRenderer = dynamicRequire("electron").ipcRenderer;
-        ipcRenderer.invoke("get-workspaces").then((reg: WorkspaceRegistry) => {
-            setRegistry(reg);
-        });
+        window.electronApi?.workspaces.getWorkspaces().then(setRegistry);
     }, []);
 
     if (!registry) {
@@ -48,19 +34,18 @@ export default function WorkspaceSelector() {
         setIsOpen(false);
         if (workspaceId === currentDbId) return;
 
-        const ipcRenderer = dynamicRequire("electron").ipcRenderer;
-        await ipcRenderer.invoke("open-workspace", workspaceId);
+        await window.electronApi?.workspaces.openWorkspace(workspaceId);
     }
 
     async function addWorkspace() {
         setIsOpen(false);
-        const ipcRenderer = dynamicRequire("electron").ipcRenderer;
-        const dirPath = await ipcRenderer.invoke("pick-directory");
+        const dirPath = await window.electronApi?.workspaces.pickDirectory();
         if (!dirPath) return;
 
         const name = dirPath.split(/[/\\]/).pop() || "New Workspace";
-        const workspace = await ipcRenderer.invoke("add-workspace", name, dirPath);
-        await ipcRenderer.invoke("open-workspace", workspace.id);
+        const workspace = await window.electronApi?.workspaces.addWorkspace(name, dirPath);
+        if (!workspace) return;
+        await window.electronApi?.workspaces.openWorkspace(workspace.id);
     }
 
     return (

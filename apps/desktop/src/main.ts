@@ -191,7 +191,6 @@ async function main() {
 
     // Workspace management IPC handlers
     const { ipcMain, dialog } = await import("electron");
-    const { registerWindowDb } = (await import("@triliumnext/server/src/routes/electron.js"));
 
     ipcMain.handle("get-workspaces", () => loadRegistry());
 
@@ -268,27 +267,13 @@ async function main() {
 
         await becca_loader.loadDatabase(workspaceId);
 
-        // Create a new window for this workspace
-        const { BrowserWindow } = await import("electron");
-        const win = new BrowserWindow({
-            width: 1000,
-            height: 800,
-            title: `Trilium Notes - ${workspace.name}`,
-            webPreferences: {
-                nodeIntegration: true,
-                contextIsolation: false,
-                spellcheck: true,
-                webviewTag: true
-            }
-        });
-        win.setMenuBarVisibility(false);
-
-        // Enable @electron/remote for this window (required for client-side Electron APIs)
-        const remoteMain = await import("@electron/remote/main/index.js");
-        remoteMain.enable(win.webContents);
-
-        win.loadURL(`http://127.0.0.1:${port}/?dbId=${workspaceId}`);
-        registerWindowDb(win.webContents.id, workspaceId);
+        // Create a new window for this workspace. Matches the secure prefs
+        // used by the main window (see apps/server/src/services/window.ts) —
+        // nodeIntegration off, contextIsolation on, preload script bridges
+        // Electron APIs to the renderer. The dbId travels through the URL
+        // query string; the protocol dispatcher promotes it to the
+        // `trilium-db-id` header so route_api.ts pins CLS to this workspace.
+        await windowService.createWorkspaceWindow(workspace.name, workspaceId);
 
         return { success: true };
     });

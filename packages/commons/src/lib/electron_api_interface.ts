@@ -376,6 +376,45 @@ export interface ElectronWsApi {
 }
 
 /**
+ * One entry in the workspace registry — represents a Trilium database the
+ * desktop app knows how to open in its own window.
+ */
+export interface WorkspaceInfo {
+    /** Stable identifier; used as the CLS `dbId` for routing. */
+    id: string;
+    /** Human-readable name shown in the workspace switcher. */
+    name: string;
+    /** Absolute path to the workspace's data directory on disk. */
+    dataDir: string;
+    /** ISO timestamp of the last time this workspace was opened. */
+    lastAccessed: string;
+}
+
+export interface WorkspaceRegistry {
+    workspaces: WorkspaceInfo[];
+    /** Workspace last opened by the user (null if none has been picked yet). */
+    activeWorkspaceId: string | null;
+}
+
+/**
+ * Multi-workspace controls. Each workspace is backed by an independent SQLite
+ * database; opening one spawns a new BrowserWindow whose CLS context is pinned
+ * to that workspace's `dbId`.
+ */
+export interface ElectronWorkspacesApi {
+    /** Returns the current workspace registry. */
+    getWorkspaces(): Promise<WorkspaceRegistry>;
+    /** Persists a new workspace entry and returns it. */
+    addWorkspace(name: string, dataDir: string): Promise<WorkspaceInfo>;
+    /** Removes a workspace entry; existing windows for it are not closed. */
+    removeWorkspace(id: string): Promise<void>;
+    /** Opens a native directory picker; returns the selected path or null. */
+    pickDirectory(): Promise<string | null>;
+    /** Loads (initialising if empty) the given workspace and opens a window for it. */
+    openWorkspace(id: string): Promise<{ success: boolean }>;
+}
+
+/**
  * Accessors for the underlying Chromium navigation history of the current
  * web contents (back/forward stack), exposed so the renderer can mirror it
  * in custom UI such as the breadcrumb / tab back button.
@@ -442,4 +481,6 @@ export interface ElectronApi {
     navigation: ElectronNavigationApi;
     /** In-process bridge that replaces the renderer↔server WebSocket. */
     ws: ElectronWsApi;
+    /** Multi-workspace management (open, add, remove, pick directory). */
+    workspaces: ElectronWorkspacesApi;
 }

@@ -7,26 +7,6 @@ import { Readable } from "node:stream";
 import { markAsInternalElectronRequest } from "../services/electron_request.js";
 
 /**
- * Maps Electron webContentsId to a database ID for multi-database routing.
- * The registry is populated by the desktop main process when a window is
- * created for a workspace; it is read by code that needs to route per-window
- * requests to the right database. Note that with the `trilium-app://` custom
- * protocol the dispatch path below does not currently consult this registry
- * (the dbId is carried via the `trilium-db-id` HTTP header / `?dbId=` query
- * string instead), but the exports are kept so the multi-workspace launcher
- * in `apps/desktop/src/main.ts` continues to compile.
- */
-const windowToDbId = new Map<number, string>();
-
-export function registerWindowDb(webContentsId: number, dbId: string) {
-    windowToDbId.set(webContentsId, dbId);
-}
-
-export function unregisterWindowDb(webContentsId: number) {
-    windowToDbId.delete(webContentsId);
-}
-
-/**
  * Bridges renderer-process requests on the `trilium-app://app/...` custom
  * protocol into the Express application running in the main process.
  *
@@ -57,6 +37,18 @@ export async function dispatch(app: Application, request: Request): Promise<Resp
     request.headers.forEach((value, key) => {
         headers[key] = value;
     });
+
+    // Multi-workspace: a renderer loaded as `trilium-app://app/?dbId=…` carries
+    // the workspace id only in its URL. The page-load / bootstrap requests
+    // can't set a custom header, so we promote the query param into the
+    // `trilium-db-id` header here; subsequent XHRs from the same renderer
+    // already set the header themselves (see apps/client/src/services/server.ts).
+    if (!headers["trilium-db-id"]) {
+        const dbIdParam = url.searchParams.get("dbId");
+        if (dbIdParam) {
+            headers["trilium-db-id"] = dbIdParam;
+        }
+    }
 
     const bodyBuffer = await readBody(request);
 

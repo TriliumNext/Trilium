@@ -1,4 +1,4 @@
-import type { ElectronApi, ElectronContextMenuParams } from "@triliumnext/commons";
+import type { ElectronApi, ElectronContextMenuParams, WorkspaceInfo, WorkspaceRegistry } from "@triliumnext/commons";
 import { contextBridge, ipcRenderer, webFrame } from "electron";
 
 contextBridge.exposeInMainWorld("electronApi", {
@@ -193,6 +193,24 @@ contextBridge.exposeInMainWorld("electronApi", {
             const listener = (_event: unknown, message: unknown) => callback(message);
             ipcRenderer.on("trilium-ws-message", listener);
             return () => ipcRenderer.removeListener("trilium-ws-message", listener);
+        }
+    },
+
+    workspaces: {
+        getWorkspaces(): Promise<WorkspaceRegistry> {
+            return ipcRenderer.invoke("get-workspaces");
+        },
+        addWorkspace(name: string, dataDir: string): Promise<WorkspaceInfo> {
+            return ipcRenderer.invoke("add-workspace", name, dataDir);
+        },
+        removeWorkspace(id: string): Promise<void> {
+            return ipcRenderer.invoke("remove-workspace", id);
+        },
+        pickDirectory(): Promise<string | null> {
+            return ipcRenderer.invoke("pick-directory");
+        },
+        openWorkspace(id: string): Promise<{ success: boolean }> {
+            return ipcRenderer.invoke("open-workspace", id);
         }
     },
 
