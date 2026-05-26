@@ -29,6 +29,7 @@
     "paste-notes-from-clipboard": "Panodan notları etkin nota yapıştırın",
     "cut-notes-to-clipboard": "Seçilen notları panoya kes",
     "select-all-notes-in-parent": "Geçerli nota seviyesinden tüm notaları seçin",
-    "add-note-above-to-the-selection": "Seçime yukarıdaki notu ekleyin"
+    "add-note-above-to-the-selection": "Seçime yukarıdaki notu ekleyin",
+    "toggle-archived-notes": "Not ağacında arşivlenmiş notları göster/gizle"
   }
 }

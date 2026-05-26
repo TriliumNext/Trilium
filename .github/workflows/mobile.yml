@@ -1,0 +1,29 @@
+name: Mobile
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile.yml"
+      - ".github/actions/build-mobile/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  packages: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6
+
+      - name: Build mobile APK
+        uses: ./.github/actions/build-mobile

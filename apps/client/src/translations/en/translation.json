@@ -1,5 +1,5 @@
 {
-  "about": {   
+  "about": {
     "version_label": "Version:",
     "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
     "build_info": "Build: {{buildDate}}, revision: <buildRevision />",
@@ -13,6 +13,10 @@
       "original-dev": "On 25th December 2017, Zadam released the first beta of Trilium (written with a single \"l\", unlike the flower). Dissatisfied with existing note organizers, he built a powerful self-hosted hierarchical knowledge base that gathered over 22,000 GitHub stars. In 2024, as life got busier, he placed the project into maintenance mode."
     },
     "contributor_full_list": "See the entire community",
+    "channel": {
+      "nightly": "Nightly",
+      "standalone": "Standalone"
+    },
     "data_directory": "Data directory:",
     "github_tooltip": "Report bugs, suggest features, or contribute on GitHub",
     "license_tooltip": "View license",
@@ -59,11 +63,14 @@
     "edit_branch_prefix": "Edit branch prefix",
     "edit_branch_prefix_multiple": "Edit branch prefix for {{count}} branches",
     "help_on_tree_prefix": "Help on Tree prefix",
-    "prefix": "Prefix: ",
+    "prefix": "Prefix",
     "save": "Save",
     "branch_prefix_saved": "Branch prefix has been saved.",
     "branch_prefix_saved_multiple": "Branch prefix has been saved for {{count}} branches.",
-    "affected_branches": "Affected branches ({{count}}):"
+    "affected_branches": "Affected branches ({{count}}):",
+    "preview_in_tree": "Preview in tree",
+    "description": "Prepended to the note title in this branch only. Other branches keep the original title.",
+    "cancel": "Cancel"
   },
   "bulk_actions": {
     "bulk_actions": "Bulk actions",
@@ -241,11 +248,24 @@
     "search_placeholder": "Search for note by its name or type > for commands...",
     "search_button": "Search in full text"
   },
+  "markdown_editor": {
+    "image_upload_failed": "Cannot upload image \"{{name}}\"."
+  },
   "markdown_import": {
     "dialog_title": "Markdown import",
     "modal_body_text": "Because of browser sandbox it's not possible to directly read clipboard from JavaScript. Please paste the Markdown to import to textarea below and click on Import button",
     "import_button": "Import",
     "import_success": "Markdown content has been imported into the document."
+  },
+  "markdown_slash_commands": {
+    "date": "Insert current date and time",
+    "include": "Include another note",
+    "image": "Upload and insert an image",
+    "link": "Insert a note link",
+    "math": "Insert a math equation block",
+    "footnote": "Insert a footnote",
+    "mermaid": "Insert a Mermaid diagram",
+    "admonition": "Insert {{type}} admonition"
   },
   "move_to": {
     "dialog_title": "Move notes to ...",
@@ -304,6 +324,7 @@
     "diff_on_hint": "Click to show note source diff",
     "diff_off_hint": "Click to show note content",
     "diff_not_available": "Diff isn't available.",
+    "diff_identical": "This revision is identical to the current note content.",
     "confirm_restore": "Do you want to restore this revision? This will overwrite the current title and content of the note with this revision.",
     "delete_button": "Delete",
     "confirm_delete": "Do you want to delete this revision?",
@@ -755,7 +776,8 @@
     "import_files": "Import files",
     "export_note": "Export note",
     "delete_note": "Delete note",
-    "print_note": "Print note",
+    "print_note": "Print note...",
+    "print_or_export_to_pdf": "Print/export to PDF...",
     "view_revisions": "Note revisions...",
     "save_revision": "Save revision",
     "save_named_revision": "Save named revision...",
@@ -788,6 +810,7 @@
   "code_buttons": {
     "execute_button_title": "Execute script",
     "trilium_api_docs_button_title": "Open Trilium API docs",
+    "electron_api_docs_button_title": "Open Electron API docs",
     "save_to_note_button_title": "Save to note",
     "opening_api_docs_message": "Opening API docs...",
     "sql_console_saved_message": "SQL Console note has been saved into {{note_path}}"
@@ -925,7 +948,8 @@
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
     "link-distance": "Link distance",
-    "too-many-notes": "This subtree contains {{count}} notes, which exceeds the limit of {{max}} that can be displayed in the note map."
+    "too-many-notes": "There are {{count}} notes here. Showing them all may slow things down.",
+    "show-anyway": "Show map"
   },
   "note_paths": {
     "title": "Note Paths",
@@ -1296,6 +1320,12 @@
     "modern_themes": "Modern",
     "legacy_themes": "Legacy",
     "custom_themes": "Custom",
+    "recommended": "Recommended",
+    "color_scheme": "Color scheme",
+    "color_scheme_system": "System",
+    "color_scheme_light": "Light",
+    "color_scheme_dark": "Dark",
+    "color_scheme_custom_disabled": "Color scheme override is not available for custom themes",
     "layout": "Layout",
     "layout-vertical-title": "Vertical",
     "layout-horizontal-title": "Horizontal",
@@ -1434,7 +1464,8 @@
     "enable_tray_description": "Trilium needs to be restarted for this change to take effect."
   },
   "text_editor": {
-    "title": "Editor"
+    "title": "Editor",
+    "related_task_states": "Custom checkbox states for to-do lists"
   },
   "heading_style": {
     "title": "Heading style",
@@ -1764,6 +1795,7 @@
     "thought_process": "Thought process",
     "tool_calls": "{{count}} tool call(s)",
     "input": "Input",
+    "edit_index": "Edit {{index}} of {{total}}",
     "result": "Result",
     "error": "Error",
     "tool_error": "failed",
@@ -1779,7 +1811,8 @@
     "note_context_disabled": "Click to include current note in context",
     "no_provider_message": "No AI provider configured. Add one to start chatting.",
     "add_provider": "Add AI Provider",
-    "stop": "Stop"
+    "stop": "Stop",
+    "retry": "Retry"
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -1789,7 +1822,8 @@
     "empty_state": "Start a conversation",
     "history": "Chat history",
     "recent_chats": "Recent chats",
-    "no_chats": "No previous chats"
+    "no_chats": "No previous chats",
+    "view_all_chats": "View all chats"
   },
   "shared_switch": {
     "shared": "Shared",
@@ -1853,6 +1887,15 @@
     "subtree-hidden-moved-title": "Added to {{title}}",
     "subtree-hidden-moved-description-collection": "This collection hides its child notes in the tree.",
     "subtree-hidden-moved-description-other": "Child notes are hidden in the tree for this note."
+  },
+  "mobile_note_navigator": {
+    "back": "Go up one level",
+    "loading": "Loading...",
+    "empty": "This note has no children.",
+    "children_count_one": "{{count}} note",
+    "children_count_other": "{{count}} notes",
+    "add_child": "Add child note",
+    "more_actions": "More actions"
   },
   "title_bar_buttons": {
     "window-on-top": "Keep Window on Top"
@@ -2139,7 +2182,12 @@
   "code_theme": {
     "title": "Appearance",
     "word_wrapping": "Word wrapping",
-    "color-scheme": "Color scheme"
+    "color-scheme": "Color scheme",
+    "theme_mode": "Theme mode",
+    "match_app_appearance": "Match app appearance",
+    "always_use_one_theme": "Always use one theme",
+    "light_theme": "Light theme",
+    "dark_theme": "Dark theme"
   },
   "cpu_arch_warning": {
     "title": "Please download the ARM64 version",
@@ -2332,6 +2380,8 @@
     "shared_unshare": "Remove share",
     "clipped_note": "Web clip",
     "clipped_note_description": "This note was originally taken from {{url}}.\n\nClick to navigate to the source webpage.",
+    "doc_url": "Online docs",
+    "doc_url_description": "Click to view this page on the online documentation website.",
     "execute_script": "Run script",
     "execute_script_description": "This note is a script note. Click to execute the script.",
     "execute_sql": "Run SQL",
@@ -2495,6 +2545,58 @@
     "sample_treeview": "TreeView",
     "sample_wardley": "Wardley Map"
   },
+  "setup": {
+    "heading": "Get started with Trilium",
+    "new-document": "New knowledge base",
+    "new-document-description": "Start with a clean knowledge base and begin right away.",
+    "sync-from-desktop": "Connect a desktop app",
+    "sync-from-desktop-description": "You only have a Trilium desktop app running on another device. This device will sync its data from that desktop app.",
+    "sync-from-server": "Connect to an existing server",
+    "sync-from-server-description": "You have a Trilium server running elsewhere (either self-hosted or in the cloud). This device will sync its data from that server.",
+    "next": "Next",
+    "init-in-progress": "Document initialization in progress",
+    "redirecting": "You will be shortly redirected to the application.",
+    "title": "Setup",
+    "sync-from-server-page-description": "Enter your server details below to connect your existing workspace.",
+    "sync-in-progress-title": "Sync in progress",
+    "sync-in-progress-description": "Your device is now connected and items are being synchronized.",
+    "sync-in-progress-banner": "This may take a while depending on the size of your notes. Please do not switch to another application until the sync is complete.",
+    "button-back": "Back",
+    "button-finish-setup": "Finish setup",
+    "sync-step-connecting": "Connecting to server",
+    "sync-step-syncing": "Syncing data",
+    "sync-step-finalizing": "Setting up options",
+    "create-new-document-options-title": "How would you like to start?",
+    "create-new-document-options-with-demo": "With demo content",
+    "create-new-document-options-with-demo-description": "Explore Trilium with example content.",
+    "create-new-document-options-empty": "Empty",
+    "create-new-document-options-empty-description": "Start with a blank knowledge base. You can import demo notes later.",
+    "create-new-document-title": "Preparing your knowledge base",
+    "create-new-document-description": "This will only take a moment.",
+    "sync-illustration-this-device": "This device",
+    "sync-illustration-desktop-app": "Your desktop app",
+    "sync-illustration-server": "Your server",
+    "sync-from-desktop-step1": "Open your desktop instance of Trilium Notes.",
+    "sync-from-desktop-step2": "From the Trilium Menu, click Options.",
+    "sync-from-desktop-step3": "Click on Sync category in the note tree.",
+    "sync-from-desktop-step4": "Change server instance address to point to one of the addresses on the right and click Save.",
+    "sync-from-desktop-step5": "Click the \"Test sync\" button to verify connection is successful.",
+    "sync-from-desktop-warning": "Make sure both devices are on the same network.",
+    "sync-from-desktop-waiting": "Waiting for connection...",
+    "advanced-options": "Advanced options",
+    "sync-failed": "Failed to sync: {{message}}",
+    "server-host": "Trilium server address",
+    "server-host-placeholder": "https://<hostname>:<port>",
+    "server-password": "Password",
+    "proxy-server": "Proxy server (optional)",
+    "proxy-server-placeholder": "https://<hostname>:<port>",
+    "proxy-instruction": "If you leave proxy setting blank, system proxy will be used.",
+    "dismiss-error": "Dismiss error",
+    "wrong-password": "Incorrect password. Please try again.",
+    "language": "Language",
+    "continue": "Continue",
+    "your-ip-addresses": "Addresses for this device"
+  },
   "mind-map": {
     "addChild": "Add child",
     "addParent": "Add parent",
@@ -2524,6 +2626,9 @@
     "delete_provider_confirmation": "Are you sure you want to delete the provider \"{{name}}\"?",
     "api_key": "API Key",
     "api_key_placeholder": "Enter your API key",
+    "base_url": "Base URL",
+    "base_url_description": "Optional. Override the default API endpoint — useful for self-hosted models (Ollama, LM Studio, vLLM) or proxies.",
+    "base_url_invalid": "Base URL must be a valid http:// or https:// URL",
     "cancel": "Cancel",
     "mcp_title": "MCP (Model Context Protocol)",
     "mcp_enabled": "MCP server",
@@ -2534,7 +2639,9 @@
       "search_notes": "Search notes",
       "get_note": "Get note",
       "get_note_content": "Get note content",
-      "update_note_content": "Update note content",
+      "set_note_content": "Rewrite note",
+      "update_note_content": "Rewrite note",
+      "edit_note_content": "Edit note",
       "append_to_note": "Append to note",
       "create_note": "Create note",
       "get_attributes": "Get attributes",
@@ -2560,5 +2667,20 @@
   },
   "spreadsheet": {
     "read-only": "This note is read-only."
+  },
+  "text-editor": {
+    "checkbox-tooltip": "Right click for more task states.\nPress {{shortcut}} to cycle between states.",
+    "edit-states-tooltip": "Edit task states",
+    "unknown-task-state": "Undefined custom task state",
+    "task-state-dropped": "Dropped custom task state definition \"{{title}}\" ({{id}}) due to: {{reason}}",
+    "validation-errors": {
+      "undefined-name": "undefined identifier",
+      "invalid-name": "invalid identifier",
+      "duplicate-name": "duplicate identifier",
+      "missing-title": "missing title",
+      "missing-icon": "missing icon",
+      "invalid-symbol": "the markdown symbol should be one character, excepting \"[\", \" \", \"X\", and \"]\"",
+      "duplicate-symbol": "duplicate markdown symbol"
+    }
   }
 }

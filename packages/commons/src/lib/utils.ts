@@ -24,16 +24,20 @@ function getCircularReplacer() {
     };
 }
 
-export function formatLogMessage(message: string | object) {
-    if (typeof message === "object") {
+function formatSingleArg(arg: unknown): string {
+    if (typeof arg === "object" && arg !== null) {
         try {
-            return JSON.stringify(message, getCircularReplacer(), 4);
+            return JSON.stringify(arg, getCircularReplacer(), 4);
         } catch (e) {
-            return message.toString();
+            return String(arg);
         }
     }
 
-    return message;
+    return String(arg);
+}
+
+export function formatLogMessage(...args: unknown[]): string {
+    return args.map(formatSingleArg).join(" ");
 }
 
 export interface DeferredPromise<T> extends Promise<T> {

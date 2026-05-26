@@ -61,7 +61,7 @@ export default function StatusBar() {
     const isHiddenNote = note?.isHiddenCompletely();
 
     return (
-        <div className="status-bar">
+        <div className={clsx("status-bar", {"status-bar-panel-open": !!activePane})}>
             {attributesContext && <AttributesPane {...attributesContext} />}
             {noteInfoContext && <SimilarNotesPane {...noteInfoContext} />}
 
@@ -504,7 +504,6 @@ function TabWidthSwitcher({ note, noteContext }: StatusBarContext) {
                 </FormListItem>
             }
 
-            <FormDropdownDivider />
             <FormListHeader text={t("status_bar.tab_width_display_header")} />
             {TAB_WIDTH_OPTIONS.map(size => (
                 <FormListItem
@@ -521,7 +520,6 @@ function TabWidthSwitcher({ note, noteContext }: StatusBarContext) {
                 </FormListItem>
             }
 
-            <FormDropdownDivider />
             <FormListHeader text={t("status_bar.tab_width_reindent_header")} />
             {TAB_WIDTH_OPTIONS.map(size => (
                 <FormListItem

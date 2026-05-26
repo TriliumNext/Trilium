@@ -1,0 +1,30 @@
+{
+  "name": "@triliumnext/core",
+  "version": "0.103.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Note: Core tests are run either through apps/server or apps/standalone, since they have different runtime environments.\""
+  },
+  "dependencies": {
+    "@braintree/sanitize-url": "7.1.2",
+    "@triliumnext/commons": "workspace:*",
+    "@triliumnext/turndown-plugin-gfm": "workspace:*",
+    "async-mutex": "0.5.0",
+    "chardet": "2.1.1",
+    "escape-html": "1.0.3",
+    "i18next": "26.2.0",
+    "mime-types": "3.0.2",
+    "node-html-parser": "7.1.0",
+    "sanitize-filename": "1.6.4",
+    "sanitize-html": "2.17.4",
+    "strip-bom": "5.0.0",
+    "sucrase": "3.35.1",
+    "unescape": "1.0.1"
+  },
+  "devDependencies": {
+    "@types/escape-html": "1.0.4",
+    "@types/mime-types": "3.0.1",
+    "@types/sanitize-html": "2.16.1"
+  }
+}

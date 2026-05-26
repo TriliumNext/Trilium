@@ -1,4 +1,5 @@
-import { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType, RevisionSource } from "./rows.js";
+import type { Locale } from "./i18n.js";
+import { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType, OptionRow, RevisionSource } from "./rows.js";
 
 type Response = {
     success: true,
@@ -11,11 +12,11 @@ type Response = {
 export interface AppInfo {
     appVersion: string;
     dbVersion: number;
-    nodeVersion: string;
+    nodeVersion?: string;
     syncVersion: number;
     buildDate: string;
     buildRevision: string;
-    dataDirectory: string;
+    dataDirectory?: string;
     clipperProtocolVersion: string;
     /** for timezone inference */
     utcDateTime: string;
@@ -54,7 +55,7 @@ export interface RevisionPojo {
     utcDateLastEdited?: string;
     utcDateCreated?: string;
     utcDateModified?: string;
-    content?: string | Buffer<ArrayBufferLike>;
+    content?: string | Uint8Array;
     contentLength?: number;
 }
 
@@ -326,3 +327,94 @@ export interface IconRegistry {
         }[]
     }[];
 }
+
+export type LabelType = "text" | "textarea" | "number" | "boolean" | "date" | "datetime" | "time" | "url" | "color";
+export type Multiplicity = "single" | "multi";
+
+export interface DefinitionObject {
+    isPromoted?: boolean;
+    labelType?: LabelType;
+    multiplicity?: Multiplicity;
+    numberPrecision?: number;
+    promotedAlias?: string;
+    inverseRelation?: string;
+}
+
+/**
+ * Bootstrap items that the client needs to start up. These are sent by the server in the HTML and made available as `window.glob`.
+ */
+export type BootstrapDefinition = {
+    dbInitialized: boolean;
+    baseApiUrl: string;
+    assetPath: string;
+    theme: string;
+    themeBase?: "next" | "next-light" | "next-dark";
+    customThemeCssUrl?: string;
+    iconPackCss: string;
+    iconRegistry: IconRegistry;
+    device: "mobile" | "desktop" | "print" | false;
+    csrfToken?: string;
+    headingStyle: "plain" | "underline" | "markdown";
+    layoutOrientation: "vertical" | "horizontal";
+    platform?: "aix" | "android" | "darwin" | "freebsd" | "haiku" | "linux" | "openbsd" | "sunos" | "win32" | "cygwin" | "netbsd" | "web";
+    isElectron: boolean;
+    isStandalone: boolean;
+    /**
+     * Absolute URL prefix for the WebSocket (e.g. `ws://127.0.0.1:8080/`),
+     * sent by the desktop app because the renderer page lives on the
+     * `trilium-app://` custom protocol where `window.location` no longer
+     * encodes a reachable WS host. Undefined for the regular web build,
+     * where the WS URL can still be derived from `window.location`.
+     */
+    wsBaseUrl?: string;
+    /**
+     * Absolute base URL of the local HTTP server (e.g. `http://127.0.0.1:37840`),
+     * sent by the desktop app because the renderer page lives on the
+     * `trilium-app://` custom protocol where `window.location` does not point
+     * at a reachable HTTP origin. Used to display copy-pasteable endpoints
+     * (such as the MCP URL) that external clients connect to over loopback.
+     * Undefined for the regular web build, where `window.location` already
+     * encodes the reachable HTTP origin.
+     */
+    httpBaseUrl?: string;
+    hasNativeTitleBar: boolean;
+    hasBackgroundEffects: boolean;
+    maxEntityChangeIdAtLoad?: number;
+    maxEntityChangeSyncIdAtLoad?: number;
+    instanceName: string | null;
+    appCssNoteIds: string[];
+    isDev: boolean;
+    isMainWindow: boolean;
+    isProtectedSessionAvailable: boolean;
+    triliumVersion: string;
+    appPath: string;
+    currentLocale: Locale;
+    isRtl: boolean;
+    TRILIUM_SAFE_MODE: boolean;
+    componentId?: string;
+};
+
+/**
+ * Response for /api/setup/status.
+ */
+export interface SetupStatusResponse {
+    syncVersion: number;
+    schemaExists: boolean;
+}
+
+/**
+ * Response for /api/setup/sync-seed.
+ */
+export interface SetupSyncSeedResponse {
+    syncVersion: number;
+    options: OptionRow[];
+}
+
+export type SetupSyncFromServerResponse = {
+    result: "success";
+} | {
+    result: "failure";
+    error: string;
+}
+
+export type ScriptParams = any[];

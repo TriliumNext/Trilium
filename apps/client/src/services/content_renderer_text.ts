@@ -3,6 +3,7 @@ import FNote from "../entities/fnote.js";
 import { default as content_renderer, type RenderOptions } from "./content_renderer.js";
 import froca from "./froca.js";
 import link from "./link.js";
+import { applyLinkEmbeds } from "./link_embed.js";
 import { renderMathInElement } from "./math.js";
 import { getMermaidConfig } from "./mermaid.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
@@ -52,6 +53,7 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
         el.replaceChildren(innerSpan);
     }));
 
+    applyLinkEmbeds($renderedContent[0]);
     await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
     await formatCodeBlocks($renderedContent);
 

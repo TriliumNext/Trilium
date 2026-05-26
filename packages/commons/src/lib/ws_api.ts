@@ -18,7 +18,7 @@ export interface EntityChange {
 
 export interface EntityRow {
     isDeleted?: boolean;
-    content?: Buffer | string;
+    content?: Uint8Array | string;
 }
 
 export interface EntityChangeRecord {

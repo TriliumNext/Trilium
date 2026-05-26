@@ -1,10 +1,12 @@
-import server from "./server.js";
+import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
+
 import appContext from "../components/app_context.js";
-import noteCreateService from "./note_create.js";
+import commandRegistry from "./command_registry.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
-import commandRegistry from "./command_registry.js";
-import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
+import noteCreateService from "./note_create.js";
+import server from "./server.js";
+import { escapeHtml } from "./utils.js";
 
 // this key needs to have this value, so it's hit by the tooltip
 const SELECTED_NOTE_PATH_KEY = "data-note-path";
@@ -107,7 +109,7 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
         return;
     }
 
-    const fastSearch = options.fastSearch === false ? false : true;
+    const fastSearch = options.fastSearch !== false;
     if (fastSearch === false) {
         if (term.trim().length === 0) {
             return;
@@ -256,7 +258,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         return false;
     });
 
-    let autocompleteOptions: AutoCompleteConfig = {};
+    const autocompleteOptions: AutoCompleteConfig = {};
     if (options.container) {
         autocompleteOptions.dropdownMenuContainer = options.container;
         autocompleteOptions.debug = true; // don't close on blur
@@ -313,7 +315,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     suggestion: (suggestion) => {
                         if (suggestion.action === "command") {
                             let html = `<div class="command-suggestion">`;
-                            html += `<span class="command-icon ${suggestion.icon || "bx bx-terminal"}"></span>`;
+                            html += `<span class="command-icon ${escapeHtml(suggestion.icon || "bx bx-terminal")}"></span>`;
                             html += `<div class="command-content">`;
                             html += `<div class="command-name">${suggestion.highlightedNotePathTitle}</div>`;
                             if (suggestion.commandDescription) {
@@ -341,7 +343,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
                         // Simplified HTML structure without nested divs
                         let html = `<div class="note-suggestion ${actionClass}">`;
-                        html += `<span class="icon ${iconClass}"></span>`;
+                        html += `<span class="icon ${escapeHtml(iconClass)}"></span>`;
                         html += `<span class="text">`;
                         html += `<span class="search-result-title">${suggestion.highlightedNotePathTitle}</span>`;
 
@@ -391,7 +393,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 title: suggestion.noteTitle,
                 activate: false,
                 type: noteType,
-                templateNoteId: templateNoteId
+                templateNoteId
             });
 
             const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
@@ -436,9 +438,9 @@ function init() {
     $.fn.getSelectedNotePath = function () {
         if (!String($(this).val())?.trim()) {
             return "";
-        } else {
-            return $(this).attr(SELECTED_NOTE_PATH_KEY);
-        }
+        } 
+        return $(this).attr(SELECTED_NOTE_PATH_KEY);
+        
     };
 
     $.fn.getSelectedNoteId = function () {
@@ -462,9 +464,9 @@ function init() {
     $.fn.getSelectedExternalLink = function () {
         if (!String($(this).val())?.trim()) {
             return "";
-        } else {
-            return $(this).attr(SELECTED_EXTERNAL_LINK_KEY);
-        }
+        } 
+        return $(this).attr(SELECTED_EXTERNAL_LINK_KEY);
+        
     };
 
     $.fn.setSelectedExternalLink = function (externalLink: string | null) {

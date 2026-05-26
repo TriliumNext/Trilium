@@ -1,30 +1,35 @@
 import type { ComponentChildren } from "preact";
+
 import { useUniqueName } from "./hooks";
 
 interface FormRadioProps {
     name: string;
     currentValue?: string;
-    values: {
+    values: ({
         value: string;
         label: string | ComponentChildren;
         inlineDescription?: string | ComponentChildren;
-    }[];
+    } | false)[];
     onChange(newValue: string): void;
 }
 
 export default function FormRadioGroup({ values, ...restProps }: FormRadioProps) {
     return (
         <div role="group">
-            {(values || []).map(({ value, label, inlineDescription }) => (
-                <div className="form-checkbox">
-                    <FormRadio
-                        value={value}
-                        label={label} inlineDescription={inlineDescription}
-                        labelClassName="form-check-label"
-                        {...restProps}
-                    />
-                </div>
-            ))}
+            {(values || []).map((el) => {
+                if (!el) return null;
+                const { value, label, inlineDescription } = el;
+                return (
+                    <div className="form-checkbox" key={value}>
+                        <FormRadio
+                            value={value}
+                            label={label} inlineDescription={inlineDescription}
+                            labelClassName="form-check-label"
+                            {...restProps}
+                        />
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -32,9 +37,13 @@ export default function FormRadioGroup({ values, ...restProps }: FormRadioProps)
 export function FormInlineRadioGroup({ values, ...restProps }: FormRadioProps) {
     return (
         <div role="group">
-            {values.map(({ value, label }) => (<FormRadio value={value} label={label} {...restProps} />))}
+            {values.map((el) => {
+                if (!el) return null;
+                const { value, label, inlineDescription } = el;
+                return <FormRadio key={value} value={value} label={label} inlineDescription={inlineDescription} {...restProps} />;
+            })}
         </div>
-    )
+    );
 }
 
 function FormRadio({ name, value, label, currentValue, onChange, labelClassName, inlineDescription }: Omit<FormRadioProps, "values"> & { value: string, label: ComponentChildren, inlineDescription?: ComponentChildren, labelClassName?: string }) {
@@ -50,7 +59,7 @@ function FormRadio({ name, value, label, currentValue, onChange, labelClassName,
             />
             {inlineDescription ?
                 <><strong>{label}</strong> - {inlineDescription}</>
-            : label}
+                : label}
         </label>
-    )
+    );
 }

@@ -16,7 +16,7 @@
   text notes.</p>
 <aside class="admonition note">
   <p>Feature requests regarding the Markdown implementation will be considered,
-    but if they are outside the realm of Trilium they will not be implemented.
+    but if they are outside the realm of Trilium, they will not be implemented.
     One of the core aspects of the Markdown integration is that it reuses components
     that are already available through other features of the application.</p>
 </aside>
@@ -33,11 +33,23 @@
   will show up in the preview pane:</p>
 <ul>
   <li>
-    <p>All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes)</p>
+    <p>All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes).</p>
   </li>
   <li>
-    <p>Code blocks with syntax highlight. Note that the language must be specified
-      for syntax highlight to apply (e.g. <code spellcheck="false">```js</code>).</p>
+    <p>Basic HTML is also supported (e.g. collapsible blocks using <code spellcheck="false">&lt;details&gt;</code> and
+      <code
+      spellcheck="false">&lt;summary&gt;</code>).</p>
+  </li>
+  <li>
+    <p>Code blocks with syntax highlight.</p>
+    <ul>
+      <li>The language must be specified for syntax highlight to be applied (e.g.
+        <code
+        spellcheck="false">```js</code>).</li>
+      <li>Code blocks will respect the text wrapping from the&nbsp;<a class="reference-link"
+        href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;section in&nbsp;<a class="reference-link"
+        href="#root/_help_4TIF1oA4VQRO">Options</a>.</li>
+    </ul>
   </li>
   <li>
     <p><a class="reference-link" href="#root/_help_NwBbFdNZ9h7O">Block quotes &amp; admonitions</a>
@@ -55,9 +67,13 @@
   </li>
   <li>
     <p><a class="reference-link" href="#root/_help_nBAXQFj20hS1">Include Note</a>&nbsp;(no
-      built-in Markdown syntax, but HTML syntax works just fine):</p><pre><code class="language-text-x-trilium-auto">&lt;section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable"&gt;
+      built-in Markdown syntax, but HTML syntax works just fine):</p><pre><code class="language-text-html">&lt;section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable"&gt;
     &amp;nbsp;
-&lt;/section&gt;n</code></pre>
+&lt;/section&gt;</code></pre>
+    <ul>
+      <li>These can also be quickly created via the <code spellcheck="false">/include</code> command
+        or via a dedicated keyboard shortcut (not assigned by default).</li>
+    </ul>
   </li>
   <li>
     <p><a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;via
@@ -71,8 +87,71 @@
 
 [^1]: the first footnote
 [^2]: the second footnote</code></pre>
+    <ul>
+      <li>These can also be quickly created using the <code spellcheck="false">/footnote</code> command.</li>
+    </ul>
   </li>
 </ul>
+<h3>Links</h3>
+<p>Multiple types of links are supported:</p>
+<ul>
+  <li>
+    <p>Web URLs can be written with the standard Markdown syntax:</p><pre><code class="language-text-x-trilium-auto">[Wikipedia](https://www.wikipedia.org)</code></pre>
+  </li>
+  <li>
+    <p><a href="#root/_help_hrZ1D00cLbal">Reference link</a> to other notes with dynamic
+      title, either by manually entering the note ID or via the <em>Add link</em> dialog:</p><pre><code class="language-text-x-trilium-auto">[[B9oMG6rFvvfq]]</code></pre>
+  </li>
+  <li>
+    <p><a href="#root/_help_hrZ1D00cLbal">Reference link</a> to other notes with a custom
+      text:</p><pre><code class="language-text-x-trilium-auto">[This is a link](#root/LhtnZxtVsUMp)</code></pre>
+  </li>
+</ul>
+<p>To create a link, either:</p>
+<ul>
+  <li>Type it manually using the syntax described above.</li>
+  <li>Use the <em>Add link</em> dialog by pressing <kbd>Ctrl</kbd>+<kbd>L</kbd> or
+    typing the <code spellcheck="false">/link</code> command.</li>
+</ul>
+<h3>Keyboard shortcuts</h3>
+<p>The Markdown notes share some of the keyboard shortcuts from&nbsp;<a class="reference-link"
+  href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes:</p>
+<ul>
+  <li><em>Cut to note</em> (<kbd>Ctrl</kbd>+<kbd>X</kbd>) which cuts the selection
+    into a new child note.</li>
+  <li><em>Add link</em> (<kbd>Ctrl</kbd>+<kbd>L</kbd>) which shows the dialog
+    to create external or reference links.</li>
+  <li><em>Insert date/time</em> (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects
+    the same formatting as text notes.</li>
+  <li><em>Include note</em> (not assigned by default), which triggers the same
+    dialog to insert notes as the one for text notes.</li>
+</ul>
+<p>In addition, the following formatting keyboard shortcuts are available:</p>
+<ul>
+  <li><kbd>Ctrl</kbd>+<kbd>B</kbd> to toggle <strong>bold</strong>.</li>
+  <li><kbd>Ctrl</kbd>+<kbd>I</kbd> to toggle <em>italic</em>.</li>
+  <li><kbd>Ctrl</kbd>+<kbd>M</kbd> to wrap the current selection in an inline
+    math (<code spellcheck="false">$</code>).</li>
+  <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> to toggle <del>strikethrough</del>.</li>
+</ul>
+<h3>Images &amp; attachments</h3>
+<p>Images can be inserted into the document in four different methods:</p>
+<ul>
+  <li>Drag &amp; drop directly into the editor area.</li>
+  <li>Pasting an image from clipboard.</li>
+  <li>Pasting a reference to another <a href="#root/_help_0vhv7lsOLy82">attachment</a> (e.g. <em>Copy reference to clipboard</em> button).</li>
+  <li>Use the <code spellcheck="false">/image</code> slash command.</li>
+</ul>
+<p>An image reference to an attachment looks like this:</p><pre><code class="language-text-x-trilium-auto">![Name.jpeg](api/attachments/z50RceuHXe9J/image/image)</code></pre>
+<h3>Slash commands</h3>
+<p>Just like&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes,
+  Markdown notes support a selection of slash commands:</p>
+<ul>
+  <li>Creating <a href="#root/_help_NwBbFdNZ9h7O">admonitions</a> (e.g. <code spellcheck="false">/tip</code>)</li>
+  <li>Uploading images (<code spellcheck="false">/image</code>).</li>
+  <li>Inserting the current date &amp; time (<code spellcheck="false">/date</code>).</li>
+</ul>
+<p>Note that slash commands only work outside of inline&nbsp;</p>
 <h3>Other features</h3>
 <ul>
   <li>The&nbsp;<a class="reference-link" href="#root/_help_BFvAtE74rbP6">Table of contents</a>&nbsp;will
@@ -103,26 +182,39 @@
 <aside class="admonition note">
   <p>There is no distinction between the new Markdown note type and code notes
     of type Markdown; internally both are represented as&nbsp;<a class="reference-link"
-    href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;notes with the proper MIME type
-    (e.g. <code spellcheck="false">text/x-markdown</code>).</p>
+    href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;notes with one of the following
+    MIME types:</p>
+  <ul>
+    <li><code spellcheck="false">text/markdown</code>
+    </li>
+    <li><code spellcheck="false">text/x-markdown</code>
+    </li>
+    <li><code spellcheck="false">text/x-gfm</code> (GitHub Flavored Markdown)</li>
+  </ul>
 </aside>
 <h2>Import/export</h2>
+<h3>Import</h3>
+<p>By default, when importing a single Markdown file it automatically gets
+  converted to a&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note.
+  To avoid that and have it imported as a Markdown note instead:</p>
 <ul>
-  <li>By default, when importing a single Markdown file it automatically gets
-    converted to a&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note.
-    To avoid that and have it imported as a Markdown note instead:
-    <ul>
-      <li>Right click the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and
-        select <em>Import into note</em>.</li>
-      <li>Select the file normally.</li>
-      <li>Uncheck <em>Import HTML, Markdown and TXT as text notes if it's unclear from the metadata</em>.</li>
-    </ul>
-  </li>
-  <li>When exporting Markdown files, the extension is preserved and the content
-    remains the same as in the source view.</li>
-  <li>Once exported as a Trilium ZIP, the ZIP will preserve the Markdown type
-    without converting to text notes thanks to the meta-information in it.</li>
+  <li>Right click the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and
+    select <em>Import into note</em>.</li>
+  <li>Select the file normally.</li>
+  <li>Uncheck <em>Import HTML, Markdown and TXT as text notes if it's unclear from the metadata</em>.</li>
 </ul>
+<p>When importing a Trilium ZIP, it will preserve the Markdown type without
+  converting to text notes thanks to the meta-information in it.</p>
+<h3>Exporting</h3>
+<p>When exporting Markdown files, the extension is preserved and the content
+  remains the same as in the source view (with some small exceptions such
+  as handling of attachments).</p>
+<p>When exporting Markdown files as ZIP, choosing HTML or Markdown as the
+  export format makes no difference as that only affects&nbsp;<a class="reference-link"
+  href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes.</p>
+<p>If the Markdown note contains attachments, a ZIP export will rewrite the
+  links to attachments so that they are replaced with a relative path to
+  the attachment. On import, the links are re-written back.</p>
 <h2>Conversion between text notes and Markdown notes</h2>
 <p>Currently there is no built-in functionality to convert a&nbsp;<a class="reference-link"
   href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note into a Markdown note or vice-versa.

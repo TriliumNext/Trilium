@@ -162,5 +162,8 @@
     "createNoteInto": "aktif nota yeni bir alt not oluşturun",
     "editBranchPrefix": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">prefix</a> değerini aktif not klonunun düzenle",
     "movingCloningNotes": "Notları taşıma / klonlama"
+  },
+  "common": {
+    "cancel": "iptal"
   }
 }

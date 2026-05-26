@@ -17,7 +17,11 @@
     "github_tooltip": "在 GitHub 上回報錯誤、提出功能建議或貢獻程式碼",
     "license_tooltip": "查看許可證",
     "donate": "捐款",
-    "donate_tooltip": "捐款支持此專案"
+    "donate_tooltip": "捐款支持此專案",
+    "channel": {
+      "nightly": "每夜版",
+      "standalone": "獨立版"
+    }
   },
   "toast": {
     "critical-error": {
@@ -58,12 +62,15 @@
   "branch_prefix": {
     "edit_branch_prefix": "編輯分支前綴",
     "help_on_tree_prefix": "有關樹前綴的說明",
-    "prefix": "前綴： ",
+    "prefix": "前綴",
     "save": "儲存",
     "branch_prefix_saved": "已儲存分支前綴。",
     "edit_branch_prefix_multiple": "編輯 {{count}} 個分支的前綴",
     "branch_prefix_saved_multiple": "已為 {{count}} 個分支儲存分支前綴。",
-    "affected_branches": "受影響的分支 ({{count}}):"
+    "affected_branches": "受影響的分支 ({{count}}):",
+    "preview_in_tree": "在樹中預覽",
+    "description": "僅在此分支中的筆記標題之前加上文字。其他分支則保留原始標題。",
+    "cancel": "取消"
   },
   "bulk_actions": {
     "bulk_actions": "批次操作",
@@ -190,7 +197,8 @@
     "title": "列表",
     "newTabNoteLink": "在新分頁開啟筆記連結",
     "newTabWithActivationNoteLink": "在新分頁開啟並切換至筆記連結",
-    "editShortcuts": "編輯鍵盤快捷鍵"
+    "editShortcuts": "編輯鍵盤快捷鍵",
+    "toggleArchivedNotes": "顯示/隱藏已歸檔的筆記"
   },
   "import": {
     "importIntoNote": "匯入至筆記",
@@ -376,8 +384,8 @@
     "css_class": "該標籤的值將作為 CSS 類新增至樹中表示給定筆記的節點。這對於進階主題設定非常有用。可用於模板筆記。",
     "icon_class": "該標籤的值將作為 CSS 類新增至樹中圖標上，有助於從視覺上區分筆記樹裡的筆記。比如可以是 bx bx-home——圖標來自 boxicons。可用於模板筆記。",
     "page_size": "筆記列表中每頁的項目數",
-    "custom_request_handler": "請參閱<a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">自訂請求處理程序</a>",
-    "custom_resource_provider": "請參閱<a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">自訂請求處理程序</a>",
+    "custom_request_handler": "自訂請求處理程序",
+    "custom_resource_provider": "自訂資源提供者",
     "widget": "將此筆記標記為將新增至 Trilium 元件樹中的自訂元件",
     "workspace": "將此筆記標記為允許輕鬆聚焦的工作區",
     "workspace_icon_class": "定義在選項卡中聚焦至此筆記時將使用的框圖圖標 CSS 類",
@@ -1357,7 +1365,7 @@
     "existing_backups": "現有備份",
     "date-and-time": "日期和時間",
     "path": "路徑",
-    "database_backed_up_to": "資料庫已備份至 {{backupFilePath}}",
+    "database_backed_up_to": "資料庫已備份至 {{- backupFilePath}}",
     "no_backup_yet": "尚無備份",
     "download": "下載",
     "title": "備份"
@@ -1447,7 +1455,7 @@
     "save": "儲存",
     "help": "說明",
     "test_title": "測試連線",
-    "test_description": "測試和同步伺服器之間的連接。如果同步伺服器沒有初始化，這會將本地文件同步至同步伺服器上。",
+    "test_description": "測試與同步伺服器的連線。若尚未初始化，此操作將設定同步功能。",
     "test_button": "測試同步",
     "handshake_failed": "同步伺服器握手失敗，錯誤：{{message}}",
     "timeout_description": "在放棄慢速連線前應等待多久。",
@@ -1550,7 +1558,8 @@
     "collections": "集合",
     "ai-chat": "AI 聊天",
     "spreadsheet": "試算表",
-    "llm-chat": "AI 對話"
+    "llm-chat": "AI 對話",
+    "markdown": "Markdown"
   },
   "protect_note": {
     "toggle-on": "保護筆記",
@@ -1627,7 +1636,7 @@
   "note_detail": {
     "could_not_find_typewidget": "找不到類型為 '{{type}}' 的 typeWidget",
     "printing": "正在列印…",
-    "printing_pdf": "正在匯出為 PDF…",
+    "printing_pdf": "正在預覽列印…",
     "print_report_title": "列印報告",
     "print_report_collection_content_one": "集合中的 {{count}} 篇筆記無法列印，因為它們不被支援或受到保護。",
     "print_report_collection_content_other": "",
@@ -1707,7 +1716,8 @@
     "note-revision-created": "已新增筆記修訂。",
     "note-executed": "已執行筆記。",
     "sql-error": "執行 SQL 查詢時發生錯誤：{{message}}",
-    "save-named-revision-title": "儲存命名修訂"
+    "save-named-revision-title": "儲存命名修訂",
+    "save-named-revision-message": "請輸入此修訂版本的名稱（若不需命名，請留空）："
   },
   "branches": {
     "cannot-move-notes-here": "無法將筆記移動至這裡。",
@@ -1753,7 +1763,10 @@
     "theme_none": "無語法高亮",
     "theme_group_light": "淺色主題",
     "theme_group_dark": "深色主題",
-    "copy_title": "複製到剪貼簿"
+    "copy_title": "複製到剪貼簿",
+    "click_to_copy": "點擊以複製",
+    "tab_width": "制表符寬度",
+    "tab_width_unit": "空格"
   },
   "classic_editor_toolbar": {
     "title": "格式"
@@ -1772,7 +1785,8 @@
         "title": "固定",
         "description": "編輯工具出現在「格式」功能區分頁中。"
       },
-      "multiline-toolbar": "如果工具列無法完全顯示，則分多行顯示。"
+      "multiline-toolbar": "如果工具列無法完全顯示，則分多行顯示",
+      "toolbar_style": "工具列樣式"
     }
   },
   "electron_context_menu": {
@@ -1894,7 +1908,7 @@
     "days": "天"
   },
   "share": {
-    "title": "分享設定",
+    "title": "分享",
     "redirect_bare_domain": "將裸域名重新導向至分享頁面",
     "redirect_bare_domain_description": "將匿名用戶重新導向至分享頁面，而非顯示登入",
     "show_login_link": "在分享主題中顯示登入連結",
@@ -1958,12 +1972,12 @@
   },
   "editorfeatures": {
     "title": "功能",
-    "emoji_completion_enabled": "啟用 Emoji 自動完成",
-    "note_completion_enabled": "啟用筆記自動完成",
-    "emoji_completion_description": "如果啟用，emoji 可以輕易地經由輸入 `:` 加上 emoji 名稱來插入。",
-    "note_completion_description": "如果啟用，導向筆記的連結可以經由輸入 `@` 加上筆記標題來建立。",
-    "slash_commands_enabled": "啟用斜線命令",
-    "slash_commands_description": "如果啟用，可以經由輸入 `/` 來觸發命令，如插入換行符或標題。"
+    "emoji_completion_enabled": "Emoji 自動完成",
+    "note_completion_enabled": "筆記自動完成",
+    "emoji_completion_description": "Emoji 可以輕易地經由輸入 `:` 加上 emoji 名稱來插入。",
+    "note_completion_description": "導向筆記的連結可以經由輸入 `@` 加上筆記標題來建立。",
+    "slash_commands_enabled": "斜線命令",
+    "slash_commands_description": "可以經由輸入 `/` 來觸發命令，如插入換行符或標題。"
   },
   "table_view": {
     "new-row": "新增列",
@@ -2059,7 +2073,9 @@
     "related_code_notes": "程式碼筆記的配色方案",
     "ui": "使用者介面",
     "ui_old_layout": "舊版面配置",
-    "ui_new_layout": "新版面配置"
+    "ui_new_layout": "新版面配置",
+    "ui_layout_style": "版面樣式",
+    "ui_layout_orientation": "啟動列的方向"
   },
   "units": {
     "percentage": "%"
@@ -2169,7 +2185,19 @@
     "note_paths_one": "{{count}} 條路徑",
     "note_paths_other": "",
     "note_paths_title": "筆記路徑",
-    "code_note_switcher": "更改語言模式"
+    "code_note_switcher": "更改語言模式",
+    "tab_width": "制表符寬度：{{width}}",
+    "tab_width_title": "變更制表符寬度",
+    "tab_width_spaces": "{{count}} 個空格",
+    "tab_width_spaces_short": "空格：{{width}}",
+    "tab_width_tabs": "製表符：{{width}}",
+    "tab_width_use_default": "使用預設值 ({{width}})",
+    "tab_width_use_default_style": "使用預設值 ({{style}})",
+    "tab_width_display_header": "顯示寬度",
+    "tab_width_reindent_header": "將內容的縮排重新設定為",
+    "tab_width_style_header": "縮排使用",
+    "tab_width_style_spaces": "空格",
+    "tab_width_style_tabs": "製表符"
   },
   "right_pane": {
     "empty_button": "隱藏面板",
@@ -2188,7 +2216,9 @@
     "pages_one": "共 {{count}} 頁",
     "pages_other": "",
     "pages_alt": "第 {{pageNumber}} 頁",
-    "pages_loading": "正在載入…"
+    "pages_loading": "正在載入…",
+    "annotations_one": "{{count}} 註解",
+    "annotations_other": ""
   },
   "mobile_tab_switcher": {
     "more_options": "更多選項",
@@ -2324,7 +2354,8 @@
     "note_context_enabled": "點擊以禁用筆記上下文：{{title}}",
     "note_context_disabled": "點擊將當前筆記納入上下文",
     "no_provider_message": "尚未設定任何 AI 服務提供者。請新增一個以開始聊天。",
-    "add_provider": "新增 AI 提供者"
+    "add_provider": "新增 AI 提供者",
+    "stop": "停止"
   },
   "ocr": {
     "processing_complete": "OCR 處理已完成。",
@@ -2340,7 +2371,8 @@
     "failed_to_load": "載入 OCR 文字失敗",
     "process_now": "處理 OCR",
     "processing": "正在處理…",
-    "processing_started": "OCR 處理已開始。請稍候片刻並重新整理頁面。"
+    "processing_started": "OCR 處理已開始。請稍候片刻並重新整理頁面。",
+    "image_based_pdf_not_supported": "這份 PDF 檔案似乎是圖像檔（掃描檔）。目前尚不支援從圖像型 PDF 檔案中提取文字。"
   },
   "mind-map": {
     "addChild": "新增子節點",
@@ -2394,7 +2426,11 @@
       "web_search": "網頁搜尋",
       "note_in_parent": "<Note/> 於 <Parent/>",
       "get_attachment": "取得附件",
-      "get_attachment_content": "讀取附件內容"
+      "get_attachment_content": "讀取附件內容",
+      "rename_note": "重新命名筆記",
+      "delete_note": "刪除筆記",
+      "move_note": "移動筆記",
+      "clone_note": "克隆筆記"
     }
   },
   "sidebar_chat": {
@@ -2481,5 +2517,66 @@
   },
   "text_editor": {
     "title": "編輯器"
+  },
+  "launcher_button_context_menu": {
+    "remove_from_launch_bar": "從啟動列中移除"
+  },
+  "link": {
+    "failed_to_open": "無法開啟連結 '{{- href}}': {{- message}}"
+  },
+  "display_mode": {
+    "source": "原始碼檢視",
+    "split": "分割檢視",
+    "preview": "預覽"
+  },
+  "print_preview": {
+    "title": "預覽列印",
+    "close": "關閉",
+    "save": "儲存為 PDF",
+    "print": "列印",
+    "export_pdf": "匯出為 PDF",
+    "system_print": "使用系統對話方塊列印",
+    "destination": "目標",
+    "destination_pdf": "儲存為 PDF",
+    "destination_printers": "印表機",
+    "destination_default": "預設",
+    "orientation": "方向",
+    "portrait": "垂直",
+    "landscape": "水平",
+    "page_size": "頁面大小",
+    "scale": "比例",
+    "margins": "邊界",
+    "render_error": "無法使用目前設定渲染 PDF。請檢查邊界及縮放比例。",
+    "margins_default": "預設",
+    "margins_none": "無",
+    "margins_minimum": "最小",
+    "margins_custom": "自訂",
+    "margin_top": "上方",
+    "margin_right": "右方",
+    "margin_bottom": "下方",
+    "margin_left": "左方",
+    "page_ranges": "頁數",
+    "page_ranges_hint": "若留空，將列印所有頁面。",
+    "page_ranges_invalid": "格式不正確。請使用例如 1-5, 8, 11-13。",
+    "page_ranges_placeholder": "例如 1-5, 8, 11-13"
+  },
+  "common": {
+    "save": "儲存",
+    "cancel": "取消"
+  },
+  "spreadsheet": {
+    "read-only": "此筆記為唯讀。"
+  },
+  "markdown_editor": {
+    "image_upload_failed": "無法上傳圖片 \"{{name}}\"。"
+  },
+  "markdown_slash_commands": {
+    "date": "插入當前日期和時間",
+    "include": "加入另一則筆記",
+    "image": "上傳並插入圖片",
+    "link": "插入筆記連結",
+    "math": "插入數學方程式區塊",
+    "footnote": "插入腳註",
+    "mermaid": "插入美人魚圖"
   }
 }

@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Select page { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Select page { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Page { $page } of { $total }
@@ -654,12 +650,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Toggle Sidebar
 pdfjs-toggle-views-manager-notification-button =
     .title = Toggle Sidebar (document contains thumbnails/outline/attachments/layers)
 pdfjs-toggle-views-manager-button1-label = Manage pages
-pdfjs-toggle-views-manager-button-label = Toggle Sidebar
 pdfjs-views-manager-sidebar =
     .aria-label = Sidebar
 pdfjs-views-manager-sidebar-resizer =
@@ -670,11 +663,9 @@ pdfjs-views-manager-view-selector-button-label = Views
 pdfjs-views-manager-pages-title = Pages
 pdfjs-views-manager-outlines-title1 = Document outline
     .title = Document outline (double-click to expand/collapse all items)
-pdfjs-views-manager-outlines-title = Document outline
 pdfjs-views-manager-attachments-title = Attachments
 pdfjs-views-manager-layers-title1 = Layers
     .title = Layers (double-click to reset all layers to the default state)
-pdfjs-views-manager-layers-title = Layers
 pdfjs-views-manager-pages-option-label = Pages
 pdfjs-views-manager-outlines-option-label = Document outline
 pdfjs-views-manager-attachments-option-label = Attachments
@@ -695,7 +686,6 @@ pdfjs-views-manager-pages-status-copy-button-label = Copy
 pdfjs-views-manager-pages-status-cut-button-label = Cut
 pdfjs-views-manager-pages-status-delete-button-label = Delete
 pdfjs-views-manager-pages-status-export-selected-button-label = Export selected…
-pdfjs-views-manager-pages-status-save-as-button-label = Save as…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =

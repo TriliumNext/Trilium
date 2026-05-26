@@ -29,3 +29,7 @@
     }
 }
 /* #endregion */
+
+.note-split.type-code .note-list {
+    margin-top: 1em;
+}

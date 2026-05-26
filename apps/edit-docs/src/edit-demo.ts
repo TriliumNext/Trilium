@@ -1,9 +1,8 @@
-import { createZipFromDirectory, extractZip, importData, initializeDatabase, startElectron } from "./utils.js";
-import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
+import { createZipFromDirectory, extractZip, importData, initializeEditDocsCore, startElectron } from "./utils.js";
 import debounce from "@triliumnext/client/src/services/debounce.js";
+import cls from "@triliumnext/server/src/services/cls.js";
 import fs from "fs/promises";
 import { join } from "path";
-import cls from "@triliumnext/server/src/services/cls.js";
 import type { NoteMetaFile } from "@triliumnext/server/src/services/meta/note_meta.js";
 import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
 
@@ -17,14 +16,15 @@ async function main() {
         setTimeout(() => registerHandlers(), 10_000);
     });
 
-    await initializeTranslations();
-    await initializeDatabase(true);
+    await initializeEditDocsCore();
 
-    // Wait for becca to be loaded before importing data
-    const beccaLoader = await import("@triliumnext/server/src/becca/becca_loader.js");
-    await beccaLoader.beccaLoaded;
-
+    // Create the in-memory database schema and resolve dbReady (requires CLS context)
+    const { sql_init, becca_loader } = await import("@triliumnext/core");
     cls.init(async () => {
+        cls.ignoreEntityChangeIds();
+        await sql_init.createInitialDatabase(true);
+        await becca_loader.beccaLoaded;
+
         await importData(DEMO_ZIP_DIR_PATH);
         setOptions();
         initializedPromise.resolve();
@@ -45,8 +45,8 @@ async function setOptions() {
 }
 
 async function registerHandlers() {
-    const events = (await import("@triliumnext/server/src/services/events.js")).default;
-    const eraseService = (await import("@triliumnext/server/src/services/erase.js")).default;
+    const { events } = await import("@triliumnext/core");
+    const { erase: eraseService } = await import("@triliumnext/core");
     const debouncer = debounce(async () => {
         console.log("Exporting data");
         eraseService.eraseUnusedAttachmentsNow();
@@ -68,8 +68,8 @@ async function registerHandlers() {
 }
 
 async function exportData() {
-    const { exportToZipFile } = (await import("@triliumnext/server/src/services/export/zip.js")).default;
-    await exportToZipFile("root", "html", DEMO_ZIP_PATH);
+    const { zipExportService } = (await import("@triliumnext/core"));
+    await zipExportService.exportToZipFile("root", "html", DEMO_ZIP_PATH);
 }
 
 const EXPANDED_NOTE_IDS = new Set([

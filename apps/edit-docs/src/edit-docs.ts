@@ -1,17 +1,16 @@
 import debounce from "@triliumnext/client/src/services/debounce.js";
+import type { AdvancedExportOptions, ExportFormat } from "@triliumnext/core";
 import cls from "@triliumnext/server/src/services/cls.js";
-import type { AdvancedExportOptions, ExportFormat } from "@triliumnext/server/src/services/export/zip/abstract_provider.js";
-import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
-import { parseNoteMetaFile } from "@triliumnext/server/src/services/in_app_help.js";
-import type { NoteMetaFile } from "@triliumnext/server/src/services/meta/note_meta.js";
 import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
+import type { NoteMetaFile } from "@triliumnext/server/src/services/meta/note_meta.js";
+
+import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler } from "./help_meta_generator.js";
 import fs from "fs/promises";
-import fsExtra from "fs-extra";
 import yaml from "js-yaml";
 import path from "path";
 
 import packageJson from "../package.json" with { type: "json" };
-import { extractZip, importData, initializeDatabase, startElectron } from "./utils.js";
+import { extractZip, importData, initializeEditDocsCore, startElectron } from "./utils.js";
 
 interface NoteMapping {
     rootNoteId: string;
@@ -121,14 +120,15 @@ async function main() {
         }, 10_000);
     });
 
-    await initializeTranslations();
-    await initializeDatabase(true);
+    await initializeEditDocsCore();
 
-    // Wait for becca to be loaded before importing data
-    const beccaLoader = await import("@triliumnext/server/src/becca/becca_loader.js");
-    await beccaLoader.beccaLoaded;
-
+    // Create the in-memory database schema and resolve dbReady (requires CLS context)
+    const { sql_init, becca_loader: beccaLoader } = await import("@triliumnext/core");
     cls.init(async () => {
+        cls.ignoreEntityChangeIds();
+        await sql_init.createInitialDatabase(true);
+        await beccaLoader.beccaLoaded;
+
         for (const mapping of NOTE_MAPPINGS) {
             if (!mapping.exportOnly) {
                 await importData(mapping.path);
@@ -156,11 +156,11 @@ async function exportData(noteId: string, format: ExportFormat, outputPath: stri
     const zipFilePath = "output.zip";
 
     try {
-        await fsExtra.remove(outputPath);
-        await fsExtra.mkdir(outputPath);
+        await fs.rm(outputPath, { recursive: true, force: true });
+        await fs.mkdir(outputPath, { recursive: true });
 
         // First export as zip.
-        const { exportToZipFile } = (await import("@triliumnext/server/src/services/export/zip.js")).default;
+        const { zipExportService } = (await import("@triliumnext/core"));
 
         const exportOpts: AdvancedExportOptions = {};
         if (format === "html") {
@@ -212,12 +212,10 @@ async function exportData(noteId: string, format: ExportFormat, outputPath: stri
             };
         }
 
-        await exportToZipFile(noteId, format, zipFilePath, exportOpts);
+        await zipExportService.exportToZipFile(noteId, format, zipFilePath, exportOpts);
         await extractZip(zipFilePath, outputPath, ignoredFiles);
     } finally {
-        if (await fsExtra.exists(zipFilePath)) {
-            await fsExtra.rm(zipFilePath);
-        }
+        await fs.rm(zipFilePath, { force: true });
     }
 
     const minifyMeta = (format === "html" || format === "share");
@@ -249,8 +247,13 @@ async function cleanUpMeta(outputPath: string, minify: boolean) {
     }
 
     if (minify) {
-        const subtree = parseNoteMetaFile(meta);
+        const subtree = parseNoteMetaFile(meta, serverTextNoteHandler, BASE_URL);
         await fs.writeFile(metaPath, JSON.stringify(subtree));
+
+        // Generate standalone meta: webView-based, pointing to online docs.
+        const standaloneSubtree = parseNoteMetaFile(meta, standaloneTextNoteHandler, BASE_URL);
+        const standaloneMetaPath = path.resolve(__dirname, "../../standalone/src/assets/help_meta.json");
+        await fs.writeFile(standaloneMetaPath, JSON.stringify(standaloneSubtree));
     } else {
         await fs.writeFile(metaPath, JSON.stringify(meta, null, 4));
     }
@@ -258,8 +261,8 @@ async function cleanUpMeta(outputPath: string, minify: boolean) {
 }
 
 async function registerHandlers() {
-    const events = (await import("@triliumnext/server/src/services/events.js")).default;
-    const eraseService = (await import("@triliumnext/server/src/services/erase.js")).default;
+    const { events } = await import("@triliumnext/core");
+    const { erase: eraseService } = await import("@triliumnext/core");
     const debouncer = debounce(async () => {
         eraseService.eraseUnusedAttachmentsNow();
 

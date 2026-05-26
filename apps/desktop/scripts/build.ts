@@ -7,16 +7,17 @@ import originalPackageJson from "../package.json" with { type: "json" };
 const build = new BuildHelper("apps/desktop");
 
 async function main() {
-    await build.buildBackend([ "src/main.ts"]);
+    await build.buildBackend([ "src/main.ts", "src/preload.ts"]);
 
     // Copy assets.
     build.copy("src/assets", "assets/");
     build.copy("/apps/server/src/assets", "assets/");
+    build.copy("/packages/trilium-core/src/assets/schema.sql", "assets/schema.sql");
     build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 
     // Copy node modules dependencies
-    build.copyNodeModules([ "better-sqlite3", "bindings", "file-uri-to-path", "@electron/remote" ]);
+    build.copyNodeModules([ "better-sqlite3", "bindings", "file-uri-to-path" ]);
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
 
     build.buildFrontend();

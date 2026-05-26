@@ -102,7 +102,8 @@ export interface FormListItemOpts {
 
 const TOOLTIP_CONFIG: Partial<Tooltip.Options> = {
     placement: handleRightToLeftPlacement("right"),
-    fallbackPlacements: [ handleRightToLeftPlacement("right") ]
+    fallbackPlacements: [ handleRightToLeftPlacement("right") ],
+    animation: false
 };
 
 export function FormListItem({ className, icon, value, title, active, disabled, checked, container, onClick, selected, rtl, triggerCommand, description, itemRef: externalItemRef, ...contentProps }: FormListItemOpts) {

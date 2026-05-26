@@ -118,12 +118,7 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
 ws.subscribeToMessages((message) => {
     if (message.type === "openNote") {
         appContext.tabManager.activateOrOpenNote(message.noteId);
-
-        if (utils.isElectron()) {
-            const currentWindow = utils.dynamicRequire("@electron/remote").getCurrentWindow();
-
-            currentWindow.show();
-        }
+        window.electronApi?.window.showWindow();
     }
 });
 

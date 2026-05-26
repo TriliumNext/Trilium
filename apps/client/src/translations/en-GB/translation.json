@@ -66,7 +66,18 @@
     "set-custom-color": "Set custom note colour"
   },
   "about": {
-    "data_directory": "Data directory:"
+    "data_directory": "Data directory:",
+    "version_label": "Version:",
+    "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
+    "build_info": "Build: {{buildDate}}, revision: <buildRevision />",
+    "contributors_label": "Contributors:",
+    "contributor_roles": {
+      "lead-dev": "lead developer",
+      "original-dev": "original developer"
+    },
+    "contributor_full_list": "See the entire community",
+    "github_tooltip": "Report bugs, suggest features, or contribute on GitHub",
+    "license_tooltip": "View license"
   },
   "toast": {
     "critical-error": {

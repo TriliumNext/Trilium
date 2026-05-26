@@ -18,7 +18,7 @@ import protectedSessionHolder from "./protected_session_holder.js";
 import renderService from "./render.js";
 import server from "./server.js";
 import { applySingleBlockSyntaxHighlight } from "./syntax_highlight.js";
-import utils, { getErrorMessage } from "./utils.js";
+import { getErrorMessage } from "./utils.js";
 
 let idCounter = 1;
 
@@ -78,7 +78,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         const $content = await renderDoc(entity);
         $renderedContent.html($content.html());
     } else if (!options.tooltip && type === "protectedSession") {
-        const $button = $(`<button class="btn btn-sm"><span class="bx bx-log-in"></span> Enter protected session</button>`).on("click", protectedSessionService.enterProtectedSession);
+        const $button = $(`<button class="btn btn-sm"><span class="tn-icon bx bx-log-in"></span> Enter protected session</button>`).on("click", protectedSessionService.enterProtectedSession);
 
         $renderedContent.append($("<div>").append("<div>This note is protected and to access it you need to enter password.</div>").append("<br/>").append($button));
     } else if (entity instanceof FNote) {
@@ -92,7 +92,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
                 .addClass("webview-footer");
             const $openButton = $(`
                 <button class="file-open btn btn-primary" type="button">
-                    <span class="bx bx-link-external"></span>
+                    <span class="tn-icon bx bx-link-external"></span>
                     ${t("content_renderer.open_externally")}
                 </button>
             `)
@@ -100,9 +100,8 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
                 .on("click", () => {
                     const webViewSrc = entity.getLabelValue("webViewSrc");
                     if (webViewSrc) {
-                        if (utils.isElectron()) {
-                            const electron = utils.dynamicRequire("electron");
-                            electron.shell.openExternal(webViewSrc);
+                        if (window.electronApi) {
+                            window.electronApi.shell.openExternal(webViewSrc);
                         } else {
                             window.open(webViewSrc, '_blank', 'noopener,noreferrer');
                         }
@@ -222,7 +221,7 @@ async function addOCRTextIfAvailable(note: FNote, $content: JQuery<HTMLElement>)
             const $ocrSection = $(`
                 <div class="ocr-text-section">
                     <div class="ocr-header">
-                        <span class="bx bx-text"></span> ${t("ocr.extracted_text")}
+                        <span class="tn-icon bx bx-text"></span> ${t("ocr.extracted_text")}
                     </div>
                     <div class="ocr-content"></div>
                 </div>

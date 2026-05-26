@@ -21,20 +21,6 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .c
     &.dropdown-toggle-split {
         min-width: unset;
     }
-
-    .btn-group > & {
-        border-radius: 0;
-    }
-
-    .btn-group > &:first-child {
-        border-start-start-radius: 6px;
-        border-end-start-radius: 6px;
-    }
-
-    .btn-group > &:last-child {
-        border-start-end-radius: 6px;
-        border-end-end-radius: 6px;
-    }
 }
 
 button.btn.btn-primary:hover,
@@ -131,16 +117,6 @@ button.tn-low-profile:hover {
     color: var(--icon-button-color);
 }
 
-:root .btn-group .icon-action:not(:first-child) {
-    border-top-left-radius: unset !important;
-    border-bottom-left-radius: unset !important;
-}
-
-:root .btn-group .icon-action:not(:last-child) {
-    border-top-right-radius: unset !important;
-    border-bottom-right-radius: unset !important;
-}
-
 .btn-group .tn-tool-button + .tn-tool-button {
     margin-inline-start: 4px !important;
 }
@@ -188,10 +164,37 @@ button.tn-low-profile:hover {
 
 /* Button groups */
 
-/* Active button */
-:root .btn-group button.btn.active {
-    background-color: var(--button-group-active-button-background);
-    color: var(--button-group-active-button-text-color);
+:root div.btn-group {
+    display: flex;
+    gap: 4px;
+    border-radius: 8px;
+    background: var(--button-group-background-color);
+    padding: 4px;
+
+    button,
+    button.btn,
+    button.btn.btn-secondary {
+        --cmd-button-background-color: transparent;
+        --cmd-button-shadow-color: transparent;
+
+        min-width: unset;
+        margin: 0;
+        box-shadow: unset;
+        border-radius: 8px;
+
+        &.active, &.active:hover {
+            background-color: var(--button-group-active-button-background-color);
+            color: var(--button-group-active-button-color);
+
+            box-shadow: 1px 1px 1px var(--button-group-active-button-shadow-color);
+        }
+    }
+
+    .icon-action {
+        --icon-button-size: 28px;
+        --icon-button-icon-ratio: .75;
+        width: calc(var(--icon-button-size) * 1.25);
+    }
 }
 
 /*

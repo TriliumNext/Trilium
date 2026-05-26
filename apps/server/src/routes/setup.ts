@@ -1,12 +1,10 @@
-"use strict";
-
-import sqlInit from "../services/sql_init.js";
-import setupService from "../services/setup.js";
-import { isElectron } from "../services/utils.js";
-import assetPath from "../services/asset_path.js";
-import appPath from "../services/app_path.js";
+import { i18n, setup as setupService } from "@triliumnext/core";
 import type { Request, Response } from "express";
-import { getCurrentLocale } from "../services/i18n.js";
+
+import appPath from "../services/app_path.js";
+import assetPath from "../services/asset_path.js";
+import sqlInit from "../services/sql_init.js";
+import { isElectron } from "../services/utils.js";
 
 function setupPage(req: Request, res: Response) {
     if (sqlInit.isDbInitialized()) {
@@ -29,10 +27,10 @@ function setupPage(req: Request, res: Response) {
     }
 
     res.render("setup", {
-        syncInProgress: syncInProgress,
-        assetPath: assetPath,
-        appPath: appPath,
-        currentLocale: getCurrentLocale()
+        syncInProgress,
+        assetPath,
+        appPath,
+        currentLocale: i18n.getCurrentLocale()
     });
 }
 

@@ -18,8 +18,10 @@ export default function SortChildNotesDialog() {
     const [ sortLocale, setSortLocale ] = useState("");
     const [ shown, setShown ] = useState(false);
 
-    useTriliumEvent("sortChildNotes", ({ node }) => {
-        setParentNoteId(node.data.noteId);
+    useTriliumEvent("sortChildNotes", ({ node, noteId }) => {
+        const targetNoteId = noteId ?? node?.data.noteId;
+        if (!targetNoteId) return;
+        setParentNoteId(targetNoteId);
         setShown(true);
     });
 

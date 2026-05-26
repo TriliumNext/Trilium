@@ -206,7 +206,7 @@ export interface Api {
      * Instance name identifies particular Trilium instance. It can be useful for scripts
      * if some action needs to happen on only one specific instance.
      */
-    getInstanceName(): string;
+    getInstanceName(): string | null;
 
     /**
      * @returns date in YYYY-MM-DD format
@@ -462,9 +462,10 @@ export interface Api {
     logSpacedUpdates: Record<string, SpacedUpdate>;
 
     /**
-     * Log given message to the log pane in UI
+     * Log given message to the log pane in UI.
+     * Accepts multiple arguments which are joined with spaces, similar to `console.log`.
      */
-    log(message: string | object): void;
+    log(...args: unknown[]): void;
 
     preact: typeof preactAPI;
 }
@@ -702,10 +703,10 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
 
     this.logMessages = {};
     this.logSpacedUpdates = {};
-    this.log = (message) => {
+    this.log = (...args) => {
         const { noteId } = this.startNote;
 
-        message = `${utils.now()}: ${formatLogMessage(message)}`;
+        const message = `${utils.now()}: ${formatLogMessage(...args)}`;
 
         console.log(`Script ${noteId}: ${message}`);
 

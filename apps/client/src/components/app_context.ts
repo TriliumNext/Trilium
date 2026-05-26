@@ -1,7 +1,6 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 import { type LOCALE_IDS, SqlExecuteResponse } from "@triliumnext/commons";
-import type { NativeImage, TouchBar } from "electron";
 import { ColumnComponent } from "tabulator-tables";
 
 import type { Attribute } from "../services/attribute_parser.js";
@@ -14,13 +13,14 @@ import type LoadResults from "../services/load_results.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
 import options from "../services/options.js";
 import toast from "../services/toast.js";
-import utils, { hasTouchBar } from "../services/utils.js";
+import utils from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type RootContainer from "../widgets/containers/root_container.js";
 import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
 import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
+import { LinkEmbedOpts } from "../widgets/dialogs/link_embed.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
 import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
@@ -36,7 +36,6 @@ import RootCommandExecutor from "./root_command_executor.js";
 import ShortcutComponent from "./shortcut_component.js";
 import { StartupChecks } from "./startup_checks.js";
 import TabManager from "./tab_manager.js";
-import TouchBarComponent from "./touch_bar.js";
 import zoomComponent from "./zoom.js";
 
 interface Layout {
@@ -58,9 +57,16 @@ export interface CommandData {
  * Represents a set of commands that are triggered from the context menu, providing information such as the selected note.
  */
 export interface ContextMenuCommandData extends CommandData {
-    node: Fancytree.FancytreeNode;
+    /**
+     * Fancytree node for the target when the command originated from the
+     * Fancytree-based note tree. Omitted when dispatched from node-free UIs
+     * (e.g. the mobile drill-down navigator) — handlers should prefer the
+     * explicit `noteId` / `branchId` / `notePath` fields below.
+     */
+    node?: Fancytree.FancytreeNode;
     notePath?: string;
     noteId?: string;
+    branchId?: string;
     selectedOrActiveBranchIds: string[];
     selectedOrActiveNoteIds?: string[];
 }
@@ -227,6 +233,7 @@ export type CommandMappings = {
     showProtectedSessionPasswordDialog: CommandData;
     showUploadAttachmentsDialog: CommandData & { noteId: string };
     showIncludeNoteDialog: CommandData & IncludeNoteOpts;
+    showLinkEmbedDialog: CommandData & LinkEmbedOpts;
     showAddLinkDialog: CommandData & AddLinkOpts;
     showPasteMarkdownDialog: CommandData & MarkdownImportOpts;
     closeProtectedSessionPasswordDialog: CommandData;
@@ -307,6 +314,10 @@ export type CommandMappings = {
     lastTab: CommandData;
     showNoteSource: CommandData;
     showNoteOCRText: CommandData;
+    showOcrTextDialog: CommandData & {
+        textUrl: string;
+        processUrl: string;
+    };
     showSQLConsole: CommandData;
     showBackendLog: CommandData;
     showCheatsheet: CommandData;
@@ -379,11 +390,6 @@ export type CommandMappings = {
         columnToDelete?: ColumnComponent;
     };
 
-    buildTouchBar: CommandData & {
-        TouchBar: typeof TouchBar;
-        buildIcon(name: string): NativeImage;
-    };
-    refreshTouchBar: CommandData;
     reloadTextEditor: CommandData;
     chooseNoteType: CommandData & {
         callback: ChooseNoteTypeCallback
@@ -608,10 +614,6 @@ export class AppContext extends Component {
 
         if (utils.isElectron()) {
             this.child(zoomComponent);
-        }
-
-        if (hasTouchBar) {
-            this.child(new TouchBarComponent());
         }
     }
 

@@ -21,11 +21,15 @@
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes
@@ -155,7 +159,7 @@ zadam/Trilium インスタンスから TriliumNext/Trilium インスタンスへ
 ディストリビューションが以下の表に記載されている場合は、ディストリビューションのパッケージを使用してください。
 
 [![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+status](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 [最新リリース ページ](https://github.com/TriliumNext/Trilium/releases/latest)
 からプラットフォーム用のバイナリ リリースをダウンロードし、パッケージを解凍して `trilium` 実行可能ファイルを実行することもできます。
@@ -220,6 +224,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+あるいは、Nixがインストールされている場合は:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### 実行ファイルの構築
 リポジトリをダウンロードし、`pnpm` を使用して依存関係をインストールし、Windows 用のデスクトップアプリをビルドします:
 ```shell
@@ -237,6 +252,34 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 詳細については、[ドキュメントガイド](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
 をご覧ください。ご質問がございましたら、上記の「私たちと議論しましょう」セクションに記載されているリンクからお気軽にお問い合わせください。
 
+## 💖 スポンサー
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 シャウトアウト
 
 * [zadam](https://github.com/zadam) アプリケーションのオリジナルのコンセプトと実装に対して感謝します。
@@ -244,13 +287,11 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [nriver](https://github.com/nriver) 国際化への取り組み。
 * [Thomas Frei](https://github.com/thfrei) Canvasへのオリジナルな取り組み。
 * [antoniotejada](https://github.com/nriver) オリジナルの構文ハイライトウィジェット。
-* [Dosu](https://dosu.dev/) GitHub の問題やディスカッションに対する自動応答を提供してくれました。
 * [Tabler Icons](https://tabler.io/icons) システムトレイアイコン。
 
 Trilium は、その基盤となる技術なしには実現できませんでした:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) -
-  テキストノートを補完するビジュアルエディター。プレミアム機能を提供していただき、感謝いたします。
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - テキストノートのビジュアルエディタ。
 * [CodeMirror](https://github.com/codemirror/CodeMirror) -
   膨大な数の言語をサポートするコードエディター。
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - Canvas

@@ -1,6 +1,7 @@
 {
   "about": {
-    "data_directory": "Directorul de date:"
+    "data_directory": "Directorul de date:",
+    "version_label": "Versiune:"
   },
   "abstract_bulk_action": {
     "remove_this_search_action": "Înlătură acesată acțiune la căutare"
@@ -2087,5 +2088,54 @@
     "title_few": "{{count}} taburi",
     "title_other": "{{count}} de taburi",
     "more_options": "Mai multe opțiuni"
+  },
+  "setup": {
+    "heading": "Începeți cu Trilium",
+    "new-document": "Nouă bază de cunoștințe",
+    "new-document-description": "Începeți cu o bază de cunoștințe curată și începeți imediat.",
+    "sync-from-desktop": "Conectează o aplicație desktop",
+    "sync-from-desktop-description": "Aveți doar o aplicație Trilium desktop rulând pe un alt dispozitiv. Acest dispozitiv va sincroniza datele de la acea aplicație desktop.",
+    "sync-from-server": "Conectează-te la un server existent",
+    "sync-from-server-description": "Aveți un server Trilium care rulează în altă parte (fie auto-găzduit, fie în cloud). Acest dispozitiv va sincroniza datele de la acel server.",
+    "next": "Următorul",
+    "init-in-progress": "Inițializarea documentului în curs",
+    "redirecting": "Veți fi redirecționat în scurt timp către aplicație.",
+    "title": "Configurare",
+    "sync-from-server-page-description": "Introduceți detaliile serverului dvs. mai jos pentru a vă conecta la spațiul de lucru existent.",
+    "sync-in-progress-title": "Sincronizare în curs",
+    "sync-in-progress-description": "Dispozitivul dvs. este acum conectat și elementele sunt sincronizate.",
+    "button-back": "Înapoi",
+    "button-finish-setup": "Finalizează configurarea",
+    "sync-step-connecting": "Conectare la server",
+    "sync-step-syncing": "Sincronizare date",
+    "sync-step-finalizing": "Setarea opțiunilor",
+    "create-new-document-options-title": "Cum doriți să începeți?",
+    "create-new-document-options-with-demo": "Cu conținut demonstrativ",
+    "create-new-document-options-with-demo-description": "Explorează Trilium cu conținut exemplu.",
+    "create-new-document-options-empty": "Gol",
+    "create-new-document-options-empty-description": "Începeți cu o bază de cunoștințe goală. Puteți importa notițe demo mai târziu.",
+    "create-new-document-title": "Pregătirea bazei de cunoștințe",
+    "create-new-document-description": "Acest proces va dura doar câteva momente.",
+    "sync-illustration-this-device": "Acest dispozitiv",
+    "sync-illustration-desktop-app": "Aplicație desktop",
+    "sync-illustration-server": "Server de sincronizare",
+    "sync-from-desktop-step1": "Deschideți aplicația Trilium Notes pentru desktop.",
+    "sync-from-desktop-step2": "Din meniul Trilium, dați clic pe Opțiuni.",
+    "sync-from-desktop-step3": "Clic pe categoria „Sincronizare”.",
+    "sync-from-desktop-step4": "Schimbați adresa server-ului către: {{- host}} și apăsați „Salvează”.",
+    "sync-from-desktop-step5": "Clic pe butonul „Testează sincronizarea” pentru a verifica dacă conexiunea a fost făcută cu succes.",
+    "sync-from-desktop-waiting": "Așteptare pentru conexiune...",
+    "advanced-options": "Opțiuni avansate",
+    "sync-failed": "Sincronizare eșuată: {{message}}",
+    "server-host": "Adresa serverului Trilium",
+    "server-host-placeholder": "https://<hostname>:<port>",
+    "server-password": "Parolă",
+    "proxy-server": "Server proxy (opțional)",
+    "proxy-server-placeholder": "https://<hostname>:<port>",
+    "proxy-instruction": " Dacă lăsați setarea proxy necompletată, va fi utilizat proxy-ul sistemului.",
+    "dismiss-error": "Închide mesajul de eroare",
+    "wrong-password": "Parolă greșită. Vă rugăm să încercați din nou.",
+    "language": "Limbă",
+    "continue": "Continuă"
   }
 }

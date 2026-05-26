@@ -1,13 +1,14 @@
+import { RenderMarkdownResponse } from "@triliumnext/commons";
 import { useRef, useState } from "preact/hooks";
+
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import utils from "../../services/utils";
-import Modal from "../react/Modal";
 import Button from "../react/Button";
 import { useTriliumEvent } from "../react/hooks";
+import Modal from "../react/Modal";
 import { CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
-import { RenderMarkdownResponse } from "@triliumnext/commons";
 
 export interface MarkdownImportOpts {
     editorApi: CKEditorApi;
@@ -19,11 +20,9 @@ export default function MarkdownImportDialog() {
     const [ text, setText ] = useState("");
     const [ shown, setShown ] = useState(false);
 
-    useTriliumEvent("showPasteMarkdownDialog", ({ editorApi }) => {
+    useTriliumEvent("showPasteMarkdownDialog", async ({ editorApi }) => {
         if (utils.isElectron()) {
-            const { clipboard } = utils.dynamicRequire("electron");
-            const text = clipboard.readText();
-
+            const text = await navigator.clipboard.readText();
             convertMarkdownToHtml(text, editorApi);
         } else {
             editorApiRef.current = editorApi;
@@ -65,9 +64,9 @@ export default function MarkdownImportDialog() {
                         e.preventDefault();
                         submit();
                     }
-                }}></textarea>
+                }} />
         </Modal>
-    )
+    );
 }
 
 async function convertMarkdownToHtml(markdownContent: string, textTypeWidget: CKEditorApi) {

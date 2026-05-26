@@ -2,11 +2,13 @@ on:
   push:
     branches:
       - "main"
-      - "feature/update**"
-      - "feature/server_esm**"
-    paths-ignore:
-      - "docs/**"
-      - "bin/**"
+    paths:
+      - "apps/server/**"
+      - "apps/client/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/main-docker.yml"
     tags:
       - "v*"
   workflow_dispatch:
@@ -82,7 +84,7 @@ jobs:
           require-healthy: true
 
       - name: Run Playwright tests
-        run: TRILIUM_DOCKER=1 TRILIUM_PORT=8082 pnpm --filter=server-e2e e2e
+        run: TRILIUM_DOCKER=1 TRILIUM_PORT=8082 pnpm --filter=server e2e
 
       - name: Upload Playwright trace
         if: failure()

@@ -1,11 +1,29 @@
-.branch-prefix-dialog .branch-prefix-notes-list {
-    margin-top: 10px;
+.branch-prefix-dialog .tn-card {
+    margin-top: 16px;
 }
 
-.branch-prefix-dialog .branch-prefix-notes-list ul {
+.branch-prefix-dialog .preview-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
     max-height: 200px;
     overflow: auto;
-    margin-top: 5px;
+}
+
+.branch-prefix-dialog .preview-list li {
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--main-border-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.branch-prefix-dialog .preview-list li:last-child {
+    border-bottom: none;
+}
+
+.branch-prefix-dialog .preview-list li .tn-icon {
+    margin-right: 6px;
 }
 
 .branch-prefix-dialog .branch-prefix-current {

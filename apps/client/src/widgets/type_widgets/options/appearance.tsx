@@ -3,13 +3,14 @@ import "./appearance.css";
 import { FontFamily, OptionNames, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK } from "@triliumnext/commons";
 import { Fragment } from "preact";
 import { createPortal } from "preact/compat";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 
 import zoomService from "../../../components/zoom";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import { isElectron, isMobile, reloadFrontendApp, restartDesktopApp } from "../../../services/utils";
 import { VerticalLayoutIcon } from "../../buttons/global_menu";
+import { ButtonGroup } from "../../react/Button";
 import Dropdown from "../../react/Dropdown";
 import FormList, { FormListHeader, FormListItem } from "../../react/FormList";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
@@ -25,24 +26,54 @@ import RelatedSettings from "./components/RelatedSettings";
 
 const MIN_CONTENT_WIDTH = 640;
 
-interface Theme {
+interface CustomTheme {
     val: string;
     title: string;
     icon?: string;
     noteId?: string;
 }
 
-const MODERN_THEMES: Theme[] = [
-    { val: "next", title: t("theme.triliumnext"), icon: "bx bx-sun bx-flip-horizontal" },
-    { val: "next-light", title: t("theme.triliumnext-light"), icon: "bx bx-sun" },
-    { val: "next-dark", title: t("theme.triliumnext-dark"), icon: "bx bx-moon" }
+type ColorScheme = "system" | "light" | "dark";
+
+interface ThemeFamily {
+    key: string;
+    title: string;
+    icon: string;
+    schemes: Record<ColorScheme, string>;
+}
+
+const THEME_FAMILIES: ThemeFamily[] = [
+    {
+        key: "modern",
+        title: t("theme.modern_themes"),
+        icon: "bx bx-star",
+        schemes: { system: "next", light: "next-light", dark: "next-dark" }
+    },
+    {
+        key: "legacy",
+        title: t("theme.legacy_themes"),
+        icon: "bx bx-history",
+        schemes: { system: "auto", light: "light", dark: "dark" }
+    }
 ];
 
-const LEGACY_THEMES: Theme[] = [
-    { val: "auto", title: t("theme.auto_theme"), icon: "bx bx-sun bx-flip-horizontal" },
-    { val: "light", title: t("theme.light_theme"), icon: "bx bx-sun" },
-    { val: "dark", title: t("theme.dark_theme"), icon: "bx bx-moon" }
+const COLOR_SCHEMES: { key: ColorScheme; label: string; icon: string }[] = [
+    { key: "system", label: t("theme.color_scheme_system"), icon: "bx bx-brightness-half" },
+    { key: "light", label: t("theme.color_scheme_light"), icon: "bx bx-sun" },
+    { key: "dark", label: t("theme.color_scheme_dark"), icon: "bx bx-moon" }
 ];
+
+function resolveTheme(themeVal: string | null): { family: ThemeFamily | null; scheme: ColorScheme; isCustom: boolean } {
+    for (const family of THEME_FAMILIES) {
+        for (const [scheme, val] of Object.entries(family.schemes)) {
+            if (val === themeVal) {
+                return { family, scheme: scheme as ColorScheme, isCustom: false };
+            }
+        }
+    }
+    // Custom theme
+    return { family: null, scheme: "system", isCustom: true };
+}
 
 interface FontFamilyEntry {
     value: FontFamily;
@@ -116,51 +147,56 @@ export default function AppearanceSettings() {
 
 function UserInterface() {
     const [ theme, setTheme ] = useTriliumOption("theme", true);
-    const [ customThemes, setCustomThemes ] = useState<Theme[]>([]);
+    const [ customThemes, setCustomThemes ] = useState<CustomTheme[]>([]);
     const [ newLayout, setNewLayout ] = useTriliumOptionBool("newLayout");
     const [ layoutOrientation, setLayoutOrientation ] = useTriliumOption("layoutOrientation", true);
 
     useEffect(() => {
-        server.get<Theme[]>("options/user-themes").then((userThemes) => {
+        server.get<CustomTheme[]>("options/user-themes").then((userThemes) => {
             setCustomThemes(userThemes);
         });
     }, []);
 
-    // Find current theme for display
-    const allThemes = [...MODERN_THEMES, ...LEGACY_THEMES, ...customThemes];
-    const currentTheme = allThemes.find(t => t.val === theme);
-    const currentThemeIcon = currentTheme?.icon ?? "bx bx-palette";
-    const currentThemeLabel = currentTheme?.title ?? theme ?? "";
+    const resolved = useMemo(() => resolveTheme(theme ?? null), [theme]);
+    const isCustom = resolved.isCustom;
+
+    // Derive display info for the theme family dropdown
+    const currentFamilyLabel = resolved.family?.title
+        ?? customThemes.find(ct => ct.val === theme)?.title
+        ?? theme ?? "";
+    const currentFamilyIcon = resolved.family?.icon
+        ?? customThemes.find(ct => ct.val === theme)?.icon
+        ?? "bx bx-palette";
+
+    const setFamily = (family: ThemeFamily) => {
+        // Keep current color scheme when switching families
+        setTheme(family.schemes[resolved.scheme]);
+    };
+
+    const setColorScheme = (scheme: ColorScheme) => {
+        if (resolved.family) {
+            setTheme(resolved.family.schemes[scheme]);
+        }
+    };
 
     return (
         <OptionsSection title={t("theme.title")}>
             <OptionsRow name="theme" label={t("theme.theme_label")}>
                 <Dropdown
                     text={<>
-                        <span className={currentThemeIcon} style={{ marginRight: "8px" }} />
-                        {currentThemeLabel}
+                        <span className={currentFamilyIcon} style={{ marginRight: "8px" }} />
+                        {currentFamilyLabel}
                     </>}
                 >
-                    <FormListHeader text={t("theme.modern_themes")} />
-                    {MODERN_THEMES.map(th => (
+                    {THEME_FAMILIES.map(family => (
                         <FormListItem
-                            key={th.val}
-                            icon={th.icon}
-                            selected={theme === th.val}
-                            onClick={() => setTheme(th.val)}
+                            key={family.key}
+                            icon={family.icon}
+                            selected={resolved.family?.key === family.key}
+                            onClick={() => setFamily(family)}
+                            badges={family.key === "modern" ? [{ text: t("theme.recommended") }] : undefined}
                         >
-                            {th.title}
-                        </FormListItem>
-                    ))}
-                    <FormListHeader text={t("theme.legacy_themes")} />
-                    {LEGACY_THEMES.map(th => (
-                        <FormListItem
-                            key={th.val}
-                            icon={th.icon}
-                            selected={theme === th.val}
-                            onClick={() => setTheme(th.val)}
-                        >
-                            {th.title}
+                            {family.title}
                         </FormListItem>
                     ))}
                     {customThemes.length > 0 && (
@@ -179,6 +215,21 @@ function UserInterface() {
                         </>
                     )}
                 </Dropdown>
+            </OptionsRow>
+            <OptionsRow name="color-scheme" label={t("theme.color_scheme")} description={isCustom ? t("theme.color_scheme_custom_disabled") : undefined}>
+                <ButtonGroup>
+                    {COLOR_SCHEMES.map(cs => (
+                        <button
+                            key={cs.key}
+                            type="button"
+                            className={`btn btn-sm btn-secondary ${resolved.scheme === cs.key && !isCustom ? "active" : ""}`}
+                            disabled={isCustom}
+                            onClick={() => setColorScheme(cs.key)}
+                        >
+                            <Icon icon={cs.icon} /> {cs.label}
+                        </button>
+                    ))}
+                </ButtonGroup>
             </OptionsRow>
             {!isMobile() && <>
                 <OptionsRow name="layout-style" label={t("settings_appearance.ui_layout_style")}>

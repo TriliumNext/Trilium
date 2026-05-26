@@ -212,26 +212,6 @@
     "button": "Zaloguj",
     "sign_in_with_sso": "Zaloguj przez {{ ssoIssuerName }}"
   },
-  "setup_sync-from-server": {
-    "server-host": "Adres serwera Trilium",
-    "proxy-server": "Serwer proxy (opcjonalnie)",
-    "back": "Wstecz",
-    "finish-setup": "Zakończ konfigurację",
-    "heading": "Synchronizacja z serwera",
-    "note": "Uwaga:",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "password": "Hasło",
-    "password-placeholder": "Hasło",
-    "instructions": "Wprowadź poniżej adres serwera Trilium i dane logowania. Spowoduje to pobranie całej bazy danych z serwera i skonfigurowanie synchronizacji. Może to chwilę potrwać w zależności od rozmiaru danych i prędkości łącza.",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "proxy-instruction": "Jeśli pozostawisz pole proxy puste, zostanie użyte proxy systemowe (dotyczy tylko aplikacji desktopowej)"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Synchronizacja w toku",
-    "outstanding-items": "Pozostałe elementy do synchronizacji:",
-    "outstanding-items-default": "N/A",
-    "successful": "Synchronizacja została poprawnie skonfigurowana. Wstępne pobieranie danych może zająć trochę czasu. Po zakończeniu zostaniesz przekierowany do strony logowania."
-  },
   "weekdays": {
     "monday": "Poniedziałek",
     "tuesday": "Wtorek",
@@ -330,27 +310,6 @@
     "password": "Hasło",
     "password-confirmation": "Potwierdź hasło",
     "button": "Ustaw hasło"
-  },
-  "setup": {
-    "heading": "Instalacja Trilium Notes",
-    "new-document": "Jestem nowym użytkownikiem i chcę stworzyć nową bazę danych dla moich notatek",
-    "sync-from-desktop": "Mam już aplikację desktopową i chcę skonfigurować z nią synchronizację",
-    "sync-from-server": "Mam już serwer i chcę skonfigurować z nim synchronizację",
-    "next": "Dalej",
-    "init-in-progress": "Trwa inicjalizacja dokumentu",
-    "redirecting": "Zaraz zostaniesz przekierowany do aplikacji.",
-    "title": "Instalacja"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Synchronizacja z aplikacji desktopowej",
-    "description": "Tę konfigurację należy rozpocząć w aplikacji desktopowej:",
-    "step1": "Otwórz aplikację desktopową Trilium Notes.",
-    "step2": "Z menu Trilium wybierz Opcje.",
-    "step3": "Przejdź do kategorii Synchronizacja.",
-    "step4": "Zmień adres serwera na: {{- host}} i kliknij Zapisz.",
-    "step5": "Kliknij przycisk \"Testuj synchronizację\", aby zweryfikować połączenie.",
-    "step6": "Po wykonaniu tych kroków kliknij {{- link}}.",
-    "step6-here": "tutaj"
   },
   "share_page": {
     "no-content": "Ta notatka nie posiada treści.",

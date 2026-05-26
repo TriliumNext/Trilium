@@ -1,3 +1,4 @@
+import { ExportFormat, icon_packs as iconPackService, ZipExportProvider } from "@triliumnext/core";
 import ejs from "ejs";
 import fs, { readdirSync, readFileSync } from "fs";
 import { convert as convertToText } from "html-to-text";
@@ -9,12 +10,10 @@ import type BBranch from "../../../becca/entities/bbranch.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getClientDir, getShareThemeAssetDir } from "../../../routes/assets";
 import { getDefaultTemplatePath, readTemplate, renderNoteForExport } from "../../../share/content_renderer";
-import { getIconPacks, MIME_TO_EXTENSION_MAPPINGS, ProcessedIconPack } from "../../icon_packs";
 import log from "../../log";
 import NoteMeta, { NoteMetaFile } from "../../meta/note_meta";
 import { RESOURCE_DIR } from "../../resource_dir";
 import { getResourceDir, isDev } from "../../utils";
-import { ExportFormat, ZipExportProvider } from "./abstract_provider.js";
 
 const shareThemeAssetDir = getShareThemeAssetDir();
 
@@ -31,7 +30,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
     private indexMeta: NoteMeta | null = null;
     private searchIndex: Map<string, SearchIndexEntry> = new Map();
     private rootMeta: NoteMeta | null = null;
-    private iconPacks: ProcessedIconPack[] = [];
+    private iconPacks: iconPackService.ProcessedIconPack[] = [];
 
     prepareMeta(metaFile: NoteMetaFile): void {
         const assets = [
@@ -56,12 +55,12 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
             dataFileName: "index.html"
         };
         this.rootMeta = metaFile.files[0];
-        this.iconPacks = getIconPacks();
+        this.iconPacks = iconPackService.getIconPacks();
 
         metaFile.files.push(this.indexMeta);
     }
 
-    prepareContent(title: string, content: string | Buffer, noteMeta: NoteMeta, note: BNote | undefined, branch: BBranch): string | Buffer {
+    prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta, note: BNote | undefined, branch: BBranch): string | Uint8Array {
         if (!noteMeta?.notePath?.length) {
             throw new Error("Missing note path.");
         }
@@ -149,8 +148,8 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
         }
 
         const note = this.branch.getNote();
-        const fullHtml = this.prepareContent(rootMeta.title ?? "", note.getContent(), rootMeta, note, this.branch);
-        this.archive.append(fullHtml, { name: this.indexMeta.dataFileName });
+        const content = this.prepareContent(rootMeta.title ?? "", note.getContent(), rootMeta, note, this.branch);
+        this.archive.append(typeof content === "string" ? content : Buffer.from(content), { name: this.indexMeta.dataFileName });
     }
 
     #saveAssets(rootMeta: NoteMeta, assetsMeta: NoteMeta[]) {
@@ -165,8 +164,8 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
 
         // Inject the custom fonts.
         for (const iconPack of this.iconPacks) {
-            const extension = MIME_TO_EXTENSION_MAPPINGS[iconPack.fontMime];
-            let fontData: Buffer | undefined;
+            const extension = iconPackService.MIME_TO_EXTENSION_MAPPINGS[iconPack.fontMime];
+            let fontData: Uint8Array | undefined;
             if (iconPack.builtin) {
                 fontData = readFileSync(join(getClientDir(), "fonts", `${iconPack.fontAttachmentId}.${extension}`));
             } else {
@@ -178,7 +177,9 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
                 continue;
             };
             const fontFileName = `assets/icon-pack-${iconPack.prefix.toLowerCase()}.${extension}`;
-            this.archive.append(fontData, { name: fontFileName });
+            this.archive.append(typeof fontData === "string" ? fontData : Buffer.from(fontData), {
+                name: fontFileName
+            });
         }
     }
 

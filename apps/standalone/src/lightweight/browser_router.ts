@@ -1,0 +1,314 @@
+/**
+ * Browser-compatible router that mimics Express routing patterns.
+ * Supports path parameters (e.g., /api/notes/:noteId) and query strings.
+ */
+
+import { getContext, routes } from "@triliumnext/core";
+
+export interface UploadedFile {
+    originalname: string;
+    mimetype: string;
+    buffer: Uint8Array;
+}
+
+export interface BrowserRequest {
+    method: string;
+    url: string;
+    path: string;
+    params: Record<string, string>;
+    query: Record<string, string | undefined>;
+    headers?: Record<string, string>;
+    body?: unknown;
+    file?: UploadedFile;
+}
+
+export interface BrowserResponse {
+    status: number;
+    headers: Record<string, string>;
+    body: ArrayBuffer | null;
+}
+
+export type RouteHandler = (req: BrowserRequest) => unknown | Promise<unknown>;
+
+interface Route {
+    method: string;
+    pattern: RegExp;
+    paramNames: string[];
+    handler: RouteHandler;
+}
+
+/**
+ * Symbol used to mark a result as an already-formatted response,
+ * so that formatResult passes it through without JSON-serializing.
+ * Must match the symbol exported from browser_routes.ts.
+ */
+const RAW_RESPONSE = Symbol.for('RAW_RESPONSE');
+
+const encoder = new TextEncoder();
+
+/**
+ * Convert an Express-style path pattern to a RegExp.
+ * Supports :param syntax for path parameters.
+ *
+ * Examples:
+ *   /api/notes/:noteId -> /^\/api\/notes\/([^\/]+)$/
+ *   /api/notes/:noteId/revisions -> /^\/api\/notes\/([^\/]+)\/revisions$/
+ */
+function pathToRegex(path: string): { pattern: RegExp; paramNames: string[] } {
+    const paramNames: string[] = [];
+
+    // Escape special regex characters except for :param patterns
+    const regexPattern = path
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
+        .replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, paramName) => {
+            paramNames.push(paramName);
+            return '([^/]+)';
+        });
+
+    return {
+        pattern: new RegExp(`^${regexPattern}$`),
+        paramNames
+    };
+}
+
+/**
+ * Parse query string into an object.
+ */
+function parseQuery(search: string): Record<string, string | undefined> {
+    const query: Record<string, string | undefined> = {};
+    if (!search || search === '?') return query;
+
+    const params = new URLSearchParams(search);
+    for (const [key, value] of params) {
+        query[key] = value;
+    }
+    return query;
+}
+
+/**
+ * Convert a result to a JSON response.
+ */
+function jsonResponse(obj: unknown, status = 200, extraHeaders: Record<string, string> = {}): BrowserResponse {
+    const parsedObj = routes.convertEntitiesToPojo(obj);
+    const body = encoder.encode(JSON.stringify(parsedObj)).buffer as ArrayBuffer;
+    return {
+        status,
+        headers: { "content-type": "application/json; charset=utf-8", ...extraHeaders },
+        body
+    };
+}
+
+/**
+ * Convert a string to a text response.
+ */
+function textResponse(text: string, status = 200, extraHeaders: Record<string, string> = {}): BrowserResponse {
+    const body = encoder.encode(text).buffer as ArrayBuffer;
+    return {
+        status,
+        headers: { "content-type": "text/plain; charset=utf-8", ...extraHeaders },
+        body
+    };
+}
+
+/**
+ * Browser router class that handles route registration and dispatching.
+ */
+export class BrowserRouter {
+    private routes: Route[] = [];
+
+    /**
+     * Register a route handler.
+     */
+    register(method: string, path: string, handler: RouteHandler): void {
+        const { pattern, paramNames } = pathToRegex(path);
+        this.routes.push({
+            method: method.toUpperCase(),
+            pattern,
+            paramNames,
+            handler
+        });
+    }
+
+    /**
+     * Convenience methods for common HTTP methods.
+     */
+    get(path: string, handler: RouteHandler): void {
+        this.register('GET', path, handler);
+    }
+
+    post(path: string, handler: RouteHandler): void {
+        this.register('POST', path, handler);
+    }
+
+    put(path: string, handler: RouteHandler): void {
+        this.register('PUT', path, handler);
+    }
+
+    patch(path: string, handler: RouteHandler): void {
+        this.register('PATCH', path, handler);
+    }
+
+    delete(path: string, handler: RouteHandler): void {
+        this.register('DELETE', path, handler);
+    }
+
+    /**
+     * Dispatch a request to the appropriate handler.
+     */
+    async dispatch(method: string, urlString: string, body?: unknown, headers?: Record<string, string>): Promise<BrowserResponse> {
+        const url = new URL(urlString);
+        const path = url.pathname;
+        const query = parseQuery(url.search);
+        const upperMethod = method.toUpperCase();
+
+        // Parse body based on content-type
+        let parsedBody = body;
+        let uploadedFile: UploadedFile | undefined;
+        if (body instanceof ArrayBuffer && headers) {
+            const contentType = headers['content-type'] || headers['Content-Type'] || '';
+            if (contentType.includes('application/json')) {
+                try {
+                    const text = new TextDecoder().decode(body);
+                    if (text.trim()) {
+                        parsedBody = JSON.parse(text);
+                    }
+                } catch (e) {
+                    console.warn('[Router] Failed to parse JSON body:', e);
+                    parsedBody = body;
+                }
+            } else if (contentType.includes('multipart/form-data')) {
+                try {
+                    // Reconstruct a Response so we can use the native FormData parser
+                    const response = new Response(body, { headers: { 'content-type': contentType } });
+                    const formData = await response.formData();
+                    const formFields: Record<string, string> = {};
+                    for (const [key, value] of formData.entries()) {
+                        if (typeof value === 'string') {
+                            formFields[key] = value;
+                        } else {
+                            // File field (Blob) — multer uses the field name "upload"
+                            const fileBuffer = new Uint8Array(await value.arrayBuffer());
+                            uploadedFile = {
+                                originalname: value.name,
+                                mimetype: value.type || 'application/octet-stream',
+                                buffer: fileBuffer
+                            };
+                        }
+                    }
+                    parsedBody = formFields;
+                } catch (e) {
+                    console.warn('[Router] Failed to parse multipart body:', e);
+                }
+            }
+        }
+        // Find matching route
+        for (const route of this.routes) {
+            if (route.method !== upperMethod) continue;
+
+            const match = path.match(route.pattern);
+            if (!match) continue;
+
+            // Extract path parameters
+            const params: Record<string, string> = {};
+            for (let i = 0; i < route.paramNames.length; i++) {
+                params[route.paramNames[i]] = decodeURIComponent(match[i + 1]);
+            }
+
+            const request: BrowserRequest = {
+                method: upperMethod,
+                url: urlString,
+                path,
+                params,
+                query,
+                headers: headers ?? {},
+                body: parsedBody,
+                file: uploadedFile
+            };
+
+            try {
+                const result = await getContext().init(async () => await route.handler(request));
+                return this.formatResult(result);
+            } catch (error) {
+                return this.formatError(error, `Error handling ${method} ${path}`);
+            }
+        }
+
+        // No route matched
+        return textResponse(`Not found: ${method} ${path}`, 404);
+    }
+
+    /**
+     * Format a handler result into a response.
+     * Follows the same patterns as the server's apiResultHandler.
+     */
+    private formatResult(result: unknown): BrowserResponse {
+        // Handle raw responses (e.g. from image routes that write directly to res)
+        if (result && typeof result === 'object' && RAW_RESPONSE in result) {
+            const raw = result as unknown as { status: number; headers: Record<string, string>; body: unknown };
+            let body: ArrayBuffer | null = null;
+
+            if (raw.body instanceof ArrayBuffer) {
+                body = raw.body;
+            } else if (raw.body instanceof Uint8Array) {
+                body = raw.body.buffer as ArrayBuffer;
+            } else if (typeof raw.body === 'string') {
+                body = encoder.encode(raw.body).buffer as ArrayBuffer;
+            }
+
+            return {
+                status: raw.status,
+                headers: raw.headers,
+                body
+            };
+        }
+
+        // Handle [statusCode, response] format
+        if (Array.isArray(result) && result.length > 0 && Number.isInteger(result[0])) {
+            const [statusCode, response] = result;
+            return jsonResponse(response, statusCode);
+        }
+
+        // Handle undefined (no content) - 204 should have no body
+        if (result === undefined) {
+            return {
+                status: 204,
+                headers: {},
+                body: null
+            };
+        }
+
+        // Default: JSON response with 200
+        return jsonResponse(result, 200);
+    }
+
+    /**
+     * Format an error into a response.
+     */
+    private formatError(error: unknown, context: string): BrowserResponse {
+        console.error('[Router] Handler error:', context, error);
+
+        // Check for known error types
+        if (error && typeof error === 'object') {
+            const err = error as { constructor?: { name?: string }; message?: string };
+
+            if (err.constructor?.name === 'NotFoundError') {
+                return jsonResponse({ message: err.message || 'Not found' }, 404);
+            }
+
+            if (err.constructor?.name === 'ValidationError') {
+                return jsonResponse({ message: err.message || 'Validation error' }, 400);
+            }
+        }
+
+        // Generic error
+        const message = error instanceof Error ? error.message : String(error);
+        return jsonResponse({ message }, 500);
+    }
+}
+
+/**
+ * Create a new router instance.
+ */
+export function createRouter(): BrowserRouter {
+    return new BrowserRouter();
+}

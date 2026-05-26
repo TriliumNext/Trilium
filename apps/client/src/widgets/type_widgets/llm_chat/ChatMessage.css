@@ -34,18 +34,6 @@
     background: var(--accented-background-color);
 }
 
-.llm-chat-message-assistant {
-    background: var(--main-background-color);
-    border: 1px solid var(--main-border-color);
-}
-
-.llm-chat-message-role {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    font-size: 0.8rem;
-    color: var(--muted-text-color);
-}
-
 .llm-chat-message-content {
     word-wrap: break-word;
     line-height: 1.5;
@@ -114,26 +102,16 @@
     text-align: right;
 }
 
-/* Error */
-.llm-chat-error {
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-    border-radius: 8px;
-    background: var(--danger-background-color, #fee);
-    border: 1px solid var(--danger-border-color, #fcc);
-    color: var(--danger-text-color, #c00);
+/* Error message — rendered as a real "caution" admonition (styled by
+   packages/ckeditor5/src/theme/ck-content.css) so it stays visually identical to
+   admonitions the model itself emits. Only chat-specific tweaks live here. */
+.admonition.llm-chat-error {
+    margin: 0;
     user-select: text;
 }
 
-/* Error message (persisted in conversation) */
-.llm-chat-message-error {
-    background: var(--danger-background-color, #fee);
-    border: 1px solid var(--danger-border-color, #fcc);
-    color: var(--danger-text-color, #c00);
-}
-
-.llm-chat-message-error .llm-chat-message-role {
-    color: var(--danger-text-color, #c00);
+.llm-chat-error-actions {
+    margin-top: 0.75rem;
 }
 
 .llm-chat-thinking-card.expandable-card {
@@ -245,24 +223,6 @@
     border: none;
     border-top: 1px solid var(--main-border-color);
     margin: 1em 0;
-}
-
-.llm-chat-markdown table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 0.75em 0;
-}
-
-.llm-chat-markdown th,
-.llm-chat-markdown td {
-    border: 1px solid var(--main-border-color);
-    padding: 0.5em 0.75em;
-    text-align: left;
-}
-
-.llm-chat-markdown th {
-    background: var(--accented-background-color);
-    font-weight: 600;
 }
 
 .llm-chat-markdown strong {

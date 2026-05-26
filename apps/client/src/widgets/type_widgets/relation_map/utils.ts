@@ -45,9 +45,30 @@ export function promptForRelationName(defaultValue?: string): Promise<string | n
                 return;
             }
 
-            $answer.on("keyup", () => {
+            let isComposing = false;
+
+            $answer.on("compositionstart", () => {
+                isComposing = true;
+            });
+            $answer.on("compositionend", () => {
+                isComposing = false;
                 const attrName = utils.filterAttributeName($answer.val() as string);
                 $answer.val(attrName);
+            });
+            $answer.on("input", () => {
+                if (isComposing) return;
+                const attrName = utils.filterAttributeName($answer.val() as string);
+                $answer.val(attrName);
+            });
+
+            $answer.on("keydown", (e) => {
+                if (e.key === "Enter") {
+                    $answer[0].dispatchEvent(new Event("input", { bubbles: true }));
+                }
+            });
+
+            $answer.on("blur", () => {
+                $answer[0].dispatchEvent(new Event("input", { bubbles: true }));
             });
 
             attribute_autocomplete.initAttributeNameAutocomplete({

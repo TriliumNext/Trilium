@@ -20,9 +20,7 @@ export default class Entrypoints extends Component {
     }
 
     openDevToolsCommand() {
-        if (utils.isElectron()) {
-            utils.dynamicRequire("@electron/remote").getCurrentWindow().webContents.toggleDevTools();
-        }
+        window.electronApi?.window.toggleDevTools();
     }
 
     async createNoteIntoInboxCommand() {
@@ -87,12 +85,9 @@ export default class Entrypoints extends Component {
     }
 
     toggleFullscreenCommand() {
-        if (utils.isElectron()) {
-            const win = utils.dynamicRequire("@electron/remote").getCurrentWindow();
-
-            if (win.isFullScreenable()) {
-                win.setFullScreen(!win.isFullScreen());
-            }
+        const api = window.electronApi?.window;
+        if (api) {
+            api.setFullScreen(!api.isFullScreen());
         } else {
             document.documentElement.requestFullscreen();
         }
@@ -108,24 +103,20 @@ export default class Entrypoints extends Component {
     }
 
     backInNoteHistoryCommand() {
-        if (utils.isElectron()) {
-            // standard JS version does not work completely correctly in electron
-            const webContents = utils.dynamicRequire("@electron/remote").getCurrentWebContents();
-            const activeIndex = webContents.navigationHistory.getActiveIndex();
-
-            webContents.goToIndex(activeIndex - 1);
+        const api = window.electronApi?.navigation;
+        if (api) {
+            const activeIndex = api.navigationGetActiveIndex();
+            api.navigationGoToIndex(activeIndex - 1);
         } else {
             window.history.back();
         }
     }
 
     forwardInNoteHistoryCommand() {
-        if (utils.isElectron()) {
-            // standard JS version does not work completely correctly in electron
-            const webContents = utils.dynamicRequire("@electron/remote").getCurrentWebContents();
-            const activeIndex = webContents.navigationHistory.getActiveIndex();
-
-            webContents.goToIndex(activeIndex + 1);
+        const api = window.electronApi?.navigation;
+        if (api) {
+            const activeIndex = api.navigationGetActiveIndex();
+            api.navigationGoToIndex(activeIndex + 1);
         } else {
             window.history.forward();
         }
@@ -146,10 +137,8 @@ export default class Entrypoints extends Component {
     async openInWindowCommand({ notePath, hoistedNoteId, viewScope }: NoteCommandData) {
         const extraWindowHash = linkService.calculateHash({ notePath, hoistedNoteId, viewScope });
 
-        if (utils.isElectron()) {
-            const { ipcRenderer } = utils.dynamicRequire("electron");
-
-            ipcRenderer.send("create-extra-window", { extraWindowHash });
+        if (window.electronApi) {
+            window.electronApi.window.createExtraWindow(extraWindowHash);
         } else {
             const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?extraWindow=1${extraWindowHash}`;
 

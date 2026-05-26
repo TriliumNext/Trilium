@@ -344,7 +344,8 @@ input[type="color"] {
 #viewsManagerToggleButton,
 #downloadButton,
 #secondaryDownload,
-#secondaryOpenFile {
+#secondaryOpenFile,
+#editorCommentButton {
     display: none;
 }
 
@@ -411,6 +412,7 @@ input[type="color"] {
 }
 
 :root :is(.annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor, .signatureEditor), .textLayer) .editToolbar {
+    --editor-toolbar-fg-color: var(--tn-main-text-color);
     --editor-toolbar-hover-bg-color: var(--tn-hover-item-background-color);
     --editor-toolbar-hover-fg-color: var(--tn-hover-item-text-color);
     --editor-toolbar-hover-outline: transparent;

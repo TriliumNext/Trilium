@@ -1,5 +1,77 @@
-import { Marked, Renderer, type Tokens } from "marked";
+import { Marked, Renderer, type Token, type Tokens } from "marked";
 import markedFootnote from "marked-footnote";
+
+import { DEFAULT_TASK_STATES, type TaskStateDef } from "./task_states.js";
+
+type TaskListItem = Tokens.ListItem & { _taskState?: string };
+
+function escapeForCharClass(char: string): string {
+    return char.replace(/[^\w]/g, (c) => `\\${c}`);
+}
+
+function stripTaskMarkerFromTokens(tokens: Token[] | undefined, stripPattern: RegExp): void {
+    if (!tokens || tokens.length === 0) {
+        return;
+    }
+    const first = tokens[0] as Token & { text?: string; raw?: string; tokens?: Token[] };
+    if (typeof first.text === "string") {
+        first.text = first.text.replace(stripPattern, "");
+    }
+    if (typeof first.raw === "string") {
+        first.raw = first.raw.replace(stripPattern, "");
+    }
+    if (Array.isArray(first.tokens)) {
+        stripTaskMarkerFromTokens(first.tokens, stripPattern);
+    }
+}
+
+/**
+ * Builds a marked `walkTokens` hook that recognises non-standard task markers
+ * (e.g. `[/]`, `[-]`, `[?]`) derived from the configured task states — marked
+ * itself only understands `[x]`/`[ ]`. A matched item is converted into a task
+ * item with `_taskState` carrying the resolved state name for downstream rendering.
+ */
+function createTaskStateDetector(states: TaskStateDef[]): (token: Token) => void {
+    const symbolToName = new Map<string, string>();
+    for (const state of states) {
+        const symbol = state.markdownSymbol;
+        // `x` and ` ` are the native checked/unchecked markers handled by marked.
+        if (symbol.length === 1 && symbol !== "x" && symbol !== " ") {
+            symbolToName.set(symbol, state.name);
+        }
+    }
+
+    if (symbolToName.size === 0) {
+        return () => {};
+    }
+
+    const charClass = [...symbolToName.keys()].map(escapeForCharClass).join("");
+    const rawPattern = new RegExp(`^[ \\t]*[-*+]\\s+\\[([${charClass}])\\]\\s?`);
+    const stripPattern = new RegExp(`^\\[[${charClass}]\\]\\s?`);
+
+    return (token: Token): void => {
+        if (token.type !== "list_item") {
+            return;
+        }
+        const item = token as TaskListItem;
+        if (item.task) {
+            return;
+        }
+        const match = rawPattern.exec(item.raw);
+        if (!match) {
+            return;
+        }
+        const name = symbolToName.get(match[1]);
+        if (!name) {
+            return;
+        }
+        item.task = true;
+        item.checked = false;
+        item._taskState = name;
+        item.text = item.text.replace(stripPattern, "");
+        stripTaskMarkerFromTokens(item.tokens, stripPattern);
+    };
+}
 
 import { getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "./mime_type.js";
 import {
@@ -57,6 +129,11 @@ export interface RenderToHtmlOptions {
      * marked attaches a parser to the renderer during parsing.
      */
     renderer?: Renderer;
+    /**
+     * Configured todo task states, used to recognise non-standard task markers
+     * (e.g. `[/]`) in list items. Defaults to {@link DEFAULT_TASK_STATES}.
+     */
+    taskStates?: TaskStateDef[];
 }
 
 function escapeHtml(str: string): string {
@@ -219,6 +296,8 @@ export class CustomMarkdownRenderer extends Renderer {
 
     override listitem(item: Tokens.ListItem): string {
         if (item.task) {
+            const taskState = (item as TaskListItem)._taskState;
+            const dataAttr = taskState ? ` data-trilium-task-state="${taskState}"` : "";
             let itemBody = "";
             const checkbox = this.checkbox({ checked: !!item.checked, raw: "- [ ]", type: "checkbox" });
             if (item.loose) {
@@ -241,7 +320,7 @@ export class CustomMarkdownRenderer extends Renderer {
             }
 
             itemBody += `<span class="todo-list__label__description">${this.parser.parse(item.tokens.filter((t) => t.type !== "checkbox"))}</span>`;
-            return `<li><label class="todo-list__label">${itemBody}</label></li>`;
+            return `<li${dataAttr}><label class="todo-list__label">${itemBody}</label></li>`;
         }
 
         return super.listitem(item).trimEnd();
@@ -261,9 +340,13 @@ export class CustomMarkdownRenderer extends Renderer {
             if (ADMONITION_TYPE_MAPPINGS[type]) {
                 const bodyWithoutHeader = body
                     .replace(/^<p>\[\!([A-Z]+)\]\s*/, "<p>")
-                    .replace(/^<p><\/p>/, "");
+                    .replace(/^<p><\/p>/, "")
+                    .trim();
 
-                return `<aside class="admonition ${type}">${bodyWithoutHeader.trim()}</aside>`;
+                // Empty admonition (`> [!NOTE]` with no body) — keep a non-breaking space
+                // so the callout still renders its title/icon row instead of collapsing.
+                const inner = bodyWithoutHeader || "&nbsp;";
+                return `<aside class="admonition ${type}">${inner}</aside>`;
             }
         }
 
@@ -289,6 +372,7 @@ export function renderToHtml(content: string, title: string, options: RenderToHt
 
     const marked = new Marked({ async: false, gfm: true });
     marked.use(markedFootnote());
+    marked.use({ walkTokens: createTaskStateDetector(options.taskStates ?? DEFAULT_TASK_STATES) });
     marked.use({
         // Order is important, especially for wikilinks.
         extensions: [

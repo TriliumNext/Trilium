@@ -12,11 +12,11 @@ import { useTriliumEvent, useTriliumOption } from "../react/hooks";
 import { type BoxSize, CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
 
 export interface IncludeNoteOpts {
-    editorApi: CKEditorApi;
+    editorApi: Pick<CKEditorApi, "addIncludeNote" | "addImage">;
 }
 
 export default function IncludeNoteDialog() {
-    const editorApiRef = useRef<CKEditorApi>(null);
+    const editorApiRef = useRef<Pick<CKEditorApi, "addIncludeNote" | "addImage">>(null);
     const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
     const [defaultBoxSize, setDefaultBoxSize] = useTriliumOption("includeNoteDefaultBoxSize");
     const [boxSize, setBoxSize] = useState<string>(defaultBoxSize);
@@ -77,7 +77,7 @@ export default function IncludeNoteDialog() {
     )
 }
 
-async function includeNote(notePath: string, editorApi: CKEditorApi, boxSize: BoxSize) {
+async function includeNote(notePath: string, editorApi: Pick<CKEditorApi, "addIncludeNote" | "addImage">, boxSize: BoxSize) {
     const noteId = tree.getNoteIdFromUrl(notePath);
     if (!noteId) {
         return;

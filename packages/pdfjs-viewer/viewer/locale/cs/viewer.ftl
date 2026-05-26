@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Vybrat stranu { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Vybrat stranu { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Strana { $page } z { $total }
@@ -662,12 +658,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Přepnout postranní lištu
 pdfjs-toggle-views-manager-notification-button =
     .title = Přepnout postranní lištu (dokument obsahuje náhledy/osnovu/přílohy/vrstvy)
 pdfjs-toggle-views-manager-button1-label = Spravovat strany
-pdfjs-toggle-views-manager-button-label = Přepnout postranní lištu
 pdfjs-views-manager-sidebar =
     .aria-label = Postranní lišta
 pdfjs-views-manager-sidebar-resizer =
@@ -678,9 +671,9 @@ pdfjs-views-manager-view-selector-button-label = Zobrazení
 pdfjs-views-manager-pages-title = Stránky
 pdfjs-views-manager-outlines-title1 = Osnova dokumentu
     .title = Osnova dokumentu (dvojité klepnutí rozbalí/sbalí všechny položky)
-pdfjs-views-manager-outlines-title = Osnova dokumentu
 pdfjs-views-manager-attachments-title = Přílohy
-pdfjs-views-manager-layers-title = Vrstvy
+pdfjs-views-manager-layers-title1 = Vrstvy
+    .title = Vrstvy (dvojité klepnutí obnoví všechny vrstvy do výchozího stavu)
 pdfjs-views-manager-pages-option-label = Stránky
 pdfjs-views-manager-outlines-option-label = Osnova dokumentu
 pdfjs-views-manager-attachments-option-label = Přílohy
@@ -703,7 +696,6 @@ pdfjs-views-manager-pages-status-copy-button-label = Kopírovat
 pdfjs-views-manager-pages-status-cut-button-label = Vyjmout
 pdfjs-views-manager-pages-status-delete-button-label = Smazat
 pdfjs-views-manager-pages-status-export-selected-button-label = Exportovat vybrané…
-pdfjs-views-manager-pages-status-save-as-button-label = Uložit jako…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =
@@ -752,6 +744,7 @@ pdfjs-views-manager-paste-button-after =
 # Badge used to promote a new feature in the UI, keep it as short as possible.
 # It's spelled uppercase for English, but it can be translated as usual.
 pdfjs-new-badge-content = NOVÉ
+pdfjs-views-manager-waiting-for-file = Nahrávání souboru…
 pdfjs-toggle-views-manager-button1 =
     .title = Spravovat strany
 

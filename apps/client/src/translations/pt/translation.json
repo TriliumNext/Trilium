@@ -998,7 +998,7 @@
     "too_big": "A prévia mostra apenas os primeiros {{maxNumChars}} caracteres do ficheiro por razões de desempenho. Descarregue o ficheiro e abra-o externamente para ver todo o conteúdo."
   },
   "protected_session": {
-    "enter_password_instruction": "É necessário digitar a sua palavra-passe para mostar notas protegidas:",
+    "enter_password_instruction": "É necessário digitar a sua palavra-passe para mostrar notas protegidas:",
     "start_session_button": "Iniciar sessão protegida",
     "started": "A sessão protegida foi iniciada.",
     "wrong_password": "Palavra-passe incorreta.",

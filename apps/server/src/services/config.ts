@@ -19,12 +19,13 @@
  * ╚════════════════════════════════════════════════════════════════════════════╝
  */
 
-import ini from "ini";
+import { utils } from "@triliumnext/core";
 import fs from "fs";
-import dataDir from "./data_dir.js";
+import ini from "ini";
 import path from "path";
+
+import dataDir from "./data_dir.js";
 import resourceDir from "./resource_dir.js";
-import { envToBoolean, stringToInt } from "./utils.js";
 
 /**
  * Path to the sample configuration file that serves as a template for new installations.
@@ -253,7 +254,7 @@ function getIniSection(sectionName: string): IniConfigSection | undefined {
  */
 function transformBoolean(value: unknown): boolean {
     // First try the standard envToBoolean function which handles "true"/"false" strings
-    const result = envToBoolean(String(value));
+    const result = utils.envToBoolean(String(value));
     if (result !== undefined) return result;
 
     // Handle numeric boolean values (both string and number types)
@@ -393,7 +394,11 @@ const configMapping = {
             // alternative format
             aliasEnvVars: ['TRILIUM_SYNC_SERVER_TIMEOUT'],
             iniGetter: () => getIniSection("Sync")?.syncServerTimeout,
-            defaultValue: '120000'
+            // Empty string signals "no override" so sync_options falls back to
+            // the user's `syncServerTimeout` DB option. Setting a literal
+            // default here would always take precedence and silently shadow
+            // the value the user configured in the settings UI.
+            defaultValue: ''
         },
         syncProxy: {
             standardEnvVar: 'TRILIUM_SYNC_SYNCPROXY',
@@ -456,7 +461,7 @@ const configMapping = {
             aliasEnvVars: ['TRILIUM_LOGGING_RETENTION_DAYS'],
             iniGetter: () => getIniSection("Logging")?.retentionDays,
             defaultValue: LOGGING_DEFAULT_RETENTION_DAYS,
-            transformer: (value: unknown) => stringToInt(String(value)) ?? LOGGING_DEFAULT_RETENTION_DAYS
+            transformer: (value: unknown) => utils.stringToInt(String(value)) ?? LOGGING_DEFAULT_RETENTION_DAYS
         }
     }
 };

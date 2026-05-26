@@ -32,6 +32,7 @@
         "protected_notes_title": "Korumalı notlar",
         "protected_notes_content": "Hassas kişisel verilerinizi, notları şifreleyerek ve şifre korumalı bir oturumla kilitleyerek güven altına alın.",
         "jump_to_title": "Hızlı arama ve komutlar",
-        "jump_to_content": "Notlar veya kullanıcı arayüzü komutları arasında, başlık araması yaparak hiyerarşik yapıda hızla geçiş yapın; yazım hatalarını ve küçük farklılıkları fuzzy matching (bulanık eşleme) ile tolere edin."
+        "jump_to_content": "Notlar veya kullanıcı arayüzü komutları arasında, başlık araması yaparak hiyerarşik yapıda hızla geçiş yapın; yazım hatalarını ve küçük farklılıkları fuzzy matching (bulanık eşleme) ile tolere edin.",
+        "search_title": "Gelişmiş arama"
     }
 }

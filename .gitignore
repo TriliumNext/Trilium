@@ -54,3 +54,4 @@ scripts/translation/.language*.json
 
 .claude
 .pnpm-store
+apps/edit-docs/output.zip

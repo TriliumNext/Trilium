@@ -87,7 +87,6 @@ export default defineConfig(() => ({
             input: {
                 index: join(__dirname, "index.html"),
                 login: join(__dirname, "src", "login.ts"),
-                setup: join(__dirname, "src", "setup.ts"),
                 set_password: join(__dirname, "src", "set_password.ts"),
                 runtime: join(__dirname, "src", "runtime.ts"),
                 print: join(__dirname, "src", "print.tsx")

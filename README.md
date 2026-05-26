@@ -18,7 +18,7 @@
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./docs/README-ZH_CN.md) | [Chinese (Traditional Han script)](./docs/README-ZH_TW.md) | [English](./docs/README.md) | [French](./docs/README-fr.md) | [German](./docs/README-de.md) | [Greek](./docs/README-el.md) | [Italian](./docs/README-it.md) | [Japanese](./docs/README-ja.md) | [Romanian](./docs/README-ro.md) | [Spanish](./docs/README-es.md)
+[Arabic](./docs/README-ar.md) | [Chinese (Simplified Han script)](./docs/README-ZH_CN.md) | [Chinese (Traditional Han script)](./docs/README-ZH_TW.md) | [Czech](./docs/README-cs.md) | [English (United Kingdom)](./docs/README-en_GB.md) | [English](./docs/README.md) | [French](./docs/README-fr.md) | [German](./docs/README-de.md) | [Greek](./docs/README-el.md) | [Irish](./docs/README-ga.md) | [Italian](./docs/README-it.md) | [Japanese](./docs/README-ja.md) | [Korean](./docs/README-ko.md) | [Polish](./docs/README-pl.md) | [Romanian](./docs/README-ro.md) | [Russian](./docs/README-ru.md) | [Spanish](./docs/README-es.md) | [Ukrainian](./docs/README-uk.md) | [Uyghur](./docs/README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes is a free and open-source, cross-platform hierarchical note taking application with focus on building large personal knowledge bases.
@@ -108,7 +108,7 @@ Download the binary release for your platform from the [latest release page](htt
 
 If your distribution is listed in the table below, use your distribution's package.
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 You may also download the binary release for your platform from the [latest release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the package and run the `trilium` executable.
 
@@ -126,9 +126,22 @@ To use TriliumNext on a mobile device, you can use a mobile web browser to acces
 
 See issue https://github.com/TriliumNext/Trilium/issues/4962 for more information on mobile app support.
 
+#### TriliumDroid
+
 If you prefer a native Android app, you can use [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
 Report bugs and missing features at [their repository](https://github.com/FliegendeWurst/TriliumDroid).
 Note: It is best to disable automatic updates on your server installation (see below) when using TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+
+#### Pocket Trilium
+
+If you want a full-featured native Android app, check out [Pocket Trilium](https://github.com/Nriver/pocket-trilium).
+It runs a complete Trilium instance on your phone, supports full offline use, and allows you to sync with your server.
+
+#### Trinote
+
+If you want a native iOS app, you can use [Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source client for your self-hosted Trilium / TriliumNext server.
+It lets you browse and organize your note tree, search for notes on the server, read and edit all note types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes available and editable offline.
+Here's the [repo](https://github.com/StephenArg/Trinote) if you're interested in contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS) server if you have any feedback or suggestions you want to discuss.
 
 ### Server
 
@@ -191,6 +204,34 @@ For more details, see the [development docs](https://github.com/TriliumNext/Tril
 
 Please view the [documentation guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md) for details. If you have more questions, feel free to reach out via the links described in the "Discuss with us" section above.
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./docs/logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Shoutouts
 
 * [zadam](https://github.com/zadam) for the original concept and implementation of the application.
@@ -198,12 +239,11 @@ Please view the [documentation guide](https://github.com/TriliumNext/Trilium/blo
 * [nriver](https://github.com/nriver) for his work on internationalization.
 * [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
 * [antoniotejada](https://github.com/nriver) for the original syntax highlight widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to GitHub issues and discussions.
 * [Tabler Icons](https://tabler.io/icons) for the system tray icons.
 
 Trilium would not be possible without the technologies behind it:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind text notes. We are grateful for being offered a set of the premium features.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with support for huge amount of languages.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite whiteboard used in Canvas notes.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the mind map functionality.

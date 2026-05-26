@@ -79,15 +79,21 @@ async function copy(branchIds: string[]) {
 
     if (utils.isElectron()) {
         // https://github.com/zadam/trilium/issues/2401
-        const { clipboard } = require("electron");
-        const links: string[] = [];
+        const htmlParts: string[] = [];
+        const textParts: string[] = [];
 
         for (const branch of froca.getBranches(clipboardBranchIds)) {
             const $link = await linkService.createLink(`${branch.parentNoteId}/${branch.noteId}`, { referenceLink: true });
-            links.push($link[0].outerHTML);
+            htmlParts.push($link[0].outerHTML);
+            textParts.push($link.text());
         }
 
-        clipboard.writeHTML(links.join(", "));
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                "text/html": new Blob([htmlParts.join(", ")], { type: "text/html" }),
+                "text/plain": new Blob([textParts.join(", ")], { type: "text/plain" })
+            })
+        ]);
     }
 
     toastService.showMessage(t("clipboard.copied"));

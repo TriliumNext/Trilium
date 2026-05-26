@@ -10,6 +10,7 @@ describe("isValidDocName", () => {
         expect(isValidDocName("Quick Start Guide")).toBe(true);
         expect(isValidDocName("quick_start_guide")).toBe(true);
         expect(isValidDocName("quick-start-guide")).toBe(true);
+        expect(isValidDocName("User Guide/User Guide/Advanced Usage/Text Extraction (OCR)")).toBe(true);
     });
 
     it("rejects path traversal attacks", () => {

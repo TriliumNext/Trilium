@@ -34,7 +34,9 @@ export const byBookType: Record<ViewTypeOptions, string | null> = {
 };
 
 export function getHelpUrlForNote(note: FNote | null | undefined) {
-    if (note && note.type !== "book" && byNoteType[note.type]) {
+    if (note?.isMarkdown()) {
+        return "6RM1Q7ppFVoj";
+    } else if (note && note.type !== "book" && byNoteType[note.type]) {
         return byNoteType[note.type];
     } else if (note?.hasLabel("calendarRoot")) {
         return "l0tKav7yLHGF";

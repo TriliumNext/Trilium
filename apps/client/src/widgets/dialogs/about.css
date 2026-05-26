@@ -3,7 +3,11 @@
         --donate-button-color: #e33f3b;
         
         &.nightly {
-            --modal-background-color: #f6eefd ;
+            --modal-background-color: #f6eefd;
+        }
+
+        &.standalone {
+            --modal-background-color: #eef4fd;
         }
     }
 
@@ -12,6 +16,10 @@
 
         &.nightly {
             --modal-background-color: #23182b;
+        }
+
+        &.standalone {
+            --modal-background-color: #182230;
         }
     }
 

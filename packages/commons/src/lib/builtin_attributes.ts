@@ -82,6 +82,7 @@ export default [
     { type: "label", name: "hideHighlightWidget" },
     { type: "label", name: "iconPack", isDangerous: true },
     { type: "label", name: "docName", isDangerous: true },
+    { type: "label", name: "docUrl", isDangerous: true },
 
     { type: "label", name: "tabWidth" },
     { type: "label", name: "indentWithTabs" },
@@ -114,8 +115,8 @@ export default [
     { type: "relation", name: "widget", isDangerous: true },
     { type: "relation", name: "renderNote", isDangerous: true },
     { type: "relation", name: "shareCss" },
-    { type: "relation", name: "shareJs" },
-    { type: "relation", name: "shareHtml" },
-    { type: "relation", name: "shareTemplate" },
+    { type: "relation", name: "shareJs", isDangerous: true },
+    { type: "relation", name: "shareHtml", isDangerous: true },
+    { type: "relation", name: "shareTemplate", isDangerous: true },
     { type: "relation", name: "shareFavicon" }
 ];

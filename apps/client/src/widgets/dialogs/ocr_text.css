@@ -1,0 +1,39 @@
+.ocr-text-modal-loading {
+    text-align: center;
+    padding: 2em;
+    color: var(--muted-text-color);
+}
+
+.ocr-text-modal-content {
+    white-space: pre-wrap;
+    line-height: 1.6;
+    user-select: text;
+}
+
+.ocr-text-modal-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2em;
+    color: var(--muted-text-color);
+    text-align: center;
+
+    .bx {
+        font-size: 3em;
+        margin-bottom: 0.5rem;
+    }
+
+    .ocr-text-modal-explanation {
+        margin-top: 0.5em;
+        font-size: 0.9em;
+        font-style: italic;
+    }
+}
+
+.ocr-text-modal-error {
+    color: var(--error-color);
+    background-color: var(--error-background-color);
+    border: 1px solid var(--error-border-color);
+    padding: 0.75em;
+    border-radius: 4px;
+}

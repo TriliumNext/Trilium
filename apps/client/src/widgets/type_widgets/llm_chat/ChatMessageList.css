@@ -1,0 +1,8 @@
+/* Shared scroll container for the chat message list (used by both the chat note
+   type widget and the sidebar chat). Widget-specific padding/layout lives in the
+   respective widget CSS, keyed off the extra class passed via `className`. */
+.chat-message-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}

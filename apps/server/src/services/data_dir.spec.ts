@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { getDataDirs as getDataDirsType, getPlatformAppDataDir as getPlatformAppDataDirType,getTriliumDataDir as getTriliumDataDirType } from "./data_dir.js";
 
-describe("data_dir.ts unit tests", async () => {
+describe("data_dir.ts unit tests", () => {
     let getTriliumDataDir: typeof getTriliumDataDirType;
     let getPlatformAppDataDir: typeof getPlatformAppDataDirType;
     let getDataDirs: typeof getDataDirsType;
@@ -16,37 +16,45 @@ describe("data_dir.ts unit tests", async () => {
         pathJoinMock: vi.fn()
     };
 
-    // using doMock, to avoid hoisting, so that we can use the mockFn object
-    // to collect all mocked Fns
-    vi.doMock("node:fs", () => {
-        return {
-            default: {
-                existsSync: mockFn.existsSyncMock,
-                mkdirSync: mockFn.mkdirSyncMock,
-                statSync: mockFn.statSyncMock
-            }
-        };
-    });
+    beforeAll(async () => {
+        // Reset the module cache so the dynamic imports below get a fresh instance
+        // of data_dir.ts with the mocked dependencies rather than the cached copy
+        // loaded by spec/setup.ts. This must run inside beforeAll (not at
+        // describe-level) so that spec/setup.ts's beforeAll completes first.
+        vi.resetModules();
 
-    vi.doMock("node:os", () => {
-        return {
-            default: {
-                homedir: mockFn.osHomedirMock,
-                platform: mockFn.osPlatformMock
-            }
-        };
-    });
+        // using doMock, to avoid hoisting, so that we can use the mockFn object
+        // to collect all mocked Fns
+        vi.doMock("node:fs", () => {
+            return {
+                default: {
+                    existsSync: mockFn.existsSyncMock,
+                    mkdirSync: mockFn.mkdirSyncMock,
+                    statSync: mockFn.statSyncMock
+                }
+            };
+        });
 
-    vi.doMock("path", () => {
-        return {
-            join: mockFn.pathJoinMock
-        };
-    });
+        vi.doMock("node:os", () => {
+            return {
+                default: {
+                    homedir: mockFn.osHomedirMock,
+                    platform: mockFn.osPlatformMock
+                }
+            };
+        });
 
-    // import function to test now, after creating the mocks
-    ({ getTriliumDataDir } = await import("./data_dir.js"));
-    ({ getPlatformAppDataDir } = await import("./data_dir.js"));
-    ({ getDataDirs } = await import("./data_dir.js"));
+        vi.doMock("node:path", () => {
+            return {
+                join: mockFn.pathJoinMock
+            };
+        });
+
+        // import function to test now, after creating the mocks
+        ({ getTriliumDataDir } = await import("./data_dir.js"));
+        ({ getPlatformAppDataDir } = await import("./data_dir.js"));
+        ({ getDataDirs } = await import("./data_dir.js"));
+    });
 
     // helper to reset call counts
     const resetAllMocks = () => {

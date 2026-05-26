@@ -207,19 +207,22 @@ function NoteAttributes({ note }: { note: FNote }) {
     return <span className="note-list-attributes" ref={ref} />;
 }
 
-export function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes, showTextRepresentation }: {
+export function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes, showTextRepresentation, onReady }: {
     note: FNote;
     trim?: boolean;
     noChildrenList?: boolean;
     highlightedTokens: string[] | null | undefined;
     includeArchivedNotes: boolean;
     showTextRepresentation?: boolean;
+    onReady?: () => void;
 }) {
     const contentRef = useRef<HTMLDivElement>(null);
     const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
 
     const [ready, setReady] = useState(false);
     const [noteType, setNoteType] = useState<string>("none");
+    const onReadyRef = useRef(onReady);
+    onReadyRef.current = onReady;
 
     useEffect(() => {
         const contentElement = contentRef.current;
@@ -233,6 +236,7 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
     }, []);
 
     useEffect(() => {
+        setReady(false);
         content_renderer.getRenderedContent(note, {
             trim,
             noChildrenList,
@@ -250,12 +254,14 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
                 highlightSearch(contentRef.current);
                 setNoteType(type);
                 setReady(true);
+                onReadyRef.current?.();
             })
             .catch(e => {
                 console.warn(`Caught error while rendering note '${note.noteId}' of type '${note.type}'`);
                 console.error(e);
                 contentRef.current?.replaceChildren(t("collections.rendering_error"));
                 setReady(true);
+                onReadyRef.current?.();
             });
     }, [ note, highlightedTokens ]);
 

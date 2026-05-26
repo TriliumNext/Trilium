@@ -41,12 +41,22 @@
     --cmd-button-keyboard-shortcut-color: white;
     --cmd-button-disabled-opacity: 0.5;
 
-    --button-group-active-button-background: #ffffff4e;
-    --button-group-active-button-text-color: white;
+    --low-profile-button-active-background-color: #ffffff2c;
+    --low-profile-button-active-color: white;
+
+    --button-group-background-color: #00000051;
+    --button-group-active-button-background-color: #4f4f4f;
+    --button-group-active-button-color: white;
+    --button-group-active-button-shadow-color: #000000;
 
     --icon-button-color: currentColor;
     --icon-button-hover-background: var(--hover-item-background-color);
     --icon-button-hover-color: var(--hover-item-text-color);
+
+    --opaque-icon-button-background: #646464d7;
+    --opaque-icon-button-color: var(--icon-button-color);
+    --opaque-icon-button-hover-background-color: #868686b2;
+    --opaque-icon-button-hover-color: var(--icon-button-hover-color);
 
     --muted-text-color: #bbb;
 
@@ -209,6 +219,7 @@
     --badge-read-only-background-color: #af4340;
     --badge-share-background-color: #4d4d4d;
     --badge-clipped-note-background-color: #295773;
+    --badge-doc-url-background-color: #1e5c42;
     --badge-execute-background-color: #604180;
     --badge-active-content-background-color: rgb(12, 68, 70);
 
@@ -240,7 +251,7 @@
     --bottom-panel-background-color: #11111180;
     --bottom-panel-title-bar-background-color: #3F3F3F80;
 
-    --status-bar-border-color: var(--main-border-color);
+    --status-bar-border-color: #ffffff17;
 
     --scrollbar-thumb-color: #fdfdfd5c;
     --scrollbar-thumb-hover-color: #ffffff7d;
@@ -273,7 +284,9 @@
     --tooltip-background-color: rgba(67, 67, 67, 0.86);
     --tooltip-foreground-color: #ffffffeb;
     --tooltip-shadow-color: rgba(0, 0, 0, 0.4);
-
+    
+    --note-tooltip-background-color: #3d3d3d;
+    
     --help-background-color: var(--menu-background-color);
     --help-card-background: var(--card-background-color);
     --help-card-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
@@ -307,6 +320,12 @@
     --calendar-coll-event-hover-filter: brightness(1.25);
     --callendar-coll-event-archived-sripe-color: #00000026;
     --calendar-coll-today-background-color: #ffffff08;
+
+    --task-checkbox-without-state-background: #ffffff26;
+    --task-checkbox-with-state-background: #ffffff3b;
+    --task-checkbox-done-color: #408b40;
+    --task-checkbox-unknown-state-color: orange;
+    --task-checkbox-glyph-color: white;
 }
 
 /*
@@ -381,4 +400,12 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 .note-book-card.with-hue {
     --card-background-color: hsl(var(--custom-color-hue), 6%, 21%);
     --card-background-hover-color: hsl(var(--custom-color-hue), 8%, 25%);
+}
+
+.note-tooltip.with-hue {
+    --tooltip-background-color: hsl(var(--custom-color-hue), 8.8%, 24%);
+}
+
+[data-trilium-task-state] {
+    --task-state-adjusted-color: hsl(var(--task-state-hue), 40%, 50%);
 }

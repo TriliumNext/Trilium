@@ -25,17 +25,17 @@
   "license": "Apache-2.0",
   "dependencies": {
     "fuse.js": "7.3.0",
-    "katex": "0.16.45",
-    "mermaid": "11.14.0"
+    "katex": "0.16.47",
+    "mermaid": "11.15.0"
   },
   "devDependencies": {
     "@digitak/esrun": "3.2.26",
     "@triliumnext/ckeditor5": "workspace:*",
-    "@typescript-eslint/eslint-plugin": "8.59.0",
-    "@typescript-eslint/parser": "8.59.0",
+    "@typescript-eslint/eslint-plugin": "8.59.4",
+    "@typescript-eslint/parser": "8.59.4",
     "dotenv": "17.4.2",
     "esbuild": "0.28.0",
-    "eslint": "10.2.1",
+    "eslint": "10.4.0",
     "highlight.js": "11.11.1",
     "typescript": "6.0.3"
   }

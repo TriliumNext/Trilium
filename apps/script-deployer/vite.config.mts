@@ -6,6 +6,7 @@ export default defineConfig(() => ({
     test: {
         watch: false,
         globals: true,
+        setupFiles: ["../server/spec/setup.ts"],
         environment: "node",
         env: {
             NODE_ENV: "development",

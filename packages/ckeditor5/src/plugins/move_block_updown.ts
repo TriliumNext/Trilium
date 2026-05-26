@@ -158,8 +158,6 @@ class MoveBlockDownCommand extends MoveBlockUpDownCommand {
 }
 
 function scrollToSelection(editor: Editor) {
-    // Ensure scroll happens in sync with DOM updates
-    requestAnimationFrame(() => {
-        editor.editing.view.scrollToTheSelection();
-    });
+    editor.editing.view.forceRender();
+    editor.editing.view.scrollToTheSelection();
 };

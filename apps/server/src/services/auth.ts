@@ -2,6 +2,7 @@ import etapiTokenService from "./etapi_tokens.js";
 import log from "./log.js";
 import sqlInit from "./sql_init.js";
 import { isElectron } from "./utils.js";
+import { isInternalElectronRequest } from "./electron_request.js";
 import passwordEncryptionService from "./encryption/password_encryption.js";
 import config from "./config.js";
 import passwordService from "./encryption/password.js";
@@ -16,14 +17,16 @@ refreshAuth();
 
 function checkAuth(req: Request, res: Response, next: NextFunction) {
     if (!sqlInit.isDbInitialized()) {
-        return res.redirect('setup');
+        // DB not initialized — let the request through so the client app
+        // can show its setup UI based on the bootstrap response.
+        return next();
     }
 
     const currentTotpStatus = totp.isTotpEnabled();
     const currentSsoStatus = openID.isOpenIDEnabled();
     const lastAuthState = req.session.lastAuthState || { totpEnabled: false, ssoEnabled: false };
 
-    if (isElectron || noAuthentication) {
+    if (isInternalElectronRequest(req) || noAuthentication) {
         next();
         return;
     } else if (!req.session.loggedIn && !noAuthentication) {
@@ -73,7 +76,11 @@ export function refreshAuth() {
 // for electron things which need network stuff
 //  currently, we're doing that for file upload because handling form data seems to be difficult
 function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction) {
-    if (!req.session.loggedIn && !isElectron && !noAuthentication) {
+    if (!sqlInit.isDbInitialized()) {
+        return next();
+    }
+
+    if (!req.session.loggedIn && !isInternalElectronRequest(req) && !noAuthentication) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
@@ -82,7 +89,21 @@ function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction)
 }
 
 function checkApiAuth(req: Request, res: Response, next: NextFunction) {
-    if (!req.session.loggedIn && !noAuthentication) {
+    if (!sqlInit.isDbInitialized()) {
+        return next();
+    }
+
+    // The desktop renderer is trusted (it's our own UI). API requests come in
+    // via the `trilium-app://` custom protocol where Express sessions don't
+    // round-trip — those carry the internal-electron marker and bypass auth.
+    // Requests that arrive over the desktop's TCP HTTP listener (LAN, DNS-
+    // rebound browser, co-resident process) do NOT carry the marker and go
+    // through the normal session check.
+    if (isInternalElectronRequest(req) || noAuthentication) {
+        return next();
+    }
+
+    if (!req.session.loggedIn) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
@@ -90,12 +111,9 @@ function checkApiAuth(req: Request, res: Response, next: NextFunction) {
     }
 }
 
-function checkAppInitialized(req: Request, res: Response, next: NextFunction) {
-    if (!sqlInit.isDbInitialized()) {
-        res.redirect("setup");
-    } else {
-        next();
-    }
+function checkAppInitialized(_req: Request, _res: Response, next: NextFunction) {
+    // Let the client app handle the uninitialized state via its setup UI.
+    next();
 }
 
 function checkPasswordSet(req: Request, res: Response, next: NextFunction) {

@@ -70,7 +70,7 @@ function OcrSettings() {
 
     return (
         <>
-            <OptionsSection title={t("images.ocr_section_title")}>
+            <OptionsSection title={t("images.ocr_section_title")} helpUrl="TiQbQDgP8L5t">
                 <OptionsRowWithToggle
                     name="ocr-auto-process"
                     label={t("images.ocr_auto_process")}

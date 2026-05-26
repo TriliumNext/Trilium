@@ -53,7 +53,7 @@ function ProviderSettings() {
     }, [providers, setProviders]);
 
     return (
-        <OptionsSection title={t("llm.settings_title")}>
+        <OptionsSection title={t("llm.settings_title")} helpUrl="GBBMSlVSOIGP">
             <p className="form-text">{t("llm.settings_description")}</p>
 
             <Button
@@ -81,6 +81,12 @@ function ProviderSettings() {
 }
 
 function getMcpEndpointUrl() {
+    // On desktop the renderer lives on `trilium-app://app/`, so window.location
+    // does not point at a reachable HTTP origin. The server injects an absolute
+    // httpBaseUrl in that case; in the browser we derive it from the page.
+    if (window.glob.httpBaseUrl) {
+        return `${window.glob.httpBaseUrl}/mcp`;
+    }
     const port = window.location.port || (window.location.protocol === "https:" ? "443" : "80");
     return `${window.location.protocol}//localhost:${port}/mcp`;
 }

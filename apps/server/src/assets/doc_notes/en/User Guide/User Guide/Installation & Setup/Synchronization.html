@@ -42,7 +42,8 @@
   a new desktop instance to sync with it.</p>
 <ol>
   <li><strong>Desktop Setup</strong>: Follow the <a href="#root/_help_poXkQfguuA0U">desktop installation page</a>.</li>
-  <li><strong>Initial Configuration</strong>: When prompted, choose the option
+  <li
+ ><strong>Initial Configuration</strong>: When prompted, choose the option
     to set up sync with a sync server.</li>
 </ol>
 <p>
@@ -52,7 +53,8 @@
 <ol>
   <li><strong>Server Details</strong>: Configure the Trilium server address
     and enter the correct username and password for authentication.</li>
-  <li><strong>Finish Setup</strong>: Click the "Finish setup" button. If successful,
+  <li
+ ><strong>Finish Setup</strong>: Click the "Finish setup" button. If successful,
     you will see the following screen:</li>
 </ol>
 <p>
@@ -61,34 +63,44 @@
 </p>
 <p>Once synchronization is complete, you will be automatically redirected
   to the Trilium application.</p>
-<h2>Proxy Configuration</h2>
-<p>Two proxy setups are supported:</p>
-<ul>
-  <li><strong>Explicit Proxy Configuration</strong>: Set the proxy server in
-    Options / Sync. Only unauthenticated proxy servers are supported.</li>
-  <li><strong>System Proxy Settings</strong>: If no proxy server is explicitly
-    configured, Trilium will use the system proxy settings.</li>
-</ul>
-<h2>Troubleshooting</h2>
-<h3>Date/Time Synchronization</h3>
-<p>For successful synchronization, both client and server must have the same
-  date and time, with a tolerance of up to five minutes.</p>
-<h3>Certificate Issues</h3>
-<p>When using TLS, Trilium will verify the server certificate. If verification
-  fails (e.g., due to self-signed certificates or certain corporate proxies),
-  you can run the Trilium client with the <code spellcheck="false">NODE_TLS_REJECT_UNAUTHORIZED</code> environment
-  variable set to <code spellcheck="false">0</code>:</p><pre><code class="language-text-x-trilium-auto">export NODE_TLS_REJECT_UNAUTHORIZED=0</code></pre>
-<p>This will disable TLS certificate verification, significantly reducing
-  security and exposing the setup to MITM attacks. It is strongly recommended
-  to use a valid signed server certificate. Newer Trilium versions include
-  a script called <code spellcheck="false">trilium-no-cert-check.sh</code> for
-  this purpose.</p>
-<h3>Conflict Resolution</h3>
-<p>If you edit the same note on multiple instances before synchronization,
-  Trilium resolves conflicts by retaining the newer change and discarding
-  the older one. The older version remains accessible in <a href="#root/_help_vZWERwf8U3nx">note revisions</a>,
-  allowing data recovery if needed.</p>
-<h3>Hash Check</h3>
-<p>After each synchronization, Trilium computes a hash of all synced data
-  on both the client and the sync server. If there is a discrepancy, Trilium
-  will automatically initiate a recovery mechanism to resolve the issue.</p>
+<h3>Desktop-to-desktop sync</h3>
+<p>This method allows two desktop instances to synchronize between each other
+  without requiring a&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/_help_WOcw2SLH6tbX">Server Installation</a>.</p>
+<aside
+class="admonition warning">
+  <p>Since v0.104.0, LAN access needs to be enabled to allow this sync to function.
+    See&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/poXkQfguuA0U/_help_swSFivWk6KkA">Network Access</a>&nbsp;for
+    information on how to do so.</p>
+  </aside>
+  <h2>Proxy Configuration</h2>
+  <p>Two proxy setups are supported:</p>
+  <ul>
+    <li><strong>Explicit Proxy Configuration</strong>: Set the proxy server in
+      Options / Sync. Only unauthenticated proxy servers are supported.</li>
+    <li
+   ><strong>System Proxy Settings</strong>: If no proxy server is explicitly
+      configured, Trilium will use the system proxy settings.</li>
+  </ul>
+  <h2>Troubleshooting</h2>
+  <h3>Date/Time Synchronization</h3>
+  <p>For successful synchronization, both client and server must have the same
+    date and time, with a tolerance of up to five minutes.</p>
+  <h3>Certificate Issues</h3>
+  <p>When using TLS, Trilium will verify the server certificate. If verification
+    fails (e.g., due to self-signed certificates or certain corporate proxies),
+    you can run the Trilium client with the <code spellcheck="false">NODE_TLS_REJECT_UNAUTHORIZED</code> environment
+    variable set to <code spellcheck="false">0</code>:</p><pre><code class="language-text-x-trilium-auto">export NODE_TLS_REJECT_UNAUTHORIZED=0</code></pre>
+  <p>This will disable TLS certificate verification, significantly reducing
+    security and exposing the setup to MITM attacks. It is strongly recommended
+    to use a valid signed server certificate. Newer Trilium versions include
+    a script called <code spellcheck="false">trilium-no-cert-check.sh</code> for
+    this purpose.</p>
+  <h3>Conflict Resolution</h3>
+  <p>If you edit the same note on multiple instances before synchronization,
+    Trilium resolves conflicts by retaining the newer change and discarding
+    the older one. The older version remains accessible in <a href="#root/_help_vZWERwf8U3nx">note revisions</a>,
+    allowing data recovery if needed.</p>
+  <h3>Hash Check</h3>
+  <p>After each synchronization, Trilium computes a hash of all synced data
+    on both the client and the sync server. If there is a discrepancy, Trilium
+    will automatically initiate a recovery mechanism to resolve the issue.</p>

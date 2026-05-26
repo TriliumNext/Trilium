@@ -3472,6 +3472,41 @@
                                             "attachments": []
                                         }
                                     ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "X9lrIcGKMKG7",
+                                    "notePath": [
+                                        "root",
+                                        "rvaX6hEaQlmk",
+                                        "dvgVuMNvit5M",
+                                        "X9lrIcGKMKG7"
+                                    ],
+                                    "title": "Markdown",
+                                    "notePosition": 50,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "includeNoteLink",
+                                            "value": "root",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bxl-markdown",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "html",
+                                    "dataFileName": "Markdown.html",
+                                    "attachments": []
                                 }
                             ]
                         },

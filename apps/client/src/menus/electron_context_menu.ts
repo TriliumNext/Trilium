@@ -1,5 +1,3 @@
-import type { BrowserWindow } from "electron";
-
 import type { CommandNames } from "../components/app_context.js";
 import appContext from "../components/app_context.js";
 import zoomService from "../components/zoom.js";
@@ -11,17 +9,15 @@ import utils from "../services/utils.js";
 import contextMenu, { type MenuItem } from "./context_menu.js";
 
 function setupContextMenu() {
-    const electron = utils.dynamicRequire("electron");
+    const eApi = window.electronApi;
+    if (!eApi) return;
+    const api = eApi.contextMenu;
+    const isMac = window.glob.platform === "darwin";
+    const platformModifier = isMac ? "Meta" : "Ctrl";
 
-    const remote = utils.dynamicRequire("@electron/remote");
-    // FIXME: Remove typecast once Electron is properly integrated.
-    const { webContents } = remote.getCurrentWindow() as BrowserWindow;
-
-    webContents.on("context-menu", (event, params) => {
+    api.onContextMenu((params) => {
         const { editFlags } = params;
         const hasText = params.selectionText.trim().length > 0;
-        const isMac = process.platform === "darwin";
-        const platformModifier = isMac ? "Meta" : "Ctrl";
 
         const items: MenuItem<CommandNames>[] = [];
 
@@ -38,7 +34,7 @@ function setupContextMenu() {
             items.push({
                 title: t("electron_context_menu.add-term-to-dictionary", { term: params.misspelledWord }),
                 uiIcon: "bx bx-plus",
-                handler: () => electron.ipcRenderer.send("add-word-to-dictionary", params.misspelledWord)
+                handler: () => eApi.spellcheck.addWordToDictionary(params.misspelledWord)
             });
 
             items.push({ kind: "separator" });
@@ -50,7 +46,7 @@ function setupContextMenu() {
                 title: t("electron_context_menu.cut"),
                 shortcut: `${platformModifier}+X`,
                 uiIcon: "bx bx-cut",
-                handler: () => webContents.cut()
+                handler: () => api.webContentsAction("cut")
             });
         }
 
@@ -60,7 +56,7 @@ function setupContextMenu() {
                 title: t("electron_context_menu.copy"),
                 shortcut: `${platformModifier}+C`,
                 uiIcon: "bx bx-copy",
-                handler: () => webContents.copy()
+                handler: () => api.webContentsAction("copy")
             });
 
             items.push({
@@ -95,11 +91,15 @@ function setupContextMenu() {
             items.push({
                 title: t("electron_context_menu.copy-link"),
                 uiIcon: "bx bx-copy",
-                handler: () => {
-                    electron.clipboard.write({
-                        bookmark: params.linkText,
-                        text: params.linkURL
-                    });
+                handler: async () => {
+                    const linkText = params.linkText || params.linkURL;
+                    const html = `<a href="${utils.escapeHtml(params.linkURL)}">${utils.escapeHtml(linkText)}</a>`;
+                    await navigator.clipboard.write([
+                        new ClipboardItem({
+                            "text/html": new Blob([html], { type: "text/html" }),
+                            "text/plain": new Blob([params.linkURL], { type: "text/plain" })
+                        })
+                    ]);
                 }
             });
         }
@@ -110,7 +110,7 @@ function setupContextMenu() {
                 title: t("electron_context_menu.paste"),
                 shortcut: `${platformModifier}+V`,
                 uiIcon: "bx bx-paste",
-                handler: () => webContents.paste()
+                handler: () => api.webContentsAction("paste")
             });
         }
 
@@ -120,14 +120,13 @@ function setupContextMenu() {
                 title: t("electron_context_menu.paste-as-plain-text"),
                 shortcut: `${platformModifier}+Shift+V`,
                 uiIcon: "bx bx-paste",
-                handler: () => webContents.pasteAndMatchStyle()
+                handler: () => api.webContentsAction("pasteAndMatchStyle")
             });
         }
 
         if (hasText) {
             const shortenedSelection = params.selectionText.length > 15 ? `${params.selectionText.substr(0, 13)}…` : params.selectionText;
 
-            // Read the search engine from the options and fallback to DuckDuckGo if the option is not set.
             const customSearchEngineName = options.get("customSearchEngineName");
             const customSearchEngineUrl = options.get("customSearchEngineUrl") as string;
             let searchEngineName;
@@ -140,7 +139,6 @@ function setupContextMenu() {
                 searchEngineUrl = "https://duckduckgo.com/?q={keyword}";
             }
 
-            // Replace the placeholder with the real search keyword.
             const searchUrl = searchEngineUrl.replace("{keyword}", encodeURIComponent(params.selectionText));
 
             items.push({ kind: "separator" });
@@ -148,7 +146,7 @@ function setupContextMenu() {
             items.push({
                 title: t("electron_context_menu.search_online", { term: shortenedSelection, searchEngine: searchEngineName }),
                 uiIcon: "bx bx-search-alt",
-                handler: () => electron.shell.openExternal(searchUrl)
+                handler: () => eApi.shell.openExternal(searchUrl)
             });
 
             items.push({
@@ -174,7 +172,7 @@ function setupContextMenu() {
             items,
             selectMenuItemHandler: ({ command, spellingSuggestion }) => {
                 if (command === "replaceMisspelling" && spellingSuggestion) {
-                    webContents.insertText(spellingSuggestion);
+                    api.webContentsAction("insertText", spellingSuggestion);
                 }
             }
         });

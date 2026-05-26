@@ -1,0 +1,155 @@
+/* ==========================================================================
+   Link Embed – share theme styles for mention, card, and video embeds
+   ========================================================================== */
+
+/* ---------- Inline mention (favicon + title) ---------- */
+
+.link-embed-mention {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 6px 1px 4px;
+    border-radius: 4px;
+    background: var(--background-highlight);
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 0.92em;
+    line-height: 1.5;
+    vertical-align: baseline;
+    transition: background-color 0.12s;
+}
+
+.link-embed-mention:hover {
+    background: var(--background-active);
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.link-embed-mention-favicon {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.link-embed-mention-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-menu);
+    flex-shrink: 0;
+}
+
+.link-embed-mention-title {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* ---------- Block embed wrapper ---------- */
+
+.link-embed {
+    margin: 12px 0;
+}
+
+/* ---------- Video embed (YouTube iframe) ---------- */
+
+.link-embed-video {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+}
+
+.link-embed-video iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: none;
+    display: block;
+}
+
+/* ---------- Card embed ---------- */
+
+.link-embed-card {
+    display: flex;
+    border: 1px solid var(--background-highlight);
+    border-radius: 4px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 0.15s ease;
+    max-height: 120px;
+}
+
+.link-embed-card:hover {
+    background-color: var(--background-highlight);
+    text-decoration: none;
+    color: inherit;
+}
+
+.link-embed-card-image-wrapper {
+    width: 160px;
+    min-height: 100px;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-secondary);
+}
+
+.link-embed-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.link-embed-card-image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 28px;
+    opacity: 0.5;
+}
+
+.link-embed-card-content {
+    flex: 1;
+    padding: 12px 14px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+}
+
+.link-embed-card-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.link-embed-card-description {
+    font-size: 0.82em;
+    color: var(--text-menu);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.link-embed-card-url {
+    font-size: 0.78em;
+    color: var(--text-menu);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: auto;
+}

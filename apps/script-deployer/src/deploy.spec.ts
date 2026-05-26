@@ -1,15 +1,17 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import becca from "@triliumnext/server/src/becca/becca";
 import BBranch from "@triliumnext/server/src/becca/entities/bbranch";
+import cls from "@triliumnext/server/src/services/cls";
 import { buildNote } from "@triliumnext/server/src/test/becca_easy_mocking";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import {
-    parseScriptMeta,
-    transpile,
-    deployScript,
     codeNoteId,
+    deployScript,
+    type NoteService,
+    parseScriptMeta,
     renderNoteId,
     SCRIPTS_NOTE_ID,
-    type NoteService,
+    transpile,
 } from "./deploy";
 
 // ── Mocks — only SQL and entity_changes, becca is real ───────────────────────
@@ -171,12 +173,14 @@ describe("deployScript", () => {
         becca.reset();
 
         // Root + Scripts folder, using buildNote for the tree structure.
-        buildNote({
-            id: "root",
-            title: "root",
-            children: [
-                { id: SCRIPTS_NOTE_ID, title: "Scripts", type: "doc" },
-            ],
+        cls.init(() => {
+            buildNote({
+                id: "root",
+                title: "root",
+                children: [
+                    { id: SCRIPTS_NOTE_ID, title: "Scripts", type: "doc" },
+                ],
+            });
         });
     });
 
@@ -185,7 +189,7 @@ describe("deployScript", () => {
         const jsxContent = `import { h } from "trilium:preact";\nexport default function() { return <div>Hello</div>; }`;
         const mime = "text/jsx";
 
-        it("creates a render note as parent with code note child linked via ~renderNote", () => {
+        it("creates a render note as parent with code note child linked via ~renderNote", () => cls.init(() => {
             deployScript(meta, jsxContent, mime, becca, notesService);
 
             const renderId = renderNoteId(meta.id);
@@ -213,9 +217,9 @@ describe("deployScript", () => {
             const relation = renderNote.getRelations().find((a) => a.name === "renderNote");
             expect(relation).toBeDefined();
             expect(relation!.value).toBe(codeId);
-        });
+        }));
 
-        it("returns a 'created' result with both note IDs", () => {
+        it("returns a 'created' result with both note IDs", () => cls.init(() => {
             const result = deployScript(meta, jsxContent, mime, becca, notesService);
             expect(result).toEqual({
                 action: "created",
@@ -224,7 +228,7 @@ describe("deployScript", () => {
                 title: "XOPP Importer",
                 type: "render",
             });
-        });
+        }));
     });
 
     describe("render note with TSX", () => {
@@ -233,7 +237,7 @@ describe("deployScript", () => {
         const transpiledContent = transpile(tsxSource, "tsx-widget.tsx");
         const mime = "text/jsx";
 
-        it("creates the same render+code structure as JSX, with types stripped but JSX preserved", () => {
+        it("creates the same render+code structure as JSX, with types stripped but JSX preserved", () => cls.init(() => {
             // Content was correctly transpiled
             expect(transpiledContent).not.toContain(": number");
             expect(transpiledContent).toContain("<div>");
@@ -247,14 +251,14 @@ describe("deployScript", () => {
             expect(becca.notes[renderId].type).toBe("render");
             expect(becca.notes[codeId]).toBeDefined();
             expect(becca.notes[codeId].type).toBe("code");
-        });
+        }));
     });
 
     describe("updating an existing script", () => {
         const meta = { id: "existing-script", type: "render", title: "Original" };
         const mime = "text/jsx";
 
-        it("updates content and title of existing code note", () => {
+        it("updates content and title of existing code note", () => cls.init(() => {
             deployScript(meta, "old content", mime, becca, notesService);
 
             const codeId = codeNoteId(meta.id);
@@ -269,7 +273,7 @@ describe("deployScript", () => {
             expect(note.title).toBe("New Title");
             expect(saveSpy).toHaveBeenCalled();
             expect(setContentSpy).toHaveBeenCalledWith("new content");
-        });
+        }));
     });
 
     describe("plain code note (non-render)", () => {
@@ -277,7 +281,7 @@ describe("deployScript", () => {
         const content = "module.exports = {};";
         const mime = "application/javascript;env=backend";
 
-        it("creates a single code note under scripts folder, no render note", () => {
+        it("creates a single code note under scripts folder, no render note", () => cls.init(() => {
             deployScript(meta, content, mime, becca, notesService);
 
             const codeId = codeNoteId(meta.id);
@@ -289,9 +293,9 @@ describe("deployScript", () => {
 
             // No render note was created
             expect(becca.notes[renderNoteId(meta.id)]).toBeUndefined();
-        });
+        }));
 
-        it("returns a 'created' result without renderNoteId", () => {
+        it("returns a 'created' result without renderNoteId", () => cls.init(() => {
             const result = deployScript(meta, content, mime, becca, notesService);
             expect(result).toEqual({
                 action: "created",
@@ -299,7 +303,7 @@ describe("deployScript", () => {
                 title: "Backend Helper",
                 type: "code",
             });
-        });
+        }));
     });
 
     describe("backend script", () => {
@@ -307,7 +311,7 @@ describe("deployScript", () => {
         const content = `api.log("Hello from script-deployer!");`;
         const mime = "application/javascript;env=backend";
 
-        it("creates a code note with #run label", () => {
+        it("creates a code note with #run label", () => cls.init(() => {
             deployScript(meta, content, mime, becca, notesService);
 
             const codeId = codeNoteId(meta.id);
@@ -319,31 +323,31 @@ describe("deployScript", () => {
             const runLabel = codeNote.getLabels().find((a) => a.name === "run");
             expect(runLabel).toBeDefined();
             expect(runLabel!.value).toBe("backendStartup");
-        });
+        }));
 
-        it("places the code note under scripts folder, no render note", () => {
+        it("places the code note under scripts folder, no render note", () => cls.init(() => {
             deployScript(meta, content, mime, becca, notesService);
 
             const codeId = codeNoteId(meta.id);
             const codeNote = becca.notes[codeId];
             expect(codeNote.getParentBranches().some((b) => b.parentNoteId === SCRIPTS_NOTE_ID)).toBe(true);
             expect(becca.notes[renderNoteId(meta.id)]).toBeUndefined();
-        });
+        }));
 
-        it("does not set #run when run field is absent", () => {
+        it("does not set #run when run field is absent", () => cls.init(() => {
             const metaNoRun = { id: "no-run", type: "backend", title: "No Run" };
             deployScript(metaNoRun, content, mime, becca, notesService);
 
             const codeNote = becca.notes[codeNoteId(metaNoRun.id)];
             expect(codeNote.getLabels().find((a) => a.name === "run")).toBeUndefined();
-        });
+        }));
     });
 
     describe("execute labels", () => {
         const content = `api.log("test");`;
         const mime = "application/javascript;env=backend";
 
-        it("sets executeButton, executeDescription, and executeTitle on creation", () => {
+        it("sets executeButton, executeDescription, and executeTitle on creation", () => cls.init(() => {
             const meta = {
                 id: "exec-test",
                 type: "backend",
@@ -359,9 +363,9 @@ describe("deployScript", () => {
             expect(labels.find((a) => a.name === "executeButton")?.value).toBe("true");
             expect(labels.find((a) => a.name === "executeDescription")?.value).toBe("Does something useful");
             expect(labels.find((a) => a.name === "executeTitle")?.value).toBe("Run It");
-        });
+        }));
 
-        it("sets execute labels on update of an existing note", () => {
+        it("sets execute labels on update of an existing note", () => cls.init(() => {
             const meta = { id: "exec-update", type: "backend", title: "Before" };
             deployScript(meta, content, mime, becca, notesService);
 
@@ -372,15 +376,15 @@ describe("deployScript", () => {
             const labels = becca.notes[codeNoteId(meta.id)].getLabels();
             expect(labels.find((a) => a.name === "executeButton")?.value).toBe("true");
             expect(labels.find((a) => a.name === "executeDescription")?.value).toBe("Now executable");
-        });
+        }));
 
-        it("does not set execute labels when absent from metadata", () => {
+        it("does not set execute labels when absent from metadata", () => cls.init(() => {
             const meta = { id: "no-exec", type: "backend", title: "Plain" };
             deployScript(meta, content, mime, becca, notesService);
 
             const labels = becca.notes[codeNoteId(meta.id)].getLabels();
             expect(labels.find((a) => a.name === "executeButton")).toBeUndefined();
             expect(labels.find((a) => a.name === "executeDescription")).toBeUndefined();
-        });
+        }));
     });
 });

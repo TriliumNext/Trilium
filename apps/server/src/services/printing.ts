@@ -73,6 +73,8 @@ function parsePageRangesForPrint(pageRanges: string): { from: number; to: number
     return ranges.length ? ranges : undefined;
 }
 
+let preloadScriptPath: string | undefined;
+
 async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, action: "printing" | "exporting_pdf") {
     // Offscreen rendering crashes on Wayland due to a Chromium bug where the OSR surface
     // lacks a valid xdg_toplevel role, causing a fatal zxdg_exporter_v2 protocol error.
@@ -89,8 +91,9 @@ async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, ac
             focusable: false,
         }),
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: preloadScriptPath,
             offscreen: useOffscreen,
             devTools: false,
             session: e.sender.session
@@ -176,8 +179,12 @@ async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, ac
     return { browserWindow, printReport };
 }
 
-/** Registers all printing-related IPC handlers. Call once on Electron startup. */
-export function initPrintingHandlers() {
+/** Registers all printing-related IPC handlers. Call once on Electron startup.
+ *  `preloadPath` is the same preload bundle used by the main window — the print
+ *  window needs it to expose `window.electronApi.printing.sendPrintProgress`. */
+export function initPrintingHandlers(preloadPath: string) {
+    preloadScriptPath = preloadPath;
+
     electron.ipcMain.on("print-note", async (e, { notePath }: PrintOpts) => {
         try {
             const { browserWindow, printReport } = await getBrowserWindowForPrinting(e, notePath, "printing");

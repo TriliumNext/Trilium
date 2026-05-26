@@ -1,19 +1,44 @@
-import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
-import { t } from "i18next";
-
-import { app, globalShortcut, BrowserWindow } from "electron";
-import sqlInit from "@triliumnext/server/src/services/sql_init.js";
-import windowService from "@triliumnext/server/src/services/window.js";
+import { getLog, initializeCore, options, sql_init } from "@triliumnext/core";
+import ServerBackupService from "@triliumnext/server/src/backup_provider.js";
+import ClsHookedExecutionContext from "@triliumnext/server/src/cls_provider.js";
+import { loadCoreSchema } from "@triliumnext/server/src/core_assets.js";
+import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
+import NodejsInAppHelpProvider from "@triliumnext/server/src/in_app_help_provider.js";
+import ServerLogService from "@triliumnext/server/src/log_provider.js";
+import dataDirs from "@triliumnext/server/src/services/data_dir.js";
+import port from "@triliumnext/server/src/services/port.js";
+import NodeRequestProvider from "@triliumnext/server/src/services/request.js";
+import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
 import tray from "@triliumnext/server/src/services/tray.js";
-import options from "@triliumnext/server/src/services/options.js";
+import windowService from "@triliumnext/server/src/services/window.js";
+import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
+import NodejsZipProvider from "@triliumnext/server/src/zip_provider.js";
+import { app, BrowserWindow,globalShortcut } from "electron";
 import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
-import { PRODUCT_NAME } from "./app-info";
-import port from "@triliumnext/server/src/services/port.js";
-import { join, resolve } from "path";
+import fs from "fs";
+import { t } from "i18next";
+import path, { join, resolve } from "path";
+
 import { deferred, LOCALES } from "../../../packages/commons/src";
+import { PRODUCT_NAME } from "./app-info";
+import IpcMessagingProvider from "./ipc_messaging_provider";
+import DesktopPlatformProvider from "./platform_provider";
+import { registerTriliumAppScheme } from "./protocol";
 
 async function main() {
+    // Ignore EPIPE errors on stdout/stderr — these occur when the parent process
+    // pipe breaks (e.g. after system suspend with Snap packaging).
+    for (const stream of [process.stdout, process.stderr]) {
+        stream?.on("error", (err: NodeJS.ErrnoException) => {
+            if (err.code !== "EPIPE") {
+                throw err;
+            }
+        });
+    }
+
+    registerTriliumAppScheme();
+
     const userDataPath = getUserData();
     app.setPath("userData", userDataPath);
 
@@ -82,7 +107,7 @@ async function main() {
         }
     });
 
-    await initializeTranslations();
+    // await initializeTranslations();
 
     const isPrimaryInstance = (await import("electron")).app.requestSingleInstanceLock();
     if (!isPrimaryInstance) {
@@ -93,9 +118,73 @@ async function main() {
     // this is to disable electron warning spam in the dev console (local development only)
     process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
 
+    const { DOCUMENT_PATH } = (await import("@triliumnext/server/src/services/data_dir.js")).default;
+    const config = (await import("@triliumnext/server/src/services/config.js")).default;
+
+    const dbProvider = new BetterSqlite3Provider();
+    dbProvider.loadFromFile(DOCUMENT_PATH, config.General.readOnly);
+
+    // The IPC provider just registers an `ipcMain.on` listener; no TCP socket
+    // or session parser needed, so we can init it here (before startTriliumServer)
+    // instead of going through www.ts. www.ts then only knows about the
+    // socket-bound WebSocket provider.
+    const ipcMessaging = new IpcMessagingProvider();
+    ipcMessaging.init();
+
+    await initializeCore({
+        dbConfig: {
+            provider: dbProvider,
+            isReadOnly: config.General.readOnly,
+            async onTransactionCommit() {
+                const ws = (await import("@triliumnext/server/src/services/ws.js")).default;
+                ws.sendTransactionEntityChangesToAllClients();
+            },
+            async onTransactionRollback() {
+                const cls = (await import("@triliumnext/server/src/services/cls.js")).default;
+                const becca_loader = (await import("@triliumnext/core")).becca_loader;
+                const entity_changes = (await import("@triliumnext/server/src/services/entity_changes.js")).default;
+                const log = (await import("@triliumnext/server/src/services/log")).default;
+
+                const entityChangeIds = cls.getAndClearEntityChangeIds();
+
+                if (entityChangeIds.length > 0) {
+                    log.info("Transaction rollback dirtied the becca, forcing reload.");
+
+                    becca_loader.load();
+                }
+
+                // the maxEntityChangeId has been incremented during failed transaction, need to recalculate
+                entity_changes.recalculateMaxEntityChangeId();
+            }
+        },
+        crypto: new NodejsCryptoProvider(),
+        zip: new NodejsZipProvider(),
+        zipExportProviderFactory: (await import("@triliumnext/server/src/services/export/zip/factory.js")).serverZipExportProviderFactory,
+        request: new NodeRequestProvider(),
+        executionContext: new ClsHookedExecutionContext(),
+        messaging: ipcMessaging,
+        schema: loadCoreSchema(),
+        platform: new DesktopPlatformProvider(),
+        translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslations,
+        // demo.zip is a server-owned asset; src/assets is copied to dist/assets
+        // by the build script, so the same RESOURCE_DIR-relative path works in
+        // both source and bundled-production modes.
+        getDemoArchive: async () => fs.readFileSync(path.join(RESOURCE_DIR, "db", "demo.zip")),
+        inAppHelp: new NodejsInAppHelpProvider(),
+        log: new ServerLogService(),
+        backup: new ServerBackupService(options),
+        image: (await import("@triliumnext/server/src/services/image_provider.js")).serverImageProvider,
+        config,
+        extraAppInfo: {
+            nodeVersion: process.version,
+            dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)
+        }
+    });
+
     const startTriliumServer = (await import("@triliumnext/server/src/www.js")).default;
     await startTriliumServer();
     console.log("Server loaded");
+
     serverInitializedPromise.resolve();
 }
 
@@ -118,8 +207,8 @@ async function onReady() {
 
     // if db is not initialized -> setup process
     // if db is initialized, then we need to wait until the migration process is finished
-    if (sqlInit.isDbInitialized()) {
-        await sqlInit.dbReady;
+    if (sql_init.isDbInitialized()) {
+        await sql_init.dbReady;
 
         await windowService.createMainWindow(app);
 
@@ -133,6 +222,7 @@ async function onReady() {
 
         tray.createTray();
     } else {
+        getLog().banner(t("sql_init.db_not_initialized_desktop"));
         await windowService.createSetupWindow();
     }
 
@@ -147,7 +237,7 @@ function getElectronLocale() {
     // For RTL, we have to force the UI locale to align the window buttons properly.
     if (formattingLocale && !correspondingLocale?.rtl) return formattingLocale;
 
-    return uiLocale || "en"
+    return uiLocale || "en";
 }
 
 main();

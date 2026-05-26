@@ -4,10 +4,32 @@
     "theme_group_light": "Temas claros",
     "theme_group_dark": "Temas escuros",
     "word_wrapping": "Quebra automática de linhas",
-    "copy_title": "Copiar para a área de transferência"
+    "copy_title": "Copiar para a área de transferência",
+    "tab_width_unit": "espaços"
   },
   "about": {
-    "data_directory": "Diretório de dados:"
+    "data_directory": "Diretório de dados:",
+    "contributor_roles": {
+      "original-dev": "desenvolvedor original",
+      "lead-dev": "desenvolvedor principal"
+    },
+    "contributor_full_list": "Veja toda a comunidade",
+    "github_tooltip": "Reportar bugs, sugerir recursos, ou contribuir no github",
+    "license_tooltip": "Ver licença",
+    "donate": "Doar",
+    "donate_tooltip": "Doar para apoiar esse projeto",
+    "version_label": "Versão:",
+    "contributors_label": "Contribuidores:",
+    "version": "{{appVersion}} (bano de dados: {{dbVersion}}, protocolo de sincronização: {{syncVersion}})",
+    "build_info": "Build: {{buildDate}}, revisão: <buildRevision />",
+    "role_brief_history": {
+      "lead-dev": "Elian Doran fundou o TriliumNext em 2024, um fork da comunidade criado depois que Zadam se afastou do projeto. Posteriormente, Zadam transferiu o repositório original para a equipe do TriliumNext, fundindo os dois projetos em um só.",
+      "original-dev": "Em 25 de dezembro de 2017, Zadam lançou a primeira versão beta do Trilium (escrito com um único \"l\", ao contrário da flor). Insatisfeito com os organizadores de notas existentes, ele construiu uma poderosa base de conhecimento hierárquica auto-hospedada que acumulou mais de 22.000 estrelas no GitHub. Em 2024, com a vida cada vez mais corrida, ele colocou o projeto em modo de manutenção."
+    },
+    "channel": {
+      "nightly": "Noturno",
+      "standalone": "Autônomo"
+    }
   },
   "toast": {
     "critical-error": {
@@ -21,7 +43,7 @@
     },
     "bundle-error": {
       "title": "Falha para carregar o script customizado",
-      "message": "O script da nota com ID \"{{id}}\", intitulada \"{{title}}\", não pôde ser executado devido a:\n\n{{message}}"
+      "message": "O script não pôde ser executado devido a:\n\n{{message}}"
     },
     "widget-list-error": {
       "title": "Falha ao obter a lista de widgets do servidor"
@@ -29,8 +51,9 @@
     "widget-render-error": {
       "title": "Falha ao renderizar um widget React personalizado"
     },
-    "widget-missing-parent": "O widget personalizado não possui a propriedade obrigatória '{{property}}' definida.",
-    "open-script-note": "Abrir nota de script"
+    "widget-missing-parent": "O widget personalizado não tem a propriedade obrigatória «{{property}}» definida.\n\nSe este script se destinar a ser executado sem um elemento da interface do utilizador, utilize «#run=frontendStartup» em vez disso.",
+    "open-script-note": "Abrir nota de script",
+    "scripting-error": "Erro de script personalizado: {{title}}"
   },
   "add_link": {
     "add_link": "Adicionar link",
@@ -43,7 +66,7 @@
     "button_add_link": "Adicionar link"
   },
   "branch_prefix": {
-    "prefix": "Prefixo: ",
+    "prefix": "Prefixo",
     "save": "Salvar",
     "edit_branch_prefix": "Editar Prefixo do Branch",
     "help_on_tree_prefix": "Ajuda sobre o prefixo da árvore de notas",
@@ -94,7 +117,8 @@
     "notes_to_be_deleted": "As seguintes notas serão excluídas ({{notesCount}})",
     "no_note_to_delete": "Nenhuma nota será excluída (apenas os clones).",
     "broken_relations_to_be_deleted": "As seguintes relações serão quebradas e excluídas ({{ relationCount}})",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "table_relation": "Relação"
   },
   "export": {
     "export_note_title": "Exportar nota",
@@ -121,7 +145,7 @@
     "collapseExpand": "recolher/expandir nó",
     "notSet": "não definido",
     "goBackForwards": "voltar / avançar no histórico",
-    "showJumpToNoteDialog": "mostrar diálogo <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Ir para\"</a>",
+    "showJumpToNoteDialog": "Mostrar <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\"> caixa de diálogo “Ir para”</a>",
     "scrollToActiveNote": "rolar até a nota atual",
     "jumpToParentNote": "ir para a nota pai",
     "collapseWholeTree": "recolher toda a árvore de notas",
@@ -168,14 +192,15 @@
     "quickSearch": "focar no campo de pesquisa rápida",
     "inPageSearch": "pesquisa na página",
     "title": "Folha de Dicas",
-    "editShortcuts": "Editar atalhos de teclado"
+    "editShortcuts": "Editar atalhos de teclado",
+    "toggleArchivedNotes": "mostrar/esconder notas arquivadas"
   },
   "import": {
     "importIntoNote": "Importar para a nota",
     "chooseImportFile": "Escolher arquivo para importar",
     "importDescription": "O conteúdo do(s) arquivo(s) selecionado(s) será importado como nota(s) filha(s) em",
     "options": "Opções",
-    "safeImportTooltip": "Arquivos de exportação Trilium<code> .zip</code> podem conter scripts executáveis que podem apresentar comportamentos prejudiciais. A importação segura desativará a execução automática de todos os scripts importados. Desmarque “Importação segura” apenas se o arquivo de importação contiver scripts executáveis e você confiar totalmente no conteúdo do arquivo importado.",
+    "safeImportTooltip": "Arquivos de exportação Trilium <code> .zip</code> podem conter scripts executáveis que podem apresentar comportamentos prejudiciais. A importação segura desativará a execução automática de todos os scripts importados. Desmarque “Importação segura” apenas se o arquivo de importação contiver scripts executáveis e você confiar totalmente no conteúdo do arquivo importado.",
     "safeImport": "Importação segura",
     "explodeArchivesTooltip": "Se esta opção estiver marcada, o Trilium irá ler arquivos <code>.zip</code>, <code>.enex</code> e <code>.opml</code> e criar notas a partir dos arquivos contidos nesses arquivos compactados. Se estiver desmarcada, o Trilium irá anexar os próprios arquivos compactados à nota.",
     "explodeArchives": "Ler conteúdos de arquivos <code>.zip</code>, <code>.enex</code> e <code>.opml</code>.",
@@ -337,7 +362,7 @@
     "calendar_root": "marca a nota que deve ser usada como raiz para notas diárias. Apenas uma deve ser marcada assim.",
     "archived": "notas com este rótulo não serão exibidas por padrão nos resultados de busca (também nos diálogos Ir para, Adicionar link, etc).",
     "exclude_from_export": "notas (junto com sua subárvore) não serão incluídas em nenhuma exportação de notas",
-    "run": "define em quais eventos o script deve ser executado. Os valores possíveis são:\n<ul>\n<li>frontendStartup - quando o frontend do Trilium inicia (ou é atualizado), mas não no celular.</li>\n<li>mobileStartup - quando o frontend do Trilium inicia (ou é atualizado), no celular.</li>\n<li>backendStartup - quando o backend do Trilium inicia</li>\n<li>hourly - executa uma vez por hora. Você pode usar o rótulo adicional <code>runAtHour</code> para especificar em qual hora.</li>\n<li>daily - executa uma vez por dia</li>\n</ul>",
+    "run": "define em que eventos o script deve ser executado. Os valores possíveis são:\n<ul>\n<li>frontendStartup - quando o frontend do Trilium é iniciado (ou atualizado), mas não em dispositivos móveis.</li>\n<li>mobileStartup - quando o frontend do Trilium é iniciado (ou atualizado) em dispositivos móveis.</li>\n<li>backendStartup - quando o backend do Trilium é iniciado.</li>\n<li>hourly - executar uma vez por hora. Pode utilizar o rótulo adicional <code>runAtHour</code> para especificar a que horas.</li>\n<li>daily - executar uma vez por dia.</li>\n</ul>",
     "run_on_instance": "Define em qual instância do Trilium isso deve ser executado. Por padrão, todas as instâncias.",
     "run_at_hour": "Em qual hora isso deve ser executado. Deve ser usado junto com <code>#run=hourly</code>. Pode ser definido várias vezes para executar mais de uma vez ao dia.",
     "disable_inclusion": "scripts com este rótulo não serão incluídos na execução do script pai.",
@@ -554,7 +579,7 @@
     "will_be_deleted_in": "Este anexo será excluído automaticamente em {{time}}",
     "will_be_deleted_soon": "Este anexo será excluído automaticamente em breve",
     "deletion_reason": ", porque o anexo não está associado ao conteúdo da nota. Para evitar a exclusão, adicione o anexo novamente ao conteúdo ou converta o anexo em uma nota.",
-    "role_and_size": "Regra: {{role}}, Tamanho: {{size}}",
+    "role_and_size": "Regra: {{role}}, tamanho: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Link do anexo copiado para a área de transferência.",
     "unrecognized_role": "Regra desconhecida de anexo '{{role}}'."
   },
@@ -765,7 +790,7 @@
     "import_files": "Importar arquivos",
     "export_note": "Exportar nota",
     "delete_note": "Excluir nota",
-    "print_note": "Imprimir nota",
+    "print_note": "Imprimir nota...",
     "save_revision": "Salvar revisão",
     "convert_into_attachment_failed": "A conversão da nota '{{title}}' falhou.",
     "convert_into_attachment_successful": "A nota '{{title}}' foi convertida para anexo.",
@@ -776,9 +801,11 @@
     "view_revisions": "Revisões da nota…",
     "advanced": "Avançado",
     "export_as_image": "Exportar como imagem",
-    "export_as_image_png": "PNG (raster)",
+    "export_as_image_png": "PNG (rasterizado)",
     "export_as_image_svg": "SVG (vetorial)",
-    "note_map": "Mapa de notas"
+    "note_map": "Mapa de notas",
+    "word_wrap_on": "Ligado",
+    "word_wrap_off": "Desligado"
   },
   "protected_session_status": {
     "inactive": "Clique para entrar na sessão protegida",
@@ -814,9 +841,9 @@
   },
   "zpetne_odkazy": {
     "relation": "relação",
-    "backlink_one": "",
-    "backlink_many": "",
-    "backlink_other": "{{count}} Links Reversos"
+    "backlink_one": "{{count}} Links Reverso",
+    "backlink_many": "{{count}} Links Reversos",
+    "backlink_other": "—{{count}} Links Reversos"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Inserir nota filha",
@@ -963,7 +990,8 @@
     "fast_search_description": "A opção de pesquisa rápida desabilita a pesquisa de texto completo do conteúdo de nota, o que pode acelerar a pesquisa em grandes bancos de dados.",
     "include_archived_notes_description": "As notas arquivadas são por padrão excluídas dos resultados da pesquisa, com esta opção elas serão incluídas.",
     "debug_description": "A depuração irá imprimir informações adicionais no console para ajudar na depuração de consultas complexas",
-    "view_options": "Ver opções:"
+    "view_options": "Ver opções:",
+    "option": "Opção"
   },
   "similar_notes": {
     "title": "Notas Similares",
@@ -1062,7 +1090,7 @@
     "too_big": "A prévia mostra apenas os primeiros {{maxNumChars}} caracteres do arquivo por razões de desempenho. Baixe o arquivo e abra-o externamente para ver todo o conteúdo."
   },
   "protected_session": {
-    "enter_password_instruction": "É necessário digitar sua senha para mostar notas protegidas:",
+    "enter_password_instruction": "É necessário digitar sua senha para mostrar notas protegidas:",
     "started": "A sessão protegida foi iniciada.",
     "wrong_password": "Senha incorreta.",
     "protecting-finished-successfully": "A proteção foi finalizada com sucesso.",
@@ -1132,7 +1160,7 @@
     "note_tree_font": "Fonte da Árvore de Notas",
     "note_detail_font": "Fonte Padrão da Nota",
     "monospace_font": "Fonte Monospace (código)",
-    "not_all_fonts_available": "Nem todas as fontes listadas podem estar disponíveis em seu sistema.",
+    "not_all_fonts_available": "Nem todas as fontes listadas podem estar disponíveis em seu sistema",
     "generic-fonts": "Fontes genéricas",
     "sans-serif-system-fonts": "Fontes sem serifa de sistema",
     "serif-system-fonts": "Fontes serifadas de sistema",
@@ -1169,7 +1197,8 @@
     "layout-vertical-title": "Vertical",
     "layout-horizontal-title": "Horizontal",
     "layout-vertical-description": "barra de atalho está a esquerda (padrão)",
-    "layout-horizontal-description": "barra de atalho está abaixo da barra de abas, a barra de abas agora tem a largura total."
+    "layout-horizontal-description": "barra de atalho está abaixo da barra de abas, a barra de abas agora tem a largura total.",
+    "modern_themes": "Moderno"
   },
   "note_launcher": {
     "this_launcher_doesnt_define_target_note": "Este atalho não define uma nota destino."
@@ -1190,7 +1219,7 @@
     "full_anonymization_description": "Esta ação ira gerar uma cópia anônima do banco de dados (sem conteúdo das notas, apenas estrutura e alguns metadados não sensíveis) para compartilhar online e depurar, sem expor seus dados pessoais.",
     "save_fully_anonymized_database": "Salvar banco de dados totalmente anonimizado",
     "light_anonymization": "Anonimização Leve",
-    "light_anonymization_description": "Esta ação criará uma nova cópia do banco de dados e aplicará uma anonimização leve — especificamente, apenas o conteúdo de todas as notas será removido, mas títulos e atributos permanecerão. Além disso, notas personalizadas de scripts JS frontend/servidor e widgets personalizados serão mantidos. Isso fornece mais contexto para depurar os problemas.",
+    "light_anonymization_description": "Cria uma cópia com o conteúdo das notas removido, mas mantém os títulos, atributos e scripts/widgets personalizados. Fornece mais contexto para depuração.",
     "choose_anonymization": "Você pode decidir se deseja fornecer um banco de dados totalmente ou levemente anonimizado. Mesmo o banco de dados totalmente anonimizado é muito útil; no entanto, em alguns casos, um banco de dados levemente anonimizado pode acelerar o processo de identificação e correção de bugs.",
     "save_lightly_anonymized_database": "Salvar banco de dados levemente anonimizado",
     "error_creating_anonymized_database": "Não foi possível criar o banco de dados anonimizado, verifique os logs do servidor para mais detalhes",
@@ -1224,7 +1253,8 @@
     "unit": "caracteres"
   },
   "code-editor-options": {
-    "title": "Editor"
+    "title": "Editor",
+    "tab_width_unit": "espaços"
   },
   "code_mime_types": {
     "title": "Tipos MIME disponíveis no dropdown",
@@ -1242,17 +1272,17 @@
   },
   "images": {
     "images_section_title": "Imagens",
-    "download_images_automatically": "Baixar imagens automaticamente para uso offline.",
+    "download_images_automatically": "Baixar imagens automaticamente",
     "download_images_description": "HTML colado pode conter referências a imagens on-line, Trilium vai buscar estas referências e baixar as imagens para que eles estejam disponíveis off-line.",
     "enable_image_compression": "Habilitar compressão de imagem",
-    "max_image_dimensions": "Largura/altura máxima de uma imagem (a imagem será redimensionada se exceder este valor).",
+    "max_image_dimensions": "Largura/altura máxima de uma imagem (a imagem será redimensionada se exceder este valor)",
     "max_image_dimensions_unit": "pixels",
-    "jpeg_quality_description": "Qualidade JPEG (10 - pior qualidade, 100 - melhor qualidade, 50 - 85 é recomendado)"
+    "jpeg_quality_description": "A faixa recomendada é de 50 a 85. Valores mais baixos reduzem o tamanho do arquivo, enquanto valores mais altos preservam os detalhes."
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Tempo Limite para Exclusão de um Anexo",
-    "erase_attachments_after": "Apagar anexos não utilizados após:",
-    "manual_erasing_description": "Você também pode ativar a exclusão manualmente (sem considerar o timeout definido acima):",
+    "erase_attachments_after": "Apagar anexos não utilizados após",
+    "manual_erasing_description": "Acione o apagamento manualmente, ignorando o tempo limite acima.",
     "erase_unused_attachments_now": "Apagar anexos não utilizados agora",
     "unused_attachments_erased": "Os anexos não utilizados foram apagados."
   },
@@ -1262,27 +1292,27 @@
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "Tempo Limite para Exclusão de uma Nota",
-    "erase_notes_after": "Apagar notas após:",
-    "manual_erasing_description": "Você também pode ativar a exclusão manualmente (sem considerar o timeout definido acima):",
+    "erase_notes_after": "Apagar notas após",
+    "manual_erasing_description": "Acione o apagamento manualmente, ignorando o tempo limite acima.",
     "erase_deleted_notes_now": "Apague as notas excluídas agora",
     "deleted_notes_erased": "As notas excluídas foram removidas permanentemente."
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "Intervalo de Captura de Versão da Nota",
     "note_revisions_snapshot_description": "O intervalo de captura de versão da nota é o tempo após o qual uma nova revisão será criada para a nota. Veja <doc>wiki</doc> para mais informações.",
-    "snapshot_time_interval_label": "Intervalo de Captura de Versão da Nota:"
+    "snapshot_time_interval_label": "Intervalo de snapshot da Nota"
   },
   "revisions_snapshot_limit": {
     "note_revisions_snapshot_limit_title": "Limite de Capturas das Versões da Nota",
     "note_revisions_snapshot_limit_description": "O limite de número de captura de versões das notas refere-se ao número máximo de revisões que podem ser salvas para cada nota. Onde -1 significa nenhum limite, 0 significa excluir todas as revisões. Você pode definir as revisões máximas para uma única nota através da etiqueta #versioningLimit.",
-    "snapshot_number_limit_label": "Quantidade limite de capturas de versão:",
+    "snapshot_number_limit_label": "Numero máximo de revisões",
     "snapshot_number_limit_unit": "capturas",
     "erase_excess_revision_snapshots": "Apagar capturas de versão excedentes agora",
     "erase_excess_revision_snapshots_prompt": "As capturas de versão excedentes foram apagadas."
   },
   "search_engine": {
     "title": "Motor de Pesquisa",
-    "custom_search_engine_info": "O motor de busca personalizado requer que sejam definidos um nome e uma URL. Se um destes não estiver definido, o DuckDuckGo será usado como o motor de busca padrão.",
+    "custom_search_engine_info": "Utilizado ao pesquisar na web o texto selecionado. Se não estiver configurado, o DuckDuckGo será utilizado.",
     "predefined_templates_label": "Modelos de motor de pesquisa predefinidos",
     "bing": "Bing",
     "baidu": "Baidu",
@@ -1332,8 +1362,8 @@
   "custom_date_time_format": {
     "title": "Formato Personalizado de Data/Hora",
     "description": "Personaliza o formato de data e hora inseridos via <shortcut /> ou barra de ferramentas. Veja a <doc>documentação do Day.js</doc> para os tokens de formatos disponíveis.",
-    "format_string": "Formato:",
-    "formatted_time": "Data/hora formatada:"
+    "format_string": "Formato",
+    "formatted_time": "Data/hora formatada"
   },
   "i18n": {
     "title": "Localização",
@@ -1367,8 +1397,10 @@
     "existing_backups": "Backups existentes",
     "date-and-time": "Data & hora",
     "path": "Caminho",
-    "database_backed_up_to": "Backup do banco de dados criado em {{backupFilePath}}",
-    "no_backup_yet": "ainda não existe nenhum backup"
+    "database_backed_up_to": "Backup do banco de dados criado em {{- backupFilePath}}",
+    "no_backup_yet": "ainda não existe nenhum backup",
+    "download": "Baixar",
+    "title": "Backup"
   },
   "note_types": {
     "relation-map": "Map de Relação",
@@ -1392,7 +1424,10 @@
     "collections": "Coleções",
     "text": "Texto",
     "code": "Código",
-    "saved-search": "Pesquisa Salva"
+    "saved-search": "Pesquisa Salva",
+    "spreadsheet": "Planilha",
+    "markdown": "Markdown",
+    "ai-chat": "Chat com IA"
   },
   "protect_note": {
     "toggle-on": "Proteger a nota",
@@ -1461,7 +1496,7 @@
   "note_detail": {
     "could_not_find_typewidget": "Não foi possível encontrar typeWidget para o tipo '{{type}}'",
     "printing": "Impressão em andamento…",
-    "printing_pdf": "Exportação para PDF em andamento…"
+    "printing_pdf": "Preparando a pré-visualização de impressão..."
   },
   "note_title": {
     "placeholder": "digite o título da nota aqui...",
@@ -1585,7 +1620,7 @@
         "title": "Fixado",
         "description": "ferramentas de edição aparecem na aba de faixa \"Formatação\"."
       },
-      "multiline-toolbar": "Exibir a barra de ferramentas em múltiplas linhas se não couber."
+      "multiline-toolbar": "Exibir a barra de ferramentas em múltiplas linhas se não couber"
     }
   },
   "electron_context_menu": {
@@ -1840,14 +1875,15 @@
     "protected_session_timeout_description": "O tempo limite da sessão protegida é o período após o qual a sessão protegida é apagada da memória do navegador. Esse tempo é contado a partir da última interação com notas protegidas. Veja",
     "wiki": "wiki",
     "for_more_info": "para mais informações.",
-    "protected_session_timeout_label": "Tempo limite da sessão protegida:",
+    "protected_session_timeout_label": "Fechar sessão automaticamente após",
     "reset_confirmation": "Ao redefinir a senha, você perderá para sempre o acesso a todas as suas notas protegidas existentes. Tem certeza de que deseja redefinir a senha?",
     "reset_success_message": "A senha foi redefinida. Por favor, defina uma nova senha",
     "change_password_heading": "Alterar Senha",
     "set_password_heading": "Definir Senha",
     "set_password": "Definir Senha",
     "password_mismatch": "As novas senhas não são iguais.",
-    "password_changed_success": "A senha foi alterada. O Trilium será recarregado após você pressionar OK."
+    "password_changed_success": "A senha foi alterada. O Trilium será recarregado após você pressionar OK.",
+    "cancel": "Cancelar"
   },
   "multi_factor_authentication": {
     "title": "Autenticação Multifator",
@@ -1983,10 +2019,11 @@
     "shared_unshare": "Remover compartilhamento",
     "clipped_note": "Recorte da web",
     "clipped_note_description": "Esta nota foi originalmente obtida de {{url}}.\n\nClique para navegar até a página de origem.",
-    "execute_script": "Executar script",
+    "execute_script": "Rodar script",
     "execute_script_description": "Esta nota é uma nota de script. Clique para executar o script.",
     "execute_sql": "Executar SQL",
-    "execute_sql_description": "Esta nota é uma nota SQL. Clique para executar a consulta SQL."
+    "execute_sql_description": "Esta nota é uma nota SQL. Clique para executar a consulta SQL.",
+    "save_status_unsaved": "Não salvo"
   },
   "status_bar": {
     "language_title": "Alterar idioma do conteúdo",
@@ -2011,7 +2048,11 @@
     "note_paths_many": "{{count}} caminhos",
     "note_paths_other": "{{count}} caminhos",
     "note_paths_title": "Caminhos da nota",
-    "code_note_switcher": "Alterar modo de idioma"
+    "code_note_switcher": "Alterar modo de idioma",
+    "tab_width_style_spaces": "Espaços",
+    "tab_width_style_tabs": "Abas",
+    "tab_width_style_header": "Indentação usando",
+    "tab_width_display_header": "Largura de exibição"
   },
   "attributes_panel": {
     "title": "Atributos da nota"
@@ -2021,5 +2062,187 @@
     "empty_button": "Ocultar o painel",
     "toggle": "Alternar painel direito",
     "custom_widget_go_to_source": "Ir para o código-fonte"
+  },
+  "active_content_badges": {
+    "menu_run_disabled": "Manualmente",
+    "menu_run_daily": "Diariamente",
+    "menu_execute_now": "Executar script agora",
+    "menu_docs": "Abrir documentação",
+    "toggle_tooltip_disable_tooltip": "Clique para desabilitar isso {{type}}.",
+    "toggle_tooltip_enable_tooltip": "Clique para habilitar isso {{type}}.",
+    "type_app_theme": "Tema personalizado",
+    "type_render_note": "Renderizar nota",
+    "type_app_css": "CSS Personalizado",
+    "type_widget": "Widget",
+    "type_frontend_script": "Script frontend",
+    "type_backend_script": "Script backend",
+    "menu_change_to_frontend_script": "Mudar para script frontend",
+    "menu_change_to_widget": "Alterar para widget",
+    "menu_run_mobile_startup": "Quando a interface móvel é iniciada"
+  },
+  "media": {
+    "loop": "Ciclo",
+    "rotate": "Rotacionar"
+  },
+  "mermaid": {
+    "sample_flowchart": "Fluxograma",
+    "sample_class": "Classe",
+    "sample_sequence": "Sequência",
+    "sample_state": "Estado",
+    "sample_mindmap": "Mapa mental",
+    "sample_architecture": "Arquitetura",
+    "sample_block": "Bloquear",
+    "sample_radar": "Radar",
+    "sample_requirement": "Requisitos",
+    "sample_timeline": "Linha do tempo",
+    "sample_ishikawa": "Ishikawa",
+    "sample_venn": "Venn",
+    "sample_xy": "XY",
+    "sample_sankey": "Sankey",
+    "sample_quadrant": "Quadrante",
+    "sample_pie": "Torta",
+    "sample_packet": "Pacote",
+    "sample_kanban": "Kanban",
+    "sample_git": "Git",
+    "sample_gantt": "Gantt",
+    "sample_wardley": "Mapa de Wardley",
+    "sample_treeview": "Visualização em árvore",
+    "sample_c4": "C4",
+    "sample_entity_relationship": "Relação de Entidade",
+    "sample_diagrams": "Exemplos de diagramas:",
+    "placeholder": "Digite o conteúdo do seu diagrama Mermaid ou use um dos diagramas de exemplo abaixo.",
+    "sample_treemap": "Mapa de Árvore",
+    "sample_user_journey": "Jornada do Usuário"
+  },
+  "llm_chat": {
+    "send": "Enviar",
+    "sending": "Enviando...",
+    "sources": "Fonte",
+    "thinking": "Pensando...",
+    "result": "Resultado",
+    "error": "Erro",
+    "tool_error": "Falhou",
+    "stop": "Parar"
+  },
+  "llm": {
+    "provider_name": "Nome",
+    "provider_type": "Provedor",
+    "actions": "Ações",
+    "delete_provider": "Deletar",
+    "cancel": "Cancelar",
+    "tools": {
+      "clone_note": "Clonar nota",
+      "move_note": "Mover nota",
+      "delete_note": "Deletar nota",
+      "rename_note": "Renomear nota",
+      "get_attachment_content": "Ler conteúdo anexado",
+      "get_attachment": "Obter anexo",
+      "web_search": "Pesquisar na Internet",
+      "load_skill": "Carregar habilidade",
+      "delete_attribute": "Excluir atributo",
+      "set_attribute": "Definir atributo",
+      "get_attribute": "Obter atributo",
+      "get_attributes": "Obter atributos",
+      "create_note": "Criar nota",
+      "append_to_note": "Anexar nota",
+      "update_note_content": "Atualizar conteúdo da nota",
+      "get_note_content": "Obter conteúdo da nota",
+      "get_note": "Obter nota",
+      "search_notes": "Pesquisar nota",
+      "note_in_parent": "<Note/> no <Parent/>"
+    },
+    "mcp_endpoint_description": "Adicione este URL à configuração MCP do seu assistente de IA",
+    "mcp_enabled_description": "Exponha um endpoint do Protocolo de Contexto de Modelo (MCP) para que assistentes de codificação de IA (por exemplo, Claude Code, GitHub Copilot) possam ler e modificar suas anotações. O endpoint só é acessível a partir do localhost.",
+    "mcp_enabled": "Servidor MCP",
+    "mcp_title": "MCP (Protocolo de Contexto do Modelo)",
+    "api_key_placeholder": "Insira sua chave API",
+    "api_key": "Chave API",
+    "delete_provider_confirmation": "Tem certeza de que deseja excluir o provedor \"{{name}}\"?",
+    "settings_description": "Configure as integrações de IA e de modelos de linguagem de grande porte.",
+    "settings_title": "IA / LLM"
+  },
+  "mind-map": {
+    "summary": "Sumário",
+    "linkBidirectional": "Link Bidirecional",
+    "link": "Link",
+    "cancelFocus": "Cancelar Modo Foco",
+    "focus": "Modo Foco",
+    "removeNode": "Remover nó",
+    "addSibling": "Adicionar irmão",
+    "addParent": "Adicionar pai",
+    "addChild": "Adicionar filho"
+  },
+  "ocr": {
+    "processing": "Processando..."
+  },
+  "search": {
+    "title": "Pesquisar"
+  },
+  "database": {
+    "title": "Banco de dados"
+  },
+  "text_editor": {
+    "title": "Editor"
+  },
+  "print_preview": {
+    "close": "Fechar",
+    "orientation": "Orientação",
+    "portrait": "Retrato",
+    "landscape": "Paisagem",
+    "scale": "Escala",
+    "margins": "Margem",
+    "margins_default": "Padrão",
+    "margins_minimum": "Mínimo",
+    "margins_custom": "Personalizado",
+    "margin_right": "Direita",
+    "margin_top": "Cima",
+    "margin_bottom": "Baixo",
+    "margin_left": "Esquerda",
+    "page_ranges": "Páginas",
+    "destination": "Destino",
+    "destination_default": "Padrão",
+    "page_ranges_placeholder": "ex. 1-5, 8, 11-13",
+    "page_ranges_invalid": "Formato invalido. Use p. ex. 1-5, 8, 11-13.",
+    "margins_none": "Nenhum",
+    "render_error": "Não foi possível gerar o PDF com as configurações atuais. Verifique as margens e a escala.",
+    "page_size": "Tamanho da página",
+    "destination_printers": "Impressoras",
+    "destination_pdf": "Salvar como PDF",
+    "system_print": "Imprimir usando a caixa de diálogo do sistema",
+    "export_pdf": "Exportar como PDF",
+    "print": "Imprimir",
+    "save": "Salvar como PDF",
+    "title": "Pré-visualização de impressão"
+  },
+  "revisions": {
+    "delete_button": "Deletar",
+    "download_button": "Baixar",
+    "source_auto": "Salvamento automático",
+    "source_restore": "Restaurar",
+    "date_today": "Hoje",
+    "date_yesterday": "Ontem"
+  },
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  "spreadsheet": {
+    "read-only": "Esta nota é somente para leitura."
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Favoritos"
+  },
+  "mobile_tab_switcher": {
+    "more_options": "Mais opções"
+  },
+  "platform_indicator": {
+    "available_on": "Disponível em {{platform}}"
+  },
+  "pdf": {
+    "pages_loading": "Carregando...",
+    "pages_alt": "Pagina {{pageNumber}}"
+  },
+  "setup_form": {
+    "more_info": "Saber mais"
   }
 }

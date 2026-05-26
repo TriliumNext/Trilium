@@ -1,4 +1,4 @@
-import { ButtonView, Command, Plugin, toWidget, Widget, type Editor, type Observable } from 'ckeditor5';
+import { ButtonView, Command, type Editor, Plugin, toWidget, Widget, type Observable } from 'ckeditor5';
 import noteIcon from '../icons/note.svg?raw';
 
 export const COMMAND_NAME = 'insertIncludeNote';

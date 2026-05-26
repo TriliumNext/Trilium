@@ -7,3 +7,9 @@
     font-size: 500%;
     flex-grow: 1;
 }
+
+.rendered-content .ck-content {
+    p:last-child {
+        margin-bottom: 0;
+    }
+}

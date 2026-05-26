@@ -23,11 +23,15 @@ Durumu](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes, büyük kişisel bilgi tabanları oluşturmaya odaklanmış, ücretsiz ve
@@ -83,17 +87,16 @@ Dokümantasyonumuz birden fazla formatta mevcuttur:
   (not yükseltme)
 * Sorunsuz [not
   versiyonlama](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
-* Note
-  [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
-  can be used for note organization, querying and advanced
-  [scripting](https://docs.triliumnotes.org/user-guide/scripts)
+* [Özellikler](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  notları düzenlemek, sorgulamak ve gelişmiş [komut dosyası
+  oluşturma](https://docs.triliumnotes.org/user-guide/scripts) işlemleri için
+  kullanılabilir
 * Arayüz; İngilizce, Almanca, İspanyolca, Fransızca, Rumence ve Çince
   (basitleştirilmiş ve geleneksel) dillerinde mevcuttur
-* Direct [OpenID and TOTP
-  integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
-  more secure login
-* [Synchronization](https://docs.triliumnotes.org/user-guide/setup/synchronization)
-  with self-hosted sync server
+* Daha güvenli oturum açma için [OpenID ve TOTP
+  entegrasyonu](https://docs.triliumnotes.org/user-guide/setup/server/mfa)
+* Kendi barındırdığınız senkronizasyon sunucusuyla
+  [senkronizasyon](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
@@ -185,7 +188,7 @@ If your distribution is listed in the table below, use your distribution's
 package.
 
 [![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+status](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 You may also download the binary release for your platform from the [latest
 release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
@@ -257,6 +260,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Alternatively, if you have Nix installed:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Building the Executable
 Download the repository, install dependencies using `pnpm` and then build the
 desktop app for Windows:
@@ -277,6 +291,34 @@ guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/D
 for details. If you have more questions, feel free to reach out via the links
 described in the "Discuss with us" section above.
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Shoutouts
 
 * [zadam](https://github.com/zadam) for the original concept and implementation
@@ -287,14 +329,12 @@ described in the "Discuss with us" section above.
 * [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
 * [antoniotejada](https://github.com/nriver) for the original syntax highlight
   widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
 * [Tabler Icons](https://tabler.io/icons) for the system tray icons.
 
 Trilium would not be possible without the technologies behind it:
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
+  text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
   support for huge amount of languages.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite

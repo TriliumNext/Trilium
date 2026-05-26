@@ -33,19 +33,20 @@ runs:
     # Deploy using Wrangler (use pre-installed wrangler)
     - name: Deploy to Cloudflare Pages
       id: deploy
-      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-      uses: cloudflare/wrangler-action@v3
+      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
+      uses: cloudflare/wrangler-action@v4
       with:
         apiToken: ${{ inputs.cloudflare_api_token }}
         accountId: ${{ inputs.cloudflare_account_id }}
-        command: pages deploy ${{ inputs.deploy_dir }} --project-name=${{ inputs.project_name}} --branch=${{ github.ref_name }}
+        # On release events github.ref_name is the tag (e.g. v0.103.0), so force the production branch.
+        command: pages deploy ${{ inputs.deploy_dir }} --project-name=${{ inputs.project_name}} --branch=${{ github.event_name == 'release' && 'main' || github.ref_name }}
         wranglerVersion: ''  # Use pre-installed version
 
     # Deploy preview for PRs
     - name: Deploy Preview to Cloudflare Pages
       id: preview-deployment
       if: github.event_name == 'pull_request'
-      uses: cloudflare/wrangler-action@v3
+      uses: cloudflare/wrangler-action@v4
       with:
         apiToken: ${{ inputs.cloudflare_api_token }}
         accountId: ${{ inputs.cloudflare_account_id }}

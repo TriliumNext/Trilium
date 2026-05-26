@@ -81,6 +81,8 @@
     --icon-button-size: 32px;
     --icon-button-icon-ratio: 0.65;
 
+    --opaque-icon-button-backdrop-filter: blur(32px) saturate(1000%);
+
     --modal-control-button-size: 22px;
 
     /* Theme capabilities */
@@ -100,6 +102,17 @@
 
     /* The minimum perceptual lightness for the custom color in the dark theme (%): */
     --tree-item-dark-theme-min-color-lightness: 65;
+
+    /* Tooltips */
+    --tooltip-border-radius: 6px;
+    --tooltip-padding: 2px 8px 4px 8px;
+    --tooltip-box-shadow: 
+        -1px -1px 2px var(--tooltip-shadow-color),
+        2px 2px 8px var(--tooltip-shadow-color);
+    --tooltip-backdrop-filter: blur(5px);
+    --tooltip-font-size: 0.9rem;
+
+    --note-tooltip-box-shadow: 10px 10px 93px -25px var(--tool-dialog-shadow-color);
 }
 
 body {
@@ -576,7 +589,43 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
  * NOTE TOOLTIPS
  */
 
- .tooltip .tooltip-inner:has(.note-tooltip-content) {
+.tooltip.note-tooltip {
+    --tooltip-background-color: var(--note-tooltip-background-color);
+    --tooltip-foreground-color: var(--main-text-color);
+    --tooltip-box-shadow: var(--note-tooltip-box-shadow);
+    
+    > .tooltip-inner {
+        outline: 1px solid var(--main-border-color);
+        border-radius: 12px;
+        min-height: 120px;
+    }
+    
+    .rendered-content {
+        font-size: .8em;
+    }
+
+    .open-popup-button {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        inset-inline-end: 20px;
+        inset-block-end: 20px;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+
+        backdrop-filter: var(--opaque-icon-button-backdrop-filter);
+        background-color: var(--opaque-icon-button-background);
+        color: var(--opaque-icon-button-color);
+
+        &:hover {
+            background-color: var(--opaque-icon-button-hover-background-color);
+            color: var(--opaque-icon-button-hover-color);
+        }
+    }
+}
+
+.tooltip .tooltip-inner:has(.note-tooltip-content) {
     border-radius: 8px;
 }
 

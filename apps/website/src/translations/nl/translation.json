@@ -42,6 +42,17 @@
         "title": "Meerdere manieren om je informatie te tonen",
         "text_title": "Tekstnotities",
         "text_description": "De notities worden bewerkt met een visuele (WYSIWYG) editor, met ondersteuning voor tabellen, plaatjes, wiskundige tekens, codeblokken met syntax-highlighting. Lijn tekst uit met Markdown-achtige syntax of met slash-commando's.",
-        "code_title": "Codenotities"
+        "code_title": "Codenotities",
+        "code_description": "Grote broncode fragmenten of scripts gebruiken een eigen editor, met syntax markering voor veel programmeertalen en verschillende kleurenthema's.",
+        "file_title": "Bestandsnotities",
+        "file_description": "Voeg multimediabestanden in zoals PDF bestanden, afbeeldingen en filmopnames, met voorvertoning in de toepassing.",
+        "canvas_title": "Canvas",
+        "canvas_description": "Organiseer vormen, afbeeldingen en tekst op een oneindig canvas, met dezelfde technologie als excalidraw.com. Ideaal voor diagrammen, schetsen en visuele planning.",
+        "mermaid_title": "Mermaid diagrammen",
+        "mermaid_description": "Creëer diagrammen zoals flowcharts, class & sequence diagrammen, Gantt diagrammen en nog veel meer, met de Mermaid syntax.",
+        "mindmap_title": "Mindmap"
+    },
+    "collections": {
+        "title": "Verzamelingen"
     }
 }

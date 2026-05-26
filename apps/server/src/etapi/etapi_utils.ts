@@ -2,6 +2,7 @@ import type { NextFunction, Request, RequestHandler, Response, Router } from "ex
 import type { ParamsDictionary } from "express-serve-static-core";
 
 import becca from "../becca/becca.js";
+import { namespace } from "../cls_provider.js";
 import type { ApiRequestHandler, SyncRouteRequestHandler } from "../routes/route_api.js";
 import cls from "../services/cls.js";
 import config from "../services/config.js";
@@ -53,8 +54,8 @@ function checkEtapiAuth(req: Request, res: Response, next: NextFunction) {
 
 function processRequest<P extends ParamsDictionary>(req: Request<P>, res: Response, routeHandler: ApiRequestHandler<P>, next: NextFunction, method: string, path: string) {
     try {
-        cls.namespace.bindEmitter(req);
-        cls.namespace.bindEmitter(res);
+        namespace.bindEmitter(req);
+        namespace.bindEmitter(res);
 
         cls.init(() => {
             cls.set("componentId", "etapi");
@@ -90,6 +91,7 @@ function getAndCheckNote(noteId: string) {
         return note;
     }
     throw new EtapiError(404, "NOTE_NOT_FOUND", `Note '${noteId}' not found.`);
+
 }
 
 function getAndCheckAttachment(attachmentId: string) {
@@ -99,6 +101,7 @@ function getAndCheckAttachment(attachmentId: string) {
         return attachment;
     }
     throw new EtapiError(404, "ATTACHMENT_NOT_FOUND", `Attachment '${attachmentId}' not found.`);
+
 }
 
 function getAndCheckBranch(branchId: string) {
@@ -108,6 +111,7 @@ function getAndCheckBranch(branchId: string) {
         return branch;
     }
     throw new EtapiError(404, "BRANCH_NOT_FOUND", `Branch '${branchId}' not found.`);
+
 }
 
 function getAndCheckAttribute(attributeId: string) {
@@ -117,6 +121,7 @@ function getAndCheckAttribute(attributeId: string) {
         return attribute;
     }
     throw new EtapiError(404, "ATTRIBUTE_NOT_FOUND", `Attribute '${attributeId}' not found.`);
+
 }
 
 function getAndCheckRevision(revisionId: string) {

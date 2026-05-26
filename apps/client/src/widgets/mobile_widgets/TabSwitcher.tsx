@@ -26,8 +26,7 @@ const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
     source: "bx bx-code",
     "contextual-help": "bx bx-help-circle",
     "note-map": "bx bxs-network-chart",
-    attachments: "bx bx-paperclip",
-    ocr: "bx bx-text"
+    attachments: "bx bx-paperclip"
 };
 
 export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {

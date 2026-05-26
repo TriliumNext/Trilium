@@ -127,9 +127,9 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/x-lua": async () => (await import('@codemirror/legacy-modes/mode/lua')).lua,
     "text/x-mariadb": async () => (await import('@codemirror/legacy-modes/mode/sql')).sqlite,
     "text/x-markdown": async () => {
-        const { markdown } = (await import('@codemirror/lang-markdown'));
+        const { markdown, markdownLanguage } = (await import('@codemirror/lang-markdown'));
         const { languages } = (await import('@codemirror/language-data'));
-        return markdown({ codeLanguages: languages });
+        return markdown({ base: markdownLanguage, codeLanguages: languages });
     },
     "text/x-mathematica": async () => (await import('@codemirror/legacy-modes/mode/mathematica')).mathematica,
     "text/x-modelica": async () => (await import('@codemirror/legacy-modes/mode/modelica')).modelica,

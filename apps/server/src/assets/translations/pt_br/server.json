@@ -103,7 +103,9 @@
     "find-in-text": "Alternar painel de busca",
     "export-as-pdf": "Exportar a nota atual como PDF",
     "toggle-zen-mode": "Ativa/desativa o modo zen (interface mínima para uma edição mais focada)",
-    "show-cheatsheet": "Exibir um modal com operações comuns de teclado"
+    "show-cheatsheet": "Exibir um modal com operações comuns de teclado",
+    "toggle-archived-notes": "Mostrar/ocultar notas arquivadas na árvore de notas",
+    "save-named-revision": "Guardar uma revisão com nome da nota ativa"
   },
   "login": {
     "title": "Login",
@@ -122,47 +124,6 @@
     "password": "Senha",
     "password-confirmation": "Confirmar Senha",
     "button": "Definir senha"
-  },
-  "setup": {
-    "heading": "Trilium Notes setup",
-    "new-document": "Sou um novo usuário e quero criar um novo documento Trilium para minhas notas",
-    "sync-from-desktop": "Já tenho uma instância no desktop e quero configurar a sincronização com ela",
-    "sync-from-server": "Já tenho uma instância no servidor e quero configurar a sincronização com ela",
-    "next": "Avançar",
-    "init-in-progress": "Inicialização do documento em andamento",
-    "redirecting": "Você será redirecionado para o aplicativo em breve.",
-    "title": "Setup"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sincronizar com Desktop",
-    "description": "Esta configuração deve ser iniciada a partir da instância do desktop:",
-    "step1": "Abra sua instância do Trilium Notes no desktop.",
-    "step2": "No menu do Trilium, clique em Opções.",
-    "step3": "Clique na categoria Sincronização.",
-    "step4": "Altere o endereço da instância do servidor para: {{- host}} e clique em Salvar.",
-    "step5": "Clique no botão \"Testar sincronização\" para verificar se a conexão foi bem-sucedida.",
-    "step6": "Depois de concluir essas etapas, clique em {{- link}}.",
-    "step6-here": "Aqui"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sincronizar do Servidor",
-    "instructions": "Por favor, insira abaixo o endereço e as credenciais do servidor Trilium. Isso fará o download de todo o documento Trilium do servidor e configurará a sincronização com ele. Dependendo do tamanho do documento e da velocidade da conexão, isso pode levar algum tempo.",
-    "server-host": "Endereço do servidor Trilium",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server": "Servidor proxy (opcional)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Nota:",
-    "proxy-instruction": "Se você deixar o campo de proxy em branco, o proxy do sistema será usado (aplicável apenas ao aplicativo desktop)",
-    "password": "Senha",
-    "password-placeholder": "Senha",
-    "back": "Voltar",
-    "finish-setup": "Terminar configuração"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sincronização em andamento",
-    "successful": "A sincronização foi configurada corretamente. Levará algum tempo para que a sincronização inicial seja concluída. Quando terminar, você será redirecionado para a página de login.",
-    "outstanding-items": "Itens de sincronização pendentes:",
-    "outstanding-items-default": "N/A"
   },
   "share_404": {
     "title": "Não encontrado",
@@ -198,7 +159,8 @@
     "december": "Dezembro"
   },
   "special_notes": {
-    "search_prefix": "Pesquisar:"
+    "search_prefix": "Pesquisar:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "O host do servidor de sincronização não está configurado. Por favor, configure a sincronização primeiro.",
@@ -299,7 +261,9 @@
     "zoom-in": "Aumentar Zoom",
     "reset-zoom-level": "Redefinir Nível de Zoom",
     "copy-without-formatting": "Copiar Sem Formatação",
-    "force-save-revision": "Forçar Salvamento da Revisão"
+    "force-save-revision": "Forçar Salvamento da Revisão",
+    "toggle-archived-notes": "Alternar a visibilidade das notas arquivadas",
+    "save-named-revision": "Guardar revisão com nome"
   },
   "weekdayNumber": "Semana {weekNumber}",
   "quarterNumber": "Trimestre {quarterNumber}",
@@ -334,7 +298,7 @@
     "shortcuts-title": "Atalhos",
     "text-notes": "Notas de Texto",
     "code-notes-title": "Notas de Código",
-    "images-title": "Imagens",
+    "images-title": "Mídia",
     "spellcheck-title": "Verificação Ortográfica",
     "password-title": "Senha",
     "multi-factor-authentication-title": "MFA",
@@ -354,7 +318,12 @@
     "available-launchers-title": "Atalhos disponíveis",
     "visible-launchers-title": "Atalhos Visíveis",
     "command-palette": "Abrir a Paleta de Comandos",
-    "zen-mode": "Modo Zen"
+    "zen-mode": "Modo Zen",
+    "llm-chat-history-title": "Histórico do chat da IA",
+    "custom-dictionary-title": "Dizionário personalizado",
+    "llm-title": "IA / LLM",
+    "tab-switcher-title": "Alternador de guias",
+    "sidebar-chat-title": "IA Chat"
   },
   "notes": {
     "new-note": "Nova nota",
@@ -388,7 +357,8 @@
   "migration": {
     "old_version": "A migração direta da sua versão atual não é suportada. Por favor, atualize primeiro para a versão mais recente v0.60.4 e somente depois para esta versão.",
     "error_message": "Erro durante a migração para a versão {{version}}: {{stack}}",
-    "wrong_db_version": "A versão do banco de dados ({{version}}) é mais recente do que a esperada pelo aplicativo ({{targetVersion}}), o que significa que ele foi criado por uma versão mais nova e incompatível do Trilium. Atualize para a versão mais recente do Trilium para resolver esse problema."
+    "wrong_db_version": "A versão do banco de dados ({{version}}) é mais recente do que a esperada pelo aplicativo ({{targetVersion}}), o que significa que ele foi criado por uma versão mais nova e incompatível do Trilium. Atualize para a versão mais recente do Trilium para resolver esse problema.",
+    "invalid_db_version": "A versão da base de dados não é um número válido. Normalmente, isto indica que a opção «dbVersion» na base de dados está corrompida. Por favor, recupere os dados a partir de uma cópia de segurança."
   },
   "modals": {
     "error_title": "Erro"
@@ -400,7 +370,10 @@
     "last-updated": "Atualizado pela última vez em {{- date}}",
     "subpages": "Subpáginas:",
     "on-this-page": "Nesta página",
-    "expand": "Expandir"
+    "expand": "Expandir",
+    "toggle-navigation": "Alternar Navegação",
+    "toggle-toc": "Alternar Índice",
+    "logo-alt": "Logótipo"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Trecho de texto",
@@ -436,5 +409,21 @@
   },
   "desktop": {
     "instance_already_running": "Já existe uma instância sendo executada, em vez disso focando nesta."
+  },
+  "password": {
+    "incorrect": "A senha digitada está incorreta."
+  },
+  "script": {
+    "wrong-environment": "Não é possível executar a nota «{{- noteTitle}}» ({{- noteId}}). Trata-se de um script {{- actualEnv}}, mas a execução foi tentada no ambiente {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Erro em {{- context}}: {{- message}}",
+      "reserved-keyword": "“{{- token}}” é uma palavra-chave reservada. Para pesquisar um valor literal, utilize aspas: “{{- token}}”",
+      "cannot-compare-with": "não pode ser comparado com “{{- token}}”. Para pesquisar um valor literal, utilize aspas: “{{- token}}”",
+      "misplaced-expression": "Expressão “{{- token}}” incorreta ou incompleta",
+      "fulltext-after-expression": "“{{- token}}” não é uma expressão válida. Para pesquisar texto, coloque-o antes dos filtros de atributos (por exemplo, “{{- token}} #label” em vez de “#label {{- token}}”).",
+      "unrecognized-expression": "Expressão não reconhecida \"{{- token}}\""
+    }
   }
 }

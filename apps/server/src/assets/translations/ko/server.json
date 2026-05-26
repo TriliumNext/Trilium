@@ -202,14 +202,5 @@
     "password": "암호",
     "password-confirmation": "암호 확인",
     "button": "암호 설정"
-  },
-  "setup": {
-    "heading": "Trilium 노트 셋업",
-    "next": "다음",
-    "init-in-progress": "문서 초기화 진행 중",
-    "title": "셋업"
-  },
-  "setup_sync-from-desktop": {
-    "step5": "연결 설정이 성공적인지 확인을 위해 \"Test sync\" 버튼을 클릭하세요."
   }
 }

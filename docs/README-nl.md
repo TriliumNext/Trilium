@@ -22,11 +22,15 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trillium Notes is een gratis en open-source, platformonafhankelijke,
@@ -98,34 +102,38 @@ Onze documentatie is beschikbaar in meerdere formaten:
     synchronisatieserver](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Delen](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (publiceer) notities naar het internet (publieklijk)
-* Strong [note
-  encryption](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
-  with per-note granularity
-* Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
-  "canvas")
-* [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
-* Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
-* [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) with
-  location pins and GPX tracks
-* [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - see [Advanced
-  showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
-* [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) for
-  automation
-* Scales well in both usability and performance upwards of 100 000 notes
-* Touch optimized [mobile
-  frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) for
-  smartphones and tablets
-* Built-in [dark
-  theme](https://docs.triliumnotes.org/user-guide/concepts/themes), support for
-  user themes
+* Sterke [encryptie van
+  notities](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
+  met granulariteit per notitie
+* Teken diagrammen, gebaseerd op [Excalidraw](https://excalidraw.com/) (notitie
+  type "canvas")
+* [Relatie
+  overzichten](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  en [notitie/koppeling
+  overzichten](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  voor het visualiseren van notities en hun relaties
+* Mind maps, gebaseerd op [Mind Elixir](https://docs.mind-elixir.com/)
+* [Geografische
+  kaarten](https://docs.triliumnotes.org/user-guide/collections/geomap) met
+  locatie pins en GPX tracks
+* [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - zie
+  [Geavanceerde
+  voorbeelden](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) voor
+  automatisering
+* Schaalt goed in zowel bruikbaarheid als performantie met meer dan 100 000
+  notities
+* Voor aanraakschermen geoptimaliseerde [mobiele
+  interface](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
+  voor smartphones en tablets
+* Ingebouwd [donker
+  thema](https://docs.triliumnotes.org/user-guide/concepts/themes),
+  ondersteuning voor gebruikera thema's
 * [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
-  and [Markdown import &
-  export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
-* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for
-  easy saving of web content
+  en [Markdown importeren &
+  exporteren](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) om
+  eenvoudig webinhoud op te slaan
 * Customizable UI (sidebar buttons, user-defined widgets, ...)
 * [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
   along with a Grafana Dashboard.
@@ -185,7 +193,7 @@ If your distribution is listed in the table below, use your distribution's
 package.
 
 [![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+status](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 You may also download the binary release for your platform from the [latest
 release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
@@ -257,6 +265,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Alternatively, if you have Nix installed:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Building the Executable
 Download the repository, install dependencies using `pnpm` and then build the
 desktop app for Windows:
@@ -277,6 +296,34 @@ guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/D
 for details. If you have more questions, feel free to reach out via the links
 described in the "Discuss with us" section above.
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Shoutouts
 
 * [zadam](https://github.com/zadam) for the original concept and implementation
@@ -287,14 +334,12 @@ described in the "Discuss with us" section above.
 * [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
 * [antoniotejada](https://github.com/nriver) for the original syntax highlight
   widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
 * [Tabler Icons](https://tabler.io/icons) for the system tray icons.
 
 Trilium would not be possible without the technologies behind it:
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
+  text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
   support for huge amount of languages.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite

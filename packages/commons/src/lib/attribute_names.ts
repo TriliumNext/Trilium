@@ -20,6 +20,7 @@ type Labels = {
     language: string;
     originalFileName: string;
     pageUrl: string;
+    docUrl: string;
     dateNote: string;
 
     // Scripting

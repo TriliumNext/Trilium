@@ -1,5 +1,29 @@
-import { describe, expect, it } from "vitest";
-import { findBookmarks } from "./notes.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import becca from "../becca/becca.js";
+import { buildNote } from "../test/becca_easy_mocking.js";
+import { randomString } from "./utils.js";
+import BAttribute from "../becca/entities/battribute.js";
+import { checkImageAttachments, findBookmarks, findLlmChatLinks, saveLinks } from "./notes.js";
+
+vi.mock("./sql.js", () => ({
+    default: {
+        transactional: (cb: Function) => cb(),
+        execute: () => {},
+        replace: () => {},
+        upsert: () => {},
+        getMap: () => ({}),
+        getManyRows: () => [],
+        getValue: () => null
+    }
+}));
+
+vi.mock("./ws.js", () => ({
+    default: { sendMessageToAllClients: () => {} }
+}));
+
+vi.mock("./entity_changes.js", () => ({
+    default: { putEntityChange: () => {} }
+}));
 
 describe("findBookmarks", () => {
     it("extracts bookmark IDs from empty anchor tags", () => {
@@ -38,5 +62,506 @@ describe("findBookmarks", () => {
         const contentNoClose = `<p>Text</p><a id="my-bookmark"><p>More</p>`;
         expect(findBookmarks(content)).toEqual(["my-bookmark"]);
         expect(findBookmarks(contentNoClose)).toEqual(["my-bookmark"]);
+    });
+});
+
+/** Helper to mock `save` on all attachments created via `buildNote`. */
+function mockAttachmentSaves(note: ReturnType<typeof buildNote>) {
+    for (const att of note.getAttachments()) {
+        att.save = vi.fn();
+    }
+}
+
+describe("checkImageAttachments", () => {
+    beforeEach(() => {
+        becca.reset();
+    });
+
+    describe("HTML content", () => {
+        it("keeps referenced attachments alive", () => {
+            const note = buildNote({ title: "Test", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            const content = `<p>Hello</p><img src="api/attachments/${att.attachmentId}/image/test.png">`;
+            checkImageAttachments(note, content);
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+
+        it("schedules unreferenced attachments for erasure", () => {
+            const note = buildNote({ title: "Test", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            checkImageAttachments(note, "<p>No images here</p>");
+
+            expect(att.save).toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeTruthy();
+        });
+
+        it("cancels erasure when attachment is re-referenced", () => {
+            const note = buildNote({ title: "Test", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+            att.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
+
+            const content = `<img src="api/attachments/${att.attachmentId}/image/test.png">`;
+            checkImageAttachments(note, content);
+
+            expect(att.save).toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeNull();
+        });
+
+        it("detects attachment IDs in href reference links", () => {
+            const note = buildNote({ title: "Test", attachments: [{ title: "test.png", role: "file", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            const content = `<a href="#root/${note.noteId}?viewMode=attachments&attachmentId=${att.attachmentId}">file</a>`;
+            checkImageAttachments(note, content);
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("Markdown content", () => {
+        it("keeps referenced attachments alive via markdown image syntax", () => {
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            const content = `# Hello\n\n![test](api/attachments/${att.attachmentId}/image/test.png)`;
+            checkImageAttachments(note, content);
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+
+        it("schedules unreferenced attachments for erasure", () => {
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            checkImageAttachments(note, "# No images\n\nJust text.");
+
+            expect(att.save).toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeTruthy();
+        });
+
+        it("cancels erasure when attachment is re-referenced", () => {
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+            att.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
+
+            const content = `![img](api/attachments/${att.attachmentId}/image/test.png)`;
+            checkImageAttachments(note, content);
+
+            expect(att.save).toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeNull();
+        });
+
+        it("detects attachment IDs in markdown link syntax", () => {
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [{ title: "test.png", role: "file", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            const content = `[my file](#root/${note.noteId}?viewMode=attachments&attachmentId=${att.attachmentId})`;
+            checkImageAttachments(note, content);
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+
+        it("handles multiple attachments in markdown content", () => {
+            const imgAtt = { title: "test.png", role: "image", mime: "image/png" };
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown", attachments: [imgAtt, imgAtt, imgAtt] });
+            mockAttachmentSaves(note);
+            const [att1, att2, att3] = note.getAttachments();
+
+            const content = [
+                `![img1](api/attachments/${att1.attachmentId}/image/a.png)`,
+                "Some text",
+                `![img2](api/attachments/${att2.attachmentId}/image/b.png)`
+            ].join("\n");
+
+            checkImageAttachments(note, content);
+
+            expect(att1.save).not.toHaveBeenCalled();
+            expect(att2.save).not.toHaveBeenCalled();
+            expect(att3.save).toHaveBeenCalled();
+            expect(att3.utcDateScheduledForErasureSince).toBeTruthy();
+        });
+    });
+
+    describe("foreign attachment copying", () => {
+        it("replaces foreign attachment IDs in HTML content", () => {
+            const note = buildNote({ title: "Test" });
+            const foreignNote = buildNote({ title: "Foreign", attachments: [{ id: "foreignAtt1", title: "test.png", role: "image", mime: "image/png" }] });
+            const foreignAtt = foreignNote.getAttachments()[0];
+            foreignAtt.copy = () => {
+                const copyNote = buildNote({ title: "CopyHolder", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+                const copy = copyNote.getAttachments()[0];
+                copy.blobId = foreignAtt.blobId;
+                copy.setContent = vi.fn();
+                return copy;
+            };
+            foreignAtt.getContent = () => Buffer.from("image data");
+            note.getAttachments = () => [];
+            becca.getAttachments = vi.fn().mockReturnValue([foreignAtt]);
+
+            const content = `<img src="api/attachments/foreignAtt1/image/test.png">`;
+            const result = checkImageAttachments(note, content);
+
+            expect(result.forceFrontendReload).toBe(true);
+            expect(result.content).not.toContain("foreignAtt1");
+        });
+
+        it("replaces foreign attachment IDs in markdown content", () => {
+            const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
+            const foreignNote = buildNote({ title: "Foreign", attachments: [{ id: "foreignAtt2", title: "test.png", role: "image", mime: "image/png" }] });
+            const foreignAtt = foreignNote.getAttachments()[0];
+            foreignAtt.copy = () => {
+                const copyNote = buildNote({ title: "CopyHolder", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
+                const copy = copyNote.getAttachments()[0];
+                copy.blobId = foreignAtt.blobId;
+                copy.setContent = vi.fn();
+                return copy;
+            };
+            foreignAtt.getContent = () => Buffer.from("image data");
+            note.getAttachments = () => [];
+            becca.getAttachments = vi.fn().mockReturnValue([foreignAtt]);
+
+            const content = `![test](api/attachments/foreignAtt2/image/test.png)`;
+            const result = checkImageAttachments(note, content);
+
+            expect(result.forceFrontendReload).toBe(true);
+            expect(result.content).not.toContain("foreignAtt2");
+        });
+    });
+});
+
+describe("saveLinks", () => {
+    beforeEach(() => {
+        becca.reset();
+        // Restore getAttachments in case a previous test replaced it with a mock
+        becca.getAttachments = vi.fn().mockReturnValue([]);
+    });
+
+    function makeLinkRelation(noteId: string, name: string, targetNoteId: string) {
+        const attr = new BAttribute({
+            attributeId: randomString(10),
+            noteId,
+            type: "relation",
+            name,
+            value: targetNoteId
+        });
+        attr.markAsDeleted = vi.fn();
+        return attr;
+    }
+
+    it("does not delete existing imageLink relations on markdown notes that reference images", () => {
+        const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
+        const targetNote = buildNote({ title: "Image Note", type: "image" });
+        becca.notes[targetNote.noteId] = targetNote;
+
+        const imageLink = makeLinkRelation(note.noteId, "imageLink", targetNote.noteId);
+        note.getRelations = () => [imageLink];
+        note.getAttachments = () => [];
+
+        const content = `![diagram](api/images/${targetNote.noteId}/diagram.png)`;
+        saveLinks(note, content);
+
+        expect(imageLink.markAsDeleted).not.toHaveBeenCalled();
+    });
+
+    it("does not delete existing internalLink relations on markdown notes using #root links", () => {
+        const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
+        const targetNote = buildNote({ title: "Other Note" });
+        becca.notes[targetNote.noteId] = targetNote;
+
+        const internalLink = makeLinkRelation(note.noteId, "internalLink", targetNote.noteId);
+        note.getRelations = () => [internalLink];
+        note.getAttachments = () => [];
+
+        const content = `See [Other Note](#root/${targetNote.noteId})`;
+        saveLinks(note, content);
+
+        expect(internalLink.markAsDeleted).not.toHaveBeenCalled();
+    });
+
+    it("does not delete existing internalLink relations on markdown notes using wiki-links", () => {
+        const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
+        const targetNote = buildNote({ title: "Linked Note" });
+        becca.notes[targetNote.noteId] = targetNote;
+
+        const internalLink = makeLinkRelation(note.noteId, "internalLink", targetNote.noteId);
+        note.getRelations = () => [internalLink];
+        note.getAttachments = () => [];
+
+        const content = `See [[${targetNote.noteId}]] for details.`;
+        saveLinks(note, content);
+
+        expect(internalLink.markAsDeleted).not.toHaveBeenCalled();
+    });
+
+    it("detects both wiki-links and #root links in the same content", () => {
+        const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
+        const targetA = buildNote({ title: "Note A" });
+        const targetB = buildNote({ title: "Note B" });
+        becca.notes[targetA.noteId] = targetA;
+        becca.notes[targetB.noteId] = targetB;
+
+        const linkA = makeLinkRelation(note.noteId, "internalLink", targetA.noteId);
+        const linkB = makeLinkRelation(note.noteId, "internalLink", targetB.noteId);
+        note.getRelations = () => [linkA, linkB];
+        note.getAttachments = () => [];
+
+        const content = `Link to [[${targetA.noteId}]] and [Note B](#root/${targetB.noteId})`;
+        saveLinks(note, content);
+
+        expect(linkA.markAsDeleted).not.toHaveBeenCalled();
+        expect(linkB.markAsDeleted).not.toHaveBeenCalled();
+    });
+
+    describe("llmChat notes", () => {
+        function makeChatContent(messages: unknown[]) {
+            return JSON.stringify({ version: 1, messages });
+        }
+
+        it("detects [[noteId]] wiki-links in assistant text blocks", () => {
+            const note = buildNote({ title: "Chat", type: "llmChat", mime: "application/json" });
+            const targetA = buildNote({ title: "Note A" });
+            const targetB = buildNote({ title: "Note B" });
+            becca.notes[targetA.noteId] = targetA;
+            becca.notes[targetB.noteId] = targetB;
+
+            const linkA = makeLinkRelation(note.noteId, "internalLink", targetA.noteId);
+            const linkB = makeLinkRelation(note.noteId, "internalLink", targetB.noteId);
+            note.getRelations = () => [linkA, linkB];
+
+            const content = makeChatContent([
+                { id: "1", role: "user", content: "Show me notes" },
+                {
+                    id: "2", role: "assistant", content: [
+                        { type: "text", content: `Here are your notes: [[${targetA.noteId}]] and [[${targetB.noteId}]]` }
+                    ]
+                }
+            ]);
+            saveLinks(note, content);
+
+            expect(linkA.markAsDeleted).not.toHaveBeenCalled();
+            expect(linkB.markAsDeleted).not.toHaveBeenCalled();
+        });
+
+        it("detects noteId in tool call inputs", () => {
+            const note = buildNote({ title: "Chat", type: "llmChat", mime: "application/json" });
+            const target = buildNote({ title: "Target Note" });
+            becca.notes[target.noteId] = target;
+
+            const link = makeLinkRelation(note.noteId, "internalLink", target.noteId);
+            note.getRelations = () => [link];
+
+            const content = makeChatContent([
+                {
+                    id: "1", role: "assistant", content: [
+                        {
+                            type: "tool_call", toolCall: {
+                                id: "tc1", toolName: "get_note",
+                                input: { noteId: target.noteId },
+                                result: "{}"
+                            }
+                        }
+                    ]
+                }
+            ]);
+            saveLinks(note, content);
+
+            expect(link.markAsDeleted).not.toHaveBeenCalled();
+        });
+
+        it("detects parentNoteId in tool call inputs", () => {
+            const note = buildNote({ title: "Chat", type: "llmChat", mime: "application/json" });
+            const parent = buildNote({ title: "Parent Note" });
+            becca.notes[parent.noteId] = parent;
+
+            const link = makeLinkRelation(note.noteId, "internalLink", parent.noteId);
+            note.getRelations = () => [link];
+
+            const content = makeChatContent([
+                {
+                    id: "1", role: "assistant", content: [
+                        {
+                            type: "tool_call", toolCall: {
+                                id: "tc1", toolName: "create_note",
+                                input: { parentNoteId: parent.noteId, title: "New" },
+                                result: "{}"
+                            }
+                        }
+                    ]
+                }
+            ]);
+            saveLinks(note, content);
+
+            expect(link.markAsDeleted).not.toHaveBeenCalled();
+        });
+
+        it("detects links from both text blocks and tool calls", () => {
+            const note = buildNote({ title: "Chat", type: "llmChat", mime: "application/json" });
+            const targetA = buildNote({ title: "Note A" });
+            const targetB = buildNote({ title: "Note B" });
+            becca.notes[targetA.noteId] = targetA;
+            becca.notes[targetB.noteId] = targetB;
+
+            const linkA = makeLinkRelation(note.noteId, "internalLink", targetA.noteId);
+            const linkB = makeLinkRelation(note.noteId, "internalLink", targetB.noteId);
+            note.getRelations = () => [linkA, linkB];
+
+            const content = makeChatContent([
+                {
+                    id: "1", role: "assistant", content: [
+                        {
+                            type: "tool_call", toolCall: {
+                                id: "tc1", toolName: "get_note",
+                                input: { noteId: targetA.noteId },
+                                result: "{}"
+                            }
+                        },
+                        { type: "text", content: `See [[${targetB.noteId}]] for details.` }
+                    ]
+                }
+            ]);
+            saveLinks(note, content);
+
+            expect(linkA.markAsDeleted).not.toHaveBeenCalled();
+            expect(linkB.markAsDeleted).not.toHaveBeenCalled();
+        });
+
+        it("deletes links that are no longer in the chat content", () => {
+            const note = buildNote({ title: "Chat", type: "llmChat", mime: "application/json" });
+            const removedTarget = buildNote({ title: "Removed" });
+            becca.notes[removedTarget.noteId] = removedTarget;
+
+            const staleLink = makeLinkRelation(note.noteId, "internalLink", removedTarget.noteId);
+            note.getRelations = () => [staleLink];
+
+            const content = makeChatContent([
+                { id: "1", role: "user", content: "Hello" },
+                { id: "2", role: "assistant", content: [{ type: "text", content: "Hi there!" }] }
+            ]);
+            saveLinks(note, content);
+
+            expect(staleLink.markAsDeleted).toHaveBeenCalled();
+        });
+
+        it("ignores user messages (does not extract links from them)", () => {
+            const note = buildNote({ title: "Chat", type: "llmChat", mime: "application/json" });
+            const target = buildNote({ title: "Target" });
+            becca.notes[target.noteId] = target;
+
+            const staleLink = makeLinkRelation(note.noteId, "internalLink", target.noteId);
+            note.getRelations = () => [staleLink];
+
+            const content = makeChatContent([
+                { id: "1", role: "user", content: `Check [[${target.noteId}]]` }
+            ]);
+            saveLinks(note, content);
+
+            expect(staleLink.markAsDeleted).toHaveBeenCalled();
+        });
+
+        it("handles invalid JSON content gracefully", () => {
+            const note = buildNote({ title: "Chat", type: "llmChat", mime: "application/json" });
+            note.getRelations = () => [];
+
+            expect(() => saveLinks(note, "not valid json")).not.toThrow();
+        });
+
+        it("handles empty messages array", () => {
+            const note = buildNote({ title: "Chat", type: "llmChat", mime: "application/json" });
+            note.getRelations = () => [];
+
+            expect(() => saveLinks(note, JSON.stringify({ version: 1, messages: [] }))).not.toThrow();
+        });
+    });
+});
+
+describe("findLlmChatLinks", () => {
+    it("extracts wiki-links from assistant text blocks", () => {
+        const links: { name: "internalLink" | "imageLink" | "includeNoteLink" | "relationMapLink"; value: string }[] = [];
+        const content = JSON.stringify({
+            messages: [{
+                role: "assistant",
+                content: [{ type: "text", content: "See [[abc123]] and [[def456]]" }]
+            }]
+        });
+        findLlmChatLinks(content, links);
+
+        expect(links).toEqual([
+            { name: "internalLink", value: "abc123" },
+            { name: "internalLink", value: "def456" }
+        ]);
+    });
+
+    it("extracts noteId and parentNoteId from tool call inputs", () => {
+        const links: { name: "internalLink" | "imageLink" | "includeNoteLink" | "relationMapLink"; value: string }[] = [];
+        const content = JSON.stringify({
+            messages: [{
+                role: "assistant",
+                content: [
+                    {
+                        type: "tool_call",
+                        toolCall: { id: "t1", toolName: "get_note", input: { noteId: "noteA" } }
+                    },
+                    {
+                        type: "tool_call",
+                        toolCall: { id: "t2", toolName: "create_note", input: { parentNoteId: "noteB", title: "X" } }
+                    }
+                ]
+            }]
+        });
+        findLlmChatLinks(content, links);
+
+        expect(links).toEqual([
+            { name: "internalLink", value: "noteA" },
+            { name: "internalLink", value: "noteB" }
+        ]);
+    });
+
+    it("skips user and system messages", () => {
+        const links: { name: "internalLink" | "imageLink" | "includeNoteLink" | "relationMapLink"; value: string }[] = [];
+        const content = JSON.stringify({
+            messages: [
+                { role: "user", content: "Check [[abc123]]" },
+                { role: "system", content: "You have [[def456]]" }
+            ]
+        });
+        findLlmChatLinks(content, links);
+
+        expect(links).toEqual([]);
+    });
+
+    it("returns nothing for invalid JSON", () => {
+        const links: { name: "internalLink" | "imageLink" | "includeNoteLink" | "relationMapLink"; value: string }[] = [];
+        findLlmChatLinks("broken json {", links);
+
+        expect(links).toEqual([]);
+    });
+
+    it("returns nothing when messages is missing", () => {
+        const links: { name: "internalLink" | "imageLink" | "includeNoteLink" | "relationMapLink"; value: string }[] = [];
+        findLlmChatLinks(JSON.stringify({ version: 1 }), links);
+
+        expect(links).toEqual([]);
+    });
+
+    it("handles legacy string content in assistant messages", () => {
+        const links: { name: "internalLink" | "imageLink" | "includeNoteLink" | "relationMapLink"; value: string }[] = [];
+        const content = JSON.stringify({
+            messages: [{ role: "assistant", content: "Some text with [[abc123]]" }]
+        });
+        findLlmChatLinks(content, links);
+
+        // Legacy string content is not an array of blocks, so it's skipped
+        expect(links).toEqual([]);
     });
 });

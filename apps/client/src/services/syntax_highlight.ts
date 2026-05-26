@@ -5,9 +5,32 @@ import { copyText, copyTextWithToast } from "./clipboard_ext.js";
 import { t } from "./i18n.js";
 import mime_types from "./mime_types.js";
 import options from "./options.js";
+import { getEffectiveThemeStyle } from "./theme.js";
 import { isShare } from "./utils.js";
 
 let highlightingLoaded = false;
+
+function getEffectiveCodeBlockTheme(): string {
+    if (options.get("codeBlockThemeMatchesApp") === "true") {
+        const style = getEffectiveThemeStyle();
+        return String(options.get(style === "dark" ? "codeBlockThemeDark" : "codeBlockThemeLight"));
+    }
+    return String(options.get("codeBlockTheme"));
+}
+
+// Re-apply the highlight.js theme when the OS color scheme changes, so that
+// "match app appearance" reacts in real time.
+let colorSchemeListenerRegistered = false;
+function ensureColorSchemeListener() {
+    if (colorSchemeListenerRegistered) return;
+    colorSchemeListenerRegistered = true;
+
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+        if (highlightingLoaded && options.get("codeBlockThemeMatchesApp") === "true") {
+            loadHighlightingTheme(getEffectiveCodeBlockTheme());
+        }
+    });
+}
 
 // Highlight.js can spend tens of milliseconds per block (php/c# are especially slow).
 // The Markdown live preview replaces the entire rendered DOM on every keystroke, so the
@@ -136,8 +159,8 @@ export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
 
     // Load theme.
     if (!highlightingLoaded) {
-        const currentThemeName = String(options.get("codeBlockTheme"));
-        await loadHighlightingTheme(currentThemeName);
+        await loadHighlightingTheme(getEffectiveCodeBlockTheme());
+        ensureColorSchemeListener();
     }
 
     // Load mime types.
@@ -178,7 +201,7 @@ export async function loadHighlightingTheme(themeName: string) {
  */
 export function isSyntaxHighlightEnabled() {
     if (!isShare) {
-        const theme = options.get("codeBlockTheme");
+        const theme = getEffectiveCodeBlockTheme();
         return !!theme && theme !== "none";
     }
     return true;

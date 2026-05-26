@@ -1,7 +1,6 @@
 import { execSync } from "child_process";
 import { build as esbuild } from "esbuild";
-import { cpSync, existsSync, rmSync, writeFileSync } from "fs";
-import { copySync, emptyDirSync, mkdirpSync } from "fs-extra";
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { delimiter, join } from "path";
 
 export default class BuildHelper {
@@ -15,7 +14,8 @@ export default class BuildHelper {
         this.projectDir = join(this.rootDir, projectPath);
         this.outDir = join(this.projectDir, "dist");
 
-        emptyDirSync(this.outDir);
+        rmSync(this.outDir, { recursive: true, force: true });
+        mkdirSync(this.outDir, { recursive: true });
     }
 
     copy(projectDirPath: string, outDirPath: string) {
@@ -27,9 +27,9 @@ export default class BuildHelper {
         }
 
         if (outDirPath.endsWith("/")) {
-            mkdirpSync(join(outDirPath));
+            mkdirSync(join(this.outDir, outDirPath), { recursive: true });
         }
-        copySync(sourcePath, join(this.outDir, outDirPath), { dereference: true });
+        cpSync(sourcePath, join(this.outDir, outDirPath), { recursive: true, dereference: true });
     }
 
     deleteFromOutput(path: string) {
@@ -49,12 +49,27 @@ export default class BuildHelper {
             format: "cjs",
             external: [
                 "electron",
-                "@electron/remote",
                 "better-sqlite3",
                 "pdfjs-dist",
                 "./xhr-sync-worker.js",
                 "vite",
-                "tesseract.js"
+                "tesseract.js",
+                // Test fixtures referenced via require.resolve from
+                // integration-test-only code paths in apps/server. These
+                // paths are gated at runtime by TRILIUM_INTEGRATION_TEST and
+                // never reached in production, but esbuild can't see through
+                // the gate during static analysis. Marking them external
+                // suppresses the spurious "require.resolve not external"
+                // warning without affecting the bundle behavior.
+                "@triliumnext/core/src/test/*",
+                // schema.sql is read via core_assets.ts, which prefers a
+                // bundled copy at RESOURCE_DIR/schema.sql (placed there by
+                // apps/server/scripts/build.ts) and only falls back to
+                // require.resolve in dev/test mode. In bundled production
+                // the require.resolve branch is unreachable, but esbuild
+                // still sees the static string and warns. External marker
+                // suppresses the warning without changing runtime behavior.
+                "@triliumnext/core/src/assets/*"
             ],
             metafile: true,
             splitting: false,
@@ -89,7 +104,7 @@ export default class BuildHelper {
     triggerBuildAndCopyTo(projectToBuild: string, destPath: string) {
         const projectDir = join(this.rootDir, projectToBuild);
         execSync("pnpm build", { cwd: projectDir, stdio: "inherit" });
-        copySync(join(projectDir, "dist"), join(this.projectDir, "dist", destPath));
+        cpSync(join(projectDir, "dist"), join(this.projectDir, "dist", destPath), { recursive: true });
     }
 
     copyNodeModules(nodeModules: string[]) {
@@ -100,7 +115,7 @@ export default class BuildHelper {
             ]);
 
             const destDir = join(this.outDir, "node_modules", moduleName);
-            mkdirpSync(destDir);
+            mkdirSync(destDir, { recursive: true });
             cpSync(sourceDir, destDir, { recursive: true, dereference: true });
         }
     }
@@ -109,7 +124,7 @@ export default class BuildHelper {
         const fullPath = join(this.outDir, relativePath);
         const dirPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
         if (dirPath) {
-            mkdirpSync(dirPath);
+            mkdirSync(dirPath, { recursive: true });
         }
         writeFileSync(fullPath, JSON.stringify(data, null, 4), "utf-8");
     }

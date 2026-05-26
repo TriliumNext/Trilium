@@ -217,7 +217,7 @@
         margin-bottom: 0;
     }
 
-    &.type-text {
+    &.type-text, &.type-markdown {
         padding: 8px 24px;
 
         .ck-content > *:last-child {

@@ -17,7 +17,11 @@
     "github_tooltip": "Reportar errores, sugerir características o contribuir en GitHub",
     "license_tooltip": "Ver licencia",
     "donate": "Donar",
-    "donate_tooltip": "Donar para apoyar este proyecto"
+    "donate_tooltip": "Donar para apoyar este proyecto",
+    "channel": {
+      "nightly": "Nocturno",
+      "standalone": "Autónomo"
+    }
   },
   "toast": {
     "critical-error": {
@@ -58,12 +62,13 @@
   "branch_prefix": {
     "edit_branch_prefix": "Editar prefijo de rama",
     "help_on_tree_prefix": "Ayuda sobre el prefijo del árbol",
-    "prefix": "Prefijo: ",
+    "prefix": "Prefijo",
     "save": "Guardar",
     "branch_prefix_saved": "Se ha guardado el prefijo de rama.",
     "edit_branch_prefix_multiple": "Editar prefijo de rama para {{count}} ramas",
     "branch_prefix_saved_multiple": "El prefijo de rama se ha guardado para {{count}} ramas.",
-    "affected_branches": "Ramas afectadas ({{count}}):"
+    "affected_branches": "Ramas afectadas ({{count}}):",
+    "preview_in_tree": "Vista previa en el árbol"
   },
   "bulk_actions": {
     "bulk_actions": "Acciones en bloque",
@@ -191,7 +196,8 @@
     "quickSearch": "centrarse en la entrada de búsqueda rápida",
     "inPageSearch": "búsqueda en la página",
     "title": "Hoja de ayuda",
-    "editShortcuts": "Editar atajos de teclado"
+    "editShortcuts": "Editar atajos de teclado",
+    "toggleArchivedNotes": "mostrar/ocultar notas archivadas"
   },
   "import": {
     "importIntoNote": "Importar a nota",
@@ -692,7 +698,7 @@
     "import_files": "Importar archivos",
     "export_note": "Exportar nota",
     "delete_note": "Eliminar nota",
-    "print_note": "Imprimir nota",
+    "print_note": "Imprimir nota...",
     "save_revision": "Guardar revisión",
     "convert_into_attachment_failed": "La conversión de nota '{{title}}' falló.",
     "convert_into_attachment_successful": "La nota '{{title}}' ha sido convertida a un archivo adjunto.",
@@ -711,7 +717,8 @@
     "word_wrap_on": "Encendido",
     "word_wrap_off": "Apagado",
     "save_named_revision": "Guardar revisión nombrada...",
-    "word_wrap": "Ajuste de línea"
+    "word_wrap": "Ajuste de línea",
+    "print_or_export_to_pdf": "Imprimir/exportar a PDF..."
   },
   "onclick_button": {
     "no_click_handler": "El widget de botón '{{componentId}}' no tiene un controlador de clics definido"
@@ -1198,7 +1205,13 @@
     "dark_theme": "Oscuro",
     "modern_themes": "Moderno",
     "legacy_themes": "Heredado",
-    "custom_themes": "Personalizado"
+    "custom_themes": "Personalizado",
+    "recommended": "Recomendado",
+    "color_scheme": "esquema de colores",
+    "color_scheme_system": "Sistema",
+    "color_scheme_light": "Luz",
+    "color_scheme_dark": "Oscuro",
+    "color_scheme_custom_disabled": "La opción de anulación de la combinación de colores no está disponible para temas personalizados"
   },
   "zoom_factor": {
     "title": "Factor de zoom (solo versión de escritorio)",

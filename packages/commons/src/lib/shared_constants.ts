@@ -20,3 +20,23 @@ export const ALLOWED_PROTOCOLS = [
     'view-source', 'vlc', 'vnc', 'ws', 'wss', 'xmpp', 'jdbc', 'slack', 'tel', 'smb', 'zotero', 'geo',
     'logseq', 'mid', 'obsidian', 'bookends', 'highlights'
 ];
+
+// Subset of ALLOWED_PROTOCOLS that the main process will hand to
+// electron.shell.openExternal. ALLOWED_PROTOCOLS gates DISPLAY (sanitizer /
+// CKEditor); this list gates DISPATCH to the OS protocol handler. Derived
+// by filtering rather than duplicating so the two stay in sync when
+// ALLOWED_PROTOCOLS gains new entries.
+//
+// Excluded schemes:
+//   - file        local-file launcher; routed separately via openFileUrl
+//   - data        phishing / arbitrary HTML in the default browser
+//   - smb         NTLM credential theft, SMB relay
+//   - ldap/ldaps  NTLM relay, JNDI lookup vectors
+//   - jar         Java loader RCE history
+//   - view-source browser-internal, no value via shell dispatch
+const SHELL_OPEN_EXTERNAL_BLOCKLIST = new Set([
+    'file', 'data', 'smb', 'ldap', 'ldaps', 'jar', 'view-source'
+]);
+export const SHELL_OPEN_EXTERNAL_PROTOCOLS = ALLOWED_PROTOCOLS.filter(
+    p => !SHELL_OPEN_EXTERNAL_BLOCKLIST.has(p)
+);

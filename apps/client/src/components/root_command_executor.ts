@@ -148,15 +148,12 @@ export default class RootCommandExecutor extends Component {
         }
     }
 
-    async showNoteOCRTextCommand() {
-        const notePath = appContext.tabManager.getActiveContextNotePath();
-
-        if (notePath) {
-            await appContext.tabManager.openTabWithNoteWithHoisting(notePath, {
-                activate: true,
-                viewScope: {
-                    viewMode: "ocr"
-                }
+    showNoteOCRTextCommand() {
+        const noteId = appContext.tabManager.getActiveContextNoteId();
+        if (noteId) {
+            appContext.triggerCommand("showOcrTextDialog", {
+                textUrl: `ocr/notes/${noteId}/text`,
+                processUrl: `ocr/process-note/${noteId}`
             });
         }
     }
@@ -190,11 +187,7 @@ export default class RootCommandExecutor extends Component {
     toggleTrayCommand() {
         if (!utils.isElectron() || options.is("disableTray")) return;
 
-        const { BrowserWindow } = utils.dynamicRequire("@electron/remote");
-        const windows = BrowserWindow.getAllWindows() as Electron.BaseWindow[];
-        const isVisible = windows.every((w) => w.isVisible());
-        const action = isVisible ? "hide" : "show";
-        for (const window of windows) window[action]();
+        window.electronApi?.window.toggleAllWindows();
     }
 
     toggleZenModeCommand() {

@@ -13,24 +13,19 @@ export function reloadFrontendApp(reason?: string) {
         logInfo(`Frontend app reload: ${reason}`);
     }
 
-    if (isElectron()) {
-        for (const window of dynamicRequire("@electron/remote").BrowserWindow.getAllWindows()) {
-            window.reload();
-        }
+    if (window.electronApi) {
+        window.electronApi.window.reloadAllWindows();
     } else {
         window.location.reload();
     }
 }
 
 export function restartDesktopApp() {
-    if (!isElectron()) {
+    if (window.electronApi) {
+        window.electronApi.window.restartApp();
+    } else {
         reloadFrontendApp();
-        return;
     }
-
-    const app = dynamicRequire("@electron/remote").app;
-    app.relaunch();
-    app.exit();
 }
 
 /**
@@ -39,12 +34,7 @@ export function restartDesktopApp() {
  * On any other platform than Electron, nothing happens.
  */
 function reloadTray() {
-    if (!isElectron()) {
-        return;
-    }
-
-    const { ipcRenderer } = dynamicRequire("electron");
-    ipcRenderer.send("reload-tray");
+    window.electronApi?.tray.reloadTray();
 }
 
 function parseDate(str: string) {
@@ -132,8 +122,10 @@ function now() {
  * Returns `true` if the client is currently running under Electron, or `false` if running in a web browser.
  */
 export function isElectron() {
-    return !!(window && window.process && window.process.type);
+    return "electronApi" in window;
 }
+
+export const isStandalone = window.glob.isStandalone;
 
 /**
  * Returns `true` if the client is running as a PWA, otherwise `false`.
@@ -147,11 +139,17 @@ export function isPWA() {
     );
 }
 
+/**
+ * Returns `true` when running inside the native Capacitor mobile app wrapper.
+ * PWAs and regular browsers return `false`.
+ */
+export function isMobileApp() {
+    return !!window.Capacitor?.isNativePlatform?.();
+}
+
 export function isMac() {
     return navigator.platform.indexOf("Mac") > -1;
 }
-
-export const hasTouchBar = (isMac() && isElectron());
 
 export function isCtrlKey(evt: KeyboardEvent | MouseEvent | JQuery.ClickEvent | JQuery.ContextMenuEvent | JQuery.TriggeredEvent | React.PointerEvent<HTMLCanvasElement> | JQueryEventObject) {
     return (!isMac() && evt.ctrlKey) || (isMac() && evt.metaKey);
@@ -292,6 +290,7 @@ export function isHtmlEmpty(html: string) {
     return (
         !html.includes("<img") &&
         !html.includes("<section") &&
+        !html.includes("link-mention") &&
         // the line below will actually attempt to load images so better to check for images first
         $("<div>").html(html).text().trim().length === 0
     );
@@ -344,10 +343,7 @@ function formatHtml(html: string) {
 }
 
 export async function clearBrowserCache() {
-    if (isElectron()) {
-        const win = dynamicRequire("@electron/remote").getCurrentWindow();
-        await win.webContents.session.clearCache();
-    }
+    await window.electronApi?.window.clearCache();
 }
 
 function copySelectionToClipboard() {
@@ -357,22 +353,6 @@ function copySelectionToClipboard() {
     }
 }
 
-type dynamicRequireMappings = {
-    "@electron/remote": typeof import("@electron/remote"),
-    "electron": typeof import("electron"),
-    "child_process": typeof import("child_process"),
-    "url": typeof import("url")
-};
-
-export function dynamicRequire<T extends keyof dynamicRequireMappings>(moduleName: T): Awaited<dynamicRequireMappings[T]>{
-    if (typeof __non_webpack_require__ !== "undefined") {
-        return __non_webpack_require__(moduleName);
-    }
-    // explicitly pass as string and not as expression to suppress webpack warning
-    // 'Critical dependency: the request of a dependency is an expression'
-    return require(`${moduleName}`);
-
-}
 
 function timeLimit<T>(promise: Promise<T>, limitMs: number, errorMessage?: string) {
     if (!promise || !promise.then) {
@@ -776,7 +756,7 @@ function compareVersions(v1: string, v2: string): number {
 /**
  * Compares two semantic version strings and returns `true` if the latest version is greater than the current version.
  */
-function isUpdateAvailable(latestVersion: string | null | undefined, currentVersion: string): boolean {
+export function isUpdateAvailable(latestVersion: string | null | undefined, currentVersion: string): boolean {
     if (!latestVersion) {
         return false;
     }
@@ -863,6 +843,10 @@ export function getErrorMessage(e: unknown) {
 
 }
 
+export function replaceHtmlEscapedSlashes(str: string) {
+    return str.replace(/&#x2F;/g, "/");
+}
+
 /**
  * Handles left or right placement of e.g. tooltips in case of right-to-left languages. If the current language is a RTL one, then left and right are swapped. Other directions are unaffected.
  * @param placement a string optionally containing a "left" or "right" value.
@@ -904,7 +888,6 @@ export default {
     formatHtml,
     clearBrowserCache,
     copySelectionToClipboard,
-    dynamicRequire,
     timeLimit,
     initHelpDropdown,
     filterAttributeName,
@@ -916,6 +899,7 @@ export default {
     createImageSrcUrl,
     downloadAsSvg,
     downloadAsPng,
+    triggerDownload,
     compareVersions,
     isUpdateAvailable,
     isLaunchBarConfig

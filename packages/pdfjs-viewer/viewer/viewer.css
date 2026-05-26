@@ -4969,10 +4969,12 @@
 
 .basicColorPicker::-moz-color-swatch{
     border-radius:100%;
+    margin:0;
   }
 
 .basicColorPicker::-webkit-color-swatch{
     border-radius:100%;
+    margin:0;
   }
 
 .annotationEditorLayer[data-main-rotation="0"] .highlightEditor:not(.free) > .editToolbar{
@@ -6220,8 +6222,6 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
             }
 
 :is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerAddFileButton{
-        visibility:hidden;
-
         background:var(--button-no-bg);
         width:32px;
         height:32px;
@@ -6236,6 +6236,11 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
                   mask-repeat:no-repeat;
           -webkit-mask-image:var(--views-manager-add-file-button-icon);
                   mask-image:var(--views-manager-add-file-button-icon);
+          background-color:var(--button-fg);
+        }
+
+:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerAddFileButton)  > input{
+          display:none;
         }
 
 :is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerCurrentOutlineButton{
@@ -6253,14 +6258,12 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
                   mask-repeat:no-repeat;
           -webkit-mask-image:var(--current-outline-button-icon);
                   mask-image:var(--current-outline-button-icon);
+          background-color:var(--button-fg);
         }
 
 :is(#viewsManager #viewsManagerHeader) #viewsManagerStatus{
-      display:flex;
-      align-items:center;
-      align-self:stretch;
-      justify-content:space-between;
-      width:auto;
+      display:grid;
+      width:100%;
       border:1px solid var(--status-border-color);
     }
 
@@ -6268,7 +6271,14 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
         min-height:64px;
         width:100%;
         padding-inline:16px;
+        grid-area:1 / 1;
+        box-sizing:border-box;
       }
+
+.hidden:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) > div){
+          visibility:hidden;
+          display:unset !important;
+        }
 
 :is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) .viewsManagerStatusLabel{
         display:flex;

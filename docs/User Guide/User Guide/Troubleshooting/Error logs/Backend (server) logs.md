@@ -1,7 +1,12 @@
 # Backend (server) logs
 ## Accessing via the backend log
 
-In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>, go to Advanced → Show backend log
+In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>, go to _Advanced_ → _Show backend log_. This will display the current backend log (i.e. today's), with the historical information available only on disk (see below).
+
+Interaction since v0.104.0:
+
+*   The file can be downloaded as a text file using the dedicated button in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area (<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a> only).
+*   The file can also be searched just like a normal <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> note.
 
 ## Location on the disk
 

@@ -42,7 +42,7 @@ jobs:
             shell: bash
             forge_platform: linux
           - name: windows
-            image: windows-latest
+            image: win-signing
             shell: cmd
             forge_platform: win32
         # Exclude ARM64 Linux from default matrix to use native runner
@@ -88,6 +88,8 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          WINDOWS_SIGN_EXECUTABLE: ${{ vars.WINDOWS_SIGN_EXECUTABLE }}
+          WINDOWS_SIGN_ERROR_LOG: ${{ vars.WINDOWS_SIGN_ERROR_LOG }}
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Publish release
@@ -108,6 +110,26 @@ jobs:
         with:
           name: TriliumNotes ${{ matrix.os.name }} ${{ matrix.arch }}
           path: apps/desktop/upload
+
+  nightly-mobile:
+    if: ${{ github.repository == vars.REPO_MAIN && github.event_name != 'pull_request' }}
+    name: Build mobile nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build mobile APK
+        uses: ./.github/actions/build-mobile
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v3.0.0
+        with:
+          make_latest: false
+          prerelease: true
+          draft: false
+          files: apps/mobile/android/app/build/outputs/apk/debug/*.apk
+          tag_name: nightly
+          name: Mobile Nightly
 
   nightly-server:
     if: ${{ github.repository == vars.REPO_MAIN }}

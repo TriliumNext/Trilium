@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/commons",
-  "version": "0.102.2",
+  "version": "0.103.0",
   "description": "Shared library between the clients (e.g. browser, Electron) and the server, mostly for type definitions and utility methods.",
   "private": true,
   "type": "module",
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "dayjs": "1.11.20",
-    "marked": "18.0.2",
+    "marked": "18.0.4",
     "marked-footnote": "1.4.0"
   }
 }

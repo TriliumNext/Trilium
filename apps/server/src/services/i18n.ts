@@ -1,18 +1,22 @@
+import { dayjs, LOCALES, LOCALE_IDS, setDayjsLocale, type Dayjs } from "@triliumnext/commons";
 import i18next from "i18next";
+import { join } from "path";
+
+import { getResourceDir } from "./utils";
 import options from "./options.js";
 import sql_init from "./sql_init.js";
-import { join } from "path";
-import { getResourceDir } from "./utils.js";
 import hidden_subtree from "./hidden_subtree.js";
-import { dayjs, LOCALES, setDayjsLocale, type Dayjs, type LOCALE_IDS } from "@triliumnext/commons";
 
-export async function initializeTranslations() {
+/**
+ * Initialize translations with explicit i18next instance and locale.
+ * Used as a TranslationProvider callback for initializeCore().
+ */
+export async function initializeTranslationsWithParams(i18nextInstance: typeof i18next, locale: LOCALE_IDS) {
     const resourceDir = getResourceDir();
     const Backend = (await import("i18next-fs-backend/cjs")).default;
-    const locale = getCurrentLanguage();
 
     // Initialize translations
-    await i18next.use(Backend).init({
+    await i18nextInstance.use(Backend).init({
         lng: locale,
         fallbackLng: "en",
         ns: "server",
@@ -25,9 +29,17 @@ export async function initializeTranslations() {
     await setDayjsLocale(locale);
 }
 
+/**
+ * Initialize translations using the global i18next instance and locale from options.
+ * Convenience function for scripts that don't use initializeCore().
+ */
+export async function initializeTranslations() {
+    const locale = getCurrentLanguage();
+    await initializeTranslationsWithParams(i18next, locale);
+}
+
 export function ordinal(date: Dayjs) {
-    return dayjs(date)
-        .format("Do");
+    return dayjs(date).format("Do");
 }
 
 function getCurrentLanguage(): LOCALE_IDS {

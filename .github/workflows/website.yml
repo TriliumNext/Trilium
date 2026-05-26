@@ -40,6 +40,7 @@ jobs:
         run: pnpm website:build
 
       - name: Deploy
+        if: github.repository == vars.REPO_MAIN
         uses: ./.github/actions/deploy-to-cloudflare-pages
         with:
           project_name: "trilium-homepage"

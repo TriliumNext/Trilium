@@ -27,6 +27,7 @@ export default function RecentChangesDialog() {
     });
 
     useEffect(() => {
+        if (!ancestorNoteId) return;
         server.get<RecentChangeRow[]>(`recent-changes/${ancestorNoteId}`)
             .then(async (recentChanges) => {
                 // preload all notes into cache
