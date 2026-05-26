@@ -74,6 +74,12 @@ async function sync() {
 
             ws.syncFinished();
 
+            if (optionService.getOptionOrNull("syncIncomplete") === "true") {
+                optionService.setOption("syncIncomplete", "false");
+
+                getLog().info("Sync complete — consistency checks will run on next scheduled check.");
+            }
+
             return {
                 success: true
             };
@@ -172,6 +178,13 @@ async function pullChanges(syncContext: SyncContext) {
         const { entityChanges, lastEntityChangeId } = resp;
 
         outstandingPullCount = resp.outstandingPullCount;
+
+        const hasPendingChanges = entityChanges.length > 0 || outstandingPullCount > 0;
+        if (hasPendingChanges && optionService.getOptionOrNull("syncIncomplete") !== "true") {
+            optionService.setOption("syncIncomplete", "true");
+
+            getLog().info("Marking sync as incomplete — consistency checks will be deferred until sync converges.");
+        }
 
         if (totalPullCount === null) {
             totalPullCount = entityChanges.length + outstandingPullCount;
@@ -465,7 +478,7 @@ function startSyncTimer() {
     becca_loader.beccaLoaded.then(() => {
         setInterval(cls.wrap(sync), 60000);
 
-        // kickoff initial sync immediately, but should happen after initial consistency checks
+        // kickoff initial sync immediately
         setTimeout(cls.wrap(sync), 5000);
 
         // called just so ws.setLastSyncedPush() is called

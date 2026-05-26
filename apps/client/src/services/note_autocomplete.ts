@@ -315,7 +315,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     suggestion: (suggestion) => {
                         if (suggestion.action === "command") {
                             let html = `<div class="command-suggestion">`;
-                            html += `<span class="command-icon ${suggestion.icon || "bx bx-terminal"}"></span>`;
+                            html += `<span class="command-icon ${escapeHtml(suggestion.icon || "bx bx-terminal")}"></span>`;
                             html += `<div class="command-content">`;
                             html += `<div class="command-name">${suggestion.highlightedNotePathTitle}</div>`;
                             if (suggestion.commandDescription) {

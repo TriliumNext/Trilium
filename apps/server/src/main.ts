@@ -83,6 +83,7 @@ async function startApplication() {
         inAppHelp: new NodejsInAppHelpProvider(),
         backup: new ServerBackupService(options),
         image: (await import("./services/image_provider.js")).serverImageProvider,
+        config,
         extraAppInfo: {
             nodeVersion: process.version,
             dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)

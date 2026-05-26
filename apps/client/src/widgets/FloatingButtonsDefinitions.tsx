@@ -17,7 +17,7 @@ import LoadResults from "../services/load_results";
 import server from "../services/server";
 import toast from "../services/toast";
 import tree from "../services/tree";
-import { createImageSrcUrl, openInAppHelpFromUrl } from "../services/utils";
+import { createImageSrcUrl, isElectron, openInAppHelpFromUrl } from "../services/utils";
 import { ViewTypeOptions } from "./collections/interface";
 import ActionButton, { ActionButtonProps } from "./react/ActionButton";
 import { ButtonGroup } from "./react/Button";
@@ -56,6 +56,7 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
     ShowHighlightsListWidgetButton,
     RunActiveNoteButton,
     OpenTriliumApiDocsButton,
+    OpenElectronApiDocsButton,
     SaveToNoteButton,
     RelationMapButtons,
     CopyImageReferenceButton,
@@ -211,6 +212,15 @@ function OpenTriliumApiDocsButton({ note }: FloatingButtonContext) {
         icon="bx bx-help-circle"
         text={t("code_buttons.trilium_api_docs_button_title")}
         onClick={() => openInAppHelpFromUrl(note.mime.endsWith("frontend") ? "Q2z6av6JZVWm" : "MEtfsqa5VwNi")}
+    />;
+}
+
+function OpenElectronApiDocsButton({ note }: FloatingButtonContext) {
+    const isEnabled = note.mime === "application/javascript;env=frontend" && isElectron();
+    return isEnabled && <FloatingButton
+        icon="bx bx-window-alt"
+        text={t("code_buttons.electron_api_docs_button_title")}
+        onClick={() => openInAppHelpFromUrl("GFXVHyblVN3d")}
     />;
 }
 

@@ -184,7 +184,7 @@
     "followLink": "suivre le lien sous le curseur",
     "insertDateTime": "insérer la date et l'heure courante à la position du curseur",
     "jumpToTreePane": "passer au volet de l'arborescence et aller jusqu'à la note active",
-    "markdownAutoformat": "Mise en forme automatique (comme Markdown)",
+    "markdownAutoformat": "Auto-formatage style Markdown",
     "headings": "<code>##</code>, <code>###</code>, <code>####</code>  etc. suivi d'un espace pour les titres",
     "bulletList": "<code>*</code> ou <code>-</code> suivi d'un espace pour une liste à puces",
     "numberedList": "<code>1.</code> ou <code>1)</code> suivi d'un espace pour une liste numérotée",
@@ -275,7 +275,7 @@
   "password_not_set": {
     "title": "Le mot de passe n'est pas défini",
     "body1": "Les notes protégées sont cryptées à l'aide d'un mot de passe utilisateur, mais le mot de passe n'a pas encore été défini.",
-    "body2": "Pour pouvoir protéger les notes, cliquez sur le bouton ci-dessous pour ouvrir la boîte de dialogue Options et définir votre mot de passe.",
+    "body2": "Pour pouvoir protéger les notes, cliquez sur le bouton ci-dessous pour ouvrir la boîte de dialogue Paramètres et définir votre mot de passe.",
     "go_to_password_options": "Accéder aux options de mot de passe"
   },
   "prompt": {
@@ -382,7 +382,7 @@
     "auto_read_only_disabled": "les notes textuelles/de code peuvent être automatiquement mises en mode lecture lorsqu'elles sont trop volumineuses. Vous pouvez désactiver ce comportement note par note en ajoutant ce label à la note",
     "app_css": "marque les notes CSS qui sont chargées dans l'application Trilium et peuvent ainsi être utilisées pour modifier l'apparence de Trilium.",
     "app_theme": "marque les notes CSS qui sont des thèmes Trilium complets et sont donc disponibles dans les options Trilium.",
-    "app_theme_base": "définir sur \"next\" afin d'utiliser le thème TriliumNext comme base pour un thème personnalisé à la place de l'ancien thème.",
+    "app_theme_base": "définir sur \"next\" afin d'utiliser le thème TriliumNext comme base pour un thème personnalisé à la place du thème classique.",
     "css_class": "la valeur de ce label est ensuite ajoutée en tant que classe CSS au nœud représentant la note donnée dans l'arborescence. Cela peut être utile pour les thèmes avancés. Peut être utilisé dans les notes modèle.",
     "icon_class": "la valeur de ce label est ajoutée en tant que classe CSS à l'icône dans l'arbre, ce qui peut aider à distinguer visuellement les notes dans l'arborescence. Un exemple pourrait être bx bx-home - les icônes sont extraites de boxicons. Peut être utilisé dans les notes modèle.",
     "page_size": "nombre d'éléments par page dans la liste de notes",
@@ -511,7 +511,7 @@
     "delete_matched_notes": "Supprimer les notes correspondantes",
     "delete_matched_notes_description": "Cela supprimera les notes correspondantes.",
     "undelete_notes_instruction": "Après la suppression, il est possible de les restaurer à partir de la boîte de dialogue Modifications récentes.",
-    "erase_notes_instruction": "Pour effacer définitivement les notes, après leur suppression, allez dans Options → Autres et cliquez sur le bouton \"Effacer immédiatement les notes supprimées\"."
+    "erase_notes_instruction": "Pour effacer définitivement les notes, après leur suppression, allez dans Paramètres → Autres et cliquez sur le bouton \"Effacer immédiatement les notes supprimées\"."
   },
   "delete_revisions": {
     "delete_note_revisions": "Supprimer les versions de notes",
@@ -640,7 +640,7 @@
   },
   "global_menu": {
     "menu": "Menu",
-    "options": "Options",
+    "options": "Paramètres",
     "open_new_window": "Ouvrir une nouvelle fenêtre",
     "switch_to_mobile_version": "Passer à la version mobile",
     "switch_to_desktop_version": "Passer à la version de bureau",
@@ -667,7 +667,7 @@
     "toggle-zen-mode": "Zen Mode",
     "new-version-available": "Nouvelle mise à jour disponible",
     "download-update": "Obtenir la version {{latestVersion}}",
-    "search_notes": "Rechercher notes"
+    "search_notes": "Rechercher des notes"
   },
   "zen_mode": {
     "button_exit": "Sortir du Zen mode"
@@ -701,7 +701,7 @@
     "export_note": "Exporter la note",
     "delete_note": "Supprimer la note",
     "print_note": "Imprimer la note...",
-    "save_revision": "Enregistrer la révision",
+    "save_revision": "Enregistrer une révision",
     "convert_into_attachment_failed": "La conversion de la note '{{title}}' a échoué.",
     "convert_into_attachment_successful": "La note '{{title}}' a été convertie en pièce jointe.",
     "convert_into_attachment_prompt": "Êtes-vous sûr de vouloir convertir la note '{{title}}' en une pièce jointe de la note parent ?",
@@ -1094,7 +1094,7 @@
     "finding_and_fixing_message": "Recherche et résolution des problèmes de cohérence...",
     "issues_fixed_message": "Les problèmes de cohérence devraient être résolus.",
     "find_and_fix_label": "Identifier et corriger les problèmes de cohérence",
-    "find_and_fix_description": "Rechercher et corriger automatiquement tout problème de cohérence des données dans la base de données."
+    "find_and_fix_description": "Recherche et corrige automatiquement tout problème de cohérence des données dans la base."
   },
   "database_anonymization": {
     "title": "Anonymisation de la base de données",
@@ -1192,7 +1192,7 @@
     "title": "Interface utilisateur",
     "theme_label": "Thème de l'application",
     "override_theme_fonts_label": "Remplacer les polices du thème",
-    "triliumnext": "Suit le thème du système",
+    "triliumnext": "Suit le schéma de couleurs du système",
     "triliumnext-light": "Clair",
     "triliumnext-dark": "Sombre",
     "layout": "Disposition",
@@ -1200,18 +1200,18 @@
     "layout-horizontal-title": "Horizontal",
     "layout-vertical-description": "la barre de raccourcis est à gauche (défaut)",
     "layout-horizontal-description": "la barre de raccourcis est sous la barre des onglets, cette-dernière est s'affiche en pleine largeur.",
-    "auto_theme": "Suit le thème du système",
+    "auto_theme": "Suit le schéma de couleurs du système",
     "light_theme": "Clair",
     "dark_theme": "Sombre",
     "modern_themes": "Moderne",
-    "legacy_themes": "Historique",
+    "legacy_themes": "Classique",
     "custom_themes": "Personnalisé",
     "recommended": "Recommandé",
-    "color_scheme": "Palette de couleurs",
+    "color_scheme": "Schéma de couleurs",
     "color_scheme_system": "Système",
     "color_scheme_light": "Clair",
     "color_scheme_dark": "Sombre",
-    "color_scheme_custom_disabled": "La modification de la palette de couleurs n'est pas disponible pour les thèmes personnalisés"
+    "color_scheme_custom_disabled": "Le schéma de couleurs est non modifiable sur les thèmes personnalisés"
   },
   "zoom_factor": {
     "title": "Facteur de zoom (version bureau uniquement)",
@@ -1240,22 +1240,22 @@
   "images": {
     "images_section_title": "Images",
     "download_images_automatically": "Télécharger automatiquement les images",
-    "download_images_description": "Téléchargez les images en ligne référencées dans le HTML collé afin qu'elles soient disponibles hors connexion.",
+    "download_images_description": "Télécharge les images externes du HTML collé pour les rendre disponibles hors connexion.",
     "enable_image_compression": "Compression des images",
     "max_image_dimensions": "Dimensions maximales d'une image",
     "jpeg_quality_description": "La plage recommandée est entre 50 et 85. Des valeurs plus faibles réduisent la taille du fichier, des valeurs plus élevées préservent les détails.",
     "max_image_dimensions_unit": "pixels",
     "jpeg_quality": "Qualité JPEG",
-    "enable_image_compression_description": "Compresser et redimensionner les images lors de leur téléchargement ou de leur copie.",
+    "enable_image_compression_description": "Compresse et redimensionne les images lors de leur téléversement ou de leur collage.",
     "max_image_dimensions_description": "Les images dépassant cette taille seront automatiquement redimensionnées.",
     "ocr_section_title": "Extraction de texte (OCR)",
     "ocr_related_content_languages": "Langues du contenu (utilisées pour l’extraction de texte)",
     "ocr_auto_process": "Traiter automatiquement les nouveaux fichiers",
-    "ocr_auto_process_description": "Extraire automatiquement le texte des fichiers nouvellement importés ou collés.",
+    "ocr_auto_process_description": "Extrait automatiquement le texte des fichiers nouvellement téléversés ou collés.",
     "ocr_min_confidence": "Seuil de confiance minimal",
-    "ocr_confidence_description": "N’extraire que le texte dont la confiance est supérieure à ce seuil. Des valeurs plus faibles incluent davantage de texte, mais peuvent être moins précises.",
+    "ocr_confidence_description": "N’extrait que le texte dont la confiance est supérieure à ce seuil. Des valeurs plus faibles incluent davantage de texte, mais peuvent être moins précises.",
     "batch_ocr_title": "Traiter les fichiers existants",
-    "batch_ocr_description": "Extraire le texte de toutes les images, PDF et documents Office existants dans vos notes. Cette opération peut prendre du temps en fonction du nombre de fichiers.",
+    "batch_ocr_description": "Extrait le texte de toutes les images, PDF et documents Office existants dans vos notes. Cela peut prendre du temps selon le nombre de fichiers.",
     "batch_ocr_start": "Démarrer le traitement par lot",
     "batch_ocr_starting": "Démarrage du traitement par lot…",
     "batch_ocr_progress": "Traitement de {{processed}} sur {{total}} fichiers…",
@@ -1338,13 +1338,13 @@
     "bg_color": "Texte avec couleur de fond",
     "visibility_title": "Visibilité de la Liste des Mises en évidence",
     "visibility_description": "Vous pouvez masquer le widget des mises en évidence par note en ajoutant un label #hideHighlightWidget.",
-    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour basculer rapidement vers le volet droit (comprenant les Mises en évidence) dans Options -> Raccourcis (nom « toggleRightPane »)."
+    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour basculer rapidement vers le volet droit (comprenant les Mises en évidence) dans Paramètres -> Raccourcis (nom « toggleRightPane »)."
   },
   "table_of_contents": {
     "title": "Table des matières",
     "description": "La table des matières apparaîtra dans les notes textuelles lorsque la note comporte plus d'un nombre défini de titres. Vous pouvez personnaliser ce nombre :",
     "disable_info": "Vous pouvez également utiliser cette option pour désactiver la table des matières en définissant un nombre très élevé.",
-    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour afficher/masquer le volet de droite (y compris la table des matières) dans Options -> Raccourcis (nom « toggleRightPane »).",
+    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour afficher/masquer le volet de droite (y compris la table des matières) dans Paramètres -> Raccourcis (nom « toggleRightPane »).",
     "unit": "titres"
   },
   "text_auto_read_only_size": {
@@ -1778,11 +1778,11 @@
   },
   "highlighting": {
     "description": "Contrôle la coloration syntaxique des blocs de code à l'intérieur des notes texte, les notes de code ne seront pas affectées.",
-    "color-scheme": "Jeu de couleurs",
+    "color-scheme": "Schéma de couleurs",
     "title": "Blocs de code"
   },
   "code_block": {
-    "word_wrapping": "Saut à la ligne automatique suivant la largeur",
+    "word_wrapping": "Retour à la ligne",
     "theme_none": "Pas de coloration syntaxique",
     "theme_group_light": "Thèmes clairs",
     "theme_group_dark": "Thèmes sombres",
@@ -2010,7 +2010,7 @@
     "search_notes_description": "Ouvrir la recherche avancée",
     "search_subtree_title": "Rechercher dans la sous-arborescence",
     "search_subtree_description": "Rechercher dans la sous-arborescence actuelle",
-    "search_history_title": "Afficher l'historique de recherche",
+    "search_history_title": "Afficher l'historique des recherches",
     "search_history_description": "Afficher les recherches précédentes",
     "configure_launch_bar_title": "Configurer la barre de lancement",
     "configure_launch_bar_description": "Ouvrir la configuration de la barre de lancement pour ajouter ou supprimer des éléments."
@@ -2020,21 +2020,21 @@
   },
   "call_to_action": {
     "next_theme_title": "Essayez le nouveau thème Trilium",
-    "next_theme_message": "Vous utilisez actuellement le thème hérité de l'ancienne version, souhaitez-vous essayer le nouveau thème ?",
+    "next_theme_message": "Vous utilisez actuellement le thème classique, souhaitez-vous essayer le nouveau thème ?",
     "next_theme_button": "Essayez le nouveau thème",
     "background_effects_title": "Les effets d'arrière-plan sont désormais stables",
     "background_effects_message": "Sur les appareils Windows et macOS les effets d'arrière-plan sont désormais stables. Ils ajoutent une touche de couleur à l'interface utilisateur en floutant l'arrière-plan.",
     "background_effects_button": "Activer les effets d'arrière-plan",
     "dismiss": "Rejeter",
     "new_layout_title": "Nouvelle mise en page",
-    "new_layout_message": "Nous avons introduit une mise en page modernisée pour Trilium. Le ruban a été supprimé et intégré de manière transparente dans l'interface principale, avec une nouvelle barre d'état et des sections extensibles (telles que les attributs promus) reprenant les fonctions clés.\n\nLa nouvelle mise en page est activée par défaut et peut être temporairement désactivée via Options → Apparence.",
+    "new_layout_message": "Nous avons introduit une mise en page modernisée pour Trilium. Le ruban a été supprimé et intégré de manière transparente dans l'interface principale, avec une nouvelle barre d'état et des sections extensibles (telles que les attributs promus) reprenant les fonctions clés.\n\nLa nouvelle mise en page est activée par défaut et peut être temporairement désactivée via Paramètres → Apparence.",
     "new_layout_button": "Plus d'infos"
   },
   "settings": {
-    "related_settings": "Paramètres associés"
+    "related_settings": "Autres paramètres"
   },
   "settings_appearance": {
-    "related_code_blocks": "Schéma de coloration syntaxique pour les blocs de code dans les notes de texte",
+    "related_code_blocks": "Schéma de couleurs des blocs de code dans les notes de texte",
     "related_code_notes": "Schéma de couleurs pour les notes de code",
     "ui": "Interface utilisateur",
     "ui_old_layout": "Ancien",
@@ -2069,12 +2069,12 @@
     "unknown_widget": "Widget inconnu pour « {{id}} »."
   },
   "note_language": {
-    "not_set": "Langage non défini",
+    "not_set": "Aucune langue définie",
     "configure-languages": "Configurer les langues...",
-    "help-on-languages": "Aide sur les langues de contenu..."
+    "help-on-languages": "Aide sur les langues du contenu..."
   },
   "content_language": {
-    "title": "Contenu des langues",
+    "title": "Langues du contenu",
     "description": "Sélectionnez une ou plusieurs langues qui doivent apparaître dans la liste de sélection de langues, située dans la section Propriétés de base d'une note de type texte. Cela permettra d'activer des fonctionnalités telles que la vérification orthographique, le support du texte de droite à gauche (RTL) et l'extraction de texte (OCR)."
   },
   "switch_layout_button": {
@@ -2094,8 +2094,13 @@
   },
   "code_theme": {
     "title": "Apparence",
-    "word_wrapping": "Retour à la ligne automatique",
-    "color-scheme": "Jeu de couleurs"
+    "word_wrapping": "Retour à la ligne",
+    "color-scheme": "Schéma de couleurs",
+    "light_theme": "Clair",
+    "theme_mode": "Thème",
+    "dark_theme": "Sombre",
+    "match_app_appearance": "Suivre l'apparence de l'application",
+    "always_use_one_theme": "Thème unique"
   },
   "cpu_arch_warning": {
     "title": "Veuillez télécharger la version ARM64",
@@ -2198,7 +2203,9 @@
     "no_provider_message": "Aucun fournisseur d'IA configuré. Ajoutez en un pour commencer à discuter.",
     "add_provider": "Ajouter un fournisseur d'IA",
     "sources_summary": "{{count}} sources provenant de {{sites}} sites",
-    "stop": "Arrêter"
+    "stop": "Arrêter",
+    "retry": "Réessayer",
+    "edit_index": "Modification {{index}} sur {{total}}"
   },
   "sidebar_chat": {
     "title": "discussion IA",
@@ -2208,7 +2215,8 @@
     "empty_state": "Démarrer une conversation",
     "history": "Historique des discussions",
     "recent_chats": "Discussions récentes",
-    "no_chats": "Pas de discussions précédentes"
+    "no_chats": "Pas de discussions précédentes",
+    "view_all_chats": "Voir toutes les discussions"
   },
   "note-color": {
     "clear-color": "Retirer la couleur de la note",
@@ -2369,8 +2377,8 @@
     "summary": "Résumé"
   },
   "llm": {
-    "settings_title": "AI / LLM",
-    "settings_description": "Configurer les intégrations AI et les LLM (Large Language Model).",
+    "settings_title": "IA / LLM",
+    "settings_description": "Configurer les intégrations IA et les LLM (Large Language Model).",
     "add_provider": "Ajouter le fournisseur",
     "add_provider_title": "Ajouter le fournisseur d'IA",
     "configured_providers": "Fournisseurs configurés",
@@ -2386,32 +2394,37 @@
     "tools": {
       "note_in_parent": "<Note/> dans <Parent/>",
       "search_notes": "Rechercher des notes",
-      "get_note": "Obtenir une note",
-      "get_note_content": "Obtenir le contenu d'une note",
+      "get_note": "Récupérer une note",
+      "get_note_content": "Lire le contenu d'une note",
       "update_note_content": "Mettre à jour le contenu d'une note",
-      "append_to_note": "Ajouter à une note",
-      "create_note": "Créer une note",
-      "get_attributes": "Obtenir les attributs",
-      "get_attribute": "Obtenir l’attribut",
-      "set_attribute": "Définir l’attribut",
-      "delete_attribute": "Supprimer l’attribut",
-      "get_child_notes": "Obtenir les notes enfant",
-      "get_subtree": "Obtenir le sous-arbre",
+      "append_to_note": "Ajouter du texte à une note",
+      "create_note": "Créer une nouvelle note",
+      "get_attributes": "Récupérer les attributs",
+      "get_attribute": "Lire l'attribut",
+      "set_attribute": "Définir l'attribut",
+      "delete_attribute": "Supprimer l'attribut",
+      "get_child_notes": "Récupérer les notes enfants",
+      "get_subtree": "Récupérer l'arborescence (sous-arbre)",
       "load_skill": "Charger la compétence",
-      "web_search": "Recherche web",
-      "get_attachment": "Obtenir une pièce jointe",
+      "web_search": "Recherche sur le web",
+      "get_attachment": "Récupérer une pièce jointe",
       "get_attachment_content": "Lire le contenu de la pièce jointe",
       "rename_note": "Renommer la note",
       "delete_note": "Supprimer la note",
       "move_note": "Déplacer la note",
-      "clone_note": "Cloner la note"
+      "clone_note": "Cloner la note",
+      "set_note_content": "Remplacer le contenu d'une note",
+      "edit_note_content": "Modifier le contenu d'une note"
     },
     "feature_not_enabled": "Activez la fonctionnalité expérimentale LLM dans Paramètres → Avancé → Fonctionnalités expérimentales pour utiliser les intégrations d’IA.",
     "mcp_title": "MCP (Model Context Protocol)",
-    "mcp_enabled": "serveur MCP",
-    "mcp_enabled_description": "Active un point de terminaison Model Context Protocol (MCP) pour que les assistants de codage IA (par ex. Claude Code, GitHub Copilot) puissent lire et modifier vos notes. Ce point de terminaison n’est accessible que depuis le localhost.",
+    "mcp_enabled": "Serveur MCP",
+    "mcp_enabled_description": "Expose un point de terminaison MCP (Model Context Protocol) afin que les assistants IA (ex : Claude Code, GitHub Copilot) puissent lire et modifier vos notes. Ce point n'est accessible qu'en local.",
     "mcp_endpoint_title": "URL du point de terminaison",
-    "mcp_endpoint_description": "Ajoutez cette URL à la configuration MCP de votre assistant IA"
+    "mcp_endpoint_description": "Ajoutez cette URL à la configuration MCP de votre assistant IA",
+    "base_url": "URL de base",
+    "base_url_description": "Optionnel. Permet de remplacer l'endpoint API par défaut (utile pour les modèles auto-hébergés comme Ollama, LM Studio, vLLM ou proxies).",
+    "base_url_invalid": "L'URL de base doit être une adresse valide (commençant par http:// ou https://)"
   },
   "status_bar": {
     "language_title": "Changer de langue",
@@ -2480,12 +2493,12 @@
     "snapshot_header": "Instantané de révision de la note",
     "snapshot_interval_value": "Intervalle : {{seconds}}s",
     "snapshot_limit_value": "Limite : {{number}}",
-    "settings": "Paramètres de révision des notes",
+    "settings": "Paramètres des révisions de notes",
     "menu_tooltip": "Options de révision",
     "download_button": "Télécharger",
     "file_size": "Taille du fichier :",
     "preview_not_available": "L'aperçu n'est pas disponible pour ce type de note.",
-    "save_revision": "Enregistrer la révision",
+    "save_revision": "Enregistrer une révision",
     "save_revision_tooltip": "Enregistrer manuellement un instantané de la note actuelle",
     "description_placeholder": "Nommer cette révision",
     "revision_saved": "La révision de la note a été enregistrée.",
@@ -2507,7 +2520,8 @@
     "mime": "MIME : ",
     "source_etapi": "ETAPI",
     "source_llm": "LLM",
-    "source_unknown": "Instantané"
+    "source_unknown": "Instantané",
+    "diff_identical": "Cette révision est identique au contenu actuel de la note."
   },
   "database": {
     "title": "Base de données"
@@ -2539,7 +2553,8 @@
     "autocomplete_fuzzy_description": "Affecte l’accès rapide aux notes et les sélecteurs de notes. Plus lent, mais tolère les fautes de frappe."
   },
   "text_editor": {
-    "title": "Éditeur"
+    "title": "Éditeur",
+    "related_task_states": "Personnaliser les statuts des listes de tâches"
   },
   "mobile_note_navigator": {
     "back": "Remonter d’un niveau",
@@ -2611,13 +2626,13 @@
     "title": "Attributs système"
   },
   "setup": {
-    "heading": "Commencer avec Trilium",
+    "heading": "Démarrer avec Trilium",
     "new-document": "Nouvelle base de connaissances",
-    "new-document-description": "Commencez avec une base de connaissances vide et démarrez immédiatement.",
+    "new-document-description": "Partez d'une base vierge pour commencer sans attendre.",
     "sync-from-desktop": "Connecter une application de bureau",
-    "sync-from-desktop-description": "Une application de bureau Trilium est en cours d’exécution sur un autre appareil. Cet appareil synchronisera ses données à partir de cette application.",
+    "sync-from-desktop-description": "Vous utilisez l'application de bureau Trilium sur un autre appareil. Cet appareil synchronisera ses données avec cette application.",
     "sync-from-server": "Se connecter à un serveur existant",
-    "sync-from-server-description": "Vous avez un serveur Trilium en fonctionnement (auto-hébergé ou dans le cloud). Cet appareil synchronisera ses données depuis ce serveur.",
+    "sync-from-server-description": "Vous utilisez déjà un serveur Trilium ailleurs (auto-hébergé ou dans le cloud). Cet appareil synchronisera ses données avec ce serveur.",
     "next": "Suivant",
     "init-in-progress": "Initialisation en cours",
     "redirecting": "Vous allez bientôt être redirigé vers l’application.",
@@ -2641,7 +2656,7 @@
     "sync-illustration-desktop-app": "Votre application de bureau",
     "sync-illustration-server": "Votre serveur",
     "sync-from-desktop-step1": "Ouvrez votre application Trilium Notes.",
-    "sync-from-desktop-step2": "Dans le menu, cliquez sur Options.",
+    "sync-from-desktop-step2": "Dans le menu, cliquez sur Paramètres.",
     "sync-from-desktop-step3": "Cliquez sur la catégorie Synchronisation.",
     "sync-from-desktop-step4": "Modifiez l’adresse de l’instance du serveur dans le champ de droite.",
     "sync-from-desktop-step5": "Cliquez sur le bouton « Tester la synchronisation » pour vérifier que la connexion fonctionne.",
@@ -2668,5 +2683,20 @@
   },
   "spreadsheet": {
     "read-only": "Cette note est en lecture seule."
+  },
+  "text-editor": {
+    "checkbox-tooltip": "Clic droit pour plus d'états.\nAppuyez sur {{shortcut}} pour changer d'état.",
+    "edit-states-tooltip": "Modifier les états des tâches",
+    "unknown-task-state": "État personnalisé non défini",
+    "task-state-dropped": "L'état \"{{title}}\" {{id}} a été supprimé pour la raison suivante : {{reason}}",
+    "validation-errors": {
+      "undefined-name": "identifiant non défini",
+      "invalid-name": "identifiant invalide",
+      "duplicate-name": "identifiant en double",
+      "missing-title": "titre manquant",
+      "missing-icon": "icône manquante",
+      "invalid-symbol": "le symbole Markdown doit être un seul caractère (sauf \"[\", \"X\" et \"]\")",
+      "duplicate-symbol": "symbole Markdown en double"
+    }
   }
 }

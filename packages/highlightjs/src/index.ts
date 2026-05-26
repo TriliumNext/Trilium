@@ -5,7 +5,7 @@ import { type Theme } from "./themes.js";
 import { type HighlightOptions } from "highlight.js";
 export type { HighlightResult, AutoHighlightResult } from "highlight.js";
 
-export { default as Themes, type Theme } from "./themes.js";
+export { default as Themes, type Theme, type ThemeVariant, getThemeVariant } from "./themes.js";
 
 const registeredMimeTypes = new Set<string>();
 const unsupportedMimeTypes = new Set<string>();

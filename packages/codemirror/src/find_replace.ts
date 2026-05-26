@@ -83,13 +83,15 @@ export class SearchHighlighter {
 
         // Check if the match is inside a folded region.
         const unfoldEffects: StateEffect<unknown>[] = [];
-        const folded = this.view.state.field(foldState);
-        const iter = folded.iter();
-        while (iter.value) {
-            if (match.from >= iter.from && match.to <= iter.to) {
-                unfoldEffects.push(unfoldEffect.of({ from: iter.from, to: iter.to }));
+        if (this.view.state.field(foldState, false)) {
+            const folded = this.view.state.field(foldState);
+            const iter = folded.iter();
+            while (iter.value) {
+                if (match.from >= iter.from && match.to <= iter.to) {
+                    unfoldEffects.push(unfoldEffect.of({ from: iter.from, to: iter.to }));
+                }
+                iter.next();
             }
-            iter.next();
         }
 
         this.view.dispatch({

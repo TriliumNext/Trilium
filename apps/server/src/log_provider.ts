@@ -9,7 +9,13 @@ import dataDir from "./services/data_dir.js";
 
 const LOG_FILE_PATTERN = /^trilium-\d{4}-\d{2}-\d{2}\.log$/;
 
-const requestBlacklist = ["/app", "/images", "/stylesheets", "/api/recent-notes"];
+const requestBlacklist = [
+    "/app",
+    "/images",
+    "/stylesheets",
+    "/api/recent-notes",
+    "/api/backend-log"
+];
 
 export default class ServerLogService extends FileBasedLogService {
     private logFile: fs.WriteStream | undefined;

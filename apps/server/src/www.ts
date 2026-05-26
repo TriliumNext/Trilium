@@ -59,8 +59,15 @@ export default async function startTriliumServer() {
     const app = await buildApp();
     const httpServer = startHttpServer(app);
 
-    const sessionParser = (await import("./routes/session_parser.js")).default;
-    (getMessagingProvider() as WebSocketMessagingProvider).init(httpServer, sessionParser);
+    // Only the WS provider needs the HTTP server and session parser; other
+    // providers (e.g. the Electron-IPC provider from apps/desktop) are
+    // initialised by their owning app before startup. Gating on the concrete
+    // type keeps www.ts platform-agnostic.
+    const messaging = getMessagingProvider();
+    if (messaging instanceof WebSocketMessagingProvider) {
+        const sessionParser = (await import("./routes/session_parser.js")).default;
+        messaging.init(httpServer, sessionParser);
+    }
 
     const ws = (await import("./services/ws.js")).default;
     ws.init();

@@ -28,7 +28,7 @@
 }
 
 /* Markdown preview content blocks in split-view */
-.note-detail-split.split-horizontal .note-detail-split-preview > .note-detail-readonly-text-content > div {     
+.note-detail-split.split-horizontal .note-detail-split-preview > .note-detail-readonly-text-content > div {
     max-width: var(--preferred-max-content-width);
 
     body.prefers-centered-content & {

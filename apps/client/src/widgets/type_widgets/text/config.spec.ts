@@ -11,6 +11,13 @@ vi.mock('../../../services/options.js', () => ({
     }
 }));
 
+// buildConfig reads the `_taskStates` hidden subtree via Froca; stub it out
+// since this test only covers language mapping.
+vi.mock('../../../services/task_states.js', () => ({
+    getTaskStateDefinitions: async () => [],
+    openCustomTaskStateConfig: () => {}
+}));
+
 describe("CK config", () => {
     it("maps all languages correctly", async () => {
         const { buildConfig } = await import("./config.js");

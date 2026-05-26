@@ -18,7 +18,7 @@ import protectedSessionHolder from "./protected_session_holder.js";
 import renderService from "./render.js";
 import server from "./server.js";
 import { applySingleBlockSyntaxHighlight } from "./syntax_highlight.js";
-import utils, { getErrorMessage } from "./utils.js";
+import { getErrorMessage } from "./utils.js";
 
 let idCounter = 1;
 
@@ -100,9 +100,8 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
                 .on("click", () => {
                     const webViewSrc = entity.getLabelValue("webViewSrc");
                     if (webViewSrc) {
-                        if (utils.isElectron()) {
-                            const electron = utils.dynamicRequire("electron");
-                            electron.shell.openExternal(webViewSrc);
+                        if (window.electronApi) {
+                            window.electronApi.shell.openExternal(webViewSrc);
                         } else {
                             window.open(webViewSrc, '_blank', 'noopener,noreferrer');
                         }

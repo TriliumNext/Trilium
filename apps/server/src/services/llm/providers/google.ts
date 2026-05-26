@@ -48,12 +48,12 @@ export class GoogleProvider extends BaseProvider {
 
     private google: GoogleGenerativeAIProvider;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, baseURL?: string) {
         super();
         if (!apiKey) {
             throw new Error("API key is required for Google provider");
         }
-        this.google = createGoogleGenerativeAI({ apiKey });
+        this.google = createGoogleGenerativeAI({ apiKey, ...(baseURL && { baseURL }) });
     }
 
     protected createModel(modelId: string) {
@@ -74,13 +74,16 @@ export class GoogleProvider extends BaseProvider {
         }
 
         const systemPrompt = this.buildSystemPrompt(messages, config);
-        const chatMessages = messages.filter(m => m.role !== "system");
-        const coreMessages = this.buildMessages(chatMessages, systemPrompt);
+        const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
+        const coreMessages = this.buildMessages(chatMessages);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
             model: this.createModel(config.model || this.defaultModel),
+            system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
             maxOutputTokens: config.maxTokens || 8096,
+            // Reject any system message smuggled into `messages` (prompt injection guard).
+            allowSystemInMessages: false,
             providerOptions: {
                 google: {
                     thinkingConfig: {

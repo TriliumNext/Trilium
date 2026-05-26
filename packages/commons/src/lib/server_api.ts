@@ -359,6 +359,24 @@ export type BootstrapDefinition = {
     platform?: "aix" | "android" | "darwin" | "freebsd" | "haiku" | "linux" | "openbsd" | "sunos" | "win32" | "cygwin" | "netbsd" | "web";
     isElectron: boolean;
     isStandalone: boolean;
+    /**
+     * Absolute URL prefix for the WebSocket (e.g. `ws://127.0.0.1:8080/`),
+     * sent by the desktop app because the renderer page lives on the
+     * `trilium-app://` custom protocol where `window.location` no longer
+     * encodes a reachable WS host. Undefined for the regular web build,
+     * where the WS URL can still be derived from `window.location`.
+     */
+    wsBaseUrl?: string;
+    /**
+     * Absolute base URL of the local HTTP server (e.g. `http://127.0.0.1:37840`),
+     * sent by the desktop app because the renderer page lives on the
+     * `trilium-app://` custom protocol where `window.location` does not point
+     * at a reachable HTTP origin. Used to display copy-pasteable endpoints
+     * (such as the MCP URL) that external clients connect to over loopback.
+     * Undefined for the regular web build, where `window.location` already
+     * encodes the reachable HTTP origin.
+     */
+    httpBaseUrl?: string;
     hasNativeTitleBar: boolean;
     hasBackgroundEffects: boolean;
     maxEntityChangeIdAtLoad?: number;

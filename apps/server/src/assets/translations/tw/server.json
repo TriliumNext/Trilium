@@ -104,7 +104,8 @@
     "toggle-classic-editor-toolbar": "切換固定工具列編輯器的格式分頁",
     "export-as-pdf": "匯出目前筆記為 PDF",
     "toggle-zen-mode": "啟用 / 禁用禪模式（極簡界面以專注編輯）",
-    "save-named-revision": "儲存目前筆記的命名修訂"
+    "save-named-revision": "儲存目前筆記的命名修訂",
+    "toggle-archived-notes": "在筆記樹中顯示/隱藏已歸檔的筆記"
   },
   "login": {
     "title": "登入",
@@ -261,7 +262,8 @@
     "toggle-left-pane": "切換左側面板",
     "toggle-full-screen": "切換全螢幕",
     "command-palette": "命令面板",
-    "save-named-revision": "儲存命名修訂"
+    "save-named-revision": "儲存命名修訂",
+    "toggle-archived-notes": "切換已歸檔筆記的顯示狀態"
   },
   "weekdayNumber": "第 {weekNumber} 週",
   "quarterNumber": "第 {quarterNumber} 季度",

@@ -12,6 +12,7 @@ import migrationService from "./migration.js";
 import noteService from "./notes.js";
 import { getLog } from "./log.js";
 import { getSql } from "./sql/index.js";
+import { seedDefaultTaskStates } from "./task_states.js";
 
 export const LBTPL_ROOT = "_lbTplRoot";
 export const LBTPL_BASE = "_lbTplBase";
@@ -70,7 +71,10 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
             {
                 id: "_llmChat",
                 title: t("hidden-subtree.llm-chat-history-title"),
-                type: "doc",
+                type: "book",
+                attributes: [
+                    { type: "label", name: "viewType", value: "grid" }
+                ],
                 icon: "bx-message-square-dots"
             },
             {
@@ -83,6 +87,48 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                 id: "_bulkAction",
                 title: t("hidden-subtree.bulk-action-title"),
                 type: "doc"
+            },
+            {
+                id: "_taskStates",
+                title: t("hidden-subtree.task-states-title"),
+                type: "doc",
+                icon: "bx-list-check",
+                isExpanded: true,
+                attributes: [
+                    { type: "label", name: "child:label:stateId", value: `promoted,single,text,alias=${t("hidden-subtree.task-state-attr-state-id")}` },
+                    { type: "label", name: "child:label:markdownSymbol", value: `promoted,single,text,alias=${t("hidden-subtree.task-state-attr-markdown-symbol")}` },
+                    { type: "label", name: "child:label:isCompleted", value: `promoted,single,boolean,alias=${t("hidden-subtree.task-state-attr-is-completed")}` },
+                    { type: "label", name: "child:label:color", value: `promoted,single,color,alias=${t("hidden-subtree.task-state-attr-color")}` },
+                    { type: "label", name: "child:label:isHidden", value: `promoted,single,boolean,alias=${t("hidden-subtree.task-state-attr-is-hidden")}` },
+                    // Documentation page for this container. The anchor states use
+                    // `system_state`, custom states use `task_state` (see createTaskStateNote).
+                    { type: "label", name: "docName", value: "task_states" }
+                ],
+                // Non-customizable anchor states — recreated if missing; they only
+                // determine where `none`/`done` sit in the toolbar/cycling order.
+                children: [
+                    {
+                        id: "_taskStateNone",
+                        title: t("hidden-subtree.task-state-none"),
+                        type: "doc",
+                        icon: "bx-checkbox",
+                        attributes: [
+                            { type: "label", name: "hidePromotedAttributes" },
+                            { type: "label", name: "docName", value: "system_state" }
+                        ]
+                    },
+                    {
+                        id: "_taskStateDone",
+                        title: t("hidden-subtree.task-state-done"),
+                        type: "doc",
+                        icon: "bx-check",
+                        attributes: [
+                            { type: "label", name: "hidePromotedAttributes" },
+                            { type: "label", name: "color", value: "#4de64d" },
+                            { type: "label", name: "docName", value: "system_state" }
+                        ]
+                    }
+                ]
             },
             {
                 id: "_backendLog",
@@ -298,7 +344,15 @@ function checkHiddenSubtree(force = false, extraOpts: CheckHiddenExtraOpts = {})
     }
 
     getSql().transactional(() => {
+        const taskStatesExisted = !!becca.notes["_taskStates"];
+
         checkHiddenSubtreeRecursively("root", hiddenSubtreeDefinition, extraOpts);
+
+        // Seed the default task states only the first time the container is created,
+        // so that later user deletions stick instead of being recreated on startup.
+        if (!taskStatesExisted) {
+            seedDefaultTaskStates();
+        }
 
         try {
             cleanUpHelp(helpSubtree);

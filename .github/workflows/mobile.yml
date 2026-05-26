@@ -4,11 +4,6 @@ on:
   pull_request:
     paths:
       - "apps/mobile/**"
-      - "apps/client/**"
-      - "apps/standalone/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - "package.json"
       - ".github/workflows/mobile.yml"
       - ".github/actions/build-mobile/**"
   workflow_dispatch:

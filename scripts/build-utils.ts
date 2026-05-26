@@ -49,7 +49,6 @@ export default class BuildHelper {
             format: "cjs",
             external: [
                 "electron",
-                "@electron/remote",
                 "better-sqlite3",
                 "pdfjs-dist",
                 "./xhr-sync-worker.js",

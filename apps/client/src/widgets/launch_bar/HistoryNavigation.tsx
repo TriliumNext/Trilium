@@ -1,4 +1,3 @@
-import type { WebContents } from "electron";
 import { useMemo } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
@@ -7,7 +6,7 @@ import { showLauncherContextMenu } from "../../menus/launcher_button_context_men
 import froca from "../../services/froca";
 import link from "../../services/link";
 import tree from "../../services/tree";
-import { dynamicRequire, isElectron } from "../../services/utils";
+import { isElectron } from "../../services/utils";
 import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
 interface HistoryNavigationProps {
@@ -19,7 +18,7 @@ const HISTORY_LIMIT = 20;
 
 export default function HistoryNavigationButton({ launcherNote, command }: HistoryNavigationProps) {
     const { icon, title } = useLauncherIconAndTitle(launcherNote);
-    const webContents = useMemo(() => isElectron() ? dynamicRequire("@electron/remote").getCurrentWebContents() : undefined, []);
+    const hasApi = useMemo(() => isElectron() && !!window.electronApi, []);
 
     return (
         <LaunchBarActionButton
@@ -27,14 +26,13 @@ export default function HistoryNavigationButton({ launcherNote, command }: Histo
             text={title}
             triggerCommand={command}
             onContextMenu={async (e) => {
-                // Prevent the native menu synchronously before awaiting history items.
                 e.preventDefault();
-                const items = webContents ? await getHistoryItems(webContents) : [];
+                const items = hasApi ? await getHistoryItems() : [];
                 showLauncherContextMenu<string>(launcherNote, e, {
                     extraItems: items,
                     onCommand: (cmd) => {
-                        if (cmd && webContents) {
-                            webContents.navigationHistory.goToIndex(parseInt(cmd, 10));
+                        if (cmd && hasApi) {
+                            window.electronApi?.navigation.navigationGoToIndex(parseInt(cmd, 10));
                         }
                     }
                 });
@@ -43,13 +41,14 @@ export default function HistoryNavigationButton({ launcherNote, command }: Histo
     );
 }
 
-async function getHistoryItems(webContents: WebContents): Promise<MenuCommandItem<string>[]> {
-    if (webContents.navigationHistory.length() < 2) return [];
+async function getHistoryItems(): Promise<MenuCommandItem<string>[]> {
+    const api = window.electronApi?.navigation;
+    if (!api || api.navigationLength() < 2) return [];
 
     let items: MenuCommandItem<string>[] = [];
 
-    const history = webContents.navigationHistory.getAllEntries();
-    const activeIndex = webContents.navigationHistory.getActiveIndex();
+    const history = api.navigationGetAllEntries();
+    const activeIndex = api.navigationGetActiveIndex();
 
     for (const idx in history) {
         const { noteId, notePath } = link.parseNavigationStateFromUrl(history[idx].url);
@@ -77,11 +76,11 @@ async function getHistoryItems(webContents: WebContents): Promise<MenuCommandIte
     return items;
 }
 
-export function handleHistoryContextMenu(webContents: WebContents) {
+export function handleHistoryContextMenu() {
     return async (e: MouseEvent) => {
         e.preventDefault();
 
-        const items = await getHistoryItems(webContents);
+        const items = await getHistoryItems();
         if (items.length === 0) return;
 
         contextMenu.show({
@@ -89,9 +88,9 @@ export function handleHistoryContextMenu(webContents: WebContents) {
             y: e.pageY,
             items,
             selectMenuItemHandler: (item: MenuCommandItem<string>) => {
-                if (item && item.command && webContents) {
+                if (item && item.command) {
                     const idx = parseInt(item.command, 10);
-                    webContents.navigationHistory.goToIndex(idx);
+                    window.electronApi?.navigation.navigationGoToIndex(idx);
                 }
             }
         });

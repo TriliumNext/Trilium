@@ -14,6 +14,7 @@ import { type ZipProvider, initZipProvider } from "./services/zip_provider";
 import { type ZipExportProviderFactory, initZipExportProviderFactory } from "./services/export/zip_export_provider_factory";
 import { InAppHelpProvider, initInAppHelp } from "./services/in_app_help";
 import { type ImageProvider, initImageProvider } from "./services/image_provider";
+import { type CoreConfig, initConfig } from "./services/config";
 
 export { default as LogService, getLog } from "./services/log";
 export { default as FileBasedLogService, type LogFileInfo } from "./services/file_based_log";
@@ -39,6 +40,7 @@ export { default as keyboard_actions } from "./services/keyboard_actions";
 export { default as entity_changes } from "./services/entity_changes";
 export { default as hidden_subtree } from "./services/hidden_subtree";
 export * as icon_packs from "./services/icon_packs";
+export * as task_states from "./services/task_states";
 export { getContext, type ExecutionContext } from "./services/context";
 export * as cls from "./services/context";
 export * as i18n from "./services/i18n";
@@ -106,6 +108,7 @@ export { default as setup } from "./services/setup";
 export { getPlatform, type PlatformProvider } from "./services/platform";
 export { InAppHelpProvider } from "./services/in_app_help";
 export { type ImageProvider, type ImageFormat, type ProcessedImage, getImageProvider } from "./services/image_provider";
+export { type CoreConfig, initConfig, getConfig } from "./services/config";
 export { default as imageService } from "./services/image";
 export { t } from "i18next";
 export type { RequestProvider, ExecOpts, CookieJar } from "./services/request";
@@ -130,7 +133,7 @@ export { default as scriptService } from "./services/script";
 export { default as BackendScriptApi, type Api as BackendScriptApiInterface } from "./services/backend_script_api";
 export * as scheduler from "./services/scheduler";
 
-export async function initializeCore({ dbConfig, executionContext, crypto, zip, zipExportProviderFactory, translations, messaging, request, schema, extraAppInfo, platform, getDemoArchive, inAppHelp, log, backup, image }: {
+export async function initializeCore({ dbConfig, executionContext, crypto, zip, zipExportProviderFactory, translations, messaging, request, schema, extraAppInfo, platform, getDemoArchive, inAppHelp, log, backup, image, config }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
     crypto: CryptoProvider,
@@ -150,7 +153,11 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
     log?: LogService;
     backup: BackupService;
     image: ImageProvider;
+    config?: CoreConfig;
 }) {
+    if (config) {
+        initConfig(config);
+    }
     initPlatform(platform);
     initLog(log);
     initBackup(backup);

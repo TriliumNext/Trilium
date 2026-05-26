@@ -324,6 +324,7 @@
     "diff_on_hint": "Click to show note source diff",
     "diff_off_hint": "Click to show note content",
     "diff_not_available": "Diff isn't available.",
+    "diff_identical": "This revision is identical to the current note content.",
     "confirm_restore": "Do you want to restore this revision? This will overwrite the current title and content of the note with this revision.",
     "delete_button": "Delete",
     "confirm_delete": "Do you want to delete this revision?",
@@ -809,6 +810,7 @@
   "code_buttons": {
     "execute_button_title": "Execute script",
     "trilium_api_docs_button_title": "Open Trilium API docs",
+    "electron_api_docs_button_title": "Open Electron API docs",
     "save_to_note_button_title": "Save to note",
     "opening_api_docs_message": "Opening API docs...",
     "sql_console_saved_message": "SQL Console note has been saved into {{note_path}}"
@@ -1462,7 +1464,8 @@
     "enable_tray_description": "Trilium needs to be restarted for this change to take effect."
   },
   "text_editor": {
-    "title": "Editor"
+    "title": "Editor",
+    "related_task_states": "Custom checkbox states for to-do lists"
   },
   "heading_style": {
     "title": "Heading style",
@@ -1792,6 +1795,7 @@
     "thought_process": "Thought process",
     "tool_calls": "{{count}} tool call(s)",
     "input": "Input",
+    "edit_index": "Edit {{index}} of {{total}}",
     "result": "Result",
     "error": "Error",
     "tool_error": "failed",
@@ -1807,7 +1811,8 @@
     "note_context_disabled": "Click to include current note in context",
     "no_provider_message": "No AI provider configured. Add one to start chatting.",
     "add_provider": "Add AI Provider",
-    "stop": "Stop"
+    "stop": "Stop",
+    "retry": "Retry"
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -1817,7 +1822,8 @@
     "empty_state": "Start a conversation",
     "history": "Chat history",
     "recent_chats": "Recent chats",
-    "no_chats": "No previous chats"
+    "no_chats": "No previous chats",
+    "view_all_chats": "View all chats"
   },
   "shared_switch": {
     "shared": "Shared",
@@ -2180,7 +2186,12 @@
   "code_theme": {
     "title": "Appearance",
     "word_wrapping": "Word wrapping",
-    "color-scheme": "Color scheme"
+    "color-scheme": "Color scheme",
+    "theme_mode": "Theme mode",
+    "match_app_appearance": "Match app appearance",
+    "always_use_one_theme": "Always use one theme",
+    "light_theme": "Light theme",
+    "dark_theme": "Dark theme"
   },
   "cpu_arch_warning": {
     "title": "Please download the ARM64 version",
@@ -2619,6 +2630,9 @@
     "delete_provider_confirmation": "Are you sure you want to delete the provider \"{{name}}\"?",
     "api_key": "API Key",
     "api_key_placeholder": "Enter your API key",
+    "base_url": "Base URL",
+    "base_url_description": "Optional. Override the default API endpoint — useful for self-hosted models (Ollama, LM Studio, vLLM) or proxies.",
+    "base_url_invalid": "Base URL must be a valid http:// or https:// URL",
     "cancel": "Cancel",
     "mcp_title": "MCP (Model Context Protocol)",
     "mcp_enabled": "MCP server",
@@ -2629,7 +2643,9 @@
       "search_notes": "Search notes",
       "get_note": "Get note",
       "get_note_content": "Get note content",
-      "update_note_content": "Update note content",
+      "set_note_content": "Rewrite note",
+      "update_note_content": "Rewrite note",
+      "edit_note_content": "Edit note",
       "append_to_note": "Append to note",
       "create_note": "Create note",
       "get_attributes": "Get attributes",
@@ -2655,5 +2671,20 @@
   },
   "spreadsheet": {
     "read-only": "This note is read-only."
+  },
+  "text-editor": {
+    "checkbox-tooltip": "Right click for more task states.\nPress {{shortcut}} to cycle between states.",
+    "edit-states-tooltip": "Edit task states",
+    "unknown-task-state": "Undefined custom task state",
+    "task-state-dropped": "Dropped custom task state definition \"{{title}}\" ({{id}}) due to: {{reason}}",
+    "validation-errors": {
+      "undefined-name": "undefined identifier",
+      "invalid-name": "invalid identifier",
+      "duplicate-name": "duplicate identifier",
+      "missing-title": "missing title",
+      "missing-icon": "missing icon",
+      "invalid-symbol": "the markdown symbol should be one character, excepting \"[\", \" \", \"X\", and \"]\"",
+      "duplicate-symbol": "duplicate markdown symbol"
+    }
   }
 }

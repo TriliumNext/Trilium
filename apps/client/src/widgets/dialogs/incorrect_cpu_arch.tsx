@@ -25,9 +25,8 @@ export default function IncorrectCpuArchDialogComponent() {
                     icon="bx bx-download"
                     onClick={() => {
                         // Open the releases page where users can download the correct version
-                        if (utils.isElectron()) {
-                            const { shell } = utils.dynamicRequire("electron");
-                            shell.openExternal("https://github.com/TriliumNext/Trilium/releases/latest");
+                        if (window.electronApi) {
+                            window.electronApi.shell.openExternal("https://github.com/TriliumNext/Trilium/releases/latest");
                         } else {
                             window.open("https://github.com/TriliumNext/Trilium/releases/latest", "_blank");
                         }

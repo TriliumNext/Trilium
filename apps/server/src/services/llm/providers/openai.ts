@@ -66,12 +66,12 @@ export class OpenAiProvider extends BaseProvider {
 
     private openai: OpenAISDKProvider;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, baseURL?: string) {
         super();
         if (!apiKey) {
             throw new Error("API key is required for OpenAI provider");
         }
-        this.openai = createOpenAI({ apiKey });
+        this.openai = createOpenAI({ apiKey, ...(baseURL && { baseURL }) });
     }
 
     protected createModel(modelId: string) {

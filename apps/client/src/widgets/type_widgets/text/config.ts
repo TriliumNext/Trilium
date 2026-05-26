@@ -4,6 +4,7 @@ import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, MIME_TYPE_AUTO, normalizeMim
 
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { t } from "../../../services/i18n.js";
+import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
 import { getMermaidConfig } from "../../../services/mermaid.js";
 import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
 import noteAutocompleteService, { type Suggestion } from "../../../services/note_autocomplete.js";
@@ -173,6 +174,13 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         removePlugins: getDisabledPlugins(),
         ...await getCkLocale(opts.uiLanguage)
     };
+
+    // User-configurable todo task states (from the `_taskStates` hidden subtree).
+    (config as Record<string, unknown>).taskStates = await getTaskStateDefinitions();
+    (config as Record<string, unknown>).editTaskStates = openCustomTaskStateConfig;
+
+    // The app's i18n translate function, so plugins can resolve Trilium translation keys.
+    (config as Record<string, unknown>).translate = (key: string, params?: Record<string, unknown>) => t(key, params);
 
     // Set up content language.
     const { contentLanguage } = opts;

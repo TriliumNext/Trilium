@@ -10,7 +10,7 @@ import smartIndentWithTab from "./extensions/custom_tab.js";
 import type { ThemeDefinition } from "./color_themes.js";
 import { createSearchHighlighter, SearchHighlighter, searchMatchHighlightTheme } from "./find_replace.js";
 
-export { default as ColorThemes, type ThemeDefinition, getThemeById } from "./color_themes.js";
+export { default as ColorThemes, type ThemeDefinition, type ThemeVariant, getThemeById } from "./color_themes.js";
 
 // Custom keymap to prevent Ctrl+Enter from inserting a newline
 // This allows the parent application to handle the shortcut (e.g., for "Run Active Note")

@@ -284,6 +284,21 @@ $$`;
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
     });
 
+    it("imports todo list multistate markers as data-trilium-task-state", () => {
+        const input = trimIndentation`\
+            - [/] Doing
+            - [-] Cancelled
+            - [?] Maybe`;
+        const expected = [
+            `<ul class="todo-list">`,
+            `<li data-trilium-task-state="doing"><label class="todo-list__label"><input type="checkbox" disabled="disabled"><span class="todo-list__label__description">Doing</span></label></li>`,
+            `<li data-trilium-task-state="cancelled"><label class="todo-list__label"><input type="checkbox" disabled="disabled"><span class="todo-list__label__description">Cancelled</span></label></li>`,
+            `<li data-trilium-task-state="maybe"><label class="todo-list__label"><input type="checkbox" disabled="disabled"><span class="todo-list__label__description">Maybe</span></label></li>`,
+            `</ul>`
+        ].join("");
+        expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+    });
+
     it("supports wikilink with root-relative path", () => {
         const input = `oh no my banana I bought on [[journal/monday]] has gone off! I’m taking it back to the [[other/shop]] for a refund`;
         const expected = `<p>oh no my banana I bought on <a class="reference-link" href="/journal/monday">journal/monday</a> has gone off! I’m taking it back to the <a class="reference-link" href="/other/shop">other/shop</a> for a refund</p>`;

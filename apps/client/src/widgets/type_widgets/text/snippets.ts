@@ -4,6 +4,7 @@ import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
 import type { TemplateDefinition } from "@triliumnext/ckeditor5";
 import type FNote from "../../../entities/fnote.js";
+import { escapeHtml } from "../../../services/utils.js";
 
 interface TemplateData {
     title: string;
@@ -56,7 +57,7 @@ function buildIcon(snippet: FNote) {
     return /*xml*/`\
 <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
   <foreignObject x="0" y="0" width="20" height="20">
-    <span class="note-icon ${snippet.getIcon()} ${snippet.getColorClass()}" xmlns="http://www.w3.org/1999/xhtml"></span>
+    <span class="note-icon ${escapeHtml(snippet.getIcon())} ${escapeHtml(snippet.getColorClass())}" xmlns="http://www.w3.org/1999/xhtml"></span>
   </foreignObject>
 </svg>`
 }

@@ -1,3 +1,4 @@
+import appContext from "../../../../components/app_context";
 import { t } from "../../../../services/i18n";
 import type { OptionPages } from "../../ContentWidget";
 import { OptionsRowLink } from "./OptionsRow";
@@ -6,7 +7,10 @@ import OptionsSection from "./OptionsSection";
 interface RelatedSettingsItem {
     title: string;
     description?: string;
-    targetPage: OptionPages;
+    /** Link to another options page. */
+    targetPage?: OptionPages;
+    /** Link to an arbitrary hidden-subtree note (e.g. `_taskStates`). */
+    targetNoteId?: string;
     enabled?: boolean;
 }
 
@@ -23,14 +27,29 @@ export default function RelatedSettings({ items }: RelatedSettingsProps) {
 
     return (
         <OptionsSection title={t("settings.related_settings")}>
-            {filteredItems.map((item) => (
-                <OptionsRowLink
-                    key={item.targetPage}
-                    label={item.title}
-                    description={item.description}
-                    href={`#root/_hidden/_options/${item.targetPage}`}
-                />
-            ))}
+            {filteredItems.map((item) => {
+                const { targetPage, targetNoteId } = item;
+                return (
+                    <OptionsRowLink
+                        key={targetPage ?? targetNoteId}
+                        label={item.title}
+                        description={item.description}
+                        href={targetNoteId
+                            ? `#root/_hidden/${targetNoteId}`
+                            : `#root/_hidden/_options/${targetPage}`}
+                        onClick={targetNoteId
+                            ? (e) => {
+                                // Hidden-subtree config notes open hoisted, in their own tab.
+                                // stopPropagation keeps the global `a` click handler
+                                // (link.ts `goToLink`) from navigating by href instead.
+                                e.preventDefault();
+                                e.stopPropagation();
+                                void appContext.tabManager.openInNewTab(targetNoteId, targetNoteId, true);
+                            }
+                            : undefined}
+                    />
+                );
+            })}
         </OptionsSection>
     );
 }

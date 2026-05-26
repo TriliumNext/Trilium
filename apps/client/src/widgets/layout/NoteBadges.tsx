@@ -1,6 +1,7 @@
 import "./NoteBadges.css";
 
 import { clsx } from "clsx";
+import { useEffect, useState } from "preact/hooks";
 
 import { copyTextWithToast } from "../../services/clipboard_ext";
 import { t } from "../../services/i18n";
@@ -126,10 +127,19 @@ function ExecuteBadge() {
     );
 }
 
+const SAVE_STATE_DEBOUNCE_MS = 200;
+
 export function SaveStatusBadge() {
     const { noteContext} = useNoteContext();
     const saveState = useGetContextDataFrom(noteContext, "saveState");
-    if (!saveState) return;
+    const [debouncedState, setDebouncedState] = useState(saveState);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedState(saveState), SAVE_STATE_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+    }, [saveState]);
+
+    if (!debouncedState) return;
 
     const stateConfig = {
         saved: {
@@ -154,11 +164,11 @@ export function SaveStatusBadge() {
         }
     };
 
-    const { icon, title, tooltip } = stateConfig[saveState.state];
+    const { icon, title, tooltip } = stateConfig[debouncedState.state];
 
     return (
         <Badge
-            className={clsx("save-status-badge", saveState.state)}
+            className={clsx("save-status-badge", debouncedState.state)}
             icon={icon}
             text={title}
             tooltip={tooltip}

@@ -104,7 +104,8 @@
     "toggle-note-hoisting": "Переключить фокус активной заметки",
     "unhoist": "Убрать фокус с любой заметки",
     "force-save-revision": "Принудительное создать/сохранить снимок версии активной заметки",
-    "save-named-revision": "Сохранить именованную ревизию активной заметки"
+    "save-named-revision": "Сохранить именованную ревизию активной заметки",
+    "toggle-archived-notes": "Показать/скрыть архивные заметки в дереве заметок"
   },
   "hidden-subtree": {
     "localization": "Язык и регион",
@@ -162,7 +163,18 @@
     "llm-chat-history-title": "История чата с ИИ",
     "llm-title": "ИИ / LLM",
     "sidebar-chat-title": "Чат с ИИ",
-    "custom-dictionary-title": "Пользовательский словарь"
+    "custom-dictionary-title": "Пользовательский словарь",
+    "task-states-title": "Состояния задач",
+    "task-state-none": "Нет",
+    "task-state-doing": "В работе",
+    "task-state-done": "Выполнено",
+    "task-state-maybe": "Под вопросом",
+    "task-state-cancelled": "Отменено",
+    "task-state-attr-state-id": "Идентификатор (обязательно)",
+    "task-state-attr-markdown-symbol": "Символ Markdown",
+    "task-state-attr-is-completed": "Считать статус выполненным",
+    "task-state-attr-color": "Цвет",
+    "task-state-attr-is-hidden": "Скрыт из спивска"
   },
   "tray": {
     "bookmarks": "Закладки",
@@ -270,7 +282,8 @@
     "toggle-ribbon-tab-similar-notes": "Переключить на вкладку \"Похожие заметки\"",
     "export-active-note-as-pdf": "Экспортировать активную заметку в формате PDF",
     "toggle-note-hoisting": "Переключить закрепление заметки",
-    "save-named-revision": "Сохранить именованную ревизию"
+    "save-named-revision": "Сохранить именованную ревизию",
+    "toggle-archived-notes": "Переключить отображение архивных заметок"
   },
   "months": {
     "august": "Август",

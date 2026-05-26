@@ -1,5 +1,5 @@
 import { BootstrapDefinition } from "@triliumnext/commons";
-import { attributes, BNote, getSharedBootstrapItems, icon_packs as iconPackService, sql_init } from "@triliumnext/core";
+import { attributes, BNote, getSharedBootstrapItems, icon_packs as iconPackService, sql_init, task_states } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
@@ -8,6 +8,7 @@ import assetPath from "../services/asset_path.js";
 import config from "../services/config.js";
 import log from "../services/log.js";
 import optionService from "../services/options.js";
+import port from "../services/port.js";
 import { isDev, isElectron, isMac, isWindows11 } from "../services/utils.js";
 import { generateCsrfToken } from "./csrf_protection.js";
 
@@ -35,7 +36,15 @@ export function bootstrap(req: Request, res: Response) {
         triliumVersion: packageJson.version,
         device: view,
         TRILIUM_SAFE_MODE: !!process.env.TRILIUM_SAFE_MODE,
-        instanceName: config.General ? config.General.instanceName : null
+        instanceName: config.General ? config.General.instanceName : null,
+        // The desktop renderer loads from trilium-app://, so location-based
+        // ws:// URL derivation no longer works there. Send an absolute URL.
+        wsBaseUrl: isElectron ? `ws://127.0.0.1:${port}/` : undefined,
+        // Same reason for HTTP-origin-dependent UI (e.g. the MCP URL shown
+        // in Options) — give the renderer a real loopback origin to display.
+        httpBaseUrl: isElectron
+            ? `${config["Network"]["https"] ? "https" : "http"}://127.0.0.1:${port}`
+            : undefined
     };
     if (!isDbInitialized) {
         res.send({
@@ -70,10 +79,13 @@ export function bootstrap(req: Request, res: Response) {
             && (isWindows11 || isMac)
             && !nativeTitleBarVisible,
         isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
-        iconPackCss: iconPacks
-            .map((p: iconPackService.ProcessedIconPack) => iconPackService.generateCss(p, p.builtin
-                ? `${assetPath}/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
-                : `api/attachments/download/${p.fontAttachmentId}`))
+        iconPackCss: [
+            ...iconPacks
+                .map((p: iconPackService.ProcessedIconPack) => iconPackService.generateCss(p, p.builtin
+                    ? `${assetPath}/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+                    : `api/attachments/download/${p.fontAttachmentId}`)),
+            task_states.generateTaskStateCss()
+        ]
             .filter(Boolean)
             .join("\n\n"),
     } satisfies BootstrapDefinition);

@@ -20,10 +20,10 @@
     "electron-forge:make-flatpak": "pnpm build && DEBUG=* electron-forge make dist --targets=@electron-forge/maker-flatpak",
     "electron-forge:package": "pnpm build && electron-forge package dist",
     "electron-forge:start": "pnpm build && electron-forge start dist",
-    "e2e": "pnpm build && cross-env TRILIUM_INTEGRATION_TEST=memory-no-store TRILIUM_PORT=8082 TRILIUM_DATA_DIR=data-e2e TRILIUM_ELECTRON_DATA_DIR=data-e2e-electron-8082 ELECTRON_IS_DEV=0 playwright test"
+    "e2e": "pnpm build && cross-env TRILIUM_INTEGRATION_TEST=memory-no-store TRILIUM_PORT=8082 TRILIUM_DATA_DIR=data-e2e TRILIUM_ELECTRON_DATA_DIR=data-e2e-electron-8082 ELECTRON_IS_DEV=0 playwright test",
+    "test": "vitest --config vitest.config.mts"
   },
   "dependencies": {
-    "@electron/remote": "2.1.3",
     "better-sqlite3": "12.10.0",
     "electron-debug": "4.1.0",
     "electron-dl": "4.0.0",
@@ -45,7 +45,7 @@
     "@triliumnext/server": "workspace:*",
     "@types/electron-squirrel-startup": "1.0.2",
     "copy-webpack-plugin": "14.0.0",
-    "electron": "41.6.0",
+    "electron": "41.7.0",
     "prebuild-install": "7.1.3"
   }
 }

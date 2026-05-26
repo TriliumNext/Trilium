@@ -377,6 +377,13 @@
                                             "position": 20
                                         },
                                         {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "swSFivWk6KkA",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
                                             "type": "label",
                                             "name": "shareAlias",
                                             "value": "desktop-as-server",
@@ -456,6 +463,69 @@
                                     ],
                                     "format": "markdown",
                                     "dataFileName": "Nix flake.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "swSFivWk6KkA",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "poXkQfguuA0U",
+                                        "swSFivWk6KkA"
+                                    ],
+                                    "title": "Network Access",
+                                    "notePosition": 40,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "cbkrhQjrkKrh",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "WOcw2SLH6tbX",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "nRqcgfTb97uV",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "Gzjqa934BdH4",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "network-access",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-network-chart",
+                                            "isInheritable": false,
+                                            "position": 90
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Network Access.md",
                                     "attachments": []
                                 }
                             ]
@@ -1473,9 +1543,23 @@
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "vZWERwf8U3nx",
+                                    "value": "WOcw2SLH6tbX",
                                     "isInheritable": false,
                                     "position": 30
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "swSFivWk6KkA",
+                                    "isInheritable": false,
+                                    "position": 40
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "vZWERwf8U3nx",
+                                    "isInheritable": false,
+                                    "position": 50
                                 },
                                 {
                                     "type": "label",
@@ -8742,6 +8826,66 @@
                                 },
                                 {
                                     "isClone": false,
+                                    "noteId": "UmgZAfcltxkS",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "KSZ04uQ2D1St",
+                                        "iPIMuisry3hd",
+                                        "UmgZAfcltxkS"
+                                    ],
+                                    "title": "Link Previews",
+                                    "notePosition": 140,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-link-external",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "link-previews",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Link Previews.md",
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "EfsHrc7ELh78",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "Link Previews_image.png"
+                                        },
+                                        {
+                                            "attachmentId": "lVAQ8JhgcyKa",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "1_Link Previews_image.png"
+                                        },
+                                        {
+                                            "attachmentId": "Rqiah3ePyp71",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "2_Link Previews_image.png"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "QEAPj01N5f7w",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -8750,7 +8894,7 @@
                                         "QEAPj01N5f7w"
                                     ],
                                     "title": "Links",
-                                    "notePosition": 140,
+                                    "notePosition": 150,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -8944,7 +9088,7 @@
                                         "S6Xx8QIWTV66"
                                     ],
                                     "title": "Lists",
-                                    "notePosition": 150,
+                                    "notePosition": 160,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -9075,7 +9219,7 @@
                                         "QrtTYPmdd1qq"
                                     ],
                                     "title": "Markdown-like formatting",
-                                    "notePosition": 160,
+                                    "notePosition": 170,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -9166,7 +9310,7 @@
                                         "YfYAtQBcfo5V"
                                     ],
                                     "title": "Math Equations",
-                                    "notePosition": 170,
+                                    "notePosition": 180,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -9239,7 +9383,7 @@
                                         "dEHYtoWWi8ct"
                                     ],
                                     "title": "Other features",
-                                    "notePosition": 180,
+                                    "notePosition": 190,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -9359,7 +9503,7 @@
                                         "gLt3vA97tMcp"
                                     ],
                                     "title": "Premium features",
-                                    "notePosition": 190,
+                                    "notePosition": 200,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -9682,7 +9826,7 @@
                                         "oBo3iHIZnbG2"
                                     ],
                                     "title": "Spell Check",
-                                    "notePosition": 200,
+                                    "notePosition": 210,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -9717,7 +9861,7 @@
                                         "BFvAtE74rbP6"
                                     ],
                                     "title": "Table of contents",
-                                    "notePosition": 210,
+                                    "notePosition": 220,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -9789,7 +9933,7 @@
                                         "NdowYOC1GFKS"
                                     ],
                                     "title": "Tables",
-                                    "notePosition": 220,
+                                    "notePosition": 230,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -12638,16 +12782,37 @@
                                         {
                                             "type": "relation",
                                             "name": "internalLink",
-                                            "value": "tAassRL4RSQL",
+                                            "value": "8YBEPzcpUgxw",
                                             "isInheritable": false,
                                             "position": 20
                                         },
                                         {
                                             "type": "relation",
                                             "name": "internalLink",
-                                            "value": "Gzjqa934BdH4",
+                                            "value": "IjZS7iK5EXtb",
                                             "isInheritable": false,
                                             "position": 30
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "6f9hih2hXXZk",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "tAassRL4RSQL",
+                                            "isInheritable": false,
+                                            "position": 50
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "Gzjqa934BdH4",
+                                            "isInheritable": false,
+                                            "position": 60
                                         },
                                         {
                                             "type": "label",
@@ -18319,6 +18484,47 @@
                                 },
                                 {
                                     "isClone": false,
+                                    "noteId": "GFXVHyblVN3d",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "CdNpE2pqjmI6",
+                                        "GLks18SNjxmC",
+                                        "GFXVHyblVN3d"
+                                    ],
+                                    "title": "Electron API",
+                                    "notePosition": 30,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "webView",
+                                    "mime": "",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "webViewSrc",
+                                            "value": "/script-api/electron",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "electron-api",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-window-alt",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        }
+                                    ],
+                                    "dataFileName": "Electron API.dat",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "ApVHZ8JY5ofC",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -18327,7 +18533,7 @@
                                         "ApVHZ8JY5ofC"
                                     ],
                                     "title": "Day.js",
-                                    "notePosition": 30,
+                                    "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -18460,6 +18666,55 @@
                             "children": [
                                 {
                                     "isClone": false,
+                                    "noteId": "YeOa2l7Pu39I",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "CdNpE2pqjmI6",
+                                        "cNpC0ITcfX0N",
+                                        "YeOa2l7Pu39I"
+                                    ],
+                                    "title": "v0.104.0: Disabling the Node integration in Electron",
+                                    "notePosition": 10,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "GFXVHyblVN3d",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "SPirpZypehBG",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "wy8So3yZZlH9",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "disabling-node-integration",
+                                            "isInheritable": false,
+                                            "position": 50
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "v0.104.0 Disabling the Node in.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "fqAK6opjUagR",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -18468,7 +18723,7 @@
                                         "fqAK6opjUagR"
                                     ],
                                     "title": "v0.103.0: Removal of axios",
-                                    "notePosition": 10,
+                                    "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -18496,7 +18751,7 @@
                                         "pAJ0jWz16xFm"
                                     ],
                                     "title": "v0.103.0: `cheerio` is now deprecated",
-                                    "notePosition": 20,
+                                    "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -18524,7 +18779,7 @@
                                         "72dxvnbnkDFY"
                                     ],
                                     "title": "v0.102.0: Upgrade to jQuery 4.0.0",
-                                    "notePosition": 30,
+                                    "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",

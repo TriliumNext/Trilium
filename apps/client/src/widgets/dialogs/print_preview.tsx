@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks"
 import FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import toast from "../../services/toast";
-import { dynamicRequire, isElectron } from "../../services/utils";
+
+
 import Button, { ButtonGroup } from "../react/Button";
 import Dropdown from "../react/Dropdown";
 import { FormListHeader, FormListItem } from "../react/FormList";
@@ -114,11 +115,12 @@ export default function PrintPreviewDialog() {
     const [destination, setDestination] = useState<string>(DESTINATION_PDF);
 
     useEffect(() => {
-        if (!shown || !isElectron()) return;
-        const { ipcRenderer } = dynamicRequire("electron");
-        ipcRenderer.invoke("get-printers").then((list: PrinterInfo[]) => {
-            setPrinters(list ?? []);
-            const defaultPrinter = list?.find((p) => p.isDefault);
+        const api = window.electronApi?.printing;
+        if (!shown || !api) return;
+        api.getPrinters().then((list) => {
+            const printerList = (list ?? []) as PrinterInfo[];
+            setPrinters(printerList);
+            const defaultPrinter = printerList.find((p) => p.isDefault);
             if (defaultPrinter) setDestination(defaultPrinter.name);
         });
     }, [shown]);
@@ -150,10 +152,10 @@ export default function PrintPreviewDialog() {
     // dialog's lifecycle. A generation counter discards stale results when
     // multiple requests overlap.
     useEffect(() => {
-        if (!shown || !isElectron()) return;
-        const { ipcRenderer } = dynamicRequire("electron");
+        const api = window.electronApi?.printing;
+        if (!shown || !api) return;
 
-        const onResult = (_e: any, { buffer, error }: { buffer?: Uint8Array; error?: string }) => {
+        api.onExportAsPdfPreviewResult(({ buffer, error }) => {
             toast.closePersistent("printing");
             if (error) {
                 setLoading(false);
@@ -173,19 +175,18 @@ export default function PrintPreviewDialog() {
             if (buffer) {
                 updatePreview(buffer);
             }
-        };
-        ipcRenderer.on("export-as-pdf-preview-result", onResult);
+        });
         return () => {
-            ipcRenderer.off("export-as-pdf-preview-result", onResult);
+            api.removeExportAsPdfPreviewResultListener();
         };
     }, [shown, updatePreview]);
 
     const regeneratePreview = useCallback((opts: PreviewOpts) => {
-        if (!isElectron()) return;
+        const api = window.electronApi?.printing;
+        if (!api) return;
 
         setLoading(true);
-        const { ipcRenderer } = dynamicRequire("electron");
-        ipcRenderer.send("export-as-pdf-preview", {
+        api.exportAsPdfPreview({
             notePath: notePathRef.current,
             pageSize: opts.pageSize,
             landscape: opts.landscape,
@@ -225,8 +226,7 @@ export default function PrintPreviewDialog() {
     function handleExportPdf() {
         if (!bufferRef.current) return;
 
-        const { ipcRenderer } = dynamicRequire("electron");
-        ipcRenderer.send("save-pdf", {
+        window.electronApi?.printing.savePdf({
             title: note?.title ?? "",
             buffer: bufferRef.current
         });
@@ -234,9 +234,7 @@ export default function PrintPreviewDialog() {
     }
 
     function handlePrint(silent: boolean, deviceName?: string) {
-        if (!isElectron()) return;
-        const { ipcRenderer } = dynamicRequire("electron");
-        ipcRenderer.send("print-from-preview", {
+        window.electronApi?.printing.printFromPreview({
             notePath: notePathRef.current,
             pageSize,
             landscape,

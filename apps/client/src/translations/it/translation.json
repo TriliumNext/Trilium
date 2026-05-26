@@ -17,7 +17,11 @@
     "github_tooltip": "Segnala bug, suggerisci nuove funzionalità o contribuisci su GitHub",
     "license_tooltip": "Visualizza licenza",
     "donate": "Fai una donazione",
-    "donate_tooltip": "Fai una donazione per sostenere questo progetto"
+    "donate_tooltip": "Fai una donazione per sostenere questo progetto",
+    "channel": {
+      "nightly": "Ogni sera",
+      "standalone": "Autonomo"
+    }
   },
   "toast": {
     "critical-error": {
@@ -58,12 +62,15 @@
   "branch_prefix": {
     "edit_branch_prefix": "Modifica il prefisso del ramo",
     "help_on_tree_prefix": "Aiuto sui prefissi dell'Albero",
-    "prefix": "Prefisso: ",
+    "prefix": "Prefisso",
     "save": "Salva",
     "branch_prefix_saved": "Il prefisso del ramo è stato salvato.",
     "edit_branch_prefix_multiple": "Modifica prefisso ramo per {{count}} rami",
     "branch_prefix_saved_multiple": "Il prefisso del ramo è stato salvato per {{count}} rami.",
-    "affected_branches": "Rami interessati ({{count}}):"
+    "affected_branches": "Rami interessati ({{count}}):",
+    "preview_in_tree": "Anteprima nella struttura ad albero",
+    "description": "Aggiunto all'inizio del titolo della nota solo in questo ramo. Gli altri rami mantengono il titolo originale.",
+    "cancel": "Annulla"
   },
   "bulk_actions": {
     "bulk_actions": "Azioni massive",
@@ -2165,7 +2172,9 @@
     "save_status_error": "Salvataggio non riuscito",
     "save_status_saving_tooltip": "Le modifiche sono state salvate.",
     "save_status_unsaved_tooltip": "Ci sono modifiche non salvate. Verranno salvate automaticamente tra un attimo.",
-    "save_status_error_tooltip": "Si è verificato un errore durante il salvataggio della nota. Se possibile, prova a copiare il contenuto della nota altrove e a ricaricare l'applicazione."
+    "save_status_error_tooltip": "Si è verificato un errore durante il salvataggio della nota. Se possibile, prova a copiare il contenuto della nota altrove e a ricaricare l'applicazione.",
+    "doc_url": "Documentazione online",
+    "doc_url_description": "Clicca qui per visualizzare questa pagina sul sito web della documentazione online."
   },
   "breadcrumb": {
     "workspace_badge": "Area di lavoro",
@@ -2373,7 +2382,9 @@
     "no_provider_message": "Non è stato configurato alcun fornitore di IA. Aggiungine uno per iniziare a chattare.",
     "add_provider": "Aggiungi un fornitore di IA",
     "sources_summary": "{{count}} fonti provenienti da {{sites}} siti",
-    "stop": "Stop"
+    "stop": "Stop",
+    "edit_index": "Modifica {{index}} di {{total}}",
+    "retry": "Riprova"
   },
   "sidebar_chat": {
     "title": "Chat AI",
@@ -2383,7 +2394,8 @@
     "empty_state": "Avvia una conversazione",
     "history": "Cronologia delle chat",
     "recent_chats": "Conversazioni recenti",
-    "no_chats": "Nessuna conversazione precedente"
+    "no_chats": "Nessuna conversazione precedente",
+    "view_all_chats": "Visualizza tutte le chat"
   },
   "llm": {
     "settings_title": "AI / LLM",
@@ -2428,7 +2440,8 @@
       "delete_note": "Elimina nota",
       "move_note": "Sposta nota",
       "clone_note": "Clona nota"
-    }
+    },
+    "base_url": "URL di base"
   },
   "ocr": {
     "extracted_text": "Testo estratto (OCR)",
@@ -2522,7 +2535,8 @@
     "source_description_etapi": "Creato tramite l'API esterna di Trilium",
     "source_description_llm": "Creato dall'assistente AI",
     "source_description_restore": "Salvato prima di ripristinare una revisione precedente",
-    "source_description_unknown": "Fonte non disponibile"
+    "source_description_unknown": "Fonte non disponibile",
+    "diff_identical": "Questa revisione è identica al contenuto dell'attuale."
   },
   "auto_link_attribute_list": {
     "title": "Attributi di sistema"
@@ -2534,7 +2548,8 @@
     "title": "Note sulle revisioni"
   },
   "text_editor": {
-    "title": "Redattore"
+    "title": "Redattore",
+    "related_task_states": "Personalizza le caselle di selezione per le liste delle cose da fare"
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Rimuovi dalla barra di avvio"
@@ -2584,5 +2599,80 @@
   },
   "spreadsheet": {
     "read-only": "Questa nota è di sola lettura."
+  },
+  "markdown_editor": {
+    "image_upload_failed": "Impossibile caricare l'immagine \"{{name}}\"."
+  },
+  "markdown_slash_commands": {
+    "date": "Inserisci la data e l'ora attuali",
+    "include": "Aggiungi un'altra nota",
+    "image": "Carica e inserisci un'immagine",
+    "link": "Inserisci un link alla nota",
+    "math": "Inserisci un blocco di equazioni matematiche",
+    "footnote": "Inserisci una nota a piè di pagina",
+    "mermaid": "Inserisci un diagramma Mermaid",
+    "admonition": "Inserisci l'avviso {{type}}"
+  },
+  "mobile_note_navigator": {
+    "back": "Torna al livello superiore",
+    "loading": "Caricamento in corso...",
+    "empty": "Questa nota non ha elementi secondari.",
+    "children_count_one": "{{count}} nota",
+    "children_count_many": "{{count}} note",
+    "children_count_other": "{{count}} note",
+    "add_child": "Aggiungi una nota secondaria",
+    "more_actions": "Altre azioni"
+  },
+  "setup": {
+    "heading": "Inizia a usare Trilium",
+    "new-document": "Nuova base di conoscenze",
+    "new-document-description": "Parti da una base di conoscenze pulita e mettiti subito al lavoro.",
+    "sync-from-desktop": "Collegare un'applicazione desktop",
+    "sync-from-desktop-description": "Hai solo un'applicazione desktop Trilium in esecuzione su un altro dispositivo. Questo dispositivo sincronizzerà i propri dati da quell'applicazione desktop.",
+    "sync-from-server": "Connettiti a un server esistente",
+    "sync-from-server-description": "Hai un server Trilium in esecuzione altrove (sia in locale che su cloud). Questo dispositivo sincronizzerà i propri dati da quel server.",
+    "next": "Avanti",
+    "init-in-progress": "Inizializzazione del documento in corso",
+    "redirecting": "Tra poco verrai reindirizzato alla pagina di registrazione.",
+    "title": "Configurazione",
+    "sync-from-server-page-description": "Inserisci qui sotto i dati del tuo server per collegare il tuo spazio di lavoro esistente.",
+    "sync-in-progress-title": "Sincronizzazione in corso",
+    "sync-in-progress-description": "Il tuo dispositivo è ora connesso e i dati sono in fase di sincronizzazione.",
+    "sync-in-progress-banner": "L'operazione potrebbe richiedere un po' di tempo, a seconda delle dimensioni dei tuoi appunti. Ti preghiamo di non passare a un'altra applicazione finché la sincronizzazione non sarà completata.",
+    "button-back": "Indietro",
+    "button-finish-setup": "Completa la configurazione",
+    "sync-step-connecting": "Connessione al server",
+    "sync-step-syncing": "Sincronizzazione dei dati",
+    "sync-step-finalizing": "Opzioni di configurazione",
+    "create-new-document-options-title": "Da dove vorresti iniziare?",
+    "create-new-document-options-with-demo": "Con contenuti dimostrativi",
+    "create-new-document-options-with-demo-description": "Scopri Trilium con alcuni contenuti di esempio.",
+    "create-new-document-options-empty": "Vuoto",
+    "create-new-document-options-empty-description": "Inizia con una knowledge base vuota. Potrai importare le note di esempio in un secondo momento.",
+    "create-new-document-title": "Preparazione della vostra knowledge base",
+    "create-new-document-description": "Ci vorrà solo un attimo.",
+    "sync-illustration-this-device": "Questo dispositivo",
+    "sync-illustration-desktop-app": "La tua app desktop",
+    "sync-illustration-server": "Il tuo server",
+    "sync-from-desktop-step1": "Apri l'istanza desktop di Trilium Notes.",
+    "sync-from-desktop-step2": "Dal menu Trilium, clicca su Opzioni.",
+    "sync-from-desktop-step3": "Clicca sulla categoria \"Sincronizza\" nell'albero delle note.",
+    "sync-from-desktop-step4": "Modifica l'indirizzo dell'istanza del server in modo che punti a uno degli indirizzi riportati a destra, quindi fai clic su Salva.",
+    "sync-from-desktop-step5": "Clicca sul pulsante \"Verifica sincronizzazione\" per verificare che la connessione funzioni correttamente.",
+    "sync-from-desktop-warning": "Assicurati che entrambi i dispositivi siano connessi alla stessa rete.",
+    "sync-from-desktop-waiting": "In attesa della connessione...",
+    "advanced-options": "Opzioni avanzate",
+    "sync-failed": "Sincronizzazione non riuscita: {{message}}",
+    "server-host": "Indirizzo del server Trilium",
+    "server-host-placeholder": "https://<hostname>:<port>",
+    "server-password": "Password",
+    "proxy-server": "Server proxy (facoltativo)",
+    "proxy-server-placeholder": "https://<hostname>:<port>",
+    "proxy-instruction": "Se non si specifica alcuna impostazione per il proxy, verrà utilizzato il proxy di sistema.",
+    "dismiss-error": "Ignora errore",
+    "wrong-password": "Password errata. Riprova.",
+    "language": "Lingua",
+    "continue": "Continua",
+    "your-ip-addresses": "Indirizzi per questo dispositivo"
   }
 }

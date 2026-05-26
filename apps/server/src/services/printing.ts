@@ -3,7 +3,6 @@ import fs from "fs/promises";
 import { t } from "i18next";
 
 import log from "./log.js";
-import port from "./port.js";
 import { formatDownloadTitle } from "./utils.js";
 
 interface PrintOpts {
@@ -73,6 +72,8 @@ function parsePageRangesForPrint(pageRanges: string): { from: number; to: number
     return ranges.length ? ranges : undefined;
 }
 
+let preloadScriptPath: string | undefined;
+
 async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, action: "printing" | "exporting_pdf") {
     // Offscreen rendering crashes on Wayland due to a Chromium bug where the OSR surface
     // lacks a valid xdg_toplevel role, causing a fatal zxdg_exporter_v2 protocol error.
@@ -89,8 +90,9 @@ async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, ac
             focusable: false,
         }),
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: preloadScriptPath,
             offscreen: useOffscreen,
             devTools: false,
             session: e.sender.session
@@ -111,7 +113,12 @@ async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, ac
     });
 
     try {
-        await browserWindow.loadURL(`http://127.0.0.1:${port}/?print#${notePath}`);
+        // Load through the custom protocol so the print window is same-origin
+        // with the main renderer (`trilium-app://app/`). Loading over HTTP
+        // would split origins — the main window's session cookie wouldn't
+        // reach the print window, auth would redirect to /login, and the
+        // print page would never render.
+        await browserWindow.loadURL(`trilium-app://app/?print#${notePath}`);
     } catch (err) {
         log.error(`Failed to load print window: ${err}`);
         ipcMain.off("print-progress", progressCallback);
@@ -176,8 +183,12 @@ async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, ac
     return { browserWindow, printReport };
 }
 
-/** Registers all printing-related IPC handlers. Call once on Electron startup. */
-export function initPrintingHandlers() {
+/** Registers all printing-related IPC handlers. Call once on Electron startup.
+ *  `preloadPath` is the same preload bundle used by the main window — the print
+ *  window needs it to expose `window.electronApi.printing.sendPrintProgress`. */
+export function initPrintingHandlers(preloadPath: string) {
+    preloadScriptPath = preloadPath;
+
     electron.ipcMain.on("print-note", async (e, { notePath }: PrintOpts) => {
         try {
             const { browserWindow, printReport } = await getBrowserWindowForPrinting(e, notePath, "printing");

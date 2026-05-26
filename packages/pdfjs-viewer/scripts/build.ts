@@ -40,9 +40,11 @@ async function main() {
     }
     build.writeJson("web/locale/locale.json", localeMappings);
 
-    // Copy pdfjs-dist files.
+    // Copy pdfjs-dist files. Resolve from the package's own node_modules so we
+    // pick up the version declared in this package.json — the hoisted root
+    // node_modules may hold a different version pulled in by another dependency.
     for (const file of [ "pdf.mjs", "pdf.worker.mjs", "pdf.sandbox.mjs" ]) {
-        build.copy(join("/node_modules/pdfjs-dist/build", file), join("build", file));
+        build.copy(join("node_modules/pdfjs-dist/build", file), join("build", file));
     }
 
     if (watchMode) {

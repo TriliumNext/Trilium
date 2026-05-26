@@ -319,6 +319,12 @@
     --calendar-coll-event-hover-filter: brightness(.95) saturate(1.25);
     --callendar-coll-event-archived-sripe-color: #0000000a;
     --calendar-coll-today-background-color: #00000006;
+
+    --task-checkbox-without-state-background: #d5d5d5;
+    --task-checkbox-with-state-background: gray;
+    --task-checkbox-done-color: green;
+    --task-checkbox-unknown-state-color: orange;
+    --task-checkbox-glyph-color: white;
 }
 
 #left-pane .fancytree-node.tinted,
@@ -370,4 +376,8 @@
 
 .note-tooltip.with-hue {
     --tooltip-background-color: hsl(var(--custom-color-hue), 56%, 96%);
+}
+
+[data-trilium-task-state] {
+    --task-state-adjusted-color: hsl(var(--task-state-hue), 50%, 50%);
 }

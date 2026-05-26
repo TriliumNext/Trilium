@@ -30,17 +30,29 @@ export async function streamChatCompletion(
     callbacks: StreamCallbacks,
     abortSignal?: AbortSignal
 ): Promise<void> {
-    const headers = await server.getHeaders();
-
-    const response = await fetch(`${window.glob.baseApiUrl}llm-chat/stream`, {
-        method: "POST",
-        headers: {
-            ...headers,
-            "Content-Type": "application/json"
-        } as HeadersInit,
-        body: JSON.stringify({ messages, config }),
-        signal: abortSignal
-    });
+    let response: Response;
+    try {
+        const headers = await server.getHeaders();
+        response = await fetch(`${window.glob.baseApiUrl}llm-chat/stream`, {
+            method: "POST",
+            headers: {
+                ...headers,
+                "Content-Type": "application/json"
+            } as HeadersInit,
+            body: JSON.stringify({ messages, config }),
+            signal: abortSignal
+        });
+    } catch (e) {
+        // AbortError is the user stopping generation — let the caller handle it.
+        // Everything else (network failure, custom-protocol/CORS issues, DNS, etc.)
+        // is reported via onError so the chat UI shows it instead of hanging.
+        if (e instanceof DOMException && e.name === "AbortError") {
+            throw e;
+        }
+        const message = e instanceof Error ? e.message : String(e);
+        callbacks.onError(`Failed to connect to LLM stream: ${message}`);
+        return;
+    }
 
     if (!response.ok) {
         callbacks.onError(`HTTP ${response.status}: ${response.statusText}`);
@@ -110,6 +122,12 @@ export async function streamChatCompletion(
                 }
             }
         }
+    } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+            throw e;
+        }
+        const message = e instanceof Error ? e.message : String(e);
+        callbacks.onError(`LLM stream interrupted: ${message}`);
     } finally {
         reader.releaseLock();
     }

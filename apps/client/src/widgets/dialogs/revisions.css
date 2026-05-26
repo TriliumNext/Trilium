@@ -86,7 +86,8 @@ body.desktop .revisions-dialog {
     }
 
     .no-items {
-        padding-block: 3em;
+        padding-block: 0;
+        height: calc(100% - 2.5em);
     }
 
     .revision-list {

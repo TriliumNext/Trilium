@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Zaznacz { $page }. stronę
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Zaznacz { $page }. stronę
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = { $page }. strona z { $total }
@@ -657,12 +653,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Przełącz panel boczny
 pdfjs-toggle-views-manager-notification-button =
     .title = Przełącz panel boczny (dokument zawiera miniatury/konspekt/załączniki/warstwy)
 pdfjs-toggle-views-manager-button1-label = Zarządzaj stronami
-pdfjs-toggle-views-manager-button-label = Przełącz panel boczny
 pdfjs-views-manager-sidebar =
     .aria-label = Panel boczny
 pdfjs-views-manager-sidebar-resizer =
@@ -671,9 +664,11 @@ pdfjs-views-manager-view-selector-button =
     .title = Widoki
 pdfjs-views-manager-view-selector-button-label = Widoki
 pdfjs-views-manager-pages-title = Strony
-pdfjs-views-manager-outlines-title = Konspekt dokumentu
+pdfjs-views-manager-outlines-title1 = Konspekt dokumentu
+    .title = Konspekt dokumentu (podwójne kliknięcie rozwija lub zwija wszystkie pozycje)
 pdfjs-views-manager-attachments-title = Załączniki
-pdfjs-views-manager-layers-title = Warstwy
+pdfjs-views-manager-layers-title1 = Warstwy
+    .title = Warstwy (podwójne kliknięcie przywraca wszystkie warstwy do stanu domyślnego)
 pdfjs-views-manager-pages-option-label = Strony
 pdfjs-views-manager-outlines-option-label = Konspekt dokumentu
 pdfjs-views-manager-attachments-option-label = Załączniki
@@ -694,7 +689,7 @@ pdfjs-views-manager-pages-status-action-button-label = Zarządzaj
 pdfjs-views-manager-pages-status-copy-button-label = Kopiuj
 pdfjs-views-manager-pages-status-cut-button-label = Wytnij
 pdfjs-views-manager-pages-status-delete-button-label = Usuń
-pdfjs-views-manager-pages-status-save-as-button-label = Zapisz jako…
+pdfjs-views-manager-pages-status-export-selected-button-label = Eksportuj zaznaczone…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =
@@ -737,6 +732,9 @@ pdfjs-views-manager-paste-button-before =
 #   $page (Number) - the page number after which the paste button is.
 pdfjs-views-manager-paste-button-after =
     .title = Wklej po { $page }. stronie
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = Nowe
 pdfjs-toggle-views-manager-button1 =
     .title = Zarządzaj stronami
 

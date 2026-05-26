@@ -3,17 +3,17 @@ import "./SidebarChat.css";
 import type { Dropdown as BootstrapDropdown } from "bootstrap";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import appContext from "../../components/app_context.js";
 import dateNoteService, { type RecentLlmChat } from "../../services/date_notes.js";
 import { t } from "../../services/i18n.js";
 import server from "../../services/server.js";
 import { formatDateTime } from "../../utils/formatters";
 import ActionButton from "../react/ActionButton.js";
 import Dropdown from "../react/Dropdown.js";
-import { FormListItem } from "../react/FormList.js";
+import { FormDropdownDivider, FormListItem } from "../react/FormList.js";
 import { useActiveNoteContext, useNote, useNoteProperty, useSpacedUpdate } from "../react/hooks.js";
-import NoItems from "../react/NoItems.js";
 import ChatInputBar from "../type_widgets/llm_chat/ChatInputBar.js";
-import ChatMessage from "../type_widgets/llm_chat/ChatMessage.js";
+import ChatMessageList from "../type_widgets/llm_chat/ChatMessageList.js";
 import type { LlmChatContent } from "../type_widgets/llm_chat/llm_chat_types.js";
 import { useLlmChat } from "../type_widgets/llm_chat/useLlmChat.js";
 import RightPanelWidget from "./RightPanelWidget.js";
@@ -201,6 +201,11 @@ export default function SidebarChat() {
         }
     }, []);
 
+    const handleViewAllChats = useCallback(() => {
+        historyDropdownRef.current?.hide();
+        appContext.tabManager.openInNewTab("_llmChat", "_llmChat", true);
+    }, []);
+
     const handleSelectChat = useCallback(async (noteId: string) => {
         historyDropdownRef.current?.hide();
 
@@ -268,6 +273,13 @@ export default function SidebarChat() {
                                 </FormListItem>
                             ))
                         )}
+                        <FormDropdownDivider />
+                        <FormListItem
+                            icon="bx bx-folder-open"
+                            onClick={handleViewAllChats}
+                        >
+                            {t("sidebar_chat.view_all_chats")}
+                        </FormListItem>
                     </Dropdown>
                     <ActionButton
                         icon="bx bx-save"
@@ -279,42 +291,11 @@ export default function SidebarChat() {
             }
         >
             <div className="sidebar-chat-container">
-                <div className="sidebar-chat-messages" ref={chat.scrollContainerRef}>
-                    {chat.messages.length === 0 && !chat.isStreaming && (
-                        <NoItems
-                            icon="bx bx-conversation"
-                            text={t("sidebar_chat.empty_state")}
-                        />
-                    )}
-                    {chat.messages.map(msg => (
-                        <ChatMessage key={msg.id} message={msg} />
-                    ))}
-                    {chat.isStreaming && chat.streamingThinking && (
-                        <ChatMessage
-                            message={{
-                                id: "streaming-thinking",
-                                role: "assistant",
-                                content: chat.streamingThinking,
-                                createdAt: new Date().toISOString(),
-                                type: "thinking"
-                            }}
-                            isStreaming
-                        />
-                    )}
-                    {chat.isStreaming && chat.streamingBlocks.length > 0 && (
-                        <ChatMessage
-                            message={{
-                                id: "streaming",
-                                role: "assistant",
-                                content: chat.streamingBlocks,
-                                createdAt: new Date().toISOString(),
-                                citations: chat.pendingCitations.length > 0 ? chat.pendingCitations : undefined
-                            }}
-                            isStreaming
-                        />
-                    )}
-                    <div ref={chat.messagesEndRef} />
-                </div>
+                <ChatMessageList
+                    chat={chat}
+                    className="sidebar-chat-messages"
+                    emptyStateText={t("sidebar_chat.empty_state")}
+                />
                 <ChatInputBar
                     chat={chat}
                     rows={2}

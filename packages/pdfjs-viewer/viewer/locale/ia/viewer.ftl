@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Seliger pagina { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Seliger pagina { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Pagina { $page } de { $total }
@@ -654,12 +650,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Monstrar/celar le barra lateral
 pdfjs-toggle-views-manager-notification-button =
     .title = Monstrar/celar le barra lateral (le documento contine miniaturas/structura/attachamentos/stratos)
 pdfjs-toggle-views-manager-button1-label = Gerer paginas
-pdfjs-toggle-views-manager-button-label = Monstrar/celar le barra lateral
 pdfjs-views-manager-sidebar =
     .aria-label = Barra lateral
 pdfjs-views-manager-sidebar-resizer =
@@ -670,11 +663,9 @@ pdfjs-views-manager-view-selector-button-label = Vistas
 pdfjs-views-manager-pages-title = Paginas
 pdfjs-views-manager-outlines-title1 = Structura de documento
     .title = Structura de documento (clicca-duplemente pro expander/collaber tote elementos)
-pdfjs-views-manager-outlines-title = Schema del documento
 pdfjs-views-manager-attachments-title = Annexos
 pdfjs-views-manager-layers-title1 = Stratos
     .title = Stratos (clicca-duplemente pro reinitialisar tote le stratos al stato predefinite)
-pdfjs-views-manager-layers-title = Stratos
 pdfjs-views-manager-pages-option-label = Paginas
 pdfjs-views-manager-outlines-option-label = Schema del documento
 pdfjs-views-manager-attachments-option-label = Annexos
@@ -695,7 +686,6 @@ pdfjs-views-manager-pages-status-copy-button-label = Copiar
 pdfjs-views-manager-pages-status-cut-button-label = Secar
 pdfjs-views-manager-pages-status-delete-button-label = Deler
 pdfjs-views-manager-pages-status-export-selected-button-label = Exportar seligite…
-pdfjs-views-manager-pages-status-save-as-button-label = Salvar como…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =
@@ -738,6 +728,7 @@ pdfjs-views-manager-paste-button-after =
 # Badge used to promote a new feature in the UI, keep it as short as possible.
 # It's spelled uppercase for English, but it can be translated as usual.
 pdfjs-new-badge-content = NOVA
+pdfjs-views-manager-waiting-for-file = Cargante file…
 pdfjs-toggle-views-manager-button1 =
     .title = Gerer paginas
 

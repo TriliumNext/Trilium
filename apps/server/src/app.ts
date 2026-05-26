@@ -127,9 +127,5 @@ export default async function buildApp() {
 
     erase.startScheduledCleanup();
 
-    if (utils.isElectron) {
-        (await import("@electron/remote/main/index.js")).initialize();
-    }
-
     return app;
 }

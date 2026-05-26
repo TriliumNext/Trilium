@@ -65,6 +65,8 @@ export interface UseLlmChatReturn {
     refreshModels: () => void;
     /** Stop the current generation */
     stopStreaming: () => void;
+    /** Re-run the last turn after a failed response (drops the trailing error message) */
+    retryLast: () => void;
 }
 
 export function useLlmChat(
@@ -218,22 +220,13 @@ export function useLlmChat(
         setLastPromptTokens(0);
     }, [setMessages]);
 
-    const handleSubmit = useCallback(async (e: Event) => {
-        e.preventDefault();
-        if (!input.trim() || isStreaming) return;
-
+    /**
+     * Run a streaming completion against `conversation` — the full ordered message
+     * list to send to the model and to use as the base for finalized/error results.
+     */
+    const runStream = useCallback(async (conversation: StoredMessage[]) => {
         setPendingCitations([]);
-
-        const userMessage: StoredMessage = {
-            id: randomString(),
-            role: "user",
-            content: input.trim(),
-            createdAt: new Date().toISOString()
-        };
-
-        const newMessages = [...messages, userMessage];
-        setMessagesInternal(newMessages);
-        setInput("");
+        setMessagesInternal(conversation);
         setIsStreaming(true);
         setStreamingContent("");
         setStreamingBlocks([]);
@@ -255,7 +248,7 @@ export function useLlmChat(
             return block as ContentBlock & { type: "text" };
         }
 
-        const apiMessages: LlmMessage[] = newMessages.map(m => ({
+        const apiMessages: LlmMessage[] = conversation.map(m => ({
             role: m.role,
             content: typeof m.content === "string" ? m.content : m.content
                 .filter((b): b is ContentBlock & { type: "text" } => b.type === "text")
@@ -315,7 +308,7 @@ export function useLlmChat(
             }
 
             if (finalNewMessages.length > 0) {
-                setMessages([...newMessages, ...finalNewMessages]);
+                setMessages([...conversation, ...finalNewMessages]);
             }
 
             setStreamingContent("");
@@ -387,7 +380,7 @@ export function useLlmChat(
                         createdAt: new Date().toISOString(),
                         type: "error"
                     };
-                    const finalMessages = [...newMessages, errorMessage];
+                    const finalMessages = [...conversation, errorMessage];
                     setMessages(finalMessages);
                     setStreamingContent("");
                     setStreamingBlocks([]);
@@ -403,12 +396,48 @@ export function useLlmChat(
             // AbortError is expected when user stops generation
             if (e instanceof DOMException && e.name === "AbortError") {
                 finalizeStream();
-            } else {
-                // Re-throw other errors so they are not swallowed
-                throw e;
+                return;
             }
+            // Unexpected error — streamChatCompletion normally routes failures
+            // through onError, so reaching here is a bug. Surface it in the chat
+            // and reset state instead of leaving the UI stuck on the stop button.
+            console.error("Unexpected error in chat stream:", e);
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            setMessages([...conversation, {
+                id: randomString(),
+                role: "assistant",
+                content: errorMsg,
+                createdAt: new Date().toISOString(),
+                type: "error"
+            }]);
+            setStreamingContent("");
+            setStreamingBlocks([]);
+            setStreamingThinking("");
+            setIsStreaming(false);
+            abortControllerRef.current = null;
         });
-    }, [input, isStreaming, messages, selectedModel, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages]);
+    }, [selectedModel, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages]);
+
+    const handleSubmit = useCallback(async (e: Event) => {
+        e.preventDefault();
+        if (!input.trim() || isStreaming) return;
+
+        const userMessage: StoredMessage = {
+            id: randomString(),
+            role: "user",
+            content: input.trim(),
+            createdAt: new Date().toISOString()
+        };
+        setInput("");
+        await runStream([...messages, userMessage]);
+    }, [input, isStreaming, messages, runStream]);
+
+    /** Re-run the last turn after a failed response, dropping the trailing error message. */
+    const retryLast = useCallback(async () => {
+        if (isStreaming) return;
+        if (messages[messages.length - 1]?.type !== "error") return;
+        await runStream(messages.slice(0, -1));
+    }, [isStreaming, messages, runStream]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -463,6 +492,7 @@ export function useLlmChat(
         getContent,
         clearMessages,
         refreshModels,
-        stopStreaming
+        stopStreaming,
+        retryLast
     };
 }

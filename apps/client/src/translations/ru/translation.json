@@ -62,7 +62,7 @@
   "branch_prefix": {
     "save": "Сохранить",
     "edit_branch_prefix": "Редактировать префикс ветки",
-    "prefix": "Префикс:",
+    "prefix": "Префикс",
     "branch_prefix_saved": "Префикс ветки сохранен.",
     "help_on_tree_prefix": "Помощь по префиксу дерева",
     "affected_branches": "Затронутые ветки ({{count}}):",
@@ -637,7 +637,12 @@
   "code_theme": {
     "color-scheme": "Цветовая схема",
     "word_wrapping": "Перенос слов",
-    "title": "Внешний вид"
+    "title": "Внешний вид",
+    "theme_mode": "Режим темы оформления",
+    "match_app_appearance": "В соответствии стилю приложения",
+    "always_use_one_theme": "Всегда использовать одну тему",
+    "light_theme": "Светлая тема",
+    "dark_theme": "Темная тема"
   },
   "svg": {
     "export_to_png": "Диаграмму не может быть экспортирована в PNG.",
@@ -1095,8 +1100,8 @@
     "open_all_in_tabs": "Открыть все",
     "open_all_in_tabs_tooltip": "Открыть все результаты в новых вкладках",
     "open_all_confirm": "Это откроет заметки ({{count}}) в новых вкладках. Продолжить?",
-    "open_all_too_one": "",
-    "open_all_too_few": "",
+    "open_all_too_one": "Слишком много результатов ({{count}}). Максимум — {{max}}.",
+    "open_all_too_few": "Слишком много результатов ({{count}}). Максимум — {{max}}.",
     "open_all_too_many": "Слишком много результатов ({{count}}). Максимум — {{max}}."
   },
   "edited_notes": {
@@ -2255,8 +2260,8 @@
     "attachments_few": "{{count}} вложения",
     "attachments_many": "{{count}} вложений",
     "annotations_one": "{{count}} аннотация",
-    "annotations_few": "",
-    "annotations_many": ""
+    "annotations_few": "{{count}} аннотации",
+    "annotations_many": "{{count}} аннотаций"
   },
   "platform_indicator": {
     "available_on": "Доступно для {{platform}}"
@@ -2306,23 +2311,23 @@
     "more_info": "Узнать больше"
   },
   "media": {
-    "play": "Воспроизвести (пробел)",
-    "pause": "Пауза (пробел)",
-    "back-10s": "Назад на 10 секунд (стрелка влево)",
-    "forward-30s": "Вперёд на 30 секунд",
+    "play": "Воспроизвести (Пробел)",
+    "pause": "Пауза (Пробел)",
+    "back-10s": "Назад на 10 сек (Стрелка влево)",
+    "forward-30s": "Вперед на 30 сек",
     "mute": "Выключить звук (M)",
     "unmute": "Включить звук (M)",
-    "playback-speed": "Скорость проигрывания",
-    "loop": "Зациклить",
-    "disable-loop": "Отключить зацикливание",
+    "playback-speed": "Скорость воспроизведения",
+    "loop": "Повтор",
+    "disable-loop": "Отключить повтор",
     "rotate": "Повернуть",
     "picture-in-picture": "Картинка в картинке",
-    "exit-picture-in-picture": "Выйти из режима \"картинка в картинке\"",
-    "fullscreen": "Режим полного экрана (F)",
-    "exit-fullscreen": "Выйти из режима полного экрана",
-    "unsupported-format": "Предпросмотр недоступен для данного формата файла:\n{{mime}}",
-    "zoom-to-fit": "Заполнить путём масштабирования",
-    "zoom-reset": "Сбросить заполнение путём масштабирования"
+    "exit-picture-in-picture": "Выйти из «картинки в картинке»",
+    "fullscreen": "Полноэкранный режим (F)",
+    "exit-fullscreen": "Выйти из полноэкранного режима",
+    "unsupported-format": "Предпросмотр недоступен для этого формата файлов:\n{{mime}}",
+    "zoom-to-fit": "Растянуть на весь экран",
+    "zoom-reset": "Сбросить масштаб"
   },
   "llm_chat": {
     "placeholder": "Введите сообщение...",
@@ -2355,7 +2360,9 @@
     "tokens_used_with_model": "{{model}}: {{prompt}} (промпт) + {{completion}} (ответ) = {{total}} токен(а/ов)",
     "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} (промпт) + {{completion}} (ответ) = {{total}} токен(а/ов) (~${{cost}})",
     "sources_summary": "{{count}} источников с {{sites}} сайтов",
-    "stop": "Остановить"
+    "stop": "Остановить",
+    "retry": "Повторить",
+    "edit_index": "Редактировать {{index}} из {{total}}"
   },
   "sidebar_chat": {
     "title": "Чат с ИИ",
@@ -2434,7 +2441,7 @@
       "search_notes": "Поиск заметок",
       "get_note": "Получить заметку",
       "get_note_content": "Получить содержимое заметки",
-      "update_note_content": "Обновить содержимое заметки",
+      "update_note_content": "Перезаписать заметку",
       "append_to_note": "Дописать к заметке",
       "create_note": "Создать заметку",
       "get_attributes": "Получить атрибуты",
@@ -2447,14 +2454,19 @@
       "web_search": "Поиск в интернете",
       "note_in_parent": "<Note/> в <Parent/>",
       "get_attachment": "Получить вложение",
-      "get_attachment_content": "Прочитать содержимое вложения"
+      "get_attachment_content": "Прочитать содержимое вложения",
+      "edit_note_content": "Редактировать заметку",
+      "set_note_content": "Перезаписать заметку"
     },
     "feature_not_enabled": "Чтобы использовать ИИ-интеграции, включите экспериментальную функцию LLM в «Параметры → Расширенные → Экспериментальные функции».",
     "mcp_title": "MCP (Model Context Protocol)",
     "mcp_enabled": "MCP-сервер",
     "mcp_enabled_description": "Открыть эндпоинт Model Context Protocol (MCP), чтобы ИИ-ассистенты (например, Claude Code, GitHub Copilot) могли читать и изменять ваши заметки. Доступен только с localhost.",
     "mcp_endpoint_title": "URL эндпоинта",
-    "mcp_endpoint_description": "Добавьте этот URL в настройки MCP вашего ИИ-ассистента"
+    "mcp_endpoint_description": "Добавьте этот URL в настройки MCP вашего ИИ-ассистента",
+    "base_url_invalid": "Базовый URL должен быть допустимым URL-адресом http:// или https://",
+    "base_url_description": "(опционально) Переопределите конечную точку API по умолчанию — полезно для локальных провайдеров (Ollama, LM Studio, vLLM) или прокси-серверов.",
+    "base_url": "Базовый URL"
   },
   "database": {
     "title": "База данных"
@@ -2526,7 +2538,8 @@
     "source_description_etapi": "Создано через External Trilium API",
     "source_description_llm": "Создано ИИ-ассистентом",
     "source_description_restore": "Сохранено перед восстановлением предыдущей версии",
-    "source_description_unknown": "Источник недоступен"
+    "source_description_unknown": "Источник недоступен",
+    "diff_identical": "Эта версия идентична текущему содержанию заметки."
   },
   "auto_link_attribute_list": {
     "title": "Системные атрибуты"
@@ -2542,15 +2555,16 @@
     "autocomplete_fuzzy_description": "Влияет на «Перейти к заметке» и выбор заметок. Чуть медленнее, но допускает опечатки."
   },
   "text_editor": {
-    "title": "Редактор"
+    "title": "Редактор",
+    "related_task_states": "Настраиваемые состояния флажков для списков дел"
   },
   "mobile_note_navigator": {
     "back": "На уровень выше",
     "loading": "Загрузка...",
     "empty": "У этой заметки нет дочерних заметок.",
     "children_count_one": "{{count}} заметка",
-    "children_count_few": "",
-    "children_count_many": "",
+    "children_count_few": "{{count}} заметки",
+    "children_count_many": "{{count}} заметок",
     "add_child": "Добавить дочернюю заметку",
     "more_actions": "Другие действия"
   },
@@ -2671,5 +2685,20 @@
   },
   "spreadsheet": {
     "read-only": "Эта заметка доступна только для чтения."
+  },
+  "text-editor": {
+    "validation-errors": {
+      "duplicate-symbol": "продублирован символ разметки Markdown",
+      "invalid-symbol": "символ разметки Markdown должен состоять из одного символа, за исключением \"[\", \"\", \"X\" и \"]\"",
+      "missing-icon": "отсутствует иконка",
+      "missing-title": "отсутствует название",
+      "duplicate-name": "продублирован идентификатор",
+      "invalid-name": "некорректный идентификатор",
+      "undefined-name": "идентификатор не определен"
+    },
+    "unknown-task-state": "Неопределеннре пользовательское состояние задачи",
+    "edit-states-tooltip": "Управление состояниями",
+    "checkbox-tooltip": "Щелкните правой кнопкой мыши, чтобы просмотреть другие состояния задачи.\nНажмите {{shortcut}} для переключения между состояниями.",
+    "task-state-dropped": "Удалено определение пользовательского состояния задачи \"{{title}}\" ({{id}}) по причине: {{reason}}"
   }
 }

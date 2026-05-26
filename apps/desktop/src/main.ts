@@ -11,7 +11,6 @@ import NodeRequestProvider from "@triliumnext/server/src/services/request.js";
 import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
 import tray from "@triliumnext/server/src/services/tray.js";
 import windowService from "@triliumnext/server/src/services/window.js";
-import WebSocketMessagingProvider from "@triliumnext/server/src/services/ws_messaging_provider.js";
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import NodejsZipProvider from "@triliumnext/server/src/zip_provider.js";
 import { app, BrowserWindow,globalShortcut } from "electron";
@@ -23,7 +22,9 @@ import path, { join, resolve } from "path";
 
 import { deferred, LOCALES } from "../../../packages/commons/src";
 import { PRODUCT_NAME } from "./app-info";
+import IpcMessagingProvider from "./ipc_messaging_provider";
 import DesktopPlatformProvider from "./platform_provider";
+import { registerTriliumAppScheme } from "./protocol";
 
 async function main() {
     // Ignore EPIPE errors on stdout/stderr — these occur when the parent process
@@ -35,6 +36,8 @@ async function main() {
             }
         });
     }
+
+    registerTriliumAppScheme();
 
     const userDataPath = getUserData();
     app.setPath("userData", userDataPath);
@@ -121,6 +124,13 @@ async function main() {
     const dbProvider = new BetterSqlite3Provider();
     dbProvider.loadFromFile(DOCUMENT_PATH, config.General.readOnly);
 
+    // The IPC provider just registers an `ipcMain.on` listener; no TCP socket
+    // or session parser needed, so we can init it here (before startTriliumServer)
+    // instead of going through www.ts. www.ts then only knows about the
+    // socket-bound WebSocket provider.
+    const ipcMessaging = new IpcMessagingProvider();
+    ipcMessaging.init();
+
     await initializeCore({
         dbConfig: {
             provider: dbProvider,
@@ -152,7 +162,7 @@ async function main() {
         zipExportProviderFactory: (await import("@triliumnext/server/src/services/export/zip/factory.js")).serverZipExportProviderFactory,
         request: new NodeRequestProvider(),
         executionContext: new ClsHookedExecutionContext(),
-        messaging: new WebSocketMessagingProvider(),
+        messaging: ipcMessaging,
         schema: loadCoreSchema(),
         platform: new DesktopPlatformProvider(),
         translations: (await import("@triliumnext/server/src/services/i18n.js")).initializeTranslations,
@@ -164,6 +174,7 @@ async function main() {
         log: new ServerLogService(),
         backup: new ServerBackupService(options),
         image: (await import("@triliumnext/server/src/services/image_provider.js")).serverImageProvider,
+        config,
         extraAppInfo: {
             nodeVersion: process.version,
             dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)

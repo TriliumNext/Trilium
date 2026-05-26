@@ -22,11 +22,15 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
+[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
+| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
+[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
+[Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes est une application gratuite, open-source et multiplateforme de
@@ -192,7 +196,7 @@ Si votre distribution est répertoriée dans le tableau ci-dessous, utilisez le
 package de votre distribution.
 
 [![Statut du
-Packaging](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+Packaging](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 Vous pouvez également télécharger la version binaire pour votre plateforme à
 partir de la [dernière page de
@@ -270,6 +274,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Si vous utilisez Nix :
+```shell
+# Exécuter directement
+nix run .#edit-docs
+
+# Ou installer dans votre profil
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Générer l'exécutable
 Téléchargez le référentiel, installez les dépendances à l'aide de `pnpm`, puis
 créez l'application de bureau pour Windows :
@@ -290,6 +305,34 @@ documentation](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%2
 pour plus de détails. Pour toute question, n'hésitez pas à nous contacter via
 les liens décrits dans la section "Discuter avec nous" ci-dessus.
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Dédicaces
 
 * [zadam](https://github.com/zadam) pour le concept original et la mise en œuvre
@@ -302,16 +345,13 @@ les liens décrits dans la section "Discuter avec nous" ci-dessus.
   Canvas.
 * [antoniotejada](https://github.com/nriver) pour le widget de coloration
   syntaxique original.
-* [Dosu](https://dosu.dev/) pour nous avoir fourni des réponses automatisées aux
-  problèmes et aux discussions sur GitHub.
 * [Tabler Icons](https://tabler.io/icons) pour les icônes de la barre d'état
   système.
 
 Trilium ne serait pas possible sans les technologies qui le sous-tendent :
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - est l’éditeur visuel
-  utilisé pour les notes textuelles. Nous remercions l’équipe pour la mise à
-  disposition d’un ensemble de fonctionnalités premium.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - l'éditeur WYSIWYG pour
+  les notes de texte.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - éditeur de code
   prenant en charge un grand nombre de langages.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - le tableau blanc

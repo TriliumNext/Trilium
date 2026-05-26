@@ -14,6 +14,7 @@ import IncludeNoteDialog from "../widgets/dialogs/include_note.js";
 import IncorrectCpuArchDialog from "../widgets/dialogs/incorrect_cpu_arch.js";
 import InfoDialog from "../widgets/dialogs/info.js";
 import JumpToNoteDialog from "../widgets/dialogs/jump_to_note.js";
+import LinkEmbedDialog from "../widgets/dialogs/link_embed.js";
 import MarkdownImportDialog from "../widgets/dialogs/markdown_import.js";
 import MoveToDialog from "../widgets/dialogs/move_to.js";
 import NoteTypeChooserDialog from "../widgets/dialogs/note_type_chooser.js";
@@ -37,6 +38,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<BranchPrefixDialog />)
         .child(<SortChildNotesDialog />)
         .child(<IncludeNoteDialog />)
+        .child(<LinkEmbedDialog />)
         .child(<NoteTypeChooserDialog />)
         .child(<JumpToNoteDialog />)
         .child(<AddLinkDialog />)

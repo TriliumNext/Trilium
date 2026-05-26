@@ -3,7 +3,7 @@ import "./index.css";
 import { divIcon, GPXOptions, LatLng, LeafletMouseEvent } from "leaflet";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerIconShadow from "leaflet/dist/images/marker-shadow.png";
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
@@ -12,12 +12,11 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
+import { escapeHtml } from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import { ButtonOrActionButton } from "../../react/Button";
 import { useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
-import { ParentComponent } from "../../react/react_utils";
-import TouchBar, { TouchBarButton, TouchBarSlider } from "../../react/TouchBar";
 import { ViewModeProps } from "../interface";
 import { createNewNote, moveMarker } from "./api";
 import openContextMenu, { openMapContextMenu } from "./context_menu";
@@ -165,7 +164,6 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             >
                 {notes.map(note => <NoteWrapper note={note} isReadOnly={isReadOnly} hideLabels={hideLabels} />)}
             </Map>}
-            <GeoMapTouchBar state={state} map={apiRef.current} />
         </div>
     );
 }
@@ -301,11 +299,11 @@ function buildIcon(bxIconClass: string, colorClass?: string, title?: string, not
     let html = /*html*/`\
         <img class="icon" src="${markerIcon}" />
         <img class="icon-shadow" src="${markerIconShadow}" />
-        <span class="bx ${bxIconClass} ${colorClass ?? ""}"></span>
-        <span class="title-label">${title ?? ""}</span>`;
+        <span class="bx ${escapeHtml(bxIconClass)} ${escapeHtml(colorClass ?? "")}"></span>
+        <span class="title-label">${escapeHtml(title ?? "")}</span>`;
 
     if (noteIdLink) {
-        html = `<div data-href="#root/${noteIdLink}" class="${archived ? "archived" : ""}">${html}</div>`;
+        html = `<div data-href="#root/${escapeHtml(noteIdLink)}" class="${archived ? "archived" : ""}">${html}</div>`;
     }
 
     return divIcon({
@@ -315,38 +313,3 @@ function buildIcon(bxIconClass: string, colorClass?: string, title?: string, not
     });
 }
 
-function GeoMapTouchBar({ state, map }: { state: State, map: L.Map | null | undefined }) {
-    const [ currentZoom, setCurrentZoom ] = useState<number>();
-    const parentComponent = useContext(ParentComponent);
-
-    useEffect(() => {
-        if (!map) return;
-
-        function onZoomChanged() {
-            setCurrentZoom(map?.getZoom());
-        }
-
-        map.on("zoom", onZoomChanged);
-        return () => map.off("zoom", onZoomChanged);
-    }, [ map ]);
-
-    return map && currentZoom && (
-        <TouchBar>
-            <TouchBarSlider
-                label="Zoom"
-                value={currentZoom}
-                minValue={map.getMinZoom()}
-                maxValue={map.getMaxZoom()}
-                onChange={(newValue) => {
-                    setCurrentZoom(newValue);
-                    map.setZoom(newValue);
-                }}
-            />
-            <TouchBarButton
-                label="New geo note"
-                click={() => parentComponent?.triggerCommand("geoMapCreateChildNote")}
-                enabled={state === State.Normal}
-            />
-        </TouchBar>
-    );
-}

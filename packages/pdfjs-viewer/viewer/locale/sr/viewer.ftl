@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Изабери страницу { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Изабери страницу { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Страница { $page } од { $total }
@@ -658,12 +654,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Прикажи/сакриј бочну површ
 pdfjs-toggle-views-manager-notification-button =
     .title = Прикажи/сакриј бочну површ (документ садржи умањене сличице/оквир/прилоге/слојеве)
 pdfjs-toggle-views-manager-button1-label = Управљај страницама
-pdfjs-toggle-views-manager-button-label = Прикажи/сакриј бочну површ
 pdfjs-views-manager-sidebar =
     .aria-label = Бочна површ
 pdfjs-views-manager-sidebar-resizer =
@@ -674,11 +667,9 @@ pdfjs-views-manager-view-selector-button-label = Прегледи
 pdfjs-views-manager-pages-title = Странице
 pdfjs-views-manager-outlines-title1 = Контура документа
     .title = Контура документа (двоклик за ширење/скупљање свих ставки)
-pdfjs-views-manager-outlines-title = Оквир документа
 pdfjs-views-manager-attachments-title = Прилози
 pdfjs-views-manager-layers-title1 = Слојеви
     .title = Слојеви (двоклик за враћање свих слојева у подразумевано стање)
-pdfjs-views-manager-layers-title = Слојеви
 pdfjs-views-manager-pages-option-label = Странице
 pdfjs-views-manager-outlines-option-label = Контура документа
 pdfjs-views-manager-attachments-option-label = Прилози
@@ -700,7 +691,6 @@ pdfjs-views-manager-pages-status-copy-button-label = Умножи
 pdfjs-views-manager-pages-status-cut-button-label = Исеци
 pdfjs-views-manager-pages-status-delete-button-label = Обриши
 pdfjs-views-manager-pages-status-export-selected-button-label = Извези изабрано…
-pdfjs-views-manager-pages-status-save-as-button-label = Сачувај као…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =

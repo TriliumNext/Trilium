@@ -562,7 +562,7 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
     const logInstance = getLog();
     const sql = getSql();
     this.log = (...rawMessages) => {
-        const message = formatLogMessage(rawMessages);
+        const message = formatLogMessage(...rawMessages);
         logInstance.info(message);
 
         if (!this.startNote) {
