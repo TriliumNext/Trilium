@@ -290,6 +290,10 @@ function useNoteInfo() {
         refresh();
     });
     useTriliumEvent("noteTypeMimeChanged", refresh);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (!note || loadResults.getEntityRow("notes", note.noteId)?.isDeleted) return;
+        refresh();
+    });
 
     return { note, type, mime, noteContext, parentComponent };
 }
