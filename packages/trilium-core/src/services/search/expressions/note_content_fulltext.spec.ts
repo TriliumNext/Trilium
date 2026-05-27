@@ -37,6 +37,16 @@ describe("buildFtsMatchQuery", () => {
         expect(buildFtsMatchQuery("*=*", [])).toBeNull();
         expect(buildFtsMatchQuery("*=*", ["a"])).toBeNull(); // single char filtered out
         expect(buildFtsMatchQuery("*=*", ["", "  "])).toBeNull();
+        // Punctuation-only tokens are dropped because the unicode61 tokenizer
+        // would strip them down to an empty phrase, which FTS5 rejects as a
+        // syntax error.
+        expect(buildFtsMatchQuery("*=*", ["++", "=="])).toBeNull();
+    });
+
+    it("keeps tokens with mixed punctuation and alphanumeric content", () => {
+        // Tokens like "v2.0" or "foo-1" still contain alphanumeric code points,
+        // so the unicode61 tokenizer will produce non-empty terms from them.
+        expect(buildFtsMatchQuery("*=*", ["v2.0"])).toBe(`"v2.0"*`);
     });
 
     it("filters out tokens shorter than 2 chars but keeps the rest", () => {

@@ -58,11 +58,16 @@ export function buildFtsMatchQuery(operator: string, tokens: string[]): string |
         return null;
     }
 
-    // Single-character tokens have a high false-positive rate against the prefix
-    // index — let the JS scan handle them instead of polluting the MATCH set.
+    // Punctuation-only tokens (e.g. `++`, `==`, `//`) survive the length check but
+    // the unicode61 tokenizer strips every character from them, leaving an empty
+    // phrase. FTS5 raises a syntax error on `""*`, so require at least one
+    // alphanumeric code point (any unicode letter or number, including CJK / Cyrillic)
+    // before the token is allowed into the MATCH query. Single-char tokens are also
+    // dropped because they produce too many false-positive prefix hits.
+    const hasAlphanumeric = /[\p{L}\p{N}]/u;
     const usableTokens = tokens
         .map((t) => (t ?? "").trim())
-        .filter((t) => t.length >= 2);
+        .filter((t) => t.length >= 2 && hasAlphanumeric.test(t));
     if (usableTokens.length === 0) {
         return null;
     }

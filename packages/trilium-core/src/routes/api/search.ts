@@ -68,11 +68,20 @@ function quickSearch(req: Request<{ searchString: string }>) {
     const allSearchResults = searchService.findResultsWithQuery(searchString, searchContext);
     const trimmed = allSearchResults.slice(0, QUICK_SEARCH_MAX_RESULTS);
 
-    const snippetCount = Math.min(trimmed.length, QUICK_SEARCH_SNIPPET_LIMIT);
-    for (let i = 0; i < snippetCount; i++) {
+    // Snippet extraction is the dominant per-result cost; only run it for the
+    // first batch the dropdown actually displays. Results beyond the limit still
+    // appear in the dropdown as plain links — explicitly assign empty snippets
+    // so downstream code (highlighter, API mapper) sees a consistent string shape
+    // rather than mixing strings with undefined.
+    for (let i = 0; i < trimmed.length; i++) {
         const result = trimmed[i];
-        result.contentSnippet = searchService.extractContentSnippet(result.noteId, searchContext.highlightedTokens);
-        result.attributeSnippet = searchService.extractAttributeSnippet(result.noteId, searchContext.highlightedTokens);
+        if (i < QUICK_SEARCH_SNIPPET_LIMIT) {
+            result.contentSnippet = searchService.extractContentSnippet(result.noteId, searchContext.highlightedTokens);
+            result.attributeSnippet = searchService.extractAttributeSnippet(result.noteId, searchContext.highlightedTokens);
+        } else {
+            result.contentSnippet = "";
+            result.attributeSnippet = "";
+        }
     }
 
     searchService.highlightSearchResults(trimmed, searchContext.highlightedTokens, searchContext.ignoreInternalAttributes);
