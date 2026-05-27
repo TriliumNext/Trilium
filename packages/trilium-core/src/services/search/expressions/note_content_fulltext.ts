@@ -38,6 +38,43 @@ interface ConstructorOpts {
 
 type SearchRow = Pick<NoteRow, "noteId" | "type" | "mime" | "content" | "isProtected">;
 
+/**
+ * Translate a Trilium search operator + token list into a notes_fts MATCH query, or
+ * return null if the operator can't be safely narrowed by FTS (the caller then falls
+ * back to a full blob scan). FTS uses prefix matching so e.g. `"hello"*` hits any
+ * indexed token starting with `hello` — close enough to what the JS scorer treats as
+ * a substring/fuzzy hit for the common case, while leaving regex/negation/anchored
+ * operators on the slow path that preserves their exact semantics.
+ *
+ * Exported for unit testing; the class wraps it as a private method.
+ */
+export function buildFtsMatchQuery(operator: string, tokens: string[]): string | null {
+    // != and %= need to see every row to decide. =, *=, =* depend on positional
+    // anchors FTS5 doesn't preserve once content is tokenized — they'd produce
+    // a strict superset of candidates that findInText would still have to scan,
+    // so we leave them on the legacy unfiltered path.
+    if (operator === "!=" || operator === "%=" ||
+        operator === "=" || operator === "*=" || operator === "=*") {
+        return null;
+    }
+
+    // Single-character tokens have a high false-positive rate against the prefix
+    // index — let the JS scan handle them instead of polluting the MATCH set.
+    const usableTokens = tokens
+        .map((t) => (t ?? "").trim())
+        .filter((t) => t.length >= 2);
+    if (usableTokens.length === 0) {
+        return null;
+    }
+
+    // FTS5 phrase syntax: wrap each token in double quotes (escaping inner quotes
+    // by doubling) and append `*` for prefix matching. Multiple phrases are
+    // implicitly ANDed by FTS5.
+    return usableTokens
+        .map((t) => `"${t.replace(/"/g, '""')}"*`)
+        .join(" ");
+}
+
 class NoteContentFulltextExp extends Expression {
     private operator: string;
     tokens: string[];
@@ -79,13 +116,34 @@ class NoteContentFulltextExp extends Expression {
 
         const resultNoteSet = new NoteSet();
 
-        // Search through notes with content
-        for (const row of getSql().iterateRows<SearchRow>(`
-                SELECT noteId, type, mime, content, isProtected
-                FROM notes JOIN blobs USING (blobId)
-                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
-                  AND isDeleted = 0
-                  AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
+        // Narrow candidates through the notes_fts inverted index when the operator
+        // allows it. FTS5 (unicode61 + remove_diacritics) returns matching blobIds
+        // in microseconds, turning what would be a full-blob scan into a small set
+        // that findInText re-checks with the existing fuzzy/normalize logic to
+        // enforce precise operator semantics. Operators FTS can't express (regex,
+        // negation, anchored matches) fall back to the legacy unfiltered scan.
+        //
+        // Protected notes store encrypted ciphertext in blobs, so FTS can't see
+        // their plaintext — they're always included as candidates and decrypted
+        // inside findInText. Their typically small count keeps the speedup intact.
+        const ftsQuery = this.buildFtsMatchQuery();
+
+        const baseSql = `
+            SELECT notes.noteId, notes.type, notes.mime, blobs.content, notes.isProtected
+            FROM notes JOIN blobs USING (blobId)
+            WHERE notes.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
+              AND notes.isDeleted = 0
+              AND LENGTH(blobs.content) < ${MAX_SEARCH_CONTENT_SIZE}`;
+
+        const sql = ftsQuery
+            ? `${baseSql}
+              AND (notes.isProtected = 1
+                   OR blobs.blobId IN (SELECT blobId FROM notes_fts WHERE notes_fts MATCH ?))`
+            : baseSql;
+
+        const params = ftsQuery ? [ftsQuery] : [];
+
+        for (const row of getSql().iterateRows<SearchRow>(sql, params)) {
             this.findInText(row, inputNoteSet, resultNoteSet);
         }
 
@@ -126,6 +184,10 @@ class NoteContentFulltextExp extends Expression {
         }
 
         return resultNoteSet;
+    }
+
+    private buildFtsMatchQuery(): string | null {
+        return buildFtsMatchQuery(this.operator, this.tokens);
     }
 
     /**

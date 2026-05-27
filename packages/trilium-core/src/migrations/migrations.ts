@@ -9,6 +9,45 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Add FTS5 full-text index over blob content so quick search doesn't have to
+    // scan every note's body at query time. Triggers keep the index in sync.
+    // Blobs are content-addressed (immutable): new content -> new blobId, so we
+    // only need INSERT and DELETE sync, never UPDATE.
+    {
+        version: 239,
+        sql: /*sql*/`
+            CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
+                blobId UNINDEXED,
+                content,
+                tokenize = 'unicode61 remove_diacritics 1',
+                prefix = '2 3'
+            );
+
+            INSERT INTO notes_fts (blobId, content)
+            SELECT blobId, content FROM blobs
+            WHERE content IS NOT NULL
+              AND LENGTH(content) > 0
+              AND LENGTH(content) < 2097152
+              AND typeof(content) = 'text';
+
+            CREATE TRIGGER IF NOT EXISTS notes_fts_blob_insert
+                AFTER INSERT ON blobs
+                WHEN new.content IS NOT NULL
+                 AND LENGTH(new.content) > 0
+                 AND LENGTH(new.content) < 2097152
+                 AND typeof(new.content) = 'text'
+            BEGIN
+                INSERT INTO notes_fts (blobId, content)
+                    VALUES (new.blobId, new.content);
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS notes_fts_blob_delete
+                AFTER DELETE ON blobs
+            BEGIN
+                DELETE FROM notes_fts WHERE blobId = old.blobId;
+            END;
+        `
+    },
     // Add description column to revisions table for manual revision comments
     {
         version: 238,
