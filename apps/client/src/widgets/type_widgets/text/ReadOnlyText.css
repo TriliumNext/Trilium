@@ -13,6 +13,14 @@
         max-width: 100%;
         height: auto;
     }
+
+    .mermaid-diagram {
+        background: #fff;
+        resize: both;
+        overflow: auto;
+        min-height: 60px;
+        min-width: 150px;
+    }
 }
 
 body.heading-style-markdown .note-detail-readonly-text-content {

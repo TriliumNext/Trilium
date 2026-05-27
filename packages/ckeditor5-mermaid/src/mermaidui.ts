@@ -6,6 +6,7 @@ import insertMermaidIcon from '../theme/icons/insert.svg?raw';
 import previewModeIcon from '../theme/icons/preview-mode.svg?raw';
 import splitModeIcon from '../theme/icons/split-mode.svg?raw';
 import sourceModeIcon from '../theme/icons/source-mode.svg?raw';
+import refreshIcon from '../theme/icons/refresh.svg?raw';
 import infoIcon from '../theme/icons/info.svg?raw';
 import { ButtonView, Editor, ModelElement, Locale, Observable, Plugin } from 'ckeditor5';
 import InsertMermaidCommand from './commands/insertMermaidCommand.js';
@@ -37,6 +38,7 @@ export default class MermaidUI extends Plugin {
 
 		this._addInsertMermaidButton();
 		this._addMermaidInfoButton();
+		this._addMermaidRefreshButton();
 		this._createToolbarButton( editor, 'mermaidPreview', 'Preview', previewModeIcon );
 		this._createToolbarButton( editor, 'mermaidSourceView', 'Source view', sourceModeIcon );
 		this._createToolbarButton( editor, 'mermaidSplitView', 'Split view', splitModeIcon );
@@ -109,6 +111,36 @@ export default class MermaidUI extends Plugin {
 
 			buttonView.on( 'execute', () => {
 				window.open( link, '_blank', 'noopener' );
+			} );
+
+			return buttonView;
+		} );
+	}
+
+	/**
+	 * Adds the button for re-rendering the mermaid diagram.
+	 *
+	 * @private
+	 */
+	_addMermaidRefreshButton() {
+		const editor = this.editor;
+		const t = editor.t;
+
+		editor.ui.componentFactory.add( 'mermaidRefresh', locale => {
+			const buttonView = new ButtonView( locale );
+			const command = editor.commands.get( 'refreshMermaidCommand' );
+
+			buttonView.set( {
+				label: t( 'Refresh diagram' ),
+				icon: refreshIcon,
+				tooltip: true
+			} );
+
+			buttonView.bind( 'isEnabled' ).to( command as (Observable & { isEnabled: boolean; }), 'isEnabled' );
+
+			command.listenTo( buttonView, 'execute', () => {
+				editor.execute( 'refreshMermaidCommand' );
+				editor.editing.view.focus();
 			} );
 
 			return buttonView;
