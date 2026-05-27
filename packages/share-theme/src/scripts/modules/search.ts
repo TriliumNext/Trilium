@@ -1,7 +1,7 @@
 import debounce from "../common/debounce.js";
 import parents from "../common/parents.js";
 import parseHTML from "../common/parsehtml.js";
-import type { default as Fuse } from "fuse.js";
+import type { default as Fuse, FuseResultMatch } from "fuse.js";
 
 let fuseInstance: Fuse<SearchResult> | null = null;
 
@@ -20,22 +20,25 @@ interface SearchResult {
     highlightedSnippet?: string;
 }
 
+const HTML_ESCAPE_MAP: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+};
+
 /** Escape user-supplied/match text before injecting into innerHTML. */
-function escapeHtml(s: string): string {
-    return s.replace(/[&<>"']/g, (c) => (
-        c === "&" ? "&amp;" :
-        c === "<" ? "&lt;" :
-        c === ">" ? "&gt;" :
-        c === "\"" ? "&quot;" :
-        "&#39;"
-    ));
+export function escapeHtml(s: string): string {
+    return s.replace(/[&<>"']/g, (c) => HTML_ESCAPE_MAP[c]);
 }
 
 function buildResultItem(result: SearchResult) {
     // Prefer the server-rendered highlighted snippet (it only contains <b>/<br> tags that
     // the search service inserts). For static (Fuse) mode we build a plain snippet below
     // and the highlight pass wraps matched substrings in <b>.
-    const snippetHtml = result.highlightedSnippet ?? (result.snippet ? escapeHtml(result.snippet) : "");
+    const snippetHtml = result.highlightedSnippet
+        ?? (result.snippet ? escapeHtml(result.snippet) : "");
     const snippetBlock = snippetHtml
         ? `<div class="search-result-snippet">${snippetHtml}</div>`
         : "";
@@ -50,39 +53,45 @@ function buildResultItem(result: SearchResult) {
  * Build a content snippet around the first Fuse match for the static-export search index.
  * Returns an HTML string with the matched ranges wrapped in <b>...</b>.
  */
-function buildStaticSnippet(content: string | undefined, matches: ReadonlyArray<{ key?: string; indices: ReadonlyArray<[number, number]>; }> | undefined, maxLength = 160): string | undefined {
+export function buildStaticSnippet(
+    content: string | undefined,
+    matches: ReadonlyArray<FuseResultMatch> | undefined,
+    maxLength = 160
+): string | undefined {
     if (!content) return undefined;
-    const contentMatch = matches?.find((m) => m.key === "content" && m.indices && m.indices.length > 0);
+    const contentMatch = matches?.find(
+        (m) => m.key === "content" && m.indices && m.indices.length > 0
+    );
     if (!contentMatch) {
         // No content match (e.g. matched only on title) — return a small head-of-content preview.
         const head = content.slice(0, maxLength).trim();
-        return head ? escapeHtml(head) + (content.length > maxLength ? "\u2026" : "") : undefined;
+        if (!head) return undefined;
+        return `${escapeHtml(head)}${content.length > maxLength ? "…" : ""}`;
     }
 
     // Centre the window on the first match and wrap every match-range that falls inside it.
-    const [firstStart] = contentMatch.indices[0];
+    const [ firstStart ] = contentMatch.indices[0];
     const half = Math.floor(maxLength / 2);
-    let from = Math.max(0, firstStart - half);
-    let to = Math.min(content.length, from + maxLength);
-    // Re-extend left if we hit the right end early.
-    from = Math.max(0, to - maxLength);
+    const to = Math.min(content.length, Math.max(0, firstStart - half) + maxLength);
+    // Anchor the window to the right edge when we hit the end of content.
+    const from = Math.max(0, to - maxLength);
 
     // Build the snippet by walking the window and inserting <b>...</b> around any
     // match-range that intersects it. Indices are inclusive on both ends per Fuse.
     let out = "";
     let cursor = from;
     const ranges = contentMatch.indices
-        .map(([s, e]) => [Math.max(s, from), Math.min(e + 1, to)] as [number, number])
-        .filter(([s, e]) => e > s)
+        .map(([ s, e ]) => [ Math.max(s, from), Math.min(e + 1, to) ] as [number, number])
+        .filter(([ s, e ]) => e > s)
         .sort((a, b) => a[0] - b[0]);
-    for (const [s, e] of ranges) {
+    for (const [ s, e ] of ranges) {
         if (s > cursor) out += escapeHtml(content.slice(cursor, s));
         out += `<b>${escapeHtml(content.slice(s, e))}</b>`;
         cursor = e;
     }
     if (cursor < to) out += escapeHtml(content.slice(cursor, to));
 
-    return (from > 0 ? "\u2026" : "") + out + (to < content.length ? "\u2026" : "");
+    return `${from > 0 ? "…" : ""}${out}${to < content.length ? "…" : ""}`;
 }
 
 
@@ -153,7 +162,8 @@ async function fetchResults(query: string): Promise<SearchResults> {
         const results = fuseInstance.search(query, { limit: 5 });
         console.debug("Search results:", results);
         const processedResults = results.map(({ item, score, matches }) => {
-            const highlightedSnippet = buildStaticSnippet((item as SearchResult & { content?: string }).content, matches as any);
+            const itemWithContent = item as SearchResult & { content?: string };
+            const highlightedSnippet = buildStaticSnippet(itemWithContent.content, matches);
             return {
                 ...item,
                 id: rootUrl + "/" + item.id,

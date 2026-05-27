@@ -329,12 +329,15 @@ function register(router: Router) {
         // Results beyond the cap are still returned, just without a snippet.
         const SNIPPET_LIMIT = 20;
         const snippetTargets = searchResults.slice(0, SNIPPET_LIMIT);
+        const { highlightedTokens } = searchContext;
         for (const result of snippetTargets) {
-            result.contentSnippet = searchService.extractContentSnippet(result.noteId, searchContext.highlightedTokens);
+            result.contentSnippet = searchService.extractContentSnippet(
+                result.noteId, highlightedTokens
+            );
         }
         // highlightSearchResults wraps matched tokens in <b>...</b> on highlightedContentSnippet.
         // We pass ignoreInternalAttributes=true to match the share UX (no internal attrs).
-        searchService.highlightSearchResults(snippetTargets, searchContext.highlightedTokens, true);
+        searchService.highlightSearchResults(snippetTargets, highlightedTokens, true);
 
         const filteredResults = searchResults.map((sr) => {
             const fullNote = shaca.notes[sr.noteId];
@@ -346,7 +349,7 @@ function register(router: Router) {
                 title: fullNote.title,
                 score: sr.score,
                 path: pathTitle,
-                // Plain-text fallback and the <b>-highlighted variant produced by the search service.
+                // Plain-text fallback and the <b>-highlighted variant from the search service.
                 snippet: sr.contentSnippet,
                 highlightedSnippet: sr.highlightedContentSnippet
             };
