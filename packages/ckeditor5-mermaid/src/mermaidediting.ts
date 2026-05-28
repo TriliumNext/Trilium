@@ -6,7 +6,6 @@ import MermaidPreviewCommand from './commands/mermaidPreviewCommand.js';
 import MermaidSourceViewCommand from './commands/mermaidSourceViewCommand.js';
 import MermaidSplitViewCommand from './commands/mermaidSplitViewCommand.js';
 import InsertMermaidCommand from './commands/insertMermaidCommand.js';
-import RefreshMermaidCommand from './commands/RefreshMermaidCommand.js';
 import { DowncastAttributeEvent, DowncastConversionApi, EditorConfig, ModelElement, EventInfo, ModelItem, ModelNode, Plugin, toWidget, uid, UpcastConversionApi, UpcastConversionData, ViewElement, ViewText, ViewUIElement } from 'ckeditor5';
 
 import { debounce } from './utils.js';
@@ -61,7 +60,6 @@ export default class MermaidEditing extends Plugin {
 		editor.commands.add( 'mermaidSplitViewCommand', new MermaidSplitViewCommand( editor ) );
 		editor.commands.add( 'mermaidSourceViewCommand', new MermaidSourceViewCommand( editor ) );
 		editor.commands.add( 'insertMermaidCommand', new InsertMermaidCommand( editor ) );
-		editor.commands.add( 'refreshMermaidCommand', new RefreshMermaidCommand( editor ) );
 	}
 
 	/**

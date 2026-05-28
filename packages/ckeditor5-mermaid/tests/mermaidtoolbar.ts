@@ -39,12 +39,11 @@ describe( 'MermaidToolbar', () => {
 
 			setData( model, '<mermaid displayMode="split" source="">[]</mermaid>' );
 
-			expect( toolbar.items ).to.have.length( 7 );
+			expect( toolbar.items ).to.have.length( 5 );
 			expect( toolbar.items.get( 0 ).label ).to.equal( 'Source view' );
 			expect( toolbar.items.get( 1 ).label ).to.equal( 'Split view' );
 			expect( toolbar.items.get( 2 ).label ).to.equal( 'Preview' );
-			expect( toolbar.items.get( 4 ).label ).to.equal( 'Refresh diagram' );
-			expect( toolbar.items.get( 6 ).label ).to.equal( 'Read more about Mermaid diagram syntax' );
+			expect( toolbar.items.get( 4 ).label ).to.equal( 'Read more about Mermaid diagram syntax' );
 		} );
 	} );
 

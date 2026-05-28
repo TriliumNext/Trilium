@@ -80,8 +80,8 @@ export abstract class ZipExportProvider {
         }
         if (mime?.toLowerCase()?.trim() === "image/jpg") {
             return "jpg";
-        } else if (mime?.toLowerCase()?.trim() === "text/mermaid") {
-            return "txt";
+        } else if (mime?.toLowerCase()?.trim() === "text/vnd.mermaid") {
+            return "mermaid";
         }
         return mapCodeMimeToExtension(mime) || mimeTypes.extension(mime) || "dat";
 

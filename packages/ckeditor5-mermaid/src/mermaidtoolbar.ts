@@ -20,7 +20,7 @@ export default class MermaidToolbar extends Plugin {
 		const t = editor.t;
 
 		const widgetToolbarRepository = editor.plugins.get( WidgetToolbarRepository );
-		const mermaidToolbarItems = [ 'mermaidSourceView', 'mermaidSplitView', 'mermaidPreview', '|', 'mermaidRefresh', '|', 'mermaidInfo' ];
+		const mermaidToolbarItems = [ 'mermaidSourceView', 'mermaidSplitView', 'mermaidPreview', '|', 'mermaidInfo' ];
 
 		if ( mermaidToolbarItems ) {
 			widgetToolbarRepository.register( 'mermaidToolbar', {

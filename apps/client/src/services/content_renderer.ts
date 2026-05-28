@@ -11,7 +11,7 @@ import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
 import renderText, { postProcessRichContent, renderChildrenList } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
-import { loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
+import { getMermaidConfig, loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
 import openService from "./open.js";
 import protectedSessionService from "./protected_session.js";
 import protectedSessionHolder from "./protected_session_holder.js";
@@ -327,14 +327,11 @@ async function renderMermaid(note: FNote | FAttachment, $renderedContent: JQuery
 
     $renderedContent.css("display", "flex").css("justify-content", "space-around");
 
-    const documentStyle = window.getComputedStyle(document.documentElement);
-    const mermaidTheme = documentStyle.getPropertyValue("--mermaid-theme");
-
-    mermaid.mermaidAPI.initialize({ startOnLoad: false, theme: mermaidTheme.trim() as "default", securityLevel: "antiscript" });
+    mermaid.initialize(getMermaidConfig());
 
     try {
         await loadElkIfNeeded(mermaid, content);
-        const { svg } = await mermaid.mermaidAPI.render(`in-mermaid-graph-${idCounter++}`, content);
+        const { svg } = await mermaid.render(`in-mermaid-graph-${idCounter++}`, content);
 
         $renderedContent.append($(postprocessMermaidSvg(svg)));
     } catch (e) {

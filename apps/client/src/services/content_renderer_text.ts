@@ -108,7 +108,7 @@ export async function rewriteMermaidDiagramsInContainer(container: HTMLDivElemen
     for (const mermaidBlock of mermaidBlocks) {
         const div = document.createElement("div");
         div.classList.add("mermaid-diagram");
-        div.innerHTML = mermaidBlock.querySelector("code")?.innerHTML ?? "";
+        div.textContent = mermaidBlock.querySelector("code")?.textContent ?? "";
         mermaidBlock.replaceWith(div);
         nodes.push(div);
     }
@@ -198,18 +198,19 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
 
     try {
         await mermaid.run({ nodes: pairs.map((p) => p.clone) });
-        for (const { visible, clone, source } of pairs) {
-            if (clone.getAttribute("data-processed") !== "true") continue;
-            const svg = clone.innerHTML;
-            visible.innerHTML = svg;
-            visible.setAttribute("data-processed", "true");
-            cache.set(source, svg);
-        }
     } catch (e) {
         console.error(e);
-    } finally {
-        offscreen.remove();
     }
+
+    for (const { visible, clone, source } of pairs) {
+        if (clone.getAttribute("data-processed") !== "true") continue;
+        const svg = clone.innerHTML;
+        visible.innerHTML = svg;
+        visible.setAttribute("data-processed", "true");
+        cache.set(source, svg);
+    }
+
+    offscreen.remove();
 
     mermaidLastRenderedByPosition.set(container, nodes.map((n) => n.innerHTML));
 }
