@@ -39,7 +39,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 (window as any).katex = (await import("../../../services/math.js")).default;
             },
             forceOutputType: false, // forces output to use outputType
-            enablePreview: true // Enable preview view
+            enablePreview: true, // Enable preview view
+            enableMathField: options.get("mathFieldEnabled") !== "false"
         },
         mermaid: {
             lazyLoad: async () => (await import("mermaid")).default, // FIXME

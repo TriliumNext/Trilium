@@ -76,7 +76,7 @@ overrides:
 patchedDependencies:
   '@ckeditor/ckeditor5-code-block': 1530be090e4f5235e197fb6208a8e8230e3355d5633fc7cad2b2e892659e9c04
   '@ckeditor/ckeditor5-mention': 70377e48a04e2f45abba79aa35f3d5527ec7aa7ffce44056f9957a49a24a4a60
-  mathlive: 0237d6f7433fa3f4bb89923419fd64640ceb22202fdd083c7c47d9d2da109a62
+  mathlive: c2ce7495ba944c06c6d0e49f8fd59a8edc78a66347436ce42102875ca6f33144
 
 importers:
 
@@ -1285,7 +1285,7 @@ importers:
         version: 48.1.1
       mathlive:
         specifier: 0.109.2
-        version: 0.109.2(patch_hash=0237d6f7433fa3f4bb89923419fd64640ceb22202fdd083c7c47d9d2da109a62)
+        version: 0.109.2(patch_hash=c2ce7495ba944c06c6d0e49f8fd59a8edc78a66347436ce42102875ca6f33144)
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: '>=4.1.0'
@@ -24780,7 +24780,7 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  mathlive@0.109.2(patch_hash=0237d6f7433fa3f4bb89923419fd64640ceb22202fdd083c7c47d9d2da109a62):
+  mathlive@0.109.2(patch_hash=c2ce7495ba944c06c6d0e49f8fd59a8edc78a66347436ce42102875ca6f33144):
     dependencies:
       '@cortex-js/compute-engine': 0.55.6
 
