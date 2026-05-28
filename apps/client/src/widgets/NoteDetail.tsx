@@ -290,10 +290,6 @@ function useNoteInfo() {
         refresh();
     });
     useTriliumEvent("noteTypeMimeChanged", refresh);
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (!note || loadResults.getEntityRow("notes", note.noteId)?.isDeleted) return;
-        refresh();
-    });
 
     return { note, type, mime, noteContext, parentComponent };
 }
@@ -336,8 +332,6 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
         resultingType = "sqlConsole";
     } else if (note.isMarkdown()) {
         resultingType = "markdown";
-    } else if (type === "code" && (note.mime === "text/vnd.mermaid" || note.mime === "text/mermaid")) {
-        resultingType = "mermaid";
     } else if (type === "code" && (await noteContext?.isReadOnly())) {
         resultingType = "readOnlyCode";
     } else if (type === "text") {

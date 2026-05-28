@@ -48,7 +48,7 @@ export default function Mermaid(props: TypeWidgetProps) {
         <SvgSplitEditor
             attachmentName="mermaid-export"
             renderSvg={renderSvg}
-            noteType={props.note?.type ?? "mermaid"}
+            noteType="mermaid"
             extraContent={(
                 <NoteContentSwitcher
                     text={t("mermaid.sample_diagrams")}

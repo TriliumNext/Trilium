@@ -118,7 +118,6 @@ const MIME_TYPES_DICT_RAW = [
     { title: "MIPS Assembler", mime: "text/x-asm-mips", mdLanguageCode: "mips" },
     { title: "mIRC", mime: "text/mirc" },
     { title: "Modelica", mime: "text/x-modelica" },
-    { title: "Mermaid Diagram", mime: "text/vnd.mermaid", icon: "bx bx-selection" },
     { title: "MS SQL", mime: "text/x-mssql", mdLanguageCode: "sql", icon: "bx bx-data" },
     { title: "mscgen", mime: "text/x-mscgen" },
     { title: "msgenny", mime: "text/x-msgenny" },
