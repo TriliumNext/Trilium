@@ -76,6 +76,7 @@ overrides:
 patchedDependencies:
   '@ckeditor/ckeditor5-code-block': 1530be090e4f5235e197fb6208a8e8230e3355d5633fc7cad2b2e892659e9c04
   '@ckeditor/ckeditor5-mention': 70377e48a04e2f45abba79aa35f3d5527ec7aa7ffce44056f9957a49a24a4a60
+  mathlive: 0237d6f7433fa3f4bb89923419fd64640ceb22202fdd083c7c47d9d2da109a62
 
 importers:
 
@@ -403,7 +404,7 @@ importers:
         version: 6.3.3
       copy-webpack-plugin:
         specifier: 14.0.0
-        version: 14.0.0(webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0))
+        version: 14.0.0(webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)(postcss@8.5.15))
       happy-dom:
         specifier: 20.9.0
         version: 20.9.0
@@ -1284,7 +1285,7 @@ importers:
         version: 48.1.1
       mathlive:
         specifier: 0.109.2
-        version: 0.109.2
+        version: 0.109.2(patch_hash=0237d6f7433fa3f4bb89923419fd64640ceb22202fdd083c7c47d9d2da109a62)
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: '>=4.1.0'
@@ -21579,14 +21580,14 @@ snapshots:
 
   cookiejar@2.1.4: {}
 
-  copy-webpack-plugin@14.0.0(webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)):
+  copy-webpack-plugin@14.0.0(webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)(postcss@8.5.15)):
     dependencies:
       glob-parent: 6.0.2
       normalize-path: 3.0.0
       schema-utils: 4.3.3
       serialize-javascript: 7.0.5
       tinyglobby: 0.2.16
-      webpack: 5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)
+      webpack: 5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)(postcss@8.5.15)
 
   copy-webpack-plugin@14.0.0(webpack@5.106.2(esbuild@0.28.0)):
     dependencies:
@@ -24779,7 +24780,7 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  mathlive@0.109.2:
+  mathlive@0.109.2(patch_hash=0237d6f7433fa3f4bb89923419fd64640ceb22202fdd083c7c47d9d2da109a62):
     dependencies:
       '@cortex-js/compute-engine': 0.55.6
 
@@ -27667,16 +27668,17 @@ snapshots:
       rimraf: 2.6.3
     optional: true
 
-  terser-webpack-plugin@5.6.0(esbuild@0.28.0)(lightningcss@1.32.0)(webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)):
+  terser-webpack-plugin@5.6.0(esbuild@0.28.0)(lightningcss@1.32.0)(postcss@8.5.15)(webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)(postcss@8.5.15)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.47.1
-      webpack: 5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)
+      webpack: 5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)(postcss@8.5.15)
     optionalDependencies:
       esbuild: 0.28.0
       lightningcss: 1.32.0
+      postcss: 8.5.15
 
   terser-webpack-plugin@5.6.0(esbuild@0.28.0)(webpack@5.106.2(esbuild@0.28.0)):
     dependencies:
@@ -28515,7 +28517,7 @@ snapshots:
       - postcss
       - uglify-js
 
-  webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0):
+  webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)(postcss@8.5.15):
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.9
@@ -28538,7 +28540,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
-      terser-webpack-plugin: 5.6.0(esbuild@0.28.0)(lightningcss@1.32.0)(webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0))
+      terser-webpack-plugin: 5.6.0(esbuild@0.28.0)(lightningcss@1.32.0)(postcss@8.5.15)(webpack@5.106.2(esbuild@0.28.0)(lightningcss@1.32.0)(postcss@8.5.15))
       watchpack: 2.5.1
       webpack-sources: 3.4.1
     transitivePeerDependencies:
