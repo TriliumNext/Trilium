@@ -6,6 +6,7 @@ import config from "./config.js";
 import openIDEncryption from "./encryption/open_id_encryption.js";
 import sql from "./sql.js";
 import sqlInit from "./sql_init.js";
+import log from "./log.js";
 
 function checkOpenIDConfig() {
     const missingVars: string[] = [];
@@ -70,7 +71,8 @@ async function isTokenValid(req: Request, res: Response, next: NextFunction) {
                 message: "Token is valid",
                 user: userStatus,
             };
-        } catch {
+        } catch (err) {
+            log.info(`OIDC token validation failed: ${err instanceof Error ? err.message : String(err)}`);
             return {
                 success: false,
                 message: "Token is not valid",
@@ -115,18 +117,30 @@ function generateOAuthConfig() {
         clientSecret: config.MultiFactorAuthentication.oauthClientSecret,
         authorizationParams: {
             response_type: "code",
-            scope: "openid profile email",
+            scope: config.MultiFactorAuthentication.oauthScope,
             access_type: "offline",
             prompt: "consent",
         },
         routes: authRoutes,
         idpLogout: true,
         logoutParams,
+        // Override the library's default 5000 ms timeout for discovery / token-exchange / userinfo requests.
+        httpTimeout: config.MultiFactorAuthentication.oauthHttpTimeout,
+        // Match the OIDC appSession cookie lifetime to Trilium's own trilium.sid cookie. The library defaults
+        // (24h rolling, 7d absolute) silently capped the effective Trilium session at 7 days when SSO was on.
+        // Both bounds are set to cookieMaxAge (default 21d): rollingDuration is required when rolling: true,
+        // and keeping absoluteDuration as a hard cap follows the OWASP / Auth0 guidance that every session
+        // should have an upper bound regardless of activity.
+        session: {
+            rolling: true,
+            rollingDuration: config.Session.cookieMaxAge,
+            absoluteDuration: config.Session.cookieMaxAge,
+        },
         afterCallback: async (req: Request, res: Response, session: Session) => {
             if (!sqlInit.isDbInitialized()) return session;
 
             if (!req.oidc.user) {
-                console.log("user invalid!");
+                log.error("OIDC callback received without user info; aborting login");
                 return session;
             }
 
@@ -136,11 +150,33 @@ function generateOAuthConfig() {
                 req.oidc.user.email.toString()
             );
 
-            req.session.loggedIn = true;
-            req.session.lastAuthState = {
-                totpEnabled: false,
-                ssoEnabled: true
-            };
+            // Mirror the password-login flow: regenerate the trilium.sid session to mint a fresh
+            // session ID on login (defense-in-depth against session fixation), then set loggedIn
+            // on the new session. Awaiting ensures the new session is persisted before the OIDC
+            // middleware redirects to returnTo.
+            await new Promise<void>((resolve, reject) => {
+                req.session.regenerate((err) => {
+                    if (err) {
+                        log.error(`Failed to regenerate session on OIDC login: ${err}`);
+                        return reject(err);
+                    }
+                    req.session.loggedIn = true;
+                    req.session.lastAuthState = {
+                        totpEnabled: false,
+                        ssoEnabled: true
+                    };
+                    // Explicit save: afterCallback runs inside a Promise chain and the redirect is
+                    // issued by the express-openid-connect middleware *after* this function returns,
+                    // so we can't rely on res.end-triggered auto-save fully completing in time.
+                    req.session.save((saveErr) => {
+                        if (saveErr) {
+                            log.error(`Failed to save session after OIDC regeneration: ${saveErr}`);
+                            return reject(saveErr);
+                        }
+                        resolve();
+                    });
+                });
+            });
 
             return session;
         },
