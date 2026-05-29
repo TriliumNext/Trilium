@@ -111,8 +111,10 @@ export default async function buildApp() {
     startSessionCleanup();
     app.use(favicon(path.join(assetsDir, isDev ? "icon-dev.ico" : "icon.ico")));
 
-    if (openID.isOpenIDEnabled())
+    if (openID.isOpenIDEnabled()) {
         app.use(auth(openID.generateOAuthConfig()));
+        app.use(openID.refreshOidcTokenIfNeeded);
+    }
 
     await assets.register(app);
     routes.register(app);
