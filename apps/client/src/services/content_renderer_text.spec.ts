@@ -2,6 +2,7 @@ import { trimIndentation } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
 import { buildNote } from "../test/easy-froca";
+import contentRenderer from "./content_renderer";
 import renderText from "./content_renderer_text";
 
 describe("Text content renderer", () => {
@@ -128,5 +129,43 @@ describe("Text content renderer", () => {
         expect(items.length).toBe(2);
         expect(items[0].textContent).toBe("Child note 1");
         expect(items[1].textContent).toBe("Child note 3");
+    });
+
+    it("removes embedded style tags from trimmed previews", async () => {
+        const contentEl = document.createElement("div");
+        const note = buildNote({
+            title: "Imported HTML note",
+            content: trimIndentation`
+                <style>
+                    li { margin-bottom: 8pt; }
+                </style>
+                <p>Preview text</p>
+            `
+        });
+
+        await renderText(note, $(contentEl), { trim: true });
+
+        expect(contentEl.querySelector("style")).toBeNull();
+        expect(contentEl.textContent).toContain("Preview text");
+    });
+
+    it("removes embedded style tags from trimmed markdown previews", async () => {
+        const note = buildNote({
+            title: "Imported Markdown note",
+            type: "code",
+            content: trimIndentation`
+                <style>
+                    li { margin-bottom: 8pt; }
+                </style>
+
+                Preview text
+            `
+        });
+        note.mime = "text/x-markdown";
+
+        const { $renderedContent } = await contentRenderer.getRenderedContent(note, { trim: true });
+
+        expect($renderedContent[0].querySelector("style")).toBeNull();
+        expect($renderedContent[0].textContent).toContain("Preview text");
     });
 });

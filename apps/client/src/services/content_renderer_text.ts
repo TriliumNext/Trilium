@@ -56,6 +56,10 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     applyLinkEmbeds($renderedContent[0]);
     await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
     await formatCodeBlocks($renderedContent);
+
+    if (options.trim) {
+        $renderedContent.find("style").remove();
+    }
 }
 
 async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<string>) {
