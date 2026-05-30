@@ -15,7 +15,7 @@
     }
 
     .mermaid-diagram {
-        background: #fff;
+        background: var(--mermaid-preview-bg, #fff);
         resize: both;
         overflow: auto;
         min-height: 60px;

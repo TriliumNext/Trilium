@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "preact/hooks";
+import { useCallback } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { getMermaidConfig, loadElkIfNeeded, postprocessMermaidSvg } from "../../../services/mermaid";
@@ -9,19 +9,8 @@ import SAMPLE_DIAGRAMS from "./sample_diagrams";
 
 let idCounter = 1;
 let registeredErrorReporter = false;
-let fontAwesomeLoaded = false;
-
-function loadFontAwesome() {
-    if (fontAwesomeLoaded) return;
-    fontAwesomeLoaded = true;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css";
-    document.head.appendChild(link);
-}
 
 export default function Mermaid(props: TypeWidgetProps) {
-    useEffect(() => { loadFontAwesome(); }, []);
     const renderSvg = useCallback(async (content: string) => {
         const mermaid = (await import("mermaid")).default;
         await loadElkIfNeeded(mermaid, content);

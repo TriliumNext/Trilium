@@ -745,8 +745,8 @@ export function removeTriliumTags(content: string) {
     }
 
     // Remove ckeditor tags
-    content = content.replace(/<div class="ck-content">(.*?)<\/div>/gms, "$1");
-    content = content.replace(/<div class="content">(.*?)<\/div>/gms, "$1");
+    content = content.replace(/<div class="ck-content">(.*)<\/div>/gms, "$1");
+    content = content.replace(/<div class="content">(.*)<\/div>/gms, "$1");
 
     return content;
 }

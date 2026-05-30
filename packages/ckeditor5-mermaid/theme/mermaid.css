@@ -21,7 +21,7 @@
 .ck-mermaid__preview {
 	display: flex;
 	justify-content: center;
-	background: #fff;
+	background: var(--mermaid-preview-bg, #fff);
 	resize: both;
 	overflow: auto;
 	min-height: 100px;
