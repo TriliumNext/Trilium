@@ -452,6 +452,7 @@ function init() {
 
         const chunks = notePath.split("/");
 
+        /* v8 ignore next -- String.split always yields at least one element, so the `: null` branch is unreachable */
         return chunks.length >= 1 ? chunks[chunks.length - 1] : null;
     };
 

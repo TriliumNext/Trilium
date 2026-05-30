@@ -1,9 +1,9 @@
 import type { OCRProcessResponse, TextRepresentationResponse } from "@triliumnext/commons";
+import { options } from "@triliumnext/core";
 import type { Request } from "express";
 
-import becca from "../../becca/becca.js";
+import { becca } from "@triliumnext/core";
 import ocrService from "../../services/ocr/ocr_service.js";
-import options from "../../services/options.js";
 import sql from "../../services/sql.js";
 
 function getMinConfidenceThreshold(): number {

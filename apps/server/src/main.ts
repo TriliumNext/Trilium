@@ -10,7 +10,7 @@ import path from "path";
 
 import ServerBackupService from "./backup_provider.js";
 import ClsHookedExecutionContext from "./cls_provider.js";
-import { getIntegrationTestDbPath, loadCoreSchema } from "./core_assets.js";
+import { loadCoreSchema } from "./core_assets.js";
 import NodejsCryptoProvider from "./crypto_provider.js";
 import NodejsInAppHelpProvider from "./in_app_help_provider.js";
 import ServerLogService from "./log_provider.js";
@@ -29,12 +29,10 @@ async function startApplication() {
 
     const dbProvider = new BetterSqlite3Provider();
     if (process.env.TRILIUM_INTEGRATION_TEST === "memory") {
-        // Integration test mode: load the same fixture buffer used by the
-        // unit test setup so e2e tests get a known-good starting state
-        // (schema + demo content + known password) without touching disk.
-        // getIntegrationTestDbPath() handles the bundled-vs-source path
-        // resolution; see core_assets.ts.
-        dbProvider.loadFromBuffer(fs.readFileSync(getIntegrationTestDbPath()));
+        // Load the database file into memory so mutations don't persist to
+        // disk between test runs. The fixture is provided externally (e.g.
+        // copied into the data dir by CI or the Playwright config).
+        dbProvider.loadFromBuffer(fs.readFileSync(DOCUMENT_PATH));
     } else {
         dbProvider.loadFromFile(DOCUMENT_PATH, config.General.readOnly);
     }
@@ -46,13 +44,11 @@ async function startApplication() {
             provider: dbProvider,
             isReadOnly: config.General.readOnly,
             async onTransactionCommit() {
-                const ws = (await import("./services/ws.js")).default;
+                const { ws } = await import("@triliumnext/core");
                 ws.sendTransactionEntityChangesToAllClients();
             },
             async onTransactionRollback() {
-                const cls = (await import("./services/cls.js")).default;
-                const becca_loader = (await import("@triliumnext/core")).becca_loader;
-                const entity_changes = (await import("./services/entity_changes.js")).default;
+                const { cls, becca_loader, entity_changes } = await import("@triliumnext/core");
 
                 const entityChangeIds = cls.getAndClearEntityChangeIds();
 

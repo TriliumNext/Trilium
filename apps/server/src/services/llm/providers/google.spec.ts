@@ -2,12 +2,13 @@ import type { LlmMessage } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const createGoogleMock = vi.fn();
+const googleSearchMock = vi.fn(() => ({ kind: "google_search" }));
 
 vi.mock("@ai-sdk/google", () => ({
     createGoogleGenerativeAI: (opts: unknown) => {
         createGoogleMock(opts);
         const fn: any = () => ({});
-        fn.tools = { googleSearch: () => ({}) };
+        fn.tools = { googleSearch: googleSearchMock };
         return fn;
     }
 }));
@@ -114,5 +115,57 @@ describe("GoogleProvider message building", () => {
         expect(opts.messages.every((m: any) => m.role !== "system")).toBe(true);
         expect(typeof opts.system).toBe("string");
         expect(opts.system).toContain("BASE PROMPT");
+        // Extended thinking forwards Gemini's thinkingConfig.
+        expect(opts.providerOptions.google.thinkingConfig.thinkingBudget).toBe(10000);
+    });
+});
+
+describe("GoogleProvider tool handling", () => {
+    beforeEach(() => {
+        streamTextMock.mockClear();
+        googleSearchMock.mockClear();
+    });
+
+    it("adds the googleSearch tool when only web search is enabled", () => {
+        const provider = new GoogleProvider("test-key");
+        provider.chat([{ role: "user", content: "hi" }], { enableWebSearch: true });
+
+        expect(googleSearchMock).toHaveBeenCalledOnce();
+        const opts = streamTextMock.mock.calls[0][0] as any;
+        expect(opts.tools.google_search).toEqual({ kind: "google_search" });
+        expect(opts.toolChoice).toBe("auto");
+    });
+
+    it("drops googleSearch and warns the model when note tools and web search are both enabled", () => {
+        const provider = new GoogleProvider("test-key");
+        provider.chat([{ role: "user", content: "hi" }], {
+            enableWebSearch: true,
+            enableNoteTools: true
+        });
+
+        // The conflict path strips google_search but keeps the function tools.
+        expect(googleSearchMock).not.toHaveBeenCalled();
+        const opts = streamTextMock.mock.calls[0][0] as any;
+        expect(opts.tools.google_search).toBeUndefined();
+        expect(Object.keys(opts.tools).length).toBeGreaterThan(0);
+        // The system prompt gains the conflict explanation.
+        expect(opts.system).toContain("web search is unavailable in this turn");
+    });
+
+    it("forwards thinkingBudget override under extended thinking with tools enabled", () => {
+        const provider = new GoogleProvider("test-key");
+        provider.chat([{ role: "user", content: "hi" }], {
+            enableExtendedThinking: true,
+            enableNoteTools: true,
+            thinkingBudget: 25000,
+            maxTokens: 5000
+        });
+
+        const opts = streamTextMock.mock.calls[0][0] as any;
+        expect(opts.providerOptions.google.thinkingConfig.thinkingBudget).toBe(25000);
+        expect(opts.maxOutputTokens).toBe(5000);
+        // Function tools present → agentic loop options set on the thinking path.
+        expect(opts.toolChoice).toBe("auto");
+        expect(opts.stopWhen).toBeDefined();
     });
 });

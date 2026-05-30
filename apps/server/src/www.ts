@@ -1,4 +1,4 @@
-import { getMessagingProvider, getPlatform, utils } from "@triliumnext/core";
+import { app_info as appInfo, getMessagingProvider, getPlatform, utils } from "@triliumnext/core";
 import type { Express } from "express";
 import fs from "fs";
 import http from "http";
@@ -6,11 +6,10 @@ import https from "https";
 import tmp from "tmp";
 
 import buildApp from "./app.js";
-import appInfo from "./services/app_info.js";
 import config from "./services/config.js";
 import { registerOcrHandlers } from "./services/handlers.js";
 import host from "./services/host.js";
-import log from "./services/log.js";
+import { getLog } from "@triliumnext/core";
 import port from "./services/port.js";
 import { getDbSize } from "./services/sql_init.js";
 import WebSocketMessagingProvider from "./services/ws_messaging_provider.js";
@@ -25,7 +24,7 @@ const LOGO = `\
   |_||_|  |_|_|_|\\__,_|_| |_| |_| |_| \\_|\\___/ \\__\\___||___/ [version]
 `;
 
-export default async function startTriliumServer() {
+export default async function startTriliumServer(): Promise<Express> {
     await displayStartupMessage();
 
     // setup basic error handling even before requiring dependencies, since those can produce errors as well
@@ -34,7 +33,7 @@ export default async function startTriliumServer() {
         console.log(error);
 
         // but also try to log it into file
-        log.info(error);
+        getLog().info(error);
     });
 
     function exit() {
@@ -69,33 +68,30 @@ export default async function startTriliumServer() {
         messaging.init(httpServer, sessionParser);
     }
 
-    const ws = (await import("./services/ws.js")).default;
+    const { ws } = await import("@triliumnext/core");
     ws.init();
 
-    if (utils.isElectron()) {
-        const electronRouting = await import("./routes/electron.js");
-        electronRouting.default(app);
-    }
-
     registerOcrHandlers();
+
+    return app;
 }
 
 async function displayStartupMessage() {
-    log.info(`\n${LOGO.replace("[version]", appInfo.appVersion)}`);
-    log.info(`📦 Versions:    app=${appInfo.appVersion} db=${appInfo.dbVersion} sync=${appInfo.syncVersion} clipper=${appInfo.clipperProtocolVersion}`);
-    log.info(`🔧 Build:       ${utils.formatUtcTime(appInfo.buildDate)} (${appInfo.buildRevision.substring(0, 10)})`);
-    log.info(`📂 Data dir:    ${appInfo.dataDirectory}`);
-    log.info(`⏰ UTC time:    ${utils.formatUtcTime(appInfo.utcDateTime)}`);
+    getLog().info(`\n${LOGO.replace("[version]", appInfo.appVersion)}`);
+    getLog().info(`📦 Versions:    app=${appInfo.appVersion} db=${appInfo.dbVersion} sync=${appInfo.syncVersion} clipper=${appInfo.clipperProtocolVersion}`);
+    getLog().info(`🔧 Build:       ${utils.formatUtcTime(appInfo.buildDate)} (${appInfo.buildRevision.substring(0, 10)})`);
+    getLog().info(`📂 Data dir:    ${appInfo.dataDirectory}`);
+    getLog().info(`⏰ UTC time:    ${utils.formatUtcTime(appInfo.utcDateTime)}`);
 
     // for perf. issues it's good to know the rough configuration
     const cpuInfos = (await import("os")).cpus();
     if (cpuInfos && cpuInfos[0] !== undefined) {
         // https://github.com/zadam/trilium/pull/3957
         const cpuModel = (cpuInfos[0].model || "").trimEnd();
-        log.info(`💻 CPU:         ${cpuModel} (${cpuInfos.length}-core @ ${cpuInfos[0].speed} Mhz)`);
+        getLog().info(`💻 CPU:         ${cpuModel} (${cpuInfos.length}-core @ ${cpuInfos[0].speed} Mhz)`);
     }
-    log.info(`💾 DB size:     ${utils.formatSize(getDbSize() * 1024)}`);
-    log.info("");
+    getLog().info(`💾 DB size:     ${utils.formatSize(getDbSize() * 1024)}`);
+    getLog().info("");
 }
 
 function startHttpServer(app: Express) {
@@ -109,7 +105,7 @@ function startHttpServer(app: Express) {
         }
     }
 
-    log.info(`Trusted reverse proxy: ${app.get("trust proxy")}`);
+    getLog().info(`Trusted reverse proxy: ${app.get("trust proxy")}`);
 
     let httpServer: http.Server | https.Server;
 
@@ -129,11 +125,11 @@ function startHttpServer(app: Express) {
 
         httpServer = https.createServer(options, app);
 
-        log.info(`App HTTPS server starting up at port ${port}`);
+        getLog().info(`App HTTPS server starting up at port ${port}`);
     } else {
         httpServer = http.createServer(app);
 
-        log.info(`App HTTP server starting up at port ${port}`);
+        getLog().info(`App HTTP server starting up at port ${port}`);
     }
 
     /**
@@ -167,24 +163,19 @@ function startHttpServer(app: Express) {
             }
         }
 
-        if (utils.isElectron()) {
-            import("electron").then(({ app }) => {
-                if ("code" in error && error.code === "EADDRINUSE" && (process.argv.includes("--new-window") || !app.requestSingleInstanceLock())) {
-                    console.error(message);
-                } else {
-                    getPlatform().crash(`Error while initializing the server: ${message}`);
-                }
-            });
+        const platform = getPlatform();
+        if (platform.shouldIgnoreStartupError?.(error)) {
+            console.error(message);
         } else {
-            getPlatform().crash(message);
+            platform.crash(`Error while initializing the server: ${message}`);
         }
     });
 
     httpServer.on("listening", () => {
         if (listenOnTcp) {
-            log.info(`Listening on port ${port}`);
+            getLog().info(`Listening on port ${port}`);
         } else {
-            log.info(`Listening on unix socket ${host}`);
+            getLog().info(`Listening on unix socket ${host}`);
         }
     });
 

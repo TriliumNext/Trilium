@@ -1,5 +1,6 @@
+import { options } from '@triliumnext/core';
 import { Totp, generateSecret } from 'time2fa';
-import options from './options.js';
+
 import totpEncryptionService from './encryption/totp_encryption.js';
 
 function isTotpEnabled(): boolean {

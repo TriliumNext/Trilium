@@ -20,7 +20,7 @@
     "donate_tooltip": "Faites un don pour soutenir ce projet",
     "channel": {
       "nightly": "Nightly",
-      "standalone": "Web autonome"
+      "standalone": "Standalone"
     }
   },
   "toast": {
@@ -210,8 +210,8 @@
     "safeImport": "Importation sécurisée",
     "explodeArchivesTooltip": "Si cette case est cochée, Trilium lira les fichiers <code>.zip</code>, <code>.enex</code> et <code>.opml</code> et créera des notes à partir des fichiers contenus dans ces archives. Si cette case n'est pas cochée, Trilium joindra les archives elles-mêmes à la note.",
     "explodeArchives": "Lire le contenu des archives <code>.zip</code>, <code>.enex</code> et <code>.opml</code>.",
-    "shrinkImagesTooltip": "<p>Si vous cochez cette option, Trilium tentera de réduire les images importées par mise à l'échelle et optimisation, ce qui peut affecter la qualité de l'image perçue. Si cette case n'est pas cochée, les images seront importées sans modifications.</p><p>Cela ne s'applique pas aux importations <code>.zip</code> avec des métadonnées, car on suppose que ces fichiers sont déjà optimisés.</p>",
-    "shrinkImages": "Réduire les images",
+    "shrinkImagesTooltip": "<p>Si vous cochez cette option, Trilium tentera de réduire la taille des images importées, ce qui peut affecter la qualité perçue des images. Si cette option est décochée, les images seront importées sans modification..</p><p>Cela ne s'applique pas aux importations de fichiers <code>.zip</code> contenant des métadonnées, car il est supposé que ces fichiers sont déjà optimisés..</p>",
+    "shrinkImages": "Réduire la taille des images",
     "textImportedAsText": "Importez HTML, Markdown et TXT sous forme de notes de texte si les métadonnées ne sont pas claires",
     "codeImportedAsCode": "Importez des fichiers de code reconnus (par exemple <code>.json</code>) en tant que notes de code si cela n'est pas clair à partir des métadonnées",
     "replaceUnderscoresWithSpaces": "Remplacez les tirets bas par des espaces dans les noms de notes importées",
@@ -320,9 +320,9 @@
     "choose_files": "Choisir des fichiers",
     "files_will_be_uploaded": "Les fichiers seront téléversés sous forme de pièces jointes dans {{noteTitle}}",
     "options": "Options",
-    "shrink_images": "Réduire les images",
+    "shrink_images": "Réduire la taille des images",
     "upload": "Téléverser",
-    "tooltip": "Si vous cochez cette option, Trilium tentera de réduire les images téléversées par mise à l'échelle et optimisation, ce qui peut affecter la qualité de l'image perçue. Si cette case n'est pas cochée, les images seront téléversées sans modifications."
+    "tooltip": "Si vous cochez cette option, Trilium tentera de réduire la taille des images importées, ce qui peut affecter la qualité perçue des images. Si cette option est décochée, les images seront importées sans modification."
   },
   "attribute_detail": {
     "attr_detail_title": "Titre détaillé de l'attribut",
@@ -581,7 +581,7 @@
     "delete_attachment": "Supprimer la pièce jointe",
     "upload_success": "Une nouvelle version de pièce jointe a été téléversée.",
     "upload_failed": "Le téléversement d'une nouvelle version de pièce jointe a échoué.",
-    "open_externally_detail_page": "L'ouverture externe d'une pièce jointe n''est disponible qu'à partir de la page de détails. Veuillez d'abord cliquer sur les détails de la pièce jointe et répéter l'opération.",
+    "open_externally_detail_page": "L'ouverture externe d'une pièce jointe n'est disponible qu'à partir de la page de détails. Cliquez d'abord sur les détails de la pièce jointe puis réessayez.",
     "open_custom_client_only": "L'option \"Ouvrir avec\" des pièces jointes n'est disponible que dans la version bureau de Trilium.",
     "delete_confirm": "Êtes-vous sûr de vouloir supprimer la pièce jointe « {{title}} » ?",
     "delete_success": "La pièce jointe « {{title}} » a été supprimée.",
@@ -743,7 +743,8 @@
     "trilium_api_docs_button_title": "Ouvrir la documentation de l'API Trilium",
     "save_to_note_button_title": "Enregistrer dans la note",
     "opening_api_docs_message": "Ouverture de la documentation de l'API...",
-    "sql_console_saved_message": "La note de la console SQL a été enregistrée dans {{note_path}}"
+    "sql_console_saved_message": "La note de la console SQL a été enregistrée dans {{note_path}}",
+    "electron_api_docs_button_title": "Ouvrir la documentation de l'API Electron"
   },
   "copy_image_reference_button": {
     "button_title": "Copier la référence de l'image dans le presse-papiers, peut être collée dans une note textuelle."
@@ -1241,7 +1242,7 @@
     "images_section_title": "Images",
     "download_images_automatically": "Télécharger automatiquement les images",
     "download_images_description": "Télécharge les images externes du HTML collé pour les rendre disponibles hors connexion.",
-    "enable_image_compression": "Compression des images",
+    "enable_image_compression": "Compresser les images",
     "max_image_dimensions": "Dimensions maximales d'une image",
     "jpeg_quality_description": "La plage recommandée est entre 50 et 85. Des valeurs plus faibles réduisent la taille du fichier, des valeurs plus élevées préservent les détails.",
     "max_image_dimensions_unit": "pixels",
@@ -1295,10 +1296,10 @@
     "note_revisions_snapshot_limit_title": "Nombre maximal d’instantanés de révision de note",
     "note_revisions_snapshot_limit_description": "La limite du nombre de révision de note désigne le nombre maximum de révisions pouvant être enregistrées pour chaque note. -1 signifie aucune limite, 0 signifie supprimer toutes les révisions. Vous pouvez définir le nombre maximal de révisions pour une seule note avec le label #versioningLimit.",
     "snapshot_number_limit_label": "Nombre maximal de révisions",
-    "erase_excess_revision_snapshots": "Effacer immédiatement les instantanés de révisions excédentaires",
+    "erase_excess_revision_snapshots": "Effacer les instantanés de révisions excédentaires",
     "erase_excess_revision_snapshots_prompt": "Les révisions en excès ont été effacées.",
     "snapshot_number_limit_unit": "instantanés",
-    "erase_excess_revision_snapshots_description": "Supprimer les révisions excédant la limite pour toutes les notes.",
+    "erase_excess_revision_snapshots_description": "Supprime immediatement les révisions excédant la limite pour toutes les notes.",
     "note_revisions_snapshot_limit_description_short": "Nombre maximal de révisions par note. Utilisez -1 pour aucune limite, 0 pour désactiver."
   },
   "search_engine": {
@@ -1878,9 +1879,9 @@
   "share": {
     "title": "Partage",
     "redirect_bare_domain": "Rediriger le domaine principal vers la page de partage",
-    "redirect_bare_domain_description": "Rediriger les utilisateurs anonymes vers la page de partage au lieu d'afficher la connexion",
+    "redirect_bare_domain_description": "Redirige les utilisateurs anonymes vers la page de partage au lieu d'afficher la connexion",
     "show_login_link": "Afficher le lien de connexion dans le thème de partage",
-    "show_login_link_description": "Ajouter un lien de connexion dans le pied de page de la page de partage",
+    "show_login_link_description": "Ajoute un lien de connexion dans le pied de page de la page de partage",
     "check_share_root": "Vérifier l'état du partage de la racine",
     "share_root_found": "La note racine du partage '{{noteTitle}}' est prête",
     "share_root_not_found": "Aucune note avec le label #shareRoot trouvée",
@@ -2205,7 +2206,13 @@
     "sources_summary": "{{count}} sources provenant de {{sites}} sites",
     "stop": "Arrêter",
     "retry": "Réessayer",
-    "edit_index": "Modification {{index}} sur {{total}}"
+    "edit_index": "Modification {{index}} sur {{total}}",
+    "web_search_unavailable_gemini": "Non disponible sur les modèles Gemini lorsque l'accès aux notes est activé — l'API de Google ne permet pas de combiner les deux. Désactivez l'accès aux notes ou changez de fournisseur pour utiliser la recherche web.",
+    "input_streaming": "Entrée (streaming…)",
+    "attach_file": "Joindre une image, un PDF ou un fichier texte",
+    "remove_attachment": "Supprimer la pièce jointe",
+    "attachment_upload_failed": "Impossible de téléverser \"{{name}}\".",
+    "attachment_unsupported_type": "\"{{name}}\" n'est pas un type de pièce jointe pris en charge. Utilisez une image (PNG, JPEG, GIF, WebP), un PDF, ou un fichier texte/source."
   },
   "sidebar_chat": {
     "title": "discussion IA",
@@ -2256,7 +2263,7 @@
     "shared_open_in_browser": "Ouvrir le lien dans le navigateur",
     "shared_unshare": "Supprimer le partage",
     "clipped_note": "Clip Web",
-    "clipped_note_description": "Cette note a été initialement construite depuis l'url {{url}}.\n\nCliquez pour accéder à la page Web source.",
+    "clipped_note_description": "Cette note provient à l'origine de {{url}}.\n\nCliquez pour accéder à la page web source.",
     "execute_script": "Exécuter le script",
     "execute_script_description": "Cette note est une note de script. Cliquez pour exécuter le script.",
     "execute_sql": "Exécuter la commande SQL",
@@ -2547,9 +2554,9 @@
   },
   "search": {
     "title": "Rechercher",
-    "fuzzy_matching_label": "Tolérance aux fautes de frappe dans la recherche",
+    "fuzzy_matching_label": "Accepter les fautes de frappe dans la recherche",
     "fuzzy_matching_description": "Affecte la recherche rapide et la recherche complète. Trouve des mots similaires lorsque les correspondances exactes ne suffisent pas.",
-    "autocomplete_fuzzy_label": "Tolérance aux fautes de frappe dans l’autocomplétion",
+    "autocomplete_fuzzy_label": "Accepter les fautes de frappe dans l'autocomplétion",
     "autocomplete_fuzzy_description": "Affecte l’accès rapide aux notes et les sélecteurs de notes. Plus lent, mais tolère les fautes de frappe."
   },
   "text_editor": {

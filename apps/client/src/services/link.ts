@@ -105,6 +105,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     let linkTitle = options.title;
 
     if (linkTitle === undefined) {
+        /* v8 ignore start -- the implicit `else` of this chain (noteId falsy) is unreachable: an empty noteId already returned at the guard above */
         if (viewMode === "attachments" && viewScope.attachmentId) {
             const attachment = await froca.getAttachment(viewScope.attachmentId);
 
@@ -112,6 +113,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
         } else if (noteId) {
             linkTitle = await treeService.getNoteTitle(noteId, parentNoteId);
         }
+        /* v8 ignore stop */
     }
 
     const note = await froca.getNote(noteId);
@@ -166,6 +168,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
             pathSegments = await treeService.getNotePathTitleComponents(resolvedPath);
         }
 
+        /* v8 ignore next 2 -- defensive guards: pathSegments is always a non-empty array (getNotePathTitleComponents never returns empty, and the root case yields ["⌂"]) */
         if (pathSegments) {
             if (pathSegments.length) {
                 $container.append($("<small>").append(treeService.formatNotePath(pathSegments)));
@@ -190,6 +193,7 @@ export function calculateHash({ notePath, ntxId, hoistedNoteId, viewScope = {} }
             const name = Object.keys(pair)[0];
             const value = (pair as Record<string, string | undefined>)[name];
 
+            /* v8 ignore next -- the `value || ""` fallback is unreachable: every retained param pair has a truthy value (falsy ones were filtered out above) */
             return `${encodeURIComponent(name)}=${encodeURIComponent(value || "")}`;
         })
         .join("&");
@@ -494,6 +498,7 @@ function getReferenceLinkTitleSync(href: string) {
     return note.title;
 }
 
+/* v8 ignore next -- the `print` device branch is evaluated once at module load; under test glob.device is undefined, so the false arm cannot be exercised */
 if (glob.device !== "print") {
     // TODO: Check why the event is not supported.
     //@ts-ignore

@@ -4,7 +4,7 @@ import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import cls from "../services/cls.js";
+import { cls } from "@triliumnext/core";
 import { type SQLiteSessionStore } from "./session_parser.js";
 
 let app: Application;

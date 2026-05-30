@@ -129,6 +129,8 @@ For rendering custom content inside a note:
 
 IMPORTANT: Always create the JSX code note as a child of the render note, not as a sibling or at the root. This keeps them organized together.
 
+Stateless example:
+
 ```jsx
 export default function MyRenderNote() {
     return (
@@ -138,6 +140,44 @@ export default function MyRenderNote() {
         </>
     );
 }
+```
+
+Stateful example — hooks MUST be imported from `"trilium:preact"`:
+
+```jsx
+import { useState } from "trilium:preact";
+
+export default function CelsiusToFahrenheit() {
+    const [celsius, setCelsius] = useState("");
+    const fahrenheit = celsius === "" ? "" : (Number(celsius) * 9 / 5 + 32).toFixed(2);
+    return (
+        <div>
+            <input
+                type="number"
+                value={celsius}
+                onInput={e => setCelsius(e.currentTarget.value)}
+            />
+            <span>{fahrenheit} °F</span>
+        </div>
+    );
+}
+```
+
+### Anti-patterns (do NOT do this)
+
+LLMs often invent syntax that does not exist in Trilium. Avoid these:
+
+- ❌ `trilium.preact.useState(...)` — `trilium` is not a global object; there is no `trilium.preact` namespace
+- ❌ `window.trilium.preact.useState(...)` — same; no such global
+- ❌ `React.useState(...)` / `import React from "react"` — Trilium uses Preact, NOT React
+- ❌ `const { useState } = await import("trilium:preact")` — dynamic imports break hooks; always use top-level `import`
+- ❌ `const { useState } = require("trilium:preact")` — JSX notes are ES modules, not CommonJS
+
+The ONLY correct way to use hooks or components is a top-level ES `import`:
+
+```jsx
+import { useState, useEffect } from "trilium:preact";
+import { showMessage } from "trilium:api";
 ```
 
 ## Script API

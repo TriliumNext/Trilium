@@ -48,15 +48,17 @@ vi.mock("electron", () => ({
     }
 }));
 
-// `log` reads RESOURCE_DIR / data-dir state at module-load time, which is not
-// available in the test process — stub it out so importing the provider
-// doesn't transitively initialise the server log subsystem.
-vi.mock("@triliumnext/server/src/services/log.js", () => ({
-    default: {
-        info: vi.fn(),
-        error: vi.fn()
-    }
-}));
+// `getLog()` throws when the log service hasn't been initialised via
+// `initializeCore` — and we don't want to spin up core in unit tests just to
+// satisfy a logger. Partial-mock core so `getLog` returns no-op stubs while
+// every other core export keeps its real implementation.
+vi.mock("@triliumnext/core", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@triliumnext/core")>();
+    return {
+        ...actual,
+        getLog: () => ({ info: vi.fn(), error: vi.fn() })
+    };
+});
 
 const { default: IpcMessagingProvider } = await import("./ipc_messaging_provider.js");
 

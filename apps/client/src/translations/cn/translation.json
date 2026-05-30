@@ -17,7 +17,11 @@
     "github_tooltip": "在 GitHub 上报告错误、提出功能建议或贡献代码",
     "license_tooltip": "查看许可证",
     "donate": "捐赠",
-    "donate_tooltip": "捐款支持这个项目"
+    "donate_tooltip": "捐款支持这个项目",
+    "channel": {
+      "nightly": "每夜版",
+      "standalone": "独立版"
+    }
   },
   "toast": {
     "critical-error": {
@@ -58,12 +62,15 @@
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
     "help_on_tree_prefix": "有关树前缀的帮助",
-    "prefix": "前缀： ",
+    "prefix": "前缀",
     "save": "保存",
     "branch_prefix_saved": "分支前缀已保存。",
     "edit_branch_prefix_multiple": "编辑 {{count}} 个分支的前缀",
     "branch_prefix_saved_multiple": "已为 {{count}} 个分支保存分支前缀。",
-    "affected_branches": "受影响的分支 {{count}}:"
+    "affected_branches": "受影响的分支 {{count}}:",
+    "preview_in_tree": "在树中预览",
+    "description": "仅添加在此分支的笔记标题之前。其他分支保留原标题。",
+    "cancel": "取消"
   },
   "bulk_actions": {
     "bulk_actions": "批量操作",
@@ -734,7 +741,8 @@
     "trilium_api_docs_button_title": "打开 Trilium API 文档",
     "save_to_note_button_title": "保存到笔记",
     "opening_api_docs_message": "正在打开 API 文档...",
-    "sql_console_saved_message": "SQL 控制台已保存到 {{note_path}}"
+    "sql_console_saved_message": "SQL 控制台已保存到 {{note_path}}",
+    "electron_api_docs_button_title": "打开 Electron API 文档"
   },
   "copy_image_reference_button": {
     "button_title": "复制图片引用到剪贴板，可粘贴到文本笔记中。"
@@ -863,7 +871,8 @@
     "title": "笔记地图",
     "fix-nodes": "固定节点",
     "link-distance": "链接距离",
-    "too-many-notes": "此子树包含 {{count}} 个笔记，超过了笔记地图中可显示的 {{max}} 个笔记的限制。"
+    "too-many-notes": "这里有 {{count}} 条笔记。全部显示可能会导致运行变慢。",
+    "show-anyway": "显示地图"
   },
   "note_paths": {
     "title": "笔记路径",
@@ -1191,7 +1200,13 @@
     "dark_theme": "深色",
     "modern_themes": "现代",
     "legacy_themes": "传统",
-    "custom_themes": "自定义"
+    "custom_themes": "自定义",
+    "recommended": "推荐",
+    "color_scheme": "配色方案",
+    "color_scheme_system": "跟随系统",
+    "color_scheme_light": "浅色",
+    "color_scheme_dark": "深色",
+    "color_scheme_custom_disabled": "配色方案覆盖不适用于自定义主题"
   },
   "zoom_factor": {
     "title": "缩放系数（仅桌面客户端有效）",
@@ -1947,7 +1962,12 @@
   "code_theme": {
     "title": "外观",
     "word_wrapping": "自动换行",
-    "color-scheme": "配色方案"
+    "color-scheme": "配色方案",
+    "theme_mode": "主题模式",
+    "match_app_appearance": "跟随应用外观",
+    "always_use_one_theme": "始终使用同一主题",
+    "light_theme": "浅色主题",
+    "dark_theme": "深色主题"
   },
   "cpu_arch_warning": {
     "title": "请下载ARM64版本",
@@ -2146,7 +2166,9 @@
     "save_status_error": "保存失败",
     "save_status_unsaved_tooltip": "还有一些更改尚未保存。它们将稍后自动保存。",
     "save_status_error_tooltip": "保存笔记时出错。如果可以，请尝试将笔记内容复制到其他位置并重新加载应用程序。",
-    "save_status_saving_tooltip": "更改正在保存。"
+    "save_status_saving_tooltip": "更改正在保存。",
+    "doc_url": "在线文档",
+    "doc_url_description": "点击即可在在线文档网站上查看本页。"
   },
   "status_bar": {
     "language_title": "更改内容语言",
@@ -2332,7 +2354,9 @@
     "add_provider": "添加AI提供商",
     "note_tools": "笔记访问",
     "sources_summary": "来自 {{sites}} 个网站的 {{count}} 个来源",
-    "stop": "停止"
+    "stop": "停止",
+    "edit_index": "编辑第 {{index}} 条（共 {{total}} 条）",
+    "retry": "重试"
   },
   "sidebar_chat": {
     "title": "AI对话",
@@ -2342,7 +2366,8 @@
     "empty_state": "开始对话",
     "history": "对话历史",
     "recent_chats": "最近对话",
-    "no_chats": "无历史对话"
+    "no_chats": "无历史对话",
+    "view_all_chats": "查看所有聊天"
   },
   "ocr": {
     "extracted_text": "提取文本（OCR）",
@@ -2400,7 +2425,7 @@
       "search_notes": "搜索笔记",
       "get_note": "获取笔记",
       "get_note_content": "获取笔记内容",
-      "update_note_content": "更新笔记内容",
+      "update_note_content": "重写笔记",
       "append_to_note": "追加到笔记",
       "create_note": "创建笔记",
       "get_attributes": "获取属性",
@@ -2417,8 +2442,13 @@
       "rename_note": "重命名笔记",
       "delete_note": "删除笔记",
       "move_note": "移动笔记",
-      "clone_note": "克隆笔记"
-    }
+      "clone_note": "克隆笔记",
+      "set_note_content": "重写笔记",
+      "edit_note_content": "编辑笔记"
+    },
+    "base_url": "基础 URL",
+    "base_url_description": "可选。覆盖默认的API端点——适用于自托管模型（如Ollama、LM Studio、vLLM）或代理服务器。",
+    "base_url_invalid": "基础 URL 必须以 http:// 或 https:// 开头"
   },
   "revisions": {
     "note_revisions": "笔记修订",
@@ -2474,7 +2504,8 @@
     "source_description_etapi": "通过外部 Trilium API 创建",
     "source_description_llm": "由 AI 智能助手创建",
     "source_description_restore": "在还原先前修订之前已保存",
-    "source_description_unknown": "来源不可用"
+    "source_description_unknown": "来源不可用",
+    "diff_identical": "此修订与当前笔记内容相同。"
   },
   "database": {
     "title": "数据库"
@@ -2493,7 +2524,8 @@
     "autocomplete_fuzzy_description": "影响“跳转到笔记”和笔记选择器。速度较慢，但能容忍拼写错误。"
   },
   "text_editor": {
-    "title": "编辑器"
+    "title": "编辑器",
+    "related_task_states": "待办事项列表中自定义复选框的状态"
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "从启动栏中移除"
@@ -2543,5 +2575,93 @@
   },
   "spreadsheet": {
     "read-only": "此注释为只读。"
+  },
+  "markdown_editor": {
+    "image_upload_failed": "无法上传图片“{{name}}”。"
+  },
+  "markdown_slash_commands": {
+    "date": "插入当前日期和时间",
+    "include": "添加另一条笔记",
+    "image": "上传并插入图片",
+    "link": "插入笔记链接",
+    "math": "插入数学公式块",
+    "footnote": "插入脚注",
+    "mermaid": "插入 Mermaid 图表",
+    "admonition": "插入{{type}}提示框"
+  },
+  "mobile_note_navigator": {
+    "back": "返回上一级",
+    "loading": "正在加载...",
+    "empty": "这个笔记下还没有子笔记。",
+    "children_count_other": "{{count}} 条笔记",
+    "add_child": "添加子笔记",
+    "more_actions": "更多操作"
+  },
+  "setup": {
+    "heading": "开始使用 Trilium",
+    "new-document": "新建知识库",
+    "new-document-description": "从一个全新的知识库开始，即刻上手。",
+    "sync-from-desktop": "连接桌面应用",
+    "sync-from-desktop-description": "您在另一台设备上已运行 Trilium 桌面应用。此设备将从该桌面应用同步数据。",
+    "sync-from-server": "连接到现有服务器",
+    "sync-from-server-description": "您已在其他地方运行 Trilium 服务器（无论是自托管还是云端部署）。此设备将从该服务器同步数据。",
+    "next": "下一步",
+    "init-in-progress": "正在初始化文档",
+    "redirecting": "您稍后将被重定向到应用程序。",
+    "title": "设置",
+    "sync-from-server-page-description": "在下方输入服务器信息，即可连接您现有的工作区。",
+    "sync-in-progress-title": "正在同步",
+    "sync-in-progress-description": "您的设备已连接，正在同步数据。",
+    "sync-in-progress-banner": "根据笔记数量，这可能需要一些时间。请在这段时间内不要切换到其他应用，直到同步完成。",
+    "button-back": "上一步",
+    "button-finish-setup": "完成设置",
+    "sync-step-connecting": "正在连接服务器",
+    "sync-step-syncing": "正在同步数据",
+    "sync-step-finalizing": "正在配置选项",
+    "create-new-document-options-title": "您想要如何开始？",
+    "create-new-document-options-with-demo": "包含演示内容",
+    "create-new-document-options-with-demo-description": "通过示例内容来探索 Trilium。",
+    "create-new-document-options-empty": "空白",
+    "create-new-document-options-empty-description": "从一个空白知识库开始。您可以稍后导入演示笔记。",
+    "create-new-document-title": "正在准备您的知识库",
+    "create-new-document-description": "稍等片刻即可。",
+    "sync-illustration-this-device": "此设备",
+    "sync-illustration-desktop-app": "您的桌面应用",
+    "sync-illustration-server": "您的服务器",
+    "sync-from-desktop-step1": "打开您桌面端的 Trilium Notes。",
+    "sync-from-desktop-step2": "在 Trilium 菜单中，点击选项。",
+    "sync-from-desktop-step3": "在笔记树中点击“同步”分类。",
+    "sync-from-desktop-step4": "将服务器实例地址改为右侧列出的地址之一，然后点击保存。",
+    "sync-from-desktop-step5": "点击“测试同步”按钮，确认连接是否成功。",
+    "sync-from-desktop-warning": "请确保两台设备处于同一网络。",
+    "sync-from-desktop-waiting": "正在等待连接…",
+    "advanced-options": "高级选项",
+    "sync-failed": "同步失败：{{message}}",
+    "server-host": "Trilium 服务器地址",
+    "server-host-placeholder": "https://<hostname>:<port>",
+    "server-password": "密码",
+    "proxy-server": "代理服务器（选填）",
+    "proxy-server-placeholder": "https://<hostname>:<port>",
+    "proxy-instruction": "如果留空代理设置，将使用系统代理。",
+    "dismiss-error": "关闭错误提示",
+    "wrong-password": "密码不正确，请再试一次。",
+    "language": "语言",
+    "continue": "继续",
+    "your-ip-addresses": "此设备的地址"
+  },
+  "text-editor": {
+    "checkbox-tooltip": "右键点击可查看更多任务状态。\n按 {{shortcut}} 可在各状态间循环切换。",
+    "edit-states-tooltip": "编辑任务状态",
+    "unknown-task-state": "未定义的自定义任务状态",
+    "task-state-dropped": "自定义任务状态定义“{{title}}”({{id}}) 因以下原因被丢弃：{{reason}}",
+    "validation-errors": {
+      "undefined-name": "未定义的标识符",
+      "invalid-name": "无效的标识符",
+      "duplicate-name": "重复的标识符",
+      "missing-title": "缺少标题",
+      "missing-icon": "缺少图标",
+      "invalid-symbol": "Markdown 符号应为一个字符，但不能是 \"[\", \" \", \"X\", 和 \"]\"",
+      "duplicate-symbol": "重复的 Markdown 符号"
+    }
   }
 }

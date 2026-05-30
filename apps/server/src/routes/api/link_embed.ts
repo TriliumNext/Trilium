@@ -3,7 +3,7 @@ import { ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 import { parse } from "node-html-parser";
 
-import log from "../../services/log.js";
+import { getLog } from "@triliumnext/core";
 import { safeFetch, validateUrl } from "../../services/safe_fetch.js";
 
 const MAX_RESPONSE_SIZE = 512 * 1024; // 512KB
@@ -197,7 +197,7 @@ async function getMetadata(req: Request) {
             embedType: "opengraph"
         } satisfies LinkEmbedMetadata;
     } catch (e: unknown) {
-        log.info(`Failed to fetch metadata for ${url}: ${e}`);
+        getLog().info(`Failed to fetch metadata for ${url}: ${e}`);
         return {
             url,
             title: validatedUrl.hostname,

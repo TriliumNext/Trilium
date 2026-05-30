@@ -2,14 +2,9 @@
  * LLM tools for note operations (search, read, create, update, append).
  */
 
-import { markdownImportService as markdownImport } from "@triliumnext/core";
+import { becca, markdownImportService as markdownImport, note_service as noteService, search as searchService, SearchContext, TaskContext } from "@triliumnext/core";
 import { z } from "zod";
 
-import becca from "../../../becca/becca.js";
-import noteService from "../../notes.js";
-import SearchContext from "../../search/search_context.js";
-import searchService from "../../search/services/search.js";
-import TaskContext from "../../task_context.js";
 import { applyTextEdits, getContentPreview, getNoteContentForLlm, getNoteMeta, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm,TOOL_LIMITS } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
@@ -98,7 +93,7 @@ export const noteTools = defineTools({
     },
 
     set_note_content: {
-        description: "Replace the ENTIRE content of a note. Only use this for a full rewrite or for rich-text ('text') notes. For small or localized changes to a non-text note, prefer edit_note_content — resending the whole note wastes tokens. For text notes, provide Markdown content.",
+        description: "Replace the ENTIRE content of a note. Only use this for a full rewrite or for rich-text ('text') notes. For small or localized changes to a non-text note, prefer edit_note_content — resending the whole note wastes tokens. For text notes, provide Markdown content. Returns the resulting content; do not call get_note_content afterwards to verify.",
         inputSchema: z.object({
             noteId: z.string().describe("The ID of the note to update"),
             content: z.string().describe("The new content for the note (Markdown for text notes, plain text for code notes)")
@@ -121,13 +116,14 @@ export const noteTools = defineTools({
             return {
                 success: true,
                 noteId: note.noteId,
-                title: note.getTitleOrProtected()
+                title: note.getTitleOrProtected(),
+                content: getNoteContentForLlm(note)
             };
         }
     },
 
     append_to_note: {
-        description: "Append content to the end of an existing note. For text notes, provide Markdown content.",
+        description: "Append content to the end of an existing note. For text notes, provide Markdown content. Returns the resulting (combined) content; do not call get_note_content afterwards to verify.",
         inputSchema: z.object({
             noteId: z.string().describe("The ID of the note to append to"),
             content: z.string().describe("The content to append (Markdown for text notes, plain text for code notes)")
@@ -163,7 +159,8 @@ export const noteTools = defineTools({
             return {
                 success: true,
                 noteId: note.noteId,
-                title: note.getTitleOrProtected()
+                title: note.getTitleOrProtected(),
+                content: getNoteContentForLlm(note)
             };
         }
     },
@@ -175,7 +172,9 @@ export const noteTools = defineTools({
             "changes to large notes — it is far cheaper. Each edit's oldText must appear",
             "exactly once in the note; include surrounding context to make it unique.",
             "Multiple edits are applied in order. Does not support rich-text ('text')",
-            "notes — use set_note_content for those."
+            "notes — use set_note_content for those.",
+            "Returns the resulting content with all edits applied; do not call",
+            "get_note_content afterwards to verify."
         ].join(" "),
         inputSchema: z.object({
             noteId: z.string().describe("The ID of the note to edit"),
@@ -220,14 +219,15 @@ export const noteTools = defineTools({
             return {
                 success: true,
                 noteId: note.noteId,
-                title: note.getTitleOrProtected()
+                title: note.getTitleOrProtected(),
+                content: getNoteContentForLlm(note)
             };
         }
     },
 
     create_note: {
         description: [
-            "Create a new note in the user's knowledge base. Returns the created note's ID and title.",
+            "Create a new note in the user's knowledge base. Returns the created note's ID, title, and stored content — do not call get_note_content afterwards to verify.",
             "Note types:",
             "- 'text': rich text (provide content in Markdown)",
             "- 'code': source code (must also set mime)",
@@ -283,7 +283,8 @@ export const noteTools = defineTools({
                     success: true,
                     noteId: note.noteId,
                     title: note.getTitleOrProtected(),
-                    type: note.type
+                    type: note.type,
+                    content: getNoteContentForLlm(note)
                 };
             } catch (err) {
                 return { error: err instanceof Error ? err.message : "Failed to create note" };

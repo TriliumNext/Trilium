@@ -1,6 +1,6 @@
 import { events as eventService } from "@triliumnext/core";
 
-import log from "../../services/log.js";
+import { getLog } from "@triliumnext/core";
 import shareRoot from "../share_root.js";
 import sql from "../sql.js";
 import type { SAttachmentRow, SAttributeRow, SBranchRow, SNoteRow } from "./entities/rows.js";
@@ -81,7 +81,7 @@ function load() {
 
     shaca.loaded = true;
 
-    log.info(`Shaca loaded ${rawNoteRows.length} notes, ${rawBranchRows.length} branches, ${rawAttachmentRows.length} attributes took ${Date.now() - start}ms`);
+    getLog().info(`Shaca loaded ${rawNoteRows.length} notes, ${rawBranchRows.length} branches, ${rawAttachmentRows.length} attributes took ${Date.now() - start}ms`);
 }
 
 function ensureLoad() {

@@ -1,8 +1,8 @@
-import becca from "@triliumnext/server/src/becca/becca";
-import BBranch from "@triliumnext/server/src/becca/entities/bbranch";
-import cls from "@triliumnext/server/src/services/cls";
-import { buildNote } from "@triliumnext/server/src/test/becca_easy_mocking";
+import { BBranch, becca, becca_easy_mocking } from "@triliumnext/core";
+import { cls } from "@triliumnext/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { buildNote } = becca_easy_mocking;
 
 import {
     codeNoteId,

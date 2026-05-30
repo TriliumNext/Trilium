@@ -179,7 +179,12 @@ function buildDataset(noteCount: number, opts: {
 
 // ── profiling tests ──────────────────────────────────────────────────
 
-describe("Search Profiling", () => {
+// These are diagnostic benchmarks (they just log timings), not correctness
+// tests. They build datasets up to 20k notes and are CPU-bound, so under the
+// parallel `forks` pool they contend for cores and blow past the test timeout.
+// Gate them behind an env var so they never flake CI; run on demand with
+// `RUN_SEARCH_PROFILING=1`.
+describe.runIf(process.env.RUN_SEARCH_PROFILING)("Search Profiling", () => {
 
     afterEach(() => {
         becca.reset();

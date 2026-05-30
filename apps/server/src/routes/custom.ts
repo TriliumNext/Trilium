@@ -1,10 +1,7 @@
-import { routeHelpers, scriptService, utils } from "@triliumnext/core";
+import { becca, cls, getLog, routeHelpers, scriptService, utils } from "@triliumnext/core";
 import type { Request, Response, Router } from "express";
 
-import becca from "../becca/becca.js";
 import { namespace } from "../cls_provider.js";
-import cls from "../services/cls.js";
-import log from "../services/log.js";
 import sql from "../services/sql.js";
 
 function handleRequest(req: Request, res: Response) {
@@ -53,7 +50,7 @@ function handleRequest(req: Request, res: Response) {
             }
         } catch (e: unknown) {
             const [errMessage, errStack] = utils.safeExtractMessageAndStackFromError(e);
-            log.error(`Testing path for label '${attr.attributeId}', regex '${attr.value}' failed with error: ${errMessage}, stack: ${errStack}`);
+            getLog().error(`Testing path for label '${attr.attributeId}', regex '${attr.value}' failed with error: ${errMessage}, stack: ${errStack}`);
             continue;
         }
 
@@ -64,7 +61,7 @@ function handleRequest(req: Request, res: Response) {
         if (attr.name === "customRequestHandler") {
             const note = attr.getNote();
 
-            log.info(`Handling custom request '${path}' with note '${note.noteId}'`);
+            getLog().info(`Handling custom request '${path}' with note '${note.noteId}'`);
 
             try {
                 scriptService.executeNote(note, {
@@ -74,7 +71,7 @@ function handleRequest(req: Request, res: Response) {
                 });
             } catch (e: unknown) {
                 const [errMessage, errStack] = utils.safeExtractMessageAndStackFromError(e);
-                log.error(`Custom handler '${note.noteId}' failed with: ${errMessage}, ${errStack}`);
+                getLog().error(`Custom handler '${note.noteId}' failed with: ${errMessage}, ${errStack}`);
                 res.setHeader("Content-Type", "text/plain").status(500).send(errMessage);
             }
         } else if (attr.name === "customResourceProvider") {
@@ -88,7 +85,7 @@ function handleRequest(req: Request, res: Response) {
 
     const message = `No handler matched for custom '${path}' request.`;
 
-    log.info(message);
+    getLog().info(message);
     res.setHeader("Content-Type", "text/plain").status(404).send(message);
 }
 

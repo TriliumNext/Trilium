@@ -1,16 +1,14 @@
-import { ValidationError } from "@triliumnext/core";
+import { note_service as noteService, ValidationError, ws } from "@triliumnext/core";
 import chokidar from "chokidar";
 import type { Request } from "express";
 import fs from "fs";
 import { Readable } from "stream";
 import tmp from "tmp";
 
-import becca from "../../becca/becca.js";
+import { becca } from "@triliumnext/core";
 import dataDirs from "../../services/data_dir.js";
-import log from "../../services/log.js";
-import noteService from "../../services/notes.js";
+import { getLog } from "@triliumnext/core";
 import utils from "../../services/utils.js";
-import ws from "../../services/ws.js";
 
 function updateFile(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
@@ -138,7 +136,7 @@ function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType
 
     createdTemporaryFiles.add(tmpObj.name);
 
-    log.info(`Saved temporary file ${tmpObj.name}`);
+    getLog().info(`Saved temporary file ${tmpObj.name}`);
 
     if (utils.isElectron) {
         chokidar.watch(tmpObj.name).on("change", (path, stats) => {
@@ -167,7 +165,7 @@ function uploadModifiedFileToNote(req: Request<{ noteId: string }>) {
 
     const note = becca.getNoteOrThrow(noteId);
 
-    log.info(`Updating note '${noteId}' with content from '${filePath}'`);
+    getLog().info(`Updating note '${noteId}' with content from '${filePath}'`);
 
     note.saveRevision();
 
@@ -190,7 +188,7 @@ function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) 
 
     const attachment = becca.getAttachmentOrThrow(attachmentId);
 
-    log.info(`Updating attachment '${attachmentId}' with content from '${filePath}'`);
+    getLog().info(`Updating attachment '${attachmentId}' with content from '${filePath}'`);
 
     attachment.getNote().saveRevision();
 

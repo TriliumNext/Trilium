@@ -1,20 +1,11 @@
-import { sanitize, ValidationError } from "@triliumnext/core";
+import { app_info as appInfo, attribute_formatter as attributeFormatter, attributes as attributeService, type BNote, cloning as cloneService, date_notes as dateNoteService, date_utils as dateUtils, note_service as noteService, sanitize, ValidationError, ws } from "@triliumnext/core";
 import type { Request } from "express";
 import { parse } from "node-html-parser";
 import path from "path";
 
-import type BNote from "../../becca/entities/bnote.js";
-import appInfo from "../../services/app_info.js";
-import attributeFormatter from "../../services/attribute_formatter.js";
-import attributeService from "../../services/attributes.js";
-import cloneService from "../../services/cloning.js";
-import dateNoteService from "../../services/date_notes.js";
-import dateUtils from "../../services/date_utils.js";
 import imageService from "../../services/image.js";
-import log from "../../services/log.js";
-import noteService from "../../services/notes.js";
+import { getLog } from "@triliumnext/core";
 import utils from "../../services/utils.js";
-import ws from "../../services/ws.js";
 
 interface Image {
     src: string;
@@ -155,7 +146,7 @@ export function processContent(images: Image[], note: BNote, content: string) {
             if (!dataUrl || !dataUrl.startsWith("data:image")) {
                 const excerpt = dataUrl ? dataUrl.substr(0, Math.min(100, dataUrl.length)) : "null";
 
-                log.info(`Image could not be recognized as data URL: ${excerpt}`);
+                getLog().info(`Image could not be recognized as data URL: ${excerpt}`);
                 continue;
             }
 
@@ -166,7 +157,7 @@ export function processContent(images: Image[], note: BNote, content: string) {
             const encodedTitle = encodeURIComponent(attachment.title);
             const url = `api/attachments/${attachment.attachmentId}/image/${encodedTitle}`;
 
-            log.info(`Replacing '${imageId}' with '${url}' in note '${note.noteId}'`);
+            getLog().info(`Replacing '${imageId}' with '${url}' in note '${note.noteId}'`);
 
             rewrittenContent = utils.replaceAll(rewrittenContent, imageId, url);
         }

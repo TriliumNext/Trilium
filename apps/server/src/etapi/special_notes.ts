@@ -1,7 +1,6 @@
-import { special_notes as specialNotesService } from "@triliumnext/core";
+import { date_notes as dateNotesService, special_notes as specialNotesService } from "@triliumnext/core";
 import type { Router } from "express";
 
-import dateNotesService from "../services/date_notes.js";
 import eu from "./etapi_utils.js";
 import mappers from "./mappers.js";
 

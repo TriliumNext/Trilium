@@ -1,8 +1,6 @@
 import { SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, type OptionMap } from "@triliumnext/commons";
-import { sql_init } from "@triliumnext/core";
+import { options as optionService, sql_init } from "@triliumnext/core";
 import type { Request, Response } from "express";
-
-import optionService from "../../services/options.js";
 
 function getFontCss(req: Request, res: Response) {
     res.setHeader("Content-Type", "text/css");

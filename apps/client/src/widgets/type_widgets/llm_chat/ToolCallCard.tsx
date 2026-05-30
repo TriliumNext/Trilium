@@ -186,9 +186,11 @@ function ToolCallLabel({ toolCall }: { toolCall: ToolCall }) {
 /** A single tool call section within a ToolCallCard. */
 function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
     const hasError = toolCall.isError;
+    const isStreamingInput = toolCall.inputStreaming !== undefined;
 
     // The `edit_note_content` tool gets a fancy unified diff instead of a raw input table.
-    const noteContentEdits = toolCall.toolName === "edit_note_content"
+    // Suppress the diff view while input is still streaming — the partial JSON isn't parseable yet.
+    const noteContentEdits = !isStreamingInput && toolCall.toolName === "edit_note_content"
         ? parseNoteContentEdits(toolCall.input?.edits)
         : null;
 
@@ -197,10 +199,15 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
             icon={toolCallIcon(toolCall)}
             label={<ToolCallLabel toolCall={toolCall} />}
             className={hasError ? "llm-chat-tool-call-error" : ""}
-            open={noteContentEdits ? isSmallEdit(noteContentEdits) : undefined}
+            open={noteContentEdits ? isSmallEdit(noteContentEdits) : isStreamingInput || undefined}
         >
-            <div className="llm-chat-tool-call-input">
-                {noteContentEdits ? (
+            <div className={`llm-chat-tool-call-input ${isStreamingInput ? "llm-chat-tool-call-input-streaming" : ""}`}>
+                {isStreamingInput ? (
+                    <>
+                        <strong>{t("llm_chat.input_streaming")}</strong>
+                        <pre>{toolCall.inputStreaming}</pre>
+                    </>
+                ) : noteContentEdits ? (
                     <EditNoteContentDiff edits={noteContentEdits} />
                 ) : (
                     <>

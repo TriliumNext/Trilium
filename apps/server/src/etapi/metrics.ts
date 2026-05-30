@@ -1,6 +1,6 @@
+import { app_info as appInfo } from "@triliumnext/core";
 import type { NextFunction,Request, Response, Router } from "express";
 
-import appInfo from "../services/app_info.js";
 import sql from "../services/sql.js";
 import eu from "./etapi_utils.js";
 

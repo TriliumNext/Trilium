@@ -52,6 +52,8 @@ site/
 apps/*/coverage
 scripts/translation/.language*.json
 
-.claude
+# Ignore local Claude Code settings, but keep shared project skills.
+.claude/*
+!.claude/skills/
 .pnpm-store
 apps/edit-docs/output.zip

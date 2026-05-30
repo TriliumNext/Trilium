@@ -23,6 +23,7 @@ async function pasteAfter(afterBranchId: string) {
         const clipboardBranches = clipboardBranchIds.map((branchId) => froca.getBranch(branchId));
 
         for (const clipboardBranch of clipboardBranches) {
+            /* v8 ignore next 3 -- isClipboardEmpty() already filtered out non-existent branches, so this is defensive */
             if (!clipboardBranch) {
                 continue;
             }
@@ -36,9 +37,11 @@ async function pasteAfter(afterBranchId: string) {
         }
 
         // copy will keep clipboardBranchIds and clipboardMode, so it's possible to paste into multiple places
+    /* v8 ignore start -- clipboardMode is only ever set to "cut"/"copy" while the clipboard is non-empty */
     } else {
         throwError(`Unrecognized clipboard mode=${clipboardMode}`);
     }
+    /* v8 ignore stop */
 }
 
 async function pasteInto(parentBranchId: string) {
@@ -55,6 +58,7 @@ async function pasteInto(parentBranchId: string) {
         const clipboardBranches = clipboardBranchIds.map((branchId) => froca.getBranch(branchId));
 
         for (const clipboardBranch of clipboardBranches) {
+            /* v8 ignore next 3 -- isClipboardEmpty() already filtered out non-existent branches, so this is defensive */
             if (!clipboardBranch) {
                 continue;
             }
@@ -68,9 +72,11 @@ async function pasteInto(parentBranchId: string) {
         }
 
         // copy will keep clipboardBranchIds and clipboardMode, so it's possible to paste into multiple places
+    /* v8 ignore start -- clipboardMode is only ever set to "cut"/"copy" while the clipboard is non-empty */
     } else {
         throwError(`Unrecognized clipboard mode=${clipboardMode}`);
     }
+    /* v8 ignore stop */
 }
 
 async function copy(branchIds: string[]) {

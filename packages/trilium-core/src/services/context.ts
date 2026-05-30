@@ -29,6 +29,22 @@ export function wrap(callback: (...args: any[]) => any) {
     };
 }
 
+export function init<T>(callback: () => T): T {
+    return getContext().init(callback);
+}
+
+export function get<T = any>(key: string): T | undefined {
+    return getContext().get<T>(key);
+}
+
+export function set(key: string, value: unknown): void {
+    getContext().set(key, value);
+}
+
+export function reset(): void {
+    getContext().reset();
+}
+
 export function getHoistedNoteId() {
     return getContext().get("hoistedNoteId") || "root";
 }

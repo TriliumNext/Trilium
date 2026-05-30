@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import MIGRATIONS from "./migrations.js";
+import { MIGRATIONS } from "./migrations.js";
 
 describe("migrations", () => {
     it("should have unique version numbers", () => {

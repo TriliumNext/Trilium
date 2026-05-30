@@ -1,10 +1,10 @@
-import { beforeAll, describe, expect, it } from "vitest";
-import config from "../../src/services/config.js";
-import { login } from "./utils.js";
+import { cls, date_notes } from "@triliumnext/core";
 import { Application } from "express";
 import supertest from "supertest";
-import date_notes from "../../src/services/date_notes.js";
-import cls from "../../src/services/cls.js";
+import { beforeAll, describe, expect, it } from "vitest";
+
+import config from "../../src/services/config.js";
+import { login } from "./utils.js";
 
 let app: Application;
 let token: string;

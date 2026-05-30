@@ -8,9 +8,9 @@ import isAnimated from "is-animated";
 import isSvg from "is-svg";
 import { Jimp } from "jimp";
 
+import { options as optionService } from "@triliumnext/core";
 import type { ImageProvider, ImageFormat, ProcessedImage } from "@triliumnext/core/src/services/image_provider.js";
-import log from "./log.js";
-import optionService from "./options.js";
+import { getLog } from "@triliumnext/core";
 
 async function getImageTypeFromBuffer(buffer: Uint8Array): Promise<ImageFormat | null> {
     // Check for SVG first (text-based)
@@ -38,7 +38,7 @@ async function shrinkImage(buffer: Uint8Array, originalName: string): Promise<Ui
         finalImageBuffer = await resize(buffer, jpegQuality);
     } catch (e: unknown) {
         const error = e as Error;
-        log.error(`Failed to resize image '${originalName}', stack: ${error.stack}`);
+        getLog().error(`Failed to resize image '${originalName}', stack: ${error.stack}`);
         finalImageBuffer = buffer;
     }
 
@@ -68,7 +68,7 @@ async function resize(buffer: Uint8Array, quality: number): Promise<Uint8Array> 
 
     const resultBuffer = await image.getBuffer("image/jpeg", { quality });
 
-    log.info(`Resizing image of ${resultBuffer.byteLength} took ${Date.now() - start}ms`);
+    getLog().info(`Resizing image of ${resultBuffer.byteLength} took ${Date.now() - start}ms`);
 
     return resultBuffer;
 }
@@ -93,16 +93,24 @@ export const serverImageProvider: ImageProvider = {
 
         if (!origImageFormat || !["jpg", "png"].includes(origImageFormat.ext)) {
             shouldShrink = false;
+        /* v8 ignore start -- rare defensive guard: spec-compliant animated images are
+           already excluded above (file-type reports animated PNG as "apng" and animated
+           GIF/WebP as gif/webp). Only a pathological PNG with 512+ chunks before its acTL
+           chunk slips through (file-type bails to "png" at its chunk-scan limit while
+           is-animated still flags it), so this guard correctly skips recompressing it. */
         } else if (isAnimated(Buffer.from(buffer))) {
-            // Recompression of animated images will make them static
+            // Recompression of animated images would make them static.
             shouldShrink = false;
         }
+        /* v8 ignore stop */
 
         let finalBuffer: Uint8Array;
         let format: ImageFormat;
 
         if (compressImages && shouldShrink) {
             finalBuffer = await shrinkImage(buffer, originalName);
+            /* v8 ignore next -- the "jpg" fallback is unreachable: shrinkImage returns
+               either a detectable JPEG or the (jpg/png-detectable) original buffer. */
             format = (await getImageTypeFromBuffer(finalBuffer)) || { ext: "jpg", mime: "image/jpeg" };
         } else {
             finalBuffer = buffer;

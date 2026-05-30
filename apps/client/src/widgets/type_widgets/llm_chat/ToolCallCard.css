@@ -119,3 +119,20 @@
 .llm-chat-tool-call-result-error pre {
     color: var(--danger-color, #dc3545);
 }
+
+/* Streaming-input view: raw JSON arriving from the LLM, shown until it's parsed.
+   The trailing block-caret hints that text is still landing. */
+.llm-chat-tool-call-input-streaming pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.llm-chat-tool-call-input-streaming pre::after {
+    content: "▍";
+    color: var(--muted-text-color);
+    animation: llm-chat-tool-call-caret 1s steps(1) infinite;
+}
+
+@keyframes llm-chat-tool-call-caret {
+    50% { opacity: 0; }
+}

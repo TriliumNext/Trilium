@@ -1,13 +1,12 @@
-import { NotFoundError, routes, ValidationError } from "@triliumnext/core";
+import { entity_changes as entityChangesService, NotFoundError, routes, ValidationError } from "@triliumnext/core";
 import express, { type RequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
 import multer from "multer";
 
 import { namespace } from "../cls_provider.js";
 import auth from "../services/auth.js";
-import cls from "../services/cls.js";
-import entityChangesService from "../services/entity_changes.js";
-import log from "../services/log.js";
+import { cls } from "@triliumnext/core";
+import { getLog } from "@triliumnext/core";
 import sql from "../services/sql.js";
 import { safeExtractMessageAndStackFromError } from "../services/utils.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
@@ -34,7 +33,7 @@ export function apiResultHandler(req: express.Request, res: express.Response, re
         const [statusCode, response] = result;
 
         if (statusCode !== 200 && statusCode !== 201 && statusCode !== 204) {
-            log.info(`${req.method} ${req.originalUrl} returned ${statusCode} with response ${JSON.stringify(response)}`);
+            getLog().info(`${req.method} ${req.originalUrl} returned ${statusCode} with response ${JSON.stringify(response)}`);
         }
 
         return send(res, statusCode, response);
@@ -117,18 +116,18 @@ function handleResponse(resultHandler: ApiResultHandler, req: express.Request, r
     // Skip result handling if the response has already been handled
     if (res.triliumResponseHandled) {
         // Just log the request without additional processing
-        log.request(req, res, Date.now() - start, 0);
+        getLog().request(req, res, Date.now() - start, 0);
         return;
     }
 
     const responseLength = resultHandler(req, res, result);
-    log.request(req, res, Date.now() - start, responseLength);
+    getLog().request(req, res, Date.now() - start, responseLength);
 }
 
 function handleException(e: unknown | Error, method: HttpMethod, path: string, res: express.Response) {
     const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
 
-    log.error(`${method} ${path} threw exception: '${errMessage}', stack: ${errStack}`);
+    getLog().error(`${method} ${path} threw exception: '${errMessage}', stack: ${errStack}`);
 
     // Skip sending response if it's already been handled by the route handler
     if (res.triliumResponseHandled || res.headersSent) {

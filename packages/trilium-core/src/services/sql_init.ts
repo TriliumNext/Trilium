@@ -206,6 +206,15 @@ async function createInitialDatabase(skipDemoDb?: boolean) {
     log.info("Schema and initial content generated.");
 
     initDbConnection();
+
+    // `initNotSyncedOptions(true, ...)` above already set the "initialized"
+    // option, so `setDbAsInitialized` would short-circuit on its
+    // `!isDbInitialized()` guard. Emit the event here directly so downstream
+    // listeners (e.g. the desktop's setup→main window swap) still fire on the
+    // "create new document" path, matching the behaviour of the sync flow
+    // which goes through `setDbAsInitialized` via `syncFinished`.
+    eventService.emit(eventService.DB_INITIALIZED);
+    log.info("Database initialization completed, emitted DB_INITIALIZED event");
 }
 
 async function createDatabaseForSync(options: OptionRow[], syncServerHost = "", syncProxy = "") {

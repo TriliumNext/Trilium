@@ -5,7 +5,7 @@ import type express from "express";
 import { WebSocket, WebSocketServer } from "ws";
 
 import config from "./config.js";
-import log from "./log.js";
+import { getLog } from "@triliumnext/core";
 import { randomString } from "./utils.js";
 
 type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
@@ -32,7 +32,7 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
                     const allowed = (info.req as any).session.loggedIn || (config.General && config.General.noAuthentication);
 
                     if (!allowed) {
-                        log.error("WebSocket connection not allowed: session is not logged in.");
+                        getLog().error("WebSocket connection not allowed: session is not logged in.");
                     }
 
                     done(allowed);
@@ -79,7 +79,7 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
 
         if (this.webSocketServer) {
             if (message.type !== "sync-failed" && message.type !== "api-log-messages") {
-                log.info(`Sending message to all clients: ${jsonStr}`);
+                getLog().info(`Sending message to all clients: ${jsonStr}`);
             }
 
             this.webSocketServer.clients.forEach((client) => {

@@ -86,6 +86,9 @@ jobs:
           os: linux
           arch: ${{ matrix.arch }}
 
+      - name: Copy test fixture database
+        run: cp packages/trilium-core/src/test/fixtures/document.db apps/server/spec/db/document.db
+
       - name: Unpack and start the server
         run: |
           version=$(node --eval "console.log(require('./package.json').version)")

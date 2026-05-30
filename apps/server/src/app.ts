@@ -18,7 +18,7 @@ import error_handlers from "./routes/error_handlers.js";
 import mcpRoutes from "./routes/mcp.js";
 import routes from "./routes/routes.js";
 import config from "./services/config.js";
-import log from "./services/log.js";
+import { getLog } from "@triliumnext/core";
 import openID from "./services/open_id.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
 import utils, { getResourceDir, isDev } from "./services/utils.js";
@@ -76,7 +76,7 @@ export default async function buildApp() {
 
     let resourcePolicy = config["Network"]["corsResourcePolicy"] as 'same-origin' | 'same-site' | 'cross-origin' | undefined;
     if(resourcePolicy !== 'same-origin' && resourcePolicy !== 'same-site' && resourcePolicy !== 'cross-origin') {
-        log.error(`Invalid CORS Resource Policy value: '${resourcePolicy}', defaulting to 'same-origin'`);
+        getLog().error(`Invalid CORS Resource Policy value: '${resourcePolicy}', defaulting to 'same-origin'`);
         resourcePolicy = 'same-origin';
     }
 

@@ -8,7 +8,7 @@ import server from "./server.js";
 
 type ErrorHandler = (e: unknown) => void;
 
-async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: ErrorHandler) {
+export async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: ErrorHandler) {
     const relations = note.getRelations("renderNote");
     const renderNoteIds = relations.map((rel) => rel.value).filter((noteId) => noteId);
 
@@ -52,7 +52,7 @@ async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: ErrorHand
     }
 }
 
-async function renderIfJsx(bundle: Bundle, result: unknown, $el: JQuery<HTMLElement>, onError?: ErrorHandler) {
+export async function renderIfJsx(bundle: Bundle, result: unknown, $el: JQuery<HTMLElement>, onError?: ErrorHandler) {
     // Ensure the root script note is actually a JSX.
     const rootScriptNoteId = await froca.getNote(bundle.noteId);
     if (rootScriptNoteId?.mime !== "text/jsx") return;

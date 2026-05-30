@@ -14,10 +14,10 @@
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
 ![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
 ![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads
-(所有资产，所有历史版本)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![翻译状态](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub Downloads (all assets, all
+releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![Translation
+status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -203,12 +203,12 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-Alternatively, if you have Nix installed:
+或者，如果您安装了 Nix：
 ```shell
-# Run directly
+# 直接运行 
 nix run .#edit-docs
 
-# Or install to your profile
+#或安装到您的配置文件 
 nix profile install .#edit-docs
 trilium-edit-docs
 ```
@@ -229,7 +229,7 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 
 详情请参阅[文档指南](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)。如有更多疑问，欢迎通过上方“联系我们”部分提供的链接与我们沟通。
 
-## 💖 Sponsors
+## 💖 赞助者
 
 <table>
   <tr>
@@ -268,8 +268,7 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 
 若没有支撑其背后的技术，Trilium 项目便无法实现：
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - 文本笔记背后的可视化编辑器。
 * [CodeMirror](https://github.com/codemirror/CodeMirror) —— 支持海量编程语言的代码编辑器。
 * [Excalidraw](https://github.com/excalidraw/excalidraw) —— 画布笔记中使用的无限白板。
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— 提供思维导图功能。

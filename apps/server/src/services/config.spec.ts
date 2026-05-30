@@ -303,6 +303,37 @@ corsAllowOrigin=https://ini-cors.com
         });
     });
 
+    describe("config.ini bootstrapping", () => {
+        it("creates config.ini from the sample when it does not yet exist", async () => {
+            // existsSync false -> the bootstrap branch copies config-sample.ini.
+            vi.mocked(fs.existsSync).mockReturnValue(false);
+            const sampleContents = "[General]\ninstanceName=from-sample";
+            vi.mocked(fs.readFileSync).mockImplementation((path) => {
+                if (String(path).includes("config-sample.ini")) {
+                    return Buffer.from(sampleContents) as any;
+                }
+                return sampleContents as any;
+            });
+
+            const { default: config } = await import("./config.js");
+
+            expect(fs.writeFileSync).toHaveBeenCalledWith("/test/config.ini", sampleContents);
+            expect(config.General.instanceName).toBe("from-sample");
+        });
+    });
+
+    describe("Boolean transformation edge cases", () => {
+        it("defaults unrecognized boolean-ish values to false", async () => {
+            // "yes" is not handled by envToBoolean nor the 1/0 checks -> falls
+            // through to the default `return false` branch of transformBoolean.
+            process.env.TRILIUM_GENERAL_NOAUTHENTICATION = "yes";
+
+            const { default: config } = await import("./config.js");
+
+            expect(config.General.noAuthentication).toBe(false);
+        });
+    });
+
     describe("Default Values", () => {
         it("should use correct default values when no config is provided", async () => {
             const { default: config } = await import("./config.js");

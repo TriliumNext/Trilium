@@ -1,9 +1,9 @@
-import { createAnthropic, type AnthropicProvider as AnthropicSDKProvider } from "@ai-sdk/anthropic";
-import { stepCountIs, streamText, type ModelMessage, type SystemModelMessage, type ToolSet } from "ai";
+import { type AnthropicProvider as AnthropicSDKProvider,createAnthropic } from "@ai-sdk/anthropic";
 import type { LlmMessage } from "@triliumnext/commons";
+import { type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type ToolSet } from "ai";
 
 import type { LlmProviderConfig, StreamResult } from "../types.js";
-import { BaseProvider, buildModelList } from "./base_provider.js";
+import { BaseProvider, buildModelList, buildModelMessage } from "./base_provider.js";
 
 /** Anthropic ephemeral prompt-caching breakpoint. */
 const CACHE_CONTROL = { anthropic: { cacheControl: { type: "ephemeral" as const } } };
@@ -130,15 +130,18 @@ export class AnthropicProvider extends BaseProvider {
         for (let i = 0; i < chatMessages.length; i++) {
             const m = chatMessages[i];
             const isLastBeforeNewTurn = i === chatMessages.length - 2;
-            // Anthropic rejects empty text content blocks. Replace empty
-            // content (e.g. tool-only assistant turns) with a placeholder
-            // to preserve conversation flow.
-            const content = m.content || "(tool use)";
-            coreMessages.push({
-                role: m.role as "user" | "assistant",
-                content,
-                ...(isLastBeforeNewTurn && { providerOptions: CACHE_CONTROL })
-            });
+            // Anthropic rejects empty text content blocks. For purely-empty
+            // string content (e.g. tool-only assistant turns), substitute a
+            // placeholder so the turn still has a body.
+            const normalized: LlmMessage = (typeof m.content === "string" && !m.content)
+                ? { ...m, content: "(tool use)" }
+                : m;
+            const base = buildModelMessage(normalized);
+            coreMessages.push(
+                isLastBeforeNewTurn
+                    ? { ...base, providerOptions: CACHE_CONTROL }
+                    : base
+            );
         }
 
         return coreMessages;

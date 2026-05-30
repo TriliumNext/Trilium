@@ -1,8 +1,6 @@
 import type { HiddenSubtreeItem } from "@triliumnext/commons";
+import type { NoteMeta, NoteMetaFile } from "@triliumnext/core";
 import path from "path";
-
-import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
-import type { NoteMetaFile } from "@triliumnext/server/src/services/meta/note_meta.js";
 
 /**
  * Callback that defines how a text note is represented in the help meta.

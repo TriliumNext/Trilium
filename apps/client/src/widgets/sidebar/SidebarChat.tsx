@@ -151,13 +151,6 @@ export default function SidebarChat() {
         await chat.handleSubmit(e);
     }, [chatNoteId, chat]);
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit(e);
-        }
-    }, [handleSubmit]);
-
     const handleNewChat = useCallback(async () => {
         // Save any pending changes before switching
         await spacedUpdate.updateNowIfNecessary();
@@ -298,11 +291,9 @@ export default function SidebarChat() {
                 />
                 <ChatInputBar
                     chat={chat}
-                    rows={2}
                     activeNoteId={activeNoteId ?? undefined}
                     activeNoteTitle={activeNote?.title}
                     onSubmit={handleSubmit}
-                    onKeyDown={handleKeyDown}
                 />
             </div>
         </RightPanelWidget>

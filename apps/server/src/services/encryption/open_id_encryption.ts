@@ -82,6 +82,9 @@ function verifyOpenIDSubjectIdentifier(subjectIdentifier: string) {
     const savedHash = sql.getValue(
         "SELECT userIDVerificationHash FROM user_data"
     );
+    /* v8 ignore next 4 -- unreachable: the same single user_data row already
+       yielded a non-null salt above, so this column query cannot return undefined
+       (a NULL column yields null, not undefined). */
     if (savedHash === undefined) {
         console.log("verification hash undefined");
         return undefined;

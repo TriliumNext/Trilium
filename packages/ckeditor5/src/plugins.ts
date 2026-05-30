@@ -20,6 +20,7 @@ import SyntaxHighlighting from "./plugins/syntax_highlighting/index.js";
 import { Kbd } from "@triliumnext/ckeditor5-keyboard-marker";
 import { Mermaid } from "@triliumnext/ckeditor5-mermaid";
 import { Admonition } from "@triliumnext/ckeditor5-admonition";
+import { Collapsible } from "@triliumnext/ckeditor5-collapsible";
 import { Footnotes } from "@triliumnext/ckeditor5-footnotes";
 import { Math, AutoformatMath } from "@triliumnext/ckeditor5-math";
 import CopyAnchorLinkButton from "./plugins/copy_anchor_link.js";
@@ -80,6 +81,7 @@ const EXTERNAL_PLUGINS: typeof Plugin[] = [
     Kbd,
     Mermaid,
     Admonition,
+    Collapsible,
     Footnotes,
     Math,
 	AutoformatMath

@@ -10,16 +10,20 @@ function escapeForCharClass(char: string): string {
 }
 
 function stripTaskMarkerFromTokens(tokens: Token[] | undefined, stripPattern: RegExp): void {
+    /* v8 ignore start -- defensive: renderToHtml always passes a non-empty token array */
     if (!tokens || tokens.length === 0) {
         return;
     }
+    /* v8 ignore stop */
     const first = tokens[0] as Token & { text?: string; raw?: string; tokens?: Token[] };
+    /* v8 ignore start -- defensive: the marker-bearing first token always has string text/raw */
     if (typeof first.text === "string") {
         first.text = first.text.replace(stripPattern, "");
     }
     if (typeof first.raw === "string") {
         first.raw = first.raw.replace(stripPattern, "");
     }
+    /* v8 ignore stop */
     if (Array.isArray(first.tokens)) {
         stripTaskMarkerFromTokens(first.tokens, stripPattern);
     }
@@ -62,9 +66,11 @@ function createTaskStateDetector(states: TaskStateDef[]): (token: Token) => void
             return;
         }
         const name = symbolToName.get(match[1]);
+        /* v8 ignore start -- defensive: match[1] is always a symbolToName key */
         if (!name) {
             return;
         }
+        /* v8 ignore stop */
         item.task = true;
         item.checked = false;
         item._taskState = name;
@@ -241,6 +247,7 @@ function restoreFromMap(text: string, map: Map<string, string>): string {
     const pattern = [ ...map.keys() ]
         .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
         .join("|");
+    /* v8 ignore next -- defensive: every regex match is a map key, so the ?? fallback is unreachable */
     return text.replace(new RegExp(pattern, "g"), (match) => map.get(match) ?? match);
 }
 

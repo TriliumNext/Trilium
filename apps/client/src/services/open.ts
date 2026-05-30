@@ -9,7 +9,7 @@ interface TmpResponse {
     tmpFilePath: string;
 }
 
-function checkType(type: string) {
+export function checkType(type: string) {
     if (type !== "notes" && type !== "attachments") {
         throw new Error(`Unrecognized type '${type}', should be 'notes' or 'attachments'`);
     }

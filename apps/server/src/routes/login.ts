@@ -1,13 +1,11 @@
-import { ValidationError, password_encryption } from "@triliumnext/core";
-import { i18n } from "@triliumnext/core";
+import { i18n, password as passwordService, password_encryption, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from 'express';
 
 import appPath from "../services/app_path.js";
 import assetPath, { assetUrlFragment } from "../services/asset_path.js";
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
-import passwordService from "../services/encryption/password.js";
 import recoveryCodeService from '../services/encryption/recovery_codes.js';
-import log from "../services/log.js";
+import { getLog } from "@triliumnext/core";
 import openID from '../services/open_id.js';
 import totp from '../services/totp.js';
 
@@ -156,9 +154,9 @@ function verifyTOTP(submittedTotpToken: string) {
 function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' = 'password') {
     // note that logged IP address is usually meaningless since the traffic should come from a reverse proxy
     if (totp.isTotpEnabled()) {
-        log.info(`WARNING: Wrong ${errorType} from ${req.ip}, rejecting.`);
+        getLog().info(`WARNING: Wrong ${errorType} from ${req.ip}, rejecting.`);
     } else {
-        log.info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
+        getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
     }
 
     res.status(401).render('login', {

@@ -1786,6 +1786,7 @@
     "empty_state": "Start a conversation by typing a message below.",
     "searching_web": "Searching the web...",
     "web_search": "Web search",
+    "web_search_unavailable_gemini": "Not available on Gemini models while note access is on — Google's API does not allow combining both. Disable note access or switch to a different provider to use web search.",
     "note_tools": "Note access",
     "sources": "Sources",
     "sources_summary": "{{count}} sources from {{sites}} sites",
@@ -1795,6 +1796,7 @@
     "thought_process": "Thought process",
     "tool_calls": "{{count}} tool call(s)",
     "input": "Input",
+    "input_streaming": "Input (streaming…)",
     "edit_index": "Edit {{index}} of {{total}}",
     "result": "Result",
     "error": "Error",
@@ -1812,7 +1814,11 @@
     "no_provider_message": "No AI provider configured. Add one to start chatting.",
     "add_provider": "Add AI Provider",
     "stop": "Stop",
-    "retry": "Retry"
+    "retry": "Retry",
+    "attach_file": "Attach image, PDF, or text file",
+    "remove_attachment": "Remove attachment",
+    "attachment_upload_failed": "Failed to upload \"{{name}}\".",
+    "attachment_unsupported_type": "\"{{name}}\" isn't a supported attachment type. Use an image (PNG, JPEG, GIF, WebP), a PDF, or a text/source file."
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -2670,6 +2676,13 @@
   },
   "text-editor": {
     "checkbox-tooltip": "Right click for more task states.\nPress {{shortcut}} to cycle between states.",
+    "collapsible-body-placeholder": "Type the content here...",
+    "collapsible-button-label": "Collapsible block",
+    "collapsible-handle-tooltip": "Drag to reposition the collapsible block",
+    "collapsible-select-label": "Select collapsible block",
+    "collapsible-title-placeholder": "Summary",
+    "collapsible-toggle-label": "Toggle collapsible block",
+    "collapsible-tooltip": "Click on the arrow or press {{shortcut}} to collapse/expand.",
     "edit-states-tooltip": "Edit task states",
     "unknown-task-state": "Undefined custom task state",
     "task-state-dropped": "Dropped custom task state definition \"{{title}}\" ({{id}}) due to: {{reason}}",

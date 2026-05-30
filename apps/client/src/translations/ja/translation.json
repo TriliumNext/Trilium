@@ -2356,7 +2356,13 @@
     "sources_summary": "{{count}} 件のソースを {{sites}} サイトから取得",
     "stop": "停止",
     "edit_index": "{{total}} 件中 {{index}} 件目を編集",
-    "retry": "再試行"
+    "retry": "再試行",
+    "web_search_unavailable_gemini": "ノートへのアクセスが有効になっている場合は Gemini モデルは利用できません — Google の API では、両方を同時に使用できないためです。ウェブ検索を使用するには、ノートへのアクセスを無効にするか、別のプロバイダに切り替えてください。",
+    "input_streaming": "入力（ストリーミング…）",
+    "attach_file": "画像、PDF、またはテキストファイルを添付",
+    "remove_attachment": "添付ファイルを削除",
+    "attachment_upload_failed": "\"{{name}}\" のアップロードに失敗しました。",
+    "attachment_unsupported_type": "\"{{name}}\" はサポートされていない添付ファイル形式です。画像（PNG、JPEG、GIF、WebP）、PDF、またはテキスト/ソースファイルをご利用ください。"
   },
   "sidebar_chat": {
     "title": "AI チャット",

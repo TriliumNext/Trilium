@@ -5,7 +5,7 @@ import ClsHookedExecutionContext from "@triliumnext/server/src/cls_provider.js";
 import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
 import ServerPlatformProvider from "@triliumnext/server/src/platform_provider.js";
 import { serverImageProvider } from "@triliumnext/server/src/services/image_provider.js";
-import windowService from "@triliumnext/server/src/services/window.js";
+import windowService from "@triliumnext/desktop/src/services/window.js";
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import NodejsZipProvider from "@triliumnext/server/src/zip_provider.js";
 import { type Archiver, ZipArchive } from "archiver";
@@ -57,7 +57,7 @@ export async function initializeEditDocsCore() {
             provider: dbProvider,
             isReadOnly: false,
             async onTransactionCommit() {
-                const ws = (await import("@triliumnext/server/src/services/ws.js")).default;
+                const { ws } = await import("@triliumnext/core");
                 ws.sendTransactionEntityChangesToAllClients();
             },
             onTransactionRollback: () => {}
@@ -95,7 +95,7 @@ export function startElectron(callback: () => void): DeferredPromise<void> {
         await startTriliumServer();
 
         // Create the main window.
-        await windowService.createMainWindow(electron.app);
+        await windowService.createMainWindow();
 
         callback();
     };

@@ -1,7 +1,7 @@
 import { ForbiddenError, HttpError, NotFoundError } from "@triliumnext/core";
 import type { Application, NextFunction, Request, Response } from "express";
 
-import log from "../services/log.js";
+import { getLog } from "@triliumnext/core";
 
 function register(app: Application) {
 
@@ -16,7 +16,7 @@ function register(app: Application) {
             const csrfHeader = req.headers["x-csrf-token"];
             const csrfHeaderPrefix = typeof csrfHeader === "string" ? csrfHeader.slice(0, 8) : undefined;
             const tokenInfo = csrfHeaderPrefix ? ` (token prefix: ${csrfHeaderPrefix})` : "";
-            log.error(`Invalid CSRF token on ${req.method} ${req.url}${tokenInfo}`);
+            getLog().error(`Invalid CSRF token on ${req.method} ${req.url}${tokenInfo}`);
             return next(new ForbiddenError("Invalid CSRF token"));
         }
 
@@ -37,7 +37,7 @@ function register(app: Application) {
             ? err
             : `${statusCode} ${req.method} ${req.url}`;
 
-        log.info(errMessage);
+        getLog().info(errMessage);
 
         res.status(statusCode).send({
             message: err instanceof Error ? err.message : "Unknown Error"

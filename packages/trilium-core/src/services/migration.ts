@@ -5,7 +5,7 @@ import { getPlatform } from "./platform.js";
 import appInfo from "./app_info.js";
 import * as cls from "./context.js";
 import { t } from "i18next";
-import MIGRATIONS from "../migrations/migrations.js";
+import { MIGRATIONS } from "../migrations/migrations.js";
 
 interface MigrationInfo {
     dbVersion: number;

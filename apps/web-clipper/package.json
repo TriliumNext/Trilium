@@ -13,7 +13,7 @@
     "postinstall": "wxt prepare"
   },
   "keywords": [],
-  "packageManager": "pnpm@11.2.2",
+  "packageManager": "pnpm@11.3.0",
   "devDependencies": {
     "@wxt-dev/auto-icons": "1.1.1",
     "wxt": "0.20.26"

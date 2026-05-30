@@ -151,6 +151,7 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
     const pending: Array<{ visible: HTMLElement; source: string }> = [];
     const seenSources = new Set<string>();
     for (const [ index, node ] of nodes.entries()) {
+        /* v8 ignore next -- defensive fallback: textContent on an HTMLElement is always a string */
         const source = (node.textContent ?? "").trim();
         seenSources.add(source);
 

@@ -4,27 +4,26 @@
 <p>A link preview can be displayed in one of three modes:</p>
 <ul>
   <li>
-    <img class="image_resized" style="aspect-ratio:251/42;width:25%;" src="Link Previews_image.png"
-    width="251" height="42"><strong><br>Inline </strong>— a pill showing the site's favicon and page
-    title. Use this when you want the link to flow with the surrounding paragraph.</li>
-  <li
- >
     <p>
-      <img class="image_resized" style="aspect-ratio:1217/196;width:61.28%;"
-      src="2_Link Previews_image.png" width="1217" height="196">
-    </p>
+      <img class="image_resized" style="aspect-ratio:251/42;width:25%;" src="Link Previews_image.png"
+      width="251" height="42"><strong>Inline</strong> — a pill showing the site's favicon and page title.
+      Use this when you want the link to flow with the surrounding paragraph.</p>
+  </li>
+  <li>
+    <img class="image_resized" style="aspect-ratio:1217/196;width:61.28%;"
+    src="2_Link Previews_image.png" width="1217"
+    height="196">
     <p><strong>Card</strong> — a block-level preview with thumbnail, title, description,
       and site name. Use this when the link is the focus of a paragraph.</p>
-    </li>
-    <li>
-      <p>
-        <img class="image_resized" style="aspect-ratio:994/563;width:49.28%;"
-        src="1_Link Previews_image.png" width="994" height="563">
-      </p>
-      <p><strong>Embed</strong> — a block-level interactive embed. Currently supported
-        for YouTube videos, which render as a playable iframe. For URLs that don't
-        support an embedded view, this mode falls back to the Card layout.</p>
-    </li>
+  </li>
+  <li>
+    <img class="image_resized" style="aspect-ratio:994/563;width:49.28%;"
+    src="1_Link Previews_image.png" width="994"
+    height="563">
+    <p><strong>Embed</strong> — a block-level interactive embed. Currently supported
+      for YouTube videos, which render as a playable iframe. For URLs that don't
+      support an embedded view, this mode falls back to the Card layout.</p>
+  </li>
 </ul>
 <h2>Inserting a link preview</h2>
 <p>There are two ways to create one:</p>
@@ -72,9 +71,8 @@
   <li>The Embed display mode currently only supports YouTube. Other video and
     media platforms fall back to a Card preview.</li>
   <li>The preview reflects the page at the moment you inserted the link.</li>
-  <li
- >Pages that block automated fetches or that don't expose OpenGraph metadata
+  <li>Pages that block automated fetches or that don't expose OpenGraph metadata
     may produce a minimal preview (hostname only).</li>
-    <li>Link previews require the Trilium server to reach the target URL, so they
-      won't generate previews for pages on networks the server can't see.</li>
+  <li>Link previews require the Trilium server to reach the target URL, so they
+    won't generate previews for pages on networks the server can't see.</li>
 </ul>

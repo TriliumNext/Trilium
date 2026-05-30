@@ -40,7 +40,7 @@ function setupElementTooltip($el: JQuery<HTMLElement>) {
     $el.on("pointerenter", mouseEnterHandler);
 }
 
-async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<T, undefined, T, T>) {
+export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<T, undefined, T, T>) {
     if (e.pointerType !== "mouse") return;
 
     const $link = $(this);
@@ -144,7 +144,7 @@ async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<
     }
 }
 
-async function renderTooltip(note: FNote | null) {
+export async function renderTooltip(note: FNote | null) {
     if (!note) {
         return `<div>${t("note_tooltip.note-has-been-deleted")}</div>`;
     }
@@ -187,7 +187,7 @@ async function renderTooltip(note: FNote | null) {
     return content;
 }
 
-function renderFootnoteOrAnchor($link: JQuery<HTMLElement>, url: string) {
+export function renderFootnoteOrAnchor($link: JQuery<HTMLElement>, url: string) {
     // A footnote text reference
     const footnoteRef = url.substring(3);
     let $targetContent: JQuery<HTMLElement>;
@@ -229,6 +229,7 @@ function renderFootnoteOrAnchor($link: JQuery<HTMLElement>, url: string) {
 
     let footnoteContent = $targetContent.html();
     footnoteContent = `<div class="ck-content">${footnoteContent}</div>`;
+    /* v8 ignore next -- footnoteContent is always a non-empty wrapper div here, so the || "" fallback is unreachable */
     return footnoteContent || "";
 }
 

@@ -1,9 +1,9 @@
+import { options } from '@triliumnext/core';
 import fs from 'fs';
 import Tesseract from 'tesseract.js';
 
 import dataDirs from '../../data_dir.js';
-import log from '../../log.js';
-import options from '../../options.js';
+import { getLog } from "@triliumnext/core";
 import { OCRProcessingOptions,OCRResult } from '../ocr_service.js';
 import { FileProcessor } from './file_processor.js';
 
@@ -36,7 +36,7 @@ export class ImageProcessor extends FileProcessor {
         await this.ensureWorker(language);
 
         try {
-            log.info(`Starting image OCR text extraction (language: ${language})...`);
+            getLog().info(`Starting image OCR text extraction (language: ${language})...`);
 
             const result = await this.worker!.recognize(buffer);
 
@@ -54,7 +54,7 @@ export class ImageProcessor extends FileProcessor {
             return ocrResult;
 
         } catch (error) {
-            log.error(`Image OCR text extraction failed: ${error}`);
+            getLog().error(`Image OCR text extraction failed: ${error}`);
             throw error;
         }
     }
@@ -78,12 +78,12 @@ export class ImageProcessor extends FileProcessor {
 
         fs.mkdirSync(dataDirs.OCR_CACHE_DIR, { recursive: true });
 
-        log.info(`Initializing Tesseract worker for language(s): ${language}`);
+        getLog().info(`Initializing Tesseract worker for language(s): ${language}`);
         this.worker = await Tesseract.createWorker(language, 1, {
             cachePath: dataDirs.OCR_CACHE_DIR,
             logger: (m: { status: string; progress: number }) => {
                 if (m.status === 'recognizing text') {
-                    log.info(`Image OCR progress (${language}): ${Math.round(m.progress * 100)}%`);
+                    getLog().info(`Image OCR progress (${language}): ${Math.round(m.progress * 100)}%`);
                 }
             }
         });
@@ -127,7 +127,7 @@ export class ImageProcessor extends FileProcessor {
                     overallConfidence
                 };
             }
-            log.info(`Entire text filtered out due to low confidence ${overallConfidence} (below threshold ${minConfidence})`);
+            getLog().info(`Entire text filtered out due to low confidence ${overallConfidence} (below threshold ${minConfidence})`);
             return {
                 filteredText: '',
                 overallConfidence
@@ -141,7 +141,7 @@ export class ImageProcessor extends FileProcessor {
 
         const filteredText = filteredWords.join(' ').trim();
 
-        log.info(`Filtered OCR text: ${filteredWords.length} words kept out of ${data.words?.length || 0} total words (min confidence: ${minConfidence})`);
+        getLog().info(`Filtered OCR text: ${filteredWords.length} words kept out of ${data.words?.length || 0} total words (min confidence: ${minConfidence})`);
 
         return {
             filteredText,

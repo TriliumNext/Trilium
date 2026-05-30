@@ -1,5 +1,6 @@
+import { options as optionService } from '@triliumnext/core';
 import crypto from 'crypto';
-import optionService from '../options.js';
+
 import sql from '../sql.js';
 import { constantTimeCompare } from '../utils.js';
 

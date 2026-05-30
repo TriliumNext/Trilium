@@ -12,6 +12,7 @@ import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from './plugins/internallink.js
 import { COMMAND_NAME as INCLUDE_NOTE_COMMAND } from './plugins/includenote.js';
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from './plugins/markdownimport.js';
 import { ADMONITION_TYPES, type AdmonitionType } from '@triliumnext/ckeditor5-admonition';
+import { icons as collapsibleIcons } from '@triliumnext/ckeditor5-collapsible';
 import dateTimeIcon from './icons/date-time.svg?raw';
 import internalLinkIcon from './icons/trilium.svg?raw';
 import noteIcon from './icons/note.svg?raw';
@@ -26,6 +27,14 @@ export default function buildExtraCommands(): SlashCommandDefinition[] {
     return [
         ...buildAlignmentExtraCommands(),
         ...buildAdmonitionExtraCommands(),
+        {
+            id: "collapsible",
+            title: "Collapsible block",
+            description: "Insert a toggleable section that hides/shows content on click.",
+            aliases: [ "details", "fold", "toggle" ],
+            icon: collapsibleIcons.collapsibleIcon,
+            commandName: "collapsible"
+        },
         {
             id: 'footnote',
             title: 'Footnote',

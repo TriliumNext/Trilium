@@ -1,8 +1,6 @@
 import { ChangePasswordResponse } from "@triliumnext/commons";
-import { ValidationError } from "@triliumnext/core";
+import { password as passwordService, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
-
-import passwordService from "../../services/encryption/password.js";
 
 async function changePassword(req: Request): Promise<ChangePasswordResponse> {
     if (passwordService.isPasswordSet()) {

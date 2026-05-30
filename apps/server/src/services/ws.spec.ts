@@ -1,43 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock dependencies first
-vi.mock('./log.js', () => ({
-    default: {
-        info: vi.fn(),
-        error: vi.fn(),
-        warn: vi.fn()
-    }
-}));
-
-vi.mock('./sync_mutex.js', () => ({
-    default: {
-        doExclusively: vi.fn().mockImplementation((fn) => fn())
-    }
-}));
+// Replace the log subsystem with silent stubs so the test process doesn't
+// touch the real file-based log writer, and so we can assert against calls.
+const logStub = { info: vi.fn(), error: vi.fn(), warn: vi.fn() };
+vi.mock('@triliumnext/core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@triliumnext/core')>();
+    return {
+        ...actual,
+        getLog: () => logStub
+    };
+});
 
 vi.mock('./sql.js', () => ({
     getManyRows: vi.fn(),
     getValue: vi.fn(),
     getRow: vi.fn()
-}));
-
-vi.mock('../becca/becca.js', () => ({
-    default: {
-        getAttribute: vi.fn(),
-        getBranch: vi.fn(),
-        getNote: vi.fn(),
-        getOption: vi.fn()
-    }
-}));
-
-vi.mock('./protected_session.js', () => ({
-    default: {
-        decryptString: vi.fn((str) => str)
-    }
-}));
-
-vi.mock('./cls.js', () => ({
-    getAndClearEntityChangeIds: vi.fn().mockReturnValue([])
 }));
 
 // Mock the entire ws module instead of trying to set up the server
@@ -53,16 +30,12 @@ vi.mock('ws', () => ({
 
 describe('WebSocket Service', () => {
     let wsService: any;
-    let log: any;
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        
-        // Get mocked log
-        log = (await import('./log.js')).default;
 
         // Import service after mocks are set up
-        wsService = (await import('./ws.js')).default;
+        wsService = (await import('@triliumnext/core')).ws;
     });
 
     afterEach(() => {

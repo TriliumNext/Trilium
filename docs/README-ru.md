@@ -11,14 +11,13 @@
 
 # Trilium Notes
 
-![Спонсоры GitHub](https://img.shields.io/github/sponsors/eliandoran) ![Меценаты
-LiberaPay ](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Загрузок Docker](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![Загрузок GitHub (all assets, all
+![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
+![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
+![GitHub Downloads (all assets, all
 releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Процесс
-перевода](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+[![Translation
+status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->

@@ -1195,7 +1195,8 @@
     "trilium_api_docs_button_title": "Apri la documentazione API di Trilium",
     "save_to_note_button_title": "Salva per annotare",
     "opening_api_docs_message": "Apertura dei documenti API...",
-    "sql_console_saved_message": "La nota della console SQL è stata salvata in {{note_path}}"
+    "sql_console_saved_message": "La nota della console SQL è stata salvata in {{note_path}}",
+    "electron_api_docs_button_title": "Documentazione dell'API di Open Electron"
   },
   "copy_image_reference_button": {
     "button_title": "Copia il riferimento all'immagine negli appunti, può essere incollato in una nota di testo."
@@ -2041,7 +2042,12 @@
   "code_theme": {
     "title": "Aspetto",
     "word_wrapping": "A capo automatico",
-    "color-scheme": "Schema dei colori"
+    "color-scheme": "Schema dei colori",
+    "theme_mode": "Modalità tema",
+    "match_app_appearance": "Personalizza l'aspetto dell'app",
+    "always_use_one_theme": "Utilizza sempre un unico tema",
+    "light_theme": "Tema chiaro",
+    "dark_theme": "Tema scuro"
   },
   "book_properties_config": {
     "hide-weekends": "Nascondi i fine settimana",
@@ -2384,7 +2390,13 @@
     "sources_summary": "{{count}} fonti provenienti da {{sites}} siti",
     "stop": "Stop",
     "edit_index": "Modifica {{index}} di {{total}}",
-    "retry": "Riprova"
+    "retry": "Riprova",
+    "web_search_unavailable_gemini": "Non disponibile sui modelli Gemini quando l'accesso alle note è attivo: l'API di Google non consente di combinare entrambe le funzioni. Disattiva l'accesso alle note o passa a un altro provider per utilizzare la ricerca sul web.",
+    "input_streaming": "Input (in streaming…)",
+    "attach_file": "Allega un'immagine, un PDF o un file di testo",
+    "remove_attachment": "Rimuovi allegato",
+    "attachment_upload_failed": "Caricamento non riuscito \"{{name}}\".",
+    "attachment_unsupported_type": "\"{{name}}\" questo tipo di allegato non è supportato. Utilizza un'immagine (PNG, JPEG, GIF, WebP), un PDF o un file di testo/sorgente."
   },
   "sidebar_chat": {
     "title": "Chat AI",
@@ -2422,7 +2434,7 @@
       "search_notes": "Cerca nelle note",
       "get_note": "Prendi nota",
       "get_note_content": "Visualizza il contenuto della nota",
-      "update_note_content": "Aggiorna il contenuto della nota",
+      "update_note_content": "Nota di riscrittura",
       "append_to_note": "Aggiungi alla nota",
       "create_note": "Crea nota",
       "get_attributes": "Recupera gli attributi",
@@ -2439,9 +2451,13 @@
       "rename_note": "Rinomina nota",
       "delete_note": "Elimina nota",
       "move_note": "Sposta nota",
-      "clone_note": "Clona nota"
+      "clone_note": "Clona nota",
+      "set_note_content": "Nota di riscrittura",
+      "edit_note_content": "Nota dell'editore"
     },
-    "base_url": "URL di base"
+    "base_url": "URL di base",
+    "base_url_description": "Facoltativo. Sovrascrivere l'endpoint API predefinito - utile per modelli self-hosted (Ollama, LM Studio, vLLM) o proxy.",
+    "base_url_invalid": "L'URL di base deve essere un URL valido del tipo http:// o https://"
   },
   "ocr": {
     "extracted_text": "Testo estratto (OCR)",
@@ -2674,5 +2690,20 @@
     "language": "Lingua",
     "continue": "Continua",
     "your-ip-addresses": "Indirizzi per questo dispositivo"
+  },
+  "text-editor": {
+    "checkbox-tooltip": "Clicca con il tasto destro del mouse per visualizzare altri stati dell'attività.\nPremi {{shortcut}} per passare da uno stato all'altro.",
+    "edit-states-tooltip": "Modifica gli stati delle attività",
+    "unknown-task-state": "Stato dell'attività personalizzata non definito",
+    "task-state-dropped": "La definizione dello stato dell'attività personalizzata \"{{title}}\" ({{id}}) è stata eliminata per il seguente motivo: {{reason}}",
+    "validation-errors": {
+      "undefined-name": "identificatore non definito",
+      "invalid-name": "identificatore non valido",
+      "duplicate-name": "identificatore duplicato",
+      "missing-title": "titolo mancante",
+      "missing-icon": "icona mancante",
+      "invalid-symbol": "Il simbolo Markdown deve essere composto da un solo carattere, ad eccezione di \"[\", \" \", \"X\" e \"]\"",
+      "duplicate-symbol": "simbolo markdown duplicato"
+    }
   }
 }

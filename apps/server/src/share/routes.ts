@@ -1,9 +1,7 @@
-import { utils } from "@triliumnext/core";
+import { search as searchService, SearchContext, utils } from "@triliumnext/core";
 import type { NextFunction, Request, Response, Router } from "express";
 import safeCompare from "safe-compare";
 
-import SearchContext from "../services/search/search_context.js";
-import searchService from "../services/search/services/search.js";
 import { getDefaultTemplatePath, renderNoteContent } from "./content_renderer.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
 import type SNote from "./shaca/entities/snote.js";

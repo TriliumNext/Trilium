@@ -1,9 +1,9 @@
+import { options } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
 import type { Session } from "express-openid-connect";
 
 import config from "./config.js";
 import openIDEncryption from "./encryption/open_id_encryption.js";
-import options from "./options.js";
 import sql from "./sql.js";
 import sqlInit from "./sql_init.js";
 

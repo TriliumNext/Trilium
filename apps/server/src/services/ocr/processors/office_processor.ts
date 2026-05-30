@@ -1,6 +1,6 @@
 import { OfficeParser, type OfficeParserConfig } from 'officeparser';
 
-import log from '../../log.js';
+import { getLog } from "@triliumnext/core";
 import { OCRProcessingOptions, OCRResult } from '../ocr_service.js';
 import { FileProcessor } from './file_processor.js';
 
@@ -42,7 +42,7 @@ export class OfficeProcessor extends FileProcessor {
             throw new Error(`Unsupported MIME type for Office processor: ${mimeType}`);
         }
 
-        log.info(`Starting Office document text extraction for ${mimeType}...`);
+        getLog().info(`Starting Office document text extraction for ${mimeType}...`);
 
         const ast = await OfficeParser.parseOffice(buffer, PARSER_CONFIG);
         const trimmed = ast.toText().trim();

@@ -26,4 +26,13 @@ export default defineConfig(() => ({
       external: []
     },
   },
+  test: {
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}', '**/*.d.ts'],
+      reporter: ['text', 'lcov'],
+      reportsDirectory: './test-output/vitest/coverage'
+    }
+  },
 }));

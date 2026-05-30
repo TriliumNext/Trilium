@@ -52,6 +52,7 @@ function toMarkdown(content: string) {
         instance.addRule("fencedCodeBlock", fencedCodeBlockFilter);
         instance.addRule("img", buildImageFilter());
         instance.addRule("admonition", buildAdmonitionFilter());
+        instance.addRule("details", buildDetailsFilter());
         instance.addRule("inlineLink", buildInlineLinkFilter());
         instance.addRule("figure", buildFigureFilter());
         instance.addRule("math", buildMathFilter());
@@ -214,6 +215,27 @@ function buildFigureFilter(): Rule {
         },
         replacement(content, node) {
             return (node as HTMLElement).outerHTML;
+        }
+    };
+}
+
+/**
+ * Markdown has no native syntax for disclosure widgets, but GitHub, Obsidian
+ * and most CommonMark+HTML renderers accept raw <details>/<summary> verbatim
+ * — and Trilium's markdown importer already parses them back into the
+ * collapsible model node, so passthrough round-trips losslessly.
+ *
+ * We match on tag name only (not on the trilium-collapsible class) so any
+ * pasted/imported <details> is preserved too; stripping it to plain text
+ * would silently lose structure.
+ */
+function buildDetailsFilter(): Rule {
+    return {
+        filter(node) {
+            return node.nodeName === "DETAILS";
+        },
+        replacement(_content, node) {
+            return `\n\n${(node as HTMLElement).outerHTML}\n\n`;
         }
     };
 }

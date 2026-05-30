@@ -1,16 +1,14 @@
-import etapiTokenService from "./etapi_tokens.js";
-import log from "./log.js";
-import sqlInit from "./sql_init.js";
-import { isElectron } from "./utils.js";
-import { isInternalElectronRequest } from "./electron_request.js";
-import passwordEncryptionService from "./encryption/password_encryption.js";
-import config from "./config.js";
-import passwordService from "./encryption/password.js";
-import totp from "./totp.js";
-import openID from "./open_id.js";
-import options from "./options.js";
-import attributes from "./attributes.js";
+import { attributes, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
+
+import config from "./config.js";
+import { isInternalElectronRequest } from "./electron_request.js";
+import etapiTokenService from "./etapi_tokens.js";
+import { getLog } from "@triliumnext/core";
+import openID from "./open_id.js";
+import sqlInit from "./sql_init.js";
+import totp from "./totp.js";
+import { isElectron } from "./utils.js";
 
 let noAuthentication = false;
 refreshAuth();
@@ -149,7 +147,7 @@ function checkEtapiToken(req: Request, res: Response, next: NextFunction) {
 }
 
 function reject(req: Request, res: Response, message: string) {
-    log.info(`${req.method} ${req.path} rejected with 401 ${message}`);
+    getLog().info(`${req.method} ${req.path} rejected with 401 ${message}`);
 
     res.setHeader("Content-Type", "text/plain").status(401).send(message);
 }
@@ -178,7 +176,7 @@ function checkCredentials(req: Request, res: Response, next: NextFunction) {
 
     if (!passwordEncryptionService.verifyPassword(password)) {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
-        log.info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
+        getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
     } else {
         next();
     }

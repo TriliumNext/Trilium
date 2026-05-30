@@ -1,8 +1,9 @@
-import becca from "../becca/becca.js";
-import eu from "./etapi_utils.js";
-import passwordEncryptionService from "../services/encryption/password_encryption.js";
-import etapiTokenService from "../services/etapi_tokens.js";
+import { password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { RequestHandler, Router } from "express";
+
+import { becca } from "@triliumnext/core";
+import etapiTokenService from "../services/etapi_tokens.js";
+import eu from "./etapi_utils.js";
 
 function register(router: Router, loginMiddleware: RequestHandler[]) {
     eu.NOT_AUTHENTICATED_ROUTE(router, "post", "/etapi/auth/login", loginMiddleware, (req, res, next) => {

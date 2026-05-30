@@ -8,7 +8,7 @@
 /// <reference types="../../../../node_modules/dayjs/plugin/utc.d.ts" />
 
 import { LOCALES } from "./i18n.js";
-import { DAYJS_LOADER, dayjs } from "./dayjs.js";
+import { DAYJS_LOADER, dayjs, setDayjsLocale } from "./dayjs.js";
 import { describe, expect, it } from "vitest";
 
 describe("dayjs", () => {
@@ -57,6 +57,22 @@ describe("dayjs", () => {
         it("utc is available", () => {
             const utcDate = dayjs("2023-10-01T12:00:00").utc();
             expect(utcDate.utcOffset()).toBe(0);
+        });
+    });
+
+    describe("setDayjsLocale", () => {
+        it("sets the locale when present in the loader", async () => {
+            await setDayjsLocale("en");
+            expect(dayjs.locale()).toBe("en");
+        });
+
+        it("leaves the locale unchanged when not present in the loader", async () => {
+            await setDayjsLocale("en");
+            expect(dayjs.locale()).toBe("en");
+
+            // "xx-not-a-locale" is not a key in DAYJS_LOADER, so the locale must stay as "en".
+            await setDayjsLocale("xx-not-a-locale" as never);
+            expect(dayjs.locale()).toBe("en");
         });
     });
 });

@@ -3,12 +3,12 @@
  * tool assembly, model pricing, and title generation.
  */
 
-import type { LlmMessage } from "@triliumnext/commons";
-import { generateText, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type ToolSet } from "ai";
+import type { LlmMessage, LlmMessagePart } from "@triliumnext/commons";
+import { decodeUtf8 } from "@triliumnext/core/src/services/utils/binary.js";
+import { type FilePart, generateText, type ImagePart, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type TextPart, type ToolSet } from "ai";
 import yaml from "js-yaml";
 
-import becca from "../../../becca/becca.js";
-import { getSkillsSummary } from "../skills/index.js";
+import { becca, getLog } from "@triliumnext/core";
 import { getNoteMeta,SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
@@ -27,20 +27,117 @@ function effectiveCost(pricing: ModelPricing): number {
 /**
  * Build a context hint about the current note with full metadata (same as get_note / ETAPI).
  */
-function buildNoteHint(noteId: string): string | null {
+function buildNoteHint(noteId: string, hasAttachments: boolean): string | null {
     const note = becca.getNote(noteId);
     if (!note) {
         return null;
     }
 
     const metadata = yaml.dump(getNoteMeta(note, SYSTEM_PROMPT_LIMITS), { lineWidth: -1 });
-    return [
+    const lines = [
         "The user is currently viewing the following note.",
         "Use this metadata (including contentPreview) to answer questions about the note without calling tools when possible.",
-        "Use get_note_content only if the preview is insufficient.",
-        "",
-        metadata
-    ].join("\n");
+        "Use get_note_content only if the preview is insufficient."
+    ];
+    if (hasAttachments) {
+        // When the user has attached files alongside this turn, those are
+        // almost always the actual subject of the question — the note context
+        // is just ambient information about where they happen to be in the app.
+        lines.push("The user has attached files in this message. Treat those attachments as the primary subject of their question; refer to this note only for background context if relevant.");
+    }
+    lines.push("", metadata);
+    return lines.join("\n");
+}
+
+/**
+ * Resolve a single LlmMessagePart to its AI SDK ModelMessage part form.
+ * For image/file parts, this reads the attachment bytes out of Becca. Text
+ * attachments are decoded as UTF-8 and emitted as a labelled TextPart so the
+ * file's content travels inline (works across all providers). Failures are
+ * logged and the part is dropped so the rest of the message still goes through.
+ */
+function resolveMessagePart(part: LlmMessagePart): TextPart | ImagePart | FilePart | null {
+    if (part.type === "text") {
+        return { type: "text", text: part.text };
+    }
+    try {
+        const attachment = becca.getAttachment(part.attachmentId);
+        if (!attachment) {
+            getLog().error(`LLM message references missing attachment ${part.attachmentId}`);
+            return null;
+        }
+        if (!attachment.isContentAvailable()) {
+            getLog().error(`LLM message references protected attachment ${part.attachmentId} without an unlocked session`);
+            return null;
+        }
+        // Read attachment bytes once — `getContent()` hits the blob store and
+        // (for protected attachments) decrypts, so callers shouldn't repeat it.
+        const content = attachment.getContent();
+        if (part.type === "image") {
+            const mime = part.mime || attachment.mime;
+            // SVG isn't accepted by any major provider's vision input, but every
+            // LLM is fluent in SVG markup — send the XML source as a text part so
+            // the model can actually read and reason about it.
+            if (mime === "image/svg+xml") {
+                const filename = attachment.title || "image.svg";
+                const text = decodeUtf8(content);
+                return {
+                    type: "text",
+                    text: `<file name="${filename}">\n${text}\n</file>`
+                };
+            }
+            return {
+                type: "image",
+                image: content,
+                mediaType: mime
+            };
+        }
+        if (part.type === "file") {
+            return {
+                type: "file",
+                data: content,
+                mediaType: part.mime || attachment.mime,
+                filename: part.filename || attachment.title
+            };
+        }
+        // type === "text_attachment" — decode the bytes and wrap in a labelled
+        // XML-style block. Anthropic recommends this shape and other providers
+        // handle it fine; the filename gives the model context about what it's
+        // reading without needing provider-specific file APIs.
+        const filename = part.filename || attachment.title;
+        const text = decodeUtf8(content);
+        return {
+            type: "text",
+            text: `<file name="${filename}">\n${text}\n</file>`
+        };
+    } catch (err) {
+        // A single unreadable attachment (corrupt blob, decryption failure,
+        // invalid UTF-8) shouldn't crash the whole chat turn — drop the part
+        // and log so the rest of the message still reaches the model.
+        getLog().error(`Failed to resolve message part for attachment ${part.attachmentId}: ${err}`);
+        return null;
+    }
+}
+
+/**
+ * Build a single ModelMessage from an LlmMessage. Plain string content stays
+ * as-is; multimodal content is resolved into AI SDK text/image/file parts.
+ */
+export function buildModelMessage(m: LlmMessage): ModelMessage {
+    const role = m.role as "user" | "assistant";
+    if (typeof m.content === "string") {
+        return { role, content: m.content };
+    }
+    const resolved = m.content
+        .map(resolveMessagePart)
+        .filter((p): p is TextPart | ImagePart | FilePart => p !== null);
+    // Assistant turns can only carry TextParts (per the AI SDK type), so
+    // strip any stray attachments — they only make sense on user turns anyway.
+    if (role === "assistant") {
+        const textOnly: TextPart[] = resolved.filter((p): p is TextPart => p.type === "text");
+        return { role: "assistant", content: textOnly };
+    }
+    return { role: "user", content: resolved };
 }
 
 /**
@@ -82,8 +179,11 @@ export abstract class BaseProvider implements LlmProvider {
     protected buildSystemPrompt(messages: LlmMessage[], config: LlmProviderConfig): string | undefined {
         const parts: string[] = [];
 
-        // Base system prompt from config or messages
-        const basePrompt = config.systemPrompt || messages.find(m => m.role === "system")?.content;
+        // Base system prompt from config or messages. System messages only ever
+        // carry string content — multimodal parts apply to user/assistant turns.
+        const systemMessage = messages.find(m => m.role === "system");
+        const messageSystemPrompt = typeof systemMessage?.content === "string" ? systemMessage.content : undefined;
+        const basePrompt = config.systemPrompt || messageSystemPrompt;
         if (basePrompt) {
             parts.push(basePrompt);
         }
@@ -91,13 +191,22 @@ export abstract class BaseProvider implements LlmProvider {
         // Note tools hint
         if (config.enableNoteTools) {
             parts.push(
-                `You have access to skills that provide specialized instructions. Load a skill with the load_skill tool before performing complex operations.\n\nAvailable skills:\n${getSkillsSummary()}`
+                [
+                    `Before calling create_note (or any write tool) for Trilium-specific code or queries, you MUST call load_skill first — guessing the API produces broken code that doesn't run:`,
+                    `- Frontend code notes (mime "text/jsx" or "application/javascript;env=frontend") or render notes (type "render") → load_skill with name "frontend_scripting". Trilium uses Preact, NOT React, with imports from "trilium:preact".`,
+                    `- Backend code notes (mime "application/javascript;env=backend") → load_skill with name "backend_scripting".`,
+                    `- Search queries using boolean logic, attribute filters, relations, ordering, or regex → load_skill with name "search_syntax".`,
+                    `Loading is one cheap tool call. Skipping it wastes the user's time.`
+                ].join("\n")
             );
             parts.push(
                 `When referring to notes in your responses, use the wiki-link format [[noteId]] to create clickable internal links. Use the note ID (not the title) from tool results. The link will automatically display the note's title and icon, so don't repeat the title in your text. For example: "You can find more details in [[ZjSfLhzlqNY6]]" instead of "You can find more details in the Meeting Notes note ([[ZjSfLhzlqNY6]])".`
             );
             parts.push(
                 `Do not create, modify, or delete notes unless the user explicitly asks you to (e.g. "create a note", "save this to a note"). The chat supports rich Markdown rendering including code blocks, math equations, mermaid diagrams, and tables — so always present content directly in your response rather than creating a note for it. For example, if asked to "visualize an algorithm", render a mermaid diagram in the chat, don't create a note.`
+            );
+            parts.push(
+                `After a successful write tool call (set_note_content, append_to_note, edit_note_content, create_note), the tool's result already contains the resulting content of the note. Do not call get_note_content to verify the write — trust the returned content.`
             );
         } else if (config.contextNoteId) {
             parts.push(
@@ -142,6 +251,9 @@ export abstract class BaseProvider implements LlmProvider {
                 + `**Task lists** — use \`- [ ]\` for unchecked and \`- [x]\` for checked items.`
         );
 
+        // The markdown formatting hints above are pushed unconditionally, so
+        // `parts` is never empty — the `: undefined` arm is unreachable defence.
+        /* v8 ignore next */
         return parts.length > 0 ? parts.join("\n\n") : undefined;
     }
 
@@ -153,10 +265,7 @@ export abstract class BaseProvider implements LlmProvider {
      * which is resilient against prompt injection.
      */
     protected buildMessages(chatMessages: LlmMessage[]): ModelMessage[] {
-        return chatMessages.map(m => ({
-            role: m.role as "user" | "assistant",
-            content: m.content
-        }));
+        return chatMessages.map(m => buildModelMessage(m));
     }
 
     /**
@@ -173,19 +282,32 @@ export abstract class BaseProvider implements LlmProvider {
             return chatMessages;
         }
 
-        const noteHint = buildNoteHint(config.contextNoteId);
-        if (!noteHint) {
-            return chatMessages;
-        }
-
         const lastUserIndex = chatMessages.map(m => m.role).lastIndexOf("user");
         if (lastUserIndex === -1) {
             return chatMessages;
         }
 
-        return chatMessages.map((m, i) =>
-            i === lastUserIndex ? { ...m, content: `${noteHint}\n\n${m.content}` } : m
-        );
+        const lastUserContent = chatMessages[lastUserIndex].content;
+        const hasAttachments = Array.isArray(lastUserContent)
+            && lastUserContent.some(p => p.type !== "text");
+
+        const noteHint = buildNoteHint(config.contextNoteId, hasAttachments);
+        if (!noteHint) {
+            return chatMessages;
+        }
+
+        return chatMessages.map((m, i) => {
+            if (i !== lastUserIndex) return m;
+            if (typeof m.content === "string") {
+                return { ...m, content: `${noteHint}\n\n${m.content}` };
+            }
+            // For multimodal content, prepend the hint as a leading text part so
+            // any attached images still travel with the message.
+            return {
+                ...m,
+                content: [{ type: "text" as const, text: noteHint }, ...m.content]
+            };
+        });
     }
 
     /**

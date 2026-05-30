@@ -13,8 +13,10 @@ export async function getAvailableModels(): Promise<LlmModelInfo[]> {
 export interface StreamCallbacks {
     onChunk: (text: string) => void;
     onThinking?: (text: string) => void;
-    onToolUse?: (toolName: string, input: Record<string, unknown>) => void;
-    onToolResult?: (toolName: string, result: string, isError?: boolean) => void;
+    onToolInputStart?: (toolCallId: string, toolName: string) => void;
+    onToolInputDelta?: (toolCallId: string, delta: string) => void;
+    onToolUse?: (toolCallId: string, toolName: string, input: Record<string, unknown>) => void;
+    onToolResult?: (toolCallId: string, toolName: string, result: string, isError?: boolean) => void;
     onCitation?: (citation: LlmCitation) => void;
     onUsage?: (usage: LlmUsage) => void;
     onError: (error: string) => void;
@@ -89,14 +91,23 @@ export async function streamChatCompletion(
                             case "thinking":
                                 callbacks.onThinking?.(data.content);
                                 break;
+                            case "tool_input_start":
+                                callbacks.onToolInputStart?.(data.toolCallId, data.toolName);
+                                // Yield to force Preact to commit the pending tool call
+                                // state before any deltas arrive.
+                                await new Promise((r) => setTimeout(r, 1));
+                                break;
+                            case "tool_input_delta":
+                                callbacks.onToolInputDelta?.(data.toolCallId, data.delta);
+                                break;
                             case "tool_use":
-                                callbacks.onToolUse?.(data.toolName, data.toolInput);
+                                callbacks.onToolUse?.(data.toolCallId, data.toolName, data.toolInput);
                                 // Yield to force Preact to commit the pending tool call
                                 // state before we process the result.
                                 await new Promise((r) => setTimeout(r, 1));
                                 break;
                             case "tool_result":
-                                callbacks.onToolResult?.(data.toolName, data.result, data.isError);
+                                callbacks.onToolResult?.(data.toolCallId, data.toolName, data.result, data.isError);
                                 await new Promise((r) => setTimeout(r, 1));
                                 break;
                             case "citation":

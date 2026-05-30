@@ -18,7 +18,7 @@ export interface TaskStateDef {
     /** Indicates whether the task is completed in this state. */
     isCompleted: boolean;
     /** CSS color associated with the state, e.g. `#e6a23c`. */
-    color: string;
+    color?: string;
     /** Icon class, e.g. `bx bx-loader`. */
     icon: string;
     /** The `isHidden` label — kept for CSS/round-trip, but hidden from the toolbar and keyboard cycle. */
@@ -58,7 +58,7 @@ export const DONE_TASK_STATE: TaskStateDef = {
  */
 export const DEFAULT_CUSTOM_TASK_STATES: TaskStateDef[] = [
     {id: "_taskStateDoing", name: "doing", title: "Doing", markdownSymbol: "/", isCompleted: false, color: "#e6a23c", icon: "bx bx-loader"},
-    {id: "_taskStateMaybe", name: "maybe", title: "Maybe", markdownSymbol: "?", isCompleted: false, color: "#4d4de6", icon: "bx bx-question-mark"},
+    {id: "_taskStateMaybe", name: "maybe", title: "Maybe", markdownSymbol: "?", isCompleted: false, icon: "bx bx-question-mark"},
     {id: "_taskStateCancelled", name: "cancelled", title: "Cancelled", markdownSymbol: "-", isCompleted: false, color: "#e64d4d", icon: "bx bx-block"}
 ];
 
