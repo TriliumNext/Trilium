@@ -11,6 +11,7 @@ import type { PrintReport } from "../print";
 import attributes from "../services/attributes";
 import dialog from "../services/dialog";
 import { t } from "../services/i18n";
+import { stopBackgroundMedia } from "../services/media_playback";
 import protected_session_holder from "../services/protected_session_holder";
 import toast from "../services/toast.js";
 import { isElectron, isMobile } from "../services/utils";
@@ -244,6 +245,7 @@ function FixedTree({ noteContext }: { noteContext: NoteContext }) {
  */
 function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, props }: { Element: (props: TypeWidgetProps) => VNode, type: ExtendedNoteType, isVisible: boolean, isFullHeight: boolean, props: TypeWidgetProps }) {
     const [ cachedProps, setCachedProps ] = useState(props);
+    const wrapperRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (isVisible) {
@@ -252,9 +254,19 @@ function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, props }: { 
         // When not visible, keep the old props to avoid re-rendering in the background.
     }, [ props, isVisible ]);
 
+    // This widget stays mounted (just hidden) when the user switches note type —
+    // e.g. read-only ↔ editable text. A hidden but still-mounted media embed keeps
+    // playing audio/video in the background, so stop it whenever it's hidden.
+    useEffect(() => {
+        if (!isVisible) {
+            stopBackgroundMedia(wrapperRef.current);
+        }
+    }, [ isVisible ]);
+
     const typeMapping = TYPE_MAPPINGS[type];
     return (
         <div
+            ref={wrapperRef}
             className={`${typeMapping.className} ${typeMapping.printable ? "note-detail-printable" : ""} ${isVisible ? "visible" : "hidden-ext"}`}
             style={{
                 height: isFullHeight ? "100%" : ""
