@@ -136,6 +136,7 @@ function ProviderList({ providers, onDelete }: ProviderListProps) {
                     <tr>
                         <th>{t("llm.provider_name")}</th>
                         <th>{t("llm.provider_type")}</th>
+                        <th>{t("llm.model")}</th>
                         <th>{t("llm.actions")}</th>
                     </tr>
                 </thead>
@@ -146,6 +147,7 @@ function ProviderList({ providers, onDelete }: ProviderListProps) {
                             <tr key={provider.id}>
                                 <td>{provider.name}</td>
                                 <td>{providerType?.name || provider.provider}</td>
+                                <td>{provider.model || <em className="text-muted">{t("llm.default_model")}</em>}</td>
                                 <td>
                                     <ActionButton
                                         icon="bx bx-trash"

@@ -36,6 +36,7 @@ import {
     getAllModels,
     getProvider,
     getProviderByType,
+    getProviderSetupByType,
     hasConfiguredProviders
 } from "./index.js";
 
@@ -157,6 +158,47 @@ describe("llm/index provider registry", () => {
             // Unknown type → getProvider throws inside getAllModels and is caught.
             expect(getAllModels()).toEqual([]);
             expect(errorMock).toHaveBeenCalled();
+        });
+
+        it("injects a configured custom model as default when it is not in the provider list", () => {
+            setProviders([
+                { id: "a1", name: "A1", provider: "anthropic", apiKey: "k1", model: "custom-model" }
+            ]);
+            const models = getAllModels();
+            expect(models).toHaveLength(2);
+            expect(models[0]).toEqual({
+                id: "custom-model",
+                name: "custom-model",
+                provider: "anthropic",
+                pricing: { input: 0, output: 0 },
+                isDefault: true
+            });
+        });
+
+        it("marks an existing model as default when it matches the configured model", () => {
+            setProviders([
+                { id: "a1", name: "A1", provider: "anthropic", apiKey: "k1", model: "anthropic-model" }
+            ]);
+            const models = getAllModels();
+            expect(models).toHaveLength(1);
+            expect(models[0]).toMatchObject({
+                id: "anthropic-model",
+                provider: "anthropic",
+                isDefault: true
+            });
+        });
+    });
+
+    describe("getProviderSetupByType", () => {
+        it("returns the setup for the first provider of the given type", () => {
+            setProviders(TWO);
+            const setup = getProviderSetupByType("openai");
+            expect(setup).toMatchObject({ id: "o1", provider: "openai" });
+        });
+
+        it("returns undefined when no provider of that type exists", () => {
+            setProviders(TWO);
+            expect(getProviderSetupByType("google")).toBeUndefined();
         });
     });
 });

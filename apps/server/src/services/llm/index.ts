@@ -16,6 +16,8 @@ export interface LlmProviderSetup {
     apiKey: string;
     /** Optional override for the SDK's default API endpoint (e.g. for self-hosted Ollama, vLLM, or proxies). */
     baseURL?: string;
+    /** Optional model ID to use instead of the provider default. */
+    model?: string;
 }
 
 /** Factory functions for creating provider instances */
@@ -95,6 +97,14 @@ export function getProviderByType(providerType: string): LlmProvider {
 }
 
 /**
+ * Get the setup config for the first configured provider of a specific type.
+ */
+export function getProviderSetupByType(providerType: string): LlmProviderSetup | undefined {
+    const configs = getConfiguredProviders();
+    return configs.find(c => c.provider === providerType);
+}
+
+/**
  * Check if any providers are configured.
  */
 export function hasConfiguredProviders(): boolean {
@@ -119,8 +129,25 @@ export function getAllModels(): ModelInfo[] {
         try {
             const provider = getProvider(config.id);
             const models = provider.getAvailableModels();
-            for (const model of models) {
-                allModels.push({ ...model, provider: config.provider });
+            const mergedModels = models.map(m => ({ ...m, provider: config.provider }));
+
+            if (config.model) {
+                const existingIndex = mergedModels.findIndex(m => m.id === config.model);
+                if (existingIndex >= 0) {
+                    mergedModels[existingIndex] = { ...mergedModels[existingIndex], isDefault: true };
+                } else {
+                    mergedModels.unshift({
+                        id: config.model,
+                        name: config.model,
+                        provider: config.provider,
+                        pricing: { input: 0, output: 0 },
+                        isDefault: true
+                    });
+                }
+            }
+
+            for (const model of mergedModels) {
+                allModels.push(model);
             }
         } catch (e) {
             getLog().error(`Failed to get models from provider ${config.provider}: ${e}`);
