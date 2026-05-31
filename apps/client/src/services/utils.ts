@@ -287,13 +287,31 @@ export function isHtmlEmpty(html: string) {
 
     html = html.toLowerCase();
 
-    return (
-        !html.includes("<img") &&
-        !html.includes("<section") &&
-        !html.includes("link-mention") &&
-        // the line below will actually attempt to load images so better to check for images first
-        $("<div>").html(html).text().trim().length === 0
-    );
+    // Elements that represent content even when they hold no text. Matched as
+    // substrings before building a DOM below — both for speed and to avoid the
+    // side effect of <img>/<iframe> actually loading their resource.
+    const nonEmptyMarkers = [
+        "<img",
+        "<hr",
+        "<table",
+        "<iframe",
+        "<video",
+        "<audio",
+        "<input",
+        "<section", // included notes
+        "link-mention",
+        // media embeds (CKEditor MediaEmbed): <oembed> is the semantic form,
+        // data-oembed-url the rendered-preview form
+        "<oembed",
+        "data-oembed-url",
+        "page-break"
+    ];
+
+    if (nonEmptyMarkers.some((marker) => html.includes(marker))) {
+        return false;
+    }
+
+    return $("<div>").html(html).text().trim().length === 0;
 }
 
 function formatHtml(html: string) {

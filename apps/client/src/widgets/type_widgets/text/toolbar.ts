@@ -77,7 +77,7 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
                 {
                     label: "Insert",
                     icon: "plus",
-                    items: ["link", "bookmark", "internallink", "includeNote", "linkEmbed", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "|", "dateTime", "specialCharacters", "emoji"]
+                    items: ["link", "bookmark", "internallink", "includeNote", "linkEmbed", "mediaEmbed", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "|", "dateTime", "specialCharacters", "emoji"]
                 },
                 "|",
                 buildAlignmentToolbar(),
@@ -137,7 +137,7 @@ export function buildFloatingToolbar() {
             {
                 label: "Insert",
                 icon: "plus",
-                items: ["link", "bookmark", "internallink", "includeNote", "linkEmbed", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
+                items: ["link", "bookmark", "internallink", "includeNote", "linkEmbed", "mediaEmbed", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
             },
             "|",
             buildAlignmentToolbar(),

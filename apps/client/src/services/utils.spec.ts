@@ -211,6 +211,21 @@ describe("isHtmlEmpty", () => {
         expect(isHtmlEmpty("<span class='link-mention'></span>")).toBe(false);
     });
 
+    it("treats a text-less media embed as non-empty (both serialization forms)", () => {
+        // semantic form (config.mediaEmbed.previewsInData = false)
+        expect(isHtmlEmpty(`<figure class="media"><oembed url="https://youtu.be/x"></oembed></figure>`)).toBe(false);
+        // rendered-preview form (previewsInData = true)
+        expect(isHtmlEmpty(`<figure class="media"><div data-oembed-url="https://youtu.be/x"><iframe src="https://www.youtube.com/embed/x"></iframe></div></figure>`)).toBe(false);
+    });
+
+    it("treats other text-less block content as non-empty", () => {
+        expect(isHtmlEmpty(`<hr>`)).toBe(false);
+        expect(isHtmlEmpty(`<div class="page-break" style="page-break-after:always;"><span style="display:none;">&nbsp;</span></div>`)).toBe(false);
+        expect(isHtmlEmpty(`<figure class="table"><table><tbody><tr><td>&nbsp;</td></tr></tbody></table></figure>`)).toBe(false);
+        expect(isHtmlEmpty(`<ul class="todo-list"><li><label class="todo-list__label"><input type="checkbox" disabled></label></li></ul>`)).toBe(false);
+        expect(isHtmlEmpty(`<figure class="image"><video controls><source src="x.mp4"></video></figure>`)).toBe(false);
+    });
+
     it("detects plain text content", () => {
         expect(isHtmlEmpty("<p>hello</p>")).toBe(false);
     });

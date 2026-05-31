@@ -109,6 +109,12 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 types: ["jpeg", "png", "gif", "bmp", "webp", "tiff", "svg", "svg+xml", "avif"]
             }
         },
+        mediaEmbed: {
+            // Store the actual media preview in the content so embeds also render
+            // outside the editor (read-only and shared views render the raw HTML).
+            previewsInData: true,
+            toolbar: ["mediaEmbed"]
+        },
         heading: {
             options: [
                 { model: "paragraph" as const, title: "Paragraph", class: "ck-heading_paragraph" },
