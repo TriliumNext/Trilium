@@ -113,7 +113,12 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             // Store the actual media preview in the content so embeds also render
             // outside the editor (read-only and shared views render the raw HTML).
             previewsInData: true,
-            toolbar: ["mediaEmbed"]
+            toolbar: ["mediaEmbed"],
+            // Keep only providers that render an inline preview (dailymotion, spotify,
+            // youtube, vimeo). The providers below have no preview and save as a bare
+            // <oembed> that shows nothing outside the editor, so drop them — their URLs
+            // stay ordinary links instead of becoming embeds that vanish when viewed.
+            removeProviders: ["instagram", "twitter", "googleMaps", "flickr", "facebook"]
         },
         heading: {
             options: [
