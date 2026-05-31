@@ -9,10 +9,15 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
-    // Add FTS5 full-text index over blob content so quick search doesn't have to
-    // scan every note's body at query time. Triggers keep the index in sync.
-    // Blobs are content-addressed (immutable): new content -> new blobId, so we
-    // only need INSERT and DELETE sync, never UPDATE.
+    // Add FTS5 full-text index over note blob content so quick search doesn't have
+    // to scan every blob at query time. The index is **scoped to blobs that are
+    // currently referenced by a non-deleted text-content note** — blobs that only
+    // exist because they back a historical revision or an attachment are skipped,
+    // since they're not reachable from the search JOIN anyway and would only bloat
+    // the index. Triggers on `notes` keep the index in sync as notes are created,
+    // their content/type changes, or they're soft/hard-deleted; an AFTER DELETE
+    // trigger on `blobs` cleans up any FTS row left behind when the blob itself
+    // is garbage-collected.
     {
         version: 239,
         sql: /*sql*/`
@@ -23,25 +28,94 @@ export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
                 prefix = '2 3'
             );
 
+            -- Backfill: only blobs reachable from current non-deleted text notes.
+            -- DISTINCT because content-addressed dedup means one blob can back many
+            -- notes; we want one FTS row per indexed blob.
             INSERT INTO notes_fts (blobId, content)
-            SELECT blobId, content FROM blobs
-            WHERE content IS NOT NULL
-              AND LENGTH(content) > 0
-              AND LENGTH(content) < 2097152
-              AND typeof(content) = 'text';
+            SELECT DISTINCT b.blobId, b.content
+            FROM blobs b
+            JOIN notes n ON n.blobId = b.blobId
+            WHERE n.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
+              AND n.isDeleted = 0
+              AND b.content IS NOT NULL
+              AND LENGTH(b.content) > 0
+              AND LENGTH(b.content) < 2097152
+              AND typeof(b.content) = 'text';
 
-            CREATE TRIGGER IF NOT EXISTS notes_fts_blob_insert
-                AFTER INSERT ON blobs
-                WHEN new.content IS NOT NULL
-                 AND LENGTH(new.content) > 0
-                 AND LENGTH(new.content) < 2097152
-                 AND typeof(new.content) = 'text'
+            -- When a note appears (newly inserted, or its blobId/type changes, or
+            -- it's restored from soft-delete), index its blob if it isn't yet.
+            CREATE TRIGGER IF NOT EXISTS notes_fts_after_note_insert
+                AFTER INSERT ON notes
+                WHEN new.blobId IS NOT NULL
+                 AND new.isDeleted = 0
+                 AND new.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
             BEGIN
                 INSERT INTO notes_fts (blobId, content)
-                    VALUES (new.blobId, new.content);
+                SELECT b.blobId, b.content
+                FROM blobs b
+                WHERE b.blobId = new.blobId
+                  AND b.content IS NOT NULL
+                  AND LENGTH(b.content) > 0
+                  AND LENGTH(b.content) < 2097152
+                  AND typeof(b.content) = 'text'
+                  AND NOT EXISTS (SELECT 1 FROM notes_fts WHERE blobId = new.blobId);
             END;
 
-            CREATE TRIGGER IF NOT EXISTS notes_fts_blob_delete
+            -- When a note's content (blobId), type, or isDeleted flag changes, the
+            -- set of indexable blobs can shift in either direction. We first remove
+            -- the old blob from FTS if nothing else still needs it indexed, then
+            -- (re)insert the new blob if it now qualifies and isn't already there.
+            CREATE TRIGGER IF NOT EXISTS notes_fts_after_note_update
+                AFTER UPDATE OF blobId, type, isDeleted ON notes
+            BEGIN
+                DELETE FROM notes_fts
+                WHERE blobId = old.blobId
+                  AND old.blobId IS NOT NULL
+                  AND (old.blobId != new.blobId
+                       OR new.isDeleted = 1
+                       OR new.type NOT IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet'))
+                  AND NOT EXISTS (
+                      SELECT 1 FROM notes
+                      WHERE blobId = old.blobId
+                        AND noteId != old.noteId
+                        AND isDeleted = 0
+                        AND type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
+                  );
+
+                INSERT INTO notes_fts (blobId, content)
+                SELECT b.blobId, b.content
+                FROM blobs b
+                WHERE b.blobId = new.blobId
+                  AND new.blobId IS NOT NULL
+                  AND new.isDeleted = 0
+                  AND new.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
+                  AND b.content IS NOT NULL
+                  AND LENGTH(b.content) > 0
+                  AND LENGTH(b.content) < 2097152
+                  AND typeof(b.content) = 'text'
+                  AND NOT EXISTS (SELECT 1 FROM notes_fts WHERE blobId = new.blobId);
+            END;
+
+            -- Hard-delete of a note row: drop its blob from FTS unless another note
+            -- still keeps the same blob indexable.
+            CREATE TRIGGER IF NOT EXISTS notes_fts_after_note_delete
+                AFTER DELETE ON notes
+                WHEN old.blobId IS NOT NULL
+            BEGIN
+                DELETE FROM notes_fts
+                WHERE blobId = old.blobId
+                  AND NOT EXISTS (
+                      SELECT 1 FROM notes
+                      WHERE blobId = old.blobId
+                        AND isDeleted = 0
+                        AND type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
+                  );
+            END;
+
+            -- Safety net: if the blob row itself is garbage-collected (no notes,
+            -- revisions, or attachments reference it any more), make sure its FTS
+            -- entry goes with it.
+            CREATE TRIGGER IF NOT EXISTS notes_fts_after_blob_delete
                 AFTER DELETE ON blobs
             BEGIN
                 DELETE FROM notes_fts WHERE blobId = old.blobId;
