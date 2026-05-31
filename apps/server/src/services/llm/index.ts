@@ -144,6 +144,12 @@ export function getAllModels(): ModelInfo[] {
                         isDefault: true
                     });
                 }
+                // Ensure only the configured model is the default
+                for (let i = 0; i < mergedModels.length; i++) {
+                    if (mergedModels[i].isDefault && mergedModels[i].id !== config.model) {
+                        mergedModels[i] = { ...mergedModels[i], isDefault: false };
+                    }
+                }
             }
 
             for (const model of mergedModels) {
