@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
 vi.mock("../../services/llm/index.js", () => ({
     hasConfiguredProviders: () => state.configured,
     getAllModels: () => state.models,
+    getProviderSetupByType: () => undefined,
     getProviderByType: () => ({
         chat: () => { if (state.chatThrows) throw new Error("provider exploded"); return {}; },
         getAvailableModels: () => state.availableModels,
