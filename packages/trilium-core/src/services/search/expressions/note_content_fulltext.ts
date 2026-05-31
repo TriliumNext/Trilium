@@ -41,42 +41,46 @@ type SearchRow = Pick<NoteRow, "noteId" | "type" | "mime" | "content" | "isProte
 /**
  * Translate a Trilium search operator + token list into a notes_fts MATCH query, or
  * return null if the operator can't be safely narrowed by FTS (the caller then falls
- * back to a full blob scan). FTS uses prefix matching so e.g. `"hello"*` hits any
- * indexed token starting with `hello` — close enough to what the JS scorer treats as
- * a substring/fuzzy hit for the common case, while leaving regex/negation/anchored
- * operators on the slow path that preserves their exact semantics.
+ * back to a full blob scan).
+ *
+ * The FTS5 table uses the `trigram` tokenizer (see migration 239), so a phrase
+ * query like `"hello"` matches any document containing the literal substring
+ * "hello". That makes the candidate set a strict superset of what JS
+ * `findInText` accepts for substring/start/end/exact operators (`*=*`, `=`,
+ * `*=`, `=*`) — `findInText` then re-checks each candidate to enforce the
+ * precise operator semantics. For operators where trigram is not a superset —
+ * fuzzy (`~=`/`~*`, where typos change every trigram), negation (`!=`), and
+ * regex (`%=`) — we return null and the caller scans every blob.
  *
  * Exported for unit testing; the class wraps it as a private method.
  */
 export function buildFtsMatchQuery(operator: string, tokens: string[]): string | null {
-    // != and %= need to see every row to decide. =, *=, =* depend on positional
-    // anchors FTS5 doesn't preserve once content is tokenized — they'd produce
-    // a strict superset of candidates that findInText would still have to scan,
-    // so we leave them on the legacy unfiltered path.
-    if (operator === "!=" || operator === "%=" ||
-        operator === "=" || operator === "*=" || operator === "=*") {
+    // ~= / ~* tolerate typos that produce no overlapping trigrams with the target,
+    // so FTS would silently drop valid matches. != and %= require seeing every row.
+    if (operator === "~=" || operator === "~*" ||
+        operator === "!=" || operator === "%=") {
         return null;
     }
 
-    // Punctuation-only tokens (e.g. `++`, `==`, `//`) survive the length check but
-    // the unicode61 tokenizer strips every character from them, leaving an empty
-    // phrase. FTS5 raises a syntax error on `""*`, so require at least one
-    // alphanumeric code point (any unicode letter or number, including CJK / Cyrillic)
-    // before the token is allowed into the MATCH query. Single-char tokens are also
-    // dropped because they produce too many false-positive prefix hits.
+    // The trigram tokenizer can only match phrases of at least 3 codepoints —
+    // anything shorter has no representable token in the index. Punctuation-only
+    // strings tokenize to nothing and would cause `fts5: syntax error`, so we
+    // also require at least one alphanumeric codepoint (any Unicode letter or
+    // number, including CJK / Cyrillic). Tokens that fail either check fall
+    // through to the legacy scan via the null return below.
     const hasAlphanumeric = /[\p{L}\p{N}]/u;
     const usableTokens = tokens
         .map((t) => (t ?? "").trim())
-        .filter((t) => t.length >= 2 && hasAlphanumeric.test(t));
+        .filter((t) => t.length >= 3 && hasAlphanumeric.test(t));
     if (usableTokens.length === 0) {
         return null;
     }
 
-    // FTS5 phrase syntax: wrap each token in double quotes (escaping inner quotes
-    // by doubling) and append `*` for prefix matching. Multiple phrases are
-    // implicitly ANDed by FTS5.
+    // FTS5 trigram phrase syntax: each token becomes a quoted phrase (with inner
+    // `"` doubled per FTS5's escape rule). Trigram does **not** accept the `*`
+    // prefix wildcard. Multiple phrases joined by spaces are implicitly ANDed.
     return usableTokens
-        .map((t) => `"${t.replace(/"/g, '""')}"*`)
+        .map((t) => `"${t.replace(/"/g, '""')}"`)
         .join(" ");
 }
 

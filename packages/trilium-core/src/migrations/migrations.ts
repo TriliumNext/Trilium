@@ -10,22 +10,38 @@ export function getMaxMigrationVersion() {
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
     // Add FTS5 full-text index over note blob content so quick search doesn't have
-    // to scan every blob at query time. The index is **scoped to blobs that are
-    // currently referenced by a non-deleted text-content note** — blobs that only
-    // exist because they back a historical revision or an attachment are skipped,
-    // since they're not reachable from the search JOIN anyway and would only bloat
-    // the index. Triggers on `notes` keep the index in sync as notes are created,
-    // their content/type changes, or they're soft/hard-deleted; an AFTER DELETE
-    // trigger on `blobs` cleans up any FTS row left behind when the blob itself
-    // is garbage-collected.
+    // to scan every blob at query time.
+    //
+    // Tokenizer: **trigram**, which indexes every contiguous 3-character window of
+    // the content. This makes the index a strict *superset* of what the JS
+    // `findInText` substring/operator semantics ask for — every doc containing
+    // the search token as a literal substring shows up as a candidate, so
+    // `*=*`, `*=`, `=*`, and `=` can re-check candidates without false negatives.
+    // The earlier `unicode61` + prefix wildcards approach only matched word-start
+    // occurrences ("ello" missed "hello"), which broke the superset property.
+    //
+    // Trigram doesn't ship with built-in diacritic folding (the `unicode61`
+    // `remove_diacritics` option doesn't apply), so diacritic-insensitive content
+    // searches are out of scope for this migration. Title and attribute matches
+    // still go through `NoteFlatTextExp`, which normalizes diacritics in JS, so
+    // most user queries are unaffected; full diacritic-insensitive content search
+    // can be layered on top later by indexing a pre-normalized column.
+    //
+    // The index is also **scoped to blobs that are currently referenced by a
+    // non-deleted text-content note** — blobs that only exist because they back a
+    // historical revision or an attachment are skipped, since they aren't reachable
+    // from the search JOIN anyway and would only bloat the index. Triggers on
+    // \`notes\` keep the index in sync as notes are inserted, as their content
+    // (\`blobId\`)/type/isDeleted change, or as they're hard-deleted; an
+    // \`AFTER DELETE ON blobs\` trigger cleans up any FTS row left behind when the
+    // blob itself is garbage-collected.
     {
         version: 239,
         sql: /*sql*/`
             CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
                 blobId UNINDEXED,
                 content,
-                tokenize = 'unicode61 remove_diacritics 1',
-                prefix = '2 3'
+                tokenize = 'trigram'
             );
 
             -- Backfill: only blobs reachable from current non-deleted text notes.
@@ -42,8 +58,10 @@ export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
               AND LENGTH(b.content) < 2097152
               AND typeof(b.content) = 'text';
 
-            -- When a note appears (newly inserted, or its blobId/type changes, or
-            -- it's restored from soft-delete), index its blob if it isn't yet.
+            -- When a new note row is inserted, index its blob if it qualifies.
+            -- (Re-indexing on content/type/isDeleted changes is handled by the
+            -- UPDATE trigger below; restoring a soft-deleted note runs an UPDATE
+            -- on \`isDeleted\` and therefore fires there, not here.)
             CREATE TRIGGER IF NOT EXISTS notes_fts_after_note_insert
                 AFTER INSERT ON notes
                 WHEN new.blobId IS NOT NULL
