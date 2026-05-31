@@ -319,20 +319,29 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
             const word = words[i];
             const originalWord = originalWords[i];
 
-            // Skip if word is too different in length for fuzzy matching
-            if (Math.abs(word.length - normalizedToken.length) > maxDistance) {
-                continue;
+            // Strategy 1: whole-word fuzzy match for similar-length words ("infra" ↔ "infa", typos).
+            if (normalizedToken.length >= 4 &&
+                Math.abs(word.length - normalizedToken.length) <= maxDistance) {
+                const distance = calculateOptimizedEditDistance(normalizedToken, word, maxDistance);
+                if (distance <= maxDistance) {
+                    return originalWord;
+                }
             }
 
-            // For very short tokens or very different lengths, be more strict
-            if (normalizedToken.length < 4 || Math.abs(word.length - normalizedToken.length) > 2) {
-                continue;
-            }
-
-            // Use optimized edit distance calculation
-            const distance = calculateOptimizedEditDistance(normalizedToken, word, maxDistance);
-            if (distance <= maxDistance) {
-                return originalWord; // Return the original word with case preserved
+            // Strategy 2: prefix-aware fuzzy match for longer words ("infa" ↔ "infrastructure").
+            // The whole-word check above skips length-mismatched words; without this, a typo in
+            // a short token never matches a long word that starts with the intended prefix.
+            // We try edit distance against a prefix sized to the token's intended length
+            // (±maxDistance), so "infa" lines up with the first 4-6 chars of "infrastructure".
+            // Require a healthy length difference to avoid double-counting Strategy 1 hits.
+            if (normalizedToken.length >= 4 &&
+                word.length > normalizedToken.length + maxDistance) {
+                const prefixLen = Math.min(word.length, normalizedToken.length + maxDistance);
+                const prefix = word.substring(0, prefixLen);
+                const distance = calculateOptimizedEditDistance(normalizedToken, prefix, maxDistance);
+                if (distance <= maxDistance) {
+                    return originalWord.substring(0, prefixLen);
+                }
             }
         }
 
