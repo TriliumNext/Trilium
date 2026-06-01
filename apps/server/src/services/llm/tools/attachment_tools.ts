@@ -5,7 +5,7 @@
 import { unwrapStringOrBuffer } from "@triliumnext/core/src/services/utils/binary.js";
 import { z } from "zod";
 
-import becca from "../../../becca/becca.js";
+import { becca } from "@triliumnext/core";
 import { defineTools } from "./tool_registry.js";
 
 export const attachmentTools = defineTools({

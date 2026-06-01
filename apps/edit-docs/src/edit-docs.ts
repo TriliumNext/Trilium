@@ -1,8 +1,6 @@
 import debounce from "@triliumnext/client/src/services/debounce.js";
-import type { AdvancedExportOptions, ExportFormat } from "@triliumnext/core";
-import cls from "@triliumnext/server/src/services/cls.js";
-import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
-import type { NoteMetaFile } from "@triliumnext/server/src/services/meta/note_meta.js";
+import type { AdvancedExportOptions, ExportFormat, NoteMeta, NoteMetaFile } from "@triliumnext/core";
+import { cls } from "@triliumnext/core";
 
 import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler } from "./help_meta_generator.js";
 import fs from "fs/promises";
@@ -140,7 +138,7 @@ async function main() {
 }
 
 async function setOptions() {
-    const optionsService = (await import("@triliumnext/server/src/services/options.js")).default;
+    const { options: optionsService } = await import("@triliumnext/core");
     const sql = (await import("@triliumnext/server/src/services/sql.js")).default;
 
     optionsService.setOption("eraseUnusedAttachmentsAfterSeconds", 10);

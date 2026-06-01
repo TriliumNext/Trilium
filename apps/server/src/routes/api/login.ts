@@ -4,15 +4,11 @@
  * Protected session routes (loginToProtectedSession, logoutFromProtectedSession,
  * touchProtectedSession) are now in core and registered via buildSharedApiRoutes.
  */
-import { getInstanceId } from "@triliumnext/core";
+import { app_info as appInfo, date_utils as dateUtils, getInstanceId, options, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { Request } from "express";
 
-import appInfo from "../../services/app_info.js";
-import dateUtils from "../../services/date_utils.js";
-import passwordEncryptionService from "../../services/encryption/password_encryption.js";
 import recoveryCodeService from "../../services/encryption/recovery_codes";
 import etapiTokenService from "../../services/etapi_tokens.js";
-import options from "../../services/options.js";
 import sql from "../../services/sql.js";
 import sqlInit from "../../services/sql_init.js";
 import totp from "../../services/totp";
@@ -80,7 +76,7 @@ import utils from "../../services/utils.js";
  *                   type: string
  *                   example: "Auth request time is out of sync, please check that both client and server have correct time. The difference between clocks has to be smaller than 5 minutes"
  */
-function loginSync(req: Request) {
+async function loginSync(req: Request) {
     if (!sqlInit.schemaExists()) {
         return [500, { message: "DB schema does not exist, can't sync." }];
     }
@@ -113,6 +109,17 @@ function loginSync(req: Request) {
     if (!utils.constantTimeCompare(expectedHash, givenHash)) {
         return [400, { message: "Sync login credentials are incorrect. It looks like you're trying to sync two different initialized documents which is not possible." }];
     }
+
+    // Regenerate session to prevent session fixation attacks.
+    await new Promise<void>((resolve, reject) => {
+        req.session.regenerate((err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
 
     req.session.loggedIn = true;
 

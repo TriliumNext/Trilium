@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { renderWithSourceLines } from "./Markdown.js";
+import { buildTaskItemInsert, renderWithSourceLines } from "./Markdown.js";
 
 describe("renderWithSourceLines", () => {
     function extractLines(src: string): number[] {
@@ -84,6 +84,38 @@ describe("renderWithSourceLines", () => {
         expect(html("Energy: $e=mc^2$.")).toContain('<span class="math-tex">');
     });
 
+    it("renders the default /todo:<state> templates to their task states", () => {
+        // The `/todo:*` commands insert `- [<symbol>] `; verify each default state's marker
+        // round-trips to the right rendered task item. The ` ` (unchecked) and `x` (checked)
+        // anchors map to native checkboxes; custom states carry data-trilium-task-state.
+        const unchecked = html("- [ ] groceries");
+        expect(unchecked).toContain('type="checkbox"');
+        expect(unchecked).not.toContain("checked");
+        expect(unchecked).not.toContain("data-trilium-task-state");
+
+        expect(html("- [x] groceries")).toContain("checked");
+        expect(html("- [/] groceries")).toContain('data-trilium-task-state="doing"');
+        expect(html("- [?] groceries")).toContain('data-trilium-task-state="maybe"');
+        expect(html("- [-] groceries")).toContain('data-trilium-task-state="cancelled"');
+    });
+
+    it("renders the /collapsible template as a details block", () => {
+        // Mirrors the markdown the `/collapsible` slash command inserts.
+        const src = [
+            '<details class="trilium-collapsible">',
+            "<summary>Summary</summary>",
+            "",
+            "Details",
+            "",
+            "</details>"
+        ].join("\n");
+
+        const result = html(src);
+        expect(result).toContain("<details");
+        expect(result).toContain("<summary>Summary</summary>");
+        expect(result).toContain("Details");
+    });
+
     it("renders [[wikilinks]] with hash-router hrefs so the preview navigates correctly", () => {
         const result = html("See [[abc123]] for details.");
         expect(result).toContain('class="reference-link"');
@@ -157,5 +189,19 @@ describe("renderWithSourceLines", () => {
             expect(h.text).not.toMatch(/onload/i);
             expect(h.text).not.toMatch(/javascript:/i);
         }
+    });
+});
+
+describe("buildTaskItemInsert", () => {
+    it("prepends a bullet when not already in a list item", () => {
+        expect(buildTaskItemInsert(" ", false)).toBe("- [ ] ");
+        expect(buildTaskItemInsert("x", false)).toBe("- [x] ");
+        expect(buildTaskItemInsert("/", false)).toBe("- [/] ");
+    });
+
+    it("reuses an existing '- ' bullet to avoid a doubled marker", () => {
+        expect(buildTaskItemInsert(" ", true)).toBe("[ ] ");
+        expect(buildTaskItemInsert("x", true)).toBe("[x] ");
+        expect(buildTaskItemInsert("/", true)).toBe("[/] ");
     });
 });

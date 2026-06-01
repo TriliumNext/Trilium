@@ -38,6 +38,13 @@ This method is used when you already have a sync server and want to configure a 
 
 Once synchronization is complete, you will be automatically redirected to the Trilium application.
 
+### Desktop-to-desktop sync
+
+This method allows two desktop instances to synchronize between each other without requiring a <a class="reference-link" href="Server%20Installation.md">Server Installation</a>.
+
+> [!WARNING]
+> Since v0.104.0, LAN access needs to be enabled to allow this sync to function. See <a class="reference-link" href="Desktop%20Installation/Network%20Access.md">Network Access</a> for information on how to do so.
+
 ## Proxy Configuration
 
 Two proxy setups are supported:

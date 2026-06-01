@@ -1,11 +1,10 @@
 import { dayjs, LOCALES, LOCALE_IDS, setDayjsLocale, type Dayjs } from "@triliumnext/commons";
+import { hidden_subtree, options } from "@triliumnext/core";
 import i18next from "i18next";
 import { join } from "path";
 
 import { getResourceDir } from "./utils";
-import options from "./options.js";
 import sql_init from "./sql_init.js";
-import hidden_subtree from "./hidden_subtree.js";
 
 /**
  * Initialize translations with explicit i18next instance and locale.

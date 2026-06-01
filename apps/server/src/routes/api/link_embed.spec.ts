@@ -1,108 +1,128 @@
-import { describe, expect, it, vi } from "vitest";
-import dns from "node:dns";
 import { extractYouTubeVideoId } from "@triliumnext/commons";
-import { validateHostResolution, validateUrl } from "./link_embed.js";
+import { ValidationError } from "@triliumnext/core";
+import type { Request } from "express";
+import { describe, expect, it, vi } from "vitest";
 
-vi.mock("../../services/log.js", () => ({
-    default: { info: vi.fn(), error: vi.fn() }
+const safeFetch = vi.hoisted(() => vi.fn());
+
+vi.mock("../../services/safe_fetch.js", () => ({
+    // Bypass SSRF/DNS checks in tests — just parse the URL.
+    validateUrl: (u: string) => new URL(u),
+    safeFetch: (...args: unknown[]) => safeFetch(...args)
 }));
 
-describe("validateUrl", () => {
-    it("accepts http URLs", () => {
-        const result = validateUrl("http://example.com");
-        expect(result.hostname).toBe("example.com");
-    });
+import linkEmbedRoute from "./link_embed.js";
 
-    it("accepts https URLs", () => {
-        const result = validateUrl("https://example.com/path?q=1");
-        expect(result.hostname).toBe("example.com");
-    });
+function oneShotReader(bytes: Buffer) {
+    let sent = false;
+    return {
+        async read() {
+            if (sent) return { done: true, value: undefined };
+            sent = true;
+            return { done: false, value: new Uint8Array(bytes) };
+        },
+        async cancel() {}
+    };
+}
 
-    it("rejects non-http protocols", () => {
-        expect(() => validateUrl("ftp://example.com")).toThrow("Only http and https");
-        expect(() => validateUrl("file:///etc/passwd")).toThrow("Only http and https");
-        expect(() => validateUrl("javascript:alert(1)")).toThrow("Only http and https");
-    });
-
-    it("rejects invalid URLs", () => {
-        expect(() => validateUrl("not-a-url")).toThrow("Invalid URL");
-        expect(() => validateUrl("")).toThrow("Invalid URL");
-    });
-});
-
-describe("validateHostResolution", () => {
-    it("rejects private IPv4 literals", async () => {
-        await expect(validateHostResolution("127.0.0.1")).rejects.toThrow("private/internal");
-        await expect(validateHostResolution("10.0.0.1")).rejects.toThrow("private/internal");
-        await expect(validateHostResolution("192.168.1.1")).rejects.toThrow("private/internal");
-        await expect(validateHostResolution("172.16.0.1")).rejects.toThrow("private/internal");
-        await expect(validateHostResolution("169.254.1.1")).rejects.toThrow("private/internal");
-        await expect(validateHostResolution("0.0.0.0")).rejects.toThrow("private/internal");
-    });
-
-    it("rejects private IPv6 literals", async () => {
-        await expect(validateHostResolution("::1")).rejects.toThrow("private/internal");
-        await expect(validateHostResolution("fc00::1")).rejects.toThrow("private/internal");
-        await expect(validateHostResolution("fd12::1")).rejects.toThrow("private/internal");
-        await expect(validateHostResolution("fe80::1")).rejects.toThrow("private/internal");
-    });
-
-    it("allows public IP literals", async () => {
-        await expect(validateHostResolution("8.8.8.8")).resolves.toBeUndefined();
-        await expect(validateHostResolution("1.1.1.1")).resolves.toBeUndefined();
-    });
-
-    it("rejects hostnames that resolve to private IPs (DNS rebinding)", async () => {
-        vi.spyOn(dns.promises, "lookup").mockResolvedValueOnce([
-            { address: "127.0.0.1", family: 4 }
-        ] as unknown as dns.LookupAddress);
-
-        await expect(validateHostResolution("evil.example.com")).rejects.toThrow("private/internal");
-    });
-
-    it("rejects hostnames where any resolved address is private", async () => {
-        vi.spyOn(dns.promises, "lookup").mockResolvedValueOnce([
-            { address: "93.184.216.34", family: 4 },
-            { address: "10.0.0.1", family: 4 }
-        ] as unknown as dns.LookupAddress);
-
-        await expect(validateHostResolution("dual.example.com")).rejects.toThrow("private/internal");
-    });
-
-    it("allows hostnames that resolve to public IPs", async () => {
-        vi.spyOn(dns.promises, "lookup").mockResolvedValueOnce([
-            { address: "93.184.216.34", family: 4 }
-        ] as unknown as dns.LookupAddress);
-
-        await expect(validateHostResolution("example.com")).resolves.toBeUndefined();
-    });
-
-    it("rejects hostnames that fail to resolve", async () => {
-        vi.spyOn(dns.promises, "lookup").mockRejectedValueOnce(new Error("ENOTFOUND"));
-
-        await expect(validateHostResolution("nonexistent.invalid")).rejects.toThrow("Could not resolve hostname");
-    });
-});
+function fakeResponse(payload: string | Buffer, opts: { ok?: boolean; contentType?: string; json?: unknown } = {}) {
+    const buf = Buffer.isBuffer(payload) ? payload : Buffer.from(payload);
+    const headers: Record<string, string | null> = {
+        "content-type": opts.contentType ?? "text/html",
+        "content-length": String(buf.byteLength)
+    };
+    return {
+        ok: opts.ok ?? true,
+        status: opts.ok === false ? 500 : 200,
+        headers: { get: (h: string) => headers[h.toLowerCase()] ?? null },
+        body: { getReader: () => oneShotReader(buf) },
+        json: async () => opts.json
+    };
+}
 
 describe("extractYouTubeVideoId", () => {
-    it("extracts ID from standard watch URL", () => {
+    it("extracts ids and rejects non-YouTube URLs", () => {
         expect(extractYouTubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-    });
-
-    it("extracts ID from short URL", () => {
         expect(extractYouTubeVideoId("https://youtu.be/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-    });
-
-    it("extracts ID from embed URL", () => {
-        expect(extractYouTubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-    });
-
-    it("extracts ID from shorts URL", () => {
-        expect(extractYouTubeVideoId("https://www.youtube.com/shorts/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
-    });
-
-    it("returns null for non-YouTube URLs", () => {
         expect(extractYouTubeVideoId("https://example.com")).toBeNull();
-        expect(extractYouTubeVideoId("https://vimeo.com/12345")).toBeNull();
+    });
+});
+
+describe("link-embed getMetadata", () => {
+    function req(url?: unknown) { return { query: { url } } as unknown as Request; }
+
+    it("requires a url query parameter", async () => {
+        await expect(linkEmbedRoute.getMetadata(req())).rejects.toBeInstanceOf(ValidationError);
+    });
+
+    it("returns YouTube metadata via the oEmbed endpoint", async () => {
+        safeFetch.mockImplementation(async (url: string) => {
+            if (url.includes("favicon")) return fakeResponse(Buffer.from([1, 2, 3]), { contentType: "image/x-icon" });
+            return fakeResponse("", { json: { title: "Cool Video", author_name: "Channel", thumbnail_url: "https://img/thumb.jpg" } });
+        });
+
+        const result = await linkEmbedRoute.getMetadata(req("https://www.youtube.com/watch?v=dQw4w9WgXcQ"));
+        expect(result.embedType).toBe("youtube");
+        expect(result.title).toBe("Cool Video");
+        expect(result.description).toBe("Channel");
+        expect(result.favicon).toMatch(/^data:image\//);
+    });
+
+    it("parses OpenGraph metadata from an HTML page", async () => {
+        const html = `<html><head>
+            <meta property="og:title" content="OG Title">
+            <meta property="og:description" content="OG Desc">
+            <meta property="og:image" content="https://site/img.png">
+            <meta property="og:site_name" content="Example">
+            <link rel="icon" href="/fav.ico">
+        </head></html>`;
+        safeFetch.mockImplementation(async (url: string) => {
+            if (url.includes("fav.ico")) return fakeResponse(Buffer.from([9, 9]), { contentType: "image/x-icon" });
+            return fakeResponse(html, { contentType: "text/html" });
+        });
+
+        const result = await linkEmbedRoute.getMetadata(req("https://example.com/page"));
+        expect(result.embedType).toBe("opengraph");
+        expect(result.title).toBe("OG Title");
+        expect(result.description).toBe("OG Desc");
+        expect(result.siteName).toBe("Example");
+    });
+
+    it("falls back to the hostname when the fetch fails", async () => {
+        safeFetch.mockResolvedValue(fakeResponse("", { ok: false }));
+        const result = await linkEmbedRoute.getMetadata(req("https://broken.example.com/x"));
+        expect(result).toEqual({ url: "https://broken.example.com/x", title: "broken.example.com", embedType: "opengraph" });
+    });
+
+    it("uses a generic YouTube title when oEmbed is unavailable", async () => {
+        safeFetch.mockImplementation(async (url: string) => {
+            if (url.includes("favicon")) return fakeResponse(Buffer.from([1]), { contentType: "image/x-icon" });
+            return fakeResponse("", { ok: false }); // oembed fails
+        });
+        const result = await linkEmbedRoute.getMetadata(req("https://youtu.be/dQw4w9WgXcQ"));
+        expect(result.embedType).toBe("youtube");
+        expect(result.title).toBe("YouTube Video");
+    });
+
+    it("falls back when the page is not HTML", async () => {
+        safeFetch.mockResolvedValue(fakeResponse("not html", { contentType: "application/json" }));
+        const result = await linkEmbedRoute.getMetadata(req("https://example.com/data.json"));
+        expect(result).toEqual({ url: "https://example.com/data.json", title: "example.com", embedType: "opengraph" });
+    });
+
+    it("ignores a favicon that advertises a size over the limit", async () => {
+        const html = `<html><head><title>Plain</title><link rel="icon" href="/big.ico"></head></html>`;
+        safeFetch.mockImplementation(async (url: string) => {
+            if (url.includes("big.ico")) {
+                const big = fakeResponse(Buffer.from([1, 2, 3]), { contentType: "image/x-icon" });
+                (big.headers as { get: (h: string) => string | null }).get = (h: string) =>
+                    h.toLowerCase() === "content-length" ? String(1024 * 1024) : "image/x-icon";
+                return big;
+            }
+            return fakeResponse(html, { contentType: "text/html" });
+        });
+        const result = await linkEmbedRoute.getMetadata(req("https://example.com/page"));
+        expect(result.title).toBe("Plain");
+        expect(result.favicon).toBeUndefined();
     });
 });

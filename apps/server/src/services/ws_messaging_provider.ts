@@ -5,8 +5,8 @@ import type express from "express";
 import { WebSocket, WebSocketServer } from "ws";
 
 import config from "./config.js";
-import log from "./log.js";
-import { isElectron, randomString } from "./utils.js";
+import { getLog } from "@triliumnext/core";
+import { randomString } from "./utils.js";
 
 type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
 
@@ -15,6 +15,10 @@ type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
  *
  * Handles the raw WebSocket transport: server setup, connection management,
  * message serialization, and client tracking.
+ *
+ * Note: this provider is no longer used by the Electron desktop build —
+ * desktop runs IpcMessagingProvider instead so the renderer↔server messaging
+ * channel never crosses a TCP socket. See `apps/server/src/main.ts`.
  */
 export default class WebSocketMessagingProvider implements MessagingProvider {
     private webSocketServer!: WebSocketServer;
@@ -25,10 +29,10 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
         this.webSocketServer = new WebSocketServer({
             verifyClient: (info, done) => {
                 sessionParser(info.req as express.Request, {} as express.Response, () => {
-                    const allowed = isElectron || (info.req as any).session.loggedIn || (config.General && config.General.noAuthentication);
+                    const allowed = (info.req as any).session.loggedIn || (config.General && config.General.noAuthentication);
 
                     if (!allowed) {
-                        log.error("WebSocket connection not allowed because session is neither electron nor logged in.");
+                        getLog().error("WebSocket connection not allowed: session is not logged in.");
                     }
 
                     done(allowed);
@@ -44,12 +48,20 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
 
             console.log(`websocket client connected`);
 
-            ws.on("message", async (messageJson) => {
-                const message = JSON.parse(messageJson as any);
+            ws.on("message", (messageJson) => {
+                void (async () => {
+                    try {
+                        const message = JSON.parse(messageJson as any);
 
-                if (this.clientMessageHandler) {
-                    await this.clientMessageHandler(id, message);
-                }
+                        if (this.clientMessageHandler) {
+                            await this.clientMessageHandler(id, message);
+                        }
+                    } catch (e) {
+                        // A malformed message (invalid JSON) or a failing handler must not
+                        // crash the process via an unhandled rejection on this floating promise.
+                        console.error("Failed to process websocket message:", e);
+                    }
+                })();
             });
 
             ws.on("close", () => {
@@ -75,7 +87,7 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
 
         if (this.webSocketServer) {
             if (message.type !== "sync-failed" && message.type !== "api-log-messages") {
-                log.info(`Sending message to all clients: ${jsonStr}`);
+                getLog().info(`Sending message to all clients: ${jsonStr}`);
             }
 
             this.webSocketServer.clients.forEach((client) => {

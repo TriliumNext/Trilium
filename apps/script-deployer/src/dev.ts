@@ -38,7 +38,7 @@ async function ensureDatabase() {
 
     console.log("No database found — creating a fresh instance…");
 
-    const cls = (await import("@triliumnext/server/src/services/cls.js")).default;
+    const cls = (await import("@triliumnext/core")).cls;
     const sqlInit = (await import("@triliumnext/server/src/services/sql_init.js")).default;
 
     // createInitialDatabase must run inside CLS (it touches becca).
@@ -56,7 +56,7 @@ async function ensureEtapiToken() {
         return;
     }
 
-    const cls = (await import("@triliumnext/server/src/services/cls.js")).default;
+    const cls = (await import("@triliumnext/core")).cls;
     const etapiTokens = (await import("@triliumnext/server/src/services/etapi_tokens.js")).default;
 
     const authToken: string = cls.init(() => {
@@ -70,11 +70,11 @@ async function ensureEtapiToken() {
 }
 
 async function ensureScriptsFolder() {
-    const becca = (await import("@triliumnext/server/src/becca/becca.js")).default;
+    const becca = (await import("@triliumnext/core")).becca;
     if (becca.notes[SCRIPTS_NOTE_ID]) return;
 
-    const cls = (await import("@triliumnext/server/src/services/cls.js")).default;
-    const notesService = (await import("@triliumnext/server/src/services/notes.js")).default;
+    const cls = (await import("@triliumnext/core")).cls;
+    const { note_service: notesService } = await import("@triliumnext/core");
 
     cls.init(() => {
         notesService.createNewNote({
@@ -96,9 +96,7 @@ async function deployScripts() {
         return;
     }
 
-    const becca = (await import("@triliumnext/server/src/becca/becca.js")).default;
-    const cls = (await import("@triliumnext/server/src/services/cls.js")).default;
-    const notesService = (await import("@triliumnext/server/src/services/notes.js")).default;
+    const { becca, cls, note_service: notesService } = await import("@triliumnext/core");
 
     console.log(`Deploying ${files.length} script(s)…`);
 
@@ -142,8 +140,8 @@ function watchScripts() {
 
         const noteId = codeNoteId(meta.id);
 
-        const becca = (await import("@triliumnext/server/src/becca/becca.js")).default;
-        const cls = (await import("@triliumnext/server/src/services/cls.js")).default;
+        const becca = (await import("@triliumnext/core")).becca;
+        const cls = (await import("@triliumnext/core")).cls;
 
         const note = becca.notes[noteId];
         if (!note) {
@@ -160,7 +158,7 @@ function watchScripts() {
         // For render scripts, trigger a refresh of all contexts viewing
         // the render note by injecting a client-side script via websocket.
         if (meta.type === "render") {
-            const ws = (await import("@triliumnext/server/src/services/ws.js")).default;
+            const { ws } = await import("@triliumnext/core");
             const renderId = renderNoteId(meta.id);
             ws.sendMessageToAllClients({
                 type: "execute-script",

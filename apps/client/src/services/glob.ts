@@ -82,7 +82,7 @@ function setupGlobs() {
     });
 }
 
-async function requireCss(url: string, prependAssetPath = true) {
+export async function requireCss(url: string, prependAssetPath = true) {
     const cssLinks = Array.from(document.querySelectorAll("link")).map((el) => el.href);
 
     if (!cssLinks.some((l) => l.endsWith(url))) {

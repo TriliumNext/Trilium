@@ -1,22 +1,21 @@
-.note-detail-content-widget-content.options {
+/* #region CodeMimeTypesList */
+.options-mime-types {
+    list-style-type: none;
+    column-width: 250px;
+    padding-inline-start: 0;
 
-    /* #region CodeMimeTypesList */
-    .options-mime-types {
-        list-style-type: none;
-        column-width: 250px;
-        padding-inline-start: 0;
-    }
-
-    .options-mime-types > section {
+    & > section {
         margin-bottom: 1em;
         break-inside: avoid-column;
     }
 
-    .options-mime-types ul {
+    ul {
         padding-inline-start: 0;
     }
-    /* #endregion */
+}
+/* #endregion */
 
+.note-detail-content-widget-content.options {
     /* #region Code Preview */
     .options-section.code-block-appearance .options-section-card {
         overflow: hidden;

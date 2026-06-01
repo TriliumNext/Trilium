@@ -1,0 +1,47 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+
+# trilium-core has no test runner of its own; its specs run *through* the server
+# and standalone suites. Vitest's v8 provider emits those external files with
+# paths relative to each suite's project root, so they arrive as `../../packages/…`
+# (server, root = apps/server) and `../../../packages/…` (standalone, root = apps/standalone/src).
+# Strip the leading `../` segments so the paths resolve to the repo-root tree.
+fixes:
+  - "../../../packages/::packages/"
+  - "../../packages/::packages/"
+
+flags:
+  client:
+    paths:
+      - apps/client/src/
+    carryforward: true
+  server:
+    paths:
+      - apps/server/src/
+      - packages/trilium-core/src/
+    carryforward: true
+  standalone:
+    paths:
+      - apps/standalone/src/
+      - packages/trilium-core/src/
+    carryforward: true
+  desktop:
+    paths:
+      - apps/desktop/src/
+    carryforward: true
+  commons:
+    paths:
+      - packages/commons/src/
+    carryforward: true
+
+comment:
+  layout: "condensed_header, condensed_files, condensed_footer"
+  require_changes: true

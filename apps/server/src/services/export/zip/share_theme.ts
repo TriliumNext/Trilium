@@ -1,17 +1,14 @@
-import { ExportFormat, icon_packs as iconPackService, ZipExportProvider } from "@triliumnext/core";
+import { type BBranch, type BNote, ExportFormat, icon_packs as iconPackService, type NoteMeta, type NoteMetaFile, ZipExportProvider } from "@triliumnext/core";
 import ejs from "ejs";
 import fs, { readdirSync, readFileSync } from "fs";
 import { convert as convertToText } from "html-to-text";
 import { t } from "i18next";
 import { join } from "path";
 
-import becca from "../../../becca/becca";
-import type BBranch from "../../../becca/entities/bbranch.js";
-import type BNote from "../../../becca/entities/bnote.js";
+import { becca } from "@triliumnext/core";
 import { getClientDir, getShareThemeAssetDir } from "../../../routes/assets";
 import { getDefaultTemplatePath, readTemplate, renderNoteForExport } from "../../../share/content_renderer";
-import log from "../../log";
-import NoteMeta, { NoteMetaFile } from "../../meta/note_meta";
+import { getLog } from "@triliumnext/core";
 import { RESOURCE_DIR } from "../../resource_dir";
 import { getResourceDir, isDev } from "../../utils";
 
@@ -173,7 +170,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
             }
 
             if (!fontData) {
-                log.error(`Failed to find font data for icon pack ${iconPack.prefix} with attachment ID ${iconPack.fontAttachmentId}`);
+                getLog().error(`Failed to find font data for icon pack ${iconPack.prefix} with attachment ID ${iconPack.fontAttachmentId}`);
                 continue;
             };
             const fontFileName = `assets/icon-pack-${iconPack.prefix.toLowerCase()}.${extension}`;

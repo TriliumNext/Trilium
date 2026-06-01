@@ -1,13 +1,6 @@
 import { SaveLlmChatResponse } from "@triliumnext/commons";
+import { becca, type BNote, date_notes as dateNoteService, date_utils as dateUtils, hoisted_note as hoistedNoteService, note_service as noteService, search as searchService, SearchContext } from "@triliumnext/core";
 import { t } from "i18next";
-
-import becca from "../becca/becca.js";
-import dateNoteService from "./date_notes.js";
-import dateUtils from "./date_utils.js";
-import hoistedNoteService from "./hoisted_note.js";
-import noteService from "./notes.js";
-import SearchContext from "./search/search_context.js";
-import searchService from "./search/services/search.js";
 
 function createLlmChat() {
     const { note } = noteService.createNewNote({
@@ -125,7 +118,7 @@ function getMonthlyParentNoteId(rootNoteId: string, prefix: string) {
     const month = dateUtils.localNowDate().substring(0, 7);
     const labelName = `${prefix}MonthNote`;
 
-    let monthNote = searchService.findFirstNoteWithQuery(`#${labelName}="${month}"`, new SearchContext({ ancestorNoteId: rootNoteId }));
+    let monthNote: BNote | null = searchService.findFirstNoteWithQuery(`#${labelName}="${month}"`, new SearchContext({ ancestorNoteId: rootNoteId }));
 
     if (!monthNote) {
         monthNote = noteService.createNewNote({

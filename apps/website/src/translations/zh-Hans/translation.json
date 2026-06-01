@@ -74,7 +74,8 @@
         "download_deb": ".deb",
         "download_rpm": ".rpm",
         "download_flatpak": ".flatpak",
-        "download_zip": "便携版（.zip）"
+        "download_zip": "便携版（.zip）",
+        "download_appimage": ".AppImage"
     },
     "hero_section": {
         "title": "整理你的思路。建立你的个人知识库。",

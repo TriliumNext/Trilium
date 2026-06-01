@@ -1,10 +1,10 @@
 import { AnonymizedDbResponse, BUILTIN_ATTRIBUTES, DatabaseAnonymizeResponse } from "@triliumnext/commons";
+import { date_utils as dateUtils } from "@triliumnext/core";
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 
 import dataDir from "./data_dir.js";
-import dateUtils from "./date_utils.js";
 import sql from "./sql.js";
 
 function getFullAnonymizationScript() {

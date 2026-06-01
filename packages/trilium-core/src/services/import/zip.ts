@@ -399,7 +399,12 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Ui
             content = markdownService.renderToHtml(content, noteTitle);
         }
 
-        if (type === "text" && typeof content === "string") {
+        // `book` notes are rendered as rich HTML through the same `renderText()` path as
+        // `text` notes (see content_renderer), so their content must receive the same
+        // import processing — crucially the Safe Import HTML sanitization. Otherwise a
+        // malicious `book` note bypasses sanitization and achieves stored XSS/RCE when its
+        // content is previewed in a grid/list view.
+        if ((type === "text" || type === "book") && typeof content === "string") {
             content = processTextNoteContent(content, noteTitle, filePath, noteMeta);
         }
 

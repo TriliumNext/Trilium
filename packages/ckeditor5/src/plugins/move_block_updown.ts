@@ -120,8 +120,15 @@ abstract class MoveBlockUpDownCommand extends Command {
 
 		for (const block of blocks) {
 			let el: ModelElement = block;
-			// Traverse up until the parent is the root ($root) or there is no parent
-			while (el.parent && el.parent.name !== '$root') {
+			// Hoist a caret-in-<summary> to the enclosing <details> so the
+			// collapsible's title acts as a handle for the whole block (the
+			// schema's `isBlock: true` on <summary> was specifically engineered
+			// for this — see packages/ckeditor5-collapsible/src/collapsible-editing.ts).
+			// Everything else uses the block as-is, so nested children
+			// (collapsible body, admonition body, blockquote children) move
+			// within their immediate container instead of escalating to the
+			// top-level block.
+			if (el.name === 'summary' && el.parent) {
 				el = el.parent as ModelElement;
 			}
 			resolved.push(el);

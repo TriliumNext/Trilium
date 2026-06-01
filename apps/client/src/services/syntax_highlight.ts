@@ -21,7 +21,7 @@ function getEffectiveCodeBlockTheme(): string {
 // Re-apply the highlight.js theme when the OS color scheme changes, so that
 // "match app appearance" reacts in real time.
 let colorSchemeListenerRegistered = false;
-function ensureColorSchemeListener() {
+export function ensureColorSchemeListener() {
     if (colorSchemeListenerRegistered) return;
     colorSchemeListenerRegistered = true;
 
@@ -48,6 +48,7 @@ function setCachedHighlight(language: string, text: string, value: string) {
     const key = `${language}\x00${text}`;
     if (highlightCache.size >= HIGHLIGHT_CACHE_MAX) {
         const oldest = highlightCache.keys().next().value;
+        /* v8 ignore next -- size>=MAX guarantees a key exists; the undefined guard is defensive */
         if (oldest !== undefined) highlightCache.delete(oldest);
     }
     highlightCache.set(key, value);

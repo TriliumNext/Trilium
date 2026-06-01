@@ -1,5 +1,5 @@
 import { extractYouTubeVideoId, renderSpreadsheetToHtml, renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons";
-import { icon_packs as iconPackService, sanitize, task_states, utils } from "@triliumnext/core";
+import { type BAttachment, type BBranch, becca, BNote, getLog, icon_packs as iconPackService, options, sanitize, task_states, utils } from "@triliumnext/core";
 import { highlightAuto } from "@triliumnext/highlightjs";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
@@ -8,13 +8,8 @@ import { t } from "i18next";
 import { HTMLElement, Options, parse, TextNode } from "node-html-parser";
 import { join } from "path";
 
-import becca from "../becca/becca.js";
-import BAttachment from '../becca/entities/battachment.js';
-import type BBranch from "../becca/entities/bbranch.js";
-import BNote from "../becca/entities/bnote.js";
 import assetPath, { assetUrlFragment } from "../services/asset_path.js";
-import log from "../services/log.js";
-import options from "../services/options.js";
+import { isScriptingEnabled } from "../services/scripting_guard.js";
 import { getResourceDir, isDev } from "../services/utils.js";
 import SAttachment from "./shaca/entities/sattachment.js";
 import SBranch from "./shaca/entities/sbranch.js";
@@ -199,11 +194,13 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         t,
         isDev,
         utils,
+        sanitizeUrl: sanitize.sanitizeUrl,
         ...renderArgs,
     };
 
     // Check if the user has their own template.
-    if (note.hasRelation("shareTemplate")) {
+    // Skip user-provided EJS templates when backend scripting is disabled since EJS can execute arbitrary JS.
+    if (note.hasRelation("shareTemplate") && isScriptingEnabled()) {
         // Get the template note and content
         const templateId = note.getRelation("shareTemplate")?.value;
         const templateNote = templateId && shaca.getNote(templateId);
@@ -230,7 +227,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
                 }
             } catch (e: unknown) {
                 const [errMessage, errStack] = utils.safeExtractMessageAndStackFromError(e);
-                log.error(`Rendering user provided share template (${templateId}) threw exception ${errMessage} with stacktrace: ${errStack}`);
+                getLog().error(`Rendering user provided share template (${templateId}) threw exception ${errMessage} with stacktrace: ${errStack}`);
             }
         }
     }
@@ -448,7 +445,7 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
             linkEl.appendChild(new TextNode(attachment.title));
         } else {
             linkEl.removeAttribute("href");
-            log.error(`Broken attachment link detected in shared note: unable to find attachment with ID ${attachmentId}`);
+            getLog().error(`Broken attachment link detected in shared note: unable to find attachment with ID ${attachmentId}`);
         }
     } else {
         const [notePath] = href.split("?");
@@ -468,7 +465,7 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
             }
             linkEl.classList.add(`type-${linkedNote.type}`);
         } else {
-            log.error(`Broken link detected in shared note: unable to find note with ID ${noteId}`);
+            getLog().error(`Broken link detected in shared note: unable to find note with ID ${noteId}`);
             linkEl.removeAttribute("href");
         }
     }
@@ -498,7 +495,7 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
     } else if (note.isProtected) {
         linkEl.innerHTML = "[protected]";
     } else {
-        linkEl.innerHTML = `<span><span class="${note.getIcon()}"></span>${utils.escapeHtml(note.title)}</span>`;
+        linkEl.innerHTML = `<span><span class="${escapeHtml(note.getIcon())}"></span>${utils.escapeHtml(note.title)}</span>`;
     }
 }
 

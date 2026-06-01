@@ -8,6 +8,14 @@ export interface PlatformProvider {
     readonly isElectron: boolean;
     readonly isMac: boolean;
     readonly isWindows: boolean;
+    /**
+     * Lets a platform decide whether an HTTP-server startup error should be
+     * swallowed (logged-only) rather than treated as fatal. The desktop uses
+     * this to tolerate `EADDRINUSE` when launched with `--new-window` or as a
+     * secondary instance — the primary handles the request via Electron's
+     * `second-instance` event. Optional; absent = always fatal.
+     */
+    shouldIgnoreStartupError?(error: NodeJS.ErrnoException): boolean;
 }
 
 let platformProvider: PlatformProvider | null = null;

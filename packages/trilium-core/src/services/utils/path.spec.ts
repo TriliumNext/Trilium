@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extname, basename } from "./path";
+import { basename, dirname, extname } from "./path";
 
 describe("#extname", () => {
     const testCases: [input: string, expected: string][] = [
@@ -36,6 +36,23 @@ describe("#basename", () => {
     testCases.forEach(([input, expected]) => {
         it(`'${input}' should return '${expected}'`, () => {
             expect(basename(input)).toBe(expected);
+        });
+    });
+});
+
+describe("#dirname", () => {
+    const testCases: [input: string, expected: string][] = [
+        ["path/to/file.txt", "path/to"],
+        ["path\\to\\file.txt", "path/to"],
+        ["/root/file", "/root"],
+        ["/file", "/"],
+        ["file.txt", "."],
+        ["", "."],
+    ];
+
+    testCases.forEach(([input, expected]) => {
+        it(`'${input}' should return '${expected}'`, () => {
+            expect(dirname(input)).toBe(expected);
         });
     });
 });

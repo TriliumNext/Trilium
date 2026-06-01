@@ -1,16 +1,15 @@
-import { ValidationError } from "@triliumnext/core";
+import { note_service as noteService, ValidationError, ws } from "@triliumnext/core";
 import chokidar from "chokidar";
 import type { Request } from "express";
 import fs from "fs";
+import path from "path";
 import { Readable } from "stream";
 import tmp from "tmp";
 
-import becca from "../../becca/becca.js";
+import { becca } from "@triliumnext/core";
 import dataDirs from "../../services/data_dir.js";
-import log from "../../services/log.js";
-import noteService from "../../services/notes.js";
+import { getLog } from "@triliumnext/core";
 import utils from "../../services/utils.js";
-import ws from "../../services/ws.js";
 
 function updateFile(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
@@ -34,7 +33,7 @@ function updateFile(req: Request<{ noteId: string }>) {
 
     note.setLabel("originalFileName", file.originalname);
 
-    noteService.asyncPostProcessContent(note, file.buffer);
+    void noteService.asyncPostProcessContent(note, file.buffer);
 
     return {
         uploaded: true
@@ -138,7 +137,7 @@ function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType
 
     createdTemporaryFiles.add(tmpObj.name);
 
-    log.info(`Saved temporary file ${tmpObj.name}`);
+    getLog().info(`Saved temporary file ${tmpObj.name}`);
 
     if (utils.isElectron) {
         chokidar.watch(tmpObj.name).on("change", (path, stats) => {
@@ -157,17 +156,40 @@ function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType
     };
 }
 
+/**
+ * Validates that the given file path is a known temporary file created by this server
+ * and resides within the expected temporary directory. This prevents path traversal
+ * attacks (CWE-22) where an attacker could read arbitrary files from the filesystem.
+ */
+function validateTemporaryFilePath(filePath: string): void {
+    if (!filePath || typeof filePath !== "string") {
+        throw new ValidationError("Missing or invalid file path.");
+    }
+
+    // Check 1: The file must be in our set of known temporary files created by saveToTmpDir().
+    if (!createdTemporaryFiles.has(filePath)) {
+        throw new ValidationError(`File '${filePath}' is not a tracked temporary file.`);
+    }
+
+    // Check 2 (defense-in-depth): Resolve to an absolute path and verify it is within TMP_DIR.
+    // This guards against any future bugs where a non-temp path could end up in the set.
+    const resolvedPath = path.resolve(filePath);
+    const resolvedTmpDir = path.resolve(dataDirs.TMP_DIR);
+
+    if (!resolvedPath.startsWith(resolvedTmpDir + path.sep) && resolvedPath !== resolvedTmpDir) {
+        throw new ValidationError(`File path '${filePath}' is outside the temporary directory.`);
+    }
+}
+
 function uploadModifiedFileToNote(req: Request<{ noteId: string }>) {
     const noteId = req.params.noteId;
     const { filePath } = req.body;
 
-    if (!createdTemporaryFiles.has(filePath)) {
-        throw new ValidationError(`File '${filePath}' is not a temporary file.`);
-    }
+    validateTemporaryFilePath(filePath);
 
     const note = becca.getNoteOrThrow(noteId);
 
-    log.info(`Updating note '${noteId}' with content from '${filePath}'`);
+    getLog().info(`Updating note '${noteId}' with content from '${filePath}'`);
 
     note.saveRevision();
 
@@ -184,13 +206,11 @@ function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) 
     const { attachmentId } = req.params;
     const { filePath } = req.body;
 
-    if (!createdTemporaryFiles.has(filePath)) {
-        throw new ValidationError(`File '${filePath}' is not a temporary file.`);
-    }
+    validateTemporaryFilePath(filePath);
 
     const attachment = becca.getAttachmentOrThrow(attachmentId);
 
-    log.info(`Updating attachment '${attachmentId}' with content from '${filePath}'`);
+    getLog().info(`Updating attachment '${attachmentId}' with content from '${filePath}'`);
 
     attachment.getNote().saveRevision();
 

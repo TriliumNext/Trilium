@@ -12,6 +12,13 @@ export default defineConfig(() => ({
     include: ['src/**/*.spec.ts'],
     reporters: [
       "verbose"
-    ]
+    ],
+    coverage: {
+      provider: "v8" as const,
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"],
+      reporter: ["text", "lcov"],
+      reportsDirectory: "./test-output/vitest/coverage"
+    }
   },
 }));

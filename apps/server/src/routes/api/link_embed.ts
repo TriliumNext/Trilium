@@ -1,79 +1,13 @@
-import dns from "node:dns";
-import net from "node:net";
-
-import { type LinkEmbedMetadata, extractYouTubeVideoId } from "@triliumnext/commons";
+import { extractYouTubeVideoId,type LinkEmbedMetadata } from "@triliumnext/commons";
 import { ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 import { parse } from "node-html-parser";
-import ipaddr from "ipaddr.js";
 
-import log from "../../services/log.js";
+import { getLog } from "@triliumnext/core";
+import { safeFetch, validateUrl } from "../../services/safe_fetch.js";
 
-const FETCH_TIMEOUT_MS = 5000;
 const MAX_RESPONSE_SIZE = 512 * 1024; // 512KB
 const MAX_FAVICON_SIZE = 64 * 1024; // 64KB
-const MAX_REDIRECTS = 5;
-
-
-const ALLOWED_IP_RANGES = new Set(["unicast"]);
-
-/**
- * Checks whether an IP address is private/reserved using ipaddr.js.
- * Returns true if the IP should be blocked.
- */
-function isBlockedIP(ip: string): boolean {
-    try {
-        let parsed = ipaddr.parse(ip);
-        // For IPv4-mapped IPv6 addresses, extract and check the IPv4 part
-        if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()) {
-            parsed = (parsed as ipaddr.IPv6).toIPv4Address();
-        }
-        return !ALLOWED_IP_RANGES.has(parsed.range());
-    } catch {
-        return true; // unparseable → treat as blocked
-    }
-}
-
-/**
- * Resolves the hostname to IP addresses and verifies none are private/reserved.
- */
-async function validateHostResolution(hostname: string): Promise<void> {
-    // If the hostname is already an IP literal, check it directly
-    if (net.isIP(hostname)) {
-        if (isBlockedIP(hostname)) {
-            throw new ValidationError("URLs pointing to private/internal networks are not allowed");
-        }
-        return;
-    }
-
-    let addresses: dns.LookupAddress[];
-    try {
-        addresses = await dns.promises.lookup(hostname, { all: true });
-    } catch {
-        throw new ValidationError("Could not resolve hostname");
-    }
-
-    for (const addr of addresses) {
-        if (isBlockedIP(addr.address)) {
-            throw new ValidationError("URLs pointing to private/internal networks are not allowed");
-        }
-    }
-}
-
-function validateUrl(urlString: string): URL {
-    let parsed: URL;
-    try {
-        parsed = new URL(urlString);
-    } catch {
-        throw new ValidationError("Invalid URL");
-    }
-
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        throw new ValidationError("Only http and https URLs are supported");
-    }
-
-    return parsed;
-}
 
 /**
  * Reads the response body as text, stopping after maxBytes to avoid
@@ -95,41 +29,8 @@ async function readResponseText(response: Response, maxBytes: number): Promise<s
         result += decoder.decode(value, { stream: true });
     }
 
-    reader.cancel();
+    void reader.cancel();
     return result.slice(0, maxBytes);
-}
-
-/**
- * Fetches a URL with SSRF protection: resolves the hostname and validates
- * the resulting IP before each request, including on redirects.
- */
-async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    let currentUrl = url;
-
-    for (let i = 0; i <= MAX_REDIRECTS; i++) {
-        const parsed = validateUrl(currentUrl);
-        await validateHostResolution(parsed.hostname);
-
-        // URL and resolved IPs are validated above by validateUrl() and
-        // validateHostResolution() before every request, including redirects.
-        const response = await fetch(currentUrl, { // codeql[js/request-forgery]
-            ...options,
-            redirect: "manual",
-            signal: options.signal ?? AbortSignal.timeout(FETCH_TIMEOUT_MS)
-        });
-
-        if (response.status >= 300 && response.status < 400) {
-            const location = response.headers.get("location");
-            if (!location) throw new Error("Redirect without Location header");
-            // Resolve relative redirects against the current URL
-            currentUrl = new URL(location, currentUrl).toString();
-            continue;
-        }
-
-        return response;
-    }
-
-    throw new Error("Too many redirects");
 }
 
 /**
@@ -161,7 +62,7 @@ async function downloadFaviconAsDataUri(faviconUrl: string): Promise<string | un
 
             bytesRead += value.byteLength;
             if (bytesRead > MAX_FAVICON_SIZE) {
-                reader.cancel();
+                void reader.cancel();
                 return undefined;
             }
             chunks.push(value);
@@ -296,7 +197,7 @@ async function getMetadata(req: Request) {
             embedType: "opengraph"
         } satisfies LinkEmbedMetadata;
     } catch (e: unknown) {
-        log.info(`Failed to fetch metadata for ${url}: ${e}`);
+        getLog().info(`Failed to fetch metadata for ${url}: ${e}`);
         return {
             url,
             title: validatedUrl.hostname,
@@ -306,4 +207,3 @@ async function getMetadata(req: Request) {
 }
 
 export default { getMetadata };
-export { validateHostResolution, validateUrl };

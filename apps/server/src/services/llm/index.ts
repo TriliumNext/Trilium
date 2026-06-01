@@ -1,9 +1,9 @@
-import type { LlmProvider, ModelInfo } from "./types.js";
+import { getLog, options as optionService } from "@triliumnext/core";
+
 import { AnthropicProvider } from "./providers/anthropic.js";
 import { GoogleProvider } from "./providers/google.js";
 import { OpenAiProvider } from "./providers/openai.js";
-import optionService from "../options.js";
-import log from "../log.js";
+import type { LlmProvider, ModelInfo } from "./types.js";
 
 /**
  * Configuration for a single LLM provider instance.
@@ -39,7 +39,7 @@ function getConfiguredProviders(): LlmProviderSetup[] {
         }
         return JSON.parse(providersJson) as LlmProviderSetup[];
     } catch (e) {
-        log.error(`Failed to parse llmProviders option: ${e}`);
+        getLog().error(`Failed to parse llmProviders option: ${e}`);
         return [];
     }
 }
@@ -123,7 +123,7 @@ export function getAllModels(): ModelInfo[] {
                 allModels.push({ ...model, provider: config.provider });
             }
         } catch (e) {
-            log.error(`Failed to get models from provider ${config.provider}: ${e}`);
+            getLog().error(`Failed to get models from provider ${config.provider}: ${e}`);
         }
     }
 

@@ -5,7 +5,7 @@ import { useEffect, useState } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
-import { openInAppHelpFromUrl } from "../../services/utils";
+import { isElectron, openInAppHelpFromUrl } from "../../services/utils";
 import { BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import FormToggle from "../react/FormToggle";
@@ -34,6 +34,7 @@ const typeMappings: Record<ActiveContentInfo["type"], {
     icon: string;
     helpPage: string;
     apiDocsPage?: string;
+    electronApiDocsPage?: string;
     isExecutable?: boolean;
     additionalOptions?: BookProperty[];
 }> = {
@@ -70,6 +71,7 @@ const typeMappings: Record<ActiveContentInfo["type"], {
         icon: "bx bx-window",
         helpPage: "yIhgI5H7A2Sm",
         apiDocsPage: "Q2z6av6JZVWm",
+        electronApiDocsPage: "GFXVHyblVN3d",
         isExecutable: true,
         additionalOptions: [
             executeOption,
@@ -161,7 +163,7 @@ export function ActiveContentBadges() {
 }
 
 function ActiveContentBadge({ info, note }: { note: FNote, info: ActiveContentInfo }) {
-    const { title, icon, helpPage, apiDocsPage, additionalOptions } = typeMappings[info.type];
+    const { title, icon, helpPage, apiDocsPage, electronApiDocsPage, additionalOptions } = typeMappings[info.type];
     return (
         <BadgeWithDropdown
             className={clsx("active-content-badge", info.canToggleEnabled && !info.isEnabled && "disabled")}
@@ -190,6 +192,11 @@ function ActiveContentBadge({ info, note }: { note: FNote, info: ActiveContentIn
                 icon="bx bx-book-content"
                 onClick={() => openInAppHelpFromUrl(apiDocsPage)}
             >{t("code_buttons.trilium_api_docs_button_title")}</FormListItem>}
+
+            {electronApiDocsPage && isElectron() && <FormListItem
+                icon="bx bx-window-alt"
+                onClick={() => openInAppHelpFromUrl(electronApiDocsPage)}
+            >{t("code_buttons.electron_api_docs_button_title")}</FormListItem>}
         </BadgeWithDropdown>
     );
 }

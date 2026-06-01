@@ -1,7 +1,6 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 import { type LOCALE_IDS, SqlExecuteResponse } from "@triliumnext/commons";
-import type { NativeImage, TouchBar } from "electron";
 import { ColumnComponent } from "tabulator-tables";
 
 import type { Attribute } from "../services/attribute_parser.js";
@@ -14,7 +13,7 @@ import type LoadResults from "../services/load_results.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
 import options from "../services/options.js";
 import toast from "../services/toast.js";
-import utils, { hasTouchBar } from "../services/utils.js";
+import utils from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type RootContainer from "../widgets/containers/root_container.js";
 import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
@@ -37,7 +36,6 @@ import RootCommandExecutor from "./root_command_executor.js";
 import ShortcutComponent from "./shortcut_component.js";
 import { StartupChecks } from "./startup_checks.js";
 import TabManager from "./tab_manager.js";
-import TouchBarComponent from "./touch_bar.js";
 import zoomComponent from "./zoom.js";
 
 interface Layout {
@@ -392,11 +390,6 @@ export type CommandMappings = {
         columnToDelete?: ColumnComponent;
     };
 
-    buildTouchBar: CommandData & {
-        TouchBar: typeof TouchBar;
-        buildIcon(name: string): NativeImage;
-    };
-    refreshTouchBar: CommandData;
     reloadTextEditor: CommandData;
     chooseNoteType: CommandData & {
         callback: ChooseNoteTypeCallback
@@ -621,10 +614,6 @@ export class AppContext extends Component {
 
         if (utils.isElectron()) {
             this.child(zoomComponent);
-        }
-
-        if (hasTouchBar) {
-            this.child(new TouchBarComponent());
         }
     }
 

@@ -1,6 +1,5 @@
+import type { NoteMeta } from "@triliumnext/core";
 import { describe, expect, it } from "vitest";
-
-import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
 
 import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler } from "./help_meta_generator.js";
 

@@ -198,7 +198,10 @@
     "task-state-cancelled": "تم الالغاء",
     "task-state-attr-color": "لون",
     "task-state-attr-is-completed": "يُحسب كمكتمل",
-    "task-state-attr-is-hidden": "مخفي من القائمة"
+    "task-state-attr-is-hidden": "مخفي من القائمة",
+    "task-states-title": "حالات المهام",
+    "task-state-attr-state-id": "المعرّف (إجباري)",
+    "task-state-attr-markdown-symbol": "رمز Markdown"
   },
   "tray": {
     "bookmarks": "العلامات المرجعية",
@@ -409,7 +412,8 @@
     "old_version": "لا يتم دعم الترقية المباشرة من الإصدار الحالي. يرجى الترقية أولًا إلى أحدث إصدار v0.60.4 ثم الترقية إلى هذا الإصدار.",
     "error_message": "حدث خطأ أثناء الترحيل إلى الإصدار {{version}}: {{stack}}",
     "wrong_db_version": "إصدار قاعدة البيانات ({{version}}) أحدث من الإصدار الذي يتوقعه التطبيق ({{targetVersion}})، مما يعني أنه تم إنشاؤه بواسطة إصدار أحدث وغير متوافق من Trilium. يرجى الترقية إلى أحدث إصدار من Trilium لحل هذه المشكلة.",
-    "invalid_db_version": "إصدار قاعدة البيانات ليس رقمًا صالحًا. يشير هذا عادةً إلى تلف في خيار 'dbVersion' داخل قاعدة البيانات. يرجى الاستعادة من نسخة احتياطية."
+    "invalid_db_version": "إصدار قاعدة البيانات ليس رقمًا صالحًا. يشير هذا عادةً إلى تلف في خيار 'dbVersion' داخل قاعدة البيانات. يرجى الاستعادة من نسخة احتياطية.",
+    "automatic_migrations_disabled": "تم تعطيل الترحيل التلقائي لقاعدة البيانات عبر متغير البيئة TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}"
   },
   "sql_init": {
     "db_not_initialized_desktop": "لم تتم تهيئة قاعدة البيانات، يرجى اتباع التعليمات الظاهرة على الشاشة.",

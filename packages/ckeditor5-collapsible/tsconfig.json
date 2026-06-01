@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "types": [],
+    "lib": [
+      "ES2019",
+      "ES2020.String",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "composite": true,
+    "strict": true,
+    "target": "es2019",
+    "sourceMap": true,
+    "allowJs": true,
+    "moduleDetection": "force",
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
+    "skipLibCheck": true,
+    "noUncheckedSideEffectImports": false,
+    "outDir": "out-tsc",
+    "typeRoots": [
+      "typings",
+      "node_modules/@types"
+    ]
+  },
+  "include": [
+    "./src",
+    "./typings"
+  ]
+}

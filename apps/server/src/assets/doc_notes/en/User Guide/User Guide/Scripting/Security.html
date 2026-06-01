@@ -1,0 +1,30 @@
+<p>Starting with v0.104.0, some features in Trilium are intentionally disabled
+  in order to reduce the attack surface:</p>
+<ul>
+  <li><a class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/_help_SPirpZypehBG">Backend scripts</a>,
+    which can run processes on the server, access the file system or bypass
+    security measures.</li>
+  <li><a class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/wX4HbRucYSDD/oyIAJ9PvvwHX/_help_YKWqdJhzi2VY">SQL Console</a>,
+    which can be used to exfiltrate important data such as the document secret
+    or cause irreparable damage to the database.</li>
+</ul>
+<p>To activate either one of them, there are three variants:</p>
+<ul>
+  <li>For the desktop app, go to&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Security</em> and
+    toggle the desired option.
+    <ul>
+      <li>This will prompt a system dialog confirming the change. Note that scripts
+        could potentially call this confirmation dialog as well, make sure to accept
+        it only if enabling any of these features is required.</li>
+      <li>The settings page will be available for the server-side as well, but the
+        options need to be manually toggled using the other mechanisms described
+        here.</li>
+      <li>This works by setting a separate configuration file in the&nbsp;<a class="reference-link"
+        href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/_help_tAassRL4RSQL">Data directory</a>.</li>
+    </ul>
+  </li>
+  <li>In <a href="#root/pOsGYCXsbNQG/tC7s2alapj8V/_help_Gzjqa934BdH4">config.ini</a>,
+    set the corresponding option under the <code spellcheck="false">Security</code> group.</li>
+  <li
+ >Or use environment variables (e.g. <code spellcheck="false">TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true</code>).</li>
+</ul>

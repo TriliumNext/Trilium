@@ -7,7 +7,6 @@ import "./note_tree.css";
 
 import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
 import type { SetNoteOpts } from "../components/note_context.js";
-import type { TouchBarItem } from "../components/touch_bar.js";
 import type FBranch from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
 import contextMenu from "../menus/context_menu.js";
@@ -1788,41 +1787,6 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         appContext.tabManager.getActiveContext()?.setNote(resp.note.noteId);
     }
 
-    buildTouchBarCommand({ TouchBar, buildIcon }: CommandListenerData<"buildTouchBar">) {
-        const triggerCommand = (command: TreeCommandNames) => {
-            const node = this.getActiveNode();
-            if (!node) return;
-            const notePath = treeService.getNotePath(node);
-
-            this.triggerCommand<TreeCommandNames>(command, {
-                node,
-                notePath,
-                noteId: node.data.noteId,
-                selectedOrActiveBranchIds: this.getSelectedOrActiveBranchIds(node),
-                selectedOrActiveNoteIds: this.getSelectedOrActiveNoteIds(node)
-            });
-        };
-
-        const items: TouchBarItem[] = [
-            new TouchBar.TouchBarButton({
-                icon: buildIcon("NSImageNameTouchBarAddTemplate"),
-                click: () => {
-                    const node = this.getActiveNode();
-                    if (!node) return;
-                    const notePath = treeService.getNotePath(node);
-                    noteCreateService.createNote(notePath, {
-                        isProtected: node.data.isProtected
-                    });
-                }
-            }),
-            new TouchBar.TouchBarButton({
-                icon: buildIcon("NSImageNameTouchBarDeleteTemplate"),
-                click: () => triggerCommand("deleteNotes")
-            })
-        ];
-
-        return items;
-    }
 }
 
 function buildEnhanceTitle() {

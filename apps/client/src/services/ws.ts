@@ -15,37 +15,46 @@ type MessageHandler = (message: WebSocketMessage) => void;
 let messageHandlers: MessageHandler[] = [];
 
 let ws: WebSocket;
+// In Electron desktop, messaging goes over Chromium IPC (no TCP socket,
+// no auth). The bridge is exposed by the preload script; when present we
+// skip the WebSocket entirely.
+/* v8 ignore next -- `window` is always defined wherever this module loads (browser/electron); the SSR-style guard's else arm is unreachable */
+const ipcWs = typeof window !== "undefined" ? window.electronApi?.ws : undefined;
 let lastAcceptedEntityChangeId = window.glob.maxEntityChangeIdAtLoad ?? 0;
 let lastAcceptedEntityChangeSyncId = window.glob.maxEntityChangeSyncIdAtLoad ?? 0;
 let lastProcessedEntityChangeId = window.glob.maxEntityChangeIdAtLoad ?? 0;
 let lastPingTs: number;
 let frontendUpdateDataQueue: EntityChange[] = [];
 
+function sendOutgoing(message: object): boolean {
+    if (ipcWs) {
+        ipcWs.send(message);
+        return true;
+    }
+    if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify(message));
+        return true;
+    }
+    return false;
+}
+
 export function logError(message: string) {
     console.error(utils.now(), message); // needs to be separate from .trace()
 
-    if (ws && ws.readyState === 1) {
-        ws.send(
-            JSON.stringify({
-                type: "log-error",
-                error: message,
-                stack: new Error().stack
-            })
-        );
-    }
+    sendOutgoing({
+        type: "log-error",
+        error: message,
+        stack: new Error().stack
+    });
 }
 
 function logInfo(message: string) {
     console.log(utils.now(), message);
 
-    if (ws && ws.readyState === 1) {
-        ws.send(
-            JSON.stringify({
-                type: "log-info",
-                info: message
-            })
-        );
-    }
+    sendOutgoing({
+        type: "log-info",
+        info: message
+    });
 }
 
 window.logError = logError;
@@ -236,8 +245,13 @@ async function consumeFrontendUpdateData() {
 }
 
 function connectWebSocket() {
+    // In Electron, the page lives on `trilium-app://app/`, so deriving the
+    // WS URL from window.location would point at an unreachable host. The
+    // server injects an absolute `wsBaseUrl` (ws://127.0.0.1:<port>/) for
+    // that case; everywhere else we still derive it from the page origin.
     const loc = window.location;
-    const webSocketUri = `${loc.protocol === "https:" ? "wss:" : "ws:"}//${loc.host}${loc.pathname}`;
+    const webSocketUri = window.glob.wsBaseUrl
+        ?? `${loc.protocol === "https:" ? "wss:" : "ws:"}//${loc.host}${loc.pathname}`;
 
     // use wss for secure messaging
     const ws = new WebSocket(webSocketUri);
@@ -249,6 +263,14 @@ function connectWebSocket() {
 }
 
 async function sendPing() {
+    if (ipcWs) {
+        // IPC transport: no socket to disconnect, so we only need to nudge
+        // the server for pending entity changes. No lost-connection toast
+        // and no reconnect.
+        sendOutgoing({ type: "ping", lastEntityChangeId: lastAcceptedEntityChangeId });
+        return;
+    }
+
     if (!ws) {
         // In standalone mode, there's no WebSocket — nothing to ping.
         return;
@@ -289,6 +311,20 @@ setTimeout(() => {
             dispatchMessage(event.detail);
         }) as EventListener);
         console.debug(utils.now(), "Standalone mode: listening for worker messages");
+        return;
+    }
+
+    if (ipcWs) {
+        // Electron desktop: messages arrive via the preload-exposed IPC
+        // bridge instead of a WebSocket. The server-side counterpart is
+        // IpcMessagingProvider.
+        ipcWs.onMessage((message) => {
+            void dispatchMessage(message as WebSocketMessage);
+        });
+        console.debug(utils.now(), "Electron mode: listening for IPC messages");
+
+        lastPingTs = Date.now();
+        setInterval(sendPing, 1000);
         return;
     }
 

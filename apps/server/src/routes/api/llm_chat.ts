@@ -4,7 +4,7 @@ import type { Request, Response } from "express";
 import { generateChatTitle } from "../../services/llm/chat_title.js";
 import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
 import { streamToChunks } from "../../services/llm/stream.js";
-import log from "../../services/log.js";
+import { getLog } from "@triliumnext/core";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
 interface ChatRequest {
@@ -64,7 +64,7 @@ async function streamChat(req: Request, res: Response) {
         const modelDisplayName = provider.getAvailableModels().find(m => m.id === modelId)?.name || modelId;
         for await (const chunk of streamToChunks(result, { model: modelDisplayName, pricing })) {
             if (chunk.type === "error") {
-                log.error(`LLM chat stream error (model ${modelDisplayName}): ${chunk.error}`);
+                getLog().error(`LLM chat stream error (model ${modelDisplayName}): ${chunk.error}`);
             }
             res.write(`data: ${JSON.stringify(chunk)}\n\n`);
             // Flush immediately to ensure real-time streaming
@@ -76,15 +76,23 @@ async function streamChat(req: Request, res: Response) {
         const userMessages = messages.filter(m => m.role === "user");
         if (userMessages.length === 1 && config.chatNoteId) {
             try {
-                await generateChatTitle(config.chatNoteId, userMessages[0].content);
+                const firstContent = userMessages[0].content;
+                // Multimodal content: title from the text parts only — image
+                // bytes are useless to the title model.
+                const firstText = typeof firstContent === "string"
+                    ? firstContent
+                    : firstContent.filter(p => p.type === "text").map(p => p.text).join("\n").trim();
+                if (firstText) {
+                    await generateChatTitle(config.chatNoteId, firstText);
+                }
             } catch (err) {
                 // Title generation is best-effort; don't fail the chat
-                log.error(`Failed to generate chat title: ${safeExtractMessageAndStackFromError(err)}`);
+                getLog().error(`Failed to generate chat title: ${safeExtractMessageAndStackFromError(err)}`);
             }
         }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        log.error(`LLM chat stream failed: ${safeExtractMessageAndStackFromError(error)}`);
+        getLog().error(`LLM chat stream failed: ${safeExtractMessageAndStackFromError(error)}`);
         res.write(`data: ${JSON.stringify({ type: "error", error: errorMessage })}\n\n`);
     } finally {
         res.end();

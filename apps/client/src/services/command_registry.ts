@@ -19,7 +19,7 @@ export interface CommandDefinition {
     keyboardAction?: ActionKeyboardShortcut;
 }
 
-class CommandRegistry {
+export class CommandRegistry {
     private commands: Map<string, CommandDefinition> = new Map();
     private aliases: Map<string, string> = new Map();
 

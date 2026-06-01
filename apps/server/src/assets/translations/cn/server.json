@@ -224,7 +224,18 @@
     "llm-chat-history-title": "AI对话历史",
     "sidebar-chat-title": "AI对话",
     "custom-dictionary-title": "自定义词典",
-    "llm-title": "AI / LLM"
+    "llm-title": "AI / LLM",
+    "task-states-title": "任务状态",
+    "task-state-none": "无",
+    "task-state-doing": "进行中",
+    "task-state-done": "已完成",
+    "task-state-maybe": "待定",
+    "task-state-cancelled": "已取消",
+    "task-state-attr-state-id": "标识符（必填）",
+    "task-state-attr-markdown-symbol": "Markdown 符号",
+    "task-state-attr-is-completed": "视为已完成",
+    "task-state-attr-color": "颜色",
+    "task-state-attr-is-hidden": "在列表中隐藏"
   },
   "notes": {
     "new-note": "新建笔记",
@@ -259,7 +270,8 @@
     "old_version": "由您当前版本的直接迁移不被支持。请先升级到最新的 v0.60.4 然后再到这个版本。",
     "error_message": "迁移到版本 {{version}} 时发生错误: {{stack}}",
     "wrong_db_version": "数据库的版本（{{version}}）新于应用期望的版本（{{targetVersion}}），这意味着它由一个更加新的且不兼容的 Trilium 所创建。升级到最新版的 Trilium 以解决此问题。",
-    "invalid_db_version": "数据库版本不是一个有效的数字。这通常表示数据库中的 'dbVersion' 选项已损坏。请从备份中恢复。"
+    "invalid_db_version": "数据库版本不是一个有效的数字。这通常表示数据库中的 'dbVersion' 选项已损坏。请从备份中恢复。",
+    "automatic_migrations_disabled": "已通过环境变量 TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}} 禁用了自动数据库迁移功能"
   },
   "modals": {
     "error_title": "错误"

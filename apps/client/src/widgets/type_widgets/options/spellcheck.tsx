@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import { t } from "../../../services/i18n";
-import { dynamicRequire, isElectron, restartDesktopApp } from "../../../services/utils";
+import { isElectron, restartDesktopApp } from "../../../services/utils";
 import Button from "../../react/Button";
 import FormText from "../../react/FormText";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
@@ -70,12 +70,12 @@ function SpellcheckLanguages() {
     }, [setSpellCheckLanguageCode]);
 
     const availableLanguages = useMemo<SpellcheckLanguage[]>(() => {
-        if (!isElectron()) {
+        const api = window.electronApi?.spellcheck;
+        if (!api) {
             return [];
         }
 
-        const { webContents } = dynamicRequire("@electron/remote").getCurrentWindow();
-        const codes = webContents.session.availableSpellCheckerLanguages as string[];
+        const codes = api.getAvailableSpellCheckerLanguages();
         const displayNames = new Intl.DisplayNames([navigator.language], { type: "language" });
 
         return codes.map((code) => ({

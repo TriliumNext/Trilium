@@ -47,6 +47,17 @@ export default class LogService {
         return null;
     }
 
+    /**
+     * Records an HTTP request entry. Server platforms override this with
+     * structured request logging; other platforms (standalone, desktop preload)
+     * have no notion of HTTP requests and leave this as a no-op.
+     *
+     * Uses structural types so core does not need an express dependency.
+     */
+    request(_req: { url: string; method: string }, _res: { statusCode: number }, _timeMs: number, _responseLength: number | string = "?"): void {
+        // no-op default
+    }
+
 }
 
 let log: LogService;

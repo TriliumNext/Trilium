@@ -1,7 +1,8 @@
+import { becca } from "@triliumnext/core";
 import { Application } from "express";
 import { beforeAll, describe, expect, it } from "vitest";
 import supertest from "supertest";
-import { login } from "./utils.js";
+import { createNote, login } from "./utils.js";
 import config from "../../src/services/config.js";
 
 let app: Application;
@@ -77,6 +78,31 @@ describe("etapi/patch-note", () => {
             })
             .expect(400);
         expect(response.body.code).toStrictEqual("PROPERTY_VALIDATION_ERROR");
+    });
+
+    it("rejects turning a note into an image with a non-image MIME", async () => {
+        const response = await supertest(app)
+            .patch(`/etapi/notes/${createdNoteId}`)
+            .auth("etapi", token, { "type": "basic"})
+            .send({ type: "image", mime: "text/plain" })
+            .expect(400);
+        expect(response.body.code).toStrictEqual("INVALID_MIME_FOR_IMAGE");
+    });
+
+    it("refuses to patch a protected note", async () => {
+        const noteId = await createNote(app, token);
+        const note = becca.getNoteOrThrow(noteId);
+        note.isProtected = true;
+        try {
+            const response = await supertest(app)
+                .patch(`/etapi/notes/${noteId}`)
+                .auth("etapi", token, { "type": "basic"})
+                .send({ title: "x" })
+                .expect(400);
+            expect(response.body.code).toStrictEqual("NOTE_IS_PROTECTED");
+        } finally {
+            note.isProtected = false;
+        }
     });
 
     async function expectNoteToMatch(state: object) {

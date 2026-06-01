@@ -265,7 +265,35 @@
     "math": "Insert a math equation block",
     "footnote": "Insert a footnote",
     "mermaid": "Insert a Mermaid diagram",
-    "admonition": "Insert {{type}} admonition"
+    "mermaid_template": "Insert a \"{{name}}\" Mermaid diagram",
+    "collapsible": "Insert a collapsible block",
+    "admonition": "Insert {{type}} admonition",
+    "todo": "Insert a \"{{title}}\" task item",
+    "todo_nonstandard": "Insert a \"{{title}}\" task item (non-standard)",
+    "placeholders": {
+      "math": "equation",
+      "collapsible_summary": "Summary",
+      "collapsible_details": "Details"
+    }
+  },
+  "slash_commands": {
+    "bulleted_list_description": "Create a bulleted list",
+    "numbered_list_description": "Create a numbered list",
+    "todo_list_description": "Create a to-do list",
+    "align_left_description": "Align text to the left",
+    "align_center_description": "Align text to the center",
+    "align_right_description": "Align text to the right",
+    "justify_description": "Justify text alignment",
+    "admonition_description": "Inserts a new admonition",
+    "collapsible_description": "Insert a toggleable section that hides/shows content on click.",
+    "footnote_description": "Create a new footnote and reference it here",
+    "datetime_description": "Insert the current date and time",
+    "internal_link_description": "Insert a link to another Trilium note",
+    "math_description": "Insert a math equation",
+    "include_note_description": "Display the content of another note in this note",
+    "page_break_description": "Insert a page break (for printing)",
+    "markdown_import_description": "Import a markdown file into this note",
+    "anchor_description": "Insert an anchor for internal linking"
   },
   "move_to": {
     "dialog_title": "Move notes to ...",
@@ -810,6 +838,7 @@
   "code_buttons": {
     "execute_button_title": "Execute script",
     "trilium_api_docs_button_title": "Open Trilium API docs",
+    "electron_api_docs_button_title": "Open Electron API docs",
     "save_to_note_button_title": "Save to note",
     "opening_api_docs_message": "Opening API docs...",
     "sql_console_saved_message": "SQL Console note has been saved into {{note_path}}"
@@ -1568,6 +1597,21 @@
     "options_status": "Options status",
     "options_change_saved": "Options change have been saved."
   },
+  "security": {
+    "backend_scripting_title": "Backend scripting",
+    "backend_scripting_section_description": "Backend scripts have full server access including filesystem, network, and OS commands. They can be triggered via sync, import, or any content that includes executable attributes. Frontend scripts are always enabled as they run in a sandboxed browser context.",
+    "backend_scripting_label": "Backend script execution",
+    "backend_scripting_description": "Allow execution of backend scripts (startup scripts, custom request handlers, event handlers, scheduled scripts, etc.).",
+    "sql_console_title": "SQL console",
+    "sql_console_section_description": "The SQL console allows running raw SQL queries against the database. This can be used to read sensitive data (e.g. sync secrets, API keys) and alter or delete any data. A malicious frontend script could also access the SQL console API programmatically.",
+    "sql_console_label": "SQL console",
+    "sql_console_description": "Allow execution of queries in the SQL console.",
+    "how_to_enable": "How to enable",
+    "server_config_hint": "Add the following to your config.ini file:",
+    "server_env_hint": "Or set the following environment variable:",
+    "restart_required": "Restart required for this change to take effect.",
+    "restart_now": "Restart the application now"
+  },
   "password": {
     "heading": "Password",
     "alert_message": "Please take care to remember your new password. Password is used for logging into the web interface and to encrypt protected notes. If you forget your password, then all your protected notes are forever lost.",
@@ -1785,6 +1829,7 @@
     "empty_state": "Start a conversation by typing a message below.",
     "searching_web": "Searching the web...",
     "web_search": "Web search",
+    "web_search_unavailable_gemini": "Not available on Gemini models while note access is on — Google's API does not allow combining both. Disable note access or switch to a different provider to use web search.",
     "note_tools": "Note access",
     "sources": "Sources",
     "sources_summary": "{{count}} sources from {{sites}} sites",
@@ -1794,6 +1839,7 @@
     "thought_process": "Thought process",
     "tool_calls": "{{count}} tool call(s)",
     "input": "Input",
+    "input_streaming": "Input (streaming…)",
     "edit_index": "Edit {{index}} of {{total}}",
     "result": "Result",
     "error": "Error",
@@ -1811,7 +1857,11 @@
     "no_provider_message": "No AI provider configured. Add one to start chatting.",
     "add_provider": "Add AI Provider",
     "stop": "Stop",
-    "retry": "Retry"
+    "retry": "Retry",
+    "attach_file": "Attach image, PDF, or text file",
+    "remove_attachment": "Remove attachment",
+    "attachment_upload_failed": "Failed to upload \"{{name}}\".",
+    "attachment_unsupported_type": "\"{{name}}\" isn't a supported attachment type. Use an image (PNG, JPEG, GIF, WebP), a PDF, or a text/source file."
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -1970,7 +2020,12 @@
   },
   "image": {
     "copied-to-clipboard": "A reference to the image has been copied to clipboard. This can be pasted in any text note.",
-    "cannot-copy": "Could not copy the image reference to clipboard."
+    "cannot-copy": "Could not copy the image reference to clipboard.",
+    "copy-to-clipboard": "Copy image to clipboard",
+    "download": "Download image",
+    "image-copied-to-clipboard": "The image has been copied to clipboard.",
+    "cannot-copy-image": "Could not copy the image to clipboard.",
+    "cannot-download": "Could not download the image."
   },
   "clipboard": {
     "cut": "Note(s) have been cut into clipboard.",
@@ -2082,7 +2137,8 @@
     "copy_image_to_clipboard": "Copy image to clipboard"
   },
   "link": {
-    "failed_to_open": "Failed to open link '{{- href}}': {{- message}}"
+    "failed_to_open": "Failed to open link '{{- href}}': {{- message}}",
+    "copy_url": "Copy URL"
   },
   "link_context_menu": {
     "open_note_in_new_tab": "Open note in a new tab",
@@ -2323,6 +2379,9 @@
     "new_layout_title": "New layout",
     "new_layout_message": "We’ve introduced a modernized layout for Trilium. The ribbon has been removed and seamlessly integrated into the main interface, with a new status bar and expandable sections (such as promoted attributes) taking over key functions.\n\nThe new layout is enabled by default, and can be temporarily disabled via Options → Appearance.",
     "new_layout_button": "More info",
+    "scripting_disabled_title": "Backend scripting has been disabled",
+    "scripting_disabled_message": "Backend scripting is now disabled by default for security. Your notes contain backend scripts (notes with a #run label) that will no longer execute automatically.\n\nIf you rely on these scripts, you can re-enable backend scripting in the security settings.",
+    "scripting_disabled_button": "Open security settings",
     "dismiss": "Dismiss"
   },
   "settings": {
@@ -2525,6 +2584,8 @@
   "mermaid": {
     "placeholder": "Type the content of your Mermaid diagram or use one of the sample diagrams below.",
     "sample_diagrams": "Sample diagrams:",
+    "slash_command_blank_description": "Insert an empty Mermaid diagram",
+    "slash_command_description": "Insert a \"{{name}}\" Mermaid diagram template",
     "sample_flowchart": "Flowchart",
     "sample_class": "Class",
     "sample_sequence": "Sequence",
@@ -2677,6 +2738,13 @@
   },
   "text-editor": {
     "checkbox-tooltip": "Right click for more task states.\nPress {{shortcut}} to cycle between states.",
+    "collapsible-body-placeholder": "Type the content here...",
+    "collapsible-button-label": "Collapsible block",
+    "collapsible-handle-tooltip": "Drag to reposition the collapsible block",
+    "collapsible-select-label": "Select collapsible block",
+    "collapsible-title-placeholder": "Summary",
+    "collapsible-toggle-label": "Toggle collapsible block",
+    "collapsible-tooltip": "Click on the arrow or press {{shortcut}} to collapse/expand.",
     "edit-states-tooltip": "Edit task states",
     "unknown-task-state": "Undefined custom task state",
     "task-state-dropped": "Dropped custom task state definition \"{{title}}\" ({{id}}) due to: {{reason}}",

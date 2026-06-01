@@ -10,10 +10,9 @@
  * Verification uses scrypt-based hashing with constant-time comparison.
  */
 import type { OptionNames } from "@triliumnext/commons";
-import { data_encryption } from "@triliumnext/core";
+import { data_encryption, options as optionService } from "@triliumnext/core";
 import crypto from "crypto";
 
-import optionService from "../options.js";
 import { constantTimeCompare, randomSecureToken, toBase64 } from "../utils.js";
 
 const TOTP_OPTIONS: Record<string, OptionNames> = {

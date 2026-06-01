@@ -5,13 +5,12 @@ import { NoteType } from "@triliumnext/commons";
 import { Ref } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import appContext, { CommandListenerData } from "../../../components/app_context";
+import { CommandListenerData } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import utils from "../../../services/utils";
 import { useColorScheme, useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { refToJQuerySelector } from "../../react/react_utils";
-import TouchBar, { TouchBarButton } from "../../react/TouchBar";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";
 import CodeMirror, { CodeMirrorProps } from "./CodeMirror";
@@ -128,36 +127,28 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
     useKeyboardShortcuts("code-detail", containerRef, parentComponent, ntxId);
 
     return (
-        <>
-            <CodeEditor
-                ntxId={ntxId} parentComponent={parentComponent}
-                editorRef={combinedEditorRef} containerRef={containerRef}
-                mime={mime ?? "text/plain"}
-                className="note-detail-code-editor"
-                placeholder={placeholder ?? t("editable_code.placeholder")}
-                vimKeybindings={vimKeymapEnabled}
-                tabIndex={300}
-                onContentChanged={() => {
-                    if (debounceUpdate) {
-                        spacedUpdate.resetUpdateTimer();
-                    }
-                    spacedUpdate.scheduleUpdate();
-                    if (editorRef.current && onContentChanged) {
-                        onContentChanged(editorRef.current.getText());
-                    }
-                }}
-                {...editorProps}
-                {...(noteTabWidth != null && { indentSize: noteTabWidth })}
-                {...(noteUseTabs != null && { useTabs: noteUseTabs })}
-                {...(noteWrapLines != null && { lineWrapping: noteWrapLines })}
-            />
-
-            <TouchBar>
-                {(note?.mime.startsWith("application/javascript") || note?.mime === "text/x-sqlite;schema=trilium") && (
-                    <TouchBarButton icon="NSImageNameTouchBarPlayTemplate" click={() => appContext.triggerCommand("runActiveNote")} />
-                )}
-            </TouchBar>
-        </>
+        <CodeEditor
+            ntxId={ntxId} parentComponent={parentComponent}
+            editorRef={combinedEditorRef} containerRef={containerRef}
+            mime={mime ?? "text/plain"}
+            className="note-detail-code-editor"
+            placeholder={placeholder ?? t("editable_code.placeholder")}
+            vimKeybindings={vimKeymapEnabled}
+            tabIndex={300}
+            onContentChanged={() => {
+                if (debounceUpdate) {
+                    spacedUpdate.resetUpdateTimer();
+                }
+                spacedUpdate.scheduleUpdate();
+                if (editorRef.current && onContentChanged) {
+                    onContentChanged(editorRef.current.getText());
+                }
+            }}
+            {...editorProps}
+            {...(noteTabWidth != null && { indentSize: noteTabWidth })}
+            {...(noteUseTabs != null && { useTabs: noteUseTabs })}
+            {...(noteWrapLines != null && { lineWrapping: noteWrapLines })}
+        />
     );
 }
 

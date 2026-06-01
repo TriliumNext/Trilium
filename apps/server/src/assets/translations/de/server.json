@@ -222,7 +222,18 @@
     "llm-chat-history-title": "KI-Chat Historie",
     "custom-dictionary-title": "Benutzerdefiniertes Verzeichnis",
     "llm-title": "KI / LLM",
-    "sidebar-chat-title": "KI-Chat"
+    "sidebar-chat-title": "KI-Chat",
+    "task-states-title": "Aufgabenzustände",
+    "task-state-none": "Keine",
+    "task-state-doing": "In Bearbeitung",
+    "task-state-done": "Erledigt",
+    "task-state-maybe": "Vielleicht",
+    "task-state-cancelled": "Abgebrochen",
+    "task-state-attr-state-id": "Bezeichner (erforderlich)",
+    "task-state-attr-markdown-symbol": "Markdown-Symbol",
+    "task-state-attr-is-completed": "Gilt als abgeschlossen",
+    "task-state-attr-color": "Farbe",
+    "task-state-attr-is-hidden": "Aus Liste ausblenden"
   },
   "notes": {
     "new-note": "Neue Notiz",
@@ -386,7 +397,8 @@
     "old_version": "Eine direkte Migration von Ihrer aktuellen Version wird nicht unterstützt. Bitte führen Sie zunächst ein Upgrade auf die neueste Version v0.60.4 durch und erst dann auf diese Version.",
     "error_message": "Fehler bei der Migration zu Version {{version}}: {{stack}}",
     "wrong_db_version": "Die Version der Datenbank ({{version}}) ist neuer als die von der Anwendung erwartete Version ({{targetVersion}}), was bedeutet, dass diese mit einer neueren und inkompatiblen Version von Trilium erstellt wurde. Führen Sie ein Upgrade auf die neueste Version von Trilium durch, um dieses Problem zu beheben.",
-    "invalid_db_version": "Die Datenbankversion ist nicht lesbar, Ursache davon ist normalerweise eine defekte \"dbVersion\" der Datenbank. Eine Wiederherstellung aus einem Backup ist erforderlich."
+    "invalid_db_version": "Die Datenbankversion ist nicht lesbar, Ursache davon ist normalerweise eine defekte \"dbVersion\" der Datenbank. Eine Wiederherstellung aus einem Backup ist erforderlich.",
+    "automatic_migrations_disabled": "Automatische Datenbank-Migrationen sind über die Umgebungsvariable TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}} deaktiviert"
   },
   "modals": {
     "error_title": "Fehler"

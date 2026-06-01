@@ -21,6 +21,7 @@
     "eslint.config.cjs",
     "eslint.config.mjs",
     "scripts/**",
+    "spec/**",
     "dist/**"
   ],
   "references": [

@@ -315,7 +315,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     suggestion: (suggestion) => {
                         if (suggestion.action === "command") {
                             let html = `<div class="command-suggestion">`;
-                            html += `<span class="command-icon ${suggestion.icon || "bx bx-terminal"}"></span>`;
+                            html += `<span class="command-icon ${escapeHtml(suggestion.icon || "bx bx-terminal")}"></span>`;
                             html += `<div class="command-content">`;
                             html += `<div class="command-name">${suggestion.highlightedNotePathTitle}</div>`;
                             if (suggestion.commandDescription) {
@@ -452,6 +452,7 @@ function init() {
 
         const chunks = notePath.split("/");
 
+        /* v8 ignore next -- String.split always yields at least one element, so the `: null` branch is unreachable */
         return chunks.length >= 1 ? chunks[chunks.length - 1] : null;
     };
 

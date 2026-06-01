@@ -297,6 +297,164 @@ describe("extractSpreadsheetText", () => {
         expect(extractSpreadsheetText(input)).toBe("hello");
     });
 
+    it("returns empty string when all referenced sheets are hidden", () => {
+        const input = JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["s1"],
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        name: "Hidden",
+                        hidden: 1,
+                        cellData: { "0": { "0": { v: "secret" } } },
+                        rowData: {},
+                        columnData: {}
+                    }
+                }
+            }
+        });
+
+        expect(extractSpreadsheetText(input)).toBe("");
+    });
+
+    it("returns empty string when sheetOrder points to missing ids", () => {
+        const input = JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["does-not-exist"],
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        name: "Sheet1",
+                        hidden: 0,
+                        cellData: { "0": { "0": { v: "data" } } },
+                        rowData: {},
+                        columnData: {}
+                    }
+                }
+            }
+        });
+
+        expect(extractSpreadsheetText(input)).toBe("");
+    });
+
+    it("extracts cells from fully lowercased keys via prop fallback", () => {
+        const input = JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetorder: ["s1"],
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        hidden: 0,
+                        celldata: {
+                            "0": {
+                                "0": { v: "lower" },
+                                "1": { v: "case" }
+                            },
+                            "1": { "0": { v: "skipped" } }
+                        },
+                        rowdata: { "1": { hd: 1 } },
+                        columndata: { "1": { hd: 1 } }
+                    }
+                }
+            }
+        });
+
+        const text = extractSpreadsheetText(input);
+        expect(text).toBe("lower");
+    });
+
+    it("uses Object.keys(sheets) when sheetOrder is absent", () => {
+        const input = JSON.stringify({
+            version: 1,
+            workbook: {
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        hidden: 0,
+                        cellData: { "0": { "0": { v: "noOrder" } } },
+                        rowData: {},
+                        columnData: {}
+                    }
+                }
+            }
+        });
+
+        expect(extractSpreadsheetText(input)).toBe("noOrder");
+    });
+
+    it("skips whitespace-only string cell values", () => {
+        const input = JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["s1"],
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        hidden: 0,
+                        cellData: {
+                            "0": {
+                                "0": { v: "   " },
+                                "1": { v: "kept" }
+                            }
+                        },
+                        rowData: {},
+                        columnData: {}
+                    }
+                }
+            }
+        });
+
+        expect(extractSpreadsheetText(input)).toBe("kept");
+    });
+
+    it("defaults rowData and columnData to empty objects when absent", () => {
+        const input = JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["s1"],
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        hidden: 0,
+                        cellData: {
+                            "0": { "0": { v: "noMeta" } }
+                        }
+                    }
+                }
+            }
+        });
+
+        expect(extractSpreadsheetText(input)).toBe("noMeta");
+    });
+
+    it("handles a null cell entry without throwing", () => {
+        const input = JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["s1"],
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        hidden: 0,
+                        cellData: {
+                            "0": {
+                                "0": null,
+                                "1": { v: "present" }
+                            }
+                        },
+                        rowData: {},
+                        columnData: {}
+                    }
+                }
+            }
+        });
+
+        expect(extractSpreadsheetText(input)).toBe("present");
+    });
+
     it("extracts text from the sample spreadsheet", () => {
         const input = JSON.stringify({
             version: 1,

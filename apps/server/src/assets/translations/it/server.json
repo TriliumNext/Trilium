@@ -154,7 +154,18 @@
     "llm-chat-history-title": "Cronologia chat IA",
     "llm-title": "AI / LLM",
     "sidebar-chat-title": "Chat con IA",
-    "custom-dictionary-title": "Dizionario personalizzato"
+    "custom-dictionary-title": "Dizionario personalizzato",
+    "task-states-title": "Stati delle attività",
+    "task-state-none": "Nessuno",
+    "task-state-doing": "Fare",
+    "task-state-done": "Fatto",
+    "task-state-maybe": "Forse",
+    "task-state-cancelled": "Annullato",
+    "task-state-attr-state-id": "Identificativo (obbligatorio)",
+    "task-state-attr-markdown-symbol": "Simbolo Markdown",
+    "task-state-attr-is-completed": "Si considera completato",
+    "task-state-attr-color": "Colore",
+    "task-state-attr-is-hidden": "Nascosto dall'elenco"
   },
   "notes": {
     "new-note": "Nuova nota",
@@ -189,7 +200,8 @@
     "old_version": "La migrazione diretta dalla tua versione attuale non è supportata. Aggiorna prima all'ultima versione v0.60.4 e solo dopo a questa versione.",
     "error_message": "Errore durante la migrazione alla versione {{version}}: {{stack}}",
     "wrong_db_version": "La versione del database ({{version}}) è più recente di quanto l'applicazione si aspetti ({{targetVersion}}), il che significa che è stato creato da una versione più nuova e incompatibile di Trilium. Aggiorna Trilium all'ultima versione per risolvere questo problema.",
-    "invalid_db_version": "La versione del database non è un numero valido. Questo di solito indica che l'opzione «dbVersion» nel database è danneggiata. Si prega di ripristinare il sistema da un backup."
+    "invalid_db_version": "La versione del database non è un numero valido. Questo di solito indica che l'opzione «dbVersion» nel database è danneggiata. Si prega di ripristinare il sistema da un backup.",
+    "automatic_migrations_disabled": "Le migrazioni automatiche del database vengono disattivate tramite una variabile d'ambiente TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}"
   },
   "modals": {
     "error_title": "Errore"

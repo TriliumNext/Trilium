@@ -33,10 +33,10 @@ function autoProcessOCR(mime: string, process: () => Promise<unknown>, entityDes
     if (mime && supportedMimeTypes.includes(mime)) {
         process().then(result => {
             if (result) {
-                log.info(`Automatically processed OCR for ${entityDescription} with MIME type ${mime}`);
+                getLog().info(`Automatically processed OCR for ${entityDescription} with MIME type ${mime}`);
             }
         }).catch(error => {
-            log.error(`Failed to automatically process OCR for ${entityDescription}: ${error}`);
+            getLog().error(`Failed to automatically process OCR for ${entityDescription}: ${error}`);
         });
     }
 }

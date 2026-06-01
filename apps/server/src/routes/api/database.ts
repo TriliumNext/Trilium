@@ -1,14 +1,12 @@
 import { BackupDatabaseNowResponse, DatabaseCheckIntegrityResponse } from "@triliumnext/commons";
-import { becca_loader, getBackup, ValidationError } from "@triliumnext/core";
+import { becca_loader, consistency_checks as consistencyChecksService, getBackup, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import fs, { readFileSync } from "fs";
 import path from "path";
 
-import { getIntegrationTestDbPath } from "../../core_assets.js";
 import anonymizationService from "../../services/anonymization.js";
-import consistencyChecksService from "../../services/consistency_checks.js";
 import dataDir from "../../services/data_dir.js";
-import log from "../../services/log.js";
+import { getLog } from "@triliumnext/core";
 import sql from "../../services/sql.js";
 import sql_init from "../../services/sql_init.js";
 
@@ -25,20 +23,15 @@ async function backupDatabase() {
 function vacuumDatabase() {
     sql.execute("VACUUM");
 
-    log.info("Database has been vacuumed.");
+    getLog().info("Database has been vacuumed.");
 }
 
 function findAndFixConsistencyIssues() {
-    consistencyChecksService.runOnDemandChecks(true);
+    void consistencyChecksService.runOnDemandChecks(true);
 }
 
 async function rebuildIntegrationTestDatabase() {
-    // Reload the integration test database fixture into the in-memory SQL
-    // backend, then re-init schema-dependent state and the becca cache.
-    // Test-mode only — registered in routes.ts under the same env-var guard.
-    // getIntegrationTestDbPath() handles the bundled-vs-source path
-    // resolution; see core_assets.ts.
-    const fixtureBytes = readFileSync(getIntegrationTestDbPath());
+    const fixtureBytes = readFileSync(dataDir.DOCUMENT_PATH);
     sql.rebuildFromBuffer(fixtureBytes);
     sql_init.initializeDb();
     becca_loader.load();
@@ -58,7 +51,7 @@ async function anonymize(req: Request) {
 function checkIntegrity() {
     const results = sql.getRows<{ integrity_check: string }>("PRAGMA integrity_check");
 
-    log.info(`Integrity check result: ${JSON.stringify(results)}`);
+    getLog().info(`Integrity check result: ${JSON.stringify(results)}`);
 
     return {
         results

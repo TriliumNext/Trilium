@@ -1311,8 +1311,12 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     display: flex; /* see https://github.com/zadam/trilium/issues/1590 */
 }
 
-.include-note.ck-placeholder::before {
-    /* remove placeholder in otherwise empty note */
+/* CKEditor counts only non-UIElements as content (see `hasContent` in the
+   engine), so a widget rendered entirely from UIElements — an include note, a
+   Mermaid diagram, etc. — looks "empty" to it. When such a widget is the first
+   block, it can wrongly become the editor's placeholder host, overlaying the
+   placeholder text on top of the widget. Suppress it for any widget. */
+.ck-widget.ck-placeholder::before {
     content: "" !important;
 }
 

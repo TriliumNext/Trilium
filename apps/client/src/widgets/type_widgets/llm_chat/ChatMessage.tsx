@@ -1,8 +1,9 @@
 import "./ChatMessage.css";
 import "../code/MarkdownCommons.css";
 
-import { type LlmCitation, renderToHtml } from "@triliumnext/commons";
+import { CustomMarkdownRenderer, type LlmCitation, renderToHtml } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
+import type { Tokens } from "marked";
 import { useMemo } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
@@ -10,7 +11,8 @@ import utils from "../../../services/utils.js";
 import Button from "../../react/Button.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { ExpandableCard, ExpandableSection } from "./ExpandableCard.js";
-import { type ContentBlock, getMessageText, type StoredMessage, type TextBlock, type ToolCallBlock } from "./llm_chat_types.js";
+import { type ContentBlock, type FileBlock, getMessageText, type ImageBlock, type StoredMessage, type TextBlock, type TextFileBlock, type ToolCallBlock } from "./llm_chat_types.js";
+import { SafeImage } from "./retry_image.js";
 import ToolCallCard from "./ToolCallCard.js";
 
 function shortenNumber(n: number): string {
@@ -19,12 +21,29 @@ function shortenNumber(n: number): string {
     return n.toString();
 }
 
+/**
+ * Renderer that tags `#root/...` markdown links with the `reference-link` class
+ * so ReadOnlyTextContent's applyReferenceLinks pass decorates them with the
+ * note icon, color, and title — same shape as the `[[noteId]]` wiki-link
+ * extension's output, but for chat's `[Title](#root/noteId)` references.
+ */
+class ChatMarkdownRenderer extends CustomMarkdownRenderer {
+    override link(token: Tokens.Link): string {
+        const html = super.link(token);
+        if (token.href.startsWith("#root/")) {
+            return html.replace(/^<a\b/, '<a class="reference-link"');
+        }
+        return html;
+    }
+}
+
 /** Parse markdown to HTML using the shared rendering pipeline. */
 function renderMarkdown(markdown: string): string {
     return renderToHtml(markdown, "", {
         sanitize: (h) => DOMPurify.sanitize(h),
         wikiLink: { formatHref: (id) => `#root/${id}` },
-        demoteH1: false
+        demoteH1: false,
+        renderer: new ChatMarkdownRenderer({ async: false })
     });
 }
 
@@ -47,7 +66,10 @@ interface Props {
 
 type ContentGroup =
     | { type: "text"; block: TextBlock; index: number }
-    | { type: "tool_calls"; blocks: ToolCallBlock[]; index: number };
+    | { type: "tool_calls"; blocks: ToolCallBlock[]; index: number }
+    | { type: "image"; block: ImageBlock; index: number }
+    | { type: "file"; block: FileBlock; index: number }
+    | { type: "text_file"; block: TextFileBlock; index: number };
 
 /** Extract domain + TLD from a hostname (e.g. "www.example.co.uk" → "example.co.uk"). */
 function extractDomain(hostname: string): string {
@@ -113,13 +135,15 @@ export default function ChatMessage({ message, isStreaming, onRetry }: Props) {
     const isThinking = message.type === "thinking";
     const textContent = typeof message.content === "string" ? message.content : getMessageText(message.content);
 
-    // Render markdown for assistant messages with legacy string content
+    // Render markdown for plain-string content (assistant legacy content and user prompts).
+    // User prompts may contain `[Title](#root/noteId)` reference links produced by the
+    // chat input's @-mention feature, which markdown renders as proper clickable links.
     const renderedContent = useMemo(() => {
-        if (message.role === "assistant" && !isThinking && typeof message.content === "string") {
+        if (!isThinking && typeof message.content === "string") {
             return renderMarkdown(message.content);
         }
         return null;
-    }, [message.content, message.role, isThinking]);
+    }, [message.content, isThinking]);
 
     const messageClasses = [
         "llm-chat-message",
@@ -171,14 +195,10 @@ export default function ChatMessage({ message, isStreaming, onRetry }: Props) {
         <div className={`llm-chat-message-wrapper llm-chat-message-wrapper-${message.role}`}>
             <div className={messageClasses}>
                 <div className="llm-chat-message-content">
-                    {message.role === "assistant" ? (
-                        hasBlockContent ? (
-                            renderContentBlocks(message.content as ContentBlock[], isStreaming)
-                        ) : (
-                            <MarkdownContent html={renderedContent || ""} isStreaming={isStreaming} />
-                        )
+                    {hasBlockContent ? (
+                        renderContentBlocks(message.content as ContentBlock[], isStreaming)
                     ) : (
-                        textContent
+                        <MarkdownContent html={renderedContent || ""} isStreaming={isStreaming && message.role === "assistant"} />
                     )}
                 </div>
                 {message.citations && message.citations.length > 0 && (
@@ -237,6 +257,12 @@ function groupContentBlocks(blocks: ContentBlock[]): ContentGroup[] {
             } else {
                 groups.push({ type: "tool_calls", blocks: [block], index: i });
             }
+        } else if (block.type === "image") {
+            groups.push({ type: "image", block, index: i });
+        } else if (block.type === "file") {
+            groups.push({ type: "file", block, index: i });
+        } else if (block.type === "text_file") {
+            groups.push({ type: "text_file", block, index: i });
         } else {
             groups.push({ type: "text", block, index: i });
         }
@@ -254,6 +280,38 @@ function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
                 <div key={group.index}>
                     <MarkdownContent html={html} isStreaming={isStreaming && isLastBlock} />
                 </div>
+            );
+        }
+
+        if (group.type === "image") {
+            return (
+                <a
+                    key={group.index}
+                    href={group.block.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="llm-chat-message-image"
+                    title={group.block.title}
+                >
+                    <SafeImage src={group.block.url} alt={group.block.title} />
+                </a>
+            );
+        }
+
+        if (group.type === "file" || group.type === "text_file") {
+            const icon = group.type === "file" ? "bxs-file-pdf" : "bxs-file-blank";
+            return (
+                <a
+                    key={group.index}
+                    href={group.block.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="llm-chat-message-file"
+                    title={group.block.title}
+                >
+                    <span className={`bx ${icon}`} />
+                    <span className="llm-chat-message-file-name">{group.block.title}</span>
+                </a>
             );
         }
 

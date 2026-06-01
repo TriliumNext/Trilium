@@ -1,10 +1,9 @@
 import { createZipFromDirectory, extractZip, importData, initializeEditDocsCore, startElectron } from "./utils.js";
 import debounce from "@triliumnext/client/src/services/debounce.js";
-import cls from "@triliumnext/server/src/services/cls.js";
+import type { NoteMeta, NoteMetaFile } from "@triliumnext/core";
+import { cls } from "@triliumnext/core";
 import fs from "fs/promises";
 import { join } from "path";
-import type { NoteMetaFile } from "@triliumnext/server/src/services/meta/note_meta.js";
-import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
 
 // Paths are relative to apps/edit-docs/dist.
 const DEMO_ZIP_PATH = join(__dirname, "../../server/src/assets/db/demo.zip");
@@ -32,7 +31,7 @@ async function main() {
 }
 
 async function setOptions() {
-    const optionsService = (await import("@triliumnext/server/src/services/options.js")).default;
+    const { options: optionsService } = await import("@triliumnext/core");
     const sql = (await import("@triliumnext/server/src/services/sql.js")).default;
 
     optionsService.setOption("eraseUnusedAttachmentsAfterSeconds", 10);

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import shortcuts, { isIMEComposing, keyMatches, matchesShortcut } from "./shortcuts.js";
+import shortcuts, { type Handler, isIMEComposing, keyMatches, matchesShortcut, removeIndividualBinding } from "./shortcuts.js";
+import utils from "./utils.js";
 
 // Mock utils module
 vi.mock("./utils.js", () => ({
@@ -165,6 +166,13 @@ describe("shortcuts", () => {
             expect(matchesShortcut(event, "a")).toBe(false);
         });
 
+        it("should not match when the main key differs", () => {
+            // Valid shortcut format but the pressed key ("b") does not match the
+            // shortcut's key ("a"), so keyMatches returns false (line 175 true branch -> 176).
+            const event = createKeyboardEvent({ key: "b", code: "KeyB", ctrlKey: true });
+            expect(matchesShortcut(event, "ctrl+a")).toBe(false);
+        });
+
         it("should not match when no modifiers are used", () => {
             const event = createKeyboardEvent({ key: "a", code: "KeyA" });
             expect(matchesShortcut(event, "a")).toBe(false);
@@ -315,43 +323,94 @@ describe("shortcuts", () => {
             const handler = vi.fn();
             shortcuts.bindGlobalShortcut("ctrl+a", handler, "test-namespace");
 
+            // Capture the exact listener that was tracked for this namespace's binding.
+            const [, boundListener] = mockElement.addEventListener.mock.calls[0];
+
             shortcuts.removeGlobalShortcut("test-namespace");
 
-            expect(mockElement.removeEventListener).toHaveBeenCalledWith("keydown", expect.any(Function));
+            // Tearing down the namespace detaches that same tracked listener, proving the
+            // binding was actually registered in activeBindings (not merely attached to the DOM).
+            expect(mockElement.removeEventListener).toHaveBeenCalledWith("keydown", boundListener);
         });
     });
 
     describe("event handling", () => {
-        it.skip("should call handler when shortcut matches", () => {
+        it("should call handler when shortcut matches", () => {
             const handler = vi.fn();
             shortcuts.bindGlobalShortcut("ctrl+a", handler, "test-namespace");
 
-            // Get the listener that was registered
-            expect(mockElement.addEventListener.mock.calls).toHaveLength(1);
             const [, listener] = mockElement.addEventListener.mock.calls[0];
 
-            // First verify that matchesShortcut works directly
-            const testEvent = {
-                type: "keydown",
+            // Real KeyboardEvent so `evt instanceof KeyboardEvent` is true and the
+            // handler/preventDefault/stopPropagation path (lines 106-109) executes.
+            const testEvent = new KeyboardEvent("keydown", {
                 key: "a",
                 code: "KeyA",
-                ctrlKey: true,
-                altKey: false,
-                shiftKey: false,
-                metaKey: false,
-                preventDefault: vi.fn(),
-                stopPropagation: vi.fn()
-            } as any;
+                ctrlKey: true
+            });
+            const preventDefault = vi.spyOn(testEvent, "preventDefault");
+            const stopPropagation = vi.spyOn(testEvent, "stopPropagation");
 
-            // Test matchesShortcut directly first
-            expect(matchesShortcut(testEvent, "ctrl+a")).toBe(true);
-
-            // Now test the actual listener
             listener(testEvent);
 
-            expect(handler).toHaveBeenCalled();
-            expect(testEvent.preventDefault).toHaveBeenCalled();
-            expect(testEvent.stopPropagation).toHaveBeenCalled();
+            expect(handler).toHaveBeenCalledWith(testEvent);
+            expect(preventDefault).toHaveBeenCalled();
+            expect(stopPropagation).toHaveBeenCalled();
+        });
+
+        it("should not call handler while IME is composing", () => {
+            const handler = vi.fn();
+            shortcuts.bindGlobalShortcut("ctrl+a", handler, "test-namespace");
+
+            const [, listener] = mockElement.addEventListener.mock.calls[0];
+
+            // isComposing true short-circuits before matchesShortcut (lines 102-103).
+            const event = new KeyboardEvent("keydown", {
+                key: "a",
+                code: "KeyA",
+                ctrlKey: true
+            });
+            Object.defineProperty(event, "isComposing", { value: true });
+
+            listener(event);
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it("should not call handler for a real KeyboardEvent that does not match", () => {
+            const handler = vi.fn();
+            shortcuts.bindGlobalShortcut("ctrl+a", handler, "test-namespace");
+
+            const [, listener] = mockElement.addEventListener.mock.calls[0];
+
+            // A real KeyboardEvent that passes the type/instance/IME guards but fails
+            // matchesShortcut, exercising the false branch of line 106.
+            const event = new KeyboardEvent("keydown", {
+                key: "b",
+                code: "KeyB",
+                ctrlKey: true
+            });
+            const preventDefault = vi.spyOn(event, "preventDefault");
+
+            listener(event);
+
+            expect(handler).not.toHaveBeenCalled();
+            expect(preventDefault).not.toHaveBeenCalled();
+        });
+
+        it("should not call handler for keydown events that are not KeyboardEvents", () => {
+            const handler = vi.fn();
+            shortcuts.bindGlobalShortcut("ctrl+a", handler, "test-namespace");
+
+            const [, listener] = mockElement.addEventListener.mock.calls[0];
+
+            // type is "keydown" but the object is a plain Event, exercising the
+            // second operand of `evt.type !== 'keydown' || !(evt instanceof KeyboardEvent)`.
+            const event = new Event("keydown");
+
+            listener(event);
+
+            expect(handler).not.toHaveBeenCalled();
         });
 
         it("should not call handler for non-keyboard events", () => {
@@ -425,6 +484,123 @@ describe("shortcuts", () => {
         it('should handle null/undefined events gracefully', () => {
             expect(isIMEComposing(null as any)).toBe(false);
             expect(isIMEComposing(undefined as any)).toBe(false);
+        });
+    });
+
+    describe("removeIndividualBinding", () => {
+        // bindElShortcut returns the created ShortcutBinding; bindGlobalShortcut returns void.
+        const bind = (shortcut: string, handler: Handler, namespace?: string) =>
+            shortcuts.bindElShortcut([mockElement] as any, shortcut, handler, namespace)!;
+
+        it("should remove the event listener and drop the binding from its namespace", () => {
+            const handler = vi.fn();
+            const binding = bind("ctrl+a", handler, "test-namespace");
+
+            expect(binding).toBeTruthy();
+
+            removeIndividualBinding(binding);
+
+            expect(mockElement.removeEventListener).toHaveBeenCalledWith("keydown", binding.listener);
+        });
+
+        it("removes only the targeted binding and leaves the rest of the namespace tracked", () => {
+            // Two bindings with DISTINCT handlers in the same namespace. Removing one must
+            // drop only that binding from activeBindings and keep the other tracked. The map
+            // is private, so we observe it indirectly: tearing the namespace down afterwards
+            // must still detach the surviving binding's listener (and must not touch the
+            // already-removed one). This fails if the filter drops the wrong bindings.
+            const a = bind("ctrl+a", vi.fn(), "ns-multi");
+            const b = bind("ctrl+b", vi.fn(), "ns-multi");
+
+            removeIndividualBinding(a);
+            expect(mockElement.removeEventListener).toHaveBeenCalledWith("keydown", a.listener);
+
+            mockElement.removeEventListener.mockClear();
+            shortcuts.removeGlobalShortcut("ns-multi");
+
+            // b survived in the namespace and is cleaned up; a was already dropped, so it is
+            // not detached a second time.
+            expect(mockElement.removeEventListener).toHaveBeenCalledWith("keydown", b.listener);
+            expect(mockElement.removeEventListener).not.toHaveBeenCalledWith("keydown", a.listener);
+        });
+
+        it("should default to the 'global' namespace when binding has no namespace", () => {
+            // Bind without a namespace so binding.namespace is null and the `?? "global"`
+            // fallback (line 136) is exercised, plus the activeBindings.has(key) true branch.
+            const handler = vi.fn();
+            const first = bind("ctrl+a", handler);
+            const second = bind("ctrl+b", handler);
+
+            expect(first.namespace).toBeNull();
+            expect(second.namespace).toBeNull();
+
+            removeIndividualBinding(first);
+
+            expect(mockElement.removeEventListener).toHaveBeenCalledWith("keydown", first.listener);
+        });
+
+        it("should be a no-op when no bindings exist for the namespace", () => {
+            // Fabricate a binding for a namespace that has never been registered so
+            // `activeBindings.get(key)` is undefined (false branch of line 138).
+            const binding = {
+                element: mockElement as any,
+                shortcut: "ctrl+z",
+                handler: vi.fn(),
+                namespace: "never-registered",
+                listener: vi.fn()
+            };
+
+            expect(() => removeIndividualBinding(binding)).not.toThrow();
+            expect(mockElement.removeEventListener).toHaveBeenCalledWith("keydown", binding.listener);
+        });
+    });
+
+    describe("non-desktop behavior", () => {
+        it("should not bind shortcuts when not on desktop", () => {
+            const isDesktopSpy = vi.spyOn(utils, "isDesktop").mockReturnValue(false);
+            try {
+                const handler = vi.fn();
+                const result = shortcuts.bindGlobalShortcut("ctrl+a", handler, "test-namespace");
+
+                expect(result).toBeUndefined();
+                expect(mockElement.addEventListener).not.toHaveBeenCalled();
+            } finally {
+                isDesktopSpy.mockRestore();
+            }
+        });
+    });
+
+    describe("matchesShortcut empty-key guard", () => {
+        it("should warn and return false when the key part is only whitespace", () => {
+            const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+            const event = { key: "a", code: "KeyA" } as KeyboardEvent;
+
+            // "ctrl+ " splits to ["ctrl", " "]; key is " " so !key is false but
+            // key.trim() === '' is true, covering the second operand of line 169.
+            expect(matchesShortcut(event, "ctrl+ ")).toBe(false);
+
+            expect(consoleSpy).toHaveBeenCalled();
+            consoleSpy.mockRestore();
+        });
+    });
+
+    describe("keyMatches code fallbacks", () => {
+        it("should match a mapped special key by its code when key differs", () => {
+            // "space" maps to [" ", "Space"]; matching via e.code === "Space" exercises
+            // the `mappedKeys.includes(e.code)` fallback on line 206.
+            expect(keyMatches({ key: "Unidentified", code: "Space" } as KeyboardEvent, "space")).toBe(true);
+        });
+
+        it("should match an Alt+letter by key when the code does not match", () => {
+            // altKey true, code mismatched, but e.key matches — covers the second
+            // operand of line 221.
+            expect(keyMatches({ key: "a", code: "Unidentified", altKey: true } as KeyboardEvent, "a")).toBe(true);
+        });
+
+        it("should match a regular key by its code as a fallback", () => {
+            // Not a mapped key, not a digit, not a single a-z letter, so it falls
+            // through to line 227 and matches via e.code.
+            expect(keyMatches({ key: "Unidentified", code: "Comma" } as KeyboardEvent, "comma")).toBe(true);
         });
     });
 });

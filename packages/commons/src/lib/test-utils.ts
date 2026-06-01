@@ -47,7 +47,7 @@ export function trimIndentation(strings: TemplateStringsArray, ...values: any[])
     const output: string[] = [];
     for (let i = 0; i < lines.length; i++) {
         let numSpacesLine = 0;
-        while (str.charAt(numSpacesLine) == " " && numSpacesLine < str.length) {
+        while (numSpacesLine < numSpaces && lines[i].charAt(numSpacesLine) === " ") {
             numSpacesLine++;
         }
         output.push(lines[i].substring(numSpacesLine));

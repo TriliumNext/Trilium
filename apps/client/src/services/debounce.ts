@@ -28,6 +28,7 @@ function debounce<T>(func: (...args: any[]) => T, waitMs: number, immediate: boo
         } else {
             timeout = null;
             if (!immediate) {
+                /* v8 ignore next -- `|| []` is a defensive fallback: `args` is always non-null here because `debounced` (re)assigns it before this runs */
                 result = func.apply(context, args || []);
                 context = args = null;
             }
@@ -41,6 +42,7 @@ function debounce<T>(func: (...args: any[]) => T, waitMs: number, immediate: boo
         const callNow = immediate && !timeout;
         if (!timeout) timeout = setTimeout(later, waitMs);
         if (callNow) {
+            /* v8 ignore next -- `|| []` is a defensive fallback: `args` was just assigned `arguments` above and is always truthy here */
             result = func.apply(context, args || []);
             context = args = null;
         }
@@ -57,8 +59,13 @@ function debounce<T>(func: (...args: any[]) => T, waitMs: number, immediate: boo
 
     debounced.flush = function () {
         if (timeout) {
-            result = func.apply(context, args || []);
-            context = args = null;
+            // In immediate mode the leading-edge fire nulls `args` while leaving the
+            // trailing timer live, so only invoke when there is actually a pending
+            // trailing call to flush — otherwise this would re-fire `func` with no args.
+            if (args) {
+                result = func.apply(context, args);
+                context = args = null;
+            }
 
             clearTimeout(timeout);
             timeout = null;

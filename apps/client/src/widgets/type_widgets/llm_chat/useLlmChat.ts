@@ -1,10 +1,45 @@
-import type { LlmCitation, LlmMessage, LlmModelInfo, LlmUsage } from "@triliumnext/commons";
+import type { LlmCitation, LlmMessage, LlmMessagePart, LlmModelInfo, LlmUsage } from "@triliumnext/commons";
 import { RefObject } from "preact";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
 import { randomString } from "../../../services/utils.js";
-import type { ContentBlock, LlmChatContent, StoredMessage } from "./llm_chat_types.js";
+import type { ContentBlock, FileBlock, ImageBlock, LlmChatContent, StoredMessage, TextFileBlock } from "./llm_chat_types.js";
+import { useSmoothStreaming } from "./useSmoothStreaming.js";
+
+/** A user-supplied attachment waiting to be sent with the next message. */
+export type AttachmentBlock = ImageBlock | FileBlock | TextFileBlock;
+
+/**
+ * Flatten a stored message's content into the wire format the server expects.
+ * Plain string content stays as-is; block-shaped content (with images) becomes
+ * an ordered array of text/image parts, with tool-call blocks stripped.
+ */
+function flattenToApiContent(content: string | ContentBlock[]): string | LlmMessagePart[] {
+    if (typeof content === "string") {
+        return content;
+    }
+    const parts: LlmMessagePart[] = [];
+    for (const block of content) {
+        if (block.type === "text") {
+            if (block.content) parts.push({ type: "text", text: block.content });
+        } else if (block.type === "image") {
+            parts.push({ type: "image", attachmentId: block.attachmentId, mime: block.mime });
+        } else if (block.type === "file") {
+            parts.push({ type: "file", attachmentId: block.attachmentId, mime: block.mime, filename: block.title });
+        } else if (block.type === "text_file") {
+            parts.push({ type: "text_attachment", attachmentId: block.attachmentId, filename: block.title });
+        }
+        // tool_call blocks belong to assistant history rendering only — they
+        // are reconstructed from the model's own tool-use turns and must not
+        // be re-sent as user/assistant content.
+    }
+    // Collapse to a string if there is no multimodal content — keeps backwards
+    // compatibility with providers/paths that haven't been touched.
+    if (parts.length === 0) return "";
+    if (parts.length === 1 && parts[0].type === "text") return parts[0].text;
+    return parts;
+}
 
 export interface ModelOption extends LlmModelInfo {
     costDescription?: string;
@@ -30,16 +65,19 @@ export interface UseLlmChatReturn {
     streamingBlocks: ContentBlock[];
     streamingThinking: string;
     pendingCitations: LlmCitation[];
+    /** Images or files the user has attached but not yet sent. */
+    pendingAttachments: AttachmentBlock[];
     availableModels: ModelOption[];
     selectedModel: string;
     enableWebSearch: boolean;
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
     contextNoteId: string | undefined;
+    /** The chat note's ID — used as the upload target for attachments. */
+    chatNoteId: string | undefined;
     lastPromptTokens: number;
     messagesEndRef: RefObject<HTMLDivElement>;
     scrollContainerRef: RefObject<HTMLDivElement>;
-    textareaRef: RefObject<HTMLTextAreaElement>;
     /** Whether a provider is configured and available */
     hasProvider: boolean;
     /** Whether we're still checking for providers */
@@ -54,6 +92,10 @@ export interface UseLlmChatReturn {
     setEnableExtendedThinking: (value: boolean) => void;
     setContextNoteId: (noteId: string | undefined) => void;
     setChatNoteId: (noteId: string | undefined) => void;
+    /** Append a freshly uploaded image or file to the pending-attachments list. */
+    addPendingAttachment: (attachment: AttachmentBlock) => void;
+    /** Remove a pending attachment by its attachment ID. */
+    removePendingAttachment: (attachmentId: string) => void;
 
     // Actions
     handleSubmit: (e: Event) => Promise<void>;
@@ -78,10 +120,14 @@ export function useLlmChat(
     const [messages, setMessagesInternal] = useState<StoredMessage[]>([]);
     const [input, setInput] = useState("");
     const [isStreaming, setIsStreaming] = useState(false);
-    const [streamingContent, setStreamingContent] = useState("");
-    const [streamingBlocks, setStreamingBlocks] = useState<ContentBlock[]>([]);
+    // The canonical "target" content received from the stream so far. The
+    // displayed `streamingBlocks` is derived from this with the trailing text
+    // block smoothed via useSmoothStreaming for a steady reveal cadence.
+    const [targetBlocks, setTargetBlocks] = useState<ContentBlock[]>([]);
     const [streamingThinking, setStreamingThinking] = useState("");
+    const { displayedText: smoothedTailText, append: smoothAppend, drain: smoothDrain, reset: smoothReset } = useSmoothStreaming();
     const [pendingCitations, setPendingCitations] = useState<LlmCitation[]>([]);
+    const [pendingAttachments, setPendingAttachments] = useState<AttachmentBlock[]>([]);
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [selectedModel, setSelectedModel] = useState<string>("");
     const [enableWebSearch, setEnableWebSearch] = useState(true);
@@ -94,7 +140,6 @@ export function useLlmChat(
     const [isCheckingProvider, setIsCheckingProvider] = useState<boolean>(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const isNearBottomRef = useRef(true);
 
@@ -117,6 +162,15 @@ export function useLlmChat(
     }, []);
     const contextNoteIdRef = useRef(contextNoteId);
     contextNoteIdRef.current = contextNoteId;
+    const pendingAttachmentsRef = useRef(pendingAttachments);
+    pendingAttachmentsRef.current = pendingAttachments;
+
+    const addPendingAttachment = useCallback((attachment: AttachmentBlock) => {
+        setPendingAttachments(prev => [...prev, attachment]);
+    }, []);
+    const removePendingAttachment = useCallback((attachmentId: string) => {
+        setPendingAttachments(prev => prev.filter(a => a.attachmentId !== attachmentId));
+    }, []);
 
     // Wrapper to call onMessagesChange when messages update
     const setMessages = useCallback((newMessages: StoredMessage[]) => {
@@ -178,7 +232,7 @@ export function useLlmChat(
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, streamingContent, streamingThinking, scrollToBottom]);
+    }, [messages, smoothedTailText, streamingThinking, scrollToBottom]);
 
     // Load state from content object
     const loadFromContent = useCallback((content: LlmChatContent) => {
@@ -228,9 +282,9 @@ export function useLlmChat(
         setPendingCitations([]);
         setMessagesInternal(conversation);
         setIsStreaming(true);
-        setStreamingContent("");
-        setStreamingBlocks([]);
+        setTargetBlocks([]);
         setStreamingThinking("");
+        smoothReset();
 
         let thinkingContent = "";
         const contentBlocks: ContentBlock[] = [];
@@ -250,10 +304,7 @@ export function useLlmChat(
 
         const apiMessages: LlmMessage[] = conversation.map(m => ({
             role: m.role,
-            content: typeof m.content === "string" ? m.content : m.content
-                .filter((b): b is ContentBlock & { type: "text" } => b.type === "text")
-                .map(b => b.content)
-                .join("")
+            content: flattenToApiContent(m.content)
         }));
 
         const selectedModelProvider = availableModels.find(m => m.id === selectedModel)?.provider;
@@ -274,12 +325,23 @@ export function useLlmChat(
 
         /** Shared cleanup: finalize collected content and reset streaming state. */
         function finalizeStream() {
-            // Mark any in-progress tool calls as stopped so they don't show infinite spinners
+            // Reveal any remaining smoothed text instantly so the trailing chars
+            // don't get clipped when the streaming placeholder is swapped for
+            // the finalized message.
+            smoothDrain();
+
+            // Mark any in-progress tool calls as stopped so they don't show infinite spinners.
+            // Also clear `inputStreaming` so a half-streamed JSON arg list doesn't render.
             for (const [i, block] of contentBlocks.entries()) {
                 if (block.type === "tool_call" && !block.toolCall.result) {
                     contentBlocks[i] = {
                         type: "tool_call",
-                        toolCall: { ...block.toolCall, result: "[Stopped]", isError: true }
+                        toolCall: {
+                            ...block.toolCall,
+                            inputStreaming: undefined,
+                            result: "[Stopped]",
+                            isError: true
+                        }
                     };
                 }
             }
@@ -311,8 +373,7 @@ export function useLlmChat(
                 setMessages([...conversation, ...finalNewMessages]);
             }
 
-            setStreamingContent("");
-            setStreamingBlocks([]);
+            setTargetBlocks([]);
             setStreamingThinking("");
             setPendingCitations([]);
             setIsStreaming(false);
@@ -324,33 +385,89 @@ export function useLlmChat(
             streamOptions,
             {
                 onChunk: (text) => {
+                    // A new text block begins whenever the previous tail is
+                    // anything other than text (or there's nothing yet). In
+                    // that case the smoother needs to start fresh so it doesn't
+                    // pin the displayed length from the previous block.
+                    const prev = contentBlocks[contentBlocks.length - 1];
+                    const isNewTextBlock = prev?.type !== "text";
                     lastTextBlock().content += text;
-                    setStreamingContent(contentBlocks
-                        .filter((b): b is ContentBlock & { type: "text" } => b.type === "text")
-                        .map(b => b.content)
-                        .join(""));
-                    setStreamingBlocks([...contentBlocks]);
+                    if (isNewTextBlock) {
+                        smoothReset();
+                    }
+                    smoothAppend(text);
+                    setTargetBlocks([...contentBlocks]);
                 },
                 onThinking: (text) => {
                     thinkingContent += text;
                     setStreamingThinking(thinkingContent);
                 },
-                onToolUse: (toolName, toolInput) => {
+                onToolInputStart: (toolCallId, toolName) => {
+                    // Snap any pending smoothed text to its full value before
+                    // the tool_call block appears — otherwise the trailing
+                    // chars of the previous text block would be left hanging.
+                    smoothDrain();
                     contentBlocks.push({
                         type: "tool_call",
                         toolCall: {
-                            id: randomString(),
+                            id: toolCallId,
                             toolName,
-                            input: toolInput
+                            input: {},
+                            inputStreaming: ""
                         }
                     });
-                    setStreamingBlocks([...contentBlocks]);
+                    setTargetBlocks([...contentBlocks]);
                 },
-                onToolResult: (toolName, result, isError) => {
+                onToolInputDelta: (toolCallId, delta) => {
+                    for (let i = contentBlocks.length - 1; i >= 0; i--) {
+                        const block = contentBlocks[i];
+                        if (block.type === "tool_call" && block.toolCall.id === toolCallId) {
+                            contentBlocks[i] = {
+                                type: "tool_call",
+                                toolCall: {
+                                    ...block.toolCall,
+                                    inputStreaming: (block.toolCall.inputStreaming ?? "") + delta
+                                }
+                            };
+                            break;
+                        }
+                    }
+                    setTargetBlocks([...contentBlocks]);
+                },
+                onToolUse: (toolCallId, toolName, toolInput) => {
+                    // Some providers skip tool-input-start/delta entirely and only emit
+                    // the final tool-call. In that case there's no pending block to update,
+                    // so push a fresh one.
+                    for (let i = contentBlocks.length - 1; i >= 0; i--) {
+                        const block = contentBlocks[i];
+                        if (block.type === "tool_call" && block.toolCall.id === toolCallId) {
+                            contentBlocks[i] = {
+                                type: "tool_call",
+                                toolCall: {
+                                    ...block.toolCall,
+                                    input: toolInput,
+                                    inputStreaming: undefined
+                                }
+                            };
+                            setTargetBlocks([...contentBlocks]);
+                            return;
+                        }
+                    }
+                    // Provider went straight to a full tool_call with no
+                    // start/delta events — drain so any preceding text is
+                    // shown in full before the tool_call card replaces it.
+                    smoothDrain();
+                    contentBlocks.push({
+                        type: "tool_call",
+                        toolCall: { id: toolCallId, toolName, input: toolInput }
+                    });
+                    setTargetBlocks([...contentBlocks]);
+                },
+                onToolResult: (toolCallId, _toolName, result, isError) => {
                     // Replace the matching block with a new object so Preact sees the change.
                     for (let i = contentBlocks.length - 1; i >= 0; i--) {
                         const block = contentBlocks[i];
-                        if (block.type === "tool_call" && block.toolCall.toolName === toolName && !block.toolCall.result) {
+                        if (block.type === "tool_call" && block.toolCall.id === toolCallId) {
                             contentBlocks[i] = {
                                 type: "tool_call",
                                 toolCall: { ...block.toolCall, result, isError }
@@ -358,7 +475,7 @@ export function useLlmChat(
                             break;
                         }
                     }
-                    setStreamingBlocks([...contentBlocks]);
+                    setTargetBlocks([...contentBlocks]);
                 },
                 onCitation: (citation) => {
                     // Deduplicate by URL
@@ -382,8 +499,8 @@ export function useLlmChat(
                     };
                     const finalMessages = [...conversation, errorMessage];
                     setMessages(finalMessages);
-                    setStreamingContent("");
-                    setStreamingBlocks([]);
+                    smoothReset();
+                    setTargetBlocks([]);
                     setStreamingThinking("");
                     setIsStreaming(false);
                 },
@@ -396,24 +513,60 @@ export function useLlmChat(
             // AbortError is expected when user stops generation
             if (e instanceof DOMException && e.name === "AbortError") {
                 finalizeStream();
-            } else {
-                // Re-throw other errors so they are not swallowed
-                throw e;
+                return;
             }
+            // Unexpected error — streamChatCompletion normally routes failures
+            // through onError, so reaching here is a bug. Surface it in the chat
+            // and reset state instead of leaving the UI stuck on the stop button.
+            console.error("Unexpected error in chat stream:", e);
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            setMessages([...conversation, {
+                id: randomString(),
+                role: "assistant",
+                content: errorMsg,
+                createdAt: new Date().toISOString(),
+                type: "error"
+            }]);
+            smoothReset();
+            setTargetBlocks([]);
+            setStreamingThinking("");
+            setIsStreaming(false);
+            abortControllerRef.current = null;
         });
-    }, [selectedModel, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages]);
+    }, [selectedModel, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
 
     const handleSubmit = useCallback(async (e: Event) => {
         e.preventDefault();
-        if (!input.trim() || isStreaming) return;
+        if (isStreaming) return;
+        const trimmedInput = input.trim();
+        const attachments = pendingAttachmentsRef.current;
+        if (!trimmedInput && attachments.length === 0) return;
+
+        // If there are attachments, build a block-shaped content array so the
+        // images travel alongside the text. Otherwise stay with the simple
+        // string form so existing chat history remains byte-identical.
+        let content: StoredMessage["content"];
+        if (attachments.length === 0) {
+            content = trimmedInput;
+        } else {
+            const blocks: ContentBlock[] = [];
+            if (trimmedInput) {
+                blocks.push({ type: "text", content: trimmedInput });
+            }
+            for (const att of attachments) {
+                blocks.push(att);
+            }
+            content = blocks;
+        }
 
         const userMessage: StoredMessage = {
             id: randomString(),
             role: "user",
-            content: input.trim(),
+            content,
             createdAt: new Date().toISOString()
         };
         setInput("");
+        setPendingAttachments([]);
         await runStream([...messages, userMessage]);
     }, [input, isStreaming, messages, runStream]);
 
@@ -438,6 +591,27 @@ export function useLlmChat(
         }
     }, []);
 
+    // Build the rendered view by swapping the trailing text block's content for
+    // the smoother's progressively-revealed prefix. Earlier text blocks are
+    // already drained to their full content (drain() runs whenever a tool_call
+    // pushes onto the stack), so only the tail needs substitution.
+    const streamingBlocks = useMemo<ContentBlock[]>(() => {
+        if (targetBlocks.length === 0) return targetBlocks;
+        const lastIdx = targetBlocks.length - 1;
+        const last = targetBlocks[lastIdx];
+        if (last.type !== "text") return targetBlocks;
+        if (last.content === smoothedTailText) return targetBlocks;
+        return [
+            ...targetBlocks.slice(0, lastIdx),
+            { ...last, content: smoothedTailText }
+        ];
+    }, [targetBlocks, smoothedTailText]);
+
+    const streamingContent = useMemo(() => streamingBlocks
+        .filter((b): b is ContentBlock & { type: "text" } => b.type === "text")
+        .map(b => b.content)
+        .join(""), [streamingBlocks]);
+
     return {
         // State
         messages,
@@ -447,16 +621,17 @@ export function useLlmChat(
         streamingBlocks,
         streamingThinking,
         pendingCitations,
+        pendingAttachments,
         availableModels,
         selectedModel,
         enableWebSearch,
         enableNoteTools,
         enableExtendedThinking,
         contextNoteId,
+        chatNoteId,
         lastPromptTokens,
         messagesEndRef,
         scrollContainerRef,
-        textareaRef,
         hasProvider,
         isCheckingProvider,
 
@@ -469,6 +644,8 @@ export function useLlmChat(
         setEnableExtendedThinking,
         setContextNoteId,
         setChatNoteId,
+        addPendingAttachment,
+        removePendingAttachment,
 
         // Actions
         handleSubmit,

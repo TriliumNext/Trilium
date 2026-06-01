@@ -72,6 +72,7 @@ jobs:
 
       - name: Validate container run output
         run: |
+          cp packages/trilium-core/src/test/fixtures/document.db apps/server/spec/db/document.db
           CONTAINER_ID=$(docker run -d --log-driver=journald --rm --network=host -e TRILIUM_PORT=8082 --volume ./apps/server/spec/db:/home/node/trilium-data --name trilium_local ${{ env.TEST_TAG }})
           echo "Container ID: $CONTAINER_ID"
 

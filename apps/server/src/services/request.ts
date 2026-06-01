@@ -1,15 +1,14 @@
 "use strict";
 
-import type { ExecOpts, RequestProvider } from "@triliumnext/core";
-import { isElectron } from "./utils.js";
-import log from "./log.js";
+import { type ExecOpts, getLog, type RequestProvider, sync_options as syncOptions } from "@triliumnext/core";
 import url from "url";
-import syncOptions from "./sync_options.js";
 
-// this service provides abstraction over node's HTTP/HTTPS and electron net.client APIs
-// this allows supporting system proxy
+// this service provides abstraction over node's HTTP/HTTPS modules.
+// Subclasses (e.g. apps/desktop's ElectronRequestProvider) can override
+// `getClient` to plug in alternative transports such as `electron.net`
+// (which honours the system proxy).
 
-interface ClientOpts {
+export interface ClientOpts {
     method: string;
     url: string;
     protocol?: string | null;
@@ -24,13 +23,13 @@ interface ClientOpts {
 
 type RequestEvent = "error" | "response" | "abort";
 
-interface Request {
+interface NetRequest {
     on(event: RequestEvent, cb: (e: any) => void): void;
     end(payload?: string): void;
 }
 
-interface Client {
-    request(opts: ClientOpts): Request;
+export interface Client {
+    request(opts: ClientOpts): NetRequest;
 }
 
 const HTTP = "http:",
@@ -62,12 +61,14 @@ async function getProxyAgent(opts: ClientOpts) {
     return new AgentClass(opts.proxy);
 }
 
-async function getClient(opts: ClientOpts): Promise<Client> {
-    // it's not clear how to explicitly configure proxy (as opposed to system proxy),
-    // so in that case, we always use node's modules
-    if (isElectron && !opts.proxy) {
-        return (await import("electron")).net as unknown as Client;
-    } else {
+export default class NodeRequestProvider implements RequestProvider {
+
+    /**
+     * Resolves the HTTP client for a given request. The default implementation
+     * picks Node's `http` or `https` module based on the URL scheme. Subclasses
+     * may override to provide a transport that supports system proxy etc.
+     */
+    protected async getClient(opts: ClientOpts): Promise<Client> {
         const { protocol } = url.parse(opts.url);
 
         if (protocol === "http:" || protocol === "https:") {
@@ -76,12 +77,9 @@ async function getClient(opts: ClientOpts): Promise<Client> {
             throw new Error(`Unrecognized protocol '${protocol}'`);
         }
     }
-}
-
-export default class NodeRequestProvider implements RequestProvider {
 
     async exec<T>(opts: ExecOpts): Promise<T> {
-        const client = getClient(opts);
+        const client = this.getClient(opts);
 
         // hack for cases where electron.net does not work, but we don't want to set proxy
         if (opts.proxy === "noproxy") {
@@ -96,8 +94,9 @@ export default class NodeRequestProvider implements RequestProvider {
 
         const proxyAgent = await getProxyAgent(opts);
         const parsedTargetUrl = url.parse(opts.url);
+        const resolvedClient = await client;
 
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
             try {
                 const headers: Record<string, string | number> = {
                     Cookie: (opts.cookieJar && opts.cookieJar.header) || "",
@@ -111,7 +110,7 @@ export default class NodeRequestProvider implements RequestProvider {
                     headers["trilium-cred"] = Buffer.from(`dummy:${opts.auth.password}`).toString("base64");
                 }
 
-                const request = (await client).request({
+                const request = resolvedClient.request({
                     method: opts.method,
                     // url is used by electron net module
                     url: opts.url,
@@ -148,7 +147,7 @@ export default class NodeRequestProvider implements RequestProvider {
 
                                 resolve(jsonObj);
                             } catch (e: any) {
-                                log.error(`Failed to deserialize sync response: ${responseStr}`);
+                                getLog().error(`Failed to deserialize sync response: ${responseStr}`);
 
                                 reject(generateError(opts, e.message));
                             }
@@ -189,7 +188,7 @@ export default class NodeRequestProvider implements RequestProvider {
             proxy: proxyConf !== "noproxy" ? proxyConf : null
         };
 
-        const client = await getClient(opts);
+        const client = await this.getClient(opts);
         const proxyAgent = await getProxyAgent(opts);
         const parsedTargetUrl = url.parse(opts.url);
 

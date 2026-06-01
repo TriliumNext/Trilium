@@ -12,13 +12,10 @@
  *
  * All times are in-memory (monkeypatched getContent, no real SQL).
  */
+import { BBranch, becca, becca_mocking, BNote, search as searchService, SearchContext } from "@triliumnext/core";
 import { describe, it, expect, afterEach } from "vitest";
-import searchService from "./search.js";
-import BNote from "../../../becca/entities/bnote.js";
-import BBranch from "../../../becca/entities/bbranch.js";
-import SearchContext from "../search_context.js";
-import becca from "../../../becca/becca.js";
-import { NoteBuilder, note } from "../../../test/becca_mocking.js";
+
+const { NoteBuilder, note } = becca_mocking;
 
 // ── helpers ──────────────────────────────────────────────────────────
 
@@ -108,7 +105,7 @@ function buildDataset(noteCount: number, opts: {
         notePosition: 10
     });
 
-    const containers: NoteBuilder[] = [];
+    const containers: InstanceType<typeof NoteBuilder>[] = [];
     let parent = rootNote;
     for (let d = 0; d < depth; d++) {
         const container = note(`Container_${d}_${randomWord(4)}`);

@@ -147,6 +147,15 @@ export function sanitizeSqlIdentifier(str: string) {
 }
 
 /**
+ * Canonical Content-Security-Policy used whenever SVG content is served to a browser
+ * (image notes, attachments, raw-shared SVG). Acts as defense-in-depth alongside
+ * {@link sanitizeSvg}: blocks scripts via `default-src 'none'`, while still allowing
+ * inline styles and same-origin/`data:` images and fonts so legitimate SVGs render.
+ * Keep all SVG-serving routes pointed at this constant so the policy can't drift.
+ */
+export const SVG_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:";
+
+/**
  * Sanitize SVG to remove potentially dangerous elements and attributes.
  * This prevents XSS via script injection in SVG content.
  */

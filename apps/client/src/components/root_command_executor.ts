@@ -187,11 +187,7 @@ export default class RootCommandExecutor extends Component {
     toggleTrayCommand() {
         if (!utils.isElectron() || options.is("disableTray")) return;
 
-        const { BrowserWindow } = utils.dynamicRequire("@electron/remote");
-        const windows = BrowserWindow.getAllWindows() as Electron.BaseWindow[];
-        const isVisible = windows.every((w) => w.isVisible());
-        const action = isVisible ? "hide" : "show";
-        for (const window of windows) window[action]();
+        window.electronApi?.window.toggleAllWindows();
     }
 
     toggleZenModeCommand() {

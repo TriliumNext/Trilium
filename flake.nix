@@ -42,8 +42,7 @@
           makeBinaryWrapper
           makeDesktopItem
           makeShellWrapper
-          moreutils
-          removeReferencesTo
+removeReferencesTo
           stdenv
           wrapGAppsHook3
           xcodebuild
@@ -125,7 +124,7 @@
 
             # remove pnpm version override
             preConfigure = ''
-              cat package.json | grep -v 'packageManager' | sponge package.json
+              node -e "const p = require('./package.json'); delete p.packageManager; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n')"
             '';
 
             postConfigure =
@@ -136,8 +135,7 @@
 
             extraNativeBuildInputs =
               [
-                moreutils # sponge
-                nodejs.python
+nodejs.python
                 removeReferencesTo
               ]
               ++ lib.optionals (app == "desktop" || app == "edit-docs") [

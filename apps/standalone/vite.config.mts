@@ -1,6 +1,7 @@
 import fs from "fs";
 import { join, resolve, sep } from "path";
 
+import { codecovVitePlugin } from "@codecov/vite-plugin";
 import prefresh from "@prefresh/vite";
 import { defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
@@ -197,6 +198,20 @@ if (process.env.TRILIUM_INTEGRATION_TEST) {
     ]
 }
 
+if (!isDev) {
+    // Put the Codecov vite plugin after all other plugins.
+    // Gated on CODECOV_TOKEN so it stays a no-op locally and in the
+    // integration-test build (which sets no token).
+    plugins = [
+        ...plugins,
+        codecovVitePlugin({
+            enableBundleAnalysis: !!process.env.CODECOV_TOKEN,
+            bundleName: "standalone",
+            uploadToken: process.env.CODECOV_TOKEN
+        })
+    ];
+}
+
 export default defineConfig(() => ({
     root: join(__dirname, 'src'),  // Set src as root so index.html is served from /
     envDir: __dirname,  // Load .env files from standalone directory, not src/
@@ -303,10 +318,32 @@ export default defineConfig(() => ({
         environment: "happy-dom",
         setupFiles: [join(__dirname, "src/test_setup.ts")],
         dir: join(__dirname),
+        reporters: [
+            "default",
+            // Absolute path on purpose: the Vite `root` above is `src`, so a
+            // relative outputFile would land in `src/test-output`. Anchor to the
+            // package dir to match the other apps and the CI upload path.
+            ["junit", { outputFile: join(__dirname, "test-output/vitest/junit.xml"), addFileAttribute: true }]
+        ],
         include: [
             "src/**/*.{test,spec}.{ts,tsx}",
             "../../packages/trilium-core/src/**/*.{test,spec}.{ts,tsx}"
         ],
+        coverage: {
+            // Absolute path for the same reason as the junit reporter above: the
+            // Vite `root` is `src`, so a relative path would land in
+            // `src/test-output`. Anchor to the package dir (matches the CI upload path).
+            reportsDirectory: join(__dirname, "test-output/vitest/coverage"),
+            provider: "v8" as const,
+            // trilium-core lives outside this project's `root` (which is `src`),
+            // so its files are only collected when `allowExternal` is enabled.
+            allowExternal: true,
+            // Vite `root` above is `src`, so coverage include globs resolve relative to src/.
+            // `../../../` walks src -> standalone -> apps -> repo root to reach the core package.
+            include: ["**/*.{ts,tsx}", "../../../packages/trilium-core/src/**/*.{ts,tsx}"],
+            exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"],
+            reporter: ["text", "html", "lcov"]
+        },
         server: {
             deps: {
                 inline: ["@sqlite.org/sqlite-wasm"]

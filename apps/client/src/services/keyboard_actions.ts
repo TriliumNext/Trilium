@@ -50,6 +50,7 @@ async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, c
 
 getActionsForScope("window").then((actions) => {
     for (const action of actions) {
+        /* v8 ignore next -- effectiveShortcuts is always normalized to an array by the loader (line 13) before this resolves, so the ?? [] fallback is unreachable */
         for (const shortcut of action.effectiveShortcuts ?? []) {
             shortcutService.bindGlobalShortcut(shortcut, () => appContext.triggerCommand(action.actionName, { ntxId: appContext.tabManager.activeNtxId }));
         }

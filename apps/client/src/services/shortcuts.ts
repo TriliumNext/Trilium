@@ -136,7 +136,7 @@ export function removeIndividualBinding(binding: ShortcutBinding) {
     const key = binding.namespace ?? "global";
     const activeBindingsInNamespace = activeBindings.get(key);
     if (activeBindingsInNamespace) {
-        activeBindings.set(key, activeBindingsInNamespace.filter(aBinding => aBinding.handler === binding.handler));
+        activeBindings.set(key, activeBindingsInNamespace.filter(aBinding => aBinding !== binding));
     }
     binding.element.removeEventListener("keydown", binding.listener);
 }

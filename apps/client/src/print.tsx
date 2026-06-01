@@ -6,7 +6,7 @@ import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
 import { applyInlineMermaid } from "./services/content_renderer_text";
 import froca from "./services/froca";
-import { dynamicRequire, isElectron } from "./services/utils";
+import { isElectron } from "./services/utils";
 import { CustomNoteList, useNoteViewType } from "./widgets/collections/NoteList";
 
 interface RendererProps {
@@ -57,9 +57,8 @@ async function main() {
 function App({ note, noteId }: { note: FNote | null | undefined, noteId: string }) {
     const sentReadyEvent = useRef(false);
     const onProgressChanged = useCallback((progress: number) => {
-        if (isElectron()) {
-            const { ipcRenderer } = dynamicRequire('electron');
-            ipcRenderer.send("print-progress", progress);
+        if (window.electronApi) {
+            window.electronApi.printing.sendPrintProgress(progress);
         } else {
             window.dispatchEvent(new CustomEvent("note-load-progress", { detail: { progress } }));
         }

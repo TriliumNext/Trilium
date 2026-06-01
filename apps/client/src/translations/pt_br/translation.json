@@ -73,7 +73,8 @@
     "branch_prefix_saved": "O prefixo de ramificação foi salvo.",
     "edit_branch_prefix_multiple": "Editar prefixo do ramo para {{count}} ramos",
     "branch_prefix_saved_multiple": "O prefixo do ramo foi salvo para {{count}} ramos.",
-    "affected_branches": "Ramos afetados ({{count}}):"
+    "affected_branches": "Ramos afetados ({{count}}):",
+    "cancel": "Cancelar"
   },
   "bulk_actions": {
     "bulk_actions": "Ações em massa",
@@ -118,7 +119,11 @@
     "no_note_to_delete": "Nenhuma nota será excluída (apenas os clones).",
     "broken_relations_to_be_deleted": "As seguintes relações serão quebradas e excluídas ({{ relationCount}})",
     "cancel": "Cancelar",
-    "table_relation": "Relação"
+    "table_relation": "Relação",
+    "title": "Deletar notas",
+    "erase_notes_label": "Apagar permanentemente",
+    "clones_label": "Clones",
+    "delete": "Deletar"
   },
   "export": {
     "export_note_title": "Exportar nota",
@@ -2244,5 +2249,11 @@
   },
   "setup_form": {
     "more_info": "Saber mais"
+  },
+  "markdown_editor": {
+    "image_upload_failed": "Não foi possível carregar a imagem \"{{name}}\"."
+  },
+  "markdown_slash_commands": {
+    "date": "Inserir data e hora atuais"
   }
 }

@@ -217,7 +217,11 @@
     "share_favicon": "ملاحظة الأيقونة (Favicon) التي سيتم تعيينها في صفحة المشاركة. عادةً يُفضّل تعيينها في جذر المشاركة وجعلها قابلة للوراثة. يجب أن تكون ملاحظة الأيقونة ضمن الشجرة المُشاركة أيضًا. يُنصح باستخدام ‎'share_hidden_from_tree'‎.",
     "other_notes_with_name": "ملاحظات أخرى تحتوي على اسم الخاصية {{attributeType}} باسم \"{{attributeName}}\"",
     "print_landscape": "عند التصدير إلى PDF، يتم تغيير اتجاه الصفحة إلى الوضع الأفقي بدلًا من العمودي.",
-    "print_scale": "عند التصدير إلى PDF، يتم تغيير مقياس المحتوى المعروض. تتراوح القيم بين 0.1 (10%) و 2 (200%)، والقيمة الافتراضية هي 1 (100%)."
+    "print_scale": "عند التصدير إلى PDF، يتم تغيير مقياس المحتوى المعروض. تتراوح القيم بين 0.1 (10%) و 2 (200%)، والقيمة الافتراضية هي 1 (100%).",
+    "print_margins": "عند التصدير إلى PDF، يحدد هوامش الصفحة. استخدم ‎<code>default</code>‎ أو ‎<code>none</code>‎ أو ‎<code>minimum</code>‎، أو قيم مخصصة بصيغة ‎<code>top,right,bottom,left</code>‎ بالملليمتر.",
+    "print_page_size": "عند التصدير إلى PDF، يغيّر حجم الصفحة. القيم المدعومة: ‎<code>A0</code>‎، ‎<code>A1</code>‎، ‎<code>A2</code>‎، ‎<code>A3</code>‎، ‎<code>A4</code>‎، ‎<code>A5</code>‎، ‎<code>A6</code>‎، ‎<code>Legal</code>‎، ‎<code>Letter</code>‎، ‎<code>Tabloid</code>‎، ‎<code>Ledger</code>‎.",
+    "title_template": "العنوان الافتراضي للملاحظات التي يتم إنشاؤها كأبناء لهذه الملاحظة. يتم تقييم القيمة كسلسلة JavaScript، وبالتالي يمكن تعزيزها بمحتوى ديناميكي عبر المتغيرين المُحقنين ‎<code>now</code>‎ و‎<code>parentNote</code>‎.\n\nأمثلة:\n\n<ul>\n    <li><code>${parentNote.getLabelValue('authorName')}'s literary works</code></li>\n    <li><code>Log for ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n</ul>راجع <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">ويكي التفاصيل</a>، ووثائق API الخاصة بـ <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> و<a href=\"https://day.js.org/docs/en/display/format\">now</a> لمزيد من المعلومات.",
+    "run": "يحدد الأحداث التي يجب أن يتم تشغيل السكربت عندها. القيم الممكنة هي:\n\n<ul>\n<li>frontendStartup - عند بدء تشغيل واجهة Trilium Notes (أو إعادة تحميلها)، ولكن ليس على الهاتف.</li>\n<li>mobileStartup - عند بدء تشغيل الواجهة على الهاتف أو إعادة تحميلها.</li>\n<li>backendStartup - عند بدء تشغيل الخادم الخلفي.</li>\n<li>hourly - يتم التشغيل مرة كل ساعة. يمكنك استخدام الوسم الإضافي <code>runAtHour</code> لتحديد الساعة.</li>\n<li>daily - يتم التشغيل مرة واحدة يوميًا.</li>\n</ul>"
   },
   "rename_label": {
     "to": "الى",
@@ -273,7 +277,15 @@
     "convert_attachment_into_note": "تحويل المرفق الى ملاحظة",
     "delete_success": "تم حذف المرفق \"{{title}}\" .",
     "enter_new_name": "ادخل اسم مرفق جديد",
-    "open_externally_title": "سيتم فتح الملف في تطبيق خارجي ومراقبته للتغييرات. بعد ذلك ستتمكن من رفع النسخة المعدّلة مرة أخرى إلى Trilium."
+    "open_externally_title": "سيتم فتح الملف في تطبيق خارجي ومراقبته للتغييرات. بعد ذلك ستتمكن من رفع النسخة المعدّلة مرة أخرى إلى Trilium.",
+    "upload_success": "تم رفع نسخة جديدة من المرفق.",
+    "delete_confirm": "هل أنت متأكد أنك تريد حذف المرفق '{{title}}'؟",
+    "open_externally_detail_page": "فتح المرفق خارجيًا متاح فقط من صفحة التفاصيل، يرجى أولًا فتح تفاصيل المرفق ثم إعادة المحاولة.",
+    "open_custom_title": "سيتم فتح الملف في تطبيق خارجي ومراقبته للتغييرات. ستتمكن بعد ذلك من رفع النسخة المعدلة مرة أخرى إلى Trilium Notes.",
+    "upload_failed": "فشل رفع نسخة جديدة من المرفق.",
+    "open_custom_client_only": "فتح المرفقات بطريقة مخصصة متاح فقط من خلال تطبيق سطح المكتب.",
+    "convert_confirm": "هل أنت متأكد أنك تريد تحويل المرفق \"{{title}}\" إلى ملاحظة مستقلة؟",
+    "convert_success": "تم تحويل المرفق \"{{title}}\" إلى ملاحظة."
   },
   "calendar": {
     "week": "أسبوع",
@@ -337,7 +349,8 @@
     "switch_to_desktop_version": "التبديل الى اصدار سطح المكتب",
     "show_shared_notes_subtree": "عرض شجرة الملاحظات المشتركة",
     "open_sql_console_history": "فتح سجل لوحة تحكم SQL",
-    "search_notes": "بحث في الملاحظات"
+    "search_notes": "بحث في الملاحظات",
+    "reload_hint": "يمكن أن يساعد إعادة التحميل في إصلاح بعض مشاكل العرض البصري دون الحاجة لإعادة تشغيل التطبيق بالكامل."
   },
   "zpetne_odkazy": {
     "relation": "العلاقة",
@@ -354,7 +367,16 @@
     "reset-default": "اعادة تعيين الى الايقونة الافتراضية",
     "filter": "تصفية",
     "filter-none": "جميع الأيقونات",
-    "filter-default": "الأيقونات الافتراضية"
+    "filter-default": "الأيقونات الافتراضية",
+    "no_results": "لا توجد أيقونات.",
+    "search_placeholder_filtered": "البحث عن {{number}} من الأيقونات في {{name}}",
+    "icon_tooltip": "{{name}}\nحزمة الأيقونات: {{iconPack}}",
+    "search_placeholder_zero": "البحث عن {{number}} من الأيقونات عبر {{count}} حزمة.",
+    "search_placeholder_one": "البحث عن {{number}} من الأيقونات عبر {{count}} حزمة.",
+    "search_placeholder_two": "البحث عن {{number}} من الأيقونات عبر {{count}} حزمة.",
+    "search_placeholder_few": "البحث عن {{number}} من الأيقونات عبر {{count}} حزمة.",
+    "search_placeholder_many": "البحث عن {{number}} من الأيقونات عبر {{count}} حزمة.",
+    "search_placeholder_other": "البحث عن {{number}} من الأيقونات عبر {{count}} حزمة."
   },
   "basic_properties": {
     "language": "اللغة",
@@ -377,17 +399,33 @@
     "collapse_all_notes": "طي كل الملاحظات",
     "include_archived_notes": "عرض الملاحظات المؤرشفة",
     "presentation": "عرض تقديمي",
-    "invalid_view_type": "نوع العرض {{type}} غير صالح"
+    "invalid_view_type": "نوع العرض {{type}} غير صالح",
+    "open_all_in_tabs": "فتح الكل",
+    "expand_first_level": "توسيع العناصر الفرعية المباشرة",
+    "expand_nth_level": "توسيع {{depth}} مستويات",
+    "expand_all_levels": "توسيع كل المستويات",
+    "hide_child_notes": "إخفاء الملاحظات الفرعية في الشجرة",
+    "open_all_confirm": "سيؤدي هذا إلى فتح {{count}} من الملاحظات في تبويبات جديدة. هل تريد المتابعة؟",
+    "expand_tooltip": "يوسّع العناصر الفرعية المباشرة لهذه المجموعة (مستوى واحد فقط). لمزيد من الخيارات، اضغط السهم الموجود على اليمين.",
+    "open_all_in_tabs_tooltip": "فتح جميع النتائج في علامات تبويب جديدة",
+    "open_all_too_zero": "book_properties.open_all_too",
+    "open_all_too_one": "book_properties.open_all_too",
+    "open_all_too_two": "book_properties.open_all_too",
+    "open_all_too_few": "book_properties.open_all_too",
+    "open_all_too_many": "book_properties.open_all_too",
+    "open_all_too_other": "book_properties.open_all_too"
   },
   "file_properties": {
     "download": "تنزيل",
-    "open": "فتح",
+    "open": "فتح خارجيًا.",
     "title": "ملف",
     "note_id": "معرف الملاحظة",
     "file_type": "نوع الملف",
     "file_size": "حجم الملف",
     "original_file_name": "اسم الملف الاصلي",
-    "upload_new_revision": "رفع مراجعة جديدة"
+    "upload_new_revision": "رفع مراجعة جديدة",
+    "upload_success": "تم رفع نسخة جديدة من الملف.",
+    "upload_failed": "فشل رفع نسخة جديدة من الملف."
   },
   "image_properties": {
     "download": "تنزيل",
@@ -397,7 +435,9 @@
     "file_size": "حجم الملف",
     "original_file_name": "اسم الملف الاصلي",
     "upload_new_revision": "رفع مراجعة جديدة",
-    "copy_reference_to_clipboard": "نسخ المرجع الى الحافظة"
+    "copy_reference_to_clipboard": "نسخ المرجع الى الحافظة",
+    "upload_success": "تم رفع نسخة جديدة من الصورة.",
+    "upload_failed": "فشل رفع نسخة جديدة من الصورة: {{message}}"
   },
   "note_info_widget": {
     "created": "انشاء",
@@ -407,13 +447,19 @@
     "note_id": "معرف الملاحظة",
     "note_size": "حجم الملاحظة",
     "title": "معلومات الملاحظة",
-    "mime": "نوع MIME"
+    "mime": "نوع MIME",
+    "show_similar_notes": "عرض ملاحظات مشابهة",
+    "subtree_size": "(حجم الشجرة الفرعية: {{size}} في {{count}} ملاحظات)",
+    "note_size_info": "حجم الملاحظة يعطي تقديرًا تقريبيًا لمتطلبات التخزين لهذه الملاحظة، ويأخذ بعين الاعتبار محتوى الملاحظة ومحتوى إصداراتها ."
   },
   "note_paths": {
     "search": "بحث",
     "archived": "مؤرشف",
     "title": "مسارات الملاحظة",
-    "clone_button": "جار نسخ الملاحظة الى مكان جديد..."
+    "clone_button": "جار نسخ الملاحظة الى مكان جديد...",
+    "intro_not_placed": "هذه الملاحظة لم يتم وضعها بعد في شجرة الملاحظات.",
+    "intro_placed": "تم وضع هذه الملاحظة في المسارات التالية:",
+    "outside_hoisted": "هذا المسار يقع خارج الملاحظة المُثبّتة، وستحتاج إلى إلغاء التثبيت للوصول إليه."
   },
   "script_executor": {
     "query": "استعلام",
@@ -443,7 +489,8 @@
     "include_archived_notes_description": "يتم استبعاد الملاحظات المؤرشفة افتراضيًا من نتائج البحث، لكن مع هذا الخيار سيتم تضمينها.",
     "debug_description": "سيقوم وضع التصحيح (Debug) بطباعة معلومات تصحيح إضافية في وحدة التحكم (Console) للمساعدة في تصحيح الاستعلامات المعقدة",
     "search_note_saved": "تم حفظ ملاحظة البحث في {{- notePathTitle}}",
-    "view_options": "خيارات العرض:"
+    "view_options": "خيارات العرض:",
+    "fast_search_description": "خيار البحث السريع يعطّل البحث النصي الكامل داخل محتوى الملاحظات، مما قد يؤدي إلى تسريع عملية البحث في قواعد البيانات الكبيرة."
   },
   "ancestor": {
     "label": "السلف",
@@ -494,7 +541,10 @@
     "label_abc": "يعيد الملاحظات التي تحتوي على التسميةabc",
     "label_rock_pop": "يطابق الملاحظات التي تحتوي على كلتا التسميتين rock و pop",
     "label_rock_or_pop": "يكفي وجود واحدة فقط من التسميات",
-    "label_date_created": "الملاحظات التي تم إنشاؤها خلال الشهر الماضي"
+    "label_date_created": "الملاحظات التي تم إنشاؤها خلال الشهر الماضي",
+    "placeholder": "كلمات البحث النصي الكامل، ‎#وسم = قيمة...",
+    "label_year": "يطابق الملاحظات التي تحتوي على الوسم (label) ‎year‎ بقيمة ‎2019‎.",
+    "label_year_comparison": "مقارنة عددية (وكذلك ‎>‎، ‎>=‎، ‎<‎)."
   },
   "sync": {
     "title": "مزامنة",
@@ -506,7 +556,9 @@
     "filling_entity_changes": "جار ملء صفوف تغييرات الكيانات",
     "sync_rows_filled_successfully": "تمة تعبئة بيانات المزامنة بنجاح",
     "force_full_sync_label": "فرض مزامنة كاملة",
-    "fill_entity_changes_label": "تعبئة تغييرات الكيانات"
+    "fill_entity_changes_label": "تعبئة تغييرات الكيانات",
+    "force_full_sync_description": "بدء مزامنة كاملة مع خادم المزامنة، مع إعادة رفع جميع التغييرات.",
+    "fill_entity_changes_description": "إعادة بناء سجلات تغييرات الكيانات. استخدم هذا الخيار إذا كانت المزامنة تفتقد بعض التغييرات."
   },
   "fonts": {
     "fonts": "خطوط",
@@ -514,21 +566,24 @@
     "serif": "خط ومزخرف",
     "monospace": "خط بعرض ثابت",
     "theme_defined": "النسق المحدد",
-    "main_font": "الخط الرئيسي",
+    "main_font": "نص الواجهه",
     "font_family": "عائلة الخطوط",
     "generic-fonts": "الخطوط العامة",
     "sans-serif": "خطوط بدون زوائد",
     "system-default": "الاعداد الافتراضي للنظام",
-    "note_detail_font": "خط تفاصيل الملاحظة",
-    "note_tree_font": "خط شجرة الملاحظات",
-    "monospace_font": "خط احادي المسافة (للكود)",
+    "note_detail_font": "نص المستند",
+    "note_tree_font": "نص شجرة الملاحظات",
+    "monospace_font": "نص احادي المسافة",
     "serif-system-fonts": "خطوط النظام المزخرفة",
     "sans-serif-system-fonts": "خطوط النظام بدون زخرفة",
     "monospace-system-fonts": "خطوط النظام احادية المسافة",
     "handwriting-system-fonts": "خطوط النظام باسلوب الكتابة اليدوية",
     "preview": "معاينة",
     "custom_fonts": "استخدام خطوط مخصصة",
-    "apply_changes": "إعادة التحميل لتطبيق التغييرات"
+    "apply_changes": "إعادة التحميل لتطبيق التغييرات",
+    "not_all_fonts_available": "قد لا تكون جميع الخطوط المدرجة متوفرة على نظامك",
+    "monospace_font_description": "يُستخدم لملاحظات الكود وكتل الكود.",
+    "size_relative_to_general": "الحجم يعتمد نسبيًا على حجم الخط العام"
   },
   "confirm": {
     "confirmation": "تأكيد",
@@ -553,7 +608,13 @@
     "table_note_with_relation": "الملاحظة مع العلاقة",
     "table_relation": "علاقة",
     "table_points_to": "يشير إلى (محذوف)",
-    "delete": "حذف"
+    "delete": "حذف",
+    "delete_clones_description_zero": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_one": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_two": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_few": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_many": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_other": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\"."
   },
   "export": {
     "close": "غلق",
@@ -622,7 +683,13 @@
     "pasteNotes": "لصق ملاحظة/ملاحظات كملاحظات فرعية داخل الملاحظة النشطة (ويكون ذلك إما نقلًا أو استنساخًا حسب ما إذا كانت قد نُسخت أو قُصّت إلى الحافظة)",
     "editNoteTitle": "في لوحة الشجرة، يتم الانتقال من لوحة الشجرة إلى عنوان الملاحظة. الضغط على Enter من عنوان الملاحظة ينقل التركيز إلى محرر النص. واختصار <kbd>Ctrl+.</kbd> يعيد التركيز من المحرر إلى لوحة الشجرة.",
     "insertDateTime": "إدراج التاريخ والوقت الحالي عند موضع المؤشر",
-    "jumpToTreePane": "الانتقال إلى لوحة الشجرة والتمرير إلى الملاحظة النشطة"
+    "jumpToTreePane": "الانتقال إلى لوحة الشجرة والتمرير إلى الملاحظة النشطة",
+    "blockQuote": "ابدأ السطر بـ <code>></code> متبوعًا بمسافة لعمل اقتباس (block quote)",
+    "editBranchPrefix": "تعديل <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">بادئة</a> نسخة الملاحظة النشطة.",
+    "copyNotes": "نسخ الملاحظة النشطة (أو التحديد الحالي) إلى الحافظة (يُستخدم لـ <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">استنساخ الملاحظات</a>).",
+    "headings": "‎<code>##</code>‎، ‎<code>###</code>‎، ‎<code>####</code>‎ وغيرها متبوعة بمسافة لإنشاء عناوين (Headings).",
+    "bulletList": "‎<code>*</code>‎ أو ‎<code>-</code>‎ متبوعة بمسافة لإنشاء قائمة نقطية (Bullet List)",
+    "numberedList": "‎<code>1.</code>‎ أو ‎<code>1)</code>‎ متبوعة بمسافة لإنشاء قائمة مرقمة (Numbered List)"
   },
   "import": {
     "options": "خيارات",
@@ -648,7 +715,8 @@
     "shrinkImagesTooltip": "إذا قمت بتفعيل هذا الخيار، فسيحاول Trilium تصغير الصور المستوردة من خلال التحجيم والتحسين، مما قد يؤثر على جودة الصورة بشكل ملحوظ. أما إذا كان غير مفعّل، فسيتم استيراد الصور دون أي تغييرات\nلا ينطبق هذا الخيار على استيراد ملفات <code>.zip</code> التي تحتوي على بيانات وصفية (metadata)، حيث يُفترض أن هذه الملفات محسّنة مسبقًا.",
     "textImportedAsText": "استيراد ملفات HTML وMarkdown وTXT كملاحظات نصية إذا لم يكن ذلك واضحًا من البيانات الوصفية",
     "codeImportedAsCode": "استيراد ملفات الأكواد المعروفة (مثل <code>.json</code>) كملاحظات كود إذا لم يكن ذلك واضحًا من البيانات الوصفية",
-    "replaceUnderscoresWithSpaces": "استبدال الشرطات السفلية (_ ) بالمسافات في أسماء الملاحظات المستوردة"
+    "replaceUnderscoresWithSpaces": "استبدال الشرطات السفلية (_ ) بالمسافات في أسماء الملاحظات المستوردة",
+    "explodeArchives": "قراءة محتويات أرشيفات ‎<code>.zip</code>‎ و‎<code>.enex</code>‎ و‎<code>.opml</code>‎."
   },
   "include_note": {
     "label_note": "ملاحظة",
@@ -720,10 +788,12 @@
   },
   "edited_notes": {
     "deleted": "(حذف)",
-    "title": "الملاحظات المعدلة"
+    "title": "الملاحظات المعدلة",
+    "no_edited_notes_found": "لا توجد ملاحظات تم تعديلها في هذا اليوم حتى الآن..."
   },
   "note_properties": {
-    "info": "معلومات"
+    "info": "معلومات",
+    "this_note_was_originally_taken_from": "تم أخذ هذه الملاحظة في الأصل من:"
   },
   "backend_log": {
     "refresh": "تحديث"
@@ -731,21 +801,24 @@
   "max_content_width": {
     "max_width_unit": "بكسل",
     "title": "عرض المحتوى",
-    "max_width_label": "اقصى عرض للمحتوى"
+    "max_width_label": "اقصى عرض للمحتوى",
+    "centerContent": "إبقاء المحتوى في المنتصف",
+    "default_description": "بشكل افتراضي، يقوم Trilium Notes بتحديد الحد الأقصى لعرض المحتوى لتحسين قابلية القراءة على الشاشات العريضة عند تكبير النافذة."
   },
   "native_title_bar": {
     "enabled": "مفعل",
-    "disabled": "معطل"
+    "disabled": "معطل",
+    "title": "شريط العنوان الأصلي (يتطلب إعادة تشغيل التطبيق)"
   },
   "theme": {
-    "theme_label": "السمة",
+    "theme_label": "سمة التطبيق",
     "layout": "تخطيط",
     "layout-vertical-title": "عمودي",
     "layout-horizontal-title": "أفقي",
-    "title": "نسق التطبيق",
-    "light_theme": "النسق القديم (فاتح)",
-    "dark_theme": "النسق القديم (داكن)",
-    "triliumnext-light": "تريليوم (فاتح)",
+    "title": "واجهة المستخدم",
+    "light_theme": "فاتح",
+    "dark_theme": "داكن",
+    "triliumnext-light": "فاتح",
     "triliumnext-dark": "داكن",
     "override_theme_fonts_label": "تجاوز خطوط النسق",
     "modern_themes": "حديث",
@@ -756,38 +829,65 @@
     "color_scheme_light": "فاتح",
     "color_scheme_dark": "داكن",
     "auto_theme": "اتباع مخطط ألوان النظام",
-    "triliumnext": "اتباع مخطط ألوان النظام"
+    "triliumnext": "اتباع مخطط ألوان النظام",
+    "color_scheme": "نظام الألوان",
+    "color_scheme_custom_disabled": "تجاوز نظام الألوان غير متاح للسمات المخصصة",
+    "layout-vertical-description": "شريط المُشغّل يقع على الجهة اليسرى (افتراضيًا)",
+    "layout-horizontal-description": "شريط المُشغّل يقع أسفل شريط علامات التبويب، وأصبح شريط علامات التبويب الآن بعرض كامل."
   },
   "ui-performance": {
     "title": "أداء",
     "enable-shadows": "الضلال",
-    "enable-smooth-scroll": "تمكين التمرير السلس",
-    "enable-motion": "تمكين الانتقالات والرسوم المتحركة"
+    "enable-smooth-scroll": "التمرير السلس",
+    "enable-motion": "الانتقالات والرسوم المتحركة",
+    "app-restart-required": "يتطلب إعادة تشغيل التطبيق",
+    "enable-backdrop-effects": "تأثيرات الخلفية للقوائم والنوافذ المنبثقة واللوحات"
   },
   "code_auto_read_only_size": {
     "unit": "حروف",
-    "title": "الحجم التلقائي للقراءه فقط"
+    "title": "الحجم التلقائي للقراءه فقط",
+    "label": "حجم القراءة فقط التلقائي",
+    "description": "حجم الملاحظة الذي عند تجاوزه يتم عرض الملاحظات في وضع القراءة فقط تلقائيًا (لأسباب تتعلق بالأداء)."
   },
   "code-editor-options": {
     "title": "محرر",
-    "tab_width_unit": "المسافات"
+    "tab_width_unit": "المسافات",
+    "tab_width": "عرض التبويب"
   },
   "images": {
     "images_section_title": "صور",
     "max_image_dimensions_unit": "بكسل",
-    "enable_image_compression": "تمكين ضغط الصورة",
+    "enable_image_compression": "ضغط الصورة",
     "jpeg_quality": "جودة JPEG",
     "ocr_min_confidence": "الحد الأدنى من الثقة",
     "ocr_section_title": "استخراج النص (OCR)",
     "ocr_auto_process": "معالجة الملفات الجديدة تلقائيًا",
     "batch_ocr_title": "معالجة الملفات الموجودة",
     "batch_ocr_start": "بدء المعالجة الدفعية",
-    "batch_ocr_starting": "جارٍ بدء المعالجة الدفعية..."
+    "batch_ocr_starting": "جارٍ بدء المعالجة الدفعية...",
+    "download_images_automatically": "تنزيل الصور تلقائيًا",
+    "max_image_dimensions": "الحد الأقصى لأبعاد الصور",
+    "batch_ocr_progress": "جارٍ معالجة {{processed}} من أصل {{total}} ملفًا...",
+    "batch_ocr_error": "خطأ أثناء المعالجة الدُفعية: {{error}}",
+    "ocr_auto_process_description": "استخراج النص تلقائيًا من الملفات التي يتم رفعها أو لصقها حديثًا.",
+    "enable_image_compression_description": "ضغط الصور وتغيير حجمها عند رفعها أو لصقها.",
+    "ocr_confidence_description": "استخرج النص فقط فوق عتبة الثقة هذه. القيم الأقل تتضمن نصًا أكثر لكنها قد تكون أقل دقة.",
+    "batch_ocr_description": "استخراج النص من جميع الصور وملفات PDF ومستندات Office الموجودة في ملاحظاتك. قد تستغرق هذه العملية بعض الوقت حسب عدد الملفات.",
+    "download_images_description": "تنزيل الصور المضمّنة في HTML والمُشار إليها عبر الإنترنت عند لصقها، بحيث تصبح متاحة للاستخدام دون اتصال.",
+    "max_image_dimensions_description": "سيتم تغيير حجم الصور التي تتجاوز هذا الحجم تلقائيًا.",
+    "jpeg_quality_description": "النطاق الموصى به هو 50–85. القيم الأقل تقلل حجم الملف، بينما القيم الأعلى تحافظ على التفاصيل.",
+    "ocr_related_content_languages": "لغات المحتوى (تُستخدم لاستخراج النص)",
+    "batch_ocr_completed": "تم الانتهاء من المعالجة الدفعية! تمت معالجة {{processed}} ملفًا."
   },
   "revisions_snapshot_limit": {
     "snapshot_number_limit_unit": "لقطات",
     "note_revisions_snapshot_limit_title": "الحد الاقصى لنسخ الملاحظات الاحتياطية",
-    "snapshot_number_limit_label": "الحد الأقصى للإصدارات"
+    "snapshot_number_limit_label": "الحد الأقصى للإصدارات",
+    "erase_excess_revision_snapshots": "حذف لقطات الإصدارات الزائدة الآن",
+    "erase_excess_revision_snapshots_prompt": "تم حذف لقطات الإصدارات الزائدة.",
+    "erase_excess_revision_snapshots_description": "حذف الإصدارات التي تتجاوز الحد لجميع الملاحظات.",
+    "note_revisions_snapshot_limit_description": "يشير حد عدد لقطات نسخ المراجعات (note revision snapshot number limit) إلى الحد الأقصى لعدد الإصدارات التي يمكن حفظها لكل ملاحظة. حيث إن القيمة ‎-1‎ تعني عدم وجود حد، و‎0‎ تعني حذف جميع المراجعات. يمكنك تعيين الحد الأقصى لمراجعات ملاحظة واحدة باستخدام الوسم ‎#versioningLimit‎.",
+    "note_revisions_snapshot_limit_description_short": "الحد الأقصى لمراجعات كل ملاحظة. استخدم القيمة ‎-1‎ لعدم وجود حد، و‎0‎ لتعطيل المراجعات."
   },
   "search_engine": {
     "bing": "Bing",
@@ -798,19 +898,24 @@
     "title": "محرك البحث",
     "predefined_templates_label": "الإعدادات المسبقة",
     "custom_name_label": "اسم",
-    "custom_name_placeholder": "اسم محرك البحث المخصص",
-    "custom_url_placeholder": "تخصيص عنوان URL لمحرك البحث",
-    "custom_url_label": "الرابط (URL)"
+    "custom_name_placeholder": "اسم محرك البحث",
+    "custom_url_placeholder": "عنوان URL لمحرك البحث",
+    "custom_url_label": "الرابط (URL)",
+    "custom_url_description": "استخدم {keyword} كعنصر نائب (placeholder) لمصطلح البحث.",
+    "custom_search_engine_info": "يُستخدم عند البحث في الويب عن النص المحدد. إذا لم يتم إعداده، فسيتم استخدام DuckDuckGo."
   },
   "heading_style": {
     "plain": "بسيط",
     "underline": "تسطير",
     "markdown": "نمط-Markdown",
-    "title": "نمط العنوان"
+    "title": "نمط العنوان",
+    "description": "النمط البصري للعناوين في الملاحظات النصية."
   },
   "text_auto_read_only_size": {
     "unit": "حروف",
-    "title": "الحجم التلقائي للقراءة فقط"
+    "title": "الحجم التلقائي للقراءة فقط",
+    "label": "حجم القراءة فقط التلقائي",
+    "description": "الحجم الذي عند تجاوزه يتم عرض الملاحظات تلقائيًا في وضع القراءة فقط (لأسباب تتعلق بالأداء)."
   },
   "i18n": {
     "language": "لغة",
@@ -822,21 +927,32 @@
     "thursday": "الخميس",
     "friday": "الجمعة",
     "saturday": "السبت",
-    "formatting-locale": "تنسيق التاريخ والارقام"
+    "formatting-locale": "تنسيق التاريخ والارقام",
+    "first-day-of-the-week": "أول يوم في الأسبوع",
+    "first-week-of-the-year": "‍الأسبوع الأول من السنة",
+    "first-week-has-minimum-days": "الأسبوع الأول يحتوي على الحد الأدنى من الأيام",
+    "min-days-in-first-week": "الحد الأدنى للأيام في الأسبوع الأول",
+    "formatting-locale-auto": "بناءً على لغة التطبيق",
+    "first-week-warning": "تغيير هذا قد يؤدي إلى تكرار مع ملاحظات الأسبوع الحالية.",
+    "first-week-contains-first-day": "الأسبوع الأول يحتوي على أول يوم من السنة",
+    "first-week-contains-first-thursday": "الأسبوع الأول يحتوي على أول يوم خميس في السنة (وفق معيار ISO 8601)"
   },
   "backup": {
     "path": "مسار",
     "automatic_backup": "النسخ الاحتياطي التلقائي",
     "backup_now": "نسخ احتياطي الان",
     "existing_backups": "النسخ الاحتياطية الموجودة",
-    "enable_weekly_backup": "تمكين النسخ الاختياطي الاسبوعي",
-    "enable_monthly_backup": "تمكين النسخ الاحتياطي الشهري",
+    "enable_weekly_backup": "النسخ الاختياطي الاسبوعي",
+    "enable_monthly_backup": "النسخ الاحتياطي الشهري",
     "date-and-time": "التاريخ والوقت",
     "no_backup_yet": "لايوجد نسخة احتياطية لحد الان",
-    "enable_daily_backup": "تمكين النسخ الاحتياطي اليومي",
+    "enable_daily_backup": "النسخ الاحتياطي اليومي",
     "backup_database_now": "نسخ اختياطي لقاعدة البيانات الان",
     "download": "تنزيل",
-    "title": "نسخة احتياطية"
+    "title": "نسخة احتياطية",
+    "backup_recommendation": "يُنصح بالإبقاء على النسخ الاحتياطي مفعّلًا، لكن قد يؤدي ذلك إلى بطء تشغيل التطبيق مع قواعد البيانات الكبيرة و/أو أجهزة التخزين البطيئة.",
+    "automatic_backup_description": "يمكن لـ Trilium Notes إنشاء نسخ احتياطية من قاعدة البيانات تلقائيًا:",
+    "database_backed_up_to": "تم إنشاء نسخة احتياطية من قاعدة البيانات في ‎{{- backupFilePath}}‎"
   },
   "etapi": {
     "created": "تم الأنشاء",
@@ -849,7 +965,15 @@
     "rename_token": "اعادة تسمية هذا الرمز",
     "create_token": "انشاء رمز PEAPI جديد",
     "new_token_title": "رمز ETAPI جديد",
-    "token_created_title": "انشاء رمز ETAPI"
+    "token_created_title": "انشاء رمز ETAPI",
+    "new_token_message": "يرجى إدخال اسم الرمز المميز الجديد",
+    "error_empty_name": "اسم الرمز المميز لا يمكن أن يكون فارغًا",
+    "delete_token": "حذف / إلغاء تفعيل هذا الرمز المميز",
+    "rename_token_message": "يرجى إدخال اسم الرمز المميز الجديد",
+    "delete_token_confirmation": "هل أنت متأكد أنك تريد حذف رمز ETAPI \"{{name}}\"؟",
+    "token_created_message": "انسخ الرمز المُنشأ إلى الحافظة. يقوم Trilium Notes بتخزين الرمز بشكل مُشفّر (hashed)، وهذه هي المرة الأخيرة التي ستراه فيها.",
+    "description": "Trilium Notes ETAPI هي واجهة برمجة تطبيقات (REST API) تُستخدم للوصول إلى مثيل Trilium برمجيًا دون الحاجة إلى واجهة المستخدم (UI).",
+    "no_tokens_yet": "‎لا توجد رموز (Tokens) حتى الآن. انقر على الزر أعلاه لإنشاء واحد."
   },
   "password": {
     "heading": "كلمة المرور",
@@ -861,40 +985,65 @@
     "set_password_heading": "تعيين كلمة المرور",
     "set_password": "تعيين كلمة المرور",
     "for_more_info": "لمزيد من المعلومات.",
-    "protected_session_timeout_label": "انتهت مدة الجلسة المحمية:",
-    "protected_session_timeout": "انتهاء مهلة الجلسة المحمية",
+    "protected_session_timeout_label": "الإغلاق التلقائي للجلسة بعد",
+    "protected_session_timeout": "الجلسة المحمية",
     "new_password_confirmation": "تاكيد كلمة المرور الجديدة",
     "cancel": "الغاء",
-    "change_password_description": "تحديث كلمة المرور الحالية الخاصة بك"
+    "change_password_description": "تحديث كلمة المرور الحالية الخاصة بك",
+    "reset_password": "إعادة تعيين كلمة المرور",
+    "reset_link": "انقر هنا لإعادة تعيينه.",
+    "password_mismatch": "كلمتا المرور الجديدتان غير متطابقتين.",
+    "reset_confirmation": "بإعادة تعيين كلمة المرور، ستفقد إلى الأبد الوصول إلى جميع الملاحظات المحمية الحالية. هل تريد حقًا إعادة تعيين كلمة المرور؟",
+    "alert_message": "يرجى الانتباه لحفظ كلمة المرور الجديدة. تُستخدم كلمة المرور لتسجيل الدخول إلى واجهة الويب ولتشفير الملاحظات المحمية. إذا نسيت كلمة المرور، فستفقد جميع الملاحظات المحمية بشكل دائم.",
+    "reset_password_description": "فقدان دائم للوصول إلى الملاحظات المحمية",
+    "protected_session_timeout_description": "مدة عدم النشاط قبل أن يتم مسح الجلسة من ذاكرة المتصفح.",
+    "reset_success_message": "تمت إعادة تعيين كلمة المرور. يرجى تعيين كلمة مرور جديدة",
+    "password_changed_success": "تم تغيير كلمة المرور. سيتم إعادة تحميل Trilium Notes بعد الضغط على OK."
   },
   "shortcuts": {
     "shortcuts": "أختصارات",
     "description": "الوصف",
     "keyboard_shortcuts": "اختصارات لوحة المفاتيح",
     "action_name": "اسم الاجراء",
-    "default_shortcuts": "اختصارات افتراضية"
+    "default_shortcuts": "اختصارات افتراضية",
+    "type_text_to_filter": "اكتب نصًا لتصفية الاختصارات...",
+    "reload_app": "أعد تحميل التطبيق لتطبيق التغييرات",
+    "no_results": "لا توجد اختصارات تطابق '{{filter}}'",
+    "set_all_to_default": "إعادة تعيين جميع الاختصارات إلى الوضع الافتراضي",
+    "multiple_shortcuts": "يمكن فصل عدة اختصارات لنفس الإجراء باستخدام فاصلة.",
+    "confirm_reset": "هل تريد حقًا إعادة تعيين جميع اختصارات لوحة المفاتيح إلى الإعدادات الافتراضية؟",
+    "electron_documentation": "راجع توثيق Electron للاطلاع على المُعدِّلات ورموز المفاتيح المتاحة.<a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">"
   },
   "sync_2": {
     "save": "حفظ",
     "help": "المساعدة",
-    "config_title": "تهيئة المزامنة",
-    "timeout": "انتهاء مهلة المزامنة",
-    "test_title": "اختبار المزامنة",
+    "config_title": "خادم المزامنة",
+    "timeout": "انتهاء مهلة الاتصال",
+    "test_title": "اختبار الاتصال",
     "test_button": "اختبار المزامنة",
-    "server_address": "عنوان نسخة الخادم",
-    "proxy_label": "خادم وكيل المزامنة (اخياري)"
+    "server_address": "عنوان الخادم",
+    "proxy_label": "خادم الوكيل",
+    "handshake_failed": "فشل مصافحة خادم المزامنة، خطأ: {{message}}",
+    "server_address_description": "رابط خادم Trilium Notes للمزامنة معه.",
+    "timeout_description": "الوقت قبل التخلي عن الاتصال البطيء.",
+    "test_description": "اختبار الاتصال بخادم المزامنة. إذا لم يكن مهيأً، فسيؤدي ذلك إلى إعداد المزامنة.",
+    "proxy_description": "اترك الحقل فارغًا لاستخدام وكيل النظام (لأجهزة سطح المكتب فقط). استخدم \"noproxy\" لتجاوز جميع الوكلاء."
   },
   "api_log": {
     "close": "أغلاق"
   },
   "bookmark_switch": {
     "bookmark": "علامة مرجعية",
-    "remove_bookmark": "ازالة الاشارة المرجعية"
+    "remove_bookmark": "ازالة الاشارة المرجعية",
+    "bookmark_this_note": "إضافة إشارة مرجعية لهذه الملاحظة إلى اللوحة الجانبية اليسرى"
   },
   "editability_select": {
     "auto": "تلقائي",
     "read_only": "قراءة-فقط",
-    "always_editable": "قابل للتعديل دائما"
+    "always_editable": "قابل للتعديل دائما",
+    "note_is_editable": "يمكن تعديل الملاحظة إذا لم تكن طويلة جدًا.",
+    "note_is_read_only": "الملاحظة للقراءة فقط، ولكن يمكن تعديلها عند النقر على زر.",
+    "note_is_always_editable": "الملاحظة قابلة للتحرير دائمًا، بغض النظر عن طولها."
   },
   "tab_row": {
     "close": "اغلاق",
@@ -903,7 +1052,10 @@
     "close_all_tabs": "اغلاق كل علامات التبويب",
     "add_new_tab": "اضافة علامة تبويب جديدة",
     "close_other_tabs": "اغلاق علامات التبويب الاخرى",
-    "reopen_last_tab": "اعادة فتح اخر علامة تبويب مغلقة"
+    "reopen_last_tab": "اعادة فتح اخر علامة تبويب مغلقة",
+    "close_right_tabs": "إغلاق التبويبات على اليمين",
+    "move_tab_to_new_window": "نقل هذه التبويب إلى نافذة جديدة",
+    "copy_tab_to_new_window": "نسخ هذا التبويب إلى نافذة جديدة"
   },
   "toc": {
     "options": "خيارات",
@@ -922,7 +1074,10 @@
     "word_wrapping": "التفاف النص",
     "color-scheme": "نظام الالوان",
     "match_app_appearance": "مطابقة مظهر التطبيق",
-    "always_use_one_theme": "استخدام سمة واحدة دائمًا"
+    "always_use_one_theme": "استخدام سمة واحدة دائمًا",
+    "theme_mode": "وضع السمة",
+    "light_theme": "السمة الفاتحة",
+    "dark_theme": "السمة الداكنة"
   },
   "table_view": {
     "sort-column-ascending": "تصاعدي",
@@ -939,17 +1094,26 @@
     "row-insert-below": "ادراج صف للاسفل",
     "row-insert-child": "ادراج ملاحظة فرعية",
     "sort-column-by": "ترتيب بواسط \" {{title}}\"",
-    "hide-column": "اخفاء العمود \"{{title}}\""
+    "hide-column": "اخفاء العمود \"{{title}}\"",
+    "add-column-to-the-left": "إضافة عمود إلى اليسار",
+    "add-column-to-the-right": "إضافة عمود إلى اليمين",
+    "delete_column_confirmation": "هل أنت متأكد أنك تريد حذف هذا العمود؟ سيتم حذف السمة المقابلة من جميع الملاحظات."
   },
   "modal": {
-    "close": "اغلاق"
+    "close": "اغلاق",
+    "help_title": "عرض المزيد من المعلومات حول هذه الشاشة"
   },
   "call_to_action": {
     "dismiss": "تجاهل",
     "background_effects_button": "تفعيل مؤثرات الخلفية",
     "next_theme_button": "جرب النسق الجديد",
     "new_layout_title": "تخطيط جديد",
-    "new_layout_button": "مزيد من المعلومات"
+    "new_layout_button": "مزيد من المعلومات",
+    "next_theme_title": "جرّب سمة Trilium الجديدة",
+    "background_effects_title": "أصبحت تأثيرات الخلفية الآن مستقرة",
+    "next_theme_message": "أنت تستخدم حاليًا السمة القديمة، هل ترغب في تجربة السمة الجديدة؟",
+    "background_effects_message": "على أجهزة Windows وmacOS، أصبحت تأثيرات الخلفية الآن مستقرة. تضيف هذه التأثيرات لمسة من اللون إلى واجهة المستخدم من خلال تشويش الخلفية خلفها.",
+    "new_layout_message": "لقد قدمنا تخطيطًا مُحدَّثًا لـ Trilium Notes. تمت إزالة الشريط (Ribbon) ودمجه بسلاسة داخل الواجهة الرئيسية، مع شريط حالة جديد وأقسام قابلة للتوسيع (مثل السمات المروّجة) لتولي الوظائف الأساسية.\n\nيتم تمكين التخطيط الجديد افتراضيًا، ويمكن تعطيله مؤقتًا من خلال: الخيارات → المظهر."
   },
   "units": {
     "percentage": "%"
@@ -968,7 +1132,10 @@
   },
   "table_of_contents": {
     "unit": "عناوين",
-    "title": "جدول المحتويات"
+    "title": "جدول المحتويات",
+    "disable_info": "يمكنك أيضًا استخدام هذا الخيار لتعطيل جدول المحتويات (TOC) بشكل فعّال عبر تعيين قيمة كبيرة جدًا.",
+    "shortcut_info": "يمكنك إعداد اختصار لوحة مفاتيح للتبديل السريع للوحة اليمنى (بما في ذلك جدول المحتويات TOC) من خلال: الخيارات → الاختصارات (بالاسم ‎'toggleRightPane'‎).",
+    "description": "سيظهر جدول المحتويات في الملاحظات النصية عندما يتجاوز عدد العناوين حدًا محددًا. يمكنك تخصيص هذا الرقم:"
   },
   "tree-context-menu": {
     "archive": "أرشفة",
@@ -1000,7 +1167,13 @@
     "apply-bulk-actions": "‌تطبيق الاجراءات الجماعية",
     "recent-changes-in-subtree": "التغييرات الاخيرة في الشجرة الفرعية",
     "hide-subtree": "إخفاء الشجرة الفرعية",
-    "show-subtree": "إظهار الشجرة الفرعية"
+    "show-subtree": "إظهار الشجرة الفرعية",
+    "open-in-a-new-tab": "فتح في تبويب جديد",
+    "open-in-a-new-split": "فتح في تقسيم جديد",
+    "copy-note-path-to-clipboard": "نسخ مسار الملاحظة إلى الحافظة",
+    "open-in-a-new-window": "فتح في نافذة جديدة",
+    "convert-to-attachment-confirm": "هل أنت متأكد أنك تريد تحويل الملاحظات المحددة إلى مرفقات ضمن ملاحظاتها الأب؟ ستُطبق هذه العملية فقط على ملاحظات الصور، وسيتم تجاهل الملاحظات الأخرى.",
+    "converted-to-attachments": "تم تحويل {{count}} ملاحظة إلى مرفقات."
   },
   "note_types": {
     "text": "نص",
@@ -1027,15 +1200,20 @@
     "spreadsheet": "جدول البيانات",
     "markdown": "ماركداون",
     "ai-chat": "محادثة الذكاء الاصطناعي",
-    "llm-chat": "دردشة الذكاء الاصطناعي"
+    "llm-chat": "دردشة الذكاء الاصطناعي",
+    "confirm-change": "لا يُنصح بتغيير نوع الملاحظة عندما يكون محتواها غير فارغ. هل تريد المتابعة على أي حال؟"
   },
   "shared_switch": {
     "shared": "مشترك",
     "toggle-on-title": "مشاركة الملاحظة",
-    "toggle-off-title": "إلغاء مشاركة الملاحظة"
+    "toggle-off-title": "إلغاء مشاركة الملاحظة",
+    "shared-branch": "هذه الملاحظة موجودة فقط كملاحظة مشتركة، وإلغاء المشاركة سيؤدي إلى حذفها. هل تريد المتابعة وبالتالي حذف هذه الملاحظة؟",
+    "inherited": "لا يمكن إلغاء مشاركة هذه الملاحظة هنا لأنها تتم مشاركتها عبر الوراثة من ملاحظة أصل."
   },
   "template_switch": {
-    "template": "قالب"
+    "template": "قالب",
+    "toggle-on-hint": "جعل الملاحظة قالبًا",
+    "toggle-off-hint": "إزالة الملاحظة كقالب"
   },
   "find": {
     "replace": "استبدال",
@@ -1047,13 +1225,23 @@
   },
   "highlights_list_2": {
     "options": "خيارات",
-    "title": "قائمة التضليلات"
+    "title": "قائمة التضليلات",
+    "modal_title": "تهيئة قائمة التمييزات",
+    "menu_configure": "تهيئة قائمة التمييزات...",
+    "no_highlights": "لا توجد عناصر مميزة.",
+    "title_with_count_zero": "{{count}} تمييز",
+    "title_with_count_one": "{{count}} تمييز",
+    "title_with_count_two": "{{count}} تمييز",
+    "title_with_count_few": "{{count}} تمييز",
+    "title_with_count_many": "{{count}} تمييز",
+    "title_with_count_other": "{{count}} تمييز"
   },
   "quick-search": {
     "searching": "جار البحث...",
     "placeholder": "البحث السريع",
     "no-results": "لم يتم العثور على نتائج",
-    "show-in-full-search": "عرض في البحث الكامل"
+    "show-in-full-search": "عرض في البحث الكامل",
+    "more-results": "… و {{number}} نتيجة أخرى."
   },
   "note_tree": {
     "unhoist": "ارجاع الى الترتيب الطبيعي",
@@ -1067,7 +1255,23 @@
     "save-changes": "حفظ وتطبيق التغييرات",
     "saved-search-note-refreshed": "تم تحديث ملاحظة البحث المحفوظة.",
     "hoist-this-note-workspace": "تثبيت هذه الملاحظة (مساحة العمل)",
-    "refresh-saved-search-results": "تحديث نتائج البحث المحفوظة"
+    "refresh-saved-search-results": "تحديث نتائج البحث المحفوظة",
+    "subtree-hidden-moved-title": "تمت الإضافة إلى {{title}}",
+    "auto-collapsing-notes-after-inactivity": "طيّ الملاحظات تلقائيًا بعد عدم النشاط...",
+    "shared-indicator-tooltip": "هذه الملاحظة مشتركة بشكل عام",
+    "clone-indicator-tooltip-single": "هذه الملاحظة مستنسخة (لها أصل إضافي واحد: {{- parent}})",
+    "subtree-hidden-moved-description-collection": "هذه المجموعة تخفي ملاحظاتها الفرعية في الشجرة.",
+    "subtree-hidden-moved-description-other": "الملاحظات الفرعية مخفية في الشجرة لهذه الملاحظة.",
+    "dropping-not-allowed": "إسقاط الملاحظات في هذا الموقع غير مسموح به.",
+    "clone-indicator-tooltip": "هذه الملاحظة لها {{- count}} من الملاحظات الأم: {{- parents}}",
+    "shared-indicator-tooltip-with-url": "هذه الملاحظة مُشاركة علنًا على: {{- url}}",
+    "automatically-collapse-notes-title": "سيتم طيّ الملاحظات بعد فترة من عدم النشاط لتقليل الفوضى في الشجرة.",
+    "subtree-hidden-tooltip_zero": "{{count}} ملاحظة فرعية مخفية من الشجرة.",
+    "subtree-hidden-tooltip_one": "{{count}} ملاحظة فرعية مخفية من الشجرة.",
+    "subtree-hidden-tooltip_two": "{{count}} ملاحظة فرعية مخفية من الشجرة.",
+    "subtree-hidden-tooltip_few": "{{count}} ملاحظة فرعية مخفية من الشجرة.",
+    "subtree-hidden-tooltip_many": "{{count}} ملاحظة فرعية مخفية من الشجرة.",
+    "subtree-hidden-tooltip_other": "{{count}} ملاحظة فرعية مخفية من الشجرة."
   },
   "sql_table_schemas": {
     "tables": "جداول"
@@ -1081,7 +1285,8 @@
     "add-custom-widget": "اضافة عنصر واجهة مخصص",
     "move-to-visible-launchers": "نقل الى المشغلات المرئية",
     "move-to-available-launchers": "نقل الى المشغلات المتوفرة",
-    "duplicate-launcher": "تكرار المشغل <kbd data-command=\"duplicateSubtree\">"
+    "duplicate-launcher": "تكرار المشغل <kbd data-command=\"duplicateSubtree\">",
+    "reset_launcher_confirm": "هل تريد حقًا إعادة تعيين \"{{title}}\"؟ سيتم فقدان جميع البيانات/الإعدادات داخل هذه الملاحظة (وملاحظاتها الفرعية)، وسيتم إعادة المُشغّل إلى موقعه الأصلي."
   },
   "editable_text": {
     "auto-detect-language": "تم اكتشافه تلقائيا",
@@ -1102,12 +1307,16 @@
   "editing": {
     "editor_type": {
       "floating": {
-        "title": "عائم"
+        "title": "عائم",
+        "description": "تظهر أدوات التحرير بالقرب من المؤشر؛"
       },
       "fixed": {
-        "title": "مثبت"
+        "title": "مثبت",
+        "description": "تظهر أدوات التحرير في تبويب \"التنسيق\" ضمن الشريط."
       },
-      "label": "شريط ادوات التنسيق"
+      "label": "شريط ادوات التنسيق",
+      "toolbar_style": "نمط شريط الأدوات",
+      "multiline-toolbar": "عرض شريط الأدوات على عدة أسطر إذا لم يتسع في سطر واحد"
     }
   },
   "electron_context_menu": {
@@ -1117,7 +1326,9 @@
     "paste": "لصق",
     "copy-link": "نسخ الرابط",
     "add-term-to-dictionary": "اضافة \"{{term}}\" الى القاموس",
-    "paste-as-plain-text": "لصق كنص عادي"
+    "paste-as-plain-text": "لصق كنص عادي",
+    "search_in_trilium": "البحث عن \"{{term}}\" في Trilium",
+    "search_online": "البحث عن \"{{term}}\" باستخدام {{searchEngine}}"
   },
   "promoted_attributes": {
     "url_placeholder": "http://website...",
@@ -1138,19 +1349,23 @@
   },
   "editorfeatures": {
     "title": "مميزات",
-    "note_completion_enabled": "تمكين الاكمال التلقائي للملاحظة",
-    "emoji_completion_enabled": "تفعيل الاكمال التلقائي للرموز التعبيرية",
-    "slash_commands_enabled": "تفعيل اوامر Slash"
+    "note_completion_enabled": "الاكمال التلقائي للملاحظة",
+    "emoji_completion_enabled": "الاكمال التلقائي للرموز التعبيرية",
+    "slash_commands_enabled": "اوامر Slash",
+    "slash_commands_description": "يمكنك تفعيل أو إيقاف أوامر التحرير مثل إدراج فواصل أسطر أو عناوين عن طريق كتابة /.",
+    "note_completion_description": "يمكن إنشاء روابط للملاحظات بكتابة رمز @ متبوعًا بعنوان الملاحظة.",
+    "emoji_completion_description": "يمكن إدراج الرموز التعبيرية بسهولة داخل النص عن طريق كتابة : متبوعًا باسم الرمز التعبيري."
   },
   "book_properties_config": {
     "raster": "نقطي",
     "hide-weekends": "اخفاء عطلات نهايات الاسبوع",
-    "map-style": "نمط الخريطة:",
+    "map-style": "نمط الخريطة",
     "vector_light": "متجه (فاتح)",
     "vector_dark": "متجه (داكن)",
     "show-scale": "اظهار المقياس",
     "display-week-numbers": "اظهار ارقام الاسابيع",
-    "max-nesting-depth": "العمق الاقصى للتداخل:"
+    "max-nesting-depth": "العمق الاقصى للتداخل:",
+    "show-labels": "إظهار أسماء العلامات"
   },
   "multi_factor_authentication": {
     "oauth_title": "OAuth/OpenID",
@@ -1171,7 +1386,19 @@
     "totp_title": "كلمة مرور لمرة واحدة معتمدة على الوقت (TOTP)",
     "recovery_keys_title": "مفاتيح استرداد تسجيل الدخول الاحادي",
     "recovery_keys_error": "حدث خطأ اثناء توليد رموز الاسترجاع",
-    "recovery_keys_no_key_set": "لاتوجد رموز استرجاع معينة"
+    "recovery_keys_no_key_set": "لاتوجد رموز استرجاع معينة",
+    "recovery_keys_unused": "رمز الاسترداد {{index}} غير مستخدم",
+    "electron_disabled": "المصادقة متعددة العوامل غير مدعومة حاليًا في إصدار سطح المكتب.",
+    "no_totp_secret_warning": "لتفعيل TOTP، تحتاج أولًا إلى إنشاء مفتاح سري (TOTP secret).",
+    "totp_secret_warning": "يرجى حفظ السر الذي تم إنشاؤه في مكان آمن. لن يتم عرضه مرة أخرى.",
+    "recovery_keys_description": "—تُستخدم مفاتيح استعادة تسجيل الدخول الموحد لتسجيل الدخول في حال عدم قدرتك على الوصول إلى رموز تطبيق المصادقة الخاص بك.",
+    "totp_secret_description_warning": "بعد إنشاء سر TOTP جديد، ستحتاج إلى تسجيل الدخول مرة أخرى باستخدام السر الجديد.",
+    "totp_secret_regenerate_confirm": "هل أنت متأكد أنك تريد إعادة إنشاء سر TOTP؟ سيؤدي ذلك إلى إبطال السر السابق وجميع رموز الاسترداد الحالية.",
+    "recovery_keys_description_warning": "لن يتم عرض مفاتيح الاسترداد مرة أخرى بعد مغادرة الصفحة، لذا احتفظ بها في مكان آمن. <br>بعد استخدام مفتاح الاسترداد، لا يمكن استخدامه مرة أخرى.",
+    "totp_description": "TOTP (كلمة مرور لمرة واحدة تعتمد على الوقت) هي ميزة أمان تُنشئ رمزًا مؤقتًا فريدًا يتغير كل 30 ثانية. تستخدم هذا الرمز مع كلمة المرور لتسجيل الدخول إلى حسابك، مما يجعل من الصعب جدًا على أي شخص آخر الوصول إليه.",
+    "oauth_description": "OpenID هو معيار يتيح لك تسجيل الدخول إلى المواقع باستخدام حساب من خدمة أخرى، مثل Google، للتحقق من هويتك. المُصدر الافتراضي هو Google، ولكن يمكنك تغييره إلى أي مزود OpenID آخر. راجع <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">هنا</a> لمزيد من المعلومات. اتبع هذه <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">الإرشادات</a> لإعداد خدمة OpenID عبر Google.",
+    "description": "تُضيف المصادقة متعددة العوامل (Multi-Factor Authentication - MFA) طبقة أمان إضافية إلى حسابك. بدلًا من إدخال كلمة المرور فقط لتسجيل الدخول، تتطلب MFA تقديم عنصر أو أكثر إضافيًا للتحقق من هويتك. بهذه الطريقة، حتى لو حصل شخص ما على كلمة المرور الخاصة بك، فلن يتمكن من الوصول إلى حسابك دون العامل الثاني من المعلومات. يمكن تشبيه ذلك بإضافة قفل إضافي لبابك، مما يجعل اختراقه أكثر صعوبة.\n\n<br><br>\n\nيرجى اتباع التعليمات أدناه لتمكين MFA. إذا لم يتم التكوين بشكل صحيح، فسيعود تسجيل الدخول إلى استخدام كلمة المرور فقط.",
+    "oauth_description_warning": "لتمكين OAuth/OpenID، تحتاج إلى ضبط عنوان URL الأساسي لـ OAuth/OpenID ومعرّف العميل (Client ID) وسر العميل (Client Secret) في ملف config.ini ثم إعادة تشغيل التطبيق.\n\nإذا كنت ترغب في الإعداد عبر متغيرات البيئة، يرجى تعيين:\n\nTRILIUM_OAUTH_BASE_URL\n\nTRILIUM_OAUTH_CLIENT_ID\n\nTRILIUM_OAUTH_CLIENT_SECRET"
   },
   "execute_script": {
     "execute_script": "تنفيذ السكريبت",
@@ -1215,7 +1442,12 @@
     "rename_note": "اعادة تسمية الملاحظة",
     "new_note_title": "عنوان ملاحظة جديد",
     "rename_note_title_to": "اعادة تسمية عنوان الملاحظة الى",
-    "click_help_icon": "اضغط على أيقونة المساعدة على اليمين لعرض جميع الخيارات"
+    "click_help_icon": "اضغط على أيقونة المساعدة على اليمين لعرض جميع الخيارات",
+    "example_new_title": "NEW: ${note.title} — عناوين الملاحظات المطابقة يتم إضافة بادئة \"NEW: \" إليها",
+    "evaluated_as_js_string": "يتم تقييم القيمة المُعطاة كسلسلة JavaScript، وبالتالي يمكن تعزيزها بمحتوى ديناميكي عبر المتغير المُحقن ‎<code>note</code>‎ (مع إعادة تسمية الملاحظة). أمثلة:",
+    "example_note": "‎<code>Note</code>‎ - تتم إعادة تسمية جميع الملاحظات المطابقة إلى \"Note\"",
+    "example_date_prefix": "‎<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code>‎ - تتم إضافة بادئة للملاحظات المطابقة تتضمن شهر ويوم إنشاء الملاحظة",
+    "api_docs": "راجع وثائق API الخاصة بـ Trilium Notes للاطلاع على تفاصيل <a href='https://zadam.github.io/trilium/backend_api/Note.html'>note</a>، وكذلك خصائص <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj</a> لمزيد من المعلومات."
   },
   "delete_relation": {
     "delete_relation": "حذف العلاقة",
@@ -1237,7 +1469,7 @@
     "import_files": "استيراد الملفات",
     "export_note": "تصدير الملاحظة",
     "delete_note": "حذف الملاحظة",
-    "print_note": "طباعة الملاحظة",
+    "print_note": "طباعة الملاحظة...",
     "save_revision": "حفظ المراجعة",
     "convert_into_attachment": "تحويل الى مرفق",
     "search_in_note": "بحث في الملاحظة",
@@ -1257,7 +1489,12 @@
     "save_named_revision": "حفظ نسخة باسم...",
     "print_or_export_to_pdf": "طباعة / تصدير إلى PDF...",
     "open_note_on_server": "فتح الملاحظة على الخادم",
-    "word_wrap_auto_description": "اتباع الإعداد العام"
+    "word_wrap_auto_description": "اتباع الإعداد العام",
+    "word_wrap": "التفاف النص",
+    "export_as_image": "تصدير كصورة",
+    "convert_into_attachment_prompt": "هل أنت متأكد أنك تريد تحويل الملاحظة '{{title}}' إلى مرفق داخل الملاحظة الأب؟",
+    "open_note_externally_title": "سيتم فتح الملف في تطبيق خارجي ومراقبة التغييرات عليه. بعد ذلك ستتمكن من رفع النسخة المعدلة مرة أخرى إلى Trilium Notes.",
+    "convert_into_attachment_successful": "تم تحويل الملاحظة \"{{title}}\" إلى مرفق."
   },
   "update_available": {
     "update_available": "تحديث متوفر"
@@ -1266,7 +1503,9 @@
     "execute_button_title": "تنفيذ السكريبت",
     "save_to_note_button_title": "حفظ في الملاحظا",
     "opening_api_docs_message": "جاري فتح مستدات API...",
-    "trilium_api_docs_button_title": "فتح مستندات API لتريليوم"
+    "trilium_api_docs_button_title": "فتح مستندات API لتريليوم",
+    "electron_api_docs_button_title": "فتح توثيق واجهة برمجة تطبيقات Electron",
+    "sql_console_saved_message": "تم حفظ ملاحظة وحدة تحكم SQL في ‎{{note_path}}‎"
   },
   "hide_floating_buttons_button": {
     "button_title": "اخفاء الازرار"
@@ -1276,7 +1515,9 @@
   },
   "relation_map_buttons": {
     "zoom_in_title": "تكبير",
-    "zoom_out_title": "تصغير"
+    "zoom_out_title": "تصغير",
+    "reset_pan_zoom_title": "إعادة ضبط التحريك والتكبير إلى الإحداثيات والتكبير الأصليين",
+    "create_child_note_title": "إنشاء ملاحظة فرعية وإضافتها إلى الخريطة"
   },
   "inherited_attribute_list": {
     "title": "السمات الموروثة",
@@ -1288,7 +1529,9 @@
     "fix-nodes": "اصلاح العقد",
     "link-distance": "مسافة الرابط",
     "open_full": "توسيع للعرض الكامل",
-    "collapse": "طي الى الحجم الطبيعي"
+    "collapse": "طي الى الحجم الطبيعي",
+    "show-anyway": "عرض الخريطة",
+    "too-many-notes": "يوجد {{count}} ملاحظة هنا. عرضها جميعًا قد يؤدي إلى بطء الأداء."
   },
   "owned_attribute_list": {
     "owned_attributes": "السمات المملوكة"
@@ -1307,7 +1550,8 @@
     "placeholder": "ابحث عن ملاحظة حسب اسمها",
     "description1": "يسمح سكربت البحث بتحديد نتائج البحث عبر تنفيذ سكربت، مما يوفر أقصى قدر من المرونة عندما لا يكون البحث القياسي كافيًا.",
     "description2": "يجب أن يكون سكربت البحث من نوع \"code\" ونوع فرعي \"JavaScript backend\". ويجب أن يُرجع مصفوفة تحتوي على noteIds أو notes.",
-    "note": "ملاحظة: لا يمكن دمج سكربت البحث مع نص البحث في نفس الوقت."
+    "note": "ملاحظة: لا يمكن دمج سكربت البحث مع نص البحث في نفس الوقت.",
+    "example_code": "// 1. التصفية المسبقة باستخدام البحث القياسي const candidateNotes = api.searchForNotes(\"#journal\");\n\n// 2. تطبيق معايير بحث مخصصة const matchedNotes = candidateNotes .filter(note => note.title.match(/[0-9]{1,2}. ?[0-9]{1,2}. ?[0-9]{4}/));\n\nreturn matchedNotes;"
   },
   "attachment_detail": {
     "owning_note": "الملاحظة المالكة: ",
@@ -1346,41 +1590,65 @@
     "rename_relation": "إعادة تسمية العلاقة",
     "confirm_remove_relation": "هل أنت متأكد أنك تريد إزالة العلاقة؟",
     "specify_new_relation_name": "حدد اسم العلاقة الجديد (الأحرف المسموح بها: أحرف أبجدية رقمية، النقطتان الرأسيتان (:)، والشرطة السفلية (_)):",
-    "enter_title_of_new_note": "أدخل عنوان الملاحظة الجديدة"
+    "enter_title_of_new_note": "أدخل عنوان الملاحظة الجديدة",
+    "start_dragging_relations": "ابدأ بسحب العلاقات من هنا وأسقطها على ملاحظة أخرى.",
+    "connection_exists": "الاتصال \"{{name}}\" بين هذه الملاحظات موجود بالفعل.",
+    "note_already_in_diagram": "الملاحظة \"{{title}}\" موجودة بالفعل في المخطط.",
+    "click_on_canvas_to_place_new_note": "انقر على اللوحة لوضع ملاحظة جديدة"
   },
   "consistency_checks": {
-    "title": "فحوصات التناسق"
+    "title": "فحوصات التناسق",
+    "find_and_fix_button": "العثور على مشاكل الاتساق وإصلاحها",
+    "finding_and_fixing_message": "جارٍ البحث عن مشاكل الاتساق وإصلاحها...",
+    "find_and_fix_label": "العثور على مشاكل الاتساق وإصلاحها",
+    "issues_fixed_message": "تم إصلاح أي مشكلة اتساق قد تم العثور عليها.",
+    "find_and_fix_description": "فحص قاعدة البيانات بحثًا عن أي مشاكل في اتساق البيانات وإصلاحها تلقائيًا."
   },
   "database_anonymization": {
     "title": "اخفاء هوية البيانات",
-    "full_anonymization": "الاخفاء الكامل للهوية",
+    "full_anonymization": "إخفاء الهوية بالكامل",
     "light_anonymization": "الاخفاء الجزئي للهوية",
     "existing_anonymized_databases": "قواعد البيانات المجهولة الحالية",
     "save_fully_anonymized_database": "حفظ قاعدة البيانات بعد اخفاء كل الهويات",
     "save_lightly_anonymized_database": "حفظ قاعدةةبيانات مخفية جزئيا",
     "creating_fully_anonymized_database": "انشاء قاعدة بيانات مجهولة بالكامل",
     "creating_lightly_anonymized_database": "انشاء قاعدةة بيانات مجهولة جزئيا...",
-    "no_anonymized_database_yet": "لاتوجد قاعدة بيانات مجهولة بعد."
+    "no_anonymized_database_yet": "لاتوجد قاعدة بيانات مجهولة بعد.",
+    "successfully_created_fully_anonymized_database": "تم إنشاء قاعدة بيانات مجهولة الهوية بالكامل في {{anonymizedFilePath}}",
+    "successfully_created_lightly_anonymized_database": "تم إنشاء قاعدة بيانات مُعتمة الهوية بشكل جزئي في {{anonymizedFilePath}}",
+    "error_creating_anonymized_database": "تعذر إنشاء قاعدة بيانات مجهولة الهوية، يرجى التحقق من سجلات الخادم الخلفي للحصول على التفاصيل",
+    "description": "إنشاء نسخة مجهولة من قاعدة بياناتك لمشاركتها مع المطورين عند تصحيح الأخطاء، دون الكشف عن البيانات الشخصية.",
+    "light_anonymization_description": "إنشاء نسخة يتم فيها إزالة محتوى الملاحظات، مع الاحتفاظ بالعناوين والسمات والسكربتات/الأدوات المخصصة. يوفر ذلك سياقًا أفضل لتصحيح الأخطاء.",
+    "full_anonymization_description": "ينشئ نسخة من قاعدة البيانات يتم فيها إزالة جميع محتوى الملاحظات، مع الاحتفاظ فقط بالبنية والبيانات الوصفية غير الحساسة. تكون هذه النسخة آمنة للمشاركة عبر الإنترنت عند تصحيح المشكلات.",
+    "choose_anonymization": "يمكنك أن تقرر بنفسك ما إذا كنت تريد توفير قاعدة بيانات مجهولة بالكامل أو مجهولة بشكل جزئي. حتى قاعدة البيانات المجهولة بالكامل تكون مفيدة جدًا، لكن في بعض الحالات قد تساعد القاعدة المجهولة بشكل جزئي في تسريع عملية تحديد الأخطاء وإصلاحها."
   },
   "vacuum_database": {
     "title": "تحرير مساحة قاعدة البيانات",
     "button_text": "تحرير مساحة قاعدة البيانات",
     "vacuuming_database": "جار تحرير مساحة قاعدة الييانات...",
-    "database_vacuumed": "تم تنظيف قاعدة البيانات"
+    "database_vacuumed": "تم تنظيف قاعدة البيانات",
+    "vacuum_label": "تنظيف قاعدة البيانات",
+    "description": "سيؤدي هذا إلى إعادة بناء قاعدة البيانات، مما يؤدي عادةً إلى تقليل حجم ملف قاعدة البيانات. لن يتم تغيير أي بيانات فعليًا.",
+    "vacuum_description": "إعادة بناء قاعدة البيانات لتقليل حجم الملف. لن يتم تغيير أي بيانات."
   },
   "ribbon": {
-    "widgets": "ادوات الشريط"
+    "widgets": "ادوات الشريط",
+    "edited_notes_message": "سيتم فتح تبويب الشريط \"الملاحظات المعدلة\" تلقائيًا عند ملاحظات اليوم",
+    "promoted_attributes_message": "سيتم فتح تبويب الشريط \"السمات المروّجة\" تلقائيًا إذا كانت السمات المروّجة موجودة في الملاحظة"
   },
   "vim_key_bindings": {
-    "use_vim_keybindings_in_code_notes": "اختصارات لوحة المفاتيح باسلوب Vim"
+    "use_vim_keybindings_in_code_notes": "اختصارات لوحة المفاتيح باسلوب Vim",
+    "enable_vim_keybindings": "تفعيل اختصارات Vim في ملاحظات الكود (بدون وضع ex)"
   },
   "network_connections": {
     "network_connections_title": "الشبكة",
-    "check_for_updates": "‪التحقق من وجود تحديثات تلقائية"
+    "check_for_updates": "‪التحقق من وجود تحديثات تلقائية",
+    "check_for_updates_description": "يفحص الإصدارات الجديدة على GitHub ويعرض إشعارًا في القائمة العامة عند توفر إصدار جديد."
   },
   "tray": {
     "title": "شريط النظام",
-    "enable_tray": "أيقونة شريط النظام"
+    "enable_tray": "أيقونة شريط النظام",
+    "enable_tray_description": "يجب إعادة تشغيل Trilium Notes لكي يصبح هذا التغيير ساري المفعول."
   },
   "highlights_list": {
     "title": "قائمة النقاط المميزة",
@@ -1389,23 +1657,38 @@
     "underline": "خط تحت النص",
     "color": "نص ملون",
     "visibility_title": "اظهار قائمة التضليلات",
-    "bg_color": "نص مع لون خلفية"
+    "bg_color": "نص مع لون خلفية",
+    "description": "يمكنك تخصيص قائمة التمييزات المعروضة في اللوحة اليمنى:",
+    "shortcut_info": "يمكنك إعداد اختصار لوحة مفاتيح للتبديل السريع للوحة اليمنى (بما في ذلك التمييزات) من خلال: الخيارات → الاختصارات (باسم ‎'toggleRightPane'‎).",
+    "visibility_description": "يمكنك إخفاء أداة التمييز (Highlights widget) لكل ملاحظة على حدة عبر إضافة الوسم ‎#hideHighlightWidget‎."
   },
   "revisions_button": {
     "note_revisions": "مراجعات الملاحظة"
   },
   "custom_date_time_format": {
-    "format_string": "سلسلة التنسيق:",
-    "formatted_time": "التاريخ/الوقت المنسق:",
-    "title": "تنسيق تاريخ/وقت مخصص"
+    "format_string": "سلسلة التنسيق",
+    "formatted_time": "التاريخ/الوقت المنسق",
+    "title": "تاريخ/وقت مخصص",
+    "preview": "معاينة: {{preview}}",
+    "description": "قم بتخصيص تنسيق التاريخ والوقت الذي يتم إدخاله عبر ‎<shortcut />‎ أو شريط الأدوات. راجع توثيق Day.js لمعرفة رموز التنسيق المتاحة.",
+    "description_short": "تخصيص تنسيق التاريخ والوقت المُدرج عبر شريط الأدوات."
   },
   "options_widget": {
-    "options_status": "حالة الخيارات"
+    "options_status": "حالة الخيارات",
+    "options_change_saved": "تم حفظ تغييرات الخيارات."
   },
   "spellcheck": {
     "title": "التدقيق الاملائي",
-    "enable": "تفعيل التدقيق الاملائي",
-    "language_code_label": "رمز اللغة او رموز اللغات"
+    "enable": "التحقق من التدقيق الاملائي",
+    "language_code_label": "لغات التدقيق الإملائي",
+    "custom_dictionary_title": "قاموس مخصص",
+    "custom_dictionary_edit": "كلمات مخصصة",
+    "custom_dictionary_open": "تعديل القاموس",
+    "description": "تنطبق هذه الخيارات فقط على إصدارات سطح المكتب، بينما ستستخدم المتصفحات تدقيق الإملاء الخاص بها.",
+    "custom_dictionary_edit_description": "قم بتعديل قائمة الكلمات التي يجب عدم تمييزها بواسطة المدقق الإملائي. ستظهر التغييرات بعد إعادة التشغيل.",
+    "restart-required": "ستصبح التغييرات على خيارات التدقيق الإملائي سارية المفعول بعد إعادة تشغيل التطبيق.",
+    "custom_dictionary_description": "الكلمات التي تتم إضافتها إلى القاموس تتم مزامنتها عبر جميع أجهزتك.",
+    "related_description": "تكوين لغات التدقيق الإملائي والقاموس المخصص."
   },
   "note-map": {
     "button-link-map": "خريطة الروابط",
@@ -1416,17 +1699,23 @@
   },
   "entrypoints": {
     "note-executed": "تم تنفيذ الملاحظة.",
-    "save-named-revision-title": "حفظ نسخة باسم"
+    "save-named-revision-title": "حفظ نسخة باسم",
+    "note-revision-created": "تم إنشاء نسخة مراجعة للملاحظة.",
+    "sql-error": "حدث خطأ أثناء تنفيذ استعلام SQL: {{message}}",
+    "save-named-revision-message": "أدخل اسمًا لهذا الإصدار (اتركه فارغًا لعدم تسمية الإصدار):"
   },
   "branches": {
     "delete-status": "حالة الحذف",
     "delete-finished-successfully": "تم الحذف بنجاح.",
     "cannot-move-notes-here": "لايمكن نقل الملاحظات الى هنا.",
-    "undeleting-notes-finished-successfully": "تم استرجاع الملاحظات بنجاح."
+    "undeleting-notes-finished-successfully": "تم استرجاع الملاحظات بنجاح.",
+    "delete-notes-in-progress": "جارٍ حذف الملاحظات: {{count}}",
+    "undeleting-notes-in-progress": "جارٍ استعادة الملاحظات: {{count}}"
   },
   "highlighting": {
     "title": "كتل الكود",
-    "color-scheme": "نظام الالوان"
+    "color-scheme": "نظام الالوان",
+    "description": "يتحكم في تلوين الصياغة (Syntax Highlighting) لمقاطع الكود داخل الملاحظات النصية، أما ملاحظات الكود فلن تتأثر بهذا الإعداد."
   },
   "code_block": {
     "word_wrapping": "التفاف النص",
@@ -1435,15 +1724,24 @@
     "copy_title": "نسخ الى الحافظة",
     "theme_none": "بدون تمييز الصياغة",
     "tab_width_unit": "المسافات",
-    "click_to_copy": "انقر للنسخ"
+    "click_to_copy": "انقر للنسخ",
+    "tab_width": "عرض التبويب"
   },
   "link_context_menu": {
-    "open_note_in_popup": "تحرير سريع"
+    "open_note_in_popup": "تحرير سريع",
+    "open_note_in_new_tab": "فتح الملاحظة في علامة تبويب جديدة",
+    "open_note_in_new_split": "فتح الملاحظة في تقسيم  جديد.",
+    "open_note_in_new_window": "فتح الملاحظة في نافذة جديدة",
+    "open_note_in_other_split": "فتح الملاحظة في التقسيم الآخر"
   },
   "electron_integration": {
     "desktop-application": "تطبيقات سطح المكتب",
     "zoom-factor": "عامل التكبير",
-    "native-title-bar": "شريط العنوان الاصلي"
+    "native-title-bar": "شريط العنوان الاصلي",
+    "background-effects": "تفعيل تأثيرات الخلفية",
+    "background-effects-description": "يضيف خلفية ضبابية وأنيقة لنوافذ التطبيق، مما يخلق عمقًا ومظهرًا حديثًا. يجب تعطيل \"شريط العنوان الأصلي (Native title bar)\".",
+    "native-title-bar-description": "في نظامي Windows وmacOS، إيقاف شريط العنوان الأصلي يجعل التطبيق يبدو أكثر انضغاطًا. أما في Linux، فإن إبقاء شريط العنوان الأصلي مفعّلًا ينسجم بشكل أفضل مع بقية النظام.",
+    "restart-app-button": "أعد تشغيل التطبيق لعرض التغييرات"
   },
   "note_tooltip": {
     "quick-edit": "التحرير السريع",
@@ -1451,19 +1749,28 @@
   },
   "geo-map-context": {
     "open-location": "فتح الموقع",
-    "remove-from-map": "ازالة من الخريطة"
+    "remove-from-map": "ازالة من الخريطة",
+    "add-note": "إضافة علامة عند هذا الموقع"
   },
   "share": {
     "title": "المشاركة",
-    "check_share_root": "التحقق من حالة جذر المشاركة"
+    "check_share_root": "التحقق من حالة جذر المشاركة",
+    "show_login_link_description": "إضافة رابط تسجيل الدخول إلى تذييل صفحة المشاركة",
+    "share_root_not_shared": "الملاحظة '{{noteTitle}}' تحتوي على الوسم #shareRoot لكنها غير مشتركة.",
+    "redirect_bare_domain": "إعادة توجيه النطاق (domain) المجرد إلى صفحة المشاركة",
+    "show_login_link": "إظهار رابط تسجيل الدخول في ثيم المشاركة",
+    "share_root_found": "الملاحظة الجذرية المُشاركة \"{{noteTitle}}\" جاهزة",
+    "share_root_not_found": "لم يتم العثور على ملاحظة تحتوي على الوسم ‎#shareRoot‎",
+    "redirect_bare_domain_description": "إعادة توجيه المستخدمين المجهولين إلى صفحة المشاركة بدلًا من عرض تسجيل الدخول"
   },
   "note_language": {
-    "not_set": "غير محدد",
+    "not_set": "لم يتم تعيين لغة",
     "configure-languages": "لغات التهيئة",
     "help-on-languages": "مساعدة حول لغات المحتوى..."
   },
   "content_language": {
-    "title": "لغات المحتوى"
+    "title": "لغات المحتوى",
+    "description": "اختر لغة واحدة أو أكثر لعرضها في قائمة اختيار اللغة ضمن قسم الخصائص الأساسية في الملاحظة النصية (سواء كانت للقراءة فقط أو قابلة للتعديل). سيسمح ذلك بتفعيل ميزات مثل التدقيق الإملائي، ودعم الكتابة من اليمين إلى اليسار، واستخراج النص (OCR)."
   },
   "toggle_read_only_button": {
     "unlock-editing": "الغاء قفل التحرير",
@@ -1471,7 +1778,12 @@
   },
   "cpu_arch_warning": {
     "continue_anyway": "المتابعة على اي حال",
-    "download_link": "تنزيل النسخة الاصلية"
+    "download_link": "تنزيل النسخة الاصلية",
+    "title": "يرجى تنزيل إصدار ARM64",
+    "dont_show_again": "عدم إظهار هذا التحذير مرة أخرى",
+    "recommendation": "لأفضل تجربة، يُرجى تنزيل إصدار ARM64 الأصلي من TriliumNext من صفحة الإصدارات الخاصة بنا.",
+    "message_windows": "يعمل TriliumNext حاليًا في وضع المحاكاة، مما يعني أنك تستخدم إصدار Intel (x64) على جهاز Windows بمعمارية ARM. سيؤدي ذلك إلى تأثير كبير على الأداء وعمر البطارية.",
+    "message_macos": "يعمل TriliumNext حاليًا باستخدام طبقة الترجمة Rosetta 2، مما يعني أنك تستخدم إصدار Intel (x64) على جهاز Apple Silicon. سيؤدي ذلك إلى تأثير كبير على الأداء وعمر البطارية."
   },
   "table_context_menu": {
     "delete_row": "حذف الصف"
@@ -1488,7 +1800,11 @@
     "add-column": "اضافة عمود",
     "new-item-placeholder": "ادخل عنوان الملاحظة...",
     "add-column-placeholder": "ادخل اسم العمود...",
-    "remove-from-board": "ازالة من اللوحة"
+    "remove-from-board": "ازالة من اللوحة",
+    "edit-note-title": "انقر لتعديل عنوان الملاحظة",
+    "edit-column-title": "انقر لتعديل عنوان العمود",
+    "delete-column-confirmation": "هل أنت متأكد أنك تريد حذف هذا العمود؟ سيتم أيضًا حذف السمة المقابلة في الملاحظات الموجودة ضمن هذا العمود.",
+    "column-already-exists": "هذا العمود موجود بالفعل على اللوحة."
   },
   "command_palette": {
     "export_note_title": "تصدير ملاحظة",
@@ -1502,7 +1818,8 @@
     "search_history_title": "عرص سجل البحث",
     "search_history_description": "عرض البحث السابق",
     "configure_launch_bar_title": "تكوين شريط الاطلاق",
-    "search_subtree_description": "البحث ضمن الشجرة الفرعية الحالية"
+    "search_subtree_description": "البحث ضمن الشجرة الفرعية الحالية",
+    "configure_launch_bar_description": "فتح إعدادات شريط التشغيل لإضافة أو إزالة العناصر."
   },
   "content_renderer": {
     "open_externally": "فتح خارجيا"
@@ -1520,7 +1837,9 @@
     "insert_child_note": "ادراج ملاحظة فرعية",
     "delete_this_note": "حذف هذه الملاحظة",
     "error_unrecognized_command": "امر غير معروف {{command}}",
-    "backlinks": "الروابط الخلفية"
+    "backlinks": "الروابط الخلفية",
+    "content_language_switcher": "لغة المحتوى: {{language}}",
+    "error_cannot_get_branch_id": "لا يمكن الحصول على معرّف الفرع لمسار الملاحظة '{{notePath}}'"
   },
   "move_to": {
     "notes_to_move": "الملاحظات المراد نقلها",
@@ -1557,20 +1876,28 @@
     "check_button": "التحقق من سلامة قاعدة البيانات",
     "checking_integrity": "جار التحقق من سلامة قاعدة البيانات...",
     "integrity_check_failed": "فشل التحقق من السلامة: {{results}}",
-    "check_integrity_label": "التحقق من سلامة قاعدة البيانات"
+    "check_integrity_label": "التحقق من سلامة قاعدة البيانات",
+    "check_integrity_description": "التحقق من أن قاعدة البيانات غير تالفة على مستوى SQLite.",
+    "integrity_check_succeeded": "نجح فحص سلامة البيانات — لم يتم العثور على أي مشاكل."
   },
   "watched_file_update_status": {
     "upload_modified_file": "رفع الملف المعدل",
-    "ignore_this_change": "اهمل هذا التغيير"
+    "ignore_this_change": "اهمل هذا التغيير",
+    "file_last_modified": "تم تعديل الملف <code class=\"file-path\"></code> آخر مرة في <span class=\"file-last-modified\"></span>."
   },
   "clipboard": {
-    "copy_success": "تم النسخ للحافظة."
+    "copy_success": "تم النسخ للحافظة.",
+    "cut": "تم قص الملاحظات إلى الحافظة.",
+    "copied": "تم نسخ الملاحظات إلى الحافظة.",
+    "copy_failed": "لا يمكن النسخ إلى الحافظة بسبب مشكلات في الأذونات."
   },
   "note_autocomplete": {
     "clear-text-field": "مسح حقل النص",
     "show-recent-notes": "عرض الملاحظات الاخيرة",
     "full-text-search": "البحث بالنص الكامل",
-    "search-for": "بحث ل \"{{term}}\""
+    "search-for": "بحث ل \"{{term}}\"",
+    "insert-external-link": "إدراج رابط خارجي إلى \"{{term}}\"",
+    "create-note": "إنشاء ملاحظة فرعية وربطها \"{{term}}\""
   },
   "protect_note": {
     "toggle-off": "إزالة الحماية عن الملاحظة",
@@ -1591,30 +1918,46 @@
     "add_new_relation_definition": "اضافة تعريف لعلاقة جديدة",
     "add_new_relation": "اضافة علاقة جديدة <kbd data-command=\"addNewRelation\">",
     "placeholder": "اكتب التسميات والعلاقات هنا",
-    "add_new_label": "إضافة تسمية جديدة <kbd data-command=\"addNewLabel\"></kbd>"
+    "add_new_label": "إضافة تسمية جديدة <kbd data-command=\"addNewLabel\"></kbd>",
+    "help_text_body3": "بدلًا من ذلك، يمكنك إضافة وسم وعلاقة باستخدام زر <code>+</code> الموجود على الجانب الأيمن.",
+    "help_text_body1": "لإضافة وسم (label)، اكتب مثلًا ‎<code>#rock</code>‎، أو إذا أردت إضافة قيمة أيضًا فاكتب مثلًا ‎<code>#year = 2020</code>‎.",
+    "help_text_body2": "لإضافة علاقة (relation)، اكتب مثلًا ‎<code>~author = @</code>‎، وسيظهر لك الإكمال التلقائي الذي يمكنك من خلاله البحث عن الملاحظة المطلوبة."
   },
   "zen_mode": {
     "button_exit": "الخروج من وضع Zen"
   },
   "attachment_erasure_timeout": {
-    "attachment_erasure_timeout": "مهلة مسح المرفقات",
-    "erase_attachments_after": "حذف المرفقات الغير مستخدمة بعد:",
-    "erase_unused_attachments_now": "حذف المرفقات غير المستخدمة الآن"
+    "attachment_erasure_timeout": "المرفقات الغير مستعملة",
+    "erase_attachments_after": "حذف المرفقات الغير مستخدمة بعد",
+    "erase_unused_attachments_now": "حذف المرفقات غير المستخدمة الآن",
+    "unused_attachments_erased": "تم حذف المرفقات غير المستخدمة",
+    "description": "يُعتبر المرفق الذي لم يعد مرتبطًا بأي ملاحظة غير مستخدم، ويمكن حذفه تلقائيًا بعد فترة زمنية محددة.",
+    "erase_attachments_after_description": "المدة الزمنية قبل حذف المرفقات غير المستخدمة بشكل دائم.",
+    "manual_erasing_description": "ذتنفيذ عملية الحذف يدويًا، مع تجاهل المهلة الزمنية المذكورة أعلاه."
   },
   "note_erasure_timeout": {
-    "note_erasure_timeout_title": "مهلة مسح الملاحظة",
-    "erase_notes_after": "مسح الملاحظات بعد:",
-    "erase_deleted_notes_now": "مسح الملاحظات المحذوفة الان"
+    "note_erasure_timeout_title": "مسح الملاحظة",
+    "erase_notes_after": "مسح الملاحظات بعد",
+    "erase_deleted_notes_now": "مسح الملاحظات المحذوفة الان",
+    "deleted_notes_erased": "تم حذف الملاحظات المحذوفة نهائيًا.",
+    "description": "يتم أولًا وضع الملاحظات المحذوفة كـ\"محذوفة\" فقط، ويمكن استعادتها من قسم \"الملاحظات الحديثة\". بعد فترة زمنية، يتم حذفها بشكل نهائي.",
+    "erase_notes_after_description": "المدة الزمنية قبل حذف الملاحظات المحذوفة بشكل دائم.",
+    "manual_erasing_description": "تنفيذ الحذف يدويًا، مع تجاهل المهلة الزمنية المذكورة أعلاه."
   },
   "ws": {
-    "sync-check-failed": "فشل التحقق من المزامنة!"
+    "sync-check-failed": "فشل التحقق من المزامنة!",
+    "lost-websocket-connection-title": "تم فقدان الاتصال بالخادم",
+    "lost-websocket-connection-message": "تحقق من إعدادات الخادم العكسي (Reverse Proxy) لديك (مثل Nginx أو Apache HTTP Server) للتأكد من أن اتصالات WebSocket مسموح بها بشكل صحيح وغير محجوبة.",
+    "consistency-checks-failed": "فشل التحقق من الاتساق! راجع السجلات للتفاصيل.",
+    "encountered-error": "تمت مواجهة خطأ \"{{message}}\"، تحقق من وحدة التحكم."
   },
   "show_highlights_list_widget_button": {
     "show_highlights_list": "عرض قائمة التضليلات"
   },
   "presentation_view": {
     "start-presentation": "بدء العرض التقديمي",
-    "edit-slide": "تعديل هذه الشريحة"
+    "edit-slide": "تعديل هذه الشريحة",
+    "slide-overview": "تبديل عرض نظرة عامة على الشرائح"
   },
   "jump_to_note": {
     "search_button": "البحث في النص الكامل",
@@ -1641,18 +1984,33 @@
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "الفاصل الزمني لنسخ الملاحظات الاحتياطية",
-    "snapshot_time_interval_label": "الفاصل الزمني للّقطات"
+    "snapshot_time_interval_label": "الفاصل الزمني للّقطات",
+    "note_revisions_snapshot_description_short": "الوقت الذي بعده سيتم إنشاء نسخة مراجعة جديدة للملاحظة.",
+    "note_revisions_snapshot_description": "فاصل أخذ لقطة نسخة الملاحظة (Note revision snapshot) هو الوقت الذي بعده يتم إنشاء نسخة جديدة من مراجعة الملاحظة. راجع <doc>wiki</doc> لمزيد من المعلومات."
   },
   "note_detail": {
     "printing": "جار الطباعة ...",
     "print_report_title": "طباعة التقرير",
     "print_report_collection_details_button": "عرض التفاصيل",
     "print_report_collection_details_ignored_notes": "الملاحظات المُتجاهلة",
-    "print_report_stack_trace": "تتبّع المكدس"
+    "print_report_stack_trace": "تتبّع المكدس",
+    "printing_pdf": "جارٍ إعداد معاينة الطباعة...",
+    "print_report_error_title": "فشل في الطباعة",
+    "could_not_find_typewidget": "تعذر العثور على typeWidget لنوع \"{{type}}\"",
+    "print_report_collection_content_zero": "تعذّر طباعة {{count}} ملاحظة في المجموعة لأنها غير مدعومة أو محمية.",
+    "print_report_collection_content_one": "تعذّر طباعة {{count}} ملاحظة في المجموعة لأنها غير مدعومة أو محمية.",
+    "print_report_collection_content_two": "تعذّر طباعة {{count}} ملاحظة في المجموعة لأنها غير مدعومة أو محمية.",
+    "print_report_collection_content_few": "تعذّر طباعة {{count}} ملاحظة في المجموعة لأنها غير مدعومة أو محمية.",
+    "print_report_collection_content_many": "تعذّر طباعة {{count}} ملاحظة في المجموعة لأنها غير مدعومة أو محمية.",
+    "print_report_collection_content_other": "تعذّر طباعة {{count}} ملاحظة في المجموعة لأنها غير مدعومة أو محمية."
   },
   "attachment_detail_2": {
     "role_and_size": "الدور: {{role}}، الحجم: {{size}}",
-    "unrecognized_role": "دور المرفق '{{role}}'الغير معروف."
+    "unrecognized_role": "دور المرفق '{{role}}'الغير معروف.",
+    "link_copied": "تم نسخ رابط المرفق إلى الحافظة.",
+    "deletion_reason": "لأن المرفق غير مرتبط بمحتوى الملاحظة. ولمنع حذفه، أضف رابط المرفق مرة أخرى داخل المحتوى أو قم بتحويل المرفق إلى ملاحظة.",
+    "will_be_deleted_in": "سيتم حذف هذا المرفق تلقائيًا خلال {{time}}",
+    "will_be_deleted_soon": "سيتم حذف هذا المرفق تلقائيًا قريبًا"
   },
   "title_bar_buttons": {
     "window-on-top": "ابقاء النافذة في الاعلى"
@@ -1664,7 +2022,9 @@
     "promoted_attributes": "الخصائص المُروَّجة",
     "created_on": "تم الإنشاء في <Value />",
     "last_modified": "تم التعديل في <Value />",
-    "note_type_switcher_label": "التبديل من {{type}} إلى:"
+    "note_type_switcher_label": "التبديل من {{type}} إلى:",
+    "note_type_switcher_others": "نوع ملاحظة آخر",
+    "edited_notes": "الملاحظات التي تم تعديلها في هذا اليوم"
   },
   "image_context_menu": {
     "copy_reference_to_clipboard": "نسخ المرجع الى الحافظة",
@@ -1672,7 +2032,9 @@
   },
   "geo-map": {
     "unable-to-load-map": "تعذر تحميل الخريطة.",
-    "create-child-note-text": "إضافة علامة"
+    "create-child-note-text": "إضافة علامة",
+    "create-child-note-instruction": "انقر على الخريطة لإنشاء ملاحظة جديدة في ذلك الموقع أو اضغط مفتاح Escape للإغلاق.",
+    "create-child-note-title": "إنشاء ملاحظة فرعية جديدة وإضافتها إلى الخريطة"
   },
   "content_widget": {
     "unknown_widget": "عنصر واجهة غير معروف للمعرف \"{{id}}\"."
@@ -1681,7 +2043,8 @@
     "button_title": "تصدير المخطط كملف PNG"
   },
   "protected_session_status": {
-    "inactive": "انقر للدخول الى جلسة محمية"
+    "inactive": "انقر للدخول الى جلسة محمية",
+    "active": "الجلسة المحمية نشطة. انقر لمغادرة الجلسة المحمية."
   },
   "revisions": {
     "note_revisions": "مراجعات الملاحظة",
@@ -1756,17 +2119,53 @@
     "save_status_error": "فشل الحفظ",
     "shared_copy_to_clipboard": "نسخ الرابط إلى الحافظة",
     "shared_open_in_browser": "فتح الرابط في المتصفح",
-    "save_status_saving_tooltip": "جارٍ حفظ التغييرات."
+    "save_status_saving_tooltip": "جارٍ حفظ التغييرات.",
+    "doc_url": "التوثيق عبر الإنترنت",
+    "doc_url_description": "انقر لعرض هذه الصفحة على موقع التوثيق الإلكتروني.",
+    "save_status_error_tooltip": "حدث خطأ أثناء حفظ الملاحظة. إذا أمكن، حاول نسخ محتوى الملاحظة إلى مكان آخر ثم أعد تحميل التطبيق.",
+    "read_only_auto_description": "تم تعيين هذه الملاحظة تلقائيًا إلى وضع القراءة فقط لأسباب تتعلق بالأداء. يمكن تعديل هذا الحد التلقائي من الإعدادات.\n\nانقر لتحريرها مؤقتًا.",
+    "read_only_temporarily_disabled_description": "هذه الملاحظة قابلة للتعديل حاليًا، لكنها عادةً تكون في وضع القراءة فقط. ستعود إلى وضع القراءة فقط بمجرد الانتقال إلى ملاحظة أخرى.\n\nانقر لإعادة تفعيل وضع القراءة فقط.",
+    "execute_script_description": "هذه الملاحظة هي ملاحظة سكربت. انقر لتشغيل السكربت.",
+    "execute_sql_description": "هذه الملاحظة هي ملاحظة SQL. انقر لتنفيذ استعلام SQL.",
+    "save_status_unsaved_tooltip": "هناك تغييرات غير محفوظة. سيتم حفظها تلقائيًا خلال لحظات.",
+    "read_only_explicit_description": "تم تعيين هذه الملاحظة يدويًا إلى وضع القراءة فقط.\nانقر لتحريرها مؤقتًا.",
+    "clipped_note_description": "تم أخذ هذه الملاحظة في الأصل من {{url}}.\n\nانقر للانتقال إلى صفحة الويب المصدر."
   },
   "breadcrumb": {
     "hoisted_badge": "مُفعَّل عليه التركيز",
     "hoisted_badge_title": "إلغاء التركيز",
     "workspace_badge": "مساحة العمل",
-    "create_new_note": "إنشاء ملاحظة فرعية جديدة"
+    "create_new_note": "إنشاء ملاحظة فرعية جديدة",
+    "empty_hide_archived_notes": "إخفاء الملاحظات المؤرشفة",
+    "scroll_to_top_title": "الانتقال إلى بداية الملاحظة"
   },
   "pdf": {
     "pages_loading": "تحميل...",
-    "pages_alt": "صفحة{{pageNumber}}"
+    "pages_alt": "صفحة{{pageNumber}}",
+    "attachments_zero": "{{count}} مرفق",
+    "attachments_one": "{{count}} مرفق",
+    "attachments_two": "{{count}} مرفق",
+    "attachments_few": "{{count}} مرفق",
+    "attachments_many": "{{count}} مرفق",
+    "attachments_other": "{{count}} مرفق",
+    "layers_zero": "{{count}} طبقة",
+    "layers_one": "{{count}} طبقة",
+    "layers_two": "{{count}} طبقة",
+    "layers_few": "{{count}} طبقة",
+    "layers_many": "{{count}} طبقة",
+    "layers_other": "{{count}} طبقة",
+    "pages_zero": "{{count}} صفحة",
+    "pages_one": "{{count}} صفحة",
+    "pages_two": "{{count}} صفحة",
+    "pages_few": "{{count}} صفحة",
+    "pages_many": "{{count}} صفحة",
+    "pages_other": "{{count}} صفحة",
+    "annotations_zero": "{{count}} تعليق توضيحي",
+    "annotations_one": "{{count}} تعليق توضيحي",
+    "annotations_two": "{{count}} تعليق توضيحي",
+    "annotations_few": "{{count}} تعليق توضيحي",
+    "annotations_many": "{{count}} تعليق توضيحي",
+    "annotations_other": "{{count}} تعليق توضيحي"
   },
   "bookmark_buttons": {
     "bookmarks": "الإشارات المرجعية"
@@ -1786,7 +2185,14 @@
     "menu_docs": "فتح التوثيق",
     "menu_run": "تشغيل تلقائي",
     "menu_theme_base": "قاعدة السِمة",
-    "menu_change_to_frontend_script": "التبديل إلى سكربت الواجهة الأمامية"
+    "menu_change_to_frontend_script": "التبديل إلى سكربت الواجهة الأمامية",
+    "menu_execute_now": "تنفيذ السكربت الآن",
+    "menu_change_to_widget": "التبديل إلى الودجت",
+    "toggle_tooltip_enable_tooltip": "انقر لتفعيل هذا {{type}}.",
+    "toggle_tooltip_disable_tooltip": "انقر لتعطيل هذا {{type}}.",
+    "menu_run_backend_startup": "عند بدء تشغيل الخادم الخلفي",
+    "menu_run_frontend_startup": "عند بدء تشغيل واجهة سطح المكتب",
+    "menu_run_mobile_startup": "عند بدء تشغيل واجهة الهاتف المحمول"
   },
   "media": {
     "loop": "حلقة",
@@ -1804,7 +2210,8 @@
     "fullscreen": "ملء الشاشة (F)",
     "exit-fullscreen": "الخروج من وضع ملء الشاشة",
     "zoom-to-fit": "التكبير لملء الشاشة",
-    "zoom-reset": "إعادة تعيين التكبير إلى وضع الملء"
+    "zoom-reset": "إعادة تعيين التكبير إلى وضع الملء",
+    "unsupported-format": "معاينة الوسائط غير متاحة لهذا التنسيق: {{mime}}"
   },
   "mermaid": {
     "sample_flowchart": "مخطط انسيابي",
@@ -1832,7 +2239,9 @@
     "sample_treeview": "عرض الشجرة",
     "sample_diagrams": "نماذج مخططات:",
     "sample_entity_relationship": "علاقة الكيانات",
-    "sample_user_journey": "رحلة المستخدم"
+    "sample_user_journey": "رحلة المستخدم",
+    "sample_wardley": "خريطة واردلي",
+    "placeholder": "اكتب محتوى مخطط Mermaid الخاص بك أو استخدم أحد المخططات النموذجية أدناه."
   },
   "llm_chat": {
     "send": "ارسال",
@@ -1854,7 +2263,26 @@
     "placeholder": "اكتب رسالة...",
     "searching_web": "جارٍ البحث في الويب...",
     "add_provider": "إضافة مزوّد ذكاء اصطناعي",
-    "edit_index": "تحرير {{index}} من {{total}}"
+    "edit_index": "تحرير {{index}} من {{total}}",
+    "tool_calls": "{{count}} استدعاء/استدعاءات أداة",
+    "context_used": "تم استخدام {{percentage}}٪",
+    "sources_summary": "{{count}} مصدر من {{sites}} مواقع",
+    "no_provider_message": "لم يتم إعداد مزوّد ذكاء اصطناعي. أضف مزوّدًا لبدء المحادثة.",
+    "total_tokens": "{{total}} رمزًا (Tokens)",
+    "tokens_detail": "{{prompt}} المُدخل + {{completion}} الاستجابة",
+    "note_context_enabled": "انقر لتعطيل سياق الملاحظة: {{title}}",
+    "note_context_disabled": "انقر لتضمين الملاحظة الحالية في السياق",
+    "empty_state": "ابدأ محادثة بكتابة رسالة في الأسفل.",
+    "tokens_used": "{{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens)",
+    "tokens_used_with_cost": "{{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens) (~${{cost}})",
+    "tokens_used_with_model": "{{model}}: {{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens)",
+    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens) (~${{cost}})",
+    "web_search_unavailable_gemini": "غير متاح في نماذج Gemini أثناء تفعيل الوصول إلى الملاحظات — واجهة Google البرمجية لا تسمح بدمج الاثنين معًا. عطّل الوصول إلى الملاحظات أو بدّل إلى مزود آخر لاستخدام البحث على الويب.",
+    "input_streaming": "الإدخال (تدفق مباشر…)",
+    "attach_file": "إرفاق صورة أو ملف PDF أو ملف نصي",
+    "remove_attachment": "إزالة المرفق",
+    "attachment_upload_failed": "فشل رفع \"{{name}}\".",
+    "attachment_unsupported_type": "\"{{name}}\" ليس نوع مرفق مدعومًا. استخدم صورة (PNG أو JPEG أو GIF أو WebP) أو ملف PDF أو ملف نصي/كود."
   },
   "llm": {
     "provider_name": "اسم",
@@ -1872,13 +2300,39 @@
       "get_note_content": "الحصول على محتوى الملاحظة",
       "append_to_note": "إضافة إلى الملاحظة",
       "get_child_notes": "الحصول على الملاحظات الفرعية",
-      "get_attachment_content": "قراءة محتوى المرفق"
+      "get_attachment_content": "قراءة محتوى المرفق",
+      "get_attributes": "الحصول على السمات",
+      "get_attribute": "الحصول على السمة",
+      "set_attribute": "تعيين سمة",
+      "delete_attribute": "حذف السمة",
+      "get_subtree": "الحصول على الشجرة الفرعية",
+      "load_skill": "تحميل المهارة",
+      "web_search": "بحث الويب",
+      "get_attachment": "الحصول على المرفق",
+      "rename_note": "إعادة تسمية الملاحظة",
+      "delete_note": "حذف الملاحظة",
+      "move_note": "نقل الملاحظة",
+      "clone_note": "استنساخ الملاحظة",
+      "set_note_content": "إعادة كتابة الملاحظة",
+      "edit_note_content": "تحرير الملاحظة",
+      "get_note": "الحصول على الملاحظة",
+      "update_note_content": "إعادة كتابة الملاحظة",
+      "create_note": "إنشاء ملاحظة",
+      "note_in_parent": "‎<Note/> في ‎<Parent/>‎"
     },
     "settings_title": "الذكاء الاصطناعي / نموذج اللغة الكبير",
     "add_provider_title": "إضافة مزوّد ذكاء اصطناعي",
     "no_providers_configured": "لم يتم إعداد أي مزوّدين بعد.",
     "api_key_placeholder": "أدخل مفتاح API الخاص بك",
-    "mcp_title": "بروتوكول سياق النموذج (MCP)"
+    "mcp_title": "بروتوكول سياق النموذج (MCP)",
+    "base_url": "عنوان URL الأساسي",
+    "mcp_endpoint_description": "إضافة هذا الرابط إلى إعدادات MCP الخاصة بمساعد الذكاء الاصطناعي",
+    "delete_provider_confirmation": "هل أنت متأكد أنك تريد حذف مزوّد الخدمة \"{{name}}\"؟",
+    "base_url_invalid": "يجب أن يكون الرابط الأساسي (Base URL) رابطًا صالحًا يبدأ بـ http:// أو https://",
+    "feature_not_enabled": "قم بتمكين ميزة LLM التجريبية من خلال: الإعدادات → متقدم → الميزات التجريبية لاستخدام تكاملات الذكاء الاصطناعي.",
+    "base_url_description": "اختياري. يمكنك تجاوز نقطة نهاية الـ API الافتراضية — وهو مفيد للنماذج المستضافة محليًا (مثل Ollama أو LM Studio أو vLLM) أو عند استخدام بروكسي.",
+    "mcp_enabled_description": "إتاحة نقطة نهاية بروتوكول سياق النموذج (Model Context Protocol - MCP) بحيث يمكن لمساعدي البرمجة بالذكاء الاصطناعي (مثل Claude Code و GitHub Copilot) قراءة وتعديل ملاحظاتك. تكون نقطة النهاية متاحة فقط من localhost.",
+    "settings_description": "تكوين تكاملات الذكاء الاصطناعي ونماذج اللغة الكبيرة (LLM)."
   },
   "markdown_editor": {
     "image_upload_failed": "لا يمكن رفع الصورة \"{{name}}\"."
@@ -1911,7 +2365,8 @@
     "moveUp": "تحريك للأعلى",
     "moveDown": "تحريك للاسفل",
     "linkBidirectional": "رابط ثنائي الاتجاه",
-    "cancelFocus": "إلغاء وضع التركيز"
+    "cancelFocus": "إلغاء وضع التركيز",
+    "clickTips": "يرجى النقر على العقدة المستهدفة"
   },
   "ocr": {
     "processing": "جارٍ المعالجة...",
@@ -1921,18 +2376,28 @@
     "loading_text": "جارٍ تحميل نص OCR...",
     "processing_complete": "اكتمل معالجة OCR.",
     "no_text_available": "لا يوجد نص OCR متاح",
-    "view_extracted_text": "عرض النص المستخرج (OCR)"
+    "view_extracted_text": "عرض النص المستخرج (OCR)",
+    "open_media_settings": "فتح الإعدادات",
+    "failed_to_load": "فشل تحميل نص التعرف الضوئي على الحروف (OCR)",
+    "processing_failed": "فشل بدء معالجة التعرف الضوئي على الحروف (OCR)",
+    "no_text_explanation": "لم تتم معالجة هذه الملاحظة لاستخراج نص OCR أو لم يتم العثور على نص.",
+    "text_filtered_low_confidence": "تم اكتشاف نص عبر OCR بنسبة ثقة {{confidence}}٪، لكن تم تجاهله لأن الحد الأدنى المطلوب هو {{threshold}}٪.",
+    "image_based_pdf_not_supported": "يبدو أن هذا ملف PDF قائم على الصور (ممسوح ضوئيًا). استخراج النص من ملفات PDF المصوّرة غير مدعوم حاليًا.",
+    "processing_started": "بدأت معالجة التعرف الضوئي على الحروف (OCR). يرجى الانتظار قليلًا ثم تحديث الصفحة."
   },
   "search": {
     "title": "بحث",
     "fuzzy_matching_label": "تحمّل الأخطاء الإملائية في البحث",
-    "autocomplete_fuzzy_label": "تحمّل الأخطاء الإملائية في الإكمال التلقائي"
+    "autocomplete_fuzzy_label": "تحمّل الأخطاء الإملائية في الإكمال التلقائي",
+    "autocomplete_fuzzy_description": "يؤثر على الانتقال إلى الملاحظة ومحددات الملاحظات. أبطأ لكنه يتسامح مع الأخطاء الإملائية.",
+    "fuzzy_matching_description": "يؤثر على البحث السريع والبحث الكامل. يقوم بالعثور على كلمات مشابهة عندما لا تكون هناك نتائج مطابقة تمامًا."
   },
   "database": {
     "title": "قاعدة بيانات"
   },
   "text_editor": {
-    "title": "محرر"
+    "title": "محرر",
+    "related_task_states": "حالات مربعات اختيار مخصصة لقوائم المهام (To-do lists)"
   },
   "status_bar": {
     "tab_width_style_spaces": "المسافات",
@@ -1947,7 +2412,47 @@
     "backlinks_title_two": "عرض الرابطان الخلفيان",
     "backlinks_title_few": "عرض الروابط الخلفية",
     "backlinks_title_many": "عرض رابط الخلفي",
-    "backlinks_title_other": "عرض رابط خلفي"
+    "backlinks_title_other": "عرض رابط خلفي",
+    "tab_width_spaces": "{{count}} مسافات",
+    "tab_width_spaces_short": "مسافات: {{width}}",
+    "tab_width_tabs": "تبويبات: {{width}}",
+    "tab_width_display_header": "عرض العرض",
+    "tab_width_style_header": "استخدام المسافة البادئة بواسطة",
+    "language_title": "تغيير لغة المحتوى",
+    "code_note_switcher": "تغيير وضع اللغة",
+    "tab_width": "عرض التبويب: {{width}}",
+    "attributes_title": "السمات المملوكة والسمات الموروثة",
+    "note_info_title": "عرض معلومات الملاحظة (مثل التواريخ وحجم الملاحظة)",
+    "attachments_title_zero": "عرض المرفق في علامة تبويب جديدة",
+    "attachments_title_one": "عرض المرفق في علامة تبويب جديدة",
+    "attachments_title_two": "عرض المرفق في علامة تبويب جديدة",
+    "attachments_title_few": "عرض المرفقات في علامة تبويب جديدة",
+    "attachments_title_many": "عرض المرفق في علامة تبويب جديدة",
+    "attachments_title_other": "عرض المرفق في علامة تبويب جديدة",
+    "backlinks_zero": "{{count}} رابط خلفي",
+    "backlinks_one": "{{count}} رابط خلفي",
+    "backlinks_two": "{{count}} رابط خلفي",
+    "backlinks_few": "{{count}} رابط خلفي",
+    "backlinks_many": "{{count}} رابط خلفي",
+    "backlinks_other": "{{count}} رابط خلفي",
+    "attachments_zero": "{{count}} مرفق",
+    "attachments_one": "{{count}} مرفق",
+    "attachments_two": "{{count}} مرفق",
+    "attachments_few": "{{count}} مرفق",
+    "attachments_many": "{{count}} مرفق",
+    "attachments_other": "{{count}} مرفق",
+    "attributes_zero": "{{count}} سِمة",
+    "attributes_one": "{{count}} سِمة",
+    "attributes_two": "{{count}} سِمة",
+    "attributes_few": "{{count}} سِمة",
+    "attributes_many": "{{count}} سِمة",
+    "attributes_other": "{{count}} سِمة",
+    "note_paths_zero": "{{count}} مسار",
+    "note_paths_one": "{{count}} مسار",
+    "note_paths_two": "{{count}} مسار",
+    "note_paths_few": "{{count}} مسار",
+    "note_paths_many": "{{count}} مسار",
+    "note_paths_other": "{{count}} مسار"
   },
   "print_preview": {
     "close": "اغلاق",
@@ -1973,10 +2478,17 @@
     "export_pdf": "تصدير كملف PDF",
     "destination_pdf": "حفظ كملف PDF",
     "page_ranges_placeholder": "مثال: 1-5، 8، 11-13",
-    "system_print": "الطباعة باستخدام مربع حوار النظام"
+    "system_print": "الطباعة باستخدام مربع حوار النظام",
+    "title": "معاينة الطباعة",
+    "page_size": "حجم الصفحة",
+    "page_ranges_hint": "اتركه فارغًا لطباعة جميع الصفحات.",
+    "page_ranges_invalid": "تنسيق غير صالح. استخدم مثلًا: 1-5، 8، 11-13.",
+    "render_error": "تعذّر عرض ملف PDF بالإعدادات الحالية. يرجى التحقق من الهوامش ومقياس العرض."
   },
   "display_mode": {
-    "preview": "معاينة"
+    "preview": "معاينة",
+    "source": "عرض المصدر",
+    "split": "عرض مقسوم"
   },
   "common": {
     "save": "حفظ",
@@ -1985,7 +2497,15 @@
   "mobile_note_navigator": {
     "loading": "جار التحميل...",
     "add_child": "إضافة ملاحظة فرعية",
-    "back": "الانتقال مستوى واحد للأعلى"
+    "back": "الانتقال مستوى واحد للأعلى",
+    "more_actions": "إجراءات إضافية",
+    "empty": "هذه الملاحظة لا تحتوي على ملاحظات فرعية.",
+    "children_count_zero": "{{count}} ملاحظة",
+    "children_count_one": "{{count}} ملاحظة",
+    "children_count_two": "{{count}} ملاحظة",
+    "children_count_few": "{{count}} ملاحظة",
+    "children_count_many": "{{count}} ملاحظة",
+    "children_count_other": "{{count}} ملاحظة"
   },
   "setup": {
     "next": "التالي",
@@ -2011,47 +2531,100 @@
     "init-in-progress": "جارٍ تهيئة المستند",
     "create-new-document-title": "جارٍ تجهيز قاعدة المعرفة الخاصة بك",
     "sync-failed": "فشل المزامنة: {{message}}",
-    "your-ip-addresses": "عناوين هذا الجهاز"
+    "your-ip-addresses": "عناوين هذا الجهاز",
+    "button-finish-setup": "إنهاء الإعداد",
+    "sync-step-syncing": "جارٍ مزامنة البيانات",
+    "sync-illustration-this-device": "هذا الجهاز",
+    "sync-illustration-server": "الخادم الخاص بك",
+    "advanced-options": "خيارات متقدمة",
+    "dismiss-error": "تجاهل الخطأ",
+    "sync-from-server": "الاتصال بخادم موجود",
+    "create-new-document-options-with-demo-description": "‍استكشاف Trilium Notes بمحتوى تجريبي.",
+    "wrong-password": "كلمة مرور غير صحيحة. يرجى المحاولة مرة أخرى.",
+    "redirecting": "سيتم توجيهك إلى التطبيق قريبًا",
+    "sync-from-desktop-step3": "انقر على فئة المزامنة في شجرة الملاحظات.",
+    "sync-from-desktop-warning": "تأكد من أن كلا الجهازين على نفس الشبكة.",
+    "new-document-description": "ابدأ بقاعدة معرفة نظيفة وابدأ فورًا.",
+    "sync-from-server-page-description": "أدخل تفاصيل الخادم أدناه للاتصال بمساحة العمل الحالية لديك.",
+    "sync-in-progress-description": "تم توصيل جهازك الآن وبدأت العناصر بالمزامنة.",
+    "sync-from-desktop-step5": "انقر على زر \"اختبار المزامنة\" للتحقق من نجاح الاتصال.",
+    "sync-from-desktop-step4": "قم بتغيير عنوان خادم النسخة للإشارة إلى أحد العناوين الموجودة على اليمين، ثم انقر على حفظ.",
+    "sync-from-desktop-description": "لديك فقط تطبيق Trilium Notes على سطح المكتب يعمل على جهاز آخر. سيقوم هذا الجهاز بمزامنة بياناته من تطبيق سطح المكتب ذلك.",
+    "sync-from-server-description": "لديك خادم Trilium Notes يعمل في مكان آخر (سواء كان مستضافًا ذاتيًا أو على السحابة). سيقوم هذا الجهاز بمزامنة بياناته من ذلك الخادم.",
+    "sync-in-progress-banner": "قد يستغرق هذا بعض الوقت حسب حجم ملاحظاتك. يُرجى عدم الانتقال إلى تطبيق آخر حتى تكتمل المزامنة.",
+    "create-new-document-options-title": "كيف ترغب في البدء؟",
+    "create-new-document-description": "هذا سيستغرق لحظات فقط.",
+    "sync-from-desktop-step2": "من قائمة Trilium Notes، انقر على \"الخيارات\".",
+    "sync-from-desktop-step1": "افتح نسخة سطح المكتب من Trilium Notes.",
+    "proxy-instruction": "إذا تركت إعدادات الوكيل فارغة، سيتم استخدام وكيل النظام.",
+    "create-new-document-options-empty-description": "ابدأ بقاعدة معرفة فارغة. يمكنك استيراد الملاحظات التجريبية لاحقًا."
   },
   "calendar_view": {
     "delete_note": "جار حذف الملاحظة..."
   },
   "read-only-info": {
-    "edit-note": "تحرير الملاحظة"
+    "edit-note": "تحرير الملاحظة",
+    "read-only-note": "أنت حاليًا تعرض ملاحظة للقراءة فقط.",
+    "auto-read-only-note": "هذه الملاحظة معروضة في وضع القراءة فقط لتحميل أسرع."
   },
   "code_mime_types": {
     "tooltip_syntax_highlighting": "تلوين بناء الجمل",
-    "tooltip_code_note_syntax": "ملاحظات الكود"
+    "tooltip_code_note_syntax": "ملاحظات الكود",
+    "tooltip_code_block_syntax": "كتل الكود في الملاحظات النصية",
+    "title": "أنواع MIME المتاحة في القائمة المنسدلة"
   },
   "experimental_features": {
     "title": "الخيارات التجريبية",
     "new_layout_name": "تخطيط جديد",
-    "llm_name": "دردشة الذكاء الاصطناعي / نموذج اللغة الكبير"
+    "llm_name": "دردشة الذكاء الاصطناعي / نموذج اللغة الكبير",
+    "new_layout_description": "جرّب التخطيط الجديد للحصول على مظهر أكثر حداثة وتحسين في سهولة الاستخدام. قد يخضع لتغييرات كبيرة في الإصدارات القادمة.",
+    "disclaimer": "هذه الخيارات تجريبية وقد تسبب عدم استقرار. استخدمها بحذر.",
+    "llm_description": "تفعيل الشريط الجانبي للدردشة بالذكاء الاصطناعي وملاحظات الدردشة المعتمدة على نماذج اللغة الكبيرة (LLMs)."
   },
   "settings_appearance": {
     "ui": "واجهة المستخدم",
     "ui_old_layout": "التخطيط القديم",
     "ui_new_layout": "التخطيط الجديد",
-    "ui_layout_orientation": "اتجاه شريط الإطلاق"
+    "ui_layout_orientation": "اتجاه شريط الإطلاق",
+    "ui_layout_style": "نمط التخطيط",
+    "related_code_notes": "نظام ألوان لملاحظات الكود",
+    "related_code_blocks": "نظام الألوان لمقاطع الشيفرة في الملاحظات النصية"
   },
   "attributes_panel": {
     "title": "خصائص الملاحظة"
   },
   "sql_result": {
     "statement_result": "نتيجة الاستعلام",
-    "execute_now": "تنفيذ الآن"
+    "execute_now": "تنفيذ الآن",
+    "failed": "فشل تنفيذ استعلام SQL",
+    "not_executed": "لم يتم تنفيذ الاستعلام بعد.",
+    "no_rows": "لم يتم إرجاع أي صفوف لهذا الاستعلام"
   },
   "mobile_tab_switcher": {
-    "more_options": "مزيد من الخيارات"
+    "more_options": "مزيد من الخيارات",
+    "title_zero": "{{count}} تبويب",
+    "title_one": "{{count}} تبويب",
+    "title_two": "{{count}} تبويب",
+    "title_few": "{{count}} تبويب",
+    "title_many": "{{count}} تبويب",
+    "title_other": "{{count}} تبويب"
   },
   "web_view_setup": {
-    "invalid_url_title": "عنوان غير صالح"
+    "invalid_url_title": "عنوان غير صالح",
+    "create_button": "إنشاء عرض ويب",
+    "disabled_button_enable": "تفعيل عرض الويب",
+    "url_placeholder": "أدخل أو الصق عنوان الموقع، على سبيل المثال https://triliumnotes.org",
+    "title": "إنشاء عرض مباشر لصفحة ويب مباشرة داخل Trilium Notes",
+    "disabled_description": "تم استيراد عرض الويب هذا من مصدر خارجي. ولحمايتك من التصيّد أو المحتوى الضار، لن يتم تحميله تلقائيًا. يمكنك تفعيله إذا كنت تثق بالمصدر.",
+    "invalid_url_message": "أدخل عنوان ويب صحيح، مثل: https://triliumnotes.org."
   },
   "setup_form": {
     "more_info": "تعرف على المزيد"
   },
   "search_result": {
-    "search_now": "ابحث الآن"
+    "search_now": "ابحث الآن",
+    "search_not_executed": "لم يتم تنفيذ البحث بعد.",
+    "no_notes_found": "لم يتم العثور على أي ملاحظات تطابق معايير البحث المحددة."
   },
   "sidebar_chat": {
     "title": "دردشة الذكاء الاصطناعي",
@@ -2061,28 +2634,136 @@
     "new_chat": "بدء محادثة جديدة",
     "empty_state": "بدء محادثة",
     "no_chats": "لا توجد محادثات سابقة",
-    "save_chat": "حفظ المحادثة في الملاحظات"
+    "save_chat": "حفظ المحادثة في الملاحظات",
+    "view_all_chats": "عرض جميع المحادثات"
   },
   "text-editor": {
     "edit-states-tooltip": "تعديل حالات المهام",
     "validation-errors": {
-      "duplicate-symbol": "رمز Markdown مكرر"
+      "duplicate-symbol": "رمز Markdown مكرر",
+      "undefined-name": "معرّف غير مُعرّف",
+      "invalid-name": "معرّف غير صالح",
+      "duplicate-name": "معرّف مكرر",
+      "missing-title": "العنوان مفقود",
+      "missing-icon": "الأيقونة مفقودة",
+      "invalid-symbol": "يجب أن يكون رمز Markdown عبارة عن حرف واحد، باستثناء \"[\", \" \", \"X\", و \"]\""
     },
-    "unknown-task-state": "حالة مهمة مخصصة غير مُعرّفة"
+    "unknown-task-state": "حالة مهمة مخصصة غير مُعرّفة",
+    "task-state-dropped": "تم تجاهل تعريف حالة المهمة المخصصة \"{{title}}\" ({{id}}) بسبب: {{reason}}",
+    "checkbox-tooltip": "انقر بزر الفأرة الأيمن لمزيد من حالات المهمة.\nاضغط {{shortcut}} للتنقل بين الحالات."
   },
   "note-color": {
-    "set-custom-color": "تعيين لون مخصص للملاحظة"
+    "set-custom-color": "تعيين لون مخصص للملاحظة",
+    "clear-color": "مسح لون الملاحظة",
+    "set-color": "تعيين لون الملاحظة"
   },
   "popup-editor": {
     "maximize": "التبديل إلى المحرر الكامل"
   },
   "right_pane": {
-    "custom_widget_go_to_source": "الانتقال إلى الشيفرة المصدرية"
+    "custom_widget_go_to_source": "الانتقال إلى الشيفرة المصدرية",
+    "empty_button": "إخفاء اللوحة",
+    "toggle": "تبديل اللوحة اليمنى",
+    "empty_message": "لا يوجد ما يمكن عرضه لهذه الملاحظة"
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "إزالة من شريط التشغيل"
   },
   "spreadsheet": {
     "read-only": "هذه الملاحظة للقراءة فقط."
+  },
+  "revisions_snapshot": {
+    "title": "إصدارات الملاحظة"
+  },
+  "auto_link_attribute_list": {
+    "title": "سمات النظام"
+  },
+  "platform_indicator": {
+    "available_on": "متاح على {{platform}}"
+  },
+  "render": {
+    "disabled_button_enable": "تفعيل عرض الملاحظة",
+    "setup_create_sample_preact": "إنشاء ملاحظة نموذجية باستخدام Preact",
+    "setup_create_sample_html": "إنشاء ملاحظة نموذجية باستخدام HTML",
+    "setup_title": "عرض HTML مخصص أو JSX باستخدام Preact داخل هذه الملاحظة",
+    "setup_sample_created": "تم إنشاء ملاحظة نموذجية كملاحظة فرعية.",
+    "disabled_description": "تأتي هذه الملاحظات المعروضة من مصدر خارجي. ولحمايتك من المحتوى الضار، فهي غير مفعّلة افتراضيًا. تأكد من أنك تثق بالمصدر قبل تفعيلها."
+  },
+  "zoom_factor": {
+    "title": "عامل التكبير (إصدار سطح المكتب فقط)",
+    "description": "‍يمكن أيضًا التحكم بالتكبير والتصغير باستخدام الاختصارين ‎CTRL+-‎ و‎CTRL+=‎."
+  },
+  "wrap_lines": {
+    "wrap_lines_in_code_notes": "تغليف الأسطر في ملاحظات الكود",
+    "enable_line_wrap": "تفعيل التفاف الأسطر (قد يتطلب تطبيق التغيير إعادة تحميل الواجهة الأمامية)"
+  },
+  "note_create": {
+    "duplicated": "تم تكرار الملاحظة \"{{title}}\"."
+  },
+  "help-button": {
+    "title": "فتح صفحة المساعدة ذات الصلة"
+  },
+  "server": {
+    "unknown_http_error_title": "خطأ في الاتصال مع الخادم",
+    "traefik_blocks_requests": "إذا كنت تستخدم الخادم العكسي Traefik، فقد تم إدخال تغيير غير متوافق يؤثر على الاتصال مع الخادم.",
+    "unknown_http_error_content": "رمز الحالة: {{statusCode}}\nالرابط: {{method}} {{url}}\nالرسالة: {{message}}"
+  },
+  "tab_history_navigation_buttons": {
+    "go-back": "العودة إلى الملاحظة السابقة",
+    "go-forward": "الانتقال إلى الملاحظة التالية"
+  },
+  "note_launcher": {
+    "this_launcher_doesnt_define_target_note": "هذا المشغّل لا يحدد الملاحظة المستهدفة."
+  },
+  "link": {
+    "failed_to_open": "فشل فتح الرابط '{{- href}}': {{- message}}"
+  },
+  "time_selector": {
+    "invalid_input": "القيمة الزمنية المُدخلة ليست رقمًا صالحًا.",
+    "minimum_input": "الوقت المُدخل يجب أن يكون على الأقل {{minimumSeconds}} ثانية."
+  },
+  "sync_status": {
+    "unknown": "<p>سيتم معرفة حالة المزامنة عند بدء محاولة المزامنة التالية.</p><p>انقر لبدء المزامنة الآن.</p>",
+    "connected_with_changes": "<p>تم الاتصال بخادم المزامنة. <br>هناك بعض التغييرات التي لم تتم مزامنتها بعد.</p><p>انقر لبدء المزامنة.</p>",
+    "disconnected_no_changes": "<p>فشل إنشاء الاتصال بخادم المزامنة.<br>تمت مزامنة جميع التغييرات المعروفة.</p><p>انقر لبدء المزامنة.</p>",
+    "disconnected_with_changes": "<p>فشل إنشاء الاتصال بخادم المزامنة.<br>هناك بعض التغييرات التي لم تتم مزامنتها بعد.</p><p>انقر لبدء المزامنة.</p>",
+    "connected_no_changes": "<p>تم الاتصال بخادم المزامنة.<br>تمت مزامنة جميع التغييرات بالفعل.</p><p>انقر لبدء المزامنة.</p>",
+    "in_progress": "جارٍ المزامنة مع الخادم."
+  },
+  "app_context": {
+    "please_wait_for_save": "يرجى الانتظار لبضع ثوانٍ حتى يكتمل الحفظ، ثم يمكنك المحاولة مرة أخرى."
+  },
+  "image": {
+    "copied-to-clipboard": "تم نسخ مرجع الصورة إلى الحافظة. يمكنك لصقه في أي ملاحظة نصية.",
+    "cannot-copy": "تعذر نسخ مرجع الصورة إلى الحافظة."
+  },
+  "hoisted_note": {
+    "confirm_unhoisting": "الملاحظة المطلوبة '{{requestedNote}}' تقع خارج الشجرة الفرعية للملاحظة المثبّتة '{{hoistedNote}}'، ويجب إلغاء التثبيت للوصول إليها. هل تريد المتابعة وإلغاء التثبيت؟"
+  },
+  "frontend_script_api": {
+    "async_warning": "أنت تقوم بتمرير دالة غير متزامنة (async) إلى ‎api.runOnBackend()‎، وهذا على الأرجح لن يعمل كما هو متوقع\nإما أن تجعل الدالة متزامنة (عن طريق إزالة كلمة ‎async‎)، أو تستخدم ‎api.runAsyncOnBackendWithManualTransactionHandling()‎.",
+    "sync_warning": "أنت تقوم بتمرير دالة متزامنة إلى api.runAsyncOnBackendWithManualTransactionHandling()، بينما يُحتمل أنه يجب عليك استخدام api.runOnBackend() بدلًا من ذلك."
+  },
+  "onclick_button": {
+    "no_click_handler": "أداة الزر \"{{componentId}}\" لا تحتوي على معالج نقر (click handler) محدد."
+  },
+  "copy_image_reference_button": {
+    "button_title": "نسخ مرجع الصورة إلى الحافظة، ويمكن لصقه في ملاحظة نصية."
+  },
+  "shared_info": {
+    "shared_publicly": "هذه الملاحظة مُشارَكة بشكل عام على {{- link}}.",
+    "help_link": "للمساعدة، قم بزيارة <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">الويكي</a>.",
+    "shared_locally": "هذه الملاحظة مشتركة محليًا على {{- link}}."
+  },
+  "switch_layout_button": {
+    "title_vertical": "نقل لوحة التحرير إلى الأسفل",
+    "title_horizontal": "نقل لوحة التحرير إلى اليسار"
+  },
+  "svg": {
+    "export_to_png": "تعذّر تصدير المخطط إلى صيغة PNG.",
+    "export_to_svg": "تعذّر تصدير المخطط إلى صيغة SVG."
+  },
+  "collections": {
+    "rendering_error": "تعذّر عرض المحتوى بسبب خطأ."
   }
 }

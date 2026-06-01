@@ -1,4 +1,4 @@
-import { BootstrapDefinition } from "@triliumnext/commons";
+import { BootstrapDefinition, ElectronApi, ElectronContextMenuParams } from "@triliumnext/commons";
 
 import appContext, { AppContext } from "./components/app_context";
 import type FNote from "./entities/fnote";
@@ -56,7 +56,10 @@ declare global {
             isNativePlatform?: () => boolean;
             getPlatform?: () => string;
         };
+
+        electronApi?: ElectronApi;
     }
+
 
     interface WindowEventMap {
         "note-ready": Event;
@@ -104,7 +107,6 @@ declare global {
     var glob: CustomGlobals;
     //@ts-ignore
     var require: RequireMethod;
-    var __non_webpack_require__: RequireMethod | undefined;
 
     /*
      * Panzoom

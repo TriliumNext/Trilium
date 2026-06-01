@@ -197,7 +197,8 @@
         "title": "مصادر",
         "icon_packs": "حِزم الأيقونات",
         "download": "تنزيل",
-        "website": "موقغ الويب"
+        "website": "موقغ الويب",
+        "icon_packs_intro": "وسّع مجموعة الأيقونات المتاحة لملاحظاتك باستخدام حزمة أيقونات. لمزيد من المعلومات حول حزم الأيقونات، راجع <DocumentationLink>التوثيق الرسمي</DocumentationLink>."
     },
     "header": {
         "get-started": "ابدأ",

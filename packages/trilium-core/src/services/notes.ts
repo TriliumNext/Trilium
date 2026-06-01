@@ -1,5 +1,4 @@
 import { type AttachmentRow, type AttributeRow, type BranchRow, dayjs, type NoteRow, type NoteType } from "@triliumnext/commons";
-import fs from "fs";
 import html2plaintext from "html2plaintext";
 import { t } from "i18next";
 import url from "url";
@@ -20,6 +19,7 @@ import noteTypesService from "./note_types.js";
 import optionService from "./options.js";
 import request from "./request.js";
 import revisionService from "./revisions.js";
+import { evaluateTemplateSafe } from "./safe_template.js";
 import { sanitizeHtml } from "./sanitizer.js";
 import { getSql } from "./sql/index.js";
 import type TaskContext from "./task_context.js";
@@ -147,17 +147,17 @@ function getNewNoteTitle(parentNote: BNote) {
     const titleTemplate = parentNote.getLabelValue("titleTemplate");
 
     if (titleTemplate !== null) {
-        try {
-            const now = dayjs(date_utils.localNowDateTime() || new Date());
+        const now = dayjs(date_utils.localNowDateTime() || new Date());
 
-            // "officially" injected values:
-            // - now
-            // - parentNote
-
-            title = eval(`\`${titleTemplate}\``);
-        } catch (e: any) {
-            getLog().error(`Title template of note '${parentNote.noteId}' failed with: ${e.message}`);
-        }
+        // "officially" injected values:
+        // - now
+        // - parentNote
+        title = evaluateTemplateSafe(
+            titleTemplate,
+            { now, parentNote },
+            title,
+            `titleTemplate of note '${parentNote.noteId}'`
+        );
     }
 
     // this isn't in theory a good place to sanitize title, but this will catch a lot of XSS attempts.
@@ -699,24 +699,20 @@ const imageUrlToAttachmentIdMapping: Record<string, string> = {};
 async function downloadImage(noteId: string, imageUrl: string) {
     const unescapedUrl = unescapeHtml(imageUrl);
 
+    // SSRF protection: only allow http(s) URLs and block file:// and other schemes.
     try {
-        let imageBuffer: Uint8Array;
-
-        if (imageUrl.toLowerCase().startsWith("file://")) {
-            imageBuffer = await new Promise((res, rej) => {
-                const localFilePath = imageUrl.substring("file://".length);
-
-                return fs.readFile(localFilePath, (err, data) => {
-                    if (err) {
-                        rej(err);
-                    } else {
-                        res(data);
-                    }
-                });
-            });
-        } else {
-            imageBuffer = new Uint8Array(await request.getImage(unescapedUrl));
+        const parsed = new URL(unescapedUrl);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+            getLog().error(`Download of '${imageUrl}' for note '${noteId}' rejected: only http/https URLs are allowed.`);
+            return;
         }
+    } catch {
+        getLog().error(`Download of '${imageUrl}' for note '${noteId}' rejected: invalid URL.`);
+        return;
+    }
+
+    try {
+        const imageBuffer = new Uint8Array(await request.getImage(unescapedUrl));
 
         const parsedUrl = url.parse(unescapedUrl);
         const title = basename(parsedUrl.pathname || "");

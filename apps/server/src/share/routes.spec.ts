@@ -3,6 +3,7 @@ import supertest from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { safeExtractMessageAndStackFromError } from "../services/utils.js";
+import config from "../services/config.js";
 
 let app: Application;
 
@@ -40,12 +41,19 @@ describe("Share API test", () => {
     });
 
     it("renders custom share template", async () => {
-        const response = await supertest(app)
-            .get("/share/pQvNLLoHcMwH")
-            .expect(200);
-        expect(cannotSetHeadersCount).toBe(0);
-        expect(response.text).toContain("Content Start");
-        expect(response.text).toContain("Content End");
+        // Custom EJS templates require scripting to be enabled
+        const originalEnabled = config.Security.backendScriptingEnabled;
+        config.Security.backendScriptingEnabled = true;
+        try {
+            const response = await supertest(app)
+                .get("/share/pQvNLLoHcMwH")
+                .expect(200);
+            expect(cannotSetHeadersCount).toBe(0);
+            expect(response.text).toContain("Content Start");
+            expect(response.text).toContain("Content End");
+        } finally {
+            config.Security.backendScriptingEnabled = originalEnabled;
+        }
     });
 
 });

@@ -129,6 +129,8 @@ For rendering custom content inside a note:
 
 IMPORTANT: Always create the JSX code note as a child of the render note, not as a sibling or at the root. This keeps them organized together.
 
+Stateless example:
+
 ```jsx
 export default function MyRenderNote() {
     return (
@@ -138,6 +140,44 @@ export default function MyRenderNote() {
         </>
     );
 }
+```
+
+Stateful example — hooks MUST be imported from `"trilium:preact"`:
+
+```jsx
+import { useState } from "trilium:preact";
+
+export default function CelsiusToFahrenheit() {
+    const [celsius, setCelsius] = useState("");
+    const fahrenheit = celsius === "" ? "" : (Number(celsius) * 9 / 5 + 32).toFixed(2);
+    return (
+        <div>
+            <input
+                type="number"
+                value={celsius}
+                onInput={e => setCelsius(e.currentTarget.value)}
+            />
+            <span>{fahrenheit} °F</span>
+        </div>
+    );
+}
+```
+
+### Anti-patterns (do NOT do this)
+
+LLMs often invent syntax that does not exist in Trilium. Avoid these:
+
+- ❌ `trilium.preact.useState(...)` — `trilium` is not a global object; there is no `trilium.preact` namespace
+- ❌ `window.trilium.preact.useState(...)` — same; no such global
+- ❌ `React.useState(...)` / `import React from "react"` — Trilium uses Preact, NOT React
+- ❌ `const { useState } = await import("trilium:preact")` — dynamic imports break hooks; always use top-level `import`
+- ❌ `const { useState } = require("trilium:preact")` — JSX notes are ES modules, not CommonJS
+
+The ONLY correct way to use hooks or components is a top-level ES `import`:
+
+```jsx
+import { useState, useEffect } from "trilium:preact";
+import { showMessage } from "trilium:api";
 ```
 
 ## Script API
@@ -207,6 +247,83 @@ Available via `getNote()`, `getActiveContextNote()`, `useNoteContext()`, etc.
 - `note.getAttributes(type?, name?)` - all attributes (including inherited)
 - `note.getOwnedAttributes(type?, name?)` - only owned attributes
 - `note.hasAttribute(type, name)` - check for attribute
+
+## Electron API (desktop only)
+
+Desktop-only functionality is exposed on `window.electronApi` by the preload script. It is **not** part of the `api` global. The global is `undefined` in the browser/server build and in the standalone (WASM) build, so always guard usage.
+
+```jsx
+if (window.electronApi) {
+    window.electronApi.window.setZoomFactor(1.2);
+}
+```
+
+Use optional chaining for one-off calls: `window.electronApi?.window.minimizeWindow()`.
+
+### Groups
+
+| Group | What it covers |
+|---|---|
+| `window` | Zoom, theme, title bar, full screen, lifecycle, devtools, extra windows, global shortcut + open-in-tab events |
+| `clipboard` | `copyImageToClipboard(buffer)` for raw PNG bytes |
+| `shell` | `openExternal`, `openPath`, `openFileUrl`, `downloadURL`, `openCustom` — all validated in main process |
+| `contextMenu` | Subscribe to right-click events, dispatch cut/copy/paste/insertText |
+| `spellcheck` | `addWordToDictionary`, `getAvailableSpellCheckerLanguages` |
+| `tray` | `reloadTray()` |
+| `printing` | PDF export/preview/save, printer list, print progress events |
+| `navigation` | Back/forward history accessors and navigation events |
+
+### Common examples
+
+```js
+// Open a URL in the user's default browser
+window.electronApi?.shell.openExternal("https://example.com");
+
+// Toggle full screen
+const api = window.electronApi;
+if (api) api.window.setFullScreen(!api.window.isFullScreen());
+
+// Read & adjust zoom
+const zoom = window.electronApi?.window.getZoomFactor() ?? 1;
+window.electronApi?.window.setZoomFactor(zoom + 0.1);
+
+// React to global shortcuts (configured in Trilium options)
+window.electronApi?.window.onGlobalShortcut((actionName) => {
+    console.log("shortcut fired:", actionName);
+});
+
+// Copy a PNG to the clipboard
+const bytes = new Uint8Array(await blob.arrayBuffer());
+window.electronApi?.clipboard.copyImageToClipboard(bytes);
+```
+
+### Security notes (shell group)
+
+Every `shell.*` call is validated in the main process and will throw on invalid input — the renderer is treated as untrusted:
+
+- `openExternal(url)`: scheme is allowlisted. `file:`, `data:`, `smb:`, `ldap:`/`ldaps:`, `jar:`, `view-source:`, and Follina-class schemes are blocked.
+- `openPath(path)`: must resolve under the Trilium data dir or tmp dir. Returns an empty string on success, an error message on failure.
+- `openFileUrl(fileUrl)`: handles user-clicked `file:` links inside notes; resolves to any local path (no data/tmp sandbox — these links routinely point at arbitrary user documents). UNC `file://host/share` URLs are blocked (NTLM-leak prevention). Returns an empty string on success, an error message on failure.
+- `downloadURL(url)`: pinned to the app's own origin — cross-origin downloads are rejected.
+- `openCustom(filePath)`: must be a descendant of the tmp dir and the file must exist.
+
+### Cross-build patterns
+
+Because `window.electronApi` is missing outside desktop, write code that degrades:
+
+```jsx
+import { showMessage } from "trilium:api";
+
+function openInBrowser(url) {
+    if (window.electronApi) {
+        window.electronApi.shell.openExternal(url);
+    } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+    }
+}
+```
+
+Avoid `require("electron")`, `@electron/remote`, and `process` — `nodeIntegration` is disabled and `contextIsolation` is enabled, so they aren't available in the renderer.
 
 ## Legacy jQuery widgets (avoid if possible)
 

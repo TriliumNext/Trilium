@@ -11,11 +11,8 @@
 .sidebar-chat-container .llm-chat-input-form {
     flex-shrink: 0;
     padding: 8px;
-
-    .llm-chat-input {
-        font-size: 0.9em;
-        padding: 0.5em;
-    }
+    font-size: 0.9em;
+    min-height: 40px;
 }
 
 /* Scroll-container essentials (flex/min-height/overflow) come from .chat-message-list. */

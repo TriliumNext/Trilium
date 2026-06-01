@@ -5,8 +5,11 @@ import eraseService from "./erase.js";
 import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import cloningService from "./cloning.js";
-import { randomString } from "./utils/index.js";
 import { getLog } from "./log";
+import { evaluateTemplate } from "./safe_template.js";
+import { executeBundle } from "./script.js";
+import { assertScriptingEnabled } from "./scripting_guard.js";
+import { randomString } from "./utils/index.js";
 
 type ActionHandler<T> = (action: T, note: BNote) => void;
 
@@ -45,9 +48,8 @@ const ACTION_HANDLERS: ActionHandlerMap = {
     },
     renameNote: (action, note) => {
         // "officially" injected value:
-        // - note
-
-        const newTitle = eval(`\`${action.newTitle}\``);
+        // - note (the note being renamed)
+        const newTitle = evaluateTemplate(action.newTitle, { note });
 
         if (note.title !== newTitle) {
             note.title = newTitle;
@@ -106,15 +108,29 @@ const ACTION_HANDLERS: ActionHandlerMap = {
         }
     },
     executeScript: (action, note) => {
+        assertScriptingEnabled();
         if (!action.script || !action.script.trim()) {
             getLog().info("Ignoring executeScript since the script is empty.");
             return;
         }
 
-        const scriptFunc = new Function("note", action.script);
-        scriptFunc(note);
+        // Route through the script service's executeBundle instead of raw
+        // new Function() to get proper CLS context, logging, and error handling.
+        // The preamble provides access to `note` and `api` as the UI documents.
+        // The user script runs inside an IIFE so that a top-level `return` (used to
+        // exit early) only exits the user code; note.save() still runs afterwards,
+        // matching the previous behavior where save() was called unconditionally.
+        const noteId = note.noteId.replace(/[^a-zA-Z0-9_]/g, "");
+        const preamble = `const api = apiContext.apis["${noteId}"] || {};\n` +
+            `const note = apiContext.notes["${noteId}"];\n`;
+        const scriptBody = `${preamble}(function() {\n${action.script}\n})();\nnote.save();`;
 
-        note.save();
+        executeBundle({
+            note: note,
+            script: scriptBody,
+            html: "",
+            allNotes: [note]
+        });
     }
 } as const;
 

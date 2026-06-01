@@ -49,7 +49,6 @@ export default class BuildHelper {
             format: "cjs",
             external: [
                 "electron",
-                "@electron/remote",
                 "better-sqlite3",
                 "pdfjs-dist",
                 "./xhr-sync-worker.js",
@@ -96,7 +95,6 @@ export default class BuildHelper {
 
     buildFrontend() {
         this.triggerBuildAndCopyTo("apps/client", "public/");
-        this.deleteFromOutput("public/webpack-stats.json");
 
         // pdf.js
         this.triggerBuildAndCopyTo("packages/pdfjs-viewer", "pdfjs-viewer");

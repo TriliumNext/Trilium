@@ -3,9 +3,12 @@
  *
  * Contains all the migrations that are run on the database.
  */
+export function getMaxMigrationVersion() {
+    return MIGRATIONS[0].version;
+}
 
 // Migrations should be kept in descending order, so the latest migration is first.
-const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
     // Add description column to revisions table for manual revision comments
     {
         version: 238,
@@ -350,10 +353,6 @@ const MIGRATIONS: (SqlMigration | JsMigration)[] = [
         `
     }
 ];
-
-export default MIGRATIONS;
-
-export const MAX_MIGRATION_VERSION = MIGRATIONS[0].version;
 
 interface Migration {
     version: number;

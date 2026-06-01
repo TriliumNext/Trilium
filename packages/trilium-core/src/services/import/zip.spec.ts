@@ -18,10 +18,8 @@ async function testImport(fileName: string) {
     return testImportBuffer(buffer);
 }
 
-async function testImportBuffer(buffer: Buffer) {
-    const taskContext = TaskContext.getInstance("import-mdx", "importNotes", {
-        textImportedAsText: true
-    });
+async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData: Record<string, unknown> = { textImportedAsText: true }) {
+    const taskContext = TaskContext.getInstance(taskId, "importNotes", taskData);
 
     return new Promise<{ importedNote: BNote; rootNote: BNote }>((resolve, reject) => {
         getContext().init(async () => {
@@ -114,6 +112,37 @@ describe("processNoteContent", () => {
         expect(attachment.mime).toBe("application/json");
         const content = attachment.getContent();
         expect(content).toStrictEqual(`{"view":{"center":{"lat":49.19598332223546,"lng":-2.1414576506668808},"zoom":12}}`);
+    });
+
+    it("sanitizes book note HTML content on safe import (GHSA-h7w4-cjfg-cvj8)", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "bookXssNote1",
+                title: "Book Payload",
+                type: "book",
+                mime: "text/html",
+                dataFileName: "Book Payload.html",
+                attributes: [],
+                attachments: []
+            }]
+        };
+
+        const payload = `<img src=x onerror="require('child_process').exec('calc')"><b>safe</b>`;
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Book Payload.html": payload
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-book-safe", { textImportedAsText: true, safeImport: true });
+        const content = importedNote.getContent() as string;
+
+        expect(importedNote.type).toBe("book");
+        expect(content).not.toContain("onerror");
+        expect(content).not.toContain("child_process");
+        // Benign markup survives sanitization.
+        expect(content).toContain("safe");
     });
 
     it("rewrites relative attachment paths in markdown code notes on import", async () => {

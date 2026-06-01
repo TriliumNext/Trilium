@@ -3,31 +3,25 @@
  * Re-exports core image service and adds OCR scheduling.
  */
 
-import { imageService } from "@triliumnext/core";
-import log from "./log.js";
+import { getLog, imageService, options as optionService } from "@triliumnext/core";
 import ocrService from "./ocr/ocr_service.js";
-import optionService from "./options.js";
 
 function scheduleOcrForNote(noteId: string) {
     if (optionService.getOptionBool("ocrAutoProcessImages")) {
-        setImmediate(async () => {
-            try {
-                await ocrService.processNoteOCR(noteId);
-            } catch (error) {
-                log.error(`Failed to process OCR for note ${noteId}: ${error}`);
-            }
+        setImmediate(() => {
+            void ocrService.processNoteOCR(noteId).catch((error) => {
+                getLog().error(`Failed to process OCR for note ${noteId}: ${error}`);
+            });
         });
     }
 }
 
 function scheduleOcrForAttachment(attachmentId: string | undefined) {
     if (attachmentId && optionService.getOptionBool("ocrAutoProcessImages")) {
-        setImmediate(async () => {
-            try {
-                await ocrService.processAttachmentOCR(attachmentId);
-            } catch (error) {
-                log.error(`Failed to process OCR for attachment ${attachmentId}: ${error}`);
-            }
+        setImmediate(() => {
+            void ocrService.processAttachmentOCR(attachmentId).catch((error) => {
+                getLog().error(`Failed to process OCR for attachment ${attachmentId}: ${error}`);
+            });
         });
     }
 }

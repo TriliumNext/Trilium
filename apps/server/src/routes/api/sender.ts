@@ -1,9 +1,8 @@
-import { special_notes as specialNotesService,utils } from "@triliumnext/core";
+import { note_service as noteService, special_notes as specialNotesService,utils } from "@triliumnext/core";
 import type { Request } from "express";
 import imageType from "image-type";
 
 import imageService from "../../services/image.js";
-import noteService from "../../services/notes.js";
 
 async function uploadImage(req: Request) {
     const file = req.file;

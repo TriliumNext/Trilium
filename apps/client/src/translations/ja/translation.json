@@ -565,7 +565,8 @@
     "trilium_api_docs_button_title": "Trilium APIのドキュメントを開く",
     "save_to_note_button_title": "ノートに保存",
     "opening_api_docs_message": "APIドキュメントを開いています...",
-    "sql_console_saved_message": "SQLコンソールが {{note_path}} に保存されました"
+    "sql_console_saved_message": "SQLコンソールが {{note_path}} に保存されました",
+    "electron_api_docs_button_title": "Electron API ドキュメントを開く"
   },
   "execute_script": {
     "execute_script": "スクリプトを実行",
@@ -1905,7 +1906,12 @@
   },
   "image": {
     "copied-to-clipboard": "画像への参照がクリップボードにコピーされました。これは任意のテキストノートに貼り付けることができます。",
-    "cannot-copy": "画像参照をクリップボードにコピーできませんでした。"
+    "cannot-copy": "画像参照をクリップボードにコピーできませんでした。",
+    "copy-to-clipboard": "画像をクリップボードにコピー",
+    "download": "画像をダウンロード",
+    "image-copied-to-clipboard": "画像がクリップボードにコピーされました。",
+    "cannot-copy-image": "画像をクリップボードにコピーできませんでした。",
+    "cannot-download": "画像をダウンロードできませんでした。"
   },
   "entrypoints": {
     "note-revision-created": "ノートの改訂版が作成されました。",
@@ -2320,7 +2326,9 @@
     "sample_venn": "ベン図",
     "sample_ishikawa": "石川図",
     "sample_treeview": "ツリービュー",
-    "sample_wardley": "ウォードリーマップ"
+    "sample_wardley": "ウォードリーマップ",
+    "slash_command_blank_description": "空のマーメイド図を挿入",
+    "slash_command_description": "\"{{name}}\" マーメイド図テンプレートを挿入"
   },
   "llm_chat": {
     "placeholder": "メッセージを入力してください…",
@@ -2355,7 +2363,13 @@
     "sources_summary": "{{count}} 件のソースを {{sites}} サイトから取得",
     "stop": "停止",
     "edit_index": "{{total}} 件中 {{index}} 件目を編集",
-    "retry": "再試行"
+    "retry": "再試行",
+    "web_search_unavailable_gemini": "ノートへのアクセスが有効になっている場合は Gemini モデルは利用できません — Google の API では、両方を同時に使用できないためです。ウェブ検索を使用するには、ノートへのアクセスを無効にするか、別のプロバイダに切り替えてください。",
+    "input_streaming": "入力（ストリーミング…）",
+    "attach_file": "画像、PDF、またはテキストファイルを添付",
+    "remove_attachment": "添付ファイルを削除",
+    "attachment_upload_failed": "\"{{name}}\" のアップロードに失敗しました。",
+    "attachment_unsupported_type": "\"{{name}}\" はサポートされていない添付ファイル形式です。画像（PNG、JPEG、GIF、WebP）、PDF、またはテキスト/ソースファイルをご利用ください。"
   },
   "sidebar_chat": {
     "title": "AI チャット",
@@ -2365,7 +2379,8 @@
     "empty_state": "会話を開始",
     "history": "チャット履歴",
     "recent_chats": "最近のチャット",
-    "no_chats": "過去のチャットはありません"
+    "no_chats": "過去のチャットはありません",
+    "view_all_chats": "すべてのチャットを表示"
   },
   "mind-map": {
     "addChild": "子ノードを追加",
@@ -2463,7 +2478,8 @@
     "related_task_states": "to-do リストのカスタムチェックボックスの状態"
   },
   "link": {
-    "failed_to_open": "'{{- href}}' のリンクを開けなせんでした: {{- message}}"
+    "failed_to_open": "'{{- href}}' のリンクを開けなせんでした: {{- message}}",
+    "copy_url": "URLをコピー"
   },
   "print_preview": {
     "title": "印刷プレビュー",
@@ -2585,7 +2601,16 @@
     "math": "数式ブロックを挿入",
     "footnote": "脚注を挿入",
     "mermaid": "マーメイド図を挿入",
-    "admonition": "{{type}} の注意書きを挿入"
+    "admonition": "{{type}} の注釈を挿入",
+    "mermaid_template": "\"{{name}}\" マーメイド図を挿入",
+    "collapsible": "折りたたみブロックを挿入",
+    "todo": "\"{{title}}\" タスク項目を挿入",
+    "todo_nonstandard": "\"{{title}}\" タスク項目（非標準）を挿入",
+    "placeholders": {
+      "math": "数式",
+      "collapsible_summary": "概要",
+      "collapsible_details": "詳細"
+    }
   },
   "mobile_note_navigator": {
     "back": "1つ上の階層へ移動",
@@ -2660,6 +2685,32 @@
       "missing-icon": "アイコンがありません",
       "invalid-symbol": "マークダウン記号は \"[\", \" \", \"X\", \"]\" を除き 1 文字である必要があります",
       "duplicate-symbol": "重複したマークダウン記号"
-    }
+    },
+    "collapsible-body-placeholder": "ここに内容を入力してください...",
+    "collapsible-button-label": "折りたたみブロック",
+    "collapsible-handle-tooltip": "折りたたみブロックをドラッグして位置を調整",
+    "collapsible-select-label": "折りたたみブロックを選択",
+    "collapsible-title-placeholder": "概要",
+    "collapsible-toggle-label": "折りたたみブロックの切り替え",
+    "collapsible-tooltip": "矢印をクリックするか、{{shortcut}} を押して開閉する。"
+  },
+  "slash_commands": {
+    "bulleted_list_description": "箇条書きリストを作成",
+    "numbered_list_description": "番号付きリストを作成",
+    "todo_list_description": "to-do リストを作成",
+    "align_left_description": "テキストを左揃え",
+    "align_center_description": "テキストを中央揃え",
+    "align_right_description": "テキストを右揃え",
+    "justify_description": "テキストを両端揃え",
+    "admonition_description": "新しい注釈を挿入",
+    "collapsible_description": "クリックでコンテンツの表示 / 非表示を切り替えるセクションを挿入する。",
+    "footnote_description": "新しい脚注を作成し、ここに参照を挿入",
+    "datetime_description": "現在の日時を挿入",
+    "internal_link_description": "別の Trilium ノートへのリンクを挿入",
+    "math_description": "数式を挿入",
+    "include_note_description": "このノートに別のノートの内容を表示する",
+    "page_break_description": "改ページを挿入（印刷用）",
+    "markdown_import_description": "マークダウンファイルをこのノートにインポート",
+    "anchor_description": "内部リンク用のアンカーを挿入"
   }
 }

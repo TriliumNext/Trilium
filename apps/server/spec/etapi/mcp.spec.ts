@@ -1,11 +1,10 @@
+import { becca, cls, options as optionService } from "@triliumnext/core";
 import { Application } from "express";
-import { beforeAll, describe, expect, it } from "vitest";
 import supertest from "supertest";
-import { createNote, login } from "./utils.js";
+import { beforeAll, describe, expect, it } from "vitest";
+
 import config from "../../src/services/config.js";
-import becca from "../../src/becca/becca.js";
-import optionService from "../../src/services/options.js";
-import cls from "../../src/services/cls.js";
+import { createNote, login } from "./utils.js";
 
 let app: Application;
 let token: string;

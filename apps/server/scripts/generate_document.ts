@@ -3,14 +3,13 @@
  * will create 1000 new notes and some clones into the current document.db
  */
 
-import sqlInit from "../src/services/sql_init.js";
-import noteService from "../src/services/notes.js";
-import attributeService from "../src/services/attributes.js";
-import cloningService from "../src/services/cloning.js";
+import { attributes as attributeService, cloning as cloningService, note_service as noteService } from "@triliumnext/core";
 import { loremIpsum } from "lorem-ipsum";
+
 import "../src/becca/entity_constructor.js";
+import { cls } from "@triliumnext/core";
 import { initializeTranslations } from "../src/services/i18n.js";
-import cls from "../src/services/cls.js";
+import sqlInit from "../src/services/sql_init.js";
 
 const noteCount = parseInt(process.argv[2]);
 

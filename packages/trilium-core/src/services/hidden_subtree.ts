@@ -302,6 +302,7 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                     { id: "_optionsImages", title: "Images", type: "contentWidget", enforceDeleted: true },
                     { id: "_optionsMedia", title: t("hidden-subtree.images-title"), type: "contentWidget", icon: "bx-image" },
                     { id: "_optionsSpellcheck", title: t("hidden-subtree.spellcheck-title"), type: "contentWidget", icon: "bx-check-double" },
+                    { id: "_optionsSecurity", title: t("hidden-subtree.security-title"), type: "contentWidget", icon: "bx-shield" },
                     { id: "_optionsPassword", title: t("hidden-subtree.password-title"), type: "contentWidget", icon: "bx-lock" },
                     { id: '_optionsMFA', title: t('hidden-subtree.multi-factor-authentication-title'), type: 'contentWidget', icon: 'bx-lock ' },
                     { id: "_optionsEtapi", title: t("hidden-subtree.etapi-title"), type: "contentWidget", icon: "bx-extension" },

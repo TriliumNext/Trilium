@@ -3,6 +3,9 @@ Unlike [front-end scripts](Frontend%20Basics.md) which run on the client / brows
 
 Back-end scripts can be used both on a <a class="reference-link" href="../Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a> (where it will run on the device the server is running on), or on the <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a> (where it will run on the PC).
 
+> [!IMPORTANT]
+> Starting with v0.104.0, backend scripts are disabled by default to reduce the attack surface. See <a class="reference-link" href="Security.md">Security</a> for more information.
+
 ## Advantages of backend scripts
 
 The benefit of backend scripts is that they can be pretty powerful, for example to have access to the underlying system, for example it can read files or execute processes.

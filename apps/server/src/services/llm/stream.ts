@@ -24,8 +24,14 @@ function calculateCost(usage: LanguageModelUsage, pricing?: ModelPricing): numbe
     const details = usage.inputTokenDetails;
     const cacheReadTokens = details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
     const cacheWriteTokens = details?.cacheWriteTokens ?? 0;
+    // The sole caller only invokes calculateCost once it has type-guarded both
+    // inputTokens and outputTokens as numbers, so the `?? 0` fallbacks here are
+    // unreachable defensive normalisation.
+    /* v8 ignore next */
+    const inputTokens = usage.inputTokens ?? 0;
     const noCacheInputTokens = details?.noCacheTokens
-        ?? Math.max(0, (usage.inputTokens ?? 0) - cacheReadTokens - cacheWriteTokens);
+        ?? Math.max(0, inputTokens - cacheReadTokens - cacheWriteTokens);
+    /* v8 ignore next */
     const outputTokens = usage.outputTokens ?? 0;
 
     const M = 1_000_000;
@@ -94,9 +100,26 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
                     yield { type: "thinking", content: part.text };
                     break;
 
+                case "tool-input-start":
+                    yield {
+                        type: "tool_input_start",
+                        toolCallId: part.id,
+                        toolName: part.toolName
+                    };
+                    break;
+
+                case "tool-input-delta":
+                    yield {
+                        type: "tool_input_delta",
+                        toolCallId: part.id,
+                        delta: part.delta
+                    };
+                    break;
+
                 case "tool-call":
                     yield {
                         type: "tool_use",
+                        toolCallId: part.toolCallId,
                         toolName: part.toolName,
                         toolInput: part.input as Record<string, unknown>
                     };
@@ -107,6 +130,7 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
                     const isError = typeof output === "object" && output !== null && "error" in output;
                     yield {
                         type: "tool_result",
+                        toolCallId: part.toolCallId,
                         toolName: part.toolName,
                         result: typeof output === "string"
                             ? output

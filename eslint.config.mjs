@@ -49,7 +49,23 @@ const mainConfig = [
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_"
         }
-      ]
+      ],
+      // Catch mishandled promises at the type level. `no-misused-promises` flags a Promise used
+      // where a non-Promise is expected (e.g. a boolean conditional or a void-returning callback);
+      // `no-floating-promises` flags promises whose result/rejection is silently discarded.
+      // Warn repo-wide (large existing backlog, mostly in apps/client); errored on the server below.
+      "@typescript-eslint/no-misused-promises": "warn",
+      "@typescript-eslint/no-floating-promises": "warn"
+    }
+  },
+  {
+    // The server is the security-sensitive surface (auth, sync, API), so enforce the promise
+    // rules as errors here — an unawaited async call in a conditional or callback can silently
+    // change control flow.
+    files: ["apps/server/**/*.{js,ts,mjs,cjs,tsx}"],
+    rules: {
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/no-floating-promises": "error"
     }
   },
   {

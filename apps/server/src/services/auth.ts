@@ -1,15 +1,14 @@
-import etapiTokenService from "./etapi_tokens.js";
-import log from "./log.js";
-import sqlInit from "./sql_init.js";
-import { isElectron } from "./utils.js";
-import passwordEncryptionService from "./encryption/password_encryption.js";
-import config from "./config.js";
-import passwordService from "./encryption/password.js";
-import totp from "./totp.js";
-import openID from "./open_id.js";
-import options from "./options.js";
-import attributes from "./attributes.js";
+import { attributes, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
+
+import config from "./config.js";
+import { isInternalElectronRequest } from "./electron_request.js";
+import etapiTokenService from "./etapi_tokens.js";
+import { getLog } from "@triliumnext/core";
+import openID from "./open_id.js";
+import sqlInit from "./sql_init.js";
+import totp from "./totp.js";
+import { isElectron } from "./utils.js";
 
 let noAuthentication = false;
 refreshAuth();
@@ -25,7 +24,7 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
     const currentSsoStatus = openID.isOpenIDEnabled();
     const lastAuthState = req.session.lastAuthState || { totpEnabled: false, ssoEnabled: false };
 
-    if (isElectron || noAuthentication) {
+    if (isInternalElectronRequest(req) || noAuthentication) {
         next();
         return;
     } else if (!req.session.loggedIn && !noAuthentication) {
@@ -79,7 +78,7 @@ function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction)
         return next();
     }
 
-    if (!req.session.loggedIn && !isElectron && !noAuthentication) {
+    if (!req.session.loggedIn && !isInternalElectronRequest(req) && !noAuthentication) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
@@ -92,7 +91,17 @@ function checkApiAuth(req: Request, res: Response, next: NextFunction) {
         return next();
     }
 
-    if (!req.session.loggedIn && !noAuthentication) {
+    // The desktop renderer is trusted (it's our own UI). API requests come in
+    // via the `trilium-app://` custom protocol where Express sessions don't
+    // round-trip — those carry the internal-electron marker and bypass auth.
+    // Requests that arrive over the desktop's TCP HTTP listener (LAN, DNS-
+    // rebound browser, co-resident process) do NOT carry the marker and go
+    // through the normal session check.
+    if (isInternalElectronRequest(req) || noAuthentication) {
+        return next();
+    }
+
+    if (!req.session.loggedIn) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
@@ -138,12 +147,12 @@ function checkEtapiToken(req: Request, res: Response, next: NextFunction) {
 }
 
 function reject(req: Request, res: Response, message: string) {
-    log.info(`${req.method} ${req.path} rejected with 401 ${message}`);
+    getLog().info(`${req.method} ${req.path} rejected with 401 ${message}`);
 
     res.setHeader("Content-Type", "text/plain").status(401).send(message);
 }
 
-function checkCredentials(req: Request, res: Response, next: NextFunction) {
+async function checkCredentials(req: Request, res: Response, next: NextFunction) {
     if (!sqlInit.isDbInitialized()) {
         res.setHeader("Content-Type", "text/plain").status(400).send("Database is not initialized yet.");
         return;
@@ -165,9 +174,9 @@ function checkCredentials(req: Request, res: Response, next: NextFunction) {
     const password = colonIndex === -1 ? "" : auth.substr(colonIndex + 1);
     // username is ignored
 
-    if (!passwordEncryptionService.verifyPassword(password)) {
+    if (!(await passwordEncryptionService.verifyPassword(password))) {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
-        log.info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
+        getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
     } else {
         next();
     }

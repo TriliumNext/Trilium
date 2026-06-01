@@ -57,6 +57,11 @@ The following features are supported by Trilium's Markdown format and will show 
     ```
     
     *   These can also be quickly created using the `/footnote` command.
+*   Page breaks for <a class="reference-link" href="#root/jdjRLhLV3TtI/yeqU0zo0ZQ83/W0msUwLxm40d">Printing and exporting to PDF</a>:
+    
+    ```
+    <div class="page-break"></div>
+    ```
 
 ### Links
 

@@ -65,7 +65,7 @@ export function createTaskStateNote(state: TaskStateDef, options: {noteId?: stri
         ignoreForbiddenParents: true
     });
 
-    const labels: Record<string, string> = {
+    const labels: Record<string, string | undefined> = {
         iconClass: state.icon,
         stateId: state.name,
         markdownSymbol: state.markdownSymbol,
@@ -176,7 +176,8 @@ export function generateTaskStateCss(): string {
             continue;
         }
         const name = escapeCssString(state.name);
-        const hue = computeHue(state.color);
+        const hue = (state.color) ? computeHue(state.color) : undefined;
+        
         rules.push(`[data-trilium-task-state="${name}"], .tn-task-checkbox[data-trilium-task-state="${name}"] {
             --task-state-glyph: "${resolved.glyph}";
             --task-state-glyph-font-family: "${resolved.fontFamily}";
