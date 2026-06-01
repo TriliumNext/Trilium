@@ -126,9 +126,13 @@ export default function AboutDialog() {
                     {syncServerHost && (
                         <PropertySheetItem label={t("about.sync_server_host")}>
                             <div style={{wordBreak: "break-all"}}>
-                                <a href={syncServerHost} target="_blank" rel="noopener noreferrer">
-                                    {syncServerHost}
-                                </a>
+                                {syncServerHost.startsWith("http://") || syncServerHost.startsWith("https://") ? (
+                                    <a href={syncServerHost} target="_blank" rel="noopener noreferrer">
+                                        {syncServerHost}
+                                    </a>
+                                ) : (
+                                    syncServerHost
+                                )}
                             </div>
                         </PropertySheetItem>
                     )}
