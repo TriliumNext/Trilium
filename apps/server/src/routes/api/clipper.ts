@@ -1,10 +1,9 @@
-import { app_info as appInfo, attribute_formatter as attributeFormatter, attributes as attributeService, type BNote, cloning as cloneService, date_notes as dateNoteService, date_utils as dateUtils, note_service as noteService, sanitize, ValidationError, ws } from "@triliumnext/core";
+import { app_info as appInfo, attribute_formatter as attributeFormatter, attributes as attributeService, type BNote, cloning as cloneService, date_notes as dateNoteService, date_utils as dateUtils, getLog, note_service as noteService, sanitize, search as searchService, ValidationError, ws } from "@triliumnext/core";
 import type { Request } from "express";
 import { parse } from "node-html-parser";
 import path from "path";
 
 import imageService from "../../services/image.js";
-import { getLog } from "@triliumnext/core";
 import utils from "../../services/utils.js";
 
 interface Image {
@@ -14,18 +13,17 @@ interface Image {
 }
 
 async function addClipping(req: Request) {
-    // if a note under the clipperInbox has the same 'pageUrl' attribute,
-    // add the content to that note and clone it under today's inbox
-    // otherwise just create a new note under today's inbox
+    // if a #clipType=clippings note exists with the same 'pageUrl' attribute,
+    // append the content to that note
+    // otherwise create a new note under clipperInbox (or today's note)
     const { title, content, images } = req.body;
     const clipType = "clippings";
 
-    const clipperInbox = await getClipperInboxNote();
-
     const pageUrl = sanitize.sanitizeUrl(req.body.pageUrl);
-    let clippingNote = findClippingNote(clipperInbox, pageUrl, clipType);
+    let clippingNote = findClippingNote(pageUrl, clipType);
 
     if (!clippingNote) {
+        const clipperInbox = await getClipperInboxNote();
         clippingNote = noteService.createNewNote({
             parentNoteId: clipperInbox.noteId,
             title,
@@ -47,22 +45,17 @@ async function addClipping(req: Request) {
 
     clippingNote.setContent(`${existingContent}${existingContent.trim() ? "<br>" : ""}${rewrittenContent}`);
 
-    // TODO: Is parentNoteId ever defined?
-    if ((clippingNote as any).parentNoteId !== clipperInbox.noteId) {
-        cloneService.cloneNoteToParentNote(clippingNote.noteId, clipperInbox.noteId);
-    }
-
     return {
         noteId: clippingNote.noteId
     };
 }
 
-function findClippingNote(clipperInboxNote: BNote, pageUrl: string, clipType: string | null) {
+function findClippingNote(pageUrl: string, clipType: string | null) {
     if (!pageUrl) {
         return null;
     }
 
-    const notes = clipperInboxNote.searchNotesInSubtree(
+    const notes = searchService.searchNotes(
         attributeFormatter.formatAttrForSearch(
             {
                 type: "label",
@@ -96,7 +89,7 @@ async function createNote(req: Request) {
     const title = trimmedTitle || `Clipped note from ${pageUrl}`;
 
     const clipperInbox = await getClipperInboxNote();
-    let note = findClippingNote(clipperInbox, pageUrl, clipType);
+    let note = findClippingNote(pageUrl, clipType);
 
     if (!note) {
         note = noteService.createNewNote({
@@ -203,8 +196,7 @@ function handshake() {
 
 async function findNotesByUrl(req: Request<{ noteUrl: string }>) {
     const pageUrl = req.params.noteUrl;
-    const clipperInbox = await getClipperInboxNote();
-    const foundPage = findClippingNote(clipperInbox, pageUrl, null);
+    const foundPage = findClippingNote(pageUrl, null);
     return {
         noteId: foundPage ? foundPage.noteId : null
     };
