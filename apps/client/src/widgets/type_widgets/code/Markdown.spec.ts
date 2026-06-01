@@ -69,7 +69,9 @@ describe("renderWithSourceLines", () => {
     });
 
     it("normalizes fenced code languages to CKEditor MIME identifiers for syntax highlighting", () => {
-        expect(html("```javascript\nconst x = 1;\n```")).toMatch(/class="language-application-javascript-env-(backend|frontend)"/);
+        // A markdown code fence is not a Trilium script, so `javascript` maps to plain JavaScript
+        // (`text/javascript`) rather than the frontend/backend script variants.
+        expect(html("```javascript\nconst x = 1;\n```")).toMatch(/class="language-text-javascript"/);
     });
 
     it("produces CKEditor admonition markup for GFM callouts", () => {

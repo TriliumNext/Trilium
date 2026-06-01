@@ -7,7 +7,12 @@ vi.mock('../../../services/options.js', () => ({
             if (name === "allowedHtmlTags") return "[]";
             return undefined;
         },
-        getJson: () => []
+        getJson: (name: string) => {
+            if (name === "codeNotesMimeTypes") {
+                return ["text/javascript", "application/javascript;env=frontend", "application/javascript;env=backend", "text/css"];
+            }
+            return [];
+        }
     }
 }));
 
@@ -43,4 +48,23 @@ describe("CK config", () => {
             }
         }
     }, 20_000);
+
+    it("excludes Trilium frontend/backend script JS variants from code-block languages", async () => {
+        const { buildConfig } = await import("./config.js");
+        const config = await buildConfig({
+            uiLanguage: "en",
+            contentLanguage: "en",
+            forceGplLicense: false,
+            isClassicEditor: false,
+            templates: []
+        });
+
+        const languages = (config.codeBlock?.languages ?? []).map((l) => l.language);
+        // Plain JavaScript (and other code languages) remain selectable.
+        expect(languages).toContain("text-javascript");
+        expect(languages).toContain("text-css");
+        // The script-environment variants are meaningless in a display-only code block.
+        expect(languages).not.toContain("application-javascript-env-frontend");
+        expect(languages).not.toContain("application-javascript-env-backend");
+    });
 });

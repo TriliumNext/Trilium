@@ -1,5 +1,5 @@
 # Events
-[Script](../../Scripting.md) notes can be triggered by events. Note that these are backend events and thus relation need to point to the "JS backend" code note.
+[Script](../../Scripting.md) notes can be triggered by events. Note that these are backend events and thus relation need to point to the "JavaScript (Trilium backend)" code note.
 
 ## Global events
 

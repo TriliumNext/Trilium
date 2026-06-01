@@ -4,7 +4,7 @@ Backend scripts run in Node.js on the server. They have direct access to notes i
 
 ## Creating a backend script
 
-1. Create a Code note with language "JS backend".
+1. Create a Code note with language "JavaScript (Trilium backend)".
 2. The script can be run manually (Execute button) or triggered automatically.
 
 ## Async code — IMPORTANT

@@ -14,7 +14,7 @@ However, the main benefit of backend scripts is that they have easier access to 
 
 ## Creating a backend script
 
-Create a new <a class="reference-link" href="../Note%20Types/Code.md">Code</a> note and select the language _JS backend_.
+Create a new <a class="reference-link" href="../Note%20Types/Code.md">Code</a> note and select the language _JavaScript (Trilium backend)_.
 
 ## Running backend scripts
 

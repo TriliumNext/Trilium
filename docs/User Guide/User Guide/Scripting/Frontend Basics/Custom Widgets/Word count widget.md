@@ -2,7 +2,7 @@
 > [!TIP]
 > This widget is also present in new installations in the <a class="reference-link" href="../../../Advanced%20Usage/Database/Demo%20Notes.md">Demo Notes</a>.
 
-Create a <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> note of type JS frontend and **give it a** `#widget` **label**.
+Create a <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> note of type JavaScript (Trilium frontend) and **give it a** `#widget` **label**.
 
 ```
 /*

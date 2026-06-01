@@ -15,13 +15,13 @@
   <code
   spellcheck="false">fetch()</code>API.</p>
 <h3><code spellcheck="false">GET</code> calls</h3>
-<p>Before (Axios):</p><pre><code class="language-application-javascript-env-backend">const response = await api.axios.get('https://api.example.com/data');
+<p>Before (Axios):</p><pre><code class="language-text-javascript">const response = await api.axios.get('https://api.example.com/data');
 const data = response.data;</code></pre>
-<p>After (<code spellcheck="false">fetch</code>):</p><pre><code class="language-application-javascript-env-backend">const response = await fetch('https://api.example.com/data');
+<p>After (<code spellcheck="false">fetch</code>):</p><pre><code class="language-text-javascript">const response = await fetch('https://api.example.com/data');
 const data = await response.json();</code></pre>
 <h3><code spellcheck="false">POST</code> calls</h3>
-<p>Before (Axios):</p><pre><code class="language-application-javascript-env-backend">await api.axios.post('https://api.example.com/data', { key: 'value' });</code></pre>
-<p>After (fetch):</p><pre><code class="language-application-javascript-env-backend">await fetch('https://api.example.com/data', {
+<p>Before (Axios):</p><pre><code class="language-text-javascript">await api.axios.post('https://api.example.com/data', { key: 'value' });</code></pre>
+<p>After (fetch):</p><pre><code class="language-text-javascript">await fetch('https://api.example.com/data', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ key: 'value' })
