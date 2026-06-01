@@ -36,6 +36,7 @@ type Labels = {
     ancestorDepth: string;
     orderBy: string;
     orderDirection: string;
+    autoExecuteSearch: boolean;
 
     // Launch bar
     bookmarkFolder: boolean;

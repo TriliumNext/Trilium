@@ -246,6 +246,7 @@ const ATTR_HELP: AttrHelpMap = {
         workspaceTemplate: t("attribute_detail.workspace_template"),
         searchHome: t("attribute_detail.search_home"),
         workspaceSearchHome: t("attribute_detail.workspace_search_home"),
+        autoExecuteSearch: t("attribute_detail.auto_execute_search"),
         inbox: t("attribute_detail.inbox"),
         workspaceInbox: t("attribute_detail.workspace_inbox"),
         sqlConsoleHome: t("attribute_detail.sql_console_home"),
