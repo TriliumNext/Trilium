@@ -56,6 +56,7 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
 
     applyLinkEmbeds($renderedContent[0]);
     await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
+    await applyInlineMermaid($renderedContent[0] as HTMLDivElement);
     await formatCodeBlocks($renderedContent);
 }
 
@@ -108,8 +109,7 @@ export async function rewriteMermaidDiagramsInContainer(container: HTMLDivElemen
     for (const mermaidBlock of mermaidBlocks) {
         const div = document.createElement("div");
         div.classList.add("mermaid-diagram");
-        /* v8 ignore next -- defensive fallback: the `:has(code[...])` selector guarantees a `<code>` child whose innerHTML is always a string */
-        div.innerHTML = mermaidBlock.querySelector("code")?.innerHTML ?? "";
+        div.textContent = mermaidBlock.querySelector("code")?.textContent ?? "";
         mermaidBlock.replaceWith(div);
         nodes.push(div);
     }
@@ -200,18 +200,19 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
 
     try {
         await mermaid.run({ nodes: pairs.map((p) => p.clone) });
-        for (const { visible, clone, source } of pairs) {
-            if (clone.getAttribute("data-processed") !== "true") continue;
-            const svg = clone.innerHTML;
-            visible.innerHTML = svg;
-            visible.setAttribute("data-processed", "true");
-            cache.set(source, svg);
-        }
     } catch (e) {
         console.error(e);
-    } finally {
-        offscreen.remove();
     }
+
+    for (const { visible, clone, source } of pairs) {
+        if (clone.getAttribute("data-processed") !== "true") continue;
+        const svg = clone.innerHTML;
+        visible.innerHTML = svg;
+        visible.setAttribute("data-processed", "true");
+        cache.set(source, svg);
+    }
+
+    offscreen.remove();
 
     mermaidLastRenderedByPosition.set(container, nodes.map((n) => n.innerHTML));
 }
