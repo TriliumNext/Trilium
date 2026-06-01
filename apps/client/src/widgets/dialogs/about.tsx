@@ -25,7 +25,7 @@ export default function AboutDialog() {
     const [channel, setChannel] = useState<"stable" | "nightly" | "standalone">(isStandalone ? "standalone" : "stable");
     const [icon, setIcon] = useState(isStandalone ? "nightly" : "default");
     const [altIcon, setAltIcon] = useState<string | null>(null);
-    const [syncServerHost, _setSyncServerHost] = useTriliumOption("syncServerHost");
+    const [syncServerHost] = useTriliumOption("syncServerHost");
 
     const hasLoaded = useRef(false);
 
