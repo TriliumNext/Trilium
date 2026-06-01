@@ -15,7 +15,7 @@ import openService from "../../services/open.js";
 import server from "../../services/server.js";
 import utils, { isStandalone } from "../../services/utils.js";
 import { formatDateTime } from "../../utils/formatters.js";
-import { useTooltip, useTriliumEvent } from "../react/hooks.jsx";
+import { useTooltip, useTriliumEvent, useTriliumOption } from "../react/hooks.jsx";
 import Modal from "../react/Modal.js";
 import { PropertySheet, PropertySheetItem } from "../react/PropertySheet.js";
 
@@ -25,6 +25,7 @@ export default function AboutDialog() {
     const [channel, setChannel] = useState<"stable" | "nightly" | "standalone">(isStandalone ? "standalone" : "stable");
     const [icon, setIcon] = useState(isStandalone ? "nightly" : "default");
     const [altIcon, setAltIcon] = useState<string | null>(null);
+    const [syncServerHost, _setSyncServerHost] = useTriliumOption("syncServerHost");
 
     const hasLoaded = useRef(false);
 
@@ -118,6 +119,16 @@ export default function AboutDialog() {
                         <PropertySheetItem label={t("about.data_directory")}>
                             <div style={{wordBreak: "break-all"}}>
                                 <DirectoryLink directory={appInfo.dataDirectory} />
+                            </div>
+                        </PropertySheetItem>
+                    )}
+
+                    {syncServerHost && (
+                        <PropertySheetItem label="Sync Server:">
+                            <div style={{wordBreak: "break-all"}}>
+                                <a className="tn-link selectable-text" href={syncServerHost} target="_blank" rel="noopener noreferrer">
+                                    {syncServerHost}
+                                </a>
                             </div>
                         </PropertySheetItem>
                     )}
