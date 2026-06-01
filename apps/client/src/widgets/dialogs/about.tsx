@@ -126,7 +126,7 @@ export default function AboutDialog() {
                     {syncServerHost && (
                         <PropertySheetItem label={t("about.sync_server_host")}>
                             <div style={{wordBreak: "break-all"}}>
-                                <a className="tn-link selectable-text" href={syncServerHost} target="_blank" rel="noopener noreferrer">
+                                <a href={syncServerHost} target="_blank" rel="noopener noreferrer">
                                     {syncServerHost}
                                 </a>
                             </div>
