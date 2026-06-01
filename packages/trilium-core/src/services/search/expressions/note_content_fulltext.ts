@@ -38,6 +38,52 @@ interface ConstructorOpts {
 
 type SearchRow = Pick<NoteRow, "noteId" | "type" | "mime" | "content" | "isProtected">;
 
+/**
+ * Translate a Trilium search operator + token list into a notes_fts MATCH query, or
+ * return null if the operator can't be safely narrowed by FTS (the caller then falls
+ * back to a full blob scan).
+ *
+ * The FTS5 table uses the `trigram` tokenizer (see migration 239), so a phrase
+ * query like `"hello"` matches any document containing the literal substring
+ * "hello". That makes the candidate set a strict superset of what JS
+ * `findInText` accepts for substring/start/end/exact operators (`*=*`, `=`,
+ * `*=`, `=*`) — `findInText` then re-checks each candidate to enforce the
+ * precise operator semantics. For operators where trigram is not a superset —
+ * fuzzy (`~=`/`~*`, where typos change every trigram), negation (`!=`), and
+ * regex (`%=`) — we return null and the caller scans every blob.
+ *
+ * Exported for unit testing; the class wraps it as a private method.
+ */
+export function buildFtsMatchQuery(operator: string, tokens: string[]): string | null {
+    // ~= / ~* tolerate typos that produce no overlapping trigrams with the target,
+    // so FTS would silently drop valid matches. != and %= require seeing every row.
+    if (operator === "~=" || operator === "~*" ||
+        operator === "!=" || operator === "%=") {
+        return null;
+    }
+
+    // The trigram tokenizer can only match phrases of at least 3 codepoints —
+    // anything shorter has no representable token in the index. Punctuation-only
+    // strings tokenize to nothing and would cause `fts5: syntax error`, so we
+    // also require at least one alphanumeric codepoint (any Unicode letter or
+    // number, including CJK / Cyrillic). Tokens that fail either check fall
+    // through to the legacy scan via the null return below.
+    const hasAlphanumeric = /[\p{L}\p{N}]/u;
+    const usableTokens = tokens
+        .map((t) => (t ?? "").trim())
+        .filter((t) => t.length >= 3 && hasAlphanumeric.test(t));
+    if (usableTokens.length === 0) {
+        return null;
+    }
+
+    // FTS5 trigram phrase syntax: each token becomes a quoted phrase (with inner
+    // `"` doubled per FTS5's escape rule). Trigram does **not** accept the `*`
+    // prefix wildcard. Multiple phrases joined by spaces are implicitly ANDed.
+    return usableTokens
+        .map((t) => `"${t.replace(/"/g, '""')}"`)
+        .join(" ");
+}
+
 class NoteContentFulltextExp extends Expression {
     private operator: string;
     tokens: string[];
@@ -79,13 +125,34 @@ class NoteContentFulltextExp extends Expression {
 
         const resultNoteSet = new NoteSet();
 
-        // Search through notes with content
-        for (const row of getSql().iterateRows<SearchRow>(`
-                SELECT noteId, type, mime, content, isProtected
-                FROM notes JOIN blobs USING (blobId)
-                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
-                  AND isDeleted = 0
-                  AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
+        // Narrow candidates through the notes_fts inverted index when the operator
+        // allows it. FTS5 (unicode61 + remove_diacritics) returns matching blobIds
+        // in microseconds, turning what would be a full-blob scan into a small set
+        // that findInText re-checks with the existing fuzzy/normalize logic to
+        // enforce precise operator semantics. Operators FTS can't express (regex,
+        // negation, anchored matches) fall back to the legacy unfiltered scan.
+        //
+        // Protected notes store encrypted ciphertext in blobs, so FTS can't see
+        // their plaintext — they're always included as candidates and decrypted
+        // inside findInText. Their typically small count keeps the speedup intact.
+        const ftsQuery = this.buildFtsMatchQuery();
+
+        const baseSql = `
+            SELECT notes.noteId, notes.type, notes.mime, blobs.content, notes.isProtected
+            FROM notes JOIN blobs USING (blobId)
+            WHERE notes.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet')
+              AND notes.isDeleted = 0
+              AND LENGTH(blobs.content) < ${MAX_SEARCH_CONTENT_SIZE}`;
+
+        const sql = ftsQuery
+            ? `${baseSql}
+              AND (notes.isProtected = 1
+                   OR blobs.blobId IN (SELECT blobId FROM notes_fts WHERE notes_fts MATCH ?))`
+            : baseSql;
+
+        const params = ftsQuery ? [ftsQuery] : [];
+
+        for (const row of getSql().iterateRows<SearchRow>(sql, params)) {
             this.findInText(row, inputNoteSet, resultNoteSet);
         }
 
@@ -126,6 +193,10 @@ class NoteContentFulltextExp extends Expression {
         }
 
         return resultNoteSet;
+    }
+
+    private buildFtsMatchQuery(): string | null {
+        return buildFtsMatchQuery(this.operator, this.tokens);
     }
 
     /**
