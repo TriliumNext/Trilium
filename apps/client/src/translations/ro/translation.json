@@ -321,8 +321,7 @@
     "open_all_in_tabs_tooltip": "Deschide toate rezultatele în taburi noi",
     "open_all_confirm_one": "Aceasta va deschide {{count}} notiță în taburi noi. Continuați?",
     "open_all_confirm_few": "Aceasta va deschide {{count}} notițe în taburi noi. Continuați?",
-    "open_all_confirm_other": "Aceasta va deschide {{count}} de notițe în taburi noi. Continuați?",
-    "open_all_too_many": "Prea multe rezultate ({{count}}). Maximul este {{max}}."
+    "open_all_confirm_other": "Aceasta va deschide {{count}} de notițe în taburi noi. Continuați?"
   },
   "bookmark_switch": {
     "bookmark": "Semn de carte",
