@@ -601,8 +601,8 @@ importers:
         specifier: 3.0.80
         version: 3.0.80(zod@4.4.3)
       '@ai-sdk/openai':
-        specifier: 3.0.66
-        version: 3.0.66(zod@4.4.3)
+        specifier: 3.0.67
+        version: 3.0.67(zod@4.4.3)
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.1
         version: 1.29.0(zod@4.4.3)
@@ -1784,8 +1784,8 @@ packages:
     peerDependencies:
       zod: '>=4.0.0'
 
-  '@ai-sdk/openai@3.0.66':
-    resolution: {integrity: sha512-n9mZ7PbU7O2zN8UMcx495Gfx7sE/rL4KS+o5JzBOUbYJCuwEIxKO6yJaUkxa4r6IyiLxyGib0jegZw91Hh0diA==}
+  '@ai-sdk/openai@3.0.67':
+    resolution: {integrity: sha512-oAiGC9eWG7IgtdsdS74bOCnAAHarAfTJhWN9x5INwnWPekL802AvF+0I5DvLzIF1MIRmNw4N8mPSL/GUVbX9Mw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: '>=4.0.0'
@@ -2570,7 +2570,7 @@ packages:
     engines: {node: '>=14'}
 
   '@electron/node-gyp@https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2':
-    resolution: {gitHosted: true, integrity: sha512-MXgzlTDEEndJB3TBbvd5uFQO/8gaINo1Hfen8vef5rq/VHVPeB63uuv/uO5+8GFsAJ/rauu6XB79S6K4+aXc+w==, tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
     version: 10.2.0-electron.1
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -13800,7 +13800,7 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.27(zod@4.4.3)
       zod: 4.4.3
 
-  '@ai-sdk/openai@3.0.66(zod@4.4.3)':
+  '@ai-sdk/openai@3.0.67(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@ai-sdk/provider-utils': 4.0.27(zod@4.4.3)

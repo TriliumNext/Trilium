@@ -33,7 +33,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.81",
     "@ai-sdk/google": "3.0.80",
-    "@ai-sdk/openai": "3.0.66",
+    "@ai-sdk/openai": "3.0.67",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "ai": "6.0.193",
     "better-sqlite3": "12.10.0",
