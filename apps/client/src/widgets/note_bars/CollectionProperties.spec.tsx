@@ -54,15 +54,16 @@ let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderProps(vnode: preact.ComponentChild) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const target = document.createElement("div");
+    container = target;
+    document.body.appendChild(target);
     act(() => {
         render(
             <ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>,
-            container
+            target
         );
     });
-    return container;
+    return target;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -95,8 +96,9 @@ beforeEach(() => {
 
 afterEach(() => {
     if (container) {
-        act(() => render(null, container ?? null));
-        container.remove();
+        const target = container;
+        act(() => render(null, target));
+        target.remove();
         container = undefined;
     }
     vi.restoreAllMocks();

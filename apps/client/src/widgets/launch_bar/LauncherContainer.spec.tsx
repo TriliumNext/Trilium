@@ -160,7 +160,7 @@ describe("LauncherContainer layout", () => {
         expect(containerEl).toBeTruthy();
 
         // A wheel on the container forwards to the scroll helper.
-        act(() => containerEl?.dispatchEvent(new WheelEvent("wheel", { bubbles: true })));
+        act(() => { containerEl?.dispatchEvent(new WheelEvent("wheel", { bubbles: true })); });
         expect(onWheelHorizontalScroll).toHaveBeenCalledTimes(1);
 
         // A wheel originating inside a `.dropdown-menu` is ignored.
@@ -169,7 +169,7 @@ describe("LauncherContainer layout", () => {
         const inner = document.createElement("span");
         menu.appendChild(inner);
         containerEl?.appendChild(menu);
-        act(() => inner.dispatchEvent(new WheelEvent("wheel", { bubbles: true })));
+        act(() => { inner.dispatchEvent(new WheelEvent("wheel", { bubbles: true })); });
         expect(onWheelHorizontalScroll).toHaveBeenCalledTimes(1);
     });
 
@@ -177,7 +177,7 @@ describe("LauncherContainer layout", () => {
         buildLaunchersRoot([ { id: "c1", launcherType: "command" } ]);
         const root = await renderContainer(false);
         const containerEl = root.querySelector<HTMLElement>("#launcher-container");
-        act(() => containerEl?.dispatchEvent(new WheelEvent("wheel", { bubbles: true })));
+        act(() => { containerEl?.dispatchEvent(new WheelEvent("wheel", { bubbles: true })); });
         expect(onWheelHorizontalScroll).not.toHaveBeenCalled();
     });
 });

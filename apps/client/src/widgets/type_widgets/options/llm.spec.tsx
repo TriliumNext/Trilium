@@ -79,17 +79,18 @@ import LlmSettings from "./llm";
 let container: HTMLDivElement | undefined;
 
 function renderComponent() {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const target = document.createElement("div");
+    container = target;
+    document.body.appendChild(target);
     act(() => {
         render(
             <ParentComponent.Provider value={null}>
                 <LlmSettings />
             </ParentComponent.Provider>,
-            container
+            target
         );
     });
-    return container;
+    return target;
 }
 
 function setOptions(values: Record<string, string>) {
@@ -108,9 +109,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) {
-        act(() => render(null, container));
-        container.remove();
+    const target = container;
+    if (target) {
+        act(() => render(null, target));
+        target.remove();
         container = undefined;
     }
     vi.restoreAllMocks();

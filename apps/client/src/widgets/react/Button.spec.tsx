@@ -86,9 +86,9 @@ describe("Button", () => {
     });
 
     it("triggerCommand makes type=button and sets data-trigger-command (no onClick)", () => {
-        const btn = renderInto(<Button text="Cmd" triggerCommand="saveToNoteMap" />).querySelector("button");
+        const btn = renderInto(<Button text="Cmd" triggerCommand="openAboutDialog" />).querySelector("button");
         expect(btn?.getAttribute("type")).toBe("button");
-        expect(btn?.getAttribute("data-trigger-command")).toBe("saveToNoteMap");
+        expect(btn?.getAttribute("data-trigger-command")).toBe("openAboutDialog");
     });
 
     it("renders an icon and reflects disabled state (no click)", () => {
@@ -182,21 +182,21 @@ describe("SplitButton", () => {
 describe("ButtonOrActionButton", () => {
     it("renders a full Button on desktop", () => {
         mockedIsDesktop = true;
-        const root = renderInto(<ButtonOrActionButton text="Go" icon="bx-play" triggerCommand="saveToNoteMap" />);
+        const root = renderInto(<ButtonOrActionButton text="Go" icon="bx-play" triggerCommand="openAboutDialog" />);
         const btn = root.querySelector("button");
         // Button wraps the icon in <span class="bx ..."> and exposes the trigger command.
         expect(root.querySelector("span.bx.bx-play")).toBeTruthy();
-        expect(btn?.getAttribute("data-trigger-command")).toBe("saveToNoteMap");
+        expect(btn?.getAttribute("data-trigger-command")).toBe("openAboutDialog");
         expect(btn?.className).toContain("btn-secondary");
     });
 
     it("renders an ActionButton on non-desktop", () => {
         mockedIsDesktop = false;
-        const root = renderInto(<ButtonOrActionButton text="Go" icon="bx-play" triggerCommand="saveToNoteMap" />);
+        const root = renderInto(<ButtonOrActionButton text="Go" icon="bx-play" triggerCommand="openAboutDialog" />);
         const btn = root.querySelector("button");
         // ActionButton applies the icon-action class and puts the icon directly on the button.
         expect(btn?.className).toContain("icon-action");
         expect(btn?.className).toContain("bx-play");
-        expect(btn?.getAttribute("data-trigger-command")).toBe("saveToNoteMap");
+        expect(btn?.getAttribute("data-trigger-command")).toBe("openAboutDialog");
     });
 });

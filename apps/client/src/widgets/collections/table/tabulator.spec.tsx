@@ -8,6 +8,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("tabulator-tables/dist/css/tabulator.css", () => ({}));
 vi.mock("../../../../src/stylesheets/table.css", () => ({}));
 
+// Explicit shape of a fake Tabulator instance. Declared independently of the class so the array
+// element type does not circularly reference the class (which itself pushes into the array).
+interface FakeTabulatorType {
+    element: HTMLElement;
+    options: Record<string, unknown>;
+    handlers: Map<string, Set<(...args: unknown[]) => void>>;
+    setDataCalls: unknown[];
+    setColumnsCalls: unknown[];
+    destroyed: boolean;
+    on(eventName: string, handler: (...args: unknown[]) => void): void;
+    off(eventName: string, handler: (...args: unknown[]) => void): void;
+    emit(eventName: string, ...args: unknown[]): void;
+    setData(data: unknown): void;
+    setColumns(columns: unknown): void;
+    destroy(): void;
+}
+
 // A controllable fake of the vanilla Tabulator that records every interaction so we can drive the
 // component's effects (tableBuilt firing, setData/setColumns/on/off/destroy) deterministically.
 // Defined via vi.hoisted so the (hoisted) vi.mock factory below can reference it.
@@ -15,7 +32,7 @@ const { FakeTabulator, tabulatorInstances, registeredModules } = vi.hoisted(() =
     const tabulatorInstances: FakeTabulatorType[] = [];
     const registeredModules: unknown[] = [];
 
-    class FakeTabulator {
+    class FakeTabulator implements FakeTabulatorType {
         static registerModule(module: unknown) {
             registeredModules.push(module);
         }
@@ -66,8 +83,6 @@ const { FakeTabulator, tabulatorInstances, registeredModules } = vi.hoisted(() =
     return { FakeTabulator, tabulatorInstances, registeredModules };
 });
 
-type FakeTabulatorType = InstanceType<typeof FakeTabulator>;
-
 vi.mock("tabulator-tables", () => ({
     Tabulator: FakeTabulator
 }));
@@ -81,29 +96,31 @@ import Tabulator from "./tabulator";
 let container: HTMLDivElement | undefined;
 
 function renderTabulator(props: Record<string, unknown>, parent: Component | null = new Component()) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const target = document.createElement("div");
+    container = target;
+    document.body.appendChild(target);
     act(() => {
         render(
             <ParentComponent.Provider value={parent}>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <Tabulator {...(props as any)} />
             </ParentComponent.Provider>,
-            container
+            target
         );
     });
-    return container;
+    return target;
 }
 
 function rerender(props: Record<string, unknown>, parent: Component | null = new Component()) {
-    if (!container) throw new Error("Nothing rendered yet");
+    const target = container;
+    if (!target) throw new Error("Nothing rendered yet");
     act(() => {
         render(
             <ParentComponent.Provider value={parent}>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <Tabulator {...(props as any)} />
             </ParentComponent.Provider>,
-            container
+            target
         );
     });
 }

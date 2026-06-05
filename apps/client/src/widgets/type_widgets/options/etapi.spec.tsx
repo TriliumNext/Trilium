@@ -41,18 +41,20 @@ let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderComponent() {
-    parent = new Component();
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const localParent = new Component();
+    const localContainer = document.createElement("div");
+    parent = localParent;
+    container = localContainer;
+    document.body.appendChild(localContainer);
     act(() => {
         render(
-            <ParentComponent.Provider value={parent}>
+            <ParentComponent.Provider value={localParent}>
                 <EtapiSettings />
             </ParentComponent.Provider>,
-            container
+            localContainer
         );
     });
-    return container;
+    return localContainer;
 }
 
 function fireEvent(name: string, data: unknown) {

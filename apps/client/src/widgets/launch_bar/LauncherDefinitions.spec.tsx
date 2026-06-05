@@ -87,8 +87,9 @@ import {
 let container: HTMLDivElement | undefined;
 
 function renderInto(vnode: unknown, opts: { isHorizontalLayout?: boolean; parent?: BasicWidget | null } = {}) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const target = document.createElement("div");
+    container = target;
+    document.body.appendChild(target);
     act(() => {
         render((
             <ParentComponent.Provider value={(opts.parent ?? null) as never}>
@@ -96,9 +97,9 @@ function renderInto(vnode: unknown, opts: { isHorizontalLayout?: boolean; parent
                     {vnode as never}
                 </LaunchBarContext.Provider>
             </ParentComponent.Provider>
-        ), container);
+        ), target);
     });
-    return container;
+    return target;
 }
 
 /** Settle async effect chains (froca relation resolution + executeScript) and the resulting re-renders. */

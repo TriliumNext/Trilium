@@ -122,7 +122,7 @@ function renderCard(props: CardProps, ctxOverrides: ContextOverrides = {}) {
     const api = props.api ?? makeApi();
     act(() => {
         render(
-            <ParentComponent.Provider value={parent}>
+            <ParentComponent.Provider value={parent ?? null}>
                 <BoardViewContext.Provider value={ctx as never}>
                     <Card
                         api={api}
@@ -246,7 +246,7 @@ describe("Card editing", () => {
 
         const input = container.querySelector(".title-editor-input") as HTMLInputElement;
         input.value = "Renamed card";
-        act(() => input.dispatchEvent(new Event("input", { bubbles: true })));
+        act(() => { input.dispatchEvent(new Event("input", { bubbles: true })); });
         expect(api.renameCard).toHaveBeenCalledWith("c5", "Renamed card");
 
         act(() => (container.querySelector(".title-editor-dismiss") as HTMLButtonElement).click());

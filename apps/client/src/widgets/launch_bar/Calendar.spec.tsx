@@ -13,19 +13,21 @@ import Calendar, { CalendarArgs, getMonthInformation } from "./Calendar";
 // --- Shared helpers -------------------------------------------------------------------------------
 
 let container: HTMLDivElement | undefined;
-let parent: Component | undefined;
+let currentParent: Component | undefined;
 
 /** Renders the Calendar inside the real ParentComponent provider (so the option hooks register). */
 async function renderCalendar(args: CalendarArgs) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    parent = new Component();
+    const localContainer = document.createElement("div");
+    container = localContainer;
+    document.body.appendChild(localContainer);
+    const localParent = new Component();
+    currentParent = localParent;
     await act(async () => {
         render(
-            <ParentComponent.Provider value={parent}>
+            <ParentComponent.Provider value={localParent}>
                 <Calendar {...args} />
             </ParentComponent.Provider>,
-            container
+            localContainer
         );
     });
     // The month sub-components fetch notes-for-month in a useEffect; settle that microtask chain.
@@ -66,7 +68,9 @@ afterEach(() => {
         container.remove();
         container = undefined;
     }
-    parent = undefined;
+    if (currentParent) {
+        currentParent = undefined;
+    }
     vi.restoreAllMocks();
 });
 

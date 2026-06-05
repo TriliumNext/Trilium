@@ -59,24 +59,26 @@ let parent: Component;
 
 function renderPopupEditor() {
     parent = new Component();
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const el = document.createElement("div");
+    container = el;
+    document.body.appendChild(el);
     act(() => {
         render(
             <ParentComponent.Provider value={parent}>
                 <PopupEditor />
             </ParentComponent.Provider>,
-            container
+            el
         );
     });
-    return container;
+    return el;
 }
 
 function renderInto(vnode: preact.ComponentChild) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => { render(vnode, container); });
-    return container;
+    const el = document.createElement("div");
+    container = el;
+    document.body.appendChild(el);
+    act(() => { render(vnode, el); });
+    return el;
 }
 
 /** Synchronously dispatch a Trilium event through the parent component (drives `useTriliumEvent`). */
@@ -96,7 +98,7 @@ beforeEach(() => {
     for (const key of Object.keys(froca.branches)) delete froca.branches[key];
     document.body.className = "";
     // Default to desktop layout (window.glob.device unset → isMobile() === false).
-    delete (window.glob as Record<string, unknown>).device;
+    delete (window.glob as unknown as Record<string, unknown>).device;
 
     // setNote() walks a deep chain (tree.resolveNotePath → appContext.tabManager, server, hoisting).
     // Stub it to just record the navigation target so PopupEditor's own logic stays exercised and
@@ -351,7 +353,7 @@ describe("PopupEditor — modal callbacks", () => {
 
 describe("PopupEditor — mobile layout", () => {
     it("renders the mobile editor toolbar and an empty floating-buttons list on mobile", () => {
-        (window.glob as Record<string, unknown>).device = "mobile";
+        (window.glob as unknown as Record<string, unknown>).device = "mobile";
         const root = renderPopupEditor();
 
         expect(root.querySelector(".stub-mobile-toolbar")).toBeTruthy();

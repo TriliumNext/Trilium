@@ -1,5 +1,5 @@
 import type { AttributeRow, DeleteNotesPreview } from "@triliumnext/commons";
-import { render } from "preact";
+import { type ComponentChildren, render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,12 +9,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // onShown/onHidden lifecycle without happy-dom's inert Modal/openDialog machinery.
 vi.mock("../react/Modal.js", () => ({
     default: ({ children, footer, show, onShown, onHidden, title, className }: {
-        children?: unknown;
-        footer?: unknown;
+        children?: ComponentChildren;
+        footer?: ComponentChildren;
         show: boolean;
         onShown?: () => void;
         onHidden?: () => void;
-        title?: unknown;
+        title?: ComponentChildren;
         className?: string;
     }) => (
         <div className={`mock-modal ${className ?? ""}`} data-shown={show ? "1" : "0"}>
@@ -38,14 +38,14 @@ vi.mock("../react/NoteLink.js", () => ({
 // DeletedNoteRow are exercised under happy-dom.
 vi.mock("react-window", () => ({
     List: ({ rowComponent: Row, rowCount, rowProps, className, tagName }: {
-        rowComponent: (props: { index: number; style: object } & Record<string, unknown>) => unknown;
+        rowComponent: (props: { index: number; style: object } & Record<string, unknown>) => VNode;
         rowCount: number;
         rowProps: Record<string, unknown>;
         className?: string;
         tagName?: string;
     }) => {
         const Tag = (tagName ?? "div") as "ul";
-        const rows = [];
+        const rows: VNode[] = [];
         for (let index = 0; index < rowCount; index++) {
             rows.push(<Row index={index} style={{}} {...rowProps} />);
         }
@@ -67,15 +67,16 @@ let parent: Component;
 
 function renderDialog() {
     parent = new Component();
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const root = document.createElement("div");
+    container = root;
+    document.body.appendChild(root);
     act(() => render(
         <ParentComponent.Provider value={parent}>
             <DeleteNotesDialog />
         </ParentComponent.Provider>,
-        container
+        root
     ));
-    return container;
+    return root;
 }
 
 function fireShow(opts: unknown) {

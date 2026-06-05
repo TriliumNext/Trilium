@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component";
 import noteAttributeCache from "../../services/note_attribute_cache";
@@ -15,17 +15,18 @@ let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderComponent(vnode: preact.ComponentChild) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const target = document.createElement("div");
+    container = target;
+    document.body.appendChild(target);
     act(() => {
         render(
             <ParentComponent.Provider value={parent}>
                 {vnode}
             </ParentComponent.Provider>,
-            container
+            target
         );
     });
-    return container;
+    return target;
 }
 
 function fireTriliumEvent(name: string, data: unknown) {
@@ -55,6 +56,7 @@ afterEach(() => {
         container.remove();
         container = undefined;
     }
+    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

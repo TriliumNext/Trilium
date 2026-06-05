@@ -26,17 +26,18 @@ let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderTab(note: Parameters<typeof NoteInfoTab>[0]["note"]) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const el = document.createElement("div");
+    container = el;
+    document.body.appendChild(el);
     act(() => {
         render(
             <ParentComponent.Provider value={parent}>
                 <NoteInfoTab note={note} />
             </ParentComponent.Provider>,
-            container
+            el
         );
     });
-    return container;
+    return el;
 }
 
 const metadata: MetadataResponse = {
@@ -164,10 +165,11 @@ describe("NoteInfoTab component", () => {
 
 describe("NoteSizeWidget", () => {
     function renderWidget(props: Omit<Parameters<typeof NoteSizeWidget>[0], never>) {
-        container = document.createElement("div");
-        document.body.appendChild(container);
-        act(() => render(<NoteSizeWidget {...props} />, container));
-        return container;
+        const el = document.createElement("div");
+        container = el;
+        document.body.appendChild(el);
+        act(() => { render(<NoteSizeWidget {...props} />, el); });
+        return el;
     }
 
     it("shows the calculate link when not loading and no sizes are present", () => {

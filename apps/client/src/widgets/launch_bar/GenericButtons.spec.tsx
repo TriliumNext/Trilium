@@ -54,15 +54,15 @@ let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderLauncher(vnode: preact.VNode) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const localContainer = document.createElement("div");
+    container = localContainer;
+    document.body.appendChild(localContainer);
     act(() => {
-        render(<ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>, container);
+        render(<ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>, localContainer);
     });
-    if (!container) throw new Error("container not initialised");
-    const button = container.querySelector("button");
+    const button = localContainer.querySelector("button");
     if (!button) throw new Error("button not rendered");
-    return { container, button };
+    return { container: localContainer, button };
 }
 
 function makeMouseEvent(type: string, init: Partial<MouseEvent> = {}) {

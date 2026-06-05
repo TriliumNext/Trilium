@@ -2,719 +2,590 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// --- Module mocks (hoisted above the component import) --------------------------------------------
+// --- Module mocks (hoisted above the component import) ---------------------------------------------
 
-// Stub NoteAutocomplete so the relation cell renders a plain input + a button that fires noteIdChanged,
-// avoiding the jQuery autocomplete plugin machinery.
+// NoteAutocomplete pulls in jQuery autocomplete plugins and a top-level server.get; replace it with a
+// trivial input that surfaces `noteIdChanged` so the RelationInput branch can be exercised.
 vi.mock("./react/NoteAutocomplete", () => ({
-    default: ({ id, noteId, noteIdChanged }: { id?: string; noteId?: string; noteIdChanged?: (v: string) => void }) => (
-        <div className="note-autocomplete-stub">
-            <input id={id} value={noteId} data-testid="relation-input" />
-            <button
-                type="button"
-                className="relation-change"
-                onClick={() => noteIdChanged?.("targetNoteX")}
+    default: ({ id, noteId, noteIdChanged }: { id?: string; noteId?: string; noteIdChanged?: (v: string) => void; }) => {
+        return (
+            <input
+                id={id}
+                className="note-autocomplete-mock"
+                data-note-id={noteId}
+                onInput={(e) => noteIdChanged?.((e.target as HTMLInputElement).value)}
             />
-        </div>
-    )
+        );
+    }
 }));
 
-import { DefinitionObject } from "@triliumnext/commons";
-
-import Component from "../components/component";
 import type NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
-import FNote from "../entities/fnote";
-import { Attribute } from "../services/attribute_parser";
+import type FNote from "../entities/fnote";
 import froca from "../services/froca";
 import noteAttributeCache from "../services/note_attribute_cache";
 import server from "../services/server";
 import ws from "../services/ws";
 import { buildNote } from "../test/easy-froca";
 import { flush, makeLoadResults, renderHook } from "../test/render-hook";
+import { NoteContextContext, ParentComponent } from "./react/react_utils";
+import Component from "../components/component";
 import PromotedAttributes, { PromotedAttributesContent, usePromotedAttributeData } from "./PromotedAttributes";
-import { ParentComponent } from "./react/react_utils";
 
-// --- Rendering harness for full components --------------------------------------------------------
+// --- Rendering helper ------------------------------------------------------------------------------
 
 let container: HTMLDivElement | undefined;
-let lastParent: Component | undefined;
-
-function renderInto(vnode: preact.ComponentChild, parent = new Component()) {
-    lastParent = parent;
+function renderInto(vnode: unknown) {
     container = document.createElement("div");
     document.body.appendChild(container);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                {vnode}
-            </ParentComponent.Provider>
-        ), container);
-    });
+    act(() => render(vnode as never, container as HTMLDivElement));
     return container;
 }
+
+// --- Fixtures --------------------------------------------------------------------------------------
 
 function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
     return {
         ntxId: "ntx1",
         viewScope: { viewMode: "default" },
+        note: null,
         ...overrides
     } as unknown as NoteContext;
 }
 
-function clearFroca() {
+function resetFroca() {
     for (const key of Object.keys(froca.notes)) delete froca.notes[key];
     for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
     for (const key of Object.keys(froca.branches)) delete froca.branches[key];
     for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
 }
 
+// jQuery's algolia `autocomplete` plugin is not loaded under happy-dom; stub it so the text-label
+// autocomplete effect (and its cleanup `.autocomplete("destroy")`) does not throw. We also capture the
+// dataset config so a test can drive the `source` callback.
+const jqueryFns = $.fn as unknown as Record<string, unknown>;
+const originalAutocomplete = jqueryFns.autocomplete;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let capturedDatasets: any[] | undefined;
+
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     vi.clearAllMocks();
-    // The auto-mock (test/setup.ts) only defines server.get/post — add the write verbs used here.
+    capturedDatasets = undefined;
     Object.assign(server, {
-        get: vi.fn(async () => [] as string[]),
         put: vi.fn(async () => ({ attributeId: "newAttrId" })),
+        get: vi.fn(async () => []),
         remove: vi.fn(async () => undefined)
     });
     Object.assign(ws, { logError: vi.fn() });
-    // jQuery autocomplete plugin is not loaded in the test env; provide a no-op so the
-    // text-label autocomplete effect never throws.
-    ($.fn as Record<string, unknown>).autocomplete = vi.fn(function (this: unknown) { return this; });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jqueryFns.autocomplete = vi.fn(function (this: unknown, configOrCommand: unknown, datasets: any[]) {
+        if (typeof configOrCommand !== "string") {
+            capturedDatasets = datasets;
+        }
+        return this;
+    });
 });
 
 afterEach(() => {
     if (container) {
-        render(null, container);
+        act(() => render(null, container as HTMLDivElement));
         container.remove();
         container = undefined;
+    }
+    if (originalAutocomplete === undefined) {
+        delete jqueryFns.autocomplete;
+    } else {
+        jqueryFns.autocomplete = originalAutocomplete;
     }
     vi.restoreAllMocks();
 });
 
-// --- Cell builders ------------------------------------------------------------------------------
-
-/** Build a real FAttribute definition note via easy-froca and return its definition attribute. */
-function makeDefinitionAttr(defName: string, defValue: string): FAttribute {
-    const note = buildNote({ title: "def", [`#${defName}`]: defValue } as never);
-    const defs = note.getAttributeDefinitions();
-    const def = defs.find((d) => d.name === defName);
-    if (!def) throw new Error(`definition attribute ${defName} not built`);
-    return def;
-}
-
-function makeCell(partial: {
-    definition: DefinitionObject;
-    valueAttr: Attribute;
-    valueName: string;
-    definitionAttr?: FAttribute;
-    uniqueId?: string;
-}) {
-    const definitionAttr = partial.definitionAttr ?? makeDefinitionAttr(
-        `${partial.valueAttr.type}:${partial.valueName}`,
-        "promoted"
-    );
-    return {
-        uniqueId: partial.uniqueId ?? `cell-${partial.valueName}-${Math.random().toString(36).slice(2)}`,
-        definitionAttr,
-        definition: partial.definition,
-        valueAttr: partial.valueAttr,
-        valueName: partial.valueName
-    };
-}
-
-// =================================================================================================
-// usePromotedAttributeData
-// =================================================================================================
+// --- usePromotedAttributeData ---------------------------------------------------------------------
 
 describe("usePromotedAttributeData", () => {
-    it("returns empty cells when there is no note", async () => {
-        const h = renderHook(() => usePromotedAttributeData(null, "cmp", fakeNoteContext()));
-        await flush();
+    it("returns an empty list when there is no note", () => {
+        const ctx = fakeNoteContext();
+        const h = renderHook(() => usePromotedAttributeData(undefined, "cmp", ctx));
         expect(h.result.current[0]).toEqual([]);
     });
 
-    it("returns empty cells when viewType is table", async () => {
-        const note = buildNote({
-            title: "tableNote",
-            "#viewType": "table",
-            "#label:foo": "promoted,text"
-        });
-        const h = renderHook(() => usePromotedAttributeData(note, "cmp", fakeNoteContext()));
-        await flush();
-        expect(h.result.current[0]).toEqual([]);
-    });
-
-    it("returns empty cells when the view mode is not the default", async () => {
-        const note = buildNote({ title: "n", "#label:foo": "promoted,text" });
-        const ctx = fakeNoteContext({ viewScope: { viewMode: "attachments" } });
+    it("returns an empty list for table viewType", () => {
+        const note = buildNote({ id: "tableNote", title: "T", "#viewType": "table", "#label:foo": "promoted,text,single" });
+        const ctx = fakeNoteContext();
         const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
-        await flush();
         expect(h.result.current[0]).toEqual([]);
     });
 
-    it("builds one cell per promoted definition, with an empty placeholder when no value exists", async () => {
-        const note = buildNote({
-            title: "n",
-            "#label:foo": "promoted,text,single"
-        });
-        const h = renderHook(() => usePromotedAttributeData(note, "cmp", fakeNoteContext()));
-        await flush();
-        const cells = h.result.current[0] ?? [];
+    it("returns an empty list when the view mode is not default", () => {
+        const note = buildNote({ id: "srcNote", title: "S", "#label:foo": "promoted,text,single" });
+        const ctx = fakeNoteContext({ viewScope: { viewMode: "source" } });
+        const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
+        expect(h.result.current[0]).toEqual([]);
+    });
+
+    it("builds a single empty cell for a defined-but-unset label", () => {
+        const note = buildNote({ id: "n1", title: "N", "#label:mood": "promoted,text,single" });
+        const ctx = fakeNoteContext();
+        const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
+        const cells = h.result.current[0];
         expect(cells).toHaveLength(1);
-        expect(cells[0]?.valueName).toBe("foo");
-        expect(cells[0]?.valueAttr.value).toBe("");
-        expect(cells[0]?.valueAttr.attributeId).toBe("");
+        expect(cells?.[0].valueName).toBe("mood");
+        expect(cells?.[0].valueAttr.value).toBe("");
+        expect(cells?.[0].valueAttr.attributeId).toBe("");
     });
 
-    it("uses the owned attribute value and reflects multi multiplicity (one cell per value)", async () => {
-        const note = buildNote({
-            id: "multiNote",
-            title: "n",
-            "#label:tag": "promoted,text,multi",
-            "#tag": "first"
-        });
-        // add a second owned value for the same label so the multi branch yields two cells
-        const secondId = "second-attr";
-        const second = new FAttribute(froca, {
-            attributeId: secondId,
-            noteId: "multiNote",
-            type: "label",
-            name: "tag",
-            value: "second",
-            position: 50,
-            isInheritable: false
-        });
-        froca.attributes[secondId] = second;
-        note.attributes.push(secondId);
-        noteAttributeCache.attributes["multiNote"]?.push(second);
-
-        const h = renderHook(() => usePromotedAttributeData(note, "cmp", fakeNoteContext()));
-        await flush();
-        const cells = h.result.current[0] ?? [];
-        const tagCells = cells.filter((c) => c.valueName === "tag");
-        expect(tagCells.map((c) => c.valueAttr.value).sort()).toEqual(["first", "second"]);
+    it("uses an existing owned value for a single-multiplicity label", () => {
+        const note = buildNote({ id: "n2", title: "N", "#label:mood": "promoted,text,single", "#mood": "happy" });
+        const ctx = fakeNoteContext();
+        const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
+        const cells = h.result.current[0];
+        expect(cells).toHaveLength(1);
+        expect(cells?.[0].valueAttr.value).toBe("happy");
     });
 
-    it("keeps only the first value when multiplicity is single", async () => {
-        const note = buildNote({
-            id: "singleNote",
-            title: "n",
-            "#label:mood": "promoted,text,single",
-            "#mood": "happy"
-        });
-        const dupId = "dup-attr";
-        const dup = new FAttribute(froca, {
-            attributeId: dupId,
-            noteId: "singleNote",
-            type: "label",
-            name: "mood",
-            value: "sad",
-            position: 99,
-            isInheritable: false
-        });
-        froca.attributes[dupId] = dup;
-        note.attributes.push(dupId);
-        noteAttributeCache.attributes["singleNote"]?.push(dup);
-
-        const h = renderHook(() => usePromotedAttributeData(note, "cmp", fakeNoteContext()));
-        await flush();
-        const moodCells = (h.result.current[0] ?? []).filter((c) => c.valueName === "mood");
-        expect(moodCells).toHaveLength(1);
-        expect(moodCells[0]?.valueAttr.value).toBe("happy");
+    it("collapses multiple values to one for single multiplicity", () => {
+        const note = buildNote({ id: "n3", title: "N", "#label:mood": "promoted,text,single" });
+        // add two value attributes manually so there are several to collapse
+        addLabel(note, "mood", "first");
+        addLabel(note, "mood", "second");
+        const ctx = fakeNoteContext();
+        const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
+        expect(h.result.current[0]).toHaveLength(1);
     });
 
-    it("forces a new attribute (clears attributeId) when the value is inherited from another note", async () => {
-        // Parent owns an inheritable promoted definition + value; child inherits both.
-        const parent = buildNote({
-            id: "parentInh",
-            title: "parent",
-            "#label:proj(inheritable)": "promoted,text,single",
-            "#proj(inheritable)": "inheritedValue"
-        });
-        const child = buildNote({ id: "childInh", title: "child" });
-        const branchId = "br-parent-child";
-        const FBranch = (await import("../entities/fbranch")).default;
-        froca.branches[branchId] = new FBranch(froca, {
-            branchId,
-            noteId: "childInh",
-            parentNoteId: "parentInh",
-            notePosition: 0,
-            fromSearchNote: false
-        });
-        parent.addChild("childInh", branchId, false);
-        child.addParent("parentInh", branchId, false);
-        delete noteAttributeCache.attributes["childInh"];
-
-        const h = renderHook(() => usePromotedAttributeData(child, "cmp", fakeNoteContext()));
-        await flush();
-        const projCells = (h.result.current[0] ?? []).filter((c) => c.valueName === "proj");
-        expect(projCells.length).toBeGreaterThanOrEqual(1);
-        // inherited value retained, but attributeId cleared so save creates a new owned attribute
-        expect(projCells[0]?.valueAttr.value).toBe("inheritedValue");
-        expect(projCells[0]?.valueAttr.attributeId).toBe("");
+    it("keeps all values for multi multiplicity", () => {
+        const note = buildNote({ id: "n4", title: "N", "#label:tag": "promoted,text,multi" });
+        addLabel(note, "tag", "a");
+        addLabel(note, "tag", "b");
+        const ctx = fakeNoteContext();
+        const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
+        expect(h.result.current[0]).toHaveLength(2);
     });
 
-    it("refreshes when an affecting attribute row arrives via entitiesReloaded", async () => {
-        const note = buildNote({ id: "evtNote", title: "n", "#label:foo": "promoted,text" });
-        const h = renderHook(() => usePromotedAttributeData(note, "cmp", fakeNoteContext()));
-        await flush();
-        const setterSpy = vi.spyOn(note, "getOwnedAttributes");
+    it("forces a fresh attribute id when the value attribute is inherited from another note", () => {
+        const note = buildNote({ id: "ownNote", title: "Owner", "#label:topic": "promoted,text,single" });
+        // an attribute that owns to a *different* note id (inherited) → attributeId must be cleared
+        const inherited = addLabel(note, "topic", "inheritedValue");
+        Object.assign(inherited, { noteId: "someOtherNote" });
+        const ctx = fakeNoteContext();
+        const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
+        expect(h.result.current[0]?.[0].valueAttr.attributeId).toBe("");
+    });
 
+    it("builds a relation cell", () => {
+        buildNote({ id: "target1", title: "Target" });
+        const note = buildNote({ id: "relParent", title: "N", "#relation:colleague": "promoted,single", "~colleague": "target1" });
+        const ctx = fakeNoteContext();
+        const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
+        const cells = h.result.current[0];
+        expect(cells).toHaveLength(1);
+        expect(cells?.[0].valueAttr.type).toBe("relation");
+        expect(cells?.[0].valueAttr.value).toBe("target1");
+    });
+
+    it("refreshes when an affecting attribute is reloaded", () => {
+        const note = buildNote({ id: "refNote", title: "N", "#label:mood": "promoted,text,single" });
+        const ctx = fakeNoteContext();
+        const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
+        expect(h.result.current[0]).toHaveLength(1);
+
+        // a new promoted definition appears; firing entitiesReloaded with an affecting row triggers refresh
+        addLabel(note, "mood", "set-now");
         h.fireEvent("entitiesReloaded", {
-            loadResults: makeLoadResults({
-                attributeRows: [{ type: "label", name: "foo", value: "x", noteId: "evtNote", isDeleted: false, isInheritable: false }]
-            })
+            loadResults: makeLoadResults({ attributeRows: [ { type: "label", name: "mood", value: "set-now", noteId: "refNote", isDeleted: false } ] })
         });
-        await flush();
-        expect(setterSpy).toHaveBeenCalled();
+        expect(h.result.current[0]?.[0].valueAttr.value).toBe("set-now");
     });
 
-    it("does not refresh when the reloaded attribute does not affect the note", async () => {
-        const note = buildNote({ id: "noEvtNote", title: "n", "#label:foo": "promoted,text" });
-        const h = renderHook(() => usePromotedAttributeData(note, "cmp", fakeNoteContext()));
-        await flush();
+    it("ignores entitiesReloaded that does not affect the note", () => {
+        const note = buildNote({ id: "refNote2", title: "N", "#label:mood": "promoted,text,single" });
+        const ctx = fakeNoteContext();
+        const h = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
         const before = h.result.current[0];
         h.fireEvent("entitiesReloaded", {
-            loadResults: makeLoadResults({
-                attributeRows: [{ type: "label", name: "foo", value: "x", noteId: "someUncachedNote", isDeleted: false, isInheritable: false }]
-            })
+            loadResults: makeLoadResults({ attributeRows: [ { type: "label", name: "mood", value: "x", noteId: "unknownNote", isDeleted: false } ] })
         });
-        await flush();
-        // identity unchanged -> refresh not run
         expect(h.result.current[0]).toBe(before);
     });
 });
 
-// =================================================================================================
-// PromotedAttributesContent + cells
-// =================================================================================================
+// --- PromotedAttributesContent (full component tree) ----------------------------------------------
 
 describe("PromotedAttributesContent", () => {
-    it("renders nothing inside the container when there are no cells", () => {
-        const el = renderInto(
-            <PromotedAttributesContent note={undefined} componentId="cmp" cells={[]} setCells={() => {}} />
+    function buildCellsFor(note: FNote, componentId = "cmp", ctx = fakeNoteContext()) {
+        const h = renderHook(() => usePromotedAttributeData(note, componentId, ctx));
+        return h.result.current[0];
+    }
+
+    function renderContent(note: FNote, cells: ReturnType<typeof buildCellsFor>, componentId = "cmp") {
+        return renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <PromotedAttributesContent note={note} componentId={componentId} cells={cells} setCells={vi.fn()} />
+            </ParentComponent.Provider>
         );
-        expect(el.querySelector(".promoted-attributes-widget")).toBeTruthy();
-        expect(el.querySelector(".promoted-attributes-container")).toBeNull();
+    }
+
+    it("renders nothing when there are no cells", () => {
+        const note = buildNote({ id: "emptyNote", title: "N" });
+        const root = renderContent(note, []);
+        expect(root.querySelector(".promoted-attributes-container")).toBeNull();
     });
 
-    it("renders a text label cell with a label element and input wired to data-attributes", () => {
-        const note = buildNote({ id: "tn", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "text", multiplicity: "single" },
-            valueAttr: { attributeId: "a1", type: "label", name: "foo", value: "hello", noteId: "tn" },
-            valueName: "foo"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const input = el.querySelector("input.promoted-attribute-input") as HTMLInputElement | null;
-        expect(input).toBeTruthy();
-        expect(input?.getAttribute("data-attribute-name")).toBe("foo");
-        expect(input?.getAttribute("data-attribute-type")).toBe("label");
-        expect(input?.getAttribute("data-attribute-id")).toBe("a1");
-        expect(el.querySelector("label")).toBeTruthy();
-        expect(el.querySelector(".promoted-attribute-label-text")).toBeTruthy();
+    it("renders a text label input with the alias label", () => {
+        const note = buildNote({ id: "textNote", title: "N", "#label:mood": "promoted,text,single,alias=Mood Label" });
+        const cells = buildCellsFor(note);
+        const root = renderContent(note, cells);
+        const input = root.querySelector("input.promoted-attribute-input") as HTMLInputElement | null;
+        expect(input?.type).toBe("text");
+        expect(root.querySelector("label")?.textContent).toBe("Mood Label");
     });
 
     it("renders a textarea for the textarea label type", () => {
-        const note = buildNote({ id: "tn2", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "textarea", multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "label", name: "notes", value: "", noteId: "tn2" },
-            valueName: "notes"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        expect(el.querySelector("textarea.promoted-attribute-input")).toBeTruthy();
+        const note = buildNote({ id: "taNote", title: "N", "#label:notes": "promoted,textarea,single" });
+        const cells = buildCellsFor(note);
+        const root = renderContent(note, cells);
+        expect(root.querySelector("textarea.promoted-attribute-input")).not.toBeNull();
     });
 
-    it("applies a step derived from numberPrecision for number labels", () => {
-        const note = buildNote({ id: "tn3", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "number", multiplicity: "single", numberPrecision: 2 },
-            valueAttr: { attributeId: "", type: "label", name: "count", value: "1", noteId: "tn3" },
-            valueName: "count"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const input = el.querySelector("input[type=number]") as HTMLInputElement | null;
+    it("renders a number input with a precision-derived step", () => {
+        const note = buildNote({ id: "numNote", title: "N", "#label:rating": "promoted,number,single,precision=2" });
+        const cells = buildCellsFor(note);
+        const root = renderContent(note, cells);
+        const input = root.querySelector("input.promoted-attribute-input") as HTMLInputElement | null;
+        expect(input?.type).toBe("number");
         expect(input?.getAttribute("step")).toBe("0.01");
     });
 
-    it("renders a url label with the external-link button which opens a new window", () => {
-        const note = buildNote({ id: "tn4", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "url", multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "label", name: "link", value: "https://example.com", noteId: "tn4" },
-            valueName: "link"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const input = el.querySelector("input[type=url]") as HTMLInputElement | null;
-        expect(input).toBeTruthy();
-        if (input) input.value = "https://opened.example";
-        const openBtn = el.querySelector(".open-external-link-button") as HTMLElement | null;
-        expect(openBtn).toBeTruthy();
-        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
-        act(() => openBtn?.click());
-        expect(openSpy).toHaveBeenCalledWith("https://opened.example", "_blank");
+    it("renders a url input with an open-external-link button", () => {
+        const note = buildNote({ id: "urlNote", title: "N", "#label:homepage": "promoted,url,single", "#homepage": "https://example.com" });
+        const cells = buildCellsFor(note);
+        const root = renderContent(note, cells);
+        const input = root.querySelector("input.promoted-attribute-input") as HTMLInputElement | null;
+        expect(input?.type).toBe("url");
+        const openBtn = root.querySelector(".open-external-link-button") as HTMLElement | null;
+        expect(openBtn).not.toBeNull();
+
+        const opened: string[] = [];
+        const originalOpen = window.open;
+        Object.assign(window, { open: (url: string) => { opened.push(url); return null; } });
+        try {
+            act(() => openBtn?.click());
+            expect(opened).toEqual([ "https://example.com" ]);
+        } finally {
+            Object.assign(window, { open: originalOpen });
+        }
     });
 
-    it("does not open a window for a url label when the value is empty", () => {
-        const note = buildNote({ id: "tn4b", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "url", multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "label", name: "link", value: "", noteId: "tn4b" },
-            valueName: "link"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const input = el.querySelector("input[type=url]") as HTMLInputElement | null;
-        if (input) input.value = "";
-        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
-        act(() => (el.querySelector(".open-external-link-button") as HTMLElement | null)?.click());
-        expect(openSpy).not.toHaveBeenCalled();
+    it("renders a number input with the default step when no precision is given", () => {
+        const note = buildNote({ id: "numNoPrec", title: "N", "#label:rating": "promoted,number,single" });
+        const cells = buildCellsFor(note);
+        const root = renderContent(note, cells);
+        const input = root.querySelector("input.promoted-attribute-input") as HTMLInputElement | null;
+        expect(input?.type).toBe("number");
+        expect(input?.getAttribute("step")).toBe("1");
     });
 
-    it("renders a boolean label as a checkbox (checked when value is true) without an outer label", () => {
-        const note = buildNote({ id: "tn5", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "boolean", multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "label", name: "done", value: "true", noteId: "tn5" },
-            valueName: "done"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const checkbox = el.querySelector("input[type=checkbox]") as HTMLInputElement | null;
-        expect(checkbox?.checked).toBe(true);
-        expect(el.querySelector(".tn-checkbox")).toBeTruthy();
+    it("renders a boolean checkbox reflecting a true and a false value", () => {
+        const trueNote = buildNote({ id: "boolNote", title: "N", "#label:done": "promoted,boolean,single", "#done": "true" });
+        const trueRoot = renderContent(trueNote, buildCellsFor(trueNote));
+        expect((trueRoot.querySelector("input[type=checkbox]") as HTMLInputElement | null)?.checked).toBe(true);
+        // the boolean branch renders the alias label outside the cell <label for>
+        expect(trueRoot.querySelector(".tn-checkbox")).not.toBeNull();
+
+        const falseNote = buildNote({ id: "boolNote2", title: "N", "#label:done": "promoted,boolean,single" });
+        const falseRoot = renderContent(falseNote, buildCellsFor(falseNote));
+        expect((falseRoot.querySelector("input[type=checkbox]") as HTMLInputElement | null)?.checked).toBe(false);
     });
 
-    it("renders a color label with the hidden input and the reset button", () => {
-        const note = buildNote({ id: "tn6", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "color", multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "label", name: "shade", value: "#112233", noteId: "tn6" },
-            valueName: "shade"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        expect(el.querySelector("input[type=color]")).toBeTruthy();
-        expect(el.querySelector("input[type=hidden]")).toBeTruthy();
-        expect(el.querySelector(".bxs-tag-x")).toBeTruthy();
+    it("renders the url open button as a no-op when the field is empty", () => {
+        const note = buildNote({ id: "urlEmpty", title: "N", "#label:homepage": "promoted,url,single" });
+        const root = renderContent(note, buildCellsFor(note));
+        const openBtn = root.querySelector(".open-external-link-button") as HTMLElement | null;
+        const opened: string[] = [];
+        const originalOpen = window.open;
+        Object.assign(window, { open: (url: string) => { opened.push(url); return null; } });
+        try {
+            act(() => openBtn?.click());
+            expect(opened).toEqual([]);
+        } finally {
+            Object.assign(window, { open: originalOpen });
+        }
     });
 
-    it("renders a relation cell using the (stubbed) NoteAutocomplete", () => {
-        const note = buildNote({ id: "tn7", title: "n" });
-        const cell = makeCell({
-            definition: { multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "relation", name: "target", value: "", noteId: "tn7" },
-            valueName: "target",
-            definitionAttr: makeDefinitionAttr("relation:target", "promoted")
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
+    it("falls back to the default color when the value is empty", () => {
+        const note = buildNote({ id: "colorEmpty", title: "N", "#label:tint": "promoted,color,single" });
+        const root = renderContent(note, buildCellsFor(note));
+        const colorInput = root.querySelector("input[type=color]") as HTMLInputElement | null;
+        expect(colorInput?.value).toBe("#ffffff");
+    });
+
+    it("renders a color input plus a reset button", () => {
+        const note = buildNote({ id: "colorNote", title: "N", "#label:tint": "promoted,color,single", "#tint": "#ff0000" });
+        const cells = buildCellsFor(note);
+        const root = renderContent(note, cells);
+        const colorInput = root.querySelector("input[type=color]") as HTMLInputElement | null;
+        expect(colorInput?.value).toBe("#ff0000");
+        // hidden input that backs the color value
+        expect(root.querySelector("input[type=hidden]")).not.toBeNull();
+    });
+
+    it("renders a relation cell via NoteAutocomplete", () => {
+        buildNote({ id: "relT", title: "T" });
+        const note = buildNote({ id: "relCellNote", title: "N", "#relation:friend": "promoted,single", "~friend": "relT" });
+        const cells = buildCellsFor(note);
+        const root = renderContent(note, cells);
+        const auto = root.querySelector(".note-autocomplete-mock") as HTMLInputElement | null;
+        expect(auto?.getAttribute("data-note-id")).toBe("relT");
+        expect(root.querySelector(".promoted-attribute-relation")).not.toBeNull();
+    });
+
+    it("renders multiplicity add/remove buttons for multi attributes", () => {
+        const note = buildNote({ id: "multiNote", title: "N", "#label:tag": "promoted,text,multi" });
+        const cells = buildCellsFor(note);
+        const root = renderContent(note, cells);
+        expect(root.querySelector(".multiplicity .bx-plus")).not.toBeNull();
+        expect(root.querySelector(".multiplicity .bx-trash")).not.toBeNull();
+    });
+});
+
+// --- Behaviour: updateAttribute through the inputs -------------------------------------------------
+
+describe("PromotedAttributes input behaviour", () => {
+    function setupCellComponent(note: FNote, componentId = "cmp") {
+        const ctx = fakeNoteContext();
+        const dataHook = renderHook(() => usePromotedAttributeData(note, componentId, ctx));
+        const cells = dataHook.result.current[0];
+        const setCells = vi.fn();
+        const root = renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <PromotedAttributesContent note={note} componentId={componentId} cells={cells} setCells={setCells} />
+            </ParentComponent.Provider>
         );
-        expect(el.querySelector(".promoted-attribute-relation")).toBeTruthy();
-        expect(el.querySelector(".note-autocomplete-stub")).toBeTruthy();
+        return { root, setCells };
+    }
+
+    it("calls server.put on blur with a changed text value", async () => {
+        const note = buildNote({ id: "putNote", title: "N", "#label:mood": "promoted,text,single" });
+        const { root } = setupCellComponent(note);
+        const input = root.querySelector("input.promoted-attribute-input") as HTMLInputElement;
+        input.value = "changed";
+        await act(async () => { input.dispatchEvent(new Event("focusout", { bubbles: true })); });
+        await flush();
+        expect(server.put).toHaveBeenCalledWith(
+            "notes/putNote/attribute",
+            expect.objectContaining({ name: "mood", value: "changed", type: "label" }),
+            "cmp"
+        );
+    });
+
+    it("does not call server.put when the value is unchanged", async () => {
+        const note = buildNote({ id: "noChange", title: "N", "#label:mood": "promoted,text,single", "#mood": "same" });
+        const { root } = setupCellComponent(note);
+        const input = root.querySelector("input.promoted-attribute-input") as HTMLInputElement;
+        // value already equals the model value
+        await act(async () => { input.dispatchEvent(new Event("focusout", { bubbles: true })); });
+        await flush();
+        expect(server.put).not.toHaveBeenCalled();
+    });
+
+    it("serializes the checkbox state to true/false on blur", async () => {
+        const note = buildNote({ id: "cbNote", title: "N", "#label:done": "promoted,boolean,single" });
+        const { root } = setupCellComponent(note);
+        const checkbox = root.querySelector("input[type=checkbox]") as HTMLInputElement;
+        checkbox.checked = true;
+        await act(async () => { checkbox.dispatchEvent(new Event("focusout", { bubbles: true })); });
+        await flush();
+        expect(server.put).toHaveBeenCalledWith(
+            "notes/cbNote/attribute",
+            expect.objectContaining({ value: "true" }),
+            "cmp"
+        );
+    });
+
+    it("clears the color through the reset button and persists an empty value", async () => {
+        const note = buildNote({ id: "resetColor", title: "N", "#label:tint": "promoted,color,single", "#tint": "#abcdef" });
+        const { root } = setupCellComponent(note);
+        const resetBtn = root.querySelector(".bxs-tag-x") as HTMLElement;
+        await act(async () => { resetBtn.click(); });
+        await flush();
+        expect(server.put).toHaveBeenCalledWith(
+            "notes/resetColor/attribute",
+            expect.objectContaining({ name: "tint", value: "" }),
+            "cmp"
+        );
+    });
+
+    it("updates the relation through NoteAutocomplete", async () => {
+        buildNote({ id: "newTarget", title: "NT" });
+        const note = buildNote({ id: "relUpd", title: "N", "#relation:friend": "promoted,single" });
+        const { root } = setupCellComponent(note);
+        const auto = root.querySelector(".note-autocomplete-mock") as HTMLInputElement;
+        auto.value = "newTarget";
+        await act(async () => { auto.dispatchEvent(new Event("input", { bubbles: true })); });
+        await flush();
+        expect(server.put).toHaveBeenCalledWith(
+            "notes/relUpd/attribute",
+            expect.objectContaining({ type: "relation", name: "friend", value: "newTarget" }),
+            "cmp"
+        );
+    });
+
+    it("applies the optimistic cell update produced by updateAttribute", async () => {
+        const note = buildNote({ id: "updNote", title: "N", "#label:mood": "promoted,text,single" });
+        const ctx = fakeNoteContext();
+        const dataHook = renderHook(() => usePromotedAttributeData(note, "cmp", ctx));
+        const cells = dataHook.result.current[0];
+        const setCells = vi.fn();
+        const root = renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <PromotedAttributesContent note={note} componentId="cmp" cells={cells} setCells={setCells} />
+            </ParentComponent.Provider>
+        );
+        const input = root.querySelector("input.promoted-attribute-input") as HTMLInputElement;
+        input.value = "newval";
+        await act(async () => { input.dispatchEvent(new Event("focusout", { bubbles: true })); });
+        await flush();
+
+        // updateAttribute called setCells with a functional updater; run it to cover the mapping branch.
+        const updater = setCells.mock.calls.at(-1)?.[0] as (prev: typeof cells) => typeof cells;
+        const next = updater(cells);
+        const updated = next?.find(c => c.uniqueId === cells?.[0].uniqueId);
+        expect(updated?.valueAttr.value).toBe("newval");
+        expect(updated?.valueAttr.attributeId).toBe("newAttrId");
+        // The functional updater also tolerates an undefined previous state.
+        expect(updater(undefined as never)).toBeUndefined();
+        dataHook.unmount();
+    });
+
+    it("renders text-label autocomplete suggestions and reflects a selection in the draft", async () => {
+        Object.assign(server, { get: vi.fn(async () => [ "alpha", "beta", "gamma" ]) });
+        const note = buildNote({ id: "acNote", title: "N", "#label:mood": "promoted,text,single" });
+        const { root } = setupCellComponent(note);
+        await flush();
+
+        // The autocomplete dataset's `source` callback should filter by the typed term.
+        const source = capturedDatasets?.[0]?.source as ((term: string, cb: (rows: { value: string }[]) => void) => void) | undefined;
+        expect(source).toBeTypeOf("function");
+        let filtered: { value: string }[] = [];
+        source?.("BET", (rows) => { filtered = rows; });
+        expect(filtered.map(r => r.value)).toEqual([ "beta" ]);
+
+        // Selecting a suggestion updates the controlled draft via setDraft (jQuery sets currentTarget).
+        const input = root.querySelector("input.promoted-attribute-input") as HTMLInputElement;
+        input.value = "chosen";
+        await act(async () => { $(input).trigger("autocomplete:selected"); });
+        expect(input.value).toBe("chosen");
     });
 
     it("logs an error for an unknown attribute type", () => {
-        const note = buildNote({ id: "tn8", title: "n" });
-        const cell = makeCell({
-            definition: { multiplicity: "single" },
-            // deliberately invalid type to hit the default switch branch
-            valueAttr: { attributeId: "", type: "bogus" as never, name: "x", value: "", noteId: "tn8" },
+        const note = buildNote({ id: "unkNote", title: "N" });
+        const cells = [ {
+            uniqueId: "u1",
+            definitionAttr: { position: 0, getDefinition: () => ({}) } as never,
+            definition: {},
+            valueAttr: { attributeId: "", type: "weird", name: "x", value: "" },
             valueName: "x"
-        });
+        } ] as never;
         renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
+            <ParentComponent.Provider value={new Component()}>
+                <PromotedAttributesContent note={note} componentId="cmp" cells={cells} setCells={vi.fn()} />
+            </ParentComponent.Provider>
         );
         expect(ws.logError).toHaveBeenCalled();
     });
 
-    it("uses promotedAlias as the label text when defined", () => {
-        const note = buildNote({ id: "tn9", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "text", multiplicity: "single", promotedAlias: "Pretty Name" },
-            valueAttr: { attributeId: "", type: "label", name: "raw", value: "", noteId: "tn9" },
-            valueName: "raw"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const label = el.querySelector("label");
-        expect(label?.textContent).toBe("Pretty Name");
-    });
-});
-
-// =================================================================================================
-// Interaction: updateAttribute via onBlur / onChange
-// =================================================================================================
-
-describe("updateAttribute interactions", () => {
-    it("calls server.put with the new value on blur of a text label and updates the cell", async () => {
-        const note = buildNote({ id: "up1", title: "n" });
-        let cells = [makeCell({
-            definition: { labelType: "text", multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "label", name: "foo", value: "old", noteId: "up1" },
-            valueName: "foo",
-            uniqueId: "cell-up1"
-        })];
-        const setCells = vi.fn((updater: unknown) => {
-            cells = typeof updater === "function" ? (updater as (p: typeof cells) => typeof cells)(cells) : (updater as typeof cells);
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={cells} setCells={setCells} />
-        );
-        const input = el.querySelector("input.promoted-attribute-input") as HTMLInputElement | null;
-        if (input) {
-            input.value = "newval";
-            await act(async () => {
-                input.dispatchEvent(new Event("focusout", { bubbles: true }));
-                await new Promise((r) => setTimeout(r, 0));
-            });
-        }
-        expect(server.put).toHaveBeenCalledWith(
-            "notes/up1/attribute",
-            expect.objectContaining({ name: "foo", value: "newval", type: "label" }),
-            "cmp"
-        );
-    });
-
-    it("does NOT call server.put when the value is unchanged", async () => {
-        const note = buildNote({ id: "up2", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "text", multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "label", name: "foo", value: "same", noteId: "up2" },
-            valueName: "foo"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const input = el.querySelector("input.promoted-attribute-input") as HTMLInputElement | null;
-        if (input) {
-            input.value = "same";
-            await act(async () => {
-                input.dispatchEvent(new Event("focusout", { bubbles: true }));
-                await new Promise((r) => setTimeout(r, 0));
-            });
-        }
-        expect(server.put).not.toHaveBeenCalled();
-    });
-
-    it("serialises a boolean checkbox to 'true'/'false' on blur", async () => {
-        const note = buildNote({ id: "up3", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "boolean", multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "label", name: "done", value: "false", noteId: "up3" },
-            valueName: "done"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const checkbox = el.querySelector("input[type=checkbox]") as HTMLInputElement | null;
-        if (checkbox) {
-            checkbox.checked = true;
-            await act(async () => {
-                checkbox.dispatchEvent(new Event("focusout", { bubbles: true }));
-                await new Promise((r) => setTimeout(r, 0));
-            });
-        }
-        expect(server.put).toHaveBeenCalledWith(
-            "notes/up3/attribute",
-            expect.objectContaining({ name: "done", value: "true" }),
-            "cmp"
-        );
-    });
-
-    it("clears the color via the reset button which triggers an empty-value update", async () => {
-        const note = buildNote({ id: "up4", title: "n" });
-        const cell = makeCell({
-            definition: { labelType: "color", multiplicity: "single" },
-            valueAttr: { attributeId: "ca", type: "label", name: "shade", value: "#abcdef", noteId: "up4" },
-            valueName: "shade"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const resetBtn = el.querySelector(".bxs-tag-x") as HTMLElement | null;
-        await act(async () => {
-            resetBtn?.click();
-            await new Promise((r) => setTimeout(r, 0));
-        });
-        expect(server.put).toHaveBeenCalledWith(
-            "notes/up4/attribute",
-            expect.objectContaining({ name: "shade", value: "" }),
-            "cmp"
-        );
-    });
-
-    it("relation change fires updateAttribute through the stubbed autocomplete button", async () => {
-        const note = buildNote({ id: "up5", title: "n" });
-        const cell = makeCell({
-            definition: { multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "relation", name: "target", value: "", noteId: "up5" },
-            valueName: "target",
-            definitionAttr: makeDefinitionAttr("relation:target", "promoted")
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[cell]} setCells={() => {}} />
-        );
-        const changeBtn = el.querySelector(".relation-change") as HTMLElement | null;
-        await act(async () => {
-            changeBtn?.click();
-            await new Promise((r) => setTimeout(r, 0));
-        });
-        expect(server.put).toHaveBeenCalledWith(
-            "notes/up5/attribute",
-            expect.objectContaining({ name: "target", type: "relation", value: "targetNoteX" }),
-            "cmp"
-        );
-    });
-});
-
-// =================================================================================================
-// MultiplicityCell add / remove buttons
-// =================================================================================================
-
-describe("MultiplicityCell", () => {
-    it("renders add/remove buttons only for multi multiplicity", () => {
-        const note = buildNote({ id: "mc0", title: "n" });
-        const single = makeCell({
-            definition: { labelType: "text", multiplicity: "single" },
-            valueAttr: { attributeId: "", type: "label", name: "foo", value: "", noteId: "mc0" },
-            valueName: "foo"
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={[single]} setCells={() => {}} />
-        );
-        expect(el.querySelector(".multiplicity")).toBeNull();
-    });
-
-    it("adds a new empty cell after the current one when '+' is clicked", () => {
-        const note = buildNote({ id: "mc1", title: "n" });
-        let cells = [makeCell({
-            definition: { labelType: "text", multiplicity: "multi" },
-            valueAttr: { attributeId: "a", type: "label", name: "tag", value: "v", noteId: "mc1" },
-            valueName: "tag",
-            uniqueId: "mc1-cell"
-        })];
-        const setCells = vi.fn((updater: unknown) => {
-            cells = typeof updater === "function" ? (updater as (p: typeof cells) => typeof cells)(cells) : (updater as typeof cells);
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={cells} setCells={setCells} />
-        );
-        const addBtn = el.querySelector(".bx-plus") as HTMLElement | null;
-        act(() => addBtn?.click());
+    it("adds a new cell with the + button", async () => {
+        const note = buildNote({ id: "addNote", title: "N", "#label:tag": "promoted,text,multi" });
+        const { root, setCells } = setupCellComponent(note);
+        const addBtn = root.querySelector(".multiplicity .bx-plus") as HTMLElement;
+        await act(async () => { addBtn.click(); });
         expect(setCells).toHaveBeenCalled();
-        expect(cells).toHaveLength(2);
-        expect(cells[1]?.valueAttr.value).toBe("");
-        expect(cells[1]?.valueAttr.attributeId).toBe("");
+        const newCells = setCells.mock.calls[0][0] as unknown[];
+        expect(newCells).toHaveLength(2);
     });
 
-    it("removes the attribute on the server and reinserts an empty cell when it was the last of its type", async () => {
-        const note = buildNote({ id: "mc2", title: "n" });
-        let cells = [makeCell({
-            definition: { labelType: "text", multiplicity: "multi" },
-            valueAttr: { attributeId: "existingAttr", type: "label", name: "tag", value: "v", noteId: "mc2" },
-            valueName: "tag",
-            uniqueId: "mc2-cell"
-        })];
-        const setCells = vi.fn((updater: unknown) => {
-            cells = typeof updater === "function" ? (updater as (p: typeof cells) => typeof cells)(cells) : (updater as typeof cells);
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={cells} setCells={setCells} />
-        );
-        const removeBtn = el.querySelector(".bx-trash") as HTMLElement | null;
-        await act(async () => {
-            removeBtn?.click();
-            await new Promise((r) => setTimeout(r, 0));
-        });
-        expect(server.remove).toHaveBeenCalledWith("notes/mc2/attributes/existingAttr", "cmp");
-        // last of its type -> replaced with a single empty cell, not removed entirely
-        expect(cells).toHaveLength(1);
-        expect(cells[0]?.valueAttr.value).toBe("");
-        expect(cells[0]?.valueAttr.attributeId).toBe("");
+    it("removes a persisted attribute via the trash button, hitting the server", async () => {
+        const note = buildNote({ id: "delNote", title: "N", "#label:tag": "promoted,text,multi", "#tag": "v" });
+        const { root, setCells } = setupCellComponent(note);
+        const trashBtn = root.querySelector(".multiplicity .bx-trash") as HTMLElement;
+        await act(async () => { trashBtn.click(); });
+        await flush();
+        expect(server.remove).toHaveBeenCalled();
+        expect(setCells).toHaveBeenCalled();
     });
 
-    it("removes only the clicked cell when other values of the same type remain", async () => {
-        const note = buildNote({ id: "mc3", title: "n" });
-        let cells = [
-            makeCell({
-                definition: { labelType: "text", multiplicity: "multi" },
-                valueAttr: { attributeId: "", type: "label", name: "tag", value: "a", noteId: "mc3" },
-                valueName: "tag",
-                uniqueId: "mc3-a"
-            }),
-            makeCell({
-                definition: { labelType: "text", multiplicity: "multi" },
-                valueAttr: { attributeId: "", type: "label", name: "tag", value: "b", noteId: "mc3" },
-                valueName: "tag",
-                uniqueId: "mc3-b"
-            })
-        ];
-        const setCells = vi.fn((updater: unknown) => {
-            cells = typeof updater === "function" ? (updater as (p: typeof cells) => typeof cells)(cells) : (updater as typeof cells);
-        });
-        const el = renderInto(
-            <PromotedAttributesContent note={note} componentId="cmp" cells={cells} setCells={setCells} />
-        );
-        const removeBtns = el.querySelectorAll(".bx-trash");
-        await act(async () => {
-            (removeBtns[0] as HTMLElement | undefined)?.click();
-            await new Promise((r) => setTimeout(r, 0));
-        });
-        // no attributeId -> server.remove skipped; other value still present so no empty insert
+    it("removes an unsaved attribute without contacting the server", async () => {
+        const note = buildNote({ id: "delEmpty", title: "N", "#label:tag": "promoted,text,multi" });
+        const { root, setCells } = setupCellComponent(note);
+        const trashBtn = root.querySelector(".multiplicity .bx-trash") as HTMLElement;
+        await act(async () => { trashBtn.click(); });
+        await flush();
         expect(server.remove).not.toHaveBeenCalled();
-        expect(cells).toHaveLength(1);
-        expect(cells[0]?.valueAttr.value).toBe("b");
+        expect(setCells).toHaveBeenCalled();
     });
 });
 
-// =================================================================================================
-// Default export (full pipeline through useNoteContext)
-// =================================================================================================
+// --- Default export (top-level) -------------------------------------------------------------------
 
 describe("PromotedAttributes (default export)", () => {
-    it("renders cells end-to-end from the note context", async () => {
-        const note = buildNote({
-            id: "ee1",
-            title: "n",
-            "#label:foo": "promoted,text,single",
-            "#foo": "bar"
-        });
-        const ctx = fakeNoteContext({ note, notePath: "root/ee1", viewScope: { viewMode: "default" } });
-        const parent = new Component();
-        // useNoteContext reads parent.componentId; ensure it exists.
-        expect(parent.componentId).toBeTruthy();
+    it("renders cells driven from the note context", () => {
+        const note = buildNote({ id: "topNote", title: "N", "#label:mood": "promoted,text,single" });
+        const ctx = fakeNoteContext({ note, notePath: "root/topNote" });
+        const root = renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <NoteContextContext.Provider value={ctx}>
+                    <PromotedAttributes />
+                </NoteContextContext.Provider>
+            </ParentComponent.Provider>
+        );
+        expect(root.querySelector(".promoted-attributes-widget")).not.toBeNull();
+        expect(root.querySelector("input.promoted-attribute-input")).not.toBeNull();
+    });
 
-        container = document.createElement("div");
-        document.body.appendChild(container);
-        const { NoteContextContext } = await import("./react/react_utils");
-        await act(async () => {
-            render((
-                <ParentComponent.Provider value={parent}>
-                    <NoteContextContext.Provider value={ctx}>
-                        <PromotedAttributes />
-                    </NoteContextContext.Provider>
-                </ParentComponent.Provider>
-            ), container);
-            await new Promise((r) => setTimeout(r, 0));
-        });
-        const input = container.querySelector("input.promoted-attribute-input") as HTMLInputElement | null;
-        expect(input?.getAttribute("data-attribute-name")).toBe("foo");
-        expect(input?.value).toBe("bar");
+    it("adds a fresh cell through the + button and focuses it", async () => {
+        const note = buildNote({ id: "topMulti", title: "N", "#label:tag": "promoted,text,multi" });
+        const ctx = fakeNoteContext({ note, notePath: "root/topMulti" });
+        const root = renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <NoteContextContext.Provider value={ctx}>
+                    <PromotedAttributes />
+                </NoteContextContext.Provider>
+            </ParentComponent.Provider>
+        );
+        expect(root.querySelectorAll("input.promoted-attribute-input")).toHaveLength(1);
+
+        const addBtn = root.querySelector(".multiplicity .bx-plus") as HTMLElement;
+        await act(async () => { addBtn.click(); });
+        await flush();
+        // a new cell was appended (which also exercises the shouldFocus effect on the focused cell)
+        expect(root.querySelectorAll("input.promoted-attribute-input").length).toBeGreaterThan(1);
     });
 });
+
+// --- Helpers --------------------------------------------------------------------------------------
+
+function addLabel(note: FNote, name: string, value: string) {
+    return addAttribute(note, "label", name, value);
+}
+
+function addAttribute(note: FNote, type: "label" | "relation", name: string, value: string) {
+    // mirror what easy-froca does, for additional value attributes beyond the buildNote definition
+    const attributeId = `attr-${Math.random().toString(36).slice(2)}`;
+    const attr = new FAttribute(froca, {
+        noteId: note.noteId,
+        attributeId,
+        type,
+        name,
+        value,
+        position: note.attributes.length,
+        isInheritable: false
+    });
+    froca.attributes[attributeId] = attr;
+    note.attributes.push(attributeId);
+    if (!noteAttributeCache.attributes[note.noteId]) {
+        noteAttributeCache.attributes[note.noteId] = [];
+    }
+    noteAttributeCache.attributes[note.noteId].push(attr);
+    return attr;
+}

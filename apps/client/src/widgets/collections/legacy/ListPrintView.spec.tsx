@@ -37,11 +37,12 @@ import { ListPrintView } from "./ListPrintView";
 let container: HTMLDivElement | undefined;
 
 function renderView(props: Record<string, unknown>) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+    const el = document.createElement("div");
+    container = el;
+    document.body.appendChild(el);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    act(() => render(<ListPrintView {...(props as any)} />, container));
-    return container;
+    act(() => render(<ListPrintView {...(props as any)} />, el));
+    return el;
 }
 
 type AnyFn = ReturnType<typeof vi.fn>;
