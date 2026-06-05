@@ -59,7 +59,35 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                 icon: "bx bx-hash",
                 type: "checkbox",
                 bindToLabel: "calendar:weekNumbers"
-            }
+            },
+            {
+                label: t("calendar_view.set_slot_duration"),
+                icon: "bx bx-time",
+                type: "combobox",
+                bindToLabel: "calendar:slotDuration",
+                options: [
+                    { value: "00:01:00", label: "1 Minute" },
+                    { value: "00:05:00", label: "5 Minutes" },
+                    { value: "00:10:00", label: "10 Minutes" },
+                    { value: "00:20:00", label: "20 Minutes" },
+                    { value: "00:30:00", label: "30 Minutes" },
+                    { value: "01:00:00", label: "1 Hour" }
+                ]
+            },
+            {
+                label: t("calendar_view.set_slot_label_interval"),
+                icon: "bx bx-time",
+                type: "combobox",
+                bindToLabel: "calendar:slotLabelInterval",
+                options: [
+                    { value: "00:01:00", label: "1 Minute" },
+                    { value: "00:05:00", label: "5 Minutes" },
+                    { value: "00:10:00", label: "10 Minutes" },
+                    { value: "00:20:00", label: "20 Minutes" },
+                    { value: "00:30:00", label: "30 Minutes" },
+                    { value: "01:00:00", label: "1 Hour" }
+                ]
+            },
         ]
     },
     geoMap: {
