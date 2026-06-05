@@ -13,6 +13,12 @@ export interface ValidationResponse {
     message?: string;
 }
 
+interface SortCriterion {
+    key: string;
+    reverse: boolean;
+    hasExplicitDirection: boolean;
+}
+
 function validateParentChild(parentNoteId: string, childNoteId: string, branchId: string | null = null): ValidationResponse {
     if (["root", "_hidden", "_share", "_lbRoot", "_lbAvailableLaunchers", "_lbVisibleLaunchers"].includes(childNoteId)) {
         return { branch: null, success: false, message: `Cannot change this note's location.` };
@@ -77,10 +83,43 @@ function wouldAddingBranchCreateCycle(parentNoteId: string, childNoteId: string)
     return parentAncestorNoteIds.some((parentAncestorNoteId) => childSubtreeNoteIds.has(parentAncestorNoteId));
 }
 
+function parseSortCriteria(customSortBy: string, reverse: boolean): SortCriterion[] {
+    const criteria = customSortBy
+        .split(",")
+        .map((sortBy) => {
+            const trimmedSortBy = sortBy.trim();
+
+            if (!trimmedSortBy) {
+                return null;
+            }
+
+            const directionSeparatorIndex = trimmedSortBy.lastIndexOf(":");
+            const rawDirection = directionSeparatorIndex >= 0
+                ? trimmedSortBy.substring(directionSeparatorIndex + 1).trim().toLowerCase()
+                : null;
+            const hasExplicitDirection = rawDirection === "asc" || rawDirection === "desc";
+            const key = hasExplicitDirection
+                ? trimmedSortBy.substring(0, directionSeparatorIndex).trim()
+                : trimmedSortBy;
+
+            return {
+                key: key || "title",
+                reverse: hasExplicitDirection ? rawDirection === "desc" : reverse,
+                hasExplicitDirection
+            };
+        })
+        .filter((criterion): criterion is SortCriterion => !!criterion);
+
+    return criteria.length > 0 ? criteria : [{ key: "title", reverse, hasExplicitDirection: false }];
+}
+
 function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse = false, foldersFirst = false, sortNatural = false, _sortLocale?: string | null) {
     if (!customSortBy) {
         customSortBy = "title";
     }
+
+    const sortCriteria = parseSortCriteria(customSortBy, reverse);
+    const hasExplicitDirection = sortCriteria.some((criterion) => criterion.hasExplicitDirection);
 
     // sortLocale can not be empty string or null value, default value must be set to undefined.
     const sortLocale = _sortLocale || undefined;
@@ -124,26 +163,28 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
                 }
             }
 
+            function compareSortValues(a: string, b: string, reverse = false) {
+                return compare(a, b) * (reverse ? -1 : 1);
+            }
+
             const topAEl = fetchValue(a, "top");
             const topBEl = fetchValue(b, "top");
 
             if (topAEl !== topBEl) {
-                if (topAEl === null) return reverse ? -1 : 1;
-                if (topBEl === null) return reverse ? 1 : -1;
+                if (topAEl === null) return 1;
+                if (topBEl === null) return -1;
 
-                // since "top" should not be reversible, we'll reverse it once more to nullify this effect
-                return compare(topAEl, topBEl) * (reverse ? -1 : 1);
+                return compare(topAEl, topBEl);
             }
 
             const bottomAEl = fetchValue(a, "bottom");
             const bottomBEl = fetchValue(b, "bottom");
 
             if (bottomAEl !== bottomBEl) {
-                if (bottomAEl === null) return reverse ? 1 : -1;
-                if (bottomBEl === null) return reverse ? -1 : 1;
+                if (bottomAEl === null) return -1;
+                if (bottomBEl === null) return 1;
 
-                // since "bottom" should not be reversible, we'll reverse it once more to nullify this effect
-                return compare(bottomBEl, bottomAEl) * (reverse ? -1 : 1);
+                return compare(bottomBEl, bottomAEl);
             }
 
             if (foldersFirst) {
@@ -156,22 +197,20 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
                 }
             }
 
-            const customAEl = fetchValue(a, customSortBy) ?? fetchValue(a, "title") as string;
-            const customBEl = fetchValue(b, customSortBy) ?? fetchValue(b, "title")  as string;
+            for (const criterion of sortCriteria) {
+                const customAEl = fetchValue(a, criterion.key) ?? fetchValue(a, "title") as string;
+                const customBEl = fetchValue(b, criterion.key) ?? fetchValue(b, "title") as string;
 
-            if (customAEl !== customBEl) {
-                return compare(customAEl, customBEl);
+                if (customAEl !== customBEl) {
+                    return compareSortValues(customAEl, customBEl, criterion.reverse);
+                }
             }
 
             const titleAEl = fetchValue(a, "title") as string;
             const titleBEl = fetchValue(b, "title") as string;
 
-            return compare(titleAEl, titleBEl);
+            return compareSortValues(titleAEl, titleBEl, hasExplicitDirection ? false : reverse);
         });
-
-        if (reverse) {
-            notes.reverse();
-        }
 
         let position = 10;
         let someBranchUpdated = false;
