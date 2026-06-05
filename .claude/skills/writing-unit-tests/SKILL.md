@@ -18,6 +18,7 @@ Also follow `CLAUDE.md`: write **concise** tests (group related assertions in on
 | You're testing… | Technique | Reference |
 |---|---|---|
 | A reusable Preact component (`apps/client/src/widgets/react/`) | Render with raw `preact` `render()` into a happy-dom div | [client-components.md](client-components.md) |
+| A Preact **hook** (`apps/client/src/widgets/react/hooks.tsx`, or any `use*`) | `renderHook` harness (`test/render-hook.tsx`) + `fireEvent`/`flush`/`makeLoadResults` | [client-hooks.md](client-hooks.md) |
 | A jQuery widget / type widget | Extract logic → test fn; or instantiate + assert on `$widget` | [client-logic-and-services.md](client-logic-and-services.md) |
 | A client service (`apps/client/src/services/`) | `easy-froca` + override `server.*`; or pure logic | [client-logic-and-services.md](client-logic-and-services.md) |
 | A server service (`apps/server/src` or `packages/trilium-core/src`) | Real in-memory DB (`sql_init` + `cls.init`) or mocked becca | [server-and-core.md](server-and-core.md) |

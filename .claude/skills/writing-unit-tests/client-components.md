@@ -1,5 +1,7 @@
 # Testing Preact components (`apps/client/src/widgets/react/`)
 
+> Testing a **hook** (`use*`) rather than a component? Use the `renderHook` harness — see [client-hooks.md](client-hooks.md).
+
 You can render real components **with zero new dependencies**. The test env is already `happy-dom`, esbuild compiles JSX with `jsxImportSource: "preact"`, and `apps/client/src/test/setup.ts` already injects `$`/`glob`/`ws` and auto-mocks `services/server`. Rendering uses Preact's own `render()` — the exact mechanism the app uses in `apps/client/src/widgets/react/react_utils.tsx`.
 
 > This recipe is **proven**: Icon, Button, FormTextBox, FormSelect, and ActionButton were rendered and asserted (events + DOM) with all tests passing.
