@@ -12,6 +12,18 @@ interface MathFieldElement extends HTMLElement {
 	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
 }
 
+declare global {
+	interface Window {
+		mathVirtualKeyboard?: {
+			visible: boolean;
+			show: () => void;
+			hide: () => void;
+			addEventListener: ( event: string, cb: () => void ) => void;
+			removeEventListener: ( event: string, cb: () => void ) => void;
+		};
+	}
+}
+
 // Wrapper for the MathLive element to make it focusable in CKEditor's UI system
 export class MathFieldFocusableView extends View implements FocusableView {
 	public declare element: HTMLElement | null;
@@ -130,7 +142,7 @@ export default class MathInputView extends View {
 		} );
 
 		// Handle virtual keyboard geometry changes
-		const vk = (window as any).mathVirtualKeyboard;
+		const vk = window.mathVirtualKeyboard;
 		if ( vk && !this._vkGeometryHandler ) {
 			this._vkGeometryHandler = () => {
 				if ( vk.visible && this.mathfield ) {
@@ -247,7 +259,7 @@ export default class MathInputView extends View {
 	}
 
 	public hideKeyboard(): void {
-		(window as any).mathVirtualKeyboard?.hide();
+		window.mathVirtualKeyboard?.hide();
 	}
 
 	public focus(): void {
@@ -260,7 +272,7 @@ export default class MathInputView extends View {
 
 	public override destroy(): void {
 		this._destroyed = true;
-		const vk = (window as any).mathVirtualKeyboard;
+		const vk = window.mathVirtualKeyboard;
 		if ( vk && this._vkGeometryHandler ) {
 			vk.removeEventListener( 'geometrychange', this._vkGeometryHandler );
 			this._vkGeometryHandler = undefined;
