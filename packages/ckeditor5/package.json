@@ -15,5 +15,13 @@
     "@triliumnext/ckeditor5-mermaid": "workspace:*",
     "ckeditor5": "48.1.1",
     "ckeditor5-premium-features": "48.1.1"
+  },
+  "devDependencies": {
+    "happy-dom": "20.9.0",
+    "vite-plugin-svgo": "2.0.0",
+    "vitest": "4.1.7"
+  },
+  "scripts": {
+    "test": "vitest"
   }
 }

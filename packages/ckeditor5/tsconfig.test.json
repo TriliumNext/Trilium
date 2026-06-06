@@ -1,0 +1,19 @@
+{
+    "extends": "./tsconfig.lib.json",
+    "compilerOptions": {
+        "types": [
+            "vitest/globals",
+            "vite/client",
+            "jquery"
+        ],
+        "rootDir": ".",
+        "noEmit": true,
+        "emitDeclarationOnly": false,
+        "composite": false,
+        "sourceMap": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "tests/**/*.ts"
+    ]
+}
