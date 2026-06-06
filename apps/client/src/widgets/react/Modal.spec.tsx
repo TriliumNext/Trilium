@@ -1,10 +1,12 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { type RenderResult, renderComponent } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-// A stub bootstrap Modal whose instance records hide/show calls.
+// A stub bootstrap Modal whose instance records hide/show calls. The shared bootstrapMock does not
+// provide getOrCreateInstance, which this spec relies on, so it keeps its own bootstrap mock.
 const modalInstance = { hide: vi.fn(), show: vi.fn() };
 vi.mock("bootstrap", () => {
     class Modal {
@@ -36,13 +38,11 @@ vi.mock("../../components/app_context", () => ({
     default: { triggerCommand: (...args: unknown[]) => triggerCommand(...args) }
 }));
 
-import Component from "../../components/component";
 import Modal, { ModalProps } from "./Modal";
-import { ParentComponent } from "./react_utils";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let rendered: RenderResult | undefined;
 
 function makeProps(props: Partial<ModalProps>): ModalProps {
     return {
@@ -56,46 +56,21 @@ function makeProps(props: Partial<ModalProps>): ModalProps {
 }
 
 function renderModal(props: Partial<ModalProps> = {}) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={new Component()}>
-                <Modal {...makeProps(props)} />
-            </ParentComponent.Provider>
-        ), target);
-    });
-    const root = target.querySelector(".modal");
+    rendered = renderComponent(<Modal {...makeProps(props)} />);
+    const root = rendered.container.querySelector(".modal");
     if (!root) throw new Error("modal root not rendered");
     return root as HTMLElement;
 }
 
 function rerenderModal(props: Partial<ModalProps>) {
-    const target = container;
-    if (!target) throw new Error("no container");
-    act(() => {
-        render((
-            <ParentComponent.Provider value={new Component()}>
-                <Modal {...makeProps(props)} />
-            </ParentComponent.Provider>
-        ), target);
-    });
+    if (!rendered) throw new Error("no container");
+    rendered.rerender(<Modal {...makeProps(props)} />);
 }
 
 beforeEach(() => {
     vi.clearAllMocks();
+    rendered = undefined;
     openDialog.mockImplementation((...args: unknown[]) => Promise.resolve(args[0] as JQuery<HTMLElement>));
-});
-
-afterEach(() => {
-    const target = container;
-    if (target) {
-        act(() => { render(null, target); });
-        target.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Static structure -----------------------------------------------------------------------------
@@ -335,7 +310,7 @@ describe("Modal show/hide lifecycle", () => {
         const onShown = vi.fn();
         const onHidden = vi.fn();
         const root = renderModal({ show: true, onShown, onHidden });
-        act(() => { if (container) render(null, container); });
+        rendered?.unmount();
         // After unmount, firing the events on the detached node must not call handlers.
         root.dispatchEvent(new Event("shown.bs.modal"));
         root.dispatchEvent(new Event("hidden.bs.modal"));

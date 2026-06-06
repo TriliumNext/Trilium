@@ -2,8 +2,9 @@ import type { AttributeEditor, CKTextEditor, EditorConfig, ModelPosition } from 
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import type { MutableRef } from "preact/hooks";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { renderInto } from "../../test/render";
 import CKEditor, { type CKEditorApi } from "./CKEditor";
 
 // --- Fake CKEditor implementation -----------------------------------------------------------------
@@ -135,15 +136,6 @@ const fakeConfig = { toolbar: { items: [] } } as unknown as EditorConfig;
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: preact.ComponentChild) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => { render(vnode, container ?? document.createElement("div")); });
-    return container;
-}
-
 /** Wait for the create() promise + the .then() callback chain to settle and re-render. */
 async function flushCreate() {
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
@@ -157,15 +149,6 @@ beforeEach(() => {
     FakeEditor.lastInstance = undefined;
     FakeEditor.createImpl = undefined;
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container ?? document.createElement("div")); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests -----------------------------------------------------------------------------------------
@@ -313,12 +296,12 @@ describe("CKEditor", () => {
     it("re-applies data via the currentValue effect when the prop changes after init", async () => {
         const apiRef = makeApiRef();
         const baseProps = { apiRef, editor: fakeEditor, config: fakeConfig, className: "c" };
-        renderInto(<CKEditor {...baseProps} currentValue="first" />);
+        const container = renderInto(<CKEditor {...baseProps} currentValue="first" />);
         await flushCreate();
         const instance = FakeEditor.lastInstance;
         expect(instance?.getData()).toBe("first");
         // Re-render with a changed currentValue → second useEffect fires setData(newValue).
-        act(() => { render(<CKEditor {...baseProps} currentValue="second" />, container ?? document.createElement("div")); });
+        act(() => { render(<CKEditor {...baseProps} currentValue="second" />, container); });
         await flushCreate();
         expect(instance?.getData()).toBe("second");
     });
@@ -326,11 +309,11 @@ describe("CKEditor", () => {
     it("re-applies empty string when currentValue becomes undefined", async () => {
         const apiRef = makeApiRef();
         const baseProps = { apiRef, editor: fakeEditor, config: fakeConfig, className: "c" };
-        renderInto(<CKEditor {...baseProps} currentValue="something" />);
+        const container = renderInto(<CKEditor {...baseProps} currentValue="something" />);
         await flushCreate();
         const instance = FakeEditor.lastInstance;
         instance?.setData("dirty");
-        act(() => { render(<CKEditor {...baseProps} currentValue={undefined} />, container ?? document.createElement("div")); });
+        act(() => { render(<CKEditor {...baseProps} currentValue={undefined} />, container); });
         await flushCreate();
         expect(instance?.getData()).toBe("");
     });

@@ -1,4 +1,3 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,18 +35,17 @@ vi.mock("./PdfViewer", () => ({
 }));
 
 import appContext from "../../../components/app_context";
-import Component from "../../../components/component";
+import type Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
 import type FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
+import { flush, renderComponent } from "../../../test/render";
 import PdfPreview from "./Pdf";
 
 // --- Render helpers -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 async function renderPdf(props: {
@@ -56,27 +54,18 @@ async function renderPdf(props: {
     blob?: FBlob | null;
     componentId?: string;
 }) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    const p = new Component();
+    const { container, parent: p } = renderComponent(
+        <PdfPreview
+            note={props.note}
+            noteContext={props.noteContext}
+            blob={props.blob ?? null}
+            componentId={props.componentId}
+        />
+    );
     parent = p;
-    act(() => render((
-        <ParentComponent.Provider value={p}>
-            <PdfPreview
-                note={props.note}
-                noteContext={props.noteContext}
-                blob={props.blob ?? null}
-                componentId={props.componentId}
-            />
-        </ParentComponent.Provider>
-    ), container as HTMLDivElement));
     // useViewModeConfig resolves restore() asynchronously; settle it so PdfViewer renders.
     await flush();
     return container;
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }
 
 /** Build a `file`-typed PDF note that never tries to load attachments from the throwing mock server. */
@@ -159,17 +148,13 @@ function installPrototypeContentWindow() {
 
 beforeEach(() => {
     ($.fn as unknown as Record<string, unknown>).tooltip = vi.fn();
-    // useBlobEditorSpacedUpdate's save callback calls server.upload; setup.ts only mocks get/post.
-    Object.assign(server, { upload: vi.fn(async () => undefined) });
     // SpacedUpdate.triggerUpdate's catch calls the global logError, which the test env lacks.
     (globalThis as unknown as { logError?: unknown }).logError = vi.fn();
 });
 
 afterEach(() => {
-    if (container) { act(() => render(null, container as HTMLDivElement)); container.remove(); container = undefined; }
     parent = undefined;
     delete (globalThis as unknown as { logError?: unknown }).logError;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -512,17 +497,11 @@ describe("PdfPreview - blob save flow", () => {
         const { restore } = installPrototypeContentWindow();
         try {
             const ctx = fakeNoteContext({ ntxId: "ntxTO" });
-            await act(async () => {
-                container = document.createElement("div");
-                document.body.appendChild(container);
-                const p = new Component();
-                parent = p;
-                render((
-                    <ParentComponent.Provider value={p}>
-                        <PdfPreview note={pdfNote({ id: "noteTO" })} noteContext={ctx} blob={null} componentId={undefined} />
-                    </ParentComponent.Provider>
-                ), container as HTMLDivElement);
-            });
+            // Fake timers are active, so render synchronously (no async flush, which would await a real timer).
+            const { parent: p } = renderComponent(
+                <PdfPreview note={pdfNote({ id: "noteTO" })} noteContext={ctx} blob={null} componentId={undefined} />
+            );
+            parent = p;
 
             // Mark dirty; scheduleUpdate sets a 0ms timer that, once the interval has elapsed,
             // runs the updater -> getData, which registers a 10s reject timeout.

@@ -78,22 +78,18 @@ vi.mock("../text/ReadOnlyText", () => ({
 }));
 
 import { syntaxTree } from "@codemirror/language";
-import { render } from "preact";
 
 import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
-import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
-import froca from "../../../services/froca";
 import keyboard_actions from "../../../services/keyboard_actions";
 import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import { removeIndividualBinding } from "../../../services/shortcuts";
 import toast from "../../../services/toast";
 import { getTaskStateDefinitions } from "../../../services/task_states";
-import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
+import { fakeNoteContext, renderComponent, resetFroca } from "../../../test/render";
 import { TypeWidgetProps } from "../type_widget";
 import Markdown, { buildTaskItemInsert, renderWithSourceLines } from "./Markdown";
 
@@ -176,17 +172,8 @@ function setTabManager(fake: { getActiveContextNote: () => FNote | null; getActi
 
 // --- Render helper -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let container: HTMLElement | undefined;
 let parent: Component;
-
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        noteId: "md1",
-        setContextData: vi.fn(),
-        ...overrides
-    } as unknown as NoteContext;
-}
 
 function renderMarkdown(props: Partial<TypeWidgetProps> = {}) {
     const note = props.note ?? buildNote({ id: "md1", title: "Doc", type: "code", content: "# Hi" });
@@ -199,32 +186,14 @@ function renderMarkdown(props: Partial<TypeWidgetProps> = {}) {
         noteContext: undefined,
         ...props
     };
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <Markdown {...fullProps} />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    const unmount = () => act(() => {
-        render(null, el);
-        el.remove();
-        container = undefined;
-    });
-    return { note, props: fullProps, unmount };
+    const rendered = renderComponent(<Markdown {...fullProps} />, { parent });
+    container = rendered.container;
+    return { note, props: fullProps, unmount: rendered.unmount };
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     capturedOverride = null;
     capturedSnippetMatches = null;
     splitEditorProps = null;
@@ -240,12 +209,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
     if (originalTabManager !== undefined) {
         (appContext as unknown as { tabManager: unknown }).tabManager = originalTabManager;
         originalTabManager = undefined;
     }
-    vi.restoreAllMocks();
 });
 
 // --- Pure functions ------------------------------------------------------------------------------

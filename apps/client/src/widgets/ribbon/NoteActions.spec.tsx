@@ -80,29 +80,17 @@ import froca from "../../services/froca";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
-import { flush } from "../../test/render-hook";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, flush, renderComponent, resetFroca } from "../../test/render";
 import ws from "../../services/ws";
 import NoteActions, { CommandItem, NoteContextMenu } from "./NoteActions";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
+/** Render through the shared `renderComponent` (ParentComponent + NoteContextContext) and return the container. */
 function renderInto(vnode: preact.ComponentChildren, noteContext: NoteContext | null = null) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => render(
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={noteContext}>
-                {vnode}
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>,
-        el
-    ));
-    return el;
+    return renderComponent(vnode, { parent, noteContext }).container;
 }
 
 /** Open every Bootstrap dropdown so the lazily-rendered `{shown && children}` items mount. */
@@ -114,45 +102,19 @@ function openDropdowns(root: ParentNode) {
     });
 }
 
-/** A minimal NoteContext-shaped object for the few fields the component touches. */
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: "root/note1",
-        viewScope: { viewMode: "default" },
-        isReadOnly: vi.fn(async () => false),
-        ...overrides
-    } as unknown as NoteContext;
-}
-
 beforeEach(() => {
     parent = new Component();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
+    // setup.ts provides put/upload/patch/remove + ws.logError globally; these two are spec-specific.
     Object.assign(server, {
-        put: vi.fn(async () => undefined),
-        remove: vi.fn(async () => undefined),
-        upload: vi.fn(async () => undefined),
         post: vi.fn(async () => ({ attachment: { ownerId: "owner", attachmentId: "att1", title: "Att" } }))
     });
-    Object.assign(ws, { logError: vi.fn(), waitForMaxKnownEntityChangeId: vi.fn(async () => undefined) });
+    Object.assign(ws, { waitForMaxKnownEntityChangeId: vi.fn(async () => undefined) });
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     (isExperimentalFeatureEnabled as ReturnType<typeof vi.fn>).mockReturnValue(false);
     (dialog.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     (window.glob as unknown as Record<string, unknown>).isDev = false;
-});
-
-afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => { render(null, el); });
-        el.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- NoteActions (top-level, classic layout) ------------------------------------------------------
@@ -549,10 +511,15 @@ describe("NoteActions (new layout)", () => {
         };
     }
 
+    // The new layout re-imports the module graph (so the React contexts match the re-imported
+    // component), which means the shared `renderComponent` can't be used here — it wires up the
+    // *original* module's providers. These containers are therefore torn down locally.
+    const nlContainers: HTMLElement[] = [];
+
     /** Render using the providers/parent from the re-imported module graph. */
     function renderNewLayout(vnode: preact.ComponentChildren, noteContext: NoteContext | null) {
         const el = document.createElement("div");
-        container = el;
+        nlContainers.push(el);
         document.body.appendChild(el);
         act(() => render(
             <nl.ParentComponent.Provider value={nl.parent}>
@@ -566,6 +533,10 @@ describe("NoteActions (new layout)", () => {
     }
 
     afterEach(() => {
+        for (const el of nlContainers.splice(0)) {
+            act(() => render(null, el));
+            el.remove();
+        }
         vi.doUnmock("./NoteActionsCustom");
         vi.doUnmock("../buttons/move_pane_button");
         vi.doUnmock("../buttons/close_pane_button");

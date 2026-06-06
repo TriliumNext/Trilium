@@ -1,7 +1,7 @@
 import type { Defaults, jsPlumbInstance, OnConnectionBindInfo } from "jsplumb";
-import { render } from "preact";
-import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the imports) ----------------------------------------------------
 
@@ -51,24 +51,6 @@ import { JsPlumb, JsPlumbItem } from "./jsplumb";
 
 // --- Render helper -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: preact.ComponentChild) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => { render(vnode, el); });
-    return el;
-}
-
-function unmount() {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-}
-
 /** Returns the most recently created fake jsPlumb instance, throwing if none exists. */
 function lastInstance() {
     const inst = shared.instances[shared.instances.length - 1];
@@ -84,11 +66,6 @@ beforeEach(() => {
     vi.clearAllMocks();
 });
 
-afterEach(() => {
-    unmount();
-    vi.restoreAllMocks();
-});
-
 // --- JsPlumb wrapper -----------------------------------------------------------------------------
 
 describe("JsPlumb", () => {
@@ -97,7 +74,7 @@ describe("JsPlumb", () => {
         const containerRef = { current: null as unknown as HTMLElement };
         const onInstanceCreated = vi.fn();
 
-        const root = renderInto(
+        const { container: root } = renderComponent(
             <JsPlumb
                 className="my-canvas"
                 props={baseProps}
@@ -127,7 +104,7 @@ describe("JsPlumb", () => {
     });
 
     it("works without optional refs/callbacks and tears the instance down on unmount", () => {
-        renderInto(
+        const { unmount } = renderComponent(
             <JsPlumb props={baseProps}>
                 <span />
             </JsPlumb>
@@ -142,7 +119,7 @@ describe("JsPlumb", () => {
 
     it("binds the connection handler and unbinds it on unmount", () => {
         const onConnection = vi.fn();
-        renderInto(
+        const { unmount } = renderComponent(
             <JsPlumb props={baseProps} onConnection={onConnection}>
                 <span />
             </JsPlumb>
@@ -157,7 +134,7 @@ describe("JsPlumb", () => {
     it("re-binds when the connection handler changes, unbinding the previous one", () => {
         const first = vi.fn();
         const second = vi.fn();
-        renderInto(
+        const { rerender } = renderComponent(
             <JsPlumb props={baseProps} onConnection={first}>
                 <span />
             </JsPlumb>
@@ -166,20 +143,17 @@ describe("JsPlumb", () => {
         expect(instance.bind).toHaveBeenCalledWith("connection", first);
 
         // Re-render with a new handler → cleanup unbinds `first`, effect binds `second`.
-        act(() => {
-            render(
-                <JsPlumb props={baseProps} onConnection={second}>
-                    <span />
-                </JsPlumb>,
-                container as HTMLDivElement
-            );
-        });
+        rerender(
+            <JsPlumb props={baseProps} onConnection={second}>
+                <span />
+            </JsPlumb>
+        );
         expect(instance.unbind).toHaveBeenCalledWith("connection", first);
         expect(instance.bind).toHaveBeenCalledWith("connection", second);
     });
 
     it("does not bind a connection handler when none is supplied", () => {
-        renderInto(
+        renderComponent(
             <JsPlumb props={baseProps}>
                 <span />
             </JsPlumb>
@@ -189,7 +163,7 @@ describe("JsPlumb", () => {
 
     it("forwards the bound connection callback so it can be invoked with jsPlumb info", () => {
         const onConnection = vi.fn();
-        renderInto(
+        renderComponent(
             <JsPlumb props={baseProps} onConnection={onConnection}>
                 <span />
             </JsPlumb>
@@ -213,7 +187,7 @@ describe("JsPlumbItem", () => {
         // the ref with a fake instance so the item's draggable/source/target effects have a target.
         const seeded = makeFakeInstance();
         const apiRef = { current: seeded as unknown as jsPlumbInstance };
-        const root = renderInto(
+        const { container: root } = renderComponent(
             <JsPlumb props={baseProps} apiRef={apiRef}>
                 <JsPlumbItem {...itemProps} />
             </JsPlumb>
@@ -274,7 +248,7 @@ describe("JsPlumbItem", () => {
 
     it("does nothing when rendered without a jsPlumb context provider", () => {
         // No surrounding <JsPlumb> → useContext returns undefined and the config effects bail out.
-        const root = renderInto(
+        const { container: root } = renderComponent(
             <JsPlumbItem
                 x={5}
                 y={6}

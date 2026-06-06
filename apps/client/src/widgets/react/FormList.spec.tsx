@@ -1,6 +1,8 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -45,27 +47,8 @@ import FormList, {
     FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem
 } from "./FormList";
 
-// --- Render helper ----------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
-
 beforeEach(() => {
     openInAppHelpFromUrlMock.mockReset();
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- FormList (the dropdown container) --------------------------------------------------------------
@@ -140,7 +123,6 @@ describe("FormList", () => {
 
         // onSelect present, but the clicked target has no data-value (click on the menu itself).
         const onSelect = vi.fn();
-        if (container) { act(() => render(null, container as HTMLDivElement)); container.remove(); container = undefined; }
         const root = renderInto(
             <FormList onSelect={onSelect}>
                 <FormListHeader text="Header" />
@@ -159,8 +141,6 @@ describe("FormList", () => {
         // Unmount triggers the effect's cleanup; should not throw.
         act(() => render(null, root));
         expect(root.querySelector(".dropdownWrapper")).toBeNull();
-        // re-create container so afterEach teardown is a no-op safe path
-        container = undefined;
     });
 });
 
@@ -248,7 +228,6 @@ describe("FormListItem", () => {
         // Not disabled -> no info-circle indicator.
         expect(enabledRoot.querySelector("li .bx-info-circle")).toBeNull();
 
-        if (container) { act(() => render(null, container as HTMLDivElement)); container.remove(); container = undefined; }
         const disabledRoot = renderInto(
             <FormListItem value="v" disabled disabledTooltip="why">Main</FormListItem>
         );

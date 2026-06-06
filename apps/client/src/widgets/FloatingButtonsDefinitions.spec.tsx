@@ -1,23 +1,12 @@
 import { VNode } from "preact";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        config: unknown;
-        constructor(el: Element, config?: unknown) { this.element = el; this.config = config; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+import { bootstrapMock } from "../test/mocks";
+
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../services/keyboard_actions", () => ({
     default: { getAction: vi.fn(async () => ({ effectiveShortcuts: [] })) }
 }));
@@ -35,59 +24,33 @@ vi.mock("../services/utils", async (importOriginal) => ({
 
 import appContext from "../components/app_context";
 import Component from "../components/component";
-import type NoteContext from "../components/note_context";
 import froca from "../services/froca";
 import { copyImageReferenceToClipboard } from "../services/image";
 import server from "../services/server";
 import toast from "../services/toast";
 import tree from "../services/tree";
 import { isElectron, openInAppHelpFromUrl } from "../services/utils";
-import ws from "../services/ws";
 import { buildNote } from "../test/easy-froca";
+import { fakeNoteContext, renderComponent, resetFroca } from "../test/render";
 import {
     BacklinksList, buildSaveSqlToNoteHandler, DESKTOP_FLOATING_BUTTONS, type FloatingButtonContext,
     POPUP_HIDDEN_FLOATING_BUTTONS, useBacklinkCount
 } from "./FloatingButtonsDefinitions";
-import { ParentComponent } from "./react/react_utils";
 
 // --- Render helper -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let container: HTMLElement | undefined;
 let parent: Component;
 
 function renderInto(vnode: VNode | false) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                {vnode}
-            </ParentComponent.Provider>
-        ), el);
-    });
-    return el;
+    container = renderComponent(vnode, { parent }).container;
+    return container;
 }
 
 /** Renders one floating-button factory function with the given context. */
 function renderButton(fn: (ctx: FloatingButtonContext) => false | VNode, ctx: FloatingButtonContext) {
     const Comp = fn as (props: FloatingButtonContext) => VNode | false;
     return renderInto(<Comp {...ctx} />);
-}
-
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        noteId: "n1",
-        hoistedNoteId: "root",
-        notePath: "root/n1",
-        viewScope: { viewMode: "default", isReadOnly: false },
-        setContextData: vi.fn(),
-        getContextData: vi.fn(),
-        clearContextData: vi.fn(),
-        isReadOnly: vi.fn(async () => false),
-        ...overrides
-    } as unknown as NoteContext;
 }
 
 function buildContext(overrides: Partial<FloatingButtonContext> = {}): FloatingButtonContext {
@@ -110,9 +73,7 @@ function byName(fn: (ctx: FloatingButtonContext) => false | VNode) {
 
 beforeEach(() => {
     parent = new Component();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     Object.assign(server, {
         get: vi.fn(async () => ({ count: 0 })),
@@ -120,13 +81,7 @@ beforeEach(() => {
         put: vi.fn(async () => undefined),
         upload: vi.fn(async () => undefined)
     });
-    Object.assign(ws, { logError: vi.fn() });
     (isElectron as ReturnType<typeof vi.fn>).mockReturnValue(false);
-});
-
-afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
 });
 
 // --- Exported lists ------------------------------------------------------------------------------
@@ -143,7 +98,6 @@ describe("floating button lists", () => {
         const note = buildNote({ id: "neutral", title: "N" });
         for (const fn of DESKTOP_FLOATING_BUTTONS) {
             expect(() => renderButton(fn, buildContext({ note }))).not.toThrow();
-            if (container) { render(null, container); container.remove(); container = undefined; }
         }
     });
 });
@@ -391,7 +345,6 @@ describe("OpenElectronApiDocsButton", () => {
         Object.assign(note, { mime: "application/javascript;env=frontend" });
         (isElectron as ReturnType<typeof vi.fn>).mockReturnValue(false);
         expect(renderButton(fn, buildContext({ note })).querySelector("button")).toBeNull();
-        if (container) { render(null, container); container.remove(); container = undefined; }
 
         (isElectron as ReturnType<typeof vi.fn>).mockReturnValue(true);
         const el = renderButton(fn, buildContext({ note }));
@@ -603,16 +556,7 @@ describe("useBacklinkCount", () => {
 
     function renderProbe(note: ReturnType<typeof buildNote> | null, isDefaultViewMode: boolean) {
         result = { current: -1 };
-        const el = document.createElement("div");
-        container = el;
-        document.body.appendChild(el);
-        act(() => {
-            render((
-                <ParentComponent.Provider value={parent}>
-                    <Probe note={note} isDefaultViewMode={isDefaultViewMode} />
-                </ParentComponent.Provider>
-            ), el);
-        });
+        renderComponent(<Probe note={note} isDefaultViewMode={isDefaultViewMode} />, { parent });
     }
 
     it("returns 0 and does not query when there is no note or non-default view mode", async () => {
@@ -683,17 +627,10 @@ describe("BacklinksList", () => {
 
         let el: HTMLElement | undefined;
         await act(async () => {
-            container = document.createElement("div");
-            document.body.appendChild(container);
-            render((
-                <ParentComponent.Provider value={parent}>
-                    <ul><BacklinksList note={note} /></ul>
-                </ParentComponent.Provider>
-            ), container);
+            el = renderComponent(<ul><BacklinksList note={note} /></ul>, { parent }).container;
             await new Promise(r => setTimeout(r, 0));
         });
         await act(async () => { await new Promise(r => setTimeout(r, 0)); });
-        el = container;
         expect(el?.querySelectorAll("li").length).toBe(1);
         expect(getNotes).toHaveBeenCalledWith([ "src1" ]);
     });
@@ -708,18 +645,13 @@ describe("BacklinksList", () => {
         vi.spyOn(froca, "getNotes").mockResolvedValue([]);
         const note = buildNote({ id: "blist2", title: "B" });
 
+        let el: HTMLElement | undefined;
         await act(async () => {
-            container = document.createElement("div");
-            document.body.appendChild(container);
-            render((
-                <ParentComponent.Provider value={parent}>
-                    <ul><BacklinksList note={note} /></ul>
-                </ParentComponent.Provider>
-            ), container);
+            el = renderComponent(<ul><BacklinksList note={note} /></ul>, { parent }).container;
             await new Promise(r => setTimeout(r, 0));
         });
         await act(async () => { await new Promise(r => setTimeout(r, 0)); });
-        expect(container?.querySelector("li p")?.textContent).toBe("myrel");
+        expect(el?.querySelector("li p")?.textContent).toBe("myrel");
     });
 
     it("refreshes when a relation-affecting entitiesReloaded event fires", async () => {
@@ -730,13 +662,7 @@ describe("BacklinksList", () => {
         const note = buildNote({ id: "blist3", title: "B" });
 
         await act(async () => {
-            container = document.createElement("div");
-            document.body.appendChild(container);
-            render((
-                <ParentComponent.Provider value={parent}>
-                    <ul><BacklinksList note={note} /></ul>
-                </ParentComponent.Provider>
-            ), container);
+            renderComponent(<ul><BacklinksList note={note} /></ul>, { parent });
             await new Promise(r => setTimeout(r, 0));
         });
         const callsBefore = getSpy.mock.calls.length;

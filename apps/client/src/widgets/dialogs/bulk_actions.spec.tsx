@@ -1,9 +1,10 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// NOTE: keep this local bootstrap mock — the Modal component uses `Modal.getOrCreateInstance`, which
+// the shared `bootstrapMock()` helper does not provide.
 vi.mock("bootstrap", () => {
     class Modal {
         static instances = new Map<Element, Modal>();
@@ -70,34 +71,21 @@ vi.mock("../../services/bulk_action", () => ({
 }));
 
 import bulk_action from "../../services/bulk_action";
-import Component from "../../components/component";
-import froca from "../../services/froca";
+import type Component from "../../components/component";
 import server from "../../services/server";
 import toast from "../../services/toast";
-import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import BulkActionsDialog from "./bulk_actions";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderDialog() {
-    parent = new Component();
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <BulkActionsDialog />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    const result = renderComponent(<BulkActionsDialog />);
+    parent = result.parent;
+    return result.container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -105,16 +93,6 @@ function fireEvent(name: string, data: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (parent.handleEventInChildren as any)(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
 }
 
 /** Builds the `_bulkAction` system note so froca.getNote("_bulkAction") resolves from the cache. */
@@ -129,24 +107,13 @@ async function openDialog(el: HTMLElement, selectedOrActiveNoteIds: string[] = [
 }
 
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     vi.clearAllMocks();
-    // The auto-mocked server (test/setup.ts) only defines get/post; post is used by the component.
+    // The shared server mock's `post` returns undefined; the component reads `affectedNoteCount`.
     Object.assign(server, {
-        post: vi.fn(async () => ({ affectedNoteCount: 7 })),
-        put: vi.fn(async () => undefined)
+        post: vi.fn(async () => ({ affectedNoteCount: 7 }))
     });
-    Object.assign(ws, { logError: vi.fn(), waitForMaxKnownEntityChangeId: vi.fn(async () => undefined) });
     (bulk_action.parseActions as ReturnType<typeof vi.fn>).mockReturnValue([]);
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

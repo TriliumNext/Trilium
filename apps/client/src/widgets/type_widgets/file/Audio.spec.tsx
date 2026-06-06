@@ -1,9 +1,13 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// Kept local: the MediaPlayer controls rely on Dropdown.getOrCreateInstance/.update, which the
+// shared bootstrapMock does not provide.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -43,15 +47,6 @@ import AudioPreview from "./Audio";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
-
 /** Build a `file`-typed note in froca so nothing tries to load from the throwing mock server. */
 function audioNote(overrides: { id?: string; mime?: string } = {}): FNote {
     const note = buildNote({ id: overrides.id ?? "aud1", title: "clip", type: "file" });
@@ -90,11 +85,6 @@ function setupAudioMetrics(audio: HTMLAudioElement, opts: { currentTime?: number
 beforeEach(() => {
     // No-op jQuery tooltip so ActionButton's useStaticTooltip never touches the real plugin.
     ($.fn as unknown as Record<string, unknown>).tooltip = vi.fn();
-});
-
-afterEach(() => {
-    if (container) { act(() => render(null, container as HTMLDivElement)); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -163,7 +153,7 @@ describe("AudioPreview", () => {
         expect(root.querySelector(".no-items")).toBeTruthy();
 
         // Re-render with a different note -> useEffect([noteId]) resets error -> player returns.
-        act(() => render(<AudioPreview note={audioNote({ id: "audB" })} />, container as HTMLDivElement));
+        act(() => render(<AudioPreview note={audioNote({ id: "audB" })} />, root));
         expect(root.querySelector(".no-items")).toBeFalsy();
         expect(root.querySelector("audio")).toBeTruthy();
     });

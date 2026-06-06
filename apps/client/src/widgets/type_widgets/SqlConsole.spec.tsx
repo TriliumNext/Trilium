@@ -1,8 +1,7 @@
 import { SchemaResponse, SqlExecuteResponse } from "@triliumnext/commons";
 import { ComponentChildren } from "preact";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the imports) ----------------------------------------------------
 
@@ -37,42 +36,27 @@ vi.mock("../collections/table/tabulator", () => ({
     }
 }));
 
-import Component from "../../components/component";
-import type NoteContext from "../../components/note_context";
+import type Component from "../../components/component";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { flush, renderComponent } from "../../test/render";
 import SqlConsole, { SqlTableSchemas } from "./SqlConsole";
 import { TypeWidgetProps } from "./type_widget";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderWithContext(vnode: ComponentChildren) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    parent = new Component();
-    act(() => render((
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={null}>
-                {vnode}
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), el));
-    return el;
+    const { container, parent: renderedParent } = renderComponent(vnode);
+    parent = renderedParent;
+    return container;
 }
 
 function fireTriliumEvent(name: string, data: unknown) {
     act(() => {
         (parent.handleEventInChildren as (n: string, d: unknown) => unknown)(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }
 
 function makeProps(overrides: Partial<TypeWidgetProps> = {}): TypeWidgetProps {
@@ -92,16 +76,6 @@ beforeEach(() => {
     vi.clearAllMocks();
     // The auto-mock only defines server.get/post; SqlTableSchemas calls server.get<SchemaResponse[]>.
     Object.assign(server, { get: vi.fn(async () => [] as SchemaResponse[]) });
-});
-
-afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => render(null, el));
-        el.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- SqlConsole (default export) ------------------------------------------------------------------

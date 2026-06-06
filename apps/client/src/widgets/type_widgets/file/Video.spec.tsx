@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -43,15 +44,6 @@ import VideoPreview from "./Video";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
-
 /** Build a `file`-typed note in froca so nothing tries to load from the throwing mock server. */
 function videoNote(overrides: { id?: string; mime?: string } = {}): FNote {
     const note = buildNote({ id: overrides.id ?? "vid1", title: "clip", type: "file" });
@@ -81,11 +73,6 @@ function stubMediaMethods(video: HTMLVideoElement, opts: { paused?: boolean } = 
 beforeEach(() => {
     // No-op jQuery tooltip so ActionButton's useStaticTooltip never touches the real plugin.
     ($.fn as unknown as Record<string, unknown>).tooltip = vi.fn();
-});
-
-afterEach(() => {
-    if (container) { act(() => render(null, container as HTMLDivElement)); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

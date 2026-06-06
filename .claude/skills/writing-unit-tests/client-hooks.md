@@ -1,13 +1,13 @@
 # Testing Preact hooks (`apps/client/src/widgets/react/hooks.tsx`)
 
-Hooks can't be called outside a render. Test them by mounting a throwaway component that calls the hook and exposes its return value — using the **shared harness** `apps/client/src/test/render-hook.tsx`. It renders inside the real `ParentComponent`/`NoteContextContext` providers (the same ones `react_utils.tsx` uses in the app), so `useTriliumEvent`/`useTriliumEvents` register against a real `Component` you can drive.
+Hooks can't be called outside a render. Test them by mounting a throwaway component that calls the hook and exposes its return value — using the **shared kit** `apps/client/src/test/render.tsx`. It renders inside the real `ParentComponent`/`NoteContextContext` providers (the same ones `react_utils.tsx` uses in the app), so `useTriliumEvent`/`useTriliumEvents` register against a real `Component` you can drive.
 
 > **Proven:** all ~50 hooks in `hooks.tsx` were taken from 0.8% → **100% lines / 90.6% branches** (64 tests, zero new deps, no production-code changes) in `hooks.spec.tsx`. Use that file as the worked example.
 
 ## The harness (already in the repo — import it, don't re-create)
 
 ```ts
-import { renderHook, flush, makeLoadResults } from "../../test/render-hook";
+import { renderHook, flush, makeLoadResults, fakeNoteContext } from "../../test/render";
 ```
 
 - **`renderHook(useHook, { parent?, noteContext? })`** → `{ result, parent, fireEvent, rerender, unmount }`.

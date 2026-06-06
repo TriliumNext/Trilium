@@ -1,7 +1,7 @@
-import type { ComponentChildren, VNode } from "preact";
-import { render } from "preact";
-import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../../test/mocks";
+import { flush, renderComponent, resetFroca } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -52,35 +52,22 @@ vi.mock("../../../services/utils", async (importOriginal) => {
 });
 
 // ActionButton (used by PreviewButton) pulls in bootstrap tooltips + the keyboard-actions service.
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../../../services/keyboard_actions", () => ({
     default: { getAction: vi.fn(async () => ({ effectiveShortcuts: [] })) }
 }));
 
+import type { VNode } from "preact";
+
 import type FNote from "../../../entities/fnote";
-import Component from "../../../components/component";
-import froca from "../../../services/froca";
-import noteAttributeCache from "../../../services/note_attribute_cache";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
+import type { RenderResult } from "../../../test/render";
 import SplitEditor, { PreviewButton } from "./SplitEditor";
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement;
-let parent: Component;
+let lastRender: RenderResult;
 
 /** The base {@link TypeWidgetProps} every SplitEditor render needs; tests supply the interesting ones. */
 function baseProps(note: FNote) {
@@ -93,18 +80,10 @@ function baseProps(note: FNote) {
     };
 }
 
+/** Renders inside the Trilium providers via the shared harness and returns the container. */
 function renderInto(vnode: VNode) {
-    parent = new Component();
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => {
-        render(<ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>, container);
-    });
-    return container;
-}
-
-async function flush() {
-    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    lastRender = renderComponent(vnode);
+    return lastRender.container;
 }
 
 function setOptions(values: Record<string, string>) {
@@ -116,22 +95,11 @@ beforeEach(() => {
     splitInstances.length = 0;
     editableProps.length = 0;
     readonlyProps.length = 0;
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
+    resetFroca();
     vi.clearAllMocks();
     isMobileSpy.mockReturnValue(false);
     isDesktopSpy.mockReturnValue(true);
     setOptions({});
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container); });
-        container.remove();
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests -----------------------------------------------------------------------------------------
@@ -228,7 +196,7 @@ describe("SplitEditor — split lifecycle & desktop guard", () => {
         renderInto(<SplitEditor {...baseProps(note)} previewContent={<div />} />);
         await flush();
         const instance = splitInstances[splitInstances.length - 1];
-        act(() => { render(null, container); });
+        lastRender.unmount();
         expect(instance.destroy).toHaveBeenCalledTimes(1);
     });
 });

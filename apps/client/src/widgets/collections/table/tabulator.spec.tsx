@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent, type RenderResult } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -87,42 +88,23 @@ vi.mock("tabulator-tables", () => ({
     Tabulator: FakeTabulator
 }));
 
-import { ParentComponent } from "../../react/react_utils";
 import Component from "../../../components/component";
 import Tabulator from "./tabulator";
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let rendered: RenderResult | undefined;
 
 function renderTabulator(props: Record<string, unknown>, parent: Component | null = new Component()) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <Tabulator {...(props as any)} />
-            </ParentComponent.Provider>,
-            target
-        );
-    });
-    return target;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rendered = renderComponent(<Tabulator {...(props as any)} />, { parent } as { parent?: Component });
+    return rendered.container;
 }
 
-function rerender(props: Record<string, unknown>, parent: Component | null = new Component()) {
-    const target = container;
-    if (!target) throw new Error("Nothing rendered yet");
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <Tabulator {...(props as any)} />
-            </ParentComponent.Provider>,
-            target
-        );
-    });
+function rerender(props: Record<string, unknown>) {
+    if (!rendered) throw new Error("Nothing rendered yet");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rendered.rerender(<Tabulator {...(props as any)} />);
 }
 
 /** Fire the `tableBuilt` event on the most recently created Tabulator so `tabulatorRef` gets set. */
@@ -136,16 +118,8 @@ function buildLatest() {
 beforeEach(() => {
     tabulatorInstances.length = 0;
     registeredModules.length = 0;
+    rendered = undefined;
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 describe("Tabulator", () => {
@@ -242,7 +216,7 @@ describe("Tabulator", () => {
         expect(onCellClick2).toHaveBeenCalledTimes(1); // previous handler was detached on cleanup
 
         // Unmount removes the listeners and destroys the instance.
-        act(() => render(null, container as HTMLDivElement));
+        rendered?.unmount();
         expect(instance.handlers.get("cellClick")?.size ?? 0).toBe(0);
         expect(instance.destroyed).toBe(true);
     });

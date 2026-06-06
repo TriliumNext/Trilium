@@ -1,21 +1,12 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { bootstrapMock } from "../test/mocks";
+import { flush, renderComponent, resetFroca } from "../test/render";
+
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../services/math", () => ({ default: { render: vi.fn() } }));
 vi.mock("../services/keyboard_actions", () => ({
     default: {
@@ -26,38 +17,10 @@ vi.mock("../services/keyboard_actions", () => ({
 
 import type { ElectronNavigationApi } from "@triliumnext/commons";
 
-import Component from "../components/component";
-import froca from "../services/froca";
 import { buildNote } from "../test/easy-froca";
-import { flush } from "../test/render-hook";
 import TabHistoryNavigationButtons from "./TabHistoryNavigationButtons";
-import { NoteContextContext, ParentComponent } from "./react/react_utils";
 
 // --- Render helper --------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-
-function renderComponent() {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => render((
-        <ParentComponent.Provider value={new Component()}>
-            <NoteContextContext.Provider value={null}>
-                <TabHistoryNavigationButtons />
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), target));
-    return target;
-}
-
-function unmountComponent() {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-}
 
 /** Builds an electron navigation API stub and installs it on `window.electronApi`. */
 function installElectronApi(overrides: Partial<ElectronNavigationApi> = {}) {
@@ -95,23 +58,19 @@ function seedLauncherNotes(visible = false) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     removeElectronApi();
 });
 
 afterEach(() => {
-    unmountComponent();
     removeElectronApi();
-    vi.restoreAllMocks();
 });
 
 describe("TabHistoryNavigationButtons", () => {
     it("renders both nav buttons in non-electron mode (no api, defaults enabled)", async () => {
         seedLauncherNotes();
-        const root = renderComponent();
+        const { container: root } = renderComponent(<TabHistoryNavigationButtons />);
         await flush();
 
         const wrapper = root.querySelector(".tab-history-navigation-buttons");
@@ -132,7 +91,7 @@ describe("TabHistoryNavigationButtons", () => {
             navigationCanGoBack: vi.fn(() => false),
             navigationCanGoForward: vi.fn(() => true)
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<TabHistoryNavigationButtons />);
         await flush();
 
         // Back disabled, forward enabled (icons distinguish the two buttons).
@@ -159,7 +118,7 @@ describe("TabHistoryNavigationButtons", () => {
             navigationCanGoBack: vi.fn(() => canBack),
             navigationCanGoForward: vi.fn(() => canForward)
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<TabHistoryNavigationButtons />);
         await flush();
 
         let back = root.querySelector("button.bx-left-arrow-alt");
@@ -180,16 +139,16 @@ describe("TabHistoryNavigationButtons", () => {
     it("removes navigation listeners on unmount (effect cleanup)", async () => {
         seedLauncherNotes();
         const navigation = installElectronApi();
-        renderComponent();
+        const { unmount } = renderComponent(<TabHistoryNavigationButtons />);
         await flush();
 
-        unmountComponent();
+        unmount();
         expect(navigation.removeDidNavigateListeners).toHaveBeenCalledTimes(1);
     });
 
     it("hides the legacy buttons when their launchers are visible", async () => {
         seedLauncherNotes(true);
-        const root = renderComponent();
+        const { container: root } = renderComponent(<TabHistoryNavigationButtons />);
         await flush();
 
         // Both legacy launchers are visible → component renders neither ActionButton.
@@ -204,7 +163,7 @@ describe("TabHistoryNavigationButtons", () => {
             navigationCanGoBack: vi.fn(() => undefined as unknown as boolean),
             navigationCanGoForward: vi.fn(() => undefined as unknown as boolean)
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<TabHistoryNavigationButtons />);
         await flush();
 
         const buttons = root.querySelectorAll("button");

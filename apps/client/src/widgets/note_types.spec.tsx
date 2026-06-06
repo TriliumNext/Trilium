@@ -1,5 +1,5 @@
 import { isValidElement } from "preact";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // --- Mock every dynamically imported type-widget module ------------------------------------------
 // The real modules pull in heavy dependencies (ckeditor, mermaid, codemirror, llm services, ...).
@@ -34,10 +34,6 @@ vi.mock("./type_widgets/spreadsheet/Spreadsheet", () => ({ default: stub() }));
 vi.mock("./type_widgets/llm_chat/LlmChat", () => ({ default: stub() }));
 
 import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
-
-afterEach(() => {
-    vi.restoreAllMocks();
-});
 
 const allTypes = Object.keys(TYPE_MAPPINGS) as ExtendedNoteType[];
 

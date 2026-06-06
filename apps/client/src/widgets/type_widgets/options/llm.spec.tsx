@@ -1,7 +1,8 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -70,27 +71,12 @@ vi.mock("./llm/AddProviderModal", () => ({
 
 import options from "../../../services/options";
 import server from "../../../services/server";
-import ws from "../../../services/ws";
-import { ParentComponent } from "../../react/react_utils";
 import LlmSettings from "./llm";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderComponent() {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={null}>
-                <LlmSettings />
-            </ParentComponent.Provider>,
-            target
-        );
-    });
-    return target;
+function renderLlmSettings() {
+    return renderComponent(<LlmSettings />).container;
 }
 
 function setOptions(values: Record<string, string>) {
@@ -104,18 +90,6 @@ beforeEach(() => {
     vi.clearAllMocks();
     experimentalFeatureEnabled.mockReturnValue(true);
     confirmResult.mockResolvedValue(true);
-    Object.assign(server, { put: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
-});
-
-afterEach(() => {
-    const target = container;
-    if (target) {
-        act(() => render(null, target));
-        target.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Feature gating -------------------------------------------------------------------------------
@@ -123,7 +97,7 @@ afterEach(() => {
 describe("LlmSettings feature gating", () => {
     it("shows only the not-enabled notice when the LLM feature is disabled", () => {
         experimentalFeatureEnabled.mockReturnValue(false);
-        const el = renderComponent();
+        const el = renderLlmSettings();
         expect(el.querySelector(".options-section")).toBeTruthy();
         expect(el.querySelector("p.form-text")).toBeTruthy();
         // The provider table / MCP section must not be rendered in the disabled branch.
@@ -132,7 +106,7 @@ describe("LlmSettings feature gating", () => {
     });
 
     it("renders provider and MCP sections when enabled", () => {
-        const el = renderComponent();
+        const el = renderLlmSettings();
         // Two OptionsSection cards: providers + MCP.
         expect(el.querySelectorAll(".options-section").length).toBeGreaterThanOrEqual(2);
         expect(el.querySelector(".switch-widget")).toBeTruthy();
@@ -145,7 +119,7 @@ describe("LlmSettings feature gating", () => {
 describe("ProviderSettings & ProviderList", () => {
     it("shows the empty placeholder when no providers are configured", () => {
         setOptions({ llmProviders: "[]", mcpEnabled: "false" });
-        const el = renderComponent();
+        const el = renderLlmSettings();
         expect(el.querySelector("table")).toBeNull();
         // The "no providers" div is rendered inside the providers card.
         expect(el.querySelector("h5")).toBeTruthy();
@@ -153,13 +127,13 @@ describe("ProviderSettings & ProviderList", () => {
 
     it("treats malformed JSON as an empty provider list", () => {
         setOptions({ llmProviders: "{not json", mcpEnabled: "false" });
-        const el = renderComponent();
+        const el = renderLlmSettings();
         expect(el.querySelector("table")).toBeNull();
     });
 
     it("treats an empty option string as an empty provider list", () => {
         setOptions({ llmProviders: "", mcpEnabled: "false" });
-        const el = renderComponent();
+        const el = renderLlmSettings();
         expect(el.querySelector("table")).toBeNull();
     });
 
@@ -171,7 +145,7 @@ describe("ProviderSettings & ProviderList", () => {
             ]),
             mcpEnabled: "false"
         });
-        const el = renderComponent();
+        const el = renderLlmSettings();
         const rows = el.querySelectorAll("tbody tr");
         expect(rows.length).toBe(2);
         // First column = provider name; second column = resolved type label or raw provider id.
@@ -190,7 +164,7 @@ describe("ProviderSettings & ProviderList", () => {
 describe("adding a provider", () => {
     it("appends the saved provider and persists the new JSON", async () => {
         setOptions({ llmProviders: "[]", mcpEnabled: "false" });
-        const el = renderComponent();
+        const el = renderLlmSettings();
         const save = el.querySelector(".stub-save");
         expect(save).toBeTruthy();
         await act(async () => { (save as HTMLButtonElement).click(); });
@@ -204,7 +178,7 @@ describe("adding a provider", () => {
     });
 
     it("opens the add modal when clicking the add button", () => {
-        const el = renderComponent();
+        const el = renderLlmSettings();
         const stub = el.querySelector(".add-provider-stub");
         expect(stub?.getAttribute("data-show")).toBe("false");
 
@@ -233,7 +207,7 @@ describe("deleting a provider", () => {
     it("removes the provider after the user confirms", async () => {
         confirmResult.mockResolvedValue(true);
         seedOneProvider();
-        const el = renderComponent();
+        const el = renderLlmSettings();
         expect(el.querySelectorAll("tbody tr").length).toBe(1);
 
         const deleteBtn = el.querySelector("tbody .icon-action");
@@ -250,7 +224,7 @@ describe("deleting a provider", () => {
     it("keeps the provider when the user cancels the confirmation", async () => {
         confirmResult.mockResolvedValue(false);
         seedOneProvider();
-        const el = renderComponent();
+        const el = renderLlmSettings();
 
         const deleteBtn = el.querySelector("tbody .icon-action");
         await act(async () => { (deleteBtn as HTMLButtonElement).click(); });
@@ -265,7 +239,7 @@ describe("deleting a provider", () => {
 describe("McpSettings & getMcpEndpointUrl", () => {
     it("hides the endpoint row while MCP is disabled and shows it when enabled", () => {
         setOptions({ llmProviders: "[]", mcpEnabled: "false" });
-        const el = renderComponent();
+        const el = renderLlmSettings();
         expect(el.querySelector("input[readonly]")).toBeNull();
 
         // Toggle the MCP switch on.
@@ -278,7 +252,7 @@ describe("McpSettings & getMcpEndpointUrl", () => {
 
     it("renders the endpoint readonly when MCP is enabled from the start", () => {
         setOptions({ llmProviders: "[]", mcpEnabled: "true" });
-        const el = renderComponent();
+        const el = renderLlmSettings();
         const input = el.querySelector<HTMLInputElement>("input[readonly]");
         expect(input).toBeTruthy();
         expect(input?.value).toContain("/mcp");
@@ -290,7 +264,7 @@ describe("McpSettings & getMcpEndpointUrl", () => {
         glob.httpBaseUrl = "https://desktop.example";
         try {
             setOptions({ llmProviders: "[]", mcpEnabled: "true" });
-            const el = renderComponent();
+            const el = renderLlmSettings();
             const input = el.querySelector<HTMLInputElement>("input[readonly]");
             expect(input?.value).toBe("https://desktop.example/mcp");
         } finally {
@@ -304,7 +278,7 @@ describe("McpSettings & getMcpEndpointUrl", () => {
         glob.httpBaseUrl = undefined;
         try {
             setOptions({ llmProviders: "[]", mcpEnabled: "true" });
-            const el = renderComponent();
+            const el = renderLlmSettings();
             const input = el.querySelector<HTMLInputElement>("input[readonly]");
             expect(input?.value).toContain("//localhost:");
             expect(input?.value.endsWith("/mcp")).toBe(true);
@@ -325,7 +299,7 @@ describe("McpSettings & getMcpEndpointUrl", () => {
         });
         try {
             setOptions({ llmProviders: "[]", mcpEnabled: "true" });
-            const el = renderComponent();
+            const el = renderLlmSettings();
             const input = el.querySelector<HTMLInputElement>("input[readonly]");
             expect(input?.value).toBe("https://localhost:443/mcp");
         } finally {

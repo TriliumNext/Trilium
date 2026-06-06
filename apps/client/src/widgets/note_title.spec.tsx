@@ -1,4 +1,3 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -14,47 +13,40 @@ vi.mock("../services/branches", () => ({
     default: { deleteNotes: vi.fn(async () => undefined) }
 }));
 
-import Component from "../components/component";
+import type Component from "../components/component";
 import type NoteContext from "../components/note_context";
 import branches from "../services/branches";
 import protected_session_holder from "../services/protected_session_holder";
 import server from "../services/server";
 import { buildNote } from "../test/easy-froca";
-import froca from "../services/froca";
-import { NoteContextContext, ParentComponent } from "./react/react_utils";
+import { fakeNoteContext as baseFakeNoteContext, flush, renderComponent, resetFroca } from "../test/render";
 import NoteTitleWidget from "./note_title";
+import { NoteContextContext } from "./react/react_utils";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let container: HTMLElement | undefined;
 let parent: Component | undefined;
-
-let currentProps: { className?: string } = {};
-
-function paint(target: HTMLDivElement, noteContext: NoteContext | null) {
-    render((
-        <ParentComponent.Provider value={parent ?? null}>
-            <NoteContextContext.Provider value={noteContext}>
-                <NoteTitleWidget {...currentProps} />
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), target);
-}
+// Re-render with a new note context, reusing the same parent/container.
+let rerenderCurrent: ((noteContext: NoteContext | null) => void) | undefined;
 
 function renderWidget(noteContext: NoteContext | null, props: { className?: string } = {}) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    parent = new Component();
-    currentProps = props;
-    act(() => paint(target, noteContext));
-    return target;
+    const result = renderComponent(<NoteTitleWidget {...props} />, { noteContext });
+    container = result.container;
+    parent = result.parent;
+    // `result.rerender` re-wraps in the original NoteContextContext, so nest a closer provider to
+    // override it with the new context (the innermost provider wins for the widget).
+    rerenderCurrent = (ctx) => result.rerender(
+        <NoteContextContext.Provider value={ctx}>
+            <NoteTitleWidget {...props} />
+        </NoteContextContext.Provider>
+    );
+    return container;
 }
 
 function rerenderWidget(noteContext: NoteContext | null) {
-    const target = container;
-    if (!target) throw new Error("not rendered");
-    act(() => paint(target, noteContext));
+    if (!rerenderCurrent) throw new Error("not rendered");
+    rerenderCurrent(noteContext);
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -64,20 +56,15 @@ function fireEvent(name: string, data: unknown) {
     });
 }
 
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
-}
-
 /** A minimal NoteContext shape; only the fields the widget touches are implemented. */
 function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
+    return baseFakeNoteContext({
         note: undefined,
         viewScope: { viewMode: "default" },
         isActive: vi.fn(() => true),
         getNavigationTitle: vi.fn(async () => "Nav Title"),
         ...overrides
-    } as unknown as NoteContext;
+    });
 }
 
 function getInput() {
@@ -89,11 +76,8 @@ type CheckVisibilityHost = { checkVisibility?: (opts?: unknown) => boolean };
 let checkVisibilityInstalled = false;
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined) });
     (protected_session_holder.isProtectedSessionAvailable as ReturnType<typeof vi.fn>).mockReturnValue(true);
 
     const proto = HTMLElement.prototype as unknown as CheckVisibilityHost;
@@ -104,14 +88,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    const target = container;
-    if (target) {
-        act(() => render(null, target));
-        target.remove();
-        container = undefined;
-    }
+    container = undefined;
     parent = undefined;
-    vi.restoreAllMocks();
+    rerenderCurrent = undefined;
     if (checkVisibilityInstalled) {
         delete (HTMLElement.prototype as unknown as CheckVisibilityHost).checkVisibility;
         checkVisibilityInstalled = false;

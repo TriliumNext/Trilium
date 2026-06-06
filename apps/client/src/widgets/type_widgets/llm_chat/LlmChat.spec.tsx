@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -40,67 +39,33 @@ vi.mock("./ChatInputBar.js", () => ({
 }));
 vi.mock("../../../services/i18n.js", () => ({ t: (key: string) => key }));
 
-import Component from "../../../components/component.js";
 import type NoteContext from "../../../components/note_context.js";
 import type FNote from "../../../entities/fnote.js";
-import froca from "../../../services/froca.js";
 import server from "../../../services/server.js";
 import { buildNote } from "../../../test/easy-froca.js";
-import { flush } from "../../../test/render-hook.js";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils.js";
+import { fakeNoteContext, flush, renderComponent, resetFroca } from "../../../test/render.js";
 import type { TypeWidgetProps } from "../type_widget.js";
 import LlmChat from "./LlmChat.js";
 import type { LlmChatContent } from "./llm_chat_types.js";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
 function renderChat(props: Partial<TypeWidgetProps>, noteContext: NoteContext | null = null) {
-    const host = document.createElement("div");
-    document.body.appendChild(host);
-    container = host;
-    const parent = new Component();
-    const draw = (p: Partial<TypeWidgetProps>) => act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={noteContext}>
-                    <LlmChat {...(p as TypeWidgetProps)} />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            host
-        );
-    });
-    draw(props);
-    return { container: host, parent, rerender: draw };
-}
-
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
+    const { container, parent, rerender } = renderComponent(
+        <LlmChat {...(props as TypeWidgetProps)} />,
+        { noteContext }
+    );
     return {
-        ntxId: "ntx1",
-        setContextData: vi.fn(),
-        getContextData: vi.fn(),
-        ...overrides
-    } as unknown as NoteContext;
+        container,
+        parent,
+        rerender: (p: Partial<TypeWidgetProps>) => rerender(<LlmChat {...(p as TypeWidgetProps)} />)
+    };
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     chatStub.getContent.mockReturnValue({ version: 1, messages: [] });
-    Object.assign(server, { put: vi.fn(async () => undefined) });
-});
-
-afterEach(async () => {
-    await act(async () => {});
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

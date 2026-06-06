@@ -1,6 +1,8 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -91,20 +93,10 @@ import { ParentMap } from "./map";
 
 // --- Helpers --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: ComponentChildren) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
-
-function unmount() {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
+// Unmount a container rendered via the shared `renderInto` (the shared helper also auto-tears down
+// in an afterEach, but several tests need to unmount mid-test to assert cleanup behaviour).
+function unmount(container: HTMLElement) {
+    act(() => render(null, container));
 }
 
 // A minimal stand-in for a Leaflet map; Marker.addTo/removeFrom just receive it.
@@ -117,11 +109,6 @@ function withMap(node: ComponentChildren, map: unknown = fakeMap) {
 beforeEach(() => {
     created.markers.length = 0;
     created.gpxTracks.length = 0;
-});
-
-afterEach(() => {
-    unmount();
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -204,9 +191,9 @@ describe("Marker (geomap)", () => {
     });
 
     it("removes the marker from the map on unmount", () => {
-        renderInto(withMap(<Marker coordinates={[1, 1]} onContextMenu={onContextMenu} />));
+        const root = renderInto(withMap(<Marker coordinates={[1, 1]} onContextMenu={onContextMenu} />));
         const m = created.markers[0];
-        unmount();
+        unmount(root);
         expect(m.removeFrom).toHaveBeenCalledWith(fakeMap);
     });
 
@@ -245,9 +232,9 @@ describe("GpxTrack (geomap)", () => {
     });
 
     it("removes the track from the map on unmount", () => {
-        renderInto(withMap(<GpxTrack gpxXmlString="<gpx/>" options={options} />));
+        const root = renderInto(withMap(<GpxTrack gpxXmlString="<gpx/>" options={options} />));
         const track = created.gpxTracks[0];
-        unmount();
+        unmount(root);
         expect(track.removeFrom).toHaveBeenCalledWith(fakeMap);
     });
 

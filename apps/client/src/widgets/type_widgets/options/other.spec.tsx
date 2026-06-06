@@ -1,22 +1,12 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 vi.mock("../../../services/toast", () => ({
     default: { showMessage: vi.fn(), showError: vi.fn() }
@@ -32,36 +22,18 @@ vi.mock("../../../services/utils", async (importOriginal) => ({
     isElectron: () => electronFlag
 }));
 
-import Component from "../../../components/component";
-import froca from "../../../services/froca";
 import options from "../../../services/options";
 import search from "../../../services/search";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent, NoteContextContext } from "../../react/react_utils";
+import { renderComponent as renderShared, resetFroca } from "../../../test/render";
 import OtherSettings from "./other";
 
 // --- Render harness (mounts the real component inside the Trilium providers) ----------------------
 
-let container: HTMLDivElement | undefined;
-const parent = new Component();
-
 function renderComponent() {
-    const host = document.createElement("div");
-    document.body.appendChild(host);
-    container = host;
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null}>
-                    <OtherSettings />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            host
-        );
-    });
-    return host;
+    return renderShared(<OtherSettings />).container;
 }
 
 function blur(el: Element, value: string) {
@@ -102,25 +74,13 @@ function setOptions(values: Record<string, string>) {
 beforeEach(() => {
     electronFlag = false;
     setOptions({});
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     Object.assign(server, {
         get: vi.fn(async () => ({})),
-        post: vi.fn(async () => undefined),
-        put: vi.fn(async () => undefined)
+        post: vi.fn(async () => undefined)
     });
     (search.searchForNotes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Top-level structure -------------------------------------------------------------------------

@@ -2,16 +2,8 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { renderInto } from "../../../test/render";
 import { SafeImage } from "./retry_image";
-
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: ReturnType<typeof SafeImage>) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode, container ?? document.createElement("div")));
-    return container;
-}
 
 function getImg(host: HTMLElement) {
     const img = host.querySelector("img");
@@ -28,12 +20,6 @@ function fireError(img: HTMLImageElement) {
 }
 
 afterEach(() => {
-    if (container) {
-        act(() => render(null, container ?? document.createElement("div")));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
     vi.useRealTimers();
 });
 

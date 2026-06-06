@@ -1,7 +1,6 @@
 import { MetadataResponse, NoteSizeResponse, SubtreeSizeResponse } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -12,32 +11,15 @@ vi.mock("../../services/experimental_features", () => ({
     isExperimentalFeatureEnabled: vi.fn(() => false)
 }));
 
-import Component from "../../components/component";
-import froca from "../../services/froca";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
-import { flush, makeLoadResults, renderHook } from "../../test/render-hook";
-import { ParentComponent } from "../react/react_utils";
+import { flush, makeLoadResults, renderComponent, renderHook, renderInto, resetFroca } from "../../test/render";
 import NoteInfoTab, { NoteSizeWidget, useNoteMetadata } from "./NoteInfoTab";
 
 // --- Render helper for the full component (needs the ParentComponent provider for useTriliumEvent) -
 
-let container: HTMLDivElement | undefined;
-let parent: Component;
-
 function renderTab(note: Parameters<typeof NoteInfoTab>[0]["note"]) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteInfoTab note={note} />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    return renderComponent(<NoteInfoTab note={note} />).container;
 }
 
 const metadata: MetadataResponse = {
@@ -48,22 +30,8 @@ const metadata: MetadataResponse = {
 };
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    parent = new Component();
+    resetFroca();
     vi.clearAllMocks();
-    vi.useRealTimers();
-});
-
-afterEach(async () => {
-    await act(async () => {});
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
     vi.useRealTimers();
 });
 
@@ -165,11 +133,7 @@ describe("NoteInfoTab component", () => {
 
 describe("NoteSizeWidget", () => {
     function renderWidget(props: Omit<Parameters<typeof NoteSizeWidget>[0], never>) {
-        const el = document.createElement("div");
-        container = el;
-        document.body.appendChild(el);
-        act(() => { render(<NoteSizeWidget {...props} />, el); });
-        return el;
+        return renderInto(<NoteSizeWidget {...props} />);
     }
 
     it("shows the calculate link when not loading and no sizes are present", () => {
@@ -235,7 +199,7 @@ describe("useNoteMetadata", () => {
         });
         Object.assign(server, { get });
 
-        const h = renderHook(() => useNoteMetadata(note), { parent });
+        const h = renderHook(() => useNoteMetadata(note));
         await flush();
 
         expect(get).toHaveBeenCalledWith("notes/h1/metadata");
@@ -249,7 +213,7 @@ describe("useNoteMetadata", () => {
         const get = vi.fn(async () => undefined);
         Object.assign(server, { get });
 
-        const h = renderHook(() => useNoteMetadata(null), { parent });
+        const h = renderHook(() => useNoteMetadata(null));
         await flush();
 
         expect(get).not.toHaveBeenCalled();
@@ -260,7 +224,7 @@ describe("useNoteMetadata", () => {
         const get = vi.fn(async () => undefined);
         Object.assign(server, { get });
 
-        const h = renderHook(() => useNoteMetadata(null), { parent });
+        const h = renderHook(() => useNoteMetadata(null));
         await flush();
 
         await act(async () => {
@@ -284,7 +248,7 @@ describe("useNoteMetadata", () => {
         });
         Object.assign(server, { get });
 
-        const h = renderHook(() => useNoteMetadata(note), { parent });
+        const h = renderHook(() => useNoteMetadata(note));
         await flush();
 
         await act(async () => {
@@ -309,7 +273,7 @@ describe("useNoteMetadata", () => {
         Object.assign(server, { get });
 
         vi.useFakeTimers();
-        const h = renderHook(() => useNoteMetadata(note, 50), { parent });
+        const h = renderHook(() => useNoteMetadata(note, 50));
         // initial refresh effect.
         await act(async () => { await vi.runOnlyPendingTimersAsync(); });
         get.mockClear();
@@ -334,7 +298,7 @@ describe("useNoteMetadata", () => {
         Object.assign(server, { get });
 
         vi.useFakeTimers();
-        const h = renderHook(() => useNoteMetadata(note, 50), { parent });
+        const h = renderHook(() => useNoteMetadata(note, 50));
         await act(async () => { await vi.runOnlyPendingTimersAsync(); });
         get.mockClear();
 
@@ -356,7 +320,7 @@ describe("useNoteMetadata", () => {
         Object.assign(server, { get });
 
         vi.useFakeTimers();
-        const h = renderHook(() => useNoteMetadata(note, 50), { parent });
+        const h = renderHook(() => useNoteMetadata(note, 50));
         await act(async () => { await vi.runOnlyPendingTimersAsync(); });
         get.mockClear();
 

@@ -1,62 +1,40 @@
 import type { MimeType } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
 // The Badge uses useStaticTooltip → bootstrap Tooltip; stub it so happy-dom doesn't choke.
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 // Control the available mime types deterministically rather than depending on the real dict.
-const mimeTypesList: MimeType[] = [
-    { title: "CSS", mime: "text/css", icon: "bx bxs-file-css", enabled: true },
-    { title: "JavaScript", mime: "application/javascript", enabled: true } // no icon → fallback path
-];
 vi.mock("../../services/mime_types", () => ({
-    default: { getMimeTypes: () => mimeTypesList }
+    default: {
+        getMimeTypes: (): MimeType[] => [
+            { title: "CSS", mime: "text/css", icon: "bx bxs-file-css", enabled: true },
+            { title: "JavaScript", mime: "application/javascript", enabled: true } // no icon → fallback path
+        ]
+    }
 }));
 
+import type Component from "../../components/component";
 import type NoteContext from "../../components/note_context";
 import attributes from "../../services/attributes";
-import froca from "../../services/froca";
 import noteAttributeCache from "../../services/note_attribute_cache";
 import { buildNote } from "../../test/easy-froca";
-import { makeLoadResults } from "../../test/render-hook";
-import Component from "../../components/component";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, makeLoadResults, renderComponent, resetFroca } from "../../test/render";
 import { SnippetBadge } from "./SnippetBadge";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderBadge(noteContext: NoteContext | null) {
-    const target = document.createElement("div");
-    document.body.appendChild(target);
-    container = target;
-    const parentComponent = new Component();
+    const { container, parent: parentComponent } = renderComponent(<SnippetBadge />, { noteContext });
     parent = parentComponent;
-    act(() => render((
-        <ParentComponent.Provider value={parentComponent}>
-            <NoteContextContext.Provider value={noteContext}>
-                <SnippetBadge />
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), target));
-    return target;
+    return container;
 }
 
 function fireEntitiesReloaded(loadResults: ReturnType<typeof makeLoadResults>) {
@@ -68,27 +46,16 @@ function fireEntitiesReloaded(loadResults: ReturnType<typeof makeLoadResults>) {
 
 /** Builds a minimal NoteContext carrying the given note (only the fields the hook reads). */
 function ctxWithNote(note: ReturnType<typeof buildNote> | null): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
+    return fakeNoteContext({
         notePath: note ? `root/${note.noteId}` : "root",
         viewScope: { viewMode: "default" },
         note
-    } as unknown as NoteContext;
+    });
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
+    resetFroca();
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 describe("SnippetBadge", () => {

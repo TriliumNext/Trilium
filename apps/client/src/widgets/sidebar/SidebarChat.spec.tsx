@@ -1,7 +1,8 @@
 import { ComponentChildren } from "preact";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent, resetFroca } from "../../test/render";
 
 // --- Hoisted shared state -------------------------------------------------------------------------
 // Everything referenced inside a vi.mock factory must be created via vi.hoisted,
@@ -132,51 +133,31 @@ vi.mock("../../services/date_notes.js", () => ({ default: h.dateNotesMock }));
 vi.mock("../../components/app_context.js", () => ({ default: { tabManager: h.tabManagerMock } }));
 
 import appContext from "../../components/app_context";
-import froca from "../../services/froca";
 import server from "../../services/server";
-import ws from "../../services/ws";
-import Component from "../../components/component";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent, NoteContextContext } from "../react/react_utils";
 import SidebarChat from "./SidebarChat";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-const parent = new Component();
-
 async function renderSidebar() {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
+    const { container } = renderComponent(<SidebarChat />);
     await act(async () => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null}>
-                    <SidebarChat />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            el
-        );
         await new Promise(resolve => setTimeout(resolve, 0));
     });
-    return el;
+    return container;
 }
 
 beforeEach(() => {
     vi.clearAllMocks();
     // Wipe froca between tests so the chat-note lookups below never leak.
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
 
-    // setup.ts only mocks server.get/post; add put for the spaced-update save path.
+    // setup.ts mocks server.get/post with fixed behaviour; replace get/post with
+    // controllable spies (put is already an inert vi.fn from setup.ts, cleared each test).
     Object.assign(server, {
         get: vi.fn(async () => undefined),
-        post: vi.fn(async () => undefined),
-        put: vi.fn(async () => undefined)
+        post: vi.fn(async () => undefined)
     });
-    Object.assign(ws, { logError: vi.fn() });
 
     // Reset chat state to defaults.
     chatState.input = "";
@@ -202,15 +183,6 @@ function setupExistingChat(noteId: string, content: unknown = { version: 1, mess
     dateNotesMock.getMostRecentLlmChat.mockResolvedValue({ noteId });
     (server.get as ReturnType<typeof vi.fn>).mockResolvedValue({ content: JSON.stringify(content) });
 }
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container ?? document.createElement("div")); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
-});
 
 // --- Tests ----------------------------------------------------------------------------------------
 

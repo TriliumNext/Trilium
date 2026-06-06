@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -43,42 +42,22 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 import { NoteType } from "@triliumnext/commons";
 
 import Component from "../../components/component";
-import type NoteContext from "../../components/note_context";
 import attributes from "../../services/attributes";
 import { isElectron, openInAppHelpFromUrl } from "../../services/utils";
-import froca from "../../services/froca";
-import noteAttributeCache from "../../services/note_attribute_cache";
 import { buildNote } from "../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, makeLoadResults, renderComponent, resetFroca } from "../../test/render";
 import { ActiveContentBadges } from "./ActiveContentBadges";
 
 // --- Harness --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
-function fakeNoteContext(note: ReturnType<typeof buildNote> | null): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: note ? `root/${note.noteId}` : "root",
-        note,
-        viewScope: { viewMode: "default" }
-    } as unknown as NoteContext;
-}
-
 function renderBadges(note: ReturnType<typeof buildNote> | null) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => render((
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={fakeNoteContext(note)}>
-                <ActiveContentBadges />
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), el));
-    return el;
+    const noteContext = fakeNoteContext({
+        note,
+        notePath: note ? `root/${note.noteId}` : "root"
+    });
+    return renderComponent(<ActiveContentBadges />, { parent, noteContext }).container;
 }
 
 /** Open every dropdown so its (conditionally rendered) children mount into the DOM. */
@@ -104,17 +83,6 @@ function fire(name: string, data: unknown) {
     act(() => { (parent.handleEventInChildren as any)(name, data); });
 }
 
-function makeLoadResults(attributeRows: unknown[]) {
-    return {
-        getAttributeRows: () => attributeRows,
-        getBranchRows: () => [],
-        getOptionNames: () => [],
-        isNoteReloaded: () => false,
-        isNoteContentReloaded: () => false,
-        getEntityRow: () => undefined
-    };
-}
-
 function codeNote(def: Parameters<typeof buildNote>[0], mime: string) {
     const note = buildNote({ ...def, type: "code" as NoteType });
     Object.assign(note, { mime });
@@ -125,16 +93,8 @@ beforeEach(() => {
     parent = new Component();
     // `useStaticTooltip` (via Badge) calls jQuery's bootstrap `$el.tooltip(...)`; provide a no-op plugin.
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
+    resetFroca();
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -275,9 +235,9 @@ describe("ActiveContentBadges", () => {
         expect(newNote.hasLabel("appCss")).toBe(true);
 
         fire("entitiesReloaded", {
-            loadResults: makeLoadResults([
+            loadResults: makeLoadResults({ attributeRows: [
                 { type: "label", name: "appCss", value: "true", noteId: "refresh1", isDeleted: false }
-            ])
+            ] })
         });
         expect(root.querySelector(".active-content-badge")).not.toBeNull();
     });
@@ -339,9 +299,9 @@ describe("ActiveContentBadges", () => {
 
         // Attribute on an unrelated, non-cached note → isAffecting returns false → no refresh/no throw.
         fire("entitiesReloaded", {
-            loadResults: makeLoadResults([
+            loadResults: makeLoadResults({ attributeRows: [
                 { type: "label", name: "appCss", value: "x", noteId: "someOtherUncached", isDeleted: false }
-            ])
+            ] })
         });
         expect(root.querySelector(".active-content-badge")).not.toBeNull();
     });

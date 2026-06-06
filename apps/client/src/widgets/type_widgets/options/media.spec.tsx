@@ -1,7 +1,8 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -21,28 +22,9 @@ import options from "../../../services/options";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { isElectron } from "../../../services/utils";
-import ws from "../../../services/ws";
-import { ParentComponent } from "../../react/react_utils";
 import MediaSettings from "./media";
 
 // --- Render helper --------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-
-function renderComponent() {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={undefined as never}>
-                <MediaSettings />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
-}
 
 function setOptions(values: Record<string, string>) {
     options.load(values as Record<OptionNames, string>);
@@ -61,27 +43,18 @@ beforeEach(() => {
     // The auto-mocked server (test/setup.ts) only defines get/post — make them controllable.
     Object.assign(server, {
         get: vi.fn(async () => ({ inProgress: false, total: 0, processed: 0 })),
-        post: vi.fn(async () => ({ success: true })),
-        put: vi.fn(async () => undefined)
+        post: vi.fn(async () => ({ success: true }))
     });
-    Object.assign(ws, { logError: vi.fn() });
     (isElectron as ReturnType<typeof vi.fn>).mockReturnValue(false);
 });
 
-afterEach(async () => {
-    await act(async () => {});
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
+afterEach(() => {
     vi.useRealTimers();
 });
 
 describe("MediaSettings", () => {
     it("renders the image and OCR sections with toggles, slider and number input", () => {
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
 
         // Two toggles in image section + one in OCR section => 3 switch widgets.
         const toggles = root.querySelectorAll(".switch-widget input.switch-toggle");
@@ -103,7 +76,7 @@ describe("MediaSettings", () => {
             imageJpegQuality: "75",
             ocrMinConfidence: "0.75"
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const numberInput = root.querySelector<HTMLInputElement>(".tn-number-unit-pair input[type='number']");
         expect(numberInput?.disabled).toBe(true);
     });
@@ -114,7 +87,7 @@ describe("MediaSettings", () => {
             imageJpegQuality: "50",
             ocrMinConfidence: "0.5"
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const sliders = root.querySelectorAll<HTMLInputElement>("input.slider");
         // First slider = jpeg quality (50), second = ocr confidence (0.5 -> 50).
         expect(sliders[0].value).toBe("50");
@@ -123,7 +96,7 @@ describe("MediaSettings", () => {
 
     it("uses fallback values when jpeg quality / confidence options are missing", () => {
         setOptions({ compressImages: "true" });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const sliders = root.querySelectorAll<HTMLInputElement>("input.slider");
         expect(sliders[0].value).toBe("75"); // imageJpegQuality fallback
         expect(sliders[1].value).toBe("75"); // 0.75 confidence -> 75
@@ -132,7 +105,7 @@ describe("MediaSettings", () => {
 
 describe("ImageSettings interactions", () => {
     it("saves a new jpeg quality when the slider changes", async () => {
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const sliders = root.querySelectorAll<HTMLInputElement>("input.slider");
         const jpegSlider = sliders[0];
         jpegSlider.value = "60";
@@ -144,7 +117,7 @@ describe("ImageSettings interactions", () => {
     });
 
     it("saves a new max width/height when the number input changes", async () => {
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const input = root.querySelector<HTMLInputElement>(".tn-number-unit-pair input[type='number']");
         expect(input).not.toBeNull();
         if (!input) return;
@@ -156,7 +129,7 @@ describe("ImageSettings interactions", () => {
     });
 
     it("toggles download-images-automatically", async () => {
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const toggle = root.querySelector<HTMLInputElement>(".switch-widget input.switch-toggle");
         expect(toggle).not.toBeNull();
         if (!toggle) return;
@@ -168,7 +141,7 @@ describe("ImageSettings interactions", () => {
     });
 
     it("saves a new ocr confidence when its slider changes", async () => {
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const sliders = root.querySelectorAll<HTMLInputElement>("input.slider");
         const confSlider = sliders[1];
         confSlider.value = "40";
@@ -182,14 +155,14 @@ describe("ImageSettings interactions", () => {
 describe("OcrSettings related links", () => {
     it("omits the languages related-setting on web (non-electron)", () => {
         (isElectron as ReturnType<typeof vi.fn>).mockReturnValue(false);
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const relatedLinks = root.querySelectorAll("a.option-row-link");
         expect(relatedLinks.length).toBe(0);
     });
 
     it("shows the languages related-setting on desktop (electron)", () => {
         (isElectron as ReturnType<typeof vi.fn>).mockReturnValue(true);
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const relatedLinks = root.querySelectorAll("a.option-row-link");
         expect(relatedLinks.length).toBe(1);
     });
@@ -197,7 +170,7 @@ describe("OcrSettings related links", () => {
 
 describe("BatchProcessing", () => {
     it("renders the start button when nothing is running", () => {
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const btn = root.querySelector<HTMLButtonElement>("button.btn-secondary");
         expect(btn).not.toBeNull();
         expect(btn?.querySelector(".bx-play")).not.toBeNull();
@@ -211,7 +184,7 @@ describe("BatchProcessing", () => {
             get: getMock
         });
 
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const btn = root.querySelector<HTMLButtonElement>("button.btn-secondary");
         expect(btn).not.toBeNull();
         if (!btn) return;
@@ -236,7 +209,7 @@ describe("BatchProcessing", () => {
         Object.assign(server, {
             post: vi.fn(async () => ({ success: false, message: "boom" }))
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const btn = root.querySelector<HTMLButtonElement>("button.btn-secondary");
         if (!btn) return;
         await act(async () => {
@@ -251,7 +224,7 @@ describe("BatchProcessing", () => {
         Object.assign(server, {
             post: vi.fn(async () => ({ success: false }))
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const btn = root.querySelector<HTMLButtonElement>("button.btn-secondary");
         if (!btn) return;
         await act(async () => {
@@ -267,7 +240,7 @@ describe("BatchProcessing", () => {
                 throw new Error("network");
             })
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const btn = root.querySelector<HTMLButtonElement>("button.btn-secondary");
         if (!btn) return;
         await act(async () => {
@@ -293,7 +266,7 @@ describe("BatchProcessing", () => {
             get: getMock
         });
 
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const btn = root.querySelector<HTMLButtonElement>("button.btn-secondary");
         if (!btn) return;
 
@@ -321,7 +294,7 @@ describe("BatchProcessing", () => {
             post: vi.fn(async () => ({ success: true })),
             get: vi.fn(async () => ({ inProgress: true, total: 8, processed: 4, percentage: 50 }))
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const btn = root.querySelector<HTMLButtonElement>("button.btn-secondary");
         if (!btn) return;
         await act(async () => {
@@ -341,7 +314,7 @@ describe("BatchProcessing", () => {
             // inProgress but without percentage/processed/total -> exercises the ?? 0 fallbacks.
             get: vi.fn(async () => ({ inProgress: true }))
         });
-        const root = renderComponent();
+        const { container: root } = renderComponent(<MediaSettings />);
         const btn = root.querySelector<HTMLButtonElement>("button.btn-secondary");
         if (!btn) return;
         await act(async () => {
@@ -361,7 +334,7 @@ describe("BatchProcessing", () => {
             post: vi.fn(async () => ({ success: true })),
             get: vi.fn(async () => ({ inProgress: true, total: 8, processed: 0, percentage: 0 }))
         });
-        const root = renderComponent();
+        const { container: root, unmount } = renderComponent(<MediaSettings />);
         const btn = root.querySelector<HTMLButtonElement>("button.btn-secondary");
         if (!btn) return;
         await act(async () => {
@@ -370,13 +343,7 @@ describe("BatchProcessing", () => {
             await Promise.resolve();
         });
         // Unmount should clear the active interval.
-        act(() => {
-            if (container) {
-                render(null, container);
-                container.remove();
-                container = undefined;
-            }
-        });
+        unmount();
         expect(clearSpy).toHaveBeenCalled();
     });
 });

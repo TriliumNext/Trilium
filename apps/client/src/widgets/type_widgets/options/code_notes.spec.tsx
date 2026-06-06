@@ -1,23 +1,13 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../../test/mocks";
+import { renderInto } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        config: unknown;
-        constructor(el: Element, config?: unknown) { this.element = el; this.config = config; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 // Replace the heavy CodeMirror editor (EditorView subclass) with a lightweight spy double so the
 // preview useEffect can mount without pulling in @codemirror/view DOM machinery. Named exports
@@ -67,19 +57,9 @@ import { Tooltip as MockTooltip } from "bootstrap";
 
 import options from "../../../services/options";
 import server from "../../../services/server";
-import ws from "../../../services/ws";
 import CodeNoteSettings, { CodeMimeTypesList } from "./code_notes";
 
 // --- Render helper -------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: preact.ComponentChild) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => render(vnode, el));
-    return el;
-}
 
 function setOptions(values: Record<string, string>) {
     options.load(values as Record<OptionNames, string>);
@@ -97,36 +77,13 @@ const DEFAULT_OPTIONS: Record<string, string> = {
     codeNotesMimeTypes: JSON.stringify([ "text/x-csrc" ])
 };
 
-let originalMatchMedia: typeof window.matchMedia;
-
 beforeEach(() => {
     cmInstances.length = 0;
     setOptions({ ...DEFAULT_OPTIONS });
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
 
-    // useColorScheme() reads window.glob.getThemeStyle() and window.matchMedia.
+    // useColorScheme() reads window.glob.getThemeStyle() (the global inert matchMedia handles the rest).
     Object.assign(window.glob as unknown as Record<string, unknown>, { getThemeStyle: () => "light" });
-    originalMatchMedia = window.matchMedia;
-    Object.assign(window, {
-        matchMedia: vi.fn(() => ({
-            matches: false,
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn()
-        }))
-    });
-});
-
-afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => render(null, el));
-        el.remove();
-        container = undefined;
-    }
-    Object.assign(window, { matchMedia: originalMatchMedia });
-    vi.restoreAllMocks();
 });
 
 function fireChange(el: Element) {

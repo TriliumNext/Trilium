@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { OptionNames } from "@triliumnext/commons";
 
@@ -120,10 +119,9 @@ import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import options from "../../../services/options";
 import server from "../../../services/server";
-import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
+import { flush, renderComponent, resetFroca } from "../../../test/render";
 import Component from "../../../components/component";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
 import type { ViewModeProps } from "../interface";
 import { changeEvent, newEvent } from "./api";
 import { openCalendarContextMenu } from "./context_menu";
@@ -132,13 +130,9 @@ import CalendarView, { LOCALE_MAPPINGS } from "./index";
 
 // --- Harness --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 const parent = new Component();
 
 async function renderCalendar(props: Partial<ViewModeProps<any>> & { note: ReturnType<typeof buildNote> }) {
-    const target = document.createElement("div");
-    document.body.appendChild(target);
-    container = target;
     const fullProps: ViewModeProps<any> = {
         notePath: "root/" + props.note.noteId,
         noteIds: [],
@@ -149,19 +143,10 @@ async function renderCalendar(props: Partial<ViewModeProps<any>> & { note: Retur
         onReady: vi.fn(),
         ...props
     };
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null}>
-                    <CalendarView {...fullProps} />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            target
-        );
-    });
+    const { container } = renderComponent(<CalendarView {...fullProps} />, { parent });
     // Let usePlugins / useLocale async effects settle, then the resulting re-render.
-    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
-    return target;
+    await flush();
+    return container;
 }
 
 function fireTrilium(name: string, data: unknown) {
@@ -191,23 +176,10 @@ beforeEach(() => {
     mobileHolder.value = false;
     calendarState.props = undefined;
     calendarState.api = undefined;
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     options.load({ locale: "en", formattingLocale: "en", firstDayOfWeek: "1" } as Record<OptionNames, string>);
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
-});
-
-afterEach(async () => {
-    if (container) {
-        await act(async () => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

@@ -1,22 +1,13 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../../test/mocks";
+import { flush, renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 vi.mock("../../../services/toast", () => ({
     default: { showMessage: vi.fn(), showError: vi.fn() }
@@ -39,34 +30,15 @@ import * as experimentalFeatures from "../../../services/experimental_features";
 import options from "../../../services/options";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import ws from "../../../services/ws";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
 import AdvancedSettings from "./advanced";
 
 // --- Render harness (mounts the real component inside the Trilium providers) ----------------------
 
-let container: HTMLDivElement | undefined;
 const parent = { current: new Component() };
 
-function renderComponent() {
-    const host = document.createElement("div");
-    document.body.appendChild(host);
-    container = host;
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent.current}>
-                <NoteContextContext.Provider value={null}>
-                    <AdvancedSettings />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            host
-        );
-    });
-    return host;
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+function renderAdvanced() {
+    const { container } = renderComponent(<AdvancedSettings />, { parent: parent.current });
+    return container;
 }
 
 function click(el: HTMLElement) { act(() => { el.click(); }); }
@@ -92,29 +64,19 @@ beforeEach(() => {
     parent.current = new Component();
     setOptions({});
     vi.clearAllMocks();
-    // The auto-mocked server (test/setup.ts) only defines get/post — add put and override the verbs.
+    // The auto-mocked server (test/setup.ts) only defines real get/post — override with spies (put is
+    // already a globally-provided vi.fn, cleared each test).
     Object.assign(server, {
         get: vi.fn(async () => []),
-        post: vi.fn(async () => ({ success: true, anonymizedFilePath: "/tmp/anon.db" })),
-        put: vi.fn(async () => undefined)
+        post: vi.fn(async () => ({ success: true, anonymizedFilePath: "/tmp/anon.db" }))
     });
-    Object.assign(ws, { logError: vi.fn() });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { if (container) render(null, container); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Top-level structure --------------------------------------------------------------------------
 
 describe("AdvancedSettings", () => {
     it("renders all the option sections and loads anonymized databases on mount", async () => {
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         // Database, DatabaseAnonymization, Experimental, AdvancedSync = 4 sections.
         const sections = root.querySelectorAll(".options-section");
@@ -132,7 +94,7 @@ describe("DatabaseOptions", () => {
             if (url === "database/check-integrity") return { results: [ { integrity_check: "ok" } ] };
             return [];
         });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const btn = buttonByIcon(root, "bx-check-shield") ?? root.querySelectorAll<HTMLButtonElement>("button.option-row-link")[0];
         click(btn);
@@ -147,7 +109,7 @@ describe("DatabaseOptions", () => {
             if (url === "database/check-integrity") return { results: [ { integrity_check: "broken" }, { integrity_check: "also" } ] };
             return [];
         });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const btn = root.querySelectorAll<HTMLButtonElement>("button.option-row-link")[0];
         click(btn);
@@ -158,7 +120,7 @@ describe("DatabaseOptions", () => {
     });
 
     it("find-and-fix consistency issues posts and toasts", async () => {
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const btn = root.querySelectorAll<HTMLButtonElement>("button.option-row-link")[1];
         click(btn);
@@ -168,7 +130,7 @@ describe("DatabaseOptions", () => {
     });
 
     it("vacuum database posts and toasts", async () => {
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const btn = root.querySelectorAll<HTMLButtonElement>("button.option-row-link")[2];
         click(btn);
@@ -186,7 +148,7 @@ describe("DatabaseAnonymizationOptions", () => {
         Object.assign(server, { get: getMock });
         (server.post as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true, anonymizedFilePath: "/tmp/full.db" });
 
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         // The full / light anonymization buttons live in the second section (after the 3 DB buttons).
         const buttons = root.querySelectorAll<HTMLButtonElement>("button.option-row-link");
@@ -200,7 +162,7 @@ describe("DatabaseAnonymizationOptions", () => {
 
     it("full anonymization failure shows an error", async () => {
         (server.post as ReturnType<typeof vi.fn>).mockResolvedValue({ success: false });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const buttons = root.querySelectorAll<HTMLButtonElement>("button.option-row-link");
         click(buttons[3]);
@@ -213,7 +175,7 @@ describe("DatabaseAnonymizationOptions", () => {
         const getMock = vi.fn(async (_url: string) => []);
         Object.assign(server, { get: getMock });
         (server.post as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true, anonymizedFilePath: "/tmp/light.db" });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const buttons = root.querySelectorAll<HTMLButtonElement>("button.option-row-link");
         click(buttons[4]);
@@ -225,7 +187,7 @@ describe("DatabaseAnonymizationOptions", () => {
 
     it("light anonymization failure shows an error and does not refresh", async () => {
         (server.post as ReturnType<typeof vi.fn>).mockResolvedValue({ success: false });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const buttons = root.querySelectorAll<HTMLButtonElement>("button.option-row-link");
         click(buttons[4]);
@@ -236,7 +198,7 @@ describe("DatabaseAnonymizationOptions", () => {
 
     it("renders the empty-state text when there are no anonymized databases", async () => {
         Object.assign(server, { get: vi.fn(async () => []) });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         // No table is rendered while the list is empty; only a form-text placeholder.
         expect(root.querySelector("table.table")).toBeNull();
@@ -248,7 +210,7 @@ describe("DatabaseAnonymizationOptions", () => {
                 ? [ { filePath: "/a/one.db" }, { filePath: "/a/two.db" } ]
                 : []))
         });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const table = root.querySelector("table.table");
         expect(table).not.toBeNull();
@@ -264,7 +226,7 @@ describe("ExperimentalOptions", () => {
     it("renders a toggle per available feature and reflects the enabled state", async () => {
         // Pre-enable the only non-layout feature (llm) so its toggle reads as on.
         setOptions({ experimentalFeatures: JSON.stringify([ "llm" ]) });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const toggle = root.querySelector<HTMLInputElement>("input.switch-toggle[id^='experimental-llm']");
         expect(toggle).toBeInstanceOf(HTMLInputElement);
@@ -273,7 +235,7 @@ describe("ExperimentalOptions", () => {
 
     it("toggling a disabled feature on persists it through the option setter", async () => {
         setOptions({ experimentalFeatures: JSON.stringify([]) });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const toggle = root.querySelector<HTMLInputElement>("input.switch-toggle[id^='experimental-llm']");
         expect(toggle?.checked).toBe(false);
@@ -293,7 +255,7 @@ describe("ExperimentalOptions", () => {
 
     it("renders nothing when no experimental features are available", async () => {
         vi.spyOn(experimentalFeatures, "getAvailableExperimentalFeatures").mockReturnValue([]);
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         // The Experimental section disappears entirely, leaving Database, Anonymization and Sync.
         expect(root.querySelector("input.switch-toggle[id^='experimental-']")).toBeNull();
@@ -302,7 +264,7 @@ describe("ExperimentalOptions", () => {
 
     it("toggling an enabled feature off removes it from the persisted array", async () => {
         setOptions({ experimentalFeatures: JSON.stringify([ "llm" ]) });
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const toggle = root.querySelector<HTMLInputElement>("input.switch-toggle[id^='experimental-llm']");
         if (toggle) {
@@ -323,7 +285,7 @@ describe("ExperimentalOptions", () => {
 
 describe("AdvancedSyncOptions", () => {
     it("force full sync posts and shows a toast", async () => {
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const buttons = root.querySelectorAll<HTMLButtonElement>("button.option-row-link");
         // The two sync buttons are the last option-row-link buttons in the form.
@@ -335,7 +297,7 @@ describe("AdvancedSyncOptions", () => {
     });
 
     it("fill entity changes posts and shows surrounding toasts", async () => {
-        const root = renderComponent();
+        const root = renderAdvanced();
         await flush();
         const buttons = root.querySelectorAll<HTMLButtonElement>("button.option-row-link");
         const fillBtn = buttons[buttons.length - 1];

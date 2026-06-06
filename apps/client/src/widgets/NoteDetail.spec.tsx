@@ -1,4 +1,3 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -81,13 +80,12 @@ import appContext from "../components/app_context";
 import Component from "../components/component";
 import type NoteContext from "../components/note_context";
 import dialog from "../services/dialog";
-import froca from "../services/froca";
 import protected_session_holder from "../services/protected_session_holder";
 import toast from "../services/toast";
 import { buildNote } from "../test/easy-froca";
-import { flush } from "../test/render-hook";
+import { flush, renderComponent, resetFroca } from "../test/render";
 import NoteDetail, { checkFullHeight, getExtendedWidgetType } from "./NoteDetail";
-import { NoteContextContext, ParentComponent } from "./react/react_utils";
+import { NoteContextContext } from "./react/react_utils";
 
 /** Settle the multi-hop async effect chain (type resolution → widget import → state updates). */
 async function settle() {
@@ -119,42 +117,26 @@ function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
     } as unknown as NoteContext;
 }
 
-let container: HTMLDivElement | undefined;
+/** Mounts `<NoteDetail />` through the shared (auto-teardown) provider harness, plus a `fire` helper. */
 function renderDetail(noteContext: NoteContext | null, parent: Component = makeParent()) {
-    const localContainer = document.createElement("div");
-    document.body.appendChild(localContainer);
-    container = localContainer;
-    act(() => render(
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={noteContext}>
-                <NoteDetail />
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>,
-        localContainer
-    ));
-    return { container: localContainer, parent, fire: (name: string, data: unknown) => act(() => {
-        (parent.handleEventInChildren as unknown as (n: string, d: unknown) => void)(name, data);
-    }) };
+    const result = renderComponent(<NoteDetail />, { parent, noteContext });
+    return {
+        container: result.container,
+        parent,
+        unmount: result.unmount,
+        fire: (name: string, data: unknown) => act(() => {
+            (parent.handleEventInChildren as unknown as (n: string, d: unknown) => void)(name, data);
+        })
+    };
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     h.isElectron = false;
     h.isMobile = false;
     vi.clearAllMocks();
     (protected_session_holder.isProtectedSessionAvailable as ReturnType<typeof vi.fn>).mockReturnValue(true);
     Object.assign(window, { glob: { ...(window.glob ?? {}), getComponentByEl: vi.fn(() => ({ id: "comp" })) } });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- getExtendedWidgetType (pure) -----------------------------------------------------------------
@@ -566,7 +548,7 @@ describe("NoteDetail electronApi printing", () => {
     it("subscribes to print progress/done and cleans up on unmount", async () => {
         const { handlers, removePrintListeners } = installPrintingApi();
         const note = buildNote({ id: "ep1", title: "EP", type: "text" });
-        renderDetail(fakeNoteContext({ note }));
+        const { unmount } = renderDetail(fakeNoteContext({ note }));
         await settle();
 
         handlers.progress?.({ progress: 25, action: "printing" });
@@ -576,7 +558,7 @@ describe("NoteDetail electronApi printing", () => {
         handlers.done?.({ type: "single-note" });
         expect(toast.closePersistent).toHaveBeenCalledWith("printing");
 
-        if (container) { act(() => render(null, container as HTMLDivElement)); container.remove(); container = undefined; }
+        unmount();
         expect(removePrintListeners).toHaveBeenCalled();
     });
 
@@ -638,27 +620,24 @@ describe("NoteDetail electronApi printing", () => {
 describe("NoteDetail widget resolution branches", () => {
     it("activates a deferred tab via the isActive effect when a new active context arrives", async () => {
         const note = buildNote({ id: "act1", title: "A", type: "text" });
-        const parent = makeParent();
-        const localContainer = document.createElement("div");
-        document.body.appendChild(localContainer);
-        container = localContainer;
         const treeWith = (ctx: NoteContext) => (
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={ctx}>
-                    <NoteDetail />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
+            <NoteContextContext.Provider value={ctx}>
+                <NoteDetail />
+            </NoteContextContext.Provider>
         );
 
         // Mount with an inactive context → tab stays deferred.
-        act(() => { render(treeWith(fakeNoteContext({ note, ntxId: "ntx-eff", isActive: () => false })), localContainer); });
+        const { container, rerender } = renderComponent(
+            treeWith(fakeNoteContext({ note, ntxId: "ntx-eff", isActive: () => false })),
+            { parent: makeParent() }
+        );
         await settle();
-        expect(localContainer.querySelector(".note-detail-editable-text")).toBeNull();
+        expect(container.querySelector(".note-detail-editable-text")).toBeNull();
 
         // A *new* active context object changes the effect dep, running the activation branch.
-        act(() => { render(treeWith(fakeNoteContext({ note, ntxId: "ntx-eff", isActive: () => true })), localContainer); });
+        rerender(treeWith(fakeNoteContext({ note, ntxId: "ntx-eff", isActive: () => true })));
         await settle();
-        expect(localContainer.querySelector(".note-detail-editable-text")).toBeTruthy();
+        expect(container.querySelector(".note-detail-editable-text")).toBeTruthy();
     });
 
     it("resolves a widget provided as a direct VNode", async () => {

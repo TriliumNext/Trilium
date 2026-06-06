@@ -1,18 +1,13 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
-import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import Component from "../components/component";
-import type NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
 import FNote from "../entities/fnote";
 import froca from "../services/froca";
 import noteAttributeCache from "../services/note_attribute_cache";
 import options from "../services/options";
 import { buildNote } from "../test/easy-froca";
-import { flush, makeLoadResults, renderHook } from "../test/render-hook";
-import { NoteContextContext, ParentComponent } from "./react/react_utils";
+import { fakeNoteContext, flush, makeLoadResults, renderComponent, renderHook, resetFroca } from "../test/render";
 import SharedInfo, { useShareInfo } from "./shared_info";
 
 // --- Helpers --------------------------------------------------------------------------------------
@@ -31,52 +26,22 @@ function buildSharedNote(childDef: Parameters<typeof buildNote>[0]): FNote {
     return child;
 }
 
-let containers: HTMLDivElement[] = [];
-function renderInto(vnode: unknown, noteContext: NoteContext | null) {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    containers.push(container);
-    act(() => render((
-        <ParentComponent.Provider value={new Component()}>
-            <NoteContextContext.Provider value={noteContext}>
-                {vnode as never}
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), container));
-    return container;
-}
-
-function fakeNoteContext(note: FNote | null): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: note ? `root/${note.noteId}` : "root",
-        note,
-        viewScope: { viewMode: "default" }
-    } as unknown as NoteContext;
-}
-
 let savedElectronApi: PropertyDescriptor | undefined;
 
 beforeEach(() => {
     setOptions({});
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     savedElectronApi = Object.getOwnPropertyDescriptor(window, "electronApi");
     delete (window as unknown as Record<string, unknown>).electronApi;
 });
 
 afterEach(() => {
-    for (const c of containers) { render(null, c); c.remove(); }
-    containers = [];
     if (savedElectronApi) {
         Object.defineProperty(window, "electronApi", savedElectronApi);
     } else {
         delete (window as unknown as Record<string, unknown>).electronApi;
     }
-    vi.restoreAllMocks();
 });
 
 // --- useShareInfo hook ----------------------------------------------------------------------------
@@ -238,7 +203,7 @@ describe("useShareInfo", () => {
 describe("SharedInfo component", () => {
     it("renders hidden (display:none) and only the help button when the note is not shared", async () => {
         const note = buildNote({ id: "plain", title: "Plain" });
-        const container = renderInto(<SharedInfo />, fakeNoteContext(note));
+        const { container } = renderComponent(<SharedInfo />, { noteContext: fakeNoteContext({ note, notePath: `root/${note.noteId}` }) });
         await flush();
         const bar = container.querySelector(".shared-info-widget");
         expect(bar).toBeTruthy();
@@ -250,7 +215,7 @@ describe("SharedInfo component", () => {
 
     it("renders the share link when the note is shared", async () => {
         const note = buildSharedNote({ id: "sharedComp", title: "Shared" });
-        const container = renderInto(<SharedInfo />, fakeNoteContext(note));
+        const { container } = renderComponent(<SharedInfo />, { noteContext: fakeNoteContext({ note, notePath: `root/${note.noteId}` }) });
         await flush();
         const bar = container.querySelector(".shared-info-widget") as HTMLElement;
         // A non-hidden bar means useShareInfo produced a link for the shared note.
@@ -263,7 +228,7 @@ describe("SharedInfo component", () => {
     it("renders the locally-shared variant on electron without a sync server", async () => {
         (window as unknown as Record<string, unknown>).electronApi = {};
         const note = buildSharedNote({ id: "sharedLocal", title: "Local" });
-        const container = renderInto(<SharedInfo />, fakeNoteContext(note));
+        const { container } = renderComponent(<SharedInfo />, { noteContext: fakeNoteContext({ note, notePath: `root/${note.noteId}` }) });
         await flush();
         const bar = container.querySelector(".shared-info-widget") as HTMLElement;
         expect(bar.style.display).not.toBe("none");

@@ -1,7 +1,8 @@
 import type { IconRegistry } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { fakeNoteContext, renderComponent } from "../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -63,54 +64,30 @@ vi.mock("../services/utils", async (importOriginal) => {
     return { ...actual, isMobile: vi.fn(() => false), isDesktop: vi.fn(() => true) };
 });
 
-import type NoteContext from "../components/note_context";
-import Component from "../components/component";
 import type FNote from "../entities/fnote";
 import attributes from "../services/attributes";
 import server from "../services/server";
 import { isDesktop, isMobile } from "../services/utils";
 import { buildNote } from "../test/easy-froca";
 import NoteIcon from "./note_icon";
-import { NoteContextContext, ParentComponent } from "./react/react_utils";
 
 // --- Helpers -------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderNoteIcon(noteContext: NoteContext | null) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={new Component()}>
-                <NoteContextContext.Provider value={noteContext}>
-                    <NoteIcon />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
-        ), target);
-    });
-    return target;
+function renderNoteIcon(note: FNote | null | undefined, viewMode = "default") {
+    return renderComponent(<NoteIcon />, {
+        noteContext: fakeNoteContext({
+            hoistedNoteId: "root",
+            notePath: note ? `root/${note.noteId}` : "root",
+            note,
+            viewScope: { viewMode }
+        })
+    }).container;
 }
 
 /** Trigger the bootstrap-jQuery `show.bs.dropdown` event so the Dropdown renders its children. */
 function openDropdown(dropdownEl: Element | null) {
     if (!dropdownEl) return;
     act(() => { $(dropdownEl).trigger("show.bs.dropdown"); });
-}
-
-function fakeNoteContext(note: FNote | null | undefined, viewMode = "default"): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: note ? `root/${note.noteId}` : "root",
-        note,
-        viewScope: { viewMode },
-        getContextData: vi.fn(),
-        setContextData: vi.fn(),
-        clearContextData: vi.fn(),
-        isReadOnly: vi.fn(async () => false)
-    } as unknown as NoteContext;
 }
 
 const ICON_REGISTRY: IconRegistry = {
@@ -152,14 +129,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    const target = container;
-    if (target) {
-        act(() => { render(null, target); });
-        target.remove();
-        container = undefined;
-    }
     (($.fn as unknown as Record<string, unknown>)).tooltip = previousTooltipPlugin;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------
@@ -167,7 +137,7 @@ afterEach(() => {
 describe("NoteIcon (desktop)", () => {
     it("renders the dropdown button with the note's icon and is enabled for a default-view note", async () => {
         const note = buildNote({ id: "n1", title: "N", "#iconClass": "bx bx-star" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         await act(async () => { await Promise.resolve(); });
 
         const button = el.querySelector("button.note-icon");
@@ -180,18 +150,18 @@ describe("NoteIcon (desktop)", () => {
 
     it("disables the button when the view mode is not default", () => {
         const note = buildNote({ id: "n2", title: "N2" });
-        const el = renderNoteIcon(fakeNoteContext(note, "source"));
+        const el = renderNoteIcon(note, "source");
         expect(el.querySelector("button.note-icon")?.hasAttribute("disabled")).toBe(true);
     });
 
     it("disables the button when the note metadata is read-only (system note)", () => {
         const note = buildNote({ id: "_options_appearance", title: "Opt" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         expect(el.querySelector("button.note-icon")?.hasAttribute("disabled")).toBe(true);
     });
 
     it("falls back to bx-empty when the context has no note", () => {
-        const el = renderNoteIcon(fakeNoteContext(null));
+        const el = renderNoteIcon(null);
         const button = el.querySelector("button.note-icon");
         expect(button?.className).toContain("bx bx-empty");
         // No note → the dropdown list (and its inner content) is not rendered.
@@ -202,7 +172,7 @@ describe("NoteIcon (desktop)", () => {
 describe("NoteIcon list contents (desktop)", () => {
     it("renders the filter row, the icon grid and reacts to a text search", async () => {
         const note = buildNote({ id: "list1", title: "List" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -226,7 +196,7 @@ describe("NoteIcon list contents (desktop)", () => {
 
     it("shows the no-results placeholder when the search matches nothing", async () => {
         const note = buildNote({ id: "list2", title: "List2" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -243,7 +213,7 @@ describe("NoteIcon list contents (desktop)", () => {
     it("clicking an icon span sets the iconClass label and ignores clicks on non-icons", async () => {
         const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
         const note = buildNote({ id: "click1", title: "Click" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -269,7 +239,7 @@ describe("NoteIcon list contents (desktop)", () => {
     it("clicking an icon on a workspace note sets the workspaceIconClass label", async () => {
         const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
         const note = buildNote({ id: "ws1", title: "WS", "#workspace": "true" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -286,7 +256,7 @@ describe("NoteIcon reset-to-default (desktop)", () => {
     it("shows the reset button only when the note has an icon label and removes it on click", async () => {
         const removeById = vi.spyOn(attributes, "removeAttributeById").mockResolvedValue(undefined);
         const note = buildNote({ id: "reset1", title: "R", "#iconClass": "bx bx-star" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -302,7 +272,7 @@ describe("NoteIcon reset-to-default (desktop)", () => {
 
     it("hides the reset button when the note has no custom icon label", async () => {
         const note = buildNote({ id: "reset2", title: "R2" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -315,7 +285,7 @@ describe("NoteIcon reset-to-default (desktop)", () => {
 describe("NoteIcon prefix filter (desktop)", () => {
     it("renders the filter dropdown content and filters icons by prefix", async () => {
         const note = buildNote({ id: "filter1", title: "F" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -344,7 +314,7 @@ describe("NoteIcon prefix filter (desktop)", () => {
 
     it("filtering to the bx prefix then back to none updates the icon grid", async () => {
         const note = buildNote({ id: "filter2", title: "F2" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -379,7 +349,7 @@ describe("NoteIcon icon cell rendering (desktop)", () => {
             } ]
         };
         const note = buildNote({ id: "cell1", title: "Cell" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -393,7 +363,7 @@ describe("NoteIcon icon cell rendering (desktop)", () => {
     it("sorts icons even when the usage-count map is empty", async () => {
         Object.assign(server, { get: vi.fn(async () => ({ iconClassToCountMap: {} })) });
         const note = buildNote({ id: "sort1", title: "S" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         openDropdown(el.querySelector(".note-icon-widget.dropdown"));
         await act(async () => { await Promise.resolve(); });
         await act(async () => { await Promise.resolve(); });
@@ -409,7 +379,7 @@ describe("NoteIcon (mobile)", () => {
 
     it("renders the mobile action-button switcher and opens the modal on click", async () => {
         const note = buildNote({ id: "m1", title: "M", "#iconClass": "bx bx-home" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         await act(async () => { await Promise.resolve(); });
 
         const actionButton = el.querySelector<HTMLElement>("button.note-icon");
@@ -447,7 +417,7 @@ describe("NoteIcon (mobile)", () => {
 
     it("renders the mobile filter menu (three-dots) including the reset entry for custom icons", async () => {
         const note = buildNote({ id: "m2", title: "M2", "#iconClass": "bx bx-star" });
-        const el = renderNoteIcon(fakeNoteContext(note));
+        const el = renderNoteIcon(note);
         await act(async () => { await Promise.resolve(); });
 
         const actionButton = el.querySelector<HTMLElement>("button.note-icon");

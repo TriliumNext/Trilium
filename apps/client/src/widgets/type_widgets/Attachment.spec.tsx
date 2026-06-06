@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -86,34 +85,16 @@ import toast from "../../services/toast";
 import utils from "../../services/utils";
 import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
+import { flush, renderComponent, renderHook, resetFroca } from "../../test/render";
 import Component from "../../components/component";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import { AttachmentDetail, AttachmentList, useAttachments } from "./Attachment";
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderWithProviders(vnode: any) {
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null}>
-                    {vnode}
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            root
-        );
-    });
-    return root;
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+    return renderComponent(vnode, { parent }).container;
 }
 
 function makeAttachment(overrides: Partial<FAttachmentRow> = {}): FAttachment {
@@ -147,30 +128,19 @@ const TYPE_PROPS_EXTRA = {
 
 beforeEach(() => {
     parent = new Component();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     for (const key of Object.keys(froca.attachments)) delete froca.attachments[key];
     vi.clearAllMocks();
+    // `post`/`upload` need specific return values and `post` must be a vi.fn (the global setup `post`
+    // is a plain function); `waitForMaxKnownEntityChangeId` isn't part of the global ws mock.
     Object.assign(server, {
-        put: vi.fn(async () => undefined),
-        remove: vi.fn(async () => undefined),
         upload: vi.fn(async () => ({ uploaded: true })),
         post: vi.fn(async () => ({ note: { noteId: "newNote1" } }))
     });
-    Object.assign(ws, { logError: vi.fn(), waitForMaxKnownEntityChangeId: vi.fn(async () => undefined) });
+    Object.assign(ws, { waitForMaxKnownEntityChangeId: vi.fn(async () => undefined) });
     // Bootstrap jQuery plugins aren't loaded in the test env; stub them so component effects don't throw.
     ($.fn as any).tooltip = function () { return this; };
     ($.fn as any).dropdown = function () { return this; };
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- AttachmentList --------------------------------------------------------------------------------
@@ -230,43 +200,25 @@ describe("useAttachments", () => {
         const note = buildOwnerNote([att], "ownerHook");
         const getSpy = vi.spyOn(note, "getAttachments");
 
-        const result: { current: FAttachment[] } = { current: [] };
-        function Harness() { result.current = useAttachments(note); return null; }
-        const host = document.createElement("div");
-        document.body.appendChild(host);
-        act(() => {
-            render(
-                <ParentComponent.Provider value={parent}>
-                    <Harness />
-                </ParentComponent.Provider>,
-                host
-            );
-        });
+        const { result, fireEvent } = renderHook(() => useAttachments(note), { parent });
         await flush();
         expect(result.current.length).toBe(1);
         const callsAfterInit = getSpy.mock.calls.length;
 
         // Matching row → refresh.
-        act(() => {
-            (parent.handleEventInChildren as any)("entitiesReloaded", {
-                loadResults: { getAttachmentRows: () => [ { attachmentId: "a1", ownerId: "ownerHook" } ] }
-            });
+        fireEvent("entitiesReloaded", {
+            loadResults: { getAttachmentRows: () => [ { attachmentId: "a1", ownerId: "ownerHook" } ] }
         });
         await flush();
         expect(getSpy.mock.calls.length).toBeGreaterThan(callsAfterInit);
 
         // Non-matching owner → no extra refresh.
         const before = getSpy.mock.calls.length;
-        act(() => {
-            (parent.handleEventInChildren as any)("entitiesReloaded", {
-                loadResults: { getAttachmentRows: () => [ { attachmentId: "x", ownerId: "someoneElse" } ] }
-            });
+        fireEvent("entitiesReloaded", {
+            loadResults: { getAttachmentRows: () => [ { attachmentId: "x", ownerId: "someoneElse" } ] }
         });
         await flush();
         expect(getSpy.mock.calls.length).toBe(before);
-
-        act(() => { render(null, host); });
-        host.remove();
     });
 });
 

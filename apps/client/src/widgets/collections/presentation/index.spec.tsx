@@ -1,6 +1,8 @@
-import { ComponentChild, render } from "preact";
+import { ComponentChild } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent, resetFroca } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) ----------------------------------------
 
@@ -100,28 +102,20 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
 }));
 
 import Component from "../../../components/component";
-import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
 import type { ViewModeProps } from "../interface";
 import PresentationView from "./index";
 import type { PresentationModel } from "./model";
 
 // --- Helpers ----------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
+/** Render the view inside the Trilium providers and return the container (auto-torn-down). */
 function renderInto(vnode: ComponentChild) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    const p = new Component();
+    const { container, parent: p } = renderComponent(vnode);
     parent = p;
-    act(() => {
-        render(<ParentComponent.Provider value={p}>{vnode}</ParentComponent.Provider>, el);
-    });
-    return el;
+    return container;
 }
 
 /** Drive a Trilium event through the parent component (which the view subscribes to). */
@@ -178,9 +172,7 @@ const HORIZONTAL_SLIDE = {
 };
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     revealInstances.length = 0;
     openInCurrentNoteContext.mockReset();
     loadPresentationTheme.mockClear();
@@ -191,15 +183,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => { render(null, el); });
-        el.remove();
-        container = undefined;
-    }
     parent = undefined;
     vi.useRealTimers();
-    vi.restoreAllMocks();
 });
 
 // --- Tests ------------------------------------------------------------------------------------

@@ -1,10 +1,10 @@
-import { OptionNames } from "@triliumnext/commons";
-import { ComponentChildren, render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// NOTE: kept local (not `bootstrapMock()`): the React Dropdown/Modal wrappers call
+// `getOrCreateInstance(...)` plus `dropdown.update()`, which the shared stub doesn't provide.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -51,34 +51,25 @@ vi.mock("../../../components/zoom", () => ({
     default: { setZoomFactorAndSave: vi.fn(async () => undefined) }
 }));
 
+import { OptionNames } from "@triliumnext/commons";
+
 import zoomService from "../../../components/zoom";
 import Component from "../../../components/component";
 import options from "../../../services/options";
 import server from "../../../services/server";
 import { isElectron, isMobile, reloadFrontendApp, restartDesktopApp } from "../../../services/utils";
-import ws from "../../../services/ws";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
+import { flush, makeLoadResults, renderComponent } from "../../../test/render";
 import AppearanceSettings from "./appearance";
 
-// --- Render harness (wraps the component in the Trilium providers, like react_utils.tsx) -----------
+// --- Render harness (uses the shared `renderComponent`, which wraps the component in the Trilium
+// providers and auto-tears-down the container) ----------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-const parent = { current: new Component() };
+let parent: Component = new Component();
 
-function renderApp(node: ComponentChildren = <AppearanceSettings />) {
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent.current}>
-                <NoteContextContext.Provider value={null}>
-                    {node}
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
-        ), root);
-    });
-    return root;
+function renderApp() {
+    const { container, parent: renderedParent } = renderComponent(<AppearanceSettings />);
+    parent = renderedParent;
+    return container;
 }
 
 /** Dispatch a native DOM event inside an act() block, discarding dispatchEvent's boolean return. */
@@ -117,12 +108,8 @@ function showDropdown(root: ParentNode) {
 
 function fireEvent(name: string, data: unknown) {
     act(() => {
-        (parent.current.handleEventInChildren as unknown as (n: string, d: unknown) => void)(name, data);
+        (parent.handleEventInChildren as unknown as (n: string, d: unknown) => void)(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
 }
 
 function setOptions(values: Record<string, string>) {
@@ -152,30 +139,19 @@ const DEFAULT_OPTIONS = {
 
 beforeEach(() => {
     setOptions({ ...DEFAULT_OPTIONS });
-    parent.current = new Component();
+    parent = new Component();
     vi.clearAllMocks();
     (isElectron as ReturnType<typeof vi.fn>).mockReturnValue(false);
     (isMobile as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    // The auto-mocked server (test/setup.ts) only defines get/post — add the write verbs and the
-    // user-themes GET endpoint the UserInterface section loads on mount.
+    // The shared server mock (test/setup.ts) supplies inert write verbs (put/upload/...) already.
+    // Only `get` needs to be a spy here so tests can assert on it / serve the user-themes endpoint
+    // the UserInterface section loads on mount.
     Object.assign(server, {
-        get: vi.fn(async (url: string) => (url === "options/user-themes" ? [] : undefined)),
-        put: vi.fn(async () => undefined),
-        upload: vi.fn(async () => undefined)
+        get: vi.fn(async (url: string) => (url === "options/user-themes" ? [] : undefined))
     });
-    Object.assign(ws, { logError: vi.fn() });
     // Bootstrap's jQuery tooltip plugin isn't loaded in happy-dom; stub it (used by useTooltip /
     // useStaticTooltip via Dropdown, PlatformIndicator and FormListItem).
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn(), dropdown: vi.fn() });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { if (container) render(null, container); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Top-level structure --------------------------------------------------------------------------
@@ -587,7 +563,7 @@ describe("reacting to external option changes", () => {
         expect(schemeButtons[0].className).toContain("active"); // system active for "next"
 
         setOptions({ ...DEFAULT_OPTIONS, theme: "next-dark" });
-        fireEvent("entitiesReloaded", { loadResults: makeLoadResults([ "theme" ]) });
+        fireEvent("entitiesReloaded", { loadResults: makeLoadResults({ optionNames: [ "theme" ] }) });
         await flush();
         schemeButtons = root.querySelectorAll(".btn-group button");
         expect(schemeButtons[2].className).toContain("active"); // dark now active
@@ -643,14 +619,3 @@ describe("fallback branches", () => {
         expect(zoomInput?.value).toBe("100");
     });
 });
-
-function makeLoadResults(optionNames: string[]) {
-    return {
-        getAttributeRows: () => [],
-        getBranchRows: () => [],
-        getOptionNames: () => optionNames,
-        isNoteReloaded: () => false,
-        isNoteContentReloaded: () => false,
-        getEntityRow: () => undefined
-    };
-}

@@ -1,9 +1,10 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// Keep the local bootstrap mock: this spec relies on `Dropdown.getOrCreateInstance()` and `.update()`,
+// which the shared `bootstrapMock` does not provide.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -44,26 +45,15 @@ import Component from "../../components/component";
 import attributes from "../../services/attributes";
 import dialogService from "../../services/dialog";
 import { buildNote } from "../../test/easy-froca";
-import froca from "../../services/froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import CollectionProperties from "./CollectionProperties";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderProps(vnode: preact.ComponentChild) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>,
-            target
-        );
-    });
-    return target;
+    return renderComponent(vnode, { parent }).container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -77,31 +67,14 @@ function showDropdown(dropdown: Element | null | undefined) {
     act(() => { if (dropdown) $(dropdown).trigger("show.bs.dropdown"); });
 }
 
-/** Settle pending async microtasks (dialog promises, the open-all loop) and the resulting re-render. */
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
 beforeEach(() => {
     parent = new Component();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     // The Bootstrap tooltip jQuery plugin isn't loaded under happy-dom; provide a no-op so useTooltip works.
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     (dialogService.info as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (dialogService.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
-});
-
-afterEach(() => {
-    if (container) {
-        const target = container;
-        act(() => render(null, target));
-        target.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Top-level visibility -------------------------------------------------------------------------

@@ -1,5 +1,4 @@
 import { OnConnectionBindInfo } from "jsplumb";
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -128,12 +127,10 @@ vi.mock("./utils", async (importOriginal) => ({
 
 import Component from "../../../components/component";
 import dialog from "../../../services/dialog";
-import froca from "../../../services/froca";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
+import { fakeNoteContext, renderComponent, resetFroca } from "../../../test/render";
 import { TypeWidgetProps } from "../type_widget";
 import RelationMap from "./RelationMap";
 
@@ -183,7 +180,7 @@ shared.makeFakeJsPlumbInstance = makeFakeJsPlumbInstance;
 
 // --- Render helper -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let container: HTMLElement | undefined;
 let parent: Component;
 
 function renderRelationMap(props: Partial<TypeWidgetProps> = {}) {
@@ -196,23 +193,9 @@ function renderRelationMap(props: Partial<TypeWidgetProps> = {}) {
         noteContext: undefined,
         ...props
     };
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <RelationMap {...fullProps} />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    const unmount = () => act(() => {
-        render(null, el);
-        el.remove();
-        container = undefined;
-    });
-    return { note, props: fullProps, unmount };
+    const rendered = renderComponent(<RelationMap {...fullProps} />, { parent });
+    container = rendered.container;
+    return { note, props: fullProps, unmount: rendered.unmount };
 }
 
 async function flushAsync() {
@@ -242,18 +225,14 @@ function defaultPost(url: string, data?: { noteIds?: string[] }) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
+    // `get`/`post` need relation-map-specific behaviour; put/remove/upload (and ws.logError) come
+    // from the global test setup as cleared spies.
     Object.assign(server, {
         get: vi.fn(async (url: string) => (url === "keyboard-actions" ? [] : undefined)),
-        post: vi.fn(async (url: string, data?: { noteIds?: string[] }) => defaultPost(url, data)),
-        put: vi.fn(async () => undefined),
-        remove: vi.fn(async () => undefined),
-        upload: vi.fn(async () => undefined)
+        post: vi.fn(async (url: string, data?: { noteIds?: string[] }) => defaultPost(url, data))
     });
-    Object.assign(ws, { logError: vi.fn() });
     shared.capturedJsPlumb = null;
     panzoomInstances.length = 0;
     shared.promptResult = "knows";
@@ -263,8 +242,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
+    container = undefined;
 });
 
 // --- Initial render & content parsing ------------------------------------------------------------
@@ -658,7 +636,7 @@ describe("useRelationCreation", () => {
 
 describe("persistence", () => {
     it("serializes the map data and PUTs it when a save is forced after a change", async () => {
-        const noteContext = { ntxId: "ntx1", setContextData: vi.fn() } as never;
+        const noteContext = fakeNoteContext({ ntxId: "ntx1" });
         (server.post as ReturnType<typeof vi.fn>).mockImplementation(async (url: string, data?: { noteIds?: string[] }) => {
             if (typeof url === "string" && url.includes("children")) return { note: { noteId: "savedNote" } };
             return defaultPost(url, data);

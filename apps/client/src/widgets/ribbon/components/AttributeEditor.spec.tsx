@@ -1,8 +1,9 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MutableRef } from "preact/hooks";
+
+import { bootstrapMock } from "../../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -14,18 +15,7 @@ vi.mock("../../../services/i18n", async (importOriginal) => ({
     t: (key: string) => key
 }));
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 // The real ckeditor5 bundle is huge and irrelevant here (CKEditor itself is mocked below); provide
 // just the named symbols referenced at module top-level.
@@ -89,14 +79,12 @@ import note_create from "../../../services/note_create";
 import options from "../../../services/options";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
-import { makeLoadResults } from "../../../test/render-hook";
-import Component from "../../../components/component";
-import { ParentComponent } from "../../react/react_utils";
+import { flush, makeLoadResults, renderComponent, resetFroca } from "../../../test/render";
+import type Component from "../../../components/component";
 import AttributeEditor, { AttributeEditorImperativeHandlers } from "./AttributeEditor";
 
 // --- Harness --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderEditor(props: {
@@ -106,41 +94,29 @@ function renderEditor(props: {
     ntxId?: string | null;
     hidden?: boolean;
 }) {
-    parent = new Component();
     const api: MutableRef<AttributeEditorImperativeHandlers | null> = { current: null };
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => render((
-        <ParentComponent.Provider value={parent}>
-            <AttributeEditor
-                api={api}
-                note={props.note}
-                componentId={props.componentId ?? "comp-1"}
-                notePath={props.notePath}
-                ntxId={props.ntxId}
-                hidden={props.hidden}
-            />
-        </ParentComponent.Provider>
-    ), el));
-    return { api, parent, container: el };
+    const result = renderComponent(
+        <AttributeEditor
+            api={api}
+            note={props.note}
+            componentId={props.componentId ?? "comp-1"}
+            notePath={props.notePath}
+            ntxId={props.ntxId}
+            hidden={props.hidden}
+        />
+    );
+    parent = result.parent;
+    return { api, parent, container: result.container };
 }
 
 function fireEvent(name: string, data: unknown) {
     act(() => { (parent.handleEventInChildren as any)(name, data); });
 }
 
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     options.load({ locale: "en" } as any);
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined) });
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     ckEditorState.props = undefined;
     ckEditorState.setText = vi.fn();
@@ -148,15 +124,6 @@ beforeEach(() => {
     attributeDetailState.showAttributeDetail = vi.fn();
     attributeDetailState.hide = vi.fn();
     contextMenuState.options = undefined;
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

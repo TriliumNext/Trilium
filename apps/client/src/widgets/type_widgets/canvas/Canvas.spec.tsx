@@ -1,7 +1,7 @@
 import type { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
-import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -49,32 +49,18 @@ import useCanvasPersistence from "./persistence";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+// Wraps the shared `renderInto` (raw render, no Trilium providers) with the Canvas-specific props.
+// The shared helper auto-tears-down every mounted container in an afterEach.
 function renderCanvas(props: { note: FNote; noteContext?: NoteContext }) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render(
-            <Canvas
-                note={props.note}
-                noteContext={props.noteContext}
-                viewScope={undefined}
-                ntxId={null}
-                parentComponent={undefined}
-            />,
-            target
-        );
-    });
-    return target;
-}
-
-function teardownContainer() {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
+    return renderInto(
+        <Canvas
+            note={props.note}
+            noteContext={props.noteContext}
+            viewScope={undefined}
+            ntxId={null}
+            parentComponent={undefined}
+        />
+    );
 }
 
 function setOptions(values: Record<string, string>) {
@@ -85,8 +71,7 @@ function lastProps() {
     return excalidrawProps[excalidrawProps.length - 1];
 }
 
-// happy-dom's matchMedia returns undefined by default; useColorScheme reads window.glob.getThemeStyle.
-let originalMatchMedia: typeof window.matchMedia;
+// useColorScheme reads window.glob.getThemeStyle, which the global glob stub (setup.ts) doesn't provide.
 let originalGlob: unknown;
 
 beforeEach(() => {
@@ -95,23 +80,14 @@ beforeEach(() => {
     vi.clearAllMocks();
     (useCanvasPersistence as ReturnType<typeof vi.fn>).mockReturnValue(persistenceStub);
 
-    originalMatchMedia = window.matchMedia;
     originalGlob = (window as unknown as { glob: unknown }).glob;
-    window.matchMedia = vi.fn().mockReturnValue({
-        matches: false,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn()
-    }) as unknown as typeof window.matchMedia;
     (window as unknown as { glob: { getThemeStyle: () => string } }).glob = {
         getThemeStyle: () => "light"
     };
 });
 
 afterEach(() => {
-    teardownContainer();
-    window.matchMedia = originalMatchMedia;
     (window as unknown as { glob: unknown }).glob = originalGlob;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -144,14 +120,12 @@ describe("Canvas", () => {
         expect(lastProps().langCode).toBe("de-DE");
 
         // ga maps to null in LANGUAGE_MAPPINGS -> coerced to undefined via `?? undefined`.
-        teardownContainer();
         excalidrawProps.length = 0;
         setOptions({ locale: "ga" });
         renderCanvas({ note });
         expect(lastProps().langCode).toBeUndefined();
 
         // An unrecognised locale id -> mapping lookup is undefined -> undefined.
-        teardownContainer();
         excalidrawProps.length = 0;
         setOptions({ locale: "zz-unknown" });
         renderCanvas({ note });

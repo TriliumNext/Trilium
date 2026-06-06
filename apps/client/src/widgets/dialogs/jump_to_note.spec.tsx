@@ -1,8 +1,8 @@
 import type { ComponentChildren } from "preact";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { renderComponent } from "../../test/render";
 import type { ModalProps } from "../react/Modal";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
@@ -82,40 +82,26 @@ vi.mock("../../components/app_context", () => ({
 }));
 
 import appContext from "../../components/app_context";
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import commandRegistry from "../../services/command_registry";
 import note_autocomplete from "../../services/note_autocomplete";
 import shortcutService from "../../services/shortcuts";
-import { ParentComponent } from "../react/react_utils";
 import JumpToNoteDialogComponent from "./jump_to_note";
 
 // --- Harness --------------------------------------------------------------------------------------
 
-interface Harness {
-    container: HTMLDivElement;
-    parent: Component;
-}
-let harness: Harness | undefined;
+let harnessParent: Component | undefined;
 
 function renderDialog() {
-    const parent = new Component();
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    harness = { container, parent };
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <JumpToNoteDialogComponent />
-            </ParentComponent.Provider>
-        ), container);
-    });
+    const { parent } = renderComponent(<JumpToNoteDialogComponent />);
+    harnessParent = parent;
     return parent;
 }
 
 function fireTrilium(name: string, data: unknown = {}) {
     act(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (harness?.parent.handleEventInChildren as any)?.(name, data);
+        (harnessParent?.handleEventInChildren as any)?.(name, data);
     });
 }
 
@@ -125,16 +111,6 @@ beforeEach(() => {
     capturedModalProps.current = undefined;
     capturedAutocompleteProps.current = undefined;
     capturedButtonProps.current = undefined;
-});
-
-afterEach(() => {
-    if (harness) {
-        const { container } = harness;
-        act(() => render(null, container));
-        container.remove();
-        harness = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

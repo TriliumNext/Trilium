@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -19,55 +19,33 @@ import attributes from "../../services/attributes";
 import froca from "../../services/froca";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
+import { renderComponent, resetFroca } from "../../test/render";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import WebView from "./WebView";
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderWebView(noteId: string, ntxId: string | null | undefined = "ntx1", ctx: NoteContext | null = null) {
     const note = froca.notes[noteId];
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={ctx}>
-                    <WebView
-                        note={note}
-                        ntxId={ntxId}
-                        viewScope={undefined}
-                        parentComponent={undefined}
-                        noteContext={undefined}
-                    />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
-        ), el);
-    });
-    return el;
+    return renderComponent((
+        <WebView
+            note={note}
+            ntxId={ntxId}
+            viewScope={undefined}
+            parentComponent={undefined}
+            noteContext={undefined}
+        />
+    ), { parent, noteContext: ctx });
 }
 
 beforeEach(() => {
     parent = new Component();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     // appContext.tabManager is only assigned during app load; stub it for the focus/blur listeners.
     Object.assign(appContext, { tabManager: { activateNoteContext: vi.fn() } });
-});
-
-afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => { render(null, el); });
-        el.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- DisabledWebView -------------------------------------------------------------------------------
@@ -77,7 +55,7 @@ describe("WebView - disabled state", () => {
         buildNote({ id: "n1", title: "WV", "#disabled:webViewSrc": "https://example.com/" });
         const toggleSpy = vi.spyOn(attributes, "toggleDangerousAttribute").mockImplementation(async () => undefined);
 
-        const root = renderWebView("n1");
+        const { container: root } = renderWebView("n1");
 
         // The disabled URL input shows the stored value and is disabled.
         const input = root.querySelector("input.form-control");
@@ -106,7 +84,7 @@ describe("WebView - setup state", () => {
 
     it("renders the setup form when no webViewSrc label is present", () => {
         buildNote({ id: "n2", title: "WV" });
-        const root = renderWebView("n2");
+        const { container: root } = renderWebView("n2");
 
         // Setup form has a text input (not disabled) and a create button.
         const input = root.querySelector("input.form-control") as HTMLInputElement;
@@ -119,7 +97,7 @@ describe("WebView - setup state", () => {
     it("shows an error toast when submitting an invalid URL and does not set the label", () => {
         buildNote({ id: "n3", title: "WV" });
         const setLabelSpy = vi.spyOn(attributes, "setLabel").mockImplementation(async () => undefined);
-        const root = renderWebView("n3");
+        const { container: root } = renderWebView("n3");
 
         const input = root.querySelector("input.form-control") as HTMLInputElement;
         input.value = "not a url";
@@ -137,7 +115,7 @@ describe("WebView - setup state", () => {
     it("sets the webViewSrc label when submitting a valid URL", () => {
         buildNote({ id: "n4", title: "WV" });
         const setLabelSpy = vi.spyOn(attributes, "setLabel").mockImplementation(async () => undefined);
-        const root = renderWebView("n4");
+        const { container: root } = renderWebView("n4");
 
         const input = root.querySelector("input.form-control") as HTMLInputElement;
         input.value = "https://trilium.test/page";
@@ -158,7 +136,7 @@ describe("WebView - setup state", () => {
 describe("WebView - browser variant", () => {
     it("renders a sandboxed iframe when webViewSrc is set (non-electron)", () => {
         buildNote({ id: "n5", title: "WV", "#webViewSrc": "https://content.test/" });
-        const root = renderWebView("n5", "ntxB");
+        const { container: root } = renderWebView("n5", "ntxB");
 
         const iframe = root.querySelector("iframe.note-detail-web-view-content") as HTMLIFrameElement;
         expect(iframe).not.toBeNull();
@@ -170,7 +148,7 @@ describe("WebView - browser variant", () => {
 
     it("activates the note context on window blur when the iframe is focused", () => {
         buildNote({ id: "n6", title: "WV", "#webViewSrc": "https://content.test/" });
-        const root = renderWebView("n6", "ntxB");
+        const { container: root } = renderWebView("n6", "ntxB");
         const iframe = root.querySelector("iframe") as HTMLIFrameElement;
 
         // happy-dom: make the iframe the active element so the blur handler proceeds.
@@ -192,7 +170,7 @@ describe("WebView - browser variant", () => {
 
     it("does not activate the note context when ntxId is missing", () => {
         buildNote({ id: "n8", title: "WV", "#webViewSrc": "https://content.test/" });
-        const root = renderWebView("n8", null);
+        const { container: root } = renderWebView("n8", null);
         const iframe = root.querySelector("iframe") as HTMLIFrameElement;
 
         Object.defineProperty(document, "activeElement", { configurable: true, get: () => iframe });
@@ -203,10 +181,10 @@ describe("WebView - browser variant", () => {
 
     it("removes the window blur listener on unmount", () => {
         buildNote({ id: "n9", title: "WV", "#webViewSrc": "https://content.test/" });
-        const root = renderWebView("n9", "ntxB");
+        const { container: root, unmount } = renderWebView("n9", "ntxB");
         const iframe = root.querySelector("iframe") as HTMLIFrameElement;
 
-        act(() => { render(null, root); });
+        unmount();
 
         Object.defineProperty(document, "activeElement", { configurable: true, get: () => iframe });
         act(() => { window.dispatchEvent(new Event("blur")); });

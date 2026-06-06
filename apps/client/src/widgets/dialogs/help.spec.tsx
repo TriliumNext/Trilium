@@ -1,11 +1,11 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
 // Bootstrap's Modal/Tooltip touch real DOM APIs that happy-dom doesn't fully implement; stub them so
-// the dialog body still renders without throwing when `show` flips to true.
+// the dialog body still renders without throwing when `show` flips to true. The shared `bootstrapMock`
+// is not used here because the React Modal wrapper relies on `Modal.getOrCreateInstance`.
 vi.mock("bootstrap", () => {
     class Modal {
         static instances = new Map<Element, Modal>();
@@ -41,29 +41,19 @@ vi.mock("../../services/keyboard_actions", () => ({
 }));
 
 import appContext from "../../components/app_context";
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import keyboard_actions from "../../services/keyboard_actions";
-import { flush } from "../../test/render-hook";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent } from "../../test/render";
 import HelpDialog from "./help";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderDialog() {
-    parent = new Component();
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => render(
-        <ParentComponent.Provider value={parent}>
-            <HelpDialog />
-        </ParentComponent.Provider>,
-        el
-    ));
-    return el;
+    const { container, parent: renderedParent } = renderComponent(<HelpDialog />);
+    parent = renderedParent;
+    return container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -74,15 +64,6 @@ function fireEvent(name: string, data: unknown) {
 beforeEach(() => {
     vi.clearAllMocks();
     (keyboard_actions.getAction as ReturnType<typeof vi.fn>).mockResolvedValue({ effectiveShortcuts: [ "ctrl+k" ] });
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

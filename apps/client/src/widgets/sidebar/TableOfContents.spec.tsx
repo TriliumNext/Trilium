@@ -1,6 +1,8 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -50,13 +52,12 @@ import TableOfContents from "./TableOfContents";
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+// Uses the shared `renderInto` (raw render + auto-teardown). We track the last container only so the
+// unmount test can detach the component mid-test and observe the change listener being removed.
+let container: HTMLElement | undefined;
 function renderToc() {
-    const c = document.createElement("div");
-    container = c;
-    document.body.appendChild(c);
-    act(() => render(<TableOfContents />, c));
-    return c;
+    container = renderInto(<TableOfContents />);
+    return container;
 }
 
 function resetState() {
@@ -74,15 +75,6 @@ beforeEach(() => {
     resetState();
     vi.clearAllMocks();
     (attributeChangeAffectsHeading as ReturnType<typeof vi.fn>).mockReturnValue(false);
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Fake CKEditor model ---------------------------------------------------------------------------

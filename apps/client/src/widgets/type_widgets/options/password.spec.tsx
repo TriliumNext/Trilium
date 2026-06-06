@@ -1,7 +1,9 @@
 import { OptionNames } from "@triliumnext/commons";
-import { ComponentChildren, render } from "preact";
+import { ComponentChildren } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { flush, renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -58,36 +60,18 @@ import options from "../../../services/options";
 import protected_session_holder from "../../../services/protected_session_holder";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import ws from "../../../services/ws";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
 import PasswordSettings from "./password";
 
-// --- Render harness (wraps the component in the Trilium providers, like react_utils.tsx) -----------
+// --- Render harness (wraps the component in the Trilium providers via the shared helper) -----------
 
-let container: HTMLDivElement | undefined;
 const parent = { current: new Component() };
 
 function renderApp(node: ComponentChildren = <PasswordSettings />) {
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent.current}>
-                <NoteContextContext.Provider value={null}>
-                    {node}
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
-        ), root);
-    });
-    return root;
+    const { container } = renderComponent(node, { parent: parent.current });
+    return container;
 }
 
 function click(el: HTMLElement) { act(() => { el.click(); }); }
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
-}
 
 function setOptions(values: Record<string, string>) {
     options.load(values as Record<OptionNames, string>);
@@ -120,13 +104,11 @@ beforeEach(() => {
     setOptions({ protectedSessionTimeout: "600", protectedSessionTimeoutTimeScale: "60" });
     parent.current = new Component();
     vi.clearAllMocks();
-    // The auto-mocked server (test/setup.ts) only defines get/post — supply per-test impls below.
+    // The auto-mocked server (test/setup.ts) defines inert get/post — supply per-test impls below.
     Object.assign(server, {
         get: vi.fn(async () => undefined),
-        post: vi.fn(async () => ({ success: true })),
-        put: vi.fn(async () => undefined)
+        post: vi.fn(async () => ({ success: true }))
     });
-    Object.assign(ws, { logError: vi.fn() });
     // Bootstrap's jQuery tooltip plugin isn't loaded under happy-dom; stub it.
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     asMock(dialog.confirm).mockResolvedValue(true);
@@ -134,14 +116,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) {
-        act(() => { if (container) render(null, container); });
-        container.remove();
-        container = undefined;
-    }
-    // Drop any portal nodes left in body.
+    // The shared render helper tears down rendered containers; only the createPortal nodes that land
+    // directly in document.body need manual cleanup.
     document.body.querySelectorAll(".change-password-modal").forEach((el) => el.remove());
-    vi.restoreAllMocks();
 });
 
 // --- Top-level structure --------------------------------------------------------------------------

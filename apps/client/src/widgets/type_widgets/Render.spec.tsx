@@ -1,28 +1,11 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    class Dropdown {
-        static getOrCreateInstance() { return new Dropdown(); }
-        show() {}
-        hide() {}
-        toggle() {}
-        dispose() {}
-    }
-    return { Tooltip, Dropdown, default: { Tooltip, Dropdown } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 // The render service drives heavy bundle execution + jQuery DOM mutation; stub it.
 vi.mock("../../services/render", () => ({
@@ -52,40 +35,19 @@ vi.mock("../react/NoteAutocomplete", () => ({
 
 import attributes from "../../services/attributes";
 import Component from "../../components/component";
-import froca from "../../services/froca";
 import note_create from "../../services/note_create";
 import render_service from "../../services/render";
-import server from "../../services/server";
 import toast from "../../services/toast";
-import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, flush, renderComponent, resetFroca } from "../../test/render";
 import RenderWidget from "./Render";
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderWithProviders(vnode: any, noteContext: any = null) {
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={noteContext}>
-                    {vnode}
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            root
-        );
-    });
-    return root;
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+    return renderComponent(vnode, { parent, noteContext }).container;
 }
 
 function fire(name: string, data: unknown) {
@@ -101,27 +63,10 @@ const TYPE_PROPS_EXTRA = {
 beforeEach(() => {
     parent = new Component();
     lastNoteIdChanged = undefined;
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, {
-        put: vi.fn(async () => undefined),
-        remove: vi.fn(async () => undefined),
-        post: vi.fn(async () => undefined)
-    });
-    Object.assign(ws, { logError: vi.fn() });
     ($.fn as any).tooltip = function () { return this; };
     ($.fn as any).dropdown = function () { return this; };
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Dispatcher branches ---------------------------------------------------------------------------
@@ -258,7 +203,7 @@ describe("RenderContent", () => {
     it("refreshes on renderActiveNote only when the note context is active", () => {
         const note = buildHost("activeHost");
         const isActive = vi.fn(() => true);
-        const noteContext = { ntxId: "ntx1", isActive } as any;
+        const noteContext = fakeNoteContext({ isActive });
         renderWithProviders(<RenderWidget note={note} viewScope={undefined} {...TYPE_PROPS_EXTRA} noteContext={noteContext} />, noteContext);
 
         const callsBefore = (render_service.render as ReturnType<typeof vi.fn>).mock.calls.length;

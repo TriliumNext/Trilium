@@ -1,6 +1,9 @@
-import { ComponentChildren, render, VNode } from "preact";
+import { ComponentChildren } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../../test/mocks";
+import { flush, renderComponent, resetFroca } from "../../../test/render";
 
 // --- Hoisted fakes ---------------------------------------------------------------------------------
 
@@ -24,18 +27,7 @@ const resizeState = vi.hoisted(() => {
 
 // --- Module mocks (hoisted above the imports) ------------------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 const contentRendererMock = vi.hoisted(() => ({
     getRenderedContent: vi.fn()
@@ -73,43 +65,17 @@ vi.mock("../../react/NoteLink", () => ({
         />
 }));
 
-import type NoteContext from "../../../components/note_context";
 import attribute_renderer from "../../../services/attribute_renderer";
 import content_renderer from "../../../services/content_renderer";
-import froca from "../../../services/froca";
 import link from "../../../services/link";
 import linkContextMenuService from "../../../menus/link_context_menu";
 import { buildNote } from "../../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
-import Component from "../../../components/component";
 import { GridView, ListView, NoteContent } from "./ListOrGridView";
 import { ViewModeProps } from "../interface";
 
 // --- Render helper ---------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-const parent = new Component();
-
-function renderInProviders(vnode: VNode) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null as unknown as NoteContext}>
-                    {vnode}
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
+const renderInProviders = (vnode: unknown) => renderComponent(vnode).container;
 
 function viewProps(overrides: Partial<ViewModeProps<{}>> & { note: ViewModeProps<{}>["note"] }): ViewModeProps<{}> {
     return {
@@ -132,22 +98,10 @@ function renderedContent(html: string, type = "text") {
 // --- Lifecycle -------------------------------------------------------------------------------------
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     (content_renderer.getRenderedContent as ReturnType<typeof vi.fn>).mockResolvedValue(renderedContent("<p>content</p>"));
     (attribute_renderer.renderNormalAttributes as ReturnType<typeof vi.fn>).mockResolvedValue({ $renderedAttributes: [ $("<span>#a</span>")[0] ] });
-});
-
-afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => render(null, el));
-        el.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- ListView --------------------------------------------------------------------------------------

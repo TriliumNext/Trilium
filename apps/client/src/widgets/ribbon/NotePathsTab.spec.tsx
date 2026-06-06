@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -15,21 +14,13 @@ import Component from "../../components/component";
 import { NotePathRecord } from "../../entities/fnote";
 import { NOTE_PATH_TITLE_SEPARATOR } from "../../services/tree";
 import { buildNote } from "../../test/easy-froca";
-import { flush, makeLoadResults, renderHook } from "../../test/render-hook";
-import froca from "../../services/froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, makeLoadResults, renderComponent, renderHook, resetFroca } from "../../test/render";
 import NotePathsTab, { NotePathsWidget, useSortedNotePaths } from "./NotePathsTab";
 
 // --- Helpers -------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderWidget(vnode: preact.VNode, parent: Component | null = new Component()) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => render(<ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>, target));
-    return target;
+function renderWidget(vnode: preact.VNode, parent: Component = new Component()) {
+    return renderComponent(vnode, { parent }).container;
 }
 
 function makeRecord(overrides: Partial<NotePathRecord> = {}): NotePathRecord {
@@ -44,20 +35,8 @@ function makeRecord(overrides: Partial<NotePathRecord> = {}): NotePathRecord {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    const target = container;
-    if (target) {
-        act(() => render(null, target));
-        target.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- NotePathsWidget -----------------------------------------------------------------------------

@@ -1,27 +1,13 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
+import { renderInto } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
 // bootstrap (Modal/Tooltip) — render path touches it indirectly; provide inert stubs.
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static getInstance() { return null; }
-        constructor() {}
-        dispose() {}
-        show() {}
-        hide() {}
-    }
-    class Modal {
-        static getInstance() { return null; }
-        constructor() {}
-        show() {}
-        hide() {}
-        dispose() {}
-    }
-    return { Tooltip, Modal, default: { Tooltip, Modal } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 // math.render must be a no-op (KaTeX is not loaded in happy-dom).
 vi.mock("../../services/math", () => ({ default: { render: vi.fn() } }));
@@ -80,14 +66,6 @@ import HighlightsList, { extractHighlightsFromStaticHtml } from "./HighlightsLis
 
 // --- Render harness ------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as preact.ComponentChild, container as HTMLDivElement));
-    return container;
-}
-
 beforeEach(() => {
     hookState.activeNote = { noteId: "n1" };
     hookState.activeNoteContext = { ntxId: "ntx1" };
@@ -96,17 +74,6 @@ beforeEach(() => {
     hookState.textEditor = null;
     hookState.contentEl = null;
     hookState.highlightsList = [ "bold", "italic", "underline", "color", "bgColor" ];
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    // Remove portal content rendered into document.body.
-    document.querySelectorAll(".fake-modal").forEach(el => el.remove());
-    vi.restoreAllMocks();
 });
 
 // --- extractHighlightsFromStaticHtml (pure DOM) --------------------------------------------------

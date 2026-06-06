@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -47,14 +48,10 @@ import AddProviderModal, { PROVIDER_TYPES } from "./AddProviderModal";
 
 // --- Render helper (portals into document.body) --------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
 function renderModal(props: Parameters<typeof AddProviderModal>[0]) {
-    const localContainer = document.createElement("div");
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    act(() => render(<AddProviderModal {...props} />, localContainer));
-    // The component portals into document.body; query the portal root there.
+    // renderInto mounts (and auto-tears-down) the container; the component portals into
+    // document.body, so query the portal root there.
+    renderInto(<AddProviderModal {...props} />);
     const modal = document.body.querySelector<HTMLElement>(".add-provider-modal");
     if (!modal) {
         throw new Error("Modal did not render");
@@ -69,20 +66,6 @@ function typeInto(input: HTMLInputElement, value: string) {
 
 beforeEach(() => {
     glob.activeDialog = null;
-});
-
-afterEach(() => {
-    const localContainer = container;
-    if (localContainer) {
-        act(() => render(null, localContainer));
-        localContainer.remove();
-        container = undefined;
-    }
-    // Remove any portal leftovers so subsequent queries are isolated.
-    for (const el of Array.from(document.body.querySelectorAll(".add-provider-modal"))) {
-        el.remove();
-    }
-    vi.restoreAllMocks();
 });
 
 describe("AddProviderModal", () => {

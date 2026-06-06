@@ -1,22 +1,11 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        config: unknown;
-        constructor(el: Element, config?: unknown) { this.element = el; this.config = config; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../../services/keyboard_actions", () => ({
     default: {
         getAction: vi.fn(async () => ({ effectiveShortcuts: [] })),
@@ -24,35 +13,13 @@ vi.mock("../../services/keyboard_actions", () => ({
     }
 }));
 
-import froca from "../../services/froca";
 import { buildNote } from "../../test/easy-froca";
-import { flush, renderHook } from "../../test/render-hook";
+import { flush, renderHook, renderInto, resetFroca } from "../../test/render";
 import { Pager, usePagination } from "./Pagination";
 
-// --- renderInto recipe (inline; see client-components.md) ------------------------------------------
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    render(vnode as never, container);
-    return container;
-}
-
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 function noop() { /* setPage stub */ }

@@ -1,19 +1,12 @@
 import type { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static getInstance() { return null; }
-        dispose() {}
-        hide() {}
-        show() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 // Control isIOS() (read both in the JSX className and the positioning effect) while keeping the rest
 // of the utils module (randomString used by easy-froca, etc.) real.
@@ -31,35 +24,21 @@ vi.mock("../../../services/protected_session_holder", () => ({
     default: { touchProtectedSessionIfNecessary: vi.fn(), isProtectedSessionAvailable: vi.fn(() => true) }
 }));
 
-import Component from "../../../components/component";
+import type Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
-import FNote from "../../../entities/fnote";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
+import { fakeNoteContext, flush, renderComponent } from "../../../test/render";
 import MobileEditorToolbar from "./mobile_editor_toolbar";
 
 // --- Render helper -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
-function renderComponent(vnode: preact.VNode, noteContext: NoteContext | null) {
-    const newParent = new Component();
-    const el = document.createElement("div");
-    parent = newParent;
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={newParent}>
-                <NoteContextContext.Provider value={noteContext}>
-                    {vnode}
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
-        ), el);
-    });
-    return el;
+function render(vnode: preact.VNode, noteContext: NoteContext | null) {
+    const result = renderComponent(vnode, { noteContext });
+    parent = result.parent;
+    return result.container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -67,10 +46,6 @@ function fireEvent(name: string, data: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (parent?.handleEventInChildren as any)?.(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise(r => setTimeout(r, 0)); });
 }
 
 function setOptions(values: Record<string, string>) {
@@ -82,34 +57,10 @@ function fakeEditor(toolbar?: HTMLElement) {
     return { ui: { view: { toolbar: toolbar ? { element: toolbar, items: [] } : { items: [] } } } } as unknown as never;
 }
 
-/** A minimal `NoteContext`-shaped object; only the fields the component/hooks touch are present. */
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    const note: FNote | undefined = overrides.note as FNote | undefined;
-    return {
-        ntxId: "ntx1",
-        note,
-        notePath: note ? `root/${note.noteId}` : "root/note1",
-        hoistedNoteId: "root",
-        viewScope: { viewMode: "default" },
-        isReadOnly: vi.fn(async () => false),
-        ...overrides
-    } as unknown as NoteContext;
-}
-
 beforeEach(() => {
     iosState.value = false;
     setOptions({});
-});
-
-afterEach(() => {
-    const c = container;
-    if (c) {
-        act(() => render(null, c));
-        c.remove();
-        container = undefined;
-    }
     parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------
@@ -118,7 +69,7 @@ describe("MobileEditorToolbar", () => {
     it("is visible (non-iOS) for an editable text note", async () => {
         const note = buildNote({ id: "meVisible", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const outer = el.querySelector(".classic-toolbar-outer-container");
@@ -132,7 +83,7 @@ describe("MobileEditorToolbar", () => {
     it("is hidden for a non-text note", async () => {
         const note = buildNote({ id: "meImg", title: "I", type: "image" });
         const ctx = fakeNoteContext({ note, isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const outer = el.querySelector(".classic-toolbar-outer-container");
@@ -143,7 +94,7 @@ describe("MobileEditorToolbar", () => {
     it("is hidden for a read-only text note", async () => {
         const note = buildNote({ id: "meRo", title: "R", type: "text" });
         const ctx = fakeNoteContext({ note, isReadOnly: vi.fn(async () => true) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const outer = el.querySelector(".classic-toolbar-outer-container");
@@ -154,7 +105,7 @@ describe("MobileEditorToolbar", () => {
         iosState.value = true;
         const note = buildNote({ id: "meIos", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const outer = el.querySelector(".classic-toolbar-outer-container");
@@ -164,7 +115,7 @@ describe("MobileEditorToolbar", () => {
     it("attaches the CKEditor toolbar when an editor refresh matches the ntxId", async () => {
         const note = buildNote({ id: "meAttach", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, ntxId: "ntxA", isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const toolbar = document.createElement("div");
@@ -176,7 +127,7 @@ describe("MobileEditorToolbar", () => {
     it("clears its children when the matching editor has no toolbar element", async () => {
         const note = buildNote({ id: "meClear", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, ntxId: "ntxA", isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const toolbar = document.createElement("div");
@@ -191,7 +142,7 @@ describe("MobileEditorToolbar", () => {
     it("ignores editor refreshes meant for a different note context", async () => {
         const note = buildNote({ id: "meOther", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, ntxId: "ntxA", isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const toolbar = document.createElement("div");
@@ -203,7 +154,7 @@ describe("MobileEditorToolbar", () => {
     it("repositions dropdowns to point upwards on a matching refresh (non-popup)", async () => {
         const note = buildNote({ id: "meDrop", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, ntxId: "ntxDrop", isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         // A toolbar item exposing a panelView + change:isOpen subscription.
@@ -231,7 +182,7 @@ describe("MobileEditorToolbar", () => {
     it("does not reposition dropdowns when in the popup editor", async () => {
         const note = buildNote({ id: "mePopup", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, ntxId: "ntxPopup", isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar inPopupEditor />, ctx);
+        const el = render(<MobileEditorToolbar inPopupEditor />, ctx);
         await flush();
 
         let subscribed = false;
@@ -250,7 +201,7 @@ describe("MobileEditorToolbar", () => {
     it("ignores a dropdown open event when the item is not actually open", async () => {
         const note = buildNote({ id: "meDropClosed", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, ntxId: "ntxDropC", isReadOnly: vi.fn(async () => false) });
-        renderComponent(<MobileEditorToolbar />, ctx);
+        render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const onHandlers: Record<string, () => void> = {};
@@ -275,7 +226,7 @@ describe("MobileEditorToolbar", () => {
     it("toggles the dropdown-active class via the aria-expanded MutationObserver", async () => {
         const note = buildNote({ id: "meObserver", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, ntxId: "ntxObs", isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const widget = el.querySelector<HTMLDivElement>(".classic-toolbar-widget");
@@ -302,7 +253,7 @@ describe("MobileEditorToolbar", () => {
     it("AND-reduces multiple aria-expanded targets in a single mutation batch", async () => {
         const note = buildNote({ id: "meObsMulti", title: "T", type: "text" });
         const ctx = fakeNoteContext({ note, ntxId: "ntxObsMulti", isReadOnly: vi.fn(async () => false) });
-        const el = renderComponent(<MobileEditorToolbar />, ctx);
+        const el = render(<MobileEditorToolbar />, ctx);
         await flush();
 
         const widget = el.querySelector<HTMLDivElement>(".classic-toolbar-widget");
@@ -350,7 +301,7 @@ describe("MobileEditorToolbar", () => {
         try {
             const note = buildNote({ id: "meIosPos", title: "T", type: "text" });
             const ctx = fakeNoteContext({ note, ntxId: "ntxIosPos", isReadOnly: vi.fn(async () => false) });
-            const el = renderComponent(<MobileEditorToolbar />, ctx);
+            const el = render(<MobileEditorToolbar />, ctx);
             await flush();
 
             const outer = el.querySelector<HTMLDivElement>(".classic-toolbar-outer-container");
@@ -381,7 +332,7 @@ describe("MobileEditorToolbar", () => {
         try {
             const note = buildNote({ id: "meIosNoVV", title: "T", type: "text" });
             const ctx = fakeNoteContext({ note, ntxId: "ntxIosNoVV", isReadOnly: vi.fn(async () => false) });
-            const el = renderComponent(<MobileEditorToolbar />, ctx);
+            const el = render(<MobileEditorToolbar />, ctx);
             await flush();
 
             const wrapper = el.querySelector<HTMLDivElement>(".classic-toolbar-widget");
@@ -408,7 +359,7 @@ describe("MobileEditorToolbar", () => {
         try {
             const note = buildNote({ id: "meIosPopup", title: "T", type: "text" });
             const ctx = fakeNoteContext({ note, ntxId: "ntxIosPopup", isReadOnly: vi.fn(async () => false) });
-            renderComponent(<MobileEditorToolbar inPopupEditor />, ctx);
+            render(<MobileEditorToolbar inPopupEditor />, ctx);
             await flush();
             // enabled = !inPopupEditor = false → effect returns early, never subscribes.
             expect(addEventListener).not.toHaveBeenCalled();
@@ -418,7 +369,7 @@ describe("MobileEditorToolbar", () => {
     });
 
     it("renders an empty (hidden) container when there is no note context", async () => {
-        const el = renderComponent(<MobileEditorToolbar />, null);
+        const el = render(<MobileEditorToolbar />, null);
         await flush();
         const outer = el.querySelector(".classic-toolbar-outer-container");
         expect(outer).not.toBeNull();

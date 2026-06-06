@@ -1,19 +1,12 @@
 import type { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static getInstance() { return null; }
-        dispose() {}
-        hide() {}
-        show() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 // Capture the props passed to the (heavyweight, real CKEditor) child so the tests can drive its
 // callbacks without instantiating an actual editor.
@@ -81,16 +74,13 @@ import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
 import dialog from "../../../services/dialog";
-import froca from "../../../services/froca";
 import link_embed from "../../../services/link_embed";
 import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
-import { flush, makeLoadResults } from "../../../test/render-hook";
+import { fakeNoteContext as baseFakeNoteContext, flush, makeLoadResults, renderComponent, resetFroca } from "../../../test/render";
 import options from "../../../services/options";
-import { ParentComponent, NoteContextContext } from "../../react/react_utils";
 import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 import { updateTemplateCache } from "./snippets.js";
 import EditableText from "./EditableText";
@@ -147,37 +137,20 @@ function makeEditor(domRoot?: HTMLElement, overrides: Partial<FakeEditor> = {}):
 }
 
 function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: "root/note1",
-        viewScope: { viewMode: "default", isReadOnly: false },
+    // The shared base lacks the two methods EditableText calls (`isActive`, `getTextEditor`); add
+    // them as defaults so tests can override or assert on them.
+    return baseFakeNoteContext({
         isActive: vi.fn(() => true),
-        isReadOnly: vi.fn(async () => false),
-        setContextData: vi.fn(),
-        getContextData: vi.fn(),
-        clearContextData: vi.fn(),
         getTextEditor: vi.fn(async () => undefined),
         ...overrides
-    } as unknown as NoteContext;
+    });
 }
 
 // --- Render harness ------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
 function renderEditableText(props: TypeWidgetProps, parent: Component) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => render((
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={props.noteContext ?? null}>
-                <EditableText {...props} />
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), el));
-    return el;
+    const { container } = renderComponent(<EditableText {...props} />, { parent, noteContext: props.noteContext ?? null });
+    return container;
 }
 
 function fireEvent(parent: Component, name: string, data: unknown) {
@@ -199,15 +172,11 @@ function getEditorApiRef() {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     ckProps.current = {};
     preAttachedEditor.current = undefined;
     options.load({ textNoteEditorType: "ckeditor-balloon", codeBlockWordWrap: "false", codeBlockTabWidth: "4", locale: "en" } as Record<OptionNames, string>);
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     (globalThis as unknown as { logInfo: unknown }).logInfo = vi.fn();
     (globalThis as unknown as { logError: unknown }).logError = vi.fn();
     Object.assign(appContext, {
@@ -217,15 +186,6 @@ beforeEach(() => {
             getActiveContextNotePath: vi.fn(() => null)
         }
     });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

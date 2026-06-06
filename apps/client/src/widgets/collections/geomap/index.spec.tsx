@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -85,13 +84,11 @@ import { divIcon } from "leaflet";
 
 import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
-import froca from "../../../services/froca";
 import branches from "../../../services/branches";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../../test/render";
 import type { ViewModeProps } from "../interface";
 import { createNewNote, moveMarker } from "./api";
 import openContextMenu, { openMapContextMenu } from "./context_menu";
@@ -99,13 +96,9 @@ import GeoView from "./index";
 
 // --- Harness --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-const parent = new Component();
+let parent = new Component();
 
 async function renderGeo(props: Partial<ViewModeProps<any>> & { note: ReturnType<typeof buildNote> }) {
-    const target = document.createElement("div");
-    document.body.appendChild(target);
-    container = target;
     const fullProps: ViewModeProps<any> = {
         notePath: "root/" + props.note.noteId,
         noteIds: [],
@@ -116,19 +109,11 @@ async function renderGeo(props: Partial<ViewModeProps<any>> & { note: ReturnType
         onReady: vi.fn(),
         ...props
     };
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null}>
-                    <GeoView {...fullProps} />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            target
-        );
-    });
+    parent = new Component();
+    const { container } = renderComponent(<GeoView {...fullProps} />, { parent });
     // Let the froca.getNotes effect (and any resulting re-render) settle.
-    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
-    return target;
+    await flush();
+    return container;
 }
 
 function fireTrilium(name: string, data: unknown) {
@@ -140,7 +125,7 @@ function fireTrilium(name: string, data: unknown) {
 /** Drain several macrotask hops so deeply chained async effects (froca → blob → server) settle. */
 async function flushMany(rounds = 6) {
     for (let i = 0; i < rounds; i++) {
-        await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+        await flush();
     }
 }
 
@@ -149,26 +134,12 @@ beforeEach(() => {
     mapState.props = undefined;
     markerCalls.length = 0;
     gpxCalls.length = 0;
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, {
-        put: vi.fn(async () => undefined),
-        upload: vi.fn(async () => undefined),
-        get: vi.fn(async () => "")
-    });
-    Object.assign(ws, { logError: vi.fn() });
+    // The global mock's `server.get` is a smart router, not a vi.fn; these tests need a controllable
+    // spy they can override per-test with `.mockResolvedValue(...)`.
+    Object.assign(server, { get: vi.fn(async () => "") });
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
-});
-
-afterEach(async () => {
-    if (container) {
-        await act(async () => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

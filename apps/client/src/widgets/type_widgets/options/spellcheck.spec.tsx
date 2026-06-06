@@ -1,5 +1,4 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -14,28 +13,16 @@ import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
 import options from "../../../services/options";
 import { reloadFrontendApp } from "../../../services/utils";
-import ws from "../../../services/ws";
-import { ParentComponent } from "../../react/react_utils";
+import { renderComponent } from "../../../test/render";
 import SpellcheckSettings from "./spellcheck";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 const parent = new Component();
 
-/** Render inside a ParentComponent provider so the internal `useTriliumEvent`/option hooks register. */
+/** Render inside the Trilium providers so the internal `useTriliumEvent`/option hooks register. */
 function renderSpellcheck() {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <SpellcheckSettings />
-            </ParentComponent.Provider>
-        ), el);
-    });
-    return el;
+    return renderComponent(<SpellcheckSettings />, { parent }).container;
 }
 
 function setOptions(values: Record<string, string>) {
@@ -56,17 +43,10 @@ beforeEach(() => {
     setOptions({});
     clearElectronApi();
     vi.clearAllMocks();
-    Object.assign(ws, { logError: vi.fn() });
 });
 
 afterEach(() => {
-    if (container) {
-        act(() => { render(null, container ?? document.createElement("div")); });
-        container.remove();
-        container = undefined;
-    }
     clearElectronApi();
-    vi.restoreAllMocks();
 });
 
 // --- Web (non-electron) ---------------------------------------------------------------------------

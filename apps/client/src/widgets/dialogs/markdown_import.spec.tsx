@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -48,28 +49,18 @@ import server from "../../services/server";
 import toast from "../../services/toast";
 import utils from "../../services/utils";
 import { CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
-import { ParentComponent } from "../react/react_utils";
 import MarkdownImportDialog from "./markdown_import";
 
 // --- Harness ------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let container: HTMLElement | undefined;
 let parent: Component;
 
 function renderDialog() {
-    parent = new Component();
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <MarkdownImportDialog />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    const rendered = renderComponent(<MarkdownImportDialog />);
+    container = rendered.container;
+    parent = rendered.parent;
+    return container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -94,15 +85,6 @@ beforeEach(() => {
     vi.clearAllMocks();
     Object.assign(server, { post: vi.fn(async () => ({ htmlContent: "<p>converted</p>" })) });
     (utils.isElectron as ReturnType<typeof vi.fn>).mockReturnValue(false);
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests --------------------------------------------------------------------------------------

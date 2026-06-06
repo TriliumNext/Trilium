@@ -3,8 +3,12 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { renderInto } from "../../../test/render";
+
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// The shared bootstrapMock only exposes getInstance/show/hide/dispose/toggle, but this spec relies on
+// Dropdown.getOrCreateInstance + Dropdown.update, so keep the local mock unchanged.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -82,16 +86,6 @@ function fakeRef(media: unknown): RefObject<HTMLVideoElement | HTMLAudioElement>
     return { current: media as HTMLVideoElement };
 }
 
-// --- Render harness -------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => { render(vnode as never, container as HTMLDivElement); });
-    return container;
-}
-
 // --- MutationObserver stub (happy-dom's may not invoke for attribute changes on plain objects) ----
 
 interface FakeMObserver { cb: MutationCallback; target?: Node; }
@@ -117,9 +111,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
     if (RealMutationObserver) Object.assign(window, { MutationObserver: RealMutationObserver });
-    vi.restoreAllMocks();
 });
 
 function fireMutations() {
@@ -184,10 +176,10 @@ describe("SeekBar", () => {
 
     it("removes listeners on unmount", () => {
         const media = createFakeMedia({ duration: 10 });
-        renderInto(<SeekBar mediaRef={fakeRef(media)} />);
+        const root = renderInto(<SeekBar mediaRef={fakeRef(media)} />);
         expect(media.listeners["timeupdate"]?.size).toBe(1);
         expect(media.listeners["durationchange"]?.size).toBe(1);
-        if (container) { act(() => render(null, container as HTMLDivElement)); }
+        act(() => render(null, root));
         expect(media.listeners["timeupdate"]?.size ?? 0).toBe(0);
         expect(media.listeners["durationchange"]?.size ?? 0).toBe(0);
     });
@@ -286,9 +278,9 @@ describe("VolumeControl", () => {
 
     it("removes the volumechange listener on unmount", () => {
         const media = createFakeMedia({ volume: 0.5 });
-        renderInto(<VolumeControl mediaRef={fakeRef(media)} />);
+        const root = renderInto(<VolumeControl mediaRef={fakeRef(media)} />);
         expect(media.listeners["volumechange"]?.size).toBe(1);
-        if (container) act(() => render(null, container as HTMLDivElement));
+        act(() => render(null, root));
         expect(media.listeners["volumechange"]?.size ?? 0).toBe(0);
     });
 });
@@ -405,9 +397,9 @@ describe("PlaybackSpeed", () => {
 
     it("removes the ratechange listener on unmount", () => {
         const media = createFakeMedia({ playbackRate: 1 });
-        renderInto(<PlaybackSpeed mediaRef={fakeRef(media)} />);
+        const root = renderInto(<PlaybackSpeed mediaRef={fakeRef(media)} />);
         expect(media.listeners["ratechange"]?.size).toBe(1);
-        if (container) act(() => render(null, container as HTMLDivElement));
+        act(() => render(null, root));
         expect(media.listeners["ratechange"]?.size ?? 0).toBe(0);
     });
 });

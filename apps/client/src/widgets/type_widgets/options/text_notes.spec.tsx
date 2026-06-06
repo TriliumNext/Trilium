@@ -1,7 +1,6 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -61,9 +60,7 @@ vi.mock("bootstrap", () => {
 import options from "../../../services/options";
 import server from "../../../services/server";
 import { loadHighlightingTheme } from "../../../services/syntax_highlight";
-import { flush } from "../../../test/render-hook";
-import { ParentComponent } from "../../react/react_utils";
-import Component from "../../../components/component";
+import { flush, renderComponent } from "../../../test/render";
 import TextNoteSettings, { HighlightsListOptions } from "./text_notes";
 
 // --- Helpers -------------------------------------------------------------------------------------
@@ -87,21 +84,9 @@ const ALL_OPTIONS: Record<string, string> = {
     highlightsList: JSON.stringify([ "bold", "italic" ])
 };
 
-let container: HTMLDivElement | undefined;
-
+// The shared `renderComponent` wraps in the Trilium providers and auto-tears-down the container.
 function renderInto(vnode: any) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={new Component()}>
-                {vnode}
-            </ParentComponent.Provider>,
-            target
-        );
-    });
-    return target;
+    return renderComponent(vnode).container;
 }
 
 function setOptions(values: Record<string, string>) {
@@ -110,24 +95,13 @@ function setOptions(values: Record<string, string>) {
 
 beforeEach(() => {
     setOptions({ ...ALL_OPTIONS });
-    Object.assign(server, { put: vi.fn(async () => undefined) });
     const glob = window.glob as unknown as Record<string, unknown>;
     glob.getThemeStyle = () => "light";
-    Object.assign(window, { matchMedia: vi.fn(() => ({ matches: false, addEventListener() {}, removeEventListener() {} })) });
     // The static-tooltip hooks used by FormListItem/Dropdown call these jQuery plugins.
     Object.assign(($.fn as unknown as Record<string, unknown>), {
         tooltip: vi.fn(),
         dropdown: vi.fn()
     });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

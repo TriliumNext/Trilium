@@ -1,5 +1,7 @@
-import { render } from "preact";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
+import { renderInto } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 // `cachedIsMobile = isMobile()` and `isDesktop()` (via ButtonOrActionButton) are read from
@@ -12,42 +14,16 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 }));
 // ActionButton (rendered by ButtonOrActionButton on non-desktop) pulls in bootstrap tooltips +
 // keyboard_actions; stub them so the real DOM still renders without side effects.
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../../services/keyboard_actions", () => ({
     default: { getAction: vi.fn(async () => ({ effectiveShortcuts: [] })) }
 }));
 
 import Button, { ButtonGroup, ButtonOrActionButton, SplitButton } from "./Button";
 
-// --- Render helper -------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    render(vnode as never, container);
-    return container;
-}
-
+// Reset the controllable isDesktop flag after each test (container teardown + spy restore are global).
 afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
     mockedIsDesktop = true;
-    vi.restoreAllMocks();
 });
 
 // --- Button --------------------------------------------------------------------------------------

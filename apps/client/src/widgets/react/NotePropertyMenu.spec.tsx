@@ -1,31 +1,16 @@
-import { render, VNode } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        config: unknown;
-        constructor(el: Element, config?: unknown) { this.element = el; this.config = config; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    class Dropdown {
-        static getOrCreateInstance() { return new Dropdown(); }
-        dispose() {}
-    }
-    return { Tooltip, Dropdown, default: { Tooltip, Dropdown } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 import Component from "../../components/component";
 import attributes from "../../services/attributes";
-import froca from "../../services/froca";
 import { buildNote } from "../../test/easy-froca";
+import { renderComponent, renderInto, resetFroca } from "../../test/render";
 import { ParentComponent } from "./react_utils";
 import {
     BookProperty,
@@ -37,38 +22,13 @@ import {
     ViewProperty
 } from "./NotePropertyMenu";
 
-// --- Render helper --------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: VNode, parent: Component | null = new Component()) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>,
-            container as HTMLDivElement
-        );
-    });
-    return container;
-}
+// --- Setup ----------------------------------------------------------------------------------------
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     // A bootstrap-tooltip plugin and jquery `.on/.off` are exercised by FormList/FormListItem.
     Object.assign($.fn as unknown as Record<string, unknown>, { tooltip: vi.fn() });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Separator ------------------------------------------------------------------------------------
@@ -77,7 +37,7 @@ describe("ViewProperty - separator", () => {
     it("renders a dropdown divider", () => {
         const property: BookProperty = { type: "separator" };
         const note = buildNote({ id: "sepNote", title: "S" });
-        const el = renderInto(<ViewProperty note={note} property={property} />);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />);
         expect(el.querySelector(".dropdown-divider")).toBeTruthy();
     });
 });
@@ -98,7 +58,7 @@ describe("ViewProperty - button", () => {
         const parent = new Component();
         const triggerSpy = vi.spyOn(parent, "triggerCommand").mockResolvedValue(undefined as never);
 
-        const el = renderInto(<ViewProperty note={note} property={property} />, parent);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />, { parent });
         const item = el.querySelector(".dropdown-item");
         expect(item).toBeTruthy();
         expect(item?.getAttribute("title")).toBe("A title");
@@ -118,7 +78,7 @@ describe("ViewProperty - button", () => {
         const onClick = vi.fn();
         const property: ButtonProperty = { type: "button", label: "X", onClick };
 
-        const el = renderInto(<ViewProperty note={note} property={property} />, null);
+        const el = renderInto(<ParentComponent.Provider value={null}><ViewProperty note={note} property={property} /></ParentComponent.Provider>);
         (el.querySelector(".dropdown-item") as HTMLElement | null)?.click();
         expect(onClick).not.toHaveBeenCalled();
     });
@@ -142,7 +102,7 @@ describe("ViewProperty - split-button", () => {
         };
         const parent = new Component();
 
-        const el = renderInto(<ViewProperty note={note} property={property} />, parent);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />, { parent });
         expect(el.querySelector(".dropdown-submenu")).toBeTruthy();
         expect(el.querySelector(".bx-list-ul")).toBeTruthy();
         // Inner items component received the note + parentComponent.
@@ -168,11 +128,11 @@ describe("ViewProperty - split-button", () => {
         };
 
         // Default icon branch (no icon supplied) with a parent present.
-        const withParent = renderInto(<ViewProperty note={note} property={property} />, new Component());
+        const { container: withParent } = renderComponent(<ViewProperty note={note} property={property} />, { parent: new Component() });
         expect(withParent.querySelector(".bx-empty")).toBeTruthy();
 
         // No parent → the whole submenu renders nothing.
-        const withoutParent = renderInto(<ViewProperty note={note} property={property} />, null);
+        const withoutParent = renderInto(<ParentComponent.Provider value={null}><ViewProperty note={note} property={property} /></ParentComponent.Provider>);
         expect(withoutParent.querySelector(".dropdown-submenu")).toBeNull();
         expect(withoutParent.querySelector(".inner-x")).toBeNull();
     });
@@ -191,7 +151,7 @@ describe("ViewProperty - checkbox", () => {
             icon: "bx bx-archive"
         };
 
-        const el = renderInto(<ViewProperty note={note} property={property} />);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />);
         const toggle = el.querySelector("input[type=checkbox]") as HTMLInputElement | null;
         expect(toggle?.checked).toBe(true);
 
@@ -212,7 +172,7 @@ describe("ViewProperty - checkbox", () => {
             reverseValue: true
         };
 
-        const el = renderInto(<ViewProperty note={note} property={property} />);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />);
         const toggle = el.querySelector("input[type=checkbox]") as HTMLInputElement | null;
         expect(toggle?.checked).toBe(true);
 
@@ -238,7 +198,7 @@ describe("ViewProperty - number", () => {
             icon: "bx bx-tab"
         };
 
-        const el = renderInto(<ViewProperty note={note} property={property} />);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />);
         const input = el.querySelector("input[type=number]") as HTMLInputElement | null;
         expect(input?.value).toBe("5");
         expect(el.querySelector(".bx-tab")).toBeTruthy();
@@ -267,7 +227,7 @@ describe("ViewProperty - number", () => {
             disabled: () => true
         };
 
-        const el = renderInto(<ViewProperty note={note} property={property} />);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />);
         const input = el.querySelector("input[type=number]") as HTMLInputElement | null;
         expect(input?.disabled).toBe(true);
         // No label present → empty value with default min=0.
@@ -296,7 +256,7 @@ describe("ViewProperty - combobox", () => {
             ]
         };
 
-        const el = renderInto(<ViewProperty note={note} property={property} />);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />);
         const items = Array.from(el.querySelectorAll(".dropdown-submenu .dropdown-item"));
         expect(items.length).toBe(3);
         // Active value "b" gets the check icon.
@@ -325,7 +285,7 @@ describe("ViewProperty - combobox", () => {
             ]
         };
 
-        const el = renderInto(<ViewProperty note={note} property={property} />);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />);
         // Default icon fallback.
         expect(el.querySelector(".bx-empty")).toBeTruthy();
         // dropStart class applied to the submenu.
@@ -346,7 +306,7 @@ describe("ViewProperty - combobox", () => {
             ]
         };
 
-        const el = renderInto(<ViewProperty note={note} property={property} />);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />);
         // valueWithDefault resolves to null → the null-valued option is the checked one.
         const items = Array.from(el.querySelectorAll(".dropdown-submenu .dropdown-item"));
         expect(items.length).toBe(2);
@@ -368,7 +328,7 @@ describe("ViewProperty - combobox", () => {
             ]
         };
 
-        const el = renderInto(<ViewProperty note={note} property={property} />);
+        const { container: el } = renderComponent(<ViewProperty note={note} property={property} />);
         // Group headers render as disabled items.
         const disabledHeaders = el.querySelectorAll(".dropdown-submenu .dropdown-item.disabled");
         expect(disabledHeaders.length).toBe(2);

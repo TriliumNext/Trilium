@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -40,28 +41,19 @@ vi.mock("../../services/dialog", () => ({
     closeActiveDialog: vi.fn()
 }));
 
-import Component from "../../components/component";
-import { ParentComponent } from "../react/react_utils";
+import type Component from "../../components/component";
 import PromptDialog, { type PromptDialogOptions } from "./prompt";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let container: HTMLElement | undefined;
 let parent: Component;
 
 function renderDialog() {
-    parent = new Component();
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <PromptDialog />
-            </ParentComponent.Provider>
-        ), target);
-    });
-    return target;
+    const result = renderComponent(<PromptDialog />);
+    container = result.container;
+    parent = result.parent;
+    return container;
 }
 
 function fireTrilium(name: string, data: unknown) {
@@ -96,15 +88,6 @@ function submitForm() {
 
 beforeEach(() => {
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

@@ -1,23 +1,12 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the hook import) -------------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        config: unknown;
-        constructor(el: Element, config?: unknown) { this.element = el; this.config = config; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../../services/math", () => ({ default: { render: vi.fn() } }));
 vi.mock("../../services/keyboard_actions", () => ({
     default: {
@@ -40,7 +29,6 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 
 import appContext from "../../components/app_context";
 import Component from "../../components/component";
-import type NoteContext from "../../components/note_context";
 import attributes from "../../services/attributes";
 import froca from "../../services/froca";
 import keyboard_actions from "../../services/keyboard_actions";
@@ -54,10 +42,9 @@ import tree from "../../services/tree";
 import { reloadFrontendApp } from "../../services/utils";
 import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { flush, makeLoadResults, renderHook } from "../../test/render-hook";
+import { fakeNoteContext, flush, makeLoadResults, renderComponent, renderHook, resetFroca } from "../../test/render";
 import BasicWidget from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
-import { ParentComponent } from "./react_utils";
 import {
     useActiveNoteContext, useChildNotes, useColorScheme, useContentElement, useEditorSpacedUpdate,
     useEffectiveReadOnly, useElementSize, useGetContextData, useGetContextDataFrom, useGlobalShortcut,
@@ -79,39 +66,14 @@ function setOptions(values: Record<string, string>) {
     options.load(values as Record<OptionNames, string>);
 }
 
-/** A minimal `NoteContext`-shaped object; cast through `unknown` since hooks only touch a few fields. */
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: "root/note1",
-        viewScope: { viewMode: "default", isReadOnly: false },
-        setContextData: vi.fn(),
-        getContextData: vi.fn(),
-        clearContextData: vi.fn(),
-        isReadOnly: vi.fn(async () => false),
-        ...overrides
-    } as unknown as NoteContext;
-}
-
 beforeEach(() => {
     setOptions({});
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    // The auto-mocked server (test/setup.ts) only defines get/post — add the write verbs hooks use.
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     // Re-establish module-mock defaults that individual tests override (clearAllMocks keeps impls).
     (protected_session_holder.isProtectedSessionAvailable as ReturnType<typeof vi.fn>).mockReturnValue(true);
     (keyboard_actions.setupActionsForElement as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (keyboard_actions.getAction as ReturnType<typeof vi.fn>).mockResolvedValue({ effectiveShortcuts: [ "ctrl+k" ] });
-});
-
-afterEach(async () => {
-    await act(async () => {});
-    vi.restoreAllMocks(); // undo per-test vi.spyOn (froca/tree/attributes) so spies never leak across tests
 });
 
 // --- Event subscription ---------------------------------------------------------------------------
@@ -164,7 +126,7 @@ describe("useTriliumOption family", () => {
 
     it("reverts and logs when saving fails", async () => {
         setOptions({ theme: "dark" });
-        Object.assign(server, { put: vi.fn(async () => { throw new Error("boom"); }) });
+        (server.put as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("boom"));
         const harness = renderHook(() => useTriliumOption("theme" as OptionNames));
         await act(async () => { await harness.result.current[1]("green"); });
         expect(ws.logError).toHaveBeenCalled();
@@ -687,22 +649,19 @@ describe("useLegacyWidget", () => {
 
     it("renders the widget into the container and cleans up", () => {
         const parent = new Component();
-        const host = document.createElement("div");
-        document.body.appendChild(host);
         let widget: FakeWidget | undefined;
         function Host() {
             const [ vnode, w ] = useLegacyWidget(() => new FakeWidget());
             widget = w;
             return vnode;
         }
-        act(() => render(<ParentComponent.Provider value={parent}><Host /></ParentComponent.Provider>, host));
+        const harness = renderComponent(<Host />, { parent });
         const w = widget;
         expect(w).toBeInstanceOf(FakeWidget);
         expect(w && parent.children.includes(w)).toBe(true);
-        expect(host.querySelector(".fake-widget")).toBeTruthy();
+        expect(harness.container.querySelector(".fake-widget")).toBeTruthy();
 
-        act(() => render(null, host)); // unmount → cleanup removes the child + runs widget.cleanup()
-        host.remove();
+        harness.unmount(); // unmount → cleanup removes the child + runs widget.cleanup()
         expect(w && parent.children.includes(w)).toBe(false);
     });
 

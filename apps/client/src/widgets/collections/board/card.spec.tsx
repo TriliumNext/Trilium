@@ -1,9 +1,10 @@
-import { createContext, render } from "preact";
+import { createContext } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FBranch from "../../../entities/fbranch";
 import type FNote from "../../../entities/fnote";
+import { renderComponent, resetFroca } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -44,10 +45,9 @@ vi.mock("../../attribute_widgets/UserAttributesList", () => ({
     )
 }));
 
-import Component from "../../../components/component";
+import type Component from "../../../components/component";
 import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
 import { BoardViewContext } from ".";
 import type BoardApi from "./api";
 import Card, { CARD_CLIPBOARD_TYPE } from "./card";
@@ -101,7 +101,6 @@ function buildCard(childId: string, childDef: Record<string, unknown> = {}): { n
     return { note, branch };
 }
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 interface CardProps {
@@ -114,30 +113,22 @@ interface CardProps {
 }
 
 function renderCard(props: CardProps, ctxOverrides: ContextOverrides = {}) {
-    const localContainer = document.createElement("div");
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    parent = new Component();
     const ctx = makeContext(ctxOverrides);
     const api = props.api ?? makeApi();
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent ?? null}>
-                <BoardViewContext.Provider value={ctx as never}>
-                    <Card
-                        api={api}
-                        note={props.note}
-                        branch={props.branch}
-                        column={props.column ?? "Todo"}
-                        index={props.index ?? 0}
-                        isDragging={props.isDragging ?? false}
-                    />
-                </BoardViewContext.Provider>
-            </ParentComponent.Provider>,
-            localContainer
-        );
-    });
-    return { container: localContainer, ctx, api };
+    const result = renderComponent(
+        <BoardViewContext.Provider value={ctx as never}>
+            <Card
+                api={api}
+                note={props.note}
+                branch={props.branch}
+                column={props.column ?? "Todo"}
+                index={props.index ?? 0}
+                isDragging={props.isDragging ?? false}
+            />
+        </BoardViewContext.Provider>
+    );
+    parent = result.parent;
+    return { container: result.container, ctx, api };
 }
 
 function fireTriliumEvent(name: string, data: unknown) {
@@ -168,20 +159,9 @@ function fakeDataTransfer(data: Record<string, string> = {}) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
+    resetFroca();
     parent = undefined;
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

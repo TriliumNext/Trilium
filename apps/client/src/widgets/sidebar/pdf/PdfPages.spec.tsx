@@ -1,4 +1,3 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -33,16 +32,12 @@ vi.mock("react-window", () => ({
 import type { OptionNames } from "@triliumnext/commons";
 
 import appContext from "../../../components/app_context";
-import Component from "../../../components/component";
-import type NoteContext from "../../../components/note_context";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
+import { fakeNoteContext, renderComponent } from "../../../test/render";
 import PdfPages from "./PdfPages";
 
 // --- Test scaffolding ----------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
 
 interface ResizeStub {
     cb: ResizeObserverCallback;
@@ -93,17 +88,11 @@ function fakePagesData(overrides: Partial<PagesData> = {}): PagesData {
 
 /** Installs a fake active note context returning the given note and pdfPages context data. */
 function setActiveContext(note: unknown, pagesData: unknown) {
-    const noteContext = {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
+    const noteContext = fakeNoteContext({
         notePath: "root/pdf",
         note,
-        viewScope: { viewMode: "default", isReadOnly: false },
-        getContextData: vi.fn((key: string) => (key === "pdfPages" ? pagesData : undefined)),
-        setContextData: vi.fn(),
-        clearContextData: vi.fn(),
-        isReadOnly: vi.fn(async () => false)
-    } as unknown as NoteContext;
+        getContextData: vi.fn((key: string) => (key === "pdfPages" ? pagesData : undefined))
+    });
 
     Object.assign(appContext, {
         tabManager: {
@@ -114,17 +103,6 @@ function setActiveContext(note: unknown, pagesData: unknown) {
     return noteContext;
 }
 
-function renderInto(vnode: preact.ComponentChild) {
-    const target = document.createElement("div");
-    document.body.appendChild(target);
-    container = target;
-    const parent = new Component();
-    act(() => {
-        render(<ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>, target);
-    });
-    return target;
-}
-
 beforeEach(() => {
     observers = [];
     Object.assign(window, { ResizeObserver: FakeResizeObserver });
@@ -133,13 +111,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
     Object.assign(window, { ResizeObserver: realResizeObserver });
-    vi.restoreAllMocks();
 });
 
 // --- Top-level gating (PdfPages) -----------------------------------------------------------------
@@ -148,7 +120,7 @@ describe("PdfPages - gating", () => {
     it("renders nothing for a non-file note", () => {
         const note = buildNote({ id: "txt", title: "Text", type: "text" });
         setActiveContext(note, fakePagesData());
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
         expect(el.querySelector("#pdf-pages")).toBeNull();
         expect(el.textContent).toBe("");
     });
@@ -158,7 +130,7 @@ describe("PdfPages - gating", () => {
         // file note but wrong mime -> the component reads note.mime; override it.
         (note as unknown as { mime: string }).mime = "image/png";
         setActiveContext(note, fakePagesData());
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
         expect(el.querySelector("#pdf-pages")).toBeNull();
     });
 
@@ -166,7 +138,7 @@ describe("PdfPages - gating", () => {
         Object.assign(appContext, {
             tabManager: { ...appContext.tabManager, getActiveContext: vi.fn(() => null) }
         });
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
         expect(el.querySelector("#pdf-pages")).toBeNull();
     });
 
@@ -174,7 +146,7 @@ describe("PdfPages - gating", () => {
         const note = buildNote({ id: "pdf0", title: "Doc", type: "file" });
         (note as unknown as { mime: string }).mime = "application/pdf";
         setActiveContext(note, undefined);
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
         expect(el.querySelector("#pdf-pages")).toBeNull();
     });
 });
@@ -191,7 +163,7 @@ describe("PdfPages - widget", () => {
     it("renders the RightPanelWidget for a PDF note with pages", () => {
         const note = makePdfNote("pdf-w1");
         setActiveContext(note, fakePagesData({ totalPages: 4 }));
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
 
         const widget = el.querySelector("#pdf-pages");
         expect(widget).not.toBeNull();
@@ -201,7 +173,7 @@ describe("PdfPages - widget", () => {
     it("shows the empty placeholder when totalPages is 0", () => {
         const note = makePdfNote("pdf-empty");
         setActiveContext(note, fakePagesData({ totalPages: 0 }));
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
 
         expect(el.querySelector(".no-pages")).not.toBeNull();
         expect(el.querySelector(".pdf-pages-list")).toBeNull();
@@ -211,7 +183,7 @@ describe("PdfPages - widget", () => {
         const note = makePdfNote("pdf-noheight");
         const pagesData = fakePagesData({ totalPages: 5 });
         setActiveContext(note, pagesData);
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
 
         // containerHeight is still 0 -> List not rendered.
         expect(el.querySelector(".mock-list")).toBeNull();
@@ -221,7 +193,7 @@ describe("PdfPages - widget", () => {
         const note = makePdfNote("pdf-rows");
         const pagesData = fakePagesData({ totalPages: 3, currentPage: 2 });
         setActiveContext(note, pagesData);
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
 
         fireResize(500);
 
@@ -240,7 +212,7 @@ describe("PdfPages - widget", () => {
     it("marks the current page cell as active", () => {
         const note = makePdfNote("pdf-active");
         setActiveContext(note, fakePagesData({ totalPages: 2, currentPage: 2 }));
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
         fireResize(400);
 
         const activeCells = el.querySelectorAll(".pdf-page-item.active");
@@ -256,7 +228,7 @@ describe("PdfPages - thumbnails & interactions", () => {
         const note = makePdfNote("pdf-req");
         const requestThumbnail = vi.fn();
         setActiveContext(note, fakePagesData({ totalPages: 2, requestThumbnail }));
-        renderInto(<PdfPages />);
+        renderComponent(<PdfPages />);
         fireResize(400);
 
         // Each of the 2 cells requests its page once.
@@ -271,7 +243,7 @@ describe("PdfPages - thumbnails & interactions", () => {
     it("renders the loading placeholder when no thumbnail is available", () => {
         const note = makePdfNote("pdf-loading");
         setActiveContext(note, fakePagesData({ totalPages: 1 }));
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
         fireResize(400);
 
         expect(el.querySelector(".pdf-page-loading")).not.toBeNull();
@@ -281,7 +253,7 @@ describe("PdfPages - thumbnails & interactions", () => {
     it("renders an <img> once a pdf-thumbnail event delivers a data URL", () => {
         const note = makePdfNote("pdf-thumb");
         setActiveContext(note, fakePagesData({ totalPages: 1 }));
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
         fireResize(400);
 
         act(() => {
@@ -300,7 +272,7 @@ describe("PdfPages - thumbnails & interactions", () => {
         const note = makePdfNote("pdf-norereq");
         const requestThumbnail = vi.fn();
         setActiveContext(note, fakePagesData({ totalPages: 1, requestThumbnail }));
-        renderInto(<PdfPages />);
+        renderComponent(<PdfPages />);
 
         // Deliver the thumbnail BEFORE the list renders so requestThumbnail dedups on the cached set.
         act(() => {
@@ -317,7 +289,7 @@ describe("PdfPages - thumbnails & interactions", () => {
         const note = makePdfNote("pdf-click");
         const scrollToPage = vi.fn();
         setActiveContext(note, fakePagesData({ totalPages: 2, scrollToPage }));
-        const el = renderInto(<PdfPages />);
+        const { container: el } = renderComponent(<PdfPages />);
         fireResize(400);
 
         const secondCell = el.querySelectorAll(".pdf-page-item")[1] as HTMLElement;
@@ -328,15 +300,11 @@ describe("PdfPages - thumbnails & interactions", () => {
     it("removes the pdf-thumbnail listener on unmount", () => {
         const note = makePdfNote("pdf-cleanup");
         setActiveContext(note, fakePagesData({ totalPages: 1 }));
-        renderInto(<PdfPages />);
+        const { unmount } = renderComponent(<PdfPages />);
         fireResize(400);
 
         const removeSpy = vi.spyOn(window, "removeEventListener");
-        if (container) {
-            act(() => { render(null, container as HTMLDivElement); });
-        }
+        unmount();
         expect(removeSpy.mock.calls.some(([ name ]) => name === "pdf-thumbnail")).toBe(true);
-        // Avoid the afterEach double-unmount touching a torn-down tree.
-        container = undefined;
     });
 });

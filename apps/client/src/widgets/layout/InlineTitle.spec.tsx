@@ -1,23 +1,14 @@
 import type { NoteType } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
+import { fakeNoteContext, renderComponent, resetFroca } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
 // The real bootstrap Tooltip machinery does not behave under happy-dom; provide an inert stub.
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 // i18next is never initialised in tests; return the key so structure renders.
 vi.mock("../../services/i18n", () => ({
@@ -60,11 +51,7 @@ vi.mock("../react/hooks", async (importOriginal) => ({
 
 import type { CommandNames } from "../../components/app_context";
 import Component from "../../components/component";
-import type NoteContext from "../../components/note_context";
-import type { ViewScope } from "../../services/link";
-import froca from "../../services/froca";
 import { buildNote } from "../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import InlineTitle, { NoteTitleDetails } from "./InlineTitle";
 
 // --- IntersectionObserver fake --------------------------------------------------------------------
@@ -110,37 +97,8 @@ function makeParent({ withTitleRow = true, withSplit = true } = {}) {
     return { parent, split, titleRow, widgetEl };
 }
 
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: "root/note1",
-        viewScope: { viewMode: "default" } as ViewScope,
-        ...overrides
-    } as unknown as NoteContext;
-}
-
-let containers: HTMLDivElement[] = [];
-
-function renderWith(parent: Component | null, noteContext: NoteContext | null, vnode: preact.ComponentChild) {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    containers.push(container);
-    act(() => render(
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={noteContext}>
-                {vnode}
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>,
-        container
-    ));
-    return container;
-}
-
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     FakeIntersectionObserver.instances = [];
     metadataRef.current = undefined;
     Object.assign(window, { IntersectionObserver: FakeIntersectionObserver });
@@ -148,14 +106,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    for (const container of containers) {
-        act(() => render(null, container));
-        container.remove();
-    }
-    containers = [];
     document.querySelectorAll(".note-split").forEach((el) => el.remove());
     Object.assign(window, { IntersectionObserver: originalIntersectionObserver });
-    vi.restoreAllMocks();
 });
 
 // --- shouldShow via the rendered container --------------------------------------------------------
@@ -165,7 +117,7 @@ describe("InlineTitle — visibility (shouldShow)", () => {
         const note = buildNote({ id: noteOverrides.id as string ?? "n", title: "T", type: (noteOverrides.type as NoteType) ?? "text" });
         Object.assign(note, noteOverrides);
         const { parent } = makeParent();
-        const container = renderWith(parent, fakeNoteContext({ note, ...ctxOverrides }), <InlineTitle />);
+        const { container } = renderComponent(<InlineTitle />, { parent, noteContext: fakeNoteContext({ note, ...ctxOverrides }) });
         return { note, container };
     }
 
@@ -221,8 +173,8 @@ describe("InlineTitle — title-row observer", () => {
     function renderShown() {
         const note = buildNote({ id: "obsNote", title: "T", type: "text" });
         const { parent, split, titleRow } = makeParent();
-        const container = renderWith(parent, fakeNoteContext({ note }), <InlineTitle />);
-        return { container, split, titleRow };
+        const { container, unmount } = renderComponent(<InlineTitle />, { parent, noteContext: fakeNoteContext({ note }) });
+        return { container, split, titleRow, unmount };
     }
 
     it("toggles hide-title on the sibling title-row and reacts to intersection", () => {
@@ -248,12 +200,11 @@ describe("InlineTitle — title-row observer", () => {
     });
 
     it("cleans up the observer and restores the title-row on unmount", () => {
-        const { titleRow } = renderShown();
+        const { titleRow, unmount } = renderShown();
         const observer = FakeIntersectionObserver.instances[0];
         expect(titleRow.classList.contains("hide-title")).toBe(true);
 
-        for (const container of containers) act(() => render(null, container));
-        containers = [];
+        unmount();
 
         expect(observer.disconnected).toBe(true);
         expect(titleRow.classList.contains("hide-title")).toBe(false);
@@ -262,14 +213,14 @@ describe("InlineTitle — title-row observer", () => {
     it("does not register an observer when the note is hidden", () => {
         const note = buildNote({ id: "hiddenObs", title: "T", type: "image" });
         const { parent } = makeParent();
-        renderWith(parent, fakeNoteContext({ note }), <InlineTitle />);
+        renderComponent(<InlineTitle />, { parent, noteContext: fakeNoteContext({ note }) });
         expect(FakeIntersectionObserver.instances.length).toBe(0);
     });
 
     it("no-ops when the split has no sibling title-row", () => {
         const note = buildNote({ id: "noRow", title: "T", type: "text" });
         const { parent } = makeParent({ withTitleRow: false });
-        renderWith(parent, fakeNoteContext({ note }), <InlineTitle />);
+        renderComponent(<InlineTitle />, { parent, noteContext: fakeNoteContext({ note }) });
         // Effect bails before constructing an observer because the title-row query returns null.
         expect(FakeIntersectionObserver.instances.length).toBe(0);
     });
@@ -281,7 +232,7 @@ describe("NoteTitleDetails", () => {
     function renderDetails(noteId: string) {
         const note = buildNote({ id: noteId, title: "T", type: "text" });
         const { parent } = makeParent();
-        const container = renderWith(parent, fakeNoteContext({ note }), <NoteTitleDetails />);
+        const { container } = renderComponent(<NoteTitleDetails />, { parent, noteContext: fakeNoteContext({ note }) });
         return container;
     }
 

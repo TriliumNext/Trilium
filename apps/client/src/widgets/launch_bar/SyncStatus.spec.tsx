@@ -2,7 +2,10 @@ import type { WebSocketMessage } from "@triliumnext/commons";
 import type { OptionNames } from "@triliumnext/commons";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
+import { renderInto } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -42,18 +45,7 @@ vi.mock("../../services/i18n", () => ({
 }));
 
 // useStaticTooltip patches Tooltip.prototype.dispose at import and instantiates a Tooltip — stub it.
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 import options from "../../services/options";
 import sync from "../../services/sync";
@@ -62,11 +54,9 @@ import SyncStatus from "./SyncStatus";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as never, container as HTMLDivElement));
+let container: HTMLElement | undefined;
+function renderWidget(vnode: unknown) {
+    container = renderInto(vnode);
     return container;
 }
 
@@ -88,6 +78,7 @@ function setMaxKnownSyncId(value: number) {
 }
 
 beforeEach(() => {
+    container = undefined;
     wsState.subscribedHandlers.length = 0;
     wsState.maxKnownEntityChangeSyncId = 0;
     setSyncServerHost("https://example.com");
@@ -95,23 +86,18 @@ beforeEach(() => {
     (sync.syncNow as ReturnType<typeof vi.fn>).mockClear();
 });
 
-afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
-});
-
 describe("SyncStatus", () => {
     it("renders nothing when no sync server host is configured", () => {
         setSyncServerHost("");
         const launcherNote = buildNote({ id: "lbHidden", title: "Sync" });
-        const root = renderInto(<SyncStatus launcherNote={launcherNote} />);
+        const root = renderWidget(<SyncStatus launcherNote={launcherNote} />);
         expect(root.querySelector(".sync-status-widget")).toBeNull();
         expect(root.querySelector(".sync-status-icon")).toBeNull();
     });
 
     it("renders the widget with the unknown state by default and subscribes", () => {
         const launcherNote = buildNote({ id: "lb1", title: "Sync" });
-        const root = renderInto(<SyncStatus launcherNote={launcherNote} />);
+        const root = renderWidget(<SyncStatus launcherNote={launcherNote} />);
 
         expect(root.querySelector(".sync-status-widget.launcher-button")).not.toBeNull();
         const icon = statusIcon();
@@ -124,7 +110,7 @@ describe("SyncStatus", () => {
 
     it("moves to in-progress on pull/push and ignores clicks while syncing", () => {
         const launcherNote = buildNote({ id: "lb2", title: "Sync" });
-        renderInto(<SyncStatus launcherNote={launcherNote} />);
+        renderWidget(<SyncStatus launcherNote={launcherNote} />);
 
         fireMessage({ type: "sync-pull-in-progress", lastSyncedPush: 0 });
         let icon = statusIcon();
@@ -143,7 +129,7 @@ describe("SyncStatus", () => {
     it("shows connected-no-changes when all changes pushed, and triggers syncNow on click", () => {
         setMaxKnownSyncId(7);
         const launcherNote = buildNote({ id: "lb3", title: "Sync" });
-        renderInto(<SyncStatus launcherNote={launcherNote} />);
+        renderWidget(<SyncStatus launcherNote={launcherNote} />);
 
         fireMessage({ type: "sync-finished", lastSyncedPush: 7 });
         const icon = statusIcon();
@@ -158,7 +144,7 @@ describe("SyncStatus", () => {
     it("shows connected-with-changes (with star sub-icon) when changes remain unpushed", () => {
         setMaxKnownSyncId(9);
         const launcherNote = buildNote({ id: "lb4", title: "Sync" });
-        renderInto(<SyncStatus launcherNote={launcherNote} />);
+        renderWidget(<SyncStatus launcherNote={launcherNote} />);
 
         fireMessage({ type: "sync-finished", lastSyncedPush: 3 });
         const icon = statusIcon();
@@ -170,7 +156,7 @@ describe("SyncStatus", () => {
     it("shows disconnected-no-changes and disconnected-with-changes on sync-failed", () => {
         setMaxKnownSyncId(4);
         const launcherNote = buildNote({ id: "lb5", title: "Sync" });
-        renderInto(<SyncStatus launcherNote={launcherNote} />);
+        renderWidget(<SyncStatus launcherNote={launcherNote} />);
 
         fireMessage({ type: "sync-failed", lastSyncedPush: 4 });
         expect(statusIcon()?.classList.contains("sync-status-disconnected-no-changes")).toBe(true);
@@ -185,7 +171,7 @@ describe("SyncStatus", () => {
     it("reads lastSyncedPush from a top-level field and from message.data", () => {
         setMaxKnownSyncId(5);
         const launcherNote = buildNote({ id: "lb6", title: "Sync" });
-        renderInto(<SyncStatus launcherNote={launcherNote} />);
+        renderWidget(<SyncStatus launcherNote={launcherNote} />);
 
         // frontend-update carries lastSyncedPush in `data`; it sets the running value but does not
         // change the visible state by itself.
@@ -199,7 +185,7 @@ describe("SyncStatus", () => {
     it("updates lastSyncedPush from message.data after an initial top-level read", () => {
         setMaxKnownSyncId(8);
         const launcherNote = buildNote({ id: "lb7", title: "Sync" });
-        renderInto(<SyncStatus launcherNote={launcherNote} />);
+        renderWidget(<SyncStatus launcherNote={launcherNote} />);
 
         // First establish lastSyncedPush via a top-level field (so it is defined),
         // then a message carrying it in `data` updates it (the else-if branch).
@@ -214,7 +200,7 @@ describe("SyncStatus", () => {
 
     it("invokes the context-menu handler bound to the launcher note", () => {
         const launcherNote = buildNote({ id: "lb8", title: "Sync" });
-        const root = renderInto(<SyncStatus launcherNote={launcherNote} />);
+        const root = renderWidget(<SyncStatus launcherNote={launcherNote} />);
         const widget = root.querySelector<HTMLDivElement>(".sync-status-widget");
         expect(widget).not.toBeNull();
 
@@ -228,10 +214,10 @@ describe("SyncStatus", () => {
 
     it("unsubscribes the message handler on unmount", () => {
         const launcherNote = buildNote({ id: "lb9", title: "Sync" });
-        renderInto(<SyncStatus launcherNote={launcherNote} />);
+        renderWidget(<SyncStatus launcherNote={launcherNote} />);
         expect(wsState.subscribedHandlers.length).toBe(1);
 
-        if (container) { act(() => render(null, container as HTMLDivElement)); }
+        if (container) { act(() => render(null, container as HTMLElement)); }
         expect(wsState.subscribedHandlers.length).toBe(0);
     });
 });

@@ -1,10 +1,12 @@
 import { RevisionItem, RevisionPojo } from "@triliumnext/commons";
-import { ComponentChildren, render } from "preact";
+import { ComponentChildren } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// NOTE: keep a local bootstrap stub — the components used here (Modal, FormCheckbox) call
+// `getOrCreateInstance`/`update`, which the shared `bootstrapMock()` does not provide.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -56,28 +58,17 @@ import open from "../../services/open";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
-import froca from "../../services/froca";
-import { ParentComponent } from "../react/react_utils";
+import { renderComponent, resetFroca } from "../../test/render";
 import RevisionsDialog from "./revisions";
 
 // --- Render harness (full component inside the Trilium parent provider) ---------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderDialog() {
-    const localParent = new Component();
-    const localContainer = document.createElement("div");
-    parent = localParent;
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    act(() => render(
-        <ParentComponent.Provider value={localParent}>
-            <RevisionsDialog />
-        </ParentComponent.Provider>,
-        localContainer
-    ));
-    return localContainer;
+    const result = renderComponent(<RevisionsDialog />);
+    parent = result.parent;
+    return result.container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -107,23 +98,15 @@ function makeRevision(overrides: Partial<RevisionItem> = {}): RevisionItem {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
+    // `get`/`post` aren't vi.fn in the global server mock, so install controllable defaults here.
     Object.assign(server, {
         get: vi.fn(async () => []),
-        post: vi.fn(async () => undefined),
-        remove: vi.fn(async () => undefined),
-        patch: vi.fn(async () => undefined)
+        post: vi.fn(async () => undefined)
     });
     (dialog.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     (dialog.prompt as ReturnType<typeof vi.fn>).mockResolvedValue("named");
-});
-
-afterEach(() => {
-    if (container) { act(() => render(null, container ?? document.createElement("div"))); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

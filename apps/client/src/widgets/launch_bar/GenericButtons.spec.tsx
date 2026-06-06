@@ -1,22 +1,11 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        config: unknown;
-        constructor(el: Element, config?: unknown) { this.element = el; this.config = config; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../../services/keyboard_actions", () => ({
     default: {
         getAction: vi.fn(async () => ({ effectiveShortcuts: [] })),
@@ -39,30 +28,20 @@ vi.mock("../../menus/link_context_menu", () => ({
 }));
 
 import appContext from "../../components/app_context";
-import Component from "../../components/component";
 import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
 import link_context_menu from "../../menus/link_context_menu";
 import shortcuts from "../../services/shortcuts";
 import { buildNote } from "../../test/easy-froca";
-import { flush } from "../../test/render-hook";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent } from "../../test/render";
 import { CustomNoteLauncher, launchCustomNoteLauncher } from "./GenericButtons";
 
-// --- Render helper (mirrors react_utils' ParentComponent.Provider) --------------------------------
-
-let container: HTMLDivElement | undefined;
-let parent: Component;
+// --- Render helper (delegates the provider wrapping + auto-teardown to the shared kit) -------------
 
 function renderLauncher(vnode: preact.VNode) {
-    const localContainer = document.createElement("div");
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    act(() => {
-        render(<ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>, localContainer);
-    });
-    const button = localContainer.querySelector("button");
+    const { container } = renderComponent(vnode);
+    const button = container.querySelector("button");
     if (!button) throw new Error("button not rendered");
-    return { container: localContainer, button };
+    return { container, button };
 }
 
 function makeMouseEvent(type: string, init: Partial<MouseEvent> = {}) {
@@ -72,17 +51,7 @@ function makeMouseEvent(type: string, init: Partial<MouseEvent> = {}) {
 }
 
 beforeEach(() => {
-    parent = new Component();
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Component rendering ---------------------------------------------------------------------------

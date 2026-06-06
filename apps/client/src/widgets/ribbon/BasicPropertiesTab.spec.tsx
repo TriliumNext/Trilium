@@ -1,10 +1,11 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// The spec relies on Dropdown/Modal `getOrCreateInstance` and Dropdown `.update()`, which the shared
+// `bootstrapMock` does not provide — keep this local stub.
 vi.mock("bootstrap", () => {
     class Dropdown {
         static instances = new Map<Element, Dropdown>();
@@ -68,9 +69,7 @@ import protected_session from "../../services/protected_session";
 import server from "../../services/server";
 import sync from "../../services/sync";
 import { buildNote } from "../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
-import Component from "../../components/component";
-import ws from "../../services/ws";
+import { flush, renderComponent, renderHook, resetFroca } from "../../test/render";
 import BasicPropertiesTab, {
     ContentLanguagesModal,
     NoteLanguageSelector,
@@ -82,32 +81,12 @@ import BasicPropertiesTab, {
     useNoteBookmarkState,
     useShareState
 } from "./BasicPropertiesTab";
-import { flush, renderHook } from "../../test/render-hook";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-const parent = new Component();
-
+/** Render a component inside the Trilium providers and return its container element. */
 function renderInto(vnode: preact.ComponentChildren) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => render(
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={null}>
-                {vnode}
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>,
-        el
-    ));
-    return el;
-}
-
-/** Tear down a container rendered mid-test before rendering a fresh one. */
-function teardown(el: HTMLElement) {
-    act(() => { render(null, el); });
-    container = undefined;
+    return renderComponent(vnode).container;
 }
 
 /** Open every Bootstrap dropdown so the lazily-rendered `{shown && children}` items mount. */
@@ -125,26 +104,12 @@ function setOptions(values: Record<string, string>) {
 
 beforeEach(() => {
     setOptions({ codeNotesMimeTypes: "[]", languages: "[]" });
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), remove: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     // The Dropdown/FormListItem tooltips call the jQuery tooltip plugin, which isn't installed in happy-dom.
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     (isExperimentalFeatureEnabled as ReturnType<typeof vi.fn>).mockReturnValue(false);
     (dialog.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
-});
-
-afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => { render(null, el); });
-        el.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Top-level component --------------------------------------------------------------------------
@@ -188,9 +153,9 @@ describe("NoteTypeWidget / findTypeTitle", () => {
     it("renders for a code note and disables the dropdown for static types", () => {
         const codeNote = buildNote({ id: "cn", title: "C", type: "code" });
         Object.assign(codeNote, { mime: "text/x-csrc" });
-        const codeRoot = renderInto(<BasicPropertiesTab note={codeNote} hidden={false} componentId="c" activate={() => {}} />);
-        expect(codeRoot.querySelector(".note-type-desc")).toBeTruthy();
-        teardown(codeRoot); // tear down before next render
+        const code = renderComponent(<BasicPropertiesTab note={codeNote} hidden={false} componentId="c" activate={() => {}} />);
+        expect(code.container.querySelector(".note-type-desc")).toBeTruthy();
+        code.unmount(); // tear down before next render
 
         // A static note type (search) disables the trigger button.
         const searchNote = buildNote({ id: "sn", title: "S", type: "search" });
@@ -520,9 +485,9 @@ describe("BookmarkSwitch / useNoteBookmarkState", () => {
 describe("SharedSwitch / useShareState", () => {
     it("disables the toggle for reserved note ids and _options notes", () => {
         const shareNote = buildNote({ id: "_share", title: "Share" });
-        const dom = renderInto(<BasicPropertiesTab note={shareNote} hidden={false} componentId="c" activate={() => {}} />);
-        expect(dom.querySelector<HTMLInputElement>(".shared-switch-container input")?.disabled).toBe(true);
-        teardown(dom);
+        const share = renderComponent(<BasicPropertiesTab note={shareNote} hidden={false} componentId="c" activate={() => {}} />);
+        expect(share.container.querySelector<HTMLInputElement>(".shared-switch-container input")?.disabled).toBe(true);
+        share.unmount();
 
         const optNote = buildNote({ id: "_optionsFoo", title: "Opt" });
         const dom2 = renderInto(<BasicPropertiesTab note={optNote} hidden={false} componentId="c" activate={() => {}} />);
@@ -610,12 +575,12 @@ describe("TemplateSwitch", () => {
     it("toggles the template label and is disabled for _options notes", () => {
         const setBool = vi.spyOn(attributes, "setBooleanWithInheritance").mockImplementation(() => undefined as never);
         const note = buildNote({ id: "tmpl", title: "T" });
-        const root = renderInto(<BasicPropertiesTab note={note} hidden={false} componentId="c" activate={() => {}} />);
-        const input = root.querySelector<HTMLInputElement>(".template-switch-container input");
+        const tmpl = renderComponent(<BasicPropertiesTab note={note} hidden={false} componentId="c" activate={() => {}} />);
+        const input = tmpl.container.querySelector<HTMLInputElement>(".template-switch-container input");
         expect(input?.disabled).toBe(false);
         act(() => { input?.dispatchEvent(new Event("input", { bubbles: true })); });
         expect(setBool).toHaveBeenCalledWith(note, "template", true);
-        teardown(root);
+        tmpl.unmount();
 
         const optNote = buildNote({ id: "_optionsBar", title: "Opt" });
         const dom2 = renderInto(<BasicPropertiesTab note={optNote} hidden={false} componentId="c" activate={() => {}} />);

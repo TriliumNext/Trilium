@@ -1,32 +1,12 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
+import { renderComponent, resetFroca } from "../../test/render";
 
 // --- Module mocks (hoisted above the component imports) -------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    class Dropdown {
-        static getOrCreateInstance() { return new Dropdown(); }
-        show() {}
-        hide() {}
-        dispose() {}
-    }
-    class Modal {
-        static getOrCreateInstance() { return new Modal(); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, Dropdown, Modal, default: { Tooltip, Dropdown, Modal } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 vi.mock("../../services/keyboard_actions", () => ({
     default: { getAction: vi.fn(async () => ({ effectiveShortcuts: [] })) }
@@ -70,13 +50,11 @@ vi.mock("../react/hooks", async (importOriginal) => {
 
 import appContext from "../../components/app_context";
 import dialog from "../../services/dialog";
-import froca from "../../services/froca";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
 import BasicWidget from "../basic_widget";
 import { useGlobalShortcut } from "../react/hooks";
 import { LaunchBarContext } from "./launch_bar_widgets";
-import { ParentComponent } from "../react/react_utils";
 import {
     CommandButton, CustomWidget, LegacyWidgetRenderer, NoteLauncher,
     QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher
@@ -84,22 +62,14 @@ import {
 
 // --- Render harness ------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
+/** Wraps the shared `renderComponent` (auto-teardown + `ParentComponent` provider) with the launch-bar context. */
 function renderInto(vnode: unknown, opts: { isHorizontalLayout?: boolean; parent?: BasicWidget | null } = {}) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={(opts.parent ?? null) as never}>
-                <LaunchBarContext.Provider value={{ isHorizontalLayout: opts.isHorizontalLayout ?? false }}>
-                    {vnode as never}
-                </LaunchBarContext.Provider>
-            </ParentComponent.Provider>
-        ), target);
-    });
-    return target;
+    return renderComponent(
+        <LaunchBarContext.Provider value={{ isHorizontalLayout: opts.isHorizontalLayout ?? false }}>
+            {vnode as never}
+        </LaunchBarContext.Provider>,
+        { parent: (opts.parent ?? null) as never }
+    ).container;
 }
 
 /** Settle async effect chains (froca relation resolution + executeScript) and the resulting re-renders. */
@@ -109,18 +79,9 @@ async function flush() {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
+    resetFroca();
     legacyWidgets.length = 0;
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- CommandButton -------------------------------------------------------------------------------

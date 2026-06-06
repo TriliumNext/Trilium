@@ -1,21 +1,11 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { bootstrapMock } from "../../test/mocks";
+
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../../services/keyboard_actions", () => ({
     default: { getAction: vi.fn(async () => ({ effectiveShortcuts: [] })) },
     getActionSync: vi.fn(() => undefined)
@@ -33,33 +23,20 @@ vi.mock("../../menus/context_menu", () => ({
     default: { show: vi.fn() }
 }));
 
-import Component from "../../components/component";
 import contextMenu, { MenuCommandItem } from "../../menus/context_menu";
 import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
 import froca from "../../services/froca";
 import link from "../../services/link";
 import tree from "../../services/tree";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { renderComponent, resetFroca } from "../../test/render";
 import HistoryNavigationButton, { handleHistoryContextMenu } from "./HistoryNavigation";
 
 // --- Harness -------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
 function renderButton(noteId: string, command: "backInNoteHistory" | "forwardInNoteHistory") {
     const note = froca.notes[noteId];
-    const target = document.createElement("div");
-    document.body.appendChild(target);
-    container = target;
-    act(() => {
-        render((
-            <ParentComponent.Provider value={new Component()}>
-                <HistoryNavigationButton launcherNote={note} command={command} />
-            </ParentComponent.Provider>
-        ), target);
-    });
-    return target;
+    return renderComponent(<HistoryNavigationButton launcherNote={note} command={command} />).container;
 }
 
 interface FakeNav {
@@ -83,17 +60,13 @@ function installElectronNav(nav: Partial<FakeNav> = {}): FakeNav {
 const hadElectronApi = "electronApi" in window;
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     (tree.getNotePathTitle as ReturnType<typeof vi.fn>).mockImplementation(async (p: string) => `title:${p}`);
 });
 
 afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
     delete (window as unknown as Record<string, unknown>).electronApi;
-    vi.restoreAllMocks();
 });
 
 // --- Component rendering --------------------------------------------------------------------------

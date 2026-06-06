@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -76,29 +75,17 @@ import tree from "../../services/tree";
 import { logError } from "../../services/ws";
 import Component from "../../components/component";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import AddLinkDialog, { type AddLinkOpts } from "./add_link";
 
 // --- Render harness for the full dialog -----------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderDialog() {
-    const p = new Component();
-    const c = document.createElement("div");
-    parent = p;
-    container = c;
-    document.body.appendChild(c);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={p}>
-                <AddLinkDialog />
-            </ParentComponent.Provider>,
-            c
-        );
-    });
-    return c;
+    const result = renderComponent(<AddLinkDialog />);
+    parent = result.parent;
+    return result.container;
 }
 
 /** Dispatch a DOM event inside `act` without leaking the boolean return value (typing). */
@@ -137,10 +124,6 @@ function fireEvent(name: string, data: unknown) {
     });
 }
 
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
 function makeOpts(overrides: Partial<AddLinkOpts> = {}): AddLinkOpts {
     return {
         text: "",
@@ -166,9 +149,7 @@ function selectSuggestion(suggestion: unknown) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     autocompleteOnChange = undefined;
     (tree.getNoteTitle as ReturnType<typeof vi.fn>).mockResolvedValue("Default Title");
@@ -179,16 +160,6 @@ beforeEach(() => {
         const segments = path.split("/");
         return segments[segments.length - 1];
     });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container ?? document.createElement("div")); });
-        container.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

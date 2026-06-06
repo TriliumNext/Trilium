@@ -1,7 +1,8 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { flush, renderComponent, resetFroca } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -57,50 +58,24 @@ vi.mock("../../services/import.js", () => ({
     default: { uploadFiles: vi.fn(async () => undefined) }
 }));
 
-import Component from "../../components/component";
-import froca from "../../services/froca";
+import type Component from "../../components/component";
 import importService from "../../services/import.js";
 import options from "../../services/options";
 import tree from "../../services/tree";
-import { ParentComponent } from "../react/react_utils";
 import UploadAttachmentsDialog from "./upload_attachments";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-let parent: Component;
-
 function renderDialog() {
-    parent = new Component();
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <UploadAttachmentsDialog />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    const { container, parent } = renderComponent(<UploadAttachmentsDialog />);
+    return { el: container, parent };
 }
 
-function fireShowDialog(data: unknown) {
+function fireShowDialog(parent: Component, data: unknown) {
     act(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (parent.handleEventInChildren as any)("showUploadAttachmentsDialog", data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
 }
 
 /** Attach a FileList to the file input and fire its change event (happy-dom forbids assigning .files). */
@@ -127,26 +102,17 @@ function uploadMock() {
 }
 
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     options.load({ compressImages: "true" } as Record<OptionNames, string>);
     vi.clearAllMocks();
     vi.spyOn(tree, "getNoteTitle").mockResolvedValue("Target Note");
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
 
 describe("UploadAttachmentsDialog", () => {
     it("renders the modal shell but no body until an event arrives", () => {
-        const el = renderDialog();
+        const { el } = renderDialog();
         expect(el.querySelector(".upload-attachments-dialog")).toBeTruthy();
         // Body (and its checkbox / file upload) only mount once the modal is shown.
         expect(el.querySelector(".modal-dialog")).toBeNull();
@@ -154,8 +120,8 @@ describe("UploadAttachmentsDialog", () => {
     });
 
     it("opens on the event, resolving the note title and mounting the form", async () => {
-        const el = renderDialog();
-        fireShowDialog({ noteId: "noteAbc" });
+        const { el, parent } = renderDialog();
+        fireShowDialog(parent, { noteId: "noteAbc" });
         await flush();
 
         // The useEffect resolves the parent note title (which feeds the FormGroup description).
@@ -169,8 +135,8 @@ describe("UploadAttachmentsDialog", () => {
     });
 
     it("enables the submit button once files are selected", async () => {
-        const el = renderDialog();
-        fireShowDialog({ noteId: "noteFile" });
+        const { el, parent } = renderDialog();
+        fireShowDialog(parent, { noteId: "noteFile" });
         await flush();
         expect(footerButton(el)?.disabled).toBe(true);
 
@@ -179,8 +145,8 @@ describe("UploadAttachmentsDialog", () => {
     });
 
     it("submits selected files via importService to the attachments entity type", async () => {
-        const el = renderDialog();
-        fireShowDialog({ noteId: "noteSubmit" });
+        const { el, parent } = renderDialog();
+        fireShowDialog(parent, { noteId: "noteSubmit" });
         await flush();
         selectFiles(el, [ "one.txt", "two.txt" ]);
 
@@ -202,8 +168,8 @@ describe("UploadAttachmentsDialog", () => {
     });
 
     it("reflects the toggled shrink-images checkbox in the upload options", async () => {
-        const el = renderDialog();
-        fireShowDialog({ noteId: "noteToggle" });
+        const { el, parent } = renderDialog();
+        fireShowDialog(parent, { noteId: "noteToggle" });
         await flush();
         selectFiles(el, [ "f.png" ]);
 
@@ -223,8 +189,8 @@ describe("UploadAttachmentsDialog", () => {
     });
 
     it("does not upload when submitting without selected files (early return)", async () => {
-        const el = renderDialog();
-        fireShowDialog({ noteId: "noteEmpty" });
+        const { el, parent } = renderDialog();
+        fireShowDialog(parent, { noteId: "noteEmpty" });
         await flush();
 
         const form = el.querySelector("form");
@@ -238,8 +204,8 @@ describe("UploadAttachmentsDialog", () => {
     });
 
     it("resets show and files on the bootstrap hidden event (onHidden)", async () => {
-        const el = renderDialog();
-        fireShowDialog({ noteId: "noteHidden" });
+        const { el, parent } = renderDialog();
+        fireShowDialog(parent, { noteId: "noteHidden" });
         await flush();
         selectFiles(el, [ "x.txt" ]);
         expect(footerButton(el)?.disabled).toBe(false);
@@ -250,15 +216,15 @@ describe("UploadAttachmentsDialog", () => {
         expect(el.querySelector(".modal-dialog")).toBeNull();
 
         // Re-opening shows a fresh form with the submit button disabled again (files reset to null).
-        fireShowDialog({ noteId: "noteHidden" });
+        fireShowDialog(parent, { noteId: "noteHidden" });
         await flush();
         expect(footerButton(el)?.disabled).toBe(true);
     });
 
     it("initialises shrink-images from compressImages being off", async () => {
         options.load({ compressImages: "false" } as Record<OptionNames, string>);
-        const el = renderDialog();
-        fireShowDialog({ noteId: "noteNoCompress" });
+        const { el, parent } = renderDialog();
+        fireShowDialog(parent, { noteId: "noteNoCompress" });
         await flush();
         selectFiles(el, [ "img.png" ]);
 

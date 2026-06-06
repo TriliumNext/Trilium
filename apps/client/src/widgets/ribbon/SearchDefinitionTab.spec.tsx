@@ -1,10 +1,11 @@
 import $ from "jquery";
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// NOTE: the shared `bootstrapMock` does not expose `Dropdown.getOrCreateInstance`, which this spec's
+// component relies on, so we keep the local bootstrap stub instead of `bootstrapMock()`.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -53,26 +54,19 @@ import tree from "../../services/tree";
 import { isMobile } from "../../services/utils";
 import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import SearchDefinitionTab from "./SearchDefinitionTab";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderTab(props: { note: ReturnType<typeof buildNote> | null | undefined; ntxId?: string | null; hidden?: boolean }) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <SearchDefinitionTab note={props.note} ntxId={props.ntxId ?? "ntx1"} hidden={props.hidden ?? false} />
-            </ParentComponent.Provider>
-        ), target);
-    });
-    return target;
+    const { container } = renderComponent(
+        <SearchDefinitionTab note={props.note} ntxId={props.ntxId ?? "ntx1"} hidden={props.hidden ?? false} />,
+        { parent }
+    );
+    return container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -80,10 +74,6 @@ function fireEvent(name: string, data: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (parent.handleEventInChildren as any)(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
 }
 
 let originalTooltip: unknown;
@@ -94,28 +84,22 @@ beforeEach(() => {
     originalTooltip = ($.fn as any).tooltip;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ($.fn as any).tooltip = vi.fn();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     parent = new Component();
-    // The auto-mocked server (test/setup.ts) only defines get/post — add the write verbs used here.
+    // The shared server mock (test/setup.ts) returns inert values for get/post; override the verbs
+    // whose return shapes and call assertions this spec depends on.
     Object.assign(server, {
-        put: vi.fn(async () => undefined),
         post: vi.fn(async () => ({})),
-        get: vi.fn(async () => ({ searchResultNoteIds: [], highlightedTokens: [] })),
-        remove: vi.fn(async () => undefined)
+        get: vi.fn(async () => ({ searchResultNoteIds: [], highlightedTokens: [] }))
     });
-    Object.assign(ws, { logError: vi.fn(), waitForMaxKnownEntityChangeId: vi.fn(async () => undefined) });
+    Object.assign(ws, { waitForMaxKnownEntityChangeId: vi.fn(async () => undefined) });
     (isMobile as ReturnType<typeof vi.fn>).mockReturnValue(false);
 });
 
-afterEach(async () => {
-    await act(async () => {});
-    if (container) { render(null, container); container.remove(); container = undefined; }
+afterEach(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ($.fn as any).tooltip = originalTooltip;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

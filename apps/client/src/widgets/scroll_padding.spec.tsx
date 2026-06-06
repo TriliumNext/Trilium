@@ -1,13 +1,10 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../components/component";
-import type NoteContext from "../components/note_context";
-import froca from "../services/froca";
 import { buildNote } from "../test/easy-froca";
+import { fakeNoteContext, renderComponent, resetFroca } from "../test/render";
 import ScrollPadding from "./scroll_padding";
-import { NoteContextContext, ParentComponent } from "./react/react_utils";
 
 // --- ResizeObserver capture -----------------------------------------------------------------------
 // happy-dom's ResizeObserver is inert; replace it so we can fire the callback and exercise refreshHeight.
@@ -32,61 +29,47 @@ class FakeResizeObserver {
     disconnect() { this.entry.disconnected = true; }
 }
 
-// --- Render helper --------------------------------------------------------------------------------
+// --- offsetHeight control -------------------------------------------------------------------------
+// happy-dom always reports 0 for offsetHeight; expose a controllable value for the `.scrolling-container`.
 
-let container: HTMLDivElement | undefined;
+let containerOffsetHeight = 400;
+let originalOffsetHeight: PropertyDescriptor | undefined;
 
-/** Renders ScrollPadding inside a `.scrolling-container` wrapped in the Trilium providers. */
-function renderScrollPadding(noteContext: NoteContext | null, parent: Component, withContainer = true) {
-    const host = document.createElement("div");
-    container = host;
-    if (withContainer) {
-        host.className = "scrolling-container";
-        Object.defineProperty(host, "offsetHeight", { configurable: true, value: 400 });
-    }
-    document.body.appendChild(host);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={noteContext}>
-                    <ScrollPadding />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
-        ), host);
-    });
-    return host;
-}
-
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: "root/note1",
-        viewScope: { viewMode: "default" },
-        ...overrides
-    } as unknown as NoteContext;
+/** Renders ScrollPadding inside a `.scrolling-container` (when requested) wrapped in the Trilium providers. */
+function renderScrollPadding(noteContext: ReturnType<typeof fakeNoteContext> | null, parent: Component, withContainer = true) {
+    const tree = withContainer
+        ? <div className="scrolling-container"><ScrollPadding /></div>
+        : <div><ScrollPadding /></div>;
+    const { container } = renderComponent(tree, { parent, noteContext });
+    const root = container.querySelector("div");
+    if (!root) throw new Error("Expected a rendered root element");
+    return root as HTMLElement;
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     observers = [];
+    containerOffsetHeight = 400;
     originalResizeObserver = window.ResizeObserver;
     Object.assign(window, { ResizeObserver: FakeResizeObserver });
+    originalOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight");
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+        configurable: true,
+        get(this: HTMLElement) {
+            return this.classList.contains("scrolling-container") ? containerOffsetHeight : 0;
+        }
+    });
 });
 
 afterEach(() => {
-    const host = container;
-    if (host) {
-        act(() => render(null, host));
-        host.remove();
-        container = undefined;
-    }
     if (originalResizeObserver) {
         Object.assign(window, { ResizeObserver: originalResizeObserver });
     }
-    vi.restoreAllMocks();
+    if (originalOffsetHeight) {
+        Object.defineProperty(HTMLElement.prototype, "offsetHeight", originalOffsetHeight);
+    } else {
+        delete (HTMLElement.prototype as unknown as Record<string, unknown>).offsetHeight;
+    }
 });
 
 describe("ScrollPadding", () => {
@@ -111,7 +94,7 @@ describe("ScrollPadding", () => {
         const widget = root.querySelector(".scroll-padding-widget");
         expect((widget as HTMLElement).style.height).toBe("200px");
 
-        Object.defineProperty(root, "offsetHeight", { configurable: true, value: 600 });
+        containerOffsetHeight = 600;
         act(() => observers.forEach(o => o.cb()));
         expect((widget as HTMLElement).style.height).toBe("300px");
     });
@@ -191,9 +174,13 @@ describe("ScrollPadding", () => {
 
     it("disconnects the observer on unmount", () => {
         const note = buildNote({ id: "unmount1", title: "T", type: "text" });
-        const root = renderScrollPadding(fakeNoteContext({ note }), new Component());
+        const { container, unmount } = renderComponent(
+            <div className="scrolling-container"><ScrollPadding /></div>,
+            { parent: new Component(), noteContext: fakeNoteContext({ note }) }
+        );
+        expect(container.querySelector(".scroll-padding-widget")).toBeTruthy();
         expect(observers.length).toBe(1);
-        act(() => render(null, root));
+        unmount();
         expect(observers[0]?.disconnected).toBe(true);
     });
 });

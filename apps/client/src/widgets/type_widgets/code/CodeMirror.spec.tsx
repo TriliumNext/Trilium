@@ -1,6 +1,6 @@
-import { render } from "preact";
-import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -49,20 +49,19 @@ import CodeMirror, { type CodeMirrorProps } from "./CodeMirror";
 
 // --- Harness -------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let currentRerender: ((vnode: unknown) => void) | undefined;
+let currentUnmount: (() => void) | undefined;
 
 function renderCodeMirror(props: CodeMirrorProps) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => render(<CodeMirror {...props} />, target));
-    return target;
+    const { container, rerender, unmount } = renderComponent(<CodeMirror {...props} />);
+    currentRerender = rerender;
+    currentUnmount = unmount;
+    return container;
 }
 
 function rerender(props: CodeMirrorProps) {
-    const target = container;
-    if (!target) throw new Error("renderCodeMirror must be called before rerender");
-    act(() => render(<CodeMirror {...props} />, target));
+    if (!currentRerender) throw new Error("renderCodeMirror must be called before rerender");
+    currentRerender(<CodeMirror {...props} />);
 }
 
 function lastInstance() {
@@ -73,16 +72,8 @@ function lastInstance() {
 
 beforeEach(() => {
     instances.length = 0;
-});
-
-afterEach(() => {
-    const target = container;
-    if (target) {
-        act(() => render(null, target));
-        target.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
+    currentRerender = undefined;
+    currentUnmount = undefined;
 });
 
 // --- Tests ---------------------------------------------------------------------------------------
@@ -225,12 +216,7 @@ describe("CodeMirror", () => {
     it("destroys the editor on unmount", () => {
         renderCodeMirror({ mime: "text/plain" });
         const inst = lastInstance();
-        const target = container;
-        if (target) {
-            act(() => render(null, target));
-            target.remove();
-            container = undefined;
-        }
+        currentUnmount?.();
         expect(inst.destroy).toHaveBeenCalledTimes(1);
     });
 });

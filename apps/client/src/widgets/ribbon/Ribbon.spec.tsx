@@ -1,23 +1,12 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
 // Bootstrap Tooltip is patched at import time by useStaticTooltip; provide a stub.
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        config: unknown;
-        constructor(el: Element, config?: unknown) { this.element = el; this.config = config; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 vi.mock("../../services/keyboard_actions", () => ({
     default: {
@@ -72,51 +61,22 @@ vi.mock("./RibbonDefinition", () => {
     };
 });
 
+import type Component from "../../components/component";
 import type NoteContext from "../../components/note_context";
-import Component from "../../components/component";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent, NoteContextContext } from "../react/react_utils";
+import { fakeNoteContext, flush, renderComponent } from "../../test/render";
 import Ribbon from "./Ribbon";
 
 // --- Harness -------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        noteId: "note1",
-        hoistedNoteId: "root",
-        notePath: "root/note1",
-        viewScope: { viewMode: "default" },
-        isReadOnly: vi.fn(async () => false),
-        ...overrides
-    } as unknown as NoteContext;
-}
-
 async function renderRibbon(noteContext: NoteContext | null) {
-    const localContainer = document.createElement("div");
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    const localParent = new Component();
+    const { container, parent: localParent } = renderComponent(<Ribbon />, { noteContext });
     parent = localParent;
-    act(() => {
-        render((
-            <ParentComponent.Provider value={localParent}>
-                <NoteContextContext.Provider value={noteContext}>
-                    <Ribbon />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
-        ), localContainer);
-    });
     // settle the async refresh() (shouldShowTab) + the resulting setComputedTabs re-render.
     await flush();
-    return localContainer;
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+    return container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -124,17 +84,6 @@ function fireEvent(name: string, data: unknown) {
         (parent?.handleEventInChildren as unknown as (n: string, d: unknown) => void)?.(name, data);
     });
 }
-
-afterEach(() => {
-    const localContainer = container;
-    if (localContainer) {
-        act(() => render(null, localContainer));
-        localContainer.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
-});
 
 // --- Tests ---------------------------------------------------------------------------------------
 

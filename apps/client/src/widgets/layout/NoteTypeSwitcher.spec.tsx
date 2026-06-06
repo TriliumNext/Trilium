@@ -1,9 +1,10 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) -------------------------------------------
 
+// NoteTypeSwitcher relies on bootstrap's `Dropdown.getOrCreateInstance`/`.update`, which the shared
+// `bootstrapMock` doesn't provide, so this spec keeps its own local stub.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -45,30 +46,19 @@ import { isExperimentalFeatureEnabled } from "../../services/experimental_featur
 import froca from "../../services/froca";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
-import { makeLoadResults } from "../../test/render-hook";
-import { ParentComponent } from "../react/react_utils";
+import { flush, makeLoadResults, renderComponent, resetFroca } from "../../test/render";
 import { noteSavedDataStore } from "../react/NoteStore";
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import NoteTypeSwitcher from "./NoteTypeSwitcher";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderSwitcher(note: ReturnType<typeof buildNote> | null | undefined) {
-    const div = document.createElement("div");
-    document.body.appendChild(div);
-    const comp = new Component();
-    container = div;
+    const { container, parent: comp } = renderComponent(<NoteTypeSwitcher note={note} />);
     parent = comp;
-    act(() => render(
-        <ParentComponent.Provider value={comp}>
-            <NoteTypeSwitcher note={note} />
-        </ParentComponent.Provider>,
-        div
-    ));
-    return div;
+    return container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -78,10 +68,6 @@ function fireEvent(name: string, data: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (p.handleEventInChildren as any)(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
 }
 
 /**
@@ -97,27 +83,16 @@ function openDropdowns(root: HTMLElement) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    vi.clearAllMocks();
-    Object.assign(server, {
-        put: vi.fn(async () => undefined),
-        get: vi.fn(async () => [])
-    });
+    resetFroca();
+    // setup.ts provides `server.put` (a cleared vi.fn) globally, but its `server.get` is a fixed
+    // function — tests here call `.mockResolvedValue` on it, so install a fresh vi.fn each test.
+    Object.assign(server, { get: vi.fn(async () => []) });
     (isExperimentalFeatureEnabled as ReturnType<typeof vi.fn>).mockReturnValue(false);
     // Badge/FormListItem use the jQuery bootstrap tooltip plugin via useStaticTooltip; stub it.
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     // useBuiltinTemplates always calls froca.getNote("_templates"); ensure it is cached so froca
     // never falls back to the (throwing) mock server. Individual tests may overwrite it with children.
     buildNote({ id: "_templates", title: "Templates" });
-});
-
-afterEach(async () => {
-    await act(async () => {});
-    if (container) { render(null, container); container.remove(); container = undefined; }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

@@ -1,6 +1,8 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { buildNote } from "../../test/easy-froca";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -15,53 +17,15 @@ vi.mock("../../services/link", async (importOriginal) => {
     };
 });
 
-import Component from "../../components/component";
-import type NoteContext from "../../components/note_context";
+import type Component from "../../components/component";
 import link from "../../services/link";
-import froca from "../../services/froca";
-import { buildNote } from "../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "./react_utils";
 import NoteLink, { NewNoteLink } from "./NoteLink";
 
-// --- Render harness (component inside the Trilium context providers) -------------------------------
-
-interface RenderResult {
-    container: HTMLDivElement;
-    parent: Component;
-    fireEvent: (name: string, data: unknown) => void;
-    rerender: (vnode: preact.ComponentChild) => void;
-    unmount: () => void;
-}
-
-function renderComponent(vnode: preact.ComponentChild, noteContext: NoteContext | null = null): RenderResult {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    const parent = new Component();
-
-    const wrap = (node: preact.ComponentChild) => (
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={noteContext}>
-                {node}
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    );
-
-    act(() => render(wrap(vnode), container));
-
-    return {
-        container,
-        parent,
-        fireEvent: (name, data) => act(() => {
-            (parent.handleEventInChildren as (n: string, d: unknown) => void)(name, data);
-        }),
-        rerender: (next) => act(() => render(wrap(next), container)),
-        unmount: () => act(() => { render(null, container); container.remove(); })
-    };
-}
-
-/** Settle async effects (the createLink promise) and the resulting re-render. */
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+/** Fire a Trilium event into the rendered tree (the shared `renderComponent` exposes `parent`). */
+function fireEvent(parent: Component, name: string, data: unknown) {
+    act(() => {
+        (parent.handleEventInChildren as (n: string, d: unknown) => void)(name, data);
+    });
 }
 
 /** A jQuery `<span><a>...</a></span>` so the component's `.find("a")`/`.css`/`.attr` calls work. */
@@ -72,16 +36,9 @@ function makeLinkEl() {
 const createLinkMock = link.createLink as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     createLinkMock.mockResolvedValue(makeLinkEl());
-});
-
-afterEach(async () => {
-    await act(async () => {});
-    vi.restoreAllMocks();
 });
 
 // --- NoteLink (jQuery-backed link) ----------------------------------------------------------------
@@ -164,7 +121,7 @@ describe("NoteLink", () => {
         await flush();
         createLinkMock.mockClear();
 
-        r.fireEvent("entitiesReloaded", {
+        fireEvent(r.parent, "entitiesReloaded", {
             loadResults: { getEntityRow: (entity: string, id: string) => entity === "notes" && id === "abc" ? { title: "Renamed" } : undefined }
         });
         await flush();
@@ -178,7 +135,7 @@ describe("NoteLink", () => {
         await flush();
         createLinkMock.mockClear();
 
-        r.fireEvent("entitiesReloaded", {
+        fireEvent(r.parent, "entitiesReloaded", {
             loadResults: { getEntityRow: () => ({ title: "Renamed" }) }
         });
         await flush();
@@ -191,7 +148,7 @@ describe("NoteLink", () => {
         await flush();
         createLinkMock.mockClear();
 
-        r.fireEvent("entitiesReloaded", {
+        fireEvent(r.parent, "entitiesReloaded", {
             loadResults: { getEntityRow: () => undefined }
         });
         await flush();

@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -12,34 +11,18 @@ vi.mock("../../services/experimental_features", () => ({
 import Component from "../../components/component";
 import type FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
-import froca from "../../services/froca";
-import server from "../../services/server";
-import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { renderComponent, renderInto, resetFroca } from "../../test/render";
 import CollectionPropertiesTab, { useViewType, VIEW_TYPE_MAPPINGS } from "./CollectionPropertiesTab";
 import type { TabContext } from "./ribbon-interface";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-const activeContainers: HTMLDivElement[] = [];
-
 function renderTab(note: FNote | null | undefined, parent: Component | null = new Component()) {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    activeContainers.push(container);
     const props = { note, hidden: false, componentId: "comp-1", activate: () => undefined } satisfies TabContext;
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null}>
-                    <CollectionPropertiesTab {...props} />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            container
-        );
-    });
-    return container;
+    // The "no parent" test relies on passing `null` straight through to the provider, so preserve it
+    // (renderComponent only substitutes a fresh Component when `parent` is `undefined`).
+    return renderComponent(<CollectionPropertiesTab {...props} />, { parent: parent as Component, noteContext: null }).container;
 }
 
 function fireInput(el: HTMLInputElement, value: string) {
@@ -48,27 +31,11 @@ function fireInput(el: HTMLInputElement, value: string) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
+    resetFroca();
     // Prevent label setters from reaching the (throwing) mock server.
     vi.spyOn(attributes, "setLabel").mockImplementation(() => undefined as never);
     vi.spyOn(attributes, "setBooleanWithInheritance").mockImplementation(() => undefined as never);
     vi.spyOn(attributes, "removeOwnedLabelByName").mockImplementation(() => undefined as never);
-});
-
-afterEach(() => {
-    while (activeContainers.length) {
-        const container = activeContainers.pop();
-        if (container) {
-            act(() => { render(null, container); });
-            container.remove();
-        }
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Top-level component --------------------------------------------------------------------------
@@ -125,11 +92,7 @@ describe("useViewType", () => {
             captured = viewType;
             return null;
         };
-        const host = document.createElement("div");
-        document.body.appendChild(host);
-        act(() => { render(<Probe note={note} />, host); });
-        act(() => { render(null, host); });
-        host.remove();
+        renderInto(<Probe note={note} />);
         return captured;
     }
 

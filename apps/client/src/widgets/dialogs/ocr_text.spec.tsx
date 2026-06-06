@@ -1,12 +1,15 @@
 import { OCRProcessResponse, TextRepresentationResponse } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { flush, renderComponent } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
 // Modal.tsx imports `Modal as BootstrapModal`; hooks.tsx (pulled in via Button -> ActionButton)
 // patches Tooltip.prototype.dispose at import time, so Tooltip must be a real class.
+// NOTE: kept local (not the shared bootstrapMock) because this spec relies on
+// Modal.getOrCreateInstance / Dropdown.getOrCreateInstance, which the shared stub doesn't provide.
 vi.mock("bootstrap", () => {
     class Modal {
         static getOrCreateInstance() { return new Modal(); }
@@ -67,8 +70,6 @@ import Component from "../../components/component";
 import { copyTextWithToast } from "../../services/clipboard_ext";
 import server from "../../services/server";
 import toast from "../../services/toast";
-import ws from "../../services/ws";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import OcrTextDialog from "./ocr_text";
 
 const toastMock = vi.mocked(toast);
@@ -77,24 +78,14 @@ const openInNewTabMock = vi.mocked(appContext.tabManager.openInNewTab);
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let container: HTMLElement | undefined;
 let parent: Component;
 
 function renderDialog() {
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null}>
-                    <OcrTextDialog />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            root
-        );
-    });
-    return root;
+    const result = renderComponent(<OcrTextDialog />);
+    container = result.container;
+    parent = result.parent;
+    return container;
 }
 
 function fireShow(textUrl = "ocr/notes/n1/text", processUrl = "ocr/process-note/n1") {
@@ -102,10 +93,6 @@ function fireShow(textUrl = "ocr/notes/n1/text", processUrl = "ocr/process-note/
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (parent.handleEventInChildren as any)("showOcrTextDialog", { textUrl, processUrl });
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
 }
 
 function setGet(impl: (url: string) => Promise<unknown>) {
@@ -121,25 +108,14 @@ function modalEl() {
 }
 
 beforeEach(() => {
-    parent = new Component();
     vi.clearAllMocks();
     Object.assign(server, {
         get: vi.fn(async () => ({ success: true, hasOcr: false, text: "" })),
         post: vi.fn(async () => ({ success: true }))
     });
-    Object.assign(ws, { logError: vi.fn() });
     // jQuery bootstrap plugins aren't loaded in the test env.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ($.fn as any).tooltip = function () { return this; };
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- OcrTextDialog (the event-driven wrapper) -----------------------------------------------------

@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 //
@@ -49,36 +48,20 @@ import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
 import froca from "../../services/froca";
 import { buildNote } from "../../test/easy-froca";
+import { flush, renderComponent, renderInto, resetFroca } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
 import PopupEditor, { DialogWrapper, TitleRow } from "./PopupEditor";
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
+let unmountPopup: (() => void) | undefined;
 
 function renderPopupEditor() {
-    parent = new Component();
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <PopupEditor />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
-}
-
-function renderInto(vnode: preact.ComponentChild) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => { render(vnode, el); });
-    return el;
+    const { container, parent: p, unmount } = renderComponent(<PopupEditor />);
+    parent = p;
+    unmountPopup = unmount;
+    return container;
 }
 
 /** Synchronously dispatch a Trilium event through the parent component (drives `useTriliumEvent`). */
@@ -88,14 +71,8 @@ function fireEvent(name: string, data: unknown) {
     });
 }
 
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
-}
-
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     document.body.className = "";
     // Default to desktop layout (window.glob.device unset → isMobile() === false).
     delete (window.glob as unknown as Record<string, unknown>).device;
@@ -109,14 +86,6 @@ beforeEach(() => {
         this.viewScope = opts?.viewScope;
         return this;
     });
-});
-
-afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
-    // Sweep any lingering backdrops we created.
-    document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
-    document.body.className = "";
-    vi.restoreAllMocks();
 });
 
 // --- Static structure ------------------------------------------------------------------------------
@@ -241,7 +210,7 @@ describe("PopupEditor — openInPopup", () => {
         expect(backdrop.classList.contains("popup-editor-backdrop")).toBe(true);
 
         // Cleanup of the stacking effect removes the raised-backdrop class on unmount.
-        if (container) { render(null, container); container.remove(); container = undefined; }
+        unmountPopup?.();
         expect(backdrop.classList.contains("popup-editor-backdrop")).toBe(false);
 
         existing.remove();

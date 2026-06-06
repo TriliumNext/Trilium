@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 // Stub the heavy SearchNoteList so the GOT_RESULTS branch renders identifiable, side-effect-free DOM
@@ -20,43 +19,20 @@ vi.mock("./collections/NoteList", () => ({
 }));
 
 import type NoteContext from "../components/note_context";
-import Component from "../components/component";
+import type Component from "../components/component";
 import type FNote from "../entities/fnote";
-import froca from "../services/froca";
 import { buildNote } from "../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "./react/react_utils";
+import { fakeNoteContext, renderComponent, resetFroca } from "../test/render";
 import SearchResult from "./search_result";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
-/** A minimal NoteContext exposing only the fields useNoteContext reads (note/notePath/ntxId). */
-function makeContext(overrides: Partial<Record<string, unknown>> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: "root/search1",
-        viewScope: { viewMode: "default" },
-        ...overrides
-    } as unknown as NoteContext;
-}
-
 function renderResult(noteContext: NoteContext | null) {
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    const parentComponent = new Component();
+    const { container, parent: parentComponent } = renderComponent(<SearchResult />, { noteContext });
     parent = parentComponent;
-    act(() => render((
-        <ParentComponent.Provider value={parentComponent}>
-            <NoteContextContext.Provider value={noteContext}>
-                <SearchResult />
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), root));
-    return root;
+    return container;
 }
 
 function fire(name: string, data: unknown) {
@@ -73,26 +49,13 @@ function buildSearchNote(opts: { id: string; searchResultsLoaded?: boolean; toke
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-});
-
-afterEach(() => {
-    const current = container;
-    if (current) {
-        act(() => render(null, current));
-        current.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
+    resetFroca();
 });
 
 describe("SearchResult", () => {
     it("hides itself (no state) when the note is not a search note", () => {
         const note = buildNote({ id: "plain1", title: "Plain", type: "text" });
-        const root = renderResult(makeContext({ note, notePath: "root/plain1" }));
+        const root = renderResult(fakeNoteContext({ note, notePath: "root/plain1" }));
 
         const widget = root.querySelector(".search-result-widget");
         expect(widget?.className).toContain("hidden-ext");
@@ -102,13 +65,13 @@ describe("SearchResult", () => {
     });
 
     it("hides itself when there is no note at all", () => {
-        const root = renderResult(makeContext({ note: undefined, notePath: undefined }));
+        const root = renderResult(fakeNoteContext({ note: undefined, notePath: undefined }));
         expect(root.querySelector(".search-result-widget")?.className).toContain("hidden-ext");
     });
 
     it("renders the not-executed placeholder with a search-now trigger button", () => {
         const note = buildSearchNote({ id: "search-ne", searchResultsLoaded: false });
-        const root = renderResult(makeContext({ note, notePath: "root/search-ne" }));
+        const root = renderResult(fakeNoteContext({ note, notePath: "root/search-ne" }));
 
         const widget = root.querySelector(".search-result-widget");
         expect(widget?.className).not.toContain("hidden-ext");
@@ -125,7 +88,7 @@ describe("SearchResult", () => {
 
     it("renders the no-results placeholder when the search ran but matched nothing", () => {
         const note = buildSearchNote({ id: "search-empty", searchResultsLoaded: true, children: [] });
-        const root = renderResult(makeContext({ note, notePath: "root/search-empty" }));
+        const root = renderResult(fakeNoteContext({ note, notePath: "root/search-empty" }));
 
         const noItems = root.querySelector(".no-items");
         expect(noItems).not.toBeNull();
@@ -142,7 +105,7 @@ describe("SearchResult", () => {
             tokens: [ "alpha", "beta" ],
             children: [ { id: "child1", title: "C1" } ]
         });
-        const root = renderResult(makeContext({ note, notePath: "root/search-hit", ntxId: "ntxA" }));
+        const root = renderResult(fakeNoteContext({ note, notePath: "root/search-hit", ntxId: "ntxA" }));
 
         const list = root.querySelector(".stub-search-note-list");
         expect(list).not.toBeNull();
@@ -157,7 +120,7 @@ describe("SearchResult", () => {
 
     it("refreshes on searchRefreshed only for the matching ntxId", () => {
         const note = buildSearchNote({ id: "search-evt", searchResultsLoaded: false });
-        const root = renderResult(makeContext({ note, notePath: "root/search-evt", ntxId: "ntxMatch" }));
+        const root = renderResult(fakeNoteContext({ note, notePath: "root/search-evt", ntxId: "ntxMatch" }));
         expect(root.querySelector(".no-items")).not.toBeNull();
         expect(root.querySelector(".stub-search-note-list")).toBeNull();
 
@@ -179,7 +142,7 @@ describe("SearchResult", () => {
 
     it("refreshes on notesReloaded only when the note's id is included", () => {
         const note = buildSearchNote({ id: "search-reload", searchResultsLoaded: false });
-        const root = renderResult(makeContext({ note, notePath: "root/search-reload" }));
+        const root = renderResult(fakeNoteContext({ note, notePath: "root/search-reload" }));
         expect(root.querySelector(".no-items")).not.toBeNull();
 
         // Reload event not mentioning our note → no change.

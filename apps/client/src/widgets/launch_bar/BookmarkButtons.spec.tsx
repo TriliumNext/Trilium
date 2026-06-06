@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderInto, resetFroca } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -54,23 +55,17 @@ import { LaunchBarContext } from "./launch_bar_widgets";
 // --- Harness -------------------------------------------------------------------------------------
 
 const BOOKMARKS_ROOT_ID = "_lbBookmarks";
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 async function renderButtons(launcherNoteId: string, isHorizontalLayout = true) {
     const launcherNote = froca.notes[launcherNoteId];
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <LaunchBarContext.Provider value={{ isHorizontalLayout }}>
-                    <BookmarkButtons launcherNote={launcherNote} />
-                </LaunchBarContext.Provider>
-            </ParentComponent.Provider>
-        ), root);
-    });
+    const root = renderInto((
+        <ParentComponent.Provider value={parent}>
+            <LaunchBarContext.Provider value={{ isHorizontalLayout }}>
+                <BookmarkButtons launcherNote={launcherNote} />
+            </LaunchBarContext.Provider>
+        </ParentComponent.Provider>
+    ));
     // The child-note resolution is an async froca effect; drain several microtask/render cycles.
     for (let i = 0; i < 4; i++) {
         await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
@@ -80,20 +75,9 @@ async function renderButtons(launcherNoteId: string, isHorizontalLayout = true) 
 
 beforeEach(() => {
     parent = new Component();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     (isMobile as ReturnType<typeof vi.fn>).mockReturnValue(false);
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { if (container) render(null, container); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 /** Builds the `_lbBookmarks` parent and a `launcher` note that points at it. */

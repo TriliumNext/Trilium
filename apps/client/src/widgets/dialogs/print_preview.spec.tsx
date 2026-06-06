@@ -1,9 +1,11 @@
-import { ComponentChildren, render } from "preact";
+import { ComponentChildren } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// NOTE: kept local (not the shared bootstrapMock) because this spec relies on
+// Tooltip/Dropdown/Modal.getOrCreateInstance and .update(), which the shared stub omits.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -59,12 +61,10 @@ import type FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import froca from "../../services/froca";
 import noteAttributeCache from "../../services/note_attribute_cache";
-import server from "../../services/server";
 import toast from "../../services/toast";
 import utils from "../../services/utils";
-import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { renderComponent, resetFroca } from "../../test/render";
 import PrintPreviewDialog from "./print_preview";
 
 // --- electronApi printing stub --------------------------------------------------------------------
@@ -104,22 +104,13 @@ function clearElectronApi() {
 
 // --- Render harness ------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderDialog() {
-    const localParent = new Component();
-    const localContainer = document.createElement("div");
-    parent = localParent;
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    act(() => render(
-        <ParentComponent.Provider value={localParent}>
-            <PrintPreviewDialog />
-        </ParentComponent.Provider>,
-        localContainer
-    ));
-    return localContainer;
+    // Shared helper wraps in ParentComponent (+ a null NoteContext, unused here) and auto-tears down.
+    const rendered = renderComponent(<PrintPreviewDialog />);
+    parent = rendered.parent;
+    return rendered.container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -217,14 +208,9 @@ function makePrinter(over: Partial<Record<string, unknown>> = {}) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
+    resetFroca();
     vi.clearAllMocks();
-    // The auto-mocked server (test/setup.ts) only defines get/post — the label setters use put.
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
+    // server.put/upload and ws.logError come from the global test/setup.ts mocks.
     // happy-dom does not provide a usable Blob URL factory — stub it (tests can override per-case).
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:preview");
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
@@ -232,10 +218,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    // Switch back to real timers before the shared render afterEach tears down the container.
     vi.useRealTimers();
-    if (container) { act(() => render(null, container ?? document.createElement("div"))); container.remove(); container = undefined; }
     clearElectronApi();
-    vi.restoreAllMocks();
+    // Container teardown is handled by the shared renderComponent helper; vi.restoreAllMocks() by setup.ts.
 });
 
 // Helper to advance the debounce timer and settle async effects.

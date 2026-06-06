@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -93,7 +92,6 @@ vi.mock("../../components/app_context", () => ({
 }));
 
 import appContext from "../../components/app_context";
-import Component from "../../components/component";
 import branches from "../../services/branches";
 import froca from "../../services/froca";
 import { triggerRecentNotes } from "../../services/note_autocomplete";
@@ -101,29 +99,17 @@ import toast from "../../services/toast";
 import tree from "../../services/tree";
 import { logError } from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import CloneToDialog from "./clone_to";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-let parent: Component | undefined;
+let parent: { handleEventInChildren: (n: string, d: unknown) => void } | undefined;
 
 function renderDialog() {
-    const p = new Component();
-    const c = document.createElement("div");
-    parent = p;
-    container = c;
-    document.body.appendChild(c);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={p}>
-                <CloneToDialog />
-            </ParentComponent.Provider>,
-            c
-        );
-    });
-    return c;
+    const { container, parent: p } = renderComponent(<CloneToDialog />);
+    parent = p as unknown as { handleEventInChildren: (n: string, d: unknown) => void };
+    return container;
 }
 
 function dispatch(el: EventTarget | null | undefined, event: Event) {
@@ -141,12 +127,8 @@ function fireModalEvent(root: HTMLElement, eventName: string) {
 
 function fireEvent(name: string, data: unknown) {
     act(() => {
-        (parent?.handleEventInChildren as (n: string, d: unknown) => void)(name, data);
+        parent?.handleEventInChildren(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }
 
 /** Open the dialog by firing the Trilium command the widget subscribes to. */
@@ -164,14 +146,9 @@ function selectSuggestion(suggestion: unknown) {
     act(() => autocompleteOnChange?.(suggestion));
 }
 
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-}
-
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
+    parent = undefined;
     vi.clearAllMocks();
     autocompleteOnChange = undefined;
     // `logError` is a global set up by ws.ts at runtime; ws is mocked, so provide a no-op so the real
@@ -185,16 +162,6 @@ beforeEach(() => {
         return { noteId: segments[segments.length - 1], parentNoteId: segments[segments.length - 2] ?? "root" };
     });
     (branches.cloneNoteToBranch as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container ?? document.createElement("div")); });
-        container.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

@@ -1,7 +1,8 @@
 import { KeyboardShortcut, OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { flush, makeLoadResults, renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -13,52 +14,22 @@ vi.mock("../../../services/utils", async (importOriginal) => ({
     reloadFrontendApp: vi.fn()
 }));
 
-import Component from "../../../components/component";
+import type Component from "../../../components/component";
 import dialog from "../../../services/dialog";
 import options from "../../../services/options";
 import server from "../../../services/server";
 import { reloadFrontendApp } from "../../../services/utils";
-import { ParentComponent } from "../../react/react_utils";
 import ShortcutSettings from "./shortcuts";
 
 // --- Render harness (component wrapped in ParentComponent so useTriliumEvent registers) ------------
 
-let container: HTMLDivElement | undefined;
-let parent: Component;
-
-function renderComponent() {
-    parent = new Component();
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <ShortcutSettings />
-            </ParentComponent.Provider>
-        ), el);
-    });
-    return el;
+function renderShortcuts() {
+    return renderComponent(<ShortcutSettings />);
 }
 
-function fireTriliumEvent(name: string, data: unknown) {
+function fireTriliumEvent(parent: Component, name: string, data: unknown) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     act(() => { (parent.handleEventInChildren as any)(name, data); });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
-function makeLoadResults(optionNames: string[]) {
-    return {
-        getAttributeRows: () => [],
-        getBranchRows: () => [],
-        getOptionNames: () => optionNames,
-        isNoteReloaded: () => false,
-        isNoteContentReloaded: () => false,
-        getEntityRow: () => undefined
-    };
 }
 
 function typeInto(input: HTMLInputElement, value: string) {
@@ -108,24 +79,14 @@ beforeEach(() => {
     options.load({} as Record<OptionNames, string>);
     vi.clearAllMocks();
     Object.assign(server, {
-        get: vi.fn(async (url: string) => (url === "keyboard-actions" ? SHORTCUTS : {})),
-        put: vi.fn(async () => undefined)
+        get: vi.fn(async (url: string) => (url === "keyboard-actions" ? SHORTCUTS : {}))
     });
     (dialog.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(true);
 });
 
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
-});
-
 describe("ShortcutSettings", () => {
     it("loads keyboard actions and renders a row per action plus a separator", async () => {
-        const root = renderComponent();
+        const { container: root } = renderShortcuts();
         await flush();
 
         const table = root.querySelector("table.keyboard-shortcut-table");
@@ -151,7 +112,7 @@ describe("ShortcutSettings", () => {
     });
 
     it("filters actions by name / friendlyName / shortcut and hides separators while filtering", async () => {
-        const root = renderComponent();
+        const { container: root } = renderShortcuts();
         await flush();
 
         const filterInput = root.querySelector<HTMLInputElement>("header input.form-control");
@@ -168,7 +129,7 @@ describe("ShortcutSettings", () => {
     });
 
     it("matches by default shortcut, effective shortcut and description text", async () => {
-        const root = renderComponent();
+        const { container: root } = renderShortcuts();
         await flush();
         const filterInput = root.querySelector<HTMLInputElement>("header input.form-control");
         if (!filterInput) return;
@@ -189,7 +150,7 @@ describe("ShortcutSettings", () => {
     });
 
     it("shows the empty NoItems placeholder when nothing matches the filter", async () => {
-        const root = renderComponent();
+        const { container: root } = renderShortcuts();
         await flush();
         const filterInput = root.querySelector<HTMLInputElement>("header input.form-control");
         if (!filterInput) return;
@@ -200,7 +161,7 @@ describe("ShortcutSettings", () => {
     });
 
     it("saves a new shortcut on blur, handling the +, escaping and trimming empties", async () => {
-        const root = renderComponent();
+        const { container: root } = renderShortcuts();
         await flush();
         const saveSpy = vi.spyOn(options, "save").mockResolvedValue(undefined);
 
@@ -217,7 +178,7 @@ describe("ShortcutSettings", () => {
     });
 
     it("reloads the frontend app when the reload button is clicked", async () => {
-        const root = renderComponent();
+        const { container: root } = renderShortcuts();
         await flush();
         const buttons = root.querySelectorAll<HTMLButtonElement>("footer button");
         expect(buttons.length).toBe(2);
@@ -227,7 +188,7 @@ describe("ShortcutSettings", () => {
 
     it("does not reset shortcuts when the confirm dialog is declined", async () => {
         (dialog.confirm as ReturnType<typeof vi.fn>).mockResolvedValue(false);
-        const root = renderComponent();
+        const { container: root } = renderShortcuts();
         await flush();
         const saveMany = vi.spyOn(options, "saveMany").mockResolvedValue(undefined);
 
@@ -240,7 +201,7 @@ describe("ShortcutSettings", () => {
     });
 
     it("resets only the shortcuts that differ from their defaults when confirmed", async () => {
-        const root = renderComponent();
+        const { container: root } = renderShortcuts();
         await flush();
         const saveMany = vi.spyOn(options, "saveMany").mockResolvedValue(undefined);
 
@@ -258,18 +219,18 @@ describe("ShortcutSettings", () => {
     });
 
     it("updates an effective shortcut from an entitiesReloaded option change", async () => {
-        const root = renderComponent();
+        const { container: root, parent } = renderShortcuts();
         await flush();
 
         options.load({ keyboardShortcutsJumpToNote: JSON.stringify([ "ctrl+x" ]) } as Record<OptionNames, string>);
-        fireTriliumEvent("entitiesReloaded", { loadResults: makeLoadResults([ "keyboardShortcutsJumpToNote" ]) });
+        fireTriliumEvent(parent, "entitiesReloaded", { loadResults: makeLoadResults({ optionNames: [ "keyboardShortcutsJumpToNote" ] }) });
 
         const editorInputs = root.querySelectorAll<HTMLInputElement>("tbody td input.form-control");
         expect(editorInputs[0].value).toBe("ctrl+x");
     });
 
     it("updates multiple effective shortcuts from a single entitiesReloaded event", async () => {
-        const root = renderComponent();
+        const { container: root, parent } = renderShortcuts();
         await flush();
 
         options.load({
@@ -277,8 +238,8 @@ describe("ShortcutSettings", () => {
             keyboardShortcutsQuickSearch: JSON.stringify([ "ctrl+y" ])
         } as Record<OptionNames, string>);
         // Two matching names in one event exercises the `if (!updatedShortcuts)` already-set branch.
-        fireTriliumEvent("entitiesReloaded", {
-            loadResults: makeLoadResults([ "keyboardShortcutsJumpToNote", "keyboardShortcutsQuickSearch" ])
+        fireTriliumEvent(parent, "entitiesReloaded", {
+            loadResults: makeLoadResults({ optionNames: [ "keyboardShortcutsJumpToNote", "keyboardShortcutsQuickSearch" ] })
         });
 
         const editorInputs = root.querySelectorAll<HTMLInputElement>("tbody td input.form-control");
@@ -287,17 +248,17 @@ describe("ShortcutSettings", () => {
     });
 
     it("ignores entitiesReloaded events with no option names or no matching shortcut prefix", async () => {
-        const root = renderComponent();
+        const { container: root, parent } = renderShortcuts();
         await flush();
         const before = root.querySelectorAll<HTMLInputElement>("tbody td input.form-control")[0].value;
 
         // No option names -> early return.
-        fireTriliumEvent("entitiesReloaded", { loadResults: makeLoadResults([]) });
+        fireTriliumEvent(parent, "entitiesReloaded", { loadResults: makeLoadResults({ optionNames: [] }) });
         // Non-shortcut option name -> continue, no update.
-        fireTriliumEvent("entitiesReloaded", { loadResults: makeLoadResults([ "theme" ]) });
+        fireTriliumEvent(parent, "entitiesReloaded", { loadResults: makeLoadResults({ optionNames: [ "theme" ] }) });
         // Shortcut option whose action is not among the loaded actions -> no matching shortcut.
         options.load({ keyboardShortcutsDeleteNotes: JSON.stringify([ "del" ]) } as Record<OptionNames, string>);
-        fireTriliumEvent("entitiesReloaded", { loadResults: makeLoadResults([ "keyboardShortcutsDeleteNotes" ]) });
+        fireTriliumEvent(parent, "entitiesReloaded", { loadResults: makeLoadResults({ optionNames: [ "keyboardShortcutsDeleteNotes" ] }) });
 
         const after = root.querySelectorAll<HTMLInputElement>("tbody td input.form-control")[0].value;
         expect(after).toBe(before);

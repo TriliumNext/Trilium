@@ -14,7 +14,7 @@ vi.mock("../../react/NoteAutocomplete", () => ({
 
 import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
-import { flush } from "../../../test/render-hook";
+import { flush, resetFroca } from "../../../test/render";
 import { buildColumnDefinitions, restoreExistingData } from "./columns";
 
 // --- Helpers -------------------------------------------------------------------------------------
@@ -59,20 +59,13 @@ function findField(defs: ColumnDefinition[], field: string): ColumnDefinition | 
     return defs.find((d) => d.field === field);
 }
 
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-}
-
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     vi.clearAllMocks();
 });
 
 afterEach(() => {
-    clearFroca();
-    vi.restoreAllMocks();
+    resetFroca();
 });
 
 // --- buildColumnDefinitions: base columns --------------------------------------------------------

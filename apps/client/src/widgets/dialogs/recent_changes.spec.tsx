@@ -1,10 +1,11 @@
 import { RecentChangeRow } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// NOTE: keep the local bootstrap mock — this dialog's Modal relies on `Modal.getOrCreateInstance`
+// and the tooltip on `getOrCreateInstance`/`update`, which the shared `bootstrapMock()` does not provide.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -54,27 +55,17 @@ import server from "../../services/server";
 import toast from "../../services/toast";
 import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { renderComponent, resetFroca } from "../../test/render";
 import RecentChangesDialog from "./recent_changes";
 
 // --- Render harness (full component inside the Trilium parent provider) ---------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderDialog() {
-    const localParent = new Component();
-    const localContainer = document.createElement("div");
-    parent = localParent;
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    act(() => render(
-        <ParentComponent.Provider value={localParent}>
-            <RecentChangesDialog />
-        </ParentComponent.Provider>,
-        localContainer
-    ));
-    return localContainer;
+    const result = renderComponent(<RecentChangesDialog />);
+    parent = result.parent;
+    return result.container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -104,16 +95,16 @@ function makeChange(overrides: Partial<RecentChangeRow> = {}): RecentChangeRow {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
+    // `server.get`/`post` are plain (non-spy) functions on the shared mock — replace with spies so
+    // each test can drive the response and assert calls. `put` is already a vi.fn on the shared mock.
     Object.assign(server, {
         get: vi.fn(async () => []),
-        post: vi.fn(async () => undefined),
-        put: vi.fn(async () => undefined)
+        post: vi.fn(async () => undefined)
     });
-    Object.assign(ws, { waitForMaxKnownEntityChangeId: vi.fn(async () => undefined), logError: vi.fn() });
+    // `waitForMaxKnownEntityChangeId` is not part of the shared ws mock — provide it locally.
+    Object.assign(ws, { waitForMaxKnownEntityChangeId: vi.fn(async () => undefined) });
     // The component preloads notes via froca.getNotes(ids, true); for non-cached (deleted) notes
     // this would hit the (throwing) mock server. Stub it as a no-op so rendering relies purely on
     // notes already injected via easy-froca and getNoteFromCache.
@@ -123,11 +114,6 @@ beforeEach(() => {
     (link.createLink as ReturnType<typeof vi.fn>).mockImplementation(
         async (notePath: string, opts: { title?: string }) => $(`<a class="reference-link" href="#${notePath}">${opts?.title ?? notePath}</a>`)
     );
-});
-
-afterEach(() => {
-    if (container) { act(() => render(null, container ?? document.createElement("div"))); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

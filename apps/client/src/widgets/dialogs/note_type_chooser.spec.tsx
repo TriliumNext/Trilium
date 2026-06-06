@@ -1,9 +1,9 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MenuItem } from "../../menus/context_menu";
 import type { TreeCommandNames } from "../../menus/tree_context_menu";
+import { flush, renderComponent } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -68,33 +68,21 @@ vi.mock("../../services/note_types", () => ({
     default: { getNoteTypeItems: vi.fn(async () => []) }
 }));
 
-import Component from "../../components/component";
 import note_types from "../../services/note_types";
-import { ParentComponent } from "../react/react_utils";
 import NoteTypeChooserDialogComponent, { type ChooseNoteTypeResponse } from "./note_type_chooser";
 
 const getNoteTypeItems = note_types.getNoteTypeItems as ReturnType<typeof vi.fn>;
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-let parent: Component | undefined;
+let fireEvent: (name: string, data: unknown) => void = () => {};
 
 function renderDialog() {
-    const p = new Component();
-    const c = document.createElement("div");
-    parent = p;
-    container = c;
-    document.body.appendChild(c);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={p}>
-                <NoteTypeChooserDialogComponent />
-            </ParentComponent.Provider>,
-            c
-        );
+    const { container, parent } = renderComponent(<NoteTypeChooserDialogComponent />);
+    fireEvent = (name, data) => act(() => {
+        (parent.handleEventInChildren as (n: string, d: unknown) => void)(name, data);
     });
-    return c;
+    return container;
 }
 
 function dispatch(el: EventTarget | null | undefined, event: Event) {
@@ -104,16 +92,6 @@ function dispatch(el: EventTarget | null | undefined, event: Event) {
 
 function fireModalEvent(root: HTMLElement, eventName: string) {
     dispatch(root.querySelector<HTMLElement>(".modal.note-type-chooser-dialog"), new Event(eventName));
-}
-
-function fireEvent(name: string, data: unknown) {
-    act(() => {
-        (parent?.handleEventInChildren as (n: string, d: unknown) => void)(name, data);
-    });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }
 
 function getModal(root: HTMLElement) {
@@ -149,16 +127,6 @@ beforeEach(() => {
     vi.clearAllMocks();
     autocompleteOnChange = undefined;
     getNoteTypeItems.mockResolvedValue([]);
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container ?? document.createElement("div")); });
-        container.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

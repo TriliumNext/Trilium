@@ -1,9 +1,11 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the imports) -----------------------------------------------------
 
+// NOTE: the shared `bootstrapMock` only exposes getInstance/show/hide/dispose/toggle. This spec's
+// help-dropdown relies on `Dropdown.getOrCreateInstance` and `Dropdown.update`, so we keep the local
+// mock unchanged.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -60,21 +62,15 @@ vi.mock("../../services/utils", async (importOriginal) => ({
     openInAppHelpFromUrl: vi.fn()
 }));
 
-import Component from "../../components/component";
 import attributes, { removeOwnedAttributesByNameOrType } from "../../services/attributes";
-import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import { openInAppHelpFromUrl } from "../../services/utils";
-import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { flush } from "../../test/render-hook";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import { SEARCH_OPTIONS, SearchOption } from "./SearchDefinitionOptions";
 
 // --- Render helper --------------------------------------------------------------------------------
-
-let container: HTMLElement | undefined;
 
 function findOption(attributeName: string): SearchOption {
     const option = SEARCH_OPTIONS.find((o) => o.attributeName === attributeName);
@@ -89,18 +85,11 @@ function renderOption(attributeName: string, props: {
 }) {
     const option = findOption(attributeName);
     const OptionComponent = option.component;
-    container = document.createElement("div");
-    document.body.appendChild(container);
 
     // The option components return <tr> rows, so host them inside a real table for valid DOM.
-    const table = document.createElement("table");
-    const tbody = document.createElement("tbody");
-    table.appendChild(tbody);
-    container.appendChild(table);
-
-    act(() => {
-        render(
-            <ParentComponent.Provider value={new Component()}>
+    const { container } = renderComponent(
+        <table>
+            <tbody>
                 <OptionComponent
                     note={props.note}
                     refreshResults={props.refreshResults ?? (() => {})}
@@ -110,22 +99,19 @@ function renderOption(attributeName: string, props: {
                     defaultValue={option.defaultValue}
                     error={props.error}
                 />
-            </ParentComponent.Provider>,
-            tbody
-        );
-    });
+            </tbody>
+        </table>
+    );
+    const tbody = container.querySelector("tbody");
+    if (!tbody) throw new Error("Failed to render option tbody");
     return tbody;
 }
 
 let previousTooltipPlugin: unknown;
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     // ActionButton/Dropdown static tooltips call $el.tooltip(); provide a no-op jQuery plugin.
     const fn = $.fn as unknown as Record<string, unknown>;
     previousTooltipPlugin = fn.tooltip;
@@ -133,14 +119,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
     const fn = $.fn as unknown as Record<string, unknown>;
     fn.tooltip = previousTooltipPlugin;
-    vi.restoreAllMocks();
 });
 
 // --- The exported metadata ------------------------------------------------------------------------

@@ -1,7 +1,9 @@
 import { render } from "preact";
 import { useContext } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -116,20 +118,10 @@ vi.mock("leaflet", () => {
 // Stub a controllable ResizeObserver so useElementSize fires deterministically.
 const resizeObservers: Array<{ cb: () => void; observe: ReturnType<typeof vi.fn>; unobserve: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn> }> = [];
 
-import { ComponentChildren } from "preact";
-
 import { MAP_LAYERS, type MapLayer } from "./map_layer";
 import Map, { ParentMap } from "./map";
 
 // --- Helpers --------------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: ComponentChildren) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
 
 const rasterLayer = MAP_LAYERS["openstreetmap"];
 const vectorDarkLayer = MAP_LAYERS["versatiles-eclipse"];
@@ -181,15 +173,6 @@ beforeEach(() => {
         }
     }
     Object.assign(window, { ResizeObserver: FakeResizeObserver });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -273,14 +256,11 @@ describe("Map (geomap)", () => {
     });
 
     it("adds a scale control only when scale is enabled", () => {
-        renderInto(<Map {...baseProps({ scale: false })} />);
+        const root = renderInto(<Map {...baseProps({ scale: false })} />);
         expect(created.scaleControls.length).toBe(0);
 
-        if (container) {
-            act(() => render(null, container as HTMLDivElement));
-            container.remove();
-            container = undefined;
-        }
+        act(() => render(null, root));
+        root.remove();
 
         renderInto(<Map {...baseProps({ scale: true })} />);
         expect(created.scaleControls.length).toBe(1);
@@ -321,15 +301,12 @@ describe("Map (geomap)", () => {
     });
 
     it("tears down the map and its handlers on unmount", () => {
-        renderInto(<Map {...baseProps({ scale: true, onClick: vi.fn() })} />);
+        const root = renderInto(<Map {...baseProps({ scale: true, onClick: vi.fn() })} />);
         const map = created.maps[0];
         const scaleCtrl = created.scaleControls[0];
         const tile = created.tileLayers[0];
-        if (container) {
-            act(() => render(null, container as HTMLDivElement));
-            container.remove();
-            container = undefined;
-        }
+        act(() => render(null, root));
+        root.remove();
         expect(map.off).toHaveBeenCalledWith();
         expect(map.remove).toHaveBeenCalled();
         expect(scaleCtrl.remove).toHaveBeenCalled();

@@ -1,7 +1,7 @@
 import type { AttributeRow, DeleteNotesPreview } from "@triliumnext/commons";
-import { type ComponentChildren, render, type VNode } from "preact";
+import { type ComponentChildren, type VNode } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -54,29 +54,20 @@ vi.mock("react-window", () => ({
 }));
 
 import Component from "../../components/component";
-import froca from "../../services/froca";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
+import froca from "../../services/froca";
 import DeleteNotesDialog from "./delete_notes";
 
 // --- Harness -------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderDialog() {
-    parent = new Component();
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => render(
-        <ParentComponent.Provider value={parent}>
-            <DeleteNotesDialog />
-        </ParentComponent.Provider>,
-        root
-    ));
-    return root;
+    const { container, parent: renderedParent } = renderComponent(<DeleteNotesDialog />);
+    parent = renderedParent;
+    return container;
 }
 
 function fireShow(opts: unknown) {
@@ -86,34 +77,14 @@ function fireShow(opts: unknown) {
     });
 }
 
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
 function setPreview(preview: DeleteNotesPreview) {
     Object.assign(server, { post: vi.fn(async () => preview) });
 }
 
-function getRoot() {
-    if (!container) throw new Error("not rendered");
-    return container;
-}
-
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     setPreview({ noteIdsToBeDeleted: [], brokenRelations: [] });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container ?? document.createElement("div")));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

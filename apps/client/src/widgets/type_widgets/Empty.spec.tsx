@@ -1,6 +1,4 @@
-import { render } from "preact";
-import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -56,25 +54,15 @@ import note_autocomplete from "../../services/note_autocomplete";
 import search from "../../services/search";
 import { isMobile } from "../../services/utils";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import Empty from "./Empty";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
 function renderEmpty(props: { ntxId?: string | null | undefined } = {}, parent: Component | null = null) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <Empty ntxId={props.ntxId} note={undefined as never} viewScope={undefined} parentComponent={undefined} noteContext={undefined} />
-            </ParentComponent.Provider>
-        ), target);
-    });
-    return target;
+    return renderComponent((
+        <Empty ntxId={props.ntxId} note={undefined as never} viewScope={undefined} parentComponent={undefined} noteContext={undefined} />
+    ), { parent: parent as Component }).container;
 }
 
 const isMobileMock = isMobile as ReturnType<typeof vi.fn>;
@@ -84,20 +72,11 @@ const getActiveMock = appContext.tabManager.getActiveContext as ReturnType<typeo
 const triggerCommandMock = appContext.triggerCommand as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
+    resetFroca();
     vi.clearAllMocks();
     isMobileMock.mockReturnValue(false);
     searchMock.mockResolvedValue([]);
     capturedAutocompleteProps = undefined;
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -105,7 +84,7 @@ afterEach(() => {
 describe("Empty (desktop)", () => {
     it("renders the workspace switcher and the desktop note search; shows recent notes on mount", async () => {
         const root = renderEmpty({ ntxId: "ntx1" });
-        await act(async () => { await Promise.resolve(); });
+        await flush();
 
         // Desktop search path renders the FormGroup + autocomplete stub + results container.
         expect(root.querySelector(".form-group-stub")).toBeTruthy();
@@ -123,7 +102,7 @@ describe("Empty (desktop)", () => {
         const setNote = vi.fn();
         getByIdMock.mockReturnValue({ setNote });
         renderEmpty({ ntxId: "ctx-a" });
-        await act(async () => { await Promise.resolve(); });
+        await flush();
 
         const onChange = capturedAutocompleteProps?.onChange as (s: Suggestion | null) => unknown;
         onChange({ notePath: "root/abc" });
@@ -138,7 +117,7 @@ describe("Empty (desktop)", () => {
         getByIdMock.mockReturnValue(undefined);
         getActiveMock.mockReturnValue({ setNote });
         renderEmpty({ ntxId: null });
-        await act(async () => { await Promise.resolve(); });
+        await flush();
 
         const onChange = capturedAutocompleteProps?.onChange as (s: Suggestion | null) => unknown;
         onChange({ notePath: "root/xyz" });
@@ -151,7 +130,7 @@ describe("Empty (desktop)", () => {
         getByIdMock.mockReturnValue(undefined);
         getActiveMock.mockReturnValue(null);
         renderEmpty({ ntxId: "ctx-b" });
-        await act(async () => { await Promise.resolve(); });
+        await flush();
 
         const onChange = capturedAutocompleteProps?.onChange as (s: Suggestion | null) => unknown;
         // No suggestion at all -> early return false.
@@ -191,7 +170,7 @@ describe("WorkspaceSwitcher", () => {
         const triggerOnParent = vi.spyOn(parent, "triggerCommand").mockResolvedValue(undefined as never);
 
         const root = renderEmpty({ ntxId: "ntx1" }, parent);
-        await act(async () => { await Promise.resolve(); });
+        await flush();
 
         const notes = root.querySelectorAll(".workspace-note");
         expect(notes.length).toBe(2);
@@ -207,7 +186,7 @@ describe("WorkspaceSwitcher", () => {
     it("renders no entries before/when the search resolves empty, and tolerates a missing parent", async () => {
         searchMock.mockResolvedValue([]);
         const root = renderEmpty({ ntxId: "ntx1" }, null);
-        await act(async () => { await Promise.resolve(); });
+        await flush();
 
         const switcher = root.querySelector(".workspace-notes");
         expect(switcher).toBeTruthy();
@@ -218,7 +197,7 @@ describe("WorkspaceSwitcher", () => {
         const ws1 = buildNote({ id: "wsSolo", title: "Solo" });
         searchMock.mockResolvedValue([ ws1 ]);
         const root = renderEmpty({ ntxId: "ntx1" }, null);
-        await act(async () => { await Promise.resolve(); });
+        await flush();
 
         const note = root.querySelector(".workspace-note");
         expect(note).toBeTruthy();

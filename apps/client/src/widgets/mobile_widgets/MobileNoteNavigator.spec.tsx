@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) -------------------------------------------
 
@@ -13,18 +14,7 @@ vi.mock("../collections/legacy/ListOrGridView", () => ({
         return <div className="mock-note-content" />;
     }
 }));
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../../services/note_create", () => ({
     default: { createNote: vi.fn(async () => undefined) }
 }));
@@ -50,37 +40,23 @@ import contextMenu from "../../menus/context_menu";
 import { buildTreeContextMenuItems, handleTreeContextMenuSelect } from "../../menus/tree_context_menu";
 import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
-import noteAttributeCache from "../../services/note_attribute_cache";
 import note_create from "../../services/note_create";
 import options from "../../services/options";
 import tree from "../../services/tree";
 import utils from "../../services/utils";
 import { buildNote } from "../../test/easy-froca";
-import { makeLoadResults } from "../../test/render-hook";
-import { ParentComponent } from "../react/react_utils";
+import { flush, makeLoadResults, renderComponent, resetFroca } from "../../test/render";
 import MobileNoteNavigator from "./MobileNoteNavigator";
 import FBranch from "../../entities/fbranch";
 import type { OptionNames } from "@triliumnext/commons";
 
 // --- Render harness ------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 /** Render the navigator inside the ParentComponent provider (the same wiring react_utils uses). */
 function renderNavigator() {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <MobileNoteNavigator />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    return renderComponent(<MobileNoteNavigator />, { parent }).container;
 }
 
 /** Dispatch a Trilium event to the navigator's `useTriliumEvent` handlers. */
@@ -88,10 +64,6 @@ function fireEvent(name: string, data: unknown) {
     act(() => {
         (parent.handleEventInChildren as unknown as (n: string, d: unknown) => void)(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 }
 
 /** Drain several async effect/commit cycles (drill/back go through a pending-stack handshake). */
@@ -134,23 +106,13 @@ function fakeContext(overrides: Record<string, unknown> = {}): NoteContext {
     } as unknown as NoteContext;
 }
 
-let originalAnimate: unknown;
-
 beforeEach(() => {
     previewControl.fireReady = true;
     parent = new Component();
     parent.triggerCommand = vi.fn();
 
-    // happy-dom has no Element.animate; the slide-in layoutEffect calls it on every drill/back commit.
-    const proto = window.HTMLElement.prototype as unknown as { animate?: unknown };
-    originalAnimate = proto.animate;
-    proto.animate = vi.fn(() => ({ cancel: vi.fn(), finish: vi.fn() }));
     options.load({} as Record<OptionNames, string>);
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    // easy-froca seeds this global cache; stale entries (e.g. #subtreeHidden on a re-used id) leak otherwise.
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
+    resetFroca();
 
     // Async froca methods the navigator drives — make them resolve against the easy-froca cache.
     vi.spyOn(froca, "loadSubTree").mockResolvedValue([] as never);
@@ -162,17 +124,6 @@ beforeEach(() => {
     );
 
     setActiveContext(null);
-});
-
-afterEach(() => {
-    if (container) {
-        const el = container;
-        act(() => { render(null, el); });
-        el.remove();
-        container = undefined;
-    }
-    (window.HTMLElement.prototype as unknown as { animate?: unknown }).animate = originalAnimate;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

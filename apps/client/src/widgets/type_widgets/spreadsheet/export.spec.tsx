@@ -1,6 +1,6 @@
 import { FUniver } from "@univerjs/presets";
 import { MutableRef } from "preact/hooks";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the hook import) -------------------------------------------------
 
@@ -15,11 +15,10 @@ vi.mock("@triliumnext/commons/src/lib/spreadsheet/render_to_csv", () => ({ rende
 
 vi.mock("../../../services/toast", () => ({ default: { showError: vi.fn() } }));
 
-import NoteContext from "../../../components/note_context";
 import toast from "../../../services/toast";
 import utils from "../../../services/utils";
 import { buildNote } from "../../../test/easy-froca";
-import { flush, renderHook } from "../../../test/render-hook";
+import { fakeNoteContext, flush, renderHook } from "../../../test/render";
 import useSpreadsheetExport from "./export";
 
 // --- Helpers --------------------------------------------------------------------------------------
@@ -41,10 +40,6 @@ function fakeApi(opts: {
     } as unknown as FUniver;
 }
 
-function fakeNoteContext(ntxId: string | undefined): NoteContext {
-    return { ntxId } as unknown as NoteContext;
-}
-
 /**
  * The export chain spans several macrotasks (dynamic import → renderer → FileReader → download),
  * so a single `flush()` won't drain it; flush repeatedly until it settles.
@@ -64,17 +59,13 @@ beforeEach(() => {
     vi.spyOn(utils, "triggerDownload").mockImplementation(() => {});
 });
 
-afterEach(() => {
-    vi.restoreAllMocks();
-});
-
 // --------------------------------------------------------------------------------------------------
 
 describe("useSpreadsheetExport", () => {
     it("ignores export events meant for a different note context", async () => {
         const note = buildNote({ id: "sx1", title: "Sheet", type: "doc" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi() };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntxA")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntxA" })));
 
         harness.fireEvent("exportXlsx", { ntxId: "other" });
         harness.fireEvent("exportCsv", { ntxId: "other" });
@@ -102,7 +93,7 @@ describe("XLSX export", () => {
     it("does nothing when there is no active workbook to serialize", async () => {
         const note = buildNote({ id: "sx3", title: "NoWb" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi({ noWorkbook: true }) };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportXlsx", { ntxId: "ntx1" });
         await settle();
@@ -114,7 +105,7 @@ describe("XLSX export", () => {
     it("does nothing when the api ref is empty", async () => {
         const note = buildNote({ id: "sx3b", title: "NoApi" });
         const apiRef: MutableRef<FUniver | undefined> = { current: undefined };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportXlsx", { ntxId: "ntx1" });
         await settle();
@@ -126,7 +117,7 @@ describe("XLSX export", () => {
         const save = () => ({ version: 1, foo: "bar" });
         const note = buildNote({ id: "sx4", title: "My Sheet" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi({ save }) };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportXlsx", { ntxId: "ntx1" });
         await settle();
@@ -143,7 +134,7 @@ describe("XLSX export", () => {
     it("falls back to a default filename when the note has no title", async () => {
         const note = buildNote({ id: "sx5", title: "" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi() };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportXlsx", { ntxId: "ntx1" });
         await settle();
@@ -157,7 +148,7 @@ describe("XLSX export", () => {
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
         const note = buildNote({ id: "sx6", title: "Sheet" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi() };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportXlsx", { ntxId: "ntx1" });
         await settle();
@@ -172,7 +163,7 @@ describe("CSV export", () => {
     it("does nothing when there is no active workbook", async () => {
         const note = buildNote({ id: "sc1", title: "NoWb" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi({ noWorkbook: true }) };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportCsv", { ntxId: "ntx1" });
         await settle();
@@ -185,7 +176,7 @@ describe("CSV export", () => {
         const save = () => ({ sheetOrder: [ "s1", "s2" ], sheets: { s1: {}, s2: { hidden: 1 } } as Sheets });
         const note = buildNote({ id: "sc2", title: "Data" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi({ save, activeSheetId: "s1" }) };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportCsv", { ntxId: "ntx1" });
         await settle();
@@ -205,7 +196,7 @@ describe("CSV export", () => {
         const save = () => ({ sheetOrder: [ "s1" ], sheets: { s1: {} } as Sheets });
         const note = buildNote({ id: "sc3", title: "Data" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi({ save }) };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportCsv", { ntxId: "ntx1" });
         await settle();
@@ -217,7 +208,7 @@ describe("CSV export", () => {
         const save = () => ({ sheetOrder: [ "s1", "s2" ], sheets: { s1: {}, s2: {} } as Sheets });
         const note = buildNote({ id: "sc4", title: "Multi" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi({ save, activeSheetId: "s1" }) };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportCsv", { ntxId: "ntx1" });
         await settle();
@@ -234,7 +225,7 @@ describe("CSV export", () => {
         const save = () => ({ sheets: { a: {}, b: {} } as Sheets });
         const note = buildNote({ id: "sc5", title: "Fallback" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi({ save }) };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportCsv", { ntxId: "ntx1" });
         await settle();
@@ -247,7 +238,7 @@ describe("CSV export", () => {
         const save = () => ({});
         const note = buildNote({ id: "sc6", title: "Empty" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi({ save }) };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportCsv", { ntxId: "ntx1" });
         await settle();
@@ -261,7 +252,7 @@ describe("CSV export", () => {
         const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
         const note = buildNote({ id: "sc7", title: "Sheet" });
         const apiRef: MutableRef<FUniver | undefined> = { current: fakeApi() };
-        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext("ntx1")));
+        const harness = renderHook(() => useSpreadsheetExport(apiRef, note, fakeNoteContext({ ntxId: "ntx1" })));
 
         harness.fireEvent("exportCsv", { ntxId: "ntx1" });
         await settle();

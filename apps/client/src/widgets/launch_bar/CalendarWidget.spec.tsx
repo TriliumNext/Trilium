@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -50,24 +49,18 @@ vi.mock("../../services/keyboard_actions", () => ({
 
 import appContext from "../../components/app_context";
 import date_notes from "../../services/date_notes";
-import froca from "../../services/froca";
 import search from "../../services/search";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
+import { renderInto, resetFroca } from "../../test/render";
 import CalendarWidget from "./CalendarWidget";
 
 // --- Render harness (act-aware, with provider context) --------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
 function renderWidget(launcherNoteId = "launcher") {
     const launcherNote = buildNote({ id: launcherNoteId, title: "Calendar", "#iconClass": "bx bx-calendar" });
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => { render(<CalendarWidget launcherNote={launcherNote} />, root); });
-    return root;
+    return renderInto(<CalendarWidget launcherNote={launcherNote} />);
 }
 
 /** Fires the jQuery `show.bs.dropdown` event the Dropdown component listens for, opening the menu. */
@@ -102,23 +95,14 @@ function setActiveContext(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), get: vi.fn(async () => []) });
+    // `server.get` is mocked here (rather than via the global shared mock) so each test can
+    // configure resolved values and assert call arguments.
+    Object.assign(server, { get: vi.fn(async () => []) });
     // The bootstrap-backed `useTooltip` hook calls `$el.tooltip(...)`; provide a no-op jQuery plugin.
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     setActiveContext();
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { if (container) render(null, container); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Closed (initial) render ----------------------------------------------------------------------

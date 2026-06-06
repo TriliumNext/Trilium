@@ -1,10 +1,13 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { flush, renderComponent } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
 // The real bootstrap Modal/Tooltip machinery does not behave under happy-dom; provide inert stubs.
+// (Kept local: the dialog's Modal uses BootstrapModal.getOrCreateInstance, which the shared
+// bootstrapMock does not provide.)
 vi.mock("bootstrap", () => {
     class Modal {
         static getOrCreateInstance() { return new Modal(); }
@@ -35,9 +38,8 @@ vi.mock("../../services/link_embed", () => {
     return { default: { fetchMetadata: fetchMetadataMock }, fetchMetadata: fetchMetadataMock };
 });
 
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import linkEmbedService from "../../services/link_embed";
-import { ParentComponent } from "../react/react_utils";
 import LinkEmbedDialog from "./link_embed";
 import type { CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
 
@@ -45,24 +47,12 @@ const fetchMetadata = vi.mocked(linkEmbedService.fetchMetadata);
 
 // --- Render harness for the full dialog -----------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderDialog() {
-    const p = new Component();
-    const c = document.createElement("div");
-    parent = p;
-    container = c;
-    document.body.appendChild(c);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={p}>
-                <LinkEmbedDialog />
-            </ParentComponent.Provider>,
-            c
-        );
-    });
-    return c;
+    const result = renderComponent(<LinkEmbedDialog />);
+    parent = result.parent;
+    return result.container;
 }
 
 /** Dispatch a DOM event inside `act` without leaking the boolean return value (typing). */
@@ -75,10 +65,6 @@ function fireEvent(name: string, data: unknown) {
     act(() => {
         (parent?.handleEventInChildren as (n: string, d: unknown) => void)(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }
 
 function getModal(root: HTMLElement) {
@@ -136,18 +122,9 @@ function openDialog(editorApi: CKEditorApi) {
 }
 
 beforeEach(() => {
+    parent = undefined;
     vi.clearAllMocks();
     fetchMetadata.mockImplementation(async (url: string) => ({ url, embedType: "opengraph", title: url }));
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container ?? document.createElement("div")); });
-        container.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

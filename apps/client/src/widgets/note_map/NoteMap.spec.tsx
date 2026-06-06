@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -67,11 +66,10 @@ vi.mock("../react/hooks", async (importOriginal) => ({
 import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import attributes from "../../services/attributes";
-import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
 import noteAttributeCache from "../../services/note_attribute_cache";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import NoteMap from "./NoteMap";
 import type { NotesAndRelationsData } from "./data";
 
@@ -85,48 +83,32 @@ function makeData(nodeCount: number): NotesAndRelationsData {
     };
 }
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderNoteMap(props: { noteId: string; widgetMode: "ribbon" | "hoisted" | "type"; labels?: Record<string, string> }) {
     const note = buildNote({ id: props.noteId, title: "Map", ...(props.labels ?? {}) });
     const parentEl = document.createElement("div");
     const parentRef = { current: parentEl };
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
 
-    act(() => render((
-        <ParentComponent.Provider value={parent}>
-            <NoteMap note={note} widgetMode={props.widgetMode} parentRef={parentRef} />
-        </ParentComponent.Provider>
-    ), target));
+    const rendered = renderComponent(
+        <NoteMap note={note} widgetMode={props.widgetMode} parentRef={parentRef} />,
+        { parent }
+    );
 
-    return { note, container: target };
+    return { note, ...rendered };
 }
 
 function fireEvent(name: string, data: unknown) {
     act(() => { (parent.handleEventInChildren as (n: string, d: unknown) => void)(name, data); });
 }
 
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
 beforeEach(() => {
     parent = new Component();
     graphs.length = 0;
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     loadNotesAndRelations.mockResolvedValue(makeData(2));
     Object.assign(appContext, { tabManager: { getActiveContext: () => null } });
-});
-
-afterEach(() => {
-    if (container) { render(null, container); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -319,12 +301,11 @@ describe("NoteMap", () => {
         let resolveLoad: (data: NotesAndRelationsData) => void = () => undefined;
         loadNotesAndRelations.mockReturnValue(new Promise<NotesAndRelationsData>((resolve) => { resolveLoad = resolve; }));
 
-        renderNoteMap({ noteId: "unmountNote", widgetMode: "ribbon" });
+        const { unmount } = renderNoteMap({ noteId: "unmountNote", widgetMode: "ribbon" });
         expect(graphs.length).toBe(1);
 
         // Unmount → the build effect cleanup runs and containerRef.current becomes null.
-        const mounted = container;
-        if (mounted) { act(() => { render(null, mounted); }); mounted.remove(); container = undefined; }
+        unmount();
 
         // Now resolve the load: the `.then` guard sees the detached refs and returns early.
         resolveLoad(makeData(3));

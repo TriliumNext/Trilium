@@ -1,20 +1,11 @@
 import { ComponentChild, ComponentChildren } from "preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { bootstrapMock } from "../../test/mocks";
+
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip }, Modal: class {} };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 vi.mock("../../services/keyboard_actions", () => ({
     default: { getAction: vi.fn(async () => ({ effectiveShortcuts: [] })) }
@@ -69,7 +60,6 @@ vi.mock("../react/Modal", () => ({
     )
 }));
 
-import { render } from "preact";
 import { act } from "preact/test-utils";
 
 import appContext from "../../components/app_context";
@@ -77,31 +67,20 @@ import type NoteContext from "../../components/note_context";
 import { getHue } from "../../services/css_class_manager";
 import keyboard_actions from "../../services/keyboard_actions";
 import { buildNote } from "../../test/easy-froca";
-import froca from "../../services/froca";
-import { ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, renderComponent, resetFroca } from "../../test/render";
 import Component from "../../components/component";
 import TabSwitcher from "./TabSwitcher";
 
 // --- Helpers --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let currentParent: Component | undefined;
 
+/** Renders through the shared helper (ParentComponent wrapper + auto-teardown) and captures the
+ * parent so `fireTriliumEvent` can dispatch events into the rendered tree. */
 function renderInto(vnode: ComponentChild) {
-    const el = document.createElement("div");
-    const parent = new Component();
-    container = el;
+    const { container, parent } = renderComponent(vnode);
     currentParent = parent;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                {vnode}
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    return container;
 }
 
 /** Dispatches a Trilium event through the ParentComponent rendered by the last `renderInto`. */
@@ -114,16 +93,15 @@ function fireTriliumEvent(name: string, data: unknown) {
 
 /** Minimal NoteContext-shaped object; only the fields TabSwitcher reads are implemented. */
 function fakeContext(overrides: Partial<Record<string, unknown>> = {}): NoteContext {
-    const base = {
-        ntxId: "ntx1",
+    const base = fakeNoteContext({
         note: null,
         hoistedNoteId: null,
         mainNtxId: null,
         viewScope: { viewMode: "default" },
-        isMainContext() { return !base.mainNtxId; },
+        isMainContext() { return !(base as Record<string, unknown>).mainNtxId; },
         getSubContexts() { return [ base ]; },
         getNavigationTitle: vi.fn(async () => null)
-    } as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
     Object.assign(base, overrides);
     return base as unknown as NoteContext;
 }
@@ -152,9 +130,7 @@ function launcherNote() {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     (keyboard_actions.getAction as ReturnType<typeof vi.fn>).mockResolvedValue({ effectiveShortcuts: [] });
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
@@ -162,17 +138,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => { render(null, el); });
-        el.remove();
-        container = undefined;
-    }
-    // Remove any portals appended to document.body.
+    // Remove any portals left appended to document.body (the shared teardown unmounts the owning
+    // tree, but guard against a stray portal if a test threw before unmount).
     for (const el of Array.from(document.body.querySelectorAll(".tab-bar-modal"))) {
         el.remove();
     }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

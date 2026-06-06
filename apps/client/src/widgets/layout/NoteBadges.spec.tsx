@@ -1,10 +1,11 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// NOTE: kept local (not `bootstrapMock()`) because this spec relies on
+// `Dropdown.getOrCreateInstance` / `Dropdown.update`, which the shared stub doesn't provide.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -46,58 +47,16 @@ vi.mock("../../services/utils", async (importOriginal) => ({
     isElectron: vi.fn(() => false)
 }));
 
-import type NoteContext from "../../components/note_context";
-import Component from "../../components/component";
 import { copyTextWithToast } from "../../services/clipboard_ext";
 import { goToLinkExt } from "../../services/link";
 import options from "../../services/options";
-import server from "../../services/server";
-import ws from "../../services/ws";
 import { isElectron } from "../../services/utils";
 import { buildNote } from "../../test/easy-froca";
 import froca from "../../services/froca";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, flush, renderComponent, resetFroca } from "../../test/render";
 import NoteBadges, { SaveStatusBadge } from "./NoteBadges";
 
 // --- Render harness --------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-let parent: Component | undefined;
-
-function renderWithContext(vnode: preact.ComponentChild, noteContext: NoteContext | null) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    const parentComponent = new Component();
-    parent = parentComponent;
-    act(() => render((
-        <ParentComponent.Provider value={parentComponent}>
-            <NoteContextContext.Provider value={noteContext}>
-                {vnode}
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), el));
-    return el;
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
-}
-
-/** A minimal NoteContext-shaped object; only the fields the badges read are implemented. */
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: "root/note1",
-        viewScope: { viewMode: "default" },
-        getContextData: vi.fn(() => undefined),
-        setContextData: vi.fn(),
-        clearContextData: vi.fn(),
-        isReadOnly: vi.fn(async () => false),
-        ...overrides
-    } as unknown as NoteContext;
-}
 
 function setOptions(values: Record<string, string>) {
     options.load(values as Record<OptionNames, string>);
@@ -105,36 +64,25 @@ function setOptions(values: Record<string, string>) {
 
 beforeEach(() => {
     setOptions({});
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined), remove: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     (isElectron as ReturnType<typeof vi.fn>).mockReturnValue(false);
     const tooltipPlugin = vi.fn();
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: tooltipPlugin });
-});
-
-afterEach(async () => {
-    await act(async () => {});
-    if (container) { render(null, container); container.remove(); container = undefined; }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- The container ---------------------------------------------------------------------------------
 
 describe("NoteBadges", () => {
     it("renders the badge container even with no note", () => {
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note: undefined }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note: undefined }) });
         expect(root.querySelector(".note-badges")).toBeTruthy();
         // Nothing applicable → no individual badges rendered.
         expect(root.querySelector(".ext-badge")).toBeNull();
     });
 
     it("renders without a note context at all (null provider)", () => {
-        const root = renderWithContext(<NoteBadges />, null);
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: null });
         expect(root.querySelector(".note-badges")).toBeTruthy();
     });
 });
@@ -145,7 +93,7 @@ describe("ReadOnlyBadge", () => {
     it("shows the auto read-only badge for a read-only note and toggles editing on click", async () => {
         const note = buildNote({ id: "roAuto", title: "RO" });
         const noteContext = fakeNoteContext({ note, isReadOnly: vi.fn(async () => true) });
-        const root = renderWithContext(<NoteBadges />, noteContext);
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext });
         await flush();
 
         const badge = root.querySelector(".read-only-badge");
@@ -168,7 +116,7 @@ describe("ReadOnlyBadge", () => {
     it("shows the explicit read-only badge when the note carries the readOnly label", async () => {
         const note = buildNote({ id: "roExplicit", title: "RO", "#readOnly": "true" });
         const noteContext = fakeNoteContext({ note, isReadOnly: vi.fn(async () => true) });
-        const root = renderWithContext(<NoteBadges />, noteContext);
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext });
         await flush();
         expect(root.querySelector(".read-only-badge .bx-lock-alt")).toBeTruthy();
     });
@@ -176,7 +124,7 @@ describe("ReadOnlyBadge", () => {
     it("renders no read-only badge when the note is editable", async () => {
         const note = buildNote({ id: "editable", title: "E" });
         const noteContext = fakeNoteContext({ note, isReadOnly: vi.fn(async () => false) });
-        const root = renderWithContext(<NoteBadges />, noteContext);
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext });
         await flush();
         expect(root.querySelector(".read-only-badge")).toBeNull();
         expect(root.querySelector(".temporarily-editable-badge")).toBeNull();
@@ -190,7 +138,7 @@ describe("ShareBadge", () => {
         buildNote({ id: "_share", title: "Shared root", children: [ { id: "sharedNote", title: "S" } ] });
         const note = froca.notes["sharedNote"];
         const noteContext = fakeNoteContext({ note });
-        const root = renderWithContext(<NoteBadges />, noteContext);
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext });
         await flush();
 
         const badge = root.querySelector(".share-badge");
@@ -221,7 +169,7 @@ describe("ShareBadge", () => {
         setOptions({ syncServerHost: "https://example.com" });
         buildNote({ id: "_share", title: "Shared root", children: [ { id: "sharedExt", title: "S" } ] });
         const note = froca.notes["sharedExt"];
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".share-badge .bx-world")).toBeTruthy();
     });
@@ -231,14 +179,14 @@ describe("ShareBadge", () => {
         setOptions({});
         buildNote({ id: "_share", title: "Shared root", children: [ { id: "sharedLocal", title: "S" } ] });
         const note = froca.notes["sharedLocal"];
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".share-badge .bx-share-alt")).toBeTruthy();
     });
 
     it("renders no share badge when the note is not shared", async () => {
         const note = buildNote({ id: "notShared", title: "N" });
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".share-badge")).toBeNull();
     });
@@ -249,7 +197,7 @@ describe("ShareBadge", () => {
 describe("ClippedNoteBadge", () => {
     it("renders a clipped-note badge linking to the pageUrl label", async () => {
         const note = buildNote({ id: "clipped", title: "C", "#pageUrl": "https://clipped.example" });
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
 
         const badge = root.querySelector(".clipped-note-badge");
@@ -260,7 +208,7 @@ describe("ClippedNoteBadge", () => {
 
     it("renders a doc-url badge for a help note with a docUrl label", async () => {
         const note = buildNote({ id: "_helpDoc", title: "Help", "#docUrl": "https://docs.example" });
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
 
         const badge = root.querySelector(".doc-url-badge");
@@ -272,7 +220,7 @@ describe("ClippedNoteBadge", () => {
 
     it("renders no clipped badge without a url label", async () => {
         const note = buildNote({ id: "noUrl", title: "N" });
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".clipped-note-badge")).toBeNull();
         expect(root.querySelector(".doc-url-badge")).toBeNull();
@@ -286,14 +234,14 @@ describe("ExecuteBadge", () => {
         const note = buildNote({ id: "scriptNote", title: "Script", type: "code", "#executeButton": "true" });
         Object.assign(note, { mime: "application/javascript;env=frontend" });
         const noteContext = fakeNoteContext({ note });
-        const root = renderWithContext(<NoteBadges />, noteContext);
+        const { container: root, parent } = renderComponent(<NoteBadges />, { noteContext });
         await flush();
 
         const badge = root.querySelector(".execute-badge");
         expect(badge).toBeTruthy();
         expect(badge?.querySelector(".bx-play")).toBeTruthy();
 
-        const triggerCommand = vi.spyOn(parent ?? new Component(), "triggerCommand").mockReturnValue(undefined);
+        const triggerCommand = vi.spyOn(parent, "triggerCommand").mockReturnValue(undefined);
         (badge as HTMLElement | null)?.click();
         expect(triggerCommand).toHaveBeenCalledWith("runActiveNote");
     });
@@ -301,7 +249,7 @@ describe("ExecuteBadge", () => {
     it("renders an execute-sql badge for an SQLite note with executeDescription", async () => {
         const note = buildNote({ id: "sqlNote", title: "SQL", type: "code", "#executeDescription": "Run it" });
         Object.assign(note, { mime: "text/x-sqlite;schema=trilium" });
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".execute-badge .bx-play")).toBeTruthy();
     });
@@ -309,14 +257,14 @@ describe("ExecuteBadge", () => {
     it("renders an execute-sql badge using the default SQL tooltip (no description)", async () => {
         const note = buildNote({ id: "sqlNoDesc", title: "SQL", type: "code", "#executeButton": "true" });
         Object.assign(note, { mime: "text/x-sqlite;schema=trilium" });
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".execute-badge .bx-play")).toBeTruthy();
     });
 
     it("renders no execute badge for a non-executable note", async () => {
         const note = buildNote({ id: "plain", title: "P", "#executeButton": "true" });
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".execute-badge")).toBeNull();
     });
@@ -324,7 +272,7 @@ describe("ExecuteBadge", () => {
     it("renders no execute badge for an executable note without description/button", async () => {
         const note = buildNote({ id: "scriptNoFlag", title: "S", type: "code" });
         Object.assign(note, { mime: "application/javascript;env=backend" });
-        const root = renderWithContext(<NoteBadges />, fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteBadges />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".execute-badge")).toBeNull();
     });
@@ -335,7 +283,7 @@ describe("ExecuteBadge", () => {
 describe("SaveStatusBadge", () => {
     function renderSaveBadge(saveState: unknown) {
         const noteContext = fakeNoteContext({ getContextData: vi.fn((key: string) => key === "saveState" ? saveState : undefined) });
-        return renderWithContext(<SaveStatusBadge />, noteContext);
+        return renderComponent(<SaveStatusBadge />, { noteContext }).container;
     }
 
     it("shows the initial save state and survives the debounce timer", () => {
@@ -371,7 +319,6 @@ describe("SaveStatusBadge", () => {
             } finally {
                 vi.useRealTimers();
             }
-            if (container) { render(null, container); container.remove(); container = undefined; }
         }
     });
 

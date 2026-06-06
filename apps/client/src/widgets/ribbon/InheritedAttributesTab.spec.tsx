@@ -1,4 +1,3 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -20,43 +19,21 @@ vi.mock("../attribute_widgets/attribute_detail", async () => {
 
 import FAttribute from "../../entities/fattribute";
 import type FNote from "../../entities/fnote";
-import attribute_renderer from "../../services/attribute_renderer";
 import froca from "../../services/froca";
-import Component from "../../components/component";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import InheritedAttributesTab from "./InheritedAttributesTab";
 
 // --- Render helper (renders the component inside a real ParentComponent) --------------------------
 
-let container: HTMLDivElement | undefined;
-let parent: Component | undefined;
-
 function renderTab(props: { note?: FNote; componentId?: string; emptyListString?: string }) {
-    const localContainer = document.createElement("div");
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    parent = new Component();
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent ?? null}>
-                <InheritedAttributesTab
-                    note={props.note ?? null}
-                    componentId={props.componentId ?? "comp-1"}
-                    emptyListString={props.emptyListString}
-                />
-            </ParentComponent.Provider>,
-            localContainer
-        );
-    });
-    return localContainer;
-}
-
-/** Settle the async renderAttribute() promise chain and the resulting re-render. */
-async function flush() {
-    await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-    });
+    return renderComponent(
+        <InheritedAttributesTab
+            note={props.note ?? null}
+            componentId={props.componentId ?? "comp-1"}
+            emptyListString={props.emptyListString}
+        />
+    );
 }
 
 /** Collect the FAttribute objects froca holds for the given owner note. */
@@ -74,31 +51,21 @@ function stubAttributes(note: FNote, attrs: FAttribute[]) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
 });
 
 afterEach(() => {
-    const localContainer = container;
-    if (localContainer) {
-        act(() => render(null, localContainer));
-        localContainer.remove();
-        container = undefined;
-    }
-    parent = undefined;
     // remove any portal content appended to document.body by createPortal
     for (const el of Array.from(document.body.querySelectorAll(".fake-attr-detail"))) {
         el.remove();
     }
-    vi.restoreAllMocks();
 });
 
 describe("InheritedAttributesTab", () => {
     it("renders the empty fallback when the note has no inherited attributes", () => {
         const note = buildNote({ id: "noInh", title: "N", "#archived": "true" });
-        const root = renderTab({ note });
+        const { container: root } = renderTab({ note });
 
         const list = root.querySelector(".inherited-attributes-container");
         expect(root.querySelector(".inherited-attributes-widget")).toBeTruthy();
@@ -108,13 +75,13 @@ describe("InheritedAttributesTab", () => {
     });
 
     it("uses the supplied emptyListString and tolerates a missing note", () => {
-        const withCustom = renderTab({ note: buildNote({ id: "e1", title: "E" }), emptyListString: "no_attrs" });
+        const { container: withCustom } = renderTab({ note: buildNote({ id: "e1", title: "E" }), emptyListString: "no_attrs" });
         // Custom emptyListString branch: still the fallback (no attribute spans).
         expect(withCustom.querySelector(".inherited-attributes-container")).toBeTruthy();
         expect(withCustom.querySelector(".inherited-attributes-container span")).toBeNull();
 
         // note=null: refresh() returns early, list stays empty, no crash.
-        const noNote = renderTab({ note: undefined });
+        const { container: noNote } = renderTab({ note: undefined });
         expect(noNote.querySelector(".inherited-attributes-container")).toBeTruthy();
         expect(noNote.querySelector(".inherited-attributes-container span")).toBeNull();
     });
@@ -134,7 +101,7 @@ describe("InheritedAttributesTab", () => {
         const note = buildNote({ id: "child", title: "Child" });
         stubAttributes(note, combined);
 
-        const root = renderTab({ note });
+        const { container: root } = renderTab({ note });
         await flush();
 
         const spans = root.querySelectorAll(".inherited-attributes-container > span");
@@ -173,7 +140,7 @@ describe("InheritedAttributesTab", () => {
         const note = buildNote({ id: "sortChild", title: "S" });
         stubAttributes(note, mixed);
 
-        const root = renderTab({ note });
+        const { container: root } = renderTab({ note });
         await flush();
 
         const spans = root.querySelectorAll(".inherited-attributes-container > span");
@@ -188,7 +155,7 @@ describe("InheritedAttributesTab", () => {
             const note = buildNote({ id: "clickChild", title: "CC" });
             stubAttributes(note, attrs);
 
-            const root = renderTab({ note });
+            const { container: root } = renderTab({ note });
             // settle the renderAttribute promise under fake timers
             await act(async () => {
                 await vi.runOnlyPendingTimersAsync();
@@ -225,7 +192,7 @@ describe("InheritedAttributesTab", () => {
         note.getAttributes = (type?: string, name?: string) =>
             currentAttrs.filter((attr) => (!type || attr.type === type) && (!name || attr.name === name));
 
-        const root = renderTab({ note, componentId: "comp-x" });
+        const { container: root, parent } = renderTab({ note, componentId: "comp-x" });
         await flush();
         expect(root.querySelector(".inherited-attributes-container > span")).toBeNull();
 

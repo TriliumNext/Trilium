@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -70,26 +71,18 @@ vi.mock("./retry_image.js", () => ({
     SafeImage: ({ src, alt }: any) => <img class="safe-image-stub" src={src} alt={alt} />
 }));
 
-import Component from "../../../components/component.js";
 import link from "../../../services/link.js";
 import note_autocomplete from "../../../services/note_autocomplete.js";
 import options from "../../../services/options.js";
-import { ParentComponent } from "../../react/react_utils.js";
 import type { AttachmentBlock, UseLlmChatReturn } from "./useLlmChat.js";
 import ChatInputBar from "./ChatInputBar.js";
 
 const ckeditorApi = { setText: vi.fn(), focus: vi.fn() };
 
-// Inline render helper (no shared test/render.ts in the repo). The component uses
-// `useLegacyImperativeHandlers`, which writes onto the ParentComponent — so a real
-// Component must back the provider.
-const rendered: HTMLDivElement[] = [];
-function renderInto(vnode: any): HTMLDivElement {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => { render(<ParentComponent.Provider value={new Component()}>{vnode}</ParentComponent.Provider>, container); });
-    rendered.push(container);
-    return container;
+// The component uses `useLegacyImperativeHandlers`, which writes onto the ParentComponent — so the
+// shared `renderComponent` (which backs the provider with a real Component) is used for rendering.
+function renderInto(vnode: any): HTMLElement {
+    return renderComponent(vnode).container;
 }
 
 function makeChat(overrides: Partial<UseLlmChatReturn> = {}): UseLlmChatReturn {
@@ -148,17 +141,6 @@ beforeEach(() => {
     lastCkeditorProps = undefined;
     lastModalProps = undefined;
     options.load({});
-});
-
-afterEach(() => {
-    while (rendered.length) {
-        const container = rendered.pop();
-        if (container) {
-            act(() => { render(null, container); });
-            container.remove();
-        }
-    }
-    vi.restoreAllMocks();
 });
 
 describe("ChatInputBar — provider gate", () => {
@@ -512,26 +494,17 @@ describe("ChatInputBar — streaming state", () => {
                 }
             }
         };
-        const parent = new Component();
         const chat = makeChat({ isStreaming: false });
-        const container = document.createElement("div");
-        document.body.appendChild(container);
-        const draw = (c: UseLlmChatReturn) => act(() => {
-            render(<ParentComponent.Provider value={parent}><ChatInputBar chat={c} /></ParentComponent.Provider>, container);
-        });
-        draw(chat);
+        const { rerender } = renderComponent(<ChatInputBar chat={chat} />);
         act(() => { lastCkeditorProps.onInitialized(editor); });
 
         // Re-render with streaming on → lock.
-        draw(makeChat({ isStreaming: true }));
+        rerender(<ChatInputBar chat={makeChat({ isStreaming: true })} />);
         expect(editor.enableReadOnlyMode).toHaveBeenCalledWith("llm-chat-streaming");
 
         // Back to not streaming → unlock.
-        draw(makeChat({ isStreaming: false }));
+        rerender(<ChatInputBar chat={makeChat({ isStreaming: false })} />);
         expect(editor.disableReadOnlyMode).toHaveBeenCalledWith("llm-chat-streaming");
-
-        act(() => { render(null, container); });
-        container.remove();
     });
 
     it("shows a stop button bound to stopStreaming while streaming", () => {
@@ -568,12 +541,7 @@ describe("ChatInputBar — mention feed & reference-link handler", () => {
     });
 
     it("registers loadReferenceLinkTitle on the parent and delegates to the link service", async () => {
-        const parent = new Component();
-        const container = document.createElement("div");
-        document.body.appendChild(container);
-        act(() => {
-            render(<ParentComponent.Provider value={parent}><ChatInputBar chat={makeChat()} /></ParentComponent.Provider>, container);
-        });
+        const { parent } = renderComponent(<ChatInputBar chat={makeChat()} />);
 
         const handler = (parent as unknown as Record<string, unknown>).loadReferenceLinkTitle as
             ((el: JQuery<HTMLElement>, href?: string | null) => Promise<void>) | undefined;
@@ -582,8 +550,5 @@ describe("ChatInputBar — mention feed & reference-link handler", () => {
         const $el = $("<a></a>");
         await act(async () => { await handler?.($el, "#root/x"); });
         expect(link.loadReferenceLinkTitle).toHaveBeenCalledWith($el, "#root/x");
-
-        act(() => { render(null, container); });
-        container.remove();
     });
 });

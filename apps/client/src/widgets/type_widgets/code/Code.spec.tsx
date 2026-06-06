@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { fakeNoteContext, type RenderResult, renderComponent, resetFroca } from "../../../test/render";
 
 // --- Module mocks (hoisted above the imports) ----------------------------------------------------
 
@@ -102,13 +103,9 @@ import { OptionNames } from "@triliumnext/commons";
 import { useEffect as mockUseEffect, useRef as mockUseRef } from "preact/hooks";
 
 import Component from "../../../components/component";
-import type NoteContext from "../../../components/note_context";
-import froca from "../../../services/froca";
 import options from "../../../services/options";
 import server from "../../../services/server";
-import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
 import { TypeWidgetProps } from "../type_widget";
 import { CodeEditor, EditableCode, type EditableCodeProps, ReadOnlyCode } from "./Code";
 
@@ -116,23 +113,11 @@ type CodeEditorProps = Parameters<typeof CodeEditor>[0];
 
 // --- Helpers --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+let current: RenderResult | undefined;
 let parent: Component;
 
 function setOptions(values: Record<string, string>) {
     options.load(values as Record<OptionNames, string>);
-}
-
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        viewScope: { viewMode: "default" },
-        isReadOnly: vi.fn(async () => false),
-        setContextData: vi.fn(),
-        getContextData: vi.fn(),
-        clearContextData: vi.fn(),
-        ...overrides
-    } as unknown as NoteContext;
 }
 
 /** Drain async effect chains (jQuery deferred + froca) and the resulting re-render. */
@@ -143,18 +128,8 @@ async function flush() {
 }
 
 function renderInto(vnode: preact.ComponentChildren) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                {vnode}
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    current = renderComponent(vnode, { parent });
+    return current.container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -162,21 +137,14 @@ function fireEvent(name: string, data: unknown) {
 }
 
 function unmountCurrent() {
-    const el = container;
-    if (!el) return;
-    act(() => render(null, el));
-    el.remove();
-    container = undefined;
+    current?.unmount();
+    current = undefined;
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     for (const key of Object.keys(themeById)) delete themeById[key];
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     setOptions({
         vimKeymapEnabled: "false",
         codeLineWrapEnabled: "false",
@@ -200,7 +168,6 @@ beforeEach(() => {
 afterEach(() => {
     unmountCurrent();
     while (cmPres.length) cmPres.pop()?.remove();
-    vi.restoreAllMocks();
 });
 
 // --- ReadOnlyCode ---------------------------------------------------------------------------------

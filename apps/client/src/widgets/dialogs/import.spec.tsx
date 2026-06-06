@@ -1,7 +1,8 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { flush, renderComponent, resetFroca } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -58,32 +59,19 @@ vi.mock("../../services/import", () => ({
 }));
 
 import importService from "../../services/import";
-import Component from "../../components/component";
-import froca from "../../services/froca";
+import type Component from "../../components/component";
 import options from "../../services/options";
 import tree from "../../services/tree";
-import { ParentComponent } from "../react/react_utils";
 import ImportDialog from "./import";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderDialog() {
-    parent = new Component();
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <ImportDialog />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    const result = renderComponent(<ImportDialog />);
+    parent = result.parent;
+    return result.container;
 }
 
 function fireShowImportDialog(data: unknown) {
@@ -91,16 +79,6 @@ function fireShowImportDialog(data: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (parent.handleEventInChildren as any)("showImportDialog", data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
 }
 
 /** Attach a FileList to the file input and fire its change event (happy-dom forbids assigning .files). */
@@ -127,19 +105,10 @@ function uploadMock() {
 }
 
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     options.load({ compressImages: "true" } as Record<OptionNames, string>);
     vi.clearAllMocks();
     vi.spyOn(tree, "getNoteTitle").mockResolvedValue("Target Note");
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

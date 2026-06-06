@@ -3,6 +3,8 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { renderInto } from "../../test/render";
+
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
 vi.mock("../../services/i18n", () => ({
@@ -68,23 +70,9 @@ function restoreFnStubs() {
 
 // --- render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: ReturnType<typeof NoteAutocomplete>) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
+function rerender(root: HTMLElement, vnode: ReturnType<typeof NoteAutocomplete>) {
     act(() => {
-        render(vnode, el);
-    });
-    return el;
-}
-
-function rerender(vnode: ReturnType<typeof NoteAutocomplete>) {
-    const el = container;
-    if (!el) throw new Error("nothing rendered yet");
-    act(() => {
-        render(vnode, el);
+        render(vnode, root);
     });
 }
 
@@ -104,14 +92,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => { render(null, el); });
-        el.remove();
-        container = undefined;
-    }
     restoreFnStubs();
-    vi.restoreAllMocks();
 });
 
 describe("NoteAutocomplete", () => {
@@ -288,10 +269,10 @@ describe("NoteAutocomplete", () => {
         const root = renderInto(<NoteAutocomplete noteId="first" />);
         expect(setNoteCalls).toContain("first");
 
-        rerender(<NoteAutocomplete text="now text" />);
+        rerender(root, <NoteAutocomplete text="now text" />);
         expect(note_autocomplete.setText).toHaveBeenCalled();
 
-        rerender(<NoteAutocomplete />);
+        rerender(root, <NoteAutocomplete />);
         const input = getInput(root);
         expect(input.value).toBe("");
     });
@@ -301,8 +282,7 @@ describe("NoteAutocomplete", () => {
         const root = renderInto(<NoteAutocomplete onChange={onChange} />);
         const input = getInput(root);
 
-        const el = container;
-        act(() => { if (el) render(null, el); });
+        act(() => { render(null, root); });
 
         // After unmount the listeners are detached; firing should not call onChange.
         $(input).trigger("autocomplete:noteselected", [{ notePath: "root/x" }]);

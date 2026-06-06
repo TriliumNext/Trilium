@@ -1,10 +1,14 @@
 import { OptionNames } from "@triliumnext/commons";
-import { ComponentChildren, render } from "preact";
+import { ComponentChildren } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { flush, renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// The shared bootstrapMock only provides getInstance/show/hide/dispose, but this spec's components
+// rely on Tooltip.getOrCreateInstance and .update(), so keep the local stub.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -46,43 +50,21 @@ vi.mock("../../../services/toast", () => ({
     default: { showError: vi.fn() }
 }));
 
-import Component from "../../../components/component";
 import dialog from "../../../services/dialog";
 import options from "../../../services/options";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { isElectron } from "../../../services/utils";
-import ws from "../../../services/ws";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
 import MultiFactorAuthenticationSettings from "./multi_factor_authentication";
 
-// --- Render harness (wraps the component in the Trilium providers, like react_utils.tsx) -----------
-
-let container: HTMLDivElement | undefined;
-const parent = { current: new Component() };
+// --- Render harness (delegates provider wrapping + auto-teardown to the shared helper) -------------
 
 function renderApp(node: ComponentChildren = <MultiFactorAuthenticationSettings />) {
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent.current}>
-                <NoteContextContext.Provider value={null}>
-                    {node}
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
-        ), root);
-    });
-    return root;
+    return renderComponent(node).container;
 }
 
 function click(el: HTMLElement) { act(() => { el.click(); }); }
 function change(el: Element) { act(() => { el.dispatchEvent(new Event("change", { bubbles: true })); }); }
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
-}
 
 function setOptions(values: Record<string, string>) {
     options.load(values as Record<OptionNames, string>);
@@ -97,29 +79,18 @@ const asMock = (fn: unknown) => fn as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
     setOptions({ mfaEnabled: "false", mfaMethod: "totp" });
-    parent.current = new Component();
     vi.clearAllMocks();
     (isElectron as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    // The auto-mocked server (test/setup.ts) only defines get/post — supply per-test impls below.
+    // setup.ts mocks get/post as plain fns (and put/upload/... as cleared spies) — supply spy
+    // impls for get/post so mockGet() can drive per-URL responses (put comes from setup.ts).
     Object.assign(server, {
         get: vi.fn(async () => undefined),
-        post: vi.fn(async () => undefined),
-        put: vi.fn(async () => undefined)
+        post: vi.fn(async () => undefined)
     });
-    Object.assign(ws, { logError: vi.fn() });
     // Bootstrap's jQuery tooltip plugin isn't loaded under happy-dom; stub it (used by FormCheckbox).
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     asMock(dialog.confirm).mockResolvedValue(true);
     asMock(dialog.prompt).mockResolvedValue(null);
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { if (container) render(null, container); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Top-level: electron vs non-electron ----------------------------------------------------------

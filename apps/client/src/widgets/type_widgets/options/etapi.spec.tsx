@@ -1,23 +1,13 @@
 import type { EtapiToken } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../../test/mocks";
+import { flush, renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        config: unknown;
-        constructor(el: Element, config?: unknown) { this.element = el; this.config = config; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../../../services/keyboard_actions", () => ({
     default: { getAction: vi.fn(async () => ({ effectiveShortcuts: [] })) }
 }));
@@ -28,46 +18,22 @@ vi.mock("../../../services/toast", () => ({
     default: { showError: vi.fn() }
 }));
 
-import Component from "../../../components/component";
+import type Component from "../../../components/component";
 import dialog from "../../../services/dialog";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import { ParentComponent } from "../../react/react_utils";
 import EtapiSettings from "./etapi";
 
 // --- Render harness: mount the component under a real ParentComponent so useTriliumEvent works ----
 
-let container: HTMLDivElement | undefined;
-let parent: Component | undefined;
-
-function renderComponent() {
-    const localParent = new Component();
-    const localContainer = document.createElement("div");
-    parent = localParent;
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={localParent}>
-                <EtapiSettings />
-            </ParentComponent.Provider>,
-            localContainer
-        );
-    });
-    return localContainer;
+function mount() {
+    return renderComponent(<EtapiSettings />);
 }
 
-function fireEvent(name: string, data: unknown) {
+function fireEvent(parent: Component, name: string, data: unknown) {
     act(() => {
-        const p = parent;
-        if (p) {
-            (p.handleEventInChildren as unknown as (n: string, d: unknown) => void)(name, data);
-        }
+        (parent.handleEventInChildren as unknown as (n: string, d: unknown) => void)(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
 }
 
 const mockedDialog = dialog as unknown as { prompt: ReturnType<typeof vi.fn>; confirm: ReturnType<typeof vi.fn> };
@@ -84,32 +50,20 @@ function makeToken(overrides: Partial<EtapiToken> = {}): EtapiToken {
 
 beforeEach(() => {
     vi.clearAllMocks();
-    // setup.ts's auto-mock only defines get/post — add the verbs this component uses.
+    // setup.ts's auto-mock only defines get/post — these need component-specific return values.
     Object.assign(server, {
         get: vi.fn(async () => [] as EtapiToken[]),
-        post: vi.fn(async () => ({ authToken: "auth-token-value" })),
-        patch: vi.fn(async () => undefined),
-        remove: vi.fn(async () => undefined)
+        post: vi.fn(async () => ({ authToken: "auth-token-value" }))
     });
     mockedDialog.prompt.mockResolvedValue(null);
     mockedDialog.confirm.mockResolvedValue(false);
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------
 
 describe("EtapiSettings", () => {
     it("renders the section, fetches tokens on mount, and shows the empty placeholder", async () => {
-        const root = renderComponent();
+        const { container: root } = mount();
         await flush();
 
         // OptionsSection wrapper + a create button + the existing-tokens heading.
@@ -127,7 +81,7 @@ describe("EtapiSettings", () => {
             makeToken({ etapiTokenId: "tok1", name: "Alpha" }),
             makeToken({ etapiTokenId: "tok2", name: "Beta" })
         ]);
-        const root = renderComponent();
+        const { container: root } = mount();
         await flush();
 
         const table = root.querySelector("table");
@@ -144,7 +98,7 @@ describe("EtapiSettings", () => {
         (server.get as ReturnType<typeof vi.fn>).mockResolvedValue([
             makeToken({ etapiTokenId: undefined, name: "NoId" })
         ]);
-        const root = renderComponent();
+        const { container: root } = mount();
         await flush();
 
         const bodyRows = root.querySelectorAll("tbody tr");
@@ -154,19 +108,19 @@ describe("EtapiSettings", () => {
     });
 
     it("refreshes the token list when an entitiesReloaded event reports token changes", async () => {
-        const root = renderComponent();
+        const { container: root, parent } = mount();
         await flush();
         expect(server.get).toHaveBeenCalledTimes(1);
 
         // A reload with token changes triggers another fetch.
         (server.get as ReturnType<typeof vi.fn>).mockResolvedValue([ makeToken({ name: "Refreshed" }) ]);
-        fireEvent("entitiesReloaded", { loadResults: { hasEtapiTokenChanges: true } });
+        fireEvent(parent, "entitiesReloaded", { loadResults: { hasEtapiTokenChanges: true } });
         await flush();
         expect(server.get).toHaveBeenCalledTimes(2);
         expect(root.querySelector("tbody td")?.textContent).toBe("Refreshed");
 
         // A reload without token changes is ignored.
-        fireEvent("entitiesReloaded", { loadResults: { hasEtapiTokenChanges: false } });
+        fireEvent(parent, "entitiesReloaded", { loadResults: { hasEtapiTokenChanges: false } });
         await flush();
         expect(server.get).toHaveBeenCalledTimes(2);
     });
@@ -175,7 +129,7 @@ describe("EtapiSettings", () => {
         mockedDialog.prompt
             .mockResolvedValueOnce("New Token")   // name prompt
             .mockResolvedValueOnce(null);          // token-created display prompt
-        const root = renderComponent();
+        const { container: root } = mount();
         await flush();
 
         const createBtn = root.querySelector("button.btn");
@@ -190,7 +144,7 @@ describe("EtapiSettings", () => {
 
     it("aborts token creation and shows an error when the name is blank", async () => {
         mockedDialog.prompt.mockResolvedValueOnce("   "); // whitespace only → treated as empty
-        const root = renderComponent();
+        const { container: root } = mount();
         await flush();
 
         const createBtn = root.querySelector("button.btn");
@@ -204,7 +158,7 @@ describe("EtapiSettings", () => {
 
     it("renames a token: prompts and patches when a new name is given, no-ops when blank", async () => {
         (server.get as ReturnType<typeof vi.fn>).mockResolvedValue([ makeToken({ etapiTokenId: "tokR", name: "Old" }) ]);
-        const root = renderComponent();
+        const { container: root } = mount();
         await flush();
 
         const renameBtn = root.querySelectorAll("tbody tr button")[0];
@@ -225,7 +179,7 @@ describe("EtapiSettings", () => {
 
     it("deletes a token after confirmation, and skips when not confirmed", async () => {
         (server.get as ReturnType<typeof vi.fn>).mockResolvedValue([ makeToken({ etapiTokenId: "tokD", name: "Doomed" }) ]);
-        const root = renderComponent();
+        const { container: root } = mount();
         await flush();
 
         const deleteBtn = root.querySelectorAll("tbody tr button")[1];

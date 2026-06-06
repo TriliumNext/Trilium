@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 // The real subtrees (PromotedAttributes, SearchDefinitionTab, NoteTypeSwitcher, NoteLink) pull in
@@ -51,55 +50,21 @@ vi.mock("../ribbon/EditedNotesTab", () => ({
     useEditedNotes: () => editedNotesState.value
 }));
 
-import type NoteContext from "../../components/note_context";
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import { buildNote } from "../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, flush, renderComponent } from "../../test/render";
 import { checkFullHeight, getExtendedWidgetType } from "../NoteDetail";
 import NoteTitleActions from "./NoteTitleActions";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-let parent: Component;
-
-function renderActions(noteContext: NoteContext | null) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => render((
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={noteContext}>
-                <NoteTitleActions />
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), target));
-    return target;
-}
-
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
-}
-
-function fireEvent(name: string, data: unknown) {
+function fireEvent(parent: Component, name: string, data: unknown) {
     act(() => {
         (parent.handleEventInChildren as unknown as (n: string, d: unknown) => void)(name, data);
     });
 }
 
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: "root/note1",
-        viewScope: { viewMode: "default" },
-        note: null,
-        ...overrides
-    } as unknown as NoteContext;
-}
-
 beforeEach(() => {
-    parent = new Component();
     promotedState.cells = undefined;
     promotedState.setCells = vi.fn();
     noteDetailState.extendedNoteType = "editableText";
@@ -108,21 +73,12 @@ beforeEach(() => {
     vi.clearAllMocks();
 });
 
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
-});
-
 // --- Tests ----------------------------------------------------------------------------------------
 
 describe("NoteTitleActions", () => {
     it("renders the root container and promoted/note-type for a default text note", async () => {
         const note = buildNote({ id: "textNote", title: "Text", type: "text" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
 
         expect(root.querySelector(".title-actions")).toBeTruthy();
@@ -138,14 +94,14 @@ describe("NoteTitleActions", () => {
 
     it("omits the note-type switcher for non-default view modes", async () => {
         const note = buildNote({ id: "srcNote", title: "Src", type: "text" });
-        const root = renderActions(fakeNoteContext({ note, viewScope: { viewMode: "source" } }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note, viewScope: { viewMode: "source" } }) });
         await flush();
         expect(root.querySelector(".mock-note-type-switcher")).toBeNull();
     });
 
     it("renders the note-type switcher when viewScope has no view mode", async () => {
         const note = buildNote({ id: "novmNote", title: "NoVM", type: "text" });
-        const root = renderActions(fakeNoteContext({ note, viewScope: {} }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note, viewScope: {} }) });
         await flush();
         expect(root.querySelector(".mock-note-type-switcher")).toBeTruthy();
     });
@@ -154,7 +110,7 @@ describe("NoteTitleActions", () => {
 describe("SearchProperties", () => {
     it("renders a collapsible with the search definition tab for search notes", async () => {
         const note = buildNote({ id: "searchNote", title: "Search", type: "search" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
 
         const searchTab = root.querySelector(".mock-search-definition");
@@ -167,7 +123,7 @@ describe("SearchProperties", () => {
 describe("PromotedAttributes", () => {
     it("renders nothing for promoted attributes when there are no cells", async () => {
         const note = buildNote({ id: "noCells", title: "NC", type: "text" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".mock-promoted-content")).toBeNull();
     });
@@ -176,7 +132,7 @@ describe("PromotedAttributes", () => {
         promotedState.cells = [ { uniqueId: "c1" } ];
         noteDetailState.fullHeight = true; // → expanded = false
         const note = buildNote({ id: "withCells", title: "WC", type: "text" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
 
         const content = root.querySelector(".mock-promoted-content");
@@ -190,7 +146,7 @@ describe("PromotedAttributes", () => {
         promotedState.cells = [ { uniqueId: "c1" } ];
         noteDetailState.fullHeight = false; // → expanded = true
         const note = buildNote({ id: "expandedCells", title: "EC", type: "text" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         const collapsible = root.querySelector(".mock-promoted-content")?.closest(".collapsible");
         expect(collapsible?.classList.contains("expanded")).toBe(true);
@@ -200,13 +156,13 @@ describe("PromotedAttributes", () => {
         promotedState.cells = [ { uniqueId: "c1" } ];
         noteDetailState.fullHeight = true; // start collapsed
         const note = buildNote({ id: "toggleCells", title: "TC", type: "text" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root, parent } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
 
         const before = root.querySelector(".mock-promoted-content")?.closest(".collapsible");
         expect(before?.classList.contains("expanded")).toBe(false);
 
-        fireEvent("toggleRibbonTabPromotedAttributes", {});
+        fireEvent(parent, "toggleRibbonTabPromotedAttributes", {});
         const after = root.querySelector(".mock-promoted-content")?.closest(".collapsible");
         expect(after?.classList.contains("expanded")).toBe(true);
     });
@@ -216,7 +172,7 @@ describe("EditedNotes", () => {
     it("does not render the edited-notes section without a dateNote label", async () => {
         editedNotesState.value = [ { noteId: "e1" } ];
         const note = buildNote({ id: "plainNote", title: "Plain", type: "text" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
         expect(root.querySelector(".edited-notes")).toBeNull();
     });
@@ -224,7 +180,7 @@ describe("EditedNotes", () => {
     it("renders edited-note badges when the note has a dateNote label", async () => {
         editedNotesState.value = [ { noteId: "ed1" }, { noteId: "ed2" } ];
         const note = buildNote({ id: "dateNote", title: "Day", type: "text", "#dateNote": "2026-06-05" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
 
         const section = root.querySelector(".edited-notes");
@@ -237,7 +193,7 @@ describe("EditedNotes", () => {
     it("renders the no-edited-notes placeholder when the list is empty", async () => {
         editedNotesState.value = [];
         const note = buildNote({ id: "emptyEdited", title: "Empty", type: "text", "#dateNote": "2026-06-05" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
 
         const section = root.querySelector(".edited-notes");
@@ -249,7 +205,7 @@ describe("EditedNotes", () => {
     it("renders nothing inside the edited-notes body while still loading", async () => {
         editedNotesState.value = undefined; // useEditedNotes returns undefined → render is suppressed
         const note = buildNote({ id: "loadingEdited", title: "Loading", type: "text", "#dateNote": "2026-06-05" });
-        const root = renderActions(fakeNoteContext({ note }));
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: fakeNoteContext({ note }) });
         await flush();
 
         const section = root.querySelector(".edited-notes");
@@ -261,7 +217,7 @@ describe("EditedNotes", () => {
 
 describe("no note", () => {
     it("renders only the container shell when there is no note context", async () => {
-        const root = renderActions(null);
+        const { container: root } = renderComponent(<NoteTitleActions />, { noteContext: null });
         await flush();
         expect(root.querySelector(".title-actions")).toBeTruthy();
         expect(root.querySelector(".mock-note-type-switcher")).toBeTruthy();

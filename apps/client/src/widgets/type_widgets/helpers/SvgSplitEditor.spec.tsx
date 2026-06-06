@@ -1,7 +1,8 @@
 import type { ComponentChildren, VNode } from "preact";
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { flush, renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -70,19 +71,18 @@ vi.mock("../../../services/utils", async (importOriginal) => ({
     }
 }));
 
-import Component from "../../../components/component";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import utils from "../../../services/utils";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
 import type FNote from "../../../entities/fnote";
 import SvgSplitEditor from "./SvgSplitEditor";
 
 // --- Render harness (component inside ParentComponent so useTriliumEvent registers) ----------------
 
-let container: HTMLDivElement | undefined;
-let parent: Component;
+let container: HTMLElement | undefined;
+let fireEvent: (name: string, data: unknown) => void;
+let unmountEditor: () => void;
 
 /** Supplies the required `TypeWidgetProps` base props so tests only vary the interesting ones. */
 function Editor({ ntxId, note, attachmentName, renderSvg }: {
@@ -105,24 +105,13 @@ function Editor({ ntxId, note, attachmentName, renderSvg }: {
 }
 
 function renderEditor(vnode: VNode) {
-    parent = new Component();
-    const host = document.createElement("div");
+    const { container: host, parent, unmount } = renderComponent(vnode);
     container = host;
-    document.body.appendChild(host);
-    act(() => {
-        render(<ParentComponent.Provider value={parent}>{vnode}</ParentComponent.Provider>, host);
-    });
-    return host;
-}
-
-function fireEvent(name: string, data: unknown) {
-    act(() => {
+    unmountEditor = unmount;
+    fireEvent = (name, data) => act(() => {
         (parent.handleEventInChildren as unknown as (n: string, d: unknown) => void)(name, data);
     });
-}
-
-async function flush() {
-    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    return host;
 }
 
 /** Inject a real <svg> element into the preview container so the resizer / export paths find it. */
@@ -163,11 +152,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
+    container = undefined;
     if (originalResizeObserver) {
         window.ResizeObserver = originalResizeObserver;
         originalResizeObserver = undefined;
@@ -176,7 +161,6 @@ afterEach(() => {
         HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
         originalGetBoundingClientRect = undefined;
     }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -434,7 +418,7 @@ describe("SvgSplitEditor - pan & zoom resizer", () => {
         await setupWithZoom("ntxZ3", "nz3");
         await flush();
         const instance = panZoomInstances[panZoomInstances.length - 1];
-        act(() => { render(null, container as HTMLDivElement); });
+        unmountEditor();
         expect(instance.destroy).toHaveBeenCalled();
     });
 

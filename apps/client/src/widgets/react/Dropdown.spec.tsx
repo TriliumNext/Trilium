@@ -47,17 +47,10 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 
 import { Dropdown as BootstrapDropdown } from "bootstrap";
 import { isMobile } from "../../services/utils";
+import { renderInto } from "../../test/render";
 import Dropdown from "./Dropdown";
 
 // --- Render helper ----------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
 
 // Fake ResizeObserver that captures the callback so we can fire it manually.
 const resizeCallbacks: Array<() => void> = [];
@@ -86,15 +79,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
     (($.fn as unknown as Record<string, unknown>)).tooltip = previousTooltipPlugin;
     (window as unknown as { ResizeObserver: unknown }).ResizeObserver = previousResizeObserver;
     document.getElementById("context-menu-cover")?.remove();
-    vi.restoreAllMocks();
 });
 
 // --- Structure / default classes -------------------------------------------------------------------
@@ -207,13 +194,11 @@ describe("Dropdown refs and instance", () => {
 
     it("disposes the bootstrap instance on unmount", () => {
         const dropdownRef: MutableRef<BootstrapDropdown | null> = { current: null };
-        renderInto(<Dropdown dropdownRef={dropdownRef}><span>Z</span></Dropdown>);
+        const root = renderInto(<Dropdown dropdownRef={dropdownRef}><span>Z</span></Dropdown>);
         const instance = dropdownRef.current as unknown as { disposed: boolean };
         expect(instance.disposed).toBe(false);
 
-        act(() => render(null, container as HTMLDivElement));
-        container?.remove();
-        container = undefined;
+        act(() => render(null, root));
 
         expect(instance.disposed).toBe(true);
     });

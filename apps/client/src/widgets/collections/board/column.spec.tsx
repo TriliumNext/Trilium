@@ -1,9 +1,9 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FBranch from "../../../entities/fbranch";
 import type FNote from "../../../entities/fnote";
+import { renderInto, resetFroca } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -120,38 +120,19 @@ function buildColumnItems(parentId: string, childIds: string[]): { note: FNote; 
     });
 }
 
-let container: HTMLDivElement | undefined;
-
 function renderColumn(props: Parameters<typeof Column>[0], ctxOverrides: ContextOverrides = {}) {
-    const localContainer = document.createElement("div");
-    container = localContainer;
-    document.body.appendChild(localContainer);
     const ctx = makeContext({ api: props.api, ...ctxOverrides });
-    act(() => {
-        render(
-            <BoardViewContext.Provider value={ctx as never}>
-                <Column {...props} />
-            </BoardViewContext.Provider>,
-            localContainer
-        );
-    });
-    return { container: localContainer, ctx };
+    const container = renderInto(
+        <BoardViewContext.Provider value={ctx as never}>
+            <Column {...props} />
+        </BoardViewContext.Provider>
+    );
+    return { container, ctx };
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

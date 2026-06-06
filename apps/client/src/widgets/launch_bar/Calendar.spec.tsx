@@ -1,39 +1,19 @@
 import { OptionNames } from "@triliumnext/commons";
 import { dayjs } from "@triliumnext/commons";
-import { render } from "preact";
-import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Component from "../../components/component";
 import options from "../../services/options";
 import server from "../../services/server";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent } from "../../test/render";
 import Calendar, { CalendarArgs, getMonthInformation } from "./Calendar";
 
 // --- Shared helpers -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-let currentParent: Component | undefined;
-
 /** Renders the Calendar inside the real ParentComponent provider (so the option hooks register). */
 async function renderCalendar(args: CalendarArgs) {
-    const localContainer = document.createElement("div");
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    const localParent = new Component();
-    currentParent = localParent;
-    await act(async () => {
-        render(
-            <ParentComponent.Provider value={localParent}>
-                <Calendar {...args} />
-            </ParentComponent.Provider>,
-            localContainer
-        );
-    });
+    const { container } = renderComponent(<Calendar {...args} />);
     // The month sub-components fetch notes-for-month in a useEffect; settle that microtask chain.
-    await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-    });
+    await flush();
     return container;
 }
 
@@ -60,18 +40,6 @@ beforeEach(() => {
     });
     // The auto-mocked server only knows a few URLs; make notes-for-month return nothing by default.
     Object.assign(server, { get: vi.fn(async () => ({})) });
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    if (currentParent) {
-        currentParent = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Rendering ------------------------------------------------------------------------------------

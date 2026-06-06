@@ -1,7 +1,6 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -78,7 +77,7 @@ import options from "../../services/options";
 import server from "../../services/server";
 import tree from "../../services/tree";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import type { CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
 import IncludeNoteDialog from "./include_note";
 
@@ -86,24 +85,12 @@ const triggerRecentNotesMock = vi.mocked(triggerRecentNotes);
 
 // --- Render harness for the full dialog -----------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderDialog() {
-    const p = new Component();
-    const c = document.createElement("div");
-    parent = p;
-    container = c;
-    document.body.appendChild(c);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={p}>
-                <IncludeNoteDialog />
-            </ParentComponent.Provider>,
-            c
-        );
-    });
-    return c;
+    const result = renderComponent(<IncludeNoteDialog />);
+    parent = result.parent;
+    return result.container;
 }
 
 /** Dispatch a DOM event inside `act` without leaking the boolean return value (typing). */
@@ -136,10 +123,6 @@ function fireEvent(name: string, data: unknown) {
     });
 }
 
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
 function makeEditorApi(overrides: Partial<Pick<CKEditorApi, "addIncludeNote" | "addImage">> = {}) {
     return {
         addIncludeNote: vi.fn(),
@@ -168,30 +151,16 @@ function setOptions(values: Record<string, string>) {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     autocompleteOnChange = undefined;
     setOptions({ includeNoteDefaultBoxSize: "medium" });
-    // The shared setup mock for server only defines get/post; the option setter calls server.put.
-    Object.assign(server, { put: vi.fn(async () => undefined) });
     (tree.getNoteIdFromUrl as ReturnType<typeof vi.fn>).mockImplementation((notePath: string | null | undefined) => {
         if (!notePath) return null;
         const [path] = notePath.split("?");
         const segments = path.split("/");
         return segments[segments.length - 1];
     });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container ?? document.createElement("div")); });
-        container.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

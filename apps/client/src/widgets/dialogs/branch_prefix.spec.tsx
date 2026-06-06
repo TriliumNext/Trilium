@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -50,33 +49,22 @@ vi.mock("../../components/app_context.js", () => ({
 }));
 
 import appContext from "../../components/app_context.js";
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import froca from "../../services/froca";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import BranchPrefixDialog from "./branch_prefix";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderDialog() {
-    parent = new Component();
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <BranchPrefixDialog />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    const { container, parent: p } = renderComponent(<BranchPrefixDialog />);
+    parent = p;
+    return container;
 }
 
 function fireEditBranchPrefix(data: unknown) {
@@ -86,31 +74,11 @@ function fireEditBranchPrefix(data: unknown) {
     });
 }
 
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-}
-
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined) });
     Object.assign(toast, { showMessage: vi.fn() });
     (appContext.tabManager.getActiveContextNotePath as ReturnType<typeof vi.fn>).mockReturnValue(null);
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

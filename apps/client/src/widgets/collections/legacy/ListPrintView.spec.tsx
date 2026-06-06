@@ -1,6 +1,4 @@
-import { render } from "preact";
-import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -29,20 +27,14 @@ vi.mock("../../../services/protected_session_holder", () => ({
 import froca from "../../../services/froca";
 import protected_session_holder from "../../../services/protected_session_holder";
 import { buildNote } from "../../../test/easy-froca";
-import { flush } from "../../../test/render-hook";
+import { flush, renderInto, resetFroca } from "../../../test/render";
 import { ListPrintView } from "./ListPrintView";
 
 // --- Render helper --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
 function renderView(props: Record<string, unknown>) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    act(() => render(<ListPrintView {...(props as any)} />, el));
-    return el;
+    return renderInto(<ListPrintView {...(props as any)} />);
 }
 
 type AnyFn = ReturnType<typeof vi.fn>;
@@ -62,21 +54,9 @@ function makeProps(overrides: Record<string, unknown>) {
 
 beforeEach(() => {
     renderedHtmlByNoteId.clear();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     (protected_session_holder.isProtectedSessionAvailable as AnyFn).mockReturnValue(true);
-});
-
-afterEach(async () => {
-    await act(async () => {});
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

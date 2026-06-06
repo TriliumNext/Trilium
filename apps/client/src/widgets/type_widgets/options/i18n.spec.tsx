@@ -1,12 +1,15 @@
 import { OptionNames } from "@triliumnext/commons";
 import type { Locale } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
 // bootstrap is used by Dropdown (BootstrapDropdown.getOrCreateInstance) and useTooltip (Tooltip).
+// Kept local because this spec relies on Dropdown.getOrCreateInstance / .update, which the shared
+// bootstrapMock does not provide.
 vi.mock("bootstrap", () => {
     class Tooltip {
         static instances = new Map<Element, Tooltip>();
@@ -55,38 +58,11 @@ vi.mock("../../../services/utils", async (importOriginal) => ({
 
 import options from "../../../services/options";
 import server from "../../../services/server";
-import ws from "../../../services/ws";
-import Component from "../../../components/component";
-import { ParentComponent } from "../../react/react_utils";
 import InternationalizationOptions, { ContentLanguagesList } from "./i18n";
 
 // --- Shared helpers -------------------------------------------------------------------------------
 
 let isElectronValue = false;
-let container: HTMLDivElement | undefined;
-
-function renderComponent(vnode: preact.ComponentChildren) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={new Component()}>
-                {vnode}
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
-}
-
-function unmountContainer() {
-    const el = container;
-    if (!el) return;
-    act(() => { render(null, el); });
-    el.remove();
-    container = undefined;
-}
 
 function setOptions(values: Record<string, string>) {
     options.load(values as Record<OptionNames, string>);
@@ -109,14 +85,6 @@ beforeEach(() => {
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     vi.clearAllMocks();
     getAvailableLocales.mockReturnValue(FULL_LOCALES);
-    // The auto-mocked server (test/setup.ts) only defines get/post — add the write verbs option setters use.
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
-});
-
-afterEach(() => {
-    unmountContainer();
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -124,7 +92,7 @@ afterEach(() => {
 describe("InternationalizationOptions", () => {
     it("renders localization + content-language sections and omits related settings in browser mode", () => {
         isElectronValue = false;
-        const root = renderComponent(<InternationalizationOptions />);
+        const { container: root } = renderComponent(<InternationalizationOptions />);
 
         // Localization section + content language section = two options-section headers (h4).
         const sections = root.querySelectorAll(".options-section");
@@ -143,7 +111,7 @@ describe("InternationalizationOptions", () => {
 
     it("renders the electron-only related-settings section when running under Electron", () => {
         isElectronValue = true;
-        const root = renderComponent(<InternationalizationOptions />);
+        const { container: root } = renderComponent(<InternationalizationOptions />);
 
         // Now three sections: localization, content-languages, related-settings.
         expect(root.querySelectorAll(".options-section").length).toBe(3);
@@ -157,7 +125,7 @@ describe("LocalizationOptions locale filtering", () => {
         isElectronValue = false;
         const glob = window.glob as unknown as Record<string, unknown>;
         glob.isDev = false;
-        const root = renderComponent(<InternationalizationOptions />);
+        const { container: root } = renderComponent(<InternationalizationOptions />);
 
         // Two dropdown toggle buttons (UI locale + formatting locale).
         const dropdownButtons = root.querySelectorAll(".dropdown button.dropdown-toggle");
@@ -169,7 +137,7 @@ describe("LocalizationOptions locale filtering", () => {
         const glob = window.glob as unknown as Record<string, unknown>;
         glob.isDev = true;
         // No throw and renders both dropdowns even with the dev-only locale present.
-        const root = renderComponent(<InternationalizationOptions />);
+        const { container: root } = renderComponent(<InternationalizationOptions />);
         expect(root.querySelectorAll(".dropdown").length).toBeGreaterThanOrEqual(2);
     });
 });
@@ -178,14 +146,14 @@ describe("DateSettings", () => {
     it("shows the min-days-in-first-week selector only when firstWeekOfYear is '2'", () => {
         // firstWeekOfYear "0" => hidden.
         setOptions({ locale: "en", formattingLocale: "en", firstDayOfWeek: "1", firstWeekOfYear: "0", minDaysInFirstWeek: "4", languages: JSON.stringify([ "en" ]) });
-        const rootHidden = renderComponent(<InternationalizationOptions />);
-        expect(rootHidden.querySelector("[name='min-days-in-first-week']")).toBeNull();
+        const hidden = renderComponent(<InternationalizationOptions />);
+        expect(hidden.container.querySelector("[name='min-days-in-first-week']")).toBeNull();
         // cleanup before re-render
-        unmountContainer();
+        hidden.unmount();
 
         // firstWeekOfYear "2" => shown.
         setOptions({ locale: "en", formattingLocale: "en", firstDayOfWeek: "1", firstWeekOfYear: "2", minDaysInFirstWeek: "4", languages: JSON.stringify([ "en" ]) });
-        const rootShown = renderComponent(<InternationalizationOptions />);
+        const { container: rootShown } = renderComponent(<InternationalizationOptions />);
         expect(rootShown.querySelector("[name='min-days-in-first-week']")).toBeTruthy();
         // The min-days select renders 7 day options.
         const minDaysSelect = rootShown.querySelector<HTMLSelectElement>("[name='min-days-in-first-week']");
@@ -193,7 +161,7 @@ describe("DateSettings", () => {
     });
 
     it("changing a date FormSelect persists via the option setter, and the restart button calls restartDesktopApp", async () => {
-        const root = renderComponent(<InternationalizationOptions />);
+        const { container: root } = renderComponent(<InternationalizationOptions />);
 
         const firstWeekSelect = root.querySelector<HTMLSelectElement>("[name='first-week-of-year']");
         expect(firstWeekSelect).toBeTruthy();
@@ -216,7 +184,7 @@ describe("ContentLanguagesList", () => {
     it("renders a checkbox per available locale and reflects the selected languages", () => {
         getAvailableLocales.mockReturnValue(FULL_LOCALES);
         setOptions({ languages: JSON.stringify([ "en", "ar" ]) });
-        const root = renderComponent(<ContentLanguagesList />);
+        const { container: root } = renderComponent(<ContentLanguagesList />);
 
         const checkboxes = root.querySelectorAll<HTMLInputElement>("input[type='checkbox']");
         expect(checkboxes.length).toBe(FULL_LOCALES.length);
@@ -228,7 +196,7 @@ describe("ContentLanguagesList", () => {
     it("toggling a checkbox adds/removes the language via the option setter", () => {
         getAvailableLocales.mockReturnValue(FULL_LOCALES);
         setOptions({ languages: JSON.stringify([ "en" ]) });
-        const root = renderComponent(<ContentLanguagesList />);
+        const { container: root } = renderComponent(<ContentLanguagesList />);
 
         const arabicCheckbox = root.querySelector<HTMLInputElement>("input[value='ar']");
         expect(arabicCheckbox?.checked).toBe(false);

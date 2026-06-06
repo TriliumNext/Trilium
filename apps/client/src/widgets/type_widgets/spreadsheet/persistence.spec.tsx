@@ -3,11 +3,9 @@ import { MutableRef } from "preact/hooks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../../../components/note_context";
-import froca from "../../../services/froca";
 import server from "../../../services/server";
-import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
-import { flush, makeLoadResults, renderHook } from "../../../test/render-hook";
+import { fakeNoteContext, flush, makeLoadResults, renderHook, resetFroca } from "../../../test/render";
 import usePersistence from "./persistence";
 
 // --- Fakes ---------------------------------------------------------------------------------------
@@ -113,16 +111,6 @@ function makeContainer(visible: boolean): MutableRef<HTMLDivElement | null> {
     return { current: div };
 }
 
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx-sheet",
-        setContextData: vi.fn(),
-        getContextData: vi.fn(),
-        clearContextData: vi.fn(),
-        ...overrides
-    } as unknown as NoteContext;
-}
-
 // --- ResizeObserver capture ----------------------------------------------------------------------
 
 let resizeObservers: { cb: ResizeObserverCallback; disconnect: ReturnType<typeof vi.fn> }[] = [];
@@ -151,18 +139,13 @@ function buildPersistedContent() {
 // --- Tests ---------------------------------------------------------------------------------------
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     installFakeResizeObserver();
 });
 
 afterEach(() => {
     Object.assign(window, { ResizeObserver: originalResizeObserver });
-    vi.restoreAllMocks();
 });
 
 function mountPersistence(opts: {
@@ -174,7 +157,7 @@ function mountPersistence(opts: {
     const note = buildNote({ id: "sheetNote", title: "Sheet", type: "spreadsheet", content: opts.content ?? "" });
     const apiRef = asApiRef(opts.api);
     const containerRef = makeContainer(opts.visible ?? true);
-    const noteContext = opts.noteContext === undefined ? fakeNoteContext() : opts.noteContext;
+    const noteContext = opts.noteContext === undefined ? fakeNoteContext({ ntxId: "ntx-sheet" }) : opts.noteContext;
     const harness = renderHook(() => usePersistence(note, noteContext, apiRef, containerRef));
     return { harness, note, apiRef, containerRef };
 }
@@ -233,7 +216,7 @@ describe("usePersistence", () => {
         const note = buildNote({ id: "hiddenNote", title: "H", type: "spreadsheet", content: buildPersistedContent() });
         const apiRef = asApiRef(api);
         const containerRef = makeContainer(false); // hidden
-        renderHook(() => usePersistence(note, fakeNoteContext(), apiRef, containerRef));
+        renderHook(() => usePersistence(note, fakeNoteContext({ ntxId: "ntx-sheet" }), apiRef, containerRef));
         await flush();
 
         // Hidden -> content was buffered, not applied.
@@ -252,7 +235,7 @@ describe("usePersistence", () => {
         const note = buildNote({ id: "noApiNote", title: "N", type: "spreadsheet", content: buildPersistedContent() });
         const apiRef = asApiRef(undefined);
         const containerRef = makeContainer(true);
-        renderHook(() => usePersistence(note, fakeNoteContext(), apiRef, containerRef));
+        renderHook(() => usePersistence(note, fakeNoteContext({ ntxId: "ntx-sheet" }), apiRef, containerRef));
         await flush();
         resizeObservers.forEach(o => o.cb([], o as unknown as ResizeObserver));
         await flush();
@@ -265,7 +248,7 @@ describe("usePersistence", () => {
         const apiRef = asApiRef(makeFakeUniver({ active: undefined }));
         const containerRef: MutableRef<HTMLDivElement | null> = { current: null };
         const before = resizeObservers.length;
-        renderHook(() => usePersistence(note, fakeNoteContext(), apiRef, containerRef));
+        renderHook(() => usePersistence(note, fakeNoteContext({ ntxId: "ntx-sheet" }), apiRef, containerRef));
         await flush();
         // Effect short-circuits before creating an observer.
         expect(resizeObservers.length).toBe(before);
@@ -348,7 +331,7 @@ describe("usePersistence", () => {
         const note = buildNote({ id: "stillHidden", title: "SH", type: "spreadsheet", content: buildPersistedContent() });
         const apiRef = asApiRef(api);
         const containerRef = makeContainer(false); // hidden -> content buffered
-        renderHook(() => usePersistence(note, fakeNoteContext(), apiRef, containerRef));
+        renderHook(() => usePersistence(note, fakeNoteContext({ ntxId: "ntx-sheet" }), apiRef, containerRef));
         await flush();
         expect(api.createWorkbook).not.toHaveBeenCalled();
 
@@ -428,7 +411,7 @@ describe("usePersistence", () => {
 
         const apiRef = asApiRef(api);
         const containerRef = makeContainer(true);
-        const harness = renderHook(() => usePersistence(note, fakeNoteContext(), apiRef, containerRef));
+        const harness = renderHook(() => usePersistence(note, fakeNoteContext({ ntxId: "ntx-sheet" }), apiRef, containerRef));
         await flush();
         expect(api.createWorkbook).toHaveBeenCalledTimes(1);
 
@@ -466,7 +449,7 @@ describe("usePersistence", () => {
         const note = buildNote({ id: "earlyNote", title: "E", type: "spreadsheet", content: buildPersistedContent() });
         const apiRef = asApiRef(undefined);
         const containerRef = makeContainer(true);
-        const harness = renderHook(() => usePersistence(note, fakeNoteContext(), apiRef, containerRef));
+        const harness = renderHook(() => usePersistence(note, fakeNoteContext({ ntxId: "ntx-sheet" }), apiRef, containerRef));
         await flush();
         // Nothing to assert beyond not throwing; the effect chain ran with apiRef.current undefined.
         harness.unmount();

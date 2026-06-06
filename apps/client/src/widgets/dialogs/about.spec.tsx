@@ -1,7 +1,8 @@
 import { AppInfo } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent, resetFroca } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -74,32 +75,19 @@ vi.mock("../../services/utils", async (importOriginal) => {
     };
 });
 
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import { openDialog } from "../../services/dialog";
-import froca from "../../services/froca";
 import server from "../../services/server";
-import ws from "../../services/ws";
-import { ParentComponent } from "../react/react_utils";
 import AboutDialog from "./about";
 
 // --- Render harness (full component inside the Trilium parent provider) ---------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderDialog() {
-    const localParent = new Component();
-    const localContainer = document.createElement("div");
-    parent = localParent;
-    container = localContainer;
-    document.body.appendChild(localContainer);
-    act(() => render(
-        <ParentComponent.Provider value={localParent}>
-            <AboutDialog />
-        </ParentComponent.Provider>,
-        localContainer
-    ));
-    return localContainer;
+    const result = renderComponent(<AboutDialog />);
+    parent = result.parent;
+    return result.container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -126,24 +114,14 @@ function makeAppInfo(overrides: Partial<AppInfo> = {}): AppInfo {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     isElectronMock.mockReturnValue(false);
     Object.assign(server, {
-        get: vi.fn(async () => makeAppInfo()),
-        post: vi.fn(async () => undefined),
-        put: vi.fn(async () => undefined)
+        get: vi.fn(async () => makeAppInfo())
     });
-    Object.assign(ws, { logError: vi.fn() });
     // useTooltip calls $el.tooltip(config); provide the jQuery plugin method as a no-op.
     (($.fn as unknown) as { tooltip: unknown }).tooltip = vi.fn(function (this: unknown) { return this; });
-});
-
-afterEach(() => {
-    if (container) { act(() => render(null, container ?? document.createElement("div"))); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

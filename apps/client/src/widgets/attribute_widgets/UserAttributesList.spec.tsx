@@ -1,32 +1,17 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import Component from "../../components/component";
-import noteAttributeCache from "../../services/note_attribute_cache";
-import froca from "../../services/froca";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { makeLoadResults, renderComponent, resetFroca } from "../../test/render";
 import UserAttributesDisplay from "./UserAttributesList";
 
 // --- Render harness ------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
-function renderComponent(vnode: preact.ComponentChild) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                {vnode}
-            </ParentComponent.Provider>,
-            target
-        );
-    });
-    return target;
+function render(vnode: preact.ComponentChild): HTMLElement {
+    return renderComponent(vnode, { parent }).container;
 }
 
 function fireTriliumEvent(name: string, data: unknown) {
@@ -36,27 +21,9 @@ function fireTriliumEvent(name: string, data: unknown) {
     });
 }
 
-/** Duck-typed LoadResults exposing only the accessor UserAttributesList reads. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function makeLoadResults(attributeRows: any[]) {
-    return { loadResults: { getAttributeRows: () => attributeRows } };
-}
-
 beforeEach(() => {
     parent = new Component();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
+    resetFroca();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------
@@ -64,14 +31,14 @@ afterEach(() => {
 describe("UserAttributesDisplay - empty states", () => {
     it("renders nothing when the note has no promoted attribute definitions", () => {
         const note = buildNote({ id: "n-empty", title: "Empty", "#archived": "true" });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         expect(el.querySelector(".user-attributes")).toBeNull();
     });
 
     it("renders nothing when a definition exists but has no matching value label", () => {
         // Definition present, but no actual `myColor` label value -> result is empty.
         const note = buildNote({ id: "n-def-only", title: "DefOnly", "#label:myColor": "promoted,color" });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         expect(el.querySelector(".user-attributes")).toBeNull();
     });
 
@@ -84,7 +51,7 @@ describe("UserAttributesDisplay - empty states", () => {
             "#relation:emptyRel": "promoted",
             "~emptyRel": ""
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         // Both values are empty strings so nothing is pushed -> the container is not rendered.
         expect(el.querySelector(".user-attributes")).toBeNull();
     });
@@ -98,7 +65,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:myText": "promoted,text",
             "#myText": "hello"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         const attr = el.querySelector(".user-attribute");
         expect(attr?.className).toContain("type-label");
         expect(attr?.className).toContain("text");
@@ -113,7 +80,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:internalName": "promoted,text,alias=Display Name",
             "#internalName": "value"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         expect(el.querySelector(".user-attribute strong")?.textContent).toBe("Display Name:");
     });
 
@@ -124,7 +91,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:myNum": "promoted,number,precision=2",
             "#myNum": "3.14159"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         expect(el.querySelector(".user-attribute")?.textContent).toContain("3.14");
     });
 
@@ -135,7 +102,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:myNum": "promoted,number,precision=2",
             "#myNum": "not-a-number"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         expect(el.querySelector(".user-attribute")?.textContent).toContain("not-a-number");
     });
 
@@ -146,7 +113,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:myNum": "promoted,number",
             "#myNum": "5.5"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         expect(el.querySelector(".user-attribute")?.textContent).toContain("5.5");
     });
 
@@ -159,7 +126,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:theDateTime": "promoted,datetime",
             "#theDateTime": "2024-01-15T10:30:00"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         const attrs = el.querySelectorAll(".user-attribute");
         expect(attrs.length).toBe(2);
         // Date strong labels are present and there is a formatted value following.
@@ -176,7 +143,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:theTime": "promoted,time",
             "#theTime": "13:45:00"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         const attr = el.querySelector(".user-attribute");
         expect(attr?.querySelector("strong")?.textContent).toBe("theTime:");
         expect((attr?.textContent ?? "").length).toBeGreaterThan("theTime:".length);
@@ -191,7 +158,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:flagOff": "promoted,boolean",
             "#flagOff": "false"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         const attrs = el.querySelectorAll(".user-attribute");
         expect(attrs.length).toBe(2);
         expect(attrs[0]?.querySelector("span.bx-check-square")).not.toBeNull();
@@ -207,7 +174,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:myUrl": "promoted,url",
             "#myUrl": "https://example.com"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         const anchor = el.querySelector("a");
         expect(anchor?.getAttribute("href")).toBe("https://example.com");
         expect(anchor?.getAttribute("target")).toBe("_blank");
@@ -231,7 +198,7 @@ describe("UserAttributesDisplay - label types", () => {
             "#label:myColor": "promoted,color",
             "#myColor": "#ffffff"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         const attr = el.querySelector<HTMLElement>(".user-attribute");
         expect(attr?.textContent).toBe("myColor");
         expect(attr?.style.backgroundColor).not.toBe("");
@@ -249,7 +216,7 @@ describe("UserAttributesDisplay - relations & ignore list", () => {
             "#relation:myRel": "promoted",
             "~myRel": "target-note"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         const attr = el.querySelector(".user-attribute");
         expect(attr?.className).toContain("type-relation");
         expect(attr?.querySelector("strong")?.textContent).toBe("myRel:");
@@ -267,7 +234,7 @@ describe("UserAttributesDisplay - relations & ignore list", () => {
             "#label:dropMe": "promoted,text",
             "#dropMe": "dropped"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} ignoredAttributes={["dropMe"]} />);
+        const el = render(<UserAttributesDisplay note={note} ignoredAttributes={["dropMe"]} />);
         const attrs = el.querySelectorAll(".user-attribute");
         expect(attrs.length).toBe(1);
         expect(attrs[0]?.textContent).toContain("kept");
@@ -283,7 +250,7 @@ describe("UserAttributesDisplay - reactivity", () => {
             "#label:myText": "promoted,text",
             "#myText": "before"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         expect(el.querySelector(".user-attribute")?.textContent).toContain("before");
 
         // Mutate the underlying value, then fire an event whose row owner is the cached note.
@@ -291,9 +258,9 @@ describe("UserAttributesDisplay - reactivity", () => {
         if (valueAttr) {
             valueAttr.value = "after";
         }
-        fireTriliumEvent("entitiesReloaded", makeLoadResults([
+        fireTriliumEvent("entitiesReloaded", { loadResults: makeLoadResults({ attributeRows: [
             { type: "label", name: "myText", value: "after", noteId: "n-react", isDeleted: false }
-        ]));
+        ] }) });
         expect(el.querySelector(".user-attribute")?.textContent).toContain("after");
     });
 
@@ -304,13 +271,13 @@ describe("UserAttributesDisplay - reactivity", () => {
             "#label:myText": "promoted,text",
             "#myText": "stable"
         });
-        const el = renderComponent(<UserAttributesDisplay note={note} />);
+        const el = render(<UserAttributesDisplay note={note} />);
         expect(el.querySelector(".user-attribute")?.textContent).toContain("stable");
 
         // Row owned by an unrelated, uncached note id -> isAffecting returns false.
-        fireTriliumEvent("entitiesReloaded", makeLoadResults([
+        fireTriliumEvent("entitiesReloaded", { loadResults: makeLoadResults({ attributeRows: [
             { type: "label", name: "myText", value: "changed", noteId: "some-other-note", isDeleted: false }
-        ]));
+        ] }) });
         expect(el.querySelector(".user-attribute")?.textContent).toContain("stable");
     });
 });

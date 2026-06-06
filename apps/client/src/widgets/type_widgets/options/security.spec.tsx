@@ -1,31 +1,11 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
-import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { flush, renderInto } from "../../../test/render";
 import options from "../../../services/options";
-import server from "../../../services/server";
 import SecuritySettings from "./security";
 
 // --- Render harness ------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => {
-        render(vnode as preact.ComponentChild, container as HTMLDivElement);
-    });
-    return container;
-}
-
-/** Settle async effect chains (option setters → server.put) and the resulting re-render. */
-async function flush() {
-    await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-}
 
 function setOptions(values: Record<string, string>) {
     options.load(values as Record<OptionNames, string>);
@@ -57,18 +37,7 @@ function removeElectron() {
 beforeEach(() => {
     setOptions({ backendScriptingEnabled: "false", sqlConsoleEnabled: "false" });
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined) });
     removeElectron();
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    removeElectron();
-    vi.restoreAllMocks();
 });
 
 describe("SecuritySettings (browser / non-Electron)", () => {

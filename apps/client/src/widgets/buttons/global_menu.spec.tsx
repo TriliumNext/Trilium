@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -77,29 +76,14 @@ import Component from "../../components/component";
 import * as experimentalFeaturesService from "../../services/experimental_features";
 import options from "../../services/options";
 import { reloadFrontendApp } from "../../services/utils";
-import { ParentComponent } from "../react/react_utils";
+import { renderComponent, renderInto } from "../../test/render";
 import GlobalMenu, { VerticalLayoutIcon } from "./global_menu";
 
 // --- Render harness --------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: unknown) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    act(() => render(vnode as any, el));
-    return el;
-}
-
 /** Renders the global menu and flips the bootstrap dropdown into the "shown" state so children render. */
 function renderMenu(props: { isHorizontalLayout: boolean }, parent: Component = new Component()) {
-    const el = renderInto(
-        <ParentComponent.Provider value={parent}>
-            <GlobalMenu {...props} />
-        </ParentComponent.Provider>
-    );
+    const { container: el } = renderComponent(<GlobalMenu {...props} />, { parent });
     const dropdown = el.querySelector(".dropdown");
     if (dropdown) {
         act(() => { $(dropdown).trigger("show.bs.dropdown"); });
@@ -124,16 +108,6 @@ beforeEach(() => {
     glob.triliumVersion = "1.0.0";
     glob.device = "desktop";
     delete (window as { electronApi?: unknown }).electronApi;
-});
-
-afterEach(() => {
-    const el = container;
-    if (el) {
-        act(() => render(null, el));
-        el.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests -----------------------------------------------------------------------------------------

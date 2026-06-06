@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 //
@@ -154,11 +153,9 @@ vi.mock("./export", () => ({ default: h.useSpreadsheetExportMock }));
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
-import type NoteContext from "../../../components/note_context";
 import Component from "../../../components/component";
-import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
+import { fakeNoteContext, renderComponent, resetFroca, type RenderResult } from "../../../test/render";
 import { TypeWidgetProps } from "../type_widget";
 import Spreadsheet from "./Spreadsheet";
 
@@ -169,8 +166,8 @@ const useSpreadsheetExportMock = h.useSpreadsheetExportMock;
 
 // --- Render helper -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
+let lastRender: RenderResult | undefined;
 
 function makeProps(overrides: Partial<TypeWidgetProps> = {}): TypeWidgetProps {
     const note = overrides.note ?? buildNote({ id: "sheetNote", title: "Sheet", type: "spreadsheet" });
@@ -185,16 +182,8 @@ function makeProps(overrides: Partial<TypeWidgetProps> = {}): TypeWidgetProps {
 }
 
 function renderSpreadsheet(props: TypeWidgetProps) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => render(
-        <ParentComponent.Provider value={parent}>
-            <Spreadsheet {...props} />
-        </ParentComponent.Provider>,
-        target
-    ));
-    return target;
+    lastRender = renderComponent(<Spreadsheet {...props} />, { parent });
+    return lastRender.container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -205,23 +194,14 @@ function fireEvent(name: string, data: unknown) {
 
 beforeEach(() => {
     parent = new Component();
+    lastRender = undefined;
     univerState.createCount = 0;
     univerState.lastApi = undefined;
     univerState.lastConfig = undefined;
     DEFAULT_STYLES.ff = "";
     (window.glob as unknown as Record<string, unknown>).getThemeStyle = () => "light";
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
+    resetFroca();
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    const target = container;
-    if (target) {
-        act(() => render(null, target));
-        target.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------
@@ -263,14 +243,14 @@ describe("Spreadsheet", () => {
     });
 
     it("opens the find dialog on findInText when the note context is active", () => {
-        const noteContext = { ntxId: "ntx1", isActive: () => true } as unknown as NoteContext;
+        const noteContext = fakeNoteContext({ isActive: () => true });
         renderSpreadsheet(makeProps({ noteContext }));
         fireEvent("findInText", {});
         expect(univerState.lastApi?.executeCommand).toHaveBeenCalledWith("ui.operation.open-find-dialog");
     });
 
     it("ignores findInText when the note context is inactive", () => {
-        const noteContext = { ntxId: "ntx1", isActive: () => false } as unknown as NoteContext;
+        const noteContext = fakeNoteContext({ isActive: () => false });
         renderSpreadsheet(makeProps({ noteContext }));
         fireEvent("findInText", {});
         expect(univerState.lastApi?.executeCommand).not.toHaveBeenCalled();
@@ -296,11 +276,9 @@ describe("Spreadsheet", () => {
     });
 
     it("disposes Univer on unmount", () => {
-        const target = renderSpreadsheet(makeProps());
+        renderSpreadsheet(makeProps());
         const api = univerState.lastApi;
-        act(() => render(null, target));
-        target.remove();
-        container = undefined;
+        lastRender?.unmount();
         expect(api?.dispose).toHaveBeenCalled();
     });
 
@@ -381,11 +359,10 @@ describe("Spreadsheet", () => {
 describe("Spreadsheet (read-only)", () => {
     function readOnlyProps() {
         const note = buildNote({ id: "roSheet", title: "RO", type: "spreadsheet", "#readOnly": "true" });
-        const noteContext = {
-            ntxId: "ntx1",
+        const noteContext = fakeNoteContext({
             isActive: () => true,
             viewScope: { readOnlyTemporarilyDisabled: false }
-        } as unknown as NoteContext;
+        });
         return makeProps({ note, noteContext });
     }
 

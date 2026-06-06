@@ -1,9 +1,10 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
+// The shared bootstrapMock() does not provide Modal.getOrCreateInstance, which Modal.tsx calls when
+// shown, so keep a local stub that implements it.
 vi.mock("bootstrap", () => {
     class Modal {
         static instances = new Map<Element, Modal>();
@@ -68,34 +69,23 @@ vi.mock("../../services/toast", () => ({
     }
 }));
 
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import froca from "../../services/froca";
 import open from "../../services/open";
 import toast from "../../services/toast";
 import tree from "../../services/tree";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import ExportDialog from "./export";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
 
 function renderDialog() {
-    parent = new Component();
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <ExportDialog />
-            </ParentComponent.Provider>,
-            el
-        );
-    });
-    return el;
+    const { container, parent: p } = renderComponent(<ExportDialog />);
+    parent = p;
+    return container;
 }
 
 function fireShowExportDialog(data: unknown) {
@@ -105,16 +95,6 @@ function fireShowExportDialog(data: unknown) {
     });
 }
 
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-}
-
 /** Build a parent/child pair so froca.getBranchId resolves a real branch id without server load. */
 function buildBranch(parentId: string, childId: string) {
     buildNote({ id: parentId, title: parentId, children: [ { id: childId, title: childId } ] });
@@ -122,19 +102,10 @@ function buildBranch(parentId: string, childId: string) {
 }
 
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     // Note: do NOT clear `wsSubscribers` — the component registers its subscriber once at module
     // import time, so resetting the array would permanently drop it for later tests.
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

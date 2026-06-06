@@ -1,53 +1,37 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static getInstance() { return null; }
-        dispose() {}
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 import appContext from "../../components/app_context";
-import Component from "../../components/component";
 import type NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import options from "../../services/options";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { renderComponent, type RenderResult } from "../../test/render";
 import FormattingToolbar, { FixedFormattingToolbar, getFormattingToolbarState } from "./FormattingToolbar";
 import { TabContext } from "./ribbon-interface";
 
 // --- Render helper -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-let parent: Component | undefined;
+// The shared `renderComponent` auto-tears down each container; we keep the latest result so the
+// event-firing helper and the cache-restore test can address its parent / unmount it.
+let lastResult: RenderResult | undefined;
 
-function renderComponent(vnode: preact.VNode) {
-    parent = new Component();
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent ?? null}>
-                {vnode}
-            </ParentComponent.Provider>
-        ), container);
-    });
-    return container;
+function renderComponent_(vnode: preact.VNode) {
+    lastResult = renderComponent(vnode);
+    return lastResult.container;
 }
 
 function fireEvent(name: string, data: unknown) {
     act(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (parent?.handleEventInChildren as any)?.(name, data);
+        (lastResult?.parent.handleEventInChildren as any)?.(name, data);
     });
 }
 
@@ -92,41 +76,30 @@ beforeEach(() => {
     Object.assign(appContext, { tabManager: { getActiveContext: () => null } });
 });
 
-afterEach(() => {
-    const c = container;
-    if (c) {
-        act(() => render(null, c));
-        c.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
-});
-
 // --- FormattingToolbar (detached/decoupled editor toolbar) ---------------------------------------
 
 describe("FormattingToolbar", () => {
     it("renders nothing when the editor type is not the classic CKEditor", () => {
         setOptions({ textNoteEditorType: "ckeditor-balloon" });
-        const el = renderComponent(<FormattingToolbar {...tabContext()} />);
+        const el = renderComponent_(<FormattingToolbar {...tabContext()} />);
         expect(el.querySelector(".classic-toolbar-widget")).toBeNull();
     });
 
     it("renders the toolbar container, marking it hidden via the prop", () => {
-        const el = renderComponent(<FormattingToolbar {...tabContext({ hidden: true })} />);
+        const el = renderComponent_(<FormattingToolbar {...tabContext({ hidden: true })} />);
         const widget = el.querySelector(".classic-toolbar-widget");
         expect(widget?.className).toContain("hidden-ext");
     });
 
     it("renders without the hidden class when not hidden", () => {
-        const el = renderComponent(<FormattingToolbar {...tabContext({ hidden: false })} />);
+        const el = renderComponent_(<FormattingToolbar {...tabContext({ hidden: false })} />);
         const widget = el.querySelector(".classic-toolbar-widget");
         expect(widget).not.toBeNull();
         expect(widget?.className).not.toContain("hidden-ext");
     });
 
     it("attaches the CKEditor toolbar element when an editor refresh matches the ntxId", () => {
-        const el = renderComponent(<FormattingToolbar {...tabContext({ ntxId: "ntxA" })} />);
+        const el = renderComponent_(<FormattingToolbar {...tabContext({ ntxId: "ntxA" })} />);
         const toolbar = document.createElement("div");
         toolbar.className = "ck-toolbar";
         fireEvent("textEditorRefreshed", { ntxId: "ntxA", editor: fakeEditor(toolbar) });
@@ -134,7 +107,7 @@ describe("FormattingToolbar", () => {
     });
 
     it("clears its children when the matching editor has no toolbar element", () => {
-        const el = renderComponent(<FormattingToolbar {...tabContext({ ntxId: "ntxA" })} />);
+        const el = renderComponent_(<FormattingToolbar {...tabContext({ ntxId: "ntxA" })} />);
         const toolbar = document.createElement("div");
         toolbar.className = "ck-toolbar";
         fireEvent("textEditorRefreshed", { ntxId: "ntxA", editor: fakeEditor(toolbar) });
@@ -145,7 +118,7 @@ describe("FormattingToolbar", () => {
     });
 
     it("ignores editor refreshes meant for a different note context", () => {
-        const el = renderComponent(<FormattingToolbar {...tabContext({ ntxId: "ntxA" })} />);
+        const el = renderComponent_(<FormattingToolbar {...tabContext({ ntxId: "ntxA" })} />);
         const toolbar = document.createElement("div");
         toolbar.className = "ck-toolbar";
         fireEvent("textEditorRefreshed", { ntxId: "other", editor: fakeEditor(toolbar) });
@@ -158,7 +131,7 @@ describe("FormattingToolbar", () => {
 describe("FixedFormattingToolbar", () => {
     function renderFixed(note: FNote | undefined, noteContext: NoteContext) {
         Object.assign(appContext, { tabManager: { getActiveContext: () => noteContext } });
-        const el = renderComponent(<FixedFormattingToolbar />);
+        const el = renderComponent_(<FixedFormattingToolbar />);
         return el;
     }
 
@@ -286,12 +259,7 @@ describe("FixedFormattingToolbar", () => {
         toolbar.className = "ck-toolbar";
         fireEvent("textEditorRefreshed", { ntxId: "ntxRestore", editor: fakeEditor(toolbar) });
         // Tear down the first instance so the next mount reads the cache fresh.
-        const firstContainer = container;
-        if (firstContainer) {
-            act(() => render(null, firstContainer));
-            firstContainer.remove();
-            container = undefined;
-        }
+        lastResult?.unmount();
 
         // Second mount with the same ntxId: the mount effect should pull the cached toolbar.
         const note2 = buildNote({ id: "fixedRestore2", title: "Text2", type: "text" });
@@ -303,7 +271,7 @@ describe("FixedFormattingToolbar", () => {
 
     it("renders an empty container when there is no active context", async () => {
         Object.assign(appContext, { tabManager: { getActiveContext: () => null } });
-        const el = renderComponent(<FixedFormattingToolbar />);
+        const el = renderComponent_(<FixedFormattingToolbar />);
         await act(async () => { await new Promise(r => setTimeout(r, 0)); });
         const widget = el.querySelector(".classic-toolbar-widget");
         expect(widget).not.toBeNull();

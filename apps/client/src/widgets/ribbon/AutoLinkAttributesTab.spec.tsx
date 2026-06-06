@@ -1,72 +1,32 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import froca from "../../services/froca";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, makeLoadResults, renderComponent, resetFroca } from "../../test/render";
 import AutoLinkAttributesTab from "./AutoLinkAttributesTab";
 
 // --- Rendering harness -----------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-let parent: Component | undefined;
-
 /** Renders the tab inside a real ParentComponent so `useTriliumEvent` registers against `parent`. */
 function renderTab(props: { note: ReturnType<typeof buildNote> | null | undefined; componentId: string }) {
-    const el = document.createElement("div");
-    document.body.appendChild(el);
-    container = el;
-    const cmp = new Component();
-    parent = cmp;
-    act(() => render((
-        <ParentComponent.Provider value={cmp}>
-            <AutoLinkAttributesTab note={props.note} componentId={props.componentId} />
-        </ParentComponent.Provider>
-    ), el));
-    return el;
+    return renderComponent(
+        <AutoLinkAttributesTab note={props.note} componentId={props.componentId} />
+    );
 }
 
 /** Synchronously dispatch a Trilium event through the parent to the registered hook handler. */
-function fireEvent(name: string, data: unknown) {
+function fireEvent(parent: Component, name: string, data: unknown) {
     act(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (parent?.handleEventInChildren as any)(name, data);
+        (parent.handleEventInChildren as any)(name, data);
     });
 }
 
-/** Settle the async `AutoLinkAttribute` render (renderAutoLink → froca → setHtml). */
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
-function makeLoadResults(attributeRows: unknown[]) {
-    return {
-        getAttributeRows: () => attributeRows,
-        getBranchRows: () => [],
-        getOptionNames: () => [],
-        isNoteReloaded: () => false,
-        isNoteContentReloaded: () => false,
-        getEntityRow: () => undefined
-    };
-}
-
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-});
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------
@@ -74,23 +34,23 @@ afterEach(() => {
 describe("AutoLinkAttributesTab", () => {
     it("renders nothing when the note has no auto-link attributes", () => {
         const note = buildNote({ id: "plain", title: "Plain", "#archived": "true" });
-        const root = renderTab({ note, componentId: "comp-1" });
+        const { container: root } = renderTab({ note, componentId: "comp-1" });
         expect(root.querySelector(".auto-link-attributes-widget")).toBeNull();
         expect(root.textContent).toBe("");
     });
 
     it("renders nothing when the note is null/undefined (refresh early-returns)", () => {
-        const root = renderTab({ note: null, componentId: "comp-null" });
+        const { container: root } = renderTab({ note: null, componentId: "comp-null" });
         expect(root.querySelector(".auto-link-attributes-widget")).toBeNull();
 
-        const root2 = renderTab({ note: undefined, componentId: "comp-undef" });
+        const { container: root2 } = renderTab({ note: undefined, componentId: "comp-undef" });
         expect(root2.querySelector(".auto-link-attributes-widget")).toBeNull();
     });
 
     it("renders a relation auto-link with a reference link to the target note", async () => {
         buildNote({ id: "target1", title: "My <Target>" });
         const note = buildNote({ id: "src1", title: "Source", "~internalLink": "target1" });
-        const root = renderTab({ note, componentId: "comp-rel" });
+        const { container: root } = renderTab({ note, componentId: "comp-rel" });
         await flush();
 
         expect(root.querySelector(".auto-link-attributes-widget")).not.toBeNull();
@@ -104,7 +64,7 @@ describe("AutoLinkAttributesTab", () => {
 
     it("renders a label auto-link (internalBookmark) with escaped name/value", async () => {
         const note = buildNote({ id: "src2", title: "Source", "#internalBookmark": "a&b<c>" });
-        const root = renderTab({ note, componentId: "comp-lbl" });
+        const { container: root } = renderTab({ note, componentId: "comp-lbl" });
         await flush();
 
         expect(root.querySelector(".auto-link-attributes-widget")).not.toBeNull();
@@ -120,7 +80,7 @@ describe("AutoLinkAttributesTab", () => {
         const note = buildNote({ id: "src3", title: "Source", "~imageLink": "missingTarget" });
         // Make froca.getNote resolve to null/undefined for the missing target.
         vi.spyOn(froca, "getNote").mockResolvedValue(undefined as never);
-        const root = renderTab({ note, componentId: "comp-missing" });
+        const { container: root } = renderTab({ note, componentId: "comp-missing" });
         await flush();
 
         // The widget still shows (there is an auto-link attribute), but the inner html is empty.
@@ -138,7 +98,7 @@ describe("AutoLinkAttributesTab", () => {
             "~internalLink": "tA",
             "~includeNoteLink": "tB"
         });
-        const root = renderTab({ note, componentId: "comp-multi" });
+        const { container: root } = renderTab({ note, componentId: "comp-multi" });
         await flush();
 
         const spans = root.querySelectorAll(".auto-link-attributes-container span");
@@ -152,16 +112,18 @@ describe("AutoLinkAttributesTab", () => {
     it("refreshes when an affecting attribute change arrives via entitiesReloaded", async () => {
         buildNote({ id: "erTarget", title: "ER Target" });
         const note = buildNote({ id: "erNote", title: "ER" });
-        const root = renderTab({ note, componentId: "comp-er" });
+        const { container: root, parent } = renderTab({ note, componentId: "comp-er" });
         // No auto-link attributes yet → nothing rendered.
         expect(root.querySelector(".auto-link-attributes-widget")).toBeNull();
 
         // Add an auto-link relation to the note and notify with an affecting attribute row.
         buildNote({ id: "erNote", title: "ER", "~internalLink": "erTarget" });
-        fireEvent("entitiesReloaded", {
-            loadResults: makeLoadResults([
-                { type: "relation", name: "internalLink", value: "erTarget", noteId: "erNote", isDeleted: false, isInheritable: false }
-            ])
+        fireEvent(parent, "entitiesReloaded", {
+            loadResults: makeLoadResults({
+                attributeRows: [
+                    { type: "relation", name: "internalLink", value: "erTarget", noteId: "erNote", isDeleted: false, isInheritable: false }
+                ]
+            })
         });
         await flush();
 
@@ -174,7 +136,7 @@ describe("AutoLinkAttributesTab", () => {
         buildNote({ id: "otherOwner", title: "Other" });
         buildNote({ id: "naTarget", title: "Target" });
         const note = buildNote({ id: "naNote", title: "NA" });
-        const root = renderTab({ note, componentId: "comp-na" });
+        const { container: root, parent } = renderTab({ note, componentId: "comp-na" });
         await flush();
         // No auto-link attributes → nothing rendered.
         expect(root.querySelector(".auto-link-attributes-widget")).toBeNull();
@@ -182,10 +144,12 @@ describe("AutoLinkAttributesTab", () => {
         // Now add an auto-link relation to the note, but signal a change owned by an unrelated
         // note → isAffecting is false → refresh does NOT run → still nothing rendered.
         buildNote({ id: "naNote", title: "NA", "~internalLink": "naTarget" });
-        fireEvent("entitiesReloaded", {
-            loadResults: makeLoadResults([
-                { type: "relation", name: "internalLink", value: "x", noteId: "otherOwner", isDeleted: false, isInheritable: false }
-            ])
+        fireEvent(parent, "entitiesReloaded", {
+            loadResults: makeLoadResults({
+                attributeRows: [
+                    { type: "relation", name: "internalLink", value: "x", noteId: "otherOwner", isDeleted: false, isInheritable: false }
+                ]
+            })
         });
         await flush();
         expect(root.querySelector(".auto-link-attributes-widget")).toBeNull();

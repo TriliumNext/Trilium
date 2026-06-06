@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { flush, renderComponent } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -227,50 +228,59 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
 }));
 
 import Component from "../../../components/component";
-import { ParentComponent } from "../../react/react_utils";
 import CKEditorWithWatchdog, { type CKEditorApi } from "./CKEditorWithWatchdog";
 
 // --- Helpers --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
+// The current render's container + unmount, captured so tests that exercise cleanup can tear the
+// component down mid-test. The shared renderComponent auto-tears-down anything left at afterEach.
+let container: HTMLDivElement | undefined;
+let unmountCurrent: (() => void) | undefined;
+let rerenderCurrent: ((vnode: unknown) => void) | undefined;
 
-function renderComponent(props: Partial<Parameters<typeof CKEditorWithWatchdog>[0]> = {}) {
-    const host = document.createElement("div");
-    document.body.appendChild(host);
-    container = host;
+function unmount() {
+    unmountCurrent?.();
+    unmountCurrent = undefined;
+    container = undefined;
+}
 
-    const watchdogRef = props.watchdogRef ?? { current: null };
-    const editorApi = props.editorApi ?? { current: null };
-
-    const fullProps = {
+function buildFullProps(props: Partial<Parameters<typeof CKEditorWithWatchdog>[0]>) {
+    return {
         contentLanguage: null,
-        watchdogRef,
+        watchdogRef: { current: null },
         onChange: vi.fn(),
-        editorApi,
+        editorApi: { current: null },
         templates: [],
         ...props
     } as Parameters<typeof CKEditorWithWatchdog>[0];
-
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <CKEditorWithWatchdog {...fullProps} />
-            </ParentComponent.Provider>,
-            host
-        );
-    });
-
-    return { watchdogRef, editorApi, host };
 }
 
-/** Settle async effects (watchdog init chain) and the resulting re-render. */
-async function flush() {
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+function renderEditor(props: Partial<Parameters<typeof CKEditorWithWatchdog>[0]> = {}) {
+    const watchdogRef = props.watchdogRef ?? { current: null };
+    const editorApi = props.editorApi ?? { current: null };
+
+    const fullProps = buildFullProps({ watchdogRef, editorApi, ...props });
+
+    const rendered = renderComponent(<CKEditorWithWatchdog {...fullProps} />, { parent });
+    container = rendered.container as HTMLDivElement;
+    unmountCurrent = rendered.unmount;
+    rerenderCurrent = rendered.rerender;
+
+    return { watchdogRef, editorApi, host: container };
+}
+
+/** Re-render the currently mounted component into the same container with new props. */
+function rerenderEditor(props: Partial<Parameters<typeof CKEditorWithWatchdog>[0]>) {
+    const fullProps = buildFullProps(props);
+    rerenderCurrent?.(<CKEditorWithWatchdog {...fullProps} />);
 }
 
 beforeEach(() => {
     parent = new Component();
+    container = undefined;
+    unmountCurrent = undefined;
+    rerenderCurrent = undefined;
     watchdogInstances.length = 0;
     vi.clearAllMocks();
     editorFactory.createImpl = async () => makeFakeEditor();
@@ -278,12 +288,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
     vi.unstubAllEnvs();
 });
 
@@ -292,7 +296,7 @@ afterEach(() => {
 describe("CKEditorWithWatchdog rendering & init", () => {
     it("renders a div with the supplied class/tabIndex and initializes a popup watchdog", async () => {
         const onEditorInitialized = vi.fn();
-        const { watchdogRef } = renderComponent({
+        const { watchdogRef } = renderEditor({
             className: "ck-host",
             tabIndex: 3,
             onEditorInitialized
@@ -314,7 +318,7 @@ describe("CKEditorWithWatchdog rendering & init", () => {
     it("uses the classic editor class and forwards watchdogConfig + external watchdog ref", async () => {
         const externalWatchdogRef = { current: null };
         const watchdogConfig = { crashNumberLimit: 5 };
-        renderComponent({
+        renderEditor({
             isClassicEditor: true,
             watchdogConfig,
             watchdogRef: externalWatchdogRef
@@ -328,7 +332,7 @@ describe("CKEditorWithWatchdog rendering & init", () => {
 
     it("notifies onWatchdogStateChange when the watchdog state changes", async () => {
         const onWatchdogStateChange = vi.fn();
-        renderComponent({ onWatchdogStateChange });
+        renderEditor({ onWatchdogStateChange });
         await flush();
         expect(onWatchdogStateChange).toHaveBeenCalledWith(watchdogInstances[0]);
     });
@@ -337,7 +341,7 @@ describe("CKEditorWithWatchdog rendering & init", () => {
 describe("CKEditorWithWatchdog editor listeners", () => {
     it("wires change:data to onChange and removes it on editor teardown", async () => {
         const onChange = vi.fn();
-        renderComponent({ onChange });
+        renderEditor({ onChange });
         await flush();
 
         const editor = watchdogInstances[0]?.editor;
@@ -348,17 +352,13 @@ describe("CKEditorWithWatchdog editor listeners", () => {
 
     it("subscribes to notification warnings and unsubscribes on cleanup", async () => {
         const onNotificationWarning = vi.fn();
-        renderComponent({ onNotificationWarning });
+        renderEditor({ onNotificationWarning });
         await flush();
 
         const editor = watchdogInstances[0]?.editor;
         expect(editor?.notificationHandlers["show:warning"]?.length).toBe(1);
 
-        if (container) {
-            act(() => render(null, container as HTMLDivElement));
-            container.remove();
-            container = undefined;
-        }
+        unmount();
         expect(editor?.notificationHandlers["show:warning"]?.length).toBe(0);
     });
 });
@@ -366,7 +366,7 @@ describe("CKEditorWithWatchdog editor listeners", () => {
 describe("CKEditorWithWatchdog imperative API", () => {
     async function setupApi(configureEditor?: (e: FakeEditor) => void) {
         const editorApi: { current: CKEditorApi | null } = { current: null };
-        renderComponent({ editorApi });
+        renderEditor({ editorApi });
         await flush();
         const editor = watchdogInstances[0]?.editor;
         if (editor && configureEditor) configureEditor(editor);
@@ -513,7 +513,7 @@ describe("CKEditorWithWatchdog imperative API guards (no editor)", () => {
         // The creator throws during create -> editor stays null on the watchdog,
         // but setEditor was never called.
         editorFactory.createImpl = async () => { throw new Error("creation cancelled"); };
-        renderComponent({ editorApi });
+        renderEditor({ editorApi });
         await flush();
         const api = editorApi.current;
         if (!api) throw new Error("editorApi was not assigned");
@@ -537,7 +537,7 @@ describe("CKEditorWithWatchdog imperative API guards (no editor)", () => {
 
 describe("CKEditorWithWatchdog legacy imperative handlers", () => {
     it("registers loadReferenceLinkTitle / fetchLinkMetadata / detectEmbedType / render helpers on the parent", async () => {
-        renderComponent();
+        renderEditor();
         await flush();
 
         const p = parent as unknown as Record<string, (...a: unknown[]) => unknown>;
@@ -559,34 +559,14 @@ describe("CKEditorWithWatchdog legacy imperative handlers", () => {
     });
 });
 
-function rerenderInto(host: HTMLDivElement, props: Partial<Parameters<typeof CKEditorWithWatchdog>[0]>) {
-    const fullProps = {
-        contentLanguage: null,
-        watchdogRef: { current: null },
-        onChange: vi.fn(),
-        editorApi: { current: null },
-        templates: [],
-        ...props
-    } as Parameters<typeof CKEditorWithWatchdog>[0];
-
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <CKEditorWithWatchdog {...fullProps} />
-            </ParentComponent.Provider>,
-            host
-        );
-    });
-}
-
 describe("CKEditorWithWatchdog re-init on dependency change", () => {
     it("destroys the previous watchdog and rebuilds when contentLanguage changes", async () => {
-        const { host, watchdogRef } = renderComponent({ contentLanguage: "en" });
+        const { watchdogRef } = renderEditor({ contentLanguage: "en" });
         await flush();
         expect(watchdogInstances.length).toBe(1);
         const first = watchdogInstances[0];
 
-        rerenderInto(host, { contentLanguage: "de", watchdogRef });
+        rerenderEditor({ contentLanguage: "de", watchdogRef });
         await flush();
 
         expect(watchdogInstances.length).toBe(2);
@@ -595,12 +575,12 @@ describe("CKEditorWithWatchdog re-init on dependency change", () => {
 
     it("logs a warning when destroying the previous watchdog fails", async () => {
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-        const { host, watchdogRef } = renderComponent({ contentLanguage: "en" });
+        const { watchdogRef } = renderEditor({ contentLanguage: "en" });
         await flush();
         const first = watchdogInstances[0];
         if (first) first.destroy = vi.fn(async () => { throw new Error("destroy boom"); });
 
-        rerenderInto(host, { contentLanguage: "fr", watchdogRef });
+        rerenderEditor({ contentLanguage: "fr", watchdogRef });
         await flush();
 
         expect(warnSpy).toHaveBeenCalled();
@@ -608,7 +588,7 @@ describe("CKEditorWithWatchdog re-init on dependency change", () => {
     });
 
     it("aborts re-init without building a new watchdog when it becomes stale during the prior destroy", async () => {
-        const { host, watchdogRef } = renderComponent({ contentLanguage: "en" });
+        const { watchdogRef } = renderEditor({ contentLanguage: "en" });
         await flush();
         expect(watchdogInstances.length).toBe(1);
         const first = watchdogInstances[0];
@@ -618,16 +598,12 @@ describe("CKEditorWithWatchdog re-init on dependency change", () => {
         if (first) first.destroy = vi.fn(() => new Promise<void>((resolve) => { resolveDestroy = resolve; }));
 
         // Re-render with a changed dep -> the new effect's init() awaits first.destroy().
-        rerenderInto(host, { contentLanguage: "de", watchdogRef });
+        rerenderEditor({ contentLanguage: "de", watchdogRef });
         await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
         expect(resolveDestroy).toBeTruthy();
 
         // Unmount while the destroy is pending -> the new effect's cleanup flips isStale.
-        if (container) {
-            act(() => render(null, container as HTMLDivElement));
-            container.remove();
-            container = undefined;
-        }
+        unmount();
 
         // Resolve the destroy: init() resumes, hits `if (isStale) return`, never builds watchdog #2.
         await act(async () => {
@@ -651,7 +627,7 @@ describe("CKEditorWithWatchdog buildEditor read-only fallback", () => {
             return e;
         };
         const onEditorInitialized = vi.fn();
-        renderComponent({ onEditorInitialized });
+        renderEditor({ onEditorInitialized });
         await flush();
 
         // buildConfig is called once for the initial config and once more for the GPL retry.
@@ -665,7 +641,7 @@ describe("CKEditorWithWatchdog buildEditor read-only fallback", () => {
 describe("CKEditorWithWatchdog inspector branch", () => {
     it("does not attach the inspector when the env flag is unset", async () => {
         vi.stubEnv("VITE_CKEDITOR_ENABLE_INSPECTOR", "false");
-        renderComponent();
+        renderEditor();
         await flush();
         expect(watchdogInstances[0]?.editor).toBeTruthy();
         expect(inspectorAttach).not.toHaveBeenCalled();
@@ -673,7 +649,7 @@ describe("CKEditorWithWatchdog inspector branch", () => {
 
     it("attaches the inspector when the env flag is 'true'", async () => {
         vi.stubEnv("VITE_CKEDITOR_ENABLE_INSPECTOR", "true");
-        renderComponent();
+        renderEditor();
         await flush();
         expect(inspectorAttach).toHaveBeenCalledTimes(1);
     });
@@ -681,18 +657,14 @@ describe("CKEditorWithWatchdog inspector branch", () => {
 
 describe("CKEditorWithWatchdog stale-creation guards", () => {
     it("throws before building when the effect is already stale", async () => {
-        renderComponent();
+        renderEditor();
         await flush();
         const watchdog = watchdogInstances[0];
         const creator = watchdog?.creator;
         expect(creator).toBeTruthy();
 
         // Unmount -> the effect cleanup sets isStale = true (captured by the creator's closure).
-        if (container) {
-            act(() => render(null, container as HTMLDivElement));
-            container.remove();
-            container = undefined;
-        }
+        unmount();
 
         // Re-invoking the (now stale) creator hits the early `if (isStale) throw`.
         buildConfigMock.mockClear();
@@ -706,18 +678,14 @@ describe("CKEditorWithWatchdog stale-creation guards", () => {
         const builtEditor = makeFakeEditor();
         editorFactory.createImpl = () => new Promise((resolve) => { resolveBuild = (e) => resolve(e); });
 
-        renderComponent();
+        renderEditor();
         // Let the async init chain run up to the pending buildEditor await so resolveBuild is set.
         await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
         const watchdog = watchdogInstances[0];
         expect(resolveBuild).toBeTruthy();
 
         // Unmount -> isStale becomes true while the build is still pending.
-        if (container) {
-            act(() => render(null, container as HTMLDivElement));
-            container.remove();
-            container = undefined;
-        }
+        unmount();
 
         // Resolve the build; the creator now sees isStale -> destroys the editor and throws,
         // which our fake watchdog catches (leaving editor null).

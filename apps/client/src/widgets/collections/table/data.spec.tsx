@@ -3,12 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "preact/test-utils";
 
 import attributes from "../../../services/attributes";
-import froca from "../../../services/froca";
-import noteAttributeCache from "../../../services/note_attribute_cache";
-import server from "../../../services/server";
-import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
-import { flush, renderHook } from "../../../test/render-hook";
+import { flush, renderHook, resetFroca } from "../../../test/render";
 import useData, { type TableConfig } from "./data";
 
 // --- helpers --------------------------------------------------------------------------------------
@@ -35,13 +31,6 @@ async function settle() {
     }
 }
 
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
-}
-
 const noopRef: RefObject<number | undefined> = { current: undefined };
 
 // Track mounted hooks so they are unmounted before froca is cleared; otherwise a still-mounted
@@ -54,10 +43,8 @@ function mount<T>(hook: () => T) {
 }
 
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     // glob.device defaults to undefined; ensure no leftover "print" value from a prior test.
     (globalThis as unknown as { glob: { device?: string } }).glob.device = undefined;
 });
@@ -66,7 +53,6 @@ afterEach(async () => {
     await act(async () => {});
     for (const h of mounted.splice(0)) h.unmount();
     await act(async () => {});
-    vi.restoreAllMocks();
     (globalThis as unknown as { glob: { device?: string } }).glob.device = undefined;
 });
 

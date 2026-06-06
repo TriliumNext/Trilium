@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -54,49 +53,35 @@ vi.mock("../../attribute_widgets/attribute_detail", async () => {
 import type { NoteType } from "@triliumnext/commons";
 
 import Component from "../../../components/component";
-import froca from "../../../services/froca";
-import noteAttributeCache from "../../../services/note_attribute_cache";
-import server from "../../../services/server";
-import ws from "../../../services/ws";
 import { buildNote } from "../../../test/easy-froca";
-import { ParentComponent } from "../../react/react_utils";
+import { type RenderResult, renderComponent, resetFroca } from "../../../test/render";
 import type { TableConfig } from "./data";
 import TableView from "./index";
 
 // --- Render harness --------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
 
 interface RenderOpts {
     note: ReturnType<typeof buildNote>;
     noteIds?: string[];
     viewConfig?: TableConfig | undefined;
     saveConfig?: (newConfig: TableConfig) => void;
-    parent?: Component | null;
+    parent?: Component;
 }
 
-function renderTable({ note, noteIds = [], viewConfig, saveConfig = vi.fn(), parent = new Component() }: RenderOpts) {
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <TableView
-                    note={note}
-                    notePath={`root/${note.noteId}`}
-                    noteIds={noteIds}
-                    highlightedTokens={null}
-                    viewConfig={viewConfig}
-                    saveConfig={saveConfig}
-                    media="screen"
-                    onReady={vi.fn()}
-                />
-            </ParentComponent.Provider>,
-            root
-        );
-    });
-    return root;
+function renderTable({ note, noteIds = [], viewConfig, saveConfig = vi.fn(), parent = new Component() }: RenderOpts): RenderResult {
+    return renderComponent(
+        <TableView
+            note={note}
+            notePath={`root/${note.noteId}`}
+            noteIds={noteIds}
+            highlightedTokens={null}
+            viewConfig={viewConfig}
+            saveConfig={saveConfig}
+            media="screen"
+            onReady={vi.fn()}
+        />,
+        { parent }
+    );
 }
 
 async function flushAll() {
@@ -110,33 +95,12 @@ function latestTabulatorProps() {
     return tabulatorProps.at(-1);
 }
 
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
-}
-
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     tabulatorProps.length = 0;
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     // The bootstrap tooltip jQuery plugin isn't wired up in tests; stub it so tooltip hooks no-op.
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
-    (globalThis as unknown as { glob: { device?: string } }).glob.device = undefined;
-});
-
-afterEach(async () => {
-    await act(async () => {});
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    await act(async () => {});
-    vi.restoreAllMocks();
     (globalThis as unknown as { glob: { device?: string } }).glob.device = undefined;
 });
 
@@ -156,11 +120,11 @@ describe("TableView", () => {
         // book notes get the CollectionProperties chrome rendered (noteType is "book").
         Object.assign(note, { type: "book" as NoteType });
 
-        const root = renderTable({ note, noteIds: [ "row1", "row2" ] });
+        const { container } = renderTable({ note, noteIds: [ "row1", "row2" ] });
         await flushAll();
 
-        expect(root.querySelector(".table-view")).not.toBeNull();
-        expect(root.querySelector(".fake-attr-detail")).not.toBeNull();
+        expect(container.querySelector(".table-view")).not.toBeNull();
+        expect(container.querySelector(".fake-attr-detail")).not.toBeNull();
 
         const props = latestTabulatorProps();
         expect(props).toBeDefined();
@@ -221,13 +185,13 @@ describe("TableView", () => {
         const note = buildNote({ id: "search1", title: "Search", children: [ { id: "sr1", title: "SR" } ] });
         Object.assign(note, { type: "search" as NoteType });
 
-        const root = renderTable({ note, noteIds: [ "sr1" ] });
+        const { container } = renderTable({ note, noteIds: [ "sr1" ] });
         await flushAll();
 
         // CollectionProperties renders for "search" notes; but the add-row/add-column trigger
         // buttons (right children) are omitted because note.type === "search".
-        expect(root.querySelector("[data-trigger-command='addNewRow']")).toBeNull();
-        expect(root.querySelector("[data-trigger-command='addNewTableColumn']")).toBeNull();
+        expect(container.querySelector("[data-trigger-command='addNewRow']")).toBeNull();
+        expect(container.querySelector("[data-trigger-command='addNewTableColumn']")).toBeNull();
         // Search notes also disable movable rows.
         expect(latestTabulatorProps()?.movableRows).toBe(false);
     });
@@ -267,7 +231,7 @@ describe("TableView - persistence", () => {
         Object.assign(note, { type: "book" as NoteType });
 
         const saveConfig = vi.fn();
-        renderTable({ note, noteIds: [ "pr2" ], saveConfig });
+        const { unmount } = renderTable({ note, noteIds: [ "pr2" ], saveConfig });
         await flushAll();
 
         const writer = latestTabulatorProps()?.persistenceWriterFunc as (id: string, type: string, data: unknown) => void;
@@ -275,8 +239,7 @@ describe("TableView - persistence", () => {
         // forces the pending spaced save to run with the mutated local config.
         writer("table", "sort", [ { column: "title", dir: "desc" } ]);
 
-        await act(async () => render(null, container as HTMLDivElement));
-        if (container) { container.remove(); container = undefined; }
+        unmount();
         await flushAll();
         expect(saveConfig).toHaveBeenCalledWith({
             tableData: { sort: [ { column: "title", dir: "desc" } ] }

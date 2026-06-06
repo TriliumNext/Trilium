@@ -1,34 +1,9 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { renderInto } from "../../test/render";
 import Collapsible, { ExternallyControlledCollapsible } from "./Collapsible";
-
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
-
-function rerenderInto(vnode: unknown) {
-    if (!container) {
-        throw new Error("Nothing rendered yet");
-    }
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
-});
 
 describe("Collapsible (default, internally controlled)", () => {
     it("renders collapsed by default and exposes title, button and body structure", () => {
@@ -128,7 +103,7 @@ describe("Collapsible transition lifecycle (timers)", () => {
         vi.useFakeTimers();
         try {
             const setExpanded = vi.fn();
-            renderInto(
+            const root = renderInto(
                 <ExternallyControlledCollapsible title="T" expanded={false} setExpanded={setExpanded}>
                     <span>x</span>
                 </ExternallyControlledCollapsible>
@@ -136,26 +111,28 @@ describe("Collapsible transition lifecycle (timers)", () => {
 
             // Enable the transition first.
             act(() => { vi.advanceTimersByTime(200); });
-            const body = () => container?.querySelector(".collapsible-body");
+            const body = () => root.querySelector(".collapsible-body");
             expect(body()?.classList.contains("fully-expanded")).toBe(false);
 
             // Now expand: with transition enabled, fully-expanded is deferred by 250ms.
-            rerenderInto(
+            act(() => render(
                 <ExternallyControlledCollapsible title="T" expanded={true} setExpanded={setExpanded}>
                     <span>x</span>
-                </ExternallyControlledCollapsible>
-            );
+                </ExternallyControlledCollapsible>,
+                root
+            ));
             expect(body()?.classList.contains("fully-expanded")).toBe(false);
 
             act(() => { vi.advanceTimersByTime(250); });
             expect(body()?.classList.contains("fully-expanded")).toBe(true);
 
             // Collapsing again clears fully-expanded synchronously.
-            rerenderInto(
+            act(() => render(
                 <ExternallyControlledCollapsible title="T" expanded={false} setExpanded={setExpanded}>
                     <span>x</span>
-                </ExternallyControlledCollapsible>
-            );
+                </ExternallyControlledCollapsible>,
+                root
+            ));
             expect(body()?.classList.contains("fully-expanded")).toBe(false);
         } finally {
             vi.useRealTimers();
@@ -173,14 +150,14 @@ describe("Collapsible transition lifecycle (timers)", () => {
             );
             // Enable the transition, then leave a deferred fully-expanded timeout pending.
             act(() => { vi.advanceTimersByTime(200); });
-            rerenderInto(
+            act(() => render(
                 <ExternallyControlledCollapsible title="T" expanded={true} setExpanded={setExpanded}>
                     <span>x</span>
-                </ExternallyControlledCollapsible>
-            );
+                </ExternallyControlledCollapsible>,
+                root
+            ));
             // Unmount while timers are still pending → cleanup callbacks run.
             act(() => render(null, root));
-            container = undefined;
             expect(() => act(() => { vi.runAllTimers(); })).not.toThrow();
         } finally {
             vi.useRealTimers();
@@ -200,12 +177,13 @@ describe("ExternallyControlledCollapsible body height", () => {
         expect((collapsed.querySelector(".collapsible-body") as HTMLElement | null)?.style.height).toBe("0px");
 
         // When expanded, height comes from useElementSize (a DOMRect height, "0" under happy-dom).
-        rerenderInto(
+        act(() => render(
             <ExternallyControlledCollapsible title="H" expanded={true} setExpanded={setExpanded}>
                 <span>x</span>
-            </ExternallyControlledCollapsible>
-        );
-        const expandedBody = container?.querySelector(".collapsible-body") as HTMLElement | null;
+            </ExternallyControlledCollapsible>,
+            collapsed
+        ));
+        const expandedBody = collapsed.querySelector(".collapsible-body") as HTMLElement | null;
         expect(expandedBody?.getAttribute("aria-hidden")).toBe("false");
     });
 

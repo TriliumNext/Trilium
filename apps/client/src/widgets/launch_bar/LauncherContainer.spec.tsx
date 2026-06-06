@@ -1,5 +1,4 @@
 import { NoteType } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -41,11 +40,10 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 import Component from "../../components/component";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
-import server from "../../services/server";
 import { isDesktop, isMobile } from "../../services/utils";
 import { buildNote } from "../../test/easy-froca";
+import { flush, renderComponent, resetFroca, type RenderResult } from "../../test/render";
 import { onWheelHorizontalScroll } from "../widget_utils";
-import { ParentComponent } from "../react/react_utils";
 import LauncherContainer from "./LauncherContainer";
 
 // --- Helpers -------------------------------------------------------------------------------------
@@ -60,8 +58,8 @@ interface LauncherDef {
     growthFactor?: string;
 }
 
-let container: HTMLDivElement | undefined;
 let parent: Component;
+let lastRender: RenderResult | undefined;
 
 const VISIBLE_ROOT_ID = "_lbVisibleLaunchers";
 const MOBILE_ROOT_ID = "_lbMobileVisibleLaunchers";
@@ -85,22 +83,13 @@ function buildLaunchersRoot(launchers: LauncherDef[], rootId = VISIBLE_ROOT_ID) 
 }
 
 async function renderContainer(isHorizontalLayout = true) {
-    const root = document.createElement("div");
-    container = root;
-    document.body.appendChild(root);
-    act(() => {
-        render((
-            <ParentComponent.Provider value={parent}>
-                <LauncherContainer isHorizontalLayout={isHorizontalLayout} />
-            </ParentComponent.Provider>
-        ), root);
-    });
+    lastRender = renderComponent(<LauncherContainer isHorizontalLayout={isHorizontalLayout} />, { parent });
     // The root-note load and the child-note load are two sequential async effects; drain several
     // microtask/render cycles so both settle.
     for (let i = 0; i < 4; i++) {
-        await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+        await flush();
     }
-    return root;
+    return lastRender.container;
 }
 
 function widgetMarkers(root: HTMLElement) {
@@ -109,11 +98,8 @@ function widgetMarkers(root: HTMLElement) {
 
 beforeEach(() => {
     parent = new Component();
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined) });
     (isDesktop as ReturnType<typeof vi.fn>).mockReturnValue(true);
     (isMobile as ReturnType<typeof vi.fn>).mockReturnValue(false);
     (isExperimentalFeatureEnabled as ReturnType<typeof vi.fn>).mockReturnValue(false);
@@ -122,14 +108,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (container) {
-        act(() => { if (container) render(null, container); });
-        container.remove();
-        container = undefined;
-    }
+    lastRender = undefined;
     const glob = (window as unknown as { glob: Record<string, unknown> }).glob;
     delete glob.TRILIUM_SAFE_MODE;
-    vi.restoreAllMocks();
 });
 
 // --- Container structure --------------------------------------------------------------------------
@@ -270,9 +251,8 @@ describe("initBuiltinWidget dispatch", () => {
         // Disabled → nothing.
         let root = await renderContainer();
         expect(widgetMarkers(root)).toEqual([]);
-        act(() => { if (container) render(null, container); });
-        container?.remove();
-        container = undefined;
+        lastRender?.unmount();
+        lastRender = undefined;
 
         // Enabled → sidebar chat.
         (isExperimentalFeatureEnabled as ReturnType<typeof vi.fn>).mockReturnValue(true);

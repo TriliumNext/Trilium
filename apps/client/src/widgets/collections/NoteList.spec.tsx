@@ -1,4 +1,3 @@
-import { ComponentChild, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -45,14 +44,11 @@ vi.mock("./view_mode_storage", () => ({
     }
 }));
 
-import Component from "../../components/component";
 import froca from "../../services/froca";
-import noteAttributeCache from "../../services/note_attribute_cache";
 import search from "../../services/search";
 import { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { flush, renderHook } from "../../test/render-hook";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, flush, renderComponent, renderHook, resetFroca } from "../../test/render";
 import NoteList, { CustomNoteList, SearchNoteList, useNoteIds, useNoteViewType, useViewModeConfig } from "./NoteList";
 
 // --- Helpers --------------------------------------------------------------------------------------
@@ -69,20 +65,9 @@ function makeReloadResults(opts: {
     };
 }
 
-let containers: HTMLDivElement[] = [];
-function renderInto(noteContext: unknown, child: ComponentChild) {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    containers.push(container);
-    act(() => render(
-        <ParentComponent.Provider value={new Component()}>
-            <NoteContextContext.Provider value={noteContext as never}>
-                {child}
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>,
-        container
-    ));
-    return container;
+/** Wraps the shared `renderComponent` to keep the existing `renderInto(noteContext, child)` call sites. */
+function renderInto(noteContext: unknown, child: unknown) {
+    return renderComponent(child, { noteContext: noteContext as never }).container;
 }
 
 /** Wait long enough for the observer's `setTimeout(..., 10)` to fire, then settle effects. */
@@ -111,10 +96,7 @@ class FakeIntersectionObserver {
 const originalIntersectionObserver = window.IntersectionObserver;
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
+    resetFroca();
     wsSubscribers.clear();
     FakeIntersectionObserver.instances = [];
     Object.assign(window, { IntersectionObserver: FakeIntersectionObserver });
@@ -123,14 +105,10 @@ beforeEach(() => {
     restoreImpl.mockResolvedValue(undefined);
 });
 
-afterEach(async () => {
-    for (const container of containers) {
-        act(() => render(null, container));
-        container.remove();
-    }
-    containers = [];
+afterEach(() => {
+    // FakeIntersectionObserver captures the callback so specs can fire it; the global stub is inert,
+    // so this local controllable observer is kept and restored here.
     Object.assign(window, { IntersectionObserver: originalIntersectionObserver });
-    vi.restoreAllMocks();
 });
 
 // --- useNoteViewType ------------------------------------------------------------------------------
@@ -490,14 +468,12 @@ describe("NoteList (default export)", () => {
     it("derives view type and enablement from the active note context", async () => {
         buildNote({ id: "nl-note", title: "N", type: "book", children: [ { id: "nl-c1", title: "C1" } ] });
         const note = froca.notes["nl-note"];
-        const noteContext = {
+        const noteContext = fakeNoteContext({
             ntxId: "ntx-nl",
-            hoistedNoteId: "root",
             notePath: "root/nl-note",
             note,
-            viewScope: { viewMode: "default" },
             hasNoteList: () => true
-        };
+        });
         const container = renderInto(noteContext, <NoteList media="screen" />);
         await flush();
         expect(container.querySelector(".note-list-widget")).toBeTruthy();
@@ -506,14 +482,12 @@ describe("NoteList (default export)", () => {
     it("renders disabled (no content) when the context reports no note list", async () => {
         buildNote({ id: "nl-empty", title: "N", type: "book" });
         const note = froca.notes["nl-empty"];
-        const noteContext = {
+        const noteContext = fakeNoteContext({
             ntxId: "ntx-nl2",
-            hoistedNoteId: "root",
             notePath: "root/nl-empty",
             note,
-            viewScope: { viewMode: "default" },
             hasNoteList: () => false
-        };
+        });
         const container = renderInto(noteContext, <NoteList media="screen" displayOnlyCollections />);
         await flush();
         expect(container.querySelector(".note-list-widget-content")).toBeNull();

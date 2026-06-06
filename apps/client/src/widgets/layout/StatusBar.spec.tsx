@@ -1,31 +1,12 @@
 import { Locale } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        config: unknown;
-        constructor(el: Element, config?: unknown) { this.element = el; this.config = config; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    class Dropdown {
-        static getInstance() { return null; }
-        static getOrCreateInstance() { return new Dropdown(); }
-        show() {}
-        hide() {}
-        update() {}
-        dispose() {}
-    }
-    return { Tooltip, Dropdown, default: { Tooltip, Dropdown } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 
 // Stub the real Dropdown component so its children render unconditionally (the production one only
 // renders children when the bootstrap dropdown is "shown"). We keep enough structure to assert on.
@@ -100,31 +81,21 @@ import Component from "../../components/component";
 import type NoteContext from "../../components/note_context";
 import attributes from "../../services/attributes";
 import froca from "../../services/froca";
-import noteAttributeCache from "../../services/note_attribute_cache";
 import options from "../../services/options";
 import server from "../../services/server";
 import * as utils from "../../services/utils";
-import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { makeLoadResults } from "../../test/render-hook";
-import { ParentComponent } from "../react/react_utils";
+import { fakeNoteContext as sharedFakeNoteContext, makeLoadResults, renderComponent, resetFroca } from "../../test/render";
 import StatusBar, { getLocaleName, NoteInfoBadge, NoteInfoContent } from "./StatusBar";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | null = null;
 let parent: Component | null = null;
 
 function renderInProviders(vnode: preact.ComponentChild, theParent = new Component()) {
-    parent = theParent;
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => render(
-        <ParentComponent.Provider value={theParent}>{vnode}</ParentComponent.Provider>,
-        el
-    ));
-    return el;
+    const { container, parent: renderedParent } = renderComponent(vnode, { parent: theParent });
+    parent = renderedParent;
+    return container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -135,15 +106,14 @@ function fireEvent(name: string, data: unknown) {
 }
 
 function fakeNoteContext(note: ReturnType<typeof buildNote>, overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
+    return sharedFakeNoteContext({
         note,
         notePath: `root/${note.noteId}`,
         hoistedNoteId: "root",
         viewScope: { viewMode: "default" },
         getCodeEditor: vi.fn(async () => null),
         ...overrides
-    } as unknown as NoteContext;
+    });
 }
 
 const LOCALE_EN: Locale = { id: "en", name: "English" } as Locale;
@@ -168,25 +138,15 @@ function defaultLanguageSwitcher() {
 }
 
 beforeEach(() => {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
+    resetFroca();
     options.load({});
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     Object.assign(($.fn as unknown as Record<string, unknown>), { tooltip: vi.fn() });
     defaultLanguageSwitcher();
     mockUseBacklinkCount.mockReturnValue(0);
     mockUseAttachments.mockReturnValue([]);
     mockUseSortedNotePaths.mockReturnValue([]);
     setActiveContext(null);
-});
-
-afterEach(() => {
-    if (container) { const el = container; act(() => render(null, el)); el.remove(); container = null; }
-    vi.restoreAllMocks();
 });
 
 /** A non-hidden note: parented under `root` so `isHiddenCompletely()` returns false. */

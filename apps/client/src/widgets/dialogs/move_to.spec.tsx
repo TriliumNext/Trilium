@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -80,36 +79,24 @@ vi.mock("../../components/app_context", () => ({
     }
 }));
 
-import Component from "../../components/component";
+import type Component from "../../components/component";
 import branches from "../../services/branches";
 import froca from "../../services/froca";
 import { triggerRecentNotes } from "../../services/note_autocomplete";
 import toast from "../../services/toast";
 import tree from "../../services/tree";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import MoveToDialog from "./move_to";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent: Component | undefined;
 
 function renderDialog() {
-    const p = new Component();
-    const c = document.createElement("div");
+    const { container, parent: p } = renderComponent(<MoveToDialog />);
     parent = p;
-    container = c;
-    document.body.appendChild(c);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={p}>
-                <MoveToDialog />
-            </ParentComponent.Provider>,
-            c
-        );
-    });
-    return c;
+    return container;
 }
 
 function dispatch(el: EventTarget | null | undefined, event: Event) {
@@ -131,10 +118,6 @@ function fireEvent(name: string, data: unknown) {
     });
 }
 
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
 /** Open the dialog by firing the Trilium command the widget subscribes to. */
 function openDialog(branchIds: string[] | undefined) {
     fireEvent("moveBranchIdsTo", { branchIds });
@@ -150,33 +133,18 @@ function selectSuggestion(suggestion: unknown) {
     act(() => autocompleteOnChange?.(suggestion));
 }
 
-function clearFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-}
-
 const logErrorMock = vi.fn();
 
 beforeEach(() => {
-    clearFroca();
+    resetFroca();
     vi.clearAllMocks();
     autocompleteOnChange = undefined;
+    parent = undefined;
     // `logError` is a global normally set up by ws.ts; the dialog's onSubmit error path calls it
     // directly. froca.getBranch (used by moveNotesTo on a missing branch) also relies on it.
     logErrorMock.mockClear();
     (window as unknown as { logError: (msg: string) => void }).logError = logErrorMock;
     (branches.moveToParentNote as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => { render(null, container ?? document.createElement("div")); });
-        container.remove();
-        container = undefined;
-    }
-    parent = undefined;
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

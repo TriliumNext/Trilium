@@ -1,6 +1,6 @@
-import { render } from "preact";
-import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -36,24 +36,6 @@ import type { ToolCall } from "./llm_chat_types.js";
 import ToolCallCard from "./ToolCallCard.js";
 
 // --- Render helper --------------------------------------------------------------------------------
-
-const rendered: HTMLDivElement[] = [];
-function renderInto(vnode: preact.ComponentChild): HTMLDivElement {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => { render(vnode, container); });
-    rendered.push(container);
-    return container;
-}
-
-afterEach(() => {
-    for (const container of rendered) {
-        render(null, container);
-        container.remove();
-    }
-    rendered.length = 0;
-    vi.restoreAllMocks();
-});
 
 function makeToolCall(overrides: Partial<ToolCall> = {}): ToolCall {
     return {

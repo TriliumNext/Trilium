@@ -1,7 +1,6 @@
-import { render } from "preact";
 import { useContext, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FNote from "../../../entities/fnote";
 
@@ -94,7 +93,7 @@ vi.mock("../../../services/toast", () => ({
 import Component from "../../../components/component";
 import toast from "../../../services/toast";
 import { buildNote } from "../../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
+import { flush, renderComponent } from "../../../test/render";
 import { onWheelHorizontalScroll } from "../../widget_utils";
 import type { ViewModeProps } from "../interface";
 import BoardView, { BoardViewContext, TitleEditor } from "./index";
@@ -106,7 +105,6 @@ ctxHolder.useContext = (<T,>(c: unknown) => useContext(c as Parameters<typeof us
 
 // --- Harness --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 let parent = new Component();
 
 function setBoardData(byColumn: Map<string, unknown>, opts: { newPersistedData?: unknown; isInRelationMode?: boolean } = {}) {
@@ -118,9 +116,6 @@ function setBoardData(byColumn: Map<string, unknown>, opts: { newPersistedData?:
 }
 
 async function renderBoard(props: Partial<ViewModeProps<{ columns?: { value: string }[] }>> & { note: FNote }) {
-    const target = document.createElement("div");
-    document.body.appendChild(target);
-    container = target;
     const fullProps: ViewModeProps<{ columns?: { value: string }[] }> = {
         notePath: "root/" + props.note.noteId,
         noteIds: [],
@@ -131,19 +126,10 @@ async function renderBoard(props: Partial<ViewModeProps<{ columns?: { value: str
         onReady: vi.fn(),
         ...props
     };
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null}>
-                    <BoardView {...fullProps} />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>,
-            target
-        );
-    });
+    const { container } = renderComponent(<BoardView {...fullProps} />, { parent });
     // Let the refresh() async effect settle and re-render.
-    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
-    return target;
+    await flush();
+    return container;
 }
 
 function fireTrilium(name: string, data: unknown) {
@@ -177,15 +163,6 @@ beforeEach(() => {
     apiState.instances.length = 0;
     dataState.impl = undefined;
     vi.clearAllMocks();
-});
-
-afterEach(async () => {
-    if (container) {
-        await act(async () => { render(null, container as HTMLDivElement); });
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- BoardView rendering --------------------------------------------------------------------------
@@ -526,20 +503,7 @@ describe("AddNewColumn", () => {
 
 describe("TitleEditor", () => {
     function renderEditor(props: Parameters<typeof TitleEditor>[0]) {
-        const target = document.createElement("div");
-        document.body.appendChild(target);
-        container = target;
-        act(() => {
-            render(
-                <ParentComponent.Provider value={parent}>
-                    <NoteContextContext.Provider value={null}>
-                        <TitleEditor {...props} />
-                    </NoteContextContext.Provider>
-                </ParentComponent.Provider>,
-                target
-            );
-        });
-        return target;
+        return renderComponent(<TitleEditor {...props} />, { parent }).container;
     }
 
     it("renders a single-line FormTextBox in normal mode and commits on blur with a changed value", () => {
@@ -700,9 +664,6 @@ describe("TitleEditor", () => {
         // After save(), dismissOnNextRefreshRef is armed; the effect on the *next* render calls dismiss().
         const save = vi.fn();
         const dismiss = vi.fn();
-        const target = document.createElement("div");
-        document.body.appendChild(target);
-        container = target;
 
         let forceRerender: (() => void) | undefined;
         function Host() {
@@ -710,16 +671,7 @@ describe("TitleEditor", () => {
             forceRerender = () => setTick((t) => t + 1);
             return <TitleEditor currentValue="Old" save={save} dismiss={dismiss} mode="normal" />;
         }
-        act(() => {
-            render(
-                <ParentComponent.Provider value={parent}>
-                    <NoteContextContext.Provider value={null}>
-                        <Host />
-                    </NoteContextContext.Provider>
-                </ParentComponent.Provider>,
-                target
-            );
-        });
+        const { container: target } = renderComponent(<Host />, { parent });
 
         const input = target.querySelector("input") as HTMLInputElement;
         input.value = "Changed";

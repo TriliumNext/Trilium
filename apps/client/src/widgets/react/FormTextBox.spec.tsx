@@ -1,29 +1,10 @@
-import { render } from "preact";
 import type { RefObject } from "preact/compat";
-import { act } from "preact/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { renderInto } from "../../test/render";
 import FormTextBox, { FormTextBoxWithUnit } from "./FormTextBox";
 
 // --- Render helper -------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    // act() flushes the autoFocus useEffect synchronously (Preact runs effects after commit).
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
-});
 
 function typeInto(input: HTMLInputElement, value: string) {
     input.value = value;

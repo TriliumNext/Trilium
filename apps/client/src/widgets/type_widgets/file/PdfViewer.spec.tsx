@@ -1,27 +1,16 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Component from "../../../components/component";
 import options from "../../../services/options";
-import { ParentComponent } from "../../react/react_utils";
+import { renderComponent, type RenderResult } from "../../../test/render";
 import PdfViewer from "./PdfViewer";
 
 // --- Render helpers -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
-function renderViewer(props: Parameters<typeof PdfViewer>[0]) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    const parent = new Component();
-    act(() => render((
-        <ParentComponent.Provider value={parent}>
-            <PdfViewer {...props} />
-        </ParentComponent.Provider>
-    ), container as HTMLDivElement));
-    return getIframe(container);
+function renderViewer(props: Parameters<typeof PdfViewer>[0]): { iframe: HTMLIFrameElement; result: RenderResult } {
+    const result = renderComponent(<PdfViewer {...props} />);
+    return { iframe: getIframe(result.container), result };
 }
 
 function getIframe(root: HTMLElement): HTMLIFrameElement {
@@ -62,16 +51,11 @@ beforeEach(() => {
     (globalThis as unknown as { glob: Record<string, unknown> }).glob = { triliumVersion: "9.9.9" };
 });
 
-afterEach(() => {
-    if (container) { act(() => render(null, container as HTMLDivElement)); container.remove(); container = undefined; }
-    vi.restoreAllMocks();
-});
-
 // --- Tests ----------------------------------------------------------------------------------------
 
 describe("PdfViewer - src construction", () => {
     it("builds the viewer URL with defaults (toolbar on, sidebar on, not editable)", () => {
-        const iframe = renderViewer({ pdfUrl: "/notes/n1/open" });
+        const { iframe } = renderViewer({ pdfUrl: "/notes/n1/open" });
         const src = iframe.getAttribute("src") ?? "";
         expect(iframe.className).toBe("pdf-preview");
         expect(src).toContain("pdfjs/web/viewer.html?v=9.9.9");
@@ -85,7 +69,7 @@ describe("PdfViewer - src construction", () => {
 
     it("reflects editable, hidden toolbar and newLayout in the URL", () => {
         setOptions({ locale: "de", newLayout: "true" });
-        const iframe = renderViewer({ pdfUrl: "/notes/n2/open", editable: true, toolbar: false });
+        const { iframe } = renderViewer({ pdfUrl: "/notes/n2/open", editable: true, toolbar: false });
         const src = iframe.getAttribute("src") ?? "";
         expect(src).toContain("locale=de");
         // newLayout=true -> sidebar=0
@@ -96,7 +80,7 @@ describe("PdfViewer - src construction", () => {
 
     it("syncs an external iframeRef to the rendered iframe via useSyncedRef", () => {
         const externalRef = { current: null as HTMLIFrameElement | null };
-        const iframe = renderViewer({ pdfUrl: "/x", iframeRef: externalRef });
+        const { iframe } = renderViewer({ pdfUrl: "/x", iframeRef: externalRef });
         expect(externalRef.current).toBe(iframe);
     });
 });
@@ -104,7 +88,7 @@ describe("PdfViewer - src construction", () => {
 describe("PdfViewer - style injection on load", () => {
     it("injects root vars + font styles into the iframe document and invokes onLoad", () => {
         const onLoad = vi.fn();
-        const iframe = renderViewer({ pdfUrl: "/x", onLoad });
+        const { iframe } = renderViewer({ pdfUrl: "/x", onLoad });
         const doc = stubContentDocument(iframe);
 
         act(() => { iframe.dispatchEvent(new Event("load")); });
@@ -123,7 +107,7 @@ describe("PdfViewer - style injection on load", () => {
     it("rewrites root --vars into prefixed --tn- vars inside the injected stylesheet", () => {
         document.documentElement.style.setProperty("--accent", "red");
         try {
-            const iframe = renderViewer({ pdfUrl: "/x" });
+            const { iframe } = renderViewer({ pdfUrl: "/x" });
             const doc = stubContentDocument(iframe);
             act(() => { iframe.dispatchEvent(new Event("load")); });
 
@@ -135,7 +119,7 @@ describe("PdfViewer - style injection on load", () => {
     });
 
     it("adds a selection-disabling style when disableSelection is set", () => {
-        const iframe = renderViewer({ pdfUrl: "/x", disableSelection: true });
+        const { iframe } = renderViewer({ pdfUrl: "/x", disableSelection: true });
         const doc = stubContentDocument(iframe);
 
         act(() => { iframe.dispatchEvent(new Event("load")); });
@@ -147,7 +131,7 @@ describe("PdfViewer - style injection on load", () => {
 
     it("tolerates a load event when the iframe has no contentDocument", () => {
         const onLoad = vi.fn();
-        const iframe = renderViewer({ pdfUrl: "/x", onLoad });
+        const { iframe } = renderViewer({ pdfUrl: "/x", onLoad });
         Object.defineProperty(iframe, "contentDocument", { value: null, configurable: true });
 
         expect(() => act(() => { iframe.dispatchEvent(new Event("load")); })).not.toThrow();
@@ -156,7 +140,7 @@ describe("PdfViewer - style injection on load", () => {
     });
 
     it("does not require an onLoad prop", () => {
-        const iframe = renderViewer({ pdfUrl: "/x" });
+        const { iframe } = renderViewer({ pdfUrl: "/x" });
         stubContentDocument(iframe);
         expect(() => act(() => { iframe.dispatchEvent(new Event("load")); })).not.toThrow();
     });
@@ -166,7 +150,7 @@ describe("PdfViewer - color scheme change listener", () => {
     it("registers a matchMedia listener and refreshes the injected vars on change", () => {
         const media = stubMatchMedia();
         try {
-            const iframe = renderViewer({ pdfUrl: "/x" });
+            const { iframe } = renderViewer({ pdfUrl: "/x" });
             const doc = stubContentDocument(iframe);
             // Populate styleRef.current via the initial load.
             act(() => { iframe.dispatchEvent(new Event("load")); });
@@ -186,9 +170,9 @@ describe("PdfViewer - color scheme change listener", () => {
     it("removes the matchMedia listener on unmount", () => {
         const media = stubMatchMedia();
         try {
-            renderViewer({ pdfUrl: "/x" });
+            const { result } = renderViewer({ pdfUrl: "/x" });
             expect(media.listeners.length).toBe(1);
-            if (container) { act(() => render(null, container as HTMLDivElement)); container.remove(); container = undefined; }
+            result.unmount();
             expect(media.removed.length).toBe(1);
             expect(media.removed[0]).toBe(media.listeners[0]);
         } finally {

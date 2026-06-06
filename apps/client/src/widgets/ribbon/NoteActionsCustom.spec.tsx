@@ -1,6 +1,7 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { bootstrapMock } from "../../test/mocks";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -12,18 +13,7 @@ vi.mock("../../services/utils", async (importOriginal) => ({
     createImageSrcUrl: vi.fn(() => "data:image/png;base64,xxx"),
     openInAppHelpFromUrl: vi.fn()
 }));
-vi.mock("bootstrap", () => {
-    class Tooltip {
-        static instances = new Map<Element, Tooltip>();
-        static getInstance(el: Element) { return Tooltip.instances.get(el) ?? null; }
-        element: Element;
-        constructor(el: Element) { this.element = el; Tooltip.instances.set(el, this); }
-        dispose() { Tooltip.instances.delete(this.element); }
-        show() {}
-        hide() {}
-    }
-    return { Tooltip, default: { Tooltip } };
-});
+vi.mock("bootstrap", () => bootstrapMock());
 vi.mock("../../services/keyboard_actions", () => ({
     default: { getAction: vi.fn(async () => ({ effectiveShortcuts: [] })) }
 }));
@@ -40,30 +30,21 @@ import attributes from "../../services/attributes";
 import { copyImageReferenceToClipboard } from "../../services/image";
 import options from "../../services/options";
 import { downloadFileNote, openNoteExternally } from "../../services/open";
-import server from "../../services/server";
 import { openInAppHelpFromUrl } from "../../services/utils";
-import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { makeLoadResults } from "../../test/render-hook";
-import { ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, makeLoadResults, renderComponent as renderWithProviders } from "../../test/render";
 import NoteActionsCustom from "./NoteActionsCustom";
 
 // --- Render helper -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
 function renderComponent(note: FNote, parent: Component | null = new Component(), noteContext?: Partial<NoteContext>) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    const ctx = { ntxId: "ntx1", viewScope: { viewMode: "default" }, ...noteContext } as unknown as NoteContext;
-    act(() => render(
-        <ParentComponent.Provider value={parent}>
-            <NoteActionsCustom note={note} ntxId="ntx1" noteContext={ctx} />
-        </ParentComponent.Provider>,
-        el
-    ));
-    return el;
+    const ctx = fakeNoteContext({ ntxId: "ntx1", viewScope: { viewMode: "default" }, ...noteContext });
+    // `null` is intentional here (tests the no-parent early-return); cast since the helper types `parent` as optional.
+    const { container } = renderWithProviders(
+        <NoteActionsCustom note={note} ntxId="ntx1" noteContext={ctx} />,
+        { parent: parent as Component | undefined }
+    );
+    return container;
 }
 
 function makeNote(def: Parameters<typeof buildNote>[0], mime?: string) {
@@ -79,18 +60,6 @@ function makeNote(def: Parameters<typeof buildNote>[0], mime?: string) {
 beforeEach(() => {
     options.load({} as never);
     vi.clearAllMocks();
-    // test/setup.ts's auto-mocked server only defines get/post — add the write verbs the setters use.
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ---------------------------------------------------------------------------------------

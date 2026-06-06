@@ -1,7 +1,8 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { renderComponent } from "../../../../test/render";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -12,22 +13,12 @@ vi.mock("../../../../services/toast", () => ({
 import options from "../../../../services/options";
 import server from "../../../../services/server";
 import toast from "../../../../services/toast";
-import ws from "../../../../services/ws";
-import { ParentComponent } from "../../../react/react_utils";
 import TimeSelector from "./TimeSelector";
 
 // --- Render harness -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
-
 function renderSelector(vnode: preact.ComponentChild) {
-    const target = document.createElement("div");
-    container = target;
-    document.body.appendChild(target);
-    act(() => {
-        render(<ParentComponent.Provider value={null}>{vnode}</ParentComponent.Provider>, target);
-    });
-    return target;
+    return renderComponent(vnode).container;
 }
 
 function setOptions(values: Record<string, string>) {
@@ -65,21 +56,6 @@ function typeInto(input: HTMLInputElement, value: string, valid = true) {
 beforeEach(() => {
     setOptions({});
     vi.clearAllMocks();
-    // The auto-mocked server (test/setup.ts) only defines get/post — add the write verb the setter uses.
-    Object.assign(server, { put: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
-});
-
-afterEach(() => {
-    const target = container;
-    if (target) {
-        act(() => {
-            render(null, target);
-        });
-        target.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 describe("TimeSelector", () => {

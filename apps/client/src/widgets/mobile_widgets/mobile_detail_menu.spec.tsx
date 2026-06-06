@@ -1,9 +1,9 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../../components/note_context";
 import type FNote from "../../entities/fnote";
+import { renderInto } from "../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -131,13 +131,8 @@ import MobileDetailMenu from "./mobile_detail_menu";
 
 // --- Render helper -------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 function renderMenu() {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    const target = container;
-    act(() => { render(<MobileDetailMenu />, target); });
-    return container;
+    return renderInto(<MobileDetailMenu />);
 }
 
 function makeNote(overrides: Partial<FNote> = {}): FNote {
@@ -181,7 +176,6 @@ function setContext(opts: {
 
 beforeEach(() => {
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined) });
     sortedNotePathsState.current = undefined;
     backlinkCountState.current = 0;
     processedLocalesState.current = [];
@@ -191,15 +185,6 @@ beforeEach(() => {
         currentNoteLanguage: "",
         setCurrentNoteLanguage: vi.fn()
     };
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 describe("MobileDetailMenu", () => {

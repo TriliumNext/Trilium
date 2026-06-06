@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -19,7 +18,6 @@ vi.mock("./react/NoteAutocomplete", () => ({
     }
 }));
 
-import type NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
 import type FNote from "../entities/fnote";
 import froca from "../services/froca";
@@ -27,46 +25,27 @@ import noteAttributeCache from "../services/note_attribute_cache";
 import server from "../services/server";
 import ws from "../services/ws";
 import { buildNote } from "../test/easy-froca";
-import { flush, makeLoadResults, renderHook } from "../test/render-hook";
+import { fakeNoteContext, flush, makeLoadResults, renderHook, renderInto, resetFroca } from "../test/render";
 import { NoteContextContext, ParentComponent } from "./react/react_utils";
 import Component from "../components/component";
 import PromotedAttributes, { PromotedAttributesContent, usePromotedAttributeData } from "./PromotedAttributes";
 
-// --- Rendering helper ------------------------------------------------------------------------------
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: unknown) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render(vnode as never, container as HTMLDivElement));
-    return container;
-}
-
 // --- Fixtures --------------------------------------------------------------------------------------
-
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        viewScope: { viewMode: "default" },
-        note: null,
-        ...overrides
-    } as unknown as NoteContext;
-}
-
-function resetFroca() {
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
-    for (const key of Object.keys(noteAttributeCache.attributes)) delete noteAttributeCache.attributes[key];
-}
 
 // jQuery's algolia `autocomplete` plugin is not loaded under happy-dom; stub it so the text-label
 // autocomplete effect (and its cleanup `.autocomplete("destroy")`) does not throw. We also capture the
-// dataset config so a test can drive the `source` callback.
+// dataset config so a test can drive the `source` callback. The stub stays installed for the whole file
+// so it is still present when the shared render teardown unmounts components (and fires the cleanup).
 const jqueryFns = $.fn as unknown as Record<string, unknown>;
-const originalAutocomplete = jqueryFns.autocomplete;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let capturedDatasets: any[] | undefined;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+jqueryFns.autocomplete = vi.fn(function (this: unknown, configOrCommand: unknown, datasets: any[]) {
+    if (typeof configOrCommand !== "string") {
+        capturedDatasets = datasets;
+    }
+    return this;
+});
 
 beforeEach(() => {
     resetFroca();
@@ -77,28 +56,6 @@ beforeEach(() => {
         get: vi.fn(async () => []),
         remove: vi.fn(async () => undefined)
     });
-    Object.assign(ws, { logError: vi.fn() });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jqueryFns.autocomplete = vi.fn(function (this: unknown, configOrCommand: unknown, datasets: any[]) {
-        if (typeof configOrCommand !== "string") {
-            capturedDatasets = datasets;
-        }
-        return this;
-    });
-});
-
-afterEach(() => {
-    if (container) {
-        act(() => render(null, container as HTMLDivElement));
-        container.remove();
-        container = undefined;
-    }
-    if (originalAutocomplete === undefined) {
-        delete jqueryFns.autocomplete;
-    } else {
-        jqueryFns.autocomplete = originalAutocomplete;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- usePromotedAttributeData ---------------------------------------------------------------------

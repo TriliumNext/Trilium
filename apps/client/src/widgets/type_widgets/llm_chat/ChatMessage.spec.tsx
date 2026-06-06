@@ -1,5 +1,6 @@
-import { render } from "preact";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { renderInto } from "../../../test/render";
 
 // --- Module mocks (hoisted above the component import) --------------------------------------------
 
@@ -21,24 +22,6 @@ vi.mock("./ToolCallCard.js", () => ({
 import type { LlmCitation, LlmUsage } from "@triliumnext/commons";
 
 import type { ContentBlock, StoredMessage } from "./llm_chat_types.js";
-
-let container: HTMLDivElement | undefined;
-
-function renderInto(vnode: any) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    render(vnode, container);
-    return container;
-}
-
-afterEach(() => {
-    if (container) {
-        render(null, container);
-        container.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
-});
 
 function makeMessage(overrides: Partial<StoredMessage> = {}): StoredMessage {
     return {
@@ -77,7 +60,6 @@ describe("ChatMessage", () => {
         expect(streaming.querySelector(".llm-chat-cursor")).not.toBeNull();
 
         // A streaming user message must NOT get the cursor (role !== assistant).
-        if (container) { render(null, container); container.remove(); container = undefined; }
         const userStreaming = await renderMessage(makeMessage({ role: "user", content: "x" }), { isStreaming: true });
         expect(userStreaming.querySelector(".llm-chat-cursor")).toBeNull();
     });
@@ -241,8 +223,6 @@ describe("ChatMessage", () => {
         // >= 10k -> no decimal; the rendered tokens span proves the branch executed.
         const big = await renderMessage(makeMessage({ role: "assistant", content: "hi", usage: { promptTokens: 1, completionTokens: 1, totalTokens: 42000 } }));
         expect(big.querySelector(".llm-chat-usage-tokens")).not.toBeNull();
-
-        if (container) { render(null, container); container.remove(); container = undefined; }
 
         // < 1000 -> plain toString branch.
         const small = await renderMessage(makeMessage({ role: "assistant", content: "hi", usage: { promptTokens: 1, completionTokens: 1, totalTokens: 999 } }));

@@ -1,5 +1,4 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -96,58 +95,30 @@ vi.mock("../../services/sanitize_content", () => ({
 }));
 
 import type NoteContext from "../../components/note_context";
-import Component from "../../components/component";
-import froca from "../../services/froca";
 import options from "../../services/options";
 import server from "../../services/server";
 import utils from "../../services/utils";
-import ws from "../../services/ws";
 import { buildNote } from "../../test/easy-froca";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { fakeNoteContext, flush, renderComponent, resetFroca } from "../../test/render";
 import { TypeWidgetProps } from "./type_widget";
 import MindMap, { sanitizeMindMapData } from "./MindMap";
 
 // --- Render harness for the component (drives Trilium events through a real parent) ----------------
 
 interface MountResult {
-    parent: Component;
-    container: HTMLDivElement;
+    container: HTMLElement;
     fireEvent: (name: string, data: unknown) => void;
     unmount: () => void;
 }
 
 function mountMindMap(props: TypeWidgetProps, noteContext: NoteContext | null): MountResult {
-    const parent = new Component();
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => render((
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={noteContext}>
-                <MindMap {...props} />
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), container));
+    const { container, parent, unmount } = renderComponent(<MindMap {...props} />, { noteContext });
     return {
-        parent,
         container,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fireEvent: (name, data) => act(() => { (parent.handleEventInChildren as any)(name, data); }),
-        unmount: () => act(() => { render(null, container); container.remove(); })
+        unmount
     };
-}
-
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        hoistedNoteId: "root",
-        notePath: "root/mm",
-        viewScope: { viewMode: "default", readOnlyTemporarilyDisabled: false },
-        isReadOnly: vi.fn(async () => false),
-        setContextData: vi.fn(),
-        getContextData: vi.fn(),
-        clearContextData: vi.fn(),
-        ...overrides
-    } as unknown as NoteContext;
 }
 
 function makeProps(note: ReturnType<typeof buildNote>, ntxId: string | null | undefined = "ntx1"): TypeWidgetProps {
@@ -158,10 +129,6 @@ function makeProps(note: ReturnType<typeof buildNote>, ntxId: string | null | un
         parentComponent: undefined,
         noteContext: fakeNoteContext({ ntxId })
     } as unknown as TypeWidgetProps;
-}
-
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }
 
 /** The instance the component's apiRef currently points at (the last one created). */
@@ -176,19 +143,14 @@ beforeEach(() => {
     mindMapState.changeThemeThrows = false;
     mindMapState.snapdomUrl = "data:image/svg+xml;charset=utf-8,%3Csvg%3E%3C%2Fsvg%3E";
     options.load({ locale: "en" } as Record<OptionNames, string>);
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
-    Object.assign(server, { put: vi.fn(async () => undefined), upload: vi.fn(async () => undefined) });
-    Object.assign(ws, { logError: vi.fn() });
     const glob = window.glob as unknown as Record<string, unknown>;
     glob.getThemeStyle = () => "light";
 });
 
 afterEach(async () => {
     await act(async () => {});
-    vi.restoreAllMocks();
 });
 
 // --- sanitizeMindMapData (pure) -------------------------------------------------------------------

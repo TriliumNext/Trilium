@@ -1,6 +1,5 @@
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) ---------------------------------------------
 
@@ -83,12 +82,11 @@ import hoisted_note from "../../services/hoisted_note";
 import note_create from "../../services/note_create";
 import options from "../../services/options";
 import { buildNote } from "../../test/easy-froca";
-import { ParentComponent } from "../react/react_utils";
+import { flush, renderComponent, resetFroca } from "../../test/render";
 import Breadcrumb from "./Breadcrumb";
 
 // --- Harness --------------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
 const parent = new Component();
 
 function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
@@ -114,18 +112,8 @@ function setActiveContext(ctx: NoteContext | null) {
 }
 
 function renderBreadcrumb() {
-    const current = document.createElement("div");
-    container = current;
-    document.body.appendChild(current);
-    act(() => {
-        render(
-            <ParentComponent.Provider value={parent}>
-                <Breadcrumb />
-            </ParentComponent.Provider>,
-            current
-        );
-    });
-    return current;
+    // Shared helper wraps in `ParentComponent` + `NoteContextContext` and auto-tears-down the container.
+    return renderComponent(<Breadcrumb />, { parent }).container;
 }
 
 function setOptions(values: Record<string, string>) {
@@ -133,28 +121,12 @@ function setOptions(values: Record<string, string>) {
     options.load(values as any);
 }
 
-async function flush() {
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
-}
-
 beforeEach(() => {
     setOptions({ hideArchivedNotes_main: "false" });
-    for (const key of Object.keys(froca.notes)) delete froca.notes[key];
-    for (const key of Object.keys(froca.attributes)) delete froca.attributes[key];
-    for (const key of Object.keys(froca.branches)) delete froca.branches[key];
+    resetFroca();
     vi.clearAllMocks();
     // root always exists in froca.
     buildNote({ id: "root", title: "root" });
-});
-
-afterEach(() => {
-    const current = container;
-    if (current) {
-        act(() => render(null, current));
-        current.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- Tests ----------------------------------------------------------------------------------------

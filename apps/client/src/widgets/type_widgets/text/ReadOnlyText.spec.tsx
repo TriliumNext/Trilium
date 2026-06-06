@@ -1,7 +1,6 @@
 import { OptionNames } from "@triliumnext/commons";
-import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Module mocks (hoisted above the component import) -------------------------------------------
 // The CSS imports + the heavy CKEditor bundle are stubbed; the transform services are mocked so we
@@ -41,29 +40,20 @@ import { renderMathInElement } from "../../../services/math";
 import options from "../../../services/options";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { buildNote } from "../../../test/easy-froca";
-import { flush } from "../../../test/render-hook";
-import { NoteContextContext, ParentComponent } from "../../react/react_utils";
+import { fakeNoteContext, flush, renderComponent } from "../../../test/render";
 import { applyReferenceLinks } from "./read_only_helper";
 import ReadOnlyText, { ReadOnlyTextContent } from "./ReadOnlyText";
 import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 
 // --- Render harness ------------------------------------------------------------------------------
 
-let container: HTMLDivElement | undefined;
+// A module-level `parent` is shared between the renders and `fireEvent` so that events dispatched
+// after a render reach the component's `useTriliumEvent` handlers. The shared `renderComponent`
+// auto-tears-down the mounted container in its own `afterEach`.
 let parent: Component;
 
 function renderInto(vnode: preact.ComponentChild, noteContext: NoteContext | null = null) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    act(() => render((
-        <ParentComponent.Provider value={parent}>
-            <NoteContextContext.Provider value={noteContext}>
-                {vnode}
-            </NoteContextContext.Provider>
-        </ParentComponent.Provider>
-    ), el));
-    return el;
+    return renderComponent(vnode, { parent, noteContext }).container;
 }
 
 function fireEvent(name: string, data: unknown) {
@@ -71,28 +61,10 @@ function fireEvent(name: string, data: unknown) {
     act(() => { (parent.handleEventInChildren as any)(name, data); });
 }
 
-function fakeNoteContext(overrides: Record<string, unknown> = {}): NoteContext {
-    return {
-        ntxId: "ntx1",
-        viewScope: { viewMode: "default" },
-        ...overrides
-    } as unknown as NoteContext;
-}
-
 beforeEach(() => {
     parent = new Component();
     options.load({ codeBlockWordWrap: "false", codeBlockTabWidth: "4" } as Record<OptionNames, string>);
     vi.clearAllMocks(); // reset call counts on the hoisted module mocks between tests
-});
-
-afterEach(() => {
-    const c = container;
-    if (c) {
-        act(() => render(null, c));
-        c.remove();
-        container = undefined;
-    }
-    vi.restoreAllMocks();
 });
 
 // --- ReadOnlyTextContent: the transform pipeline -------------------------------------------------
@@ -196,16 +168,10 @@ describe("ReadOnlyTextContent", () => {
     });
 
     it("re-runs the pipeline when the html prop changes", () => {
-        const el = renderInto(<ReadOnlyTextContent html="<p>one</p>" />);
+        const { container: el, rerender } = renderComponent(<ReadOnlyTextContent html="<p>one</p>" />, { parent });
         expect(formatCodeBlocks).toHaveBeenCalledTimes(1);
 
-        act(() => render((
-            <ParentComponent.Provider value={parent}>
-                <NoteContextContext.Provider value={null}>
-                    <ReadOnlyTextContent html="<p>two</p>" />
-                </NoteContextContext.Provider>
-            </ParentComponent.Provider>
-        ), el));
+        rerender(<ReadOnlyTextContent html="<p>two</p>" />);
         expect(formatCodeBlocks).toHaveBeenCalledTimes(2);
         expect(el.querySelector("div.note-detail-readonly-text-content")?.innerHTML).toContain("two");
     });
