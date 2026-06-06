@@ -11,6 +11,7 @@ interface TreeLink {
 }
 
 function buildDescendantCountMap(noteIdsToCount: string[]) {
+    /* v8 ignore next 3 -- defensive guard: callers always pass a real array (noteIdsArray / Array.from(noteIds)) */
     if (!Array.isArray(noteIdsToCount)) {
         throw new Error("noteIdsToCount: type error");
     }
@@ -20,6 +21,7 @@ function buildDescendantCountMap(noteIdsToCount: string[]) {
     function getCount(noteId: string): number {
         if (!(noteId in noteIdToCountMap)) {
             const note = becca.getNote(noteId);
+            /* v8 ignore next 3 -- defensive guard: noteIds come from real notes / their resolved children */
             if (!note) {
                 return 0;
             }
@@ -145,6 +147,7 @@ function getLinkMap(req: Request<{ noteId: string }>) {
                 return false;
             } else if (rel.name === "imageLink") {
                 const parentNote = becca.getNote(rel.noteId);
+                /* v8 ignore next 3 -- defensive guard: rel.noteId is already constrained to noteIds (existing notes) */
                 if (!parentNote) {
                     return false;
                 }

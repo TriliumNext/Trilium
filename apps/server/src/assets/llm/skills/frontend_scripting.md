@@ -8,7 +8,7 @@ CRITICAL: In JSX notes, always use top-level `import` statements (e.g. `import {
 
 ## Creating a frontend script
 
-1. Create a Code note with language "JSX" (preferred) or "JS frontend" (legacy only).
+1. Create a Code note with language "JSX" (preferred) or "JavaScript (Trilium frontend)" (legacy only).
 2. Add `#widget` label for widgets, or `#run=frontendStartup` for auto-run scripts.
 3. For mobile, use `#run=mobileStartup` instead.
 
@@ -17,7 +17,7 @@ CRITICAL: In JSX notes, always use top-level `import` statements (e.g. `import {
 | Type | Language | Required attribute |
 |---|---|---|
 | Custom widget | JSX (preferred) | `#widget` |
-| Regular script | JS frontend | `#run=frontendStartup` (optional) |
+| Regular script | JavaScript (Trilium frontend) | `#run=frontendStartup` (optional) |
 | Render note | JSX | None (used via `~renderNote` relation) |
 
 ## Custom widgets (Preact JSX) — preferred
@@ -182,7 +182,7 @@ import { showMessage } from "trilium:api";
 
 ## Script API
 
-In JSX, use `import { method } from "trilium:api"`. In JS frontend, use the `api` global.
+In JSX, use `import { method } from "trilium:api"`. In JavaScript (Trilium frontend), use the `api` global.
 
 ### Navigation & tabs
 - `activateNote(notePath)` - navigate to a note
@@ -330,7 +330,7 @@ Avoid `require("electron")`, `@electron/remote`, and `process` — `nodeIntegrat
 Only use legacy widgets if you specifically need jQuery or cannot use JSX.
 
 ```javascript
-// Language: JS frontend, Label: #widget
+// Language: JavaScript (Trilium frontend), Label: #widget
 class MyWidget extends api.BasicWidget {
     get position() { return 1; }
     get parentWidget() { return "center-pane"; }
@@ -354,4 +354,4 @@ Key differences from Preact:
 
 ## Module system
 
-For JSX, use `import`/`export` syntax between notes. For JS frontend, use `module.exports` and function parameters matching child note titles.
+For JSX, use `import`/`export` syntax between notes. For JavaScript (Trilium frontend), use `module.exports` and function parameters matching child note titles.

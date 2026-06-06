@@ -19,7 +19,7 @@ export interface CommandDefinition {
     keyboardAction?: ActionKeyboardShortcut;
 }
 
-class CommandRegistry {
+export class CommandRegistry {
     private commands: Map<string, CommandDefinition> = new Map();
     private aliases: Map<string, string> = new Map();
 
@@ -94,6 +94,32 @@ class CommandRegistry {
             description: t("command_palette.configure_launch_bar_description"),
             icon: "bx bx-sidebar",
             handler: () => appContext.triggerCommand("showLaunchBarSubtree")
+        });
+
+        this.register({
+            id: "pin-active-tab",
+            name: t("command_palette.pin_tab_title"),
+            description: t("command_palette.pin_tab_description"),
+            icon: "bx bx-pin",
+            handler: () => {
+                const ntxId = appContext.tabManager.getActiveMainContext()?.ntxId;
+                if (ntxId) {
+                    appContext.triggerCommand("pinTab", { ntxId });
+                }
+            }
+        });
+
+        this.register({
+            id: "unpin-active-tab",
+            name: t("command_palette.unpin_tab_title"),
+            description: t("command_palette.unpin_tab_description"),
+            icon: "bx bx-pin",
+            handler: () => {
+                const ntxId = appContext.tabManager.getActiveMainContext()?.ntxId;
+                if (ntxId) {
+                    appContext.triggerCommand("unpinTab", { ntxId });
+                }
+            }
         });
     }
 

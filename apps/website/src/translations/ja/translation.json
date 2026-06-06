@@ -40,7 +40,7 @@
     },
     "note_types": {
         "text_title": "テキストノート",
-        "text_description": "ノートはビジュアル（WYSIWYG）エディターで編集できます。表、画像、数式、構文ハイライト付きのコードブロックなど、様々な編集機能を備えています。Markdownのような構文やスラッシュコマンドを使って、テキストを素早くフォーマットできます。",
+        "text_description": "ノートはビジュアル（WYSIWYG）エディターで編集できます。表、画像、数式、構文ハイライト付きのコードブロックなど、様々な編集機能を備えています。マークダウンのような構文やスラッシュコマンドを使って、テキストを素早くフォーマットできます。",
         "code_title": "Code ノート",
         "code_description": "ソースコードやスクリプトの大きなサンプルでは、多くのプログラミング言語の構文ハイライト表示とさまざまなカラー テーマを備えた専用のエディターが使用できます。",
         "file_title": "ファイルノート",
@@ -57,7 +57,7 @@
     "extensibility_benefits": {
         "title": "共有と拡張性",
         "import_export_title": "インポート / エクスポート",
-        "import_export_description": "Markdown、ENEX、OML 形式を使用して他のアプリケーションと簡単に連携できます。",
+        "import_export_description": "マークダウン、ENEX、OML 形式を使用して他のアプリケーションと簡単に連携できます。",
         "share_title": "web 上でノートを共有",
         "share_description": "サーバーをお持ちの場合は、それを使用してノートの一部を他の人と共有することができます。",
         "scripting_title": "高度なスクリプト",

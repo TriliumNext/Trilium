@@ -3,6 +3,7 @@
 import type { OptionNames } from "@triliumnext/commons";
 import type { Request } from "express";
 
+import attributeService from "../../services/attributes.js";
 import config from "../../services/config.js";
 import { changeLanguage } from "../../services/i18n.js";
 import { getLog } from "../../services/log.js";
@@ -129,17 +130,41 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "ocrMinConfidence"
 ]);
 
+// Options that contain secrets (API keys, tokens, etc.).
+// These can be written by the client but are never sent back in GET responses.
+const WRITE_ONLY_OPTIONS = new Set<string>([
+    "openaiApiKey",
+    "anthropicApiKey"
+]);
+
 function getOptions() {
     const optionMap = optionService.getOptionMap();
     const resultMap: Record<string, string> = {};
 
     for (const optionName in optionMap) {
-        if (isAllowed(optionName)) {
+        if (isReadable(optionName)) {
             resultMap[optionName] = optionMap[optionName as OptionNames];
         }
     }
 
     resultMap["isPasswordSet"] = optionMap["passwordVerificationHash"] ? "true" : "false";
+
+    // Expose boolean flags for write-only (secret) options so the client
+    // knows whether a value has been configured without revealing the value.
+    for (const secretOption of WRITE_ONLY_OPTIONS) {
+        resultMap[`is${secretOption.charAt(0).toUpperCase()}${secretOption.slice(1)}Set`] =
+            optionMap[secretOption] ? "true" : "false";
+    }
+    // Expose scripting config (read-only, from config.ini / env vars)
+    resultMap["backendScriptingEnabled"] = config.Security.backendScriptingEnabled ? "true" : "false";
+    resultMap["sqlConsoleEnabled"] = config.Security.sqlConsoleEnabled ? "true" : "false";
+
+    // Detect if the user has any backend scripts with #run labels (backendStartup, hourly, daily).
+    // Filter by MIME type since #run can also appear on frontend scripts.
+    const hasUserBackendScripts = attributeService.getNotesWithLabel("run")
+        .some((note) => note.mime === "application/javascript;env=backend");
+    resultMap["hasUserBackendScripts"] = hasUserBackendScripts ? "true" : "false";
+
     // if database is read-only, disable editing in UI by setting 0 here
     if (config.General.readOnly) {
         resultMap["autoReadonlySizeText"] = "0";
@@ -188,7 +213,10 @@ function update(name: string, value: string) {
     }
 
     if (name !== "openNoteContexts") {
-        getLog().info(`Updating option '${name}' to '${value}'`);
+        const logValue = (WRITE_ONLY_OPTIONS as Set<string>).has(name)
+            ? "[redacted]"
+            : value;
+        getLog().info(`Updating option '${name}' to '${logValue}'`);
     }
 
     optionService.setOption(name as OptionNames, value);
@@ -219,11 +247,18 @@ function getUserThemes() {
     return ret;
 }
 
-function isAllowed(name: string) {
+/** Check if an option can be read by the client (GET responses). */
+function isReadable(name: string) {
     return (ALLOWED_OPTIONS as Set<string>).has(name)
         || name.startsWith("keyboardShortcuts")
         || name.endsWith("Collapsed")
         || name.startsWith("hideArchivedNotes");
+}
+
+/** Check if an option can be written by the client (PUT requests). */
+function isAllowed(name: string) {
+    return isReadable(name)
+        || (WRITE_ONLY_OPTIONS as Set<string>).has(name);
 }
 
 export default {

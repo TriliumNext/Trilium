@@ -12,11 +12,11 @@
 <ul>
   <li>
     <p><em>Script with dependency</em>
-    </p><pre><code class="language-application-javascript-env-backend">api.log(MyMath.sum(2, 2));</code></pre>
+    </p><pre><code class="language-text-javascript">api.log(MyMath.sum(2, 2));</code></pre>
     <ul>
       <li>
         <p><em>MyMath</em>
-        </p><pre><code class="language-application-javascript-env-backend">module.exports = {
+        </p><pre><code class="language-text-javascript">module.exports = {
     sum(a, b) {
         return a + b;
     }
@@ -34,7 +34,7 @@
 </aside>
 <h2>Alternative syntax</h2>
 <p>Instead of providing an object to <code spellcheck="false">module.exports</code>,
-  it's also possible to add fields individually:</p><pre><code class="language-application-javascript-env-backend">module.exports.sum = (a, b) =&gt; a + b;
+  it's also possible to add fields individually:</p><pre><code class="language-text-javascript">module.exports.sum = (a, b) =&gt; a + b;
 module.exports.subtract = (a, b) =&gt; a - b;</code></pre>
 <h2>Ignoring a code script from a bundle</h2>
 <p>To ignore a script from being included in a bundle (e.g. if it's unrelated

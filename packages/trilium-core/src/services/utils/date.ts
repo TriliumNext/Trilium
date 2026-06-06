@@ -44,11 +44,12 @@ function utcDateTimeStr(date: Date) {
  *              also is assumed to be GMT time (as indicated by the "Z" at the end), *not* local time
  */
 function parseDateTime(str: string) {
-    try {
-        return new Date(Date.parse(str));
-    } catch (e: any) {
-        throw new Error(`Can't parse date from '${str}': ${e.stack}`);
+    // Date.parse() returns NaN for bad input instead of throwing, so check for it explicitly.
+    const time = Date.parse(str);
+    if (Number.isNaN(time)) {
+        throw new Error(`Can't parse date from '${str}'`);
     }
+    return new Date(time);
 }
 
 function parseLocalDate(str: string) {
@@ -71,7 +72,7 @@ function validateLocalDateTime(str: string | null | undefined) {
         return `Invalid local date time format in '${str}'. Correct format shoud follow example: '2023-08-21 23:38:51.110+0200'`;
     }
 
-    if (!dayjs(str, LOCAL_DATETIME_FORMAT)) {
+    if (!dayjs(str, LOCAL_DATETIME_FORMAT).isValid()) {
         return `Date '${str}' appears to be in the correct format, but cannot be parsed. It likely represents an invalid date.`;
     }
 }
@@ -85,7 +86,7 @@ function validateUtcDateTime(str: string | undefined) {
         return `Invalid UTC date time format in '${str}'. Correct format shoud follow example: '2023-08-21 23:38:51.110Z'`;
     }
 
-    if (!dayjs(str, UTC_DATETIME_FORMAT)) {
+    if (!dayjs(str, UTC_DATETIME_FORMAT).isValid()) {
         return `Date '${str}' appears to be in the correct format, but cannot be parsed. It likely represents an invalid date.`;
     }
 }

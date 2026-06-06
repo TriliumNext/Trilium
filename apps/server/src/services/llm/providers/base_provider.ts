@@ -251,6 +251,9 @@ export abstract class BaseProvider implements LlmProvider {
                 + `**Task lists** — use \`- [ ]\` for unchecked and \`- [x]\` for checked items.`
         );
 
+        // The markdown formatting hints above are pushed unconditionally, so
+        // `parts` is never empty — the `: undefined` arm is unreachable defence.
+        /* v8 ignore next */
         return parts.length > 0 ? parts.join("\n\n") : undefined;
     }
 

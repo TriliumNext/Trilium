@@ -120,7 +120,7 @@
   "set_password": {
     "title": "Définir un mot de passe",
     "heading": "Définir un mot de passe",
-    "description": "Avant de pouvoir commencer à utiliser Trilium depuis le web, vous devez d'abord définir un mot de passe. Vous utiliserez ensuite ce mot de passe pour vous connecter.",
+    "description": "Avant d'utiliser Trilium via le web, vous devez définir un mot de passe. Vous l'utiliserez ensuite pour vous connecter.",
     "password": "Mot de passe",
     "password-confirmation": "Confirmation du mot de passe",
     "button": "Définir le mot de passe"
@@ -163,7 +163,7 @@
     "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
-    "not-configured": "L'hôte du serveur de synchronisation n'est pas configuré. Veuillez d'abord configurer la synchronisation.",
+    "not-configured": "L'adresse du serveur de synchronisation n'est pas configurée. Configurez d'abord la synchronisation.",
     "successful": "L'établissement de liaison du serveur de synchronisation a été réussi, la synchronisation a été démarrée."
   },
   "hidden-subtree": {

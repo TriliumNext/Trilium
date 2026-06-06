@@ -28,6 +28,9 @@
       "path": "../ckeditor5-admonition"
     },
     {
+      "path": "../ckeditor5-collapsible"
+    },
+    {
       "path": "../ckeditor5-mermaid"
     },
     {

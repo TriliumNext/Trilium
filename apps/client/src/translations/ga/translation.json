@@ -828,7 +828,11 @@
     "hide_child_notes": "Folaigh nótaí leanaí sa chrann",
     "open_all_in_tabs": "Oscail gach rud",
     "open_all_in_tabs_tooltip": "Oscail na torthaí go léir i gcluaisíní nua",
-    "open_all_confirm": "Osclóidh sé seo {{count}} nótaí i gcluaisíní nua. Lean ar aghaidh?"
+    "open_all_confirm_one": "Osclóidh sé seo {{count}} nótaí i gcluaisíní nua. Lean ar aghaidh?",
+    "open_all_confirm_two": "",
+    "open_all_confirm_few": "",
+    "open_all_confirm_many": "",
+    "open_all_confirm_other": ""
   },
   "edited_notes": {
     "no_edited_notes_found": "Gan aon nótaí eagarthóireachta ar an lá seo go fóill...",
@@ -873,7 +877,11 @@
     "note_size": "Méid nóta",
     "note_size_info": "Tugann méid an nóta meastachán garbh ar riachtanais stórála don nóta seo. Cuirtear ábhar an nóta agus ábhar a athbhreithnithe nótaí san áireamh ann.",
     "calculate": "ríomh",
-    "subtree_size": "(méid fo-chrainn: {{size}} i nótaí {{count}})",
+    "subtree_size_one": "(méid fo-chrainn: {{size}} i nótaí {{count}})",
+    "subtree_size_two": "",
+    "subtree_size_few": "",
+    "subtree_size_many": "",
+    "subtree_size_other": "",
     "title": "Eolas Nóta",
     "show_similar_notes": "Taispeáin nótaí comhchosúla"
   },
@@ -883,7 +891,11 @@
     "title": "Léarscáil Nótaí",
     "fix-nodes": "Deisigh nóid",
     "link-distance": "Fad naisc",
-    "too-many-notes": "Tá {{count}} nótaí anseo. D’fhéadfadh sé go mbeadh moill ar rudaí má thaispeántar iad go léir.",
+    "too-many-notes_one": "Tá {{count}} nótaí anseo. D’fhéadfadh sé go mbeadh moill ar rudaí má thaispeántar iad go léir.",
+    "too-many-notes_two": "",
+    "too-many-notes_few": "",
+    "too-many-notes_many": "",
+    "too-many-notes_other": "",
     "show-anyway": "Taispeáin léarscáil"
   },
   "note_paths": {
@@ -1613,7 +1625,11 @@
     "export": "Easpórtáil",
     "import-into-note": "Iompórtáil isteach i nóta",
     "apply-bulk-actions": "Cuir gníomhartha mórchóir i bhfeidhm",
-    "converted-to-attachments": "Tá {{count}} nótaí tiontaithe ina gceangaltáin.",
+    "converted-to-attachments_one": "Tá {{count}} nótaí tiontaithe ina gceangaltáin.",
+    "converted-to-attachments_two": "",
+    "converted-to-attachments_few": "",
+    "converted-to-attachments_many": "",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "An bhfuil tú cinnte gur mian leat na nótaí roghnaithe a thiontú ina gceangaltáin dá nótaí tuismitheora? Ní bhaineann an oibríocht seo ach le nótaí Íomhá, scipeálfar nótaí eile.",
     "open-in-popup": "Eagarthóireacht thapa"
   },
@@ -1807,7 +1823,12 @@
   },
   "image": {
     "copied-to-clipboard": "Tá tagairt don íomhá cóipeáilte chuig an ghearrthaisce. Is féidir é seo a ghreamú in aon nóta téacs.",
-    "cannot-copy": "Níorbh fhéidir tagairt na híomhá a chóipeáil chuig an ghearrthaisce."
+    "cannot-copy": "Níorbh fhéidir tagairt na híomhá a chóipeáil chuig an ghearrthaisce.",
+    "copy-to-clipboard": "Cóipeáil íomhá chuig an ghearrthaisce",
+    "download": "Íoslódáil íomhá",
+    "image-copied-to-clipboard": "Tá an íomhá cóipeáilte chuig an ghearrthaisce.",
+    "cannot-copy-image": "Níorbh fhéidir an íomhá a chóipeáil chuig an ghearrthaisce.",
+    "cannot-download": "Níorbh fhéidir an íomhá a íoslódáil."
   },
   "clipboard": {
     "cut": "Gearradh nóta(í) isteach sa ghearrthaisce.",
@@ -2124,7 +2145,10 @@
     "new_layout_title": "Leagan amach nua",
     "new_layout_message": "Thugamar leagan amach nuachóirithe isteach do Trilium. Baineadh an ribín agus comhtháthaíodh go gan uaim é sa phríomh-chomhéadan, le barra stádais nua agus rannóga inleathnaithe (amhail tréithe cur chun cinn) ag glacadh seilbhe ar phríomhfheidhmeanna.\n\nTá an leagan amach nua cumasaithe de réir réamhshocraithe, agus is féidir é a dhíchumasú go sealadach trí Roghanna → Dealramh.",
     "new_layout_button": "Tuilleadh eolais",
-    "dismiss": "Díbhe"
+    "dismiss": "Díbhe",
+    "scripting_disabled_title": "Tá scriptiú cúil díchumasaithe",
+    "scripting_disabled_message": "Tá scriptiú cúil díchumasaithe anois de réir réamhshocraithe ar mhaithe le slándáil. Tá scripteanna cúil (nótaí le lipéad #run) i do nótaí nach mbeidh á bhforghníomhú go huathoibríoch a thuilleadh.\n\nMá bhraitheann tú ar na scripteanna seo, is féidir leat scriptiú cúil a athchumasú sna socruithe slándála.",
+    "scripting_disabled_button": "Oscail socruithe slándála"
   },
   "settings": {
     "related_settings": "Socruithe gaolmhara"
@@ -2142,7 +2166,11 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} nótaí",
+    "total_notes_one": "{{count}} nótaí",
+    "total_notes_two": "",
+    "total_notes_few": "",
+    "total_notes_many": "",
+    "total_notes_other": "",
     "prev_page": "Leathanach roimhe seo",
     "next_page": "An chéad leathanach eile"
   },
@@ -2240,7 +2268,11 @@
     "code_note_switcher": "Athraigh mód teanga",
     "tab_width": "Leithead an Chluaisín: {{width}}",
     "tab_width_title": "Athraigh leithead an chluaisín",
-    "tab_width_spaces": "{{count}} spásanna",
+    "tab_width_spaces_one": "{{count}} spásanna",
+    "tab_width_spaces_two": "",
+    "tab_width_spaces_few": "",
+    "tab_width_spaces_many": "",
+    "tab_width_spaces_other": "",
     "tab_width_spaces_short": "Spásanna: {{width}}",
     "tab_width_tabs": "Cluaisíní: {{width}}",
     "tab_width_use_default": "Úsáid an réamhshocrú ({{width}})",
@@ -2389,7 +2421,9 @@
     "sample_venn": "Venn",
     "sample_ishikawa": "Ishikawa",
     "sample_treeview": "Radharc Crann",
-    "sample_wardley": "Léarscáil Wardley"
+    "sample_wardley": "Léarscáil Wardley",
+    "slash_command_blank_description": "Cuir léaráid fholamh Maighdean Mhara isteach",
+    "slash_command_description": "Cuir teimpléad léaráid maighdean mara \"{{name}}\" isteach"
   },
   "llm_chat": {
     "placeholder": "Clóscríobh teachtaireacht...",
@@ -2424,7 +2458,13 @@
     "sources_summary": "{{count}} foinsí ó {{sites}} suíomhanna",
     "stop": "Stop",
     "edit_index": "Cuir in eagar {{index}} de {{total}}",
-    "retry": "Déan iarracht eile"
+    "retry": "Déan iarracht eile",
+    "web_search_unavailable_gemini": "Ní bheidh sé ar fáil ar mhúnlaí Gemini agus rochtain nótaí ar siúl — ní cheadaíonn API Google an dá rud a chomhcheangal. Díchumasaigh rochtain nótaí nó aistrigh chuig soláthraí difriúil chun cuardach gréasáin a úsáid.",
+    "input_streaming": "Ionchur (sruthú…)",
+    "attach_file": "Ceangail íomhá, PDF, nó comhad téacs",
+    "remove_attachment": "Bain an ceangaltán",
+    "attachment_upload_failed": "Theip ar \"{{name}}\" a uaslódáil.",
+    "attachment_unsupported_type": "Ní cineál ceangaltáin a dtacaítear leis é \"{{name}}\". Bain úsáid as íomhá (PNG, JPEG, GIF, WebP), PDF, nó comhad téacs/foinse."
   },
   "sidebar_chat": {
     "title": "Comhrá AI",
@@ -2533,7 +2573,8 @@
     "related_task_states": "Stádas bosca seiceála saincheaptha le haghaidh liostaí le déanamh"
   },
   "link": {
-    "failed_to_open": "Theip ar oscailt an nasc '{{- href}}': {{- message}}"
+    "failed_to_open": "Theip ar oscailt an nasc '{{- href}}': {{- message}}",
+    "copy_url": "Cóipeáil URL"
   },
   "print_preview": {
     "title": "Réamhamharc priontála",
@@ -2655,7 +2696,16 @@
     "math": "Cuir bloc cothromóid matamaitice isteach",
     "footnote": "Cuir nóta fonóta isteach",
     "mermaid": "Cuir léaráid Maighdean Mhara isteach",
-    "admonition": "Cuir rabhadh {{type}} isteach"
+    "admonition": "Cuir rabhadh {{type}} isteach",
+    "mermaid_template": "Cuir léaráid maighdean mhara \"{{name}}\" isteach",
+    "collapsible": "Cuir bloc infhillte isteach",
+    "todo": "Cuir mír tasc \"{{title}}\" isteach",
+    "todo_nonstandard": "Cuir mír tasc \"{{title}}\" isteach (neamhchaighdeánach)",
+    "placeholders": {
+      "math": "cothromóid",
+      "collapsible_summary": "Achoimre",
+      "collapsible_details": "Sonraí"
+    }
   },
   "mobile_note_navigator": {
     "back": "Téigh suas leibhéal amháin",
@@ -2734,6 +2784,47 @@
       "missing-icon": "deilbhín ar iarraidh",
       "invalid-symbol": "Ba chóir go mbeadh an tsiombail markdown ina carachtar amháin, seachas \"[\", \" \", \"X\", agus \"]\"",
       "duplicate-symbol": "siombail markdown dúblach"
-    }
+    },
+    "collapsible-body-placeholder": "Clóscríobh an t-ábhar anseo...",
+    "collapsible-button-label": "Bloc fillte",
+    "collapsible-handle-tooltip": "Tarraing chun an bloc infhillte a athshuíomh",
+    "collapsible-select-label": "Roghnaigh bloc infhillte",
+    "collapsible-title-placeholder": "Achoimre",
+    "collapsible-toggle-label": "Bloc infhillte a scoránaigh",
+    "collapsible-tooltip": "Cliceáil ar an tsaighead nó brúigh {{shortcut}} chun é a dhúnadh/a leathnú."
+  },
+  "slash_commands": {
+    "bulleted_list_description": "Cruthaigh liosta le hurchair",
+    "numbered_list_description": "Cruthaigh liosta uimhrithe",
+    "todo_list_description": "Cruthaigh liosta le déanamh",
+    "align_left_description": "Ailínigh an téacs ar chlé",
+    "align_center_description": "Ailínigh an téacs go dtí an lár",
+    "align_right_description": "Ailínigh an téacs ar dheis",
+    "justify_description": "Comhfhírinnigh ailíniú téacs",
+    "admonition_description": "Cuireann sé rabhadh nua isteach",
+    "collapsible_description": "Cuir isteach cuid is féidir a athrú agus a cheilt/a thaispeánann ábhar nuair a chliceálann tú.",
+    "footnote_description": "Cruthaigh fonóta nua agus déan tagairt dó anseo",
+    "datetime_description": "Cuir isteach an dáta agus an t-am reatha",
+    "internal_link_description": "Cuir nasc chuig nóta Trilium eile isteach",
+    "math_description": "Cuir cothromóid mhatamaitice isteach",
+    "include_note_description": "Taispeáin ábhar nóta eile sa nóta seo",
+    "page_break_description": "Cuir briseadh leathanaigh isteach (le haghaidh priontála)",
+    "markdown_import_description": "Iompórtáil comhad marcála síos isteach sa nóta seo",
+    "anchor_description": "Cuir ancaire isteach le haghaidh nascadh inmheánach"
+  },
+  "security": {
+    "backend_scripting_title": "Scriptiú cúil",
+    "backend_scripting_section_description": "Tá rochtain iomlán ag scripteanna cúil ar an bhfreastalaí, lena n-áirítear orduithe córas comhad, líonra agus OS. Is féidir iad a spreagadh trí shioncrónú, allmhairiú nó aon ábhar ina bhfuil tréithe inrite. Bíonn scripteanna tosaigh cumasaithe i gcónaí agus iad ag rith i gcomhthéacs brabhsálaí bosca gainimh.",
+    "backend_scripting_label": "Forghníomhú script chúltaca",
+    "backend_scripting_description": "Ceadaigh forghníomhú scripteanna cúil (scripteanna tosaithe, láimhseálaithe iarratais saincheaptha, láimhseálaithe imeachtaí, scripteanna sceidealaithe, srl.).",
+    "sql_console_title": "Consól SQL",
+    "sql_console_section_description": "Ceadaíonn consól SQL fiosrúcháin SQL amha a rith i gcoinne an bhunachar sonraí. Is féidir é seo a úsáid chun sonraí íogaire (e.g. rúin sioncrónaithe, eochracha API) a léamh agus aon sonraí a athrú nó a scriosadh. D’fhéadfadh script tosaigh mailíseach rochtain a fháil ar API consól SQL go ríomhchláraitheach freisin.",
+    "sql_console_label": "Consól SQL",
+    "sql_console_description": "Ceadaigh forghníomhú fiosrúchán sa chonsól SQL.",
+    "how_to_enable": "Conas a chumasú",
+    "server_config_hint": "Cuir an méid seo a leanas le do chomhad config.ini:",
+    "server_env_hint": "Nó socraigh an athróg timpeallachta seo a leanas:",
+    "restart_required": "Tá atosú ag teastáil chun an t-athrú seo a chur i bhfeidhm.",
+    "restart_now": "Atosaigh an feidhmchlár anois"
   }
 }

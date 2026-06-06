@@ -53,6 +53,7 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/coffeescript": async () => (await import('@codemirror/legacy-modes/mode/coffeescript')).coffeeScript,
     "text/css": async () => (await import('@codemirror/lang-css')).css(),
     "text/html": async () => (await import('@codemirror/lang-html')).html(),
+    "text/javascript": async () => buildJavaScript("text/javascript"),
     "text/jinja2": async () => (await import('@codemirror/legacy-modes/mode/jinja2')).jinja2,
     "text/jsx": async () => (await import('@codemirror/lang-javascript')).javascript({ jsx: true }),
     "text/mirc": async () => (await import('@codemirror/legacy-modes/mode/mirc')).mirc,

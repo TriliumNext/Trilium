@@ -8,7 +8,7 @@ describe("markdown", () => {
         const conversionTable = {
             "nginx": "language-text-x-nginx-conf",
             "diff": "language-text-x-diff",
-            "javascript": "language-application-javascript-env-backend",
+            "javascript": "language-text-javascript",
             "css": "language-text-css",
             "mips": "language-text-x-asm-mips",
             "jsx": "language-text-jsx",

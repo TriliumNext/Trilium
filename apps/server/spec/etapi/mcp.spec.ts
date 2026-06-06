@@ -29,6 +29,10 @@ function parseSseResponse(text: string) {
 function mcpPost(app: Application) {
     return supertest(app)
         .post("/mcp")
+        // supertest binds to an ephemeral port, so its default Host (127.0.0.1:<random>)
+        // would be rejected by the DNS-rebinding allow-list. Present a bare loopback Host,
+        // matching what a real client on a standard port sends.
+        .set("Host", "localhost")
         .set("Accept", MCP_ACCEPT)
         .set("Content-Type", "application/json");
 }

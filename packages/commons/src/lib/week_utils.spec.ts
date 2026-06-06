@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { dayjs } from "./dayjs.js";
-import { getWeekInfo, getFirstDayOfWeek1, getWeekString, WeekSettings, DEFAULT_WEEK_SETTINGS } from "./week_utils.js";
+import {
+    DEFAULT_WEEK_SETTINGS,
+    getFirstDayOfWeek1,
+    getWeekInfo,
+    getWeekStartDate,
+    getWeekString,
+    parseWeekString,
+    WeekSettings
+} from "./week_utils.js";
 
 describe("week_utils", () => {
     describe("getWeekInfo", () => {
@@ -205,6 +213,129 @@ describe("week_utils", () => {
                 minDaysInFirstWeek: 4
             };
             expect(getWeekString(dayjs("2026-01-05"), settings)).toBe("2026-W02");
+        });
+    });
+
+    describe("getFirstDayOfWeek1 (additional branches)", () => {
+        it("with firstWeekOfYear=1 (ISO 8601) for 2026, week 1 starts 2025-12-29", () => {
+            const settings: WeekSettings = {
+                firstDayOfWeek: 1,
+                firstWeekOfYear: 1,
+                minDaysInFirstWeek: 4
+            };
+            // 2026-01-04 is Sunday (isoWeekday 7); week containing it starts 2025-12-29 (Mon)
+            const result = getFirstDayOfWeek1(2026, settings);
+            expect(result.format("YYYY-MM-DD")).toBe("2025-12-29");
+        });
+
+        describe("with firstWeekOfYear=2 (minimum days in first week)", () => {
+            // 2026-01-01 is Thursday (isoWeekday 4), firstDayOfWeek=1
+            // daysToSubtract = (4-1+7)%7 = 3, so daysInFirstWeek = 7-3 = 4
+            it("returns the week containing Jan 1 when daysInFirstWeek >= minDaysInFirstWeek", () => {
+                const settings: WeekSettings = {
+                    firstDayOfWeek: 1,
+                    firstWeekOfYear: 2,
+                    minDaysInFirstWeek: 4
+                };
+                // 4 days >= 4 minimum -> week containing Jan 1 starts 2025-12-29
+                const result = getFirstDayOfWeek1(2026, settings);
+                expect(result.format("YYYY-MM-DD")).toBe("2025-12-29");
+            });
+
+            it("returns the next week when daysInFirstWeek < minDaysInFirstWeek", () => {
+                const settings: WeekSettings = {
+                    firstDayOfWeek: 1,
+                    firstWeekOfYear: 2,
+                    minDaysInFirstWeek: 5
+                };
+                // 4 days < 5 minimum -> add one week -> starts 2026-01-05
+                const result = getFirstDayOfWeek1(2026, settings);
+                expect(result.format("YYYY-MM-DD")).toBe("2026-01-05");
+            });
+        });
+    });
+
+    describe("getWeekInfo (year-boundary branches)", () => {
+        const settings: WeekSettings = {
+            firstDayOfWeek: 1,
+            firstWeekOfYear: 1, // ISO 8601
+            minDaysInFirstWeek: 4
+        };
+
+        it("early-January date belonging to previous year's last week (weekStart isBefore week1 -> year--)", () => {
+            // 2023-01-01 is Sunday; its week starts 2022-12-26, which is before
+            // ISO week 1 of 2023 (2023-01-02). It belongs to 2022-W52.
+            const result = getWeekInfo(dayjs("2023-01-01"), settings);
+            expect(result.weekYear).toBe(2022);
+            expect(result.weekNumber).toBe(52);
+        });
+
+        it("late-December date belonging to next year's week 1 (!isBefore nextYearFirstDayOfWeek1 -> year++)", () => {
+            // ISO week 1 of 2026 starts 2025-12-29 (Mon). 2025-12-31 is in that week,
+            // so it belongs to 2026-W01 even though its calendar year is 2025.
+            const result = getWeekInfo(dayjs("2025-12-31"), settings);
+            expect(result.weekYear).toBe(2026);
+            expect(result.weekNumber).toBe(1);
+        });
+    });
+
+    describe("getWeekStartDate", () => {
+        it("returns the Monday of the week for firstDayOfWeek=1", () => {
+            // 2026-01-15 is Thursday (isoWeekday 4); the Monday of that week is 2026-01-12
+            const result = getWeekStartDate(dayjs("2026-01-15"), 1);
+            expect(result.format("YYYY-MM-DD")).toBe("2026-01-12");
+        });
+
+        it("returns the Sunday of the week for firstDayOfWeek=7", () => {
+            // With Sunday as first day, the week containing 2026-01-15 (Thu) starts 2026-01-11
+            const result = getWeekStartDate(dayjs("2026-01-15"), 7);
+            expect(result.format("YYYY-MM-DD")).toBe("2026-01-11");
+        });
+
+        it("defaults firstDayOfWeek to 1 (Monday) when omitted", () => {
+            const result = getWeekStartDate(dayjs("2026-01-15"));
+            expect(result.format("YYYY-MM-DD")).toBe("2026-01-12");
+        });
+
+        it("truncates the time to the start of the day", () => {
+            const result = getWeekStartDate(dayjs("2026-01-15T13:45:30"), 1);
+            expect(result.format("YYYY-MM-DD HH:mm:ss")).toBe("2026-01-12 00:00:00");
+        });
+    });
+
+    describe("parseWeekString", () => {
+        it("parses '2026-W01' to the start of week 1 under default settings", () => {
+            // Under DEFAULT_WEEK_SETTINGS, week 1 of 2026 starts 2025-12-29
+            const result = parseWeekString("2026-W01", DEFAULT_WEEK_SETTINGS);
+            expect(result.format("YYYY-MM-DD")).toBe("2025-12-29");
+        });
+
+        it("uses default settings when none are provided", () => {
+            const result = parseWeekString("2026-W01");
+            expect(result.format("YYYY-MM-DD")).toBe("2025-12-29");
+        });
+
+        it("parses later week numbers relative to week 1", () => {
+            // Week 2 is one week after week 1 (2025-12-29) -> 2026-01-05
+            const result = parseWeekString("2026-W02", DEFAULT_WEEK_SETTINGS);
+            expect(result.format("YYYY-MM-DD")).toBe("2026-01-05");
+        });
+
+        it("trims surrounding whitespace before parsing", () => {
+            const result = parseWeekString("  2026-W01  ", DEFAULT_WEEK_SETTINGS);
+            expect(result.format("YYYY-MM-DD")).toBe("2025-12-29");
+        });
+
+        it("round-trips with getWeekString and aligns with getWeekStartDate", () => {
+            const date = dayjs("2026-03-18");
+            const weekStr = getWeekString(date, DEFAULT_WEEK_SETTINGS);
+            expect(weekStr).toBe("2026-W12");
+
+            const parsed = parseWeekString(weekStr, DEFAULT_WEEK_SETTINGS);
+            const weekStart = getWeekStartDate(date, DEFAULT_WEEK_SETTINGS.firstDayOfWeek);
+
+            expect(parsed.format("YYYY-MM-DD")).toBe("2026-03-16");
+            expect(parsed.format("YYYY-MM-DD")).toBe(weekStart.format("YYYY-MM-DD"));
         });
     });
 });

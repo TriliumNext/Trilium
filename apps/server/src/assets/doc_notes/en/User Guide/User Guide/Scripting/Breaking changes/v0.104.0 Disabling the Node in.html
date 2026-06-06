@@ -20,12 +20,12 @@ class="admonition note">
   <h2>Overview of the API</h2>
   <p>The Frontend and Backend APIs reside in a global variable, <code spellcheck="false">api</code>,
     that can be used anywhere in the script. For example, to display a message
-    to the user the following front-end script can be used:</p><pre><code class="language-application-javascript-env-backend">api.showMessage("Hello world.");</code></pre>
+    to the user the following front-end script can be used:</p><pre><code class="language-text-javascript">api.showMessage("Hello world.");</code></pre>
   <p>The Electron API is different: it lives on <code spellcheck="false">window.electronApi</code> (exposed
     by the desktop preload script), not on <code spellcheck="false">api</code>,
     and is only available in the Electron desktop build. Frontend scripts that
     use it should guard with <code spellcheck="false">if (window.electronApi)</code> so
-    they degrade cleanly in the browser and standalone (WASM) builds.</p><pre><code class="language-application-javascript-env-backend">window.electronApi?.window.setZoomFactor(1.2);</code></pre>
+    they degrade cleanly in the browser and standalone (WASM) builds.</p><pre><code class="language-text-javascript">window.electronApi?.window.setZoomFactor(1.2);</code></pre>
   <h2>Additional protection</h2>
   <p>Some of the APIs have additional safe-guards built in which prevent unauthorized
     access.</p>

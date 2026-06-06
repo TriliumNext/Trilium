@@ -40,6 +40,7 @@ function getIconPath(name: string) {
 }
 
 function registerVisibilityListener(window: BrowserWindow) {
+    /* v8 ignore next 3 -- defensive: only ever called with a real window from updateWindowVisibilityMap's forEach */
     if (!window) {
         return;
     }
@@ -59,6 +60,7 @@ function registerVisibilityListener(window: BrowserWindow) {
 }
 
 function getWindowTitle(window: BrowserWindow | null) {
+    /* v8 ignore next 3 -- defensive: only called with a window already null-checked via `if (!win) continue` */
     if (!window) {
         return;
     }
@@ -97,6 +99,7 @@ function updateWindowVisibilityMap(allWindows: BrowserWindow[]) {
 
 
 function updateTrayMenu() {
+    /* v8 ignore next 3 -- defensive: every call site runs after `tray` is assigned in createTray */
     if (!tray) {
         return;
     }
@@ -105,6 +108,7 @@ function updateTrayMenu() {
     updateWindowVisibilityMap(allWindows);
 
     function ensureVisible(win: BrowserWindow) {
+        /* v8 ignore next -- defensive: always called with a truthy window (focused window or null-checked checkbox window) */
         if (win) {
             win.show();
             win.focus();
@@ -135,6 +139,7 @@ function updateTrayMenu() {
         const parentNote = becca.getNoteOrThrow("_lbBookmarks");
         const menuItems: Electron.MenuItemConstructorOptions[] = [];
 
+        /* v8 ignore next -- defensive: getNoteOrThrow never returns null and BNote.children is always an array */
         for (const bookmarkNote of parentNote?.children ?? []) {
             if (bookmarkNote.isLabelTruthy("bookmarkFolder")) {
                 menuItems.push({
@@ -198,6 +203,7 @@ function updateTrayMenu() {
         const id = parseInt(idStr, 10); // Get the ID of the window and make sure it is a number
         const isVisible = windowVisibilityMap[id];
         const win = allWindows.find(w => w.id === id);
+        /* v8 ignore next 3 -- defensive: windowVisibilityMap was just pruned to ids present in allWindows */
         if (!win) {
             continue;
         }

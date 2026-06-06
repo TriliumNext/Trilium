@@ -4,12 +4,14 @@ import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, MIME_TYPE_AUTO, normalizeMim
 
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { t } from "../../../services/i18n.js";
-import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
+import imageService from "../../../services/image.js";
 import { getMermaidConfig } from "../../../services/mermaid.js";
 import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
 import noteAutocompleteService, { type Suggestion } from "../../../services/note_autocomplete.js";
 import options from "../../../services/options.js";
 import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
+import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
+import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams.js";
 import { buildToolbarConfig } from "./toolbar.js";
 
 export const OPEN_SOURCE_LICENSE_KEY = "GPL";
@@ -44,7 +46,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         },
         mermaid: {
             lazyLoad: async () => (await import("mermaid")).default, // FIXME
-            config: getMermaidConfig()
+            config: getMermaidConfig(),
+            samples: SAMPLE_DIAGRAMS
         },
         image: {
             styles: {
@@ -133,14 +136,15 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         },
         link: {
             defaultProtocol: "https://",
-            allowedProtocols: ALLOWED_PROTOCOLS
+            allowedProtocols: ALLOWED_PROTOCOLS,
+            toolbar: ["linkPreview", "copyLinkUrl", "|", "editLink", "linkProperties", "unlink"]
         },
         bookmark: {
             toolbar: [
                 "bookmarkPreview",
+                "copyAnchorLink",
                 "|",
                 "editBookmark",
-                "copyAnchorLink",
                 "removeBookmark"
             ]
         },
@@ -162,9 +166,12 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             copy: copyTextWithToast
         },
         slashCommand: {
-            removeCommands: [],
+            // Drop CKEditor's built-in slash commands whose title/icon we re-define in
+            // buildExtraCommands: the Mermaid one (generic icon) and the list ones
+            // (Title Case titles, normalized to sentence case).
+            removeCommands: ["insertMermaidCommand", "bulletedList", "numberedList", "todoList"],
             dropdownLimit: Number.MAX_SAFE_INTEGER,
-            extraCommands: buildExtraCommands()
+            extraCommands: buildExtraCommands((key, params) => t(key, params), SAMPLE_DIAGRAMS)
         },
         template: {
             definitions: opts.templates
@@ -182,6 +189,16 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
 
     // The app's i18n translate function, so plugins can resolve Trilium translation keys.
     (config as Record<string, unknown>).translate = (key: string, params?: Record<string, unknown>) => t(key, params);
+
+    // Image toolbar actions (copy / download), handled by the ImageActions plugin. The copy
+    // button is only added where copying the raw image is supported (Electron or a secure
+    // context); elsewhere the browser's own context menu still offers a "Copy image" entry.
+    (config as Record<string, unknown>).imageActions = {
+        copyToClipboard: (src: string) => imageService.copyImageToClipboard(src),
+        download: (src: string) => imageService.downloadImage(src)
+    };
+    const imageToolbar = (config.image as { toolbar: (string | object)[] }).toolbar;
+    imageToolbar.push("|", ...(imageService.isImageCopySupported() ? ["copyImageToClipboard"] : []), "downloadImage");
 
     // Set up content language.
     const { contentLanguage } = opts;
@@ -239,6 +256,10 @@ function buildListOfLanguages() {
     const userLanguages = mimeTypesService
         .getMimeTypes()
         .filter((mt) => mt.enabled)
+        // The `env=frontend`/`env=backend` JavaScript variants are Trilium script environments,
+        // which are meaningless inside a (display-only) code block. Plain `text/javascript`
+        // already provides JavaScript highlighting, so omit the script-specific variants here.
+        .filter((mt) => mt.mime && !mt.mime.startsWith("application/javascript;env="))
         .map((mt) => ({
             language: normalizeMimeTypeForCKEditor(mt.mime),
             label: mt.title

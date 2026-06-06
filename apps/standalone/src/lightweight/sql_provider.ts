@@ -274,11 +274,13 @@ export default class BrowserSqlProvider implements DatabaseProvider {
                 `[BrowserSqlProvider] SQLite WASM initialized in ${initTime.toFixed(2)}ms:`,
                 this.sqlite3.version.libVersion
             );
+        /* v8 ignore start -- @preserve: sqlite3InitModule loads once per worker and cannot be made to fail deterministically in the test harness. */
         } catch (e) {
             this.initError = e instanceof Error ? e : new Error(String(e));
             console.error("[BrowserSqlProvider] SQLite WASM initialization failed:", this.initError);
             throw this.initError;
         }
+        /* v8 ignore stop */
     }
 
     /**

@@ -12,6 +12,7 @@ import host from "./services/host.js";
 import { getLog } from "@triliumnext/core";
 import port from "./services/port.js";
 import { getDbSize } from "./services/sql_init.js";
+import { isScriptingEnabled } from "./services/scripting_guard.js";
 import WebSocketMessagingProvider from "./services/ws_messaging_provider.js";
 
 const MINIMUM_NODE_VERSION = "20.0.0";
@@ -91,6 +92,14 @@ async function displayStartupMessage() {
         getLog().info(`💻 CPU:         ${cpuModel} (${cpuInfos.length}-core @ ${cpuInfos[0].speed} Mhz)`);
     }
     getLog().info(`💾 DB size:     ${utils.formatSize(getDbSize() * 1024)}`);
+
+    if (isScriptingEnabled()) {
+        getLog().info("WARNING: Backend script execution is ENABLED. Backend scripts have full server access including " +
+                 "filesystem, network, and OS commands. Only enable in trusted environments.");
+    } else {
+        getLog().info("Backend script execution is DISABLED. Set [Security] backendScriptingEnabled=true in config.ini to enable.");
+    }
+
     getLog().info("");
 }
 

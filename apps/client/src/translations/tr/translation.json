@@ -2,7 +2,7 @@
   "about": {
     "data_directory": "Veri dizini:",
     "version_label": "Sürüm:",
-    "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
+    "version": "{{appVersion}} (veritabanı: {{dbVersion}}, senkronizasyon protokolü: {{syncVersion}})",
     "build_info": "Derleme: {{buildDate}}, revizyon: <buildRevision />",
     "contributors_label": "Katkıda bulunanlar:",
     "contributor_roles": {
@@ -14,30 +14,46 @@
       "original-dev": "25 Aralık 2017'de Zadam, Trilium'un (kapsamlı bir not alma ve kişisel bilgi tabanı uygulaması olup adını İngilizcedeki Trillium [üçyaprak] çiçeğinden aldı ve çiçeğin adının aksine tek bir \"l\" ile yazılır) ilk beta sürümünü yayımladı. Mevcut not düzenleyicilerden memnun kalmadığı için 22 binden fazla GitHub yıldızı toplayan güçlü, kendi sunucusunda barındırılabilen hiyerarşik bir bilgi tabanı oluşturdu. 2024 yılında hayatının yoğunlaşmasıyla birlikte projeyi bakım moduna aldı."
     },
     "contributor_full_list": "Tüm topluluğu görüntüle",
-    "github_tooltip": "GitHub üzerinden hata bildirin, yeni özellik önerin veya katkıda bulunun",
+    "github_tooltip": "GitHub üzerinden hata bildir, yeni özellik öner veya katkıda bulun",
     "license_tooltip": "Lisansı görüntüle",
     "donate": "Bağış yap",
-    "donate_tooltip": "Bu projeyi desteklemek için bağış yapın"
+    "donate_tooltip": "Bu projeyi desteklemek için bağış yap",
+    "channel": {
+      "nightly": "Her gece",
+      "standalone": "Tek başına"
+    }
   },
   "branch_prefix": {
     "save": "Kaydet",
     "edit_branch_prefix": "Dalın önekini düzenle",
-    "prefix": "Önek: ",
+    "prefix": "Önek",
     "branch_prefix_saved": "Dal öneki kaydedildi.",
     "edit_branch_prefix_multiple": "{{count}} dal için dal ön ekini düzenle",
     "help_on_tree_prefix": "Ağaç ön eki hakkında yardım",
     "branch_prefix_saved_multiple": "Dal ön eki, {{count}} dal için kaydedildi.",
-    "affected_branches": "Etkilenen dal sayısı ({{count}}):"
+    "affected_branches": "Etkilenen dal sayısı ({{count}}):",
+    "preview_in_tree": "Ağaç yapısında önizleme",
+    "description": "Bu dalda not başlığının başına eklenir. Diğer dallarda orijinal başlık korunur.",
+    "cancel": "İptal"
   },
   "delete_notes": {
     "close": "Kapat",
-    "delete_all_clones_description": "Tüm klonları da sil (son değişikliklerden geri alınabilir)",
-    "erase_notes_description": "Normal (yazılımsal) silme işlemi, notları yalnızca silinmiş olarak işaretler ve belirli bir süre içinde (son değişiklikler iletişim kutusunda) geri alınabilir. Bu seçeneği işaretlemek, notları hemen siler ve notların geri alınması mümkün olmaz.",
-    "erase_notes_warning": "Notları, tüm kopyaları da dahil olmak üzere kalıcı olarak silin (geri alınamaz). Bu işlem, uygulamanın yeniden yüklenmesine neden olacaktır.",
-    "notes_to_be_deleted": "Aşağıdaki notlar silinecektir. ({{notesCount}})",
-    "no_note_to_delete": "Hiçbir not silinmeyecek (sadece kopyaları silinecek).",
-    "broken_relations_to_be_deleted": "Aşağıdaki ilişkiler koparılacak ve silinecektir ({{ relationCount}})",
-    "cancel": "İptal"
+    "delete_all_clones_description": "Tüm kopyaları da sil (son değişiklikler bölümünden geri alınabilir)",
+    "erase_notes_description": "Notları geçici silme yerine hemen kalıcı olarak silin. Bu işlem, geri alınamaz ve uygulamanın yeniden yüklenmesine neden olur.",
+    "erase_notes_warning": "Tüm kopyaları dahil notları kalıcı olarak sil (geri alınamaz). Bu işlemle uygulama yeniden yüklenecektir.",
+    "notes_to_be_deleted": "Silinecek notlar {{notesCount}}",
+    "no_note_to_delete": "Hiçbir not silinmeyecek (sadece kopyalar silinecek).",
+    "broken_relations_to_be_deleted": "Bozulan ilişkiler {{relationCount}}",
+    "cancel": "İptal",
+    "title": "Notları sil",
+    "clones_label": "Kopyalar",
+    "delete_clones_description_one": "Ayrıca {{count}} kopyayı daha silin. Bu işlem, son değişiklikler bölümünden geri alınabilir.",
+    "delete_clones_description_other": "Ayrıca {{count}} kopyayı daha silin. Bu işlem, son değişiklikler bölümünden geri alınabilir.",
+    "erase_notes_label": "Kalıcı olarak sil",
+    "table_note_with_relation": "İlişkili not",
+    "table_relation": "İlişki",
+    "table_points_to": "(Silinmiş)",
+    "delete": "Sil"
   },
   "export": {
     "close": "Kapat",
@@ -60,7 +76,9 @@
   },
   "import": {
     "chooseImportFile": "İçe aktarım dosyası",
-    "importDescription": "Seçilen dosya(lar)ın içeriği, alt not(lar) olarak şuraya içe aktarılacaktır"
+    "importDescription": "Seçilen dosya(lar)ın içeriği, alt not(lar) olarak şuraya içe aktarılacaktır",
+    "importIntoNote": "Not'a aktar",
+    "importZipRecommendation": "Bir ZIP dosyası içe aktarılırken not sıralaması arşivdeki alt dizin yapısını yansıtacaktır."
   },
   "info": {
     "closeButton": "Kapat"
@@ -100,7 +118,9 @@
     "link_title_mirrors": "bağlantı adı notun şu anki adıyla aynı",
     "link_title_arbitrary": "bağlantı adı isteğe bağlı olarak değiştirilebilir",
     "link_title": "Bağlantı adı",
-    "button_add_link": "Bağlantı ekle"
+    "button_add_link": "Bağlantı ekle",
+    "anchor": "Bağlantı (isteğe bağlı)",
+    "anchor_none": "Yok (not bağlantısı)"
   },
   "bulk_actions": {
     "bulk_actions": "Toplu eylemler",
@@ -117,16 +137,16 @@
     "other": "Diğer"
   },
   "clone_to": {
-    "clone_notes_to": "Notları klonla...",
-    "help_on_links": "Bağlantılar konusunda yardım",
-    "notes_to_clone": "Klonlanacak notlar",
+    "clone_notes_to": "Notları şuraya kopyala...",
+    "help_on_links": "Bağlantılarla ilgili yardım",
+    "notes_to_clone": "Çoğaltılacak notlar",
     "target_parent_note": "Hedef üst not",
-    "search_for_note_by_its_name": "isme göre not ara",
-    "cloned_note_prefix_title": "Klonlanan not, not ağacında belirtilen önek ile gösterilecektir",
+    "search_for_note_by_its_name": "adına göre not ara",
+    "cloned_note_prefix_title": "Çoğaltılan not, belirtilen önekle birlikte not ağacında gösterilecektir",
     "prefix_optional": "önek (opsiyonel)",
-    "clone_to_selected_note": "Seçili nota klonla",
-    "no_path_to_clone_to": "Klonlanacak bir yol yok.",
-    "note_cloned": "\"{{clonedTitle}}\" notu \"{{targetTitle}}\"'a klonlandı"
+    "clone_to_selected_note": "Seçilen nota kopyala",
+    "no_path_to_clone_to": "Çoğaltılacak yol yok.",
+    "note_cloned": "Not: \"{{clonedTitle}}\" ögesi, \"{{targetTitle}}\" öğesine kopyalandı"
   },
   "confirm": {
     "confirmation": "Onay",
@@ -160,10 +180,59 @@
     "creatingNotes": "Not oluşturma",
     "createNoteAfter": "etkin nottan sonra yeni not oluşturma",
     "createNoteInto": "aktif nota yeni bir alt not oluşturun",
-    "editBranchPrefix": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">prefix</a> değerini aktif not klonunun düzenle",
-    "movingCloningNotes": "Notları taşıma / klonlama"
+    "editBranchPrefix": "aktif notun kopyasının <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">önekini</a> düzenle",
+    "movingCloningNotes": "Notları taşıma / klonlama",
+    "toggleArchivedNotes": "arşivlenmiş notları göster/gizle",
+    "moveNoteUpDown": "notu not listesinde yukarı/aşağı taşı",
+    "moveNoteUpHierarchy": "notu sıralamada yukarı taşı",
+    "multiSelectNote": "yukarıdaki/aşağıdaki notu çoklu seç",
+    "selectAllNotes": "mevcut seviyedeki tüm notaları seç",
+    "selectNote": "notu seç",
+    "copyNotes": "etkin notu (veya mevcut seçimi) panoya kopyala (<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">kopyalama</a> için kullanılır)",
+    "cutNotes": "mevcut notu (veya seçili kısmı) panoya kopyala (notları taşımak için kullanılır)",
+    "pasteNotes": "notu/notları, aktif not için alt not olarak yapıştır (bu, panoya kopyalanmasına veya kesilmesine bağlı olarak taşıma veya çoğaltma işlemidir)",
+    "deleteNotes": "notu / alt ağacı sil",
+    "editingNotes": "Düzenleme notları",
+    "editNoteTitle": "ağaç görünümündeki tuş kombinasyonu, ağaç görünümünden not başlığına geçişi sağlar. Not başlığından Enter tuşuna basmak, odağı metin düzenleyiciye geçirir. <kbd>Ctrl+.</kbd> tuş kombinasyonu ise düzenleyiciden ağaç görünümüne geri dönmeyi sağlar.",
+    "createEditLink": "dış bağlantı oluştur / düzenle",
+    "createInternalLink": "iç bağlantı oluştur",
+    "followLink": "imlecin altındaki bağlantıyı izle",
+    "insertDateTime": "imleç konumuna güncel tarih ve saati ekle",
+    "jumpToTreePane": "ağaç bölmesine geç ve aktif nota kadar kaydır",
+    "markdownAutoformat": "Markdown benzeri otomatik biçimlendirme",
+    "headings": "<code>##</code>, <code>###</code>, <code>####</code> vb. başlıklar için ardından boşluk bırakılır",
+    "bulletList": "<code>*</code> veya <code>-</code> ve ardından madde işareti listesi için boşluk",
+    "troubleshooting": "Sorun Giderme",
+    "reloadFrontend": "Trilium arayüzünü yeniden yükle",
+    "showDevTools": "geliştirici araçlarını göster",
+    "showSQLConsole": "SQL konsolunu göster",
+    "other": "Diğer",
+    "quickSearch": "hızlı arama alanına odaklan",
+    "inPageSearch": "sayfa içi arama"
   },
   "common": {
     "cancel": "iptal"
+  },
+  "move_note": {
+    "clone_note_new_parent": "Notun birden fazla kopyası veya dalı varsa, notu yeni üst nota kopyala (hangi dalın kaldırılması gerektiği belli değil)"
+  },
+  "note_paths": {
+    "clone_button": "Notu yeni bir konuma kopyala..."
+  },
+  "order_by": {
+    "parent_count": "Kopya sayısı"
+  },
+  "tree-context-menu": {
+    "copy-clone": "Kopyala / çoğalt",
+    "clone-to": "Şuraya kopyala..."
+  },
+  "note_tree": {
+    "clone-indicator-tooltip": "Bu notun {{- count}} üst ögesi vardır: {{- parents}}",
+    "clone-indicator-tooltip-single": "Bu not kopyalanmıştır (1 ek üst öge: {{- parent}})"
+  },
+  "llm": {
+    "tools": {
+      "clone_note": "Notu kopyala"
+    }
   }
 }

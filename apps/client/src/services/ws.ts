@@ -18,6 +18,7 @@ let ws: WebSocket;
 // In Electron desktop, messaging goes over Chromium IPC (no TCP socket,
 // no auth). The bridge is exposed by the preload script; when present we
 // skip the WebSocket entirely.
+/* v8 ignore next -- `window` is always defined wherever this module loads (browser/electron); the SSR-style guard's else arm is unreachable */
 const ipcWs = typeof window !== "undefined" ? window.electronApi?.ws : undefined;
 let lastAcceptedEntityChangeId = window.glob.maxEntityChangeIdAtLoad ?? 0;
 let lastAcceptedEntityChangeSyncId = window.glob.maxEntityChangeSyncIdAtLoad ?? 0;

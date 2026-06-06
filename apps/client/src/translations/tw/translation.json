@@ -814,7 +814,7 @@
     "hide_child_notes": "隱藏樹中的子筆記",
     "open_all_in_tabs": "全部打開",
     "open_all_in_tabs_tooltip": "在新分頁中開啟所有結果",
-    "open_all_confirm": "這將在新分頁中開啟 {{count}} 則筆記。要繼續嗎？"
+    "open_all_confirm_one": "這將在新分頁中開啟 {{count}} 則筆記。要繼續嗎？"
   },
   "edited_notes": {
     "no_edited_notes_found": "今天還沒有編輯過的筆記...",
@@ -858,7 +858,7 @@
     "note_size": "筆記大小",
     "note_size_info": "筆記大小提供了該筆記儲存需求的粗略估計。它考慮了筆記及其歷史的內容。",
     "calculate": "計算",
-    "subtree_size": "（子階層大小: {{size}}, 共計 {{count}} 個筆記）",
+    "subtree_size_one": "（子階層大小: {{size}}, 共計 {{count}} 個筆記）",
     "title": "筆記資訊",
     "mime": "MIME 類型",
     "show_similar_notes": "顯示相似筆記"
@@ -869,7 +869,7 @@
     "title": "筆記地圖",
     "fix-nodes": "固定節點",
     "link-distance": "連結距離",
-    "too-many-notes": "此子樹包含 {{count}} 則筆記，已超過筆記地圖中可顯示的 {{max}} 則上限。"
+    "too-many-notes_one": "此子樹包含 {{count}} 則筆記，已超過筆記地圖中可顯示的 {{max}} 則上限。"
   },
   "note_paths": {
     "title": "筆記路徑",
@@ -1518,7 +1518,7 @@
     "export": "匯出",
     "import-into-note": "匯入至筆記",
     "apply-bulk-actions": "套用批次操作",
-    "converted-to-attachments": "{{count}} 個筆記已被轉換為附件。",
+    "converted-to-attachments_one": "{{count}} 個筆記已被轉換為附件。",
     "convert-to-attachment-confirm": "確定要將所選的筆記轉換為其父級筆記的附件嗎？此操作僅適用於圖像筆記，其他筆記將被跳過。",
     "duplicate": "複製副本",
     "open-in-popup": "快速編輯",
@@ -2089,7 +2089,7 @@
     "app-restart-required": "需要重啟程式"
   },
   "pagination": {
-    "total_notes": "{{count}} 筆記",
+    "total_notes_one": "{{count}} 筆記",
     "prev_page": "上一頁",
     "next_page": "下一頁"
   },
@@ -2188,7 +2188,7 @@
     "code_note_switcher": "更改語言模式",
     "tab_width": "制表符寬度：{{width}}",
     "tab_width_title": "變更制表符寬度",
-    "tab_width_spaces": "{{count}} 個空格",
+    "tab_width_spaces_one": "{{count}} 個空格",
     "tab_width_spaces_short": "空格：{{width}}",
     "tab_width_tabs": "製表符：{{width}}",
     "tab_width_use_default": "使用預設值 ({{width}})",

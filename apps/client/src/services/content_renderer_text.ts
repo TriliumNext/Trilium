@@ -6,6 +6,7 @@ import link from "./link.js";
 import { applyLinkEmbeds } from "./link_embed.js";
 import { renderMathInElement } from "./math.js";
 import { getMermaidConfig } from "./mermaid.js";
+import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
 import tree from "./tree.js";
 import { isHtmlEmpty } from "./utils.js";
@@ -15,7 +16,7 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
     const blob = await note.getBlob();
 
     if (blob && !isHtmlEmpty(blob.content)) {
-        $renderedContent.append($('<div class="ck-content">').html(blob.content));
+        $renderedContent.append($('<div class="ck-content">').html(sanitizeNoteContentHtml(blob.content)));
         await postProcessRichContent(note, $renderedContent, options);
     } else if (note instanceof FNote && !options.noChildrenList) {
         await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
@@ -107,6 +108,7 @@ export async function rewriteMermaidDiagramsInContainer(container: HTMLDivElemen
     for (const mermaidBlock of mermaidBlocks) {
         const div = document.createElement("div");
         div.classList.add("mermaid-diagram");
+        /* v8 ignore next -- defensive fallback: the `:has(code[...])` selector guarantees a `<code>` child whose innerHTML is always a string */
         div.innerHTML = mermaidBlock.querySelector("code")?.innerHTML ?? "";
         mermaidBlock.replaceWith(div);
         nodes.push(div);
@@ -150,6 +152,7 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
     const pending: Array<{ visible: HTMLElement; source: string }> = [];
     const seenSources = new Set<string>();
     for (const [ index, node ] of nodes.entries()) {
+        /* v8 ignore next -- defensive fallback: textContent on an HTMLElement is always a string */
         const source = (node.textContent ?? "").trim();
         seenSources.add(source);
 

@@ -24,8 +24,14 @@ function calculateCost(usage: LanguageModelUsage, pricing?: ModelPricing): numbe
     const details = usage.inputTokenDetails;
     const cacheReadTokens = details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
     const cacheWriteTokens = details?.cacheWriteTokens ?? 0;
+    // The sole caller only invokes calculateCost once it has type-guarded both
+    // inputTokens and outputTokens as numbers, so the `?? 0` fallbacks here are
+    // unreachable defensive normalisation.
+    /* v8 ignore next */
+    const inputTokens = usage.inputTokens ?? 0;
     const noCacheInputTokens = details?.noCacheTokens
-        ?? Math.max(0, (usage.inputTokens ?? 0) - cacheReadTokens - cacheWriteTokens);
+        ?? Math.max(0, inputTokens - cacheReadTokens - cacheWriteTokens);
+    /* v8 ignore next */
     const outputTokens = usage.outputTokens ?? 0;
 
     const M = 1_000_000;

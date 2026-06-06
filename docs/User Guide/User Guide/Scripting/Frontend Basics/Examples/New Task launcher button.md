@@ -3,7 +3,7 @@ In this example we are going to extend the functionality of <a class="reference
 
 ## Creating the note
 
-1.  First, create a new <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> note type with the _JS frontend_ language.
+1.  First, create a new <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> note type with the _JavaScript (Trilium frontend)_ language.
 2.  Define the `#run=frontendStartup` label in <a class="reference-link" href="../../../Advanced%20Usage/Attributes.md">Attributes</a>.
 
 ## Content of the script

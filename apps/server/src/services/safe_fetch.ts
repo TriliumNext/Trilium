@@ -112,7 +112,7 @@ function createPinnedLookup(validatedAddresses: dns.LookupAddress[]) {
 function withDispatcherCleanup(response: Response, dispatcher: Agent): Response {
     const originalBody = response.body;
     if (!originalBody) {
-        dispatcher.close();
+        void dispatcher.close();
         return response;
     }
 
@@ -120,7 +120,7 @@ function withDispatcherCleanup(response: Response, dispatcher: Agent): Response 
     const cleanup = () => {
         if (!closed) {
             closed = true;
-            dispatcher.close();
+            void dispatcher.close();
         }
     };
 
@@ -141,7 +141,7 @@ function withDispatcherCleanup(response: Response, dispatcher: Agent): Response 
             }
         },
         cancel() {
-            reader.cancel();
+            void reader.cancel();
             cleanup();
         }
     });
@@ -187,7 +187,7 @@ async function safeFetch(url: string, options: RequestInit = {}): Promise<Respon
             if (!location) throw new Error("Redirect without Location header");
             // Resolve relative redirects against the current URL
             currentUrl = new URL(location, currentUrl).toString();
-            dispatcher.close();
+            void dispatcher.close();
             continue;
         }
 

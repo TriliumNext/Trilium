@@ -816,7 +816,7 @@
     "hide_child_notes": "隐藏树中的子笔记",
     "open_all_in_tabs": "全部打开",
     "open_all_in_tabs_tooltip": "在新标签页中打开所有结果",
-    "open_all_confirm": "这将在新标签页中打开 {{count}} 个笔记。继续吗？"
+    "open_all_confirm_other": "这将在新标签页中打开 {{count}} 个笔记。继续吗？"
   },
   "edited_notes": {
     "no_edited_notes_found": "今天还没有编辑过的笔记...",
@@ -860,7 +860,7 @@
     "note_size": "笔记大小",
     "note_size_info": "笔记大小提供了该笔记存储需求的粗略估计。它考虑了笔记的内容及其笔记修订历史的内容。",
     "calculate": "计算",
-    "subtree_size": "(子树大小: {{size}}, 共计 {{count}} 个笔记)",
+    "subtree_size_other": "(子树大小: {{size}}, 共计 {{count}} 个笔记)",
     "title": "笔记信息",
     "show_similar_notes": "显示相似的笔记",
     "mime": "文件类型"
@@ -871,7 +871,7 @@
     "title": "笔记地图",
     "fix-nodes": "固定节点",
     "link-distance": "链接距离",
-    "too-many-notes": "这里有 {{count}} 条笔记。全部显示可能会导致运行变慢。",
+    "too-many-notes_other": "这里有 {{count}} 条笔记。全部显示可能会导致运行变慢。",
     "show-anyway": "显示地图"
   },
   "note_paths": {
@@ -1566,7 +1566,7 @@
     "export": "导出",
     "import-into-note": "导入到笔记",
     "apply-bulk-actions": "应用批量操作",
-    "converted-to-attachments": "{{count}} 个笔记已被转换为附件。",
+    "converted-to-attachments_other": "{{count}} 个笔记已被转换为附件。",
     "convert-to-attachment-confirm": "确定要将选中的笔记转换为其父笔记的附件吗？此操作仅适用于图像笔记，其他笔记将被跳过。",
     "duplicate": "复制",
     "open-in-popup": "快速编辑",
@@ -2097,7 +2097,7 @@
     "app-restart-required": "需要重启应用"
   },
   "pagination": {
-    "total_notes": "{{count}} 篇笔记",
+    "total_notes_other": "{{count}} 篇笔记",
     "prev_page": "上一页",
     "next_page": "下一页"
   },
@@ -2184,7 +2184,7 @@
     "note_paths_other": "{{count}} 条路径",
     "tab_width": "制表符宽度：{{width}}",
     "tab_width_title": "调整制表符宽度",
-    "tab_width_spaces": "{{count}} 个空格",
+    "tab_width_spaces_other": "{{count}} 个空格",
     "tab_width_spaces_short": "空格数：{{width}}",
     "tab_width_tabs": "制表符：{{width}}",
     "tab_width_use_default": "使用默认值（{{width}}）",

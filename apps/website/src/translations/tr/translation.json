@@ -34,5 +34,8 @@
         "jump_to_title": "Hızlı arama ve komutlar",
         "jump_to_content": "Notlar veya kullanıcı arayüzü komutları arasında, başlık araması yaparak hiyerarşik yapıda hızla geçiş yapın; yazım hatalarını ve küçük farklılıkları fuzzy matching (bulanık eşleme) ile tolere edin.",
         "search_title": "Gelişmiş arama"
+    },
+    "faq": {
+        "database_answer": "Tüm notlarınız, uygulama klasöründeki bir SQLite veritabanında saklanacaktır. Trilium'un düz metin dosyaları yerine bir veritabanı kullanmasının nedeni, hem performans hem de klonlar (ağaç yapısında aynı notun birden fazla yerde bulunması) gibi bazı özelliklerin uygulanmasının çok daha zor olmasıdır. Uygulama klasörünü bulmak için “Hakkında” penceresine gidin."
     }
 }

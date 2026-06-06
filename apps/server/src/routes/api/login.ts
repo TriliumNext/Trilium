@@ -76,7 +76,7 @@ import utils from "../../services/utils.js";
  *                   type: string
  *                   example: "Auth request time is out of sync, please check that both client and server have correct time. The difference between clocks has to be smaller than 5 minutes"
  */
-function loginSync(req: Request) {
+async function loginSync(req: Request) {
     if (!sqlInit.schemaExists()) {
         return [500, { message: "DB schema does not exist, can't sync." }];
     }
@@ -109,6 +109,17 @@ function loginSync(req: Request) {
     if (!utils.constantTimeCompare(expectedHash, givenHash)) {
         return [400, { message: "Sync login credentials are incorrect. It looks like you're trying to sync two different initialized documents which is not possible." }];
     }
+
+    // Regenerate session to prevent session fixation attacks.
+    await new Promise<void>((resolve, reject) => {
+        req.session.regenerate((err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
 
     req.session.loggedIn = true;
 

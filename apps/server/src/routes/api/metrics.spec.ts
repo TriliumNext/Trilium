@@ -1,16 +1,12 @@
-import { Application } from "express";
-import { beforeAll, describe, expect, it } from "vitest";
-import buildApp from "../../src/app.js";
+import type { Application } from "express";
 import supertest from "supertest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 let app: Application;
-let token: string;
-
-// TODO: This is an API test, not ETAPI.
 
 describe("api/metrics", () => {
     beforeAll(async () => {
-        app = await buildApp();
+        app = await (await import("../../app.js")).default();
     });
 
     it("returns Prometheus format by default", async () => {

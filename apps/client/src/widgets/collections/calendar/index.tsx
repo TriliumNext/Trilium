@@ -164,7 +164,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 firstDay={firstDayOfWeek ?? 0}
                 weekends={!hideWeekends}
                 weekNumbers={weekNumbers}
-                height="90%"
+                height="100%"
                 nowIndicator
                 handleWindowResize={false}
                 initialDate={initialDate || undefined}

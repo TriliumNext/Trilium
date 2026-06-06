@@ -72,6 +72,7 @@ jobs:
 
       - name: Validate container run output
         run: |
+          cp packages/trilium-core/src/test/fixtures/document.db apps/server/spec/db/document.db
           CONTAINER_ID=$(docker run -d --log-driver=journald --rm --network=host -e TRILIUM_PORT=8082 --volume ./apps/server/spec/db:/home/node/trilium-data --name trilium_local ${{ env.TEST_TAG }})
           echo "Container ID: $CONTAINER_ID"
 
@@ -231,7 +232,7 @@ jobs:
         run: echo "TEST_TAG=${TEST_TAG,,}" >> $GITHUB_ENV
 
       - name: Set up crane
-        uses: imjasonh/setup-crane@v0.5
+        uses: imjasonh/setup-crane@v0.6
 
       - name: Login to GHCR
         uses: docker/login-action@v4

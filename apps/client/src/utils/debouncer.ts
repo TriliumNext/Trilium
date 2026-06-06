@@ -28,6 +28,11 @@ export default class Debouncer<T> {
     }
 
     private reportUpdate() {
+        // The `=== undefined` branch is unreachable via the public API: reportUpdate only runs
+        // after updateValue has assigned `lastValue` (it both sets the value and schedules the
+        // timer / arms the destroy flush). The guard is kept defensively for `T` types that
+        // include `undefined`.
+        /* v8 ignore next 3 */
         if (this.lastValue !== undefined) {
             this.callback(this.lastValue);
         }

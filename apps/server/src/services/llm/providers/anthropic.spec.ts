@@ -2,12 +2,13 @@ import type { LlmMessage } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const createAnthropicMock = vi.fn();
+const webSearchMock = vi.fn(() => ({ kind: "anthropic_web_search" }));
 
 vi.mock("@ai-sdk/anthropic", () => ({
     createAnthropic: (opts: unknown) => {
         createAnthropicMock(opts);
         const fn: any = () => ({});
-        fn.tools = { webSearch_20250305: () => ({}) };
+        fn.tools = { webSearch_20250305: webSearchMock };
         return fn;
     }
 }));
@@ -142,15 +143,62 @@ describe("AnthropicProvider message building", () => {
     });
 });
 
+describe("AnthropicProvider tool handling", () => {
+    beforeEach(() => {
+        streamTextMock.mockClear();
+        webSearchMock.mockClear();
+    });
+
+    it("registers the Anthropic web search tool with a maxUses cap", () => {
+        const provider = new AnthropicProvider("sk-ant-test");
+        provider.chat([{ role: "user", content: "hi" }], { enableWebSearch: true });
+
+        expect(webSearchMock).toHaveBeenCalledWith({ maxUses: 5 });
+        const opts = streamTextMock.mock.calls[0][0] as any;
+        expect(opts.tools.web_search).toEqual({ kind: "anthropic_web_search" });
+        expect(opts.toolChoice).toBe("auto");
+        expect(opts.stopWhen).toBeDefined();
+    });
+
+    it("sets the thinking budget and agentic options on the extended-thinking path with tools", () => {
+        const provider = new AnthropicProvider("sk-ant-test");
+        provider.chat([{ role: "user", content: "hi" }], {
+            enableExtendedThinking: true,
+            enableNoteTools: true,
+            thinkingBudget: 12000,
+            maxTokens: 8096
+        });
+
+        const opts = streamTextMock.mock.calls[0][0] as any;
+        expect(opts.providerOptions.anthropic.thinking).toEqual({
+            type: "enabled",
+            budgetTokens: 12000
+        });
+        // maxOutputTokens is raised to at least thinkingBudget + 4000.
+        expect(opts.maxOutputTokens).toBe(16000);
+        expect(opts.toolChoice).toBe("auto");
+        expect(opts.stopWhen).toBeDefined();
+    });
+
+    it("defaults the thinking budget and floors maxOutputTokens when unset", () => {
+        const provider = new AnthropicProvider("sk-ant-test");
+        provider.chat([{ role: "user", content: "hi" }], { enableExtendedThinking: true });
+
+        const opts = streamTextMock.mock.calls[0][0] as any;
+        expect(opts.providerOptions.anthropic.thinking.budgetTokens).toBe(10000);
+        // max(8096, 10000 + 4000) = 14000
+        expect(opts.maxOutputTokens).toBe(14000);
+    });
+});
+
 /**
  * The system prompt carries the ephemeral cache breakpoint, so Anthropic can only
  * reuse the cached system+tools prefix when that string is byte-stable across turns.
  *
- * These tests assert the *desired* invariant: editing the context note must not
- * disturb the cached system prompt. They currently FAIL because the live note
- * metadata is embedded directly into the cache-controlled system string — that
- * red state is the confirmation that the note hint busts the prompt cache. Once
- * the hint is moved out of the cached prefix, they turn green.
+ * These tests assert the enforced invariant: editing the context note must not
+ * disturb the cache-controlled system prompt. The volatile note metadata is
+ * delivered on the last user message instead of being embedded in the cached
+ * system prefix (verified by the last test in this block).
  */
 describe("AnthropicProvider prompt cache stability", () => {
     beforeEach(() => {

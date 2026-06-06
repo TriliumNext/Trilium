@@ -810,7 +810,9 @@
     "note_size": "Tamanho da nota",
     "note_size_info": "O tamanho da nota fornece uma estimativa aproximada dos requisitos de armazenamento para esta nota. Leva em conta o conteúdo e o conteúdo das suas revisões de nota.",
     "calculate": "calcular",
-    "subtree_size": "(tamanho da subárvore: {{size}} em {{count}} notas)",
+    "subtree_size_one": "(tamanho da subárvore: {{size}} em {{count}} notas)",
+    "subtree_size_many": "",
+    "subtree_size_other": "",
     "title": "Informações da nota",
     "mime": "Tipo MIME",
     "show_similar_notes": "Mostrar notas semelhantes"
@@ -1462,7 +1464,9 @@
     "export": "Exportar",
     "import-into-note": "Importar na nota",
     "apply-bulk-actions": "Aplicar ações em massa",
-    "converted-to-attachments": "{{count}} notas foram convertidas em anexos.",
+    "converted-to-attachments_one": "{{count}} notas foram convertidas em anexos.",
+    "converted-to-attachments_many": "",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "Tem certeza que deseja converter as notas selecionadas em anexos das suas notas-pai?",
     "open-in-popup": "Edição rápida",
     "open-in-a-new-window": "Abrir numa nova janela",
@@ -1970,7 +1974,9 @@
     "delete_note": "Apagar nota..."
   },
   "pagination": {
-    "total_notes": "{{count}} notas"
+    "total_notes_one": "{{count}} notas",
+    "total_notes_many": "",
+    "total_notes_other": ""
   },
   "collections": {
     "rendering_error": "Sem possíbilidade de mostrar conteúdos devido a um erro."

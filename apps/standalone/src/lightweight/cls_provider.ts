@@ -39,6 +39,7 @@ export default class BrowserExecutionContext implements ExecutionContext {
 
         // Cancel any pending cleanup timer for this context
         const existingTimer = this.cleanupTimers.get(context);
+        /* v8 ignore next 3 -- @preserve: `context` is freshly created above, so it can never already have a pending cleanup timer; guard kept defensively. */
         if (existingTimer) {
             clearTimeout(existingTimer);
             this.cleanupTimers.delete(context);

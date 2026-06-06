@@ -228,5 +228,14 @@ contextBridge.exposeInMainWorld("electronApi", {
             ipcRenderer.removeAllListeners("did-navigate");
             ipcRenderer.removeAllListeners("did-navigate-in-page");
         }
+    },
+
+    security: {
+        setBackendScriptingEnabled(enabled: boolean): Promise<boolean> {
+            return ipcRenderer.invoke("security-set-backend-scripting", enabled);
+        },
+        setSqlConsoleEnabled(enabled: boolean): Promise<boolean> {
+            return ipcRenderer.invoke("security-set-sql-console", enabled);
+        }
     }
 } satisfies ElectronApi);

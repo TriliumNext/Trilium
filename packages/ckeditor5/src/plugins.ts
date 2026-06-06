@@ -20,9 +20,12 @@ import SyntaxHighlighting from "./plugins/syntax_highlighting/index.js";
 import { Kbd } from "@triliumnext/ckeditor5-keyboard-marker";
 import { Mermaid } from "@triliumnext/ckeditor5-mermaid";
 import { Admonition } from "@triliumnext/ckeditor5-admonition";
+import { Collapsible } from "@triliumnext/ckeditor5-collapsible";
 import { Footnotes } from "@triliumnext/ckeditor5-footnotes";
 import { Math, AutoformatMath } from "@triliumnext/ckeditor5-math";
 import CopyAnchorLinkButton from "./plugins/copy_anchor_link.js";
+import CopyLinkUrlButton from "./plugins/copy_link_url.js";
+import ImageActions from "./plugins/image_actions.js";
 
 // import "@triliumnext/ckeditor5-mermaid/index.css";
 // import "@triliumnext/ckeditor5-admonition/index.css";
@@ -71,6 +74,8 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     LinkEmbedToolbar,
     TodoListMultistate,
     CopyAnchorLinkButton,
+    CopyLinkUrlButton,
+    ImageActions,
 ];
 
 /**
@@ -80,6 +85,7 @@ const EXTERNAL_PLUGINS: typeof Plugin[] = [
     Kbd,
     Mermaid,
     Admonition,
+    Collapsible,
     Footnotes,
     Math,
 	AutoformatMath

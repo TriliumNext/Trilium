@@ -405,7 +405,12 @@
     "expand_nth_level": "توسيع {{depth}} مستويات",
     "expand_all_levels": "توسيع كل المستويات",
     "hide_child_notes": "إخفاء الملاحظات الفرعية في الشجرة",
-    "open_all_confirm": "سيؤدي هذا إلى فتح {{count}} من الملاحظات في تبويبات جديدة. هل تريد المتابعة؟",
+    "open_all_confirm_zero": "سيؤدي هذا إلى فتح {{count}} من الملاحظات في تبويبات جديدة. هل تريد المتابعة؟",
+    "open_all_confirm_one": "",
+    "open_all_confirm_two": "",
+    "open_all_confirm_few": "",
+    "open_all_confirm_many": "",
+    "open_all_confirm_other": "",
     "expand_tooltip": "يوسّع العناصر الفرعية المباشرة لهذه المجموعة (مستوى واحد فقط). لمزيد من الخيارات، اضغط السهم الموجود على اليمين.",
     "open_all_in_tabs_tooltip": "فتح جميع النتائج في علامات تبويب جديدة",
     "open_all_too_zero": "book_properties.open_all_too",
@@ -449,7 +454,12 @@
     "title": "معلومات الملاحظة",
     "mime": "نوع MIME",
     "show_similar_notes": "عرض ملاحظات مشابهة",
-    "subtree_size": "(حجم الشجرة الفرعية: {{size}} في {{count}} ملاحظات)",
+    "subtree_size_zero": "(حجم الشجرة الفرعية: {{size}} في {{count}} ملاحظات)",
+    "subtree_size_one": "",
+    "subtree_size_two": "",
+    "subtree_size_few": "",
+    "subtree_size_many": "",
+    "subtree_size_other": "",
     "note_size_info": "حجم الملاحظة يعطي تقديرًا تقريبيًا لمتطلبات التخزين لهذه الملاحظة، ويأخذ بعين الاعتبار محتوى الملاحظة ومحتوى إصداراتها ."
   },
   "note_paths": {
@@ -610,11 +620,11 @@
     "table_points_to": "يشير إلى (محذوف)",
     "delete": "حذف",
     "delete_clones_description_zero": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
-    "delete_clones_description_one": "",
-    "delete_clones_description_two": "",
-    "delete_clones_description_few": "",
-    "delete_clones_description_many": "",
-    "delete_clones_description_other": ""
+    "delete_clones_description_one": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_two": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_few": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_many": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\".",
+    "delete_clones_description_other": "وأيضًا حذف {{count}} نسخة مستنسخة أخرى. يمكن التراجع عن ذلك من خلال \"التغييرات الأخيرة\"."
   },
   "export": {
     "close": "غلق",
@@ -1173,7 +1183,12 @@
     "copy-note-path-to-clipboard": "نسخ مسار الملاحظة إلى الحافظة",
     "open-in-a-new-window": "فتح في نافذة جديدة",
     "convert-to-attachment-confirm": "هل أنت متأكد أنك تريد تحويل الملاحظات المحددة إلى مرفقات ضمن ملاحظاتها الأب؟ ستُطبق هذه العملية فقط على ملاحظات الصور، وسيتم تجاهل الملاحظات الأخرى.",
-    "converted-to-attachments": "تم تحويل {{count}} ملاحظة إلى مرفقات."
+    "converted-to-attachments_zero": "تم تحويل {{count}} ملاحظة إلى مرفقات.",
+    "converted-to-attachments_one": "",
+    "converted-to-attachments_two": "",
+    "converted-to-attachments_few": "",
+    "converted-to-attachments_many": "",
+    "converted-to-attachments_other": ""
   },
   "note_types": {
     "text": "نص",
@@ -1531,7 +1546,12 @@
     "open_full": "توسيع للعرض الكامل",
     "collapse": "طي الى الحجم الطبيعي",
     "show-anyway": "عرض الخريطة",
-    "too-many-notes": "يوجد {{count}} ملاحظة هنا. عرضها جميعًا قد يؤدي إلى بطء الأداء."
+    "too-many-notes_zero": "يوجد {{count}} ملاحظة هنا. عرضها جميعًا قد يؤدي إلى بطء الأداء.",
+    "too-many-notes_one": "",
+    "too-many-notes_two": "",
+    "too-many-notes_few": "",
+    "too-many-notes_many": "",
+    "too-many-notes_other": ""
   },
   "owned_attribute_list": {
     "owned_attributes": "السمات المملوكة"
@@ -1828,7 +1848,12 @@
     "related_settings": "اعدادات متعلقة"
   },
   "pagination": {
-    "total_notes": "{{count}} ملاحظات",
+    "total_notes_zero": "{{count}} ملاحظات",
+    "total_notes_one": "",
+    "total_notes_two": "",
+    "total_notes_few": "",
+    "total_notes_many": "",
+    "total_notes_other": "",
     "prev_page": "الصفحة السابقة",
     "next_page": "الصفحة التالية"
   },
@@ -2276,7 +2301,13 @@
     "tokens_used": "{{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens)",
     "tokens_used_with_cost": "{{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens) (~${{cost}})",
     "tokens_used_with_model": "{{model}}: {{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens)",
-    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens) (~${{cost}})"
+    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens) (~${{cost}})",
+    "web_search_unavailable_gemini": "غير متاح في نماذج Gemini أثناء تفعيل الوصول إلى الملاحظات — واجهة Google البرمجية لا تسمح بدمج الاثنين معًا. عطّل الوصول إلى الملاحظات أو بدّل إلى مزود آخر لاستخدام البحث على الويب.",
+    "input_streaming": "الإدخال (تدفق مباشر…)",
+    "attach_file": "إرفاق صورة أو ملف PDF أو ملف نصي",
+    "remove_attachment": "إزالة المرفق",
+    "attachment_upload_failed": "فشل رفع \"{{name}}\".",
+    "attachment_unsupported_type": "\"{{name}}\" ليس نوع مرفق مدعومًا. استخدم صورة (PNG أو JPEG أو GIF أو WebP) أو ملف PDF أو ملف نصي/كود."
   },
   "llm": {
     "provider_name": "اسم",
@@ -2407,7 +2438,12 @@
     "backlinks_title_few": "عرض الروابط الخلفية",
     "backlinks_title_many": "عرض رابط الخلفي",
     "backlinks_title_other": "عرض رابط خلفي",
-    "tab_width_spaces": "{{count}} مسافات",
+    "tab_width_spaces_zero": "{{count}} مسافات",
+    "tab_width_spaces_one": "",
+    "tab_width_spaces_two": "",
+    "tab_width_spaces_few": "",
+    "tab_width_spaces_many": "",
+    "tab_width_spaces_other": "",
     "tab_width_spaces_short": "مسافات: {{width}}",
     "tab_width_tabs": "تبويبات: {{width}}",
     "tab_width_display_header": "عرض العرض",

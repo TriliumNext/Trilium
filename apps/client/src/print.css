@@ -208,10 +208,18 @@ span[style] {
 }
 
 .spreadsheet-table td {
-    border: 0.5pt solid #ccc;
     padding: 2pt 4pt;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Gridlines: only when the sheet enables them, and only on unfilled cells (a background
+   fill covers the grid), mirroring the share renderer. Kept as a hairline border rather
+   than a box-shadow because print engines routinely drop shadows. At 0.5pt it is narrower
+   than every real cell border (>= 1px from the workbook data), so under border-collapse
+   the custom border always wins the conflict and is never clobbered. */
+.spreadsheet-table.show-gridlines td:not(.has-fill) {
+    border: 0.5pt solid var(--spreadsheet-gridline-color, #ccc);
 }
 /* #endregion */
 

@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { Marked } from "marked";
-import { createWikiLinkExtension, createTransclusionExtension } from "./marked_extensions.js";
+import {
+    createWikiLinkExtension,
+    createTransclusionExtension,
+    wikiLinkExtension,
+    transclusionExtension
+} from "./marked_extensions.js";
+
+interface ExtensionInternals {
+    start(src: string): number | undefined;
+    tokenizer(src: string): unknown;
+    renderer(token: { href: string; text?: string }): string;
+}
+
+function asInternal(extension: unknown): ExtensionInternals {
+    return extension as ExtensionInternals;
+}
 
 describe("marked_extensions", () => {
     describe("createWikiLinkExtension", () => {
@@ -91,6 +106,75 @@ describe("marked_extensions", () => {
             expect(result).not.toContain('src="/api/images/x"');  // Would indicate unescaped quote
             expect(result).toContain('&quot;');  // Quote should be escaped
             expect(result).toContain('src="/api/images/x&quot;');  // Escaped version
+        });
+    });
+
+    describe("wikiLink start()", () => {
+        it("should return the index of the first '[[' marker", () => {
+            const src = "hello [[note]] world";
+            expect(asInternal(wikiLinkExtension).start(src)).toBe(src.indexOf("[["));
+            expect(asInternal(wikiLinkExtension).start(src)).toBe(6);
+        });
+
+        it("should return -1 when there is no '[[' marker", () => {
+            expect(asInternal(wikiLinkExtension).start("hello world")).toBe(-1);
+        });
+    });
+
+    describe("wikiLink tokenizer()", () => {
+        it("should produce a wikiLink token for a matching source", () => {
+            const token = asInternal(wikiLinkExtension).tokenizer("[[ note ]] rest");
+            expect(token).toEqual({
+                type: "wikiLink",
+                raw: "[[ note ]]",
+                text: "note",
+                href: "note"
+            });
+        });
+
+        it("should return undefined when the source does not match", () => {
+            expect(asInternal(wikiLinkExtension).tokenizer("not a wiki link")).toBeUndefined();
+        });
+    });
+
+    describe("transclusion start()", () => {
+        it("should return the index of the first '![[' marker", () => {
+            const src = "x ![[id]]";
+            expect(asInternal(transclusionExtension).start(src)).toBe(src.indexOf("![["));
+            expect(asInternal(transclusionExtension).start(src)).toBe(2);
+        });
+
+        it("should return undefined when there is no '![[' marker", () => {
+            expect(asInternal(transclusionExtension).start("no transclusion here")).toBeUndefined();
+        });
+    });
+
+    describe("transclusion tokenizer()", () => {
+        it("should produce a transclusion token for a matching source", () => {
+            const token = asInternal(transclusionExtension).tokenizer("![[ img ]] rest");
+            expect(token).toEqual({
+                type: "transclusion",
+                raw: "![[ img ]]",
+                href: "img"
+            });
+        });
+
+        it("should return undefined when the source does not match", () => {
+            expect(asInternal(transclusionExtension).tokenizer("plain text")).toBeUndefined();
+        });
+    });
+
+    describe("default formatHref / formatSrc", () => {
+        it("should default the wiki-link href to /${noteId}", () => {
+            const extension = createWikiLinkExtension();
+            const result = asInternal(extension).renderer({ href: "abc", text: "abc" });
+            expect(result).toBe('<a class="reference-link" href="/abc">abc</a>');
+        });
+
+        it("should default the transclusion src to /${noteId}", () => {
+            const extension = createTransclusionExtension();
+            const result = asInternal(extension).renderer({ href: "abc" });
+            expect(result).toBe('<img src="/abc">');
         });
     });
 });

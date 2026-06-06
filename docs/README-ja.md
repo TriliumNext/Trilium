@@ -14,10 +14,10 @@
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
 ![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
 ![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub ダウンロード
-(全アセット、全リリース)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![翻訳状況](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub Downloads (all assets, all
+releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![Translation
+status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -67,7 +67,7 @@ Trilium Notes
 
 * ノートは任意の深さのツリーに配置できます。1つのノートをツリー内の複数の場所に配置できます（[クローン](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning)を参照）
 * 豊富な WYSIWYG ノートエディター 例:
-  表、画像、[数式](https://docs.triliumnotes.org/user-guide/note-types/text) と markdown
+  表、画像、[数式](https://docs.triliumnotes.org/user-guide/note-types/text) とマークダウン
   [自動フォーマット](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
   など
 * 構文ハイライト表示を含む
@@ -106,8 +106,8 @@ Trilium Notes
 * 組み込みの
   [ダークテーマ](https://docs.triliumnotes.org/user-guide/concepts/themes)、ユーザーテーマのサポート
 * [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
-  と [Markdown
-  のインポートとエクスポート](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+  と
+  [マークダウンのインポートとエクスポート](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) で
   web コンテンツを簡単に保存
 * カスタマイズ可能な UI (サイドバー ボタン、ユーザー定義のウィジェットなど)

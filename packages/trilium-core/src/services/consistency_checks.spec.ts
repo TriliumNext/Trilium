@@ -6,22 +6,6 @@ import syncOptions from "./sync_options.js";
 import optionsService from "./options.js";
 import becca_loader from "../becca/becca_loader.js";
 
-/**
- * Wraps a callback in CLS context and waits for it to complete.
- */
-function withContext(fn: () => void | Promise<void>): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        getContext().init(async () => {
-            try {
-                await fn();
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-}
-
 let testCounter = 0;
 
 /**
@@ -65,7 +49,7 @@ function setOption(name: string, value: string) {
 describe("Consistency checks during partial sync", () => {
 
     it("should NOT fix broken references when sync is incomplete", async () => {
-        await withContext(async () => {
+        await getContext().init(async () => {
             // Simulate sync being configured
             setOption("syncServerHost", "https://fake-sync-server");
             expect(syncOptions.isSyncSetup()).toBe(true);
@@ -103,7 +87,7 @@ describe("Consistency checks during partial sync", () => {
     });
 
     it("should fix broken references when sync is complete", async () => {
-        await withContext(async () => {
+        await getContext().init(async () => {
             // Simulate sync being configured and complete
             setOption("syncServerHost", "https://fake-sync-server");
             setOption("syncIncomplete", "false");
@@ -130,7 +114,7 @@ describe("Consistency checks during partial sync", () => {
     });
 
     it("should fix broken references when sync is not configured", async () => {
-        await withContext(async () => {
+        await getContext().init(async () => {
             // Ensure sync is not configured
             setOption("syncServerHost", "");
             expect(syncOptions.isSyncSetup()).toBe(false);

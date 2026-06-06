@@ -98,7 +98,7 @@ async function setPassword(req: Request, res: Response) {
  */
 async function login(req: Request, res: Response) {
     if (openID.isOpenIDEnabled()) {
-        res.oidc.login({
+        void res.oidc.login({
             returnTo: '/',
             authorizationParams: {
                 prompt: 'consent',
@@ -176,7 +176,7 @@ function logout(req: Request, res: Response) {
         req.session.loggedIn = false;
 
         if (openID.isOpenIDEnabled() && openIDEncryption.isSubjectIdentifierSaved()) {
-            res.oidc.logout({ returnTo: '/' });
+            void res.oidc.logout({ returnTo: '/' });
         }
 
         res.redirect('login');

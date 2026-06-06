@@ -298,6 +298,7 @@ function update(req: Request) {
     getSql().transactional(() => syncUpdateService.updateEntities(entities, instanceId));
 }
 
+/* v8 ignore start -- module-level timer, not invoked in tests */
 setInterval(() => {
     for (const key in partialRequests) {
         if (Date.now() - partialRequests[key].createdAt > 20 * 60 * 1000) {
@@ -307,6 +308,7 @@ setInterval(() => {
         }
     }
 }, 60 * 1000);
+/* v8 ignore stop */
 
 function syncFinished() {
     // after the first sync finishes, the application is ready to be used

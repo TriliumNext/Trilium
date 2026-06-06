@@ -168,7 +168,7 @@ function computeHue(color: string): number | undefined {
 export function generateTaskStateCss(): string {
     const rules: string[] = [];
     for (const state of getTaskStates()) {
-        if (isAnchorState(state.name) || !state.icon || !state.color) {
+        if (isAnchorState(state.name) || !state.icon) {
             continue;
         }
         const resolved = resolveIconGlyph(state.icon);
@@ -176,7 +176,8 @@ export function generateTaskStateCss(): string {
             continue;
         }
         const name = escapeCssString(state.name);
-        const hue = computeHue(state.color);
+        const hue = (state.color) ? computeHue(state.color) : undefined;
+        
         rules.push(`[data-trilium-task-state="${name}"], .tn-task-checkbox[data-trilium-task-state="${name}"] {
             --task-state-glyph: "${resolved.glyph}";
             --task-state-glyph-font-family: "${resolved.fontFamily}";

@@ -82,6 +82,9 @@ overrides:
   "hono@>=4.0.0 <=4.12.11": ">=4.12.12"
   "@hono/node-server@<1.19.13": ">=1.19.13"
   "basic-ftp@=5.2.0": ">=5.2.1"
+  # extract-zip's yauzl@2 hangs electron-forge packaging on Node >=24.16 (electron/forge#4277,
+  # electron/electron#51619). yauzl@3.3.1 is the maintainer-recommended fix.
+  "extract-zip>yauzl": "3.3.1"
 
 patchedDependencies:
   "@ckeditor/ckeditor5-mention": patches/@ckeditor__ckeditor5-mention.patch

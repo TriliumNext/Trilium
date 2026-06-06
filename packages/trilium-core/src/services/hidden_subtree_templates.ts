@@ -35,6 +35,50 @@ export default function buildHiddenSubtreeTemplates() {
                 ]
             },
             {
+                id: "_template_markdown_snippet",
+                type: "code",
+                mime: "text/x-markdown",
+                title: t("hidden_subtree_templates.markdown-snippet"),
+                icon: "bx-align-left",
+                attributes: [
+                    {
+                        name: "template",
+                        type: "label"
+                    },
+                    {
+                        name: "snippet",
+                        type: "label"
+                    },
+                    {
+                        name: "label:snippetDescription",
+                        type: "label",
+                        value: `promoted,alias=${t("hidden_subtree_templates.description")},single,text`
+                    }
+                ]
+            },
+            {
+                id: "_template_code_snippet",
+                type: "code",
+                mime: "text/plain",
+                title: t("hidden_subtree_templates.code-snippet"),
+                icon: "bx-align-left",
+                attributes: [
+                    {
+                        name: "template",
+                        type: "label"
+                    },
+                    {
+                        name: "snippet",
+                        type: "label"
+                    },
+                    {
+                        name: "label:snippetDescription",
+                        type: "label",
+                        value: `promoted,alias=${t("hidden_subtree_templates.description")},single,text`
+                    }
+                ]
+            },
+            {
                 id: "_template_list_view",
                 type: "book",
                 title: t("hidden_subtree_templates.list-view"),

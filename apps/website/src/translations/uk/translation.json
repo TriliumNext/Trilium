@@ -1,7 +1,7 @@
 {
     "get-started": {
-        "title": "Почати",
-        "desktop_title": "Завантажити програму для ПК (v{{version}})",
+        "title": "Розпочати",
+        "desktop_title": "Завантажити програму (v{{version}})",
         "architecture": "Архітектура:",
         "older_releases": "Дивитися старіші випуски",
         "server_title": "Налаштуйте сервер для доступу на кількох пристроях"
@@ -12,7 +12,7 @@
         "get_started": "Почати",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Знімок екрана програми Trilium Notes для ПК"
+        "screenshot_alt": "Знімок екрана програми Trilium Notes"
     },
     "organization_benefits": {
         "title": "Організація",
@@ -167,7 +167,8 @@
         "download_flatpak": ".flatpak",
         "download_nixpkgs": "nixpkgs",
         "download_zip": "Portable (.zip)",
-        "download_aur": "AUR"
+        "download_aur": "AUR",
+        "download_appimage": ".AppImage"
     },
     "download_helper_desktop_macos": {
         "title_x64": "macOS для Intel",

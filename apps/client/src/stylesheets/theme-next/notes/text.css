@@ -223,7 +223,7 @@
 
 /* Collapsible section */
 
-.ck.ck-collapsible {
+div.ck.ck-collapsible {
     position: relative;
     border: unset !important;
     padding-top: var(--ck-editor-popup-padding);
@@ -371,8 +371,11 @@
     color: var(--accent);
 }
 
-/* Code dropdown */
+/* Scrollable dropdown panel. Applies to our reusable `.ck-tn-dropdown`
+   (footnotes, mermaid; set via `dropdownView.class`) and to CKEditor's own code
+   block language dropdown, whose 250px default we bump up to 400px. */
 
+.ck.ck-dropdown.ck-tn-dropdown .ck-dropdown__panel,
 .ck.ck-dropdown.ck-code-block-dropdown .ck-dropdown__panel,
 .ck.ck-toolbar-container.codeblock-language-list .ck.ck-dropdown__panel {
     --_panel-height: 400px;
@@ -381,6 +384,7 @@
     max-height: var(--_panel-height);
 }
 
+.ck-tn-dropdown .ck-dropdown__panel .ck-list,
 .ck-code-block-dropdown .ck-dropdown__panel .ck-list,
 .ck.ck-toolbar-container.codeblock-language-list .ck.ck-dropdown__panel .ck-list {
     overflow: auto;
@@ -588,6 +592,13 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 
 .note-detail-editable-text-editor > .ck-placeholder {
     opacity: .5;
+}
+
+/* A widget that CKEditor wrongly flags as the placeholder host (see the
+   `.ck-widget.ck-placeholder` note in style.css) must not be dimmed — its
+   content is real. The overlaid placeholder text is suppressed there. */
+.note-detail-editable-text-editor > .ck-widget.ck-placeholder {
+    opacity: 1;
 }
 
 /*

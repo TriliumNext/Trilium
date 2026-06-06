@@ -56,7 +56,7 @@
     "add-link-to-text": "テキストにリンクを追加ダイアログを開く",
     "follow-link-under-cursor": "カーソル下のリンク先へ移動",
     "insert-date-and-time-to-text": "現在の日時を挿入する",
-    "paste-markdown-into-text": "クリップボードからMarkdownをテキストノートに貼り付けます",
+    "paste-markdown-into-text": "クリップボードからマークダウンをテキストノートに貼り付けます",
     "cut-into-note": "現在のノートから選択範囲を切り取り、サブノートを作成",
     "edit-readonly-note": "読み取り専用ノートの編集",
     "ribbon-tabs": "リボンタブ",
@@ -161,7 +161,7 @@
     "add-link-to-text": "テキストにリンクを追加",
     "follow-link-under-cursor": "カーソル下のリンクをたどる",
     "insert-date-and-time-to-text": "日時を挿入",
-    "paste-markdown-into-text": "Markdownをテキストに貼り付け",
+    "paste-markdown-into-text": "マークダウンをテキストに貼り付け",
     "cut-into-note": "ノートから切り取り",
     "edit-read-only-note": "読み取り専用ノートの編集",
     "toggle-right-pane": "右ペイン切り替え",
@@ -322,7 +322,8 @@
     "task-state-attr-markdown-symbol": "マークダウン記号",
     "task-state-attr-is-completed": "完了としてカウント",
     "task-state-attr-color": "色",
-    "task-state-attr-is-hidden": "リストから非表示"
+    "task-state-attr-is-hidden": "リストから非表示",
+    "security-title": "セキュリティ"
   },
   "notes": {
     "new-note": "新しいノート",
@@ -401,7 +402,9 @@
     "presentation_slide": "プレゼンテーションスライド",
     "presentation_slide_first": "最初のスライド",
     "presentation_slide_second": "2番目のスライド",
-    "background": "背景"
+    "background": "背景",
+    "markdown-snippet": "マークダウンスニペット",
+    "code-snippet": "コードスニペット"
   },
   "share_404": {
     "title": "該当なし",
@@ -437,5 +440,21 @@
   },
   "password": {
     "incorrect": "入力されたパスワードが間違っています。"
+  },
+  "security-dialog": {
+    "enable-title": "{{settingLabel}} を有効",
+    "enable-message": "{{settingLabel}} を有効にしますか？",
+    "enable-detail": "{{warning}}\n\nこの機能を意図的に使用する場合にのみ有効にしてください。スクリプトや見慣れないメッセージが表示された場合は有効にしないでください。\n\nこの変更を有効にするには、再起動が必要です。",
+    "disable-title": "{{settingLabel}} を無効",
+    "disable-message": "{{settingLabel}} は無効になります。",
+    "disable-detail": "この変更を有効にするには再起動が必要です。",
+    "cancel": "キャンセル",
+    "enable": "有効",
+    "disable": "無効",
+    "dont-ask-again": "再起動するまで再度表示しない",
+    "backend-scripting": "バックエンドスクリプトの実行",
+    "backend-scripting-warning": "バックエンドスクリプトは、ファイルシステムやネットワークを含むサーバーへのフルアクセス権限を持ちます。",
+    "sql-console": "SQL コンソール",
+    "sql-console-warning": "SQL コンソールを使用すると、データベースに対して任意の SQL クエリを実行できます。"
   }
 }

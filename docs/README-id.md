@@ -14,11 +14,10 @@
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
 ![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
 ![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![Unduhan GitHub (semua aset, semua
-rilis)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Status
-terjemahan](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub Downloads (all assets, all
+releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![Translation
+status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -34,16 +33,16 @@ terjemahan](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://ho
 <!-- translate:on -->
 
 Trilium Notes adalah aplikasi pencatatan hierarkis lintas platform yang gratis
-dan sumber terbuka dengan fokus untuk mengembangkan pengetahuan pribadi yang
-luas.
+dan open-source dengan fokus pada pembangunan basis pengetahuan pribadi berskala
+besar.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Unduh
-- [Rilis terbaru](https://github.com/TriliumNext/Trilium/releases/latest) –
-  versi stabil, direkomendasikan.
-- [Rilis nightly](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  versi pengembangan, tidak stabil, diperbarui setiap hari dengan fitur dan
+- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
+  versi stabil, direkomendasikan untuk sebagian besar pengguna.
+- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
+  versi pengembangan yang tidak stabil, diperbarui setiap hari dengan fitur dan
   perbaikan terbaru.
 
 ## 📚 Dokumentasi
@@ -51,20 +50,20 @@ luas.
 **Kunjungi dokumentasi lengkap kami di
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
-Dokumentasi kami tersedia dalam berbagai format:
-- **Dokumentasi Online**: Telusuri dokumentasi lengkap di
+Dokumentasi kami tersedia dalam beberapa format:
+- **Dokumentasi Online**: Jelajahi dokumentasi lengkap di
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
 - **Bantuan Dalam Aplikasi**: Tekan `F1` di dalam Trilium untuk mengakses
   dokumentasi yang sama langsung di aplikasi
-- **GitHub**: Navigasi melalui [Panduan Pengguna](./User%20Guide/User%20Guide/)
-  di repositori ini
+- **GitHub**: Telusuri [Panduan Pengguna](./User%20Guide/User%20Guide/) di
+  repositori ini
 
 ### Tautan Cepat
 - [Panduan Memulai](https://docs.triliumnotes.org/)
-- [Petunjuk Instalasi](https://docs.triliumnotes.org/user-guide/setup)
+- [Instruksi Instalasi](https://docs.triliumnotes.org/user-guide/setup)
 - [Pengaturan
   Docker](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
-- [Pembaharuan
+- [Upgrade
   TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [Konsep dan Fitur
   Dasar](https://docs.triliumnotes.org/user-guide/concepts/notes)
@@ -73,109 +72,110 @@ Dokumentasi kami tersedia dalam berbagai format:
 
 ## 🎁 Fitur
 
-* Catatan dapat disusun menjadi cabang pohon manapun. Satu catatan dapat disusun
-  ke beberapa cabang di pohon
-  (lihat[cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
-* Catatan bentuk Rich WYSIWYG dengan tabel, gambar, dan
+* Catatan dapat disusun dalam struktur pohon dengan kedalaman tak terbatas. Satu
+  catatan dapat ditempatkan di beberapa lokasi dalam pohon (lihat
+  [cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
+* Editor catatan WYSIWYG yang kaya, termasuk tabel, gambar, dan
   [math](https://docs.triliumnotes.org/user-guide/note-types/text) dengan
-  markdown
   [autoformat](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
-* Dukungan untuk peng-editan [catatan dengan kode
-  source](https://docs.triliumnotes.org/user-guide/note-types/code), termasuk
-  penyorotan sintaks
-* Cepat dan mudah [navigasi antar
-  catatan](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
-  pencarian dengan teks dan [area
-  fokus](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
-* Mulus [versi
+  markdown
+* Dukungan untuk mengedit [catatan dengan source
+  code](https://docs.triliumnotes.org/user-guide/note-types/code), termasuk
+  syntax highlighting
+* [Navigasi antar
+  catatan](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation)
+  yang cepat dan mudah, pencarian teks penuh, dan [note
+  hoisting](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* [Versioning
   catatan](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
-* Catatan
-  [atribut](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
-  dapat digunakan untuk mengatur catatan, pencarian dan tingkat lanjut
-  [pemrograman](https://docs.triliumnotes.org/user-guide/scripts)
-* Antarmuka pengguna tersedia dalam bahasa Inggris, Jerman, Spanyol, Prancis,
-  Rumania, dan Tionghoa (sederhana dan tradisional)
-* Integrasi [OpenID dan TOTP
-  langsung](https://docs.triliumnotes.org/user-guide/setup/server/mfa) untuk
-  login yang lebih aman
-* [Sinkronisasi](https://docs.triliumnotes.org/user-guide/setup/synchronization)
-  dengan server hostingan pribadi
-  * ada [servis pihak ke-3 untuk server hostingan
+  yang mulus
+* [Atribut
+  catatan](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  dapat digunakan untuk organisasi catatan, query, dan
+  [scripting](https://docs.triliumnotes.org/user-guide/scripts) lanjutan
+* UI tersedia dalam bahasa Inggris, Jerman, Spanyol, Prancis, Rumania, dan
+  Mandarin (sederhana dan tradisional)
+* Integrasi langsung [OpenID dan
+  TOTP](https://docs.triliumnotes.org/user-guide/setup/server/mfa) untuk login
+  yang lebih aman
+* [Synchronization](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  dengan server sinkronisasi self-hosted
+  * tersedia [layanan pihak ketiga untuk hosting server
     sinkronisasi](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
-* [Bagikan](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
-  (publikasi) catatan ke publik (internet)
-* Kuat [enkripsi
+* [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (publikasi) catatan ke internet publik
+* [Enkripsi
   catatan](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
-  dengan granularitas per catatan
-* Membuat diagram, berdasarkan [Excalidraw](https://excalidraw.com/) (tipe
-  catatan "kanvas")
-* [Peta
-  relasi](https://docs.triliumnotes.org/user-guide/note-types/relation-map) dan
-  [peta
-  catatan/link](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  untuk visualisasi relasi antar catatan
-* Mind maps, berdasarkan [Mind Elixir](https://docs.mind-elixir.com/)
-* [Peta geolokasi](https://docs.triliumnotes.org/user-guide/collections/geomap)
-  dengan titik lokasi dan jalur GPX
-* [Pengunaan skrip](https://docs.triliumnotes.org/user-guide/scripts) - lihat
-  [Demo tingkat
-  lanjut](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+  yang kuat dengan granularitas per catatan
+* Menggambar diagram berbasis [Excalidraw](https://excalidraw.com/) (tipe
+  catatan "canvas")
+* [Relation
+  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) dan
+  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  untuk memvisualisasikan catatan dan relasinya
+* Mind map berbasis [Mind Elixir](https://docs.mind-elixir.com/)
+* [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) dengan
+  pin lokasi dan jalur GPX
+* [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - lihat
+  [Advanced
+  showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
 * [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi)
   untuk otomatisasi
-* Performa dan Usabilitas tinggi, bahkan di atas 100 000 catatan
-* Teroptimisasi untuk kontrol sentuh [frontend
-  mobile](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) untuk
-  hp dan tablet
-* [tema gelap](https://docs.triliumnotes.org/user-guide/concepts/themes) bawaan,
-  dukungan untuk tema personal pengguna
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
-  dan [impor & ekspor
-  markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
-* [Penyemat Web](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
-  untuk memudahkan pencatatan konten web
-* "UI yang dapat dikustomisasi (tombol sidebar, widget kustom, ...)"
-* [Berbagai
-  Metrik](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics) yang
-  dipadukan dengan Dashboard Grafana.
+* Mampu menangani hingga lebih dari 100.000 catatan dengan baik dari sisi
+  kegunaan dan performa
+* [Frontend
+  mobile](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) yang
+  dioptimalkan untuk sentuhan pada smartphone dan tablet
+* [Tema gelap](https://docs.triliumnotes.org/user-guide/concepts/themes) bawaan,
+  dukungan untuk tema pengguna
+* Impor & ekspor
+  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  dan
+  [Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
+  untuk menyimpan konten web dengan mudah
+* UI yang dapat dikustomisasi (tombol sidebar, widget buatan pengguna, dll.)
+* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+  beserta Dashboard Grafana.
 
-✨ Cek lebih lanjut sumber daya/komunitas pihak ke-tiga untuk menikmati lebih
-lanjut TriliumNext:
+✨ Lihat sumber daya/komunitas pihak ketiga berikut untuk hal menarik terkait
+TriliumNext:
 
-- [trilium-beken](https://github.com/Nriver/awesome-trilium) untuk banyak tema,
-  skrip, plugin pihak ke-3 dan lain-lain.
-- [TriliumJaya!](https://trilium.rocks/) untuk tutorial, panduan dan lainnya.
+- [awesome-trilium](https://github.com/Nriver/awesome-trilium) untuk tema,
+  script, plugin pihak ketiga, dan lainnya.
+- [TriliumRocks!](https://trilium.rocks/) untuk tutorial, panduan, dan banyak
+  lagi.
 
 ## ❓Mengapa TriliumNext?
 
-Pengembang asli Trilium ([Zadam](https://github.com/zadam)) dengan murah hati
-telah memberikan repositori Trilium kepada proyek komunitas yang berada di
-https://github.com/TriliumNext
+Pengembang asli Trilium ([Zadam](https://github.com/zadam)) telah dengan baik
+hati menyerahkan repositori Trilium kepada proyek komunitas yang berada di
+[https://github.com/TriliumNext](https://github.com/TriliumNext)
 
-### ⬆️ Memindahkan dari Zadam/Trilium?
+### ⬆️ Migrasi dari Zadam/Trilium?
 
-Tidak ada langkah migrasi khusus untuk bermigrasi dari zadam/Trilium ke
+Tidak ada langkah migrasi khusus untuk berpindah dari instance zadam/Trilium ke
 TriliumNext/Trilium. Cukup [instal TriliumNext/Trilium](#-installation) seperti
-biasa dan akan menggunakan basis data yang sudah ada.
+biasa dan aplikasi akan menggunakan database yang sudah ada.
 
-Versi hingga
+Versi hingga dan termasuk
 [v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4)
-kompatibel dengan versi Zadam/Trilium terbaru yaitu
+kompatibel dengan versi zadam/trilium terbaru yaitu
 [v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Versi
-TriliumNext/Trilium yang lebih baru memiliki versi sinkronisasi yang
-ditingkatkan sehingga mencegah migrasi langsung.
+TriliumNext/Trilium setelah itu memiliki versi sinkronisasi yang ditingkatkan
+sehingga mencegah migrasi langsung.
 
-## 💬 Mari berdiskusi dengan kami
+## 💬 Diskusi bersama kami
 
-Jangan ragu untuk bergabung dalam percakapan resmi kami. Kami ingin sekali
-mendengar fitur, saran, atau masalah apa pun yang mungkin Anda miliki!
+Silakan bergabung dalam percakapan resmi kami. Kami sangat ingin mendengar
+fitur, saran, atau masalah yang Anda miliki!
 
-- [Matriks](https://matrix.to/#/#triliumnext:matrix.org) (Untuk diskusi
-  sinkron.)
-  - Ruang Matriks `Umum` juga terhubung ke
+- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (Untuk diskusi sinkron.)
+  - Ruang Matrix `General` juga terhubung ke
     [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
-- [Diskusi Github](https://github.com/TriliumNext/Trilium/discussions) (Untuk
-  diskusi asinkron.)
-- [Masalah GitHub](https://github.com/TriliumNext/Trilium/issues) (Untuk laporan
+- [GitHub Discussions](https://github.com/TriliumNext/Trilium/discussions)
+  (Untuk diskusi asinkron.)
+- [GitHub Issues](https://github.com/TriliumNext/Trilium/issues) (Untuk laporan
   bug dan permintaan fitur.)
 
 ## 🏗 Instalasi
@@ -183,120 +183,123 @@ mendengar fitur, saran, atau masalah apa pun yang mungkin Anda miliki!
 ### Windows / MacOS
 
 Unduh rilis biner untuk platform Anda dari [halaman rilis
-terbaru](https://github.com/TriliumNext/Trilium/releases/latest), ekstrak
-package dan jalankan file executable `trilium`.
+terbaru](https://github.com/TriliumNext/Trilium/releases/latest), ekstrak paket,
+lalu jalankan executable `trilium`.
 
 ### Linux
 
-Jika distribusi Anda tercantum dalam tabel di bawah ini, gunakan package dari
-distribusi Anda tersebut.
+Jika distribusi Anda tercantum pada tabel di bawah, gunakan paket dari
+distribusi tersebut.
 
-[![Status
-packaging](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
+[![Packaging
+status](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 Anda juga dapat mengunduh rilis biner untuk platform Anda dari [halaman rilis
-terbaru](https://github.com/TriliumNext/Trilium/releases/latest), ekstrak
-package-nya dan jalankan file executable `trilium`.
+terbaru](https://github.com/TriliumNext/Trilium/releases/latest), ekstrak paket,
+lalu jalankan executable `trilium`.
 
-TriliumNext juga tersedia sebagai Flatpak, namun belum dipublikasikan di
+TriliumNext juga tersedia sebagai Flatpak, tetapi belum dipublikasikan di
 FlatHub.
 
-### Browser (OS apapun)
+### Browser (semua OS)
 
 Jika Anda menggunakan instalasi server (lihat di bawah), Anda dapat langsung
 mengakses antarmuka web (yang hampir identik dengan aplikasi desktop).
 
-Saat ini hanya Chrome & Firefox versi terbaru yang didukung (dan telah diuji).
+Saat ini hanya versi terbaru Chrome dan Firefox yang didukung (dan diuji).
 
-### Ponsel
+### Mobile
 
-Untuk menggunakan TriliumNext pada perangkat seluler, Anda dapat menggunakan
-peramban web seluler untuk mengakses antarmuka seluler dari instalasi server
-(lihat di bawah).
+Untuk menggunakan TriliumNext di perangkat mobile, Anda dapat menggunakan
+browser web mobile untuk mengakses antarmuka mobile dari instalasi server (lihat
+di bawah).
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
-information on mobile app support.
+Lihat issue
+[https://github.com/TriliumNext/Trilium/issues/4962](https://github.com/TriliumNext/Trilium/issues/4962)
+untuk informasi lebih lanjut tentang dukungan aplikasi mobile.
 
-If you prefer a native Android app, you can use
+Jika Anda lebih memilih aplikasi Android native, Anda dapat menggunakan
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
-Report bugs and missing features at [their
-repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
-disable automatic updates on your server installation (see below) when using
-TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+Laporkan bug dan fitur yang belum tersedia di [repositori
+mereka](https://github.com/FliegendeWurst/TriliumDroid). Catatan: Sebaiknya
+nonaktifkan pembaruan otomatis pada instalasi server Anda (lihat di bawah) saat
+menggunakan TriliumDroid karena versi sinkronisasi harus cocok antara Trilium
+dan TriliumDroid.
 
 ### Server
 
-To install TriliumNext on your own server (including via Docker from
-[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
-installation docs](https://docs.triliumnotes.org/user-guide/setup/server).
+Untuk menginstal TriliumNext di server Anda sendiri (termasuk melalui Docker
+dari [Dockerhub](https://hub.docker.com/r/triliumnext/trilium)), ikuti
+[dokumentasi instalasi
+server](https://docs.triliumnotes.org/user-guide/setup/server).
 
 
-## 💻 Contribute
+## 💻 Berkontribusi
 
-### Translations
+### Terjemahan
 
-If you are a native speaker, help us translate Trilium by heading over to our
-[Weblate page](https://hosted.weblate.org/engage/trilium/).
+Jika Anda penutur asli, bantu kami menerjemahkan Trilium dengan mengunjungi
+[halaman Weblate](https://hosted.weblate.org/engage/trilium/).
 
-Here's the language coverage we have so far:
+Berikut cakupan bahasa yang kami miliki sejauh ini:
 
 [![Translation
 status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
-### Code
+### Kode
 
-Download the repository, install dependencies using `pnpm` and then run the
-server (available at http://localhost:8080):
+Unduh repositori, instal dependensi menggunakan `pnpm`, lalu jalankan server
+(tersedia di http://localhost:8080):
 ```shell
-git clone https://github.com/TriliumNext/Trilium.git
+git clone [https://github.com/TriliumNext/Trilium.git](https://github.com/TriliumNext/Trilium.git)
 cd Trilium
 pnpm install
 pnpm run server:start
 ```
 
-### Documentation
+### Dokumentasi
 
-Download the repository, install dependencies using `pnpm` and then run the
-environment required to edit the documentation:
+Unduh repositori, instal dependensi menggunakan `pnpm`, lalu jalankan lingkungan
+yang diperlukan untuk mengedit dokumentasi:
 ```shell
-git clone https://github.com/TriliumNext/Trilium.git
+git clone [https://github.com/TriliumNext/Trilium.git](https://github.com/TriliumNext/Trilium.git)
 cd Trilium
 pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-Alternatively, if you have Nix installed:
+Sebagai alternatif, jika Anda telah menginstal Nix:
 ```shell
-# Run directly
+# Jalankan langsung
 nix run .#edit-docs
 
-# Or install to your profile
+# Atau instal ke profil Anda
 nix profile install .#edit-docs
 trilium-edit-docs
 ```
 
 
-### Building the Executable
-Download the repository, install dependencies using `pnpm` and then build the
-desktop app for Windows:
+### Membangun Executable
+Unduh repositori, instal dependensi menggunakan `pnpm`, lalu bangun aplikasi
+desktop untuk Windows:
 ```shell
-git clone https://github.com/TriliumNext/Trilium.git
+git clone [https://github.com/TriliumNext/Trilium.git](https://github.com/TriliumNext/Trilium.git)
 cd Trilium
 pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-For more details, see the [development
-docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
+Untuk detail lebih lanjut, lihat [dokumentasi
+pengembangan](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
 
-### Developer Documentation
+### Dokumentasi Developer
 
-Please view the [documentation
-guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-for details. If you have more questions, feel free to reach out via the links
-described in the "Discuss with us" section above.
+Silakan lihat [panduan
+dokumentasi](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
+untuk detailnya. Jika Anda memiliki pertanyaan lebih lanjut, silakan hubungi
+melalui tautan yang dijelaskan pada bagian "Diskusi bersama kami" di atas.
 
-## 💖 Sponsors
+## 💖 Sponsor
 
 <table>
   <tr>
@@ -324,58 +327,57 @@ described in the "Discuss with us" section above.
   </tr>
 </table>
 
-## 👏 Shoutouts
+## 👏 Ucapan Terima Kasih
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
-* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
+* [zadam](https://github.com/zadam) untuk konsep dan implementasi awal aplikasi.
+* [Sarah Hussein](https://github.com/Sarah-Hussein) untuk desain ikon aplikasi.
+* [nriver](https://github.com/nriver) untuk kontribusinya dalam
+  internasionalisasi.
+* [Thomas Frei](https://github.com/thfrei) atas karya awalnya pada Canvas.
+* [antoniotejada](https://github.com/nriver) atas widget syntax highlighting
+  asli.
+* [Tabler Icons](https://tabler.io/icons) untuk ikon system tray.
 
-Trilium tidak akan ada tanpa teknologi-teknologi di balik berikut:
+Trilium tidak akan mungkin ada tanpa teknologi yang mendukungnya:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - editor visual di balik
+  catatan teks.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - editor kode dengan
-  dukungan banyak bahasa pemrograman.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - area catatan tanpa
-  batas yang dipakai di catatan Kanvas.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - memberikan
-  fungsionalitas peta pikiran(mind map).
-* [Leaflet](https://github.com/Leaflet/Leaflet) - untuk render peta geografikal.
+  dukungan untuk banyak bahasa.
+* [Excalidraw](https://github.com/excalidraw/excalidraw) - papan tulis tak
+  terbatas yang digunakan dalam catatan Canvas.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - menyediakan
+  fungsi mind map.
+* [Leaflet](https://github.com/Leaflet/Leaflet) - untuk merender peta geografis.
 * [Tabulator](https://github.com/olifolkerd/tabulator) - untuk tabel interaktif
-  yang dipakai di koleksi catatan.
-* [FancyTree](https://github.com/mar10/fancytree) - library pohon yang kaya akan
-  fitur tanpa ada saingan.
+  yang digunakan dalam koleksi.
+* [FancyTree](https://github.com/mar10/fancytree) - library tree kaya fitur
+  tanpa pesaing nyata.
 * [jsPlumb](https://github.com/jsplumb/jsplumb) - library konektivitas visual.
-  Dipakai di [peta
-  relasi](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [peta
-  hubungan](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+  Digunakan dalam [relation
+  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) dan
+  [link
+  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Dukungan
 
-Trilium dibangun dan diperlihara oleh [banyak developer dan
-waktu](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Dukungan
-Anda yang membuat Trilium open-source, menambah dan mengembangkan fitur, juga
-menutupi beban biaya hosting kami.
+Trilium dibangun dan dipelihara dengan [ratusan jam
+kerja](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Dukungan
+Anda menjaga proyek ini tetap open-source, meningkatkan fitur, dan menutup biaya
+seperti hosting.
 
-Berikan dukungan ke developer utama
+Pertimbangkan untuk mendukung pengembang utama
 ([eliandoran](https://github.com/eliandoran)) melalui:
 
-- [Sponsor-Sponsor GitHub](https://github.com/sponsors/eliandoran)
+- [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 License
+## 🔑 Lisensi
 
-Copyright 2017-2025 zadam, Elian Doran, and other contributors
+Hak Cipta 2017-2025 zadam, Elian Doran, dan kontributor lainnya
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version.
+Program ini adalah perangkat lunak bebas: Anda dapat mendistribusikan ulang
+dan/atau memodifikasinya di bawah ketentuan GNU Affero General Public License
+sebagaimana diterbitkan oleh Free Software Foundation, baik versi 3 dari
+Lisensi, atau (sesuai pilihan Anda) versi yang lebih baru.

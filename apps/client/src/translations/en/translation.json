@@ -214,6 +214,7 @@
     "shrinkImages": "Shrink images",
     "textImportedAsText": "Import HTML, Markdown and TXT as text notes if it's unclear from metadata",
     "codeImportedAsCode": "Import recognized code files (e.g. <code>.json</code>) as code notes if it's unclear from metadata",
+    "spreadsheetImportedAsSpreadsheet": "Import CSV and Excel files as editable spreadsheets rather than files",
     "replaceUnderscoresWithSpaces": "Replace underscores with spaces in imported note names",
     "import": "Import",
     "failed": "Import failed: {{message}}.",
@@ -265,7 +266,35 @@
     "math": "Insert a math equation block",
     "footnote": "Insert a footnote",
     "mermaid": "Insert a Mermaid diagram",
-    "admonition": "Insert {{type}} admonition"
+    "mermaid_template": "Insert a \"{{name}}\" Mermaid diagram",
+    "collapsible": "Insert a collapsible block",
+    "admonition": "Insert {{type}} admonition",
+    "todo": "Insert a \"{{title}}\" task item",
+    "todo_nonstandard": "Insert a \"{{title}}\" task item (non-standard)",
+    "placeholders": {
+      "math": "equation",
+      "collapsible_summary": "Summary",
+      "collapsible_details": "Details"
+    }
+  },
+  "slash_commands": {
+    "bulleted_list_description": "Create a bulleted list",
+    "numbered_list_description": "Create a numbered list",
+    "todo_list_description": "Create a to-do list",
+    "align_left_description": "Align text to the left",
+    "align_center_description": "Align text to the center",
+    "align_right_description": "Align text to the right",
+    "justify_description": "Justify text alignment",
+    "admonition_description": "Inserts a new admonition",
+    "collapsible_description": "Insert a toggleable section that hides/shows content on click.",
+    "footnote_description": "Create a new footnote and reference it here",
+    "datetime_description": "Insert the current date and time",
+    "internal_link_description": "Insert a link to another Trilium note",
+    "math_description": "Insert a math equation",
+    "include_note_description": "Display the content of another note in this note",
+    "page_break_description": "Insert a page break (for printing)",
+    "markdown_import_description": "Import a markdown file into this note",
+    "anchor_description": "Insert an anchor for internal linking"
   },
   "move_to": {
     "dialog_title": "Move notes to ...",
@@ -833,6 +862,18 @@
     "zoom_in_title": "Zoom In",
     "zoom_out_title": "Zoom Out"
   },
+  "image_buttons": {
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "reset_zoom": "Reset zoom"
+  },
+  "image_navigation": {
+    "previous": "Previous image: {{- title}}",
+    "next": "Next image: {{- title}}"
+  },
+  "image_viewer": {
+    "loading_error": "There was an error loading the image."
+  },
   "zpetne_odkazy": {
     "backlink_one": "{{count}} Backlink",
     "backlink_other": "{{count}} Backlinks",
@@ -889,7 +930,8 @@
     "hide_child_notes": "Hide child notes in tree",
     "open_all_in_tabs": "Open all",
     "open_all_in_tabs_tooltip": "Open all results in new tabs",
-    "open_all_confirm": "This will open {{count}} notes in new tabs. Continue?",
+    "open_all_confirm_one": "This will open {{count}} note in new tabs. Continue?",
+    "open_all_confirm_other": "This will open {{count}} notes in new tabs. Continue?",
     "open_all_too_many": "Too many results ({{count}}). Maximum is {{max}}."
   },
   "edited_notes": {
@@ -938,7 +980,8 @@
     "note_size": "Note size",
     "note_size_info": "Note size provides rough estimate of storage requirements for this note. It takes into account note's content and content of its note revisions.",
     "calculate": "calculate",
-    "subtree_size": "(subtree size: {{size}} in {{count}} notes)",
+    "subtree_size_one": "(subtree size: {{size}} in {{count}} note)",
+    "subtree_size_other": "(subtree size: {{size}} in {{count}} notes)",
     "title": "Note Info",
     "show_similar_notes": "Show similar notes"
   },
@@ -948,7 +991,8 @@
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
     "link-distance": "Link distance",
-    "too-many-notes": "There are {{count}} notes here. Showing them all may slow things down.",
+    "too-many-notes_one": "There is {{count}} note here. Showing it may slow things down.",
+    "too-many-notes_other": "There are {{count}} notes here. Showing them all may slow things down.",
     "show-anyway": "Show map"
   },
   "note_paths": {
@@ -1132,6 +1176,10 @@
     "pause": "Pause (Space)",
     "back-10s": "Back 10s (Left arrow key)",
     "forward-30s": "Forward 30s",
+    "previous-video": "Previous video: {{- title}}",
+    "next-video": "Next video: {{- title}}",
+    "previous-audio": "Previous audio: {{- title}}",
+    "next-audio": "Next audio: {{- title}}",
     "mute": "Mute (M)",
     "unmute": "Unmute (M)",
     "playback-speed": "Playback speed",
@@ -1569,6 +1617,21 @@
     "options_status": "Options status",
     "options_change_saved": "Options change have been saved."
   },
+  "security": {
+    "backend_scripting_title": "Backend scripting",
+    "backend_scripting_section_description": "Backend scripts have full server access including filesystem, network, and OS commands. They can be triggered via sync, import, or any content that includes executable attributes. Frontend scripts are always enabled as they run in a sandboxed browser context.",
+    "backend_scripting_label": "Backend script execution",
+    "backend_scripting_description": "Allow execution of backend scripts (startup scripts, custom request handlers, event handlers, scheduled scripts, etc.).",
+    "sql_console_title": "SQL console",
+    "sql_console_section_description": "The SQL console allows running raw SQL queries against the database. This can be used to read sensitive data (e.g. sync secrets, API keys) and alter or delete any data. A malicious frontend script could also access the SQL console API programmatically.",
+    "sql_console_label": "SQL console",
+    "sql_console_description": "Allow execution of queries in the SQL console.",
+    "how_to_enable": "How to enable",
+    "server_config_hint": "Add the following to your config.ini file:",
+    "server_env_hint": "Or set the following environment variable:",
+    "restart_required": "Restart required for this change to take effect.",
+    "restart_now": "Restart the application now"
+  },
   "password": {
     "heading": "Password",
     "alert_message": "Please take care to remember your new password. Password is used for logging into the web interface and to encrypt protected notes. If you forget your password, then all your protected notes are forever lost.",
@@ -1731,7 +1794,8 @@
     "export": "Export",
     "import-into-note": "Import into note",
     "apply-bulk-actions": "Apply bulk actions",
-    "converted-to-attachments": "{{count}} notes have been converted to attachments.",
+    "converted-to-attachments_one": "{{count}} note has been converted to attachments.",
+    "converted-to-attachments_other": "{{count}} notes have been converted to attachments.",
     "convert-to-attachment-confirm": "Are you sure you want to convert the selected notes into attachments of their parent notes? This operation only applies to Image notes, other notes will be skipped.",
     "open-in-popup": "Quick edit"
   },
@@ -1954,6 +2018,9 @@
     "close_other_tabs": "Close other tabs",
     "close_right_tabs": "Close tabs to the right",
     "close_all_tabs": "Close all tabs",
+    "pin_tab": "Pin tab",
+    "unpin_tab": "Unpin tab",
+    "pinned_prefix": "Pinned: ",
     "reopen_last_tab": "Reopen last closed tab",
     "move_tab_to_new_window": "Move this tab to a new window",
     "copy_tab_to_new_window": "Copy this tab to a new window",
@@ -1977,7 +2044,12 @@
   },
   "image": {
     "copied-to-clipboard": "A reference to the image has been copied to clipboard. This can be pasted in any text note.",
-    "cannot-copy": "Could not copy the image reference to clipboard."
+    "cannot-copy": "Could not copy the image reference to clipboard.",
+    "copy-to-clipboard": "Copy image to clipboard",
+    "download": "Download image",
+    "image-copied-to-clipboard": "The image has been copied to clipboard.",
+    "cannot-copy-image": "Could not copy the image to clipboard.",
+    "cannot-download": "Could not download the image."
   },
   "clipboard": {
     "cut": "Note(s) have been cut into clipboard.",
@@ -2081,7 +2153,8 @@
     "copy_image_to_clipboard": "Copy image to clipboard"
   },
   "link": {
-    "failed_to_open": "Failed to open link '{{- href}}': {{- message}}"
+    "failed_to_open": "Failed to open link '{{- href}}': {{- message}}",
+    "copy_url": "Copy URL"
   },
   "link_context_menu": {
     "open_note_in_new_tab": "Open note in a new tab",
@@ -2305,7 +2378,11 @@
     "search_history_title": "Show Search History",
     "search_history_description": "View previous searches",
     "configure_launch_bar_title": "Configure Launch Bar",
-    "configure_launch_bar_description": "Open the launch bar configuration, to add or remove items."
+    "configure_launch_bar_description": "Open the launch bar configuration, to add or remove items.",
+    "pin_tab_title": "Pin Tab",
+    "pin_tab_description": "Always keep this note open in this tab at the start of the tab bar and prevent it from being accidentally closed",
+    "unpin_tab_title": "Unpin Tab",
+    "unpin_tab_description": "Unpin this tab, allowing it to be closed and moved freely"
   },
   "content_renderer": {
     "open_externally": "Open externally"
@@ -2324,6 +2401,9 @@
     "new_layout_title": "New layout",
     "new_layout_message": "We’ve introduced a modernized layout for Trilium. The ribbon has been removed and seamlessly integrated into the main interface, with a new status bar and expandable sections (such as promoted attributes) taking over key functions.\n\nThe new layout is enabled by default, and can be temporarily disabled via Options → Appearance.",
     "new_layout_button": "More info",
+    "scripting_disabled_title": "Backend scripting has been disabled",
+    "scripting_disabled_message": "Backend scripting is now disabled by default for security. Your notes contain backend scripts (notes with a #run label) that will no longer execute automatically.\n\nIf you rely on these scripts, you can re-enable backend scripting in the security settings.",
+    "scripting_disabled_button": "Open security settings",
     "dismiss": "Dismiss"
   },
   "settings": {
@@ -2342,7 +2422,8 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} notes",
+    "total_notes_one": "{{count}} note",
+    "total_notes_other": "{{count}} notes",
     "prev_page": "Previous page",
     "next_page": "Next page"
   },
@@ -2422,7 +2503,8 @@
     "code_note_switcher": "Change language mode",
     "tab_width": "Tab Width: {{width}}",
     "tab_width_title": "Change tab width",
-    "tab_width_spaces": "{{count}} spaces",
+    "tab_width_spaces_one": "{{count}} space",
+    "tab_width_spaces_other": "{{count}} spaces",
     "tab_width_spaces_short": "Spaces: {{width}}",
     "tab_width_tabs": "Tabs: {{width}}",
     "tab_width_use_default": "Use default ({{width}})",
@@ -2496,6 +2578,12 @@
   "bookmark_buttons": {
     "bookmarks": "Bookmarks"
   },
+  "snippet_badge": {
+    "label": "{{type}} snippet",
+    "type_text": "Text",
+    "type_code": "Code",
+    "tooltip": "A reusable piece of text or code, meant to be inserted into the editor (from the snippet menu in the toolbar, or via a slash command)."
+  },
   "active_content_badges": {
     "type_icon_pack": "Icon pack",
     "type_backend_script": "Backend script",
@@ -2526,6 +2614,8 @@
   "mermaid": {
     "placeholder": "Type the content of your Mermaid diagram or use one of the sample diagrams below.",
     "sample_diagrams": "Sample diagrams:",
+    "slash_command_blank_description": "Insert an empty Mermaid diagram",
+    "slash_command_description": "Insert a \"{{name}}\" Mermaid diagram template",
     "sample_flowchart": "Flowchart",
     "sample_class": "Class",
     "sample_sequence": "Sequence",
@@ -2674,10 +2764,21 @@
     "cancel": "Cancel"
   },
   "spreadsheet": {
-    "read-only": "This note is read-only."
+    "read-only": "This note is read-only.",
+    "export-xlsx": "Export to Excel (.xlsx)",
+    "export-csv": "Export to CSV (.csv)",
+    "export-failed": "Failed to export the spreadsheet to Excel.",
+    "export-csv-failed": "Failed to export the spreadsheet to CSV."
   },
   "text-editor": {
     "checkbox-tooltip": "Right click for more task states.\nPress {{shortcut}} to cycle between states.",
+    "collapsible-body-placeholder": "Type the content here...",
+    "collapsible-button-label": "Collapsible block",
+    "collapsible-handle-tooltip": "Drag to reposition the collapsible block",
+    "collapsible-select-label": "Select collapsible block",
+    "collapsible-title-placeholder": "Summary",
+    "collapsible-toggle-label": "Toggle collapsible block",
+    "collapsible-tooltip": "Click on the arrow or press {{shortcut}} to collapse/expand.",
     "edit-states-tooltip": "Edit task states",
     "unknown-task-state": "Undefined custom task state",
     "task-state-dropped": "Dropped custom task state definition \"{{title}}\" ({{id}}) due to: {{reason}}",

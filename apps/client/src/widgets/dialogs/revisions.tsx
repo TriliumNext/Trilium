@@ -17,6 +17,7 @@ import { renderMathInElement } from "../../services/math";
 import open from "../../services/open";
 import options from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
+import { sanitizeNoteContentHtml } from "../../services/sanitize_content.js";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import utils from "../../services/utils";
@@ -579,7 +580,7 @@ function RevisionContentText({ content }: { content: string | Uint8Array | undef
             renderMathInElement(contentRef.current, { trust: true });
         }
     }, [content]);
-    return <RawHtmlBlock containerRef={contentRef} className="ck-content" html={content as string} />;
+    return <RawHtmlBlock containerRef={contentRef} className="ck-content" html={sanitizeNoteContentHtml(content as string)} />;
 }
 
 function RevisionContentDiff({ noteContent, itemContent, itemType }: {

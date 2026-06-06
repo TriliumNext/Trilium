@@ -280,7 +280,7 @@ class="image">
   </ul>
   <p>If no location is specified, the HTML will be injected at <code spellcheck="false">content:end</code> by
     default.</p>
-  <p>Example:</p><pre><code class="language-application-javascript-env-backend">const currentNote = await fetchNote();
+  <p>Example:</p><pre><code class="language-text-javascript">const currentNote = await fetchNote();
 const parentNote = await fetchNote(currentNote.parentNoteIds[0]);
 
 for (const attr of parentNote.attributes) {

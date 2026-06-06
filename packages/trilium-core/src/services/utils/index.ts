@@ -4,7 +4,6 @@ import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
 import { extensions as mimeToExt, types as extToMime } from "mime-types";
 import escape from "escape-html";
-import unescape from "unescape";
 import { basename, extname } from "./path";
 import { NoteMeta } from "../../meta";
 
@@ -30,7 +29,6 @@ export function isStringNote(type: string | undefined, mime: string) {
     return (type && STRING_NOTE_TYPES.has(type)) || mime.startsWith("text/") || STRING_MIME_TYPES.has(mime);
 }
 
-// TODO: Refactor to use getCrypto() directly.
 export function randomString(length: number) {
     return getCrypto().randomString(length);
 }
@@ -147,6 +145,15 @@ export function sanitizeSqlIdentifier(str: string) {
 }
 
 /**
+ * Canonical Content-Security-Policy used whenever SVG content is served to a browser
+ * (image notes, attachments, raw-shared SVG). Acts as defense-in-depth alongside
+ * {@link sanitizeSvg}: blocks scripts via `default-src 'none'`, while still allowing
+ * inline styles and same-origin/`data:` images and fonts so legitimate SVGs render.
+ * Keep all SVG-serving routes pointed at this constant so the policy can't drift.
+ */
+export const SVG_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:";
+
+/**
  * Sanitize SVG to remove potentially dangerous elements and attributes.
  * This prevents XSS via script injection in SVG content.
  */
@@ -208,7 +215,30 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
 
 export const escapeHtml = escape;
 
-export const unescapeHtml = unescape;
+/**
+ * Decodes the five HTML entities (and their numeric short forms) that the
+ * former `unescape` npm dependency handled in its default mode: `&`, `<`, `>`,
+ * `"` and `'`. Entities outside this set (other numeric/hex codes, named
+ * entities such as `&nbsp;`/`&copy;`) are intentionally left untouched, and
+ * non-string input yields an empty string — matching the previous behavior
+ * exactly, since this backs the public `api.unescapeHtml` script API.
+ */
+const HTML_ENTITY_REPLACEMENTS: Record<string, string> = {
+    "&quot;": "\"", "&#34;": "\"",
+    "&apos;": "'", "&#39;": "'",
+    "&amp;": "&", "&#38;": "&",
+    "&gt;": ">", "&#62;": ">",
+    "&lt;": "<", "&#60;": "<"
+};
+
+const HTML_ENTITY_RE = /&(?:quot|apos|amp|gt|lt|#34|#39|#38|#62|#60);/g;
+
+export function unescapeHtml(str: string): string {
+    if (!str || typeof str !== "string") {
+        return "";
+    }
+    return str.replace(HTML_ENTITY_RE, (entity) => HTML_ENTITY_REPLACEMENTS[entity]);
+}
 
 export function randomSecureToken(bytes = 32) {
     return encodeBase64(getCrypto().randomBytes(bytes));
@@ -252,6 +282,8 @@ export function removeFileExtension(filePath: string, mime?: string) {
         case ".mermaid":
         case ".mmd":
         case ".pdf":
+        case ".xlsx":
+        case ".csv":
             return filePath.substring(0, filePath.length - extension.length);
         default:
             return filePath;
@@ -379,7 +411,7 @@ export function stripTags(text: string) {
 }
 
 export function toObject<T, K extends string | number | symbol, V>(array: T[], fn: (item: T) => [K, V]): Record<K, V> {
-    const obj: Record<K, V> = {} as Record<K, V>; // TODO: unsafe?
+    const obj: Record<K, V> = {} as Record<K, V>;
 
     for (const item of array) {
         const ret = fn(item);

@@ -9,6 +9,7 @@ const CODE_MIME_TYPES = new Set([
     "message/http",
     "text/css",
     "text/html",
+    "text/javascript",
     "text/plain",
     "text/x-clojure",
     "text/x-csharp",
@@ -43,8 +44,10 @@ const CODE_MIME_TYPES = new Set([
 ]);
 
 const CODE_MIME_TYPES_OVERRIDE = new Map<string, string>([
-    ["application/javascript", "application/javascript;env=frontend"],
-    ["application/x-javascript", "application/javascript;env=frontend"],
+    // Imported JavaScript is treated as plain (non-Trilium) JavaScript rather than a
+    // frontend/backend script, since an imported `.js` file is rarely a Trilium script.
+    ["application/javascript", "text/javascript"],
+    ["application/x-javascript", "text/javascript"],
     // possibly later migrate to text/markdown as primary MIME
     ["text/markdown", "text/x-markdown"]
 ]);

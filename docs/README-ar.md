@@ -11,14 +11,13 @@
 
 # ملاحظات تريليوم
 
-![رعاة GitHub](https://img.shields.io/github/sponsors/eliandoran) ![داعمو
-LiberaPay](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![عمليات سحب Docker](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![تنزيلات GitHub (جميع الأصول، جميع
-الإصدارات)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![حالة
-الترجمة](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
+![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
+![GitHub Downloads (all assets, all
+releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![Translation
+status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->

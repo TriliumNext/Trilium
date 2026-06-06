@@ -3,7 +3,6 @@ import "./content_renderer.css";
 import { normalizeMimeTypeForCKEditor, renderToHtml, type TextRepresentationResponse } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
 import { h, render } from "preact";
-import WheelZoom from 'vanilla-js-wheel-zoom';
 
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
@@ -25,7 +24,6 @@ let idCounter = 1;
 export interface RenderOptions {
     tooltip?: boolean;
     trim?: boolean;
-    imageHasZoom?: boolean;
     /** If enabled, it will prevent the default behavior in which an empty note would display a list of children. */
     noChildrenList?: boolean;
     /** If enabled, it will prevent rendering of included notes. */
@@ -190,22 +188,6 @@ async function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery
         .css("max-width", "100%");
 
     $renderedContent.append($img);
-
-    if (options.imageHasZoom) {
-        const initZoom = async () => {
-            const element = document.querySelector(`#${$img.attr("id")}`);
-            if (element) {
-                WheelZoom.create(`#${$img.attr("id")}`, {
-                    maxScale: 50,
-                    speed: 1.3,
-                    zoomOnClick: false
-                });
-            } else {
-                requestAnimationFrame(initZoom);
-            }
-        };
-        initZoom();
-    }
 
     imageContextMenuService.setupContextMenu($img);
 

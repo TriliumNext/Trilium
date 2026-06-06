@@ -413,6 +413,23 @@ export interface ElectronNavigationApi {
 }
 
 /**
+ * Security settings that live outside the database (in `data_dir/security.json`)
+ * to prevent malicious scripts from modifying them. Changes require a native
+ * OS confirmation dialog and an app restart to take effect.
+ */
+export interface ElectronSecurityApi {
+    /**
+     * Requests a change to a security setting. Shows a native OS confirmation
+     * dialog before writing. Returns `true` if the user confirmed and the
+     * change was written (restart required to take effect), `false` if cancelled.
+     */
+    setBackendScriptingEnabled(enabled: boolean): Promise<boolean>;
+
+    /** Requests a change to the SQL console setting. Same flow as above. */
+    setSqlConsoleEnabled(enabled: boolean): Promise<boolean>;
+}
+
+/**
  * The complete surface exposed to the renderer as `window.electronApi` via
  * `contextBridge`. The renderer must access Electron-only functionality through
  * this object — direct `require("electron")` and `@electron/remote` are
@@ -442,4 +459,6 @@ export interface ElectronApi {
     navigation: ElectronNavigationApi;
     /** In-process bridge that replaces the renderer↔server WebSocket. */
     ws: ElectronWsApi;
+    /** Security settings (backend scripting, SQL console) stored outside the DB. */
+    security: ElectronSecurityApi;
 }

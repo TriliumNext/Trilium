@@ -29,7 +29,7 @@ One of the key changes that lead to the reimplementation is that now we are usin
 
 ## Sample use-cases
 
-<table class="ck-table-resized"><colgroup><col style="width:38.77%;"><col style="width:61.23%;"></colgroup><thead><tr><th scope="col">Use case</th><th scope="col">Sample prompt</th></tr></thead><tbody><tr><td>Easily create a&nbsp;<a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>.</td><td><blockquote><p><em>Create for me a render note which allows me to play tic-tac-toe. Make sure to use Preact instead of the legacy jQuery.</em></p></blockquote></td></tr></tbody></table>
+<table class="ck-table-resized"><colgroup><col style="width:38.77%;"><col style="width:61.23%;"></colgroup><thead><tr><th>Use case</th><th>Sample prompt</th></tr></thead><tbody><tr><td>Easily create a&nbsp;<a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>.</td><td><blockquote><p><em>Create for me a render note which allows me to play tic-tac-toe. Make sure to use Preact instead of the legacy jQuery.</em></p></blockquote></td></tr></tbody></table>
 
 ## LLM Providers
 
@@ -151,7 +151,7 @@ Since Trilium v0.140.0, <a class="reference-link" href="Basic%20Concepts%20and%
 To upload an attachment:
 
 *   Press the dedicated _Attach_ button (paperclip icon) underneath the text box.
-*   Paste an image directly from clipboard using <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">V</kbd>.
+*   Paste an image directly from clipboard using <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
 Once one or more attachments are uploaded, they will appear directly above the text box:
 
@@ -165,7 +165,7 @@ When an attachment is present, the LLM is instructed to consider the attachment 
 
 ### Mentions
 
-Mentions are a way to insert references to notes other than the current note, using the same mechanism as <a class="reference-link" href="Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a>. To refer to another note, simply type <kbd spellcheck="false">@</kbd> followed by the name of the note to reference.
+Mentions are a way to insert references to notes other than the current note, using the same mechanism as <a class="reference-link" href="Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a>. To refer to another note, simply type <kbd>@</kbd> followed by the name of the note to reference.
 
 This feature is mostly helpful when note tools are enabled, otherwise the LLM will have no way to access the given note.
 

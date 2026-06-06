@@ -1,8 +1,8 @@
 import { type ExportFormat, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
+import { becca } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
 
-import { becca } from "@triliumnext/core";
 import utils from "../services/utils.js";
 import eu from "./etapi_utils.js";
 import type { ValidatorMap } from "./etapi-interface.js";
@@ -147,7 +147,7 @@ function register(router: Router) {
         noteService.saveRevisionIfNeeded(note);
         note.setContent(req.body);
 
-        noteService.asyncPostProcessContent(note, req.body);
+        void noteService.asyncPostProcessContent(note, req.body);
 
         return res.sendStatus(204);
     });
@@ -166,7 +166,7 @@ function register(router: Router) {
         // (e.g. branchIds are not seen in UI), that we export "note export" instead.
         const branch = note.getParentBranches()[0];
 
-        zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res);
+        void zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res);
     });
 
     eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {
@@ -178,7 +178,7 @@ function register(router: Router) {
                 note: mappers.mapNoteToPojo(importedNote),
                 branch: mappers.mapBranchToPojo(importedNote.getParentBranches()[0])
             });
-        }); // we need better error handling here, async errors won't be properly processed.
+        }).catch(next); // forward async import errors to the ETAPI error handler
     });
 
     eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/revision", (req, res, next) => {
@@ -188,13 +188,6 @@ function register(router: Router) {
         note.saveRevision({ description, source: "etapi" });
 
         return res.sendStatus(204);
-    });
-
-    eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId/attachments", (req, res, next) => {
-        const note = eu.getAndCheckNote(req.params.noteId);
-        const attachments = note.getAttachments();
-
-        res.json(attachments.map((attachment) => mappers.mapAttachmentToPojo(attachment)));
     });
 }
 

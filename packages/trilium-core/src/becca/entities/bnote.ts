@@ -345,6 +345,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.__validateTypeName(type, name);
         this.__ensureAttributeCacheIsAvailable();
 
+        /* v8 ignore next 3 -- defensive: cache is always populated by __ensureAttributeCacheIsAvailable */
         if (!this.__attributeCache) {
             throw new Error("Attribute cache not available.");
         }
@@ -432,6 +433,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             this.__getAttributes(path); // will refresh also this.__inheritableAttributeCache
         }
 
+        /* v8 ignore next -- defensive: __getAttributes always sets the cache for a non-cyclic path */
         return this.__inheritableAttributeCache || [];
     }
 
@@ -1171,16 +1173,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             isHidden: path.includes("_hidden")
         }));
 
-        notePaths.sort((a, b) => {
-            if (a.isInHoistedSubTree !== b.isInHoistedSubTree) {
-                return a.isInHoistedSubTree ? -1 : 1;
-            } else if (a.isArchived !== b.isArchived) {
-                return a.isArchived ? 1 : -1;
-            } else if (a.isHidden !== b.isHidden) {
-                return a.isHidden ? 1 : -1;
-            }
-            return a.notePath.length - b.notePath.length;
-        });
+        notePaths.sort(compareNotePathRecords);
 
         return notePaths;
     }
@@ -1477,6 +1470,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         const oldNoteUrl = `api/images/${this.noteId}/`;
         const newAttachmentUrl = `api/attachments/${attachment.attachmentId}/image/`;
 
+        /* v8 ignore next 3 -- defensive: an eligible parent is always a text note with string content */
         if (typeof parentContent !== "string") {
             throw new Error("Unable to convert image note into attachment because parent note does not have a string content.");
         }
@@ -1515,6 +1509,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         taskContext.noteDeletionHandlerTriggered = true;
 
         for (const branch of this.getParentBranches()) {
+            /* v8 ignore next -- deleteId is always assigned above; the nullish fallback is unreachable */
             branch.deleteBranch(deleteId ?? undefined, taskContext);
         }
     }
@@ -1576,6 +1571,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             for (const noteAttachment of this.getAttachments()) {
                 const revisionAttachment = noteAttachment.copy();
 
+                /* v8 ignore next 3 -- defensive: revision.save() above always assigns revisionId */
                 if (!revision.revisionId) {
                     throw new Error("Revision ID is missing.");
                 }
@@ -1766,6 +1762,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     getAttributeById(attributeId : string): BAttribute | undefined {
         this.__ensureAttributeCacheIsAvailable();
 
+        /* v8 ignore next 3 -- defensive: cache is always populated by __ensureAttributeCacheIsAvailable */
         if (!this.__attributeCache) {
             throw new Error("Attribute cache not available.");
         }
@@ -1793,6 +1790,23 @@ class BNote extends AbstractBeccaEntity<BNote> {
             throw new Error(`Attribute with id ${attributeId} not found.`);
         }
     }
+}
+
+/**
+ * Orders note-path records so the "best" path sorts first: paths inside the hoisted
+ * subtree beat outside ones, non-archived beat archived, non-hidden beat hidden, and
+ * shorter paths beat longer ones. Extracted from {@link BNote.getSortedNotePathRecords}
+ * so the ordering logic can be unit-tested directly.
+ */
+export function compareNotePathRecords(a: NotePathRecord, b: NotePathRecord): number {
+    if (a.isInHoistedSubTree !== b.isInHoistedSubTree) {
+        return a.isInHoistedSubTree ? -1 : 1;
+    } else if (a.isArchived !== b.isArchived) {
+        return a.isArchived ? 1 : -1;
+    } else if (a.isHidden !== b.isHidden) {
+        return a.isHidden ? 1 : -1;
+    }
+    return a.notePath.length - b.notePath.length;
 }
 
 export default BNote;

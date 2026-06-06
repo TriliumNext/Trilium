@@ -1,11 +1,11 @@
 import { BackupService, initializeCore } from "@triliumnext/core";
 import IpcMessagingProvider from "@triliumnext/desktop/src/ipc_messaging_provider.js";
-import { registerTriliumAppScheme } from "@triliumnext/desktop/src/protocol.js";
+import { registerTriliumAppScheme, setupTriliumAppProtocol } from "@triliumnext/desktop/src/protocol.js";
 import ClsHookedExecutionContext from "@triliumnext/server/src/cls_provider.js";
 import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
 import ServerPlatformProvider from "@triliumnext/server/src/platform_provider.js";
 import { serverImageProvider } from "@triliumnext/server/src/services/image_provider.js";
-import windowService from "@triliumnext/desktop/src/services/window.js";
+import windowService, { setupWindowing } from "@triliumnext/desktop/src/services/window.js";
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import NodejsZipProvider from "@triliumnext/server/src/zip_provider.js";
 import { type Archiver, ZipArchive } from "archiver";
@@ -92,7 +92,22 @@ export function startElectron(callback: () => void): DeferredPromise<void> {
 
         // Start the server.
         const startTriliumServer = (await import("@triliumnext/server/src/www.js")).default;
-        await startTriliumServer();
+        const expressApp = await startTriliumServer();
+
+        // Install the `trilium-app://` request handler that bridges the
+        // renderer's page / asset / API requests into Express. Without this the
+        // main window navigates to `trilium-app://app/` but nothing answers it,
+        // leaving a blank screen with no requests. Desktop does the same in
+        // apps/desktop/src/main.ts.
+        setupTriliumAppProtocol(expressApp);
+
+        // Register the main-process IPC handlers the renderer relies on (window
+        // management, clipboard, and crucially the `navigation-history` channel).
+        // Without this, the renderer's synchronous `navigationCanGoBack/Forward`
+        // IPC calls hit no listener — which storms the TabHistoryNavigationButtons
+        // render loop with tens of thousands of blocking sendSync calls and pegs
+        // the renderer. Desktop registers these in apps/desktop/src/main.ts.
+        setupWindowing();
 
         // Create the main window.
         await windowService.createMainWindow();

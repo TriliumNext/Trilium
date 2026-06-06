@@ -545,10 +545,10 @@ function TabWidthSwitcher({ note, noteContext }: StatusBarContext) {
 function CodeNoteSwitcher({ note }: StatusBarContext) {
     const [ modalShown, setModalShown ] = useState(false);
     const currentNoteMime = useNoteProperty(note, "mime");
-    const mimeTypes = useMimeTypes();
+    const { enabledMimeTypes, allMimeTypes } = useMimeTypes();
     const correspondingMimeType = useMemo(() => (
-        mimeTypes.find(m => m.mime === currentNoteMime)
-    ), [ mimeTypes, currentNoteMime ]);
+        allMimeTypes.find(m => m.mime === currentNoteMime)
+    ), [ allMimeTypes, currentNoteMime ]);
 
     return (note.type === "code" &&
         <>
@@ -560,7 +560,7 @@ function CodeNoteSwitcher({ note }: StatusBarContext) {
             >
                 <NoteTypeCodeNoteList
                     currentMimeType={currentNoteMime}
-                    mimeTypes={mimeTypes}
+                    mimeTypes={enabledMimeTypes}
                     changeNoteType={(type, mime) => server.put(`notes/${note.noteId}/type`, { type, mime })}
                     setModalShown={() => setModalShown(true)}
                 />

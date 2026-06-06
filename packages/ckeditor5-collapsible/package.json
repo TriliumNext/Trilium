@@ -1,0 +1,37 @@
+{
+  "name": "@triliumnext/ckeditor5-collapsible",
+  "version": "1.0.0",
+  "description": "Collapsible block (HTML <details>/<summary>) feature for CKEditor 5.",
+  "keywords": [
+    "ckeditor",
+    "ckeditor5",
+    "ckeditor 5",
+    "ckeditor5-feature",
+    "ckeditor5-plugin",
+    "collapsible",
+    "details"
+  ],
+  "type": "module",
+  "main": "src/index.ts",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=5.7.1"
+  },
+  "devDependencies": {
+    "ckeditor5": "48.2.0",
+    "happy-dom": "20.9.0",
+    "typescript": "6.0.3",
+    "vite-plugin-svgo": "2.0.0",
+    "vitest": "4.1.8"
+  },
+  "peerDependencies": {
+    "bootstrap": "^5.3.0",
+    "ckeditor5": "48.2.0"
+  },
+  "author": "Trilium contributors",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "test": "vitest",
+    "test:debug": "vitest --inspect-brk --no-file-parallelism"
+  }
+}

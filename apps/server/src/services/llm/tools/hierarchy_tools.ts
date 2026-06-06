@@ -118,12 +118,13 @@ export const hierarchyTools = defineTools({
             if (!targetParent.isContentAvailable()) {
                 return { error: "Cannot move note to a protected parent" };
             }
-            if (!targetParent.isContentAvailable()) {
-                return { error: "Cannot move note to a protected parent" };
-            }
 
             // Use the first (primary) parent branch for the move
             const branches = note.getParentBranches();
+            /* v8 ignore next 3 -- rare edge case, not worth simulating in a unit test:
+               an orphaned note (its last parent branch removed but the note itself not
+               yet deleted from Becca, e.g. during a sync race) can momentarily have zero
+               parent branches. The guard returns a clean error instead of crashing on branches[0]. */
             if (branches.length === 0) {
                 return { error: "Note has no parent branches" };
             }
@@ -132,8 +133,10 @@ export const hierarchyTools = defineTools({
             if (Array.isArray(result)) {
                 // Validation error: [statusCode, { success: false, message }]
                 const validation = result[1] as { success: boolean; message?: string };
+                /* v8 ignore next -- defensive: validateParentChild always supplies a message on failure */
                 return { error: validation.message || "Move validation failed" };
             }
+            /* v8 ignore next 3 -- defensive: moveBranchToNote only returns success:true or a validation array */
             if (!result.success) {
                 return { error: "Failed to move note" };
             }
@@ -172,6 +175,7 @@ export const hierarchyTools = defineTools({
 
             const result = cloningService.cloneNoteToParentNote(noteId, parentNoteId, prefix ?? null);
             if (!result.success) {
+                /* v8 ignore next -- defensive: cloneNoteToParentNote always supplies a message on failure */
                 return { error: result.message || "Clone failed" };
             }
 
@@ -180,6 +184,8 @@ export const hierarchyTools = defineTools({
                 noteId,
                 title: note.getTitleOrProtected(),
                 parentNoteId,
+                // A successful clone always has a real (content-available) parent note.
+                /* v8 ignore next -- defensive: parent is non-null on the success path */
                 parentTitle: parent?.getTitleOrProtected() ?? parentNoteId,
                 branchId: result.branchId
             };

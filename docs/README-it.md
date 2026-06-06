@@ -11,14 +11,13 @@
 
 # Trilium Notes
 
-![Sponsor GitHub](https://img.shields.io/github/sponsors/eliandoran)
-![Sostenitori LiberaPay](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Pull Docker](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![Download GitHub (tutte le risorse, tutte le
-versioni)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Stato della
-traduzione](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
+![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
+![GitHub Downloads (all assets, all
+releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![Translation
+status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -272,7 +271,7 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-Alternatively, if you have Nix installed:
+In alternativa, se hai installato Nix:
 ```shell
 # Run directly
 nix run .#edit-docs
@@ -348,8 +347,8 @@ collegamenti presenti nella precedente sezione "Discuti con noi".
 
 Trilium non sarebbe possibile senza le tecnologie che lo supportano:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - l'editor visivo alla
+  base delle note di testo.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - editor di codice con
   supporto per un'ampia gamma di linguaggi.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - la lavagna infinita

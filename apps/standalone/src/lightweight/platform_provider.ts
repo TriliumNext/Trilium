@@ -23,6 +23,7 @@ export default class StandalonePlatformProvider implements PlatformProvider {
                 this.envMap[envKey] = params.get(queryKey) || "true";
             }
         }
+        /* v8 ignore next 3 -- @preserve: __TRILIUM_INTEGRATION_TEST__ is inlined empty outside integration builds, so this branch is unreachable under the standard (CI) build. */
         if (__TRILIUM_INTEGRATION_TEST__) {
             this.envMap["TRILIUM_INTEGRATION_TEST"] = __TRILIUM_INTEGRATION_TEST__;
         }

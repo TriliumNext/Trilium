@@ -1,8 +1,10 @@
+import { cls, password_encryption, protected_session } from "@triliumnext/core";
 import { Application } from "express";
 import { beforeAll, describe, expect, it } from "vitest";
 import supertest from "supertest";
 import { createNote, login } from "./utils.js";
 import config from "../../src/services/config.js";
+import sql from "../../src/services/sql.js";
 
 let app: Application;
 let token: string;
@@ -89,6 +91,51 @@ describe("etapi/note-history", () => {
         // Deleted entries should have canBeUndeleted property
         if (deletedEntry) {
             expect(deletedEntry).toHaveProperty("canBeUndeleted");
+        }
+    });
+
+    it("masks protected entries when no protected session is active", async () => {
+        protected_session.resetDataKey();
+        const noteId = await createNote(app, token);
+
+        try {
+            cls.init(() => sql.execute("UPDATE notes SET isProtected = 1 WHERE noteId = ?", [noteId]));
+
+            const response = await supertest(app)
+                .get("/etapi/notes/history")
+                .auth(USER, token, { "type": "basic" })
+                .expect(200);
+            const change = response.body.find((c: { noteId: string }) => c.noteId === noteId);
+            expect(change?.title).toStrictEqual("[protected]");
+        } finally {
+            cls.init(() => sql.execute("UPDATE notes SET isProtected = 0 WHERE noteId = ?", [noteId]));
+        }
+    });
+
+    it("decrypts protected entries when a protected session is active", async () => {
+        const dataKey = await password_encryption.getDataKey("demo1234");
+        if (!(dataKey instanceof Uint8Array)) {
+            throw new Error("Expected a data key from the fixture password.");
+        }
+        const noteId = await createNote(app, token);
+
+        try {
+            protected_session.default.setDataKey(dataKey);
+            const encryptedTitle = protected_session.default.encrypt("secret title");
+            cls.init(() => sql.execute(
+                "UPDATE notes SET isProtected = 1, title = ? WHERE noteId = ?",
+                [encryptedTitle, noteId]
+            ));
+
+            const response = await supertest(app)
+                .get("/etapi/notes/history")
+                .auth(USER, token, { "type": "basic" })
+                .expect(200);
+            const change = response.body.find((c: { noteId: string }) => c.noteId === noteId);
+            expect(change?.title).toStrictEqual("secret title");
+        } finally {
+            protected_session.resetDataKey();
+            cls.init(() => sql.execute("UPDATE notes SET isProtected = 0 WHERE noteId = ?", [noteId]));
         }
     });
 });

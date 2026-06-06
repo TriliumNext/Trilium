@@ -37,6 +37,7 @@ type TaskDataDefinitions = {
     importNotes: {
         textImportedAsText?: boolean;
         codeImportedAsCode?: boolean;
+        spreadsheetImportedAsSpreadsheet?: boolean;
         replaceUnderscoresWithSpaces?: boolean;
         shrinkImages?: boolean;
         safeImport?: boolean;

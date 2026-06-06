@@ -56,6 +56,8 @@ jobs:
 
       - name: Trigger build of app
         run: pnpm --filter=standalone build
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Deploy
         uses: ./.github/actions/deploy-to-cloudflare-pages

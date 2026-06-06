@@ -112,7 +112,8 @@ function renderImageAttachment(image: SNote, res: Response, attachmentName: stri
     const svg = utils.sanitizeSvg(svgString);
     res.set("Content-Type", "image/svg+xml");
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.set("Content-Security-Policy", "script-src 'none'");
+    res.set("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
+    res.set("X-Content-Type-Options", "nosniff");
     res.send(svg);
 }
 
@@ -143,6 +144,17 @@ function register(router: Router) {
         addNoIndexHeader(note, res);
 
         if (note.isLabelTruthy("shareRaw") || typeof req.query.raw !== "undefined") {
+            // For SVG content, add a restrictive Content-Security-Policy to prevent
+            // stored XSS via script execution (CWE-79). HTML is intentionally served
+            // unrestricted here: serving raw HTML requires the `#shareRaw` attribute (or an
+            // explicit `?raw`), and `#shareRaw` is flagged dangerous (see builtin_attributes.ts),
+            // so the instance owner is deliberately opting in to serve their own scriptable
+            // content. Restricting it would break legitimate self-contained HTML pages.
+            if (note.mime === "image/svg+xml") {
+                res.setHeader("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
+                res.setHeader("X-Content-Type-Options", "nosniff");
+            }
+
             res.setHeader("Content-Type", note.mime).send(note.getContent());
 
             return;
@@ -222,10 +234,21 @@ function register(router: Router) {
         }
 
         if (image.type === "image") {
-            // normal image
-            res.set("Content-Type", image.mime);
             addNoIndexHeader(image, res);
-            res.send(image.getContent());
+            if (image.mime === "image/svg+xml") {
+                // SVG images require sanitization to prevent stored XSS
+                const content = image.getContent();
+                const svgContent = typeof content === "string" ? content : new TextDecoder().decode(content ?? new Uint8Array());
+                const sanitized = utils.sanitizeSvg(svgContent);
+                res.set("Content-Type", "image/svg+xml");
+                res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+                res.set("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
+                res.set("X-Content-Type-Options", "nosniff");
+                res.send(sanitized);
+            } else {
+                res.set("Content-Type", image.mime);
+                res.send(image.getContent());
+            }
         } else if (image.type === "canvas") {
             renderImageAttachment(image, res, "canvas-export.svg");
         } else if (image.type === "mermaid") {
@@ -248,9 +271,21 @@ function register(router: Router) {
         }
 
         if (attachment.role === "image") {
-            res.set("Content-Type", attachment.mime);
             addNoIndexHeader(attachment.note, res);
-            res.send(attachment.getContent());
+            if (attachment.mime === "image/svg+xml") {
+                // SVG attachments require sanitization to prevent stored XSS
+                const content = attachment.getContent();
+                const svgContent = typeof content === "string" ? content : new TextDecoder().decode(content ?? new Uint8Array());
+                const sanitized = utils.sanitizeSvg(svgContent);
+                res.set("Content-Type", "image/svg+xml");
+                res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+                res.set("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
+                res.set("X-Content-Type-Options", "nosniff");
+                res.send(sanitized);
+            } else {
+                res.set("Content-Type", attachment.mime);
+                res.send(attachment.getContent());
+            }
         } else {
             res.status(400).json({ message: "Requested attachment is not a shareable image" });
         }

@@ -589,6 +589,9 @@ function ElectronIntegration() {
     const [ backgroundEffects, setBackgroundEffects ] = useTriliumOptionBool("backgroundEffects");
 
     const zoomPercentage = Math.round(parseFloat(zoomFactor || "1") * 100);
+    // Background effects are only supported on Windows 11 and macOS; on Linux they have no
+    // visual effect and would only cost the native window shadow.
+    const backgroundEffectsSupported = window.glob.platform === "win32" || window.glob.platform === "darwin";
 
     return (
         <OptionsSection title={t("electron_integration.desktop-application")}>
@@ -616,7 +619,7 @@ function ElectronIntegration() {
                 description={t("electron_integration.background-effects-description")}
                 currentValue={backgroundEffects}
                 onChange={setBackgroundEffects}
-                disabled={nativeTitleBarVisible}
+                disabled={nativeTitleBarVisible || !backgroundEffectsSupported}
             />
 
             <OptionsRowWithButton

@@ -6,9 +6,9 @@
   <code
   spellcheck="false">cheerio</code>reduces bundle size and maintenance overhead.</p>
 <h2>Migration</h2>
-<p>Before (<code spellcheck="false">cheerio</code>):</p><pre><code class="language-application-javascript-env-backend">const $ = api.cheerio.load(html);
+<p>Before (<code spellcheck="false">cheerio</code>):</p><pre><code class="language-text-javascript">const $ = api.cheerio.load(html);
 const title = $('h1').text();
 const links = $('a').map((i, el) =&gt; $(el).attr('href')).get();</code></pre>
-<p>After (<code spellcheck="false">htmlParser</code>):</p><pre><code class="language-application-javascript-env-backend">const root = api.htmlParser.parse(html);
+<p>After (<code spellcheck="false">htmlParser</code>):</p><pre><code class="language-text-javascript">const root = api.htmlParser.parse(html);
 const title = root.querySelector('h1')?.textContent;
 const links = root.querySelectorAll('a').map(a =&gt; a.getAttribute('href'));</code></pre>

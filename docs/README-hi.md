@@ -11,14 +11,13 @@
 
 # ट्रिलियम नोट्स
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub प्रायोजक](https://img.shields.io/github/sponsors/eliandoran)
+![LiberaPay संरक्षक](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker पुल्स](https://img.shields.io/docker/pulls/triliumnext/trilium)
+![GitHub डाउनलोड (सभी संपत्तियां, सभी
+रिलीज़)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![अनुवाद की
+स्थिति](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -33,14 +32,15 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Uyghur](./README-ug.md)
 <!-- translate:on -->
 
-Trilium Notes is a free and open-source, cross-platform hierarchical note taking
-application with focus on building large personal knowledge bases.
+ट्रिलियम नोट्स (Trilium Notes) एक मुफ़्त और ओपन-सोर्स, क्रॉस-प्लेटफ़ॉर्म
+श्रेणीबद्ध (hierarchical) नोट लेने वाला एप्लिकेशन है, जिसका मुख्य ध्यान बड़े
+व्यक्तिगत ज्ञान आधार (knowledge bases) बनाने पर है।
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ डाउनलोड कीजिए
-- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
+- [लेटेस्ट रिलीज़](https://github.com/TriliumNext/Trilium/releases/latest) –
+  स्थिर (stable) वर्ज़न, अधिकांश यूज़र्स के लिए अनुशंसित।
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
   unstable development version, updated daily with the latest features and
   fixes.

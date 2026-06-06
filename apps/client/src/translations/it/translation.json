@@ -351,7 +351,9 @@
     "export": "Esportare",
     "import-into-note": "Importa nella nota",
     "apply-bulk-actions": "Applica azioni in blocco",
-    "converted-to-attachments": "{{count}} note sono state convertite in allegati.",
+    "converted-to-attachments_one": "{{count}} nota è stata convertita in allegato.",
+    "converted-to-attachments_many": "{{count}} note sono state convertite in allegati.",
+    "converted-to-attachments_other": "{{count}} note sono state convertite in allegati.",
     "convert-to-attachment-confirm": "Sei sicuro di voler convertire le note selezionate in allegati delle note principali? Questa operazione si applica solo alle note immagine, le altre note verranno ignorate.",
     "open-in-popup": "Modifica rapida",
     "open-in-a-new-window": "Apri in una nuova finestra",
@@ -572,7 +574,10 @@
     "reopen_last_tab": "Riapri l'ultima scheda chiusa",
     "move_tab_to_new_window": "Sposta questa scheda in una nuova finestra",
     "copy_tab_to_new_window": "Copia questa scheda in una nuova finestra",
-    "new_tab": "Nuova scheda"
+    "new_tab": "Nuova scheda",
+    "unpin_tab": "Sblocca scheda",
+    "pin_tab": "Blocca scheda",
+    "pinned_prefix": "Bloccate: "
   },
   "toc": {
     "table_of_contents": "Tabella dei Contenuti",
@@ -728,7 +733,8 @@
     "replaceUnderscoresWithSpaces": "Sostituisci i trattini bassi con spazi nei nomi delle note importate",
     "import": "Importa",
     "failed": "Importazione fallita: {{message}}.",
-    "importZipRecommendation": "Quando si importa un file ZIP, la gerarchia delle note rifletterà la struttura delle sottodirectory all'interno dell'archivio."
+    "importZipRecommendation": "Quando si importa un file ZIP, la gerarchia delle note rifletterà la struttura delle sottodirectory all'interno dell'archivio.",
+    "spreadsheetImportedAsSpreadsheet": "Importa i file CSV ed Excel come fogli di calcolo modificabili anziché come file"
   },
   "include_note": {
     "dialog_title": "Includi nota",
@@ -1195,7 +1201,8 @@
     "trilium_api_docs_button_title": "Apri la documentazione API di Trilium",
     "save_to_note_button_title": "Salva per annotare",
     "opening_api_docs_message": "Apertura dei documenti API...",
-    "sql_console_saved_message": "La nota della console SQL è stata salvata in {{note_path}}"
+    "sql_console_saved_message": "La nota della console SQL è stata salvata in {{note_path}}",
+    "electron_api_docs_button_title": "Documentazione dell'API di Open Electron"
   },
   "copy_image_reference_button": {
     "button_title": "Copia il riferimento all'immagine negli appunti, può essere incollato in una nota di testo."
@@ -1273,7 +1280,9 @@
     "hide_child_notes": "Nascondi note secondarie nell'albero",
     "open_all_in_tabs": "Apri tutto",
     "open_all_in_tabs_tooltip": "Apri tutti i risultati in nuove schede",
-    "open_all_confirm": "Verranno aperte {{count}} note in nuove schede. Vuoi continuare?"
+    "open_all_confirm_one": "Verrà aperta {{count}} nota in una nuova scheda. Vuoi continuare?",
+    "open_all_confirm_many": "Verranno aperte {{count}} note in nuove schede. Vuoi continuare?",
+    "open_all_confirm_other": "Verranno aperte {{count}} note in nuove schede. Vuoi continuare?"
   },
   "edited_notes": {
     "no_edited_notes_found": "Nessuna nota modificata per questo giorno...",
@@ -1317,7 +1326,9 @@
     "note_size": "Dimensione della nota",
     "note_size_info": "La dimensione della nota fornisce una stima approssimativa dei requisiti di archiviazione per questa nota. Tiene conto del contenuto della nota e del contenuto delle sue revisioni.",
     "calculate": "calcolare",
-    "subtree_size": "(dimensione del sottoalbero: {{size}} in {{count}} note)",
+    "subtree_size_one": "(dimensione del sottoalbero: {{size}} in {{count}} nota)",
+    "subtree_size_many": "(dimensione del sottoalbero: {{size}} in {{count}} note)",
+    "subtree_size_other": "(dimensione del sottoalbero: {{size}} in {{count}} note)",
     "title": "Nota informativa",
     "show_similar_notes": "Mostra note simili",
     "mime": "Tipo MIME"
@@ -1328,7 +1339,9 @@
     "title": "Nota Mappa",
     "fix-nodes": "Fissare i nodi",
     "link-distance": "Distanza del collegamento",
-    "too-many-notes": "Qui ci sono {{count}} note. Visualizzarle tutte potrebbe rallentare il sistema.",
+    "too-many-notes_one": "Qui c'è {{count}} nota. Visualizzarla potrebbe rallentare il sistema.",
+    "too-many-notes_many": "Qui ci sono {{count}} note. Visualizzarle potrebbe rallentare il sistema.",
+    "too-many-notes_other": "Qui ci sono {{count}} note. Visualizzarle potrebbe rallentare il sistema.",
     "show-anyway": "Mostra mappa"
   },
   "note_paths": {
@@ -1899,7 +1912,12 @@
   },
   "image": {
     "copied-to-clipboard": "Un riferimento all'immagine è stato copiato negli appunti. Può essere incollato in qualsiasi nota di testo.",
-    "cannot-copy": "Impossibile copiare il riferimento all'immagine negli appunti."
+    "cannot-copy": "Impossibile copiare il riferimento all'immagine negli appunti.",
+    "copy-to-clipboard": "Copia l'immagine negli appunti",
+    "download": "Scarica l'immagine",
+    "image-copied-to-clipboard": "L'immagine è stata copiata negli appunti.",
+    "cannot-copy-image": "Impossibile copiare l'immagine negli appunti.",
+    "cannot-download": "Impossibile scaricare l'immagine."
   },
   "clipboard": {
     "cut": "Le note sono state tagliate negli appunti.",
@@ -2041,7 +2059,12 @@
   "code_theme": {
     "title": "Aspetto",
     "word_wrapping": "A capo automatico",
-    "color-scheme": "Schema dei colori"
+    "color-scheme": "Schema dei colori",
+    "theme_mode": "Modalità tema",
+    "match_app_appearance": "Personalizza l'aspetto dell'app",
+    "always_use_one_theme": "Utilizza sempre un unico tema",
+    "light_theme": "Tema chiaro",
+    "dark_theme": "Tema scuro"
   },
   "book_properties_config": {
     "hide-weekends": "Nascondi i fine settimana",
@@ -2075,7 +2098,11 @@
     "search_history_title": "Mostra cronologia delle ricerche",
     "search_history_description": "Visualizza le ricerche precedenti",
     "configure_launch_bar_title": "Configura la barra di avvio",
-    "configure_launch_bar_description": "Aprire la configurazione della barra di avvio per aggiungere o rimuovere elementi."
+    "configure_launch_bar_description": "Aprire la configurazione della barra di avvio per aggiungere o rimuovere elementi.",
+    "pin_tab_title": "Blocca Scheda",
+    "pin_tab_description": "Tieni sempre aperta questa nota in questa scheda, all'inizio della barra delle schede, per evitare che venga chiusa accidentalmente",
+    "unpin_tab_title": "Sblocca Scheda",
+    "unpin_tab_description": "Sblocca questa scheda, in modo che possa essere chiusa e spostata liberamente"
   },
   "content_renderer": {
     "open_externally": "Aperto esternamente"
@@ -2090,7 +2117,10 @@
     "dismiss": "Ignora",
     "new_layout_title": "Nuovo layout",
     "new_layout_message": "Abbiamo introdotto un layout modernizzato per Trilium. La barra multifunzione è stata rimossa e integrata perfettamente nell'interfaccia principale, con una nuova barra di stato e sezioni espandibili (come gli attributi promossi) che assumono le funzioni chiave.\n\nIl nuovo layout è abilitato di default e può essere temporaneamente disabilitato tramite Opzioni → Aspetto.",
-    "new_layout_button": "Maggiori informazioni"
+    "new_layout_button": "Maggiori informazioni",
+    "scripting_disabled_title": "Lo scripting sul backend è stato disabilitato",
+    "scripting_disabled_message": "Per motivi di sicurezza, l'esecuzione degli script sul backend è ora disabilitata per impostazione predefinita. Le tue note contengono script sul backend (note contrassegnate con l'etichetta #run) che non verranno più eseguiti automaticamente.\n\nSe utilizzi questi script, puoi riattivarli nelle impostazioni di sicurezza.",
+    "scripting_disabled_button": "Apri le impostazioni di sicurezza"
   },
   "settings": {
     "related_settings": "Impostazioni correlate"
@@ -2108,7 +2138,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} note",
+    "total_notes_one": "{{count}} nota",
+    "total_notes_many": "{{count}} note",
+    "total_notes_other": "{{count}} note",
     "prev_page": "Pagina precedente",
     "next_page": "Pagina successiva"
   },
@@ -2210,7 +2242,9 @@
     "code_note_switcher": "Cambia modalità lingua",
     "tab_width": "Larghezza della scheda: {{width}}",
     "tab_width_title": "Modifica la larghezza della scheda",
-    "tab_width_spaces": "{{count}} spazi",
+    "tab_width_spaces_one": "{{count}} spazio",
+    "tab_width_spaces_many": "{{count}} spazi",
+    "tab_width_spaces_other": "{{count}} spazi",
     "tab_width_spaces_short": "Spazi: {{width}}",
     "tab_width_tabs": "Schede: {{width}}",
     "tab_width_use_default": "Usa le impostazioni predefinite ({{width}})",
@@ -2349,7 +2383,9 @@
     "sample_venn": "Venn",
     "sample_ishikawa": "Ishikawa",
     "sample_treeview": "TreeView",
-    "sample_wardley": "Mappa di Wardley"
+    "sample_wardley": "Mappa di Wardley",
+    "slash_command_blank_description": "Inserisci un diagramma Mermaid vuoto",
+    "slash_command_description": "Inserisci il modello di diagramma Mermaid \"{{name}}\""
   },
   "llm_chat": {
     "placeholder": "Scrivi un messaggio...",
@@ -2384,7 +2420,13 @@
     "sources_summary": "{{count}} fonti provenienti da {{sites}} siti",
     "stop": "Stop",
     "edit_index": "Modifica {{index}} di {{total}}",
-    "retry": "Riprova"
+    "retry": "Riprova",
+    "web_search_unavailable_gemini": "Non disponibile sui modelli Gemini quando l'accesso alle note è attivo: l'API di Google non consente di combinare entrambe le funzioni. Disattiva l'accesso alle note o passa a un altro provider per utilizzare la ricerca sul web.",
+    "input_streaming": "Input (in streaming…)",
+    "attach_file": "Allega un'immagine, un PDF o un file di testo",
+    "remove_attachment": "Rimuovi allegato",
+    "attachment_upload_failed": "Caricamento non riuscito \"{{name}}\".",
+    "attachment_unsupported_type": "\"{{name}}\" questo tipo di allegato non è supportato. Utilizza un'immagine (PNG, JPEG, GIF, WebP), un PDF o un file di testo/sorgente."
   },
   "sidebar_chat": {
     "title": "Chat AI",
@@ -2422,7 +2464,7 @@
       "search_notes": "Cerca nelle note",
       "get_note": "Prendi nota",
       "get_note_content": "Visualizza il contenuto della nota",
-      "update_note_content": "Aggiorna il contenuto della nota",
+      "update_note_content": "Nota di riscrittura",
       "append_to_note": "Aggiungi alla nota",
       "create_note": "Crea nota",
       "get_attributes": "Recupera gli attributi",
@@ -2439,9 +2481,13 @@
       "rename_note": "Rinomina nota",
       "delete_note": "Elimina nota",
       "move_note": "Sposta nota",
-      "clone_note": "Clona nota"
+      "clone_note": "Clona nota",
+      "set_note_content": "Nota di riscrittura",
+      "edit_note_content": "Nota dell'editore"
     },
-    "base_url": "URL di base"
+    "base_url": "URL di base",
+    "base_url_description": "Facoltativo. Sovrascrivere l'endpoint API predefinito - utile per modelli self-hosted (Ollama, LM Studio, vLLM) o proxy.",
+    "base_url_invalid": "L'URL di base deve essere un URL valido del tipo http:// o https://"
   },
   "ocr": {
     "extracted_text": "Testo estratto (OCR)",
@@ -2555,7 +2601,8 @@
     "remove_from_launch_bar": "Rimuovi dalla barra di avvio"
   },
   "link": {
-    "failed_to_open": "Impossibile aprire il link '{{- href}}': {{- message}}"
+    "failed_to_open": "Impossibile aprire il link '{{- href}}': {{- message}}",
+    "copy_url": "Copia l'URL"
   },
   "display_mode": {
     "source": "Visualizza sorgente",
@@ -2598,20 +2645,33 @@
     "cancel": "Annulla"
   },
   "spreadsheet": {
-    "read-only": "Questa nota è di sola lettura."
+    "read-only": "Questa nota è di sola lettura.",
+    "export-xlsx": "Esporta in Excel (.xlsx)",
+    "export-csv": "Esporta in CSV (.csv)",
+    "export-failed": "Non è stato possibile esportare il foglio Excel.",
+    "export-csv-failed": "Non è stato possibile esportare il foglio di calcolo in formato CSV."
   },
   "markdown_editor": {
     "image_upload_failed": "Impossibile caricare l'immagine \"{{name}}\"."
   },
   "markdown_slash_commands": {
-    "date": "Inserisci la data e l'ora attuali",
+    "date": "Inserisci la data attuale e l'ora",
     "include": "Aggiungi un'altra nota",
     "image": "Carica e inserisci un'immagine",
     "link": "Inserisci un link alla nota",
     "math": "Inserisci un blocco di equazioni matematiche",
     "footnote": "Inserisci una nota a piè di pagina",
     "mermaid": "Inserisci un diagramma Mermaid",
-    "admonition": "Inserisci l'avviso {{type}}"
+    "admonition": "Inserisci l'avviso {{type}}",
+    "mermaid_template": "Inserisci un \"{{name}}\" diagramma Mermaid",
+    "collapsible": "Inserisci un blocco a scomparsa",
+    "todo": "Inserisci una voce di attività \"{{title}}\"",
+    "todo_nonstandard": "Inserisci una voce di attività \"{{title}}\" (non standard)",
+    "placeholders": {
+      "math": "equazione",
+      "collapsible_summary": "Sommario",
+      "collapsible_details": "Dettagli"
+    }
   },
   "mobile_note_navigator": {
     "back": "Torna al livello superiore",
@@ -2674,5 +2734,67 @@
     "language": "Lingua",
     "continue": "Continua",
     "your-ip-addresses": "Indirizzi per questo dispositivo"
+  },
+  "text-editor": {
+    "checkbox-tooltip": "Clicca con il tasto destro del mouse per visualizzare altri stati dell'attività.\nPremi {{shortcut}} per passare da uno stato all'altro.",
+    "edit-states-tooltip": "Modifica gli stati delle attività",
+    "unknown-task-state": "Stato dell'attività personalizzata non definito",
+    "task-state-dropped": "La definizione dello stato dell'attività personalizzata \"{{title}}\" ({{id}}) è stata eliminata per il seguente motivo: {{reason}}",
+    "validation-errors": {
+      "undefined-name": "identificatore non definito",
+      "invalid-name": "identificatore non valido",
+      "duplicate-name": "identificatore duplicato",
+      "missing-title": "titolo mancante",
+      "missing-icon": "icona mancante",
+      "invalid-symbol": "Il simbolo Markdown deve essere composto da un solo carattere, ad eccezione di \"[\", \" \", \"X\" e \"]\"",
+      "duplicate-symbol": "simbolo markdown duplicato"
+    },
+    "collapsible-body-placeholder": "Digita qui il contenuto...",
+    "collapsible-button-label": "Blocco pieghevole",
+    "collapsible-handle-tooltip": "Trascina per riposizionare il blocco a scomparsa",
+    "collapsible-select-label": "Seleziona il blocco a scomparsa",
+    "collapsible-title-placeholder": "Sintesi",
+    "collapsible-toggle-label": "Apri/chiudi il blocco",
+    "collapsible-tooltip": "Clicca sulla freccia oppure premi {{shortcut}} per comprimere/espandere."
+  },
+  "slash_commands": {
+    "bulleted_list_description": "Crea un elenco puntato",
+    "numbered_list_description": "Crea un elenco numerato",
+    "todo_list_description": "Crea una lista delle cose da fare",
+    "align_left_description": "Allinea il testo a sinistra",
+    "align_center_description": "Allinea il testo al centro",
+    "align_right_description": "Allinea il testo a destra",
+    "justify_description": "Allineamento del testo a sinistra",
+    "admonition_description": "Inserisce un nuovo avviso",
+    "collapsible_description": "Inserisci una sezione attivabile che nasconda/mostri il contenuto al clic.",
+    "footnote_description": "Crea una nuova nota a piè di pagina e inserisci il riferimento qui",
+    "datetime_description": "Inserisci la data e l'ora attuale",
+    "internal_link_description": "Inserisci un link a un'altra nota di Trilium",
+    "math_description": "Inserisci un'equazione matematica",
+    "include_note_description": "Mostra il contenuto di un'altra nota in questa nota",
+    "page_break_description": "Inserisci un'interruzione di pagina (per la stampa)",
+    "markdown_import_description": "Importa un file Markdown in questa nota",
+    "anchor_description": "Inserisci un collegamento per i link interni"
+  },
+  "security": {
+    "backend_scripting_title": "Scripting sul backend",
+    "backend_scripting_section_description": "Gli script di backend dispongono di pieno accesso al server, inclusi il file system, la rete e i comandi del sistema operativo. Possono essere attivati tramite sincronizzazione, importazione o qualsiasi contenuto che includa attributi eseguibili. Gli script di frontend sono sempre abilitati poiché vengono eseguiti in un contesto browser isolato.",
+    "backend_scripting_label": "Esecuzione di script sul backend",
+    "backend_scripting_description": "Consenti l'esecuzione di script di backend (script di avvio, gestori di richieste personalizzati, gestori di eventi, script pianificati, ecc.).",
+    "sql_console_title": "SQL console",
+    "sql_console_section_description": "La console SQL consente di eseguire query SQL dirette sul database. Ciò può essere utilizzato per leggere dati sensibili (ad esempio, segreti di sincronizzazione, chiavi API) e per modificare o eliminare qualsiasi dato. Uno script frontend dannoso potrebbe inoltre accedere all'API della console SQL tramite programmazione.",
+    "sql_console_label": "SQL console",
+    "sql_console_description": "Consenti l'esecuzione di query nella console SQL.",
+    "how_to_enable": "Come abilitare",
+    "server_config_hint": "Aggiungi quanto segue al tuo file config.ini:",
+    "server_env_hint": "Oppure imposta la seguente variabile d'ambiente:",
+    "restart_required": "Per rendere effettiva questa modifica è necessario riavviare il sistema.",
+    "restart_now": "Riavvia subito l'applicazione"
+  },
+  "snippet_badge": {
+    "label": "Snippet {{type}}",
+    "type_text": "Testo",
+    "type_code": "Codice",
+    "tooltip": "Un frammento di testo o codice riutilizzabile, pensato per essere inserito nell'editor (dal menu degli snippet nella barra degli strumenti o tramite un comando con la barra)."
   }
 }

@@ -12,6 +12,36 @@ import { t } from "../services/i18n.js";
 import options from "../services/options.js";
 import OnClickButtonWidget from "./buttons/onclick_button.js";
 import RightPanelWidget from "./right_panel_widget.js";
+import DOMPurify, { type Config as DOMPurifyConfig } from "dompurify";
+
+/**
+ * DOMPurify configuration for highlight list items. Highlighted spans are
+ * extracted from note content and inserted into the DOM, so they are sanitized
+ * to prevent XSS. Uses the built-in HTML and MathML profiles (so inline math
+ * markup survives), then restricts to inline-only content via FORBID_TAGS.
+ */
+const HIGHLIGHT_PURIFY_CONFIG: DOMPurifyConfig = {
+    USE_PROFILES: { html: true, mathMl: true },
+    FORBID_TAGS: [
+        "script", "style", "iframe", "object", "embed", "link", "meta",
+        "base", "noscript", "template", "form", "input", "textarea",
+        "button", "select", "option",
+        "div", "p", "h1", "h2", "h3", "h4", "h5", "h6",
+        "blockquote", "pre", "section", "article", "aside", "nav",
+        "header", "footer", "main", "figure", "figcaption",
+        "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+        "ul", "ol", "li", "dl", "dt", "dd",
+        "hr", "img", "video", "audio", "picture", "canvas",
+        "svg", "foreignObject"
+    ],
+    FORBID_ATTR: [
+        "onerror", "onload", "onclick", "onmouseover", "onfocus",
+        "onblur", "onsubmit", "onreset", "onchange", "oninput",
+        "onkeydown", "onkeyup", "onkeypress"
+    ],
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false
+};
 
 const TPL = /*html*/`<div class="highlights-list-widget">
     <style>
@@ -180,14 +210,14 @@ export default class HighlightsListWidget extends RightPanelWidget {
 
             if (prevEndIndex !== -1 && startIndex === prevEndIndex) {
                 // If the previous element is connected to this element in HTML, then concatenate them into one.
-                $highlightsList.children().last().append(subHtml);
+                $highlightsList.children().last().append(DOMPurify.sanitize(subHtml, HIGHLIGHT_PURIFY_CONFIG) as string);
             } else {
                 const hasText = $(subHtml).text().trim();
 
                 if (hasText) {
                     $highlightsList.append(
                         $("<li>")
-                            .html(subHtml)
+                            .html(DOMPurify.sanitize(subHtml, HIGHLIGHT_PURIFY_CONFIG) as string)
                             .on("click", () => this.jumpToHighlightsList(findSubStr, hltIndex))
                     );
 

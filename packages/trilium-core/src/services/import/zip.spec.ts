@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -18,10 +19,8 @@ async function testImport(fileName: string) {
     return testImportBuffer(buffer);
 }
 
-async function testImportBuffer(buffer: Buffer) {
-    const taskContext = TaskContext.getInstance("import-mdx", "importNotes", {
-        textImportedAsText: true
-    });
+async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData: Record<string, unknown> = { textImportedAsText: true }) {
+    const taskContext = TaskContext.getInstance(taskId, "importNotes", taskData);
 
     return new Promise<{ importedNote: BNote; rootNote: BNote }>((resolve, reject) => {
         getContext().init(async () => {
@@ -116,6 +115,37 @@ describe("processNoteContent", () => {
         expect(content).toStrictEqual(`{"view":{"center":{"lat":49.19598332223546,"lng":-2.1414576506668808},"zoom":12}}`);
     });
 
+    it("sanitizes book note HTML content on safe import (GHSA-h7w4-cjfg-cvj8)", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "bookXssNote1",
+                title: "Book Payload",
+                type: "book",
+                mime: "text/html",
+                dataFileName: "Book Payload.html",
+                attributes: [],
+                attachments: []
+            }]
+        };
+
+        const payload = `<img src=x onerror="require('child_process').exec('calc')"><b>safe</b>`;
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Book Payload.html": payload
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-book-safe", { textImportedAsText: true, safeImport: true });
+        const content = importedNote.getContent() as string;
+
+        expect(importedNote.type).toBe("book");
+        expect(content).not.toContain("onerror");
+        expect(content).not.toContain("child_process");
+        // Benign markup survives sanitization.
+        expect(content).toContain("safe");
+    });
+
     it("rewrites relative attachment paths in markdown code notes on import", async () => {
         const metaFile = {
             formatVersion: 2,
@@ -149,7 +179,56 @@ describe("processNoteContent", () => {
         expect(content).toContain("/image/image.jpg)");
         expect(content).not.toContain("Markdown Note_image.jpg");
     });
+
+    it("imports a CSV entry as an editable spreadsheet note", async () => {
+        const zipBuffer = await createZipBuffer({ "csv_import_sample.csv": "a,b\r\n1,2" });
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-csv", { spreadsheetImportedAsSpreadsheet: true });
+
+        const note = rootNote.getChildNotes().find((n) => n.title === "csv_import_sample");
+        expect(note?.type).toBe("spreadsheet");
+        expect(note?.mime).toBe("text/x-spreadsheet");
+
+        const sheet = parseWorkbookSheet(note?.getContent());
+        expect(sheet.cellData[0][0].v).toBe("a");
+        expect(sheet.cellData[1][1].v).toBe(2);
+    });
+
+    it("imports an XLSX entry as an editable spreadsheet note", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("Sheet1");
+        ws.getCell("A1").value = "hello";
+        ws.getCell("B1").value = 42;
+        const xlsxBuffer = Buffer.from(await wb.xlsx.writeBuffer());
+
+        const zipBuffer = await createZipBuffer({ "xlsx_import_sample.xlsx": xlsxBuffer });
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-xlsx", { spreadsheetImportedAsSpreadsheet: true });
+
+        const note = rootNote.getChildNotes().find((n) => n.title === "xlsx_import_sample");
+        expect(note?.type).toBe("spreadsheet");
+        expect(note?.mime).toBe("text/x-spreadsheet");
+
+        const sheet = parseWorkbookSheet(note?.getContent());
+        expect(sheet.cellData[0][0].v).toBe("hello");
+        expect(sheet.cellData[0][1].v).toBe(42);
+    });
+
+    it("imports a CSV entry as a plain file note when the spreadsheet option is off", async () => {
+        const zipBuffer = await createZipBuffer({ "csv_as_file_sample.csv": "a,b\r\n1,2" });
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-csv-off", { spreadsheetImportedAsSpreadsheet: false });
+
+        const note = rootNote.getChildNotes().find((n) => n.title === "csv_as_file_sample");
+        expect(note?.type).toBe("file");
+        expect(note?.mime).toBe("text/csv");
+    });
 }, 60_000);
+
+/** Parses a spreadsheet note's content and returns its single (first) sheet's data. */
+function parseWorkbookSheet(content: string | Uint8Array | undefined) {
+    expect(typeof content).toBe("string");
+    const parsed = JSON.parse(content as string);
+    const sheetId = parsed.workbook.sheetOrder[0];
+    return parsed.workbook.sheets[sheetId];
+}
 
 function getNoteByTitlePath(parentNote: BNote, ...titlePath: string[]) {
     let cursor = parentNote;

@@ -5,6 +5,7 @@ import contentRenderer from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import linkService from "./link.js";
+import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import treeService from "./tree.js";
 import utils from "./utils.js";
 
@@ -40,7 +41,7 @@ function setupElementTooltip($el: JQuery<HTMLElement>) {
     $el.on("pointerenter", mouseEnterHandler);
 }
 
-async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<T, undefined, T, T>) {
+export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<T, undefined, T, T>) {
     if (e.pointerType !== "mouse") return;
 
     const $link = $(this);
@@ -94,7 +95,8 @@ async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<
         return;
     }
 
-    const html = `<div class="note-tooltip-content">${content}</div>`;
+    const sanitizedContent = sanitizeNoteContentHtml(content);
+    const html = `<div class="note-tooltip-content">${sanitizedContent}</div>`;
     const tooltipClass = `tooltip-${Math.floor(Math.random() * 999_999_999)}${note ? ` ${note.getColorClass()}` : ""}`;
 
     // we need to check if we're still hovering over the element
@@ -112,6 +114,8 @@ async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<
             title: html,
             html: true,
             template: `<div class="tooltip note-tooltip ${tooltipClass}" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>`,
+            // Content is pre-sanitized via DOMPurify so Bootstrap's built-in sanitizer
+            // (which is too aggressive for our rich-text content) can be disabled.
             sanitize: false,
             customClass: linkId
         });
@@ -144,7 +148,7 @@ async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<
     }
 }
 
-async function renderTooltip(note: FNote | null) {
+export async function renderTooltip(note: FNote | null) {
     if (!note) {
         return `<div>${t("note_tooltip.note-has-been-deleted")}</div>`;
     }
@@ -187,7 +191,7 @@ async function renderTooltip(note: FNote | null) {
     return content;
 }
 
-function renderFootnoteOrAnchor($link: JQuery<HTMLElement>, url: string) {
+export function renderFootnoteOrAnchor($link: JQuery<HTMLElement>, url: string) {
     // A footnote text reference
     const footnoteRef = url.substring(3);
     let $targetContent: JQuery<HTMLElement>;
@@ -229,6 +233,7 @@ function renderFootnoteOrAnchor($link: JQuery<HTMLElement>, url: string) {
 
     let footnoteContent = $targetContent.html();
     footnoteContent = `<div class="ck-content">${footnoteContent}</div>`;
+    /* v8 ignore next -- footnoteContent is always a non-empty wrapper div here, so the || "" fallback is unreachable */
     return footnoteContent || "";
 }
 

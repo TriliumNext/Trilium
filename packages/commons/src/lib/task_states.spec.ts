@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DONE_TASK_STATE, NONE_TASK_STATE, type TaskStateDef, type TaskStateValidationReason, validateTaskStates } from "./task_states.js";
+import { DEFAULT_TASK_STATES, DONE_STATE_NAME, DONE_TASK_STATE, isAnchorState, NONE_STATE_NAME, NONE_TASK_STATE, type TaskStateDef, type TaskStateValidationReason, validateTaskStates } from "./task_states.js";
 
 function customState(overrides: Partial<TaskStateDef>): TaskStateDef {
     return {
@@ -67,5 +67,44 @@ describe("validateTaskStates", () => {
         const { valid, errors } = validateTaskStates([customState({ markdownSymbol: "" })]);
         expect(errors).toHaveLength(0);
         expect(valid).toHaveLength(1);
+    });
+
+    it("falls back to empty id/title when the dropped state lacks them", () => {
+        const { errors } = validateTaskStates([customState({ id: undefined, title: "", name: "" })]);
+        expect(errors[0]).toEqual({ id: "", title: "", reason: "undefined-name" });
+    });
+
+    it("uses the name as the dropped state's title when the title is missing", () => {
+        const { errors } = validateTaskStates([customState({ title: "", name: "in progress" })]);
+        expect(errors[0]).toEqual({ id: "_id", title: "in progress", reason: "invalid-name" });
+    });
+});
+
+describe("isAnchorState", () => {
+    it("treats the built-in unchecked anchor as an anchor", () => {
+        expect(isAnchorState("none")).toBe(true);
+        expect(isAnchorState(NONE_STATE_NAME)).toBe(true);
+    });
+
+    it("treats the built-in checked anchor as an anchor", () => {
+        expect(isAnchorState("done")).toBe(true);
+        expect(isAnchorState(DONE_STATE_NAME)).toBe(true);
+    });
+
+    it("rejects customizable and empty state names", () => {
+        expect(isAnchorState("doing")).toBe(false);
+        expect(isAnchorState("")).toBe(false);
+    });
+});
+
+describe("DEFAULT_TASK_STATES", () => {
+    it("orders the states None, Doing, Done, Maybe, Cancelled", () => {
+        expect(DEFAULT_TASK_STATES.map((state) => state.name)).toEqual([
+            "none",
+            "doing",
+            "done",
+            "maybe",
+            "cancelled"
+        ]);
     });
 });

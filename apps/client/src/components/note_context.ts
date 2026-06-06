@@ -9,6 +9,7 @@ import type { ViewScope } from "../services/link.js";
 import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
+import { shouldRedirectPinnedNavigation } from "../services/tab_pinning.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
@@ -68,6 +69,12 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
     hoistedNoteId: string;
     mainNtxId: string | null;
 
+    /** When true, this tab stays on its current note: navigations to a different note open a new tab instead. Only meaningful on a main context. */
+    pinned = false;
+
+    /** ntxId of the split most recently focused within this tab; re-activating the tab restores it. Only meaningful on a main context. */
+    lastActiveNtxId?: string | null;
+
     notePath?: string | null;
     noteId?: string | null;
     parentNoteId?: string | null;
@@ -112,7 +119,8 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         return !this.noteId;
     }
 
-    async setNote(inputNotePath: string | undefined, opts: SetNoteOpts = {}) {
+    /** @returns the note context that ended up showing the note: usually `this`, or a new tab when a pinned tab redirected the navigation. `undefined` if nothing was navigated. */
+    async setNote(inputNotePath: string | undefined, opts: SetNoteOpts = {}): Promise<NoteContext | undefined> {
         opts.triggerSwitchEvent = opts.triggerSwitchEvent !== undefined ? opts.triggerSwitchEvent : true;
         opts.viewScope = opts.viewScope || {};
         opts.viewScope.viewMode = opts.viewScope.viewMode || "default";
@@ -128,7 +136,17 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         }
 
         if (this.notePath === resolvedNotePath && utils.areObjectsEqual(this.viewScope, opts.viewScope)) {
-            return;
+            return this;
+        }
+
+        // Pinned tabs stay on the note they were pinned to — redirect navigation to a new tab instead.
+        const { noteId: targetNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath);
+        if (shouldRedirectPinnedNavigation(this.pinned, this.noteId, targetNoteId)) {
+            return appContext.tabManager.openContextWithNote(resolvedNotePath, {
+                activate: true,
+                viewScope: opts.viewScope,
+                hoistedNoteId: this.hoistedNoteId
+            });
         }
 
         await this.triggerEvent("beforeNoteSwitch", { noteContext: this });
@@ -174,6 +192,8 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         if (utils.isMobile()) {
             this.triggerCommand("setActiveScreen", { screen: "detail" });
         }
+
+        return this;
     }
 
     async setHoistedNoteIfNeeded() {
@@ -290,7 +310,9 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             notePath: this.notePath,
             hoistedNoteId: this.hoistedNoteId,
             active: this.isActive(),
-            viewScope: this.viewScope
+            viewScope: this.viewScope,
+            pinned: this.pinned,
+            lastActiveNtxId: this.lastActiveNtxId
         };
     }
 
@@ -580,9 +602,12 @@ export function openInCurrentNoteContext(evt: MouseEvent | JQuery.ClickEvent | J
     const noteContext = ntxId ? appContext.tabManager.getNoteContextById(ntxId) : appContext.tabManager.getActiveContext();
 
     if (noteContext) {
-        noteContext.setNote(notePath, { viewScope }).then(() => {
-            if (noteContext !== appContext.tabManager.getActiveContext()) {
-                appContext.tabManager.activateNoteContext(noteContext.ntxId);
+        noteContext.setNote(notePath, { viewScope }).then((resultContext) => {
+            // setNote may have redirected to a new tab (e.g. when this context is pinned), which is
+            // already activated — focus whichever context actually ended up showing the note.
+            const target = resultContext ?? noteContext;
+            if (target !== appContext.tabManager.getActiveContext()) {
+                appContext.tabManager.activateNoteContext(target.ntxId);
             }
         });
     } else {

@@ -49,4 +49,37 @@ describe("#formatLogMessage", () => {
     it("handles zero arguments", () => {
         expect(formatLogMessage()).toBe("");
     });
+
+    it("limits nesting depth to MAX_LOG_DEPTH, replacing deeper levels with [Object]", () => {
+        const result = formatLogMessage({ a: { b: { c: { d: 1 } } } });
+        expect(result).toContain("[Object]");
+        // The deepest level (d) is beyond the depth limit and is omitted from output.
+        expect(result).not.toContain('"d"');
+    });
+
+    it("serializes sibling nested objects independently (ancestor pop)", () => {
+        const result = formatLogMessage({ first: { x: 1 }, second: { y: 2 } });
+        expect(result).toContain('"x": 1');
+        expect(result).toContain('"y": 2');
+        expect(result).not.toContain("[Circular]");
+    });
+
+    it("falls back to String(arg) when JSON.stringify throws (BigInt value)", () => {
+        const result = formatLogMessage({ big: 10n });
+        expect(result).toBe("[object Object]");
+    });
+});
+
+describe("#deferred resolution", () => {
+    it("can be resolved", async () => {
+        const d = deferred<number>();
+        d.resolve(5);
+        expect(await d).toBe(5);
+    });
+
+    it("can be rejected", async () => {
+        const d2 = deferred<number>();
+        d2.reject(new Error("x"));
+        await expect(d2).rejects.toThrow("x");
+    });
 });

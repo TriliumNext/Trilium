@@ -26,13 +26,15 @@ import sheetsNoteEnUS from '@univerjs/preset-sheets-note/locales/en-US';
 import { UniverSheetsSortPreset } from '@univerjs/preset-sheets-sort';
 import UniverPresetSheetsSortEnUS from '@univerjs/preset-sheets-sort/locales/en-US';
 import { createUniver, FUniver, LocaleType, mergeLocales } from '@univerjs/presets';
-import { IDialogService, ISidebarService } from '@univerjs/ui';
+import { CalculationMode } from '@univerjs/sheets-formula';
+import { IDialogService, IShortcutService, ISidebarService } from '@univerjs/ui';
 import { MutableRef, useEffect, useRef } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
 import { t } from "../../../services/i18n";
 import { useColorScheme, useEffectiveReadOnly, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
+import useSpreadsheetExport from "./export";
 import usePersistence from "./persistence";
 
 function buildReadOnlyLocaleOverrides() {
@@ -71,8 +73,10 @@ function SpreadsheetEditor({ note, noteContext, readOnly }: TypeWidgetProps & { 
     const apiRef = useRef<FUniver>();
 
     useInitializeSpreadsheet(containerRef, apiRef, readOnly);
+    useReleaseFillShortcuts(apiRef);
     useDarkMode(apiRef);
     usePersistence(note, noteContext, apiRef, containerRef);
+    useSpreadsheetExport(apiRef, note, noteContext);
     useSearchIntegration(apiRef, noteContext);
     useDismissDialogsOnNoteSwitch(apiRef);
     useFixRadixPortals();
@@ -120,6 +124,69 @@ function useFixRadixPortals() {
     }, []);
 }
 
+// Univer binds Ctrl+R to fill-right and Ctrl+D to fill-down, which shadow the
+// browser/Electron refresh (Ctrl+R) and bookmark (Ctrl+D) shortcuts.
+const FILL_SHORTCUT_COMMAND_IDS = new Set([
+    "sheet.command.copy-right", // Ctrl+R
+    "sheet.command.copy-down"   // Ctrl+D
+]);
+
+interface ShortcutItemLike { id: string; }
+interface ShortcutServiceLike {
+    getAllShortcuts(): ShortcutItemLike[];
+    registerShortcut(shortcut: ShortcutItemLike): { dispose(): void };
+}
+
+/**
+ * Unregister Univer's fill-right (Ctrl+R) and fill-down (Ctrl+D) keyboard bindings so
+ * the keystrokes fall through to the browser instead of silently copying the active
+ * cell into its neighbour when a user presses Ctrl+R expecting a reload. The commands
+ * remain available via the toolbar/context menu and the fill handle.
+ */
+function useReleaseFillShortcuts(apiRef: MutableRef<FUniver | undefined>) {
+    useEffect(() => {
+        const univerAPI = apiRef.current;
+        if (!univerAPI) return;
+
+        const releaseShortcuts = () => {
+            try {
+                const injector = (univerAPI as unknown as { _injector: { get(id: unknown): ShortcutServiceLike } })._injector;
+                const shortcutService = injector.get(IShortcutService);
+                for (const shortcut of shortcutService.getAllShortcuts()) {
+                    if (FILL_SHORTCUT_COMMAND_IDS.has(shortcut.id)) {
+                        // getAllShortcuts() hands back the exact item objects the service stores
+                        // in its internal Sets, keyed by identity. registerShortcut(item) re-adds
+                        // that same object (a Set no-op) and returns a disposer that deletes it —
+                        // so disposing immediately removes the original binding, not a duplicate.
+                        shortcutService.registerShortcut(shortcut).dispose();
+                    }
+                }
+                // Guard the undocumented mechanic above against future Univer changes: if any
+                // fill binding survived, the keystrokes are still captured and our refresh/bookmark
+                // fix is silently broken.
+                const stillBound = shortcutService.getAllShortcuts().some(s => FILL_SHORTCUT_COMMAND_IDS.has(s.id));
+                if (stillBound) {
+                    console.warn("Spreadsheet fill shortcuts could not be released; Ctrl+R/Ctrl+D may be captured.");
+                }
+            } catch (e) {
+                console.error("Failed to release spreadsheet fill shortcuts", e);
+            }
+        };
+
+        // Shortcuts are registered during plugin init. The Rendered stage may already have
+        // been reached synchronously while the Univer instance was created (in which case the
+        // event below never fires again), so release immediately and keep the listener as a
+        // fallback for the asynchronous case.
+        releaseShortcuts();
+        const disposable = univerAPI.addEvent(univerAPI.Event.LifeCycleChanged, ({ stage }) => {
+            if (stage === univerAPI.Enum.LifecycleStages.Rendered) {
+                releaseShortcuts();
+            }
+        });
+        return () => disposable.dispose();
+    }, [ apiRef ]);
+}
+
 function useInitializeSpreadsheet(containerRef: MutableRef<HTMLDivElement | null>, apiRef: MutableRef<FUniver | undefined>, readOnly: boolean) {
     useEffect(() => {
         if (!containerRef.current) return;
@@ -152,6 +219,13 @@ function useInitializeSpreadsheet(containerRef: MutableRef<HTMLDivElement | null
                     contextMenu: !readOnly,
                     formulaBar: !readOnly,
                     footer: readOnly ? false : undefined,
+                    // Skip the formula recalculation Univer runs on workbook load. Our
+                    // content is always Univer-saved (formulas already carry cached
+                    // results), so the default WHEN_EMPTY mode only re-runs formulas that
+                    // evaluate to 0/"" and writes identical results back — which the change
+                    // listener persists as a spurious save on every open. NO_CALCULATION
+                    // avoids that; edit-driven recalculation is unaffected.
+                    formula: { initialFormulaComputing: CalculationMode.NO_CALCULATION },
                     menu: {
                         "sheet.contextMenu.permission": { hidden: true },
                         "sheet-permission.operation.openPanel": { hidden: true },

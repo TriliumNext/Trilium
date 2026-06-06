@@ -481,6 +481,15 @@ describe("preload script", () => {
             expect(callback).toHaveBeenCalled();
         });
 
+        it("onDidNavigateInPage registers and forwards did-navigate-in-page channel", () => {
+            const callback = vi.fn();
+            nav().onDidNavigateInPage(callback);
+            const listeners = ipcRendererListeners.get("did-navigate-in-page")!;
+            expect(listeners).toHaveLength(1);
+            listeners[0]();
+            expect(callback).toHaveBeenCalled();
+        });
+
         it("removeDidNavigateListeners clears both navigation listeners", () => {
             nav().onDidNavigate(vi.fn());
             nav().onDidNavigateInPage(vi.fn());
@@ -526,6 +535,20 @@ describe("preload script", () => {
             remaining[0]({}, { type: "toast", message: "hi" });
             expect(first).not.toHaveBeenCalled();
             expect(second).toHaveBeenCalledWith({ type: "toast", message: "hi" });
+        });
+    });
+
+    describe("security", () => {
+        const security = () => getGroup("security");
+
+        it("setBackendScriptingEnabled invokes the corresponding IPC channel", async () => {
+            await security().setBackendScriptingEnabled(true);
+            expect(ipcRendererInvoked).toContainEqual({ channel: "security-set-backend-scripting", args: [true] });
+        });
+
+        it("setSqlConsoleEnabled invokes the corresponding IPC channel", async () => {
+            await security().setSqlConsoleEnabled(false);
+            expect(ipcRendererInvoked).toContainEqual({ channel: "security-set-sql-console", args: [false] });
         });
     });
 });

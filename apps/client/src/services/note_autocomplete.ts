@@ -363,8 +363,8 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         ]
     );
 
-    // TODO: Types fail due to "autocomplete:selected" not being registered in type definitions.
-    ($el as any).on("autocomplete:selected", async (event: Event, suggestion: Suggestion) => {
+    //@ts-expect-error The `autocomplete:selected` handler takes an extra `suggestion` argument that jQuery's `.on()` typings don't model.
+    $el.on("autocomplete:selected", async (event: Event, suggestion: Suggestion) => {
         if (suggestion.action === "command") {
             $el.autocomplete("close");
             $el.trigger("autocomplete:commandselected", [suggestion]);
@@ -452,6 +452,7 @@ function init() {
 
         const chunks = notePath.split("/");
 
+        /* v8 ignore next -- String.split always yields at least one element, so the `: null` branch is unreachable */
         return chunks.length >= 1 ? chunks[chunks.length - 1] : null;
     };
 
