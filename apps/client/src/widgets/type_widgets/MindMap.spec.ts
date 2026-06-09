@@ -1,3 +1,7 @@
+// @vitest-environment jsdom
+// DOMPurify relies on browser-faithful DOM traversal (NodeIterator); happy-dom
+// mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
+// sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import { describe, expect, it, vi } from "vitest";
 
 // The node-menu plugin touches the DOM at import time, which fails under happy-dom
