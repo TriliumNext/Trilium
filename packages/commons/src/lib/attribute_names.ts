@@ -27,6 +27,7 @@ type Labels = {
     run: string;
     widget: boolean;
     "disabled:widget": boolean;
+    customRequestHandler: string;
 
     // Tree specific
     subtreeHidden: boolean;

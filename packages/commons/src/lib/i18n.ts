@@ -104,3 +104,12 @@ export type DISPLAYABLE_LOCALE_IDS = Exclude<typeof UNSORTED_LOCALES[number], { 
 export function getTesseractCode(localeId: string): string | null {
     return LOCALES.find((l) => l.id === localeId)?.tesseractCode ?? null;
 }
+
+/**
+ * Returns `true` if the given locale ID corresponds to a known locale that can be used as the
+ * application's display language (i.e. it exists and is not content-only).
+ */
+export function isDisplayableLocale(localeId: string | null | undefined): localeId is DISPLAYABLE_LOCALE_IDS {
+    if (!localeId) return false;
+    return LOCALES.some((l) => l.id === localeId && !l.contentOnly);
+}

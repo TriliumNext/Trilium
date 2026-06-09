@@ -33,12 +33,12 @@
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.81",
     "@ai-sdk/google": "3.0.80",
-    "@ai-sdk/openai": "3.0.67",
+    "@ai-sdk/openai": "3.0.68",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "ai": "6.0.195",
+    "ai": "6.0.197",
     "better-sqlite3": "12.10.0",
     "html-to-text": "10.0.0",
-    "i18next": "26.3.0",
+    "i18next": "26.3.1",
     "i18next-fs-backend": "2.6.6",
     "ipaddr.js": "^2.4.0",
     "js-yaml": "4.2.0",
@@ -90,7 +90,7 @@
     "is-animated": "2.0.2",
     "is-svg": "6.1.0",
     "jimp": "1.6.1",
-    "marked": "18.0.4",
+    "marked": "18.0.5",
     "mime-types": "3.0.2",
     "multer": "2.1.1",
     "normalize-strings": "1.1.1",
@@ -102,7 +102,7 @@
     "tesseract.js": "7.0.0",
     "time2fa": "1.4.2",
     "tmp": "0.2.7",
-    "vite": "8.0.14",
+    "vite": "8.0.16",
     "yauzl": "3.3.2"
   }
 }

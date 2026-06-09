@@ -26,12 +26,19 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
     toolbar?: boolean;
     /** If set, disables text selection in the rendered PDF. */
     disableSelection?: boolean;
+    /**
+     * Forces the rendered pages to use at least this device-pixel-ratio when rasterizing to canvas.
+     * On standard-DPI displays (DPR 1) PDF.js renders at 1× and text/headings look coarsely
+     * anti-aliased; raising this supersamples the canvas (mimicking a high-DPI screen) for a
+     * crisper preview. Has no effect when the real DPR already meets or exceeds this value.
+     */
+    minPixelRatio?: number;
 }
 
 /**
  * Reusable component displaying a PDF. The PDF needs to be provided via a URL.
  */
-export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad, editable, toolbar = true, disableSelection }: PdfViewerProps) {
+export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad, editable, toolbar = true, disableSelection, minPixelRatio }: PdfViewerProps) {
     const iframeRef = useSyncedRef(externalIframeRef, null);
     const [ locale ] = useTriliumOption("locale");
     const [ newLayout ] = useTriliumOptionBool("newLayout");
@@ -42,7 +49,7 @@ export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad
             ref={iframeRef}
             class="pdf-preview"
             style={{width: "100%", height: "100%"}}
-            src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}`}
+            src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}${minPixelRatio ? `&minPixelRatio=${minPixelRatio}` : ""}`}
             onLoad={() => {
                 injectStyles();
                 onLoad?.();

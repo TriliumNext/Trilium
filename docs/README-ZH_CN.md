@@ -11,13 +11,12 @@
 
 # Trilium Notes
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub 赞助者](https://img.shields.io/github/sponsors/eliandoran) ![LiberaPay
+赞助者](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker 拉取次数](https://img.shields.io/docker/pulls/triliumnext/trilium) ![GitHub
+下载量
+(所有资源，所有版本)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![翻译状态](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->

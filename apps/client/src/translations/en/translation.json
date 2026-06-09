@@ -2383,7 +2383,8 @@
     "unpin_tab_description": "Unpin this tab, allowing it to be closed and moved freely"
   },
   "content_renderer": {
-    "open_externally": "Open externally"
+    "open_externally": "Open externally",
+    "mermaid_diagram_error": "Mermaid diagram failed to render: {{error}}"
   },
   "modal": {
     "close": "Close",

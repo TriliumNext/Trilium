@@ -16,6 +16,8 @@ pmOnFail: ignore
 
 overrides:
   "@codemirror/language": "6.12.3"
+  "@codemirror/autocomplete": "6.20.2"
+  "@codemirror/lint": "6.9.6"
   "@lezer/highlight": "1.2.3"
   "@lezer/common": "1.5.2"
   "mermaid": "11.15.0"
@@ -84,7 +86,7 @@ overrides:
   "basic-ftp@=5.2.0": ">=5.2.1"
   # extract-zip's yauzl@2 hangs electron-forge packaging on Node >=24.16 (electron/forge#4277,
   # electron/electron#51619). yauzl@3.3.1 is the maintainer-recommended fix.
-  "extract-zip>yauzl": "3.3.1"
+  "extract-zip>yauzl": "3.3.2"
 
 patchedDependencies:
   "@ckeditor/ckeditor5-mention": patches/@ckeditor__ckeditor5-mention.patch

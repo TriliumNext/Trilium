@@ -252,6 +252,21 @@ $$`;
         expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
     });
 
+    it("preserves table cell colspan", () => {
+        const html = /*html*/`<figure class="table"><table><tbody><tr><td colspan="2">Merged</td></tr><tr><td>A</td><td>B</td></tr></tbody></table></figure>`;
+        expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
+    });
+
+    it("preserves table cell rowspan", () => {
+        const html = /*html*/`<figure class="table"><table><tbody><tr><td rowspan="2">Merged</td><td>A</td></tr><tr><td>B</td></tr></tbody></table></figure>`;
+        expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
+    });
+
+    it("preserves colspan and rowspan together on header and body cells", () => {
+        const html = /*html*/`<figure class="table"><table><thead><tr><th colspan="2">Header</th></tr></thead><tbody><tr><td rowspan="2">Side</td><td>A</td></tr><tr><td>B</td></tr></tbody></table></figure>`;
+        expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
+    });
+
     it("generates strike-through text", () => {
         const input = `~~Hello~~ world.`;
         const expected = /*html*/`<p><del>Hello</del> world.</p>`;

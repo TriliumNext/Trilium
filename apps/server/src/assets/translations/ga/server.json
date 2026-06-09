@@ -414,7 +414,9 @@
     "presentation_slide": "Sleamhnán cur i láthair",
     "presentation_slide_first": "An chéad sleamhnán",
     "presentation_slide_second": "An dara sleamhnán",
-    "background": "Cúlra"
+    "background": "Cúlra",
+    "markdown-snippet": "Sleachta Marcála",
+    "code-snippet": "Sleachta Cód"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Níl an bunachar sonraí tosaithe, lean na treoracha ar an scáileán le do thoil.",

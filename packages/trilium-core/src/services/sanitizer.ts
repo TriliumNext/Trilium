@@ -48,6 +48,8 @@ export function sanitizeHtml(dirtyHtml: string) {
             li: ["id"],
             input: ["type", "checked"],
             img: ["width", "height"],
+            td: ["colspan", "rowspan"],
+            th: ["colspan", "rowspan"],
             code: [ "spellcheck" ]
         },
         allowedStyles: {

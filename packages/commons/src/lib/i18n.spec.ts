@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getTesseractCode, LOCALES } from "./i18n.js";
+import { getTesseractCode, isDisplayableLocale, LOCALES } from "./i18n.js";
 
 describe("getTesseractCode", () => {
     it("returns the Tesseract code for a mapped locale", () => {
@@ -31,5 +31,30 @@ describe("LOCALES", () => {
         const en = LOCALES.find((l) => l.id === "en");
         expect(en).toBeDefined();
         expect(en?.name).toBe("English (United States)");
+    });
+});
+
+describe("isDisplayableLocale", () => {
+    it("accepts known display locales", () => {
+        expect(isDisplayableLocale("en")).toBe(true);
+        expect(isDisplayableLocale("de")).toBe(true);
+    });
+
+    it("rejects empty, null or undefined values", () => {
+        expect(isDisplayableLocale("")).toBe(false);
+        expect(isDisplayableLocale(null)).toBe(false);
+        expect(isDisplayableLocale(undefined)).toBe(false);
+    });
+
+    it("rejects unknown locales", () => {
+        expect(isDisplayableLocale("nonexistent-locale")).toBe(false);
+    });
+
+    it("rejects content-only locales (selectable for content, not as a UI language)", () => {
+        const contentOnly = LOCALES.find((l) => l.contentOnly);
+        expect(contentOnly).toBeDefined();
+        if (contentOnly) {
+            expect(isDisplayableLocale(contentOnly.id)).toBe(false);
+        }
     });
 });

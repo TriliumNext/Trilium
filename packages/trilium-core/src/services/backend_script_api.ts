@@ -1,4 +1,6 @@
 import { type AttributeRow, dayjs, formatLogMessage } from "@triliumnext/commons";
+import type { BackendApi as PublicBackendApi, ScriptBNote as PublicScriptBNote } from "@triliumnext/commons/src/lib/script_api.js";
+import type { Request, Response } from "express";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import Becca from "../becca/becca-interface";
 import * as cheerio from "cheerio";
@@ -76,6 +78,26 @@ export interface Api {
      * Entity whose event triggered this execution
      */
     originEntity?: AbstractBeccaEntity<any> | null;
+
+    // Note: these are optional here (unlike the gated public surface in
+    // `@triliumnext/commons`, where they're required) because this interface types
+    // *every* backend script, and they're only populated for custom request handlers.
+    /**
+     * Express request object. Only present when the script runs as a custom request
+     * handler (a note with the `#customRequestHandler` label invoked via `/custom/...`);
+     * `undefined` for every other backend script.
+     */
+    req?: Request;
+    /**
+     * Express response object — write the HTTP response here. Only present in custom
+     * request handlers; `undefined` otherwise.
+     */
+    res?: Response;
+    /**
+     * Capture groups from the `#customRequestHandler` regex that matched this request's
+     * URL, in order. Only present in custom request handlers.
+     */
+    pathParams?: string[];
 
     /**
      * @deprecated Axios was deprecated since April 2024 and has now been removed following the March 2026 supply chain attack.
@@ -729,3 +751,16 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
 export default BackendScriptApi as any as {
     new(currentNote: BNote, apiParams: ApiParams): Api;
 };
+
+// --- Drift guards -----------------------------------------------------------
+// The public backend script API surface lives in @triliumnext/commons (self-
+// contained so it can feed the in-editor language service and the script-
+// deployer). These checks fail to compile — naming the offending member — if
+// that public surface claims an `api`/`BNote` member that has since been renamed
+// or removed here.
+type _MissingBackendApiMembers = Exclude<keyof PublicBackendApi, keyof Api>;
+type _MissingBNoteMembers = Exclude<keyof PublicScriptBNote, keyof BNote>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _backendApiDriftGuard: [_MissingBackendApiMembers] extends [never] ? true : _MissingBackendApiMembers = true;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _bnoteDriftGuard: [_MissingBNoteMembers] extends [never] ? true : _MissingBNoteMembers = true;

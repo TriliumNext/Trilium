@@ -9,7 +9,7 @@ import { CommandListenerData } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import utils from "../../../services/utils";
-import { useColorScheme, useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useColorScheme, useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { refToJQuerySelector } from "../../react/react_utils";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";
@@ -99,6 +99,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
     const [ noteTabWidth ] = useNoteLabelInt(note, "tabWidth");
     const [ noteUseTabs ] = useNoteLabelOptionalBool(note, "indentWithTabs");
     const [ noteWrapLines ] = useNoteLabelOptionalBool(note, "wrapLines");
+    const [ customRequestHandler ] = useNoteLabel(note, "customRequestHandler");
     const mime = useNoteProperty(note, "mime");
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -130,7 +131,9 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
     useKeyboardShortcuts("code-detail", containerRef, parentComponent, ntxId);
 
     // Code snippets (#snippet notes with a matching MIME) as `/snippet:<name>` slash commands.
-    // Disabled for Markdown notes, whose editor provides its own combined slash-command menu.
+    // Disabled for Markdown notes, whose editor provides its own combined slash-command menu. On
+    // script notes the snippet source co-exists with the TypeScript language service's source via
+    // the editor's shared completion-source registry.
     useSnippetSlashCommands(
         editorView,
         (candidate) => candidate.type === "code" && (candidate.mime === note.mime || candidate.mime === "text/plain"),
@@ -144,6 +147,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
             ntxId={ntxId} parentComponent={parentComponent}
             editorRef={combinedEditorRef} containerRef={containerRef}
             mime={mime ?? "text/plain"}
+            customRequestHandler={customRequestHandler != null}
             className="note-detail-code-editor"
             placeholder={placeholder ?? t("editable_code.placeholder")}
             vimKeybindings={vimKeymapEnabled}

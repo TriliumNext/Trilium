@@ -59,7 +59,7 @@
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
     "@types/js-yaml": "4.0.9",
-    "@types/node": "24.12.4",
+    "@types/node": "24.13.1",
     "@vitest/browser-webdriverio": "4.1.8",
     "@vitest/coverage-v8": "4.1.8",
     "@vitest/ui": "4.1.8",
@@ -70,7 +70,7 @@
     "eslint-config-preact": "2.0.0",
     "eslint-plugin-playwright": "2.10.4",
     "eslint-plugin-simple-import-sort": "13.0.0",
-    "happy-dom": "20.9.0",
+    "happy-dom": "20.10.1",
     "http-server": "14.1.1",
     "jiti": "2.7.0",
     "js-yaml": "4.2.0",
@@ -79,7 +79,7 @@
     "tsx": "4.21.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.60.1",
-    "vite": "8.0.14",
+    "vite": "8.0.16",
     "vitest": "4.1.8"
   },
   "license": "AGPL-3.0-only",
@@ -96,5 +96,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@11.5.1"
+  "packageManager": "pnpm@11.5.2"
 }

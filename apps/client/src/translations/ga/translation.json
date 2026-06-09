@@ -259,7 +259,8 @@
     },
     "import-status": "Stádas allmhairithe",
     "in-progress": "Iompórtáil ar siúl: {{progress}}",
-    "successful": "Críochnaíodh an t-allmhairiú go rathúil."
+    "successful": "Críochnaíodh an t-allmhairiú go rathúil.",
+    "spreadsheetImportedAsSpreadsheet": "Iompórtáil comhaid CSV agus Excel mar scarbhileoga in-eagarthóireachta seachas comhaid"
   },
   "include_note": {
     "dialog_title": "Cuir nóta san áireamh",
@@ -828,11 +829,11 @@
     "hide_child_notes": "Folaigh nótaí leanaí sa chrann",
     "open_all_in_tabs": "Oscail gach rud",
     "open_all_in_tabs_tooltip": "Oscail na torthaí go léir i gcluaisíní nua",
-    "open_all_confirm_one": "Osclóidh sé seo {{count}} nótaí i gcluaisíní nua. Lean ar aghaidh?",
-    "open_all_confirm_two": "",
-    "open_all_confirm_few": "",
-    "open_all_confirm_many": "",
-    "open_all_confirm_other": ""
+    "open_all_confirm_one": "Osclóidh sé seo {{count}} nóta i gcluaisíní nua. Lean ar aghaidh?",
+    "open_all_confirm_two": "Osclóidh sé seo {{count}} nótaí i gcluaisíní nua. Lean ar aghaidh?",
+    "open_all_confirm_few": "Osclóidh sé seo {{count}} nótaí i gcluaisíní nua. Lean ar aghaidh?",
+    "open_all_confirm_many": "Osclóidh sé seo {{count}} nótaí i gcluaisíní nua. Lean ar aghaidh?",
+    "open_all_confirm_other": "Osclóidh sé seo {{count}} nótaí i gcluaisíní nua. Lean ar aghaidh?"
   },
   "edited_notes": {
     "no_edited_notes_found": "Gan aon nótaí eagarthóireachta ar an lá seo go fóill...",
@@ -877,11 +878,11 @@
     "note_size": "Méid nóta",
     "note_size_info": "Tugann méid an nóta meastachán garbh ar riachtanais stórála don nóta seo. Cuirtear ábhar an nóta agus ábhar a athbhreithnithe nótaí san áireamh ann.",
     "calculate": "ríomh",
-    "subtree_size_one": "(méid fo-chrainn: {{size}} i nótaí {{count}})",
-    "subtree_size_two": "",
-    "subtree_size_few": "",
-    "subtree_size_many": "",
-    "subtree_size_other": "",
+    "subtree_size_one": "(méid fo-chrainn: {{size}} i nóta {{count}})",
+    "subtree_size_two": "(méid fo-chrainn: {{size}} i nótaí {{count}})",
+    "subtree_size_few": "(méid fo-chrainn: {{size}} i nótaí {{count}})",
+    "subtree_size_many": "(méid fo-chrainn: {{size}} i nótaí {{count}})",
+    "subtree_size_other": "(méid fo-chrainn: {{size}} i nótaí {{count}})",
     "title": "Eolas Nóta",
     "show_similar_notes": "Taispeáin nótaí comhchosúla"
   },
@@ -891,11 +892,11 @@
     "title": "Léarscáil Nótaí",
     "fix-nodes": "Deisigh nóid",
     "link-distance": "Fad naisc",
-    "too-many-notes_one": "Tá {{count}} nótaí anseo. D’fhéadfadh sé go mbeadh moill ar rudaí má thaispeántar iad go léir.",
-    "too-many-notes_two": "",
-    "too-many-notes_few": "",
-    "too-many-notes_many": "",
-    "too-many-notes_other": "",
+    "too-many-notes_one": "Tá {{count}} nóta anseo. D’fhéadfadh sé go mbeadh moill ar rudaí má thaispeántar é.",
+    "too-many-notes_two": "Tá {{count}} nótaí anseo. D’fhéadfadh sé go mbeadh moill ar rudaí má thaispeántar iad go léir.",
+    "too-many-notes_few": "Tá {{count}} nótaí anseo. D’fhéadfadh sé go mbeadh moill ar rudaí má thaispeántar iad go léir.",
+    "too-many-notes_many": "Tá {{count}} nótaí anseo. D’fhéadfadh sé go mbeadh moill ar rudaí má thaispeántar iad go léir.",
+    "too-many-notes_other": "Tá {{count}} nótaí anseo. D’fhéadfadh sé go mbeadh moill ar rudaí má thaispeántar iad go léir.",
     "show-anyway": "Taispeáin léarscáil"
   },
   "note_paths": {
@@ -1625,11 +1626,11 @@
     "export": "Easpórtáil",
     "import-into-note": "Iompórtáil isteach i nóta",
     "apply-bulk-actions": "Cuir gníomhartha mórchóir i bhfeidhm",
-    "converted-to-attachments_one": "Tá {{count}} nótaí tiontaithe ina gceangaltáin.",
-    "converted-to-attachments_two": "",
-    "converted-to-attachments_few": "",
-    "converted-to-attachments_many": "",
-    "converted-to-attachments_other": "",
+    "converted-to-attachments_one": "Tá {{count}} nóta tiontaithe go ceangaltáin.",
+    "converted-to-attachments_two": "Tá {{count}} nótaí tiontaithe ina gceangaltáin.",
+    "converted-to-attachments_few": "Tá {{count}} nótaí tiontaithe ina gceangaltáin.",
+    "converted-to-attachments_many": "Tá {{count}} nótaí tiontaithe ina gceangaltáin.",
+    "converted-to-attachments_other": "Tá {{count}} nótaí tiontaithe ina gceangaltáin.",
     "convert-to-attachment-confirm": "An bhfuil tú cinnte gur mian leat na nótaí roghnaithe a thiontú ina gceangaltáin dá nótaí tuismitheora? Ní bhaineann an oibríocht seo ach le nótaí Íomhá, scipeálfar nótaí eile.",
     "open-in-popup": "Eagarthóireacht thapa"
   },
@@ -1803,7 +1804,10 @@
     "reopen_last_tab": "Athoscail an cluaisín deireanach a dúnadh",
     "move_tab_to_new_window": "Bog an cluaisín seo go fuinneog nua",
     "copy_tab_to_new_window": "Cóipeáil an cluaisín seo chuig fuinneog nua",
-    "new_tab": "Cluaisín nua"
+    "new_tab": "Cluaisín nua",
+    "pin_tab": "Cluaisín bioráin",
+    "unpin_tab": "Díbhoráin an cluaisín",
+    "pinned_prefix": "Bioránta: "
   },
   "toc": {
     "table_of_contents": "Clár Ábhair",
@@ -2126,7 +2130,11 @@
     "search_history_title": "Taispeáin Stair Chuardaigh",
     "search_history_description": "Féach ar chuardaigh roimhe seo",
     "configure_launch_bar_title": "Cumraigh an Barra Seolta",
-    "configure_launch_bar_description": "Oscail cumraíocht an bharra lainseála, chun míreanna a chur leis nó a bhaint."
+    "configure_launch_bar_description": "Oscail cumraíocht an bharra lainseála, chun míreanna a chur leis nó a bhaint.",
+    "pin_tab_title": "Cluaisín Bioráin",
+    "pin_tab_description": "Coinnigh an nóta seo ar oscailt i gcónaí sa chluaisín seo ag tús an bharra cluaisíní agus seachain é a dhúnadh de thaisme",
+    "unpin_tab_title": "Díbhoráin an Cluaisín",
+    "unpin_tab_description": "Díbhioráin an cluaisín seo, rud a ligfidh dó a bheith dúnta agus bogtha go saor"
   },
   "content_renderer": {
     "open_externally": "Oscail go seachtrach"
@@ -2166,11 +2174,11 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes_one": "{{count}} nótaí",
-    "total_notes_two": "",
-    "total_notes_few": "",
-    "total_notes_many": "",
-    "total_notes_other": "",
+    "total_notes_one": "{{count}} nóta",
+    "total_notes_two": "{{count}} nótaí",
+    "total_notes_few": "{{count}} nótaí",
+    "total_notes_many": "{{count}} nótaí",
+    "total_notes_other": "{{count}} nótaí",
     "prev_page": "Leathanach roimhe seo",
     "next_page": "An chéad leathanach eile"
   },
@@ -2268,11 +2276,11 @@
     "code_note_switcher": "Athraigh mód teanga",
     "tab_width": "Leithead an Chluaisín: {{width}}",
     "tab_width_title": "Athraigh leithead an chluaisín",
-    "tab_width_spaces_one": "{{count}} spásanna",
-    "tab_width_spaces_two": "",
-    "tab_width_spaces_few": "",
-    "tab_width_spaces_many": "",
-    "tab_width_spaces_other": "",
+    "tab_width_spaces_one": "{{count}} spás",
+    "tab_width_spaces_two": "{{count}} spásanna",
+    "tab_width_spaces_few": "{{count}} spásanna",
+    "tab_width_spaces_many": "{{count}} spásanna",
+    "tab_width_spaces_other": "{{count}} spásanna",
     "tab_width_spaces_short": "Spásanna: {{width}}",
     "tab_width_tabs": "Cluaisíní: {{width}}",
     "tab_width_use_default": "Úsáid an réamhshocrú ({{width}})",
@@ -2391,7 +2399,11 @@
     "exit-fullscreen": "Scoir lánscáileáin",
     "unsupported-format": "Níl réamhamharc meán ar fáil don fhormáid comhaid seo:\n{{mime}}",
     "zoom-to-fit": "Zúmáil chun líonadh",
-    "zoom-reset": "Athshocraigh súmáil chun líonadh"
+    "zoom-reset": "Athshocraigh súmáil chun líonadh",
+    "previous-video": "Físeán roimhe seo: {{- title}}",
+    "next-video": "An chéad fhíseán eile: {{- title}}",
+    "previous-audio": "Fuaim roimhe seo: {{- title}}",
+    "next-audio": "An chéad fhuaim eile: {{- title}}"
   },
   "mermaid": {
     "placeholder": "Clóscríobh ábhar do léaráid Maighdean Mhara nó bain úsáid as ceann de na léaráidí samplacha thíos.",
@@ -2683,7 +2695,11 @@
     "cancel": "Cealaigh"
   },
   "spreadsheet": {
-    "read-only": "Is nóta inléite amháin atá ann."
+    "read-only": "Is nóta inléite amháin atá ann.",
+    "export-xlsx": "Easpórtáil go Excel (.xlsx)",
+    "export-csv": "Easpórtáil go CSV (.csv)",
+    "export-failed": "Theip ar easpórtáil na scarbhileog go Excel.",
+    "export-csv-failed": "Theip ar easpórtáil na scarbhileog go CSV."
   },
   "markdown_editor": {
     "image_upload_failed": "Ní féidir íomhá \"{{name}}\" a uaslódáil."
@@ -2826,5 +2842,23 @@
     "server_env_hint": "Nó socraigh an athróg timpeallachta seo a leanas:",
     "restart_required": "Tá atosú ag teastáil chun an t-athrú seo a chur i bhfeidhm.",
     "restart_now": "Atosaigh an feidhmchlár anois"
+  },
+  "image_buttons": {
+    "zoom_in": "Zúmáil isteach",
+    "zoom_out": "Zúmáil amach",
+    "reset_zoom": "Athshocraigh an zúmáil"
+  },
+  "image_navigation": {
+    "previous": "Íomhá roimhe seo: {{- title}}",
+    "next": "An chéad íomhá eile: {{- title}}"
+  },
+  "image_viewer": {
+    "loading_error": "Tharla earráid agus an íomhá á luchtú."
+  },
+  "snippet_badge": {
+    "label": "sleachta {{type}}",
+    "type_text": "Téacs",
+    "type_code": "Cód",
+    "tooltip": "Píosa téacs nó cóid in-athúsáidte, atá ceaptha le cur isteach san eagarthóir (ón roghchlár sleachta sa bharra uirlisí, nó trí ordú slaise)."
   }
 }

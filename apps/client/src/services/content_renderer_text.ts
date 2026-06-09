@@ -2,10 +2,11 @@ import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import { default as content_renderer, type RenderOptions } from "./content_renderer.js";
 import froca from "./froca.js";
+import { t } from "./i18n.js";
 import link from "./link.js";
 import { applyLinkEmbeds } from "./link_embed.js";
 import { renderMathInElement } from "./math.js";
-import { getMermaidConfig } from "./mermaid.js";
+import { getMermaidConfig, loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
 import tree from "./tree.js";
@@ -131,6 +132,9 @@ const mermaidSvgCache = new WeakMap<HTMLElement, Map<string, string>>();
  */
 const mermaidLastRenderedByPosition = new WeakMap<HTMLElement, string[]>();
 
+/** Monotonic id for mermaid.render(), which requires a unique element id per call. */
+let mermaidRenderId = 0;
+
 export async function applyInlineMermaid(container: HTMLDivElement) {
     const nodes = Array.from(container.querySelectorAll<HTMLElement>("div.mermaid-diagram"));
     if (!nodes.length) {
@@ -146,9 +150,9 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
     const lastRendered = mermaidLastRenderedByPosition.get(container) ?? [];
 
     // Decide per node: exact cache hit → paint final SVG; source changed →
-    // paint the previous SVG (by position) as a placeholder and queue an
-    // offscreen re-render. This way the user keeps seeing the old diagram
-    // until mermaid has finished producing the new one.
+    // paint the previous SVG (by position) as a placeholder and queue a
+    // re-render. This way the user keeps seeing the old diagram until mermaid
+    // has finished producing the new one.
     const pending: Array<{ visible: HTMLElement; source: string }> = [];
     const seenSources = new Set<string>();
     for (const [ index, node ] of nodes.entries()) {
@@ -160,6 +164,7 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
         if (cached) {
             node.innerHTML = cached;
             node.setAttribute("data-processed", "true");
+            node.classList.remove("mermaid-error");
             continue;
         }
 
@@ -181,39 +186,41 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
     }
 
     const mermaid = (await import("mermaid")).default;
-    mermaid.initialize(getMermaidConfig());
+    mermaid.initialize({ ...getMermaidConfig(), startOnLoad: false });
 
-    // Render clones offscreen so the visible nodes keep showing the placeholder
-    // until the new SVG is ready. Keeps mermaid away from our placeholder SVG
-    // (which would otherwise confuse its text-based parser).
-    const offscreen = document.createElement("div");
-    offscreen.style.cssText = "position:absolute;left:-9999px;top:-9999px;width:0;height:0;overflow:hidden;visibility:hidden;";
-    document.body.appendChild(offscreen);
-
-    const pairs = pending.map(({ visible, source }) => {
-        const clone = document.createElement("div");
-        clone.className = "mermaid-diagram";
-        clone.textContent = source;
-        offscreen.appendChild(clone);
-        return { visible, clone, source };
-    });
-
-    try {
-        await mermaid.run({ nodes: pairs.map((p) => p.clone) });
-        for (const { visible, clone, source } of pairs) {
-            if (clone.getAttribute("data-processed") !== "true") continue;
-            const svg = clone.innerHTML;
-            visible.innerHTML = svg;
+    // Render each diagram to an SVG string via mermaid.render() — the same API the
+    // editable note and standalone Mermaid widget use. mermaid.render() builds its
+    // own correctly-sized measurement element; rendering in place via mermaid.run()
+    // inside a collapsed offscreen container silently broke measurement-sensitive
+    // diagrams (e.g. gantt). Each diagram renders independently so one failure
+    // surfaces its own error instead of blanking the diagrams beside it.
+    for (const { visible, source } of pending) {
+        try {
+            await loadElkIfNeeded(mermaid, source);
+            const { svg } = await mermaid.render(`mermaid-inline-${mermaidRenderId++}`, source);
+            const processed = postprocessMermaidSvg(svg);
+            visible.innerHTML = processed;
             visible.setAttribute("data-processed", "true");
-            cache.set(source, svg);
+            visible.classList.remove("mermaid-error");
+            cache.set(source, processed);
+        } catch (e) {
+            console.error(e);
+            // Surface the failure in place, replacing any placeholder from a prior
+            // good render. A broken diagram must look broken — keeping the stale
+            // render would hide the error until a full refresh.
+            showMermaidError(visible, e);
         }
-    } catch (e) {
-        console.error(e);
-    } finally {
-        offscreen.remove();
     }
 
     mermaidLastRenderedByPosition.set(container, nodes.map((n) => n.innerHTML));
+}
+
+/** Render a mermaid failure in place so it's visible instead of console-only. */
+function showMermaidError(node: HTMLElement, error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    node.removeAttribute("data-processed");
+    node.classList.add("mermaid-error");
+    node.textContent = t("content_renderer.mermaid_diagram_error", { error: message });
 }
 
 export async function renderChildrenList($renderedContent: JQuery<HTMLElement>, note: FNote, includeArchivedNotes: boolean) {
