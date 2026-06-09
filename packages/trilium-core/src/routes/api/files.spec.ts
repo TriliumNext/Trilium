@@ -101,4 +101,55 @@ describe("Files API (core)", () => {
             expect(res.status).toBe(404);
         });
     });
+
+    describe("office preview", () => {
+        // RTF is the only office format that can be created inline as plain text, which makes
+        // it ideal to exercise the real officeparser conversion in both runtimes. It also
+        // covers the explicit fileType hint path (RTF auto-detection is unreliable).
+        const RTF_CONTENT = String.raw`{\rtf1\ansi Hello {\b World}}`;
+
+        async function createRtfNote(): Promise<string> {
+            const res = await api.post<{ note: { noteId: string } }>("/api/notes/root/children?target=into", {
+                body: { title: "document.rtf", type: "file", mime: "application/rtf", content: RTF_CONTENT }
+            });
+            expect(res.status).toBe(200);
+            return res.body.note.noteId;
+        }
+
+        it("converts an RTF file note to an embeddable HTML fragment", async () => {
+            const noteId = await createRtfNote();
+
+            const res = await api.get<{ html: string }>(`/api/notes/${noteId}/office-preview`);
+            expect(res.status).toBe(200);
+            expect(res.body.html).toContain("Hello");
+            expect(res.body.html).toContain("World");
+            // fragment mode — no full standalone document wrapper
+            expect(res.body.html).not.toContain("<html");
+        });
+
+        it("converts an RTF attachment to an embeddable HTML fragment", async () => {
+            const { noteId } = await createTextNote(api, { title: "Has office attachment" });
+            const save = await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "file", mime: "application/rtf", title: "attachment.rtf", content: RTF_CONTENT }
+            });
+            expect(save.status).toBe(204);
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+
+            const res = await api.get<{ html: string }>(`/api/attachments/${list.body[0].attachmentId}/office-preview`);
+            expect(res.status).toBe(200);
+            expect(res.body.html).toContain("Hello");
+        });
+
+        it("rejects an unsupported MIME type with 400", async () => {
+            const { noteId } = await createTextNote(api, { content: "<p>not office</p>" });
+
+            const res = await api.get(`/api/notes/${noteId}/office-preview`);
+            expect(res.status).toBe(400);
+        });
+
+        it("404s for a missing note", async () => {
+            const res = await api.get("/api/notes/missingNote123/office-preview");
+            expect(res.status).toBe(404);
+        });
+    });
 });

@@ -2383,7 +2383,9 @@
     "unpin_tab_description": "Unpin this tab, allowing it to be closed and moved freely"
   },
   "content_renderer": {
-    "open_externally": "Open externally"
+    "open_externally": "Open externally",
+    "office_rendering": "Rendering preview…",
+    "office_render_error": "This document could not be rendered as a preview. You can still download it or open it externally."
   },
   "modal": {
     "close": "Close",

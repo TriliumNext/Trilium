@@ -1,9 +1,12 @@
 import "./File.css";
 
+import { isOfficeMimeType } from "@triliumnext/commons";
+
 import { t } from "../../services/i18n";
 import Alert from "../react/Alert";
 import { useNoteBlob } from "../react/hooks";
 import AudioPreview from "./file/Audio";
+import OfficePreview from "./file/Office";
 import PdfPreview from "./file/Pdf";
 import VideoPreview from "./file/Video";
 import { TypeWidgetProps } from "./type_widget";
@@ -11,9 +14,16 @@ import { TypeWidgetProps } from "./type_widget";
 const TEXT_MAX_NUM_CHARS = 5000;
 
 export default function FileTypeWidget({ note, parentComponent, noteContext }: TypeWidgetProps) {
-    const blob = useNoteBlob(note, parentComponent?.componentId);
+    // Office previews are server-rendered, so don't fetch the blob for them — it would
+    // download the document a second time without being used.
+    const isOffice = isOfficeMimeType(note.mime);
+    const blob = useNoteBlob(isOffice ? null : note, parentComponent?.componentId);
 
-    if (blob?.content) {
+    // Office formats are checked first: RTF can arrive as text/rtf (string content), which
+    // would otherwise be caught by the blob.content branch below and shown as raw markup.
+    if (isOffice) {
+        return <OfficePreview note={note} />;
+    } else if (blob?.content) {
         return <TextPreview content={blob.content} />;
     } else if (note.mime === "application/pdf") {
         return noteContext && <PdfPreview blob={blob} note={note} componentId={parentComponent?.componentId} noteContext={noteContext} />;

@@ -1,6 +1,6 @@
 import "./content_renderer.css";
 
-import { normalizeMimeTypeForCKEditor, renderToHtml, type TextRepresentationResponse } from "@triliumnext/commons";
+import { isOfficeMimeType, normalizeMimeTypeForCKEditor, renderToHtml, type TextRepresentationResponse } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
 import { h, render } from "preact";
 
@@ -12,6 +12,7 @@ import renderText, { postProcessRichContent, renderChildrenList } from "./conten
 import renderDoc from "./doc_renderer.js";
 import { loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
 import openService from "./open.js";
+import { renderOfficeToHtml } from "./office_renderer.js";
 import protectedSessionService from "./protected_session.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import renderService from "./render.js";
@@ -59,6 +60,8 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         await renderCode(entity, $renderedContent);
     } else if (["image", "canvas", "mindMap", "spreadsheet"].includes(type)) {
         await renderImage(entity, $renderedContent, options);
+    } else if (!options.tooltip && type === "office") {
+        await renderOffice(entity, $renderedContent);
     } else if (!options.tooltip && ["file", "pdf", "audio", "video"].includes(type)) {
         await renderFile(entity, type, $renderedContent, options);
     } else if (type === "mermaid") {
@@ -219,17 +222,7 @@ async function addOCRTextIfAvailable(note: FNote, $content: JQuery<HTMLElement>)
 }
 
 async function renderFile(entity: FNote | FAttachment, type: string, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
-    let entityType, entityId;
-
-    if (entity instanceof FNote) {
-        entityType = "notes";
-        entityId = entity.noteId;
-    } else if (entity instanceof FAttachment) {
-        entityType = "attachments";
-        entityId = entity.attachmentId;
-    } else {
-        throw new Error(`Can't recognize entity type of '${entity}'`);
-    }
+    const { entityType, entityId } = getEntityTypeAndId(entity);
 
     const $content = $('<div style="display: flex; flex-direction: column; height: 100%; justify-content: end;">');
 
@@ -262,43 +255,87 @@ async function renderFile(entity: FNote | FAttachment, type: string, $renderedCo
         await addOCRTextIfAvailable(entity, $content);
     }
 
-    if (entityType === "notes" && "noteId" in entity) {
-        // TODO: we should make this available also for attachments, but there's a problem with "Open externally" support
-        //       in attachment list
-        const $downloadButton = $(`
-            <button class="file-download btn btn-primary" type="button">
-                <span class="tn-icon bx bx-download"></span>
-                ${t("file_properties.download")}
-            </button>
-        `);
-
-        const $openButton = $(`
-            <button class="file-open btn btn-primary" type="button">
-                <span class="tn-icon bx bx-link-external"></span>
-                ${t("file_properties.open")}
-            </button>
-        `);
-
-        $downloadButton.on("click", (e) => {
-            e.stopPropagation();
-            openService.downloadFileNote(entity, null, null);
-        });
-        $openButton.on("click", async (e) => {
-            const iconEl = $openButton.find("> .bx");
-            iconEl.removeClass("bx bx-link-external");
-            iconEl.addClass("bx bx-loader spin");
-            e.stopPropagation();
-            await openService.openNoteExternally(entity.noteId, entity.mime);
-            iconEl.removeClass("bx bx-loader spin");
-            iconEl.addClass("bx bx-link-external");
-        });
-        // open doesn't work for protected notes since it works through a browser which isn't in protected session
-        $openButton.toggle(!entity.isProtected);
-
-        $content.append($('<footer class="file-footer">').append($downloadButton).append($openButton));
-    }
+    appendNoteFileActions($content, entity);
 
     $renderedContent.append($content);
+}
+
+/**
+ * Appends the download / open-externally action buttons for a file note. These are
+ * note-only for now — attachment "open externally" support isn't wired up (see the TODO
+ * that used to live inline in renderFile).
+ */
+function appendNoteFileActions($content: JQuery<HTMLElement>, entity: FNote | FAttachment) {
+    if (!(entity instanceof FNote)) {
+        return;
+    }
+
+    const $downloadButton = $(`
+        <button class="file-download btn btn-primary" type="button">
+            <span class="tn-icon bx bx-download"></span>
+            ${t("file_properties.download")}
+        </button>
+    `);
+
+    const $openButton = $(`
+        <button class="file-open btn btn-primary" type="button">
+            <span class="tn-icon bx bx-link-external"></span>
+            ${t("file_properties.open")}
+        </button>
+    `);
+
+    $downloadButton.on("click", (e) => {
+        e.stopPropagation();
+        openService.downloadFileNote(entity, null, null);
+    });
+    $openButton.on("click", async (e) => {
+        const iconEl = $openButton.find("> .bx");
+        iconEl.removeClass("bx bx-link-external");
+        iconEl.addClass("bx bx-loader spin");
+        e.stopPropagation();
+        await openService.openNoteExternally(entity.noteId, entity.mime);
+        iconEl.removeClass("bx bx-loader spin");
+        iconEl.addClass("bx bx-link-external");
+    });
+    // open doesn't work for protected notes since it works through a browser which isn't in protected session
+    $openButton.toggle(!entity.isProtected);
+
+    $content.append($('<footer class="file-footer">').append($downloadButton).append($openButton));
+}
+
+/**
+ * Renders an inline preview of an office document (DOCX/XLSX/PPTX, ODT/ODS/ODP and RTF) by
+ * fetching the server-rendered HTML preview and sanitizing it. On failure it falls back to
+ * a notice plus the usual download/open actions, so the file is never left unreachable.
+ */
+async function renderOffice(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>) {
+    const { entityType, entityId } = getEntityTypeAndId(entity);
+
+    const $content = $('<div class="office-preview">');
+    const $body = $('<div class="ck-content office-preview-body">');
+    $body.append($('<div class="office-preview-loading">').append($('<span class="bx bx-loader bx-spin">')).append(document.createTextNode(t("content_renderer.office_rendering"))));
+    $content.append($body);
+    $renderedContent.append($content);
+
+    try {
+        $body.html(await renderOfficeToHtml(entityType, entityId));
+    } catch (e) {
+        console.warn("Failed to render office document preview:", getErrorMessage(e));
+        $body.remove();
+        $content.prepend($("<div>").addClass("admonition caution").text(t("content_renderer.office_render_error")));
+    }
+
+    appendNoteFileActions($content, entity);
+}
+
+function getEntityTypeAndId(entity: FNote | FAttachment): { entityType: "notes" | "attachments"; entityId: string } {
+    if (entity instanceof FNote) {
+        return { entityType: "notes", entityId: entity.noteId };
+    } else if (entity instanceof FAttachment) {
+        return { entityType: "attachments", entityId: entity.attachmentId };
+    } else {
+        throw new Error(`Can't recognize entity type of '${entity}'`);
+    }
 }
 
 async function renderMermaid(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>) {
@@ -347,6 +384,8 @@ function getRenderingType(entity: FNote | FAttachment) {
         type = "audio";
     } else if (type === "file" && mime && mime.startsWith("video/")) {
         type = "video";
+    } else if (type === "file" && mime && isOfficeMimeType(mime)) {
+        type = "office";
     }
 
     if (entity.isProtected) {

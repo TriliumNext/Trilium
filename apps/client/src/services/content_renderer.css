@@ -13,3 +13,28 @@
         margin-bottom: 0;
     }
 }
+
+/* Office document preview — shared by this rendered-content path and the file type
+   widget (Office.tsx); this stylesheet is part of the startup bundle. */
+.office-preview-body {
+    overflow: auto;
+    padding: 15px;
+}
+
+.office-preview-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 15px;
+    opacity: 0.7;
+}
+
+.rendered-content .office-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .office-preview-body {
+        flex-grow: 1;
+    }
+}

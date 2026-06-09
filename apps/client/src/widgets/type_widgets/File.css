@@ -38,3 +38,8 @@
     width: calc(100% - 30px);
     transform: translateY(-50%);
 }
+
+/* base .office-preview-body / .office-preview-loading styles live in content_renderer.css */
+.note-detail-file > .office-preview-body {
+    height: 100%;
+}
