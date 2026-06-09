@@ -87,6 +87,7 @@
     "@types/mark.js": "8.11.12",
     "@types/tabulator-tables": "6.3.3",
     "happy-dom": "20.9.0",
+    "jsdom": "29.1.1",
     "lightningcss": "1.32.0",
     "stylelint": "17.12.0",
     "vite-plugin-static-copy": "4.1.0"
