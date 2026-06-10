@@ -812,7 +812,8 @@
     "note_size": "नोट साइज़",
     "note_size_info": "नोट साइज़ स्टोरेज की ज़रूरतों का एक अंदाज़ा देता है। इसमें नोट का कंटेंट और उसके रिविज़न शामिल हैं।",
     "calculate": "हिसाब लगाएं",
-    "subtree_size": "(सब-ट्री साइज़: {{count}} नोट्स में {{size}})",
+    "subtree_size_one": "(सब-ट्री साइज़: {{count}} नोट्स में {{size}})",
+    "subtree_size_other": "",
     "title": "नोट की जानकारी",
     "show_similar_notes": "मिलते-जुलते नोट्स दिखाएं"
   },
@@ -1493,7 +1494,8 @@
     "export": "एक्सपोर्ट (Export)",
     "import-into-note": "नोट में इम्पोर्ट (Import) करें",
     "apply-bulk-actions": "एक साथ कई एक्शन्स लें",
-    "converted-to-attachments": "{{count}} नोट्स को अटैचमेंट में बदल दिया गया है।",
+    "converted-to-attachments_one": "{{count}} नोट्स को अटैचमेंट में बदल दिया गया है।",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "क्या आप वाकई चुने हुए नोट्स को अटैचमेंट में बदलना चाहते हैं? यह सिर्फ़ इमेज नोट्स पर काम करेगा।",
     "open-in-popup": "तुरंत एडिट करें"
   },
@@ -1997,7 +1999,8 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} नोट्स",
+    "total_notes_one": "{{count}} नोट्स",
+    "total_notes_other": "",
     "prev_page": "पिछला पेज",
     "next_page": "अगला पेज"
   },
@@ -2130,5 +2133,8 @@
   },
   "setup_form": {
     "more_info": "और जानें"
+  },
+  "sidebar_chat": {
+    "view_all_chats": "सभी चैट देखें"
   }
 }

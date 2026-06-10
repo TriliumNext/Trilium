@@ -29,9 +29,6 @@ vi.mock("./syntax_highlight.js", () => ({
 const setupContextMenu = vi.fn((..._args: any[]) => {});
 vi.mock("../menus/image_context_menu.js", () => ({ default: { setupContextMenu: (...a: any[]) => setupContextMenu(...a) } }));
 
-const wheelZoomCreate = vi.fn((..._args: any[]) => {});
-vi.mock("vanilla-js-wheel-zoom", () => ({ default: { create: (...a: any[]) => wheelZoomCreate(...a) } }));
-
 const enterProtectedSession = vi.fn((..._args: any[]) => {});
 vi.mock("./protected_session.js", () => ({ default: { enterProtectedSession: (...a: any[]) => enterProtectedSession(...a) } }));
 
@@ -71,7 +68,9 @@ vi.mock("mermaid", () => ({
 const pdfViewerComponent = vi.fn(() => null);
 vi.mock("../widgets/type_widgets/file/PdfViewer", () => ({ default: pdfViewerComponent }));
 
-vi.mock("dompurify", () => ({ default: { sanitize: (s: string) => s } }));
+// `addHook` is a no-op here: sanitize_content.ts registers a DOMPurify hook at
+// module load (pulled in transitively), which would otherwise throw against this mock.
+vi.mock("dompurify", () => ({ default: { sanitize: (s: string) => s, addHook: () => {} } }));
 
 const renderToHtml = vi.fn((...args: any[]) => `<p>${args[0]}</p>`);
 vi.mock("@triliumnext/commons", async (orig) => ({
@@ -207,7 +206,6 @@ describe("getRenderedContent image rendering", () => {
         expect($img.attr("src")).toContain(`api/images/${note.noteId}/`);
         expect($img.attr("id")).toMatch(/^attachment-image-\d+$/);
         expect(setupContextMenu).toHaveBeenCalledOnce();
-        expect(wheelZoomCreate).not.toHaveBeenCalled();
     });
 
     it("renders an FAttachment image with an api/attachments url", async () => {
@@ -215,28 +213,6 @@ describe("getRenderedContent image rendering", () => {
         const { type, $renderedContent } = await getRenderedContent(att);
         expect(type).toBe("image");
         expect($renderedContent.find("img").attr("src")).toContain(`api/attachments/${att.attachmentId}/image/`);
-    });
-
-    it("initializes wheel zoom when imageHasZoom is set and the element is present", async () => {
-        const note = buildNote({ title: "Zoom", type: "canvas" });
-        const { $renderedContent } = await getRenderedContent(note, { imageHasZoom: true });
-        // the img must be attached to the live DOM so document.querySelector finds it
-        document.body.append($renderedContent[0]);
-        await new Promise((r) => requestAnimationFrame(() => r(null)));
-        await new Promise((r) => setTimeout(r, 0));
-        expect(wheelZoomCreate).toHaveBeenCalled();
-        $renderedContent.remove();
-    });
-
-    it("retries via requestAnimationFrame while the element is missing", async () => {
-        const rafSpy = vi.spyOn(window, "requestAnimationFrame");
-        const note = buildNote({ title: "ZoomMiss", type: "mindMap" });
-        // Do NOT attach to the DOM, so querySelector returns null and it reschedules.
-        await getRenderedContent(note, { imageHasZoom: true });
-        await new Promise((r) => setTimeout(r, 0));
-        expect(rafSpy).toHaveBeenCalled();
-        expect(wheelZoomCreate).not.toHaveBeenCalled();
-        rafSpy.mockRestore();
     });
 
     it("appends OCR text for FNote images when showTextRepresentation and OCR succeeds", async () => {

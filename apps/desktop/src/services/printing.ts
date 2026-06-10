@@ -19,6 +19,7 @@ function getPreloadScript(): string {
         // Dev: this file lives one directory below the preload bundle.
         // Prod: this file is bundled into dist/main.cjs alongside preload.cjs
         //   (no `..` — keep this synced with apps/desktop/src/services/window.ts).
+        /* v8 ignore next 5 -- prod preload arm is cache-once (only the first ternary evaluation counts); covered by the production build, not unit tests */
         preloadScriptCache = path.resolve(
             coreUtils.isDev()
                 ? path.join(__dirname, "..", "preload.compiled.cjs")
@@ -52,7 +53,7 @@ interface PrintFromPreviewOpts extends ExportAsPdfOpts {
  *  Values are stored in mm and converted to inches for Electron.
  *  Presets expand to explicit numeric margins since Electron's `marginType` aliases
  *  (especially `none` and `printableArea`) behave inconsistently for PDF output. */
-function parseMargins(margins: string): Electron.Margins {
+export function parseMargins(margins: string): Electron.Margins {
     const mmToInches = (mm: number) => mm / 25.4;
     const uniform = (mm: number): Electron.Margins => ({
         marginType: "custom",
@@ -81,7 +82,7 @@ function parseMargins(margins: string): Electron.Margins {
 }
 
 /** Convert "1-5, 8, 11-13" into PageRanges array form expected by webContents.print. */
-function parsePageRangesForPrint(pageRanges: string): { from: number; to: number }[] | undefined {
+export function parsePageRangesForPrint(pageRanges: string): { from: number; to: number }[] | undefined {
     if (!pageRanges?.trim()) return undefined;
     const ranges: { from: number; to: number }[] = [];
     for (const part of pageRanges.split(",")) {

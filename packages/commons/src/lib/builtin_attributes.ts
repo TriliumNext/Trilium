@@ -62,7 +62,7 @@ export default [
     { type: "label", name: "shareOmitDefaultCss" },
     { type: "label", name: "shareRoot" },
     { type: "label", name: "shareDescription" },
-    { type: "label", name: "shareRaw" },
+    { type: "label", name: "shareRaw", isDangerous: true },
     { type: "label", name: "shareDisallowRobotIndexing" },
     { type: "label", name: "shareCredentials" },
     { type: "label", name: "shareIndex" },

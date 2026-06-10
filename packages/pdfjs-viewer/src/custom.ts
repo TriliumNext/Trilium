@@ -9,6 +9,8 @@ async function main() {
     const urlParams = new URLSearchParams(window.location.search);
     const isEditable = urlParams.get("editable") === "1";
 
+    applyMinPixelRatio(urlParams);
+
     const hideToolbar = urlParams.get("toolbar") === "0";
     document.body.classList.toggle("read-only-document", !isEditable);
     document.body.classList.toggle("no-toolbar", hideToolbar);
@@ -51,6 +53,24 @@ async function main() {
     }
     await app.initializedPromise;
 };
+
+/**
+ * Forces a minimum device-pixel-ratio for canvas rasterization. PDF.js sizes each page's
+ * canvas backing store by `globalThis.devicePixelRatio` (read dynamically at render time via
+ * `OutputScale`), so on a standard-DPI display (DPR 1) pages render at 1× and text/headings
+ * look coarsely anti-aliased. Overriding the getter to a higher minimum supersamples the
+ * canvas — the same crispness a high-DPI screen gets for free — without changing layout size.
+ */
+function applyMinPixelRatio(urlParams: URLSearchParams) {
+    const minPixelRatio = Number(urlParams.get("minPixelRatio"));
+    if (!Number.isFinite(minPixelRatio) || minPixelRatio <= 0) return;
+    if ((window.devicePixelRatio || 1) >= minPixelRatio) return;
+
+    Object.defineProperty(window, "devicePixelRatio", {
+        configurable: true,
+        get: () => minPixelRatio
+    });
+}
 
 function configurePdfViewerOptions() {
     const urlParams = new URLSearchParams(window.location.search);

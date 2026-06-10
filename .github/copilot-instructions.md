@@ -254,6 +254,8 @@ Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/`
 - **Build order**: `pnpm typecheck` builds all projects in dependency order
 - **Build system**: Uses Vite for fast development, ESBuild for production optimization
 - **Patches**: Custom patches in `patches/` directory for CKEditor and other dependencies
+- **No non-null assertions**: Never use the TypeScript non-null assertion operator (postfix `!`), including in tests. Narrow instead — optional chaining (`?.`), a `?? fallback`, an explicit null check, or an `*OrThrow` accessor (e.g. `becca.getNoteOrThrow(id)` rather than `becca.getNote(id)!`).
+- **Helper placement**: When extracting a standalone helper function from a component, widget, hook, or route, place it below the primary export it supports (or in a separate module), not wedged between the imports and the main definition. The file's primary export stays near the top; supporting helpers follow it.
 
 ## Key Files for Context
 
@@ -345,6 +347,7 @@ Trilium provides powerful user scripting capabilities:
 #### Client vs Server Translation Usage
 - **Client-side**: `import { t } from "../services/i18n"` with keys in `apps/client/src/translations/en/translation.json`
 - **Server-side**: `import { t } from "i18next"` with keys in `apps/server/src/assets/translations/en/server.json`
+- **Electron main process** (e.g. `apps/desktop/src/`): `import { t } from "i18next"` — uses server-side keys from `apps/server/src/assets/translations/en/server.json` (same as server-side). **Never hardcode user-facing strings** in Electron dialogs, tray menus, or IPC handlers — always use `t()`.
 - **Interpolation**: Use `{{variable}}` for normal interpolation; use `{{- variable}}` (with hyphen) for **unescaped** interpolation when the value contains special characters like quotes that shouldn't be HTML-escaped
 
 ### Storing User Preferences

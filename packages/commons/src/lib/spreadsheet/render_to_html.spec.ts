@@ -640,16 +640,17 @@ describe("renderSpreadsheetToHtml", () => {
         expect(html).toContain("<td>x</td>");
     });
 
-    it("renders borders on all four sides with widths and styles", () => {
+    it("renders borders on all four sides with the correct Univer widths and styles", () => {
+        // Univer BorderStyleTypes: THIN=1, DOTTED=3, DOUBLE=7, MEDIUM=8, THICK=13.
         const html = renderSpreadsheetToHtml(
             singleCellWorkbook({
                 v: "bordered",
                 s: {
                     bd: {
                         t: { s: 1, cl: { rgb: "#111111" } }, // THIN -> 1px solid
-                        r: { s: 6, cl: { rgb: "#222222" } }, // MEDIUM -> 2px solid
-                        b: { s: 9, cl: { rgb: "#333333" } }, // THICK -> 3px solid
-                        l: { s: 3, cl: { rgb: "#444444" } } // DASHED -> 1px dashed
+                        r: { s: 8, cl: { rgb: "#222222" } }, // MEDIUM -> 2px solid
+                        b: { s: 13, cl: { rgb: "#333333" } }, // THICK -> 3px solid
+                        l: { s: 4, cl: { rgb: "#444444" } } // DASHED -> 1px dashed
                     }
                 }
             })
@@ -660,18 +661,52 @@ describe("renderSpreadsheetToHtml", () => {
         expect(html).toContain("border-left:1px dashed #444444");
     });
 
-    it("renders dotted border style and defaults missing border color to #000", () => {
+    it("renders dotted (3), double (7) and medium-dashed (9) border styles", () => {
         const html = renderSpreadsheetToHtml(
             singleCellWorkbook({
-                v: "dotted",
+                v: "styles",
                 s: {
                     bd: {
-                        t: { s: 4 } // DOTTED, no color -> default #000
+                        t: { s: 3, cl: { rgb: "#111111" } }, // DOTTED -> 1px dotted
+                        r: { s: 7, cl: { rgb: "#222222" } }, // DOUBLE -> 3px double
+                        b: { s: 9, cl: { rgb: "#333333" } } // MEDIUM_DASHED -> 2px dashed
                     }
                 }
             })
         );
-        expect(html).toContain("border-top:1px dotted #000");
+        expect(html).toContain("border-top:1px dotted #111111");
+        expect(html).toContain("border-right:3px double #222222");
+        expect(html).toContain("border-bottom:2px dashed #333333");
+    });
+
+    it("defaults a missing border style to 1px solid and missing color to #000", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({
+                v: "default",
+                s: {
+                    bd: {
+                        t: {} // no style, no color -> 1px solid #000
+                    }
+                }
+            })
+        );
+        expect(html).toContain("border-top:1px solid #000");
+    });
+
+    it("skips a border side explicitly set to NONE (0)", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({
+                v: "none",
+                s: {
+                    bd: {
+                        t: { s: 0, cl: { rgb: "#111111" } },
+                        b: { s: 1, cl: { rgb: "#222222" } }
+                    }
+                }
+            })
+        );
+        expect(html).not.toContain("border-top");
+        expect(html).toContain("border-bottom:1px solid #222222");
     });
 
     it("skips border sides that are null or undefined", () => {
@@ -933,6 +968,209 @@ describe("renderSpreadsheetToHtml", () => {
         const html = renderSpreadsheetToHtml(input);
         expect(html).toContain('rowspan="3"');
         expect(html).not.toContain("colspan");
+    });
+
+    it("formats a numeric cell using its number-format pattern", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: 1234.5, t: 2, s: { n: { pattern: "#,##0.00" } } })
+        );
+        expect(html).toContain("<td>1,234.50</td>");
+        expect(html).not.toContain("1234.5<");
+    });
+
+    it("formats a numeric cell via a style referenced by id", () => {
+        const input = JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["s1"],
+                styles: {
+                    money: { n: { pattern: "#,##0.00" } }
+                },
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        name: "Sheet1",
+                        hidden: 0,
+                        rowCount: 10,
+                        columnCount: 5,
+                        mergeData: [],
+                        cellData: { "0": { "0": { s: "money", v: 1000000, t: 2 } } },
+                        rowData: {},
+                        columnData: {}
+                    }
+                }
+            }
+        });
+        const html = renderSpreadsheetToHtml(input);
+        expect(html).toContain("1,000,000.00");
+    });
+
+    it("applies the [Red] negative color from the pattern as a text color", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: -8800.2, t: 2, s: { n: { pattern: "#,##0.00;[Red]#,##0.00" } } })
+        );
+        // Negative section has no minus sign -> value shown unsigned, in red.
+        expect(html).toContain("8,800.20");
+        expect(html).not.toContain("-8,800.20");
+        expect(html).toContain("color:red");
+    });
+
+    it("does not apply the pattern color to a positive value", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: 12.5, t: 2, s: { n: { pattern: "#,##0.00;[Red]#,##0.00" } } })
+        );
+        expect(html).toContain("12.50");
+        expect(html).not.toContain("color:red");
+    });
+
+    it("lets the pattern's negative color win over an explicit cell color (matching Univer)", () => {
+        // In the Univer editor, a [Red] negative section overrides an explicit text
+        // color: setting a different color on a negative cell does not take effect.
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({
+                v: -5,
+                t: 2,
+                s: { n: { pattern: "#,##0.00;[Red]#,##0.00" }, cl: { rgb: "#0da471" } }
+            })
+        );
+        expect(html).toContain("color:red");
+        expect(html).not.toContain("color:#0da471");
+    });
+
+    it("uses the explicit cell color when the pattern yields no color for the value", () => {
+        // Positive value -> the [Red] section never applies, so cl is used.
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({
+                v: 5,
+                t: 2,
+                s: { n: { pattern: "#,##0.00;[Red]#,##0.00" }, cl: { rgb: "#0da471" } }
+            })
+        );
+        expect(html).toContain("color:#0da471");
+    });
+
+    it("formats percentages and dates", () => {
+        const percent = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: 0.156, t: 2, s: { n: { pattern: "0.0%" } } })
+        );
+        expect(percent).toContain("15.6%");
+
+        const date = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: 45000, t: 2, s: { n: { pattern: "yyyy-mm-dd" } } })
+        );
+        expect(date).toContain("2023-03-15");
+    });
+
+    it("escapes formatted output that contains HTML-significant characters", () => {
+        // A pattern that wraps the number in literal angle brackets.
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: 5, t: 2, s: { n: { pattern: "\"<b>\"0\"</b>\"" } } })
+        );
+        expect(html).not.toContain("<b>5</b>");
+        expect(html).toContain("&lt;b&gt;5&lt;/b&gt;");
+    });
+
+    it("leaves a string cell untouched even when a number pattern is present", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: "n/a", t: 1, s: { n: { pattern: "#,##0.00" } } })
+        );
+        expect(html).toContain("<td>n/a</td>");
+    });
+
+    it("falls back to the raw value for an invalid pattern instead of throwing", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: 42, t: 2, s: { n: { pattern: "[" } } })
+        );
+        // Must not throw; the cell still renders something containing the digits.
+        expect(html).toContain("<table");
+        expect(html).toContain("42");
+    });
+
+    it("renders an unformatted number when no pattern is set", () => {
+        const html = renderSpreadsheetToHtml(singleCellWorkbook({ v: 1234.5, t: 2 }));
+        expect(html).toContain("<td>1234.5</td>");
+    });
+
+    it("marks the table with show-gridlines when the sheet has gridlines enabled", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: "x" }, { showGridlines: 1 })
+        );
+        expect(html).toContain('<table class="spreadsheet-table show-gridlines">');
+    });
+
+    it("marks a filled cell with has-fill so gridlines can be suppressed under the fill", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: "x", s: { bg: { rgb: "#f9f9f9" } } }, { showGridlines: 1 })
+        );
+        expect(html).toContain('class="has-fill"');
+    });
+
+    it("marks a cell filled via a referenced style", () => {
+        const input = JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["s1"],
+                styles: { band: { bg: { rgb: "#f1f1f1" } } },
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        name: "Sheet1",
+                        hidden: 0,
+                        rowCount: 10,
+                        columnCount: 5,
+                        mergeData: [],
+                        cellData: { "0": { "0": { s: "band", v: "x" } } },
+                        rowData: {},
+                        columnData: {}
+                    }
+                }
+            }
+        });
+        const html = renderSpreadsheetToHtml(input);
+        expect(html).toContain('class="has-fill"');
+    });
+
+    it("does not add has-fill to a cell without a background", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: "x", s: { cl: { rgb: "#414657" } } }, { showGridlines: 1 })
+        );
+        expect(html).not.toContain("has-fill");
+    });
+
+    it("shows gridlines by default when showGridlines is absent (editor default)", () => {
+        // singleCellWorkbook does not set showGridlines.
+        const html = renderSpreadsheetToHtml(singleCellWorkbook({ v: "x" }));
+        expect(html).toContain("spreadsheet-table show-gridlines");
+    });
+
+    it("omits show-gridlines when the sheet hides gridlines", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: "x" }, { showGridlines: 0 })
+        );
+        expect(html).toContain('<table class="spreadsheet-table">');
+        expect(html).not.toContain("show-gridlines");
+    });
+
+    it("emits a custom gridline color as a CSS variable", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: "x" }, { showGridlines: 1, gridlinesColor: "#abcdef" })
+        );
+        expect(html).toContain("--spreadsheet-gridline-color:#abcdef");
+    });
+
+    it("does not emit a gridline color variable when gridlines are hidden", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: "x" }, { showGridlines: 0, gridlinesColor: "#abcdef" })
+        );
+        expect(html).not.toContain("--spreadsheet-gridline-color");
+    });
+
+    it("sanitizes a malicious gridline color", () => {
+        const html = renderSpreadsheetToHtml(
+            singleCellWorkbook({ v: "x" }, { showGridlines: 1, gridlinesColor: "#000;background:url(//evil.com)" })
+        );
+        expect(html).not.toContain("evil.com");
+        expect(html).toContain("--spreadsheet-gridline-color:transparent");
     });
 
     it("extends bounds to cover a merge range that exceeds the cell data", () => {

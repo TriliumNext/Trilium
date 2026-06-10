@@ -324,6 +324,7 @@
     "code-notes-title": "Code Notes",
     "images-title": "Media",
     "spellcheck-title": "Spellcheck",
+    "security-title": "Security",
     "password-title": "Password",
     "multi-factor-authentication-title": "MFA",
     "etapi-title": "ETAPI",
@@ -392,6 +393,8 @@
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",
+    "markdown-snippet": "Markdown Snippet",
+    "code-snippet": "Code Snippet",
     "description": "Description",
     "list-view": "List View",
     "grid-view": "Grid View",
@@ -437,5 +440,21 @@
       "fulltext-after-expression": "\"{{- token}}\" is not a valid expression. To search for text, place it before attribute filters (e.g., \"{{- token}} #label\" instead of \"#label {{- token}}\").",
       "unrecognized-expression": "Unrecognized expression \"{{- token}}\""
     }
+  },
+  "security-dialog": {
+    "enable-title": "Enable {{settingLabel}}",
+    "enable-message": "Are you sure you want to enable {{settingLabel}}?",
+    "enable-detail": "{{warning}}\n\nOnly enable this if you explicitly intend to use this feature. Do not enable it if prompted by a script or an unfamiliar note.\n\nThis change requires a restart to take effect.",
+    "disable-title": "Disable {{settingLabel}}",
+    "disable-message": "{{settingLabel}} will be disabled.",
+    "disable-detail": "This change requires a restart to take effect.",
+    "cancel": "Cancel",
+    "enable": "Enable",
+    "disable": "Disable",
+    "dont-ask-again": "Don't ask again until restart",
+    "backend-scripting": "Backend script execution",
+    "backend-scripting-warning": "Backend scripts have full access to the server, including the file system and network.",
+    "sql-console": "SQL console",
+    "sql-console-warning": "The SQL console allows executing arbitrary SQL queries against the database."
   }
 }

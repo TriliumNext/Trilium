@@ -235,7 +235,8 @@
     "task-state-attr-markdown-symbol": "Markdown 符号",
     "task-state-attr-is-completed": "视为已完成",
     "task-state-attr-color": "颜色",
-    "task-state-attr-is-hidden": "在列表中隐藏"
+    "task-state-attr-is-hidden": "在列表中隐藏",
+    "security-title": "安全"
   },
   "notes": {
     "new-note": "新建笔记",
@@ -413,7 +414,9 @@
     "presentation_slide": "演示幻灯片",
     "presentation_slide_first": "第一张幻灯片",
     "presentation_slide_second": "第二张幻灯片",
-    "background": "背景"
+    "background": "背景",
+    "markdown-snippet": "Markdown 片段",
+    "code-snippet": "代码片段"
   },
   "sql_init": {
     "db_not_initialized_desktop": "数据库尚未初始化，请依照屏幕提示操作。",
@@ -437,5 +440,21 @@
   },
   "script": {
     "wrong-environment": "无法执行笔记“{{-noteTitle}}”（{{-noteId}}）。这是一个 {{-actualEnv}} 脚本，但尝试在 {{-expectedEnv}} 中执行。"
+  },
+  "security-dialog": {
+    "enable-title": "启用{{settingLabel}}",
+    "enable-message": "确定要启用{{settingLabel}}吗？",
+    "enable-detail": "{{warning}}\n\n只有在您明确需要使用此功能时才启用。如果是某个脚本或陌生笔记提示您这么做，请不要启用。\n\n此更改需要重启才能生效。",
+    "disable-title": "禁用{{settingLabel}}",
+    "disable-message": "{{settingLabel}}将被禁用。",
+    "disable-detail": "此更改需要重启才能生效。",
+    "cancel": "取消",
+    "enable": "启用",
+    "disable": "禁用",
+    "dont-ask-again": "重启前不再询问",
+    "backend-scripting": "后端脚本执行",
+    "backend-scripting-warning": "后端脚本拥有服务器的完全访问权限，包括文件系统和网络。",
+    "sql-console": "SQL 控制台",
+    "sql-console-warning": "SQL 控制台允许对数据库执行任意 SQL 查询。"
   }
 }

@@ -43,7 +43,7 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
             unlinkSync(destinationFile);
         } catch (e) { } // unlink throws exception if the file did not exist
 
-        this.dbConnection?.backup(destinationFile);
+        void this.dbConnection?.backup(destinationFile);
     }
 
     prepare(query: string): Statement {

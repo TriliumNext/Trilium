@@ -29,7 +29,7 @@ async function readResponseText(response: Response, maxBytes: number): Promise<s
         result += decoder.decode(value, { stream: true });
     }
 
-    reader.cancel();
+    void reader.cancel();
     return result.slice(0, maxBytes);
 }
 
@@ -62,7 +62,7 @@ async function downloadFaviconAsDataUri(faviconUrl: string): Promise<string | un
 
             bytesRead += value.byteLength;
             if (bytesRead > MAX_FAVICON_SIZE) {
-                reader.cancel();
+                void reader.cancel();
                 return undefined;
             }
             chunks.push(value);

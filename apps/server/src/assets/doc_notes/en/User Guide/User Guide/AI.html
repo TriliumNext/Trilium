@@ -25,40 +25,36 @@
 <ul>
   <li>Chat-based interface with live streaming of the messages.</li>
   <li>Provides the AI context with the note currently being looked at.</li>
-  <li
- >Tools to alter note content, create new notes, etc.</li>
-    <li>Statistics regarding context window use and pricing per message.</li>
-    <li
-   >Attachments for multi-modal chat (images, text files, PDFs).</li>
-      <li>Optional MCP to allow external chat tools (e.g. Claude Code) to operate
-        on notes within Trilium.</li>
+  <li>Tools to alter note content, create new notes, etc.</li>
+  <li>Statistics regarding context window use and pricing per message.</li>
+  <li>Attachments for multi-modal chat (images, text files, PDFs).</li>
+  <li>Optional MCP to allow external chat tools (e.g. Claude Code) to operate
+    on notes within Trilium.</li>
 </ul>
 <h2>Sample use-cases</h2>
-<figure class="table" style="width:100%;">
-  <table class="ck-table-resized">
-    <colgroup>
-      <col style="width:38.77%;">
-        <col style="width:61.23%;">
-    </colgroup>
-    <thead>
-      <tr>
-        <th scope="col">Use case</th>
-        <th scope="col">Sample prompt</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Easily create a&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_HcABDtFCkbFN">Render Note</a>.</td>
-        <td>
-          <blockquote>
-            <p><em>Create for me a render note which allows me to play tic-tac-toe. Make sure to use Preact instead of the legacy jQuery.</em>
-            </p>
-          </blockquote>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
+<table class="ck-table-resized">
+  <colgroup>
+    <col style="width:38.77%;">
+      <col style="width:61.23%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>Use case</th>
+      <th>Sample prompt</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Easily create a&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>.</td>
+      <td>
+        <blockquote>
+          <p><em>Create for me a render note which allows me to play tic-tac-toe. Make sure to use Preact instead of the legacy jQuery.</em>
+          </p>
+        </blockquote>
+      </td>
+    </tr>
+  </tbody>
+</table>
 <h2>LLM Providers</h2>
 <h3>Cloud providers</h3>
 <p>Currently, only three cloud providers are supported:</p>
@@ -85,7 +81,7 @@
   the default or the loaded one is used instead.</p>
 <aside class="admonition warning">
   <p>When dealing with self-hosted LLM models, depending on the training and
-    the size of the model, the quality of the output may vary. Before <a href="#root/pOsGYCXsbNQG/BgmBlOIl72jZ/_help_wy8So3yZZlH9">reporting issues</a> regarding
+    the size of the model, the quality of the output may vary. Before <a href="#root/_help_wy8So3yZZlH9">reporting issues</a> regarding
     the quality of the output (e.g. hallucinating tool calls), consider benchmarking
     the response against a cloud provider (Claude Sonnet is recommended).</p>
 </aside>
@@ -95,8 +91,7 @@
 <ol>
   <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Advanced</em> and
     check <em>AI / LLM Chat</em> in the <em>Experimental Options</em> section.</li>
-  <li
- >Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em> and
+  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em> and
     configure a new provider.</li>
 </ol>
 <h2>Creating a new chat</h2>
@@ -137,7 +132,7 @@
 <p>Unlike the sidebar, the AI will not be aware of the current note it's
   in.</p>
 <h3>Templates</h3>
-<p>Chat notes can be set as&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/_help_KC1HB96bqqHX">Templates</a>&nbsp;to
+<p>Chat notes can be set as&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;to
   make them easily reusable. The entire conversation history is kept, allowing
   a basic form of specialization for the LLM with the existing chat acting
   like a system prompt.&nbsp;</p>
@@ -167,7 +162,7 @@ class="admonition note">
           <ul>
             <li>There are multiple mechanism for the LLM to edit a note: completely by
               re-writing it, find/replace of a text sequence or append.</li>
-            <li>Whenever the AI makes a change, a <a href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_vZWERwf8U3nx">revision</a> is
+            <li>Whenever the AI makes a change, a <a href="#root/_help_vZWERwf8U3nx">revision</a> is
               saved to be able to revert any unwanted changes.</li>
           </ul>
         </li>
@@ -189,7 +184,7 @@ class="admonition note">
         <li>Move or clone a note somewhere else.</li>
       </ul>
     </li>
-    <li>For&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_0vhv7lsOLy82">Attachments</a>:
+    <li>For&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>:
       <ul>
         <li>Get metadata for an attachment.</li>
         <li>Get the content of an attachment.</li>
@@ -210,80 +205,56 @@ class="admonition note">
       be both enabled at the same time.</p>
   </aside>
   <h3>Attachments</h3>
-  <p>Since Trilium v0.140.0,&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_0vhv7lsOLy82">Attachments</a>&nbsp;allow
+  <p>Since Trilium v0.140.0,&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>&nbsp;allow
     for multi-modal chat:</p>
   <ul>
-    <li>
-      <p>Raster image (sent as vision input, except for SVGs) with the following
-        supported formats: PNG, JPEG, GIF, WebP.</p>
-    </li>
-    <li>
-      <p>PDFs, sent natively to the provider (supported by Anthropic, OpenAI and
-        Google).</p>
-    </li>
-    <li>
-      <p>SVG images (sent as raw HTML).</p>
-    </li>
-    <li>
-      <p>Text files.</p>
-    </li>
+    <li>Raster image (sent as vision input, except for SVGs) with the following
+      supported formats: PNG, JPEG, GIF, WebP.</li>
+    <li>PDFs, sent natively to the provider (supported by Anthropic, OpenAI and
+      Google).</li>
+    <li>SVG images (sent as raw HTML).</li>
+    <li>Text files.</li>
   </ul>
   <p>To upload an attachment:</p>
   <ul>
-    <li>
-      <p>Press the dedicated <em>Attach</em> button (paperclip icon) underneath the
-        text box.</p>
-    </li>
-    <li>
-      <p>Paste an image directly from clipboard using <kbd spellcheck="false">Ctrl</kbd>+
-        <kbd
-        spellcheck="false">V</kbd>.</p>
-    </li>
+    <li>Press the dedicated <em>Attach</em> button (paperclip icon) underneath the
+      text box.</li>
+    <li>Paste an image directly from clipboard using <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
   </ul>
   <p>Once one or more attachments are uploaded, they will appear directly above
     the text box:</p>
   <ul>
-    <li>
-      <p>Images have a small thumbnail for easy identifications.</p>
-    </li>
-    <li>
-      <p>Every attachment can be deleted by pressing their corresponding X button.</p>
-    </li>
+    <li>Images have a small thumbnail for easy identifications.</li>
+    <li>Every attachment can be deleted by pressing their corresponding X button.</li>
   </ul>
   <p>When an attachment is present, the LLM is instructed to consider the attachment
     with priority, even if it has access to the current note.</p>
   <aside class="admonition note">
     <p>Currently Trilium doesn't pre-process the attachments (e.g. via&nbsp;
       <a
-      class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/_help_TiQbQDgP8L5t">Text Extraction (OCR)</a>) before sending them to the LLM provider.</p>
+      class="reference-link" href="#root/_help_TiQbQDgP8L5t">Text Extraction (OCR)</a>) before sending them to the LLM provider.</p>
   </aside>
   <h3>Mentions</h3>
   <p>Mentions are a way to insert references to notes other than the current
-    note, using the same mechanism as&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/QEAPj01N5f7w/_help_hrZ1D00cLbal">Internal (reference) links</a>.
-    To refer to another note, simply type <kbd spellcheck="false">@</kbd> followed
-    by the name of the note to reference.</p>
+    note, using the same mechanism as&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>.
+    To refer to another note, simply type <kbd>@</kbd> followed by the name
+    of the note to reference.</p>
   <p>This feature is mostly helpful when note tools are enabled, otherwise
     the LLM will have no way to access the given note.</p>
   <h3>Skills</h3>
   <p>Skills in Trilium are specialized instruction sets that help the AI be
     more productive by understanding how Trilium.</p>
   <p>These skills are not loaded by default to avoid an increased consumption
-    of tokens, but the AI can load them on-demand if <em>Note tools </em>are
+    of tokens, but the AI can load them on-demand if <em>Note tools</em> are
     enabled.</p>
   <p>The following skills are built-in:</p>
   <ul>
-    <li>
-      <p>Search syntax: understands the full syntax of&nbsp;<a class="reference-link"
-        href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/wArbEsdSae6g/_help_eIg8jdvaoNNd">Search</a>.</p>
-    </li>
-    <li>
-      <p>Backend scripting: to be able to write proper&nbsp;<a class="reference-link"
-        href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/_help_SPirpZypehBG">Backend scripts</a>.</p>
-    </li>
-    <li>
-      <p>Frontend scripting: to be able to write proper <a href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/_help_yIhgI5H7A2Sm">front-end scripts</a> (basic
-        scripts, widgets,&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_HcABDtFCkbFN">Render Note</a>).</p>
-    </li>
+    <li>Search syntax: understands the full syntax of&nbsp;<a class="reference-link"
+      href="#root/_help_eIg8jdvaoNNd">Search</a>.</li>
+    <li>Backend scripting: to be able to write proper&nbsp;<a class="reference-link"
+      href="#root/_help_SPirpZypehBG">Backend scripts</a>.</li>
+    <li>Frontend scripting: to be able to write proper <a href="#root/_help_yIhgI5H7A2Sm">front-end scripts</a> (basic
+      scripts, widgets,&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>).</li>
   </ul>
   <p>When <em>Note tools</em> are enabled the skills will automatically be made
     available to the AI, so no user interaction is required.</p>
@@ -296,26 +267,20 @@ class="admonition note">
     database.</p>
   <h4>Built-in MCP</h4>
   <p>v0.103.0 comes with a built-in MCP server that is not active by default.
-    To activate it, go to&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_4TIF1oA4VQRO">Options</a>&nbsp;→
+    To activate it, go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→
     AI/LLM and toggle the <em>MCP server</em> option.</p>
   <p>Once the MCP is active, simply add the MCP server to your AI assistant.
     The URL to use is displayed in the <em>Endpoint</em>  <em>URL</em> information
     underneath the MCP toggle.</p>
   <p>Important aspects to consider:</p>
   <ul>
-    <li>
-      <p>Only the HTTP transport is supported, the <code spellcheck="false">stdio</code> method
-        is not supported. If that is a blocker, consider using a third-party alternative
-        listed below.</p>
-    </li>
-    <li>
-      <p>The MCP does not have any authentication.</p>
-    </li>
-    <li>
-      <p>The MCP is currently exposed only on <code spellcheck="false">localhost</code> to
-        avoid potential security issues, especially given that there is no authentication
-        present.</p>
-    </li>
+    <li>Only the HTTP transport is supported, the <code spellcheck="false">stdio</code> method
+      is not supported. If that is a blocker, consider using a third-party alternative
+      listed below.</li>
+    <li>The MCP does not have any authentication.</li>
+    <li>The MCP is currently exposed only on <code spellcheck="false">localhost</code> to
+      avoid potential security issues, especially given that there is no authentication
+      present.</li>
   </ul>
   <p>The tools exposed to the MCP are the same tools that are supported by
     the internal chat (see the <em>Note access</em> section).</p>

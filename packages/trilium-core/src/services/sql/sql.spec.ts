@@ -6,15 +6,6 @@ import { getSql } from "./index.js";
 // happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
 const isBrowserRuntime = typeof window !== "undefined";
 
-/**
- * Wraps a callback in a CLS context. Methods that touch `getContext()`
- * (e.g. `disableSlowQueryLogging`, `transactional`) require an initialised
- * context.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let tableCounter = 0;
 
 /**
@@ -269,7 +260,7 @@ describe("SqlService (real DB)", () => {
     describe("transactional", () => {
         it("commits the changes made inside the callback and returns its value", () => {
             const table = createTempTable();
-            const ret = withContext(() =>
+            const ret = getContext().init(() =>
                 getSql().transactional(() => {
                     getSql().insert(table, { name: "committed", val: 1 });
                     return "done";
@@ -285,7 +276,7 @@ describe("SqlService (real DB)", () => {
             getSql().insert(table, { name: "before", val: 1 });
 
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     getSql().transactional(() => {
                         getSql().insert(table, { name: "doomed", val: 2 });
                         throw new Error("boom");
@@ -302,7 +293,7 @@ describe("SqlService (real DB)", () => {
     describe("transactionalAsync", () => {
         it("commits an async callback and returns its resolved value", async () => {
             const table = createTempTable();
-            const ret = await withContext(() =>
+            const ret = await getContext().init(() =>
                 getSql().transactionalAsync(async () => {
                     getSql().insert(table, { name: "async", val: 1 });
                     return 42;
@@ -318,7 +309,7 @@ describe("SqlService (real DB)", () => {
             getSql().insert(table, { name: "keep", val: 1 });
 
             await expect(
-                withContext(() =>
+                getContext().init(() =>
                     getSql().transactionalAsync(async () => {
                         getSql().insert(table, { name: "discard", val: 2 });
                         throw new Error("async-boom");
@@ -333,7 +324,7 @@ describe("SqlService (real DB)", () => {
 
     describe("disableSlowQueryLogging", () => {
         it("sets the flag for the duration of the callback and restores the prior value", () => {
-            withContext(() => {
+            getContext().init(() => {
                 const ctx = getContext();
                 expect(ctx.get("disableSlowQueryLogging")).toBeFalsy();
 
@@ -348,7 +339,7 @@ describe("SqlService (real DB)", () => {
         });
 
         it("restores the flag even if the callback throws", () => {
-            withContext(() => {
+            getContext().init(() => {
                 expect(() =>
                     getSql().disableSlowQueryLogging(() => {
                         throw new Error("inner-fail");

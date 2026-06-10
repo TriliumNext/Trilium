@@ -505,7 +505,7 @@ describe('OCRService', () => {
                 });
                 mockWorker.recognize.mockResolvedValue({ data: { text: 'text', confidence: 90, words: [] } });
 
-                ocrService.startBatchProcessing();
+                void ocrService.startBatchProcessing();
 
                 const result = await ocrService.startBatchProcessing();
 
@@ -613,7 +613,7 @@ describe('OCRService', () => {
                     Array.from({ length: 10 }, (_, i) => ({ entityId: `note${i}`, mimeType: 'image/jpeg' }))
                 );
 
-                ocrService.startBatchProcessing();
+                void ocrService.startBatchProcessing();
 
                 const progress = ocrService.getBatchProgress();
 
@@ -631,7 +631,7 @@ describe('OCRService', () => {
                     [{ entityId: 'note1', mimeType: 'image/jpeg' }]
                 );
 
-                ocrService.startBatchProcessing();
+                void ocrService.startBatchProcessing();
 
                 expect(ocrService.getBatchProgress().inProgress).toBe(true);
 

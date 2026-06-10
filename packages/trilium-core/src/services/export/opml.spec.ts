@@ -9,14 +9,6 @@ import sql_init from "../sql_init.js";
 import TaskContext from "../task_context.js";
 import opml from "./opml.js";
 
-/**
- * Wraps a callback in a CLS context. Entity mutations (createNewNote,
- * addLabel) require CLS to be initialised.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /**
@@ -29,7 +21,7 @@ function createNote(
     overrides: Partial<{ title: string; content: string; type: BNote["type"]; mime: string }> = {}
 ): { note: BNote; branch: BBranch } {
     counter++;
-    return withContext(() =>
+    return getContext().init(() =>
         noteService.createNewNote({
             parentNoteId,
             title: overrides.title ?? `opml-export-spec-${counter}`,
@@ -174,7 +166,7 @@ describe("exportToOpml (real DB)", () => {
         const { note: parent, branch } = createNote("root", { title: "Export parent", content: "" });
         createNote(parent.noteId, { title: "Kept child", content: "<p>keep</p>" });
         const { note: excluded } = createNote(parent.noteId, { title: "Excluded child", content: "<p>no</p>" });
-        withContext(() => excluded.addLabel("excludeFromExport"));
+        getContext().init(() => excluded.addLabel("excludeFromExport"));
 
         const body = runExport(branch, "2.0").body;
 
@@ -186,7 +178,7 @@ describe("exportToOpml (real DB)", () => {
 
     it("includes the branch prefix in the title and the download filename", () => {
         const { note, branch } = createNote("root", { title: "Prefixed", content: "" });
-        withContext(() => {
+        getContext().init(() => {
             branch.prefix = "Pre";
             branch.save();
         });

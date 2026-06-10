@@ -9,6 +9,7 @@ import { HTMLElement, Options, parse, TextNode } from "node-html-parser";
 import { join } from "path";
 
 import assetPath, { assetUrlFragment } from "../services/asset_path.js";
+import { isScriptingEnabled } from "../services/scripting_guard.js";
 import { getResourceDir, isDev } from "../services/utils.js";
 import SAttachment from "./shaca/entities/sattachment.js";
 import SBranch from "./shaca/entities/sbranch.js";
@@ -193,11 +194,13 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         t,
         isDev,
         utils,
+        sanitizeUrl: sanitize.sanitizeUrl,
         ...renderArgs,
     };
 
     // Check if the user has their own template.
-    if (note.hasRelation("shareTemplate")) {
+    // Skip user-provided EJS templates when backend scripting is disabled since EJS can execute arbitrary JS.
+    if (note.hasRelation("shareTemplate") && isScriptingEnabled()) {
         // Get the template note and content
         const templateId = note.getRelation("shareTemplate")?.value;
         const templateNote = templateId && shaca.getNote(templateId);

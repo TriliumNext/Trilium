@@ -1,8 +1,8 @@
-import { becca_easy_mocking, BNote } from "@triliumnext/core";
+import { becca_easy_mocking, BNote, cls } from "@triliumnext/core";
+import type { Request } from "express";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import { cls } from "@triliumnext/core";
-import { processContent } from "./clipper";
+import clipperRoute, { processContent } from "./clipper";
 
 const { buildNote } = becca_easy_mocking;
 
@@ -52,5 +52,60 @@ describe("processContent", () => {
             ));
             expect(processed).toStrictEqual(`<img src="OKZxZA3MonZJkwFcEhId" >`);
         }
+    });
+});
+
+// These exercise the route handlers against the real in-memory DB.
+describe("clipper route handlers", () => {
+    it("returns the handshake metadata", () => {
+        const result = clipperRoute.handshake();
+        expect(result.appName).toBe("trilium");
+        expect(result.protocolVersion).toBeTruthy();
+    });
+
+    it("reports open-in-browser when not running under Electron", () => {
+        const req = { params: { noteId: "root" } } as unknown as Request<{ noteId: string }>;
+        expect(clipperRoute.openNote(req)).toEqual({ result: "open-in-browser" });
+    });
+
+    it("creates a clipping note, then appends to it when clipped from the same URL", async () => {
+        const pageUrl = "https://example.com/article";
+        const first = await cls.init(() => clipperRoute.addClipping({
+            body: { title: "Article", content: "<p>first</p>", images: [], pageUrl }
+        } as unknown as Request));
+        expect(first.noteId).toBeTruthy();
+
+        const second = await cls.init(() => clipperRoute.addClipping({
+            body: { title: "Article", content: "<p>second</p>", images: [], pageUrl }
+        } as unknown as Request));
+        // Same pageUrl → appends to the existing clipping note.
+        expect(second.noteId).toBe(first.noteId);
+
+        const found = await cls.init(() => clipperRoute.findNotesByUrl({ params: { noteUrl: pageUrl } } as unknown as Request<{ noteUrl: string }>));
+        expect(found.noteId).toBe(first.noteId);
+    });
+
+    it("creates a standalone note with labels", async () => {
+        const result = await cls.init(() => clipperRoute.createNote({
+            body: {
+                title: "Clipped",
+                content: "<p>body</p>",
+                images: [],
+                clipType: "note",
+                pageUrl: "https://example.com/page",
+                labels: { source: "web" }
+            }
+        } as unknown as Request));
+        expect(result.noteId).toBeTruthy();
+    });
+
+    it("returns a null noteId when no clipping matches the URL", async () => {
+        const found = await cls.init(() => clipperRoute.findNotesByUrl({ params: { noteUrl: "https://nope.example/none" } } as unknown as Request<{ noteUrl: string }>));
+        expect(found.noteId).toBeNull();
+    });
+
+    it("returns a null noteId for an empty URL", async () => {
+        const found = await cls.init(() => clipperRoute.findNotesByUrl({ params: { noteUrl: "" } } as unknown as Request<{ noteUrl: string }>));
+        expect(found.noteId).toBeNull();
     });
 });

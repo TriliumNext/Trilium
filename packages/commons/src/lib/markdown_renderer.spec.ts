@@ -139,8 +139,10 @@ describe("renderToHtml", () => {
     describe("code fences (CustomMarkdownRenderer.code)", () => {
         it("maps a known fence language to its CKEditor MIME class", () => {
             const html = render("```javascript\nconst x = 1;\n```");
+            // A markdown code fence is not a Trilium script, so `javascript` maps to plain
+            // JavaScript (`text/javascript`) rather than the frontend/backend script variants.
             expect(html).toBe(
-                '<pre><code class="language-application-javascript-env-backend">const x = 1;</code></pre>'
+                '<pre><code class="language-text-javascript">const x = 1;</code></pre>'
             );
         });
 

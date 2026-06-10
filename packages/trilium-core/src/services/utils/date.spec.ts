@@ -46,12 +46,10 @@ describe("date utils", () => {
             expect(parsed.toISOString()).toBe("2020-01-02T03:04:05.000Z");
         });
 
-        it("returns an Invalid Date for an unparseable string rather than throwing", () => {
-            // Date.parse() returns NaN (it does not throw), so the catch path is
-            // never hit and the result is an Invalid Date instance.
-            const parsed = date.parseDateTime("not-a-date");
-            expect(parsed).toBeInstanceOf(Date);
-            expect(Number.isNaN(parsed.getTime())).toBe(true);
+        it("throws for an unparseable string", () => {
+            // Date.parse() returns NaN (it does not throw), so parseDateTime detects
+            // the NaN explicitly and raises a descriptive error.
+            expect(() => date.parseDateTime("not-a-date")).toThrow("Can't parse date from 'not-a-date'");
         });
     });
 
@@ -115,6 +113,13 @@ describe("date utils", () => {
                 "Invalid local date time format"
             );
         });
+
+        it("rejects a value that matches the format but is not a real date", () => {
+            // Passes the regex (right shape) but month 13 / impossible time => unparseable.
+            expect(date.validateLocalDateTime("2023-13-45 99:99:99.999+0200")).toContain(
+                "cannot be parsed"
+            );
+        });
     });
 
     describe("validateUtcDateTime", () => {
@@ -140,6 +145,11 @@ describe("date utils", () => {
 
             // entirely wrong shape
             expect(date.validateUtcDateTime("garbage")).toContain("Invalid UTC date time format");
+        });
+
+        it("rejects a value that matches the format but is not a real date", () => {
+            // Passes the regex (right shape) but month 13 / impossible time => unparseable.
+            expect(date.validateUtcDateTime("2023-13-45 99:99:99.999Z")).toContain("cannot be parsed");
         });
     });
 

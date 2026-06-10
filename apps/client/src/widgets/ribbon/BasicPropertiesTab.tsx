@@ -5,9 +5,9 @@ import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useState } fro
 import FNote from "../../entities/fnote";
 import branches from "../../services/branches";
 import dialog from "../../services/dialog";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import { getAvailableLocales, t } from "../../services/i18n";
 import mime_types from "../../services/mime_types";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import { NOTE_TYPES } from "../../services/note_types";
 import protected_session from "../../services/protected_session";
 import server from "../../services/server";
@@ -72,7 +72,7 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
     setModalShown: Dispatch<StateUpdater<boolean>>;
     noCodeNotes?: boolean;
 }) {
-    const mimeTypes = useMimeTypes();
+    const { enabledMimeTypes } = useMimeTypes();
     const noteTypes = useMemo(() => NOTE_TYPES.filter((nt) => !nt.reserved && !nt.static && (nt.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))), []);
     const changeNoteType = useCallback(async (type: NoteType, mime?: string) => {
         if (!note || (type === currentNoteType && mime === currentNoteMime)) {
@@ -131,7 +131,7 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
                 );
             })}
 
-            {!noCodeNotes && <NoteTypeCodeNoteList mimeTypes={mimeTypes} changeNoteType={changeNoteType} setModalShown={setModalShown} />}
+            {!noCodeNotes && <NoteTypeCodeNoteList mimeTypes={enabledMimeTypes} changeNoteType={changeNoteType} setModalShown={setModalShown} />}
         </>
     );
 }
@@ -164,11 +164,14 @@ export function NoteTypeCodeNoteList({ currentMimeType, mimeTypes, changeNoteTyp
 
 export function useMimeTypes() {
     const [ codeNotesMimeTypes ] = useTriliumOption("codeNotesMimeTypes");
-    const mimeTypes = useMemo(() => {
+    return useMemo(() => {
         mime_types.loadMimeTypes();
-        return mime_types.getMimeTypes().filter(mimeType => mimeType.enabled);
+        const allMimeTypes = mime_types.getMimeTypes();
+        return {
+            enabledMimeTypes: allMimeTypes.filter(mimeType => mimeType?.enabled),
+            allMimeTypes
+        };
     }, [ codeNotesMimeTypes ]); // eslint-disable-line react-hooks/exhaustive-deps
-    return mimeTypes;
 }
 
 export function NoteTypeOptionsModal({ modalShown, setModalShown }: { modalShown: boolean, setModalShown: (shown: boolean) => void }) {

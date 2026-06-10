@@ -274,9 +274,9 @@
   },
   "password_not_set": {
     "title": "Le mot de passe n'est pas défini",
-    "body1": "Les notes protégées sont cryptées à l'aide d'un mot de passe utilisateur, mais le mot de passe n'a pas encore été défini.",
+    "body1": "Les notes protégées sont chiffrées à l'aide d'un mot de passe utilisateur, mais celui-ci n'a pas encore été défini.",
     "body2": "Pour pouvoir protéger les notes, cliquez sur le bouton ci-dessous pour ouvrir la boîte de dialogue Paramètres et définir votre mot de passe.",
-    "go_to_password_options": "Accéder aux options de mot de passe"
+    "go_to_password_options": "Aller aux paramètres de mot de passe"
   },
   "prompt": {
     "title": "Prompt",
@@ -821,7 +821,9 @@
     "expand_all_levels": "Développer tous les niveaux",
     "hide_child_notes": "Masquer les notes enfants dans l’arborescence",
     "open_all_in_tabs_tooltip": "Ouvrir tous les résultats dans de nouveaux onglets",
-    "open_all_confirm": "Cela ouvrira {{count}} notes dans de nouveaux onglets. Continuer ?",
+    "open_all_confirm_one": "Cela ouvrira {{count}} notes dans de nouveaux onglets. Continuer ?",
+    "open_all_confirm_many": "",
+    "open_all_confirm_other": "",
     "open_all_in_tabs": "Tout ouvrir"
   },
   "edited_notes": {
@@ -866,7 +868,9 @@
     "note_size": "Taille de la note",
     "note_size_info": "La taille de la note fournit une estimation approximative des besoins de stockage pour cette note. Il prend en compte le contenu de la note et de ses versions.",
     "calculate": "calculer",
-    "subtree_size": "(taille du sous-arbre : {{size}} pour {{count}} notes)",
+    "subtree_size_one": "(taille du sous-arbre : {{size}} pour {{count}} notes)",
+    "subtree_size_many": "",
+    "subtree_size_other": "",
     "title": "Infos sur la Note",
     "mime": "type MIME",
     "show_similar_notes": "Afficher des notes similaires"
@@ -877,7 +881,9 @@
     "title": "Carte des notes",
     "fix-nodes": "Réparer les nœuds",
     "link-distance": "Longueur des liens",
-    "too-many-notes": "Il y a {{count}} notes ici. Les afficher toutes pourrait ralentir le chargement.",
+    "too-many-notes_one": "Il y a {{count}} notes ici. Les afficher toutes pourrait ralentir le chargement.",
+    "too-many-notes_many": "",
+    "too-many-notes_other": "",
     "show-anyway": "Afficher la carte"
   },
   "note_paths": {
@@ -1418,7 +1424,7 @@
   },
   "password": {
     "heading": "Mot de passe",
-    "alert_message": "Prenez soin de mémoriser votre nouveau mot de passe. Le mot de passe est utilisé pour se connecter à l'interface Web et pour crypter les notes protégées. Si vous oubliez votre mot de passe, toutes vos notes protégées seront définitivement perdues.",
+    "alert_message": "Prenez soin de mémoriser votre nouveau mot de passe. Il sert à vous connecter à l'interface web et à chiffrer vos notes protégées. Si vous l'oubliez, toutes vos notes protégées seront définitivement perdues.",
     "reset_link": "Cliquez ici pour le réinitialiser.",
     "old_password": "Ancien mot de passe",
     "new_password": "Nouveau mot de passe",
@@ -1540,7 +1546,9 @@
     "export": "Exporter",
     "import-into-note": "Importer dans la note",
     "apply-bulk-actions": "Appliquer des Actions groupées",
-    "converted-to-attachments": "Les notes {{count}} ont été converties en pièces jointes.",
+    "converted-to-attachments_one": "Les notes {{count}} ont été converties en pièces jointes.",
+    "converted-to-attachments_many": "",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "Voulez-vous vraiment convertir les notes sélectionnées en pièces jointes de leurs notes parents ? Cette opération ne s’applique qu’aux notes de type image ; les autres notes seront ignorées.",
     "archive": "Archive",
     "unarchive": "Désarchiver",
@@ -1728,7 +1736,12 @@
   },
   "image": {
     "copied-to-clipboard": "Une référence à l'image a été copiée dans le presse-papiers. Elle peut être collée dans n'importe quelle note texte.",
-    "cannot-copy": "Impossible de copier la référence d'image dans le presse-papiers."
+    "cannot-copy": "Impossible de copier la référence d'image dans le presse-papiers.",
+    "copy-to-clipboard": "Copier l'image dans le presse-papiers",
+    "download": "Télécharger l'image",
+    "image-copied-to-clipboard": "L'image a été copiée dans le presse-papiers.",
+    "cannot-copy-image": "Impossible de copier l'image dans le presse-papiers.",
+    "cannot-download": "Impossible de télécharger l'image."
   },
   "clipboard": {
     "cut": "Les note(s) ont été coupées dans le presse-papiers.",
@@ -2047,7 +2060,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} notes",
+    "total_notes_one": "{{count}} notes",
+    "total_notes_many": "",
+    "total_notes_other": "",
     "prev_page": "Page précédente",
     "next_page": "Page suivante"
   },
@@ -2367,7 +2382,9 @@
     "sample_venn": "Venn",
     "sample_ishikawa": "Ishikawa",
     "sample_treeview": "Vue arborescente",
-    "sample_wardley": "Carte Wardley"
+    "sample_wardley": "Carte Wardley",
+    "slash_command_blank_description": "Insérer un diagramme Mermaid vide",
+    "slash_command_description": "Insérer un modèle de diagramme Mermaid \"{{name}}\""
   },
   "mind-map": {
     "addChild": "Ajouter un enfant",
@@ -2459,7 +2476,9 @@
     "code_note_switcher": "Changer de langue",
     "tab_width": "Largeur de tabulation : {{width}}",
     "tab_width_title": "Modifier la largeur de tabulation",
-    "tab_width_spaces": "{{count}} espaces",
+    "tab_width_spaces_one": "{{count}} espaces",
+    "tab_width_spaces_many": "",
+    "tab_width_spaces_other": "",
     "tab_width_spaces_short": "Espaces : {{width}}",
     "tab_width_tabs": "Tabulations : {{width}}",
     "tab_width_use_default": "Utiliser la valeur par défaut ({{width}})",
@@ -2550,7 +2569,16 @@
     "math": "Insérer un bloc de formule mathématique",
     "footnote": "Insérer une note de bas de page",
     "mermaid": "Insérer un diagramme Mermaid",
-    "admonition": "Insérer une admonition {{type}}"
+    "admonition": "Insérer une admonition {{type}}",
+    "mermaid_template": "Insérer un diagramme Mermaid \"{{name}}\"",
+    "collapsible": "Insérer un bloc repliable",
+    "todo": "Insérer un élément de tâche \"{{title}}\"",
+    "todo_nonstandard": "Insérer un élément de tâche \"{{title}}\" (non standard)",
+    "placeholders": {
+      "math": "équation",
+      "collapsible_summary": "Résumé",
+      "collapsible_details": "Détails"
+    }
   },
   "search": {
     "title": "Rechercher",
@@ -2574,7 +2602,8 @@
     "more_actions": "Plus d’actions"
   },
   "link": {
-    "failed_to_open": "Impossible d’ouvrir le lien '{{- href}}' : {{- message}}"
+    "failed_to_open": "Impossible d’ouvrir le lien '{{- href}}' : {{- message}}",
+    "copy_url": "Copier l'URL"
   },
   "display_mode": {
     "source": "Vue source",
@@ -2704,6 +2733,32 @@
       "missing-icon": "icône manquante",
       "invalid-symbol": "le symbole Markdown doit être un seul caractère (sauf \"[\", \"X\" et \"]\")",
       "duplicate-symbol": "symbole Markdown en double"
-    }
+    },
+    "collapsible-body-placeholder": "Saisissez le contenu ici...",
+    "collapsible-button-label": "Bloc repliable",
+    "collapsible-handle-tooltip": "Glisser pour déplacer le bloc repliable",
+    "collapsible-select-label": "Sélectionner le bloc repliable",
+    "collapsible-title-placeholder": "Résumé",
+    "collapsible-toggle-label": "Ouvrir/fermer le bloc repliable",
+    "collapsible-tooltip": "Cliquez sur la flèche ou appuyez sur {{shortcut}} pour replier/déplier."
+  },
+  "slash_commands": {
+    "bulleted_list_description": "Créer une liste à puces",
+    "numbered_list_description": "Créer une liste numérotée",
+    "todo_list_description": "Créer une liste de tâches",
+    "align_left_description": "Aligner le texte à gauche",
+    "align_center_description": "Centrer le texte",
+    "align_right_description": "Aligner le texte à droite",
+    "justify_description": "Justifier le texte",
+    "admonition_description": "Insérer une nouvelle admonition",
+    "collapsible_description": "Insérer une section repliable qui affiche/masque le contenu au clic.",
+    "footnote_description": "Créer une nouvelle note de bas de page et insérer sa référence ici",
+    "datetime_description": "Insérer la date et l'heure actuelles",
+    "internal_link_description": "Insérer un lien vers une autre note Trilium",
+    "math_description": "Insérer une équation mathématique",
+    "include_note_description": "Afficher le contenu d'une autre note dans cette note",
+    "page_break_description": "Insérer un saut de page (pour l'impression)",
+    "markdown_import_description": "Importer un fichier Markdown dans cette note",
+    "anchor_description": "Insérer une ancre pour les liens internes"
   }
 }

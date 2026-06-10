@@ -151,7 +151,10 @@ describe("WebSocketMessagingProvider", () => {
             const { server } = init();
             const ws = makeSocket();
             server.emit("connection", ws, {});
-            await expect(ws.emit("message", JSON.stringify({ type: "x" }))).resolves.toBeUndefined();
+            // With no handler registered the message listener parses the payload
+            // and returns (undefined) without dispatching — emitting must not throw.
+            expect(ws.emit("message", JSON.stringify({ type: "x" }))).toBeUndefined();
+            await Promise.resolve(); // let the fire-and-forget async body settle
         });
 
         it("logs server errors via the error handler", () => {

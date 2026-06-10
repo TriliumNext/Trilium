@@ -27,9 +27,10 @@ describe("getMimeTypeFromMarkdownName", () => {
         const result = getMimeTypeFromMarkdownName("javascript");
         expect(result).toBeDefined();
         expect(result?.mdLanguageCode).toBe("javascript");
-        // "JS backend" comes before "JS frontend" in the dictionary, so it wins.
-        expect(result?.title).toBe("JS backend");
-        expect(result?.mime).toBe("application/javascript;env=backend");
+        // Plain "JavaScript" comes before the Trilium frontend/backend script variants in
+        // the dictionary, so it wins — a markdown code fence is not a Trilium script.
+        expect(result?.title).toBe("JavaScript");
+        expect(result?.mime).toBe("text/javascript");
     });
 
     it("returns undefined for an unknown language tag", () => {

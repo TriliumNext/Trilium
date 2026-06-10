@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import ExcelJS from "exceljs";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -11,11 +12,12 @@ import stripBom from "strip-bom";
 import { getContext } from "../context.js";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
-async function testImport(fileName: string, mimetype: string) {
-    const buffer = fs.readFileSync(`${scriptDir}/samples/${fileName}`);
+async function testImport(fileName: string, mimetype: string, bufferOverride?: Buffer) {
+    const buffer = bufferOverride ?? fs.readFileSync(`${scriptDir}/samples/${fileName}`);
     const taskContext = TaskContext.getInstance("import-mdx", "importNotes", {
         textImportedAsText: true,
-        codeImportedAsCode: true
+        codeImportedAsCode: true,
+        spreadsheetImportedAsSpreadsheet: true
     });
 
     return new Promise<{ buffer: Buffer; importedNote: BNote }>((resolve, reject) => {
@@ -26,7 +28,7 @@ async function testImport(fileName: string, mimetype: string) {
                 return;
             }
 
-            const importedNote = single.importSingleFile(
+            const importedNote = await single.importSingleFile(
                 taskContext,
                 {
                     originalname: fileName,
@@ -115,5 +117,32 @@ describe("processNoteContent", () => {
             type: "mermaid",
             title: "New note"
         });
+    });
+
+    it("imports .xlsx as a spreadsheet note", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("Sheet1");
+        ws.getCell("A1").value = "Hello";
+        ws.getCell("B1").value = 42;
+        const xlsxBuffer = Buffer.from(await wb.xlsx.writeBuffer());
+
+        const { importedNote } = await testImport(
+            "Budget.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            xlsxBuffer
+        );
+
+        expect(importedNote).toMatchObject({
+            mime: "text/x-spreadsheet",
+            type: "spreadsheet",
+            title: "Budget"
+        });
+        expect(importedNote.getLabelValue("originalFileName")).toBe("Budget.xlsx");
+
+        // Content is the persisted Univer workbook with our imported values.
+        const parsed = JSON.parse(importedNote.getContent().toString());
+        const sheet = parsed.workbook.sheets[parsed.workbook.sheetOrder[0]];
+        expect(sheet.cellData[0][0].v).toBe("Hello");
+        expect(sheet.cellData[0][1].v).toBe(42);
     });
 }, 60_000);

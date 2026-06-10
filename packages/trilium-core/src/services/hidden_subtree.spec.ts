@@ -21,7 +21,7 @@ import noteService from "./notes.js";
  * deprecated entries live directly under "_options" in the definition.
  */
 function materialiseDeprecatedNote(noteId: string) {
-    withContext(() =>
+    getContext().init(() =>
         noteService.createNewNote({
             noteId,
             title: `deprecated-${noteId}`,
@@ -33,16 +33,8 @@ function materialiseDeprecatedNote(noteId: string) {
     );
 }
 
-/**
- * Entity mutations performed by checkHiddenSubtree (createNewNote, save,
- * markAsDeleted) require an initialised CLS context.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 function checkHiddenSubtree(force = false) {
-    return withContext(() => hiddenSubtreeService.checkHiddenSubtree(force));
+    return getContext().init(() => hiddenSubtreeService.checkHiddenSubtree(force));
 }
 
 describe("hidden_subtree (real DB)", () => {
@@ -126,7 +118,7 @@ describe("hidden_subtree (real DB)", () => {
             expect(hidden.getOwnedLabelValue("docName")).toBe("hidden");
 
             // Inject a stray owned label, then re-run the integrity check.
-            withContext(() => {
+            getContext().init(() => {
                 hidden.addLabel("strayLabelXyz", "should-be-removed");
             });
             expect(hidden.hasOwnedLabel("strayLabelXyz")).toBe(true);
@@ -144,7 +136,7 @@ describe("hidden_subtree (real DB)", () => {
             const docNameAttr = hidden.getOwnedAttributes("label", "docName")[0];
             expect(docNameAttr).toBeDefined();
 
-            withContext(() => {
+            getContext().init(() => {
                 docNameAttr.value = "tampered";
                 docNameAttr.save();
             });
@@ -204,7 +196,7 @@ describe("hidden_subtree (real DB)", () => {
             // Declared as a book.
             expect(options.type).toBe("book");
 
-            withContext(() => {
+            getContext().init(() => {
                 options.type = "text";
                 options.save();
             });

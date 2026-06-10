@@ -23,6 +23,19 @@
     }
 }
 
+/* Top-level (not scoped to the note view) so a swallowed mermaid failure is
+   visible in the chat panel too, where the container lacks the note class. */
+.mermaid-diagram.mermaid-error {
+    display: block;
+    white-space: pre-wrap;
+    padding: 0.75em 1em;
+    border: 1px solid var(--main-border-color);
+    border-radius: 4px;
+    color: var(--muted-text-color);
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.85em;
+}
+
 body.heading-style-markdown .note-detail-readonly-text-content {
     h1::before { content: "#\2004"; color: var(--muted-text-color); }
     h2::before { content: "##\2004"; color: var(--muted-text-color); }

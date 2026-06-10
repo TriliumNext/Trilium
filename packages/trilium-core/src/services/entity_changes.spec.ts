@@ -9,15 +9,6 @@ import getInstanceId from "./instance_id.js";
 import { getContext } from "./context.js";
 import { getSql } from "./sql/index.js";
 
-/**
- * Wraps a callback in a CLS context. `putEntityChange` reads the component id
- * and registers the inserted change id via the execution context, both of
- * which require an active CLS context.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /**
@@ -57,7 +48,7 @@ describe("entity_changes service (real DB)", () => {
             // No changeId provided -> a random one must be generated.
             delete ec.changeId;
 
-            withContext(() => entityChangesService.putEntityChange(ec));
+            getContext().init(() => entityChangesService.putEntityChange(ec));
 
             const row = readRow(ec.entityName, ec.entityId);
             expect(row).not.toBeNull();
@@ -75,7 +66,7 @@ describe("entity_changes service (real DB)", () => {
         it("registers the inserted change id in the CLS context and bumps maxEntityChangeId", () => {
             const ec = buildEntityChange();
 
-            const idsAfter = withContext(() => {
+            const idsAfter = getContext().init(() => {
                 entityChangesService.putEntityChange(ec);
                 return getContext().get<number[]>("entityChangeIds") ?? [];
             });
@@ -88,7 +79,7 @@ describe("entity_changes service (real DB)", () => {
         it("falls back to the 'NA' componentId when none is available in the context", () => {
             const ec = buildEntityChange();
 
-            withContext(() => entityChangesService.putEntityChange(ec));
+            getContext().init(() => entityChangesService.putEntityChange(ec));
 
             const row = readRow(ec.entityName, ec.entityId)!;
             expect(row.componentId).toBe("NA");
@@ -102,7 +93,7 @@ describe("entity_changes service (real DB)", () => {
                 isSynced: false
             });
 
-            withContext(() => entityChangesService.putEntityChange(ec));
+            getContext().init(() => entityChangesService.putEntityChange(ec));
 
             const row = readRow(ec.entityName, ec.entityId)!;
             expect(row.changeId).toBe("fixedChangeId");
@@ -116,7 +107,7 @@ describe("entity_changes service (real DB)", () => {
         it("persists the supplied instance id rather than the local one", () => {
             const ec = buildEntityChange();
 
-            withContext(() => entityChangesService.putEntityChangeWithInstanceId(ec, "remoteInst1"));
+            getContext().init(() => entityChangesService.putEntityChangeWithInstanceId(ec, "remoteInst1"));
 
             const row = readRow(ec.entityName, ec.entityId)!;
             expect(row.instanceId).toBe("remoteInst1");
@@ -127,7 +118,7 @@ describe("entity_changes service (real DB)", () => {
         it("ignores the incoming changeId and generates a fresh one", () => {
             const ec = buildEntityChange({ changeId: "originalChange" });
 
-            withContext(() => entityChangesService.putEntityChangeWithForcedChange(ec));
+            getContext().init(() => entityChangesService.putEntityChangeWithForcedChange(ec));
 
             const row = readRow(ec.entityName, ec.entityId)!;
             expect(typeof row.changeId).toBe("string");
@@ -142,7 +133,7 @@ describe("entity_changes service (real DB)", () => {
                 instanceId: "shouldBeDropped"
             });
 
-            withContext(() => entityChangesService.putEntityChangeForOtherInstances(ec));
+            getContext().init(() => entityChangesService.putEntityChangeForOtherInstances(ec));
 
             const row = readRow(ec.entityName, ec.entityId)!;
             // Both fields were reset to null and then defaulted at insert time.
@@ -155,7 +146,7 @@ describe("entity_changes service (real DB)", () => {
         it("writes a synced note_reordering change and emits ENTITY_CHANGED with the branch map", () => {
             const emitSpy = vi.spyOn(events, "emit");
 
-            withContext(() => entityChangesService.putNoteReorderingEntityChange("root", "comp-reorder"));
+            getContext().init(() => entityChangesService.putNoteReorderingEntityChange("root", "comp-reorder"));
 
             const row = readRow("note_reordering", "root")!;
             expect(row).not.toBeNull();
@@ -183,7 +174,7 @@ describe("entity_changes service (real DB)", () => {
             // Inserting a new change advances the in-memory counter past the
             // previous max, and recalculation converges back to the DB value.
             const ec = buildEntityChange();
-            withContext(() => entityChangesService.putEntityChange(ec));
+            getContext().init(() => entityChangesService.putEntityChange(ec));
             expect(entityChangesService.getMaxEntityChangeId()).toBeGreaterThan(dbMax);
 
             entityChangesService.recalculateMaxEntityChangeId();
@@ -210,7 +201,7 @@ describe("entity_changes service (real DB)", () => {
             );
             expect(before.length).toBeGreaterThan(0);
 
-            withContext(() => entityChangesService.addEntityChangesForSector("options", sector));
+            getContext().init(() => entityChangesService.addEntityChangesForSector("options", sector));
 
             const after = sql.getColumn<string>(
                 "SELECT changeId FROM entity_changes WHERE entityName = 'options' AND SUBSTR(entityId, 1, 1) = ?",
@@ -230,13 +221,13 @@ describe("entity_changes service (real DB)", () => {
 
             // Seed an erased change that must survive the rebuild.
             const erased = buildEntityChange({ isErased: true });
-            withContext(() => entityChangesService.putEntityChange(erased));
+            getContext().init(() => entityChangesService.putEntityChange(erased));
 
             const erasedCountBefore = sql.getValue<number>(
                 "SELECT COUNT(1) FROM entity_changes WHERE isErased = 1"
             );
 
-            withContext(() => entityChangesService.fillAllEntityChanges());
+            getContext().init(() => entityChangesService.fillAllEntityChanges());
 
             // Every note in becca must now have a corresponding (non-erased) change.
             const notesWithoutChange = sql.getValue<number>(`

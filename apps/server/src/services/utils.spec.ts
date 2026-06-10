@@ -2,8 +2,7 @@ import { EventEmitter } from "events";
 import path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import utils from "./utils";
-import {
+import utils, {
     constantTimeCompare,
     formatDownloadTitle,
     fromBase64,
@@ -28,6 +27,42 @@ describe("platform flags & isDev", () => {
         expect(utils.isMac).toBeTypeOf("boolean");
         expect(utils.isWindows).toBeTypeOf("boolean");
         expect(utils.isElectron).toBeTypeOf("boolean");
+    });
+});
+
+describe("isWindows11 detection", () => {
+    const ORIGINAL_PLATFORM = Object.getOwnPropertyDescriptor(process, "platform");
+
+    afterEach(() => {
+        if (ORIGINAL_PLATFORM) {
+            Object.defineProperty(process, "platform", ORIGINAL_PLATFORM);
+        }
+        vi.resetModules();
+        vi.doUnmock("os");
+    });
+
+    // isWindows11 is an import-time constant computed from process.platform and
+    // os.release(), so each scenario needs a fresh module load with both faked.
+    async function loadFreshIsWindows11(platform: string, release: string) {
+        vi.resetModules();
+        Object.defineProperty(process, "platform", { value: platform, configurable: true });
+        vi.doMock("os", async (importOriginal) => ({
+            ...(await importOriginal<typeof import("os")>()),
+            release: () => release
+        }));
+        return (await import("./utils.js")).isWindows11;
+    }
+
+    it("is true on Windows with a build >= 22000", async () => {
+        expect(await loadFreshIsWindows11("win32", "10.0.22631")).toBe(true);
+    });
+
+    it("is false on Windows with an older build (< 22000)", async () => {
+        expect(await loadFreshIsWindows11("win32", "10.0.19045")).toBe(false);
+    });
+
+    it("is false on non-Windows platforms", async () => {
+        expect(await loadFreshIsWindows11("linux", "10.0.22631")).toBe(false);
     });
 });
 

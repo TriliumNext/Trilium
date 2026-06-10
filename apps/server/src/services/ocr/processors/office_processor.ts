@@ -1,6 +1,6 @@
-import { OfficeParser, type OfficeParserConfig } from 'officeparser';
-
 import { getLog } from "@triliumnext/core";
+import { OfficeParser, type OfficeParserConfig, type SupportedFileType } from 'officeparser';
+
 import { OCRProcessingOptions, OCRResult } from '../ocr_service.js';
 import { FileProcessor } from './file_processor.js';
 
@@ -12,14 +12,25 @@ const SUPPORTED_MIME_TYPES = new Set([
     // OpenDocument
     'application/vnd.oasis.opendocument.text',
     'application/vnd.oasis.opendocument.spreadsheet',
-    'application/vnd.oasis.opendocument.presentation'
+    'application/vnd.oasis.opendocument.presentation',
+    // Rich Text Format
+    'application/rtf',
+    'text/rtf'
 ]);
 
 const PARSER_CONFIG: OfficeParserConfig = {
     outputErrorToConsole: false,
     newlineDelimiter: '\n',
-    ignoreNotes: false,
-    putNotesAtLast: false
+    ignoreNotes: false
+};
+
+// officeparser auto-detects most formats from the buffer's magic bytes, but its
+// RTF detection (via file-type) is unreliable — some valid RTF documents are not
+// recognised and parsing then fails. For those MIME types we route to the correct
+// parser explicitly with a fileType hint instead of relying on auto-detection.
+const MIME_TYPE_TO_FILE_TYPE: Record<string, SupportedFileType> = {
+    'application/rtf': 'rtf',
+    'text/rtf': 'rtf'
 };
 
 /**
@@ -44,7 +55,9 @@ export class OfficeProcessor extends FileProcessor {
 
         getLog().info(`Starting Office document text extraction for ${mimeType}...`);
 
-        const ast = await OfficeParser.parseOffice(buffer, PARSER_CONFIG);
+        const fileType = MIME_TYPE_TO_FILE_TYPE[mimeType];
+        const config = fileType ? { ...PARSER_CONFIG, fileType } : PARSER_CONFIG;
+        const ast = await OfficeParser.parseOffice(buffer, config);
         const trimmed = ast.toText().trim();
 
         return {

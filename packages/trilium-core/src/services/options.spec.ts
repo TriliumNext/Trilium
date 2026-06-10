@@ -5,14 +5,6 @@ import { getContext } from "./context.js";
 import optionService from "./options.js";
 import { getSql } from "./sql/index.js";
 
-/**
- * Wraps a callback in a CLS context. Entity mutations (BOption.save() via
- * setOption/createOption) emit entity-change records which require CLS.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /** Returns an option name that is guaranteed unique within this shared fixture DB. */
@@ -52,21 +44,21 @@ describe("options service (real DB)", () => {
     describe("getOptionInt", () => {
         it("parses an integer-valued option", () => {
             const name = uniqueName();
-            withContext(() => optionService.createOption(name as any, "42", false));
+            getContext().init(() => optionService.createOption(name as any, "42", false));
 
             expect(optionService.getOptionInt(name as any)).toBe(42);
         });
 
         it("returns the supplied default when the value cannot be parsed", () => {
             const name = uniqueName();
-            withContext(() => optionService.createOption(name as any, "not-a-number", false));
+            getContext().init(() => optionService.createOption(name as any, "not-a-number", false));
 
             expect(optionService.getOptionInt(name as any, 7)).toBe(7);
         });
 
         it("throws when the value cannot be parsed and no default is given", () => {
             const name = uniqueName();
-            withContext(() => optionService.createOption(name as any, "garbage", false));
+            getContext().init(() => optionService.createOption(name as any, "garbage", false));
 
             expect(() => optionService.getOptionInt(name as any)).toThrow(/into integer/);
         });
@@ -76,7 +68,7 @@ describe("options service (real DB)", () => {
         it("parses 'true' and 'false' into booleans", () => {
             const trueName = uniqueName();
             const falseName = uniqueName();
-            withContext(() => {
+            getContext().init(() => {
                 optionService.createOption(trueName as any, "true", false);
                 optionService.createOption(falseName as any, "false", false);
             });
@@ -87,7 +79,7 @@ describe("options service (real DB)", () => {
 
         it("throws for a value that is neither 'true' nor 'false'", () => {
             const name = uniqueName();
-            withContext(() => optionService.createOption(name as any, "yes", false));
+            getContext().init(() => optionService.createOption(name as any, "yes", false));
 
             expect(() => optionService.getOptionBool(name as any)).toThrow(/into boolean/);
         });
@@ -98,7 +90,7 @@ describe("options service (real DB)", () => {
             const syncedName = uniqueName();
             const localName = uniqueName();
 
-            withContext(() => {
+            getContext().init(() => {
                 optionService.createOption(syncedName as any, "synced-value", true);
                 optionService.createOption(localName as any, "local-value", false);
             });
@@ -115,9 +107,9 @@ describe("options service (real DB)", () => {
     describe("setOption", () => {
         it("updates the value of an existing option", () => {
             const name = uniqueName();
-            withContext(() => optionService.createOption(name as any, "initial", false));
+            getContext().init(() => optionService.createOption(name as any, "initial", false));
 
-            withContext(() => optionService.setOption(name as any, "changed"));
+            getContext().init(() => optionService.setOption(name as any, "changed"));
 
             expect(optionService.getOption(name as any)).toBe("changed");
             expect(readFromDb(name)).toBe("changed");
@@ -126,7 +118,7 @@ describe("options service (real DB)", () => {
         it("creates the option (local-only) when it does not yet exist", () => {
             const name = uniqueName();
 
-            withContext(() => optionService.setOption(name as any, "created-by-set"));
+            getContext().init(() => optionService.setOption(name as any, "created-by-set"));
 
             expect(optionService.getOption(name as any)).toBe("created-by-set");
             expect(becca.getOption(name)?.isSynced).toBe(false);
@@ -137,7 +129,7 @@ describe("options service (real DB)", () => {
     describe("getOptions / getOptionMap", () => {
         it("includes a freshly created option in both the list and the map", () => {
             const name = uniqueName();
-            withContext(() => optionService.createOption(name as any, "in-collection", false));
+            getContext().init(() => optionService.createOption(name as any, "in-collection", false));
 
             const all = optionService.getOptions();
             expect(all.some((o) => o.name === name && o.value === "in-collection")).toBe(true);

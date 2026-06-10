@@ -586,6 +586,15 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
 }
 
 /*
+ * TOOLTIPS
+ */
+
+.tooltip:not(.note-tooltip) .tooltip-inner p {
+    padding: 0;
+    margin: 0;
+}
+
+/*
  * NOTE TOOLTIPS
  */
 

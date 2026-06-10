@@ -16,10 +16,6 @@ import zip from "./zip.js";
 // happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
 const isBrowserRuntime = typeof window !== "undefined";
 
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /**
@@ -32,7 +28,7 @@ function createNote(
     overrides: Partial<{ title: string; content: string; type: BNote["type"]; mime: string }> = {}
 ): { note: BNote; branch: BBranch } {
     counter++;
-    return withContext(() =>
+    return getContext().init(() =>
         noteService.createNewNote({
             parentNoteId,
             title: overrides.title ?? `zip-spec-${counter}`,
@@ -199,7 +195,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             // to save but must be filtered out of the export meta.
             const { note: outsider } = createNote("root", { title: "Outsider", content: "<p>o</p>" });
             const { note } = createNote("root", { title: "Attributed", content: "<p>x</p>" });
-            withContext(() => {
+            getContext().init(() => {
                 note.addLabel("myLabel", "labelValue");
                 // Relation to "root" is a named noteId and is preserved.
                 note.addRelation("rootRel", "root");
@@ -223,7 +219,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             const { note: parent } = createNote("root", { title: "WithExcluded", content: "" });
             const { note: kept } = createNote(parent.noteId, { title: "Kept", content: "<p>kept</p>" });
             const { note: excluded } = createNote(parent.noteId, { title: "Excluded", content: "<p>no</p>" });
-            withContext(() => excluded.addLabel("excludeFromExport"));
+            getContext().init(() => excluded.addLabel("excludeFromExport"));
             const branch = parent.getParentBranches()[0];
 
             const { entries } = await exportSubtree(branch, "html");
@@ -242,7 +238,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
 
             // Clone the note into a second folder inside the same exported subtree.
             const cloningService = (await import("../cloning.js")).default;
-            const cloneRes = withContext(() => cloningService.cloneNoteToParentNote(original.noteId, folderB.noteId));
+            const cloneRes = getContext().init(() => cloningService.cloneNoteToParentNote(original.noteId, folderB.noteId));
             expect(cloneRes.success).toBe(true);
 
             const branch = parent.getParentBranches()[0];
@@ -282,7 +278,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             const { note } = createNote("root", { title: "FileExport", content: "<p>to file</p>" });
             const zipPath = join(tempDir, `export-${note.noteId}.zip`);
 
-            await withContext(() => zip.exportToZipFile(note.noteId, "html", zipPath));
+            await getContext().init(() => zip.exportToZipFile(note.noteId, "html", zipPath));
 
             const buffer = readFileSync(zipPath);
             const entries = await readArchive(buffer);
@@ -296,7 +292,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
 
         it("throws a ValidationError for a non-existent note", async () => {
             await expect(
-                withContext(() => zip.exportToZipFile("missingNoteId123", "html", join(tempDir, "never.zip")))
+                getContext().init(() => zip.exportToZipFile("missingNoteId123", "html", join(tempDir, "never.zip")))
             ).rejects.toThrow(/not found/);
         });
     });

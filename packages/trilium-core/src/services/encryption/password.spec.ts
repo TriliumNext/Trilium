@@ -22,15 +22,6 @@ if (isBrowserRuntime) {
     vi.setConfig({ testTimeout: 60000, hookTimeout: 60000 });
 }
 
-/**
- * Wraps a callback in a CLS context. The mutating password operations call
- * options.setOption/createOption, which save BOption entities and therefore
- * require an initialised CLS context.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 describe("password service (real DB)", () => {
     describe("isPasswordSet", () => {
         it("reports true for the seeded fixture which already has a password", () => {
@@ -70,7 +61,7 @@ describe("password service (real DB)", () => {
             expect(dataKeyBefore).toBeInstanceOf(Uint8Array);
 
             const newPassword = "brandNewPass-123";
-            const result = await withContext(() =>
+            const result = await getContext().init(() =>
                 passwordService.changePassword(FIXTURE_PASSWORD, newPassword)
             );
             expect(result.success).toBe(true);
@@ -96,7 +87,7 @@ describe("password service (real DB)", () => {
 
     describe("resetPassword", () => {
         it("clears every password-related option and makes isPasswordSet false", () => {
-            const result = withContext(() => passwordService.resetPassword());
+            const result = getContext().init(() => passwordService.resetPassword());
 
             expect(result.success).toBe(true);
             expect(options.getOption("passwordVerificationHash")).toBe("");
@@ -118,7 +109,7 @@ describe("password service (real DB)", () => {
         it("creates a fresh, verifiable password and a recoverable data key", async () => {
             const freshPassword = "freshlySet-456";
 
-            const result = await withContext(() => passwordService.setPassword(freshPassword));
+            const result = await getContext().init(() => passwordService.setPassword(freshPassword));
             expect(result.success).toBe(true);
 
             expect(passwordService.isPasswordSet()).toBe(true);

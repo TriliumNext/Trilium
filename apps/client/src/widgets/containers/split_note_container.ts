@@ -113,6 +113,12 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         const currentIndex = contexts.findIndex((c) => c.ntxId === ntxId);
         if (currentIndex === -1) return;
 
+        // the pane showing a pinned note can't be closed (unpin the tab first). Bail before the
+        // demote/reorder below, which would otherwise strip the main context of its pinned state.
+        if (contexts[currentIndex].pinned) {
+            return;
+        }
+
         const isRemoveMainContext = contexts[currentIndex].isMainContext();
         if (isRemoveMainContext && currentIndex + 1 < contexts.length) {
             const ntxIds = contexts.map((c) => c.ntxId).filter((c) => !!c) as string[];

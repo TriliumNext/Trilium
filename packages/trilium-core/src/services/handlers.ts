@@ -1,4 +1,5 @@
 import eventService from "./events.js";
+import { isScriptingEnabled } from "./scripting_guard.js";
 import scriptService from "./script.js";
 import treeService from "./tree.js";
 import noteService from "./notes.js";
@@ -13,7 +14,7 @@ import { DefinitionObject } from "@triliumnext/commons";
 type Handler = (definition: DefinitionObject, note: BNote, targetNote: BNote) => void;
 
 function runAttachedRelations(note: BNote, relationName: string, originEntity: AbstractBeccaEntity<any>) {
-    if (!note) {
+    if (!note || !isScriptingEnabled()) {
         return;
     }
 

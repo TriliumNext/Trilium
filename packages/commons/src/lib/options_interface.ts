@@ -146,6 +146,9 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
 
     initialized: boolean;
     databaseReadonly: boolean;
+    backendScriptingEnabled: boolean;
+    sqlConsoleEnabled: boolean;
+    hasUserBackendScripts: boolean;
     isPasswordSet: boolean;
     overrideThemeFonts: boolean;
     spellCheckEnabled: boolean;

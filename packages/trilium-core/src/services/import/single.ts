@@ -13,7 +13,12 @@ import { getNoteTitle } from "../utils/index.js";
 import { sanitizeHtml } from "../sanitizer.js";
 import { processStringOrBuffer } from "../utils/binary.js";
 
-function importSingleFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+// MIME of an `.xlsx` upload (Office Open XML spreadsheet), as resolved by `mime-types`.
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+// MIME of a `.csv` upload, as resolved by `mime-types`.
+const CSV_MIME = "text/csv";
+
+async function importSingleFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const mime = mimeService.getMime(file.originalname) || file.mimetype;
 
     if (taskContext?.data?.textImportedAsText) {
@@ -23,6 +28,18 @@ function importSingleFile(taskContext: TaskContext<"importNotes">, file: File, p
             return importMarkdown(taskContext, file, parentNote);
         } else if (mime === "text/plain") {
             return importPlainText(taskContext, file, parentNote);
+        }
+    }
+
+    // CSV/XLSX become editable spreadsheet notes unless the user opts out (then they fall through
+    // to a plain file attachment), mirroring `textImportedAsText`/`codeImportedAsCode`.
+    if (taskContext?.data?.spreadsheetImportedAsSpreadsheet) {
+        if (mime === XLSX_MIME) {
+            return importSpreadsheet(taskContext, file, parentNote);
+        }
+
+        if (mime === CSV_MIME) {
+            return importSpreadsheetFromCsv(taskContext, file, parentNote);
         }
     }
 
@@ -109,6 +126,43 @@ function importCustomType(taskContext: TaskContext<"importNotes">, file: File, p
         mime,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
+
+    taskContext.increaseProgressCount();
+
+    return note;
+}
+
+async function importSpreadsheet(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+    // Dynamically import the exceljs-backed parser so exceljs only loads when an `.xlsx` is
+    // actually imported, keeping it out of the core barrel (and the standalone/browser bundle).
+    const { parseXlsxToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js");
+    const buffer = typeof file.buffer === "string" ? Buffer.from(file.buffer) : file.buffer;
+    const workbook = await parseXlsxToWorkbook(buffer);
+
+    return createSpreadsheetNote(taskContext, file, parentNote, JSON.stringify(workbook));
+}
+
+async function importSpreadsheetFromCsv(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+    const csv = processStringOrBuffer(file.buffer);
+    const { parseCsvToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_csv.js");
+    const workbook = parseCsvToWorkbook(csv);
+
+    return createSpreadsheetNote(taskContext, file, parentNote, JSON.stringify(workbook));
+}
+
+function createSpreadsheetNote(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote, content: string) {
+    const title = getNoteTitle(file.originalname, !!taskContext.data?.replaceUnderscoresWithSpaces);
+
+    const { note } = noteService.createNewNote({
+        parentNoteId: parentNote.noteId,
+        title,
+        content,
+        type: "spreadsheet",
+        mime: "text/x-spreadsheet",
+        isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+    });
+
+    note.addLabel("originalFileName", file.originalname);
 
     taskContext.increaseProgressCount();
 

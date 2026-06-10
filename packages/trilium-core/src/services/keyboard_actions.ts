@@ -866,6 +866,7 @@ function getKeyboardActions() {
 
     for (const action of actions) {
         if ("effectiveShortcuts" in action && action.effectiveShortcuts) {
+            /* v8 ignore next -- no default action pre-defines effectiveShortcuts; defensive seeding */
             action.effectiveShortcuts = action.defaultShortcuts ? action.defaultShortcuts.slice() : [];
         }
     }

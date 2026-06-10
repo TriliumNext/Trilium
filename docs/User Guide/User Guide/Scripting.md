@@ -8,7 +8,7 @@ To go further I must explain basic architecture of Trilium - in its essence it i
 *   frontend running in the browser (using HTML, CSS, JavaScript) - this is mainly used to interact with the user, display notes etc.
 *   backend running JavaScript code in node.js runtime - this is responsible for e.g. storing notes, encrypting them etc.
 
-So we have frontend and backend, each with their own set of responsibilities, but their common feature is that they both run JavaScript code. Add to this the fact, that we're able to create JavaScript <a class="reference-link" href="Note%20Types/Code.md">code notes</a> and we're onto something.
+So we have frontend and backend, each with their own set of responsibilities, but their common feature is that they both run JavaScript code. Add to this the fact, that we're able to create JavaScript <a class="reference-link" href="Note%20Types/Code.md">Code</a> and we're onto something.
 
 ## Use cases
 
@@ -26,7 +26,18 @@ We need to execute it every time Trilium starts up, but we probably don't want t
 
 The solution is marked by red circle at the bottom - this note has [label](Advanced%20Usage/Attributes.md) `#run=frontendStartup` - this is one of the "system" labels which Trilium understands. As you might guess, this will cause all such labeled script notes to be executed once Trilium frontend starts up.
 
-(`#run=frontendStartup` does not work for [Mobile frontend](Installation%20%26%20Setup/Mobile%20Frontend.md) - if you want to have scripts running there, give the script `#run=mobileStartup` label)
+(`#run=frontendStartup` does not work for [Mobile frontend](Installation%20%26%20Setup/Mobile%20Frontend.md) - if you want to have scripts running there, give the script `#run=mobileStartup` label).
+
+## Autocomplete & linting
+
+Starting with Trilium v0.104.0, frontend scripts, backend scripts and render notes benefit from an autocomplete system.
+
+The autocomplete triggers automatically when typing <kbd spellcheck="false">.</kbd> or manually by pressing <kbd spellcheck="false">Ctrl</kbd>+<kbd spellcheck="false">Space</kbd>.
+
+In addition to that, the editor will also display syntax errors and warnings such as unreachable code.
+
+> [!NOTE]
+> If you notice a false positive in regards with the errors/warnings reported or an incorrect or missing API, feel free to [open a issue](Troubleshooting/Reporting%20issues.md) with a code sample.
 
 ## More showcases
 

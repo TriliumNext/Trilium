@@ -8,7 +8,7 @@ describe("markdown", () => {
         const conversionTable = {
             "nginx": "language-text-x-nginx-conf",
             "diff": "language-text-x-diff",
-            "javascript": "language-application-javascript-env-backend",
+            "javascript": "language-text-javascript",
             "css": "language-text-css",
             "mips": "language-text-x-asm-mips",
             "jsx": "language-text-jsx",
@@ -249,6 +249,21 @@ $$`;
 
     it("preserves table with column widths", () => {
         const html = /*html*/`<figure class="table" style="width:100%;"><table class="ck-table-resized"><colgroup><col style="width:2.77%;"><col style="width:33.42%;"><col style="width:63.81%;"></colgroup><thead><tr><th>&nbsp;</th><th>&nbsp;</th><th>&nbsp;</th></tr></thead><tbody><tr><td>1</td><td><img class="image_resized" style="aspect-ratio:562/454;width:100%;" src="1_Geo Map_image.png" width="562" height="454"></td><td>Go to any location on openstreetmap.org and right click to bring up the context menu. Select the “Show address” item.</td></tr><tr><td>2</td><td><img class="image_resized" style="aspect-ratio:696/480;width:100%;" src="Geo Map_image.png" width="696" height="480"></td><td>The address will be visible in the top-left of the screen, in the place of the search bar.&nbsp;&nbsp;&nbsp;&nbsp;<br><br>Select the coordinates and copy them into the clipboard.</td></tr><tr><td>3</td><td><img class="image_resized" style="aspect-ratio:640/276;width:100%;" src="5_Geo Map_image.png" width="640" height="276"></td><td>Simply paste the value inside the text box into the <code>#geolocation</code> attribute of a child note of the map and then it should be displayed on the map.</td></tr></tbody></table></figure>`;
+        expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
+    });
+
+    it("preserves table cell colspan", () => {
+        const html = /*html*/`<figure class="table"><table><tbody><tr><td colspan="2">Merged</td></tr><tr><td>A</td><td>B</td></tr></tbody></table></figure>`;
+        expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
+    });
+
+    it("preserves table cell rowspan", () => {
+        const html = /*html*/`<figure class="table"><table><tbody><tr><td rowspan="2">Merged</td><td>A</td></tr><tr><td>B</td></tr></tbody></table></figure>`;
+        expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
+    });
+
+    it("preserves colspan and rowspan together on header and body cells", () => {
+        const html = /*html*/`<figure class="table"><table><thead><tr><th colspan="2">Header</th></tr></thead><tbody><tr><td rowspan="2">Side</td><td>A</td></tr><tr><td>B</td></tr></tbody></table></figure>`;
         expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
     });
 

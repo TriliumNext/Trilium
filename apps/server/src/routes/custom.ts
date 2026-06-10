@@ -2,6 +2,7 @@ import { becca, cls, getLog, routeHelpers, scriptService, utils } from "@trilium
 import type { Request, Response, Router } from "express";
 
 import { namespace } from "../cls_provider.js";
+import { isScriptingEnabled } from "../services/scripting_guard.js";
 import sql from "../services/sql.js";
 
 function handleRequest(req: Request, res: Response) {
@@ -59,6 +60,13 @@ function handleRequest(req: Request, res: Response) {
         }
 
         if (attr.name === "customRequestHandler") {
+            // Custom request handlers execute backend scripts, so they remain gated behind the
+            // scripting toggle. Resource providers only serve static note content and are not.
+            if (!isScriptingEnabled()) {
+                res.status(403).send("Backend script execution is disabled on this server.");
+                return;
+            }
+
             const note = attr.getNote();
 
             getLog().info(`Handling custom request '${path}' with note '${note.noteId}'`);

@@ -27,7 +27,7 @@ function vacuumDatabase() {
 }
 
 function findAndFixConsistencyIssues() {
-    consistencyChecksService.runOnDemandChecks(true);
+    void consistencyChecksService.runOnDemandChecks(true);
 }
 
 async function rebuildIntegrationTestDatabase() {

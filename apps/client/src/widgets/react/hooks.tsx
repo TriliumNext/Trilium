@@ -404,6 +404,10 @@ export function useNoteContext() {
         setHoistedNoteId(noteContext.hoistedNoteId);
         setNotePath(noteContext.notePath);
         setViewScope(noteContext.viewScope);
+        // Navigating resets the view scope, so the temporary "enable editing" toggle must be reset too.
+        // Otherwise the stale value prevents consumers (e.g. the ribbon) from refreshing when the user
+        // re-enables editing on a note that was previously made temporarily editable.
+        setIsReadOnlyTemporarilyDisabled(noteContext?.viewScope?.readOnlyTemporarilyDisabled);
     });
     useTriliumEvent("frocaReloaded", () => {
         setNote(noteContext?.note);
@@ -472,6 +476,9 @@ export function useActiveNoteContext() {
         setHoistedNoteId(noteContext?.hoistedNoteId);
         setNotePath(noteContext?.notePath);
         setViewScope(noteContext?.viewScope);
+        // Navigating resets the view scope, so the temporary "enable editing" toggle must be reset too,
+        // otherwise the stale value prevents consumers from refreshing when editing is re-enabled.
+        setIsReadOnlyTemporarilyDisabled(noteContext?.viewScope?.readOnlyTemporarilyDisabled);
     });
     useTriliumEvent("frocaReloaded", () => {
         setNote(noteContext?.note);

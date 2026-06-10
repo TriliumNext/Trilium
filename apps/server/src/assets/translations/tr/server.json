@@ -22,7 +22,7 @@
     "move-note-down-in-hierarchy": "Notu hiyerarşide aşağı taşı",
     "edit-note-title": "Ağaç yapısından not detayına atla ve başlığı düzenle",
     "edit-branch-prefix": "\"Dal önekini düzenle\" iletişim kutusunu göster",
-    "clone-notes-to": "Seçilen notları klonla",
+    "clone-notes-to": "Seçili notaları kopyala",
     "move-notes-to": "Seçilen notları taşı",
     "note-clipboard": "Not panosu",
     "copy-notes-to-clipboard": "Seçilmiş notları panoya kopyala",
@@ -31,5 +31,8 @@
     "select-all-notes-in-parent": "Geçerli nota seviyesinden tüm notaları seçin",
     "add-note-above-to-the-selection": "Seçime yukarıdaki notu ekleyin",
     "toggle-archived-notes": "Not ağacında arşivlenmiş notları göster/gizle"
+  },
+  "keyboard_action_names": {
+    "clone-notes-to": "Notları Şuraya Kopyala"
   }
 }

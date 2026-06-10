@@ -14,6 +14,7 @@ import { getHoistedNoteId } from "../../services/context.js";
 function searchFromNote(req: Request<{ noteId: string }>): SearchNoteResult {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
+    /* v8 ignore next 4 -- unreachable: getNoteOrThrow already throws on a missing note */
     if (!note) {
         // this can be triggered from recent changes, and it's harmless to return an empty list rather than fail
         return EMPTY_RESULT;
@@ -29,6 +30,7 @@ function searchFromNote(req: Request<{ noteId: string }>): SearchNoteResult {
 function searchAndExecute(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
+    /* v8 ignore next 4 -- unreachable: getNoteOrThrow already throws on a missing note */
     if (!note) {
         // this can be triggered from recent changes, and it's harmless to return an empty list rather than fail
         return [];

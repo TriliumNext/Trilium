@@ -263,6 +263,8 @@ export type CommandMappings = {
     closeOtherTabs: CommandData;
     closeRightTabs: CommandData;
     closeAllTabs: CommandData;
+    pinTab: CommandData;
+    unpinTab: CommandData;
     reopenLastTab: CommandData;
     moveTabToNewWindow: CommandData;
     copyTabToNewWindow: CommandData;
@@ -492,11 +494,17 @@ type EventMappings = {
     };
     exportSvg: { ntxId: string | null | undefined; };
     exportPng: { ntxId: string | null | undefined; };
+    exportXlsx: { ntxId: string | null | undefined; };
+    exportCsv: { ntxId: string | null | undefined; };
     geoMapCreateChildNote: {
         ntxId: string | null | undefined; // TODO: deduplicate ntxId
     };
     tabReorder: {
         ntxIdsInOrder: string[];
+    };
+    tabPinStateChanged: {
+        ntxId: string | null;
+        pinned: boolean;
     };
     refreshNoteList: {
         noteId: string;

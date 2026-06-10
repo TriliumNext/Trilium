@@ -114,6 +114,7 @@ function createNote(req: Request) {
     }
 
     if (targetBranchId && typeof targetBranchId !== "string") {
+        /* v8 ignore next -- defensive guard for Express array query params; unreachable via the string-only test harness */
         throw new ValidationError("Missing or incorrect type for target branch ID.");
     }
 

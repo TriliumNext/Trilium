@@ -152,7 +152,7 @@ function reject(req: Request, res: Response, message: string) {
     res.setHeader("Content-Type", "text/plain").status(401).send(message);
 }
 
-function checkCredentials(req: Request, res: Response, next: NextFunction) {
+async function checkCredentials(req: Request, res: Response, next: NextFunction) {
     if (!sqlInit.isDbInitialized()) {
         res.setHeader("Content-Type", "text/plain").status(400).send("Database is not initialized yet.");
         return;
@@ -174,7 +174,7 @@ function checkCredentials(req: Request, res: Response, next: NextFunction) {
     const password = colonIndex === -1 ? "" : auth.substr(colonIndex + 1);
     // username is ignored
 
-    if (!passwordEncryptionService.verifyPassword(password)) {
+    if (!(await passwordEncryptionService.verifyPassword(password))) {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
         getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
     } else {

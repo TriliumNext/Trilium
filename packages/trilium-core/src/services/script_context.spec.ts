@@ -1,11 +1,23 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import becca from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import BackendScriptApi from "./backend_script_api.js";
+import config from "./config.js";
 import ScriptContext from "./script_context.js";
 
 describe("ScriptContext", () => {
+    // One test executes a bundle, which enforces the backendScriptingEnabled toggle (default false).
+    const originalScriptingEnabled = config.Security.backendScriptingEnabled;
+
+    beforeAll(() => {
+        config.Security.backendScriptingEnabled = true;
+    });
+
+    afterAll(() => {
+        config.Security.backendScriptingEnabled = originalScriptingEnabled;
+    });
+
     beforeEach(() => {
         becca.reset();
     });
@@ -66,9 +78,9 @@ describe("ScriptContext", () => {
         const moduleNote = buildNote({ title: "myModule" });
         const ctx = new ScriptContext([moduleNote], { startNote: moduleNote });
 
-        // "path" is not a Trilium module note, so it must resolve via Node's require.
-        const path = ctx.require([moduleNote.noteId])("path");
-        expect(typeof (path as { join?: unknown }).join).toBe("function");
+        // "lodash" is not a Trilium module note but is whitelisted, so it resolves via Node's require.
+        const lodash = ctx.require([moduleNote.noteId])("lodash");
+        expect(typeof (lodash as { join?: unknown }).join).toBe("function");
     });
 
     it("require() throws when falling back to a non-existent native module", () => {

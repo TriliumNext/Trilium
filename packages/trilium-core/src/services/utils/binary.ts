@@ -86,6 +86,7 @@ export function processStringOrBuffer(data: string | Uint8Array | null) {
     switch (detectedEncoding) {
         case "UTF-16LE":
             return stripBom(new TextDecoder("utf-16le").decode(data));
+        /* v8 ignore next -- empty fall-through label; coverage is attributed to the shared `default` body */
         case "UTF-8":
         default:
             return utf8Decoder.decode(data);

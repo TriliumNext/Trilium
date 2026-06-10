@@ -2,10 +2,12 @@ import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import { default as content_renderer, type RenderOptions } from "./content_renderer.js";
 import froca from "./froca.js";
+import { t } from "./i18n.js";
 import link from "./link.js";
 import { applyLinkEmbeds } from "./link_embed.js";
 import { renderMathInElement } from "./math.js";
-import { getMermaidConfig } from "./mermaid.js";
+import { getMermaidConfig, loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
+import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
 import tree from "./tree.js";
 import { isHtmlEmpty } from "./utils.js";
@@ -15,7 +17,7 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
     const blob = await note.getBlob();
 
     if (blob && !isHtmlEmpty(blob.content)) {
-        $renderedContent.append($('<div class="ck-content">').html(blob.content));
+        $renderedContent.append($('<div class="ck-content">').html(sanitizeNoteContentHtml(blob.content)));
         await postProcessRichContent(note, $renderedContent, options);
     } else if (note instanceof FNote && !options.noChildrenList) {
         await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
@@ -130,6 +132,9 @@ const mermaidSvgCache = new WeakMap<HTMLElement, Map<string, string>>();
  */
 const mermaidLastRenderedByPosition = new WeakMap<HTMLElement, string[]>();
 
+/** Monotonic id for mermaid.render(), which requires a unique element id per call. */
+let mermaidRenderId = 0;
+
 export async function applyInlineMermaid(container: HTMLDivElement) {
     const nodes = Array.from(container.querySelectorAll<HTMLElement>("div.mermaid-diagram"));
     if (!nodes.length) {
@@ -145,9 +150,9 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
     const lastRendered = mermaidLastRenderedByPosition.get(container) ?? [];
 
     // Decide per node: exact cache hit → paint final SVG; source changed →
-    // paint the previous SVG (by position) as a placeholder and queue an
-    // offscreen re-render. This way the user keeps seeing the old diagram
-    // until mermaid has finished producing the new one.
+    // paint the previous SVG (by position) as a placeholder and queue a
+    // re-render. This way the user keeps seeing the old diagram until mermaid
+    // has finished producing the new one.
     const pending: Array<{ visible: HTMLElement; source: string }> = [];
     const seenSources = new Set<string>();
     for (const [ index, node ] of nodes.entries()) {
@@ -159,6 +164,7 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
         if (cached) {
             node.innerHTML = cached;
             node.setAttribute("data-processed", "true");
+            node.classList.remove("mermaid-error");
             continue;
         }
 
@@ -214,6 +220,14 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
     offscreen.remove();
 
     mermaidLastRenderedByPosition.set(container, nodes.map((n) => n.innerHTML));
+}
+
+/** Render a mermaid failure in place so it's visible instead of console-only. */
+function showMermaidError(node: HTMLElement, error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    node.removeAttribute("data-processed");
+    node.classList.add("mermaid-error");
+    node.textContent = t("content_renderer.mermaid_diagram_error", { error: message });
 }
 
 export async function renderChildrenList($renderedContent: JQuery<HTMLElement>, note: FNote, includeArchivedNotes: boolean) {

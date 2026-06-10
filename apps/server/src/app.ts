@@ -1,4 +1,4 @@
-import("@triliumnext/core");
+void import("@triliumnext/core");
 
 import { erase } from "@triliumnext/core";
 import compression from "compression";

@@ -1,4 +1,7 @@
 # SQL Console
+> [!IMPORTANT]
+> Starting with v0.104.0, backend scripts are disabled by default to reduce the attack surface. See <a class="reference-link" href="../../../Scripting/Security.md">Security</a> for more information.
+
 The SQL Console is Trilium's built-in database editor.
 
 It can be accessed by going to the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> → Advanced → Open SQL Console.

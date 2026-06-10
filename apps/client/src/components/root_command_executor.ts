@@ -248,7 +248,7 @@ export default class RootCommandExecutor extends Component {
         const tab = mainNoteContexts[index];
 
         if (tab) {
-            appContext.tabManager.activateNoteContext(tab.ntxId);
+            appContext.tabManager.activateTabContext(tab.ntxId);
         }
     }
 

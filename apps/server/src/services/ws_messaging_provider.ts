@@ -48,12 +48,20 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
 
             console.log(`websocket client connected`);
 
-            ws.on("message", async (messageJson) => {
-                const message = JSON.parse(messageJson as any);
+            ws.on("message", (messageJson) => {
+                void (async () => {
+                    try {
+                        const message = JSON.parse(messageJson as any);
 
-                if (this.clientMessageHandler) {
-                    await this.clientMessageHandler(id, message);
-                }
+                        if (this.clientMessageHandler) {
+                            await this.clientMessageHandler(id, message);
+                        }
+                    } catch (e) {
+                        // A malformed message (invalid JSON) or a failing handler must not
+                        // crash the process via an unhandled rejection on this floating promise.
+                        console.error("Failed to process websocket message:", e);
+                    }
+                })();
             });
 
             ws.on("close", () => {

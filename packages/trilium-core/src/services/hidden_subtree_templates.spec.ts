@@ -37,6 +37,8 @@ describe("buildHiddenSubtreeTemplates", () => {
 
         expect(ids).toEqual([
             "_template_text_snippet",
+            "_template_markdown_snippet",
+            "_template_code_snippet",
             "_template_list_view",
             "_template_grid_view",
             "_template_calendar",
@@ -96,6 +98,29 @@ describe("buildHiddenSubtreeTemplates", () => {
         expect(descriptor?.value).toContain("promoted");
         expect(descriptor?.value).toContain("single");
         expect(descriptor?.value).toContain("text");
+    });
+
+    it("configures the markdown and code snippet templates as code notes with the unified snippet label", () => {
+        const templates = buildHiddenSubtreeTemplates();
+        const expectedMimes: Record<string, string> = {
+            _template_markdown_snippet: "text/x-markdown",
+            _template_code_snippet: "text/plain"
+        };
+
+        for (const [id, mime] of Object.entries(expectedMimes)) {
+            const snippet = childById(templates, id);
+
+            expect(snippet.type, id).toBe("code");
+            expect(snippet.mime, id).toBe(mime);
+
+            const names = (snippet.attributes ?? []).map((a) => a.name);
+            expect(names, id).toContain("template");
+            expect(names, id).toContain("snippet");
+
+            const descriptor = snippet.attributes?.find((a) => a.name === "label:snippetDescription");
+            expect(descriptor?.type, id).toBe("label");
+            expect(descriptor?.value, id).toContain("promoted");
+        }
     });
 
     it("applies the shared hidden-subtree label on the templates that hide their subtree", () => {

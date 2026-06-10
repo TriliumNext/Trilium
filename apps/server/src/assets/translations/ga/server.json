@@ -334,7 +334,8 @@
     "task-state-attr-markdown-symbol": "Siombail Markdown",
     "task-state-attr-is-completed": "Comhaireamh mar chríochnaithe",
     "task-state-attr-color": "Dath",
-    "task-state-attr-is-hidden": "I bhfolach ón liosta"
+    "task-state-attr-is-hidden": "I bhfolach ón liosta",
+    "security-title": "Slándáil"
   },
   "notes": {
     "new-note": "Nóta nua",
@@ -413,7 +414,9 @@
     "presentation_slide": "Sleamhnán cur i láthair",
     "presentation_slide_first": "An chéad sleamhnán",
     "presentation_slide_second": "An dara sleamhnán",
-    "background": "Cúlra"
+    "background": "Cúlra",
+    "markdown-snippet": "Sleachta Marcála",
+    "code-snippet": "Sleachta Cód"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Níl an bunachar sonraí tosaithe, lean na treoracha ar an scáileán le do thoil.",
@@ -437,5 +440,21 @@
   },
   "password": {
     "incorrect": "Tá an focal faire a chuir tú isteach mícheart."
+  },
+  "security-dialog": {
+    "enable-title": "Cumasaigh {{settingLabel}}",
+    "enable-message": "An bhfuil tú cinnte gur mian leat {{settingLabel}} a chumasú?",
+    "enable-detail": "{{warning}}\n\nNá cumasaigh é seo ach amháin má tá sé beartaithe agat go sainráite an ghné seo a úsáid. Ná cumasaigh é má iarrtar ort é a dhéanamh le script nó le nóta nach bhfuil tú eolach air.\n\nÉilíonn atosú chun go dtiocfaidh an t-athrú seo i bhfeidhm.",
+    "disable-title": "Díchumasaigh {{settingLabel}}",
+    "disable-message": "Díchumasófar {{settingLabel}}.",
+    "disable-detail": "Éilíonn an t-athrú seo atosú chun go dtiocfaidh sé i bhfeidhm.",
+    "cancel": "Cealaigh",
+    "enable": "Cumasaigh",
+    "disable": "Díchumasaigh",
+    "dont-ask-again": "Ná fiafraigh arís go dtí go n-atosófar",
+    "backend-scripting": "Forghníomhú script chúltaca",
+    "backend-scripting-warning": "Tá rochtain iomlán ag scripteanna cúil ar an bhfreastalaí, lena n-áirítear an córas comhad agus an líonra.",
+    "sql-console": "Consól SQL",
+    "sql-console-warning": "Ceadaíonn consól SQL ceisteanna SQL treallacha a fhorghníomhú i gcoinne an bhunachar sonraí."
   }
 }

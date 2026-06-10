@@ -1,5 +1,8 @@
 import { Command } from "ckeditor5";
 
+/** The name under which {@link InsertMermaidCommand} is registered in the editor. */
+export const INSERT_MERMAID_COMMAND = "insertMermaidCommand";
+
 const MOCK_MERMAID_MARKUP = `flowchart TB
 A --> B
 B --> C`;
@@ -22,15 +25,15 @@ export default class InsertMermaidCommand extends Command {
 		}
 	}
 
-	override execute() {
+	override execute( options: { source?: string; displayMode?: string } = {} ) {
 		const editor = this.editor;
 		const model = editor.model;
 		let mermaidItem;
 
 		model.change( writer => {
 			mermaidItem = writer.createElement( 'mermaid', {
-				displayMode: 'split',
-				source: MOCK_MERMAID_MARKUP
+				displayMode: options.displayMode ?? 'split',
+				source: options.source ?? MOCK_MERMAID_MARKUP
 			} );
 
 			model.insertContent( mermaidItem );

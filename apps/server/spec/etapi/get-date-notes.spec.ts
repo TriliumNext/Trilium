@@ -26,6 +26,40 @@ describe("etapi/get-date-notes", () => {
             .expect(200);
     });
 
+    it("rejects an invalid inbox date", async () => {
+        const response = await supertest(app)
+            .get("/etapi/inbox/not-a-date")
+            .auth(USER, token, { "type": "basic"})
+            .expect(400);
+        expect(response.body.code).toStrictEqual("DATE_INVALID");
+    });
+
+    describe("week-first-day", () => {
+        it("obtains the week's first day note", async () => {
+            await supertest(app)
+                .get("/etapi/calendar/week-first-day/2022-01-01")
+                .auth(USER, token, { "type": "basic"})
+                .expect(200);
+        });
+
+        it("detects invalid date", async () => {
+            const response = await supertest(app)
+                .get("/etapi/calendar/week-first-day/not-a-date")
+                .auth(USER, token, { "type": "basic"})
+                .expect(400);
+            expect(response.body.code).toStrictEqual("DATE_INVALID");
+        });
+    });
+
+    // Runs before the "weeks" suite below enables week notes, so the lookup misses.
+    it("returns 404 for a well-formed week when week notes are disabled", async () => {
+        const response = await supertest(app)
+            .get("/etapi/calendar/weeks/2022-W01")
+            .auth(USER, token, { "type": "basic"})
+            .expect(404);
+        expect(response.body.code).toStrictEqual("WEEK_NOT_FOUND");
+    });
+
     describe("days", () => {
         it("obtains day from calendar", async () => {
             await supertest(app)

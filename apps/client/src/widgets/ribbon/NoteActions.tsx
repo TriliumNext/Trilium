@@ -82,6 +82,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
         || (note.noteId === "_backendLog");
     const isInOptionsOrHelp = note?.noteId.startsWith("_options") || note?.noteId.startsWith("_help");
     const isExportableToImage = ["mermaid", "mindMap"].includes(noteType);
+    const isExportableToXlsx = noteType === "spreadsheet";
     const isContentAvailable = note.isContentAvailable();
     const isPrintable = isContentAvailable && (
         ["text", "code", "spreadsheet"].includes(noteType) ||
@@ -151,6 +152,18 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                         defaultType: "single"
                     })} />
                 {isExportableToImage && isNormalViewMode && isContentAvailable && <ExportAsImage ntxId={noteContext.ntxId} parentComponent={parentComponent} />}
+                {isExportableToXlsx && isNormalViewMode && isContentAvailable && (
+                    <>
+                        <FormListItem
+                            icon="bx bxs-spreadsheet"
+                            onClick={() => parentComponent?.triggerEvent("exportXlsx", { ntxId: noteContext.ntxId })}
+                        >{t("spreadsheet.export-xlsx")}</FormListItem>
+                        <FormListItem
+                            icon="bx bxs-spreadsheet"
+                            onClick={() => parentComponent?.triggerEvent("exportCsv", { ntxId: noteContext.ntxId })}
+                        >{t("spreadsheet.export-csv")}</FormListItem>
+                    </>
+                )}
                 <CommandItem command="printActiveNote" icon="bx bx-printer" disabled={!isPrintable}
                     text={isElectron ? t("note_actions.print_or_export_to_pdf") : t("note_actions.print_note")}
                 />

@@ -129,7 +129,7 @@ async function createNote(req: Request) {
     const newContent = `${existingContent}${existingContent.trim() ? "<br/>" : ""}${rewrittenContent}`;
     note.setContent(newContent);
 
-    noteService.asyncPostProcessContent(note, newContent); // to mark attachments as used
+    void noteService.asyncPostProcessContent(note, newContent); // to mark attachments as used
 
     return {
         noteId: note.noteId

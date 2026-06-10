@@ -289,11 +289,14 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefin
         for (const word of splitToWords(text)) {
             const reward = rewardMap.get(word) * factor * lengthPenalization || 0;
 
+            /* v8 ignore start */
+            // DEBUG-only diagnostics, displayRewards is only set true inside the permanently-false DEBUG block
             if (displayRewards && reward > 0) {
                 console.log(`Reward ${Math.round(reward * 10) / 10} for word: ${word}`);
                 console.log(`Before: ${counter}, add ${reward}, res: ${counter + reward}`);
                 console.log(`${rewardMap.get(word)} * ${factor} * ${lengthPenalization}`);
             }
+            /* v8 ignore stop */
 
             counter += reward;
         }
@@ -311,9 +314,12 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefin
 
             for (const parentNote of note.parents) {
                 if (!ancestorNoteIds.has(parentNote.noteId)) {
+                    /* v8 ignore start */
+                    // DEBUG-only diagnostics, displayRewards is permanently false outside the dead DEBUG block
                     if (displayRewards) {
                         console.log("Considering", parentNote.title);
                     }
+                    /* v8 ignore stop */
 
                     if (parentNote.isDecrypted) {
                         score += gatherRewards(parentNote.title, 0.3);
@@ -372,9 +378,12 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefin
         }
 
         if (candidateNote.type === baseNote.type) {
+            /* v8 ignore start */
+            // DEBUG-only diagnostics, displayRewards is permanently false outside the dead DEBUG block
             if (displayRewards) {
                 console.log("Adding reward for same note type");
             }
+            /* v8 ignore stop */
 
             score += 0.2;
         }
@@ -390,15 +399,21 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefin
 
         if (utcDateCreated < dateLimits.minExcludedDate || utcDateCreated > dateLimits.maxExcludedDate) {
             if (utcDateCreated >= dateLimits.minDate && utcDateCreated <= dateLimits.maxDate) {
+                /* v8 ignore start */
+                // DEBUG-only diagnostics, displayRewards is permanently false outside the dead DEBUG block
                 if (displayRewards) {
                     console.log("Adding reward for very similar date of creation");
                 }
+                /* v8 ignore stop */
 
                 score += 1;
             } else if (utcDateCreated.substr(0, 10) === dateLimits.minDate.substr(0, 10) || utcDateCreated.substr(0, 10) === dateLimits.maxDate.substr(0, 10)) {
+                /* v8 ignore start */
+                // DEBUG-only diagnostics, displayRewards is permanently false outside the dead DEBUG block
                 if (displayRewards) {
                     console.log("Adding reward for same day of creation");
                 }
+                /* v8 ignore stop */
 
                 // smaller bonus when outside of the window but within the same date
                 score += 0.5;
@@ -443,6 +458,8 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefin
 
     results.sort((a, b) => (a.score > b.score ? -1 : 1));
 
+    /* v8 ignore start */
+    // DEBUG-only diagnostics block, DEBUG is permanently false
     if (DEBUG) {
         console.log("REWARD MAP", rewardMap);
 
@@ -458,6 +475,7 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefin
             }
         }
     }
+    /* v8 ignore stop */
 
     return results.length > 200 ? results.slice(0, 200) : results;
 }

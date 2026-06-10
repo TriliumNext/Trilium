@@ -1,6 +1,6 @@
 <p><a href="#root/_help_CdNpE2pqjmI6">Script</a> notes can be triggered by events.
   Note that these are backend events and thus relation need to point to the
-  "JS backend" code note.</p>
+  "JavaScript (Trilium backend)" code note.</p>
 <h2>Global events</h2>
 <p>Global events are attached to the script note via label. Simply create
   e.g. "run" label with some of these values and script note will be executed
@@ -143,7 +143,7 @@
 <p>For example, here's a script with <code spellcheck="false">~runOnAttributeChange</code> which
   automatically changes the color of a note based on the value of the
   <code
-  spellcheck="false">mycategory</code>label:</p><pre><code class="language-application-javascript-env-backend">const attr = api.originEntity;
+  spellcheck="false">mycategory</code>label:</p><pre><code class="language-text-javascript">const attr = api.originEntity;
 if (attr.name !== "mycategory") return;
 const note = api.getNote(attr.noteId);
 if (attr.value === "Health") {

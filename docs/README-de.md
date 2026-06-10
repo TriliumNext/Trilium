@@ -51,12 +51,12 @@ Wissenssammlungen.
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
 Unsere Dokumentation ist verfügbar in mehreren Formaten:
-- **Online-Dokumentation**: Die vollständige Dokumentation finden man unter
-  [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App-Hilfe**: drücke `F1` in Trilium, um dieselbe Dokumentation direkt in
-  der Anwendung aufzurufen
-- **GitHub**: Durchsuche das [Benutzerhandbuch](./User%20Guide/User%20Guide/) in
-  diesem Repository
+- **Online-Dokumentation**: Die vollständige Dokumentation ist unter
+  [docs.triliumnotes.org](https://docs.triliumnotes.org/) verfügbar
+- **In-App-Hilfe**: Drücken Sie `F1` in Trilium, um dieselbe Dokumentation
+  direkt in der Anwendung aufzurufen
+- **GitHub**: Durchsuchen Sie das
+  [Benutzerhandbuch](./User%20Guide/User%20Guide/) in diesem Repository
 
 ### Schnellzugriff
 - [Erste Schritte](https://docs.triliumnotes.org/)
@@ -136,7 +136,7 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
 * Anpassbare Benutzeroberfläche (Seitenleisten-Schaltflächen, benutzerdefinierte
   Widgets, ...)
 * [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  zusätzlich mit dem Grafana Dashboard.
+  inklusive eines Grafana-Dashboards.
 
 ✨ Weitere Informationen zu TriliumNext findet man in den folgenden
 Ressourcen/Communities von Drittanbietern:
@@ -152,12 +152,12 @@ Der ursprüngliche Entwickler von Trilium ([Zadam](https://github.com/zadam)) ha
 das Trilium-Repository der Gemeinschaft übergeben, die nun unter
 https://github.com/TriliumNext agiert
 
-### Migration von Zadam/Trilium?
+### ⬆️ Migration von Zadam/Trilium?
 
 Es sind keine speziellen Migrationsschritte erforderlich, um von einer
 zadam/Trilium-Instanz auf eine TriliumNext/Trilium-Instanz umzustellen.
-[Installiere TriliumNext/Trilium](#-installation) einfach wie gewohnt, und die
-vorhandene Datenbank wird verwendet.
+[Installieren Sie TriliumNext/Trilium](#-installation) einfach wie gewohnt, und
+die vorhandene Datenbank wird verwendet.
 
 Versionen bis einschließlich
 [v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) sind
@@ -166,36 +166,36 @@ kompatibel mit der letzten zadam/trilium-Version
 Versionen von TriliumNext/Trilium haben ihre Sync-Versionen erhöht, was eine
 direkte Migration verhindert.
 
-## 💬 Diskussion mit uns
+## 💬 Mit uns diskutieren
 
-Nehme gerne an den offiziellen Diskussionen teil. Feedback, Funktionsvorschläge
-oder Problemberichte sind jederzeit willkommen!
+Nehmen Sie gerne an den offiziellen Diskussionen teil. Feedback,
+Funktionsvorschläge oder Problemberichte sind jederzeit willkommen!
 
 - [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (für
   Echtzeit-Diskussionen.)
-  - Der `allgemeine` Matrix-Raum ist zusätzlich mit
+  - Der `General` Matrix-Raum ist zusätzlich mit
     [XMPP](xmpp:discuss@trilium.thisgreat.party?join) verbunden
-- [Github Diskussionen](https://github.com/TriliumNext/Trilium/discussions) (für
+- [GitHub Diskussionen](https://github.com/TriliumNext/Trilium/discussions) (für
   asynchrone Diskussionen)
-- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (für
+- [GitHub Issues](https://github.com/TriliumNext/Trilium/issues) (für
   Fehlerberichte und Funktionsanfragen)
 
 ## 🏗 Installation
 
 ### Windows / MacOS
 
-Lade die Binärversion für deine Plattform von der Seite mit der [neuesten
+Laden Sie die Binärversion für Ihre Plattform von der Seite mit der [neuesten
 Version](https://github.com/TriliumNext/Trilium/releases/latest) herunter,
-entpacke das Paket und führe die ausführbare Datei `trilium` aus.
+entpacken Sie das Paket und führen Sie die ausführbare Datei `trilium` aus.
 
 ### Linux
 
-Wenn deine Distribution in der folgenden Tabelle aufgeführt ist, verwende das
-Paket deiner Distribution.
+Wenn Ihre Distribution in der folgenden Tabelle aufgeführt ist, verwenden Sie
+das Paket Ihrer Distribution.
 
 [![Paketierungsstatus](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
-Du kannst auch die Binärversion für deine Plattform von der Seite mit der
+Sie können auch die Binärversion für Ihre Plattform von der Seite mit der
 [neuesten Version](https://github.com/TriliumNext/Trilium/releases/latest)
 herunterladen, das Paket entpacken und die ausführbare Datei `trilium`
 ausführen.
@@ -206,8 +206,8 @@ veröffentlicht.
 ### Browser (beliebiges Betriebssystem)
 
 Bei Verwendung einer Server-Installation (siehe unten) kann direkt auf die
-Weboberfläche zugegriffen werden. (die nahezu identisch mit der
-Desktop-Anwendung ist).
+Weboberfläche zugegriffen werden (die nahezu identisch mit der Desktop-Anwendung
+ist).
 
 Derzeit werden ausschließlich die neuesten Versionen von Chrome und Firefox
 unterstützt (und getestet).
@@ -218,22 +218,22 @@ Um TriliumNext auf einem mobilen Gerät zu verwenden, kann ein mobiler Webbrowse
 genutzt werden, um die mobile Oberfläche einer Server-Installation (siehe unten)
 aufzurufen.
 
-Weitere Informationen zur Unterstützung mobiler Apps findest du unter
+Weitere Informationen zur Unterstützung mobiler Apps finden Sie unter
 https://github.com/TriliumNext/Trilium/issues/4962.
 
-Wenn du eine native Android-App bevorzugst, kannst du
+Wenn Sie eine native Android-App bevorzugen, können Sie
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)
-verwenden. Melde Fehler und fehlende Funktionen unter [ihrem
+verwenden. Melden Sie Fehler und fehlende Funktionen unter [ihrem
 Repository](https://github.com/FliegendeWurst/TriliumDroid). Hinweis: Bei
-Verwendung von TriliumDroid solltest du die automatischen Updates auf deinem
+Verwendung von TriliumDroid sollten Sie die automatischen Updates auf Ihrem
 Server deaktivieren (siehe unten), da die Synchronisierungsversion zwischen
 Trilium und TriliumDroid übereinstimmen muss.
 
 ### Server
 
-Um TriliumNext auf deinen eigenen Server zu installieren (einschließlich über
-Docker von [Dockerhub](https://hub.docker.com/r/triliumnext/trilium)), befolge
-[die
+Um TriliumNext auf Ihrem eigenen Server zu installieren (einschließlich über
+Docker von [Dockerhub](https://hub.docker.com/r/triliumnext/trilium)), befolgen
+Sie [die
 Server-Installationsanweisungen](https://docs.triliumnotes.org/user-guide/setup/server).
 
 
@@ -241,7 +241,7 @@ Server-Installationsanweisungen](https://docs.triliumnotes.org/user-guide/setup/
 
 ### Übersetzungen
 
-Wenn du Trilium in einer weiteren Sprache unterstützen möchtest, kannst du über
+Wenn Sie Trilium in einer weiteren Sprache unterstützen möchten, können Sie über
 unsere [Weblate-Seite](https://hosted.weblate.org/engage/trilium/) an den
 Übersetzungen mitwirken.
 
@@ -252,8 +252,9 @@ Hier ist die bisherige Sprachabdeckung:
 
 ### Code
 
-Lade das Repository herunter, die Abhängigkeiten mit `pnpm` installieren und
-anschließend den Server starten (verfügbar unter http://localhost:8080):
+Laden Sie das Repository herunter, installieren Sie die Abhängigkeiten mit
+`pnpm` und starten Sie anschließend den Server (verfügbar unter
+http://localhost:8080):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -357,7 +358,7 @@ Trilium wäre ohne die zugrundeliegenden Technologien nicht möglich:
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) – bietet die
   Mindmap-Funktionalität.
 * [Leaflet](https://github.com/Leaflet/Leaflet) – für die Darstellung
-  geografischen Karten.
+  geografischer Karten.
 * [Tabulator](https://github.com/olifolkerd/tabulator) - für die interaktive
   Tabelle in Kollektionen.
 * [FancyTree](https://github.com/mar10/fancytree) – funktionsreiche
@@ -372,20 +373,20 @@ Trilium wäre ohne die zugrundeliegenden Technologien nicht möglich:
 
 Trilium wurde mit [Hunderten von
 Arbeitsstunden](https://github.com/TriliumNext/Trilium/graphs/commit-activity)
-entwickelt und wird auch so weitergeführt. Deine Unterstützung sorgt dafür, dass
+entwickelt und wird auch so weitergeführt. Ihre Unterstützung sorgt dafür, dass
 es Open Source bleibt, verbessert die Funktionen und deckt Kosten wie das
 Hosting.
 
-Bitte unterstütze den Hauptentwickler
-([eliandoran](https://github.com/eliandoran)) der Anwendung über:
+Erwäge, den Hauptentwickler ([eliandoran](https://github.com/eliandoran)) der
+Anwendung zu unterstützen über:
 
-- [GitHub Unterstützer](https://github.com/sponsors/eliandoran)
+- [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
 - [Kauf mir einen Kaffee](https://buymeacoffee.com/eliandoran)
 
 ## 🔑 Lizenz
 
-Copyright 2017-2025 zadam, Elian Doran, und andere Unterstützer
+Copyright 2017-2025 zadam, Elian Doran, und andere Mitwirkende
 
 Dieses Programm ist freie Software: Sie können es unter den Bedingungen der GNU
 Affero General Public License, wie von der Free Software Foundation

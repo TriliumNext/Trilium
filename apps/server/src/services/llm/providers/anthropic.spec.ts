@@ -163,6 +163,7 @@ describe("AnthropicProvider tool handling", () => {
     it("sets the thinking budget and agentic options on the extended-thinking path with tools", () => {
         const provider = new AnthropicProvider("sk-ant-test");
         provider.chat([{ role: "user", content: "hi" }], {
+            model: "claude-sonnet-4-5-20250929",
             enableExtendedThinking: true,
             enableNoteTools: true,
             thinkingBudget: 12000,
@@ -182,12 +183,31 @@ describe("AnthropicProvider tool handling", () => {
 
     it("defaults the thinking budget and floors maxOutputTokens when unset", () => {
         const provider = new AnthropicProvider("sk-ant-test");
-        provider.chat([{ role: "user", content: "hi" }], { enableExtendedThinking: true });
+        provider.chat([{ role: "user", content: "hi" }], {
+            model: "claude-sonnet-4-5-20250929",
+            enableExtendedThinking: true
+        });
 
         const opts = streamTextMock.mock.calls[0][0] as any;
         expect(opts.providerOptions.anthropic.thinking.budgetTokens).toBe(10000);
         // max(8096, 10000 + 4000) = 14000
         expect(opts.maxOutputTokens).toBe(14000);
+    });
+
+    it("uses adaptive thinking on Opus 4.7+ / Sonnet 4.6, which reject manual budgets", () => {
+        const provider = new AnthropicProvider("sk-ant-test");
+
+        // Default model (Sonnet 4.6) plus the newest Opus tiers are adaptive-only.
+        for (const model of ["claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-6"]) {
+            streamTextMock.mockClear();
+            provider.chat([{ role: "user", content: "hi" }], { model, enableExtendedThinking: true });
+
+            const opts = streamTextMock.mock.calls[0][0] as any;
+            expect(opts.providerOptions.anthropic.thinking).toEqual({
+                type: "adaptive",
+                display: "summarized"
+            });
+        }
     });
 });
 

@@ -95,6 +95,32 @@ export class CommandRegistry {
             icon: "bx bx-sidebar",
             handler: () => appContext.triggerCommand("showLaunchBarSubtree")
         });
+
+        this.register({
+            id: "pin-active-tab",
+            name: t("command_palette.pin_tab_title"),
+            description: t("command_palette.pin_tab_description"),
+            icon: "bx bx-pin",
+            handler: () => {
+                const ntxId = appContext.tabManager.getActiveMainContext()?.ntxId;
+                if (ntxId) {
+                    appContext.triggerCommand("pinTab", { ntxId });
+                }
+            }
+        });
+
+        this.register({
+            id: "unpin-active-tab",
+            name: t("command_palette.unpin_tab_title"),
+            description: t("command_palette.unpin_tab_description"),
+            icon: "bx bx-pin",
+            handler: () => {
+                const ntxId = appContext.tabManager.getActiveMainContext()?.ntxId;
+                if (ntxId) {
+                    appContext.triggerCommand("unpinTab", { ntxId });
+                }
+            }
+        });
     }
 
     private async loadKeyboardActionsAsync() {

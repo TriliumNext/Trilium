@@ -1,7 +1,7 @@
 import type { Mermaid } from './index.js';
 import MermaidEditing from './mermaidediting.js';
 import MermaidToolbar from './mermaidtoolbar.js';
-import MermaidUI from './mermaidui.js';
+import MermaidUI, { type MermaidSample } from './mermaidui.js';
 
 declare global {
 	interface MermaidInstance {
@@ -28,6 +28,8 @@ declare module 'ckeditor5' {
 		"mermaid"?: {
 			lazyLoad?: () => Promise<MermaidInstance> | MermaidInstance;
 			config: MermaidConfig;
+			/** Diagram templates listed in the insert-diagram split button's dropdown. */
+			samples?: MermaidSample[];
 		}
 	}
 

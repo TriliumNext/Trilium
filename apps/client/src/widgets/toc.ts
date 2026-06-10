@@ -21,6 +21,37 @@ import OnClickButtonWidget from "./buttons/onclick_button.js";
 import appContext, { type EventData } from "../components/app_context.js";
 import katex from "../services/math.js";
 import type FNote from "../entities/fnote.js";
+import DOMPurify, { type Config as DOMPurifyConfig } from "dompurify";
+
+/**
+ * DOMPurify configuration for ToC headings. Uses DOMPurify's built-in HTML
+ * and MathML profiles for proper namespace handling (required for KaTeX
+ * rendered equations), then restricts to inline-only elements via FORBID_TAGS.
+ */
+const TOC_PURIFY_CONFIG: DOMPurifyConfig = {
+    USE_PROFILES: { html: true, mathMl: true },
+    // Block elements that should never appear in a ToC heading
+    FORBID_TAGS: [
+        "script", "style", "iframe", "object", "embed", "link", "meta",
+        "base", "noscript", "template", "form", "input", "textarea",
+        "button", "select", "option",
+        // Block-level elements — headings should only contain inline content
+        "div", "p", "h1", "h2", "h3", "h4", "h5", "h6",
+        "blockquote", "pre", "section", "article", "aside", "nav",
+        "header", "footer", "main", "figure", "figcaption",
+        "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+        "ul", "ol", "li", "dl", "dt", "dd",
+        "hr", "img", "video", "audio", "picture", "canvas",
+        "svg", "foreignObject"
+    ],
+    FORBID_ATTR: [
+        "onerror", "onload", "onclick", "onmouseover", "onfocus",
+        "onblur", "onsubmit", "onreset", "onchange", "oninput",
+        "onkeydown", "onkeyup", "onkeypress"
+    ],
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false
+};
 
 const TPL = /*html*/`<div class="toc-widget">
     <style>
@@ -337,7 +368,7 @@ export default class TocWidget extends RightPanelWidget {
             //
 
             const headingText = await this.replaceMathTextWithKatax(m[2]);
-            const $itemContent = $('<div class="item-content">').html(headingText);
+            const $itemContent = $('<div class="item-content">').html(DOMPurify.sanitize(headingText, TOC_PURIFY_CONFIG) as string);
             const $li = $("<li>").append($itemContent)
                 .on("click", () => this.jumpToHeading(headingIndex));
             $ols[$ols.length - 1].append($li);

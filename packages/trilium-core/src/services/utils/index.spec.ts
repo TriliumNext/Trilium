@@ -142,8 +142,30 @@ describe("#escapeHtml", () => {
 });
 
 describe("#unescapeHtml", () => {
-    it("should re-export 'unescape' npm module as unescapeHtml", () => {
-        expect(utils.unescapeHtml).toBeTypeOf("function");
+    it("decodes the five default HTML entities (named and numeric short forms)", () => {
+        expect(utils.unescapeHtml("a &amp; b")).toBe("a & b");
+        expect(utils.unescapeHtml("&#38;")).toBe("&");
+        expect(utils.unescapeHtml("x &lt; y &gt; z")).toBe("x < y > z");
+        expect(utils.unescapeHtml("&#60; &#62;")).toBe("< >");
+        expect(utils.unescapeHtml("&quot;hi&quot; &#34;")).toBe("\"hi\" \"");
+        expect(utils.unescapeHtml("it&apos;s &#39;")).toBe("it's '");
+    });
+
+    it("leaves entities outside the default set untouched", () => {
+        // other numeric, hex, nbsp, unknown-named and wrong-case are NOT decoded
+        expect(utils.unescapeHtml("&copy; &#169; &#x26; &nbsp; &hellip; &AMP;"))
+            .toBe("&copy; &#169; &#x26; &nbsp; &hellip; &AMP;");
+    });
+
+    it("handles double-escaped entities and query-string URLs", () => {
+        expect(utils.unescapeHtml("&amp;amp;")).toBe("&amp;");
+        expect(utils.unescapeHtml("http://x/?a=1&amp;b=2")).toBe("http://x/?a=1&b=2");
+    });
+
+    it("returns an empty string for empty or non-string input", () => {
+        expect(utils.unescapeHtml("")).toBe("");
+        expect(utils.unescapeHtml(null as unknown as string)).toBe("");
+        expect(utils.unescapeHtml(undefined as unknown as string)).toBe("");
     });
 });
 
@@ -281,6 +303,8 @@ describe("#removeFileExtension", () => {
         [ "w/ 'test.markdown' it should strip '.markdown'", [ "test.markdown" ], "test" ],
         [ "w/ 'test.html' it should strip '.html'", [ "test.html" ], "test" ],
         [ "w/ 'test.htm' it should strip '.htm'", [ "test.htm" ], "test" ],
+        [ "w/ 'test.xlsx' it should strip '.xlsx'", [ "test.xlsx" ], "test" ],
+        [ "w/ 'test.csv' it should strip '.csv'", [ "test.csv" ], "test" ],
         [ "w/ 'test.zip' it should NOT strip '.zip'", [ "test.zip" ], "test.zip" ]
     ];
 
@@ -367,6 +391,15 @@ describe("#timeLimit", () => {
             //rej("rejected!");
         });
         await expect(utils.timeLimit(testPromise, 1_000)).resolves.toBe(resolvedValue);
+    });
+
+    it("does nothing when the internal timeout fires after the promise already resolved", async () => {
+        // Resolve well within the limit, then wait past the limit so the internal
+        // setTimeout callback runs with `resolved === true` (the no-op else path).
+        const fast = new Promise((res) => setTimeout(() => res("fast"), 5));
+        await expect(utils.timeLimit(fast, 20)).resolves.toBe("fast");
+        // give the 20ms internal timer time to fire on the already-resolved promise
+        await new Promise((res) => setTimeout(res, 40));
     });
 
     it("when promise execution rejects within timeout, it should return the original promises' rejected value, not the custom set one", async () => {
@@ -653,6 +686,13 @@ describe("#formatDownloadTitle", () => {
         [
             [ ":::a", "file", "application/zip" ],
             "a.zip"
+        ],
+
+
+        // mime type that maps to no known extension -> filename returned unchanged
+        [
+            [ "test_file", "file", "application/x-this-mime-has-no-extension" ],
+            "test_file"
         ]
     ];
 
@@ -853,5 +893,136 @@ describe("#sanitizeSvg", () => {
         const maliciousSvg = '<svg><rect ONCLICK="alert(1)" width="100"/></svg>';
         const result = utils.sanitizeSvg(maliciousSvg);
         expect(result).toBe('<svg><rect width="100"/></svg>');
+    });
+});
+
+describe("#isDev", () => {
+    it("returns a boolean derived from the TRILIUM_ENV platform var", () => {
+        expect(utils.isDev()).toBeTypeOf("boolean");
+    });
+});
+
+describe("#md5", () => {
+    it("produces the canonical lowercase hex digest", () => {
+        // RFC 1321 / well-known vectors
+        expect(utils.md5("")).toBe("d41d8cd98f00b204e9800998ecf8427e");
+        expect(utils.md5("abc")).toBe("900150983cd24fb0d6963f7d28e17f72");
+    });
+
+    it("accepts a byte buffer and yields a 32-char hex string", () => {
+        const digest = utils.md5(new Uint8Array([0x61, 0x62, 0x63])); // "abc"
+        expect(digest).toBe("900150983cd24fb0d6963f7d28e17f72");
+    });
+});
+
+describe("#hashedBlobId", () => {
+    it("returns a 20-char id without '+' or '/' characters", () => {
+        const id = utils.hashedBlobId("some content");
+        expect(id).toHaveLength(20);
+        expect(id).not.toMatch(/[+/]/);
+    });
+
+    it("is deterministic for identical content", () => {
+        expect(utils.hashedBlobId("repeatable")).toBe(utils.hashedBlobId("repeatable"));
+    });
+
+    it("treats null and undefined content as empty string", () => {
+        const emptyId = utils.hashedBlobId("");
+        //@ts-expect-error - exercising the nullish guard
+        expect(utils.hashedBlobId(null)).toBe(emptyId);
+        //@ts-expect-error - exercising the nullish guard
+        expect(utils.hashedBlobId(undefined)).toBe(emptyId);
+    });
+});
+
+describe("#quoteRegex", () => {
+    it("escapes regex metacharacters", () => {
+        expect(utils.quoteRegex("a.b*c")).toBe("a\\.b\\*c");
+        expect(utils.quoteRegex("(x)[y]{z}")).toBe("\\(x\\)\\[y\\]\\{z\\}");
+    });
+});
+
+describe("#replaceAll", () => {
+    it("replaces every occurrence, escaping the search term", () => {
+        expect(utils.replaceAll("a-b-c", "-", "+")).toBe("a+b+c");
+        // the search term contains regex metacharacters that must be treated literally
+        expect(utils.replaceAll("a.b.c", ".", "_")).toBe("a_b_c");
+    });
+});
+
+describe("#escapeRegExp", () => {
+    it("escapes regex metacharacters in a string", () => {
+        expect(utils.escapeRegExp("a.b")).toBe("a\\.b");
+        expect(utils.escapeRegExp("1+1=2")).toBe("1\\+1\\=2");
+    });
+});
+
+describe("#stringToInt", () => {
+    const testCases: TestCase<typeof utils.stringToInt>[] = [
+        [ "w/ a numeric string it returns the parsed integer", [ "42" ], 42 ],
+        [ "w/ a decimal string it truncates at the decimal point", [ "12.9" ], 12 ],
+        [ "w/ a non-numeric string it returns undefined", [ "abc" ], undefined ],
+        [ "w/ an empty string it returns undefined", [ "" ], undefined ],
+        [ "w/ undefined it returns undefined", [ undefined ], undefined ]
+    ];
+
+    testCases.forEach((testCase) => {
+        const [ desc, fnParams, expected ] = testCase;
+        it(desc, () => {
+            expect(utils.stringToInt(...fnParams)).toStrictEqual(expected);
+        });
+    });
+});
+
+describe("#formatUtcTime", () => {
+    it("replaces the ISO 'T' separator and truncates to seconds", () => {
+        expect(utils.formatUtcTime("2023-08-21T23:38:51.110Z")).toBe("2023-08-21 23:38:51");
+    });
+});
+
+describe("#formatSize", () => {
+    const testCases: TestCase<typeof utils.formatSize>[] = [
+        [ "w/ null it returns an empty string", [ null ], "" ],
+        [ "w/ undefined it returns an empty string", [ undefined ], "" ],
+        [ "w/ 0 bytes it rounds up to the 1 KiB minimum", [ 0 ], "1 KiB" ],
+        [ "w/ a sub-MiB value it reports KiB", [ 2048 ], "2 KiB" ],
+        [ "w/ a multi-MiB value it reports MiB", [ 5 * 1024 * 1024 ], "5 MiB" ]
+    ];
+
+    testCases.forEach((testCase) => {
+        const [ desc, fnParams, expected ] = testCase;
+        it(desc, () => {
+            expect(utils.formatSize(...fnParams)).toBe(expected);
+        });
+    });
+});
+
+describe("#removeFileExtension (media types)", () => {
+    it("strips the extension for video and audio mime types", () => {
+        expect(utils.removeFileExtension("clip.mov", "video/quicktime")).toBe("clip");
+        expect(utils.removeFileExtension("song.flac", "audio/flac")).toBe("song");
+    });
+});
+
+describe("#compareVersions", () => {
+    const testCases: TestCase<typeof utils.compareVersions>[] = [
+        [ "equal versions return 0", [ "1.2.3", "1.2.3" ], 0 ],
+        [ "greater major returns 1", [ "2.0.0", "1.9.9" ], 1 ],
+        [ "lesser major returns -1", [ "1.0.0", "2.0.0" ], -1 ],
+        [ "greater minor returns 1", [ "1.3.0", "1.2.9" ], 1 ],
+        [ "lesser minor returns -1", [ "1.2.0", "1.3.0" ], -1 ],
+        [ "greater patch returns 1", [ "1.2.4", "1.2.3" ], 1 ],
+        [ "lesser patch returns -1", [ "1.2.3", "1.2.4" ], -1 ],
+        [ "strips a leading 'v' prefix", [ "v1.2.3", "1.2.3" ], 0 ],
+        [ "ignores a pre-release suffix after a dash", [ "1.2.3-beta", "1.2.3" ], 0 ],
+        [ "pads a shorter first version with zeros", [ "1.2", "1.2.0" ], 0 ],
+        [ "pads a shorter second version with zeros", [ "1.2.0", "1.2" ], 0 ]
+    ];
+
+    testCases.forEach((testCase) => {
+        const [ desc, fnParams, expected ] = testCase;
+        it(desc, () => {
+            expect(utils.compareVersions(...fnParams)).toBe(expected);
+        });
     });
 });

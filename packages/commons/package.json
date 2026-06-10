@@ -15,8 +15,14 @@
     "test": "vitest"
   },
   "dependencies": {
-    "dayjs": "1.11.20",
-    "marked": "18.0.4",
-    "marked-footnote": "1.4.0"
+    "dayjs": "1.11.21",
+    "exceljs": "4.4.0",
+    "jszip": "3.10.1",
+    "marked": "18.0.5",
+    "marked-footnote": "1.4.0",
+    "numfmt": "3.2.6"
+  },
+  "devDependencies": {
+    "preact": "10.29.2"
   }
 }

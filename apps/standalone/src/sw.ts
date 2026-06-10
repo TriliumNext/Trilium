@@ -5,6 +5,7 @@ const STATIC_CACHE = `static-${VERSION}`;
 // Check if running in dev mode (passed via URL parameter)
 const isDev = true;
 
+/* v8 ignore next 3 -- @preserve: isDev is hardcoded true, so the dev-mode log always runs and has no testable alternate branch. */
 if (isDev) {
     console.log('[Service Worker] Running in DEV mode - caching disabled');
 }
@@ -28,10 +29,12 @@ const PRECACHE_URLS = [
 self.addEventListener("install", (event) => {
     event.waitUntil((async () => {
         // Skip precaching in dev mode
+        /* v8 ignore start -- @preserve: isDev is hardcoded true, so precaching never runs. */
         if (!isDev) {
             const cache = await caches.open(STATIC_CACHE);
             await cache.addAll(PRECACHE_URLS);
         }
+        /* v8 ignore stop */
         self.skipWaiting();
     })());
 });
@@ -50,6 +53,7 @@ function isLocalFirst(url) {
 }
 
 async function cacheFirst(request) {
+    /* v8 ignore start -- @preserve: isDev is hardcoded true, so only the dev bypass executes; the cache implementation is dead code. */
     // In dev mode, always bypass cache
     if (isDev) {
         return fetch(request);
@@ -63,9 +67,11 @@ async function cacheFirst(request) {
     // Cache only successful GETs
     if (request.method === "GET" && fresh.ok) cache.put(request, fresh.clone());
     return fresh;
+    /* v8 ignore stop */
 }
 
 async function networkFirst(request) {
+    /* v8 ignore start -- @preserve: isDev is hardcoded true, so only the dev bypass executes; the cache implementation is dead code. */
     // In dev mode, always bypass cache
     if (isDev) {
         return fetch(request);
@@ -83,6 +89,7 @@ async function networkFirst(request) {
         if (cached) return cached;
         throw error;
     }
+    /* v8 ignore stop */
 }
 
 async function forwardToClientLocalServer(request, _clientId) {

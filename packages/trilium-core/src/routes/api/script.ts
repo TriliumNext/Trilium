@@ -6,8 +6,9 @@ import becca from "../../becca/becca.js";
 import attributeService from "../../services/attributes.js";
 import scriptService, { type Bundle } from "../../services/script.js";
 import syncService from "../../services/sync.js";
-import { safeExtractMessageAndStackFromError } from "../../services/utils/index.js";
+import { assertScriptingEnabled } from "../../services/scripting_guard.js";
 import { getSql } from "../../services/sql/index.js";
+import { safeExtractMessageAndStackFromError } from "../../services/utils/index.js";
 
 interface ScriptBody {
     script: string;
@@ -23,6 +24,7 @@ interface ScriptBody {
 // need to await it and make the complete response including metadata available in a Promise, so that the route detects
 // this and does result.then().
 async function exec(req: Request) {
+    assertScriptingEnabled();
     try {
         const body = req.body as ScriptBody;
 
@@ -45,6 +47,7 @@ async function exec(req: Request) {
 }
 
 function run(req: Request<{ noteId: string }>) {
+    assertScriptingEnabled();
     const note = becca.getNoteOrThrow(req.params.noteId);
 
     const result = scriptService.executeNote(note, { originEntity: note });

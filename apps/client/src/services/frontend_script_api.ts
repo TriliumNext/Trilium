@@ -1,4 +1,5 @@
 import { dayjs, formatLogMessage } from "@triliumnext/commons";
+import type { FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote } from "@triliumnext/commons/src/lib/script_api.js";
 
 import appContext from "../components/app_context.js";
 import type Component from "../components/component.js";
@@ -730,3 +731,15 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
 export default FrontendScriptApi as any as {
     new(startNote: FNote, currentNote: FNote, originEntity: Entity | null, $container: JQuery<HTMLElement> | null): Api;
 };
+
+// --- Drift guards -----------------------------------------------------------
+// The public script API surface lives in @triliumnext/commons (self-contained so
+// it can feed the in-editor language service and the script-deployer). These
+// checks fail to compile — naming the offending member — if that public surface
+// claims an `api`/`FNote` member that has since been renamed or removed here.
+type _MissingApiMembers = Exclude<keyof PublicFrontendApi, keyof Api>;
+type _MissingFNoteMembers = Exclude<keyof PublicScriptFNote, keyof FNote>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _apiDriftGuard: [_MissingApiMembers] extends [never] ? true : _MissingApiMembers = true;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _fnoteDriftGuard: [_MissingFNoteMembers] extends [never] ? true : _MissingFNoteMembers = true;

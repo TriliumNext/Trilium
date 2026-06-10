@@ -1,6 +1,27 @@
 {
   "about": {
-    "data_directory": "Katalog danych:"
+    "data_directory": "Katalog danych:",
+    "version_label": "Wersja:",
+    "version": "{{appVersion}} (baza danych: {{dbVersion}}, protokół synchronizacji: {{syncVersion}})",
+    "license_tooltip": "Podgląd licencji",
+    "donate": "Wesprzeć",
+    "channel": {
+      "standalone": "Samodzielna",
+      "nightly": "Kompilacja nocna"
+    },
+    "build_info": "Data kompilacji: {{buildDate}}, wersja: <buildRevision />",
+    "contributors_label": "Autorzy:",
+    "contributor_roles": {
+      "lead-dev": "główny programista",
+      "original-dev": "pierwotny twórca"
+    },
+    "role_brief_history": {
+      "lead-dev": "W 2024 roku Elian Doran założył TriliumNext, społecznościowy fork powstały po tym, jak Zadam wycofał się z projektu. Zadam przekazał później oryginalne repozytorium zespołowi TriliumNext, łącząc oba projekty w jeden.",
+      "original-dev": "25 grudnia 2017 roku Zadam opublikował pierwszą wersję beta Trilium (pisane z jednym „l”, w odróżnieniu od nazwy kwiatu). Niezadowolony z istniejących narzędzi do zarządzania notatkami, stworzył potężną, hostowaną lokalnie hierarchiczną bazę wiedzy, która zebrała ponad 22 000 gwiazdek na GitHubie. W 2024 roku, gdy jego życie stało się bardziej intensywne, przełączył projekt w tryb konserwacji."
+    },
+    "contributor_full_list": "Zobacz całą społeczność",
+    "github_tooltip": "Zgłaszaj błędy, proponuj nowe funkcje lub współtwórz projekt na GitHubie",
+    "donate_tooltip": "Przekaż darowiznę, aby wesprzeć ten projekt"
   },
   "toast": {
     "critical-error": {
@@ -251,7 +272,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} notatek",
+    "total_notes_one": "{{count}} notatek",
+    "total_notes_few": "",
+    "total_notes_many": "",
     "prev_page": "Poprzednia strona",
     "next_page": "Następna strona"
   },
@@ -447,7 +470,9 @@
     "note_size": "Rozmiar notatki",
     "note_size_info": "Rozmiar notatki zapewnia przybliżone oszacowanie wymagań pamięciowych dla tej notatki. Bierze pod uwagę treść notatki i zawartość jej wersji.",
     "calculate": "oblicz",
-    "subtree_size": "(rozmiar poddrzewa: {{size}} w {{count}} notatkach)",
+    "subtree_size_one": "(rozmiar poddrzewa: {{size}} w {{count}} notatkach)",
+    "subtree_size_few": "",
+    "subtree_size_many": "",
     "title": "Info o notatce",
     "show_similar_notes": "Pokaż podobne notatki",
     "mime": "Typ MIME"
@@ -1694,7 +1719,9 @@
     "export": "Eksportuj",
     "import-into-note": "Importuj do notatki",
     "apply-bulk-actions": "Zastosuj akcje masowe",
-    "converted-to-attachments": "{{count}} notatek zostało przekonwertowanych na załączniki.",
+    "converted-to-attachments_one": "{{count}} notatek zostało przekonwertowanych na załączniki.",
+    "converted-to-attachments_few": "",
+    "converted-to-attachments_many": "",
     "convert-to-attachment-confirm": "Czy na pewno chcesz przekonwertować wybrane notatki na załączniki ich notatek nadrzędnych? Ta operacja dotyczy tylko notatek Obrazów, inne notatki zostaną pominięte.",
     "open-in-popup": "Szybka edycja",
     "open-in-a-new-window": "Otwórz w nowym oknie",

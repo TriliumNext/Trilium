@@ -339,18 +339,18 @@ describe("Auth", () => {
             expect(res.statusCode).toBe(401);
         });
 
-        it("checkCredentials walks DB/password/header/verification branches", () => {
+        it("checkCredentials walks DB/password/header/verification branches", async () => {
             // DB not initialized -> 400
             const dbSpy = vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
             const res1 = makeRes();
-            auth.checkCredentials(makeReq(), res1 as never, vi.fn());
+            await auth.checkCredentials(makeReq(), res1 as never, vi.fn());
             expect(res1.statusCode).toBe(400);
             dbSpy.mockRestore();
 
             // password not set -> 400
             const unsetSpy = vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(false);
             const res2 = makeRes();
-            auth.checkCredentials(makeReq(), res2 as never, vi.fn());
+            await auth.checkCredentials(makeReq(), res2 as never, vi.fn());
             expect(res2.statusCode).toBe(400);
             unsetSpy.mockRestore();
 
@@ -359,31 +359,64 @@ describe("Auth", () => {
 
             // non-string trilium-cred header -> 400
             const res3 = makeRes();
-            auth.checkCredentials(makeReq({ headers: { "trilium-cred": ["a", "b"] } }), res3 as never, vi.fn());
+            await auth.checkCredentials(makeReq({ headers: { "trilium-cred": ["a", "b"] } }), res3 as never, vi.fn());
             expect(res3.statusCode).toBe(400);
 
-            // wrong password -> 401
-            const verifySpy = vi.spyOn(passwordEncryptionService, "verifyPassword").mockReturnValue(false as never);
+            // wrong password -> 401. verifyPassword is async, so it's mocked to resolve a
+            // boolean and the call is awaited.
+            const verifySpy = vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(false as never);
             const cred = Buffer.from("user:wrongpass").toString("base64");
             const res4 = makeRes();
-            auth.checkCredentials(makeReq({ headers: { "trilium-cred": cred } }), res4 as never, vi.fn());
+            await auth.checkCredentials(makeReq({ headers: { "trilium-cred": cred } }), res4 as never, vi.fn());
             expect(res4.statusCode).toBe(401);
             // The username before the colon is stripped; only the password is verified.
             expect(verifySpy).toHaveBeenLastCalledWith("wrongpass");
 
             // correct password (no colon in decoded cred path also exercised) -> next
-            verifySpy.mockReturnValue(true as never);
+            verifySpy.mockResolvedValue(true as never);
             const credNoColon = Buffer.from("justpassword").toString("base64");
             const next = vi.fn();
-            auth.checkCredentials(makeReq({ headers: { "trilium-cred": credNoColon } }), makeRes() as never, next);
+            await auth.checkCredentials(makeReq({ headers: { "trilium-cred": credNoColon } }), makeRes() as never, next);
             expect(next).toHaveBeenCalled();
             // No colon → the whole cred is treated as username and the password is "".
             expect(verifySpy).toHaveBeenLastCalledWith("");
 
             // missing trilium-cred header -> falls back to "" -> next (with verify mocked true)
             const nextNoHeader = vi.fn();
-            auth.checkCredentials(makeReq({ headers: {} }), makeRes() as never, nextNoHeader);
+            await auth.checkCredentials(makeReq({ headers: {} }), makeRes() as never, nextNoHeader);
             expect(nextNoHeader).toHaveBeenCalled();
+        });
+
+        // verifyPassword is async, so its resolved value — not the Promise object — must drive
+        // the result. These two cases mock it the way it really behaves (resolving a boolean)
+        // and await the call, asserting the verification outcome actually gates the response;
+        // a synchronous mock would not exercise that.
+        it("checkCredentials rejects a password that fails async verification", async () => {
+            vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
+            vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(true);
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(false as never);
+
+            const cred = Buffer.from("user:wrongpass").toString("base64");
+            const res = makeRes();
+            const next = vi.fn();
+
+            await auth.checkCredentials(makeReq({ headers: { "trilium-cred": cred } }), res as never, next);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(res.statusCode).toBe(401);
+        });
+
+        it("checkCredentials calls next when async verification succeeds", async () => {
+            vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
+            vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(true);
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+
+            const cred = Buffer.from("user:correctpass").toString("base64");
+            const next = vi.fn();
+
+            await auth.checkCredentials(makeReq({ headers: { "trilium-cred": cred } }), makeRes() as never, next);
+
+            expect(next).toHaveBeenCalled();
         });
     });
 }, 60_000);

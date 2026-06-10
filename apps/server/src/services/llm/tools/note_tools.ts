@@ -240,8 +240,9 @@ export const noteTools = defineTools({
             "- 'search': saved search (content is the search query)",
             "- 'mindMap': mind map (JSON content)",
             "Common mime values for code notes:",
-            "'application/javascript;env=frontend' (JS frontend),",
-            "'application/javascript;env=backend' (JS backend),",
+            "'text/javascript' (plain JavaScript, not executed as a Trilium script),",
+            "'application/javascript;env=frontend' (JavaScript, Trilium frontend script),",
+            "'application/javascript;env=backend' (JavaScript, Trilium backend script),",
             "'text/jsx' (Preact JSX, preferred for frontend widgets),",
             "'text/css', 'text/html', 'application/json', 'text/x-python', 'text/x-sh'."
         ].join(" "),

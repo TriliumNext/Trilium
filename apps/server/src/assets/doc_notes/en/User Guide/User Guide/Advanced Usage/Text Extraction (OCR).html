@@ -8,7 +8,8 @@
     to quickly find the image or file based on snippets of text.</li>
   <li>Integrated with the&nbsp;<a class="reference-link" href="#root/_help_GBBMSlVSOIGP">AI</a>&nbsp;feature,
     which allows the agent to access the content of a non-text note.</li>
-  <li>Manually accessed for other purposes (e.g. copying into a note or sending
+  <li
+ >Manually accessed for other purposes (e.g. copying into a note or sending
     it somewhere else).</li>
 </ul>
 <h2>Supported formats</h2>
@@ -37,11 +38,19 @@
 <p>The text will be extracted from the following file formats:</p>
 <ul>
   <li>Microsoft Word documents</li>
-  <li>Microsoft Excel documents (only the raw text information, the cell structure
-    is not maintained).</li>
+  <li>Microsoft Excel documents
+    <ul>
+      <li>Only the raw text information, the cell structure is not maintained.</li>
+      <li
+     >Values are extracted raw, so searching for dates will not work. The OpenDocument
+        alternative will actually extract the properly formatted value.</li>
+  </ul>
+  </li>
   <li>Microsoft PowerPoint documents</li>
   <li>The OpenDocument alternatives to the previous formats (Text, Spreadsheet,
     Presentation), created by editors such as LibreOffice and OpenOffice.</li>
+  <li
+ >Rich Text Format (RTF), since v0.104.0.</li>
 </ul>
 <h2>Configuring and triggering OCR</h2>
 <p>The OCR can be configured by going to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→&nbsp;
@@ -96,7 +105,8 @@ class="admonition note">
   <ul>
     <li>For&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>&nbsp;notes,
       go to the&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;→ <em>Advanced</em> → <em>View OCR Text</em>.</li>
-    <li>For&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>&nbsp;(e.g.&nbsp;
+    <li
+   >For&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>&nbsp;(e.g.&nbsp;
       <a
       class="reference-link" href="#root/_help_mT0HEkOsz6i1">Images</a>&nbsp;in&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes),
         double-click the attachment to view the details, press the […] button at
