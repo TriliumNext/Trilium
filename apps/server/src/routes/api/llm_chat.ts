@@ -2,7 +2,7 @@ import type { LlmMessage } from "@triliumnext/commons";
 import type { Request, Response } from "express";
 
 import { generateChatTitle } from "../../services/llm/chat_title.js";
-import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
+import { getAllModels, getProviderByType, getProviderSetupByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
 import { streamToChunks } from "../../services/llm/stream.js";
 import { getLog } from "@triliumnext/core";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
@@ -51,10 +51,12 @@ async function streamChat(req: Request, res: Response) {
         }
 
         const provider = getProviderByType(config.provider || "anthropic");
-        const result = provider.chat(messages, config);
+        const setup = getProviderSetupByType(config.provider || "anthropic");
+        const effectiveModel = config.model || setup?.model;
+        const result = provider.chat(messages, { ...config, model: effectiveModel });
 
         // Get pricing and display name for the model
-        const modelId = config.model || provider.getAvailableModels().find(m => m.isDefault)?.id;
+        const modelId = effectiveModel || provider.getAvailableModels().find(m => m.isDefault)?.id;
         if (!modelId) {
             res.write(`data: ${JSON.stringify({ type: "error", error: "No model specified and no default model available for the provider." })}\n\n`);
             return;

@@ -12,6 +12,7 @@ export interface LlmProviderConfig {
     provider: string;
     apiKey: string;
     baseURL?: string;
+    model?: string;
 }
 
 export interface ProviderType {
@@ -48,6 +49,7 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
     const [selectedProvider, setSelectedProvider] = useState(PROVIDER_TYPES[0].id);
     const [apiKey, setApiKey] = useState("");
     const [baseUrl, setBaseUrl] = useState("");
+    const [model, setModel] = useState("");
     const formRef = useRef<HTMLFormElement>(null);
 
     const providerType = useMemo(
@@ -63,12 +65,14 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
             return;
         }
 
+        const trimmedModel = model.trim();
         const newProvider: LlmProviderConfig = {
             id: `${selectedProvider}_${Date.now()}`,
             name: providerType?.name || selectedProvider,
             provider: selectedProvider,
             apiKey: apiKey.trim(),
-            ...(trimmedBaseUrl && { baseURL: trimmedBaseUrl })
+            ...(trimmedBaseUrl && { baseURL: trimmedBaseUrl }),
+            ...(trimmedModel && { model: trimmedModel })
         };
 
         onSave(newProvider);
@@ -80,6 +84,7 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
         setSelectedProvider(PROVIDER_TYPES[0].id);
         setApiKey("");
         setBaseUrl("");
+        setModel("");
     }
 
     function handleCancel() {
@@ -131,6 +136,19 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
                     currentValue={baseUrl}
                     onChange={setBaseUrl}
                     placeholder={providerType?.defaultBaseUrl}
+                />
+            </FormGroup>
+
+            <FormGroup
+                name="model"
+                label={t("llm.model")}
+                description={t("llm.model_description")}
+            >
+                <FormTextBox
+                    type="text"
+                    currentValue={model}
+                    onChange={setModel}
+                    placeholder={t("llm.model_placeholder")}
                 />
             </FormGroup>
 
