@@ -354,6 +354,27 @@ describe("getRenderedContent render / doc / protectedSession / mermaid", () => {
         expect($renderedContent.html()).toContain("doc");
     });
 
+    it("falls back to an open-externally footer when a doc note has no local content but a docUrl", async () => {
+        // Simulates the User Guide in the standalone client, which does not bundle the doc HTML.
+        renderDoc.mockResolvedValueOnce($("<div></div>"));
+        const note = buildNote({ title: "D", type: "doc", "#docUrl": "https://docs.example/x" });
+        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+        const { $renderedContent } = await getRenderedContent(note);
+        const $btn = $renderedContent.find(".webview-footer .file-open");
+        expect($btn.length).toBe(1);
+        $btn.trigger("click");
+        expect(openSpy).toHaveBeenCalledWith("https://docs.example/x", "_blank", "noopener,noreferrer");
+        openSpy.mockRestore();
+    });
+
+    it("renders no footer when a doc note has neither local content nor a docUrl", async () => {
+        renderDoc.mockResolvedValueOnce($("<div></div>"));
+        const note = buildNote({ title: "D", type: "doc" });
+        const { $renderedContent } = await getRenderedContent(note);
+        expect($renderedContent.find(".webview-footer").length).toBe(0);
+    });
+
     it("renders the protected-session prompt with a working enter button", async () => {
         const note = buildNote({ title: "S", type: "text" });
         note.isProtected = true;

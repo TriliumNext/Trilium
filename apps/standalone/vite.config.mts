@@ -132,7 +132,10 @@ let plugins: any = [
                 src: [
                     "../../server/src/assets/**/*",
                     // Exclude the User Guide (~20 MB) since it's not needed in standalone mode.
-                    "!../../server/src/assets/doc_notes/en/User Guide/**"
+                    "!../../server/src/assets/doc_notes/en/User Guide/**",
+                    // The help-content search index is bundled into the worker (imported by the
+                    // standalone help provider), so it doesn't need to be copied as a static asset.
+                    "!../../server/src/assets/doc_notes/help_content.json"
                 ],
                 dest: "server-assets",
                 rename: { stripBase: 3 }

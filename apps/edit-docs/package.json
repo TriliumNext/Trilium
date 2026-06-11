@@ -5,7 +5,8 @@
   "description": "Desktop version of Trilium which imports the demo database (presented to new users at start-up) or the user guide and other documentation and saves the modifications for committing.",
   "dependencies": {
     "archiver": "8.0.0",
-    "better-sqlite3": "12.10.0"
+    "better-sqlite3": "12.10.0",
+    "html-to-text": "10.0.0"
   },
   "devDependencies": {
     "@triliumnext/client": "workspace:*",

@@ -28,30 +28,27 @@ describe("NodejsInAppHelpProvider", () => {
     });
 
     describe("getDocContent", () => {
-        it("reads the raw HTML of a User Guide doc note", () => {
-            vi.spyOn(fs, "readFileSync").mockReturnValue(Buffer.from("<p>help</p>") as never);
+        it("returns the indexed text for a known docName and null for an unknown one", () => {
+            const index = { "User Guide/Quick Start": "help text" };
+            const readSpy = vi.spyOn(fs, "readFileSync").mockReturnValue(Buffer.from(JSON.stringify(index)) as never);
 
             const provider = new NodejsInAppHelpProvider();
-            expect(provider.getDocContent("User Guide/Quick Start")).toBe("<p>help</p>");
+            expect(provider.getDocContent("User Guide/Quick Start")).toBe("help text");
+            expect(provider.getDocContent("User Guide/Missing")).toBeNull();
+
+            // The index is read once and cached for subsequent lookups.
+            expect(readSpy).toHaveBeenCalledTimes(1);
         });
 
-        it("rejects empty or path-traversal doc names without touching the filesystem", () => {
-            const readSpy = vi.spyOn(fs, "readFileSync");
-
-            const provider = new NodejsInAppHelpProvider();
-            expect(provider.getDocContent("")).toBeNull();
-            expect(provider.getDocContent("../secret")).toBeNull();
-            expect(provider.getDocContent("foo/../../etc/passwd")).toBeNull();
-            expect(readSpy).not.toHaveBeenCalled();
-        });
-
-        it("returns null when the doc file cannot be read", () => {
+        it("returns null when the index cannot be read", () => {
+            const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
             vi.spyOn(fs, "readFileSync").mockImplementation(() => {
                 throw new Error("ENOENT");
             });
 
             const provider = new NodejsInAppHelpProvider();
-            expect(provider.getDocContent("User Guide/Missing")).toBeNull();
+            expect(provider.getDocContent("User Guide/Quick Start")).toBeNull();
+            expect(warnSpy).toHaveBeenCalled();
         });
     });
 });

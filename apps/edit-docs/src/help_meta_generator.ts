@@ -23,20 +23,6 @@ export const serverTextNoteHandler: TextNoteHandler = (item, docPath, currentUrl
 };
 
 /**
- * Standalone handler: text notes become `webView` type pointing to the online docs.
- * Excludes notes without an online URL.
- */
-export const standaloneTextNoteHandler: TextNoteHandler = (item, _docPath, currentUrl) => {
-    if (!currentUrl) {
-        return false;
-    }
-    item.type = "webView";
-    item.enforceAttributes = true;
-    item.attributes?.push({ type: "label", name: "webViewSrc", value: currentUrl });
-    return true;
-};
-
-/**
  * Parses a NoteMetaFile into HiddenSubtreeItem[] using the given text note handler.
  */
 export function parseNoteMetaFile(noteMetaFile: NoteMetaFile, handleTextNote: TextNoteHandler, baseUrl?: string): HiddenSubtreeItem[] {

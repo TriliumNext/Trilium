@@ -2,7 +2,8 @@ import debounce from "@triliumnext/client/src/services/debounce.js";
 import type { AdvancedExportOptions, ExportFormat, NoteMeta, NoteMetaFile } from "@triliumnext/core";
 import { cls } from "@triliumnext/core";
 
-import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler } from "./help_meta_generator.js";
+import { HELP_CONTENT_INDEX_TARGETS, HELP_HTML_ROOT, writeHelpContentIndex } from "./help_content_generator.js";
+import { parseNoteMetaFile, serverTextNoteHandler } from "./help_meta_generator.js";
 import fs from "fs/promises";
 import yaml from "js-yaml";
 import path from "path";
@@ -248,10 +249,21 @@ async function cleanUpMeta(outputPath: string, minify: boolean) {
         const subtree = parseNoteMetaFile(meta, serverTextNoteHandler, BASE_URL);
         await fs.writeFile(metaPath, JSON.stringify(subtree));
 
-        // Generate standalone meta: webView-based, pointing to online docs.
-        const standaloneSubtree = parseNoteMetaFile(meta, standaloneTextNoteHandler, BASE_URL);
+        // The standalone client must build the IDENTICAL hidden-subtree structure as server/desktop:
+        // these `_help` notes are synced with deterministic IDs, so if standalone emitted a different
+        // note type/attributes (the old webView variant) the two would enforce conflicting definitions
+        // and fight on every sync. The platform difference (no local HTML, no fs-based search) is now
+        // handled at render/search time, not in the note structure — so it gets the same doc-note tree.
         const standaloneMetaPath = path.resolve(__dirname, "../../standalone/src/assets/help_meta.json");
-        await fs.writeFile(standaloneMetaPath, JSON.stringify(standaloneSubtree));
+        await fs.writeFile(standaloneMetaPath, JSON.stringify(subtree));
+
+        // Rebuild the help-content search index (standalone bundles it; the server reads it for search).
+        const repoRoot = path.resolve(__dirname, "../../..");
+        const { entries } = writeHelpContentIndex(
+            path.join(repoRoot, HELP_HTML_ROOT),
+            HELP_CONTENT_INDEX_TARGETS.map((target) => path.join(repoRoot, target))
+        );
+        console.log(`Regenerated help content index with ${entries} entries.`);
     } else {
         await fs.writeFile(metaPath, JSON.stringify(meta, null, 4));
     }

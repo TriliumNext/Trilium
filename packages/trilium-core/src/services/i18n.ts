@@ -3,7 +3,6 @@ import sql_init from "./sql_init";
 import options from "./options";
 import i18next from "i18next";
 import hidden_subtree from "./hidden_subtree";
-import { clearDocSearchTextCache } from "./search/services/doc_content";
 
 export type TranslationProvider = (i18nextInstance: typeof i18next, locale: LOCALE_IDS) => Promise<void>;
 
@@ -35,8 +34,6 @@ function getCurrentLanguage(): LOCALE_IDS {
 
 export async function changeLanguage(locale: string) {
     await i18next.changeLanguage(locale);
-    // Localized doc notes may now resolve to different help files, so drop the cached search text.
-    clearDocSearchTextCache();
     hidden_subtree.checkHiddenSubtree(true, { restoreNames: true });
 }
 

@@ -3,29 +3,29 @@ import { describe, expect, it } from "vitest";
 import StandaloneInAppHelpProvider from "./in_app_help_provider.js";
 
 describe("StandaloneInAppHelpProvider", () => {
-    it("returns help data from the imported meta", () => {
+    it("returns the doc-note help subtree (same structure as server/desktop)", () => {
         const provider = new StandaloneInAppHelpProvider();
         const data = provider.getHelpHiddenSubtreeData();
         expect(Array.isArray(data)).toBe(true);
         expect(data.length).toBeGreaterThan(0);
+
+        // After unifying the hidden subtree, standalone emits doc notes with docName labels (not the
+        // old webView variant) so the synced _help structure is identical across platforms.
+        function hasDocWithName(items: typeof data): boolean {
+            return items.some((item) =>
+                (item.type === "doc" && (item.attributes?.some((a) => a.name === "docName") ?? false))
+                || (item.children ? hasDocWithName(item.children) : false));
+        }
+        expect(hasDocWithName(data)).toBe(true);
     });
 
-    it("all entries use webView or book type (no doc type with docName)", () => {
+    it("answers getDocContent from the bundled help-content index", () => {
         const provider = new StandaloneInAppHelpProvider();
-        const data = provider.getHelpHiddenSubtreeData();
 
-        function assertNoDocWithContent(items: typeof data) {
-            for (const item of items) {
-                if (item.type === "doc") {
-                    const hasDocName = item.attributes?.some(a => a.name === "docName");
-                    expect(hasDocName, `${item.title} should not have docName`).toBe(false);
-                }
-                if (item.children) {
-                    assertNoDocWithContent(item.children);
-                }
-            }
-        }
+        const content = provider.getDocContent("hidden");
+        expect(typeof content).toBe("string");
+        expect((content ?? "").length).toBeGreaterThan(0);
 
-        assertNoDocWithContent(data);
+        expect(provider.getDocContent("definitely/not/a/real/doc")).toBeNull();
     });
 });

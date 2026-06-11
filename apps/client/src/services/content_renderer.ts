@@ -72,9 +72,20 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         });
 
         $renderedContent.append($content);
-    } else if (type === "doc" && "noteId" in entity) {
+    } else if (type === "doc" && entity instanceof FNote) {
         const $content = await renderDoc(entity);
-        $renderedContent.html($content.html());
+        if ($content.html().trim()) {
+            $renderedContent.html($content.html());
+        } else {
+            // No local help content (e.g. the User Guide in the web-based standalone client, which
+            // does not bundle the doc HTML) — offer the online version instead of an empty pane.
+            const docUrl = entity.getLabelValue("docUrl");
+            if (docUrl) {
+                $renderedContent.addClass("no-preview");
+                $renderedContent.append($("<div>").append($("<span>").addClass(entity.getIcon())));
+                renderOpenExternallyFooter(docUrl, $renderedContent);
+            }
+        }
     } else if (!options.tooltip && type === "protectedSession") {
         const $button = $(`<button class="btn btn-sm"><span class="tn-icon bx bx-log-in"></span> Enter protected session</button>`).on("click", protectedSessionService.enterProtectedSession);
 
@@ -86,26 +97,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         );
 
         if (entity.type === "webView" && entity.hasLabel("webViewSrc")) {
-            const $footer = $("<footer>")
-                .addClass("webview-footer");
-            const $openButton = $(`
-                <button class="file-open btn btn-primary" type="button">
-                    <span class="tn-icon bx bx-link-external"></span>
-                    ${t("content_renderer.open_externally")}
-                </button>
-            `)
-                .appendTo($footer)
-                .on("click", () => {
-                    const webViewSrc = entity.getLabelValue("webViewSrc");
-                    if (webViewSrc) {
-                        if (window.electronApi) {
-                            window.electronApi.shell.openExternal(webViewSrc);
-                        } else {
-                            window.open(webViewSrc, '_blank', 'noopener,noreferrer');
-                        }
-                    }
-                });
-            $footer.appendTo($renderedContent);
+            renderOpenExternallyFooter(entity.getLabelValue("webViewSrc"), $renderedContent);
         }
     }
 
@@ -117,6 +109,34 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         $renderedContent,
         type
     };
+}
+
+/**
+ * Appends an "open externally" footer that opens `url` in the system browser (Electron) or a new
+ * tab. Shared by web view notes and by doc notes whose content is only available online (e.g. the
+ * User Guide in the standalone client). The footer renders even when `url` is empty so the affordance
+ * is consistent; the click is a no-op in that case.
+ */
+function renderOpenExternallyFooter(url: string | null | undefined, $renderedContent: JQuery<HTMLElement>) {
+    const $footer = $("<footer>").addClass("webview-footer");
+    $(`
+        <button class="file-open btn btn-primary" type="button">
+            <span class="tn-icon bx bx-link-external"></span>
+            ${t("content_renderer.open_externally")}
+        </button>
+    `)
+        .appendTo($footer)
+        .on("click", () => {
+            if (!url) {
+                return;
+            }
+            if (window.electronApi) {
+                window.electronApi.shell.openExternal(url);
+            } else {
+                window.open(url, "_blank", "noopener,noreferrer");
+            }
+        });
+    $footer.appendTo($renderedContent);
 }
 
 /**

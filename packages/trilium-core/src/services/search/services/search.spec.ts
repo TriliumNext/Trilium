@@ -7,7 +7,6 @@ import SearchContext from "../search_context.js";
 import dateUtils from "../../utils/date.js";
 import becca from "../../../becca/becca.js";
 import { InAppHelpProvider, initInAppHelp } from "../../in_app_help.js";
-import { clearDocSearchTextCache } from "./doc_content.js";
 import { findNoteByTitle, note, NoteBuilder } from "../../../test/becca_mocking.js";
 
 describe("Search", () => {
@@ -94,13 +93,12 @@ describe("Search", () => {
 
     describe("doc (in-app help) notes", () => {
         afterEach(() => {
-            clearDocSearchTextCache();
             initInAppHelp(undefined as unknown as InAppHelpProvider);
         });
 
-        it("matches a doc note by its static help content, not just its title", () => {
+        it("matches a doc note by its indexed help content, not just its title", () => {
             initInAppHelp(new StubHelpProvider({
-                "User Guide/Widgets": "<p>Notes can be <b>quokkafied</b> using the special widget.</p>"
+                "User Guide/Widgets": "Notes can be quokkafied using the special widget."
             }));
             rootNote.child(note("Widgets", { type: "doc" }).label("docName", "User Guide/Widgets"));
 
