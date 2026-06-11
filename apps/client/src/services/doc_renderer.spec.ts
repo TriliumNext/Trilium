@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import $ from "jquery";
 
 vi.mock("./i18n.js", () => ({
-    getCurrentLanguage: () => mockedLanguage
+    getCurrentLanguage: () => mockedLanguage,
+    t: (key: string) => key
 }));
 vi.mock("./syntax_highlight.js", () => ({
     formatCodeBlocks: (arg: unknown) => formatCodeBlocksMock(arg)
@@ -17,9 +18,12 @@ let mockedLanguage = "en";
 const formatCodeBlocksMock = vi.fn((_arg?: unknown) => {});
 const applyReferenceLinksMock = vi.fn(async (_arg?: unknown) => {});
 
-/** Builds a minimal FNote-like object with the given docName label. */
-function fakeNote(docName: string | null) {
-    return { getLabelValue: (name: string) => (name === "docName" ? docName : null) } as any;
+/** Builds a minimal FNote-like object with the given docName (and optional docUrl) label. */
+function fakeNote(docName: string | null, docUrl: string | null = null) {
+    return {
+        getLabelValue: (name: string) => (name === "docName" ? docName : name === "docUrl" ? docUrl : null),
+        getIcon: () => "bx bx-file"
+    } as any;
 }
 
 /**
@@ -108,6 +112,19 @@ describe("renderDoc", () => {
         expect(applyReferenceLinksMock).toHaveBeenCalledTimes(1);
     });
 
+    it("wraps bare tables in figure.table to match the read-only text view, leaving already-wrapped tables alone", async () => {
+        stubLoad((_url, $el) => {
+            $el.html(`<table class="ck-table-resized"><tr><td>a</td></tr></table><figure class="table"><table><tr><td>b</td></tr></table></figure>`);
+        });
+
+        const $content = await renderDoc(fakeNote("Quick Start"));
+
+        // Both tables end up inside a single figure.table wrapper (no double-wrapping of the pre-wrapped one).
+        expect($content.find("figure.table")).toHaveLength(2);
+        expect($content.find("figure.table > table")).toHaveLength(2);
+        expect($content.find("figure.table > figure.table")).toHaveLength(0);
+    });
+
     it("forces English for User Guide docs regardless of the current language", async () => {
         mockedLanguage = "fr";
         const loadSpy = stubLoad(() => {});
@@ -149,5 +166,21 @@ describe("renderDoc", () => {
         const loadSpy = stubLoad(() => {});
         await renderDoc(fakeNote("Quick Start"));
         expect(loadSpy.mock.calls[0][0]).toBe("assets/../doc_notes/en/Quick%20Start.html");
+    });
+
+    it("resolves empty (no fetch) for standalone notes with a docUrl — the Doc widget embeds a web view", async () => {
+        // The User Guide HTML is not bundled in standalone; fetching it would hit the SPA fallback.
+        (window as any).glob = { isStandalone: true, isDev: false, assetPath: "assets" };
+        const loadSpy = stubLoad(() => {});
+        const $content = await renderDoc(fakeNote("User Guide/Quick Start", "https://docs.example/x"));
+        expect(loadSpy).not.toHaveBeenCalled();
+        expect($content.html()).toBe("");
+    });
+
+    it("still fetches local content in standalone when the note has no docUrl (bundled internal docs)", async () => {
+        (window as any).glob = { isStandalone: true, isDev: false, assetPath: "assets" };
+        const loadSpy = stubLoad(() => {});
+        await renderDoc(fakeNote("share"));
+        expect(loadSpy.mock.calls[0][0]).toBe("server-assets/doc_notes/en/share.html");
     });
 });

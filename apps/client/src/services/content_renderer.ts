@@ -73,19 +73,10 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 
         $renderedContent.append($content);
     } else if (type === "doc" && entity instanceof FNote) {
+        // renderDoc returns either the doc HTML or, for notes with no local HTML (the User Guide in
+        // standalone), a link to the online docs.
         const $content = await renderDoc(entity);
-        if ($content.html().trim()) {
-            $renderedContent.html($content.html());
-        } else {
-            // No local help content (e.g. the User Guide in the web-based standalone client, which
-            // does not bundle the doc HTML) — offer the online version instead of an empty pane.
-            const docUrl = entity.getLabelValue("docUrl");
-            if (docUrl) {
-                $renderedContent.addClass("no-preview");
-                $renderedContent.append($("<div>").append($("<span>").addClass(entity.getIcon())));
-                renderOpenExternallyFooter(docUrl, $renderedContent);
-            }
-        }
+        $renderedContent.html($content.html());
     } else if (!options.tooltip && type === "protectedSession") {
         const $button = $(`<button class="btn btn-sm"><span class="tn-icon bx bx-log-in"></span> Enter protected session</button>`).on("click", protectedSessionService.enterProtectedSession);
 

@@ -31,9 +31,18 @@ export default function WebView({ note, ntxId }: TypeWidgetProps) {
         return <SetupWebView note={note} />;
     }
 
+    return <WebViewContent src={webViewSrc} ntxId={ntxId} />;
+}
+
+/**
+ * Embeds `src` as an electron `<webview>` on desktop or a sandboxed `<iframe>` in the browser.
+ * Reused by the doc note widget to render help pages whose HTML isn't available locally (the User
+ * Guide in the standalone client) directly from the online documentation.
+ */
+export function WebViewContent({ src, ntxId }: { src: string, ntxId: string | null | undefined }) {
     return isElectron
-        ? <DesktopWebView src={webViewSrc} ntxId={ntxId} />
-        : <BrowserWebView src={webViewSrc} ntxId={ntxId} />;
+        ? <DesktopWebView src={src} ntxId={ntxId} />
+        : <BrowserWebView src={src} ntxId={ntxId} />;
 }
 
 function DesktopWebView({ src, ntxId }: { src: string, ntxId: string | null | undefined }) {
