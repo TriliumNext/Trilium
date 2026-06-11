@@ -1,6 +1,9 @@
 .note-detail-doc-content {
     padding: 15px;
     user-select: text;
+    /* Match the read-only text view: heading sizing/styles come from the shared
+       .note-detail-readonly-text-content class; the font lives on its outer wrapper, so apply it here. */
+    font-family: var(--detail-font-family);
 }
 
 .note-detail-doc-content pre {

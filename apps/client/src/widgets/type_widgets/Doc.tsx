@@ -31,7 +31,7 @@ export default function Doc({ note, viewScope, ntxId }: TypeWidgetProps) {
     return (
         <div
             ref={containerRef}
-            className={`note-detail-doc-content ck-content ${viewScope?.viewMode === "contextual-help" ? "contextual-help" : ""}`}
+            className={`note-detail-doc-content note-detail-readonly-text-content ck-content ${viewScope?.viewMode === "contextual-help" ? "contextual-help" : ""}`}
         />
     );
 }
