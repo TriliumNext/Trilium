@@ -14,6 +14,7 @@ import {
 import Expression from "./expression.js";
 import preprocessContent from "./note_content_fulltext_preprocessor.js";
 import { getSql } from "../../../services/sql/index.js";
+import { getDocSearchText } from "../services/doc_content.js";
 
 const ALLOWED_OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", "%=", "~=", "~*"]);
 
@@ -122,6 +123,19 @@ class NoteContentFulltextExp extends Expression {
                 if ((this.operator === "=" && matches) || (this.operator === "!=" && !matches)) {
                     resultNoteSet.add(noteFromBecca);
                 }
+            }
+        }
+
+        // Doc (in-app help) notes keep their content in static HTML files rather than blobs, so they
+        // are absent from the SQL scan above. Index them on demand from the in-app help provider.
+        for (const note of inputNoteSet.notes) {
+            if (note.type !== "doc" || resultNoteSet.hasNoteId(note.noteId)) {
+                continue;
+            }
+
+            const content = getDocSearchText(note);
+            if (content) {
+                this.findInText({ noteId: note.noteId, type: "doc", mime: "", content, isProtected: false }, inputNoteSet, resultNoteSet);
             }
         }
 

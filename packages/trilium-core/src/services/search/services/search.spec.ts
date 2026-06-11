@@ -1,10 +1,13 @@
-import { describe, it, expect, beforeEach,  } from "vitest";
+import type { HiddenSubtreeItem } from "@triliumnext/commons";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import searchService from "./search.js";
 import BNote from "../../../becca/entities/bnote.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import SearchContext from "../search_context.js";
 import dateUtils from "../../utils/date.js";
 import becca from "../../../becca/becca.js";
+import { InAppHelpProvider, initInAppHelp } from "../../in_app_help.js";
+import { clearDocSearchTextCache } from "./doc_content.js";
 import { findNoteByTitle, note, NoteBuilder } from "../../../test/becca_mocking.js";
 
 describe("Search", () => {
@@ -87,6 +90,31 @@ describe("Search", () => {
         const searchResults = searchService.findResultsWithQuery("Vienna", searchContext);
         expect(searchResults.length).toEqual(1);
         expect(findNoteByTitle(searchResults, "Austria")).toBeTruthy();
+    });
+
+    describe("doc (in-app help) notes", () => {
+        afterEach(() => {
+            clearDocSearchTextCache();
+            initInAppHelp(undefined as unknown as InAppHelpProvider);
+        });
+
+        it("matches a doc note by its static help content, not just its title", () => {
+            initInAppHelp(new StubHelpProvider({
+                "User Guide/Widgets": "<p>Notes can be <b>quokkafied</b> using the special widget.</p>"
+            }));
+            rootNote.child(note("Widgets", { type: "doc" }).label("docName", "User Guide/Widgets"));
+
+            const searchResults = searchService.findResultsWithQuery("quokkafied", new SearchContext());
+            expect(findNoteByTitle(searchResults, "Widgets")).toBeTruthy();
+        });
+
+        it("does not match a doc note when no help content is available", () => {
+            initInAppHelp(new StubHelpProvider({}));
+            rootNote.child(note("Widgets", { type: "doc" }).label("docName", "User Guide/Widgets"));
+
+            const searchResults = searchService.findResultsWithQuery("quokkafied", new SearchContext());
+            expect(findNoteByTitle(searchResults, "Widgets")).toBeFalsy();
+        });
     });
 
     it("label comparison with short syntax", () => {
@@ -794,3 +822,18 @@ describe("Search", () => {
     //     expect(findNoteByTitle(searchResults, "Austria")).toBeTruthy();
     // })
 });
+
+/** Serves canned help content for doc notes, keyed by their `docName`. */
+class StubHelpProvider extends InAppHelpProvider {
+    constructor(private docs: Record<string, string>) {
+        super();
+    }
+
+    getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
+        return [];
+    }
+
+    override getDocContent(docName: string): string | null {
+        return this.docs[docName] ?? null;
+    }
+}

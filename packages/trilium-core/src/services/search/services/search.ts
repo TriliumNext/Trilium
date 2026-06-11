@@ -13,6 +13,7 @@ import { escapeHtml, escapeRegExp } from "../../utils/index.js";
 import type Expression from "../expressions/expression.js";
 import SearchContext from "../search_context.js";
 import SearchResult from "../search_result.js";
+import { getDocSearchText } from "./doc_content.js";
 import handleParens from "./handle_parens.js";
 import lex from "./lex.js";
 import parse from "./parse.js";
@@ -475,6 +476,9 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
             if (raw && typeof raw === "string") {
                 content = raw;
             }
+        } else if (note.type === "doc") {
+            // Doc (in-app help) notes have no blob; their content comes from static help files.
+            content = getDocSearchText(note) ?? undefined;
         } else {
             // For non-text notes (image, file), use OCR text representation
             content = getTextRepresentationForNote(note) || undefined;

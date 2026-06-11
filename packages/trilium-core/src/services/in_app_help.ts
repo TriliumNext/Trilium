@@ -7,6 +7,18 @@ export abstract class InAppHelpProvider {
     abstract getHelpHiddenSubtreeData(): HiddenSubtreeItem[];
 
     /**
+     * Returns the raw HTML content of a doc (in-app help) note identified by its `docName`
+     * label, or `null` when the content is not available locally.
+     *
+     * Doc notes have no blob — their content lives in static HTML files shipped with the app —
+     * so search relies on this hook to read help content on demand. The standalone client serves
+     * the User Guide as external web views rather than local files, so it keeps the default `null`.
+     */
+    getDocContent(_docName: string): string | null {
+        return null;
+    }
+
+    /**
      * Iterates recursively through the help subtree that the user has and compares it against the definition
      * to remove any notes that are no longer present in the latest version of the help.
      */
@@ -66,6 +78,10 @@ export function initInAppHelp(p: InAppHelpProvider) {
 
 export function getHelpHiddenSubtreeData(): HiddenSubtreeItem[] {
     return provider?.getHelpHiddenSubtreeData() ?? [];
+}
+
+export function getDocContent(docName: string): string | null {
+    return provider?.getDocContent(docName) ?? null;
 }
 
 export function cleanUpHelp(items: HiddenSubtreeItem[]): void {
