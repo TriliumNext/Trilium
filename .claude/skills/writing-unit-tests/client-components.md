@@ -1,29 +1,25 @@
 # Testing Preact components (`apps/client/src/widgets/react/`)
 
-You can render real components **with zero new dependencies**. The test env is already `happy-dom`, esbuild compiles JSX with `jsxImportSource: "preact"`, and `apps/client/src/test/setup.ts` already injects `$`/`glob`/`ws` and auto-mocks `services/server`. Rendering uses Preact's own `render()` — the exact mechanism the app uses in `apps/client/src/widgets/react/react_utils.tsx`.
+> Testing a **hook** (`use*`) rather than a component? Use the `renderHook` harness — see [client-hooks.md](client-hooks.md).
 
-> This recipe is **proven**: Icon, Button, FormTextBox, FormSelect, and ActionButton were rendered and asserted (events + DOM) with all tests passing.
+You can render real components **with zero new dependencies**. The test env is already `happy-dom`, esbuild compiles JSX with `jsxImportSource: "preact"`, and `apps/client/src/test/setup.ts` already injects `$`/`glob`/`ws`, auto-mocks `services/server` (incl. `put`/`upload`/`patch`/`remove` + `ws.logError`/`logInfo` as cleared-each-test `vi.fn`s), runs `vi.restoreAllMocks()` after every test, and provides inert `matchMedia`/`ResizeObserver`/`animate`/`scrollIntoView` fallbacks. So **don't re-augment `server`/`ws`, don't add your own `restoreAllMocks`, and don't stub those DOM APIs** unless you need to *drive* one (capture its callback).
 
-## The render helper
+## The render helpers — import them, don't re-create them
 
-Put this in a shared `apps/client/src/test/render.ts` (recommended) or inline per spec:
+The shared kit lives in **`apps/client/src/test/render.tsx`** (rendered containers auto–tear-down):
 
 ```ts
-import { render } from "preact";
-import { afterEach } from "vitest";
-
-let container: HTMLDivElement | undefined;
-export function renderInto(vnode: any) {
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    render(vnode, container);
-    return container;
-}
-// Always tear down, or bootstrap Tooltips / listeners leak between tests.
-afterEach(() => { if (container) { render(null, container); container.remove(); container = undefined; } });
+import { renderInto, renderComponent, renderHook, flush, fakeNoteContext, makeLoadResults, resetFroca } from "../../test/render";
+// bootstrap stub (Tooltip/Dropdown/Modal):
+import { bootstrapMock } from "../../test/mocks";   // vi.mock("bootstrap", () => bootstrapMock())
 ```
 
-Spec files that use JSX must be named `*.spec.tsx`.
+- **`renderInto(vnode)` → `HTMLElement`** — a presentational component, no Trilium context. (Icon/Button/FormSelect…)
+- **`renderComponent(vnode, { parent?, noteContext? })` → `{ container, parent, rerender, unmount }`** — wraps in `ParentComponent` + `NoteContextContext`, so `useTriliumEvent` registers against `parent` (drive events via `parent.handleEventInChildren(name, data)`) and note-context hooks resolve. Pass `noteContext: fakeNoteContext({…})`.
+- **`renderHook` / `flush` / `makeLoadResults`** — see [client-hooks.md](client-hooks.md).
+- **`fakeNoteContext(overrides)`**, **`resetFroca()`** — shared fixtures (call `resetFroca()` in `beforeEach` if you mutate froca).
+
+> Proven at scale: ~250 widget specs use these; the kit fixes the `let container: HTMLDivElement | undefined` → `render(...)` type error that hand-rolled helpers kept reintroducing. Spec files using JSX must be named `*.spec.tsx`.
 
 ## Firing events — match Preact's delegated event names
 
