@@ -109,6 +109,8 @@ function SearchEngineSettings() {
 
 function TrayOptionsSettings() {
     const [ disableTray, setDisableTray ] = useTriliumOptionBool("disableTray");
+    const [ minimizeToTray, setMinimizeToTray ] = useTriliumOptionBool("minimizeToTray");
+    const [ closeToTray, setCloseToTray ] = useTriliumOptionBool("closeToTray");
 
     return (
         <OptionsSection title={t("tray.title")}>
@@ -118,6 +120,24 @@ function TrayOptionsSettings() {
                 description={t("tray.enable_tray_description")}
                 currentValue={!disableTray}
                 onChange={trayEnabled => setDisableTray(!trayEnabled)}
+            />
+
+            <OptionsRowWithToggle
+                name="minimize-to-tray"
+                label={t("tray.minimize_to_tray")}
+                description={t("tray.minimize_to_tray_description")}
+                currentValue={minimizeToTray}
+                onChange={setMinimizeToTray}
+                disabled={disableTray}
+            />
+
+            <OptionsRowWithToggle
+                name="close-to-tray"
+                label={t("tray.close_to_tray")}
+                description={t("tray.close_to_tray_description")}
+                currentValue={closeToTray}
+                onChange={setCloseToTray}
+                disabled={disableTray}
             />
         </OptionsSection>
     );

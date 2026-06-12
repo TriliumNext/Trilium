@@ -36,6 +36,37 @@ let setupWindow: BrowserWindow | null;
 let allWindows: BrowserWindow[] = []; // Used to store all windows, sorted by the order of focus.
 const loadedSpellcheckSessions = new WeakSet<Session>();
 
+// Set on "before-quit" (tray quit menu, Cmd+Q, app.quit()) so that an explicit
+// quit is never intercepted by the close-to-tray handler below.
+let isQuitting = false;
+
+/** Hide-to-tray only applies while a tray icon exists to restore the window from. */
+function shouldHideToTray(optionName: "minimizeToTray" | "closeToTray") {
+    return !optionService.getOptionBool("disableTray") && optionService.getOptionBool(optionName);
+}
+
+/**
+ * Hides the window to the tray instead of minimizing/closing it, when the
+ * corresponding option is enabled (#3743). Hidden windows are restored from
+ * the tray icon or its context menu.
+ */
+function installHideToTrayHandlers(win: BrowserWindow) {
+    // The minimize event is not preventable, so the window is hidden after the
+    // fact; restoring from the tray un-minimizes it (see showAndFocusWindow).
+    win.on("minimize", () => {
+        if (shouldHideToTray("minimizeToTray")) {
+            win.hide();
+        }
+    });
+
+    win.on("close", (event) => {
+        if (!isQuitting && shouldHideToTray("closeToTray")) {
+            event.preventDefault();
+            win.hide();
+        }
+    });
+}
+
 function trackWindowFocus(win: BrowserWindow) {
     // We need to get the last focused window from allWindows. If the last window is closed, we return the previous window.
     // Therefore, we need to push the window into the allWindows array every time it gets focused.
@@ -80,6 +111,7 @@ async function createExtraWindow(extraWindowHash: string) {
 
     configureWebContents(win.webContents, spellcheckEnabled);
 
+    installHideToTrayHandlers(win);
     trackWindowFocus(win);
 }
 
@@ -141,6 +173,7 @@ async function createMainWindow() {
     mainWindow.on("closed", () => (mainWindow = null));
 
     configureWebContents(mainWindow.webContents, spellcheckEnabled);
+    installHideToTrayHandlers(mainWindow);
     trackWindowFocus(mainWindow);
 }
 
@@ -376,6 +409,10 @@ export function setupWindowing() {
     // the renderer/main security boundary.
     setupWebContentsSecurity();
 
+    electron.app.on("before-quit", () => {
+        isQuitting = true;
+    });
+
     electron.ipcMain.on("create-extra-window", (_event, arg) => {
         createExtraWindow(arg.extraWindowHash);
     });
@@ -548,5 +585,6 @@ export default {
     registerGlobalShortcuts,
     getMainWindow,
     getLastFocusedWindow,
-    getAllWindows
+    getAllWindows,
+    showAndFocusWindow
 };

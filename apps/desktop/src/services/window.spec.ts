@@ -17,6 +17,8 @@ const state = vi.hoisted(() => ({
     ipcOn: new Map<string, Handler>(),
     ipcHandle: new Map<string, Handler>(),
     ipcEmit: vi.fn(),
+    // captured electron.app event handlers (e.g. before-quit)
+    appOn: new Map<string, Handler>(),
     // captured events.subscribe callbacks keyed by event name
     eventSubs: new Map<string, Handler>(),
     // captured BrowserWindow instances
@@ -155,7 +157,8 @@ const fakeNativeImage = {
 const fakeApp = {
     setUserTasks: vi.fn(),
     relaunch: vi.fn(),
-    exit: vi.fn()
+    exit: vi.fn(),
+    on: (event: string, fn: Handler) => state.appOn.set(event, fn)
 };
 
 const electronSurface = {
@@ -892,6 +895,78 @@ describe("window service", () => {
             await cb();
             spy.mockRestore();
             expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("Failed to swap"));
+        });
+    });
+
+    // KEEP THIS DESCRIBE LAST: the final test fires "before-quit", which sets the
+    // module-level isQuitting flag — it cannot be reset, so any close-to-tray
+    // interception test running after it would fail.
+    describe("hide to tray (minimizeToTray / closeToTray)", () => {
+        beforeEach(() => {
+            setupWindowing();
+        });
+
+        it("hides the window instead of minimizing when minimizeToTray is enabled", async () => {
+            state.optionBools = { minimizeToTray: true };
+            await windowService.createMainWindow();
+            const win = state.windows[state.windows.length - 1];
+            win.fire("minimize");
+            expect(win.hide).toHaveBeenCalled();
+        });
+
+        it("keeps regular minimize when the option is off or the tray is disabled", async () => {
+            await windowService.createMainWindow();
+            const win = state.windows[state.windows.length - 1];
+            win.fire("minimize");
+            expect(win.hide).not.toHaveBeenCalled();
+
+            state.optionBools = { minimizeToTray: true, disableTray: true };
+            win.fire("minimize");
+            expect(win.hide).not.toHaveBeenCalled();
+        });
+
+        it("intercepts close and hides instead when closeToTray is enabled (main and extra windows)", async () => {
+            state.optionBools = { closeToTray: true };
+            await windowService.createMainWindow();
+            const main = state.windows[state.windows.length - 1];
+            const mainClose = { preventDefault: vi.fn() };
+            main.fire("close", mainClose);
+            expect(mainClose.preventDefault).toHaveBeenCalled();
+            expect(main.hide).toHaveBeenCalled();
+
+            await windowService.createExtraWindow("#x");
+            const extra = state.windows[state.windows.length - 1];
+            const extraClose = { preventDefault: vi.fn() };
+            extra.fire("close", extraClose);
+            expect(extraClose.preventDefault).toHaveBeenCalled();
+            expect(extra.hide).toHaveBeenCalled();
+        });
+
+        it("closes normally when the option is off or the tray is disabled", async () => {
+            await windowService.createMainWindow();
+            const win = state.windows[state.windows.length - 1];
+            const closeEvent = { preventDefault: vi.fn() };
+            win.fire("close", closeEvent);
+            expect(closeEvent.preventDefault).not.toHaveBeenCalled();
+
+            state.optionBools = { closeToTray: true, disableTray: true };
+            win.fire("close", closeEvent);
+            expect(closeEvent.preventDefault).not.toHaveBeenCalled();
+            expect(win.hide).not.toHaveBeenCalled();
+        });
+
+        it("does not intercept close once the app is quitting (before-quit fired)", async () => {
+            state.optionBools = { closeToTray: true };
+            await windowService.createMainWindow();
+            const win = state.windows[state.windows.length - 1];
+            const beforeQuit = state.appOn.get("before-quit");
+            if (!beforeQuit) throw new Error("before-quit handler not registered");
+            beforeQuit();
+
+            const closeEvent = { preventDefault: vi.fn() };
+            win.fire("close", closeEvent);
+            expect(closeEvent.preventDefault).not.toHaveBeenCalled();
+            expect(win.hide).not.toHaveBeenCalled();
         });
     });
 });

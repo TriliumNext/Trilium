@@ -1514,7 +1514,11 @@
   "tray": {
     "title": "System Tray",
     "enable_tray": "Tray icon",
-    "enable_tray_description": "Trilium needs to be restarted for this change to take effect."
+    "enable_tray_description": "Trilium needs to be restarted for this change to take effect.",
+    "minimize_to_tray": "Minimize to tray",
+    "minimize_to_tray_description": "Minimizing a window hides it to the tray icon instead of the taskbar.",
+    "close_to_tray": "Close to tray",
+    "close_to_tray_description": "Closing a window hides it to the tray icon instead of exiting; quit Trilium from the tray menu."
   },
   "text_editor": {
     "title": "Editor",

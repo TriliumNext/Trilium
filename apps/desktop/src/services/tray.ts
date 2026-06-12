@@ -110,8 +110,9 @@ function updateTrayMenu() {
     function ensureVisible(win: BrowserWindow) {
         /* v8 ignore next -- defensive: always called with a truthy window (focused window or null-checked checkbox window) */
         if (win) {
-            win.show();
-            win.focus();
+            // Restores (un-minimizes) too — a window hidden by minimize-to-tray
+            // is still minimized when shown again.
+            windowService.showAndFocusWindow(win);
         }
     }
 
@@ -262,11 +263,10 @@ function updateTrayMenu() {
             label: t("tray.close"),
             type: "normal",
             icon: getIconPath("close"),
+            // Quit via app.quit() rather than closing each window: it emits
+            // "before-quit" first, which bypasses the close-to-tray handler.
             click: () => {
-                const windows = electron.BrowserWindow.getAllWindows();
-                windows.forEach(window => {
-                    window.close();
-                });
+                electron.app.quit();
             }
         }
     ]);
@@ -285,8 +285,7 @@ function changeVisibility() {
     if (windowVisibilityMap[lastFocusedWindow.id]) {
         lastFocusedWindow.hide();
     } else {
-        lastFocusedWindow.show();
-        lastFocusedWindow.focus();
+        windowService.showAndFocusWindow(lastFocusedWindow);
     }
 }
 

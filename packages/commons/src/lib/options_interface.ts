@@ -168,6 +168,10 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     downloadImagesAutomatically: boolean;
     checkForUpdates: boolean;
     disableTray: boolean;
+    /** Hide the window to the tray icon instead of minimizing it to the taskbar. */
+    minimizeToTray: boolean;
+    /** Hide the window to the tray icon instead of closing it; the app is quit via the tray menu. */
+    closeToTray: boolean;
     editedNotesOpenInRibbon: boolean;
     codeBlockWordWrap: boolean;
     codeBlockTabWidth: number;
