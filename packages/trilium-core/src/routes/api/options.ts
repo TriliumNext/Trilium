@@ -88,6 +88,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "compressImages",
     "downloadImagesAutomatically",
     "minTocHeadings",
+    "tocActiveHeadingEnabled",
     "highlightsList",
     "checkForUpdates",
     "disableTray",

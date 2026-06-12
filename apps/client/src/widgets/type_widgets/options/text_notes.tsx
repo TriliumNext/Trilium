@@ -407,21 +407,28 @@ interface ThemeData {
 function TableOfContent() {
     const [ minTocHeadings, setMinTocHeadings ] = useTriliumOption("minTocHeadings");
 
-    return (!isNewLayout &&
+    return (
         <OptionsSection title={t("table_of_contents.title")}>
-            <FormText>{t("table_of_contents.description")}</FormText>
+            {isNewLayout && (
+                <TableOfContentOptions />
+            )}
+            {!isNewLayout && (
+                <>
+                    <FormText>{t("table_of_contents.description")}</FormText>
 
-            <FormGroup name="min-toc-headings">
-                <FormTextBoxWithUnit
-                    type="number"
-                    min={0} max={999999999999999} step={1}
-                    unit={t("table_of_contents.unit")}
-                    currentValue={minTocHeadings} onChange={setMinTocHeadings}
-                />
-            </FormGroup>
+                    <FormGroup name="min-toc-headings">
+                        <FormTextBoxWithUnit
+                            type="number"
+                            min={0} max={999999999999999} step={1}
+                            unit={t("table_of_contents.unit")}
+                            currentValue={minTocHeadings} onChange={setMinTocHeadings}
+                        />
+                    </FormGroup>
 
-            <FormText>{t("table_of_contents.disable_info")}</FormText>
-            <FormText>{t("table_of_contents.shortcut_info")}</FormText>
+                    <FormText>{t("table_of_contents.disable_info")}</FormText>
+                    <FormText>{t("table_of_contents.shortcut_info")}</FormText>
+                </>
+            )}
         </OptionsSection>
     );
 }
@@ -440,6 +447,22 @@ function HighlightsList() {
                 </>
             )}
         </OptionsSection>
+    );
+}
+
+export function TableOfContentOptions() {
+    const [ tocActiveHeadingEnabled, setTocActiveHeadingEnabled ] = useTriliumOptionBool("tocActiveHeadingEnabled");
+
+    return (
+        <>
+            <OptionsRowWithToggle
+                name="active-heading-enabled"
+                label={t("table_of_contents.active_heading_enabled")}
+                description={t("table_of_contents.active_heading_description")}
+                currentValue={tocActiveHeadingEnabled}
+                onChange={setTocActiveHeadingEnabled}
+            />
+        </>
     );
 }
 
