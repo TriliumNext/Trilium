@@ -200,9 +200,9 @@ When adding query parameters to ETAPI endpoints (`apps/server/src/etapi/`), main
 **Pattern**: ETAPI consumers expect specific response shapes. Always check for breaking changes.
 
 ### Frontend-Backend Communication
-- **REST API**: `apps/server/src/routes/api/` - Internal endpoints (no auth required when `noAuthentication=true`)
+- **REST API**: Internal endpoints — most are core-shared in `packages/trilium-core/src/routes/api/` (run in standalone WASM too), server-only ones in `apps/server/src/routes/api/`
 - **ETAPI**: `apps/server/src/etapi/` - External API with authentication
-- **WebSocket**: Real-time sync via `apps/server/src/services/ws.ts`
+- **WebSocket**: Real-time sync via `packages/trilium-core/src/services/ws.ts`
 
 **Auth note**: ETAPI uses basic auth with tokens. Internal API endpoints trust the frontend.
 
@@ -215,8 +215,8 @@ Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/`
 4. Add a client-side friendly name in `apps/client/src/translations/en/translation.json` under `llm.tools.<tool_name>` — use **imperative tense** (e.g. "Search notes", "Create note", "Get attributes"), not present continuous
 
 ### Database Migrations
-- Add scripts in `apps/server/src/migrations/YYMMDD_HHMM__description.sql`
-- Update schema in `apps/server/src/assets/db/schema.sql`
+- Add a new entry to the `MIGRATIONS` array in `packages/trilium-core/src/migrations/migrations.ts` (NOT a dated `.sql` file): `{ version, sql }` or `{ version, module: async () => import("./0NNN__desc.js") }`. The array is **descending** (newest first); `dbVersion` is derived from `MIGRATIONS[0].version`.
+- Mirror any schema change into `packages/trilium-core/src/assets/schema.sql` — fresh installs run `schema.sql` and never replay migrations.
 - Never bypass Becca cache after migrations
 
 ## Common Pitfalls
@@ -269,7 +269,7 @@ Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/`
 - `apps/server/src/main.ts` - Server startup entry point
 - `apps/client/src/desktop.ts` - Client initialization
 - `apps/server/src/services/backend_script_api.ts` - Scripting API
-- `apps/server/src/assets/db/schema.sql` - Database schema
+- `packages/trilium-core/src/assets/schema.sql` - Database schema
 
 ## Note Types and Features
 
@@ -320,8 +320,8 @@ View types are configured via `#viewType` label (e.g., `#viewType=table`). Each 
 4. Commit all changes including updated viewer files
 
 ### Database Migrations
-- Add migration scripts in `apps/server/src/migrations/YYMMDD_HHMM__description.sql`
-- Update schema in `apps/server/src/assets/db/schema.sql`
+- Add a new entry to the `MIGRATIONS` array in `packages/trilium-core/src/migrations/migrations.ts` (NOT a dated `.sql` file); keep the array **descending** (newest first) since `dbVersion` is derived from `MIGRATIONS[0].version`.
+- Mirror any schema change into `packages/trilium-core/src/assets/schema.sql` — fresh installs run `schema.sql` and never replay migrations.
 - Never bypass Becca cache after migrations
 
 ## Security & Features
@@ -356,8 +356,8 @@ Trilium provides powerful user scripting capabilities:
 - **Do not use `localStorage`** for user preferences — Trilium has a synced options system that persists across devices
 - To add a new user preference:
   1. Add the option type to `OptionDefinitions` in `packages/commons/src/lib/options_interface.ts`
-  2. Add a default value in `apps/server/src/services/options_init.ts` in the `defaultOptions` array
-  3. **Whitelist the option** in `apps/server/src/routes/api/options.ts` by adding it to `ALLOWED_OPTIONS` (required for client updates)
+  2. Add a default value in `packages/trilium-core/src/services/options_init.ts` in the `defaultOptions` array
+  3. **Whitelist the option** in `packages/trilium-core/src/routes/api/options.ts` by adding it to `ALLOWED_OPTIONS` (required for client updates; a secret/token goes in `WRITE_ONLY_OPTIONS` instead, or it leaks via `GET /api/options`)
   4. Use `useTriliumOption("optionName")` hook in React components to read/write the option
 - Available hooks: `useTriliumOption` (string), `useTriliumOptionBool`, `useTriliumOptionInt`, `useTriliumOptionJson`
 - See `docs/Developer Guide/Developer Guide/Concepts/Options/Creating a new option.md` for detailed documentation
