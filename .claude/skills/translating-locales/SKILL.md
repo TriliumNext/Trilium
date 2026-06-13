@@ -7,6 +7,8 @@ description: Use when filling in or improving a lagging UI translation locale in
 
 Trilium's UI is localized with **i18next**. English is the source of truth; other locales are normally crowd-translated via **Hosted Weblate**. This skill is for the *maintainer* case: deliberately filling a locale that lags behind (the recurring one is Romanian, `ro`).
 
+**Scope — this skill *fills* an already-registered locale.** To **add a brand-new locale** (e.g. Polish) you must first do the one-time registration/build wiring; that's a separate task. Follow `docs/Developer Guide/Developer Guide/Concepts/Internationalisation  Translations/Adding a new locale.md` to register it, then come back here to translate the strings.
+
 Read [romanian.md](romanian.md) for Romanian grammar rules and [scripts.md](scripts.md) for the copy-paste Node snippets used in every step below.
 
 ## How Weblate sync works here (merging a PR IS picked up — no separate upload needed)
@@ -32,7 +34,7 @@ Both client and server have their own EN↔locale pair — check **both**.
 ## Workflow
 
 ### 1. Measure the gap
-Flatten EN and the locale, then report **missing** keys (not in locale) and **identical-to-EN** keys (present but never translated — excluding proper nouns). See `scripts.md` → *measure*. Romanian has historically sat ~73% client / ~87% server.
+Flatten EN and the locale, then report **missing** keys (not in locale) and **identical-to-EN** keys (present but never translated — excluding proper nouns). See `scripts.md` → *measure*. **Measure, don't assume a number** — coverage drifts as the locale fills (an active `ro`-translations worktree moves it), so run *measure* against the live files before quoting a percentage.
 
 ### 2. Export the work list
 Dump `{ key: englishValue }` for every missing-or-identical string to a temp file so you can translate against the real source text. See `scripts.md` → *export*.
