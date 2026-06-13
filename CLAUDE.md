@@ -283,6 +283,13 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 - `docs/User Guide/` — Edit via `pnpm edit-docs:edit-docs`, not manually
 - `docs/Developer Guide/` and `docs/Release Notes/` — Safe for direct Markdown editing
 
+## Custom Skills
+
+Reusable AI-assistant skills live in `.claude/skills/<name>/` (a `SKILL.md`, plus optional `references/` and `scripts/`). They capture recurring, footgun-dense workflows so the assistant doesn't re-derive them each time.
+
+- **When adding or updating a skill, commit it with the `chore(skills)` prefix** (e.g. `chore(skills): add evolving-the-data-model skill`) — one skill per commit.
+- Keep each `SKILL.md` footgun-first and lean; push depth into `references/*.md` loaded on demand. Cite real `file:line` and verify it before shipping.
+
 ## Key Entry Points
 
 - `apps/server/src/main.ts` — Server startup
