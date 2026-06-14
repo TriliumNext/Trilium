@@ -162,11 +162,12 @@ function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg
     const lastNoteId = useRef<string>();
     const wasEmpty = useRef<boolean>(false);
     const zoomRef = useRef<SvgPanZoom.Instance>();
+    const resizeTimerRef = useRef<ReturnType<typeof setTimeout>>();
     const width = useElementSize(containerRef);
 
     // Set up pan & zoom.
     useEffect(() => {
-        if (zoomRef.current || width?.width === 0) return;
+        if (zoomRef.current || (containerRef.current?.offsetWidth ?? 0) === 0) return;
 
         const shouldPreservePanZoom = (lastNoteId.current === noteId) && !wasEmpty.current;
         const svgEl = containerRef.current?.querySelector("svg");
@@ -201,12 +202,16 @@ function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg
             zoomRef.current = undefined;
             zoomInstance.destroy();
         };
-    }, [ containerRef, noteId, svg, width ]);
+    }, [ containerRef, noteId, svg ]);
 
     // React to container changes.
     useEffect(() => {
         if (!zoomRef.current || (width?.width ?? 0) < 1) return;
-        zoomRef.current.resize().fit().center();
+        clearTimeout(resizeTimerRef.current);
+        resizeTimerRef.current = setTimeout(() => {
+            zoomRef.current?.resize().fit().center();
+        }, 100);
+        return () => clearTimeout(resizeTimerRef.current);
     }, [ width ]);
 
     return zoomRef;
