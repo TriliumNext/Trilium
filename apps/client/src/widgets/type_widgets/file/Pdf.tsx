@@ -4,6 +4,7 @@ import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
 import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
+import open from "../../../services/open";
 import { useViewModeConfig } from "../../collections/NoteList";
 import { useBlobEditorSpacedUpdate, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
 import PdfViewer from "./PdfViewer";
@@ -189,9 +190,9 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
 
     useTriliumEvent("customDownload", ({ ntxId }) => {
         if (ntxId !== noteContext.ntxId) return;
-        iframeRef.current?.contentWindow?.postMessage({
-            type: "trilium-request-download"
-        });
+
+        const url = `${open.getUrlForDownload(`api/notes/${note.noteId}/download`)}?${Date.now()}`;
+        open.download(url);
     });
 
     useTriliumEvent("printActiveNote", () => {
