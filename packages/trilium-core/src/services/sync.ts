@@ -203,14 +203,27 @@ async function pullChanges(syncContext: SyncContext) {
         });
 
         if (entityChanges.length === 0) {
+            // Server may have advanced lastEntityChangeId past entities that
+            // were skipped (either by server-side maxEntitySize or stripped by
+            // a client-side filter before reaching here). If server reports
+            // more outstanding AND we actually advanced, keep pulling instead
+            // of bouncing back to the outer sync() loop, which would re-login,
+            // re-push, etc., for every single skipped batch.
+            const advanced = lastSyncedPull !== lastEntityChangeId;
+            if (outstandingPullCount > 0 && advanced) {
+                continue;
+            }
             break;
         } else {
             try {
-                // https://github.com/zadam/trilium/issues/4310
-                const sizeInKb = Math.round(JSON.stringify(resp).length / 1024);
-
+                // Don't `JSON.stringify(resp)` here — for memory-constrained clients
+                // (iOS WebView worker) a single ~60MB blob response would force a
+                // second ~60MB string allocation immediately after the parsed object
+                // is still in scope, peaking the worker heap and OOM-killing it. Log
+                // the entity count instead; we already know the wire size from the
+                // raw body length when the response was received.
                 log.info(
-                    `Sync ${logMarkerId}: Pulled ${entityChanges.length} changes in ${sizeInKb} KB, starting at entityChangeId=${lastSyncedPull} in ${pulledDate - startDate}ms and applied them in ${Date.now() - pulledDate}ms, ${outstandingPullCount} outstanding pulls`
+                    `Sync ${logMarkerId}: Pulled ${entityChanges.length} changes, starting at entityChangeId=${lastSyncedPull} in ${pulledDate - startDate}ms and applied them in ${Date.now() - pulledDate}ms, ${outstandingPullCount} outstanding pulls`
                 );
             } catch (e: any) {
                 log.error(`Error occurred ${e.message} ${e.stack}`);
@@ -255,7 +268,7 @@ async function pushChanges(syncContext: SyncContext) {
             continue;
         }
 
-        const entityChangesRecords = getEntityChangeRecords(filteredEntityChanges);
+        const { records: entityChangesRecords } = getEntityChangeRecords(filteredEntityChanges);
         const startDate = new Date();
 
         const logMarkerId = randomString(10); // to easily pair sync events between client and server logs
@@ -393,14 +406,20 @@ function getEntityChangeRow(entityChange: EntityChange) {
 
 }
 
-function getEntityChangeRecords(entityChanges: EntityChange[]) {
+function getEntityChangeRecords(
+    entityChanges: EntityChange[]
+): { records: EntityChangeRecord[]; lastSeenEntityChangeId: number | null } {
     const records: EntityChangeRecord[] = [];
     let length = 0;
+    let lastSeenEntityChangeId: number | null = null;
 
     for (const entityChange of entityChanges) {
+        if (entityChange.id != null) {
+            lastSeenEntityChangeId = entityChange.id;
+        }
+
         if (entityChange.isErased) {
             records.push({ entityChange });
-
             continue;
         }
 
@@ -410,9 +429,7 @@ function getEntityChangeRecords(entityChanges: EntityChange[]) {
         }
 
         const record: EntityChangeRecord = { entityChange, entity };
-
         records.push(record);
-
         length += JSON.stringify(record).length;
 
         if (length > 1_000_000) {
@@ -421,7 +438,7 @@ function getEntityChangeRecords(entityChanges: EntityChange[]) {
         }
     }
 
-    return records;
+    return { records, lastSeenEntityChangeId };
 }
 
 function getLastSyncedPull() {

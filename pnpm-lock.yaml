@@ -573,6 +573,12 @@ importers:
       '@capacitor/core':
         specifier: 8.4.0
         version: 8.4.0
+      '@capacitor/ios':
+        specifier: 8.4.0
+        version: 8.4.0(@capacitor/core@8.4.0)
+      '@capacitor/keyboard':
+        specifier: 8.0.1
+        version: 8.0.1(@capacitor/core@8.4.0)
       '@capacitor/splash-screen':
         specifier: 8.0.1
         version: 8.0.1(@capacitor/core@8.4.0)
@@ -2022,6 +2028,16 @@ packages:
 
   '@capacitor/core@8.4.0':
     resolution: {integrity: sha512-LrS1xPIrqLtJABBIPDGXxxKmI9OyesrzWw8DiHbxhSC9JoiLUleUAJlX1a0LWIVLRbuY4Szgf9huFeRqYH2SAQ==}
+
+  '@capacitor/ios@8.4.0':
+    resolution: {integrity: sha512-tnwstEdbTJ2nHAfoAwnurXgYRscWeLY+IIGdz69o24gN2Crfj9Xc0TWo8L5uFLF1LmpbUywH1IT0U1oHV8c+CA==}
+    peerDependencies:
+      '@capacitor/core': ^8.4.0
+
+  '@capacitor/keyboard@8.0.1':
+    resolution: {integrity: sha512-HDf4qrvvhLRMsgBoqeqIld6hP8JMK/WPbCYMvz8ajhY6TaibYt6B+NQyky4oIPCOfHTz5OcVsuHkbb8fQvGDAg==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
 
   '@capacitor/splash-screen@8.0.1':
     resolution: {integrity: sha512-c/ew/Z3eA7z8l06WoRAtzVF16VwYYrExmHmfGq1Cg675pVzaC/yuucB8/1xG1vhEfnW4fZ1KhSf/kzR1RiVYgg==}
@@ -14469,6 +14485,14 @@ snapshots:
   '@capacitor/core@8.4.0':
     dependencies:
       tslib: 2.8.1
+
+  '@capacitor/ios@8.4.0(@capacitor/core@8.4.0)':
+    dependencies:
+      '@capacitor/core': 8.4.0
+
+  '@capacitor/keyboard@8.0.1(@capacitor/core@8.4.0)':
+    dependencies:
+      '@capacitor/core': 8.4.0
 
   '@capacitor/splash-screen@8.0.1(@capacitor/core@8.4.0)':
     dependencies:

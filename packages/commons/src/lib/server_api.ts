@@ -409,6 +409,14 @@ export type BootstrapDefinition = {
     isRtl: boolean;
     TRILIUM_SAFE_MODE: boolean;
     componentId?: string;
+    /**
+     * Set when the DB has a partial sync (schema exists, sync server is
+     * configured, lastSyncedPull > 0, but `options.initialized` is not "true").
+     * The standalone client uses this to skip the language/sync-from-server
+     * forms and jump straight to the sync-in-progress UI, since the user
+     * already entered those values in a previous (interrupted) session.
+     */
+    setupResuming?: boolean;
 };
 
 /**

@@ -252,6 +252,172 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         document.body.style.setProperty("--code-block-tab-width", codeBlockTabWidth || "4");
     }, [codeBlockTabWidth]);
 
+    // Mobile-only: when the keyboard opens, scroll the caret into view.
+    //
+    // Under iOS WKWebView the outer scroll view is pinned to zero (see
+    // ViewController.swift) so the toolbar doesn't get dragged off-screen
+    // — which also suppresses iOS's native scroll-focused-element-into-
+    // view behaviour. Without this effect, tapping near the bottom of a
+    // long note leaves the view stuck at the top with the caret behind
+    // the keyboard.
+    //
+    // Find the nearest scrollable ancestor of the caret, clamp its
+    // "visible bottom" to `visualViewport.height` (so the caret lands
+    // above the keyboard, not merely inside the container's rect), and
+    // adjust scrollTop directly.
+    useEffect(() => {
+        if (!isMobile()) return;
+
+        const CARET_BOTTOM_MARGIN_PX = 48;
+
+        const findScrollableAncestor = (start: Node | null | undefined): HTMLElement | null => {
+            let el: Node | null | undefined = start;
+            while (el) {
+                if (el instanceof HTMLElement) {
+                    const overflowY = getComputedStyle(el).overflowY;
+                    if ((overflowY === "auto" || overflowY === "scroll")
+                        && el.scrollHeight > el.clientHeight + 1) {
+                        return el;
+                    }
+                }
+                el = el.parentNode;
+            }
+            return null;
+        };
+
+        const getCaretRect = (): DOMRect | null => {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return null;
+            let rect = sel.getRangeAt(0).getBoundingClientRect();
+            // Collapsed carets at end-of-line return a zero rect; fall
+            // back to the containing element.
+            if (rect.width === 0 && rect.height === 0) {
+                const el = sel.focusNode instanceof Element
+                    ? sel.focusNode
+                    : sel.focusNode?.parentElement;
+                if (el) rect = el.getBoundingClientRect();
+            }
+            return rect;
+        };
+
+        const scrollCaretIntoView = () => {
+            const caretRect = getCaretRect();
+            if (!caretRect) return;
+            const scroller = findScrollableAncestor(window.getSelection()?.focusNode);
+            if (!scroller) return;
+
+            const vv = window.visualViewport;
+            const containerRect = scroller.getBoundingClientRect();
+            const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+            const viewportTop = vv?.offsetTop ?? 0;
+            const visibleBottom = Math.min(containerRect.bottom, viewportBottom);
+            const visibleTop = Math.max(containerRect.top, viewportTop);
+
+            const overshoot = caretRect.bottom - (visibleBottom - CARET_BOTTOM_MARGIN_PX);
+            if (overshoot > 0) {
+                scroller.scrollTop += overshoot;
+                return;
+            }
+            const undershoot = (visibleTop + CARET_BOTTOM_MARGIN_PX) - caretRect.top;
+            if (undershoot > 0) {
+                scroller.scrollTop -= undershoot;
+            }
+        };
+
+        let pending: number | null = null;
+        const schedule = () => {
+            if (pending !== null) return;
+            // Double rAF lets the keyboard animation, WebView resize, and
+            // CKEditor's post-focus layout all settle before we measure.
+            pending = requestAnimationFrame(() => {
+                pending = requestAnimationFrame(() => {
+                    pending = null;
+                    scrollCaretIntoView();
+                });
+            });
+        };
+
+        window.visualViewport?.addEventListener("resize", schedule);
+        document.addEventListener("focusin", schedule);
+        return () => {
+            window.visualViewport?.removeEventListener("resize", schedule);
+            document.removeEventListener("focusin", schedule);
+            if (pending !== null) cancelAnimationFrame(pending);
+        };
+    }, []);
+
+    // Mobile-only: toggle todo-list checkboxes on the first tap and widen the
+    // hit area so finger taps don't have to land precisely on the ~16px box.
+    // Two problems are being solved:
+    //   1. iOS WKWebView doesn't dispatch `change` on the first tap inside a
+    //      contenteditable that isn't focused — users have to tap twice.
+    //   2. The native checkbox is too small to hit reliably with a finger.
+    // We accept any tap whose point lands within ~14px of the checkbox's
+    // bounding box (roughly a 44px touch target, matching Apple HIG), flip
+    // the checkbox, and fire a synthetic change event that CKEditor's
+    // TodoCheckboxChangeObserver picks up.
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || !isMobile()) return;
+
+        const HIT_PAD = 14;
+        let tapped: HTMLInputElement | null = null;
+
+        const findCheckboxFromTap = (e: TouchEvent): HTMLInputElement | null => {
+            const target = e.target as HTMLElement | null;
+            if (!target) return null;
+
+            // Direct hit on the checkbox.
+            const direct = target.closest<HTMLInputElement>(
+                '.todo-list__label input[type="checkbox"]'
+            );
+            if (direct) return direct;
+
+            // Near-miss: tap landed on the label or its surroundings. Accept
+            // if the touch point is within HIT_PAD of the checkbox rect.
+            const label = target.closest(".todo-list__label");
+            if (!label) return null;
+            const checkbox = label.querySelector<HTMLInputElement>(
+                'input[type="checkbox"]'
+            );
+            if (!checkbox) return null;
+
+            const touch = e.touches[0] ?? e.changedTouches[0];
+            if (!touch) return null;
+            const rect = checkbox.getBoundingClientRect();
+            if (
+                touch.clientX >= rect.left - HIT_PAD &&
+                touch.clientX <= rect.right + HIT_PAD &&
+                touch.clientY >= rect.top - HIT_PAD &&
+                touch.clientY <= rect.bottom + HIT_PAD
+            ) {
+                return checkbox;
+            }
+            return null;
+        };
+
+        const onTouchStart = (e: TouchEvent) => {
+            tapped = findCheckboxFromTap(e);
+        };
+
+        const onTouchEnd = (e: TouchEvent) => {
+            if (!tapped) return;
+            const checkbox = tapped;
+            tapped = null;
+            // Suppress the synthesised click so we don't toggle twice.
+            e.preventDefault();
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+
+        container.addEventListener("touchstart", onTouchStart, { passive: true });
+        container.addEventListener("touchend", onTouchEnd, { passive: false });
+        return () => {
+            container.removeEventListener("touchstart", onTouchStart);
+            container.removeEventListener("touchend", onTouchEnd);
+        };
+    }, []);
+
     return (
         <>
             {note && !!templates && <CKEditorWithWatchdog
