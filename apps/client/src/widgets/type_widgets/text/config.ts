@@ -103,7 +103,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 "imageResize:50",
                 "imageResize:original",
                 "|",
-                "toggleImageCaption"
+                "toggleImageCaption",
+                "|",
+                "annotateImage"
             ],
             upload: {
                 types: ["jpeg", "png", "gif", "bmp", "webp", "tiff", "svg", "svg+xml", "avif"]
