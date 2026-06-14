@@ -16,8 +16,8 @@ pmOnFail: ignore
 
 overrides:
   "@codemirror/language": "6.12.3"
-  "@codemirror/autocomplete": "6.20.2"
-  "@codemirror/lint": "6.9.6"
+  "@codemirror/autocomplete": "6.20.3"
+  "@codemirror/lint": "6.9.7"
   "@lezer/highlight": "1.2.3"
   "@lezer/common": "1.5.2"
   "mermaid": "11.15.0"
