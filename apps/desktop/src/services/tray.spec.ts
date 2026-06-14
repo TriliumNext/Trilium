@@ -28,7 +28,8 @@ const state = vi.hoisted(() => ({
     // controllable windows
     lastFocusedWindow: null as unknown,
     allWindows: [] as unknown[],
-    browserWindowAll: [] as unknown[]
+    browserWindowAll: [] as unknown[],
+    appQuit: vi.fn()
 }));
 
 // `getTodayNote` returns a fake note used by the "today" menu item.
@@ -83,7 +84,8 @@ vi.mock("electron", () => ({
             on: (channel: string, fn: Handler) => state.ipcHandlers.set(channel, fn)
         },
         app: {
-            on: (event: string, fn: Handler) => state.appHandlers.set(event, fn)
+            on: (event: string, fn: Handler) => state.appHandlers.set(event, fn),
+            quit: () => state.appQuit()
         },
         BrowserWindow: {
             getAllWindows: () => state.browserWindowAll
@@ -94,7 +96,13 @@ vi.mock("electron", () => ({
 vi.mock("./window.js", () => ({
     default: {
         getLastFocusedWindow: () => state.lastFocusedWindow,
-        getAllWindows: () => state.allWindows
+        getAllWindows: () => state.allWindows,
+        // Mimics the real implementation (window.spec.ts covers the restore
+        // branch); the tray tests only assert show/focus routing.
+        showAndFocusWindow: (win: { show: () => void; focus: () => void }) => {
+            win.show();
+            win.focus();
+        }
     }
 }));
 
@@ -447,13 +455,13 @@ describe("tray", () => {
             await todayClick?.();
             expect(win.webContents.send).toHaveBeenCalledWith("openInSameTab", "today");
 
-            // "close" closes all BrowserWindow windows.
+            // "close" quits the app ("before-quit" bypasses close-to-tray).
             findItem("tray.close")?.click?.(
                 undefined as never,
                 undefined as never,
                 undefined as never
             );
-            expect(win.close).toHaveBeenCalled();
+            expect(state.appQuit).toHaveBeenCalled();
         });
 
         it("open-new-window and new-note no-op when no focused window", () => {
