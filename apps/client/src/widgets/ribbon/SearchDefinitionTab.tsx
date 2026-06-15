@@ -1,7 +1,7 @@
 import "./SearchDefinitionTab.css";
 
 import { SaveSearchNoteResponse } from "@triliumnext/commons";
-import { useContext, useEffect, useState } from "preact/hooks";
+import { useContext, useEffect, useMemo, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 
 import appContext from "../../components/app_context";
@@ -26,7 +26,7 @@ import ResponsiveContainer from "../react/ResponsiveContainer";
 import { TabContext } from "./ribbon-interface";
 import { SEARCH_OPTIONS, SearchOption } from "./SearchDefinitionOptions";
 
-export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabContext, "note" | "ntxId" | "hidden">) {
+export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }: Pick<TabContext, "note" | "ntxId" | "hidden" | "noteContext">) {
     const parentComponent = useContext(ParentComponent);
     const [ searchOptions, setSearchOptions ] = useState<{ availableOptions: SearchOption[], activeOptions: SearchOption[] }>();
     const [ error, setError ] = useState<{ message: string }>();
@@ -76,6 +76,26 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
             refreshOptions();
         }
     });
+
+    useEffect(() => {
+        async function autoExecute() {
+            if (glob.TRILIUM_SAFE_MODE || !note || note.type !== "search" || !note.hasLabel("autoExecuteSearch")) {
+                return;
+            }
+
+            const lastExecutedNoteId = executionState.load();
+            if (lastExecutedNoteId !== note.noteId) {
+                executionState.save(note.noteId);
+
+                await refreshResults();
+            }
+            // for old layout on desktop - open Collection Properties tab
+            if (noteContext?.viewScope?.viewMode === "default" && note.children.length > 0) {
+                parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
+            }
+        }
+        autoExecute();
+    }, [note]);
 
     return (
         <div className="search-definition-widget">
@@ -189,6 +209,14 @@ function SearchButtonBar({ note, refreshResults }: {
         </tbody>
     );
 }
+
+const executionState = function () {
+    let lastAutoExecutedSearchNoteId = "";
+    return {
+        load: () => lastAutoExecutedSearchNoteId,
+        save: (noteId: string) => lastAutoExecutedSearchNoteId = noteId,
+    };
+}();
 
 function BulkActionsList({ note }: { note: FNote }) {
     const [ bulkActions, setBulkActions ] = useState<RenameNoteBulkAction[]>();
