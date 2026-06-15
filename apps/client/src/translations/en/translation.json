@@ -2299,6 +2299,8 @@
   },
   "editorfeatures": {
     "title": "Features",
+    "mathlive_enabled": "MathLive visual editor",
+    "mathlive_description": "Math equations can be edited using a visual editor.",
     "emoji_completion_enabled": "Emoji auto-completion",
     "emoji_completion_description": "Emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
     "note_completion_enabled": "Note auto-completion",

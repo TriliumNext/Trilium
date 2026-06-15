@@ -91,7 +91,7 @@ overrides:
 patchedDependencies:
   "@ckeditor/ckeditor5-mention": patches/@ckeditor__ckeditor5-mention.patch
   "@ckeditor/ckeditor5-code-block": patches/@ckeditor__ckeditor5-code-block.patch
-
+  
 allowBuilds:
   better-sqlite3: true
   core-js: false
