@@ -77,13 +77,13 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
     // the bitmap is ready whether or not we observed `load`, so a fast/cached image that finishes before
     // the handler is wired can't stay hidden forever (a race the load event has). Large images therefore
     // fade in on real pixels; the timer guarantees we always reveal even if decode() never settles (it
-    // can, e.g. for some SVGs). Where decode() is unavailable, the load/error events take over.
+    // can, e.g. for some SVGs).
     useEffect(() => {
         setLoaded(false);
         setLoadingError(false);
 
         const img = imgRef.current;
-        if (!img || typeof img.decode !== "function") return;
+        if (!img) return;
 
         let settled = false;
         const settle = (action: () => void) => {
@@ -97,7 +97,13 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
             updateZoomState(zoomRef.current?.instance?.state?.scale ?? 1);
         });
         const timer = setTimeout(reveal, REVEAL_FALLBACK_MS);
-        img.decode().then(reveal, () => settle(() => setLoadingError(true)));
+        img.decode().then(reveal, () => {
+            // decode() can reject for an image that still paints fine — notably large images on
+            // memory-constrained Chrome (Android), which throw EncodingError despite loading OK.
+            // Only fail when the image truly didn't load; otherwise reveal without the smooth fade.
+            if (img.complete && img.naturalWidth > 0) reveal();
+            else settle(() => setLoadingError(true));
+        });
 
         return () => settle(() => {});
     }, [ src ]);
@@ -137,20 +143,6 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
                         className={imgClassName}
                         src={src}
                         alt={alt}
-                        onLoad={() => {
-                            // The decode() effect handles the reveal where supported; this only covers the rare
-                            // environment without decode() (the effect bails there).
-                            if (typeof imgRef.current?.decode === "function") return;
-                            setLoaded(true);
-                            updateZoomState(zoomRef.current?.instance?.state?.scale ?? 1);
-                        }}
-                        onError={() => {
-                            // decode()'s rejection reports failures where supported — and goes through `settle`,
-                            // clearing the fallback timer so it can't race and reveal a failed image. This only
-                            // covers the rare environment without decode().
-                            if (typeof imgRef.current?.decode === "function") return;
-                            setLoadingError(true);
-                        }}
                     />
                 </TransformComponent>
             </TransformWrapper>

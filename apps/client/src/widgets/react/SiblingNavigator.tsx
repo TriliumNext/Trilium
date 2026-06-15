@@ -9,7 +9,6 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import type { ViewScope } from "../../services/link";
 import type LoadResults from "../../services/load_results";
-import { isMobile } from "../../services/utils";
 import { useStaticTooltip, useTriliumEvent } from "./hooks";
 import { codeToSiblingDirection, getParentFromNotePath, getSiblingNavigation, isInteractiveTarget, isTextEntryTarget, sameRoleAttachments } from "./sibling_navigation";
 
@@ -92,7 +91,7 @@ export default function SiblingNavigator({ note, noteContext, viewScope, sibling
     useStaticTooltip(previousRef, previousConfig);
     useStaticTooltip(nextRef, nextConfig);
 
-    if (isMobile() || !navigation) return null;
+    if (!navigation) return null;
 
     return (
         <div className="sibling-navigator">
