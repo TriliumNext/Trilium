@@ -41,6 +41,12 @@ const SKILLS: SkillDefinition[] = [
         description: "Frontend (browser) scripting API — UI widgets, navigation, dialogs, editor access, Preact/JSX components, and keyboard shortcuts.",
         summary: "the frontend browser scripting API",
         file: "frontend_scripting.md"
+    },
+    {
+        name: "dashboards",
+        description: "Dashboard collections — creating a dashboard note, adding widgets (text, diagrams, web views), and building interactive widgets with Preact render notes.",
+        summary: "creating dashboard collections and their widgets",
+        file: "dashboards.md"
     }
 ];
 

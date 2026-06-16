@@ -1,4 +1,4 @@
-import type { ElectronApi, ElectronContextMenuParams } from "@triliumnext/commons";
+import type { ElectronApi, ElectronContextMenuParams, RendererStartupMetric } from "@triliumnext/commons";
 import { contextBridge, ipcRenderer, webFrame } from "electron";
 
 contextBridge.exposeInMainWorld("electronApi", {
@@ -66,6 +66,9 @@ contextBridge.exposeInMainWorld("electronApi", {
         toggleDevTools() {
             ipcRenderer.send("toggle-dev-tools");
         },
+        isDevToolsDocked(): boolean {
+            return ipcRenderer.sendSync("is-dev-tools-docked");
+        },
 
         // App lifecycle
         reloadAllWindows() {
@@ -83,6 +86,9 @@ contextBridge.exposeInMainWorld("electronApi", {
         showWindow() {
             ipcRenderer.send("show-window");
         },
+        reportStartupMetric(metric: RendererStartupMetric) {
+            ipcRenderer.send("report-startup-metric", metric);
+        },
 
         // Background effects
         setBackgroundMaterial(material: string) {
@@ -98,12 +104,18 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         onOpenInSameTab(callback: (noteId: string) => void) {
             ipcRenderer.on("openInSameTab", (_event, noteId) => callback(noteId));
+        },
+        onDevToolsDockChanged(callback: (docked: boolean) => void) {
+            ipcRenderer.on("dev-tools-dock-changed", (_event, docked: boolean) => callback(docked));
         }
     },
 
     clipboard: {
         copyImageToClipboard(buffer: Uint8Array) {
             ipcRenderer.send("copy-image-to-clipboard", buffer);
+        },
+        readText() {
+            return ipcRenderer.invoke("read-clipboard-text");
         }
     },
 
@@ -143,9 +155,12 @@ contextBridge.exposeInMainWorld("electronApi", {
         }
     },
 
-    tray: {
+    systemIntegration: {
         reloadTray() {
             ipcRenderer.send("reload-tray");
+        },
+        reapplyLaunchOnStartup() {
+            ipcRenderer.send("reapply-launch-on-startup");
         }
     },
 
@@ -227,6 +242,15 @@ contextBridge.exposeInMainWorld("electronApi", {
         removeDidNavigateListeners() {
             ipcRenderer.removeAllListeners("did-navigate");
             ipcRenderer.removeAllListeners("did-navigate-in-page");
+        }
+    },
+
+    security: {
+        setBackendScriptingEnabled(enabled: boolean): Promise<boolean> {
+            return ipcRenderer.invoke("security-set-backend-scripting", enabled);
+        },
+        setSqlConsoleEnabled(enabled: boolean): Promise<boolean> {
+            return ipcRenderer.invoke("security-set-sql-console", enabled);
         }
     }
 } satisfies ElectronApi);

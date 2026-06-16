@@ -36,6 +36,16 @@ export interface ElectronContextMenuParams {
 }
 
 /**
+ * Startup milestones the renderer may report to the main process for startup
+ * timing instrumentation (see `apps/desktop/src/services/startup_metrics.ts`).
+ *
+ * - `client-full-render` — the client finished its initial render: the layout
+ *   widgets are attached to the DOM, the froca note cache is loaded, and a
+ *   frame of the rendered layout has been painted.
+ */
+export type RendererStartupMetric = "client-full-render";
+
+/**
  * Window-level controls: zoom, theme, title bar, full screen, lifecycle, and
  * a handful of main → renderer event subscriptions.
  */
@@ -127,6 +137,12 @@ export interface ElectronWindowApi {
     /** Opens or closes Chromium DevTools for the current window. */
     toggleDevTools(): void;
 
+    /**
+     * Synchronously returns whether DevTools is currently open and docked into this window
+     * (as opposed to detached into a separate window).
+     */
+    isDevToolsDocked(): boolean;
+
     // #endregion
 
     // #region Background effects
@@ -165,6 +181,14 @@ export interface ElectronWindowApi {
     /** Brings the main window to the foreground, restoring it if minimized. */
     showWindow(): void;
 
+    /**
+     * Reports a renderer startup milestone to the main process, which records
+     * it relative to OS process creation alongside the main-process startup
+     * metrics. Only the first report of each metric is recorded; later reports
+     * (e.g. after a window reload or from extra windows) are ignored.
+     */
+    reportStartupMetric(metric: RendererStartupMetric): void;
+
     // #endregion
 
     // #region Main → renderer events
@@ -181,6 +205,13 @@ export interface ElectronWindowApi {
      */
     onOpenInSameTab(callback: (noteId: string) => void): void;
 
+    /**
+     * Subscribes to changes of the DevTools docking state. `docked` is `true` only while
+     * DevTools is attached to this window — where Chromium disables the native window
+     * material (Mica / vibrancy) — and `false` when it is closed or in a separate window.
+     */
+    onDevToolsDockChanged(callback: (docked: boolean) => void): void;
+
     // #endregion
 }
 
@@ -191,6 +222,14 @@ export interface ElectronClipboardApi {
      * pasted into other applications as an image rather than as a file.
      */
     copyImageToClipboard(buffer: Uint8Array): void;
+
+    /**
+     * Reads plain text from the system clipboard via the main-process
+     * `electron.clipboard`. Used instead of `navigator.clipboard.readText()`
+     * so the renderer's deny-by-default permission policy does not have to
+     * grant the sensitive `clipboard-read` permission to the whole session.
+     */
+    readText(): Promise<string>;
 }
 
 /**
@@ -303,10 +342,12 @@ export interface ElectronSpellcheckApi {
     getAvailableSpellCheckerLanguages(): string[];
 }
 
-/** System tray controls. */
-export interface ElectronTrayApi {
+/** OS integration controls — system tray and autostart / launch-on-login. */
+export interface ElectronSystemIntegrationApi {
     /** Rebuilds the tray icon and menu — call after changing tray-related settings. */
     reloadTray(): void;
+    /** Re-applies the OS autostart entry after the `launchOnStartup` / `hideOnAutoStart` options change. */
+    reapplyLaunchOnStartup(): void;
 }
 
 /**
@@ -413,6 +454,23 @@ export interface ElectronNavigationApi {
 }
 
 /**
+ * Security settings that live outside the database (in `data_dir/security.json`)
+ * to prevent malicious scripts from modifying them. Changes require a native
+ * OS confirmation dialog and an app restart to take effect.
+ */
+export interface ElectronSecurityApi {
+    /**
+     * Requests a change to a security setting. Shows a native OS confirmation
+     * dialog before writing. Returns `true` if the user confirmed and the
+     * change was written (restart required to take effect), `false` if cancelled.
+     */
+    setBackendScriptingEnabled(enabled: boolean): Promise<boolean>;
+
+    /** Requests a change to the SQL console setting. Same flow as above. */
+    setSqlConsoleEnabled(enabled: boolean): Promise<boolean>;
+}
+
+/**
  * The complete surface exposed to the renderer as `window.electronApi` via
  * `contextBridge`. The renderer must access Electron-only functionality through
  * this object — direct `require("electron")` and `@electron/remote` are
@@ -434,12 +492,14 @@ export interface ElectronApi {
     contextMenu: ElectronContextMenuApi;
     /** Chromium spell checker controls (dictionary, language list). */
     spellcheck: ElectronSpellcheckApi;
-    /** System tray menu controls. */
-    tray: ElectronTrayApi;
+    /** OS integration — system tray and autostart / launch-on-login. */
+    systemIntegration: ElectronSystemIntegrationApi;
     /** Printing and PDF export pipeline. */
     printing: ElectronPrintingApi;
     /** Read/write access to Chromium's back/forward navigation history. */
     navigation: ElectronNavigationApi;
     /** In-process bridge that replaces the renderer↔server WebSocket. */
     ws: ElectronWsApi;
+    /** Security settings (backend scripting, SQL console) stored outside the DB. */
+    security: ElectronSecurityApi;
 }

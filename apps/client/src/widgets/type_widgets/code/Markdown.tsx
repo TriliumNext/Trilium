@@ -5,7 +5,8 @@ import { autocompletion } from "@codemirror/autocomplete";
 import { syntaxTree } from "@codemirror/language";
 import type { SyntaxNode } from "@lezer/common";
 import VanillaCodeMirror from "@triliumnext/codemirror";
-import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons";
+import { isAnchorState, type TaskStateDef } from "@triliumnext/commons";
+import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer";
 import DOMPurify from "dompurify";
 import { Marked, type Tokens } from "marked";
 import { createContext } from "preact";
@@ -21,13 +22,16 @@ import note_create from "../../../services/note_create";
 import options from "../../../services/options";
 import server from "../../../services/server";
 import { removeIndividualBinding } from "../../../services/shortcuts";
+import { getTaskStateDefinitions } from "../../../services/task_states";
 import toast from "../../../services/toast";
 import tree from "../../../services/tree";
 import utils, { isDesktop } from "../../../services/utils";
 import { useLegacyImperativeHandlers, useTriliumEvent } from "../../react/hooks";
 import SplitEditor from "../helpers/SplitEditor";
+import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
+import { buildSnippetCompletions, SLASH_COMMAND_REGEX, useCodeSnippets } from "./snippets";
 
 const marked = new Marked({ breaks: true, gfm: true });
 
@@ -485,6 +489,15 @@ function useMarkdownKeymap(editorView: VanillaCodeMirror | null) {
 
 //#region Slash commands
 /**
+ * Builds the markdown a `/todo:<state>` command inserts. Omits the leading `- `
+ * bullet when the slash was typed right after an existing one (e.g. `- /todo:doing`),
+ * so the existing bullet is reused instead of producing a doubled `- - [ ] ` marker.
+ */
+export function buildTaskItemInsert(symbol: string, precededByBullet: boolean): string {
+    return `${precededByBullet ? "" : "- "}[${symbol}] `;
+}
+
+/**
  * Adds `/`-triggered autocomplete to the CodeMirror editor.
  * Typing `/` at the start of a line (or after whitespace) shows a menu of commands.
  */
@@ -494,15 +507,26 @@ function useSlashCommands(parentComponent: TypeWidgetProps["parentComponent"], e
     // `appendConfig` would otherwise stack a duplicate extension on each switch.
     const noteRef = useRef(note);
     const parentRef = useRef(parentComponent);
+    // The user-configured todo task states (from the `_taskStates` subtree), loaded once.
+    // Read inside the autocomplete closure, so `/todo:*` commands reflect the current config.
+    const taskStatesRef = useRef<TaskStateDef[]>([]);
+    // Markdown snippets (#snippet code notes with a markdown MIME) plus generic plain-text snippets,
+    // inserted via `/snippet:<name>`. useCodeSnippets keeps the ref fresh so the menu reads the latest.
+    const snippetsRef = useCodeSnippets(
+        (candidate) => candidate.isMarkdown() || (candidate.type === "code" && candidate.mime === "text/plain"),
+        "markdown"
+    );
     useEffect(() => { noteRef.current = note; }, [note]);
     useEffect(() => { parentRef.current = parentComponent; }, [parentComponent]);
+    useEffect(() => { void getTaskStateDefinitions().then((states) => { taskStatesRef.current = states; }); }, []);
 
     useEffect(() => {
         if (!editorView) return;
 
         const ext = autocompletion({
             override: [(ctx) => {
-                const match = ctx.matchBefore(/(?:^|(?<=\s))\/\w*/);
+                // `:` and `-` are allowed so `/todo:<state>` (e.g. `/todo:in-progress`) matches as one token.
+                const match = ctx.matchBefore(SLASH_COMMAND_REGEX);
                 if (!match) return null;
 
                 // Suppress slash menu inside fenced/indented code blocks and inline code spans —
@@ -557,7 +581,7 @@ function useSlashCommands(parentComponent: TypeWidgetProps["parentComponent"], e
                             label: "/math",
                             detail: t("markdown_slash_commands.math"),
                             apply(view, _completion, from, to) {
-                                const placeholder = "\\text{equation}";
+                                const placeholder = `\\text{${t("markdown_slash_commands.placeholders.math")}}`;
                                 const template = `$$\n${placeholder}\n$$`;
                                 view.dispatch({
                                     changes: { from, to, insert: template },
@@ -600,6 +624,35 @@ function useSlashCommands(parentComponent: TypeWidgetProps["parentComponent"], e
                                 });
                             }
                         },
+                        // One `/mermaid:<type>` per sample diagram (e.g. `/mermaid:flowchart`),
+                        // pre-filling the fenced block with that template's source.
+                        ...SAMPLE_DIAGRAMS.map((sample) => ({
+                            label: `/mermaid:${sample.name.toLowerCase().replace(/\s+/g, "-")}`,
+                            detail: t("markdown_slash_commands.mermaid_template", { name: sample.name }),
+                            apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
+                                const template = `\`\`\`mermaid\n${sample.content.trimEnd()}\n\`\`\``;
+                                view.dispatch({
+                                    changes: { from, to, insert: template },
+                                    selection: { anchor: from + 11 }
+                                });
+                            }
+                        })),
+                        {
+                            label: "/collapsible",
+                            detail: t("markdown_slash_commands.collapsible"),
+                            apply(view, _completion, from, to) {
+                                // No native markdown syntax — round-trips through the
+                                // importer as raw <details>/<summary> HTML (see markdown.ts).
+                                const placeholder = t("markdown_slash_commands.placeholders.collapsible_summary");
+                                const open = `<details class="trilium-collapsible">\n<summary>`;
+                                const close = `</summary>\n\n${t("markdown_slash_commands.placeholders.collapsible_details")}\n\n</details>`;
+                                const anchor = from + open.length;
+                                view.dispatch({
+                                    changes: { from, to, insert: open + placeholder + close },
+                                    selection: { anchor, head: anchor + placeholder.length }
+                                });
+                            }
+                        },
                         ...["note", "tip", "important", "caution", "warning"].map((admonitionType) => ({
                             label: `/${admonitionType}`,
                             detail: t("markdown_slash_commands.admonition", { type: admonitionType }),
@@ -610,7 +663,28 @@ function useSlashCommands(parentComponent: TypeWidgetProps["parentComponent"], e
                                     selection: { anchor: from + template.length }
                                 });
                             }
-                        }))
+                        })),
+                        // One `/todo:<state>` per configured task state that has a markdown marker —
+                        // the ` ` (unchecked) and `x` (checked) anchors are markers too, so both are covered.
+                        ...taskStatesRef.current
+                            .filter((state) => state.markdownSymbol)
+                            .map((state) => {
+                                // Anchors (`none`/`done`) are the standard `[ ]`/`[x]`; custom states
+                                // use non-standard markers (e.g. `[/]`), so flag those in the description.
+                                const detailKey = isAnchorState(state.name)
+                                    ? "markdown_slash_commands.todo"
+                                    : "markdown_slash_commands.todo_nonstandard";
+                                return {
+                                    label: `/todo:${state.name}`,
+                                    detail: t(detailKey, { title: state.title }),
+                                    apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
+                                        const precededByBullet = from >= 2 && view.state.doc.sliceString(from - 2, from) === "- ";
+                                        const insert = buildTaskItemInsert(state.markdownSymbol, precededByBullet);
+                                        view.dispatch({ changes: { from, to, insert } });
+                                    }
+                                };
+                            }),
+                        ...buildSnippetCompletions(snippetsRef.current.filter((snippet) => snippet.noteId !== noteRef.current.noteId))
                     ]
                 };
             }],

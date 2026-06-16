@@ -172,6 +172,7 @@ function getTree(req: Request) {
     const collectedNoteIds = new Set<string>([subTreeNoteId]);
 
     function collect(parentNote: BNote) {
+        /* v8 ignore next 3 -- defensive guard: collect() is only ever called with a cache-verified note */
         if (!parentNote) {
             console.trace(parentNote);
         }

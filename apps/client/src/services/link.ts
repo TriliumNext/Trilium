@@ -329,7 +329,8 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
         } else if (openInNewTab) {
             appContext.tabManager.openTabWithNoteWithHoisting(notePath, {
                 activate: activate ? true : targetIsBlank,
-                viewScope
+                viewScope,
+                placement: "afterCurrent"
             });
         } else if (isLeftClick) {
             openInCurrentNoteContext(evt, notePath, viewScope);

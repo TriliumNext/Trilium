@@ -20,6 +20,7 @@ export default function ImportDialog() {
     const [ shrinkImages, setShrinkImages ] = useState(compressImages);
     const [ textImportedAsText, setTextImportedAsText ] = useState(true);
     const [ codeImportedAsCode, setCodeImportedAsCode ] = useState(true);
+    const [ spreadsheetImportedAsSpreadsheet, setSpreadsheetImportedAsSpreadsheet ] = useState(true);
     const [ replaceUnderscoresWithSpaces, setReplaceUnderscoresWithSpaces ] = useState(true);
     const [ shown, setShown ] = useState(false);
 
@@ -44,6 +45,7 @@ export default function ImportDialog() {
                     shrinkImages: boolToString(shrinkImages),
                     textImportedAsText: boolToString(textImportedAsText),
                     codeImportedAsCode: boolToString(codeImportedAsCode),
+                    spreadsheetImportedAsSpreadsheet: boolToString(spreadsheetImportedAsSpreadsheet),
                     explodeArchives: boolToString(explodeArchives),
                     replaceUnderscoresWithSpaces: boolToString(replaceUnderscoresWithSpaces)
                 };
@@ -88,6 +90,10 @@ export default function ImportDialog() {
                 <FormCheckbox
                     name="code-imported-as-code" label={<RawHtml html={t("import.codeImportedAsCode")} />}
                     currentValue={codeImportedAsCode} onChange={setCodeImportedAsCode}
+                />
+                <FormCheckbox
+                    name="spreadsheet-imported-as-spreadsheet" label={t("import.spreadsheetImportedAsSpreadsheet")}
+                    currentValue={spreadsheetImportedAsSpreadsheet} onChange={setSpreadsheetImportedAsSpreadsheet}
                 />
                 <FormCheckbox
                     name="replace-underscores-with-spaces" label={t("import.replaceUnderscoresWithSpaces")}

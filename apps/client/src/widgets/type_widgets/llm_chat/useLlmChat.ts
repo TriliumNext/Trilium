@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks"
 
 import { getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
 import { randomString } from "../../../services/utils.js";
+import { useTriliumEvent } from "../../react/hooks.js";
 import type { ContentBlock, FileBlock, ImageBlock, LlmChatContent, StoredMessage, TextFileBlock } from "./llm_chat_types.js";
 import { useSmoothStreaming } from "./useSmoothStreaming.js";
 
@@ -205,6 +206,16 @@ export function useLlmChat(
     useEffect(() => {
         refreshModels();
     }, []);
+
+    // Re-fetch models when providers are (re)configured elsewhere — e.g. via the
+    // settings page — so the chat picks up newly added providers and clears the
+    // "no provider configured" prompt without requiring a page reload.
+    useTriliumEvent("entitiesReloaded", useCallback(({ loadResults }) => {
+        const optionNames = loadResults.getOptionNames();
+        if (optionNames.includes("llmProviders") || optionNames.includes("aiEnabled")) {
+            refreshModels();
+        }
+    }, [refreshModels]));
 
     // Track whether the user is near the bottom of the scroll container
     useEffect(() => {

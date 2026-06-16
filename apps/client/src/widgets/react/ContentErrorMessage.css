@@ -1,0 +1,10 @@
+/* Fills and centers within a positioned ancestor, overlaying the content it replaces. */
+.content-error-message {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}

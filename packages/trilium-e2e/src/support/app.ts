@@ -32,6 +32,8 @@ export default class App {
     readonly currentNoteSplitTitle: Locator;
     readonly currentNoteSplitContent: Locator;
     readonly sidebar: Locator;
+    readonly optionsDialog: Locator;
+    readonly optionsDialogContent: Locator;
     private isMobile: boolean = false;
 
     constructor(page: Page, context: BrowserContext) {
@@ -47,6 +49,8 @@ export default class App {
         this.currentNoteSplitTitle = this.currentNoteSplit.locator(".note-title").first();
         this.currentNoteSplitContent = this.currentNoteSplit.locator(".note-detail-printable.visible");
         this.sidebar = page.locator("#right-pane");
+        this.optionsDialog = page.locator(".modal.options-dialog");
+        this.optionsDialogContent = this.optionsDialog.locator(".modal-body");
     }
 
     get noteTree(): Locator {
@@ -114,8 +118,18 @@ export default class App {
         await suggestionSelector.click();
     }
 
+    /** Opens the settings dialog via the launcher cog and waits for it to appear. */
     async goToSettings() {
         await this.page.locator(".launcher-button.bx-cog").click();
+        await expect(this.optionsDialog).toBeVisible();
+    }
+
+    /**
+     * Navigates to the given settings page via the options dialog's sidebar. Pages are matched by
+     * their note ID (e.g. `_optionsLocalization`) so navigation is independent of the UI language.
+     */
+    async goToSettingsPage(optionsNoteId: string) {
+        await this.optionsDialog.locator(`.settings-navigation-item[href$="${optionsNoteId}"]`).click();
     }
 
     async getTab(tabIndex: number) {

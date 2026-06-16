@@ -409,8 +409,9 @@ describe("syntax_highlight", () => {
 
             hl.loadTheme.mockClear();
             // OS scheme change with matchesApp=true + highlightingLoaded -> re-load theme
+            // (the handler resolves highlight.js via a dynamic import, hence the waitFor)
             changeHandler!();
-            expect(hl.loadTheme).toHaveBeenCalledTimes(1);
+            await vi.waitFor(() => expect(hl.loadTheme).toHaveBeenCalledTimes(1));
 
             // a second ensure must NOT register the listener again
             await mod.ensureMimeTypesForHighlighting("text-x-csrc");

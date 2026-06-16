@@ -10,9 +10,14 @@ export interface CodeMirrorProps extends Omit<EditorConfig, "parent"> {
     editorRef?: Ref<VanillaCodeMirror>;
     containerRef?: Ref<HTMLPreElement>;
     onInitialized?: () => void;
+    /**
+     * Whether the edited note is a custom request handler (has `#customRequestHandler`).
+     * Gates the `api.req`/`api.res`/`api.pathParams` completions for backend scripts.
+     */
+    customRequestHandler?: boolean;
 }
 
-export default function CodeMirror({ className, content, mime, editorRef: externalEditorRef, containerRef: externalContainerRef, onInitialized, lineWrapping, ...extraOpts }: CodeMirrorProps) {
+export default function CodeMirror({ className, content, mime, editorRef: externalEditorRef, containerRef: externalContainerRef, onInitialized, lineWrapping, customRequestHandler, ...extraOpts }: CodeMirrorProps) {
     const parentRef = useSyncedRef(externalContainerRef);
     const codeEditorRef = useRef<VanillaCodeMirror>();
 
@@ -44,6 +49,11 @@ export default function CodeMirror({ className, content, mime, editorRef: extern
     useEffect(() => {
         codeEditorRef.current?.setMimeType(mime);
     }, [ mime ]);
+
+    // React to custom-request-handler status, which gates the backend api.req/res/pathParams completions.
+    useEffect(() => {
+        codeEditorRef.current?.setScriptApiContext({ customRequestHandler: !!customRequestHandler });
+    }, [ customRequestHandler ]);
 
     // React to line wrapping.
     useEffect(() => codeEditorRef.current?.setLineWrapping(!!lineWrapping), [ lineWrapping ]);

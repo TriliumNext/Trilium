@@ -7,15 +7,6 @@ import eraseService from "./erase.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 
-/**
- * Wraps a callback in a CLS context. Entity mutations (createNewNote,
- * markAsDeleted, setContent) require CLS to be initialised. The erase
- * service itself also opens a transaction, which needs the context.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /**
@@ -25,7 +16,7 @@ let counter = 0;
  */
 function createNote(content = "<p>hello</p>"): BNote {
     counter++;
-    return withContext(() =>
+    return getContext().init(() =>
         noteService.createNewNote({
             parentNoteId: "root",
             title: `erase-spec-${counter}`,
@@ -53,11 +44,11 @@ describe("erase service (real DB)", () => {
             const noteId = note.noteId;
             const branch = note.getParentBranches()[0];
             const branchId = branch.branchId!;
-            const attribute = withContext(() => note.addLabel("eraseMe", "v"));
+            const attribute = getContext().init(() => note.addLabel("eraseMe", "v"));
             const attributeId = attribute.attributeId;
 
             const deleteId = `del-${counter}`;
-            withContext(() => {
+            getContext().init(() => {
                 attribute.markAsDeleted(deleteId);
                 branch.markAsDeleted(deleteId);
                 note.markAsDeleted(deleteId);
@@ -66,7 +57,7 @@ describe("erase service (real DB)", () => {
             // Sanity: rows still physically present after a soft delete.
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
 
-            withContext(() => eraseService.eraseNotesWithDeleteId(deleteId));
+            getContext().init(() => eraseService.eraseNotesWithDeleteId(deleteId));
 
             // The physical rows are gone.
             expect(rowCount("notes", "noteId", noteId)).toBe(0);
@@ -82,17 +73,17 @@ describe("erase service (real DB)", () => {
 
         it("erases a soft-deleted attachment carrying a matching deleteId", () => {
             const note = createNote();
-            const attachment = withContext(() =>
+            const attachment = getContext().init(() =>
                 note.saveAttachment({ role: "file", mime: "text/plain", title: "att", content: "data" })
             );
             const attachmentId = attachment.attachmentId;
 
             const deleteId = `del-att-${counter}`;
-            withContext(() => attachment.markAsDeleted(deleteId));
+            getContext().init(() => attachment.markAsDeleted(deleteId));
 
             expect(rowCount("attachments", "attachmentId", attachmentId)).toBe(1);
 
-            withContext(() => eraseService.eraseNotesWithDeleteId(deleteId));
+            getContext().init(() => eraseService.eraseNotesWithDeleteId(deleteId));
 
             expect(rowCount("attachments", "attachmentId", attachmentId)).toBe(0);
             expect(entityChangeFor("attachments", attachmentId)?.isErased).toBe(1);
@@ -102,7 +93,7 @@ describe("erase service (real DB)", () => {
             const note = createNote();
             const noteId = note.noteId;
 
-            withContext(() => eraseService.eraseNotesWithDeleteId("nonexistent-delete-id"));
+            getContext().init(() => eraseService.eraseNotesWithDeleteId("nonexistent-delete-id"));
 
             // The live note is untouched.
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
@@ -116,11 +107,11 @@ describe("erase service (real DB)", () => {
             const branchId = note.getParentBranches()[0].branchId!;
 
             // deleteNote soft-deletes the note, its branch and attributes.
-            withContext(() => note.deleteNote());
+            getContext().init(() => note.deleteNote());
 
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
 
-            withContext(() => eraseService.eraseDeletedNotesNow());
+            getContext().init(() => eraseService.eraseDeletedNotesNow());
 
             expect(rowCount("notes", "noteId", noteId)).toBe(0);
             expect(rowCount("branches", "branchId", branchId)).toBe(0);
@@ -131,7 +122,7 @@ describe("erase service (real DB)", () => {
             const note = createNote();
             const noteId = note.noteId;
 
-            withContext(() => eraseService.eraseDeletedNotesNow());
+            getContext().init(() => eraseService.eraseDeletedNotesNow());
 
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
         });
@@ -142,7 +133,7 @@ describe("erase service (real DB)", () => {
             // Insert an orphan blob with a matching entity_changes record. It is
             // referenced by nothing, so it qualifies as unused.
             const blobId = `orphanBlob-${++counter}`;
-            withContext(() => {
+            getContext().init(() => {
                 getSql().execute(
                     "INSERT INTO blobs (blobId, content, dateModified, utcDateModified) VALUES (?, ?, ?, ?)",
                     [blobId, "junk", "2020-01-01 00:00:00.000+0000", "2020-01-01 00:00:00.000Z"]
@@ -155,7 +146,7 @@ describe("erase service (real DB)", () => {
                 );
             });
 
-            withContext(() => eraseService.eraseUnusedBlobs());
+            getContext().init(() => eraseService.eraseUnusedBlobs());
 
             // Blobs are purged completely rather than marked erased.
             expect(rowCount("blobs", "blobId", blobId)).toBe(0);
@@ -169,7 +160,7 @@ describe("erase service (real DB)", () => {
             ]);
             expect(blobId).toBeTruthy();
 
-            withContext(() => eraseService.eraseUnusedBlobs());
+            getContext().init(() => eraseService.eraseUnusedBlobs());
 
             expect(rowCount("blobs", "blobId", blobId)).toBe(1);
         });
@@ -178,21 +169,21 @@ describe("erase service (real DB)", () => {
     describe("eraseUnusedAttachmentsNow", () => {
         it("erases an attachment scheduled for erasure in the past", () => {
             const note = createNote();
-            const attachment = withContext(() =>
+            const attachment = getContext().init(() =>
                 note.saveAttachment({ role: "file", mime: "text/plain", title: "sched", content: "x" })
             );
             const attachmentId = attachment.attachmentId;
 
             // Mark the attachment as scheduled for erasure well in the past so it
             // falls before the now-based cutoff.
-            withContext(() =>
+            getContext().init(() =>
                 getSql().execute(
                     "UPDATE attachments SET utcDateScheduledForErasureSince = ? WHERE attachmentId = ?",
                     ["2000-01-01 00:00:00.000Z", attachmentId]
                 )
             );
 
-            withContext(() => eraseService.eraseUnusedAttachmentsNow());
+            getContext().init(() => eraseService.eraseUnusedAttachmentsNow());
 
             expect(rowCount("attachments", "attachmentId", attachmentId)).toBe(0);
             expect(entityChangeFor("attachments", attachmentId)?.isErased).toBe(1);
@@ -200,12 +191,12 @@ describe("erase service (real DB)", () => {
 
         it("does not erase an attachment that is not scheduled for erasure", () => {
             const note = createNote();
-            const attachment = withContext(() =>
+            const attachment = getContext().init(() =>
                 note.saveAttachment({ role: "file", mime: "text/plain", title: "keep", content: "x" })
             );
             const attachmentId = attachment.attachmentId;
 
-            withContext(() => eraseService.eraseUnusedAttachmentsNow());
+            getContext().init(() => eraseService.eraseUnusedAttachmentsNow());
 
             expect(rowCount("attachments", "attachmentId", attachmentId)).toBe(1);
         });
@@ -216,7 +207,7 @@ describe("erase service (real DB)", () => {
             const note = createNote();
             const noteId = note.noteId;
 
-            withContext(() => {
+            getContext().init(() => {
                 eraseService.eraseAttachments([]);
                 eraseService.eraseRevisions([]);
             });

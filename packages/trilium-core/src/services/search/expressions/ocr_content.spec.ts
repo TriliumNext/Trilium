@@ -9,14 +9,6 @@ import NoteSet from "../note_set.js";
 import SearchContext from "../search_context.js";
 import OCRContentExpression from "./ocr_content.js";
 
-/**
- * Wraps a callback in a CLS context. Entity mutations (createNewNote,
- * saveAttachment, setContent) require CLS to be initialised.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /**
@@ -26,7 +18,7 @@ let counter = 0;
  */
 function createNoteWithOcrText(ocrText: string): BNote {
     counter++;
-    const { note } = withContext(() =>
+    const { note } = getContext().init(() =>
         noteService.createNewNote({
             parentNoteId: "root",
             // Unique content per note: blobs are keyed by content hash, so
@@ -49,7 +41,7 @@ function createNoteWithOcrText(ocrText: string): BNote {
  */
 function createNoteWithOcrAttachment(ocrText: string): BNote {
     counter++;
-    const { note } = withContext(() =>
+    const { note } = getContext().init(() =>
         noteService.createNewNote({
             parentNoteId: "root",
             title: `ocr-spec-${counter}`,
@@ -58,7 +50,7 @@ function createNoteWithOcrAttachment(ocrText: string): BNote {
         })
     );
 
-    const attachment = withContext(() =>
+    const attachment = getContext().init(() =>
         note.saveAttachment({
             role: "image",
             mime: "image/png",

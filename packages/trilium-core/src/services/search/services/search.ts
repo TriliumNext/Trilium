@@ -8,6 +8,7 @@ import hoistedNoteService from "../../hoisted_note.js";
 import { getLog } from "../../log.js";
 import protectedSessionService from "../../protected_session.js";
 import scriptService from "../../script.js";
+import { isScriptingEnabled } from "../../scripting_guard.js";
 import { escapeHtml, escapeRegExp } from "../../utils/index.js";
 import type Expression from "../expressions/expression.js";
 import SearchContext from "../search_context.js";
@@ -76,6 +77,11 @@ function searchFromRelation(note: BNote, relationName: string) {
     if (!scriptNote) {
         log.info(`Search note's relation ${relationName} has not been found.`);
 
+        return [];
+    }
+
+    if (!isScriptingEnabled()) {
+        log.info("Script-based search is disabled (backend scripting is not enabled).");
         return [];
     }
 

@@ -7,7 +7,8 @@ import electron from "electron";
 import { default as i18next, t } from "i18next";
 import path from "path";
 
-let tray: Tray;
+let tray: Tray | null = null;
+let listenersRegistered = false;
 // `mainWindow.isVisible` doesn't work with `mainWindow.show` and `mainWindow.hide` - it returns `false` when the window
 // is minimized
 const windowVisibilityMap: Record<number, boolean> = {};; // Dictionary for storing window ID and its visibility status
@@ -40,6 +41,7 @@ function getIconPath(name: string) {
 }
 
 function registerVisibilityListener(window: BrowserWindow) {
+    /* v8 ignore next 3 -- defensive: only ever called with a real window from updateWindowVisibilityMap's forEach */
     if (!window) {
         return;
     }
@@ -59,6 +61,7 @@ function registerVisibilityListener(window: BrowserWindow) {
 }
 
 function getWindowTitle(window: BrowserWindow | null) {
+    /* v8 ignore next 3 -- defensive: only called with a window already null-checked via `if (!win) continue` */
     if (!window) {
         return;
     }
@@ -88,8 +91,10 @@ function updateWindowVisibilityMap(allWindows: BrowserWindow[]) {
     allWindows.forEach(window => {
         const windowId = window.id;
         if (!(windowId in windowVisibilityMap)) {
-            // If it does not exist, it is the newly created window
-            windowVisibilityMap[windowId] = true;
+            // Newly created window: seed from its actual state rather than assuming
+            // visible, so a window created hidden (hide-on-autostart) is tracked as
+            // hidden and the tray can bring it into view.
+            windowVisibilityMap[windowId] = window.isVisible();
             registerVisibilityListener(window);
         }
     });
@@ -97,6 +102,7 @@ function updateWindowVisibilityMap(allWindows: BrowserWindow[]) {
 
 
 function updateTrayMenu() {
+    /* v8 ignore next 3 -- defensive: every call site runs after `tray` is assigned in createTray */
     if (!tray) {
         return;
     }
@@ -105,6 +111,7 @@ function updateTrayMenu() {
     updateWindowVisibilityMap(allWindows);
 
     function ensureVisible(win: BrowserWindow) {
+        /* v8 ignore next -- defensive: always called with a truthy window (focused window or null-checked checkbox window) */
         if (win) {
             win.show();
             win.focus();
@@ -135,6 +142,7 @@ function updateTrayMenu() {
         const parentNote = becca.getNoteOrThrow("_lbBookmarks");
         const menuItems: Electron.MenuItemConstructorOptions[] = [];
 
+        /* v8 ignore next -- defensive: getNoteOrThrow never returns null and BNote.children is always an array */
         for (const bookmarkNote of parentNote?.children ?? []) {
             if (bookmarkNote.isLabelTruthy("bookmarkFolder")) {
                 menuItems.push({
@@ -198,6 +206,7 @@ function updateTrayMenu() {
         const id = parseInt(idStr, 10); // Get the ID of the window and make sure it is a number
         const isVisible = windowVisibilityMap[id];
         const win = allWindows.find(w => w.id === id);
+        /* v8 ignore next 3 -- defensive: windowVisibilityMap was just pruned to ids present in allWindows */
         if (!win) {
             continue;
         }
@@ -256,12 +265,11 @@ function updateTrayMenu() {
             label: t("tray.close"),
             type: "normal",
             icon: getIconPath("close"),
-            click: () => {
-                const windows = electron.BrowserWindow.getAllWindows();
-                windows.forEach(window => {
-                    window.close();
-                });
-            }
+            // Genuinely quit. `app.quit()` triggers `before-quit`, which clears the
+            // close-to-tray interception so the windows close for real instead of
+            // hiding back to the tray. Works on macOS too (where closing the last
+            // window does not quit by itself).
+            click: () => electron.app.quit()
         }
     ]);
 
@@ -269,37 +277,82 @@ function updateTrayMenu() {
 }
 
 function changeVisibility() {
-    const lastFocusedWindow = windowService.getLastFocusedWindow();
+    // Fall back to the main window: a window started hidden (hide-on-autostart)
+    // has never been focused, so it isn't in the focus list yet — but it's still
+    // the thing the tray click should reveal.
+    const targetWindow = windowService.getLastFocusedWindow() ?? windowService.getMainWindow();
 
-    if (!lastFocusedWindow) {
+    if (!targetWindow) {
         return;
     }
 
     // If the window is visible, hide it
-    if (windowVisibilityMap[lastFocusedWindow.id]) {
-        lastFocusedWindow.hide();
+    if (windowVisibilityMap[targetWindow.id]) {
+        targetWindow.hide();
     } else {
-        lastFocusedWindow.show();
-        lastFocusedWindow.focus();
+        targetWindow.show();
+        targetWindow.focus();
     }
 }
 
 function createTray() {
-    if (tray || optionService.getOptionBool("disableTray")) {
-        return;
-    }
-
     tray = new electron.Tray(getTrayIconPath());
     tray.setToolTip(t("tray.tooltip"));
     // Restore focus
     tray.on("click", changeVisibility);
     updateTrayMenu();
+}
 
+function destroyTray() {
+    if (!tray) {
+        return;
+    }
+
+    // Best-effort: on Windows, macOS and most Linux DEs this removes the icon
+    // immediately. On GNOME the StatusNotifier host ignores the unregister, so
+    // the icon lingers until the app restarts — upstream Electron bug #24976,
+    // with no app-level workaround.
+    tray.destroy();
+    tray = null;
+}
+
+/**
+ * Reconciles the tray with the current `disableTray` option so the setting takes
+ * effect without restarting the app. This is the single entry point for the
+ * `reload-tray` IPC the renderer sends after the option changes, as well as for
+ * window focus/close, theme and language changes — it creates, destroys or just
+ * refreshes the tray as appropriate.
+ */
+function reloadTray() {
+    if (optionService.getOptionBool("disableTray")) {
+        destroyTray();
+        return;
+    }
+
+    if (tray) {
+        updateTrayMenu();
+    } else {
+        createTray();
+    }
+}
+
+/**
+ * Registers the long-lived listeners exactly once. Deferred until a real window
+ * exists (rather than run from {@link setupSystemTray}) because `isMac()` needs
+ * the core to be initialised, which isn't guaranteed during the early Electron
+ * startup when `setupSystemTray` runs.
+ */
+function registerTrayListeners() {
+    if (listenersRegistered) {
+        return;
+    }
+    listenersRegistered = true;
+
+    electron.ipcMain.on("reload-tray", reloadTray);
     if (!coreUtils.isMac()) {
         // macOS uses template icons which work great on dark & light themes.
         electron.nativeTheme.on("updated", updateTrayMenu);
     }
-    electron.ipcMain.on("reload-tray", updateTrayMenu);
     i18next.on("languageChanged", updateTrayMenu);
 }
 
@@ -308,13 +361,15 @@ function createTray() {
  *
  * Skipping while the DB is uninitialised avoids attaching a tray to the setup
  * wizard, where it would block the app from quitting via "close last window".
- * `createTray` is idempotent so subsequent windows (extra windows, the macOS
- * "activate" re-creation path) are no-ops.
+ * Both {@link registerTrayListeners} and {@link reloadTray} are idempotent, so
+ * subsequent windows (extra windows, the macOS "activate" re-creation path) just
+ * refresh the existing tray.
  */
 export function setupSystemTray() {
     electron.app.on("browser-window-created", () => {
         if (sql_init.isDbInitialized()) {
-            createTray();
+            registerTrayListeners();
+            reloadTray();
         }
     });
 }

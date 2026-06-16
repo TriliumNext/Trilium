@@ -1,0 +1,18 @@
+.inherited-attributes-widget {
+    position: relative;
+}
+
+.inherited-attributes-widget .attr-detail {
+    contain: none;
+}
+
+.inherited-attributes-container {
+    color: var(--muted-text-color);
+    max-height: 200px;
+    overflow: auto;
+    padding: 14px 12px 13px 12px;
+
+    a.reference-link {
+        text-decoration: underline;
+    }
+}

@@ -232,7 +232,7 @@ jobs:
         run: echo "TEST_TAG=${TEST_TAG,,}" >> $GITHUB_ENV
 
       - name: Set up crane
-        uses: imjasonh/setup-crane@v0.5
+        uses: imjasonh/setup-crane@v0.6
 
       - name: Login to GHCR
         uses: docker/login-action@v4

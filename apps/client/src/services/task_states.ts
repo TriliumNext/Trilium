@@ -70,7 +70,10 @@ export async function getTaskStateDefinitions(): Promise<TaskStateDef[]> {
     return valid.length ? valid : DEFAULT_TASK_STATES;
 }
 
-/** Opens the "Task States" configuration note in a new tab, hoisted to it. */
+/** Opens the "Task States" configuration subtree in a tree-sidebar popup, hoisted to it. */
 export function openCustomTaskStateConfig(): void {
-    void appContext.tabManager.openInNewTab(TASK_STATES_CONTAINER_ID, TASK_STATES_CONTAINER_ID, true);
+    void appContext.triggerCommand("openInTreePopup", {
+        noteIdOrPath: TASK_STATES_CONTAINER_ID,
+        hoistedNoteId: TASK_STATES_CONTAINER_ID
+    });
 }

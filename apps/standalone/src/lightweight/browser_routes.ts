@@ -33,6 +33,7 @@ function toExpressLikeReq(req: BrowserRequest) {
         params: req.params,
         query: req.query,
         body: req.body,
+        /* v8 ignore next -- @preserve: BrowserRouter.dispatch always sets req.headers, so the ?? fallback is unreachable. */
         headers: req.headers ?? {},
         method: req.method,
         file: req.file,
@@ -45,6 +46,7 @@ function toExpressLikeReq(req: BrowserRequest) {
  * mirroring what the server does in route_api.ts.
  */
 function setContextFromHeaders(req: BrowserRequest) {
+    /* v8 ignore next -- @preserve: BrowserRouter.dispatch always sets req.headers, so the ?? fallback is unreachable. */
     const headers = req.headers ?? {};
     const ctx = getContext();
     ctx.set("componentId", headers["trilium-component-id"]);

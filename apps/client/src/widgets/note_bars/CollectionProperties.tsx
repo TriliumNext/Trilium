@@ -4,8 +4,8 @@ import { t } from "i18next";
 import { ComponentChildren } from "preact";
 import { useRef, useState } from "preact/hooks";
 
-import FNote from "../../entities/fnote";
 import appContext from "../../components/app_context";
+import FNote from "../../entities/fnote";
 import dialogService from "../../services/dialog";
 import { ViewTypeOptions } from "../collections/interface";
 import ActionButton from "../react/ActionButton";
@@ -24,7 +24,8 @@ export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     table: "bx bx-table",
     geoMap: "bx bx-map-alt",
     board: "bx bx-columns",
-    presentation: "bx bx-rectangle"
+    presentation: "bx bx-rectangle",
+    dashboard: "bx bxs-dashboard"
 };
 
 const MAX_OPEN_TABS = 50;
@@ -124,6 +125,7 @@ function ViewTypeSwitcher({ viewType, setViewType }: { viewType: ViewTypeOptions
                     selected={viewType === key}
                     disabled={viewType === key}
                     icon={ICON_MAPPINGS[key as ViewTypeOptions]}
+                    badges={key === "dashboard" ? [{ text: t("note_types.beta-feature") }] : undefined}
                 >{label}</FormListItem>
             ))}
         </Dropdown>

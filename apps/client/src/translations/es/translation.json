@@ -819,7 +819,9 @@
     "hide_child_notes": "Ocultar subnotas en el árbol",
     "open_all_in_tabs": "Abrir todo",
     "open_all_in_tabs_tooltip": "Abrir todos los resultados en nuevas pestañas",
-    "open_all_confirm": "Esto abrirá {{count}} notas en nuevas pestañas. ¿Continuar?",
+    "open_all_confirm_one": "Esto abrirá {{count}} notas en nuevas pestañas. ¿Continuar?",
+    "open_all_confirm_many": "",
+    "open_all_confirm_other": "",
     "open_all_too_one": " ",
     "open_all_too_many": " ",
     "open_all_too_other": " "
@@ -866,7 +868,9 @@
     "note_size": "Tamaño de nota",
     "note_size_info": "El tamaño de la nota proporciona una estimación aproximada de los requisitos de almacenamiento para esta nota. Toma en cuenta el contenido de la nota y el contenido de sus revisiones de nota.",
     "calculate": "calcular",
-    "subtree_size": "(tamaño del subárbol: {{size}} en {{count}} notas)",
+    "subtree_size_one": "(tamaño del subárbol: {{size}} en {{count}} notas)",
+    "subtree_size_many": "",
+    "subtree_size_other": "",
     "title": "Información de nota",
     "mime": "Tipo MIME",
     "show_similar_notes": "Mostrar notas similares"
@@ -877,7 +881,9 @@
     "title": "Mapa de notas",
     "fix-nodes": "Fijar nodos",
     "link-distance": "Distancia de enlace",
-    "too-many-notes": "Este subárbol contiene {{count}} notas, lo que excede el límite de {{max}} que se puede mostrar en el mapa de notas."
+    "too-many-notes_one": "Este subárbol contiene {{count}} notas, lo que excede el límite de {{max}} que se puede mostrar en el mapa de notas.",
+    "too-many-notes_many": "",
+    "too-many-notes_other": ""
   },
   "note_paths": {
     "title": "Rutas de nota",
@@ -1184,8 +1190,6 @@
     "disabled": "desactivado"
   },
   "ribbon": {
-    "widgets": "Widgets de cinta",
-    "promoted_attributes_message": "La pestaña de la cinta Atributos promovidos se abrirá automáticamente si los atributos promovidos están presentes en la nota",
     "edited_notes_message": "La pestaña de la cinta Notas editadas se abrirá automáticamente en las notas del día"
   },
   "theme": {
@@ -1585,7 +1589,9 @@
     "export": "Exportar",
     "import-into-note": "Importar a nota",
     "apply-bulk-actions": "Aplicar acciones en lote",
-    "converted-to-attachments": "{{count}} notas han sido convertidas en archivos adjuntos.",
+    "converted-to-attachments_one": "{{count}} notas han sido convertidas en archivos adjuntos.",
+    "converted-to-attachments_many": "",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "¿Está seguro que desea convertir las notas seleccionadas en archivos adjuntos de sus notas padres? Esta operación solo aplica a notas de Imagen, otras notas serán omitidas.",
     "open-in-popup": "Edición rápida",
     "archive": "Archivar",
@@ -2103,7 +2109,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} notas",
+    "total_notes_one": "{{count}} notas",
+    "total_notes_many": "",
+    "total_notes_other": "",
     "prev_page": "Página anterior",
     "next_page": "Página siguiente"
   },
@@ -2154,7 +2162,9 @@
     "code_note_switcher": "Cambiar modo de idioma",
     "tab_width": "Ancho de tabulación: {{width}}",
     "tab_width_title": "Cambiar ancho de tabulación",
-    "tab_width_spaces": "{{count}} espacios",
+    "tab_width_spaces_one": "{{count}} espacios",
+    "tab_width_spaces_many": "",
+    "tab_width_spaces_other": "",
     "tab_width_spaces_short": "Espacios: {{width}}",
     "tab_width_tabs": "Tabulaciones: {{width}}",
     "tab_width_use_default": "Usar predeterminado ({{width}})",

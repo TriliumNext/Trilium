@@ -17,6 +17,7 @@ import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
 import auth from "../services/auth.js";
 import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
+
 import shareRoutes from "../share/routes.js";
 import clipperRoute from "./api/clipper.js";
 import databaseRoute from "./api/database.js";
@@ -121,16 +122,13 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/attachments/:attachmentId/upload-modified-file", filesRoute.uploadModifiedFileToAttachment);
     route(PUT, "/api/attachments/:attachmentId/file", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], filesRoute.updateAttachment, apiResultHandler);
 
-    // TODO: Re-enable once we support route()
-    // route(GET, "/api/revisions/:revisionId/download", [auth.checkApiAuthOrElectron], revisionsApiRoute.downloadRevision);
-
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
     apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
 
     // docker health check
     route(GET, "/api/health-check", [], () => ({ status: "ok" }), apiResultHandler);
 
-    route(PST, "/api/login/sync", [loginRateLimiter], loginApiRoute.loginSync, apiResultHandler);
+    asyncRoute(PST, "/api/login/sync", [loginRateLimiter], loginApiRoute.loginSync, apiResultHandler);
     asyncRoute(PST, "/api/login/token", [loginRateLimiter], loginApiRoute.token, apiResultHandler);
 
     apiRoute(GET, "/api/etapi-tokens", etapiTokensApiRoutes.getTokens);
@@ -154,6 +152,7 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/special-notes/save-llm-chat", llmSpecialNotesRoute.saveLlmChat);
     asyncRoute(PST, "/api/database/anonymize/:type", [auth.checkApiAuthOrElectron, csrfMiddleware], databaseRoute.anonymize, apiResultHandler);
     apiRoute(GET, "/api/database/anonymized-databases", databaseRoute.getExistingAnonymizedDatabases);
+    route(GET, "/api/database/anonymized/download", [auth.checkApiAuthOrElectron], databaseRoute.downloadAnonymizedDatabase);
 
     if (process.env.TRILIUM_INTEGRATION_TEST === "memory") {
         asyncRoute(PST, "/api/database/rebuild/", [auth.checkApiAuthOrElectron], databaseRoute.rebuildIntegrationTestDatabase, apiResultHandler);

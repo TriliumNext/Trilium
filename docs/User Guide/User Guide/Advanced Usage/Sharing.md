@@ -50,7 +50,7 @@ You can view a list of all shared notes by clicking on "Show Shared Notes Subtre
 
 *   Shared notes are published on the open internet and can be accessed by anyone with the URL unless the notes are password-protected.
 *   The URL's randomness does not provide security, so it is crucial not to share sensitive information through this feature.
-*   Trilium takes precautions to protect your publicly shared instance from leaking information for non-shared notes, including opening a separate read-only connection to the <a class="reference-link" href="Database.md">Database</a>. Depending on your threat model, it might make more sense to use <a class="reference-link" href="Sharing/Exporting%20static%20HTML%20for%20web%20.md">Exporting HTML for web publishing</a> and use battle-tested web servers such as Nginx or Apache to serve static content.
+*   Trilium takes precautions to protect your publicly shared instance from leaking information for non-shared notes, including opening a separate read-only connection to the <a class="reference-link" href="Database.md">Database</a>. Depending on your threat model, it might make more sense to use <a class="reference-link" href="Sharing/Exporting%20static%20HTML%20for%20web%20.md">Exporting static HTML for web publishing</a> and use battle-tested web servers such as Nginx or Apache to serve static content.
 
 ### Password protection
 
@@ -99,6 +99,10 @@ for (const attr of parentNote.attributes) {
 }
 ```
 
+### Custom share templates
+
+To completely redesign the share, it is possible to create or use an existing [custom share template](Sharing/Custom%20share%20template.md).
+
 ### Creating human-readable URL aliases
 
 Shared notes typically have URLs like `http://domain.tld/share/knvU8aJy4dJ7`, where the last part is the note's ID. You can make these URLs more user-friendly by adding the `#shareAlias` label to individual notes (e.g., `#shareAlias=highlighting`). This will change the URL to `http://domain.tld/share/highlighting`.
@@ -129,9 +133,24 @@ When accessing a share, the sub-notes will be displayed in a tree on the left. B
 
 To do so, create a shared text note and apply the `shareIndex` label. When viewed, the list of shared roots will be displayed at the bottom of the note.
 
+### Linking to an external website
+
+Sometimes it's useful to include a link to an external website alongside your shared notes — for example in the shared navigation or in an index. To do so, add the `#shareExternalLink` label to a note, with the target URL as its value (e.g. `#shareExternalLink="https://example.com"`).
+
+Any link pointing to this note will then redirect to the external website and open in a new browser tab, instead of opening the note's own shared page. This applies to:
+
+*   the listing produced by the `#shareIndex` label;
+*   the "Subpages" list shown under a parent note;
+*   inline links to this note from within other shared notes.
+
+The URL must be absolute and include the scheme (e.g. `https://`).
+
+> [!NOTE]
+> The note still exists in the share tree and its own page remains reachable by its direct URL — the label only changes how links to it behave.
+
 ## Attribute reference
 
-<table class="ck-table-resized"><colgroup><col style="width:18.38%;"><col style="width:81.62%;"></colgroup><thead><tr><th>Attribute</th><th>Description</th></tr></thead><tbody><tr><td><code>#shareHiddenFromTree</code></td><td>this note is hidden from left navigation tree, but still accessible with its URL</td></tr><tr><td><code>#shareExternalLink</code></td><td>note will act as a link to an external website in the share tree</td></tr><tr><td><code>#shareAlias</code></td><td>define an alias using which the note will be available under <code>https://your_trilium_host/share/[your_alias]</code></td></tr><tr><td><code>#shareOmitDefaultCss</code></td><td>default share page CSS will be omitted. Use when you make extensive styling changes.</td></tr><tr><td><code>#shareRoot</code></td><td>marks note which is served on /share root.</td></tr><tr><td><code>#shareDescription</code></td><td>define text to be added to the HTML meta tag for description</td></tr><tr><td><code>#shareRaw</code></td><td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;<a class="reference-link" href="Sharing/Serving%20directly%20the%20content%20o.md">Serving directly the content of a note</a>&nbsp;for an alternative method without setting an attribute.</td></tr><tr><td><code>#shareDisallowRobotIndexing</code></td><td><p>Indicates to web crawlers that the page should not be indexed of this note by:</p><ul><li data-list-item-id="e6baa9f60bf59d085fd31aa2cce07a0e7">Setting the <code>X-Robots-Tag: noindex</code> HTTP header.</li><li data-list-item-id="ec0d067db136ef9794e4f1033405880b7">Setting the <code>noindex, follow</code> meta tag.</li></ul></td></tr><tr><td><code>#shareCredentials</code></td><td>require credentials to access this shared note. Value is expected to be in format <code>username:password</code>. Don't forget to make this inheritable to apply to child-notes/images.</td></tr><tr><td><code>#shareIndex</code></td><td>Note with this label will list all roots of shared notes.</td></tr><tr><td><code>#shareHtmlLocation</code></td><td>defines where custom HTML injected via <code>~shareHtml</code> relation should be placed. Applied to the HTML snippet note itself. Format: <code>location:position</code> where location is <code>head</code>, <code>body</code>, or <code>content</code> and position is <code>start</code> or <code>end</code>. Defaults to <code>content:end</code>.</td></tr></tbody></table>
+<table class="ck-table-resized"><colgroup><col style="width:18.38%;"><col style="width:81.62%;"></colgroup><thead><tr><th>Attribute</th><th>Description</th></tr></thead><tbody><tr><td><code spellcheck="false">#shareHiddenFromTree</code></td><td>this note is hidden from left navigation tree, but still accessible with its URL</td></tr><tr><td><code spellcheck="false">#shareExternalLink</code></td><td>when a link points to this note (from the share index, a subpage list, or an inline link in another shared note), it redirects to the given external URL in a new tab instead of the note's shared page. Value is the absolute URL, e.g. <code spellcheck="false">https://example.com</code>.</td></tr><tr><td><code spellcheck="false">#shareAlias</code></td><td>define an alias using which the note will be available under <code spellcheck="false">https://your_trilium_host/share/[your_alias]</code></td></tr><tr><td><code spellcheck="false">#shareOmitDefaultCss</code></td><td>default share page CSS will be omitted. Use when you make extensive styling changes.</td></tr><tr><td><code spellcheck="false">#shareRoot</code></td><td>marks note which is served on /share root.</td></tr><tr><td><code spellcheck="false">#shareDescription</code></td><td>define text to be added to the HTML meta tag for description</td></tr><tr><td><code spellcheck="false">#shareRaw</code></td><td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;<a class="reference-link" href="Sharing/Serving%20directly%20the%20content%20o.md">Serving directly the content of a note</a>&nbsp;for an alternative method without setting an attribute.</td></tr><tr><td><code spellcheck="false">#shareDisallowRobotIndexing</code></td><td><p>Indicates to web crawlers that the page should not be indexed of this note by:</p><ul><li data-list-item-id="e6baa9f60bf59d085fd31aa2cce07a0e7">Setting the <code spellcheck="false">X-Robots-Tag: noindex</code> HTTP header.</li><li data-list-item-id="ec0d067db136ef9794e4f1033405880b7">Setting the <code spellcheck="false">noindex, follow</code> meta tag.</li></ul></td></tr><tr><td><code spellcheck="false">#shareCredentials</code></td><td>require credentials to access this shared note. Value is expected to be in format <code spellcheck="false">username:password</code>. Don't forget to make this inheritable to apply to child-notes/images.</td></tr><tr><td><code spellcheck="false">#shareIndex</code></td><td>Note with this label will list all roots of shared notes.</td></tr><tr><td><code spellcheck="false">#shareHtmlLocation</code></td><td>defines where custom HTML injected via <code spellcheck="false">~shareHtml</code> relation should be placed. Applied to the HTML snippet note itself. Format: <code spellcheck="false">location:position</code> where location is <code spellcheck="false">head</code>, <code spellcheck="false">body</code>, or <code spellcheck="false">content</code> and position is <code spellcheck="false">start</code> or <code spellcheck="false">end</code>. Defaults to <code spellcheck="false">content:end</code>.</td></tr></tbody></table>
 
 ### Customizing logo
 
@@ -151,7 +170,7 @@ It's possible to adjust the logo which is displayed on the top-left of the left 
 | `#shareOpenGraphColor` | This adjusts the `theme-color` meta-property. |
 | `#shareOpenGraphURL` | This adjusts the `og:url` and `twitter:url` meta-properties. |
 | `#shareOpenGraphDomain` | Adjusts the `twitter:domain` meta-property. |
-| `#shareOpenGraphImage`  <br>`~shareOpenGraphImage` | Can be either a label, case in which the value is passed on as-is, or it can be a relation to an image <a class="reference-link" href="../Note%20Types/File.md">File</a>. This controls the `og:image` meta-property. |
+| `#shareOpenGraphImage`   <br>`~shareOpenGraphImage` | Can be either a label, case in which the value is passed on as-is, or it can be a relation to an image <a class="reference-link" href="../Note%20Types/File.md">File</a>. This controls the `og:image` meta-property. |
 
 ## Credits
 

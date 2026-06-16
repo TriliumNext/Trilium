@@ -9,14 +9,6 @@ import specialNotes from "./special_notes.js";
 import { unwrapStringOrBuffer } from "./utils/binary.js";
 
 /**
- * Wraps a callback in a CLS context. Entity mutations (createNewNote,
- * note.save(), branch.markAsDeleted(), etc.) require CLS to be initialised.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
-/**
  * The created note must end up (transitively) under the hidden subtree of the
  * given root, as the monthly parent for these special notes lives there.
  */
@@ -30,7 +22,7 @@ describe("special_notes (core, real DB)", () => {
 
     describe("createSqlConsole", () => {
         it("creates a code SQL console note under a monthly book parent in the hidden subtree", () => {
-            const note = withContext(() => specialNotes.createSqlConsole());
+            const note = getContext().init(() => specialNotes.createSqlConsole());
 
             expect(note.type).toBe("code");
             expect(note.mime).toBe("text/x-sqlite;schema=trilium");
@@ -48,8 +40,8 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("reuses the same monthly parent for consoles created in the same month", () => {
-            const a = withContext(() => specialNotes.createSqlConsole());
-            const b = withContext(() => specialNotes.createSqlConsole());
+            const a = getContext().init(() => specialNotes.createSqlConsole());
+            const b = getContext().init(() => specialNotes.createSqlConsole());
 
             expect(a.getParentNotes()[0].noteId).toBe(b.getParentNotes()[0].noteId);
         });
@@ -57,15 +49,15 @@ describe("special_notes (core, real DB)", () => {
 
     describe("saveSqlConsole", () => {
         it("rejects when the SQL console note does not exist", async () => {
-            await expect(withContext(() => specialNotes.saveSqlConsole("doesNotExist123")))
+            await expect(getContext().init(() => specialNotes.saveSqlConsole("doesNotExist123")))
                 .rejects.toThrow(/SQL console note/);
         });
 
         it("clones to the day note home and removes the hidden-subtree parent branch", async () => {
-            const note = withContext(() => specialNotes.createSqlConsole());
+            const note = getContext().init(() => specialNotes.createSqlConsole());
             expect(note.hasAncestor("_hidden")).toBe(true);
 
-            const result = await withContext(() => specialNotes.saveSqlConsole(note.noteId));
+            const result = await getContext().init(() => specialNotes.saveSqlConsole(note.noteId));
 
             expect(result.success).toBe(true);
             expect(result.branchId).toBeTruthy();
@@ -82,8 +74,8 @@ describe("special_notes (core, real DB)", () => {
             const home = becca.getNoteOrThrow("root").getChildNotes()[0];
             vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(home);
 
-            const note = withContext(() => specialNotes.createSqlConsole());
-            const result = await withContext(() => specialNotes.saveSqlConsole(note.noteId));
+            const note = getContext().init(() => specialNotes.createSqlConsole());
+            const result = await getContext().init(() => specialNotes.saveSqlConsole(note.noteId));
 
             expect(result.success).toBe(true);
             // It was cloned under the supplied home (a descendant of root, not hidden).
@@ -94,7 +86,7 @@ describe("special_notes (core, real DB)", () => {
 
     describe("createSearchNote", () => {
         it("creates a search note carrying the search string and keepCurrentHoisting label", () => {
-            const note = withContext(() => specialNotes.createSearchNote("hello world", ""));
+            const note = getContext().init(() => specialNotes.createSearchNote("hello world", ""));
 
             expect(note.type).toBe("search");
             expect(note.mime).toBe("application/json");
@@ -110,33 +102,33 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("sets the ancestor relation only when an ancestorNoteId is supplied", () => {
-            const withAncestor = withContext(() => specialNotes.createSearchNote("q1", "root"));
+            const withAncestor = getContext().init(() => specialNotes.createSearchNote("q1", "root"));
             expect(withAncestor.getRelationValue("ancestor")).toBe("root");
 
-            const withoutAncestor = withContext(() => specialNotes.createSearchNote("q2", ""));
+            const withoutAncestor = getContext().init(() => specialNotes.createSearchNote("q2", ""));
             expect(withoutAncestor.hasRelation("ancestor")).toBe(false);
         });
     });
 
     describe("saveSearchNote", () => {
         it("throws when the search note does not exist", () => {
-            expect(() => withContext(() => specialNotes.saveSearchNote("doesNotExist123")))
+            expect(() => getContext().init(() => specialNotes.saveSearchNote("doesNotExist123")))
                 .toThrow(/search note/);
         });
 
         it("throws when there is no workspace note", () => {
             vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(null as any);
-            const note = withContext(() => specialNotes.createSearchNote("q", ""));
+            const note = getContext().init(() => specialNotes.createSearchNote("q", ""));
 
-            expect(() => withContext(() => specialNotes.saveSearchNote(note.noteId)))
+            expect(() => getContext().init(() => specialNotes.saveSearchNote(note.noteId)))
                 .toThrow(/workspace note/);
         });
 
         it("clones to the search home and removes the hidden-subtree parent branch", () => {
-            const note = withContext(() => specialNotes.createSearchNote("q", ""));
+            const note = getContext().init(() => specialNotes.createSearchNote("q", ""));
             expect(note.hasAncestor("_hidden")).toBe(true);
 
-            const result = withContext(() => specialNotes.saveSearchNote(note.noteId));
+            const result = getContext().init(() => specialNotes.saveSearchNote(note.noteId));
 
             expect(result.success).toBe(true);
             expect(result.branchId).toBeTruthy();
@@ -166,7 +158,7 @@ describe("special_notes (core, real DB)", () => {
             vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(null);
 
             // getDayNote may create the day note, so it needs a CLS context.
-            const result = withContext(() => specialNotes.getInboxNote("2026-05-29"));
+            const result = getContext().init(() => specialNotes.getInboxNote("2026-05-29"));
             // Day note for the date is created under the calendar; it is a real note.
             expect(result).toBeTruthy();
             expect(result.noteId).not.toBe("root");
@@ -196,7 +188,7 @@ describe("special_notes (core, real DB)", () => {
 
     describe("createLauncher", () => {
         it("creates a note launcher with the note-launcher template", () => {
-            const { success, note } = withContext(() =>
+            const { success, note } = getContext().init(() =>
                 specialNotes.createLauncher({ parentNoteId: "_lbVisibleLaunchers", launcherType: "note" })
             );
 
@@ -206,7 +198,7 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("creates a script launcher with the script template", () => {
-            const { note } = withContext(() =>
+            const { note } = getContext().init(() =>
                 specialNotes.createLauncher({ parentNoteId: "_lbVisibleLaunchers", launcherType: "script" })
             );
 
@@ -215,7 +207,7 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("creates a custom widget launcher with the custom widget template", () => {
-            const { note } = withContext(() =>
+            const { note } = getContext().init(() =>
                 specialNotes.createLauncher({ parentNoteId: "_lbVisibleLaunchers", launcherType: "customWidget" })
             );
 
@@ -223,7 +215,7 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("creates a spacer launcher with the spacer template", () => {
-            const { note } = withContext(() =>
+            const { note } = getContext().init(() =>
                 specialNotes.createLauncher({ parentNoteId: "_lbVisibleLaunchers", launcherType: "spacer" })
             );
 
@@ -232,7 +224,7 @@ describe("special_notes (core, real DB)", () => {
 
         it("throws on an unrecognized launcher type", () => {
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     specialNotes.createLauncher({
                         parentNoteId: "_lbVisibleLaunchers",
                         launcherType: "bogus" as any
@@ -244,12 +236,12 @@ describe("special_notes (core, real DB)", () => {
 
     describe("resetLauncher", () => {
         it("deletes a normal launcher note", () => {
-            const { note } = withContext(() =>
+            const { note } = getContext().init(() =>
                 specialNotes.createLauncher({ parentNoteId: "_lbVisibleLaunchers", launcherType: "note" })
             );
             expect(note.isDeleted).toBe(false);
 
-            withContext(() => specialNotes.resetLauncher(note.noteId));
+            getContext().init(() => specialNotes.resetLauncher(note.noteId));
 
             expect(becca.getNote(note.noteId)?.isDeleted ?? true).toBe(true);
         });
@@ -266,7 +258,7 @@ describe("special_notes (core, real DB)", () => {
             };
             vi.spyOn(becca, "getNote").mockReturnValue(rootNote as any);
 
-            withContext(() => specialNotes.resetLauncher("_lbRoot"));
+            getContext().init(() => specialNotes.resetLauncher("_lbRoot"));
 
             // The root itself must NOT be deleted; only its children are reset.
             expect(rootNote.deleteNote).not.toHaveBeenCalled();
@@ -275,9 +267,9 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("is a no-op for a note that is not a launchbar config note", () => {
-            const plain = withContext(() => specialNotes.createSearchNote("not-a-launcher", ""));
+            const plain = getContext().init(() => specialNotes.createSearchNote("not-a-launcher", ""));
 
-            withContext(() => specialNotes.resetLauncher(plain.noteId));
+            getContext().init(() => specialNotes.resetLauncher(plain.noteId));
 
             // Search notes are not launchbar config, so they are left intact.
             expect(becca.getNote(plain.noteId)?.isDeleted).toBe(false);
@@ -287,7 +279,7 @@ describe("special_notes (core, real DB)", () => {
     describe("createOrUpdateScriptLauncherFromApi", () => {
         it("rejects non-alphanumeric ids and a missing title", () => {
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     specialNotes.createOrUpdateScriptLauncherFromApi({
                         id: "bad id!",
                         title: "X",
@@ -297,7 +289,7 @@ describe("special_notes (core, real DB)", () => {
             ).toThrow(/alphanumeric/);
 
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     specialNotes.createOrUpdateScriptLauncherFromApi({
                         id: "okid",
                         title: "",
@@ -308,7 +300,7 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("creates a new script launcher with content, mime, shortcut and icon labels", () => {
-            const launcher = withContext(() =>
+            const launcher = getContext().init(() =>
                 specialNotes.createOrUpdateScriptLauncherFromApi({
                     id: "myLauncher1",
                     title: "My Launcher",
@@ -329,7 +321,7 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("updates the existing launcher and removes shortcut/icon labels when omitted", () => {
-            withContext(() =>
+            getContext().init(() =>
                 specialNotes.createOrUpdateScriptLauncherFromApi({
                     id: "myLauncher2",
                     title: "First",
@@ -339,7 +331,7 @@ describe("special_notes (core, real DB)", () => {
                 })
             );
 
-            const updated = withContext(() =>
+            const updated = getContext().init(() =>
                 specialNotes.createOrUpdateScriptLauncherFromApi({
                     id: "myLauncher2",
                     title: "Second",
@@ -355,7 +347,7 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("derives an alphanumeric id from the title when no id is provided", () => {
-            const launcher = withContext(() =>
+            const launcher = getContext().init(() =>
                 specialNotes.createOrUpdateScriptLauncherFromApi({
                     id: "",
                     title: "Hello World!",

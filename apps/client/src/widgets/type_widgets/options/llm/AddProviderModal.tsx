@@ -96,6 +96,7 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
             title={t("llm.add_provider_title")}
             className="add-provider-modal"
             size="md"
+            stackable
             footer={
                 <>
                     <button type="button" className="btn btn-secondary" onClick={handleCancel}>

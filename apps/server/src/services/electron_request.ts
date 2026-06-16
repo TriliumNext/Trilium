@@ -3,7 +3,7 @@
  *
  * The desktop build runs the full Express stack inside the Electron main
  * process. The renderer makes API calls via the custom protocol (see
- * `apps/server/src/routes/electron.ts`), which dispatches a synthesised
+ * `apps/desktop/src/protocol.ts`), which dispatches a synthesised
  * request through the same Express app instance as the public HTTP listener.
  *
  * Auth and CSRF middleware historically bypassed on the process-wide

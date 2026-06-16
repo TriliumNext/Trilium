@@ -18,7 +18,7 @@ declare global {
     interface EditorComponent extends Component {
         loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string): Promise<void>;
         createNoteForReferenceLink(title: string): Promise<string>;
-        loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>): void;
+        loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>, boxSize?: string): void;
         fetchLinkMetadata(url: string): Promise<LinkEmbedMetadata>;
         detectEmbedType(url: string): string;
         renderLinkEmbed(container: HTMLElement, metadata: LinkEmbedMetadata, editable?: boolean): void;

@@ -233,7 +233,8 @@
     "task-state-attr-markdown-symbol": "Markdown-Symbol",
     "task-state-attr-is-completed": "Gilt als abgeschlossen",
     "task-state-attr-color": "Farbe",
-    "task-state-attr-is-hidden": "Aus Liste ausblenden"
+    "task-state-attr-is-hidden": "Aus Liste ausblenden",
+    "security-title": "Sicherheit"
   },
   "notes": {
     "new-note": "Neue Notiz",
@@ -290,7 +291,9 @@
     "presentation_slide": "Präsentationsfolie",
     "presentation_slide_first": "Erste Folie",
     "presentation_slide_second": "Zweite Folie",
-    "background": "Hintergrund"
+    "background": "Hintergrund",
+    "markdown-snippet": "Markdown-Snippet",
+    "code-snippet": "Code-Snippet"
   },
   "keyboard_action_names": {
     "copy-notes-to-clipboard": "Notizen in Zwischenablage kopieren",
@@ -437,5 +440,21 @@
       "fulltext-after-expression": "\"{{- token}}\" ist kein valider Ausdruck. Um einen Text zu suchen, platziere ihn vor den Attributfiltern (z.B. \"{{- token}} #label\" anstatt \"#label {{- token}}\").",
       "unrecognized-expression": "Nicht erkannter Ausdruck \"{{- token}}\""
     }
+  },
+  "security-dialog": {
+    "enable-title": "{{settingLabel}} aktivieren",
+    "enable-message": "Möchten Sie {{settingLabel}} wirklich aktivieren?",
+    "disable-title": "{{settingLabel}} deaktivieren",
+    "disable-message": "{{settingLabel}} wird deaktiviert.",
+    "disable-detail": "Diese Änderung erfordert einen Neustart.",
+    "cancel": "Abbrechen",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "dont-ask-again": "Bis zum Neustart nicht mehr fragen",
+    "backend-scripting": "Ausführung von Backend-Skripten",
+    "backend-scripting-warning": "Backend-Skripte haben vollen Zugriff auf den Server, einschließlich Dateisystem und Netzwerk.",
+    "sql-console": "SQL-Konsole",
+    "sql-console-warning": "Die SQL-Konsole ermöglicht die Ausführung beliebiger SQL-Abfragen gegen die Datenbank.",
+    "enable-detail": "{{warning}}\n\nAktivieren Sie dies nur, wenn Sie diese Funktion ausdrücklich verwenden möchten. Aktivieren Sie es nicht, wenn Sie dazu von einem Skript oder einer unbekannten Notiz aufgefordert werden.\n\nDiese Änderung erfordert einen Neustart, um wirksam zu werden."
   }
 }

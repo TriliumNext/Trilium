@@ -8,14 +8,6 @@ import { getContext } from "./context.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 
-/**
- * Wraps a callback in a CLS context. Entity mutations (createNewNote,
- * branch.save(), branch.deleteBranch()) require CLS to be initialised.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /**
@@ -25,7 +17,7 @@ let counter = 0;
  */
 function createNote(parentNoteId: string, type: "text" | "search" = "text"): { note: BNote; branch: BBranch } {
     counter++;
-    return withContext(() =>
+    return getContext().init(() =>
         noteService.createNewNote({
             parentNoteId,
             title: `cloning-spec-${counter}`,
@@ -41,7 +33,7 @@ describe("cloning service (real DB)", () => {
             const source = createNote("root");
             const target = createNote("root");
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 cloningService.cloneNoteToParentNote(source.note.noteId, target.note.noteId, "my-prefix")
             );
 
@@ -108,7 +100,7 @@ describe("cloning service (real DB)", () => {
 
             targetParent.branch.isExpanded = false;
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 cloningService.cloneNoteToBranch(source.note.noteId, targetParent.branch.branchId!, "px")
             ) as { success: boolean; branchId?: string };
 
@@ -137,7 +129,7 @@ describe("cloning service (real DB)", () => {
             const source = createNote("root");
             const target = createNote("root");
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 cloningService.ensureNoteIsPresentInParent(source.note.noteId, target.note.noteId, "ep")
             ) as { branch: BBranch | null; success: boolean };
 
@@ -194,10 +186,10 @@ describe("cloning service (real DB)", () => {
             const target = createNote("root");
 
             // Add a second branch so removing it does not delete the note.
-            withContext(() => cloningService.cloneNoteToParentNote(source.note.noteId, target.note.noteId));
+            getContext().init(() => cloningService.cloneNoteToParentNote(source.note.noteId, target.note.noteId));
             expect(becca.getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).not.toBeNull();
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 cloningService.ensureNoteIsAbsentFromParent(source.note.noteId, target.note.noteId)
             );
 
@@ -211,7 +203,7 @@ describe("cloning service (real DB)", () => {
         it("refuses to remove the only strong branch since it would delete the note", () => {
             const source = createNote("root");
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 cloningService.ensureNoteIsAbsentFromParent(source.note.noteId, "root")
             ) as { success: boolean; message?: string };
 
@@ -236,7 +228,7 @@ describe("cloning service (real DB)", () => {
             const source = createNote("root");
             const target = createNote("root");
 
-            const present = withContext(() =>
+            const present = getContext().init(() =>
                 cloningService.toggleNoteInParent(true, source.note.noteId, target.note.noteId, "tp")
             ) as { branch: BBranch | null; success: boolean };
 
@@ -244,7 +236,7 @@ describe("cloning service (real DB)", () => {
             expect(present.branch).not.toBeNull();
             expect(becca.getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).not.toBeNull();
 
-            const absent = withContext(() =>
+            const absent = getContext().init(() =>
                 cloningService.toggleNoteInParent(false, source.note.noteId, target.note.noteId)
             );
 
@@ -262,7 +254,7 @@ describe("cloning service (real DB)", () => {
 
             const afterPos = first.branch.notePosition;
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 cloningService.cloneNoteAfter(source.note.noteId, first.branch.branchId!)
             ) as { success: boolean; branchId?: string };
 

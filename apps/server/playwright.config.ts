@@ -10,10 +10,16 @@ const baseURL = process.env["BASE_URL"] || `http://127.0.0.1:${port}`;
 // server finds it as a regular file-backed database. In CI the workflow
 // handles this, but for local runs we do it here.
 if (!process.env.TRILIUM_DOCKER) {
-    cpSync(
-        join(__dirname, "../../packages/trilium-core/src/test/fixtures/document.db"),
-        join(__dirname, "spec/db/document.db")
-    );
+    try {
+        cpSync(
+            join(__dirname, "../../packages/trilium-core/src/test/fixtures/document.db"),
+            join(__dirname, "spec/db/document.db")
+        );
+    } catch (e) {
+        // The config is re-evaluated in every worker process; by then the webServer already
+        // holds the database open, which makes the (redundant) copy fail on Windows.
+        console.warn("Skipping test database copy:", (e as Error).message);
+    }
 }
 
 export default createBaseConfig({

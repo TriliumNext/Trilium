@@ -165,7 +165,8 @@
     "task-state-attr-markdown-symbol": "Simbolo Markdown",
     "task-state-attr-is-completed": "Si considera completato",
     "task-state-attr-color": "Colore",
-    "task-state-attr-is-hidden": "Nascosto dall'elenco"
+    "task-state-attr-is-hidden": "Nascosto dall'elenco",
+    "security-title": "Sicurezza"
   },
   "notes": {
     "new-note": "Nuova nota",
@@ -416,7 +417,10 @@
     "presentation_slide": "Diapositiva di presentazione",
     "presentation_slide_first": "Prima diapositiva",
     "presentation_slide_second": "Seconda diapositiva",
-    "background": "Contesto"
+    "background": "Contesto",
+    "markdown-snippet": "Snippet Markdown",
+    "code-snippet": "Codice Snippet",
+    "dashboard": "Pannello di controllo"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Database non inizializzato, seguire le istruzioni a schermo.",
@@ -437,5 +441,21 @@
   },
   "password": {
     "incorrect": "La password inserita non è corretta."
+  },
+  "security-dialog": {
+    "enable-title": "Abilita {{settingLabel}}",
+    "enable-message": "Sei sicuro di voler abilitare {{settingLabel}}?",
+    "enable-detail": "{{warning}}\n\nAbilita questa opzione solo se intendi utilizzare esplicitamente questa funzione. Non abilitarla se richiesto da uno script o da una nota che non conosci.\n\nPer rendere effettiva questa modifica è necessario riavviare il sistema.",
+    "disable-title": "Disattiva {{settingLabel}}",
+    "disable-message": "{{settingLabel}} verrà disattivata.",
+    "disable-detail": "Perché questa modifica abbia effetto, è necessario riavviare il sistema.",
+    "cancel": "Annulla",
+    "enable": "Abilita",
+    "disable": "Disattiva",
+    "dont-ask-again": "Non chiedere di nuovo finché non si riavvia",
+    "backend-scripting": "Esecuzione di script sul backend",
+    "backend-scripting-warning": "Gli script di backend dispongono di pieno accesso al server, compreso il file system e la rete.",
+    "sql-console": "Console SQL",
+    "sql-console-warning": "La console SQL consente di eseguire query SQL arbitrarie sul database."
   }
 }

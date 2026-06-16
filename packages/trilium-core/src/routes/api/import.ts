@@ -26,6 +26,7 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
         shrinkImages: req.body.shrinkImages !== "false",
         textImportedAsText: req.body.textImportedAsText !== "false",
         codeImportedAsCode: req.body.codeImportedAsCode !== "false",
+        spreadsheetImportedAsSpreadsheet: req.body.spreadsheetImportedAsSpreadsheet !== "false",
         explodeArchives: req.body.explodeArchives !== "false",
         replaceUnderscoresWithSpaces: req.body.replaceUnderscoresWithSpaces !== "false"
     };
@@ -69,7 +70,7 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
                 return importResult;
             }
         } else {
-            note = singleImportService.importSingleFile(taskContext, file, parentNote);
+            note = await singleImportService.importSingleFile(taskContext, file, parentNote);
         }
     } catch (e: unknown) {
         const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);

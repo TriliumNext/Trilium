@@ -1,0 +1,60 @@
+<figure class="image">
+  <img style="aspect-ratio:1406/1030;" src="Dashboard_image.png"
+  width="1406" height="1030">
+</figure>
+<aside class="admonition note">
+  <p>The dashboard is currently considered beta. This means that it might face
+    some changes in behavior until it is stabilized.</p>
+</aside>
+<p>The dashboard is a collection introduced in Trilium v0.104.0. It is similar
+  to the&nbsp;<a class="reference-link" href="#root/_help_8QqnMzx393bx">Grid View</a>&nbsp;collection,
+  but with some key differences:</p>
+<ul>
+  <li>The grid layout is not fixed, allowing for tiles of varying widths and
+    heights. The grid has 12 columns and an unlimited number of rows.</li>
+  <li>Each widget represents a child note of the collection and can be reordered
+    or resized.</li>
+  <li>The grid will distribute the columns evenly to fill the entire screen.
+    <ul>
+      <li>If the available space is too low (e.g. in a split or in mobile), the
+        columns are collapsed so that all widgets are displayed one under the other.</li>
+      <li>While the columns are collapsed, the widgets cannot be reordered or resized.</li>
+    </ul>
+  </li>
+  <li>Unlike the&nbsp;<a class="reference-link" href="#root/_help_8QqnMzx393bx">Grid View</a>,
+    the widgets are not clickable which allows them to be interactive.</li>
+</ul>
+<h2>Types of widgets</h2>
+<p>The dashboard uses the same rendering mechanism as the&nbsp;<a class="reference-link"
+  href="#root/_help_8QqnMzx393bx">Grid View</a>&nbsp;or the&nbsp;<a class="reference-link"
+  href="#root/_help_0ESUbbAxVnoK">Note List</a>, which means every note can be
+  rendered, such as:</p>
+<ul>
+  <li>Static content, via&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;or&nbsp;
+    <a
+    class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>.</li>
+  <li>Images via&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>,&nbsp;
+    <a
+    class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>,&nbsp;<a class="reference-link" href="#root/_help_gBbsAeiuUxI5">Mind Map</a>.</li>
+  <li>Interactive widgets via&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>.</li>
+  <li>Web pages can be displayed via&nbsp;<a class="reference-link" href="#root/_help_1vHRoWCEjj0L">Web View</a>&nbsp;and
+    refreshed via the context menu.</li>
+  <li><a class="reference-link" href="#root/_help_GTwFsgaA0lCt">Collections</a>&nbsp;render
+    interactively inside the dashboard</li>
+</ul>
+<aside class="admonition tip">
+  <p>Interactive widgets through the use of&nbsp;<a class="reference-link"
+    href="#root/_help_HcABDtFCkbFN">Render Note</a>&nbsp;is the highlighted use case
+    of the dashboard. Using the&nbsp;<a class="reference-link" href="#root/_help_GBBMSlVSOIGP">AI</a>&nbsp;chat,
+    these widgets can be easily created as the AI is instructed in how to write
+    them.</p>
+</aside>
+<h2>Adding new widgets</h2>
+<p>There are two ways to add widgets to a dashboard:</p>
+<ul>
+  <li>Create a child note of any type, the dashboard will automatically pick
+    it up and add it onto the grid.</li>
+  <li>From the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+    drag an existing note onto the dashboard and it will be placed there. This
+    will <a href="#root/_help_IakOLONlIfGI">clone</a> the note into the collection.</li>
+</ul>

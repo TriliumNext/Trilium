@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import ExcelJS from "exceljs";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -11,11 +12,15 @@ import stripBom from "strip-bom";
 import { getContext } from "../context.js";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
-async function testImport(fileName: string, mimetype: string) {
-    const buffer = fs.readFileSync(`${scriptDir}/samples/${fileName}`);
-    const taskContext = TaskContext.getInstance("import-mdx", "importNotes", {
+async function testImport(fileName: string, mimetype: string, bufferOverride?: Buffer, extraOptions?: Record<string, unknown>) {
+    const buffer = bufferOverride ?? fs.readFileSync(`${scriptDir}/samples/${fileName}`);
+    // getInstance caches by task id, so a caller needing distinct options (e.g. safeImport) must
+    // use a distinct id rather than reusing the shared "import-mdx" context.
+    const taskContext = TaskContext.getInstance(extraOptions ? `import-${fileName}` : "import-mdx", "importNotes", {
         textImportedAsText: true,
-        codeImportedAsCode: true
+        codeImportedAsCode: true,
+        spreadsheetImportedAsSpreadsheet: true,
+        ...extraOptions
     });
 
     return new Promise<{ buffer: Buffer; importedNote: BNote }>((resolve, reject) => {
@@ -26,7 +31,7 @@ async function testImport(fileName: string, mimetype: string) {
                 return;
             }
 
-            const importedNote = single.importSingleFile(
+            const importedNote = await single.importSingleFile(
                 taskContext,
                 {
                     originalname: fileName,
@@ -74,6 +79,18 @@ describe("processNoteContent", () => {
         expect(importedNote.getContent().toString().substring(0, 5)).toEqual("<html");
     });
 
+    it("safe import preserves data-trilium-collapsed on list items", async () => {
+        const html = `<ul><li data-trilium-collapsed="true">Parent<ul><li>Child</li></ul></li></ul>`;
+        const { importedNote } = await testImport("collapsed-list.html", "text/html", Buffer.from(html), { safeImport: true });
+
+        expect(importedNote.mime).toBe("text/html");
+        // safeImport runs the content through the sanitizer; data-* attributes are whitelisted, so
+        // the collapsed-state flag survives along with the nested item.
+        const content = importedNote.getContent().toString();
+        expect(content).toContain(`data-trilium-collapsed="true"`);
+        expect(content).toContain("Child");
+    });
+
     it("supports code note with UTF-16", async () => {
         const { importedNote, buffer } = await testImport("UTF-16LE Code Note.json", "application/json");
         expect(importedNote.mime).toBe("application/json");
@@ -115,5 +132,32 @@ describe("processNoteContent", () => {
             type: "mermaid",
             title: "New note"
         });
+    });
+
+    it("imports .xlsx as a spreadsheet note", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("Sheet1");
+        ws.getCell("A1").value = "Hello";
+        ws.getCell("B1").value = 42;
+        const xlsxBuffer = Buffer.from(await wb.xlsx.writeBuffer());
+
+        const { importedNote } = await testImport(
+            "Budget.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            xlsxBuffer
+        );
+
+        expect(importedNote).toMatchObject({
+            mime: "text/x-spreadsheet",
+            type: "spreadsheet",
+            title: "Budget"
+        });
+        expect(importedNote.getLabelValue("originalFileName")).toBe("Budget.xlsx");
+
+        // Content is the persisted Univer workbook with our imported values.
+        const parsed = JSON.parse(importedNote.getContent().toString());
+        const sheet = parsed.workbook.sheets[parsed.workbook.sheetOrder[0]];
+        expect(sheet.cellData[0][0].v).toBe("Hello");
+        expect(sheet.cellData[0][1].v).toBe(42);
     });
 }, 60_000);

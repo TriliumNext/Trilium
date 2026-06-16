@@ -36,37 +36,31 @@ function streamToBuffer(stream: Stream): Promise<Buffer> {
 }
 
 export default class NodejsZipProvider implements ZipProvider {
-    detectFilenameEncoding(buffer: Uint8Array): Promise<string> {
-        return new Promise<string>((res, rej) => {
-            yauzl.fromBuffer(Buffer.from(buffer), { lazyEntries: true, validateEntrySizes: false, decodeStrings: false }, (err, zipfile) => {
-                if (err) return rej(err);
-                if (!zipfile) return rej(new Error("Unable to read zip file."));
-
-                const samples: Buffer[] = [];
-                zipfile.readEntry();
-                zipfile.on("entry", (entry: yauzl.Entry) => {
-                    const isUtf8Flagged = !!(entry.generalPurposeBitFlag & 0x800);
-                    if (!isUtf8Flagged && Buffer.isBuffer(entry.fileName)) {
-                        samples.push(entry.fileName as Buffer);
-                    }
-                    zipfile.readEntry();
-                });
-                zipfile.on("end", async () => {
-                    if (samples.length === 0) {
-                        return res("utf-8");
-                    }
-                    const combined = Buffer.concat(samples);
-                    try {
-                        const chardet = await import("chardet");
-                        const detected = chardet.default.detect(combined);
-                        res(detected || "utf-8");
-                    } catch {
-                        res("utf-8");
-                    }
-                });
-                zipfile.on("error", rej);
-            });
+    async detectFilenameEncoding(buffer: Uint8Array): Promise<string> {
+        const zipfile = await yauzl.fromBufferPromise(Buffer.from(buffer), {
+            validateEntrySizes: false,
+            decodeStrings: false
         });
+
+        const samples: Buffer[] = [];
+        for await (const entry of zipfile.eachEntry()) {
+            const isUtf8Flagged = !!(entry.generalPurposeBitFlag & 0x800);
+            if (!isUtf8Flagged) {
+                samples.push(entry.fileNameRaw);
+            }
+        }
+
+        if (samples.length === 0) {
+            return "utf-8";
+        }
+
+        const combined = Buffer.concat(samples);
+        try {
+            const chardet = await import("chardet");
+            return chardet.default.detect(combined) || "utf-8";
+        } catch {
+            return "utf-8";
+        }
     }
 
     createZipArchive(): ZipArchive {
@@ -84,49 +78,31 @@ export default class NodejsZipProvider implements ZipProvider {
         };
     }
 
-    readZipFile(
+    async readZipFile(
         buffer: Uint8Array,
         processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
         filenameEncoding?: string
     ): Promise<void> {
-        return new Promise<void>((res, rej) => {
-            yauzl.fromBuffer(Buffer.from(buffer), { lazyEntries: true, validateEntrySizes: false, decodeStrings: false }, (err, zipfile) => {
-                if (err) { rej(err); return; }
-                if (!zipfile) { rej(new Error("Unable to read zip file.")); return; }
-
-                zipfile.readEntry();
-                zipfile.on("entry", async (entry: yauzl.Entry) => {
-                    try {
-                        // yauzl with decodeStrings: false returns fileName as a Buffer.
-                        // Use the detected encoding for non-UTF-8-flagged entries,
-                        // falling back to UTF-8.
-                        let fileName: string;
-                        if (Buffer.isBuffer(entry.fileName)) {
-                            const isUtf8Flagged = !!(entry.generalPurposeBitFlag & 0x800);
-                            const encoding = isUtf8Flagged ? "utf-8" : (filenameEncoding || "utf-8");
-                            fileName = decodeBuffer(entry.fileName as Buffer, encoding);
-                        } else {
-                            fileName = entry.fileName;
-                        }
-
-                        const readContent = () => new Promise<Uint8Array>((res, rej) => {
-                            zipfile.openReadStream(entry, (err, readStream) => {
-                                if (err) { rej(err); return; }
-                                if (!readStream) { rej(new Error("Unable to read content.")); return; }
-                                streamToBuffer(readStream).then(res, rej);
-                            });
-                        });
-
-                        await processEntry({ fileName }, readContent);
-                    } catch (e) {
-                        rej(e);
-                    }
-                    zipfile.readEntry();
-                });
-                zipfile.on("end", res);
-                zipfile.on("error", rej);
-            });
+        const zipfile = await yauzl.fromBufferPromise(Buffer.from(buffer), {
+            validateEntrySizes: false,
+            decodeStrings: false
         });
+
+        for await (const entry of zipfile.eachEntry()) {
+            // yauzl with decodeStrings: false leaves file names undecoded.
+            // Use the detected encoding for non-UTF-8-flagged entries,
+            // falling back to UTF-8.
+            const isUtf8Flagged = !!(entry.generalPurposeBitFlag & 0x800);
+            const encoding = isUtf8Flagged ? "utf-8" : (filenameEncoding || "utf-8");
+            const fileName = decodeBuffer(entry.fileNameRaw, encoding);
+
+            const readContent = async () => {
+                const readStream = await zipfile.openReadStreamPromise(entry);
+                return await streamToBuffer(readStream);
+            };
+
+            await processEntry({ fileName }, readContent);
+        }
     }
 }
 

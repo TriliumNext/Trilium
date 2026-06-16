@@ -186,8 +186,15 @@ async function getBuiltInTemplates(title: string | null, command: TreeCommandNam
             templateNoteId: templateNote.noteId
         };
 
+        const badges: MenuItemBadge[] = [];
         if (await isNewTemplate(templateNote.noteId)) {
-            item.badges = [NEW_BADGE];
+            badges.push(NEW_BADGE);
+        }
+        if (templateNote.hasLabel("beta")) {
+            badges.push(BETA_BADGE);
+        }
+        if (badges.length > 0) {
+            item.badges = badges;
         }
 
         items.push(item);

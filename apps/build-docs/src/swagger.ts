@@ -18,7 +18,7 @@ const buildInfos: BuildInfo[] = [
         outDir: `${DIR_PREFIX}/internal`
     },
     {
-        specPath: "apps/server/etapi.openapi.yaml",
+        specPath: "apps/server/src/assets/etapi.openapi.yaml",
         outDir: `${DIR_PREFIX}/etapi`
     }
 ];

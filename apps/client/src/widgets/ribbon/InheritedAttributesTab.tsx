@@ -1,3 +1,5 @@
+import "./InheritedAttributesTab.css";
+
 import { createPortal } from "preact/compat";
 import { useEffect, useState } from "preact/hooks";
 

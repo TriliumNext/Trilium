@@ -111,3 +111,29 @@
   <li>To reorder the item under the cursor, press <kbd>Alt</kbd>+<kbd>Up</kbd> or <kbd>Alt</kbd>+<kbd>Down</kbd>.
     To reorder multiple items, select them first.</li>
 </ul>
+<h2>Collapsible lists</h2>
+<p>Starting with Trilium v0.104.0, it is possible to collapse nested list
+  items. This applies to bullet lists, numbered lists as well as to-do lists.</p>
+<p>To collapse or expand a list item that has nested sub-items:</p>
+<ul>
+  <li>Using the mouse, move the cursor over the list item and an arrow will
+    appear to its left. Clicking it will toggle between collapsed and expanded.</li>
+  <li>For bullet lists and numbered lists, it's also possible to click directly
+    on the marker (e.g. the bullet or the number) instead of on the arrow to
+    collapse or expand it. This won't work for to-do lists since this would
+    toggle the to-do instead.</li>
+  <li>Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Enter</kbd> which will toggle
+    the collapse/expand state for the item at the cursor position.</li>
+</ul>
+<p>Of note:</p>
+<ul>
+  <li>Collapsed items always show the arrow to indicate its state.</li>
+  <li>The collapsed state is saved at note level and synced across instances,
+    which means that it will restore after a refresh or reopening of the application.</li>
+  <li>The collapsed state is also persisted in&nbsp;<a class="reference-link"
+    href="#root/_help_mHbBMPDPkVV5">Import &amp; Export</a>, but only for the HTML
+    format. Markdown exports will not preserve the collapse state.</li>
+  <li>Collapsible bullets only exist in the context of editable text notes.
+    Read-only lists will always be fully expanded.</li>
+  <li>The list items will auto-expand on edit to avoid typing in a hidden area.</li>
+</ul>

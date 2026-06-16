@@ -11,6 +11,8 @@ export default async function setupMath() {
 
     const contentEl = document.getElementById("content");
     if (!contentEl) return;
-    renderMathInElement(contentEl);
+    // throwOnError: false renders invalid formulas as an inline red error instead of
+    // throwing and leaving raw `$…$` text plus a console error (matches the editor).
+    renderMathInElement(contentEl, { throwOnError: false });
     document.body.classList.add("math-loaded");
 }

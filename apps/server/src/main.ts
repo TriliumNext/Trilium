@@ -43,23 +43,26 @@ async function startApplication() {
         dbConfig: {
             provider: dbProvider,
             isReadOnly: config.General.readOnly,
-            async onTransactionCommit() {
-                const { ws } = await import("@triliumnext/core");
-                ws.sendTransactionEntityChangesToAllClients();
+            onTransactionCommit() {
+                // Core types these hooks as synchronous (() => void) and invokes them without
+                // awaiting, so the dynamic import must stay fire-and-forget rather than async.
+                void import("@triliumnext/core").then(({ ws }) => {
+                    ws.sendTransactionEntityChangesToAllClients();
+                });
             },
-            async onTransactionRollback() {
-                const { cls, becca_loader, entity_changes } = await import("@triliumnext/core");
+            onTransactionRollback() {
+                void import("@triliumnext/core").then(({ cls, becca_loader, entity_changes }) => {
+                    const entityChangeIds = cls.getAndClearEntityChangeIds();
 
-                const entityChangeIds = cls.getAndClearEntityChangeIds();
+                    if (entityChangeIds.length > 0) {
+                        logService.info("Transaction rollback dirtied the becca, forcing reload.");
 
-                if (entityChangeIds.length > 0) {
-                    logService.info("Transaction rollback dirtied the becca, forcing reload.");
+                        becca_loader.load();
+                    }
 
-                    becca_loader.load();
-                }
-
-                // the maxEntityChangeId has been incremented during failed transaction, need to recalculate
-                entity_changes.recalculateMaxEntityChangeId();
+                    // the maxEntityChangeId has been incremented during failed transaction, need to recalculate
+                    entity_changes.recalculateMaxEntityChangeId();
+                });
             }
         },
         crypto: new NodejsCryptoProvider(),
@@ -93,4 +96,7 @@ async function startApplication() {
     }
 }
 
-startApplication();
+startApplication().catch((err) => {
+    console.error("Fatal error during Trilium server startup:", err);
+    process.exit(1);
+});

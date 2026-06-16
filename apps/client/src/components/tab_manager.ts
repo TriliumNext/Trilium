@@ -8,8 +8,12 @@ import NoteContext from "./note_context.js";
 import appContext from "./app_context.js";
 import Mutex from "../utils/mutex.js";
 import linkService from "../services/link.js";
+import { partitionPinnedFirst } from "../services/tab_pinning.js";
 import type { EventData } from "./app_context.js";
 import type FNote from "../entities/fnote.js";
+
+/** Where a newly created tab is inserted in the row: appended to the end, or right after the active tab. */
+type TabPlacement = "end" | "afterCurrent";
 
 interface TabState {
     contexts: NoteContext[];
@@ -23,6 +27,8 @@ interface NoteContextState {
     hoistedNoteId: string;
     active: boolean;
     viewScope: Record<string, any>;
+    pinned?: boolean;
+    lastActiveNtxId?: string | null;
 }
 
 export default class TabManager extends Component {
@@ -109,13 +115,19 @@ export default class TabManager extends Component {
 
             await this.tabsUpdate.allowUpdateWithoutChange(async () => {
                 for (const tab of filteredNoteContexts) {
-                    await this.openContextWithNote(tab.notePath, {
+                    const noteContext = await this.openContextWithNote(tab.notePath, {
                         activate: tab.active,
                         ntxId: tab.ntxId,
                         mainNtxId: tab.mainNtxId,
                         hoistedNoteId: tab.hoistedNoteId,
-                        viewScope: tab.viewScope
+                        viewScope: tab.viewScope,
+                        pinned: tab.pinned
                     });
+
+                    // restore which split was last focused in this tab (validated lazily on read)
+                    if (tab.lastActiveNtxId) {
+                        noteContext.lastActiveNtxId = tab.lastActiveNtxId;
+                    }
                 }
             });
 
@@ -262,9 +274,13 @@ export default class TabManager extends Component {
     async openEmptyTab(
         ntxId: string | null = null,
         hoistedNoteId: string = "root",
-        mainNtxId: string | null = null
+        mainNtxId: string | null = null,
+        pinned: boolean = false,
+        placement: TabPlacement = "end"
     ): Promise<NoteContext> {
         const noteContext = new NoteContext(ntxId, hoistedNoteId, mainNtxId);
+        // set before setEmpty/newNoteContextCreated so the tab renders in its pinned state from the start
+        noteContext.pinned = pinned;
         noteContext.setEmpty();
 
         const existingNoteContext = this.children.find((nc) => nc.ntxId === noteContext.ntxId);
@@ -274,11 +290,54 @@ export default class TabManager extends Component {
             return existingNoteContext;
         }
 
-        this.child(noteContext);
+        noteContext.setParent(this);
+        this.children.splice(this.getNewTabInsertionIndex(placement), 0, noteContext);
 
         await this.triggerEvent("newNoteContextCreated", { noteContext });
 
         return noteContext;
+    }
+
+    /**
+     * Index in `children` where a newly created (unpinned) tab is inserted.
+     * `"end"` appends; `"afterCurrent"` inserts right after the active tab and all of its splits,
+     * clamped so an unpinned tab never lands inside the pinned group (which `reorderPinnedFirst`
+     * keeps grouped at the front of the row).
+     */
+    private getNewTabInsertionIndex(placement: TabPlacement): number {
+        if (placement === "end") {
+            return this.children.length;
+        }
+
+        // Resolve the active main context without getActiveMainContext(): it throws on a stale
+        // activeNtxId, which would bypass the activeIndex === -1 fallback below.
+        const activeContext = this.activeNtxId
+            ? this.noteContexts.find((nc) => nc.ntxId === this.activeNtxId)
+            : undefined;
+        const activeMainNtxId = activeContext?.getMainContext().ntxId;
+        const activeIndex = activeMainNtxId
+            ? this.children.findIndex((nc) => nc.ntxId === activeMainNtxId)
+            : -1;
+
+        if (activeIndex === -1) {
+            return this.children.length;
+        }
+
+        // Skip past the active tab's main context and all of its splits.
+        let index = activeIndex + 1;
+        while (index < this.children.length && this.children[index].mainNtxId === activeMainNtxId) {
+            index++;
+        }
+
+        // Pinned tabs stay grouped first, so never insert the new (unpinned) tab inside them.
+        const firstUnpinnedIndex = this.children.findIndex((nc) => !this.isPartOfPinnedTab(nc));
+        const minIndex = firstUnpinnedIndex === -1 ? this.children.length : firstUnpinnedIndex;
+
+        return Math.max(index, minIndex);
+    }
+
+    private isPartOfPinnedTab(noteContext: NoteContext): boolean {
+        return !!noteContext.getMainContext().pinned;
     }
 
     async openInNewTab(targetNoteId: string, hoistedNoteId: string | null = null, activate: boolean = false) {
@@ -311,6 +370,7 @@ export default class TabManager extends Component {
             mainNtxId?: string | null;
             hoistedNoteId?: string | null;
             viewScope?: Record<string, any> | null;
+            placement?: TabPlacement | null;
         } = {}
     ): Promise<NoteContext> {
         const noteContext = this.getActiveContext();
@@ -337,6 +397,9 @@ export default class TabManager extends Component {
             mainNtxId?: string | null;
             hoistedNoteId?: string | null;
             viewScope?: Record<string, any> | null;
+            pinned?: boolean | null;
+            /** Where the new tab is placed in the row. Defaults to `"end"`; link/middle-click opens pass `"afterCurrent"`. */
+            placement?: TabPlacement | null;
         } = {}
     ): Promise<NoteContext> {
         const activate = !!opts.activate;
@@ -345,7 +408,13 @@ export default class TabManager extends Component {
         const hoistedNoteId = opts.hoistedNoteId || "root";
         const viewScope = opts.viewScope || { viewMode: "default" };
 
-        const noteContext = await this.openEmptyTab(ntxId, hoistedNoteId, mainNtxId);
+        const noteContext = await this.openEmptyTab(
+            ntxId,
+            hoistedNoteId,
+            mainNtxId,
+            !!opts.pinned,
+            opts.placement ?? "end"
+        );
         if (notePath) {
             await noteContext.setNote(notePath, {
                 // if activate is false, then send normal noteSwitched event
@@ -390,6 +459,12 @@ export default class TabManager extends Component {
 
         this.activeNtxId = ntxId;
 
+        // remember which split is focused within its tab, so re-activating the tab restores it
+        const activatedContext = this.noteContexts.find((nc) => nc.ntxId === ntxId);
+        if (activatedContext) {
+            activatedContext.getMainContext().lastActiveNtxId = ntxId;
+        }
+
         if (triggerEvent) {
             await this.triggerEvent("activeContextChanged", {
                 noteContext: this.getNoteContextById(ntxId)
@@ -399,6 +474,26 @@ export default class TabManager extends Component {
         this.tabsUpdate.scheduleUpdate();
 
         this.setCurrentNavigationStateToHash();
+    }
+
+    /** Activates a tab, restoring focus to the split that was last focused within it (or its main split). */
+    async activateTabContext(mainNtxId: string | null) {
+        if (!mainNtxId) {
+            return;
+        }
+
+        const mainContext = this.noteContexts.find((nc) => nc.ntxId === mainNtxId);
+        if (!mainContext) {
+            // tab vanished (e.g. closed mid-switch); avoid activateNoteContext throwing on a stale id
+            return;
+        }
+
+        const remembered = mainContext.lastActiveNtxId;
+        const targetNtxId = remembered && this.noteContexts.some((nc) => nc.ntxId === remembered)
+            ? remembered
+            : mainNtxId;
+
+        await this.activateNoteContext(targetNtxId);
     }
 
     async removeNoteContext(ntxId: string | null): Promise<boolean> {
@@ -411,6 +506,13 @@ export default class TabManager extends Component {
                 noteContextToRemove = this.getNoteContextById(ntxId);
             } catch {
                 // note context not found
+                return false;
+            }
+
+            if (noteContextToRemove.pinned) {
+                // a pinned context can't be closed — the tab must be unpinned first. This single guard
+                // makes Ctrl-W, middle-click, the bulk "close others/right/all" commands and the
+                // pinned note's split pane all refuse to close it.
                 return false;
             }
 
@@ -547,7 +649,7 @@ export default class TabManager extends Component {
         const oldIdx = this.mainNoteContexts.findIndex((nc) => nc.ntxId === activeMainNtxId);
         const newActiveNtxId = this.mainNoteContexts[oldIdx === this.mainNoteContexts.length - 1 ? 0 : oldIdx + 1].ntxId;
 
-        await this.activateNoteContext(newActiveNtxId);
+        await this.activateTabContext(newActiveNtxId);
     }
 
     async activatePreviousTabCommand() {
@@ -557,11 +659,49 @@ export default class TabManager extends Component {
         const oldIdx = this.mainNoteContexts.findIndex((nc) => nc.ntxId === activeMainNtxId);
         const newActiveNtxId = this.mainNoteContexts[oldIdx === 0 ? this.mainNoteContexts.length - 1 : oldIdx - 1].ntxId;
 
-        await this.activateNoteContext(newActiveNtxId);
+        await this.activateTabContext(newActiveNtxId);
     }
 
     async closeActiveTabCommand() {
         await this.removeNoteContext(this.activeNtxId);
+    }
+
+    async pinTabCommand({ ntxId }: { ntxId: string }) {
+        await this.setTabPinned(ntxId, true);
+    }
+
+    async unpinTabCommand({ ntxId }: { ntxId: string }) {
+        await this.setTabPinned(ntxId, false);
+    }
+
+    async setTabPinned(ntxId: string | null, pinned: boolean) {
+        let mainContext: NoteContext;
+        try {
+            mainContext = this.getNoteContextById(ntxId).getMainContext();
+        } catch {
+            return;
+        }
+
+        // can't pin an empty tab (nothing to lock onto); unpinning is always allowed
+        if (pinned && mainContext.isEmpty()) {
+            return;
+        }
+
+        if (mainContext.pinned === pinned) {
+            return;
+        }
+
+        mainContext.pinned = pinned;
+        this.reorderPinnedFirst();
+
+        await this.triggerEvent("tabPinStateChanged", { ntxId: mainContext.ntxId, pinned });
+        this.tabsUpdate.scheduleUpdate();
+    }
+
+    /** Keeps pinned tabs (with their splits) grouped at the front of the context list. */
+    reorderPinnedFirst() {
+        const orderedMain = partitionPinnedFirst(this.mainNoteContexts, (nc) => nc.pinned);
+        this.children = orderedMain.flatMap((main) => main.getSubContexts());
     }
 
     beforeUnloadEvent(): boolean {
@@ -724,6 +864,17 @@ export default class TabManager extends Component {
     }
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
+        // Auto-unpin tabs whose note was deleted, otherwise they'd get stuck (pinned tabs can't be
+        // closed). Collected synchronously up-front, before the per-context handlers clear noteId.
+        const deletedPinnedNtxIds = this.mainNoteContexts
+            .filter((nc) => nc.pinned && nc.noteId && loadResults.isNoteReloaded(nc.noteId)
+                && loadResults.getEntityRow("notes", nc.noteId)?.isDeleted)
+            .map((nc) => nc.ntxId);
+
+        for (const ntxId of deletedPinnedNtxIds) {
+            await this.setTabPinned(ntxId, false);
+        }
+
         const activeContext = this.getActiveContext();
 
         if (activeContext && loadResults.isNoteReloaded(activeContext.noteId)) {

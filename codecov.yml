@@ -41,6 +41,10 @@ flags:
     paths:
       - packages/commons/src/
     carryforward: true
+  ckeditor5:
+    paths:
+      - packages/ckeditor5/src/
+    carryforward: true
 
 comment:
   layout: "condensed_header, condensed_files, condensed_footer"

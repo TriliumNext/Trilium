@@ -37,6 +37,8 @@ describe("buildHiddenSubtreeTemplates", () => {
 
         expect(ids).toEqual([
             "_template_text_snippet",
+            "_template_markdown_snippet",
+            "_template_code_snippet",
             "_template_list_view",
             "_template_grid_view",
             "_template_calendar",
@@ -44,7 +46,8 @@ describe("buildHiddenSubtreeTemplates", () => {
             "_template_geo_map",
             "_template_board",
             "_template_presentation_slide",
-            "_template_presentation"
+            "_template_presentation",
+            "_template_dashboard"
         ]);
         // No duplicate ids.
         expect(new Set(ids).size).toBe(ids.length);
@@ -60,6 +63,7 @@ describe("buildHiddenSubtreeTemplates", () => {
         expect(viewTypeOf(childById(templates, "_template_geo_map"))).toBe("geoMap");
         expect(viewTypeOf(childById(templates, "_template_board"))).toBe("board");
         expect(viewTypeOf(childById(templates, "_template_presentation"))).toBe("presentation");
+        expect(viewTypeOf(childById(templates, "_template_dashboard"))).toBe("dashboard");
     });
 
     it("flags collection templates as templates and as collections", () => {
@@ -71,7 +75,8 @@ describe("buildHiddenSubtreeTemplates", () => {
             "_template_table",
             "_template_geo_map",
             "_template_board",
-            "_template_presentation"
+            "_template_presentation",
+            "_template_dashboard"
         ];
 
         for (const id of collectionIds) {
@@ -80,6 +85,15 @@ describe("buildHiddenSubtreeTemplates", () => {
             expect(names, id).toContain("template");
             expect(names, id).toContain("collection");
         }
+    });
+
+    it("marks the dashboard collection template as beta", () => {
+        const templates = buildHiddenSubtreeTemplates();
+        const dashboard = childById(templates, "_template_dashboard");
+
+        const beta = dashboard.attributes?.find((a) => a.name === "beta");
+        expect(beta).toBeDefined();
+        expect(beta?.type).toBe("label");
     });
 
     it("configures the text snippet template as a text note with promoted description", () => {
@@ -96,6 +110,29 @@ describe("buildHiddenSubtreeTemplates", () => {
         expect(descriptor?.value).toContain("promoted");
         expect(descriptor?.value).toContain("single");
         expect(descriptor?.value).toContain("text");
+    });
+
+    it("configures the markdown and code snippet templates as code notes with the unified snippet label", () => {
+        const templates = buildHiddenSubtreeTemplates();
+        const expectedMimes: Record<string, string> = {
+            _template_markdown_snippet: "text/x-markdown",
+            _template_code_snippet: "text/plain"
+        };
+
+        for (const [id, mime] of Object.entries(expectedMimes)) {
+            const snippet = childById(templates, id);
+
+            expect(snippet.type, id).toBe("code");
+            expect(snippet.mime, id).toBe(mime);
+
+            const names = (snippet.attributes ?? []).map((a) => a.name);
+            expect(names, id).toContain("template");
+            expect(names, id).toContain("snippet");
+
+            const descriptor = snippet.attributes?.find((a) => a.name === "label:snippetDescription");
+            expect(descriptor?.type, id).toBe("label");
+            expect(descriptor?.value, id).toContain("promoted");
+        }
     });
 
     it("applies the shared hidden-subtree label on the templates that hide their subtree", () => {

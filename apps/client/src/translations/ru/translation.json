@@ -378,7 +378,8 @@
     "explodeArchives": "Прочитать содержимое архивов <code>.zip</code>, <code>.enex</code> и <code>.opml</code>.",
     "shrinkImagesTooltip": "<p>Если этот параметр включен, Trilium попытается уменьшить размер импортируемых изображений путём масштабирования и оптимизации, что может повлиять на воспринимаемое качество изображения. Если этот параметр не установлен, изображения будут импортированы без изменений.</p><p>Это не относится к импорту файлов <code>.zip</code> с метаданными, поскольку предполагается, что эти файлы уже оптимизированы.</p>",
     "codeImportedAsCode": "Импортировать распознанные файлы кода (например, <code>.json</code>) в виде заметок типа \"код\", если это неясно из метаданных",
-    "importZipRecommendation": "При импорте ZIP файла иерархия заметок будет отражена в структуре папок внутри архива."
+    "importZipRecommendation": "При импорте ZIP файла иерархия заметок будет отражена в структуре папок внутри архива.",
+    "spreadsheetImportedAsSpreadsheet": "Импортировать файлы CSV и Excel в виде редактируемых таблиц, а не как отдельные файлы"
   },
   "markdown_import": {
     "dialog_title": "Импорт Markdown",
@@ -898,7 +899,9 @@
     "recent-changes-in-subtree": "Последние изменения в поддереве",
     "copy-note-path-to-clipboard": "Копировать путь к заметке в буфер обмена",
     "convert-to-attachment-confirm": "Вы уверены, что хотите преобразовать выбранные заметки во вложения их родительских заметок? Эта операция применяется только к заметкам в виде изображений; другие заметки будут пропущены.",
-    "converted-to-attachments": "{{count}} заметок были преобразованы во вложения.",
+    "converted-to-attachments_one": "{{count}} заметок были преобразованы во вложения.",
+    "converted-to-attachments_few": "",
+    "converted-to-attachments_many": "",
     "archive": "Архивировать",
     "unarchive": "Разархивировать",
     "open-in-a-new-window": "Открыть в новом окне",
@@ -1099,7 +1102,9 @@
     "hide_child_notes": "Скрыть дочерние заметки в дереве",
     "open_all_in_tabs": "Открыть все",
     "open_all_in_tabs_tooltip": "Открыть все результаты в новых вкладках",
-    "open_all_confirm": "Это откроет заметки ({{count}}) в новых вкладках. Продолжить?",
+    "open_all_confirm_one": "Это откроет заметки ({{count}}) в новых вкладках. Продолжить?",
+    "open_all_confirm_few": "",
+    "open_all_confirm_many": "",
     "open_all_too_one": "Слишком много результатов ({{count}}). Максимум — {{max}}.",
     "open_all_too_few": "Слишком много результатов ({{count}}). Максимум — {{max}}.",
     "open_all_too_many": "Слишком много результатов ({{count}}). Максимум — {{max}}."
@@ -1142,7 +1147,9 @@
     "title": "Информация",
     "calculate": "подсчитать",
     "note_size_info": "Размер заметки позволяет приблизительно оценить требования к объёму хранилища для данной заметки. Он учитывает её содержание и содержание её сохраненных версий.",
-    "subtree_size": "(размер поддерева: {{size}} в {{count}} заметках)",
+    "subtree_size_one": "(размер поддерева: {{size}} в {{count}} заметках)",
+    "subtree_size_few": "",
+    "subtree_size_many": "",
     "mime": "MIME тип",
     "show_similar_notes": "Похожие заметки"
   },
@@ -1660,7 +1667,9 @@
     "collapse": "Свернуть к нормальному размеру",
     "link-distance": "Расстояние связи",
     "open_full": "Развернуть полностью",
-    "too-many-notes": "Здесь {{count}} заметок. Отображение всех может замедлить работу.",
+    "too-many-notes_one": "Здесь {{count}} заметок. Отображение всех может замедлить работу.",
+    "too-many-notes_few": "",
+    "too-many-notes_many": "",
     "show-anyway": "Всё равно показать"
   },
   "owned_attribute_list": {
@@ -1958,8 +1967,6 @@
     "you_can_also_open": ", вы также можете открыть "
   },
   "ribbon": {
-    "widgets": "Виджеты ленты",
-    "promoted_attributes_message": "Вкладка «Закреплённые атрибуты» будет автоматически открыта, если такие атрибуты заданы для заметки",
     "edited_notes_message": "Вкладка ленты «Измененные заметки» будет автоматически открываться в заметках дня"
   },
   "options_widget": {
@@ -2114,7 +2121,9 @@
     "rendering_error": "Невозможно отобразить содержимое из-за ошибки."
   },
   "pagination": {
-    "total_notes": "{{count}} заметок",
+    "total_notes_one": "{{count}} заметок",
+    "total_notes_few": "",
+    "total_notes_many": "",
     "prev_page": "Предыдущая страница",
     "next_page": "Следующая страница"
   },
@@ -2144,7 +2153,9 @@
     "backlinks_title_many": "Обратные ссылки",
     "tab_width": "Ширина табуляции: {{width}}",
     "tab_width_title": "Изменить ширину табуляции",
-    "tab_width_spaces": "{{count}} пробелов",
+    "tab_width_spaces_one": "{{count}} пробелов",
+    "tab_width_spaces_few": "",
+    "tab_width_spaces_many": "",
     "tab_width_spaces_short": "Пробелы: {{width}}",
     "tab_width_tabs": "Табуляция: {{width}}",
     "tab_width_use_default": "По умолчанию ({{width}})",

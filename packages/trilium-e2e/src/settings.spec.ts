@@ -9,11 +9,11 @@ test("Native Title Bar not displayed on web", async ({ page, context }) => {
     await expect(app.currentNoteSplitContent.getByRole("heading", { name: "Native Title Bar (requires" })).toBeHidden();
 });
 
-test("Tray settings not displayed on web", async ({ page, context }) => {
+test("Desktop settings not displayed on web", async ({ page, context }) => {
     const app = new App(page, context);
-    await app.goto({ url: "/#root/_hidden/_options/_optionsOther" });
-    await expect(app.currentNoteSplitContent.getByRole("heading", { name: "Deleted Notes" })).toBeVisible();
-    await expect(app.currentNoteSplitContent.getByRole("heading", { name: "Tray" })).toBeHidden();
+    await app.goto({ url: "/#root/_hidden/_options/_optionsDesktop" });
+    await expect(app.currentNoteSplitContent.getByText("These options apply only for desktop builds")).toBeVisible();
+    await expect(app.currentNoteSplitContent.getByRole("heading", { name: "System Tray" })).toBeHidden();
 });
 
 test("Spellcheck settings not displayed on web", async ({ page, context }) => {

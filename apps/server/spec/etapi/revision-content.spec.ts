@@ -1,8 +1,10 @@
+import { cls } from "@triliumnext/core";
 import { Application } from "express";
 import { beforeAll, describe, expect, it } from "vitest";
 import supertest from "supertest";
 import { createNote, login } from "./utils.js";
 import config from "../../src/services/config.js";
+import sql from "../../src/services/sql.js";
 
 let app: Application;
 let token: string;
@@ -60,5 +62,18 @@ describe("etapi/revision-content", () => {
             .expect(404);
 
         expect(response.body.code).toStrictEqual("REVISION_NOT_FOUND");
+    });
+
+    it("refuses to read a protected revision's content", async () => {
+        cls.init(() => sql.execute("UPDATE revisions SET isProtected = 1 WHERE revisionId = ?", [revisionId]));
+        try {
+            const response = await supertest(app)
+                .get(`/etapi/revisions/${revisionId}/content`)
+                .auth(USER, token, { "type": "basic" })
+                .expect(400);
+            expect(response.body.code).toStrictEqual("REVISION_IS_PROTECTED");
+        } finally {
+            cls.init(() => sql.execute("UPDATE revisions SET isProtected = 0 WHERE revisionId = ?", [revisionId]));
+        }
     });
 });

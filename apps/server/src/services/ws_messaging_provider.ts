@@ -1,11 +1,10 @@
 import type { WebSocketMessage } from "@triliumnext/commons";
-import type { ClientMessageHandler, MessagingProvider } from "@triliumnext/core";
+import { getLog, shouldLogMessage, type ClientMessageHandler, type MessagingProvider } from "@triliumnext/core";
 import type { IncomingMessage, Server as HttpServer } from "http";
 import type express from "express";
 import { WebSocket, WebSocketServer } from "ws";
 
 import config from "./config.js";
-import { getLog } from "@triliumnext/core";
 import { randomString } from "./utils.js";
 
 type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
@@ -48,12 +47,20 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
 
             console.log(`websocket client connected`);
 
-            ws.on("message", async (messageJson) => {
-                const message = JSON.parse(messageJson as any);
+            ws.on("message", (messageJson) => {
+                void (async () => {
+                    try {
+                        const message = JSON.parse(messageJson as any);
 
-                if (this.clientMessageHandler) {
-                    await this.clientMessageHandler(id, message);
-                }
+                        if (this.clientMessageHandler) {
+                            await this.clientMessageHandler(id, message);
+                        }
+                    } catch (e) {
+                        // A malformed message (invalid JSON) or a failing handler must not
+                        // crash the process via an unhandled rejection on this floating promise.
+                        console.error("Failed to process websocket message:", e);
+                    }
+                })();
             });
 
             ws.on("close", () => {
@@ -78,7 +85,7 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
         const jsonStr = JSON.stringify(message);
 
         if (this.webSocketServer) {
-            if (message.type !== "sync-failed" && message.type !== "api-log-messages") {
+            if (shouldLogMessage(message)) {
                 getLog().info(`Sending message to all clients: ${jsonStr}`);
             }
 

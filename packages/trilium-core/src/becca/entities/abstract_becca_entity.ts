@@ -80,7 +80,8 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     }
 
     hasStringContent(): boolean {
-        // TODO: Not sure why some entities don't implement it.
+        // Default for entities without binary content; overridden by content-bearing entities
+        // (BNote, BRevision, BAttachment) whose content may be binary.
         return true;
     }
 
@@ -93,7 +94,8 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     abstract updateFromRow(row: unknown): void;
 
     get isDeleted(): boolean {
-        // TODO: Not sure why some entities don't implement it.
+        // Default for entities without a soft-delete column; overridden by those that have one
+        // (BNote, BBranch, BAttribute, BEtapiToken).
         return false;
     }
 

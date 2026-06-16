@@ -35,23 +35,22 @@ export function isExperimentalFeatureEnabled(featureId: ExperimentalFeatureId): 
         return (isMobile() || options.is("newLayout"));
     }
 
-    // LLM features require server-side API calls that don't work in standalone mode
-    // due to CORS restrictions from LLM providers (OpenAI, Google don't allow browser requests)
-    if (featureId === "llm" && isStandalone) {
-        return false;
+    if (featureId === "llm") {
+        // LLM features require server-side API calls that don't work in standalone mode
+        // due to CORS restrictions from LLM providers (OpenAI, Google don't allow browser requests)
+        return !isStandalone && options.is("aiEnabled");
     }
 
     return getEnabledFeatures().has(featureId);
 }
 
 export function getEnabledExperimentalFeatureIds() {
-    let values = [ ...getEnabledFeatures().values() ];
+    const values = [ ...getEnabledFeatures().values() ];
     if (isMobile() || options.is("newLayout")) {
         values.push("new-layout");
     }
-    // LLM is not available in standalone mode
-    if (isStandalone) {
-        values = values.filter(v => v !== "llm");
+    if (!isStandalone && options.is("aiEnabled")) {
+        values.push("llm");
     }
     return values;
 }
@@ -76,6 +75,7 @@ function getEnabledFeatures() {
         }
         enabledFeatures = new Set(features);
         enabledFeatures.delete("new-layout"); // handled separately.
+        enabledFeatures.delete("llm"); // handled separately, via the aiEnabled option.
     }
     return enabledFeatures;
 }

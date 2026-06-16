@@ -1,3 +1,4 @@
+import { h, VNode } from "preact";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Mock heavy / side-effecting collaborators BEFORE importing the SUT. ---
@@ -28,9 +29,6 @@ vi.mock("./syntax_highlight.js", () => ({
 
 const setupContextMenu = vi.fn((..._args: any[]) => {});
 vi.mock("../menus/image_context_menu.js", () => ({ default: { setupContextMenu: (...a: any[]) => setupContextMenu(...a) } }));
-
-const wheelZoomCreate = vi.fn((..._args: any[]) => {});
-vi.mock("vanilla-js-wheel-zoom", () => ({ default: { create: (...a: any[]) => wheelZoomCreate(...a) } }));
 
 const enterProtectedSession = vi.fn((..._args: any[]) => {});
 vi.mock("./protected_session.js", () => ({ default: { enterProtectedSession: (...a: any[]) => enterProtectedSession(...a) } }));
@@ -71,19 +69,28 @@ vi.mock("mermaid", () => ({
 const pdfViewerComponent = vi.fn(() => null);
 vi.mock("../widgets/type_widgets/file/PdfViewer", () => ({ default: pdfViewerComponent }));
 
-vi.mock("dompurify", () => ({ default: { sanitize: (s: string) => s } }));
+const webViewComponent = vi.fn((_props: any): VNode<any> => h("span", { class: "mock-webview-marker" }));
+vi.mock("../widgets/type_widgets/WebView", () => ({ default: webViewComponent }));
+
+const embeddedNoteListComponent = vi.fn((_props: any) => null);
+vi.mock("../widgets/collections/NoteList", () => ({ EmbeddedNoteList: embeddedNoteListComponent }));
+
+// `addHook` is a no-op here: sanitize_content.ts registers a DOMPurify hook at
+// module load (pulled in transitively), which would otherwise throw against this mock.
+vi.mock("dompurify", () => ({ default: { sanitize: (s: string) => s, addHook: () => {} } }));
 
 const renderToHtml = vi.fn((...args: any[]) => `<p>${args[0]}</p>`);
-vi.mock("@triliumnext/commons", async (orig) => ({
+vi.mock("@triliumnext/commons/src/lib/markdown_renderer", async (orig) => ({
     ...(await (orig() as Promise<object>)),
     renderToHtml: (...a: any[]) => renderToHtml(...a)
 }));
 
 // --- Imports AFTER the mocks. ---
+import appContext from "../components/app_context.js";
 import FAttachment from "../entities/fattachment.js";
 import { buildNote } from "../test/easy-froca.js";
+import { disposeInteractiveContent, getRenderedContent as rawGetRenderedContent } from "./content_renderer.js";
 import froca from "./froca.js";
-import { getRenderedContent as rawGetRenderedContent } from "./content_renderer.js";
 import server from "./server.js";
 
 // getRenderedContent declares an explicit `this` parameter; bind it so callers don't need to.
@@ -207,7 +214,6 @@ describe("getRenderedContent image rendering", () => {
         expect($img.attr("src")).toContain(`api/images/${note.noteId}/`);
         expect($img.attr("id")).toMatch(/^attachment-image-\d+$/);
         expect(setupContextMenu).toHaveBeenCalledOnce();
-        expect(wheelZoomCreate).not.toHaveBeenCalled();
     });
 
     it("renders an FAttachment image with an api/attachments url", async () => {
@@ -215,28 +221,6 @@ describe("getRenderedContent image rendering", () => {
         const { type, $renderedContent } = await getRenderedContent(att);
         expect(type).toBe("image");
         expect($renderedContent.find("img").attr("src")).toContain(`api/attachments/${att.attachmentId}/image/`);
-    });
-
-    it("initializes wheel zoom when imageHasZoom is set and the element is present", async () => {
-        const note = buildNote({ title: "Zoom", type: "canvas" });
-        const { $renderedContent } = await getRenderedContent(note, { imageHasZoom: true });
-        // the img must be attached to the live DOM so document.querySelector finds it
-        document.body.append($renderedContent[0]);
-        await new Promise((r) => requestAnimationFrame(() => r(null)));
-        await new Promise((r) => setTimeout(r, 0));
-        expect(wheelZoomCreate).toHaveBeenCalled();
-        $renderedContent.remove();
-    });
-
-    it("retries via requestAnimationFrame while the element is missing", async () => {
-        const rafSpy = vi.spyOn(window, "requestAnimationFrame");
-        const note = buildNote({ title: "ZoomMiss", type: "mindMap" });
-        // Do NOT attach to the DOM, so querySelector returns null and it reschedules.
-        await getRenderedContent(note, { imageHasZoom: true });
-        await new Promise((r) => setTimeout(r, 0));
-        expect(rafSpy).toHaveBeenCalled();
-        expect(wheelZoomCreate).not.toHaveBeenCalled();
-        rafSpy.mockRestore();
     });
 
     it("appends OCR text for FNote images when showTextRepresentation and OCR succeeds", async () => {
@@ -460,6 +444,148 @@ describe("generic FNote fallback / webView", () => {
         const { $renderedContent } = await getRenderedContent(note);
         expect($renderedContent.find(".webview-footer").length).toBe(0);
         expect($renderedContent.hasClass("no-preview")).toBe(true);
+    });
+
+    it("mounts the live WebView widget when interactive (outside a tooltip)", async () => {
+        const note = buildNote({ title: "WI", type: "webView", "#webViewSrc": "https://example.com" });
+        const { type, $renderedContent } = await getRenderedContent(note, { interactive: true });
+        expect(type).toBe("webView");
+        expect(webViewComponent).toHaveBeenCalledOnce();
+        expect(webViewComponent.mock.calls[0]?.[0]).toMatchObject({ note });
+        expect($renderedContent.find(".note-detail-web-view").length).toBe(1);
+        // The live embed replaces the static fallback.
+        expect($renderedContent.find(".webview-footer").length).toBe(0);
+        expect($renderedContent.hasClass("no-preview")).toBe(false);
+    });
+
+    it("points a freshly mounted .component element at appContext so embedded command buttons resolve", async () => {
+        // The real renderReactWidgetAtElement runs here; make the mounted widget emit a bare
+        // ".component" element (as a real widget root would) with no component prop yet.
+        webViewComponent.mockImplementationOnce(() => h("div", { class: "component" }));
+        const note = buildNote({ title: "WICmp", type: "webView", "#webViewSrc": "https://example.com" });
+
+        const { $renderedContent } = await getRenderedContent(note, { interactive: true });
+
+        const $component = $renderedContent.find(".note-detail-web-view .component");
+        expect($component.length).toBe(1);
+        expect($component.prop("component")).toBe(appContext);
+    });
+
+    it("leaves a .component element that already carries a component prop untouched", async () => {
+        const preexisting = { marker: "already-wired" };
+        webViewComponent.mockImplementationOnce(() => h("div", {
+            class: "component",
+            ref: (el: HTMLElement | null) => {
+                if (el) {
+                    $(el).prop("component", preexisting);
+                }
+            }
+        }));
+        const note = buildNote({ title: "WICmp2", type: "webView", "#webViewSrc": "https://example.com" });
+
+        const { $renderedContent } = await getRenderedContent(note, { interactive: true });
+
+        const $component = $renderedContent.find(".note-detail-web-view .component");
+        expect($component.prop("component")).toBe(preexisting);
+    });
+
+    it("executes the search and mounts the live collection list for an interactive search note", async () => {
+        const note = buildNote({ title: "Saved", type: "search" });
+        vi.spyOn(note, "getBestNotePathString").mockReturnValue("root/saved");
+        const loadSpy = vi.spyOn(froca, "loadSearchNote").mockResolvedValue(undefined);
+
+        const { type, $renderedContent } = await getRenderedContent(note, { interactive: true });
+
+        expect(type).toBe("search");
+        expect(loadSpy).toHaveBeenCalledWith(note.noteId);
+        expect(embeddedNoteListComponent).toHaveBeenCalledOnce();
+        expect(embeddedNoteListComponent.mock.calls[0]?.[0]).toMatchObject({ note, media: "screen", showTextRepresentation: true });
+        expect($renderedContent.find(".rendered-collection").length).toBe(1);
+
+        loadSpy.mockRestore();
+    });
+
+    it("mounts the collection view for an interactive book note without executing a search", async () => {
+        const note = buildNote({ title: "Coll", type: "book" });
+        vi.spyOn(note, "getBestNotePathString").mockReturnValue("root/coll");
+        const loadSpy = vi.spyOn(froca, "loadSearchNote").mockResolvedValue(undefined);
+
+        const { type, $renderedContent } = await getRenderedContent(note, { interactive: true });
+
+        expect(type).toBe("book");
+        expect(loadSpy).not.toHaveBeenCalled();
+        expect(embeddedNoteListComponent).toHaveBeenCalledOnce();
+        expect(embeddedNoteListComponent.mock.calls[0]?.[0]).toMatchObject({ note, media: "screen", showTextRepresentation: false });
+        expect($renderedContent.find(".rendered-collection").length).toBe(1);
+
+        loadSpy.mockRestore();
+    });
+
+    it("does not embed a dashboard-view collection, to avoid recursion", async () => {
+        const note = buildNote({ title: "Dash", type: "book", "#viewType": "dashboard" });
+        const { $renderedContent } = await getRenderedContent(note, { interactive: true });
+        // Falls back to renderText (the basic children list) instead of the live collection.
+        expect(embeddedNoteListComponent).not.toHaveBeenCalled();
+        expect($renderedContent.find(".rendered-collection").length).toBe(0);
+        expect($renderedContent.find(".from-render-text").length).toBe(1);
+    });
+
+    it("keeps the static fallback for book/search notes when interactive is off", async () => {
+        const loadSpy = vi.spyOn(froca, "loadSearchNote").mockResolvedValue(undefined);
+
+        // Book falls back to renderText (basic children list).
+        const book = await getRenderedContent(buildNote({ title: "Coll2", type: "book" }));
+        // Search has no static renderer, so it lands in the no-preview block.
+        const search = await getRenderedContent(buildNote({ title: "Saved2", type: "search" }));
+
+        expect(loadSpy).not.toHaveBeenCalled();
+        expect(embeddedNoteListComponent).not.toHaveBeenCalled();
+        expect(book.$renderedContent.find(".from-render-text").length).toBe(1);
+        expect(search.$renderedContent.hasClass("no-preview")).toBe(true);
+        expect(search.$renderedContent.find(".rendered-collection").length).toBe(0);
+
+        loadSpy.mockRestore();
+    });
+
+    it("keeps the static fallback in a tooltip or without a src, even when interactive", async () => {
+        // Tooltips never embed the live widget, even with interactive set.
+        const tip = await getRenderedContent(
+            buildNote({ title: "WT", type: "webView", "#webViewSrc": "https://example.com" }),
+            { interactive: true, tooltip: true }
+        );
+        // Interactive set, but the note has no configured src.
+        const noSrc = await getRenderedContent(
+            buildNote({ title: "WN", type: "webView" }),
+            { interactive: true }
+        );
+
+        expect(webViewComponent).not.toHaveBeenCalled();
+        expect(tip.$renderedContent.find(".note-detail-web-view").length).toBe(0);
+        expect(tip.$renderedContent.find(".webview-footer").length).toBe(1);
+        expect(noSrc.$renderedContent.find(".note-detail-web-view").length).toBe(0);
+        expect(noSrc.$renderedContent.hasClass("no-preview")).toBe(true);
+    });
+});
+
+describe("interactive content disposal", () => {
+    it("tags an interactive mount and disposes it, unmounting the widget", async () => {
+        const note = buildNote({ title: "WI", type: "webView", "#webViewSrc": "https://example.com" });
+        const { $renderedContent } = await getRenderedContent(note, { interactive: true });
+
+        const mount = $renderedContent.find("[data-interactive-mount]");
+        expect(mount.length).toBe(1);
+        expect(mount.find(".mock-webview-marker").length).toBe(1);
+
+        disposeInteractiveContent($renderedContent);
+        // render(null, ...) unmounted the widget, clearing the mount's rendered tree.
+        expect(mount.find(".mock-webview-marker").length).toBe(0);
+    });
+
+    it("is a no-op for content with no interactive mounts", async () => {
+        const note = buildNote({ title: "T", type: "text" });
+        const { $renderedContent } = await getRenderedContent(note);
+        expect($renderedContent.find("[data-interactive-mount]").length).toBe(0);
+        expect(() => disposeInteractiveContent($renderedContent)).not.toThrow();
     });
 });
 

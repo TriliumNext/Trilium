@@ -11,23 +11,6 @@ import notesService from "./notes.js";
 import { decodeUtf8, encodeUtf8 } from "./utils/binary.js";
 import { hash } from "./utils/index.js";
 
-// These specs run through the server suite (apps/server/spec/setup.ts), which
-// boots an in-memory fixture DB and calls initializeCore. getBlobPojo reads
-// notes from becca and blobs from SQL, and createNewNote (used to seed test
-// content) is a write path, so anything touching the DB is wrapped in a CLS
-// context via getContext().init(...).
-function withContext<T>(fn: () => T): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-        getContext().init(async () => {
-            try {
-                resolve(await fn());
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-}
-
 const PROTECTED_KEY = encodeUtf8("0123456789abcdef"); // exactly 16 bytes
 
 describe("blob", () => {
@@ -141,12 +124,12 @@ describe("blob", () => {
     });
 
     describe("getBlobPojo", () => {
-        it("throws NotFoundError when the entity does not exist", async () => {
-            await expect(withContext(() => blob.getBlobPojo("notes", "doesNotExist123"))).rejects.toBeInstanceOf(NotFoundError);
+        it("throws NotFoundError when the entity does not exist", () => {
+            expect(() => getContext().init(() => blob.getBlobPojo("notes", "doesNotExist123"))).toThrow(NotFoundError);
         });
 
-        it("returns the decoded string content of a text note's blob", async () => {
-            const { noteId, content, blobId } = await withContext(() => {
+        it("returns the decoded string content of a text note's blob", () => {
+            const { noteId, content, blobId } = getContext().init(() => {
                 const { note } = notesService.createNewNote({
                     parentNoteId: "root",
                     title: "blob spec text note",
@@ -164,10 +147,10 @@ describe("blob", () => {
             expect(becca.notes[noteId]).toBeDefined();
         });
 
-        it("nulls out the content for a note with binary (non-string) content", async () => {
+        it("nulls out the content for a note with binary (non-string) content", () => {
             const binary = Uint8Array.from([0, 1, 2, 3, 4, 5]);
 
-            const { pojoContent, contentLength } = await withContext(() => {
+            const { pojoContent, contentLength } = getContext().init(() => {
                 const { note } = notesService.createNewNote({
                     parentNoteId: "root",
                     title: "blob spec image note",

@@ -13,7 +13,7 @@
 - `#title *= Rings` — ends with
 - `#publicationYear >= 1950` — numeric comparison (>, >=, <, <=)
 - `#dateNote >= TODAY-30` — date keywords: NOW+-seconds, TODAY+-days, MONTH+-months, YEAR+-years
-- `#phone %= '\d{3}-\d{4}'` — regex match
+- `#phone %= '\\d{3}-\\d{4}'` — regex match (backslashes in the regex MUST be doubled — a single `\d` is lexed as a plain `d`)
 - `#title ~= trilim` — fuzzy exact match (tolerates typos, min 3 chars)
 - `#content ~* progra` — fuzzy contains match
 
@@ -23,9 +23,10 @@
 - `~author.relations.son.title = 'Christopher Tolkien'` — deep relation traversal
 
 ## Note properties
-Access via `note.` prefix: noteId, title, type, mime, text, content, rawContent, dateCreated, dateModified, isProtected, isArchived, parentCount, childrenCount, attributeCount, labelCount, relationCount, contentSize, revisionCount.
+Access via `note.` prefix: noteId, title, type, mime, content, rawContent, dateCreated, dateModified, isProtected, isArchived, parentCount, childrenCount, attributeCount, labelCount, relationCount, contentSize, revisionCount.
 - `note.type = code AND note.mime = 'application/json'`
 - `note.content *=* searchTerm`
+- `note.text *=* searchTerm` — virtual property searching title OR content; supports ONLY the `*=*` operator
 
 ## Hierarchy
 - `note.parents.title = 'Books'` — parent named "Books"

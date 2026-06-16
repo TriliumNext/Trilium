@@ -2774,9 +2774,27 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
+                type: object
+                properties:
+                  backupFolderPath:
+                    type: string
+                    nullable: true
+                    description: Directory where the backups are stored, or null if there is no user-accessible location.
+                  backups:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fileName:
+                          type: string
+                        filePath:
+                          type: string
+                        mtime:
+                          type: string
+                          format: date-time
+                        fileSize:
+                          type: integer
+                          description: Size of the backup file, in bytes.
                   
   /api/database/vacuum-database:
     post:
@@ -2814,10 +2832,54 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
-                  
+                type: object
+                properties:
+                  anonymizedFolderPath:
+                    type: string
+                    description: Directory where the anonymized databases are stored.
+                  databases:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fileName:
+                          type: string
+                        filePath:
+                          type: string
+                        mtime:
+                          type: string
+                          format: date-time
+                        fileSize:
+                          type: integer
+                          description: Size of the anonymized database file, in bytes.
+
+  /api/database/anonymized/download:
+    get:
+      tags: [Database]
+      summary: Download an anonymized database file
+      operationId: downloadAnonymizedDatabase
+      parameters:
+        - name: filePath
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Anonymized database file
+          content:
+            application/x-sqlite3:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Missing filePath
+        '403':
+          description: Path outside the anonymized database directory
+        '404':
+          description: File not found
+
+
   /api/database/find-and-fix-consistency-issues:
     post:
       tags: [Database]

@@ -1,4 +1,5 @@
-import { getThemeStyle } from "./services/theme";
+import { createFontStylesheetLink } from "./services/font";
+import { buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, StylesheetRef } from "./services/theme";
 
 async function bootstrap() {
     showSplash();
@@ -79,67 +80,26 @@ async function loadBootstrapCss() {
     }
 }
 
-type StylesheetRef = {
-    href: string;
-    media?: string;
-};
-
-function getConfiguredThemeStylesheets(stylesheetsPath: string, theme: string, customThemeCssUrl?: string) {
-    if (theme === "auto") {
-        return [{ href: `${stylesheetsPath}/theme-dark.css`, media: "(prefers-color-scheme: dark)" }];
-    }
-
-    if (theme === "dark") {
-        return [{ href: `${stylesheetsPath}/theme-dark.css` }];
-    }
-
-    if (theme === "next") {
-        return [
-            { href: `${stylesheetsPath}/theme-next-light.css` },
-            { href: `${stylesheetsPath}/theme-next-dark.css`, media: "(prefers-color-scheme: dark)" }
-        ];
-    }
-
-    if (theme === "next-light") {
-        return [{ href: `${stylesheetsPath}/theme-next-light.css` }];
-    }
-
-    if (theme === "next-dark") {
-        return [{ href: `${stylesheetsPath}/theme-next-dark.css` }];
-    }
-
-    if (theme !== "light" && customThemeCssUrl) {
-        return [{ href: customThemeCssUrl }];
-    }
-
-    return [];
-}
-
 function loadStylesheets() {
     const { device, assetPath, theme, themeBase, customThemeCssUrl } = window.glob;
+    if (device === "print") {
+        return;
+    }
+
     const stylesheetsPath = `${assetPath}/stylesheets`;
-
-    const cssToLoad: StylesheetRef[] = [];
-    if (device !== "print") {
-        cssToLoad.push({ href: `${stylesheetsPath}/ckeditor-theme.css` });
-        cssToLoad.push({ href: `api/fonts` });
-        cssToLoad.push({ href: `${stylesheetsPath}/theme-light.css` });
-        cssToLoad.push(...getConfiguredThemeStylesheets(stylesheetsPath, theme, customThemeCssUrl));
-        if (themeBase) {
-            cssToLoad.push(...getConfiguredThemeStylesheets(stylesheetsPath, themeBase));
-        }
-        cssToLoad.push({ href: `${stylesheetsPath}/style.css` });
+    appendStylesheet({ href: `${stylesheetsPath}/ckeditor-theme.css` });
+    // Marked so it can be swapped when font options change without reloading.
+    document.head.appendChild(createFontStylesheetLink());
+    // The light theme is always loaded as the baseline and acts as the anchor for live theme swapping.
+    appendStylesheet({ href: `${stylesheetsPath}/theme-light.css` }, { base: true });
+    for (const ref of buildThemeStylesheetRefs(theme, customThemeCssUrl, themeBase)) {
+        appendStylesheet(ref, { theme: true });
     }
+    appendStylesheet({ href: `${stylesheetsPath}/style.css` });
+}
 
-    for (const { href, media } of cssToLoad) {
-        const linkEl = document.createElement("link");
-        linkEl.href = href;
-        linkEl.rel = "stylesheet";
-        if (media) {
-            linkEl.media = media;
-        }
-        document.head.appendChild(linkEl);
-    }
+function appendStylesheet(ref: StylesheetRef, opts?: { base?: boolean; theme?: boolean }) {
+    document.head.appendChild(createStylesheetLink(ref, opts));
 }
 
 function loadIcons() {

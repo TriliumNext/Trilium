@@ -5,6 +5,7 @@ import contentRenderer from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import linkService from "./link.js";
+import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import treeService from "./tree.js";
 import utils from "./utils.js";
 
@@ -77,7 +78,10 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
 
     let renderPromise;
     let note: FNote | null = null;
-    if (url && url.startsWith("#") && !url.startsWith("#root/")) {
+    // In-page anchors and footnotes are always bare `#fragment` references; a `?` means this is a
+    // note link carrying view params (e.g. the calendar's `#<noteId>?popup`), which must render a
+    // note tooltip rather than being fed into a jQuery selector (the `?` is an invalid selector).
+    if (url && url.startsWith("#") && !url.startsWith("#root/") && !url.includes("?")) {
         renderPromise = renderFootnoteOrAnchor($link, url);
     } else {
         note = await froca.getNote(noteId);
@@ -94,7 +98,8 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         return;
     }
 
-    const html = `<div class="note-tooltip-content">${content}</div>`;
+    const sanitizedContent = sanitizeNoteContentHtml(content);
+    const html = `<div class="note-tooltip-content">${sanitizedContent}</div>`;
     const tooltipClass = `tooltip-${Math.floor(Math.random() * 999_999_999)}${note ? ` ${note.getColorClass()}` : ""}`;
 
     // we need to check if we're still hovering over the element
@@ -112,6 +117,8 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
             title: html,
             html: true,
             template: `<div class="tooltip note-tooltip ${tooltipClass}" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>`,
+            // Content is pre-sanitized via DOMPurify so Bootstrap's built-in sanitizer
+            // (which is too aggressive for our rich-text content) can be disabled.
             sanitize: false,
             customClass: linkId
         });

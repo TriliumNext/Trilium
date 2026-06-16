@@ -9,11 +9,25 @@ import { BaseProvider, buildModelList, buildModelMessage } from "./base_provider
 const CACHE_CONTROL = { anthropic: { cacheControl: { type: "ephemeral" as const } } };
 
 /**
+ * Models that support adaptive extended thinking. Opus 4.7 / 4.8 reject the
+ * manual `{ type: "enabled", budgetTokens }` form with a 400 and accept adaptive
+ * only; Opus 4.6 and Sonnet 4.6 accept both but prefer adaptive. Everything else
+ * (older Opus/Sonnet, Haiku 4.5) only supports the manual budget form.
+ */
+const ADAPTIVE_THINKING_MODELS = /^claude-(?:opus-4-[678]|sonnet-4-6)/;
+
+/**
  * Available Anthropic models with pricing (USD per million tokens).
  * Source: https://docs.anthropic.com/en/docs/about-claude/models
  */
 const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
     // ===== Current Models =====
+    {
+        id: "claude-opus-4-8",
+        name: "Claude Opus 4.8",
+        pricing: { input: 5, output: 25 },
+        contextWindow: 1000000
+    },
     {
         id: "claude-opus-4-7",
         name: "Claude Opus 4.7",
@@ -159,23 +173,25 @@ export class AnthropicProvider extends BaseProvider {
         const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
         const coreMessages = this.buildMessages(chatMessages);
 
+        const model = config.model || this.defaultModel;
         const thinkingBudget = config.thinkingBudget || 10000;
         const maxTokens = Math.max(config.maxTokens || 8096, thinkingBudget + 4000);
 
+        // Adaptive-capable models let Claude decide depth (and stream visible
+        // reasoning via `display: "summarized"`); older models take a manual budget.
+        const thinking = ADAPTIVE_THINKING_MODELS.test(model)
+            ? { type: "adaptive" as const, display: "summarized" as const }
+            : { type: "enabled" as const, budgetTokens: thinkingBudget };
+
         const streamOptions: Parameters<typeof streamText>[0] = {
-            model: this.createModel(config.model || this.defaultModel),
+            model: this.createModel(model),
             system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
             maxOutputTokens: maxTokens,
             // Reject any system message smuggled into `messages` (prompt injection guard).
             allowSystemInMessages: false,
             providerOptions: {
-                anthropic: {
-                    thinking: {
-                        type: "enabled",
-                        budgetTokens: thinkingBudget
-                    }
-                }
+                anthropic: { thinking }
             }
         };
 

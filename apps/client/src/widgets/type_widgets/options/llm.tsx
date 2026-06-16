@@ -1,28 +1,50 @@
 import { useCallback, useMemo, useState } from "preact/hooks";
 
 import dialog from "../../../services/dialog";
-import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
+import { isStandalone } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import Button from "../../react/Button";
+import FormTextBox from "../../react/FormTextBox";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import NoItems from "../../react/NoItems";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import AddProviderModal, { type LlmProviderConfig, PROVIDER_TYPES } from "./llm/AddProviderModal";
 
 export default function LlmSettings() {
-    if (!isExperimentalFeatureEnabled("llm")) {
+    const [aiEnabled, setAiEnabled] = useTriliumOptionBool("aiEnabled");
+
+    if (isStandalone) {
         return (
             <OptionsSection title={t("llm.settings_title")}>
-                <p className="form-text">{t("llm.feature_not_enabled")}</p>
+                <NoItems icon="bx bx-bot" text={t("llm.not_available_in_standalone")} />
             </OptionsSection>
         );
     }
 
     return (
         <>
-            <ProviderSettings />
-            <McpSettings />
+            <OptionsSection
+                title={t("llm.settings_title")}
+                description={t("llm.settings_description")}
+                helpUrl="GBBMSlVSOIGP"
+            >
+                <OptionsRowWithToggle
+                    name="ai-enabled"
+                    label={t("experimental_features.llm_name")}
+                    description={t("experimental_features.llm_description")}
+                    currentValue={aiEnabled}
+                    onChange={setAiEnabled}
+                />
+            </OptionsSection>
+
+            {aiEnabled && (
+                <>
+                    <ProviderSettings />
+                    <McpSettings />
+                </>
+            )}
         </>
     );
 }
@@ -53,23 +75,20 @@ function ProviderSettings() {
     }, [providers, setProviders]);
 
     return (
-        <OptionsSection title={t("llm.settings_title")} helpUrl="GBBMSlVSOIGP">
-            <p className="form-text">{t("llm.settings_description")}</p>
-
-            <Button
-                size="small"
-                icon="bx bx-plus"
-                text={t("llm.add_provider")}
-                onClick={() => setShowAddModal(true)}
-            />
-
-            <hr />
-
-            <h5>{t("llm.configured_providers")}</h5>
+        <OptionsSection title={t("llm.configured_providers")}>
             <ProviderList
                 providers={providers}
                 onDelete={handleDeleteProvider}
             />
+
+            <OptionsRow name="add-llm-provider" centered>
+                <Button
+                    name="add-llm-provider-button"
+                    size="micro" icon="bx bx-plus"
+                    text={t("llm.add_provider")}
+                    onClick={() => setShowAddModal(true)}
+                />
+            </OptionsRow>
 
             <AddProviderModal
                 show={showAddModal}
@@ -107,10 +126,9 @@ function McpSettings() {
 
             {mcpEnabled && (
                 <OptionsRow name="mcp-endpoint" label={t("llm.mcp_endpoint_title")} description={t("llm.mcp_endpoint_description")}>
-                    <input
-                        type="text"
-                        className="form-control"
-                        value={endpointUrl}
+                    <FormTextBox
+                        className="selectable-text"
+                        currentValue={endpointUrl}
                         readOnly
                     />
                 </OptionsRow>
@@ -126,38 +144,26 @@ interface ProviderListProps {
 
 function ProviderList({ providers, onDelete }: ProviderListProps) {
     if (!providers.length) {
-        return <div>{t("llm.no_providers_configured")}</div>;
+        return <NoItems icon="bx bx-bot" text={t("llm.no_providers_configured")} />;
     }
 
-    return (
-        <div style={{ overflow: "auto" }}>
-            <table className="table table-stripped">
-                <thead>
-                    <tr>
-                        <th>{t("llm.provider_name")}</th>
-                        <th>{t("llm.provider_type")}</th>
-                        <th>{t("llm.actions")}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {providers.map((provider) => {
-                        const providerType = PROVIDER_TYPES.find(p => p.id === provider.provider);
-                        return (
-                            <tr key={provider.id}>
-                                <td>{provider.name}</td>
-                                <td>{providerType?.name || provider.provider}</td>
-                                <td>
-                                    <ActionButton
-                                        icon="bx bx-trash"
-                                        text={t("llm.delete_provider")}
-                                        onClick={() => onDelete(provider.id, provider.name)}
-                                    />
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
-        </div>
-    );
+    return <>
+        {providers.map((provider) => {
+            const providerType = PROVIDER_TYPES.find(p => p.id === provider.provider);
+            return (
+                <OptionsRow
+                    key={provider.id}
+                    name="llm-provider"
+                    label={provider.name}
+                    description={providerType?.name || provider.provider}
+                >
+                    <ActionButton
+                        icon="bx bx-trash"
+                        text={t("llm.delete_provider")}
+                        onClick={() => onDelete(provider.id, provider.name)}
+                    />
+                </OptionsRow>
+            );
+        })}
+    </>;
 }

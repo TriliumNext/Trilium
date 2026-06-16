@@ -135,18 +135,15 @@ describe("getTaskStateDefinitions", () => {
 });
 
 describe("openCustomTaskStateConfig", () => {
-    it("opens the task-states container hoisted in a new tab", () => {
-        const openInNewTab = vi.fn();
-        (appContext as unknown as { tabManager: { openInNewTab: typeof openInNewTab } }).tabManager = {
-            openInNewTab
-        };
+    it("opens the task-states container hoisted in the tree popup", () => {
+        const triggerCommand = vi.fn();
+        (appContext as unknown as { triggerCommand: typeof triggerCommand }).triggerCommand = triggerCommand;
 
         openCustomTaskStateConfig();
 
-        expect(openInNewTab).toHaveBeenCalledWith(
-            TASK_STATES_CONTAINER_ID,
-            TASK_STATES_CONTAINER_ID,
-            true
-        );
+        expect(triggerCommand).toHaveBeenCalledWith("openInTreePopup", {
+            noteIdOrPath: TASK_STATES_CONTAINER_ID,
+            hoistedNoteId: TASK_STATES_CONTAINER_ID
+        });
     });
 });

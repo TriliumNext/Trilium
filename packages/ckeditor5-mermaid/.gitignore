@@ -10,4 +10,5 @@ src/**/*.js
 src/**/*.d.ts
 
 .vitest-attachments
-tests/__screenshots__
+# Vitest browser-mode writes screenshots under each test dir (e.g. tests/commands/__screenshots__).
+**/__screenshots__/

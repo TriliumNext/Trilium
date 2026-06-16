@@ -38,12 +38,12 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
         this.dbConnection = new Database(buffer, dbOpts);
     }
 
-    backup(destinationFile: string) {
+    async backup(destinationFile: string) {
         try {
             unlinkSync(destinationFile);
         } catch (e) { } // unlink throws exception if the file did not exist
 
-        this.dbConnection?.backup(destinationFile);
+        await this.dbConnection?.backup(destinationFile);
     }
 
     prepare(query: string): Statement {

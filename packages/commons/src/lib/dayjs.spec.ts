@@ -1,11 +1,11 @@
-/// <reference types="../../../../node_modules/dayjs/plugin/advancedFormat.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/duration.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/isBetween.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/isoWeek.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/isSameOrAfter.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/isSameOrBefore.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/quarterOfYear.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/utc.d.ts" />
+import "dayjs/plugin/advancedFormat.js";
+import "dayjs/plugin/duration.js";
+import "dayjs/plugin/isBetween.js";
+import "dayjs/plugin/isoWeek.js";
+import "dayjs/plugin/isSameOrAfter.js";
+import "dayjs/plugin/isSameOrBefore.js";
+import "dayjs/plugin/quarterOfYear.js";
+import "dayjs/plugin/utc.js";
 
 import { LOCALES } from "./i18n.js";
 import { DAYJS_LOADER, dayjs, setDayjsLocale } from "./dayjs.js";

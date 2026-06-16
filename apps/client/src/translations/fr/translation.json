@@ -226,7 +226,8 @@
     "import-status": "Statut de l'importation",
     "in-progress": "Importation en cours : {{progress}}",
     "successful": "Importation terminée avec succès.",
-    "importZipRecommendation": "Lors de l'importation d'un fichier ZIP, la hiérarchie des notes reflétera la structure des sous-répertoires au sein de l'archive."
+    "importZipRecommendation": "Lors de l'importation d'un fichier ZIP, la hiérarchie des notes reflétera la structure des sous-répertoires au sein de l'archive.",
+    "spreadsheetImportedAsSpreadsheet": "Importer les fichiers CSV et Excel sous forme de feuilles de calcul modifiables plutôt que de fichiers"
   },
   "include_note": {
     "dialog_title": "Inclure une note",
@@ -274,9 +275,9 @@
   },
   "password_not_set": {
     "title": "Le mot de passe n'est pas défini",
-    "body1": "Les notes protégées sont cryptées à l'aide d'un mot de passe utilisateur, mais le mot de passe n'a pas encore été défini.",
+    "body1": "Les notes protégées sont chiffrées à l'aide d'un mot de passe utilisateur, mais celui-ci n'a pas encore été défini.",
     "body2": "Pour pouvoir protéger les notes, cliquez sur le bouton ci-dessous pour ouvrir la boîte de dialogue Paramètres et définir votre mot de passe.",
-    "go_to_password_options": "Accéder aux options de mot de passe"
+    "go_to_password_options": "Aller aux paramètres de mot de passe"
   },
   "prompt": {
     "title": "Prompt",
@@ -762,7 +763,7 @@
     "create_child_note_title": "Créer une note enfant et l'ajouter à la carte",
     "reset_pan_zoom_title": "Réinitialiser le panoramique et le zoom aux coordonnées et à la position initiales",
     "zoom_in_title": "Zoomer",
-    "zoom_out_title": "Zoom arrière"
+    "zoom_out_title": "Dézoomer"
   },
   "zpetne_odkazy": {
     "relation": "relation",
@@ -821,7 +822,9 @@
     "expand_all_levels": "Développer tous les niveaux",
     "hide_child_notes": "Masquer les notes enfants dans l’arborescence",
     "open_all_in_tabs_tooltip": "Ouvrir tous les résultats dans de nouveaux onglets",
-    "open_all_confirm": "Cela ouvrira {{count}} notes dans de nouveaux onglets. Continuer ?",
+    "open_all_confirm_one": "Cela ouvrira {{count}} note dans un nouvel onglet. Continuer ?",
+    "open_all_confirm_many": "Cela ouvrira {{count}} notes dans de nouveaux onglets. Continuer ?",
+    "open_all_confirm_other": "Cela ouvrira {{count}} notes dans de nouveaux onglets. Continuer ?",
     "open_all_in_tabs": "Tout ouvrir"
   },
   "edited_notes": {
@@ -866,7 +869,9 @@
     "note_size": "Taille de la note",
     "note_size_info": "La taille de la note fournit une estimation approximative des besoins de stockage pour cette note. Il prend en compte le contenu de la note et de ses versions.",
     "calculate": "calculer",
-    "subtree_size": "(taille du sous-arbre : {{size}} pour {{count}} notes)",
+    "subtree_size_one": "(taille du sous-arbre : {{size}} pour {{count}} note)",
+    "subtree_size_many": "(taille du sous-arbre : {{size}} pour {{count}} notes)",
+    "subtree_size_other": "(taille du sous-arbre : {{size}} pour {{count}} notes)",
     "title": "Infos sur la Note",
     "mime": "type MIME",
     "show_similar_notes": "Afficher des notes similaires"
@@ -877,7 +882,9 @@
     "title": "Carte des notes",
     "fix-nodes": "Réparer les nœuds",
     "link-distance": "Longueur des liens",
-    "too-many-notes": "Il y a {{count}} notes ici. Les afficher toutes pourrait ralentir le chargement.",
+    "too-many-notes_one": "Il y a {{count}} note ici. L'afficher pourrait ralentir l'application.",
+    "too-many-notes_many": "Il y a {{count}} notes ici. Les afficher toutes pourrait ralentir l'application.",
+    "too-many-notes_other": "Il y a {{count}} notes ici. Les afficher toutes pourrait ralentir l'application.",
     "show-anyway": "Afficher la carte"
   },
   "note_paths": {
@@ -1185,8 +1192,6 @@
     "disabled": "désactivé"
   },
   "ribbon": {
-    "widgets": "Ruban de widgets",
-    "promoted_attributes_message": "L'onglet du ruban Attributs promus s'ouvrira automatiquement si la note possède des attributs mis en avant",
     "edited_notes_message": "L’onglet du ruban \"Notes modifiées\" s’ouvrira automatiquement sur les notes du jour"
   },
   "theme": {
@@ -1418,7 +1423,7 @@
   },
   "password": {
     "heading": "Mot de passe",
-    "alert_message": "Prenez soin de mémoriser votre nouveau mot de passe. Le mot de passe est utilisé pour se connecter à l'interface Web et pour crypter les notes protégées. Si vous oubliez votre mot de passe, toutes vos notes protégées seront définitivement perdues.",
+    "alert_message": "Prenez soin de mémoriser votre nouveau mot de passe. Il sert à vous connecter à l'interface web et à chiffrer vos notes protégées. Si vous l'oubliez, toutes vos notes protégées seront définitivement perdues.",
     "reset_link": "Cliquez ici pour le réinitialiser.",
     "old_password": "Ancien mot de passe",
     "new_password": "Nouveau mot de passe",
@@ -1540,7 +1545,9 @@
     "export": "Exporter",
     "import-into-note": "Importer dans la note",
     "apply-bulk-actions": "Appliquer des Actions groupées",
-    "converted-to-attachments": "Les notes {{count}} ont été converties en pièces jointes.",
+    "converted-to-attachments_one": "{{count}} note a été convertie en pièce jointe.",
+    "converted-to-attachments_many": "{{count}} notes ont été converties en pièces jointes.",
+    "converted-to-attachments_other": "{{count}} notes ont été converties en pièces jointes.",
     "convert-to-attachment-confirm": "Voulez-vous vraiment convertir les notes sélectionnées en pièces jointes de leurs notes parents ? Cette opération ne s’applique qu’aux notes de type image ; les autres notes seront ignorées.",
     "archive": "Archive",
     "unarchive": "Désarchiver",
@@ -1708,7 +1715,10 @@
     "reopen_last_tab": "Rouvrir le dernier onglet fermé",
     "move_tab_to_new_window": "Déplacer cet onglet vers une nouvelle fenêtre",
     "copy_tab_to_new_window": "Copier cet onglet dans une nouvelle fenêtre",
-    "new_tab": "Nouvel onglet"
+    "new_tab": "Nouvel onglet",
+    "pin_tab": "Épingler l'onglet",
+    "unpin_tab": "Désépingler l'onglet",
+    "pinned_prefix": "Épinglé : "
   },
   "toc": {
     "table_of_contents": "Table des matières",
@@ -1728,7 +1738,12 @@
   },
   "image": {
     "copied-to-clipboard": "Une référence à l'image a été copiée dans le presse-papiers. Elle peut être collée dans n'importe quelle note texte.",
-    "cannot-copy": "Impossible de copier la référence d'image dans le presse-papiers."
+    "cannot-copy": "Impossible de copier la référence d'image dans le presse-papiers.",
+    "copy-to-clipboard": "Copier l'image dans le presse-papiers",
+    "download": "Télécharger l'image",
+    "image-copied-to-clipboard": "L'image a été copiée dans le presse-papiers.",
+    "cannot-copy-image": "Impossible de copier l'image dans le presse-papiers.",
+    "cannot-download": "Impossible de télécharger l'image."
   },
   "clipboard": {
     "cut": "Les note(s) ont été coupées dans le presse-papiers.",
@@ -2014,10 +2029,15 @@
     "search_history_title": "Afficher l'historique des recherches",
     "search_history_description": "Afficher les recherches précédentes",
     "configure_launch_bar_title": "Configurer la barre de lancement",
-    "configure_launch_bar_description": "Ouvrir la configuration de la barre de lancement pour ajouter ou supprimer des éléments."
+    "configure_launch_bar_description": "Ouvrir la configuration de la barre de lancement pour ajouter ou supprimer des éléments.",
+    "pin_tab_title": "Épingler l'onglet",
+    "pin_tab_description": "Garde toujours cette note ouverte dans cet onglet, en début de barre d'onglets, et empêcher sa fermeture accidentelle",
+    "unpin_tab_title": "Désépingler l'onglet",
+    "unpin_tab_description": "Désépingler cet onglet pour permettre sa fermeture et son déplacement"
   },
   "content_renderer": {
-    "open_externally": "Ouverture externe"
+    "open_externally": "Ouvrir dans une application externe",
+    "mermaid_diagram_error": "Échec du rendu du diagramme Mermaid : {{error}}"
   },
   "call_to_action": {
     "next_theme_title": "Essayez le nouveau thème Trilium",
@@ -2029,7 +2049,10 @@
     "dismiss": "Rejeter",
     "new_layout_title": "Nouvelle mise en page",
     "new_layout_message": "Nous avons introduit une mise en page modernisée pour Trilium. Le ruban a été supprimé et intégré de manière transparente dans l'interface principale, avec une nouvelle barre d'état et des sections extensibles (telles que les attributs promus) reprenant les fonctions clés.\n\nLa nouvelle mise en page est activée par défaut et peut être temporairement désactivée via Paramètres → Apparence.",
-    "new_layout_button": "Plus d'infos"
+    "new_layout_button": "Plus d'infos",
+    "scripting_disabled_title": "Le scripting backend a été désactivé",
+    "scripting_disabled_message": "Le scripting backend est désormais désactivé par défaut pour des raisons de sécurité. Vos notes contiennent des scripts backend (notes avec un label #run) qui ne s'exécuteront plus automatiquement.\n\nSi vous dépendez de ces scripts, vous pouvez réactiver le scripting backend dans les paramètres de sécurité.",
+    "scripting_disabled_button": "Ouvrir les paramètres de sécurité"
   },
   "settings": {
     "related_settings": "Autres paramètres"
@@ -2047,7 +2070,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} notes",
+    "total_notes_one": "{{count}} note",
+    "total_notes_many": "{{count}} notes",
+    "total_notes_other": "{{count}} notes",
     "prev_page": "Page précédente",
     "next_page": "Page suivante"
   },
@@ -2154,7 +2179,11 @@
     "exit-fullscreen": "Sortir du mode plein-écran",
     "unsupported-format": "L'aperçu multimédia n'est pas disponible pour ce format de fichier:\n{{mime}}",
     "zoom-to-fit": "Zoom pour remplir",
-    "zoom-reset": "Annuler zoom pour remplir"
+    "zoom-reset": "Annuler zoom pour remplir",
+    "previous-video": "Vidéo précédente : {{- title}}",
+    "next-video": "Vidéo suivante : {{- title}}",
+    "previous-audio": "Audio précédent : {{- title}}",
+    "next-audio": "Audio suivant : {{- title}}"
   },
   "render": {
     "setup_title": "Afficher du HTML personnalisé ou Preact JSX dans cette note",
@@ -2367,7 +2396,9 @@
     "sample_venn": "Venn",
     "sample_ishikawa": "Ishikawa",
     "sample_treeview": "Vue arborescente",
-    "sample_wardley": "Carte Wardley"
+    "sample_wardley": "Carte Wardley",
+    "slash_command_blank_description": "Insérer un diagramme Mermaid vide",
+    "slash_command_description": "Insérer un modèle de diagramme Mermaid \"{{name}}\""
   },
   "mind-map": {
     "addChild": "Ajouter un enfant",
@@ -2459,7 +2490,9 @@
     "code_note_switcher": "Changer de langue",
     "tab_width": "Largeur de tabulation : {{width}}",
     "tab_width_title": "Modifier la largeur de tabulation",
-    "tab_width_spaces": "{{count}} espaces",
+    "tab_width_spaces_one": "{{count}} espace",
+    "tab_width_spaces_many": "{{count}} espaces",
+    "tab_width_spaces_other": "{{count}} espaces",
     "tab_width_spaces_short": "Espaces : {{width}}",
     "tab_width_tabs": "Tabulations : {{width}}",
     "tab_width_use_default": "Utiliser la valeur par défaut ({{width}})",
@@ -2550,7 +2583,16 @@
     "math": "Insérer un bloc de formule mathématique",
     "footnote": "Insérer une note de bas de page",
     "mermaid": "Insérer un diagramme Mermaid",
-    "admonition": "Insérer une admonition {{type}}"
+    "admonition": "Insérer une admonition {{type}}",
+    "mermaid_template": "Insérer un diagramme Mermaid \"{{name}}\"",
+    "collapsible": "Insérer un bloc repliable",
+    "todo": "Insérer un élément de tâche \"{{title}}\"",
+    "todo_nonstandard": "Insérer un élément de tâche \"{{title}}\" (non standard)",
+    "placeholders": {
+      "math": "équation",
+      "collapsible_summary": "Résumé",
+      "collapsible_details": "Détails"
+    }
   },
   "search": {
     "title": "Rechercher",
@@ -2574,7 +2616,8 @@
     "more_actions": "Plus d’actions"
   },
   "link": {
-    "failed_to_open": "Impossible d’ouvrir le lien '{{- href}}' : {{- message}}"
+    "failed_to_open": "Impossible d’ouvrir le lien '{{- href}}' : {{- message}}",
+    "copy_url": "Copier l'URL"
   },
   "display_mode": {
     "source": "Vue source",
@@ -2689,7 +2732,11 @@
     "cancel": "Annuler"
   },
   "spreadsheet": {
-    "read-only": "Cette note est en lecture seule."
+    "read-only": "Cette note est en lecture seule.",
+    "export-xlsx": "Exporter vers Excel (.xlsx)",
+    "export-csv": "Exporter vers CSV (.csv)",
+    "export-failed": "Échec de l'exportation de la feuille de calcul vers Excel.",
+    "export-csv-failed": "Échec de l'exportation de la feuille de calcul vers CSV."
   },
   "text-editor": {
     "checkbox-tooltip": "Clic droit pour plus d'états.\nAppuyez sur {{shortcut}} pour changer d'état.",
@@ -2704,6 +2751,65 @@
       "missing-icon": "icône manquante",
       "invalid-symbol": "le symbole Markdown doit être un seul caractère (sauf \"[\", \"X\" et \"]\")",
       "duplicate-symbol": "symbole Markdown en double"
-    }
+    },
+    "collapsible-body-placeholder": "Saisissez le contenu ici...",
+    "collapsible-button-label": "Bloc repliable",
+    "collapsible-handle-tooltip": "Glisser pour déplacer le bloc repliable",
+    "collapsible-select-label": "Sélectionner le bloc repliable",
+    "collapsible-title-placeholder": "Résumé",
+    "collapsible-toggle-label": "Ouvrir/fermer le bloc repliable",
+    "collapsible-tooltip": "Cliquez sur la flèche ou appuyez sur {{shortcut}} pour replier/déplier."
+  },
+  "slash_commands": {
+    "bulleted_list_description": "Créer une liste à puces",
+    "numbered_list_description": "Créer une liste numérotée",
+    "todo_list_description": "Créer une liste de tâches",
+    "align_left_description": "Aligner le texte à gauche",
+    "align_center_description": "Centrer le texte",
+    "align_right_description": "Aligner le texte à droite",
+    "justify_description": "Justifier le texte",
+    "admonition_description": "Insérer une nouvelle admonition",
+    "collapsible_description": "Insérer une section repliable qui affiche/masque le contenu au clic.",
+    "footnote_description": "Créer une nouvelle note de bas de page et insérer sa référence ici",
+    "datetime_description": "Insérer la date et l'heure actuelles",
+    "internal_link_description": "Insérer un lien vers une autre note Trilium",
+    "math_description": "Insérer une équation mathématique",
+    "include_note_description": "Afficher le contenu d'une autre note dans cette note",
+    "page_break_description": "Insérer un saut de page (pour l'impression)",
+    "markdown_import_description": "Importer un fichier Markdown dans cette note",
+    "anchor_description": "Insérer une ancre pour les liens internes"
+  },
+  "image_buttons": {
+    "zoom_in": "Zoomer",
+    "zoom_out": "Dézoomer",
+    "reset_zoom": "Zoom par défaut"
+  },
+  "image_navigation": {
+    "previous": "Image précédente : {{- title}}",
+    "next": "Image suivante : {{- title}}"
+  },
+  "image_viewer": {
+    "loading_error": "Erreur lors du chargement de l'image."
+  },
+  "security": {
+    "backend_scripting_title": "Scripting backend",
+    "backend_scripting_section_description": "Les scripts backend ont un accès complet au serveur, y compris au système de fichiers, au réseau et aux commandes du système d'exploitation. Ils peuvent être déclenchés via la synchronisation, l'importation ou tout contenu contenant des attributs exécutables. Les scripts frontend sont toujours actifs car ils s'exécutent dans un contexte de navigateur isolé (sandbox).",
+    "backend_scripting_label": "Exécuter les scripts backend",
+    "backend_scripting_description": "Autorise l'exécution de scripts backend (scripts de démarrage, gestionnaires de requêtes personnalisés, gestionnaires d'événements, scripts planifiés, etc.).",
+    "sql_console_title": "Console SQL",
+    "sql_console_section_description": "La console SQL permet d'exécuter des requêtes SQL sur la base de données. Elle peut être utilisée pour lire des données sensibles (par ex. secrets de synchronisation, clés API) et pour modifier ou supprimer des données. Un script frontend malveillant pourrait également accéder à l'API de la console SQL.",
+    "sql_console_label": "Console SQL",
+    "sql_console_description": "Autorise l'exécution de requêtes dans la console SQL.",
+    "how_to_enable": "Comment activer",
+    "server_config_hint": "Ajoutez la ligne suivante à votre fichier config.ini :",
+    "server_env_hint": "Ou définissez la variable d'environnement suivante :",
+    "restart_required": "Un redémarrage est nécessaire pour appliquer ce changement.",
+    "restart_now": "Redémarrer l'application maintenant"
+  },
+  "snippet_badge": {
+    "label": "Extrait {{type}}",
+    "type_text": "Texte",
+    "type_code": "Code",
+    "tooltip": "Un élément réutilisable de texte ou de code, conçu pour être inséré dans l'éditeur (depuis le menu des extraits dans la barre d'outils, ou via une commande slash)."
   }
 }

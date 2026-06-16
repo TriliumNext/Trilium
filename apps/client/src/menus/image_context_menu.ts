@@ -33,19 +33,13 @@ function setupContextMenu($image: JQuery<HTMLElement>) {
                 if (command === "copyImageReferenceToClipboard") {
                     imageService.copyImageReferenceToClipboard($image);
                 } else if (command === "copyImageToClipboard") {
-                    try {
-                        const src = $image.attr("src");
-                        if (!src) {
-                            console.error("Missing src");
-                            return;
-                        }
-
-                        const response = await fetch(src);
-                        const buffer = new Uint8Array(await response.arrayBuffer());
-                        window.electronApi?.clipboard.copyImageToClipboard(buffer);
-                    } catch (error) {
-                        console.error("Failed to copy image to clipboard:", error);
+                    const src = $image.attr("src");
+                    if (!src) {
+                        console.error("Missing src");
+                        return;
                     }
+
+                    await imageService.copyImageToClipboard(src);
                 } else {
                     throw new Error(`Unrecognized command '${command}'`);
                 }

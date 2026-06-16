@@ -1,21 +1,15 @@
 import type { BulkAction } from "@triliumnext/commons";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import bulkActionService from "./bulk_actions.js";
 import cloningService from "./cloning.js";
+import config from "./config.js";
 import { getContext } from "./context.js";
 import noteService from "./notes.js";
-
-/**
- * Wraps a callback in a CLS context. Entity mutations (createNewNote,
- * note.save(), attribute.save()) require CLS to be initialised.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
+import { getSql } from "./sql/index.js";
 
 let counter = 0;
 
@@ -26,7 +20,7 @@ let counter = 0;
  */
 function createNote(parentNoteId: string): { note: BNote; branch: BBranch } {
     counter++;
-    return withContext(() =>
+    return getContext().init(() =>
         noteService.createNewNote({
             parentNoteId,
             title: `bulk-actions-spec-${counter}`,
@@ -37,11 +31,22 @@ function createNote(parentNoteId: string): { note: BNote; branch: BBranch } {
 }
 
 describe("bulk_actions service (real DB)", () => {
+    // The executeScript action runs a backend script, gated by the backendScriptingEnabled toggle.
+    const originalScriptingEnabled = config.Security.backendScriptingEnabled;
+
+    beforeAll(() => {
+        config.Security.backendScriptingEnabled = true;
+    });
+
+    afterAll(() => {
+        config.Security.backendScriptingEnabled = originalScriptingEnabled;
+    });
+
     describe("executeActions", () => {
         it("skips note IDs that don't resolve to a note", () => {
             // No note exists for this id, so nothing should throw and no handler runs.
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     bulkActionService.executeActions(
                         [{ name: "addLabel", labelName: "foo", labelValue: "bar" }],
                         ["doesNotExist123"]
@@ -54,7 +59,7 @@ describe("bulk_actions service (real DB)", () => {
             const a = createNote("root");
             const b = createNote("root");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "addLabel", labelName: "fromSet" }],
                     new Set([a.note.noteId, b.note.noteId])
@@ -75,7 +80,7 @@ describe("bulk_actions service (real DB)", () => {
                 { name: "addLabel", labelName: "appliedAfterFailure" }
             ];
 
-            expect(() => withContext(() => bulkActionService.executeActions(actions, [note.note.noteId]))).not.toThrow();
+            expect(() => getContext().init(() => bulkActionService.executeActions(actions, [note.note.noteId]))).not.toThrow();
             expect(note.note.hasLabel("appliedAfterFailure")).toBe(true);
         });
     });
@@ -84,7 +89,7 @@ describe("bulk_actions service (real DB)", () => {
         it("addLabel / updateLabelValue / renameLabel / deleteLabel", () => {
             const note = createNote("root");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "addLabel", labelName: "color", labelValue: "red" }],
                     [note.note.noteId]
@@ -92,7 +97,7 @@ describe("bulk_actions service (real DB)", () => {
             );
             expect(note.note.getOwnedLabelValue("color")).toBe("red");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "updateLabelValue", labelName: "color", labelValue: "blue" }],
                     [note.note.noteId]
@@ -100,7 +105,7 @@ describe("bulk_actions service (real DB)", () => {
             );
             expect(note.note.getOwnedLabelValue("color")).toBe("blue");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "renameLabel", oldLabelName: "color", newLabelName: "shade" }],
                     [note.note.noteId]
@@ -109,7 +114,7 @@ describe("bulk_actions service (real DB)", () => {
             expect(note.note.hasOwnedLabel("color")).toBe(false);
             expect(note.note.getOwnedLabelValue("shade")).toBe("blue");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions([{ name: "deleteLabel", labelName: "shade" }], [note.note.noteId])
             );
             expect(note.note.hasOwnedLabel("shade")).toBe(false);
@@ -122,7 +127,7 @@ describe("bulk_actions service (real DB)", () => {
             const targetA = createNote("root");
             const targetB = createNote("root");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "addRelation", relationName: "link", targetNoteId: targetA.note.noteId }],
                     [note.note.noteId]
@@ -130,7 +135,7 @@ describe("bulk_actions service (real DB)", () => {
             );
             expect(note.note.getOwnedRelationValue("link")).toBe(targetA.note.noteId);
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "updateRelationTarget", relationName: "link", targetNoteId: targetB.note.noteId }],
                     [note.note.noteId]
@@ -138,7 +143,7 @@ describe("bulk_actions service (real DB)", () => {
             );
             expect(note.note.getOwnedRelationValue("link")).toBe(targetB.note.noteId);
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "renameRelation", oldRelationName: "link", newRelationName: "ref" }],
                     [note.note.noteId]
@@ -147,7 +152,7 @@ describe("bulk_actions service (real DB)", () => {
             expect(note.note.getOwnedRelations("link").length).toBe(0);
             expect(note.note.getOwnedRelationValue("ref")).toBe(targetB.note.noteId);
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions([{ name: "deleteRelation", relationName: "ref" }], [note.note.noteId])
             );
             expect(note.note.getOwnedRelations("ref").length).toBe(0);
@@ -158,7 +163,7 @@ describe("bulk_actions service (real DB)", () => {
         it("evaluates the new title as a template with `note` in scope", () => {
             const note = createNote("root");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "renameNote", newTitle: "Prefix - ${note.noteId}" }],
                     [note.note.noteId]
@@ -172,7 +177,7 @@ describe("bulk_actions service (real DB)", () => {
             const note = createNote("root");
             const original = note.note.title;
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "renameNote", newTitle: original }],
                     [note.note.noteId]
@@ -187,7 +192,7 @@ describe("bulk_actions service (real DB)", () => {
         it("runs the script against the note and persists changes", () => {
             const note = createNote("root");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "executeScript", script: "note.setLabel('scripted', 'yes')" }],
                     [note.note.noteId]
@@ -197,12 +202,30 @@ describe("bulk_actions service (real DB)", () => {
             expect(note.note.getOwnedLabelValue("scripted")).toBe("yes");
         });
 
+        it("persists mutations even when the script returns early", () => {
+            // A top-level `return` (used to exit early) must not skip the implicit
+            // note.save(). A title change only reaches the DB via note.save(), so we
+            // assert against the persisted row (the in-memory becca entity reflects the
+            // mutation regardless of whether save() ran).
+            const note = createNote("root");
+
+            getContext().init(() =>
+                bulkActionService.executeActions(
+                    [{ name: "executeScript", script: "note.title = 'renamed by script';\nreturn;" }],
+                    [note.note.noteId]
+                )
+            );
+
+            const persistedTitle = getSql().getValue<string>("SELECT title FROM notes WHERE noteId = ?", [note.note.noteId]);
+            expect(persistedTitle).toBe("renamed by script");
+        });
+
         it("is a no-op for an empty / whitespace-only script", () => {
             const note = createNote("root");
             const labelsBefore = note.note.getOwnedAttributes().length;
 
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     bulkActionService.executeActions([{ name: "executeScript", script: "   " }], [note.note.noteId])
                 )
             ).not.toThrow();
@@ -214,7 +237,7 @@ describe("bulk_actions service (real DB)", () => {
         it("marks the targeted note as deleted", () => {
             const note = createNote("root");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions([{ name: "deleteNote" }], [note.note.noteId])
             );
 
@@ -226,10 +249,10 @@ describe("bulk_actions service (real DB)", () => {
         it("erases all revisions of the targeted note", () => {
             const note = createNote("root");
 
-            withContext(() => note.note.saveRevision());
+            getContext().init(() => note.note.saveRevision());
             expect(note.note.getRevisions().length).toBeGreaterThan(0);
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions([{ name: "deleteRevisions" }], [note.note.noteId])
             );
 
@@ -242,7 +265,7 @@ describe("bulk_actions service (real DB)", () => {
             const note = createNote("root");
             const target = createNote("root");
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "moveNote", targetParentNoteId: target.note.noteId }],
                     [note.note.noteId]
@@ -259,12 +282,12 @@ describe("bulk_actions service (real DB)", () => {
             const target = createNote("root");
 
             // Give the note a second branch so getParentBranches().length > 1.
-            withContext(() =>
+            getContext().init(() =>
                 cloningService.cloneNoteToParentNote(note.note.noteId, secondParent.note.noteId)
             );
             expect(note.note.getParentBranches().length).toBeGreaterThan(1);
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActions(
                     [{ name: "moveNote", targetParentNoteId: target.note.noteId }],
                     [note.note.noteId]
@@ -280,7 +303,7 @@ describe("bulk_actions service (real DB)", () => {
             const note = createNote("root");
 
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     bulkActionService.executeActions(
                         [{ name: "moveNote", targetParentNoteId: "doesNotExist123" }],
                         [note.note.noteId]
@@ -298,12 +321,12 @@ describe("bulk_actions service (real DB)", () => {
             const definitionNote = createNote("root");
             const target = createNote("root");
 
-            withContext(() => {
+            getContext().init(() => {
                 definitionNote.note.addLabel("action", JSON.stringify({ name: "addLabel", labelName: "fromDefinition", labelValue: "1" }));
                 definitionNote.note.addLabel("action", JSON.stringify({ name: "addLabel", labelName: "second", labelValue: "2" }));
             });
 
-            withContext(() =>
+            getContext().init(() =>
                 bulkActionService.executeActionsFromNote(definitionNote.note, [target.note.noteId])
             );
 
@@ -315,7 +338,7 @@ describe("bulk_actions service (real DB)", () => {
             const definitionNote = createNote("root");
             const target = createNote("root");
 
-            withContext(() => {
+            getContext().init(() => {
                 // Invalid JSON.
                 definitionNote.note.addLabel("action", "{ not valid json");
                 // Unknown handler name.
@@ -325,7 +348,7 @@ describe("bulk_actions service (real DB)", () => {
             });
 
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     bulkActionService.executeActionsFromNote(definitionNote.note, [target.note.noteId])
                 )
             ).not.toThrow();

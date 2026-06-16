@@ -373,6 +373,15 @@ function AttributesPane({ note, noteContext, attributesShown, setAttributesShown
     const parentComponent = useContext(ParentComponent);
     const api = useRef<AttributeEditorImperativeHandlers>(null);
 
+    // The attribute editor pulls in CKEditor, so it is only mounted once the panel has been
+    // opened (and stays mounted afterwards so the imperative handlers keep working).
+    const [ editorMounted, setEditorMounted ] = useState(false);
+    useEffect(() => {
+        if (attributesShown) {
+            setEditorMounted(true);
+        }
+    }, [ attributesShown ]);
+
     const context = parentComponent && {
         componentId: parentComponent.componentId,
         note,
@@ -408,11 +417,11 @@ function AttributesPane({ note, noteContext, attributesShown, setAttributesShown
                 <AutoLinkAttributesTab {...context} />
             </div>}
 
-            <AttributeEditor
+            {editorMounted && <AttributeEditor
                 {...context}
                 api={api}
                 ntxId={noteContext.ntxId}
-            />
+            />}
         </BottomPanel>
     );
 }
@@ -545,10 +554,10 @@ function TabWidthSwitcher({ note, noteContext }: StatusBarContext) {
 function CodeNoteSwitcher({ note }: StatusBarContext) {
     const [ modalShown, setModalShown ] = useState(false);
     const currentNoteMime = useNoteProperty(note, "mime");
-    const mimeTypes = useMimeTypes();
+    const { enabledMimeTypes, allMimeTypes } = useMimeTypes();
     const correspondingMimeType = useMemo(() => (
-        mimeTypes.find(m => m.mime === currentNoteMime)
-    ), [ mimeTypes, currentNoteMime ]);
+        allMimeTypes.find(m => m.mime === currentNoteMime)
+    ), [ allMimeTypes, currentNoteMime ]);
 
     return (note.type === "code" &&
         <>
@@ -560,7 +569,7 @@ function CodeNoteSwitcher({ note }: StatusBarContext) {
             >
                 <NoteTypeCodeNoteList
                     currentMimeType={currentNoteMime}
-                    mimeTypes={mimeTypes}
+                    mimeTypes={enabledMimeTypes}
                     changeNoteType={(type, mime) => server.put(`notes/${note.noteId}/type`, { type, mime })}
                     setModalShown={() => setModalShown(true)}
                 />

@@ -86,12 +86,18 @@ export interface ModalProps {
      */
     sidebar?: ComponentChildren;
     /**
+     * By default a sidebar modal repeats {@link title} as a header above the sidebar. Set this to
+     * skip that header — useful when {@link title} is the active note's own title (which belongs in
+     * the main header, not duplicated over the sidebar).
+     */
+    hideSidebarHeader?: boolean;
+    /**
      * Indicates if the dialog will be displayed as a full page on mobile devices.
      */
     isFullPageOnMobile?: boolean;
 }
 
-export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, isFullPageOnMobile }: ModalProps) {
+export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile }: ModalProps) {
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
     const modalInstanceRef = useRef<BootstrapModal>();
     const elementToFocus = useRef<Element | null>();
@@ -158,7 +164,7 @@ export default function Modal({ children, className, size, title, customTitleBar
             {(show || keepInDom) && <div className={clsx("modal-dialog", `modal-${size}`, {"modal-dialog-scrollable": scrollable, "modal-dialog-full-page-on-mobile": isFullPageOnMobile, "modal-content-with-sidebar": sidebar})} style={documentStyle} role="document">
                 <div className={clsx("modal-content", sidebar && "modal-content-with-sidebar")}>
                     {sidebar && <div className="modal-sidebar">
-                        {title && <div className="modal-sidebar-header">
+                        {title && !hideSidebarHeader && <div className="modal-sidebar-header">
                             <h5>{title}</h5>
                         </div>}
                         {sidebar}

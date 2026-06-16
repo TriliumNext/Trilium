@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "outDir": "./out-tsc/vitest",
     "lib": [
       "ES2022",
       "dom",
@@ -8,11 +11,19 @@
     ],
     "types": [
       "vitest/globals",
-      "happy-dom"
+      "happy-dom",
+      "vite/client"
     ]
   },
   "include": [
+    "vite.config.mts",
     "src/**/*.spec.ts",
-    "src/**/*.test.ts"
+    "src/**/*.test.ts",
+    "src/**/*.d.ts"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    }
   ]
 }

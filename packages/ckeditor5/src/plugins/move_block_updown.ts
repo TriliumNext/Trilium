@@ -24,6 +24,7 @@ export default class MoveBlockUpDownPlugin extends Plugin {
 	bindMoveBlockShortcuts(editor: any) {
 		editor.editing.view.once('render', () => {
 			const domRoot = editor.editing.view.getDomRoot();
+			/* v8 ignore next 1 -- domRoot is always set while the editor is alive; only null after destroy */
 			if (!domRoot) return;
 
             const isMac = _isMac(navigator.userAgent.toLowerCase());
@@ -69,13 +70,16 @@ abstract class MoveBlockUpDownCommand extends Command {
         // Store selection offsets
 		const firstBlock = selectedBlocks[0];
 		const lastBlock = selectedBlocks[selectedBlocks.length - 1];
+		/* v8 ignore next 1 -- getFirstPosition only returns null when no ranges; isEnabled already requires selectedBlocks.length > 0 */
 		const startOffset = model.document.selection.getFirstPosition()?.offset ?? 0;
+		/* v8 ignore next 1 -- getLastPosition only returns null when no ranges; isEnabled already requires selectedBlocks.length > 0 */
 		const endOffset = model.document.selection.getLastPosition()?.offset ?? 0;
 
 		model.change((writer) => {
 			// Move blocks
 			for (const block of movingBlocks) {
 				const sibling = this.getSibling(block);
+				/* v8 ignore next 1 -- isEnabled already ensures every block has a sibling; null path is unreachable */
 				if (sibling) {
 					const range = model.createRangeOn(block);
 					writer.move(range, sibling, this.offset);
@@ -84,7 +88,9 @@ abstract class MoveBlockUpDownCommand extends Command {
 
 			// Restore selection
 			let range: ModelRange;
+			/* v8 ignore next 1 -- ModelElement.maxOffset is always a number; the ?? fallback is a defensive guard */
 			const maxStart = firstBlock.maxOffset ?? startOffset;
+			/* v8 ignore next 1 -- ModelElement.maxOffset is always a number; the ?? fallback is a defensive guard */
 			const maxEnd = lastBlock.maxOffset ?? endOffset;
 			// If original offsets valid within bounds, restore partial selection
 			if (startOffset <= maxStart && endOffset <= maxEnd) {

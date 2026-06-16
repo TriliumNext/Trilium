@@ -98,9 +98,10 @@ const MIME_TYPES_DICT_RAW = [
     { title: "IDL", mime: "text/x-idl" },
     { title: "Java Server Pages", mime: "application/x-jsp", mdLanguageCode: "java", icon: "bx bxl-java" },
     { title: "Java", mime: "text/x-java", mdLanguageCode: "java", default: true, icon: "bx bxl-java" },
+    { title: "JavaScript", mime: "text/javascript", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
+    { title: "JavaScript (Trilium backend)", mime: "application/javascript;env=backend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
+    { title: "JavaScript (Trilium frontend)", mime: "application/javascript;env=frontend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
     { title: "Jinja2", mime: "text/jinja2" },
-    { title: "JS backend", mime: "application/javascript;env=backend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
-    { title: "JS frontend", mime: "application/javascript;env=frontend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
     { title: "JSON-LD", mime: "application/ld+json", mdLanguageCode: "json", icon: "bx bxs-file-json" },
     { title: "JSON", mime: "application/json", mdLanguageCode: "json", default: true, icon: "bx bxs-file-json" },
     { title: "JSX", mime: "text/jsx", mdLanguageCode: "jsx", default: true },
@@ -213,7 +214,7 @@ export type SupportedMimeTypes = typeof MIME_TYPES_DICT_RAW[number]["mime"] | Me
 /**
  * Given a Markdown language tag (e.g. `css`), it returns a corresponding {@link MimeTypeDefinition} if found.
  *
- * If there are multiple {@link MimeTypeDefinition}s for the language tag, then only the first one is retrieved. For example for `javascript`, the "JS frontend" mime type is returned.
+ * If there are multiple {@link MimeTypeDefinition}s for the language tag, then only the first one is retrieved. For example for `javascript`, the plain "JavaScript" (`text/javascript`) mime type is returned rather than the Trilium frontend/backend script variants.
  *
  * @param mdLanguageCode a language tag.
  * @returns the corresponding {@link MimeTypeDefinition} if found, or `undefined` otherwise.

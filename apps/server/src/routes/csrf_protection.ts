@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import { isInternalElectronRequest } from "../services/electron_request.js";
 import sessionSecret from "../services/session_secret.js";
+import config from "../services/config.js";
 
 export const CSRF_COOKIE_NAME = "trilium-csrf";
 
@@ -10,7 +11,7 @@ const doubleCsrfUtilities = doubleCsrf({
     getSecret: () => sessionSecret,
     cookieOptions: {
         path: "/",
-        secure: false,
+        secure: config.Network.https,
         sameSite: "strict",
         httpOnly: true
     },

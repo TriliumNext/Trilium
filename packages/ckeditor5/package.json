@@ -5,6 +5,14 @@
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
+  "scripts": {
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@vitest/browser": "4.1.8",
+    "vitest": "4.1.8",
+    "webdriverio": "9.28.0"
+  },
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/ckeditor5-admonition": "workspace:*",
@@ -13,15 +21,7 @@
     "@triliumnext/ckeditor5-keyboard-marker": "workspace:*",
     "@triliumnext/ckeditor5-math": "workspace:*",
     "@triliumnext/ckeditor5-mermaid": "workspace:*",
-    "ckeditor5": "48.1.1",
-    "ckeditor5-premium-features": "48.1.1"
-  },
-  "devDependencies": {
-    "happy-dom": "20.9.0",
-    "vite-plugin-svgo": "2.0.0",
-    "vitest": "4.1.7"
-  },
-  "scripts": {
-    "test": "vitest"
+    "ckeditor5": "48.2.0",
+    "ckeditor5-premium-features": "48.2.0"
   }
 }

@@ -147,7 +147,7 @@ pnpm server:start-prod                          # Production mode server
 pnpm desktop:start                              # Desktop app development
 pnpm server:test spec/etapi/search.spec.ts     # Run specific test
 pnpm test:parallel                              # Client tests (can run parallel)
-pnpm test:sequential                            # Server tests (sequential due to shared DB)
+pnpm test:sequential                            # Server tests (shared DB) + browser-mode editor tests
 pnpm test:all                                   # All tests (parallel + sequential)
 pnpm coverage                                   # Generate coverage reports
 pnpm typecheck                                  # Type check all projects
@@ -241,6 +241,8 @@ Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/`
 
 10. **Attribute inheritance can be complex** - When checking for labels/relations, use `note.getOwnedAttribute()` for direct attributes or `note.getAttribute()` for inherited ones. Don't assume attributes are directly on the note.
 
+11. **`ELECTRON_RUN_AS_NODE` leak crashes Electron launches** - Shells spawned by Electron-based tools (the VS Code extension host, AI coding agents running inside it) often inherit `ELECTRON_RUN_AS_NODE=1`. With it set, launching the desktop app (`pnpm desktop:start`, `pnpm --filter desktop start-prod`) crashes with `TypeError: Not running in an Electron environment!` because `require("electron")` resolves to the npm stub's path string instead of the built-in module. Unset the variable before launching: `Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue` (PowerShell) or `unset ELECTRON_RUN_AS_NODE` (bash).
+
 ## MCP Server
 - Trilium exposes an MCP (Model Context Protocol) server at `http://localhost:8080/mcp`, configured in `.mcp.json`
 - The MCP server is **only available when the Trilium server is running** (`pnpm run server:start`)
@@ -254,6 +256,8 @@ Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/`
 - **Build order**: `pnpm typecheck` builds all projects in dependency order
 - **Build system**: Uses Vite for fast development, ESBuild for production optimization
 - **Patches**: Custom patches in `patches/` directory for CKEditor and other dependencies
+- **No non-null assertions**: Never use the TypeScript non-null assertion operator (postfix `!`), including in tests. Narrow instead — optional chaining (`?.`), a `?? fallback`, an explicit null check, or an `*OrThrow` accessor (e.g. `becca.getNoteOrThrow(id)` rather than `becca.getNote(id)!`).
+- **Helper placement**: When extracting a standalone helper function from a component, widget, hook, or route, place it below the primary export it supports (or in a separate module), not wedged between the imports and the main definition. The file's primary export stays near the top; supporting helpers follow it.
 
 ## Key Files for Context
 
@@ -345,6 +349,7 @@ Trilium provides powerful user scripting capabilities:
 #### Client vs Server Translation Usage
 - **Client-side**: `import { t } from "../services/i18n"` with keys in `apps/client/src/translations/en/translation.json`
 - **Server-side**: `import { t } from "i18next"` with keys in `apps/server/src/assets/translations/en/server.json`
+- **Electron main process** (e.g. `apps/desktop/src/`): `import { t } from "i18next"` — uses server-side keys from `apps/server/src/assets/translations/en/server.json` (same as server-side). **Never hardcode user-facing strings** in Electron dialogs, tray menus, or IPC handlers — always use `t()`.
 - **Interpolation**: Use `{{variable}}` for normal interpolation; use `{{- variable}}` (with hyphen) for **unescaped** interpolation when the value contains special characters like quotes that shouldn't be HTML-escaped
 
 ### Storing User Preferences

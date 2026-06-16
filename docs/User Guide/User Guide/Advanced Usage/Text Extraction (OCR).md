@@ -33,9 +33,12 @@ Currently only text extraction is supported and not OCR.
 The text will be extracted from the following file formats:
 
 *   Microsoft Word documents
-*   Microsoft Excel documents (only the raw text information, the cell structure is not maintained).
+*   Microsoft Excel documents
+    *   Only the raw text information, the cell structure is not maintained.
+    *   Values are extracted raw, so searching for dates will not work. The OpenDocument alternative will actually extract the properly formatted value.
 *   Microsoft PowerPoint documents
 *   The OpenDocument alternatives to the previous formats (Text, Spreadsheet, Presentation), created by editors such as LibreOffice and OpenOffice.
+*   Rich Text Format (RTF), since v0.104.0.
 
 ## Configuring and triggering OCR
 

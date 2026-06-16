@@ -98,7 +98,8 @@ export default class StandaloneBackupService extends BackupService {
                 backups.push({
                     fileName: name,
                     filePath: `/${BACKUP_DIR_NAME}/${name}`,
-                    mtime: new Date(file.lastModified)
+                    mtime: new Date(file.lastModified),
+                    fileSize: file.size
                 });
             }
 

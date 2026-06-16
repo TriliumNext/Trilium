@@ -40,8 +40,8 @@ import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
 import QuickSearchWidget from "../widgets/quick_search.js";
 import ReadOnlyNoteInfoBar from "../widgets/ReadOnlyNoteInfoBar.jsx";
 import { FixedFormattingToolbar } from "../widgets/ribbon/FormattingToolbar.jsx";
+import LazyComponent from "../widgets/react/LazyComponent.jsx";
 import NoteActions from "../widgets/ribbon/NoteActions.jsx";
-import Ribbon from "../widgets/ribbon/Ribbon.jsx";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
 import SharedInfo from "../widgets/shared_info.jsx";
@@ -148,7 +148,7 @@ export default class DesktopLayout {
                                                             .optChild(!isNewLayout, <ClosePaneButton />)
                                                             .optChild(!isNewLayout, <CreatePaneButton />)
                                                             .optChild(isNewLayout, <NoteActions />))
-                                                        .optChild(!isNewLayout, <Ribbon />)
+                                                        .optChild(!isNewLayout, <LazyComponent loader={() => import("../widgets/ribbon/Ribbon.jsx")} />)
                                                         .child(new WatchedFileUpdateStatusWidget())
                                                         .optChild(!isNewLayout, <FloatingButtons items={DESKTOP_FLOATING_BUTTONS} />)
                                                         .child(

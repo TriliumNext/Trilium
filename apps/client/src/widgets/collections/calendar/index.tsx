@@ -79,6 +79,7 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
     fr: () => import("@fullcalendar/core/locales/fr"),
     it: () => import("@fullcalendar/core/locales/it"),
     hi: () => import("@fullcalendar/core/locales/hi"),
+    id: () => import("@fullcalendar/core/locales/id"),
     ga: null,
     cn: () => import("@fullcalendar/core/locales/zh-cn"),
     cs: () => import("@fullcalendar/core/locales/cs"),
@@ -164,7 +165,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 firstDay={firstDayOfWeek ?? 0}
                 weekends={!hideWeekends}
                 weekNumbers={weekNumbers}
-                height="90%"
+                height="100%"
                 nowIndicator
                 handleWindowResize={false}
                 initialDate={initialDate || undefined}

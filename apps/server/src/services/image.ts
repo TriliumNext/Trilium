@@ -8,24 +8,20 @@ import ocrService from "./ocr/ocr_service.js";
 
 function scheduleOcrForNote(noteId: string) {
     if (optionService.getOptionBool("ocrAutoProcessImages")) {
-        setImmediate(async () => {
-            try {
-                await ocrService.processNoteOCR(noteId);
-            } catch (error) {
+        setImmediate(() => {
+            void ocrService.processNoteOCR(noteId).catch((error) => {
                 getLog().error(`Failed to process OCR for note ${noteId}: ${error}`);
-            }
+            });
         });
     }
 }
 
 function scheduleOcrForAttachment(attachmentId: string | undefined) {
     if (attachmentId && optionService.getOptionBool("ocrAutoProcessImages")) {
-        setImmediate(async () => {
-            try {
-                await ocrService.processAttachmentOCR(attachmentId);
-            } catch (error) {
+        setImmediate(() => {
+            void ocrService.processAttachmentOCR(attachmentId).catch((error) => {
                 getLog().error(`Failed to process OCR for attachment ${attachmentId}: ${error}`);
-            }
+            });
         });
     }
 }

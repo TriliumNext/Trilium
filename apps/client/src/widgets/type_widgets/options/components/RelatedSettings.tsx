@@ -37,14 +37,15 @@ export default function RelatedSettings({ items }: RelatedSettingsProps) {
                         href={targetNoteId
                             ? `#root/_hidden/${targetNoteId}`
                             : `#root/_hidden/_options/${targetPage}`}
+                        noContainedNavigation={!!targetNoteId}
                         onClick={targetNoteId
                             ? (e) => {
-                                // Hidden-subtree config notes open hoisted, in their own tab.
+                                // Hidden-subtree config notes open hoisted, in a tree-sidebar popup.
                                 // stopPropagation keeps the global `a` click handler
                                 // (link.ts `goToLink`) from navigating by href instead.
                                 e.preventDefault();
                                 e.stopPropagation();
-                                void appContext.tabManager.openInNewTab(targetNoteId, targetNoteId, true);
+                                void appContext.triggerCommand("openInTreePopup", { noteIdOrPath: targetNoteId, hoistedNoteId: targetNoteId });
                             }
                             : undefined}
                     />

@@ -232,6 +232,205 @@ describe("SpacedUpdate", () => {
         });
     });
 
+    describe("keyed bindings (prepare/commit)", () => {
+        function setupKeyedHarness() {
+            // Stand-in for a reused editor: holds whichever note's content was last loaded.
+            const editor = { content: "A content" };
+            const commits: { key: string; data: string }[] = [];
+            const makeBinding = (key: string) => ({
+                key,
+                prepare: () => editor.content,
+                commit: async (data: string) => {
+                    commits.push({ key, data });
+                }
+            });
+            return { editor, commits, makeBinding };
+        }
+
+        it("commits a pending change under the binding that scheduled it, even after rebinding", async () => {
+            const { editor, commits, makeBinding } = setupKeyedHarness();
+            const spacedUpdate = new SpacedUpdate<string>(makeBinding("A"), 50);
+
+            // A change is pending against A when the consumer rebinds to B; the snapshot is
+            // taken with A's binding before the swap, so it can never be saved under B.
+            spacedUpdate.scheduleUpdate();
+            const b = makeBinding("B");
+            spacedUpdate.rebind(b.key, b.prepare, b.commit);
+            editor.content = "B content"; // B's content arrives only after the rebind
+
+            await vi.runAllTimersAsync();
+            expect(commits).toEqual([{ key: "A", data: "A content" }]);
+
+            // A change made after the rebind saves under the new binding.
+            spacedUpdate.scheduleUpdate();
+            await vi.runAllTimersAsync();
+            expect(commits).toEqual([
+                { key: "A", data: "A content" },
+                { key: "B", data: "B content" }
+            ]);
+        });
+
+        it("retries a failed commit with the frozen snapshot, not the live state", async () => {
+            const editor = { content: "typed into A" };
+            const commits: string[] = [];
+            let failuresLeft = 1;
+            const spacedUpdate = new SpacedUpdate<string>({
+                key: "A",
+                prepare: () => editor.content,
+                commit: async (data) => {
+                    if (failuresLeft > 0) {
+                        failuresLeft--;
+                        throw new Error("offline");
+                    }
+                    commits.push(data);
+                }
+            }, 50);
+
+            spacedUpdate.scheduleUpdate();
+            await vi.advanceTimersByTimeAsync(60); // first attempt fails
+
+            // The live state moves on (e.g. another note's content is loaded into the editor),
+            // but the retry must persist the snapshot taken when the change was flushed.
+            editor.content = "now showing B";
+            await vi.advanceTimersByTimeAsync(200); // backoff retry fires
+
+            expect(commits).toEqual(["typed into A"]);
+        });
+
+        it("supersedes a queued failed snapshot with a newer one for the same key", async () => {
+            const editor = { content: "v1" };
+            const commits: string[] = [];
+            let failuresLeft = 1;
+            const spacedUpdate = new SpacedUpdate<string>({
+                key: "A",
+                prepare: () => editor.content,
+                commit: async (data) => {
+                    if (failuresLeft > 0) {
+                        failuresLeft--;
+                        throw new Error("offline");
+                    }
+                    commits.push(data);
+                }
+            }, 50);
+
+            spacedUpdate.scheduleUpdate();
+            await vi.advanceTimersByTimeAsync(60); // "v1" fails and stays queued
+
+            editor.content = "v2";
+            spacedUpdate.scheduleUpdate();
+            await vi.advanceTimersByTimeAsync(300);
+
+            // The newer snapshot replaced the queued one: a single save with the latest data,
+            // not a stale "v1" overwriting "v2".
+            expect(commits).toEqual(["v2"]);
+        });
+
+        it("does not report all-saved while an asynchronous snapshot from rebind is still being captured", async () => {
+            let resolvePrepare: (value: string) => void = () => {};
+            const commits: { key: string; data: string }[] = [];
+            const spacedUpdate = new SpacedUpdate<string>({
+                key: "A",
+                prepare: () => new Promise<string>((resolve) => {
+                    resolvePrepare = resolve;
+                }),
+                commit: async (data) => {
+                    commits.push({ key: "A", data });
+                }
+            }, 50);
+
+            spacedUpdate.scheduleUpdate();
+            spacedUpdate.rebind("B", () => "B content", async (data) => {
+                commits.push({ key: "B", data });
+            });
+
+            // The old binding's snapshot is still being captured, so nothing may be
+            // reported as saved yet (relevant for the beforeunload warning).
+            expect(spacedUpdate.isAllSavedAndTriggerUpdate()).toBe(false);
+
+            resolvePrepare("typed into A");
+            await spacedUpdate.updateNowIfNecessary();
+
+            expect(commits).toEqual([{ key: "A", data: "typed into A" }]);
+        });
+
+        it("schedules a retry when an asynchronous snapshot rejects, so the change is not stranded", async () => {
+            let rejectPrepare: (e: Error) => void = () => {};
+            const commits: { key: string; data: string }[] = [];
+            const spacedUpdate = new SpacedUpdate<string>({
+                key: "A",
+                prepare: () => new Promise<string>((_, reject) => {
+                    rejectPrepare = reject;
+                }),
+                commit: async (data) => {
+                    commits.push({ key: "A", data });
+                }
+            }, 50);
+
+            spacedUpdate.scheduleUpdate();
+            spacedUpdate.rebind("B", () => "B content", async (data) => {
+                commits.push({ key: "B", data });
+            });
+
+            // The debounce timer fires while the snapshot is still being captured and goes idle.
+            await vi.advanceTimersByTimeAsync(60);
+            expect(commits).toEqual([]);
+
+            // The capture fails: the restored change must be retried (under the current
+            // binding), not stranded until the next keystroke.
+            rejectPrepare(new Error("editor crashed"));
+            await vi.advanceTimersByTimeAsync(100);
+
+            expect(commits).toEqual([{ key: "B", data: "B content" }]);
+        });
+
+        it("keeps growing the retry backoff while a commit keeps failing, even if a sibling key succeeds", async () => {
+            const failingAttempts: number[] = [];
+            const spacedUpdate = new SpacedUpdate<string>({
+                key: "A",
+                prepare: () => "A content",
+                commit: async () => {
+                    failingAttempts.push(Date.now());
+                    throw new Error("offline");
+                }
+            }, 50);
+
+            // First attempt fails at ~50ms and schedules a retry.
+            spacedUpdate.scheduleUpdate();
+            await vi.advanceTimersByTimeAsync(60);
+            expect(failingAttempts).toHaveLength(1);
+
+            // A change for another note succeeds within the same retry pass.
+            spacedUpdate.rebind("B", () => "B content", async () => {});
+            spacedUpdate.scheduleUpdate();
+
+            await vi.advanceTimersByTimeAsync(1000);
+
+            // The sibling success must not reset the failing key's backoff: the gaps
+            // between consecutive failing attempts keep doubling.
+            expect(failingAttempts.length).toBeGreaterThanOrEqual(3);
+            const gaps = failingAttempts.slice(1).map((t, i) => t - failingAttempts[i]);
+            for (let i = 1; i < gaps.length; i++) {
+                expect(gaps[i]).toBeGreaterThan(gaps[i - 1]);
+            }
+        });
+
+        it("supports an asynchronous prepare", async () => {
+            const commits: string[] = [];
+            const spacedUpdate = new SpacedUpdate<string>({
+                key: "A",
+                prepare: () => Promise.resolve("async snapshot"),
+                commit: async (data) => {
+                    commits.push(data);
+                }
+            }, 50);
+
+            spacedUpdate.scheduleUpdate();
+            await spacedUpdate.updateNowIfNecessary();
+
+            expect(commits).toEqual(["async snapshot"]);
+        });
+    });
+
     describe("allowUpdateWithoutChange", () => {
         it("suppresses scheduleUpdate while the callback runs and re-enables it afterwards", async () => {
             const updater = vi.fn(async () => {});

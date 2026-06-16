@@ -37,7 +37,7 @@ async function getAndExecuteBundle(noteId: string, originEntity: FNote | null = 
     return await executeBundle(bundle, originEntity);
 }
 
-export type ParentName = "left-pane" | "center-pane" | "note-detail-pane" | "right-pane";
+export type ParentName = WidgetDefinitionWithType["parent"];
 
 export async function executeBundleWithoutErrorHandling(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
     const apiContext = await ScriptContext(bundle.noteId, bundle.allNoteIds, originEntity, $container);

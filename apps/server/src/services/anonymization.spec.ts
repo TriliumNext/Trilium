@@ -7,7 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mockFs = {
     existsSync: vi.fn(),
     mkdirSync: vi.fn(),
-    readdirSync: vi.fn()
+    readdirSync: vi.fn(),
+    statSync: vi.fn()
 };
 
 vi.mock("fs", () => ({ default: mockFs, ...mockFs }));
@@ -124,12 +125,16 @@ describe("getExistingAnonymizedDatabases", () => {
         expect(mockFs.readdirSync).not.toHaveBeenCalled();
     });
 
-    it("lists only files whose name includes 'anonymized'", () => {
+    it("lists only anonymized .db files, with their modification date and size", () => {
+        const mtime = new Date("2025-01-01T00:00:00Z");
         mockFs.existsSync.mockReturnValue(true);
+        mockFs.statSync.mockReturnValue({ mtime, size: 42 });
         mockFs.readdirSync.mockReturnValue([
             "anonymized-full-x.db",
             "document.db",
             "anonymized-light-y.db",
+            // intermediate SQLite file of an in-progress anonymization must be excluded
+            "anonymized-full-z.db-journal",
             "backup.zip"
         ]);
 
@@ -143,6 +148,8 @@ describe("getExistingAnonymizedDatabases", () => {
             // filePath must be the fully-resolved path under the anonymized-db dir,
             // not merely a string that happens to contain the file name.
             expect(entry.filePath).toBe(path.resolve(dataDir.ANONYMIZED_DB_DIR, entry.fileName));
+            expect(entry.mtime).toBe(mtime);
+            expect(entry.fileSize).toBe(42);
         }
     });
 });

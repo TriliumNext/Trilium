@@ -816,7 +816,9 @@
     "note_size": "Velikost Poznámky",
     "note_size_info": "Velikost Poznámky poskytuje hrubý odhad požadavků na úložiště pro tuto poznámku. Bere v úvahu obsah poznámky a obsah jejích revizí.",
     "calculate": "vypočítat",
-    "subtree_size": "(velikost podstromu: {{size}} v {{count}} poznámkách)",
+    "subtree_size_one": "(velikost podstromu: {{size}} v {{count}} poznámkách)",
+    "subtree_size_few": "",
+    "subtree_size_other": "",
     "title": "Informace o Poznámce",
     "show_similar_notes": "Zobrazit podobné Poznámky"
   },
@@ -1159,8 +1161,6 @@
     "disabled": "vypnuto"
   },
   "ribbon": {
-    "widgets": "Widgety pásu karet",
-    "promoted_attributes_message": "Záložka „Propagované Atributy“ se automaticky otevře, pokud jsou v poznámce přítomny povýšené atributy",
     "edited_notes_message": "Záložka Upravené poznámky na pásu karet se automaticky otevře u denních poznámek"
   },
   "theme": {
@@ -1534,7 +1534,9 @@
     "export": "Export",
     "import-into-note": "Importovat do Poznámky",
     "apply-bulk-actions": "Použít hromadné akce",
-    "converted-to-attachments": "{{count}} Poznámek bylo převedeno na Přílohy.",
+    "converted-to-attachments_one": "{{count}} Poznámek bylo převedeno na Přílohy.",
+    "converted-to-attachments_few": "",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "Jste si jisti, že chcete převést vybrané Poznámky na Přílohy jejich nadřazených Poznámek? Tato operace se vztahuje pouze na Poznámky typu Obrázek, ostatní Poznámky budou přeskočeny.",
     "open-in-popup": "Rychlá úprava"
   },
@@ -2101,7 +2103,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} poznámek",
+    "total_notes_one": "{{count}} poznámek",
+    "total_notes_few": "",
+    "total_notes_other": "",
     "prev_page": "Předchozí stránka",
     "next_page": "Další stránka"
   },

@@ -5,4 +5,10 @@ A Note map is a note type which displays a standalone version of the feature of 
 
 Once created, the note map will display the relations between notes. Only the notes that are part of the parent of the note map will be displayed (including their children).
 
-The labels `mapIncludeRelation` and `mapExcludeRelation`, if set, filter the note map to include only the specified relations or to exclude the specified relations, respectively.
+The note map can be customized using the following <a class="reference-link" href="../Advanced%20Usage/Attributes/Labels.md">Labels</a>:
+
+| Label | Description |
+| --- | --- |
+| `#mapIncludeRelation` | Comma-delimited relation names to include from the note map. |
+| `#mapExcludeRelation` | Comma-delimited relation names to exclude from the note map. |
+| `#mapRootNoteId` | The ID of the note the map roots from, with a special value `hoisted` (default behavior). |

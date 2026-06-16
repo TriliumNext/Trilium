@@ -20,10 +20,6 @@ import protectedSessionService from "./protected_session.js";
 
 let counter = 0;
 
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 const fakeBuffer = new Uint8Array([0xde, 0xad, 0xbe, 0xef]);
 
 /**
@@ -59,7 +55,7 @@ describe("image service (real DB)", () => {
         it("creates an image note under the parent and returns the upload metadata synchronously", () => {
             counter++;
             const originalName = `pic ${counter}.png`;
-            const result = withContext(() =>
+            const result = getContext().init(() =>
                 imageService.saveImage("root", fakeBuffer, originalName, false)
             );
 
@@ -82,13 +78,13 @@ describe("image service (real DB)", () => {
         it("trims an over-long file name to 'image' only when trimFilename is set", () => {
             const longName = "a".repeat(45) + ".png";
 
-            const trimmed = withContext(() =>
+            const trimmed = getContext().init(() =>
                 imageService.saveImage("root", fakeBuffer, longName, false, true)
             );
             expect(trimmed.fileName).toBe("image");
             expect(becca.getNote(trimmed.noteId)!.getOwnedLabelValue("originalFileName")).toBe("image");
 
-            const untrimmed = withContext(() =>
+            const untrimmed = getContext().init(() =>
                 imageService.saveImage("root", fakeBuffer, longName, false, false)
             );
             expect(untrimmed.fileName).toBe(longName);
@@ -96,7 +92,7 @@ describe("image service (real DB)", () => {
 
         it("throws when the parent note does not exist", () => {
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     imageService.saveImage("missingParent123", fakeBuffer, "x.png", false)
                 )
             ).toThrow("Unable to find parent note.");
@@ -106,7 +102,7 @@ describe("image service (real DB)", () => {
             stubProcessImage({ ext: "png" });
             counter++;
 
-            const result = withContext(() =>
+            const result = getContext().init(() =>
                 imageService.saveImage("root", fakeBuffer, `async-${counter}.png`, true)
             );
             await flushAsync();
@@ -121,7 +117,7 @@ describe("image service (real DB)", () => {
             counter++;
             const baseName = `nodotsvg${counter}`;
 
-            const result = withContext(() =>
+            const result = getContext().init(() =>
                 imageService.saveImage("root", fakeBuffer, baseName, true)
             );
             await flushAsync();
@@ -138,7 +134,7 @@ describe("image service (real DB)", () => {
         /** Reuse saveImage to obtain a real, persisted note to attach to. */
         function createTargetNote(): BNote {
             counter++;
-            const { noteId } = withContext(() =>
+            const { noteId } = getContext().init(() =>
                 imageService.saveImage("root", fakeBuffer, `host-${counter}.png`, false)
             );
             return becca.getNote(noteId)!;
@@ -147,7 +143,7 @@ describe("image service (real DB)", () => {
         it("creates an image attachment on the note and returns its title synchronously", () => {
             const host = createTargetNote();
 
-            const att = withContext(() =>
+            const att = getContext().init(() =>
                 imageService.saveImageToAttachment(host.noteId, fakeBuffer, "att.png", false)
             );
 
@@ -162,7 +158,7 @@ describe("image service (real DB)", () => {
 
         it("throws when the owner note does not exist", () => {
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     imageService.saveImageToAttachment("missingNote123", fakeBuffer, "x.png", false)
                 )
             ).toThrow();
@@ -172,7 +168,7 @@ describe("image service (real DB)", () => {
             const host = createTargetNote();
             stubProcessImage({ ext: "jpg" });
 
-            const att = withContext(() =>
+            const att = getContext().init(() =>
                 imageService.saveImageToAttachment(host.noteId, fakeBuffer, "nodotattach", false)
             );
             await flushAsync();
@@ -187,7 +183,7 @@ describe("image service (real DB)", () => {
     describe("updateImage", () => {
         it("throws when the note does not exist", () => {
             expect(() =>
-                withContext(() =>
+                getContext().init(() =>
                     imageService.updateImage("missingNote456", fakeBuffer, "x.png")
                 )
             ).toThrow("Unable to find note.");
@@ -202,7 +198,7 @@ describe("image service (real DB)", () => {
 
             // Start from a freshly created image note we can mutate.
             counter++;
-            const { noteId } = withContext(() =>
+            const { noteId } = getContext().init(() =>
                 imageService.saveImage("root", fakeBuffer, `update-${counter}.png`, false)
             );
             await flushAsync();
@@ -221,7 +217,7 @@ describe("image service (real DB)", () => {
 
             const revisionSpy = vi.spyOn(becca.getNote(noteId)!, "saveRevision");
 
-            withContext(() => imageService.updateImage(noteId, fakeBuffer, "renamed.png"));
+            getContext().init(() => imageService.updateImage(noteId, fakeBuffer, "renamed.png"));
             await flushAsync();
 
             const note = becca.getNote(noteId)!;
@@ -255,7 +251,7 @@ describe("image service (real DB)", () => {
                 // Session available -> protected parent yields a protected child.
                 sessionSpy.mockReturnValue(true);
                 counter++;
-                const whenAvailable = withContext(() =>
+                const whenAvailable = getContext().init(() =>
                     imageService.saveImage("root", fakeBuffer, `prot-on-${counter}.png`, false)
                 );
                 expect(becca.getNote(whenAvailable.noteId)!.isProtected).toBe(true);
@@ -268,7 +264,7 @@ describe("image service (real DB)", () => {
                 // unprotected child, proving the result tracks the session mock.
                 sessionSpy.mockReturnValue(false);
                 counter++;
-                const whenUnavailable = withContext(() =>
+                const whenUnavailable = getContext().init(() =>
                     imageService.saveImage("root", fakeBuffer, `prot-off-${counter}.png`, false)
                 );
                 expect(becca.getNote(whenUnavailable.noteId)!.isProtected).toBe(false);

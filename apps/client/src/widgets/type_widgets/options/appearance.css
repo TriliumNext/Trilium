@@ -14,40 +14,55 @@
 }
 
 /* Font Picker Modal */
-.font-picker-modal .modal-body {
-    padding: 0;
-}
-
-.font-picker-content {
-    display: flex;
-    height: 400px;
-}
-
-.font-picker-list {
-    width: 280px;
-    border-right: 1px solid var(--main-border-color);
-    overflow: hidden;
-
-    .dropdownWrapper {
-        height: 100%;
+body.desktop .modal.font-picker-modal {
+    .modal-content-with-sidebar {
+        height: 60vh;
     }
 
-    .dropdown-menu {
+    .font-picker-list {
+        width: 280px;
+    }
+}
+
+.modal.font-picker-modal {
+    /* Keep the sidebar background within the rounded corners. */
+    .modal-content {
+        overflow: hidden;
+    }
+
+    .modal-body {
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-sidebar {
+        background-color: var(--card-background-color);
+    }
+
+    .modal-sidebar .dropdown-menu.static {
+        background-color: transparent !important;
         border: none;
-        border-radius: 0;
+        border-radius: 0 !important;
     }
 
-    .dropdown-item {
-        font-size: 14px;
-    }
-}
+    .font-picker-list {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow: auto;
 
-.font-picker-settings {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    gap: 16px;
+        .dropdown-item {
+            font-size: 14px;
+        }
+    }
+
+    .font-picker-settings {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        gap: 16px;
+    }
 }
 
 .font-size-control {

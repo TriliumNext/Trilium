@@ -16,7 +16,7 @@ import { escapeHtml } from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import { ButtonOrActionButton } from "../../react/Button";
-import { useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
+import { useCollectionTreeDrag, useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
 import { ViewModeProps } from "../interface";
 import { createNewNote, moveMarker } from "./api";
 import openContextMenu, { openMapContextMenu } from "./context_menu";
@@ -47,6 +47,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     const [ hasScale ] = useNoteLabelBoolean(note, "map:scale");
     const [ hideLabels ] = useNoteLabelBoolean(note, "map:hideLabels");
     const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
     const [ notes, setNotes ] = useState<FNote[]>([]);
     const layerData = useLayerData(note);
     const spacedUpdate = useSpacedUpdate(() => {
@@ -63,8 +64,19 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
         setZoom(viewConfig?.view?.zoom ?? DEFAULT_ZOOM);
     }, [ note, viewConfig ]);
 
-    // Note creation.
-    useTriliumEvent("geoMapCreateChildNote", () => {
+    // Note creation. Scoped to this map instance via a local callback rather than the global
+    // geoMapCreateChildNote command: embedded maps share no note context (no distinct ntxId), so a
+    // broadcast command would arm placement mode on every map at once. The button is this command's
+    // only trigger, so a direct handler keeps it isolated to the clicked map.
+    const startNotePlacement = useCallback(() => setState(State.NewNote), []);
+
+    // Placement mode (NewNote) is armed by the button. Tying the instruction toast and the global
+    // Escape-to-cancel listener to the state (rather than the click handler) guarantees both are
+    // torn down on cancel, on completion (map click) and on unmount — otherwise the listener leaks
+    // and a fresh one accumulates on every placement cycle.
+    useEffect(() => {
+        if (state !== State.NewNote) return;
+
         toast.showPersistent({
             icon: "plus",
             id: "geo-new-note",
@@ -72,18 +84,18 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             message: t("geo-map.create-child-note-instruction")
         });
 
-        setState(State.NewNote);
-
-        const globalKeyListener: (this: Window, ev: KeyboardEvent) => any = (e) => {
+        const globalKeyListener = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
                 setState(State.Normal);
-
-                window.removeEventListener("keydown", globalKeyListener);
-                toast.closePersistent("geo-new-note");
             }
         };
         window.addEventListener("keydown", globalKeyListener);
-    });
+
+        return () => {
+            window.removeEventListener("keydown", globalKeyListener);
+            toast.closePersistent("geo-new-note");
+        };
+    }, [ state ]);
 
     useTriliumEvent("deleteFromMap", ({ noteId }) => {
         moveMarker(noteId, null);
@@ -91,7 +103,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
 
     const onClick = useCallback(async (e: LeafletMouseEvent) => {
         if (state === State.NewNote) {
-            toast.closePersistent("geo-new-note");
+            // Leaving NewNote closes the instruction toast via the placement-mode effect cleanup.
             await createNewNote(note, e);
             setState(State.Normal);
         }
@@ -104,16 +116,14 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<L.Map>(null);
-    useNoteTreeDrag(containerRef, {
+    useCollectionTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,
-        dragNotEnabledMessage: {
-            icon: "bx bx-lock-alt",
-            title: t("book.drag_locked_title"),
-            message: t("book.drag_locked_message")
-        },
+        includeArchived,
         async callback(treeData, e) {
             const api = apiRef.current;
-            if (!note || !api || isReadOnly) return;
+            // treeData is non-empty in practice (useNoteTreeDrag drops empty payloads), but guard
+            // explicitly so the treeData[0] access can't throw.
+            if (!note || !api || isReadOnly || !treeData.length) return [];
 
             const { noteId } = treeData[0];
 
@@ -126,10 +136,12 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             const parents = targetNote?.getParentNoteIds();
             if (parents?.includes(note.noteId)) {
                 await moveMarker(noteId, latlng);
-            } else {
-                await branches.cloneNoteToParentNote(noteId, noteId);
-                await moveMarker(noteId, latlng);
+                return [];
             }
+
+            await branches.cloneNoteToParentNote(noteId, note.noteId);
+            await moveMarker(noteId, latlng);
+            return [ noteId ];
         }
     });
 
@@ -143,7 +155,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                         icon="bx bx-plus"
                         text={t("geo-map.create-child-note-text")}
                         title={t("geo-map.create-child-note-title")}
-                        triggerCommand="geoMapCreateChildNote"
+                        onClick={startNotePlacement}
                         disabled={isReadOnly}
                     />
                 </>}

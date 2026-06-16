@@ -9,15 +9,6 @@ import TaskContext from "../task_context.js";
 import { decodeUtf8 } from "../utils/binary.js";
 import opml from "./opml.js";
 
-/**
- * Wraps a callback in a CLS context. Entity mutations (createNewNote) require
- * CLS to be initialised. The callback may return a Promise, which is passed
- * straight through.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /**
@@ -26,7 +17,7 @@ let counter = 0;
  */
 function createParent(): BNote {
     counter++;
-    return withContext(() =>
+    return getContext().init(() =>
         noteService.createNewNote({
             parentNoteId: "root",
             title: `opml-spec-parent-${counter}`,
@@ -42,7 +33,7 @@ function getTaskContext() {
 }
 
 function runImport(xml: string, parent: BNote) {
-    return withContext(() => opml.importOpml(getTaskContext(), xml, parent));
+    return getContext().init(() => opml.importOpml(getTaskContext(), xml, parent));
 }
 
 describe("importOpml (real DB)", () => {

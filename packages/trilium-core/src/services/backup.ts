@@ -48,6 +48,14 @@ export default abstract class BackupService {
     abstract getExistingBackups(): Promise<DatabaseBackup[]>;
 
     /**
+     * Get the directory where backups are stored, for display purposes.
+     * Returns null when there is no user-accessible location (e.g. OPFS on standalone).
+     */
+    getBackupFolderPath(): string | null {
+        return null;
+    }
+
+    /**
      * Get the content of a backup file.
      * Returns null if the backup doesn't exist or access is denied.
      */

@@ -39,11 +39,19 @@ interface OptionsRowLinkProps {
     description?: string;
     href: string;
     onClick?: (e: MouseEvent) => void;
+    /** Opts out of the options dialog's contained link navigation (which runs before `onClick`),
+     *  so that `onClick` gets to handle the click itself. */
+    noContainedNavigation?: boolean;
 }
 
-export function OptionsRowLink({ label, description, href, onClick }: OptionsRowLinkProps) {
+export function OptionsRowLink({ label, description, href, onClick, noContainedNavigation }: OptionsRowLinkProps) {
     return (
-        <a href={href} className="option-row option-row-link no-tooltip-preview" onClick={onClick}>
+        <a
+            href={href}
+            className="option-row option-row-link no-tooltip-preview"
+            onClick={onClick}
+            data-no-contained-navigation={noContainedNavigation ? "" : undefined}
+        >
             <div className="option-row-label">
                 <label style={{ cursor: "pointer" }}>{label}</label>
                 {description && <small className="option-row-description">{description}</small>}
@@ -84,15 +92,17 @@ interface OptionsRowWithButtonProps {
     label: string;
     description?: string;
     icon?: string;
+    disabled?: boolean;
     onClick: () => void;
 }
 
-export function OptionsRowWithButton({ label, description, icon, onClick }: OptionsRowWithButtonProps) {
+export function OptionsRowWithButton({ label, description, icon, disabled, onClick }: OptionsRowWithButtonProps) {
     return (
         <button
             type="button"
             className="option-row option-row-link"
             onClick={onClick}
+            disabled={disabled}
             aria-label={label}
         >
             <div className="option-row-label">

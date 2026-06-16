@@ -41,6 +41,13 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
     const [ error, setError ] = useState<string | null | undefined>();
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Reset the render state when switching notes so a previous note's render (and the
+    // "showing last valid render" badge) can't briefly carry over to a different note.
+    useEffect(() => {
+        setSvg(undefined);
+        setError(undefined);
+    }, [ note.noteId ]);
+
     // Render the SVG.
     async function onContentChanged(content: string) {
         try {
@@ -115,6 +122,7 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
             className="svg-editor"
             note={note} ntxId={ntxId}
             error={error}
+            previewStale={!!svg}
             onContentChanged={onContentChanged}
             dataSaved={onSave}
             placeholder={t("mermaid.placeholder")}

@@ -224,7 +224,8 @@
     "import-status": "导入状态",
     "in-progress": "导入进行中：{{progress}}",
     "successful": "导入成功完成。",
-    "importZipRecommendation": "导入 ZIP 文件时，笔记层级将反映压缩文件内的子目录结构。"
+    "importZipRecommendation": "导入 ZIP 文件时，笔记层级将反映压缩文件内的子目录结构。",
+    "spreadsheetImportedAsSpreadsheet": "将CSV和Excel文件作为可编辑的电子表格导入，而非普通文件"
   },
   "include_note": {
     "dialog_title": "包含笔记",
@@ -816,7 +817,7 @@
     "hide_child_notes": "隐藏树中的子笔记",
     "open_all_in_tabs": "全部打开",
     "open_all_in_tabs_tooltip": "在新标签页中打开所有结果",
-    "open_all_confirm": "这将在新标签页中打开 {{count}} 个笔记。继续吗？"
+    "open_all_confirm_other": "这将在新标签页中打开 {{count}} 个笔记。继续吗？"
   },
   "edited_notes": {
     "no_edited_notes_found": "今天还没有编辑过的笔记...",
@@ -860,7 +861,7 @@
     "note_size": "笔记大小",
     "note_size_info": "笔记大小提供了该笔记存储需求的粗略估计。它考虑了笔记的内容及其笔记修订历史的内容。",
     "calculate": "计算",
-    "subtree_size": "(子树大小: {{size}}, 共计 {{count}} 个笔记)",
+    "subtree_size_other": "(子树大小: {{size}}, 共计 {{count}} 个笔记)",
     "title": "笔记信息",
     "show_similar_notes": "显示相似的笔记",
     "mime": "文件类型"
@@ -871,7 +872,7 @@
     "title": "笔记地图",
     "fix-nodes": "固定节点",
     "link-distance": "链接距离",
-    "too-many-notes": "这里有 {{count}} 条笔记。全部显示可能会导致运行变慢。",
+    "too-many-notes_other": "这里有 {{count}} 条笔记。全部显示可能会导致运行变慢。",
     "show-anyway": "显示地图"
   },
   "note_paths": {
@@ -1179,8 +1180,6 @@
     "disabled": "禁用"
   },
   "ribbon": {
-    "widgets": "功能选项组件",
-    "promoted_attributes_message": "如果笔记中存在升级属性，则自动打开升级属性功能区标签页",
     "edited_notes_message": "日记笔记自动打开编辑过的笔记功能区标签页"
   },
   "theme": {
@@ -1566,7 +1565,7 @@
     "export": "导出",
     "import-into-note": "导入到笔记",
     "apply-bulk-actions": "应用批量操作",
-    "converted-to-attachments": "{{count}} 个笔记已被转换为附件。",
+    "converted-to-attachments_other": "{{count}} 个笔记已被转换为附件。",
     "convert-to-attachment-confirm": "确定要将选中的笔记转换为其父笔记的附件吗？此操作仅适用于图像笔记，其他笔记将被跳过。",
     "duplicate": "复制",
     "open-in-popup": "快速编辑",
@@ -1729,7 +1728,10 @@
     "reopen_last_tab": "重新打开关闭的标签页",
     "move_tab_to_new_window": "将此标签页移动到新窗口",
     "copy_tab_to_new_window": "将此标签页复制到新窗口",
-    "new_tab": "新标签页"
+    "new_tab": "新标签页",
+    "pin_tab": "固定标签页",
+    "unpin_tab": "取消固定标签页",
+    "pinned_prefix": "已固定: "
   },
   "toc": {
     "table_of_contents": "目录",
@@ -1749,7 +1751,12 @@
   },
   "image": {
     "copied-to-clipboard": "图片的引用已复制到剪贴板，可以粘贴到任何文本笔记中。",
-    "cannot-copy": "无法将图片引用复制到剪贴板。"
+    "cannot-copy": "无法将图片引用复制到剪贴板。",
+    "copy-to-clipboard": "将图片复制到剪贴板",
+    "download": "下载图片",
+    "image-copied-to-clipboard": "图片已复制到剪贴板。",
+    "cannot-copy-image": "无法将图片复制到剪贴板。",
+    "cannot-download": "无法下载图片。"
   },
   "clipboard": {
     "cut": "笔记已剪切到剪贴板。",
@@ -2052,7 +2059,11 @@
     "search_history_title": "显示搜索历史",
     "search_history_description": "查看之前的搜索记录",
     "configure_launch_bar_title": "配置启动栏",
-    "configure_launch_bar_description": "打开启动栏配置，添加或移除项目。"
+    "configure_launch_bar_description": "打开启动栏配置，添加或移除项目。",
+    "pin_tab_title": "固定标签页",
+    "pin_tab_description": "始终在标签栏最前面保持此笔记打开，并防止其被意外关闭",
+    "unpin_tab_title": "取消固定标签页",
+    "unpin_tab_description": "取消固定此标签页，允许其被关闭和自由移动"
   },
   "content_renderer": {
     "open_externally": "用外部程序打开"
@@ -2071,7 +2082,10 @@
     "dismiss": "关闭",
     "new_layout_message": "我们为 Trilium 引入了现代化的布局。Ribbon 界面已被移除并无缝集成到主界面中，新的状态栏和可展开部分（例如“已提升属性”）取代了其主要功能。\n\n新布局默认启用，您可以通过“选项”→“外观”暂时禁用它。",
     "new_layout_button": "更多信息",
-    "new_layout_title": "新布局"
+    "new_layout_title": "新布局",
+    "scripting_disabled_title": "后端脚本已被禁用",
+    "scripting_disabled_message": "出于安全考虑，后端脚本现在默认情况下已禁用。你的笔记里有一些后端脚本（带有 #run 标签的笔记），它们将不再自动运行。\n\n如果你需要使用这些脚本，可以到安全设置中重新启用后端脚本。",
+    "scripting_disabled_button": "打开安全设置"
   },
   "settings": {
     "related_settings": "相关设置"
@@ -2097,7 +2111,7 @@
     "app-restart-required": "需要重启应用"
   },
   "pagination": {
-    "total_notes": "{{count}} 篇笔记",
+    "total_notes_other": "{{count}} 篇笔记",
     "prev_page": "上一页",
     "next_page": "下一页"
   },
@@ -2184,7 +2198,7 @@
     "note_paths_other": "{{count}} 条路径",
     "tab_width": "制表符宽度：{{width}}",
     "tab_width_title": "调整制表符宽度",
-    "tab_width_spaces": "{{count}} 个空格",
+    "tab_width_spaces_other": "{{count}} 个空格",
     "tab_width_spaces_short": "空格数：{{width}}",
     "tab_width_tabs": "制表符：{{width}}",
     "tab_width_use_default": "使用默认值（{{width}}）",
@@ -2291,7 +2305,11 @@
     "exit-fullscreen": "退出全屏",
     "unsupported-format": "此文件格式不支持媒体预览：\n{{mime}}",
     "zoom-to-fit": "缩放以填充",
-    "zoom-reset": "重置缩放以填充"
+    "zoom-reset": "重置缩放以填充",
+    "previous-video": "上一个视频：{{- title}}",
+    "next-video": "下一个视频：{{- title}}",
+    "previous-audio": "上一个音频：{{- title}}",
+    "next-audio": "下一个音频：{{- title}}"
   },
   "mermaid": {
     "sample_diagrams": "示例图：",
@@ -2321,7 +2339,9 @@
     "sample_ishikawa": "鱼骨图",
     "placeholder": "输入你的美人鱼图的内容，或者使用下面的示例图之一。",
     "sample_treeview": "树形视图",
-    "sample_wardley": "沃德利地图"
+    "sample_wardley": "沃德利地图",
+    "slash_command_blank_description": "插入一个空白的 Mermaid 图表",
+    "slash_command_description": "插入一个“{{name}}”类型的 Mermaid 图表模板"
   },
   "llm_chat": {
     "placeholder": "输入消息…",
@@ -2356,7 +2376,13 @@
     "sources_summary": "来自 {{sites}} 个网站的 {{count}} 个来源",
     "stop": "停止",
     "edit_index": "编辑第 {{index}} 条（共 {{total}} 条）",
-    "retry": "重试"
+    "retry": "重试",
+    "web_search_unavailable_gemini": "在笔记访问功能开启时，Gemini 模型不可用 — Google 的 API 不允许同时使用两者。如需使用网络搜索，请关闭笔记访问功能，或切换到其他提供商。",
+    "input_streaming": "正在输入（流式传输…）",
+    "attach_file": "添加图片、PDF 或文本文件",
+    "remove_attachment": "移除附件",
+    "attachment_upload_failed": "上传“{{name}}”失败。",
+    "attachment_unsupported_type": "“{{name}}”不是支持的附件类型。请使用图片（PNG、JPEG、GIF、WebP）、PDF 或文本/源代码文件。"
   },
   "sidebar_chat": {
     "title": "AI对话",
@@ -2531,7 +2557,8 @@
     "remove_from_launch_bar": "从启动栏中移除"
   },
   "link": {
-    "failed_to_open": "无法打开链接“{{- href}}”：{{- message}}"
+    "failed_to_open": "无法打开链接“{{- href}}”：{{- message}}",
+    "copy_url": "复制链接"
   },
   "display_mode": {
     "source": "源代码视图",
@@ -2574,7 +2601,11 @@
     "cancel": "取消"
   },
   "spreadsheet": {
-    "read-only": "此注释为只读。"
+    "read-only": "此注释为只读。",
+    "export-xlsx": "导出为 Excel (.xlsx)",
+    "export-csv": "导出为 CSV (.csv)",
+    "export-failed": "导出电子表格到 Excel 失败。",
+    "export-csv-failed": "导出电子表格到 CSV 失败。"
   },
   "markdown_editor": {
     "image_upload_failed": "无法上传图片“{{name}}”。"
@@ -2587,7 +2618,16 @@
     "math": "插入数学公式块",
     "footnote": "插入脚注",
     "mermaid": "插入 Mermaid 图表",
-    "admonition": "插入{{type}}提示框"
+    "admonition": "插入{{type}}提示框",
+    "mermaid_template": "插入一个“{{name}}”类型的 Mermaid 图表",
+    "collapsible": "插入一个可折叠块",
+    "todo": "插入一个“{{title}}”任务项",
+    "todo_nonstandard": "插入一个“{{title}}”任务项（非标准）",
+    "placeholders": {
+      "math": "方程",
+      "collapsible_summary": "摘要",
+      "collapsible_details": "详细内容"
+    }
   },
   "mobile_note_navigator": {
     "back": "返回上一级",
@@ -2662,6 +2702,65 @@
       "missing-icon": "缺少图标",
       "invalid-symbol": "Markdown 符号应为一个字符，但不能是 \"[\", \" \", \"X\", 和 \"]\"",
       "duplicate-symbol": "重复的 Markdown 符号"
-    }
+    },
+    "collapsible-body-placeholder": "在此输入内容..",
+    "collapsible-button-label": "可折叠块",
+    "collapsible-handle-tooltip": "拖动以重新定位可折叠块",
+    "collapsible-select-label": "选择可折叠块",
+    "collapsible-title-placeholder": "摘要",
+    "collapsible-toggle-label": "切换可折叠块",
+    "collapsible-tooltip": "点击箭头或按 {{shortcut}} 键以折叠/展开。"
+  },
+  "slash_commands": {
+    "bulleted_list_description": "创建一个项目符号列表",
+    "numbered_list_description": "创建一个编号列表",
+    "todo_list_description": "创建一个待办事项列表",
+    "align_left_description": "将文本左对齐",
+    "align_center_description": "将文本居中对齐",
+    "align_right_description": "将文本右对齐",
+    "justify_description": "将文本两端对齐",
+    "admonition_description": "插入一个新的提示框",
+    "collapsible_description": "插入一个可展开/收起的区域，点击即可隐藏或显示内容。",
+    "footnote_description": "创建一个新脚注并在此处引用",
+    "datetime_description": "插入当前的日期和时间",
+    "internal_link_description": "插入一个指向其他 Trilium 笔记的链接",
+    "math_description": "插入一个数学公式",
+    "include_note_description": "在当前笔记中显示另一篇笔记的内容",
+    "page_break_description": "插入一个分页符（用于打印）",
+    "markdown_import_description": "将一个 Markdown 文件导入到这篇笔记中",
+    "anchor_description": "插入一个用于内部链接的锚点"
+  },
+  "image_buttons": {
+    "zoom_in": "放大",
+    "zoom_out": "缩小",
+    "reset_zoom": "重置缩放"
+  },
+  "image_navigation": {
+    "previous": "上一张图片：{{- title}}",
+    "next": "下一张图片：{{- title}}"
+  },
+  "image_viewer": {
+    "loading_error": "图片加载出错。"
+  },
+  "security": {
+    "backend_scripting_title": "后端脚本",
+    "backend_scripting_section_description": "后端脚本拥有对服务器的完全访问权限，包括文件系统、网络和操作系统命令。它们可以通过同步、导入或任何包含可执行属性的内容触发。前端脚本始终处于启用状态，因为它们运行在沙盒化的浏览器环境中。",
+    "backend_scripting_label": "后端脚本执行",
+    "backend_scripting_description": "允许执行后端脚本（包括启动脚本、自定义请求处理器、事件处理器、定时脚本等）。",
+    "sql_console_title": "SQL 控制台",
+    "sql_console_section_description": "SQL 控制台允许对数据库执行原始 SQL 查询。这可能被用来读取敏感数据（如同步密钥、API 密钥），以及修改或删除任何数据。恶意的前端脚本也可能通过编程方式访问 SQL 控制台 API。",
+    "sql_console_label": "SQL 控制台",
+    "sql_console_description": "允许在 SQL 控制台中执行查询。",
+    "how_to_enable": "如何启用",
+    "server_config_hint": "将以下内容添加至您的config.ini文件中：",
+    "server_env_hint": "或者设置以下环境变量：",
+    "restart_required": "此更改需要重启才能生效。",
+    "restart_now": "立即重启应用"
+  },
+  "snippet_badge": {
+    "label": "{{type}} 片段",
+    "type_text": "文本",
+    "type_code": "代码",
+    "tooltip": "一段可重复使用的文本或代码，可插入编辑器中（通过工具栏的片段菜单，或使用斜杠命令）。"
   }
 }

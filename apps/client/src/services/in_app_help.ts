@@ -30,7 +30,8 @@ export const byBookType: Record<ViewTypeOptions, string | null> = {
     table: "2FvYrpmOXm29",
     geoMap: "81SGnPGMk7Xc",
     board: "CtBQqbwXDx1w",
-    presentation: null
+    presentation: "zP3PMqaG71Ct",
+    dashboard: "IF7Q6I9x7zuw"
 };
 
 export function getHelpUrlForNote(note: FNote | null | undefined) {

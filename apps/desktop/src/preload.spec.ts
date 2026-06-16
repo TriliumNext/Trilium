@@ -189,6 +189,20 @@ describe("preload script", () => {
             expect(ipcRendererSent).toContainEqual({ channel: "toggle-dev-tools", args: [] });
         });
 
+        it("isDevToolsDocked uses sendSync", () => {
+            ipcRendererSyncResults.set("is-dev-tools-docked:undefined", true);
+            expect(win().isDevToolsDocked()).toBe(true);
+        });
+
+        it("onDevToolsDockChanged registers and forwards the dock state", () => {
+            const callback = vi.fn();
+            win().onDevToolsDockChanged(callback);
+            const listeners = ipcRendererListeners.get("dev-tools-dock-changed") ?? [];
+            expect(listeners).toHaveLength(1);
+            listeners[0]({}, true);
+            expect(callback).toHaveBeenCalledWith(true);
+        });
+
         it("reloadAllWindows sends correct IPC message", () => {
             win().reloadAllWindows();
             expect(ipcRendererSent).toContainEqual({ channel: "reload-all-windows", args: [] });
@@ -207,6 +221,14 @@ describe("preload script", () => {
         it("showWindow sends correct IPC message", () => {
             win().showWindow();
             expect(ipcRendererSent).toContainEqual({ channel: "show-window", args: [] });
+        });
+
+        it("reportStartupMetric sends correct IPC message", () => {
+            win().reportStartupMetric("client-full-render");
+            expect(ipcRendererSent).toContainEqual({
+                channel: "report-startup-metric",
+                args: ["client-full-render"]
+            });
         });
 
         it("clearCache invokes correct IPC channel", async () => {
@@ -253,6 +275,11 @@ describe("preload script", () => {
                 channel: "copy-image-to-clipboard",
                 args: [buffer]
             });
+        });
+
+        it("readText invokes correct IPC channel", async () => {
+            await clip().readText();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "read-clipboard-text", args: [] });
         });
     });
 
@@ -344,12 +371,17 @@ describe("preload script", () => {
         });
     });
 
-    describe("tray", () => {
-        const tray = () => getGroup("tray");
+    describe("systemIntegration", () => {
+        const systemIntegration = () => getGroup("systemIntegration");
 
         it("reloadTray sends correct IPC message", () => {
-            tray().reloadTray();
+            systemIntegration().reloadTray();
             expect(ipcRendererSent).toContainEqual({ channel: "reload-tray", args: [] });
+        });
+
+        it("reapplyLaunchOnStartup sends correct IPC message", () => {
+            systemIntegration().reapplyLaunchOnStartup();
+            expect(ipcRendererSent).toContainEqual({ channel: "reapply-launch-on-startup", args: [] });
         });
     });
 
@@ -481,6 +513,15 @@ describe("preload script", () => {
             expect(callback).toHaveBeenCalled();
         });
 
+        it("onDidNavigateInPage registers and forwards did-navigate-in-page channel", () => {
+            const callback = vi.fn();
+            nav().onDidNavigateInPage(callback);
+            const listeners = ipcRendererListeners.get("did-navigate-in-page")!;
+            expect(listeners).toHaveLength(1);
+            listeners[0]();
+            expect(callback).toHaveBeenCalled();
+        });
+
         it("removeDidNavigateListeners clears both navigation listeners", () => {
             nav().onDidNavigate(vi.fn());
             nav().onDidNavigateInPage(vi.fn());
@@ -526,6 +567,20 @@ describe("preload script", () => {
             remaining[0]({}, { type: "toast", message: "hi" });
             expect(first).not.toHaveBeenCalled();
             expect(second).toHaveBeenCalledWith({ type: "toast", message: "hi" });
+        });
+    });
+
+    describe("security", () => {
+        const security = () => getGroup("security");
+
+        it("setBackendScriptingEnabled invokes the corresponding IPC channel", async () => {
+            await security().setBackendScriptingEnabled(true);
+            expect(ipcRendererInvoked).toContainEqual({ channel: "security-set-backend-scripting", args: [true] });
+        });
+
+        it("setSqlConsoleEnabled invokes the corresponding IPC channel", async () => {
+            await security().setSqlConsoleEnabled(false);
+            expect(ipcRendererInvoked).toContainEqual({ channel: "security-set-sql-console", args: [false] });
         });
     });
 });

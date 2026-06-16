@@ -342,7 +342,7 @@ export async function handleTreeContextMenuSelect(
     resolved.onBeforeCommand?.();
 
     if (command === "openInTab") {
-        appContext.tabManager.openTabWithNoteWithHoisting(notePath);
+        appContext.tabManager.openTabWithNoteWithHoisting(notePath, { placement: "afterCurrent" });
     } else if (command === "insertNoteAfter") {
         const parentNotePath = parentNotePathOf(notePath);
         const parentNote = await froca.getNote(branch.parentNoteId);

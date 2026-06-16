@@ -7,12 +7,13 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import { WidgetsByParent } from "../../services/bundle";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import { t } from "../../services/i18n";
 import options from "../../services/options";
 import { DEFAULT_GUTTER_SIZE } from "../../services/resizer";
+import { isStandalone } from "../../services/utils";
 import Button from "../react/Button";
-import { useActiveNoteContext, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOptionJson } from "../react/hooks";
+import { useActiveNoteContext, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOptionBool, useTriliumOptionJson } from "../react/hooks";
+import LazyComponent from "../react/LazyComponent";
 import NoItems from "../react/NoItems";
 import LegacyRightPanelWidget from "../right_panel_widget";
 import HighlightsList from "./HighlightsList";
@@ -21,7 +22,6 @@ import PdfAttachments from "./pdf/PdfAttachments";
 import PdfLayers from "./pdf/PdfLayers";
 import PdfPages from "./pdf/PdfPages";
 import RightPanelWidget from "./RightPanelWidget";
-import SidebarChat from "./SidebarChat";
 import TableOfContents from "./TableOfContents";
 
 const MIN_WIDTH_PERCENT = 5;
@@ -70,6 +70,8 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent) {
     const noteType = useNoteProperty(note, "type");
     const noteMime = useNoteProperty(note, "mime");
     const [ highlightsList ] = useTriliumOptionJson<string[]>("highlightsList");
+    // Subscribe to the AI toggle so the LLM sidebar is added/removed reactively without a page reload.
+    const [ aiEnabled ] = useTriliumOptionBool("aiEnabled");
     const isPdf = noteType === "file" && noteMime === "application/pdf";
 
     if (!rightPaneVisible) return [];
@@ -99,8 +101,10 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent) {
             enabled: noteType === "text" && highlightsList.length > 0,
         },
         {
-            el: <SidebarChat />,
-            enabled: noteType !== "llmChat" && isExperimentalFeatureEnabled("llm"),
+            // Loaded lazily because the chat pulls in the whole LLM + CKEditor graph,
+            // which users without the LLM experimental feature should never download.
+            el: <LazyComponent loader={() => import("./SidebarChat.jsx")} />,
+            enabled: noteType !== "llmChat" && !isStandalone && aiEnabled,
             position: 1000
         },
         ...widgetsByParent.getLegacyWidgets("right-pane").map((widget) => ({

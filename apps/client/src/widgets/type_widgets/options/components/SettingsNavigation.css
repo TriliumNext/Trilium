@@ -1,0 +1,40 @@
+/* Layout-neutral styling for the settings page selector. Container-specific layout (sticky column
+   in the options page, full-height column in the quick-edit popup) lives with each container. */
+.settings-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-navigation .settings-navigation-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--main-text-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.settings-navigation .settings-navigation-item:hover {
+    background: var(--left-pane-item-hover-background, var(--accented-background-color));
+    color: var(--main-text-color);
+    text-decoration: none;
+}
+
+.settings-navigation .settings-navigation-item.active {
+    background: var(--left-pane-item-selected-background, var(--selection-background-color));
+    color: var(--left-pane-item-selected-color, var(--main-text-color));
+}
+
+.settings-navigation .settings-navigation-item .tn-icon {
+    flex: 0 0 auto;
+    font-size: 1.15em;
+}
+
+.settings-navigation .settings-navigation-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}

@@ -225,13 +225,17 @@ function extractFormulas(text: string): { processedText: string; placeholderMap:
     let id = 0;
     const timestamp = Date.now();
 
+    // Delimiters must be lone `$` (inline) / `$$` (block) runs — i.e. not adjacent to
+    // another `$` — and the body may not contain a `$`. This mirrors GitHub: mismatched
+    // runs like `$$e=mc^2$` stay literal text rather than producing a malformed formula
+    // (a stray `$` inside the body would otherwise crash KaTeX with "Can't use '$'").
     let processedText = noCodeText
-        .replace(/(?<!\\)\$\$((?:(?!\n{2,})[\s\S])+?)\$\$/g, (_, formula: string) => {
+        .replace(/(?<![\\$])\$\$(?!\$)((?:(?!\n{2,})[^$])+?)\$\$(?!\$)/g, (_, formula: string) => {
             const key = `<!--FORMULA_BLOCK_${timestamp}_${id++}-->`;
             formulaMap.set(key, `<span class="math-tex">\\[${formula}\\]</span>`);
             return key;
         })
-        .replace(/(?<!\\)\$(.+?)\$/g, (_, formula: string) => {
+        .replace(/(?<![\\$])\$(?!\$)([^$\n]+?)\$(?!\$)/g, (_, formula: string) => {
             const key = `<!--FORMULA_INLINE_${timestamp}_${id++}-->`;
             formulaMap.set(key, `<span class="math-tex">\\(${formula}\\)</span>`);
             return key;
@@ -372,9 +376,6 @@ export class CustomMarkdownRenderer extends Renderer {
  * delegated to the caller so this works in both Node and the browser.
  */
 export function renderToHtml(content: string, title: string, options: RenderToHtmlOptions): string {
-    // Double-escape slashes in math expressions — otherwise the parser consumes them.
-    content = content.replaceAll("\\$", "\\\\$");
-
     const { processedText, placeholderMap: formulaMap } = extractFormulas(content);
 
     const marked = new Marked({ async: false, gfm: true });

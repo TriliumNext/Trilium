@@ -104,7 +104,8 @@
     "clone-notes-to": "Clonează notițele selectate",
     "move-notes-to": "Mută notițele selectate",
     "find-in-text": "Afișează/ascunde panoul de căutare",
-    "open-command-palette": "Deschide paleta de comenzi"
+    "open-command-palette": "Deschide paleta de comenzi",
+    "save-named-revision": "Salvează o revizie cu nume a notiței active"
   },
   "login": {
     "button": "Autentifică",
@@ -158,7 +159,8 @@
     "december": "Decembrie"
   },
   "special_notes": {
-    "search_prefix": "Căutare:"
+    "search_prefix": "Căutare:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "Calea către serverul de sincronizare nu este configurată. Configurați sincronizarea înainte.",
@@ -216,7 +218,23 @@
     "inbox-title": "Inbox",
     "command-palette": "Deschide paleta de comenzi",
     "zen-mode": "Mod zen",
-    "tab-switcher-title": "Schimbător de taburi"
+    "tab-switcher-title": "Schimbător de taburi",
+    "llm-chat-history-title": "Istoric conversații AI",
+    "task-states-title": "Stări listă de sarcini",
+    "task-state-none": "Niciuna",
+    "task-state-doing": "În lucru",
+    "task-state-done": "Finalizat",
+    "task-state-maybe": "Poate",
+    "task-state-cancelled": "Anulat",
+    "task-state-attr-state-id": "Identificator (obligatoriu)",
+    "task-state-attr-markdown-symbol": "Simbol Markdown",
+    "task-state-attr-is-completed": "Contează ca finalizat",
+    "task-state-attr-color": "Culoare",
+    "task-state-attr-is-hidden": "Ascuns din listă",
+    "custom-dictionary-title": "Dicționar personalizat",
+    "security-title": "Securitate",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "Chat AI"
   },
   "notes": {
     "new-note": "Notiță nouă",
@@ -250,7 +268,9 @@
   "migration": {
     "error_message": "Eroare la migrarea către versiunea {{version}}: {{stack}}",
     "old_version": "Nu se poate migra la ultima versiune direct de la versiunea dvs. Actualizați mai întâi la versiunea v0.60.4 și ulterior la această versiune.",
-    "wrong_db_version": "Versiunea actuală a bazei de date ({{version}}) este mai nouă decât versiunea de bază de date suportată de aplicație ({{targetVersion}}), ceea ce înseamnă că a fost creată de către o versiune mai nouă de Trilium. Actualizați aplicația la ultima versiune pentru a putea continua."
+    "wrong_db_version": "Versiunea actuală a bazei de date ({{version}}) este mai nouă decât versiunea de bază de date suportată de aplicație ({{targetVersion}}), ceea ce înseamnă că a fost creată de către o versiune mai nouă de Trilium. Actualizați aplicația la ultima versiune pentru a putea continua.",
+    "automatic_migrations_disabled": "Migrările automate ale bazei de date sunt dezactivate prin variabila de mediu TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}",
+    "invalid_db_version": "Versiunea bazei de date nu este un număr valid. Acest lucru indică de obicei o opțiune „dbVersion” coruptă în baza de date. Vă rugăm să restaurați dintr-o copie de rezervă."
   },
   "modals": {
     "error_title": "Eroare"
@@ -351,7 +371,8 @@
     "reset-zoom-level": "Resetează nivelul de zoom",
     "copy-without-formatting": "Copiază fără formatare",
     "force-save-revision": "Forțează salvarea unei revizii",
-    "command-palette": "Paleta de comenzi"
+    "command-palette": "Paleta de comenzi",
+    "save-named-revision": "Salvează revizie cu nume"
   },
   "weekdayNumber": "Săptămâna {weekNumber}",
   "quarterNumber": "Trimestrul {quarterNumber}",
@@ -362,7 +383,10 @@
     "last-updated": "Ultima actualizare: {{- date}}",
     "subpages": "Subpagini:",
     "on-this-page": "Pe această pagină",
-    "expand": "Expandează"
+    "expand": "Expandează",
+    "toggle-navigation": "Comută navigarea",
+    "toggle-toc": "Comută cuprinsul",
+    "logo-alt": "Logo"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Fragment de text",
@@ -398,5 +422,37 @@
   },
   "desktop": {
     "instance_already_running": "Se focalizează o instanță a aplicației deja existentă."
+  },
+  "password": {
+    "incorrect": "Parola introdusă este incorectă."
+  },
+  "script": {
+    "wrong-environment": "Notița „{{- noteTitle}}” ({{- noteId}}) nu poate fi executată. Acesta este un script {{- actualEnv}}, dar execuția a fost încercată în {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Eroare în {{- context}}: {{- message}}",
+      "reserved-keyword": "„{{- token}}” este un cuvânt cheie rezervat. Pentru a căuta o valoare literală, folosiți ghilimele: „{{- token}}”",
+      "cannot-compare-with": "nu se poate compara cu „{{- token}}”. Pentru a căuta o valoare literală, folosiți ghilimele: „{{- token}}”",
+      "misplaced-expression": "Expresie plasată greșit sau incompletă „{{- token}}”",
+      "fulltext-after-expression": "„{{- token}}” nu este o expresie validă. Pentru a căuta text, plasați-l înaintea filtrelor de atribute (de ex. „{{- token}} #label” în loc de „#label {{- token}}”).",
+      "unrecognized-expression": "Expresie nerecunoscută „{{- token}}”"
+    }
+  },
+  "security-dialog": {
+    "enable-title": "Activează {{settingLabel}}",
+    "enable-message": "Sigur doriți să activați {{settingLabel}}?",
+    "enable-detail": "{{warning}}\n\nActivați această opțiune doar dacă intenționați în mod explicit să folosiți această funcție. Nu o activați dacă vi se solicită de către un script sau o notiță necunoscută.\n\nAceastă modificare necesită o repornire pentru a avea efect.",
+    "disable-title": "Dezactivează {{settingLabel}}",
+    "disable-message": "Opțiunea {{settingLabel}} va fi dezactivată.",
+    "disable-detail": "Această modificare necesită o repornire pentru a avea efect.",
+    "cancel": "Anulează",
+    "enable": "Activează",
+    "disable": "Dezactivează",
+    "dont-ask-again": "Nu mai întreba până la repornire",
+    "backend-scripting": "Execuția scripturilor backend",
+    "backend-scripting-warning": "Scripturile backend au acces complet la server, inclusiv la sistemul de fișiere și la rețea.",
+    "sql-console": "Consolă SQL",
+    "sql-console-warning": "Consola SQL permite executarea de interogări SQL arbitrare asupra bazei de date."
   }
 }

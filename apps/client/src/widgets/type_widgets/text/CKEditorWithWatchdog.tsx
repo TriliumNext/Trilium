@@ -5,7 +5,7 @@ import { HTMLProps, RefObject, useEffect, useImperativeHandle, useRef, useState 
 import froca from "../../../services/froca";
 import link from "../../../services/link";
 import linkEmbedService, { type EmbedMetadata } from "../../../services/link_embed";
-import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption } from "../../react/hooks";
+import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { buildConfig, BuildEditorOptions } from "./config";
 
 export type BoxSize = "small" | "medium" | "full" | "expandable";
@@ -42,6 +42,9 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const watchdogRef = useRef<EditorWatchdog>(null);
     const [ uiLanguage ] = useTriliumOption("locale");
+    // Read purely as a rebuild trigger: the value is consumed by buildToolbarConfig() via options.get() at
+    // editor-creation time, so the editor must be recreated when it changes.
+    const [ multilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar");
     const [ editor, setEditor ] = useState<CKTextEditor>();
     const { parentComponent, ntxId } = useNoteContext();
 
@@ -260,7 +263,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         return () => {
             isStale = true;
         };
-    }, [ contentLanguage, templates, uiLanguage ]);
+    }, [ contentLanguage, templates, uiLanguage, isClassicEditor, multilineToolbar ]);
 
 
     // React to notification warning callback.

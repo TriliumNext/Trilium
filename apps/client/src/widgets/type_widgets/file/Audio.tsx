@@ -1,13 +1,14 @@
 import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import { getUrlForDownload } from "../../../services/open";
 import Icon from "../../react/Icon";
 import NoItems from "../../react/NoItems";
-import { LoopButton, PlaybackSpeed, PlayPauseButton, SeekBar, SkipButton, VolumeControl } from "./MediaPlayer";
+import { LoopButton, MediaSiblingButton, PlaybackSpeed, PlayPauseButton, SeekBar, SkipButton, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 
-export default function AudioPreview({ note }: { note: FNote }) {
+export default function AudioPreview({ note, noteContext }: { note: FNote, noteContext?: NoteContext }) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const [playing, setPlaying] = useState(false);
@@ -25,6 +26,7 @@ export default function AudioPreview({ note }: { note: FNote }) {
 
     useEffect(() => setError(false), [note.noteId]);
     const onError = useCallback(() => setError(true), []);
+    const siblingNavigation = useMediaSessionController(note, noteContext, "audio/", audioRef);
 
     if (error) {
         return <NoItems icon="bx bx-volume-mute" text={t("media.unsupported-format", { mime: note.mime.replace("/", "-") })} />;
@@ -53,9 +55,11 @@ export default function AudioPreview({ note }: { note: FNote }) {
 
                     <div className="center">
                         <div className="spacer" />
+                        <MediaSiblingButton navigation={siblingNavigation} direction="previous" tooltipI18nKey="media.previous-audio" />
                         <SkipButton mediaRef={audioRef} seconds={-10} icon="bx bx-rewind" text={t("media.back-10s")} />
                         <PlayPauseButton playing={playing} togglePlayback={togglePlayback} />
                         <SkipButton mediaRef={audioRef} seconds={30} icon="bx bx-fast-forward" text={t("media.forward-30s")} />
+                        <MediaSiblingButton navigation={siblingNavigation} direction="next" tooltipI18nKey="media.next-audio" />
                         <LoopButton mediaRef={audioRef} />
                     </div>
 

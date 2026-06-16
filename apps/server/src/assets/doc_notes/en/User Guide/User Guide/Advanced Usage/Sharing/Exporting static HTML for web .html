@@ -27,12 +27,14 @@
   <li>The URL structure is different. Where in normal sharing it's something
     along the way of <code spellcheck="false">example.com/share/noteid</code>,
     the notes follow an hierarchical structure, such as <code spellcheck="false">docs.triliumnotes.org/user-guide/concepts/navigation/tree-concepts</code>.</li>
-  <li>The <code spellcheck="false">favicon.ico</code> is not handled automatically,
+  <li
+ >The <code spellcheck="false">favicon.ico</code> is not handled automatically,
     it needs to be manually added on the server after the export is generated.</li>
-  <li>The “Last updated” for notes is not available.</li>
-  <li>The search functionality works slightly different since the normal one
-    requires an active API to work. In the static export, search still works
-    but uses a different mechanism so results might be different.</li>
+    <li
+   >The “Last updated” for notes is not available.</li>
+      <li>The search functionality works slightly different since the normal one
+        requires an active API to work. In the static export, search still works
+        but uses a different mechanism so results might be different.</li>
 </ul>
 <h2>Differences from normal .zip export</h2>
 <ul>
@@ -44,11 +46,12 @@
   <li>The directory structure is also slightly different:
     <ul>
       <li>A normal HTML export results in an index file and a single directory.</li>
-      <li>Instead, for static exporting the top-root level becomes the index file
+      <li
+     >Instead, for static exporting the top-root level becomes the index file
         and the child directories are on the root instead.</li>
-      <li>This makes it possible to easily publish to a website, without forcing
-        everything but the root note to be in a sub-directory.</li>
-    </ul>
+  <li>This makes it possible to easily publish to a website, without forcing
+    everything but the root note to be in a sub-directory.</li>
+  </ul>
   </li>
 </ul>
 <h2>Testing locally</h2>
@@ -60,7 +63,8 @@
 <ol>
   <li>Extract the exported .zip file.</li>
   <li>Inside the extracted directory, run <code spellcheck="false">http-server</code>.</li>
-  <li>Access the indicated address (e.g. <a href="http://localhost:8080">http://localhost:8080</a>).</li>
+  <li
+ >Access the indicated address (e.g. <a href="http://localhost:8080">http://localhost:8080</a>).</li>
 </ol>
 <h2>Automation</h2>
 <p><a class="reference-link" href="#root/_help_pgxEVkzLl1OP">ETAPI (REST API)</a>&nbsp;could

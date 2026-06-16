@@ -3,14 +3,17 @@ import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, View
 import { defaultHighlightStyle, StreamLanguage, syntaxHighlighting, indentUnit, bracketMatching, foldGutter, codeFolding } from "@codemirror/language";
 import { Compartment, EditorSelection, EditorState, StateEffect, type Extension } from "@codemirror/state";
 import { highlightSelectionMatches } from "@codemirror/search";
+import { autocompletion, type CompletionSource } from "@codemirror/autocomplete";
 import { vim } from "@replit/codemirror-vim";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
-import byMimeType from "./syntax_highlighting.js";
+import byMimeType, { MIME_ALIASES } from "./syntax_highlighting.js";
 import smartIndentWithTab from "./extensions/custom_tab.js";
 import type { ThemeDefinition } from "./color_themes.js";
 import { createSearchHighlighter, SearchHighlighter, searchMatchHighlightTheme } from "./find_replace.js";
+import { buildTypeCompletion, type ScriptApiContext } from "./type_completion/index.js";
 
 export { default as ColorThemes, type ThemeDefinition, type ThemeVariant, getThemeById } from "./color_themes.js";
+export { isScriptMime, type ScriptApiContext, SCRIPT_MIME_BACKEND, SCRIPT_MIME_FRONTEND } from "./type_completion/index.js";
 
 // Custom keymap to prevent Ctrl+Enter from inserting a newline
 // This allows the parent application to handle the shortcut (e.g., for "Run Active Note")
@@ -22,6 +25,21 @@ const preventCtrlEnterKeymap: readonly KeyBinding[] = [
         preventDefault: true
     }
 ];
+
+// Lint diagnostics (e.g. the TypeScript script linter or the Mermaid linter) can produce very
+// long messages; without a width cap and wrapping the tooltip overflows the editor and gets
+// clipped at the edges. `.cm-tooltip-lint` is the diagnostics list shared by both the gutter
+// tooltip (where it also carries `.cm-tooltip`) and the inline hover tooltip (where it's nested
+// inside a `.cm-tooltip-hover` wrapper), so targeting it directly covers both.
+const lintTooltipTheme = EditorView.baseTheme({
+    ".cm-tooltip-lint": {
+        maxWidth: "min(40em, 90vw)"
+    },
+    ".cm-diagnostic": {
+        whiteSpace: "normal",
+        overflowWrap: "anywhere"
+    }
+});
 
 type ContentChangedListener = () => void;
 
@@ -54,8 +72,18 @@ export default class CodeMirror extends EditorView {
     private lineWrappingCompartment: Compartment;
     private indentUnitCompartment: Compartment;
     private searchHighlightCompartment: Compartment;
+    private typeCompletionCompartment: Compartment;
+    private completionSourceCompartment: Compartment;
     private searchPlugin?: SearchHighlighter | null;
     private namedCompartments = new Map<string, Compartment>();
+    /** Named completion sources aggregated into the editor's single autocompletion. */
+    private completionSources = new Map<string, CompletionSource>();
+    /** Monotonic token guarding against out-of-order async type-completion updates. */
+    private typeCompletionToken = 0;
+    /** Current MIME type, retained so the type completion can be rebuilt when only the api context changes. */
+    private currentMime: string | null = null;
+    /** Per-note context tuning the script `api` surface (e.g. custom-request-handler members). */
+    private scriptApiContext: ScriptApiContext = {};
 
     constructor(config: EditorConfig) {
         const languageCompartment = new Compartment();
@@ -64,6 +92,8 @@ export default class CodeMirror extends EditorView {
         const lineWrappingCompartment = new Compartment();
         const indentUnitCompartment = new Compartment();
         const searchHighlightCompartment = new Compartment();
+        const typeCompletionCompartment = new Compartment();
+        const completionSourceCompartment = new Compartment();
 
         let extensions: Extension[] = [];
 
@@ -76,7 +106,10 @@ export default class CodeMirror extends EditorView {
             languageCompartment.of([]),
             lineWrappingCompartment.of(config.lineWrapping ? EditorView.lineWrapping : []),
             searchMatchHighlightTheme,
+            lintTooltipTheme,
             searchHighlightCompartment.of([]),
+            typeCompletionCompartment.of([]),
+            completionSourceCompartment.of([]),
             highlightActiveLine(),
             lineNumbers(),
             themeCompartment.of([
@@ -135,6 +168,8 @@ export default class CodeMirror extends EditorView {
         this.lineWrappingCompartment = lineWrappingCompartment;
         this.indentUnitCompartment = indentUnitCompartment;
         this.searchHighlightCompartment = searchHighlightCompartment;
+        this.typeCompletionCompartment = typeCompletionCompartment;
+        this.completionSourceCompartment = completionSourceCompartment;
     }
 
     #onDocumentUpdated(v: ViewUpdate) {
@@ -296,9 +331,10 @@ export default class CodeMirror extends EditorView {
     }
 
     async setMimeType(mime: string) {
+        this.currentMime = mime;
         let newExtension: Extension[] = [];
 
-        const correspondingSyntax = byMimeType[mime];
+        const correspondingSyntax = byMimeType[MIME_ALIASES[mime] ?? mime];
         if (correspondingSyntax) {
             const resolvedSyntax = await correspondingSyntax();
 
@@ -314,6 +350,62 @@ export default class CodeMirror extends EditorView {
 
         this.dispatch({
             effects: this.languageCompartment.reconfigure(newExtension)
+        });
+
+        await this.#updateTypeCompletion(mime);
+    }
+
+    /**
+     * Updates the per-note script `api` context (e.g. whether the note is a custom
+     * request handler, which gates the `req`/`res`/`pathParams` members) and rebuilds
+     * the type completion in place. Safe to call before a MIME type is set — it takes
+     * effect on the next `setMimeType`.
+     */
+    async setScriptApiContext(context: ScriptApiContext) {
+        this.scriptApiContext = context;
+        if (this.currentMime !== null) {
+            await this.#updateTypeCompletion(this.currentMime);
+        }
+    }
+
+    /**
+     * Enables the TypeScript language service (full completion, hover docs and
+     * diagnostics) for backend/frontend script notes, and clears it otherwise.
+     * Guarded by a token so a slow async build for a previous MIME type can't
+     * overwrite a newer one.
+     */
+    async #updateTypeCompletion(mime: string) {
+        const token = ++this.typeCompletionToken;
+        const { extensions, source } = await buildTypeCompletion(mime, this.scriptApiContext);
+        if (token !== this.typeCompletionToken) {
+            return; // a newer setMimeType call superseded this one
+        }
+        this.dispatch({
+            effects: this.typeCompletionCompartment.reconfigure(extensions)
+        });
+        this.setCompletionSource("typescript", source);
+    }
+
+    /**
+     * Registers (or, with `null`, removes) a named autocompletion source. All
+     * registered sources are merged into the editor's single `autocompletion()`
+     * extension — CodeMirror permits only one `override` config per editor, so
+     * features (snippets, the TypeScript language service, …) contribute sources
+     * here rather than each adding their own autocompletion.
+     */
+    setCompletionSource(name: string, source: CompletionSource | null) {
+        if (source) {
+            this.completionSources.set(name, source);
+        } else {
+            this.completionSources.delete(name);
+        }
+        const sources = [...this.completionSources.values()];
+        this.dispatch({
+            effects: this.completionSourceCompartment.reconfigure(
+                sources.length
+                    ? autocompletion({ override: sources, activateOnTyping: true })
+                    : []
+            )
         });
     }
 }

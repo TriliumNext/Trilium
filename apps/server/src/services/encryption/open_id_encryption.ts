@@ -1,8 +1,7 @@
-import { data_encryption, OpenIdError } from "@triliumnext/core";
+import { data_encryption } from "@triliumnext/core";
 
 import sql from "../sql.js";
-import sqlInit from "../sql_init.js";
-import utils, { constantTimeCompare } from "../utils.js";
+import utils from "../utils.js";
 import myScryptService from "./my_scrypt.js";
 
 function saveUser(subjectIdentifier: string, name: string, email: string) {
@@ -15,20 +14,12 @@ function saveUser(subjectIdentifier: string, name: string, email: string) {
         subjectIdentifier,
         verificationSalt
     );
-    if (!verificationHash) {
-        throw new OpenIdError("Verification hash undefined!");
-    }
 
     const userIDEncryptedDataKey = setDataKey(
         subjectIdentifier,
         utils.randomSecureToken(16),
         verificationSalt
     );
-
-    if (!userIDEncryptedDataKey) {
-        console.error("UserID encrypted data key null");
-        return undefined;
-    }
 
     const data = {
         tmpID: 0,
@@ -56,43 +47,6 @@ function isUserSaved() {
     return isSaved === "true";
 }
 
-function verifyOpenIDSubjectIdentifier(subjectIdentifier: string) {
-    if (!sqlInit.isDbInitialized()) {
-        throw new OpenIdError("Database not initialized!");
-    }
-
-    if (isUserSaved()) {
-        return false;
-    }
-
-    const salt = sql.getValue("SELECT salt FROM user_data;");
-    if (salt == undefined) {
-        console.log("Salt undefined");
-        return undefined;
-    }
-
-    const givenHash = myScryptService
-        .getSubjectIdentifierVerificationHash(subjectIdentifier)
-        ?.toString("base64");
-    if (givenHash === undefined) {
-        console.log("Sub id hash undefined!");
-        return undefined;
-    }
-
-    const savedHash = sql.getValue(
-        "SELECT userIDVerificationHash FROM user_data"
-    );
-    /* v8 ignore next 4 -- unreachable: the same single user_data row already
-       yielded a non-null salt above, so this column query cannot return undefined
-       (a NULL column yields null, not undefined). */
-    if (savedHash === undefined) {
-        console.log("verification hash undefined");
-        return undefined;
-    }
-
-    return constantTimeCompare(givenHash, savedHash as string);
-}
-
 function setDataKey(
     subjectIdentifier: string,
     plainTextDataKey: string | Buffer,
@@ -101,46 +55,10 @@ function setDataKey(
     const subjectIdentifierDerivedKey =
         myScryptService.getSubjectIdentifierDerivedKey(subjectIdentifier, salt);
 
-    if (subjectIdentifierDerivedKey === undefined) {
-        console.error("SOMETHING WENT WRONG SAVING USER ID DERIVED KEY");
-        return undefined;
-    }
-    const newEncryptedDataKey = data_encryption.encrypt(
-        subjectIdentifierDerivedKey,
-        plainTextDataKey
-    );
-
-    return newEncryptedDataKey;
-}
-
-function getDataKey(subjectIdentifier: string) {
-    const subjectIdentifierDerivedKey =
-        myScryptService.getSubjectIdentifierDerivedKey(subjectIdentifier);
-
-    const encryptedDataKey = sql.getValue(
-        "SELECT userIDEncryptedDataKey FROM user_data"
-    );
-
-    if (!encryptedDataKey) {
-        console.error("Encrypted data key empty!");
-        return undefined;
-    }
-
-    if (!subjectIdentifierDerivedKey) {
-        console.error("SOMETHING WENT WRONG SAVING USER ID DERIVED KEY");
-        return undefined;
-    }
-    const decryptedDataKey = data_encryption.decrypt(
-        subjectIdentifierDerivedKey,
-        encryptedDataKey.toString()
-    );
-
-    return decryptedDataKey;
+    return data_encryption.encrypt(subjectIdentifierDerivedKey, plainTextDataKey);
 }
 
 export default {
-    verifyOpenIDSubjectIdentifier,
-    getDataKey,
     setDataKey,
     saveUser,
     isSubjectIdentifierSaved,

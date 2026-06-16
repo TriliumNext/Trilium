@@ -29,7 +29,7 @@ The extension is available from the official browser web stores:
 
 Trilium will save these clippings as a new child note under a "clipper inbox" note.
 
-By default, that's the [day note](../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md) but you can override that by setting the [label](../Advanced%20Usage/Attributes.md) `clipperInbox`, on any other note.
+By default, that's the <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a> but you can override that by setting the [label](../Advanced%20Usage/Attributes.md) `clipperInbox`, on any other note.
 
 If there's multiple clippings from the same page (and on the same day), then they will be added to the same note.
 

@@ -1,10 +1,13 @@
+import "./FormattingToolbar.css";
+
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
+import options from "../../services/options";
 import { useActiveNoteContext, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
-import { TabContext } from "./ribbon-interface";
+import { TabConfiguration, TabContext } from "./ribbon-interface";
 
 /**
  * Handles the editing toolbar when the CKEditor is in decoupled mode.
@@ -39,6 +42,12 @@ export default function FormattingToolbar({ hidden, ntxId }: TabContext) {
         />
     );
 };
+
+/** Visibility predicate for the formatting toolbar, shared by the ribbon tab definition and the standalone usages (e.g. the popup editor). */
+export const showFormattingToolbar: TabConfiguration["show"] = async ({ note, noteContext }) =>
+    note?.type === "text" && noteContext?.viewScope?.viewMode === "default"
+    && options.get("textNoteEditorType") === "ckeditor-classic"
+    && !(await noteContext?.isReadOnly());
 
 const toolbarCache = new Map<string, HTMLElement | null | undefined>();
 

@@ -7,6 +7,7 @@ import { getLog } from "./log.js";
 import options from "./options.js";
 import protected_session from "./protected_session.js";
 import scriptService from "./script.js";
+import { isScriptingEnabled } from "./scripting_guard.js";
 import sqlInit from "./sql_init.js";
 import ws from "./ws.js";
 
@@ -45,7 +46,7 @@ export function startScheduler() {
 
     // Periodic checks.
     sqlInit.dbReady.then(() => {
-        if (!process.env.TRILIUM_SAFE_MODE) {
+        if (!process.env.TRILIUM_SAFE_MODE && isScriptingEnabled()) {
             setTimeout(
                 cls.wrap(() => runNotesWithLabel("backendStartup")),
                 10 * 1000
@@ -60,12 +61,13 @@ export function startScheduler() {
                 cls.wrap(() => runNotesWithLabel("daily")),
                 24 * 3600 * 1000
             );
-
-            setInterval(
-                cls.wrap(() => hiddenSubtreeService.checkHiddenSubtree()),
-                7 * 3600 * 1000
-            );
         }
+
+        // Internal maintenance - always runs regardless of scripting setting
+        setInterval(
+            cls.wrap(() => hiddenSubtreeService.checkHiddenSubtree()),
+            7 * 3600 * 1000
+        );
 
         setInterval(() => checkProtectedSessionExpiration(), 30000);
     });

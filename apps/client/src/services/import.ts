@@ -13,6 +13,7 @@ export interface UploadFilesOptions {
     shrinkImages: BooleanLike;
     textImportedAsText?: BooleanLike;
     codeImportedAsCode?: BooleanLike;
+    spreadsheetImportedAsSpreadsheet?: BooleanLike;
     explodeArchives?: BooleanLike;
     replaceUnderscoresWithSpaces?: BooleanLike;
 }

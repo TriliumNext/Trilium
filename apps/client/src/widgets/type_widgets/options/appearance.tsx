@@ -124,13 +124,12 @@ const FONT_FAMILIES: FontGroup[] = [
 
 export default function AppearanceSettings() {
     return (
-        <div>
+        <>
             <UserInterface />
             <Fonts />
             {isElectron() && <ElectronIntegration /> }
             <Performance />
             <MaxContentWidth />
-            <RibbonOptions />
             <RelatedSettings items={[
                 {
                     title: t("settings_appearance.related_code_blocks"),
@@ -141,15 +140,16 @@ export default function AppearanceSettings() {
                     targetPage: "_optionsCodeNotes"
                 }
             ]} />
-        </div>
+        </>
     );
 }
 
 function UserInterface() {
-    const [ theme, setTheme ] = useTriliumOption("theme", true);
+    const [ theme, setTheme ] = useTriliumOption("theme");
     const [ customThemes, setCustomThemes ] = useState<CustomTheme[]>([]);
     const [ newLayout, setNewLayout ] = useTriliumOptionBool("newLayout");
     const [ layoutOrientation, setLayoutOrientation ] = useTriliumOption("layoutOrientation", true);
+    const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
 
     useEffect(() => {
         server.get<CustomTheme[]>("options/user-themes").then((userThemes) => {
@@ -245,6 +245,14 @@ function UserInterface() {
                         ]}
                     />
                 </OptionsRow>
+                {!newLayout && (
+                    <OptionsRowWithToggle
+                        name="edited-notes-open-in-ribbon"
+                        label={t("ribbon.edited_notes_message")}
+                        currentValue={editedNotesOpenInRibbon}
+                        onChange={setEditedNotesOpenInRibbon}
+                    />
+                )}
                 <OptionsRow name="layout-orientation" label={t("settings_appearance.ui_layout_orientation")}>
                     <RadioWithIllustration
                         currentValue={layoutOrientation ?? "vertical"}
@@ -417,12 +425,6 @@ function Fonts() {
             <Font label={t("fonts.note_tree_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="treeFontFamily" fontSizeOption="treeFontSize" disabled={!isEnabled} />
             <Font label={t("fonts.note_detail_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="detailFontFamily" fontSizeOption="detailFontSize" disabled={!isEnabled} />
             <Font label={t("fonts.monospace_font")} description={t("fonts.monospace_font_description")} fontFamilyOption="monospaceFontFamily" fontSizeOption="monospaceFontSize" disabled={!isEnabled} isMonospace />
-
-            <OptionsRowWithButton
-                label={t("fonts.apply_changes")}
-                icon="bx bx-refresh"
-                onClick={reloadFrontendApp}
-            />
         </OptionsSection>
     );
 }
@@ -524,57 +526,55 @@ function FontPickerModal({ show, onHidden, title, fontFamily, fontSize, onFontFa
             size="lg"
             show={show}
             onHidden={onHidden}
+            stackable
+            sidebar={
+                <FormList fullHeight wrapperClassName="font-picker-list">
+                    {FONT_FAMILIES.map(group => (
+                        <Fragment key={group.title}>
+                            <FormListHeader text={group.title} />
+                            {group.items.map(item => (
+                                <FormListItem
+                                    key={item.value}
+                                    onClick={() => onFontFamilyChange(item.value)}
+                                    checked={fontFamily === item.value}
+                                    selected={fontFamily === item.value}
+                                >
+                                    <span style={{ fontFamily: getFontFamily(item.value) }}>
+                                        {item.label ?? item.value}
+                                    </span>
+                                </FormListItem>
+                            ))}
+                        </Fragment>
+                    ))}
+                </FormList>
+            }
         >
-            <div className="font-picker-content">
-                <div className="font-picker-list">
-                    <FormList fullHeight>
-                        {FONT_FAMILIES.map(group => (
-                            <Fragment key={group.title}>
-                                <FormListHeader text={group.title} />
-                                {group.items.map(item => (
-                                    <FormListItem
-                                        key={item.value}
-                                        onClick={() => onFontFamilyChange(item.value)}
-                                        checked={fontFamily === item.value}
-                                        selected={fontFamily === item.value}
-                                    >
-                                        <span style={{ fontFamily: getFontFamily(item.value) }}>
-                                            {item.label ?? item.value}
-                                        </span>
-                                    </FormListItem>
-                                ))}
-                            </Fragment>
-                        ))}
-                    </FormList>
+            <div className="font-picker-settings">
+                <div className="font-size-control">
+                    <label>{t("fonts.size")}</label>
+                    <div className="font-size-slider">
+                        <Slider
+                            value={fontSize}
+                            onChange={onFontSizeChange}
+                            min={50}
+                            max={200}
+                            step={5}
+                        />
+                        <span className="font-size-value">{fontSize}%</span>
+                    </div>
+                    {sizeDescription && <small className="font-size-description">{sizeDescription}</small>}
                 </div>
 
-                <div className="font-picker-settings">
-                    <div className="font-size-control">
-                        <label>{t("fonts.size")}</label>
-                        <div className="font-size-slider">
-                            <Slider
-                                value={fontSize}
-                                onChange={onFontSizeChange}
-                                min={50}
-                                max={200}
-                                step={5}
-                            />
-                            <span className="font-size-value">{fontSize}%</span>
-                        </div>
-                        {sizeDescription && <small className="font-size-description">{sizeDescription}</small>}
-                    </div>
-
-                    <div className="font-preview">
-                        <label>{t("fonts.preview")}</label>
-                        <div
-                            className="font-preview-text"
-                            style={{
-                                fontFamily: getFontFamily(fontFamily),
-                                fontSize: `${fontSize}%`
-                            }}
-                        >
-                            {PREVIEW_TEXT}
-                        </div>
+                <div className="font-preview">
+                    <label>{t("fonts.preview")}</label>
+                    <div
+                        className="font-preview-text"
+                        style={{
+                            fontFamily: getFontFamily(fontFamily),
+                            fontSize: `${fontSize}%`
+                        }}
+                    >
+                        {PREVIEW_TEXT}
                     </div>
                 </div>
             </div>
@@ -589,6 +589,9 @@ function ElectronIntegration() {
     const [ backgroundEffects, setBackgroundEffects ] = useTriliumOptionBool("backgroundEffects");
 
     const zoomPercentage = Math.round(parseFloat(zoomFactor || "1") * 100);
+    // Background effects are only supported on Windows 11 and macOS; on Linux they have no
+    // visual effect and would only cost the native window shadow.
+    const backgroundEffectsSupported = window.glob.platform === "win32" || window.glob.platform === "darwin";
 
     return (
         <OptionsSection title={t("electron_integration.desktop-application")}>
@@ -616,7 +619,7 @@ function ElectronIntegration() {
                 description={t("electron_integration.background-effects-description")}
                 currentValue={backgroundEffects}
                 onChange={setBackgroundEffects}
-                disabled={nativeTitleBarVisible}
+                disabled={nativeTitleBarVisible || !backgroundEffectsSupported}
             />
 
             <OptionsRowWithButton
@@ -677,7 +680,7 @@ function MaxContentWidth() {
     const [centerContent, setCenterContent] = useTriliumOptionBool("centerContent");
 
     return (
-        <OptionsSection title={t("max_content_width.title")} description={t("max_content_width.default_description")}>
+        <OptionsSection title={t("max_content_width.title")} description={t("max_content_width.default_description")} helpUrl="t596jLvPrqkS">
             <OptionsRow name="max-content-width" label={t("max_content_width.max_width_label")}>
                 <FormTextBoxWithUnit
                     type="number" min={MIN_CONTENT_WIDTH} step="10"
@@ -691,21 +694,6 @@ function MaxContentWidth() {
                 label={t("max_content_width.centerContent")}
                 currentValue={centerContent}
                 onChange={setCenterContent}
-            />
-        </OptionsSection>
-    );
-}
-
-function RibbonOptions() {
-    const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
-
-    return (
-        <OptionsSection title={t('ribbon.widgets')}>
-            <OptionsRowWithToggle
-                name="edited-notes-open-in-ribbon"
-                label={t('ribbon.edited_notes_message')}
-                currentValue={editedNotesOpenInRibbon}
-                onChange={setEditedNotesOpenInRibbon}
             />
         </OptionsSection>
     );

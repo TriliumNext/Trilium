@@ -1,5 +1,5 @@
 # Script API
-tFor [script code notes](../Scripting.md), Trilium offers an API that gives them access to various features of the application.
+For [script code notes](../Scripting.md), Trilium offers an API that gives them access to various features of the application.
 
 There are two APIs:
 

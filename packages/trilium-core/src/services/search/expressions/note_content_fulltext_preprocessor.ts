@@ -1,4 +1,4 @@
-import { extractSpreadsheetText } from "@triliumnext/commons";
+import { extractSpreadsheetText } from "@triliumnext/commons/src/lib/spreadsheet/extract_text.js";
 import striptags from "striptags";
 import { normalizeSearchText } from "../utils/text_utils";
 import { normalize } from "../../utils/index";

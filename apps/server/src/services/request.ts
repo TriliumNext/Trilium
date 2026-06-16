@@ -94,8 +94,9 @@ export default class NodeRequestProvider implements RequestProvider {
 
         const proxyAgent = await getProxyAgent(opts);
         const parsedTargetUrl = url.parse(opts.url);
+        const resolvedClient = await client;
 
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
             try {
                 const headers: Record<string, string | number> = {
                     Cookie: (opts.cookieJar && opts.cookieJar.header) || "",
@@ -109,7 +110,7 @@ export default class NodeRequestProvider implements RequestProvider {
                     headers["trilium-cred"] = Buffer.from(`dummy:${opts.auth.password}`).toString("base64");
                 }
 
-                const request = (await client).request({
+                const request = resolvedClient.request({
                     method: opts.method,
                     // url is used by electron net module
                     url: opts.url,

@@ -9,6 +9,7 @@ const {
     getComponentByEl,
     getActiveContextNotePath,
     getActiveContext,
+    getActiveMainContext,
     getActions,
     isElectron
 } = vi.hoisted(() => ({
@@ -16,6 +17,7 @@ const {
     getComponentByEl: vi.fn(),
     getActiveContextNotePath: vi.fn<() => string | null | undefined>(() => "root/abc"),
     getActiveContext: vi.fn(),
+    getActiveMainContext: vi.fn<() => { ntxId?: string } | undefined>(() => ({ ntxId: "ntx-main" })),
     getActions: vi.fn<() => Promise<ActionKeyboardShortcut[]>>(async () => []),
     isElectron: vi.fn(() => false)
 }));
@@ -35,7 +37,8 @@ vi.mock("../components/app_context.js", () => ({
         tabManager: {
             activeNtxId: "ntx-1",
             getActiveContextNotePath,
-            getActiveContext
+            getActiveContext,
+            getActiveMainContext
         }
     }
 }));
@@ -74,6 +77,7 @@ afterEach(() => {
     getActions.mockImplementation(async () => []);
     isElectron.mockImplementation(() => false);
     getActiveContextNotePath.mockImplementation(() => "root/abc");
+    getActiveMainContext.mockImplementation(() => ({ ntxId: "ntx-main" }));
 });
 
 describe("CommandRegistry default commands", () => {
@@ -126,6 +130,25 @@ describe("CommandRegistry default commands", () => {
 
         await registry.executeCommand("export-note");
         await registry.executeCommand("search-in-subtree");
+        expect(triggerCommand).not.toHaveBeenCalled();
+    });
+
+    it("pin/unpin-active-tab trigger pinTab/unpinTab with the active main context ntxId", async () => {
+        const registry = await freshRegistry();
+
+        await registry.executeCommand("pin-active-tab");
+        expect(triggerCommand).toHaveBeenCalledWith("pinTab", { ntxId: "ntx-main" });
+
+        await registry.executeCommand("unpin-active-tab");
+        expect(triggerCommand).toHaveBeenCalledWith("unpinTab", { ntxId: "ntx-main" });
+    });
+
+    it("pin/unpin-active-tab skip triggering when there is no active main context", async () => {
+        const registry = await freshRegistry();
+        getActiveMainContext.mockImplementation(() => undefined);
+
+        await registry.executeCommand("pin-active-tab");
+        await registry.executeCommand("unpin-active-tab");
         expect(triggerCommand).not.toHaveBeenCalled();
     });
 });

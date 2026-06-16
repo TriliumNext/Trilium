@@ -1,7 +1,6 @@
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import type { BlobRow } from "@triliumnext/commons";
 
-// TODO: Why this does not extend the abstract becca?
 class BBlob extends AbstractBeccaEntity<BBlob> {
     static get entityName() {
         return "blobs";

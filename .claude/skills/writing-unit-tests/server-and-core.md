@@ -12,11 +12,50 @@ The same `packages/trilium-core/src/**` spec executes under the **server** suite
 
 There are **two distinct HTTP code paths** — testing one does not cover the other:
 - **ETAPI** (`apps/server/src/etapi/*`): basic-auth token, helpers in `spec/etapi/utils.ts`.
-- **Internal API** (`apps/server/src/routes/api/*` + `packages/trilium-core/src/routes/api/*`): session cookie + CSRF. **This is the large uncovered surface.**
+- **Internal API**: the `apps/server/src/routes/api/*` Express wrappers, plus the **shared core handlers** in `packages/trilium-core/src/routes/api/*` (registered by `buildSharedApiRoutes`). The shared core handlers are driven cross-runtime by `CoreApiTester` (Pattern 0); the thin Express transport on top is covered by supertest (Pattern 1).
 
-## Pattern 1 — internal REST API via supertest agent
+**Where spec files live:** internal-API and core route tests are **co-located with their module** — `apps/server/src/routes/api/<module>.spec.ts` for the thin Express transport, `packages/trilium-core/src/routes/api/<module>.spec.ts` for the shared core handler. **ETAPI is the exception**: its specs live under `apps/server/spec/etapi/` (with the `spec/etapi/utils.ts` helpers). Don't park internal `/api/*` tests in `spec/` — e.g. the metrics endpoint test belongs at `src/routes/api/metrics.spec.ts`, next to `metrics.ts`, not in `spec/etapi/`.
 
-Reuse the agent + CSRF flow from `apps/server/src/routes/api/options.spec.ts`. Start with read/transform handlers (`tree`, `recent_changes`, `note_map`, `similar_notes`, `stats`) — they need no setup beyond the seeded demo content. One spec file per handler keeps fork isolation clean.
+## Pattern 0 — the cross-runtime core route driver (`CoreApiTester`) — PREFER THIS for core routes
+
+For specs under `packages/trilium-core/src/routes/api/*.spec.ts`, use the in-process, transport-agnostic driver `packages/trilium-core/src/test/api_tester.ts`. It registers the exact handlers from `routes.buildSharedApiRoutes` and runs them **without Express/HTTP**, so the same spec runs under **both** the node (better-sqlite3) and standalone (sql.js WASM) suites. It exercises the real lifecycle: param/query parsing, cls + SQL transaction wrapping, `convertEntitiesToPojo`, the `[status, body]`/`undefined→204` conventions, `HttpError`→status mapping, and JSON round-tripping. It deliberately skips platform middleware (auth/CSRF/rate-limit/multipart) — those are server concerns (Pattern 1).
+
+```ts
+import { beforeAll, describe, expect, it } from "vitest";
+import { createTextNote } from "../../test/api_fixtures";
+import { CoreApiTester } from "../../test/api_tester";
+
+let api: CoreApiTester;
+describe("X API (core)", () => {
+    beforeAll(() => { api = CoreApiTester.build(); });
+    it("...", async () => {
+        const res = await api.get("/api/...", { query: { q: "1" } }); // also post/put/patch/delete
+        expect(res.status).toBe(200);          // → { status, headers, body }
+    });
+});
+```
+- `api.<verb>(path, { body, query, headers, file })`. `createTextNote(api, {...})` → `{ noteId, branchId }`. Assert real state via `getSql()` / `becca`.
+- Mutations are auto-wrapped in cls + a SQL transaction — **no `cls.init` needed** (unlike Pattern 3 direct service calls).
+- Header-reading handlers (e.g. sync) work: pass `headers` and the handler's `req.get(name)` reads them case-insensitively.
+
+### It runs REAL services end to end — including streaming + multipart. Don't mock them.
+Both test setups (`apps/server/spec/setup.ts`, `apps/standalone/src/test_setup.ts`) inject the **real platform providers** (zip = archiver/fflate, image = sharp/magic-bytes, backup = fs/OPFS), and **both vitest suites run on Node** (the standalone setup itself imports `node:fs`/`node:module`) — so `Buffer`, `node:stream`, `node:fs` are available in either runtime. The tester's mock `res` is a real Node `Writable` that also implements the Express surface (`set`/`setHeader`/`removeHeader`/`status`/`send`/`sendStatus`/`write`/`end`), so the **server** export path (`archiver.pipe(res)`, needs a real writable) and the **browser** path (`BrowserZipArchive.finalize()` → `res.send(bytes)`) both run. Match the ETAPI **zero-mock** convention: drive real inputs and assert real output.
+- **Multipart**: pass `file: { originalname, mimetype, buffer: Buffer.from(...) }` — the real import/image handlers run.
+- **Binary/streamed response bodies** come back as a `Buffer` (real zips start with `PK`); text as a string; JSON as an object.
+- **Need a real zip cross-runtime?** Export→import round-trip: `const zip = await api.get(\`/api/branches/${"<branchId>"}/export/subtree/html/1.0/t\`)` gives a real zip `Buffer` in `zip.body`; feed it back to `.../notes-import` as the `file.buffer`.
+
+### When a core route still needs a *targeted* mock (the genuine exceptions)
+Only where the platform op can't run against the ephemeral test env — keep it minimal and documented, and prefer `vi.spyOn(importedServiceObject, "method")` over `vi.mock`:
+- **backup**: better-sqlite3 `.backup()` rejects `SQLITE_NOTADB` against the in-memory fixture (node) and there's no OPFS in happy-dom (standalone) → spy `backupNow`/`getBackupContent`; keep `getExistingBackups` + 400/404 real.
+- **sync** `testSync`/`syncNow`/`forceFullSync`: real network → spy `syncService.login`/`sync`. `getChanged`/`update`/`checkSync` run real.
+- **setup** `createInitialDatabase`/`createDatabaseForSync`: they wipe/replace the DB → spy them.
+- A genuinely runtime-specific path (e.g. backup download needs the file on disk, node-only): gate with `it.skipIf(typeof window !== "undefined")` + a one-line reason; the line still counts via the node suite.
+
+## Pattern 1 — Express transport / middleware via supertest agent
+
+Use this only for what exists *because of* Express and can't be reached by Pattern 0: CSRF enforcement, auth, multipart wiring, and that core routes are wired into the app end to end. See `apps/server/src/routes/api/core_routes_http.spec.ts` (boots the real app via `bootLoggedInApp()` in `spec/support/internal_api.ts`).
+
+Reuse the agent + CSRF flow from `apps/server/src/routes/api/options.spec.ts` (or `bootLoggedInApp()`). Keep these specs thin — per-handler behaviour belongs in Pattern 0; here you assert only the transport (e.g. a mutating request without `x-csrf-token` → 403, a GET served end to end). One spec file per `beforeAll` boot keeps fork isolation clean.
 
 ```ts
 import type { Application } from "express";
@@ -73,7 +112,10 @@ describe("createNewNote (real DB)", () => {
 });
 ```
 
-**Mutations require CLS:** wrap `setContent`/`createNewNote`/etc. in `cls.init(() => ...)`. Supertest route tests get CLS for free; direct service calls do not.
+**Mutations require CLS** — wrap `setContent`/`createNewNote`/`BAttribute.save()`/etc. (anything that emits an entity change or opens a transaction) in a CLS context, or they throw. Supertest route tests and `CoreApiTester` (Pattern 0) get CLS for free; direct service/entity calls do not.
+- **In `apps/server` specs**, use `cls.init(() => ...)` from `@triliumnext/core` (as above).
+- **In `packages/trilium-core/src/**` specs** (which run cross-runtime and must NOT self-import `@triliumnext/core`), import `getContext` from a relative `context.js` and call it inline: `import { getContext } from "../services/context.js";` then `getContext().init(() => ...)`, or `await getContext().init(async () => { ... })` for async work (`init` returns the callback's promise, so awaiting and throwing propagate normally). See `import/enex.spec.ts` / `import/single.spec.ts` for the inline async form.
+- **Do NOT wrap this in a per-file helper.** A local `withContext(fn)` that just does `return getContext().init(fn)` is a pointless duplicate of the existing `getContext().init` / `cls.init` export — and because specs get written file-by-file, that wrapper once metastasised into 35 identical copies before being removed. Call `getContext().init(...)` / `cls.init(...)` directly at the call site.
 
 ## Pattern 4 — pure service, zero infra
 
@@ -104,7 +146,7 @@ Target the `mutates:false` `execute()` of LLM tools (`llm/tools/*`). Don't try t
 ## Best ROI targets
 
 1. `packages/trilium-core/src/services/notes.ts` (real-DB) — largest cold file; also pulls in blob hashing, entity_changes, saveLinks.
-2. `packages/trilium-core/src/routes/api/*` internal handlers (supertest) — untouched by ETAPI specs. Read handlers first, then `branches`/`cloning`/`bulk_action`/`attributes`.
+2. ~~`packages/trilium-core/src/routes/api/*` internal handlers~~ — **done**: all at 100% lines via `CoreApiTester` (Pattern 0). If extending, follow that pattern and keep it mock-free.
 3. `apps/server/src/services/anonymization.ts`, `totp.ts` (pure).
 4. `packages/trilium-core/src/services/date_notes.ts`, `export/markdown.ts`, `import/enex.ts`, `special_notes.ts`.
 5. `apps/server/src/services/llm/tools/*` + `request.ts`/`open_id.ts` (mocked).

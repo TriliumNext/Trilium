@@ -24,11 +24,8 @@ describe("totp_encryption", () => {
         });
 
         expect(totpEncryption.isTotpSecretSet()).toBe(true);
-        // getTotpSecret returns a non-null decrypted value whose bytes are the secret
-        const stored = totpEncryption.getTotpSecret();
-        expect(stored).not.toBeNull();
-        const bytes = Uint8Array.from((stored as string).split(",").map(Number));
-        expect(Buffer.from(bytes).toString("utf-8")).toBe(SECRET);
+        // the decrypted secret must round-trip exactly, otherwise TOTP validation breaks
+        expect(totpEncryption.getTotpSecret()).toBe(SECRET);
         // verification re-hashes the original secret with the password salt
         expect(totpEncryption.verifyTotpSecret(SECRET)).toBe(true);
         expect(totpEncryption.verifyTotpSecret("wrong-secret")).toBe(false);

@@ -21,13 +21,17 @@ vi.mock("./utils.js", async (orig) => {
 // `enabledFeatures` is module-level cached on first read of getEnabledFeatures,
 // so each scenario re-imports a fresh module copy. The fresh copy binds to a
 // fresh `options` singleton, so we re-import and spy on THAT instance.
-async function freshModule(stored: unknown, isNewLayout: boolean) {
+async function freshModule(stored: unknown, opts: { newLayout?: boolean; aiEnabled?: boolean } = {}) {
     vi.resetModules();
     const options = (await import("./options.js")).default;
     vi.spyOn(options, "get").mockReturnValue(
         typeof stored === "string" ? stored : JSON.stringify(stored)
     );
-    vi.spyOn(options, "is").mockReturnValue(isNewLayout);
+    vi.spyOn(options, "is").mockImplementation((name) => {
+        if (name === "newLayout") return opts.newLayout ?? false;
+        if (name === "aiEnabled") return opts.aiEnabled ?? false;
+        return false;
+    });
     const mod = (await import("./experimental_features.js")) as typeof import("./experimental_features.js");
     return { mod, options };
 }
@@ -40,7 +44,7 @@ describe("experimental_features", () => {
     });
 
     it("lists all features when not standalone, hides llm in standalone", async () => {
-        const { mod } = await freshModule([], false);
+        const { mod } = await freshModule([]);
 
         ctrl.standalone = false;
         expect(mod.getAvailableExperimentalFeatures().map((f) => f.id)).toEqual(["new-layout", "llm"]);
@@ -51,7 +55,7 @@ describe("experimental_features", () => {
 
     it("new-layout is enabled via mobile or the newLayout option", async () => {
         // neither mobile nor option -> disabled
-        const { mod } = await freshModule([], false);
+        const { mod } = await freshModule([]);
         ctrl.mobile = false;
         expect(mod.isExperimentalFeatureEnabled("new-layout")).toBe(false);
 
@@ -60,46 +64,46 @@ describe("experimental_features", () => {
         expect(mod.isExperimentalFeatureEnabled("new-layout")).toBe(true);
 
         // not mobile but the option is true -> enabled
-        const opt = await freshModule([], true);
+        const opt = await freshModule([], { newLayout: true });
         ctrl.mobile = false;
         expect(opt.mod.isExperimentalFeatureEnabled("new-layout")).toBe(true);
     });
 
     it("llm is always disabled in standalone mode", async () => {
-        const { mod } = await freshModule(["llm"], false);
+        const { mod } = await freshModule([], { aiEnabled: true });
         ctrl.standalone = true;
         expect(mod.isExperimentalFeatureEnabled("llm")).toBe(false);
     });
 
-    it("non-standalone llm enablement is driven by the persisted feature set", async () => {
+    it("non-standalone llm enablement is driven by the aiEnabled option", async () => {
         ctrl.standalone = false;
 
-        const enabled = await freshModule(["llm"], false);
+        const enabled = await freshModule([], { aiEnabled: true });
         expect(enabled.mod.isExperimentalFeatureEnabled("llm")).toBe(true);
 
-        const disabled = await freshModule([], false);
+        // a stale "llm" entry in the persisted experimental set no longer counts
+        const disabled = await freshModule(["llm"]);
         expect(disabled.mod.isExperimentalFeatureEnabled("llm")).toBe(false);
     });
 
-    it("drops new-layout from the persisted set and re-derives it separately", async () => {
+    it("drops new-layout and llm from the persisted set and re-derives them separately", async () => {
         ctrl.standalone = false;
         ctrl.mobile = false;
 
-        // new-layout in the stored set is stripped; only llm survives, and
-        // with the option off it is not re-added
-        const stripped = await freshModule(["new-layout", "llm"], false);
-        expect(stripped.mod.getEnabledExperimentalFeatureIds()).toEqual(["llm"]);
+        // both stored entries are stripped; with the options off nothing is re-added
+        const stripped = await freshModule(["new-layout", "llm"]);
+        expect(stripped.mod.getEnabledExperimentalFeatureIds()).toEqual([]);
 
-        // newLayout option true re-adds "new-layout"
-        const readded = await freshModule(["llm"], true);
+        // the dedicated options re-add the respective features
+        const readded = await freshModule([], { newLayout: true, aiEnabled: true });
         expect(readded.mod.getEnabledExperimentalFeatureIds().sort()).toEqual(["llm", "new-layout"]);
     });
 
-    it("adds new-layout via mobile and filters llm out in standalone", async () => {
-        const { mod } = await freshModule(["llm"], false);
+    it("adds new-layout via mobile and keeps llm out in standalone", async () => {
+        const { mod } = await freshModule([], { aiEnabled: true });
         ctrl.standalone = true;
         ctrl.mobile = true;
-        // mobile -> new-layout added; standalone -> llm removed
+        // mobile -> new-layout added; standalone -> llm not added despite aiEnabled
         expect(mod.getEnabledExperimentalFeatureIds()).toEqual(["new-layout"]);
     });
 
@@ -107,14 +111,14 @@ describe("experimental_features", () => {
         ctrl.standalone = false;
         ctrl.mobile = false;
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const { mod } = await freshModule("not-json", false);
+        const { mod } = await freshModule("not-json");
         expect(mod.getEnabledExperimentalFeatureIds()).toEqual([]);
         expect(warn).toHaveBeenCalled();
     });
 
     it("toggleExperimentalFeature adds/removes a feature and persists the set", async () => {
         ctrl.standalone = false;
-        const { mod, options } = await freshModule([], false);
+        const { mod, options } = await freshModule([]);
         const save = vi.spyOn(options, "save").mockResolvedValue(undefined);
 
         await mod.toggleExperimentalFeature("llm", true);

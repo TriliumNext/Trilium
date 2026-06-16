@@ -1,4 +1,4 @@
-import "./style.css";
+import "./Ribbon.css";
 
 import { KeyboardActionNames } from "@triliumnext/commons";
 import clsx from "clsx";
@@ -8,7 +8,7 @@ import { EventNames } from "../../components/app_context";
 import { Indexed, numberObjectsInPlace } from "../../services/utils";
 import { useNoteContext, useNoteProperty, useStaticTooltipWithKeyboardShortcut, useTriliumEvents } from "../react/hooks";
 import NoteActions from "./NoteActions";
-import { TabConfiguration, TitleContext } from "./ribbon-interface";
+import { shouldShowTab, TabConfiguration, TitleContext } from "./ribbon-interface";
 import { RIBBON_TAB_DEFINITIONS } from "./RibbonDefinition";
 
 const TAB_CONFIGURATION = numberObjectsInPlace<TabConfiguration>(RIBBON_TAB_DEFINITIONS);
@@ -144,11 +144,4 @@ function RibbonTab({ icon, title, active, onClick, toggleCommand }: { icon: stri
             <div class="ribbon-tab-spacer" />
         </>
     );
-}
-
-export async function shouldShowTab(showConfig: boolean | ((context: TitleContext) => Promise<boolean | null | undefined> | boolean | null | undefined), context: TitleContext) {
-    if (showConfig === null || showConfig === undefined) return true;
-    if (typeof showConfig === "boolean") return showConfig;
-    if ("then" in showConfig) return await showConfig(context);
-    return showConfig(context);
 }

@@ -76,7 +76,7 @@ body[data-note-type="text"] .ck-content {
         --task-state-glyph-font-family: initial;
         --task-state-color: initial;
     }
-    
+
     :where(.ck-content .todo-list li:where(:not([data-trilium-task-state]), [data-trilium-task-state="done"]):has(> .todo-list__label input[type="checkbox"]:checked)) {
         --task-state-glyph: "";
         --task-state-glyph-font-family: boxicons;
@@ -87,7 +87,7 @@ body[data-note-type="text"] .ck-content {
         --box-ratio: 0.75;
         /* The size of the gap between the check box and the caption */
         --box-text-gap: 0.25em;
-        
+
         /* The percentage of the box size that the glyph occupies. */
         --glyph-ratio: .70;
 
@@ -140,10 +140,27 @@ body[data-note-type="text"] .ck-content {
 li.footnote-item {
     position: relative;
     width: fit-content;
+    /* The flex layout that top-aligns the number lives in style.css, which is not
+       loaded in print mode (see index.ts), so the rules are replicated here. */
+    display: flex;
+    list-style: none;
+    counter-increment: footnote-counter;
+}
+
+li.footnote-item::before {
+    content: counter(footnote-counter) ". ";
+    margin-right: 0.25em;
 }
 
 .ck-content .footnote-back-link {
     margin-right: 0.25em;
+}
+
+.ck-content .footnote-section {
+    margin-top: 1em;
+    border-top: 1px solid #ccc;
+    padding-top: 1em;
+    counter-reset: footnote-counter;
 }
 
 .ck-content .footnote-content {
@@ -185,6 +202,15 @@ h6 {
     vertical-align: middle;
 }
 
+/* CKEditor's content stylesheet sets `figure.table { width: fit-content }` under
+   @media print to stop tables from being stretched to the page. On screen, Bootstrap's
+   `.table { width: 100% }` keeps tables full-width, but Bootstrap is not loaded in print,
+   so a fit-content table gets centered by CKEditor's `.table { margin: .9em auto }`.
+   Restore the full-width screen behavior while leaving the height guard intact. */
+.ck-content figure.table:not(.layout-table):not([style]) {
+    width: 100% !important;
+}
+
 pre {
     box-shadow: unset !important;
     border: 0.75pt solid gray !important;
@@ -208,10 +234,18 @@ span[style] {
 }
 
 .spreadsheet-table td {
-    border: 0.5pt solid #ccc;
     padding: 2pt 4pt;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Gridlines: only when the sheet enables them, and only on unfilled cells (a background
+   fill covers the grid), mirroring the share renderer. Kept as a hairline border rather
+   than a box-shadow because print engines routinely drop shadows. At 0.5pt it is narrower
+   than every real cell border (>= 1px from the workbook data), so under border-collapse
+   the custom border always wins the conflict and is never clobbered. */
+.spreadsheet-table.show-gridlines td:not(.has-fill) {
+    border: 0.5pt solid var(--spreadsheet-gridline-color, #ccc);
 }
 /* #endregion */
 

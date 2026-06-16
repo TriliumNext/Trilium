@@ -9,13 +9,15 @@ test("Hoist note remains expanded when opening Options and clicking child note",
     await app.goto();
     await app.closeAllTabs();
 
+    // Settings open in a dialog; maximizing it moves them to a tab hoisted on the Options subtree.
     await app.goToSettings();
+    await app.optionsDialog.locator(".custom-title-bar-button.bx-expand-alt").click();
 
-    // Activate it when opening Options
-    await expect(app.noteTreeActiveNote).toContainText(OPTIONS_TITLE);
+    await expect(app.noteTreeHoistedNote).toContainText(OPTIONS_TITLE);
+    await expect(app.noteTreeActiveNote).toContainText("Appearance");
 
     // Clicking a hoist’s child note does not collapse the hoist note
-    await app.clickNoteOnNoteTreeByTitle("Appearance");
+    await app.clickNoteOnNoteTreeByTitle("Shortcuts");
     const node = app.page.locator(".fancytree-node.fancytree-submatch:has(.bx-cog)");
     await expect(node).toHaveClass(/fancytree-expanded/);
 });

@@ -15,7 +15,8 @@ function getStatus() {
 
 async function setupNewDocument(req: Request) {
     const { skipDemoDb } = req.query;
-    await sqlInit.createInitialDatabase(skipDemoDb !== undefined);
+    const locale = req.body?.locale;
+    await sqlInit.createInitialDatabase(skipDemoDb !== undefined, locale);
 }
 
 function setupSyncFromServer(req: Request): Promise<SetupSyncFromServerResponse> {

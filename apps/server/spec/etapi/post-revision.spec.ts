@@ -26,4 +26,12 @@ describe("etapi/post-revision", () => {
             .send("Changed content")
             .expect(204);
     });
+
+    it("posts a note revision with a custom description", async () => {
+        await supertest(app)
+            .post(`/etapi/notes/${createdNoteId}/revision`)
+            .auth(USER, token, { "type": "basic"})
+            .send({ description: "manual snapshot" })
+            .expect(204);
+    });
 });

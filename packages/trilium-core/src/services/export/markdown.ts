@@ -1,4 +1,5 @@
-import { ADMONITION_TYPE_MAPPINGS, type TaskStateDef } from "@triliumnext/commons";
+import { type TaskStateDef } from "@triliumnext/commons";
+import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { gfm } from "@triliumnext/turndown-plugin-gfm";
 import Turnish, { type Rule } from "turnish";
 

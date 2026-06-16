@@ -37,11 +37,17 @@
 <p>The text will be extracted from the following file formats:</p>
 <ul>
   <li>Microsoft Word documents</li>
-  <li>Microsoft Excel documents (only the raw text information, the cell structure
-    is not maintained).</li>
+  <li>Microsoft Excel documents
+    <ul>
+      <li>Only the raw text information, the cell structure is not maintained.</li>
+      <li>Values are extracted raw, so searching for dates will not work. The OpenDocument
+        alternative will actually extract the properly formatted value.</li>
+    </ul>
+  </li>
   <li>Microsoft PowerPoint documents</li>
   <li>The OpenDocument alternatives to the previous formats (Text, Spreadsheet,
     Presentation), created by editors such as LibreOffice and OpenOffice.</li>
+  <li>Rich Text Format (RTF), since v0.104.0.</li>
 </ul>
 <h2>Configuring and triggering OCR</h2>
 <p>The OCR can be configured by going to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→&nbsp;

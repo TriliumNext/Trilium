@@ -26,7 +26,8 @@
 /* #region List view / Grid view common styles */
 
 .nested-note-list-item h5,
-.note-book-card .note-book-header {
+.note-book-card .note-book-header,
+.dashboard-widget-header {
     display: flex;
     align-items: center;
     font-size: 1em;
@@ -195,7 +196,8 @@
 }
 
 .nested-note-list:not(.search-results) h5,
-.note-book-card:not(.search-results) h5 {
+.note-book-card:not(.search-results) h5,
+.dashboard-widget-header {
     span.tn-icon + span,
     .note-list-attributes {
         white-space: nowrap;

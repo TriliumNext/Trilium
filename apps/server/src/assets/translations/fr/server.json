@@ -233,7 +233,8 @@
     "task-state-attr-markdown-symbol": "Symbole Markdown",
     "task-state-attr-is-completed": "Compte comme terminé",
     "task-state-attr-color": "Couleur",
-    "task-state-attr-is-hidden": "Masqué de la liste"
+    "task-state-attr-is-hidden": "Masqué de la liste",
+    "security-title": "Sécurité"
   },
   "notes": {
     "new-note": "Nouvelle note",
@@ -420,7 +421,9 @@
     "presentation_slide": "Diapositive de présentation",
     "presentation_slide_first": "Première diapositive",
     "presentation_slide_second": "Deuxième diapositive",
-    "background": "Arrière-plan"
+    "background": "Arrière-plan",
+    "markdown-snippet": "Extrait Markdown",
+    "code-snippet": "Extrait de code"
   },
   "password": {
     "incorrect": "Le mot de passe que vous avez saisi est incorrect."
@@ -437,5 +440,21 @@
       "fulltext-after-expression": "\"{{- token}}\" n'est pas une expression valide. Pour rechercher du texte, placez-le avant les filtres d'attributs (par exemple, \"{{- token}} #label\" au lieu de \"#label {{- token}}\").",
       "unrecognized-expression": "Expression inconnue \"{{- token}}\""
     }
+  },
+  "security-dialog": {
+    "enable-title": "Activer {{settingLabel}}",
+    "enable-message": "Êtes-vous sûr de vouloir activer {{settingLabel}} ?",
+    "enable-detail": "{{warning}}\n\nN'activez cette option que si vous avez explicitement l'intention d'utiliser cette fonctionnalité. Ne l'activez pas si elle vous est proposée par un script ou une note qui vous est inconnue.\n\nCe changement nécessite un redémarrage pour prendre effet.",
+    "disable-title": "Désactiver {{settingLabel}}",
+    "disable-message": "{{settingLabel}} sera désactivé.",
+    "disable-detail": "Ce changement nécessite un redémarrage pour prendre effet.",
+    "cancel": "Annuler",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "dont-ask-again": "Ne plus demander jusqu'au prochain redémarrage",
+    "backend-scripting": "Exécution de scripts backend",
+    "backend-scripting-warning": "Les scripts backend ont un accès complet au serveur, y compris au système de fichiers et au réseau.",
+    "sql-console": "Console SQL",
+    "sql-console-warning": "La console SQL permet d'exécuter des requêtes SQL arbitraires sur la base de données."
   }
 }

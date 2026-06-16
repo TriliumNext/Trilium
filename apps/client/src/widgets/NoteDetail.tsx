@@ -13,10 +13,12 @@ import dialog from "../services/dialog";
 import { t } from "../services/i18n";
 import protected_session_holder from "../services/protected_session_holder";
 import toast from "../services/toast.js";
-import { isElectron, isMobile } from "../services/utils";
-import NoteTreeWidget from "./note_tree";
+import { isElectron } from "../services/utils";
 import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
-import { useLegacyWidget, useNoteContext, useTriliumEvent } from "./react/hooks";
+import Button from "./react/Button";
+import { useDelayedVisibility, useGetContextDataFrom, useNoteContext, useTriliumEvent } from "./react/hooks";
+import Icon from "./react/Icon";
+import NoItems from "./react/NoItems";
 import { NoteListWithLinks } from "./react/NoteList";
 import { TypeWidgetProps } from "./type_widgets/type_widget";
 
@@ -39,19 +41,23 @@ export default function NoteDetail() {
     const [ noteTypesToRender, setNoteTypesToRender ] = useState<{ [ key in ExtendedNoteType ]?: (props: TypeWidgetProps) => VNode }>({});
     const [ activeNoteType, setActiveNoteType ] = useState<ExtendedNoteType>();
     const widgetRequestId = useRef(0);
-    const hasFixedTree = note && noteContext?.hoistedNoteId === "_lbMobileRoot" && isMobile() && note.noteId.startsWith("_lbMobile");
 
     // Defer loading for tabs that haven't been active yet (e.g. on app refresh).
+    // A tab can hold multiple splits; activating the tab makes all of them visible at once, so deferral
+    // is keyed on the whole tab (the main context) rather than the individual split. Keying it on the
+    // active split would leave the non-focused split of the active tab blank until it's clicked.
     // Special contexts (ntxId starting with "_", e.g. popup editor) are always considered active.
     const isSpecialContext = ntxId?.startsWith("_") ?? false;
-    const [ hasTabBeenActive, setHasTabBeenActive ] = useState(() => isSpecialContext || (noteContext?.isActive() ?? false));
+    const isInActiveTab = () =>
+        isContextInActiveTab(noteContext, appContext.tabManager.getActiveMainContext()?.ntxId);
+    const [ hasTabBeenActive, setHasTabBeenActive ] = useState(() => isSpecialContext || isInActiveTab());
     useEffect(() => {
-        if (!hasTabBeenActive && noteContext?.isActive()) {
+        if (!hasTabBeenActive && isInActiveTab()) {
             setHasTabBeenActive(true);
         }
-    }, [ noteContext, hasTabBeenActive ]);
-    useTriliumEvent("activeNoteChanged", ({ ntxId: eventNtxId }) => {
-        if (eventNtxId === ntxId && !hasTabBeenActive) {
+    }, [ noteContext, hasTabBeenActive ]); // eslint-disable-line react-hooks/exhaustive-deps
+    useTriliumEvent("activeNoteChanged", () => {
+        if (!hasTabBeenActive && isInActiveTab()) {
             setHasTabBeenActive(true);
         }
     });
@@ -213,12 +219,9 @@ export default function NoteDetail() {
         <div
             ref={containerRef}
             class={clsx("component note-detail", {
-                "full-height": isFullHeight,
-                "fixed-tree": hasFixedTree
+                "full-height": isFullHeight
             })}
         >
-            {hasFixedTree && <FixedTree noteContext={noteContext} />}
-
             {Object.entries(noteTypesToRender).map(([ itemType, Element ]) => {
                 return <NoteDetailWrapper
                     Element={Element}
@@ -229,13 +232,24 @@ export default function NoteDetail() {
                     props={props}
                 />;
             })}
+
+            <NoteDetailLoadingOverlay noteContext={noteContext} />
         </div>
     );
 }
 
-function FixedTree({ noteContext }: { noteContext: NoteContext }) {
-    const [ treeEl ] = useLegacyWidget(() => new NoteTreeWidget(), { noteContext });
-    return <div class="fixed-note-tree-container">{treeEl}</div>;
+/**
+ * True when the given context belongs to the active tab, identified by `activeMainNtxId` (the ntxId of
+ * the active tab's main context). A tab can hold several splits, but only one of them is the "active"
+ * context at a time; every split of the active tab is visible and must load eagerly, so the deferral
+ * check is keyed on the tab (the main context), not the individual split.
+ */
+export function isContextInActiveTab(noteContext: NoteContext | undefined, activeMainNtxId: string | null | undefined): boolean {
+    if (!noteContext || activeMainNtxId == null) {
+        return false;
+    }
+
+    return activeMainNtxId === noteContext.getMainContext().ntxId;
 }
 
 /**
@@ -265,6 +279,42 @@ function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, props }: { 
     );
 }
 
+/**
+ * Covers the note detail while the note's content is being fetched, so the user is not left
+ * looking at (and typing into) the previous note's content when the blob is slow to arrive.
+ *
+ * Driven by the `contentLoad` context data published from `useNoteInfo` (type resolution,
+ * which fetches the content for the auto-readonly check) and `useNoteBlob` (the editors'
+ * own content fetch), and paced by {@link useDelayedVisibility}: fast loads never flash it,
+ * slow loads fade it in, and loads stuck past the stall threshold (or failed outright)
+ * offer a retry.
+ */
+function NoteDetailLoadingOverlay({ noteContext }: { noteContext: NoteContext | null | undefined }) {
+    const contentLoad = useGetContextDataFrom(noteContext, "contentLoad");
+    const phase = useDelayedVisibility(contentLoad?.state === "loading");
+    const isError = contentLoad?.state === "error";
+
+    if (!isError && phase === "hidden") {
+        return null;
+    }
+
+    return (
+        <div className="note-detail-loading-overlay">
+            {isError ? (
+                <NoItems icon="bx bx-error-circle" text={t("note_detail.content_load_error")}>
+                    <Button text={t("note_detail.content_load_retry")} onClick={() => contentLoad?.retry()} />
+                </NoItems>
+            ) : phase === "stalled" ? (
+                <NoItems icon="bx bx-loader-alt bx-spin" text={t("note_detail.content_load_stalled")}>
+                    <Button text={t("note_detail.content_load_retry")} onClick={() => contentLoad?.retry()} />
+                </NoItems>
+            ) : (
+                <Icon icon="bx bx-loader-alt bx-spin" />
+            )}
+        </div>
+    );
+}
+
 /** Manages both note changes and changes to the widget type, which are asynchronous. */
 function useNoteInfo() {
     const { note: actualNote, noteContext, parentComponent } = useNoteContext();
@@ -276,11 +326,21 @@ function useNoteInfo() {
     function refresh() {
         const refreshId = ++refreshIdRef.current;
 
+        // The type resolution below can take a while (the auto-readonly check of
+        // getExtendedWidgetType fetches the note's content), during which the previously
+        // rendered note stays visible — cover it with the content-loading overlay.
+        if (actualNote) {
+            noteContext?.setContextData("contentLoad", { state: "loading", retry: refresh });
+        }
+
         getExtendedWidgetType(actualNote, noteContext).then(type => {
             if (refreshId !== refreshIdRef.current) return;
             setNote(actualNote);
             setType(type);
             setMime(actualNote?.mime);
+            if (actualNote) {
+                noteContext?.setContextData("contentLoad", { state: "loaded", retry: refresh });
+            }
         });
     }
 

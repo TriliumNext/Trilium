@@ -27,7 +27,7 @@ function resolveDbPath(): string | null {
     return null;
 }
 
-sql_init.dbReady.then(() => {
+void sql_init.dbReady.then(() => {
     const dbPath = resolveDbPath();
     if (!dbPath) {
         return;

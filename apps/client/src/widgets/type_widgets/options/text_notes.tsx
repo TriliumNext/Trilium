@@ -15,14 +15,14 @@ import { FormListItem } from "../../react/FormList";
 import FormSelect, { FormSelectGroup, FormSelectWithGroups } from "../../react/FormSelect";
 import FormText from "../../react/FormText";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
-import { useColorScheme, useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
+import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { getHtml } from "../../react/RawHtml";
-import CheckboxList from "./components/CheckboxList";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import RadioWithIllustration from "./components/RadioWithIllustration";
 import RelatedSettings from "./components/RelatedSettings";
 import ThemeModeSelector from "./components/ThemeModeSelector";
+import { HighlightsListOptions } from "./highlights_list_options";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
@@ -46,8 +46,8 @@ export default function TextNoteSettings() {
 }
 
 function FormattingToolbar() {
-    const [ textNoteEditorType, setTextNoteEditorType ] = useTriliumOption("textNoteEditorType", true);
-    const [ textNoteEditorMultilineToolbar, setTextNoteEditorMultilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar", true);
+    const [ textNoteEditorType, setTextNoteEditorType ] = useTriliumOption("textNoteEditorType");
+    const [ textNoteEditorMultilineToolbar, setTextNoteEditorMultilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar");
 
     return (
         <OptionsSection title={t("editing.editor_type.label")}>
@@ -440,26 +440,5 @@ function HighlightsList() {
                 </>
             )}
         </OptionsSection>
-    );
-}
-
-export function HighlightsListOptions() {
-    const [ highlightsList, setHighlightsList ] = useTriliumOptionJson<string[]>("highlightsList");
-
-    return (
-        <>
-            <FormText>{t("highlights_list.description")}</FormText>
-            <CheckboxList
-                values={[
-                    { val: "bold", title: t("highlights_list.bold") },
-                    { val: "italic", title: t("highlights_list.italic") },
-                    { val: "underline", title: t("highlights_list.underline") },
-                    { val: "color", title: t("highlights_list.color") },
-                    { val: "bgColor", title: t("highlights_list.bg_color") }
-                ]}
-                keyProperty="val" titleProperty="title"
-                currentValue={highlightsList} onChange={setHighlightsList}
-            />
-        </>
     );
 }

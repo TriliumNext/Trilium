@@ -1,0 +1,132 @@
+<aside class="admonition note">
+  <p>This topic of creating share templates is considered advanced and requires
+    JavaScript/EJS knowledge.</p>
+  <p>The default share template should cover most normal uses.</p>
+</aside>
+<p>For full control over the HTML structure of a shared page — beyond what
+  custom CSS, JS, or HTML snippets allow — you can replace the page template
+  entirely using the <code spellcheck="false">~shareTemplate</code> relation.</p>
+<p>To do so:</p>
+<ol>
+  <li>Create a&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_6f9hih2hXXZk">Code</a>&nbsp;note
+    with the language <em>Embedded JavaScript</em> (EJS).</li>
+  <li>For a shared note to apply the newly created template, apply the
+    <code
+    spellcheck="false">~shareTemplate</code>relation pointing to the note created at step (1).
+      Make use of&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_bwZpz2ajCEwO">Attribute Inheritance</a>&nbsp;to
+      apply it to multiple shared notes.</li>
+</ol>
+<p>There are two important constraints to be aware of:</p>
+<ul>
+  <li>Because EJS templates execute arbitrary server-side JavaScript, <code spellcheck="false">~shareTemplate</code> only
+    takes effect when backend scripting is enabled. If it is disabled (see&nbsp;
+    <a
+    class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/_help_fiHicjpHjIRJ">Security</a>), the relation is ignored and the default template is used.
+      For the same reason, <strong>only apply templates from notes you trust</strong>.</li>
+  <li
+ >The template note must be part of the shared subtree (just like <code spellcheck="false">~shareCss</code>,
+    <code
+    spellcheck="false">~shareJs</code>) in order for it to be loaded. To prevent it from being
+      shown in the navigation, apply <code spellcheck="false">#shareHiddenFromTree</code> to
+      it.</li>
+</ul>
+<h2>Content of the share template</h2>
+<p>Use the <a href="https://github.com/TriliumNext/Notes/blob/develop/packages/share-theme/src/templates/page.ejs">original template</a> as
+  reference when creating a new share template.</p>
+<h2>Available variables</h2>
+<p>Your template is rendered with a context object exposing the note and
+  its rendering environment. The most useful values are:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Variable</th>
+        <th scope="col">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">note</code>
+        </td>
+        <td>The note being rendered. Use it to read attributes (<code spellcheck="false">note.getLabelValue(...)</code>),
+          <code
+          spellcheck="false">note.title</code>, child notes, etc.</td>
+      </tr>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">content</code>
+        </td>
+        <td>The note's already-rendered HTML content, as a string.</td>
+      </tr>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">header</code>
+        </td>
+        <td>Extra HTML to place in the document head for this note (used by some note
+          types).</td>
+      </tr>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">isEmpty</code>
+        </td>
+        <td><code spellcheck="false">true</code> when the note has no content of its
+          own.</td>
+      </tr>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">subRoot</code>
+        </td>
+        <td>The root of the shared subtree as <code spellcheck="false">{ note, branch }</code> —
+          handy for a site-wide title or logo.</td>
+      </tr>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">cssToLoad</code> / <code spellcheck="false">jsToLoad</code>
+        </td>
+        <td>Arrays of stylesheet / script URLs the default theme would inject (includes
+          anything added via <code spellcheck="false">~shareCss</code> / <code spellcheck="false">~shareJs</code>).</td>
+      </tr>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">faviconUrl</code> / <code spellcheck="false">logoUrl</code>
+        </td>
+        <td>Resolved favicon and logo URLs.</td>
+      </tr>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">isStatic</code>
+        </td>
+        <td><code spellcheck="false">true</code> during a static HTML export,
+          <code
+          spellcheck="false">false</code>for a live server render.</td>
+      </tr>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">t</code>
+        </td>
+        <td>The <code spellcheck="false">i18next</code> translation function.</td>
+      </tr>
+      <tr>
+        <td style="border-style:none;padding:2px;"><code spellcheck="false">utils</code>
+        </td>
+        <td>Helper utilities such as <code spellcheck="false">slugify()</code> and
+          <code
+          spellcheck="false">stripTags()</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h2>Error handling</h2>
+<p>If your template throws an error while rendering, Trilium logs the error
+  and quietly falls back to the default template, so a broken template never
+  takes the shared page down.</p>
+<h2>Splitting a template into partials</h2>
+<p>A template can pull in other EJS notes as partials. Create them as <strong>child notes</strong> of
+  the template note (each also a <code spellcheck="false">code</code> /
+  <code
+  spellcheck="false">application/x-ejs</code>note) and reference them by title:</p>
+<div><pre><code class="language-text-x-trilium-auto">&lt;%- include("header") %&gt;
+
+&lt;main&gt;
+    &lt;h1&gt;&lt;%= note.title %&gt;&lt;/h1&gt;
+    &lt;%- content %&gt;
+&lt;/main&gt;
+
+&lt;%- include("footer") %&gt;
+</code></pre>
+</div>
+<p>Here <code spellcheck="false">header</code> and <code spellcheck="false">footer</code> are
+  the titles of child notes of the template. Only direct children are resolvable,
+  and they must be EJS code notes.</p>

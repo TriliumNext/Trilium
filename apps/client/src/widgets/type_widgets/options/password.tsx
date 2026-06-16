@@ -107,6 +107,7 @@ function ChangePasswordModal({ show, onHidden }: ChangePasswordModalProps) {
             title={t("password.change_password_heading")}
             className="change-password-modal"
             size="md"
+            stackable
             footer={
                 <>
                     <Button text={t("password.cancel")} onClick={handleHidden} />
