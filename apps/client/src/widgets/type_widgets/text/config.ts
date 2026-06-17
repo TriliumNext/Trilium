@@ -294,5 +294,9 @@ function getDisabledPlugins() {
         disabledPlugins.push("SlashCommand");
     }
 
+    if (options.get("textNoteAutoCapitalizeEnabled") !== "true") {
+        disabledPlugins.push("AutoCapitalize");
+    }
+
     return disabledPlugins;
 }

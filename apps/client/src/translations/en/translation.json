@@ -2316,7 +2316,9 @@
     "note_completion_enabled": "Note auto-completion",
     "note_completion_description": "Links to notes can be created by typing `@` followed by the title of a note.",
     "slash_commands_enabled": "Slash commands",
-    "slash_commands_description": "Editing commands such as inserting line breaks or headings can be toggled by typing `/`."
+    "slash_commands_description": "Editing commands such as inserting line breaks or headings can be toggled by typing `/`.",
+    "auto_capitalize_enabled": "Automatic capitalization",
+    "auto_capitalize_description": "Capitalizes the first letter of a sentence as you type, after `.`, `!` or `?` and at the start of a line."
   },
   "table_view": {
     "new-row": "New row",

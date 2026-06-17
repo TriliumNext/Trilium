@@ -127,6 +127,7 @@ function EditorFeatures() {
     const [emojiCompletionEnabled, setEmojiCompletionEnabled] = useTriliumOptionBool("textNoteEmojiCompletionEnabled");
     const [noteCompletionEnabled, setNoteCompletionEnabled] = useTriliumOptionBool("textNoteCompletionEnabled");
     const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
+    const [autoCapitalizeEnabled, setAutoCapitalizeEnabled] = useTriliumOptionBool("textNoteAutoCapitalizeEnabled");
 
     return (
         <OptionsSection title={t("editorfeatures.title")}>
@@ -152,6 +153,14 @@ function EditorFeatures() {
                 description={t("editorfeatures.slash_commands_description")}
                 currentValue={slashCommandsEnabled}
                 onChange={setSlashCommandsEnabled}
+            />
+
+            <OptionsRowWithToggle
+                name="auto-capitalize-enabled"
+                label={t("editorfeatures.auto_capitalize_enabled")}
+                description={t("editorfeatures.auto_capitalize_description")}
+                currentValue={autoCapitalizeEnabled}
+                onChange={setAutoCapitalizeEnabled}
             />
         </OptionsSection>
     );
