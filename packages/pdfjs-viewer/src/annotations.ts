@@ -54,6 +54,12 @@ export async function setupPdfAnnotations() {
         if (event.data?.type === "trilium-scroll-to-annotation") {
             scrollToAnnotation(event.data.annotationId, event.data.pageNumber);
         }
+
+        // Parent may request a fresh extraction when context data was cleared
+        // (e.g. after navigating away from the PDF note and back to the same note).
+        if (event.data?.type === "trilium-request-annotations") {
+            extractAndSendAnnotations();
+        }
     });
 }
 
@@ -163,7 +169,18 @@ function sendAnnotations(annotations: PdfAnnotationInfo[]) {
     } satisfies PdfViewerAnnotationsMessage, window.location.origin);
 }
 
+// Tracks the pending MutationObserver so a new scroll request can cancel the old one.
+// Without this, clicking annotation B while A's observer is still waiting causes A's
+// observer to fire later and scroll back to A.
+let activeScrollObserver: MutationObserver | null = null;
+
 function scrollToAnnotation(annotationId: string, pageNumber: number) {
+    // Cancel any pending scroll from a previous request before starting a new one.
+    if (activeScrollObserver) {
+        activeScrollObserver.disconnect();
+        activeScrollObserver = null;
+    }
+
     const app = window.PDFViewerApplication;
     const container = app.pdfViewer.container as HTMLElement;
 
@@ -184,18 +201,41 @@ function scrollToAnnotation(annotationId: string, pageNumber: number) {
         return;
     }
 
-    // Element not in DOM yet — jump to the page and wait for it to render
-    app.pdfViewer.currentPageNumber = pageNumber;
+    // Element not in DOM yet. Scroll the container to the estimated position of the
+    // target page instead of using app.pdfViewer.currentPageNumber = pageNumber.
+    //
+    // The currentPageNumber setter calls PDF.js's scrollPageIntoView, which checks
+    // the page div's offsetParent. When the PDF is cached and loads fast, PDF.js's
+    // virtual scroller may have removed off-screen page divs from the DOM, making
+    // their offsetParent null → "offsetParent is not set -- cannot scroll" → the
+    // viewport never moves → the annotation div never renders → MutationObserver times out.
+    //
+    // Scrolling the container directly bypasses that check. PDF.js's scroll handler
+    // then renders pages around the new viewport position, making the annotation
+    // element appear in the DOM.
+    const numPages = app.pdfDocument?.numPages ?? 1;
+    const estimatedTop = (container.scrollHeight / numPages) * (pageNumber - 1);
+    container.scrollTo({ top: estimatedTop, behavior: "smooth" });
+
     const observer = new MutationObserver(() => {
-        const el = document.querySelector(`[data-annotation-id="${CSS.escape(annotationId)}"]`);
-        if (el) {
+        const found = document.querySelector(`[data-annotation-id="${CSS.escape(annotationId)}"]`);
+        if (found) {
             observer.disconnect();
-            scrollToEl(el);
+            if (activeScrollObserver === observer) {
+                activeScrollObserver = null;
+            }
+            scrollToEl(found);
         }
     });
+    activeScrollObserver = observer;
     observer.observe(document.getElementById("viewer")!, { childList: true, subtree: true });
     // Clean up if annotation never appears
-    setTimeout(() => observer.disconnect(), 3000);
+    setTimeout(() => {
+        observer.disconnect();
+        if (activeScrollObserver === observer) {
+            activeScrollObserver = null;
+        }
+    }, 3000);
 }
 
 export function rgbToHex(rgb: Uint8ClampedArray | Record<number, number> | number[]): string {

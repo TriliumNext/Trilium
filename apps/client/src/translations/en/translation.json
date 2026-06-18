@@ -2724,7 +2724,9 @@
     "pages_alt": "Page {{pageNumber}}",
     "pages_loading": "Loading...",
     "annotations_one": "{{count}} annotation",
-    "annotations_other": "{{count}} annotations"
+    "annotations_other": "{{count}} annotations",
+    "copy_annotation_link": "Copy link to annotation",
+    "annotation_link_copied": "Annotation link copied to clipboard"
   },
   "platform_indicator": {
     "available_on": "Available on {{platform}}"

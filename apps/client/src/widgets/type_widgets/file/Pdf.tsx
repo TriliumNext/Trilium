@@ -17,6 +17,10 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const historyConfig = useViewModeConfig<HistoryData>(note, "pdfHistory");
+    const annotationScrolledRef = useRef(false);
+    // Stores the annotation we intend to scroll to. Survives spurious noteSwitched
+    // events that reset viewScope.annotationId to undefined before the scroll fires.
+    const pendingAnnotationIdRef = useRef<string | undefined>(undefined);
 
     const spacedUpdate = useBlobEditorSpacedUpdate({
         note,
@@ -165,6 +169,27 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                         }, window.location.origin);
                     }
                 });
+
+                // On first annotation load, scroll to the annotation referenced in the link.
+                // Read from pendingAnnotationIdRef rather than viewScope: a spurious
+                // noteSwitched with annotationId=undefined can reset viewScope before this
+                // message arrives, but the ref survives that reset.
+                const pendingId = pendingAnnotationIdRef.current;
+                if (pendingId && !annotationScrolledRef.current) {
+                    annotationScrolledRef.current = true;
+                    const target = resolveAnnotation(
+                        event.data.annotations,
+                        { ...noteContext.viewScope, annotationId: pendingId }
+                    );
+                    if (target) {
+                        pendingAnnotationIdRef.current = undefined;
+                        iframeRef.current?.contentWindow?.postMessage({
+                            type: "trilium-scroll-to-annotation",
+                            annotationId: target.id,
+                            pageNumber: target.pageNumber
+                        }, window.location.origin);
+                    }
+                }
             }
 
             if (event.data.type === "pdfjs-viewer-layers") {
@@ -186,6 +211,56 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             window.removeEventListener("message", handleMessage);
         };
     }, [ note, historyConfig, componentId, blob, noteContext, isReadOnly, spacedUpdate ]);
+
+    // Reset scroll state when the note changes (fresh PDF load).
+    // Also capture the annotationId from viewScope here: for a fresh mount the
+    // useTriliumEvent("noteSwitched") handler fires AFTER noteSwitched has already
+    // propagated, so it misses the event. Reading from the mutable noteContext object
+    // at effect time is safe because this runs before pdfjs-viewer-annotations arrives.
+    useEffect(() => {
+        annotationScrolledRef.current = false;
+        pendingAnnotationIdRef.current = noteContext.viewScope?.annotationId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ note.noteId ]);
+
+    // Handle same-note re-navigation (different annotationId, PDF already loaded).
+    // noteSwitched fires after viewScope is updated, before any re-render. Since PdfPreview
+    // doesn't re-render for same-note viewScope changes, pdfjs-viewer-annotations won't fire
+    // again — we must scroll immediately from the already-loaded annotations context data.
+    useTriliumEvent("noteSwitched", ({ noteContext: eventNoteContext }) => {
+        if (eventNoteContext !== noteContext) return;
+
+        const targetAnnotationId = noteContext.viewScope?.annotationId;
+        if (!targetAnnotationId) return;
+
+        // Record what we want to scroll to. This ref survives spurious noteSwitched
+        // events that reset viewScope.annotationId to undefined before the scroll fires.
+        pendingAnnotationIdRef.current = targetAnnotationId;
+        annotationScrolledRef.current = false;
+
+        const existing = noteContext.getContextData("pdfAnnotations");
+        if (!existing) {
+            // Context data was cleared when the user navigated away from this PDF and back.
+            // The iframe is still loaded (same src = no reload), so pdfjs-viewer-annotations
+            // won't fire automatically. Request a fresh extraction.
+            iframeRef.current?.contentWindow?.postMessage(
+                { type: "trilium-request-annotations" },
+                window.location.origin
+            );
+            return;
+        }
+
+        const target = resolveAnnotation(existing.annotations, noteContext.viewScope);
+        if (target) {
+            annotationScrolledRef.current = true;
+            pendingAnnotationIdRef.current = undefined;
+            iframeRef.current?.contentWindow?.postMessage({
+                type: "trilium-scroll-to-annotation",
+                annotationId: target.id,
+                pageNumber: target.pageNumber
+            }, window.location.origin);
+        }
+    });
 
     useTriliumEvent("customDownload", ({ ntxId }) => {
         if (ntxId !== noteContext.ntxId) return;
@@ -216,7 +291,12 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             onLoad={() => {
                 const win = iframeRef.current?.contentWindow;
                 if (win) {
-                    win.TRILIUM_VIEW_HISTORY_STORE = historyConfig.config;
+                    // Skip view history restoration when navigating via annotation link.
+                    // PDF.js applies the saved pixel-scroll offset lazily (after page render),
+                    // which fires after our scroll-to-annotation and overrides it.
+                    if (!noteContext.viewScope?.annotationId) {
+                        win.TRILIUM_VIEW_HISTORY_STORE = historyConfig.config;
+                    }
                     win.TRILIUM_NOTE_ID = note.noteId;
                     win.TRILIUM_NTX_ID = noteContext.ntxId;
                 }
@@ -237,6 +317,35 @@ interface PdfHeading {
     text: string;
     id: string;
     element: null;
+}
+
+/**
+ * Find the annotation to scroll to from a list, given the viewScope from the navigation URL.
+ *
+ * Tries an exact ID match first. Falls back to page-number + content matching because
+ * PDF.js reassigns annotation IDs when the PDF is saved (temporary editor IDs become
+ * permanent PDF object references), so a link copied before saving will have a stale ID.
+ */
+function resolveAnnotation(
+    annotations: PdfAnnotationInfo[],
+    viewScope: import("../../../services/link").ViewScope | undefined
+): PdfAnnotationInfo | undefined {
+    if (!viewScope?.annotationId) return undefined;
+
+    // 1. Exact ID match (works for existing PDF annotations and links copied after save).
+    const exact = annotations.find((a) => a.id === viewScope.annotationId);
+    if (exact) return exact;
+
+    // 2. Fallback: match by page number + content preview (handles ID rotation after save).
+    const page = viewScope.annotationPage;
+    const rawPreview = viewScope.annotationPreview?.replace(/…$/, "") ?? "";
+    if (!page || !rawPreview) return undefined;
+
+    return annotations.find(
+        (a) =>
+            a.pageNumber === page &&
+            (a.highlightedText.startsWith(rawPreview) || a.contents.startsWith(rawPreview))
+    );
 }
 
 function convertPdfOutlineToHeadings(outline: PdfOutlineItem[]): PdfHeading[] {
