@@ -217,7 +217,7 @@ describe("sync service", () => {
     describe("getEntityChangeRecords", () => {
         it("emits a bare record for erased changes and the entity row for normal ones", () => {
             const noteId = getSql().getValue<string>("SELECT noteId FROM notes WHERE isDeleted = 0 AND noteId <> 'root' LIMIT 1") ?? "root";
-            const records = syncService.getEntityChangeRecords([
+            const { records } = syncService.getEntityChangeRecords([
                 ec({ entityName: "notes", entityId: noteId }),
                 ec({ entityName: "notes", entityId: "does-not-exist" }),
                 ec({ entityName: "notes", entityId: "ignored", isErased: true })
@@ -231,11 +231,11 @@ describe("sync service", () => {
 
         it("base64-encodes blob content and reads note reordering maps", () => {
             const blobId = getSql().getValue<string>("SELECT blobId FROM blobs WHERE content IS NOT NULL LIMIT 1") ?? "";
-            const blobRecords = syncService.getEntityChangeRecords([ec({ entityName: "blobs", entityId: blobId })]);
+            const { records: blobRecords } = syncService.getEntityChangeRecords([ec({ entityName: "blobs", entityId: blobId })]);
             const blobEntity = blobRecords[0]?.entity as { content?: unknown } | undefined;
             expect(typeof blobEntity?.content).toBe("string"); // base64
 
-            const reorder = syncService.getEntityChangeRecords([ec({ entityName: "note_reordering", entityId: "root" })]);
+            const { records: reorder } = syncService.getEntityChangeRecords([ec({ entityName: "note_reordering", entityId: "root" })]);
             expect(reorder[0]?.entity).toBeTypeOf("object");
         });
 
@@ -251,7 +251,7 @@ describe("sync service", () => {
                 getSql().execute("INSERT INTO blobs (blobId, content, dateModified, utcDateModified) VALUES ('sync_small_blob', 'y', ?, ?)", [dateUtils.utcNowDateTime(), dateUtils.utcNowDateTime()]);
             });
 
-            const records = syncService.getEntityChangeRecords([
+            const { records } = syncService.getEntityChangeRecords([
                 ec({ entityName: "blobs", entityId: "sync_big_blob" }),
                 ec({ entityName: "blobs", entityId: "sync_small_blob" })
             ]);

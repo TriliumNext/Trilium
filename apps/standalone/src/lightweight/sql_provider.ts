@@ -373,6 +373,19 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             this.db.exec("PRAGMA journal_mode = WAL");
             this.db.exec("PRAGMA synchronous = NORMAL");
 
+            // Performance tuning — SAHPool/OPFS writes on iOS WKWebView are
+            // expensive (each flush hits the native filesystem barrier), so
+            // we lean heavily on in-memory caching and defer WAL checkpoints.
+            //   * cache_size:        64 MB page cache (negative value = KiB)
+            //   * temp_store:        keep tmp tables/sorts/indices in RAM
+            //   * mmap_size:         256 MB memory-mapped reads when supported
+            //   * wal_autocheckpoint: 10× the SQLite default so commits don't
+            //                         pay for a full WAL flush every ~4 MB
+            this.db.exec("PRAGMA cache_size = -65536");
+            this.db.exec("PRAGMA temp_store = MEMORY");
+            this.db.exec("PRAGMA mmap_size = 268435456");
+            this.db.exec("PRAGMA wal_autocheckpoint = 10000");
+
             const loadTime = performance.now() - startTime;
             console.log(`[BrowserSqlProvider] SAHPool database loaded in ${loadTime.toFixed(2)}ms (WAL mode)`);
         } catch (e) {

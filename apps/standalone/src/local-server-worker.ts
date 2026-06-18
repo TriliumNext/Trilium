@@ -308,6 +308,25 @@ async function initialize(): Promise<void> {
                 }
             } else {
                 logService.info("[Worker] Database not initialized, skipping becca load (will be loaded during DB initialization)");
+
+                // Auto-resume an interrupted initial sync. If the schema is
+                // present and the user already configured sync in a previous
+                // session that didn't finish, restart sync from `lastSyncedPull`
+                // so the user stays on the sync-in-progress screen without
+                // re-entering credentials. The DB will only be marked initialized
+                // once `sync()` returns success (handled inside `triggerSync`).
+                if (coreModule.sql_init.schemaExists()) {
+                    const lastSyncedPull = parseInt(
+                        coreModule.options.getOptionOrNull("lastSyncedPull") ?? "0"
+                    );
+                    const syncServerHost = coreModule.options.getOptionOrNull("syncServerHost") ?? "";
+                    if (lastSyncedPull > 0 && syncServerHost) {
+                        logService.info(
+                            `[Worker] Resuming interrupted sync: lastSyncedPull=${lastSyncedPull}, host=${syncServerHost}`
+                        );
+                        coreModule.setup.triggerSync();
+                    }
+                }
             }
 
             coreModule.sync.startSyncTimer();

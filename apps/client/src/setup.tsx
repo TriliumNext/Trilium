@@ -52,7 +52,12 @@ function renderState(state: State, setState: (state: State) => void) {
 }
 
 function App() {
-    const [state, setState] = useState<State>("selectLanguage");
+    // If the bootstrap signals that a previous setup left a partial sync, jump
+    // straight to the sync-in-progress screen. The worker auto-restarts sync,
+    // and we don't want the user re-entering host/password or seeing the
+    // language picker again — they're effectively resuming.
+    const initialState: State = glob.setupResuming ? "syncFromServerInProgress" : "selectLanguage";
+    const [state, setState] = useState<State>(initialState);
     const [prevState, setPrevState] = useState<State | null>(null);
     const [transitioning, setTransitioning] = useState(false);
     const prevStateRef = useRef<State>(state);

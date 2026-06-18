@@ -174,11 +174,17 @@ function getChanged(req: Request) {
         }
     } while (filteredEntityChanges.length === 0);
 
-    const entityChangeRecords = syncService.getEntityChangeRecords(filteredEntityChanges);
+    const { records: entityChangeRecords, lastSeenEntityChangeId } =
+        syncService.getEntityChangeRecords(filteredEntityChanges);
+
+    // Advance past entities the loop processed even when the batch yields no
+    // records (defensive — covers the case where every entity in the batch was
+    // a no-op or was otherwise skipped by getEntityChangeRecords).
+    if (lastSeenEntityChangeId != null) {
+        lastEntityChangeId = lastSeenEntityChangeId;
+    }
 
     if (entityChangeRecords.length > 0) {
-        lastEntityChangeId = entityChangeRecords[entityChangeRecords.length - 1].entityChange.id;
-
         getLog().info(`Returning ${entityChangeRecords.length} entity changes in ${Date.now() - startTime}ms`);
     }
 

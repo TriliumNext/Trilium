@@ -4,7 +4,7 @@
  */
 
 import { BootstrapDefinition } from '@triliumnext/commons';
-import { entity_changes, getContext, getPlatform, getSharedBootstrapItems, getSql, routes, sql_init } from '@triliumnext/core';
+import { entity_changes, getContext, getPlatform, getSharedBootstrapItems, getSql, options, routes, sql_init } from '@triliumnext/core';
 
 import packageJson from '../../package.json' with { type: 'json' };
 import { type BrowserRequest, BrowserRouter } from './browser_router';
@@ -315,10 +315,19 @@ function bootstrapRoute(): BootstrapDefinition {
     };
 
     if (!isDbInitialized) {
+        // Resume case: schema is already present from a previous setup attempt
+        // that was interrupted before sync completed. Tell the client to skip
+        // the language/sync-from-server forms and go straight to the
+        // sync-in-progress UI — sync itself is auto-restarted by the worker.
+        const setupResuming = sql_init.schemaExists()
+            && parseInt(options.getOptionOrNull("lastSyncedPull") ?? "0") > 0
+            && !!options.getOptionOrNull("syncServerHost");
+
         return {
             ...commonItems,
             baseApiUrl: "../api/",
             isProtectedSessionAvailable: false,
+            setupResuming,
         };
     }
 
