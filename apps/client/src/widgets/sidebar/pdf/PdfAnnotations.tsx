@@ -4,6 +4,7 @@ import { t } from "../../../services/i18n";
 import { calculateHash } from "../../../services/link";
 import { copyTextWithToast } from "../../../services/clipboard_ext";
 import toast from "../../../services/toast";
+import contextMenu from "../../../menus/context_menu";
 import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import RightPanelWidget from "../RightPanelWidget";
@@ -14,6 +15,14 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 const MAX_PREVIEW_LENGTH = 60;
+
+const PRESET_COLORS = [
+    { label: "Blue",   value: "#4a90d9" },
+    { label: "Yellow", value: "#f5c519" },
+    { label: "Green",  value: "#52b788" },
+    { label: "Red",    value: "#e63946" },
+    { label: "Purple", value: "#9c6ade" },
+];
 
 export default function PdfAnnotations() {
     const { note, noteContext } = useActiveNoteContext();
@@ -39,6 +48,8 @@ export default function PdfAnnotations() {
                         noteTitle={note?.title ?? ""}
                         notePath={noteContext?.notePath ?? ""}
                         onNavigate={annotationsData.scrollToAnnotation}
+                        onSetColor={annotationsData.setAnnotationColor}
+                        onDelete={annotationsData.deleteAnnotation}
                     />
                 ))}
             </div>
@@ -50,38 +61,41 @@ function PdfAnnotationItem({
     annotation,
     noteTitle,
     notePath,
-    onNavigate
+    onNavigate,
+    onSetColor,
+    onDelete,
 }: {
     annotation: PdfAnnotationInfo;
     noteTitle: string;
     notePath: string;
     onNavigate: (annotationId: string, pageNumber: number) => void;
+    onSetColor: (annotationId: string, color: string) => void;
+    onDelete: (annotationId: string, pageNumber: number) => void;
 }) {
     const icon = annotation.contents
         ? "bx bxs-comment-detail"
         : TYPE_ICONS[annotation.type] ?? "bx bx-comment";
 
-    function handleCopyLink(e: MouseEvent) {
-        e.stopPropagation();
-
+    function buildHash() {
         const rawPreview = (annotation.highlightedText || annotation.contents).trim();
         const annotationPreview = rawPreview.length > MAX_PREVIEW_LENGTH
             ? `${rawPreview.substring(0, MAX_PREVIEW_LENGTH)}…`
             : rawPreview || undefined;
 
-        const hash = calculateHash({
-            notePath,
-            viewScope: { annotationId: annotation.id, annotationPage: annotation.pageNumber, annotationPreview }
-        });
+        return {
+            hash: calculateHash({
+                notePath,
+                viewScope: { annotationId: annotation.id, annotationPage: annotation.pageNumber, annotationPreview }
+            }),
+            linkTitle: annotationPreview
+                ? `${noteTitle} › "${annotationPreview}"`
+                : `${noteTitle} (annotation)`,
+        };
+    }
 
-        const linkTitle = annotationPreview
-            ? `${noteTitle} › "${annotationPreview}"`
-            : `${noteTitle} (annotation)`;
+    function copyLink() {
+        const { hash, linkTitle } = buildHash();
 
-        // Build a temporary reference link element and copy it via execCommand.
-        // execCommand works without a secure context (HTTPS), unlike ClipboardItem.
-        // When pasted into a CKEditor text note the <a class="reference-link"> is
-        // upcast to a reference link widget that navigates to the annotation on click.
         const $tmp = $('<a class="reference-link">')
             .attr("href", hash)
             .text(linkTitle)
@@ -95,7 +109,6 @@ function PdfAnnotationItem({
             const sel = window.getSelection();
             sel?.removeAllRanges();
             sel?.addRange(range);
-
             if (document.execCommand("copy")) {
                 toast.showMessage(t("pdf.annotation_link_copied"));
             } else {
@@ -107,10 +120,58 @@ function PdfAnnotationItem({
         }
     }
 
+    function handleCopyLink(e: MouseEvent) {
+        e.stopPropagation();
+        copyLink();
+    }
+
+    function handleContextMenu(e: MouseEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        contextMenu.show({
+            x: e.pageX,
+            y: e.pageY,
+            items: [
+                {
+                    title: t("pdf.copy_annotation_link"),
+                    command: "copyLink",
+                    uiIcon: "bx bx-link"
+                },
+                {
+                    title: t("pdf.area_change_color"),
+                    command: "changeColor",
+                    uiIcon: "bx bx-palette",
+                    items: PRESET_COLORS.map((c) => ({
+                        title: c.label,
+                        command: `color:${c.value}`,
+                        uiIcon: "bx bx-circle"
+                    }))
+                },
+                { kind: "separator" },
+                {
+                    title: t("pdf.annotation_delete"),
+                    command: "delete",
+                    uiIcon: "bx bx-trash"
+                }
+            ],
+            selectMenuItemHandler: ({ command }) => {
+                if (command === "copyLink") {
+                    copyLink();
+                } else if (command?.startsWith("color:")) {
+                    onSetColor(annotation.id, command.slice(6));
+                } else if (command === "delete") {
+                    onDelete(annotation.id, annotation.pageNumber);
+                }
+            }
+        });
+    }
+
     return (
         <div
             className="pdf-annotation-item"
             onClick={() => onNavigate(annotation.id, annotation.pageNumber)}
+            onContextMenu={handleContextMenu}
             style={annotation.color ? { backgroundColor: annotation.color } : undefined}
         >
             <Icon icon={icon} />

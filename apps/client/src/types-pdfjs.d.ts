@@ -124,6 +124,35 @@ interface PdfViewerAnnotationsMessage {
     annotations: PdfAnnotationInfo[];
 }
 
+interface PdfAreaAnnotationInfo {
+    attachmentId: string;
+    attributeId: string;
+    pageNumber: number;
+    rect: { x: number; y: number; width: number; height: number };
+    imageUrl: string;
+    comment?: string;
+    color?: string;
+}
+
+interface PdfViewerReadyForOverlaysMessage {
+    type: "pdfjs-viewer-ready-for-overlays";
+}
+
+interface PdfViewerAreaRightClickMessage {
+    type: "pdfjs-viewer-area-right-click";
+    attachmentId: string;
+    attributeId: string;
+    clientX: number;
+    clientY: number;
+}
+
+interface PdfViewerAreaCaptureMessage {
+    type: "pdfjs-viewer-area-capture";
+    imageData: string;
+    pageNumber: number;
+    rect: { x: number; y: number; width: number; height: number };
+}
+
 type PdfMessageEvent = MessageEvent<
     PdfDocumentModifiedMessage
     | PdfSaveViewHistoryMessage
@@ -136,4 +165,7 @@ type PdfMessageEvent = MessageEvent<
     | PdfViewerLayersMessage
     | PdfViewerAnnotationsMessage
     | PdfDocumentBlobResultMessage
+    | PdfViewerAreaCaptureMessage
+    | PdfViewerAreaRightClickMessage
+    | PdfViewerReadyForOverlaysMessage
 >;

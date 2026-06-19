@@ -2726,7 +2726,17 @@
     "annotations_one": "{{count}} annotation",
     "annotations_other": "{{count}} annotations",
     "copy_annotation_link": "Copy link to annotation",
-    "annotation_link_copied": "Annotation link copied to clipboard"
+    "annotation_link_copied": "Annotation link copied to clipboard",
+    "area_capture_saved": "Area captured and saved as annotation",
+    "area_capture_failed": "Failed to save area capture",
+    "area_annotations_one": "{{count}} area annotation",
+    "area_annotations_other": "{{count}} area annotations",
+    "area_annotation_label": "Page {{page}}",
+    "area_annotation_delete": "Delete area annotation",
+    "area_add_note": "Add note",
+    "area_edit_note": "Edit note",
+    "area_change_color": "Change color",
+    "area_note_prompt": "Enter a note for this area annotation"
   },
   "platform_indicator": {
     "available_on": "Available on {{platform}}"

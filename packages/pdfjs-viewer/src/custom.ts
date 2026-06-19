@@ -4,6 +4,7 @@ import { setupPdfPages } from "./pages";
 import { setupPdfAttachments } from "./attachments";
 import { setupPdfLayers } from "./layers";
 import { setupPdfAnnotations, setupAnnotationLiveUpdates, extractFromSavedData } from "./annotations";
+import { setupAreaAnnotation } from "./area";
 
 async function main() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -33,8 +34,12 @@ async function main() {
 
     manageParentCommands();
 
+    // setupAreaAnnotation needs app.pdfViewer.container which is only available
+    // after the viewer is fully initialised (documentloaded). Calling it earlier
+    // would get a null container and bail out immediately.
     app.eventBus.on("documentloaded", () => {
         setupPdfAnnotations();
+        setupAreaAnnotation();
     });
 
     if (isEditable) {

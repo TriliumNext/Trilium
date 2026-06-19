@@ -55,10 +55,16 @@ export async function setupPdfAnnotations() {
             scrollToAnnotation(event.data.annotationId, event.data.pageNumber);
         }
 
-        // Parent may request a fresh extraction when context data was cleared
-        // (e.g. after navigating away from the PDF note and back to the same note).
         if (event.data?.type === "trilium-request-annotations") {
             extractAndSendAnnotations();
+        }
+
+        if (event.data?.type === "trilium-set-annotation-color") {
+            setAnnotationColor(event.data.annotationId, event.data.color);
+        }
+
+        if (event.data?.type === "trilium-delete-annotation") {
+            deleteAnnotationById(event.data.annotationId, event.data.pageNumber);
         }
     });
 }
@@ -243,4 +249,44 @@ export function rgbToHex(rgb: Uint8ClampedArray | Record<number, number> | numbe
     const g = rgb[1];
     const b = rgb[2];
     return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+    const v = parseInt(hex.replace("#", ""), 16);
+    return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+}
+
+function setAnnotationColor(annotationId: string, color: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const storage: any = window.PDFViewerApplication?.pdfDocument?.annotationStorage;
+    if (!storage) return;
+
+    const editor = storage.getEditor?.(annotationId);
+    if (editor) {
+        // PDF.js stores highlight colours as an RGB array (0-255 per channel).
+        // Setting .color and calling onSetModified triggers the auto-save flow.
+        editor.color = hexToRgb(color);
+        storage.onSetModified?.();
+    } else {
+        storage.setValue?.(annotationId, { color: hexToRgb(color) });
+    }
+}
+
+function deleteAnnotationById(annotationId: string, _pageNumber: number) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const storage: any = window.PDFViewerApplication?.pdfDocument?.annotationStorage;
+    if (!storage) return;
+
+    const editor = storage.getEditor?.(annotationId);
+    if (editor) {
+        if (typeof editor.remove === "function") {
+            editor.remove();
+        } else {
+            storage.setValue?.(annotationId, { deleted: true });
+            storage.onSetModified?.();
+        }
+    } else {
+        storage.setValue?.(annotationId, { deleted: true });
+        storage.onSetModified?.();
+    }
 }
