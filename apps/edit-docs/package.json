@@ -12,7 +12,7 @@
     "@triliumnext/core": "workspace:*",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/desktop": "workspace:*",
-    "electron": "41.7.2"
+    "electron": "41.8.0"
   },
   "scripts": {
     "build": "tsx scripts/build.ts",
