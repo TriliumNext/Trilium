@@ -2727,6 +2727,7 @@
     "annotations_other": "{{count}} annotations",
     "copy_annotation_link": "Copy link to annotation",
     "annotation_link_copied": "Annotation link copied to clipboard",
+    "annotation_delete": "Delete annotation",
     "area_capture_saved": "Area captured and saved as annotation",
     "area_capture_failed": "Failed to save area capture",
     "area_annotations_one": "{{count}} area annotation",

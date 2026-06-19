@@ -58,58 +58,8 @@ function PdfAreaAnnotationItem({
 }) {
     const color = annotation.color ?? "#4a90d9";
 
-    function handleContextMenu(e: MouseEvent) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        contextMenu.show({
-            x: e.pageX,
-            y: e.pageY,
-            items: [
-                {
-                    title: annotation.comment
-                        ? t("pdf.area_edit_note")
-                        : t("pdf.area_add_note"),
-                    command: "editNote",
-                    uiIcon: "bx bx-comment-add"
-                },
-                {
-                    title: t("pdf.area_change_color"),
-                    command: "changeColor",
-                    uiIcon: "bx bx-palette",
-                    items: PRESET_COLORS.map((c) => ({
-                        title: c.label,
-                        command: `color:${c.value}`,
-                        uiIcon: "bx bx-circle"
-                    }))
-                },
-                { kind: "separator" },
-                {
-                    title: t("pdf.area_annotation_delete"),
-                    command: "delete",
-                    uiIcon: "bx bx-trash"
-                }
-            ],
-            selectMenuItemHandler: ({ command }) => {
-                if (command === "editNote") {
-                    const current = annotation.comment ?? "";
-                    const entered = window.prompt(t("pdf.area_note_prompt"), current);
-                    if (entered !== null) {
-                        onUpdate(annotation.attributeId, { comment: entered.trim() });
-                    }
-                } else if (command?.startsWith("color:")) {
-                    onUpdate(annotation.attributeId, { color: command.slice(6) });
-                } else if (command === "delete") {
-                    onDelete(annotation.attachmentId, annotation.attributeId);
-                }
-            }
-        });
-    }
-
-    function handleCopyLink(e: MouseEvent) {
-        e.stopPropagation();
-
-        // Build a navigation hash so clicking the pasted image scrolls the PDF to this area.
+    // Shared copy logic — called from both the hover button and the context menu.
+    function doCopyLink() {
         const hash = calculateHash({
             notePath,
             viewScope: {
@@ -118,13 +68,10 @@ function PdfAreaAnnotationItem({
             }
         });
 
-        // Paste as <figure class="image"><a href="..."><img></a></figure>.
-        //
-        // • <figure class="image">   — CKEditor's block-image format; gives resize handles
-        //   because ImageResize is registered in Trilium's CKEditor build.
-        // • <a href="hash">          — CKEditor treats this as a linked image (Link + Image
-        //   plugins cooperate). Trilium's global click handler navigates to the PDF annotation.
-        // • <img src="imageUrl">     — loads the existing attachment, no new note created.
+        // Paste as <figure class="image"><a href="hash"><img src="..."></a></figure>:
+        // • ImageResize plugin gives resize handles in CKEditor.
+        // • The <a> makes it a linked image — clicking navigates to the PDF area.
+        // • The <img src> loads the existing attachment; no new note is created.
         const $wrapper = $('<div contenteditable="true">')
             .css({ position: "fixed", left: "-9999px", top: "0" })
             .appendTo(document.body);
@@ -154,6 +101,67 @@ function PdfAreaAnnotationItem({
             window.getSelection()?.removeAllRanges();
             $wrapper.remove();
         }
+    }
+
+    function handleCopyLink(e: MouseEvent) {
+        e.stopPropagation();
+        doCopyLink();
+    }
+
+    function handleContextMenu(e: MouseEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        contextMenu.show({
+            x: e.pageX,
+            y: e.pageY,
+            items: [
+                {
+                    title: t("pdf.copy_annotation_link"),
+                    command: "copyLink",
+                    uiIcon: "bx bx-link"
+                },
+                { kind: "separator" },
+                {
+                    title: annotation.comment
+                        ? t("pdf.area_edit_note")
+                        : t("pdf.area_add_note"),
+                    command: "editNote",
+                    uiIcon: "bx bx-comment-add"
+                },
+                {
+                    title: t("pdf.area_change_color"),
+                    command: "changeColor",
+                    uiIcon: "bx bx-palette",
+                    items: PRESET_COLORS.map((c) => ({
+                        title: c.label,
+                        command: `color:${c.value}`,
+                        uiIcon: "bx bx-circle"
+                    }))
+                },
+                { kind: "separator" },
+                {
+                    title: t("pdf.area_annotation_delete"),
+                    command: "delete",
+                    uiIcon: "bx bx-trash"
+                }
+            ],
+            selectMenuItemHandler: ({ command }) => {
+                if (command === "copyLink") {
+                    doCopyLink();
+                } else if (command === "editNote") {
+                    const current = annotation.comment ?? "";
+                    const entered = window.prompt(t("pdf.area_note_prompt"), current);
+                    if (entered !== null) {
+                        onUpdate(annotation.attributeId, { comment: entered.trim() });
+                    }
+                } else if (command?.startsWith("color:")) {
+                    onUpdate(annotation.attributeId, { color: command.slice(6) });
+                } else if (command === "delete") {
+                    onDelete(annotation.attachmentId, annotation.attributeId);
+                }
+            }
+        });
     }
 
     return (
