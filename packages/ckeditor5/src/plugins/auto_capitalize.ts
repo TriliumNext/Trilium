@@ -1,5 +1,7 @@
 import { Plugin } from "ckeditor5";
-import type { InsertTextCommandExecuteEvent, InsertTextCommandOptions, ModelPosition, ModelWriter } from "ckeditor5";
+import type {
+    InsertTextCommandExecuteEvent, InsertTextCommandOptions, ModelPosition, ModelWriter
+} from "ckeditor5";
 
 /**
  * Automatically capitalizes the first letter of a sentence as the user types,
@@ -41,46 +43,62 @@ export default class AutoCapitalize extends Plugin {
     }
 
     init() {
-        const model = this.editor.model;
+        const commands = this.editor.commands;
 
         // Typing: a single whitespace character (space / tab) ends a word.
-        const insertText = this.editor.commands.get("insertText");
-        /* v8 ignore next 3 -- defensive: the insertText command is always registered by the Typing plugin */
+        const insertText = commands.get("insertText");
+        /* v8 ignore next 3 -- defensive: insertText is always registered by Typing */
         if (insertText) {
-            this.listenTo<InsertTextCommandExecuteEvent>(insertText, "execute", (_evt, [ options ]) => {
-                if (!isWhitespaceTrigger(options)) {
-                    return;
-                }
-                // Defer into a fresh batch so the capital is a separate undo step
-                // and runs after the whitespace has actually landed in the model
-                // (real typing wraps the command in its own enqueueChange, so the
-                // insertion is queued — reading the model here, inside the queued
-                // callback, sees the finished word in every case).
-                model.enqueueChange(writer => {
-                    const caret = model.document.selection.getFirstPosition();
-                    if (caret && caret.offset >= 1) {
-                        // The word ends just before the whitespace.
-                        this.capitalizeWordEndingAt(writer, caret.getShiftedBy(-1));
-                    }
-                });
-            }, { priority: "low" });
+            this.listenTo<InsertTextCommandExecuteEvent>(
+                insertText, "execute",
+                (_evt, [ options ]) => this.onWhitespace(options),
+                { priority: "low" }
+            );
         }
 
         // Enter / Shift+Enter also finish a word (a new line or paragraph).
         for (const name of [ "enter", "shiftEnter" ] as const) {
-            const command = this.editor.commands.get(name);
-            if (!command) {
-                continue;
+            const command = commands.get(name);
+            /* v8 ignore next 3 -- defensive: enter/shiftEnter always registered by Essentials */
+            if (command) {
+                this.listenTo(
+                    command, "execute", () => this.onLineBreak(name), { priority: "low" }
+                );
             }
-            this.listenTo(command, "execute", () => {
-                model.enqueueChange(writer => {
-                    const end = this.lineBreakWordEnd(name);
-                    if (end) {
-                        this.capitalizeWordEndingAt(writer, end);
-                    }
-                });
-            }, { priority: "low" });
         }
+    }
+
+    /** Capitalize the finished word when a whitespace character is typed. */
+    private onWhitespace(options: InsertTextCommandOptions | undefined) {
+        if (!isWhitespaceTrigger(options)) {
+            return;
+        }
+        const model = this.editor.model;
+        // Defer into a fresh batch so the capital is a separate undo step and runs
+        // after the whitespace has landed. Real typing wraps the command in its own
+        // enqueueChange (queueing the insert), so reading the model inside this
+        // callback — not the listener — sees the finished word in every case.
+        model.enqueueChange(writer => {
+            const caret = model.document.selection.getFirstPosition();
+            /* v8 ignore next 3 -- defensive: the caret always sits past the typed whitespace */
+            if (!caret || caret.offset < 1) {
+                return;
+            }
+            // The word ends just before the whitespace.
+            this.capitalizeWordEndingAt(writer, caret.getShiftedBy(-1));
+        });
+    }
+
+    /** Capitalize the finished word when Enter / Shift+Enter ends a line. */
+    private onLineBreak(command: "enter" | "shiftEnter") {
+        this.editor.model.enqueueChange(writer => {
+            const end = this.lineBreakWordEnd(command);
+            /* v8 ignore next 3 -- defensive: only the unreachable guard paths return null */
+            if (!end) {
+                return;
+            }
+            this.capitalizeWordEndingAt(writer, end);
+        });
     }
 
     /**
@@ -92,13 +110,19 @@ export default class AutoCapitalize extends Plugin {
     private lineBreakWordEnd(command: "enter" | "shiftEnter"): ModelPosition | null {
         const model = this.editor.model;
         const caret = model.document.selection.getFirstPosition();
+        /* v8 ignore next 3 -- defensive: there is always a selection position */
         if (!caret) {
             return null;
         }
         if (command === "shiftEnter") {
-            return caret.offset >= 1 ? caret.getShiftedBy(-1) : null;
+            /* v8 ignore next 3 -- defensive: the soft break always sits at offset >= 1 */
+            if (caret.offset < 1) {
+                return null;
+            }
+            return caret.getShiftedBy(-1);
         }
         const previousBlock = caret.parent.previousSibling;
+        /* v8 ignore next 3 -- defensive: enter always leaves a previous block to land after */
         if (!previousBlock || !previousBlock.is("element")) {
             return null;
         }
@@ -137,12 +161,15 @@ export default class AutoCapitalize extends Plugin {
 
         // Resolve that first letter in the model (its offset maps 1:1 from the
         // text window, since each non-text item counts as one space).
-        const letterStart = model.createPositionAt(end.parent, startOffset + text.length - word.length);
+        const letterOffset = startOffset + text.length - word.length;
+        const letterStart = model.createPositionAt(end.parent, letterOffset);
         const letterRange = model.createRange(letterStart, letterStart.getShiftedBy(1));
         const item = Array.from(letterRange.getItems())[0];
+        /* v8 ignore next 3 -- defensive: the resolved position always holds a text node */
         if (!item || (!item.is("$textProxy") && !item.is("$text"))) {
             return;
         }
+        /* v8 ignore next 3 -- defensive: the resolved letter always matches the finished word */
         if (item.data !== firstChar) {
             return;
         }
