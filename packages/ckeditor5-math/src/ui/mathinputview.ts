@@ -4,14 +4,6 @@ import { View, type Locale, type FocusableView } from 'ckeditor5';
 import 'mathlive/fonts.css'; // Auto-bundles offline fonts
 import 'mathlive/static.css'; // Static styles for mathlive
 
-interface MathFieldElement extends HTMLElement {
-	value: string;
-	readOnly: boolean;
-	mathVirtualKeyboardPolicy: string;
-	inlineShortcuts?: Record<string, string>;
-	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
-}
-
 declare global {
 	interface Window {
 		mathVirtualKeyboard?: {
@@ -22,6 +14,14 @@ declare global {
 			removeEventListener: ( event: string, cb: () => void ) => void;
 		};
 	}
+}
+
+interface MathFieldElement extends HTMLElement {
+	value: string;
+	readOnly: boolean;
+	mathVirtualKeyboardPolicy: string;
+	inlineShortcuts?: Record<string, string>;
+	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
 }
 
 // Wrapper for the MathLive element to make it focusable in CKEditor's UI system
