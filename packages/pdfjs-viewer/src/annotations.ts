@@ -269,6 +269,7 @@ function setAnnotationColor(annotationId: string, color: string) {
         storage.onSetModified?.();
     } else {
         storage.setValue?.(annotationId, { color: hexToRgb(color) });
+        storage.onSetModified?.();
     }
 }
 

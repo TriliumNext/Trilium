@@ -8,7 +8,9 @@ import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import contextMenu from "../../../menus/context_menu";
 import server from "../../../services/server";
+import { textPrompt } from "../../../services/textPrompt";
 import toast from "../../../services/toast";
+import { PDF_ANNOTATION_COLORS } from "../../sidebar/pdf/pdfAnnotationColors";
 import { useViewModeConfig } from "../../collections/NoteList";
 import { useBlobEditorSpacedUpdate, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
 import PdfViewer from "./PdfViewer";
@@ -229,7 +231,6 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                 // The PDF viewer just registered its trilium-set-area-overlays listener.
                 // Send the current area overlays now that it's ready to receive them.
                 const areaCtx = noteContext.getContextData("pdfAreaAnnotations");
-                console.log("[area] viewer ready-for-overlays, annotations:", areaCtx?.annotations.length ?? 0);
                 if (areaCtx?.annotations.length) {
                     iframeRef.current?.contentWindow?.postMessage(
                         {
@@ -454,10 +455,14 @@ async function loadAreaAnnotations(
     pendingAnnotationIdRef?: { current: string | undefined },
     annotationScrolledRef?: { current: boolean }
 ) {
+    const capturedNoteId = note.noteId;
     try {
         const attributes = await server.get<{ attributeId: string; type: string; name: string; value: string }[]>(
-            `notes/${note.noteId}/attributes`
+            `notes/${capturedNoteId}/attributes`
         );
+
+        // Guard: user may have navigated away while the fetch was in-flight
+        if (noteContext.noteId !== capturedNoteId) return;
 
         const areaAnnotations: PdfAreaAnnotationInfo[] = attributes
             .filter((a) => a.type === "label" && a.name === AREA_ANNOTATION_LABEL)
@@ -513,8 +518,6 @@ async function loadAreaAnnotations(
                 await loadAreaAnnotations(note, noteContext, iframeRef);
             }
         });
-
-        console.log("[area] loadAreaAnnotations: found", areaAnnotations.length, "area annotations for note", note.noteId);
 
         // Redraw persistent overlays in the PDF viewer with all metadata.
         // Note: at initial load the iframe may not have set up its listener yet.
@@ -584,7 +587,9 @@ async function handleAreaCapture(
         }
 
         // URL format: "api/attachments/{attachmentId}/image/{title}"
-        const attachmentId = result.url.split("/")[2];
+        const attachmentIdMatch = result.url.match(/api\/attachments\/([^/]+)\//);
+        const attachmentId = attachmentIdMatch?.[1];
+        if (!attachmentId) throw new Error(`Could not extract attachmentId from URL: ${result.url}`);
 
         // Store metadata as a note label so it survives across sessions
         await server.post(`notes/${note.noteId}/attributes`, {
@@ -601,13 +606,7 @@ async function handleAreaCapture(
     }
 }
 
-const AREA_PRESET_COLORS = [
-    { label: "Blue",   value: "#4a90d9" },
-    { label: "Yellow", value: "#f5c519" },
-    { label: "Green",  value: "#52b788" },
-    { label: "Red",    value: "#e63946" },
-    { label: "Purple", value: "#9c6ade" },
-];
+const AREA_PRESET_COLORS = PDF_ANNOTATION_COLORS;
 
 function handleAreaRightClick(
     data: PdfViewerAreaRightClickMessage,
@@ -649,9 +648,9 @@ function handleAreaRightClick(
                 uiIcon: "bx bx-trash"
             }
         ],
-        selectMenuItemHandler: ({ command }) => {
+        selectMenuItemHandler: async ({ command }) => {
             if (command === "editNote") {
-                const entered = window.prompt(t("pdf.area_note_prompt"), annotation.comment ?? "");
+                const entered = await textPrompt(t("pdf.area_note_prompt"), annotation.comment ?? "");
                 if (entered !== null) {
                     areaCtx.updateArea(annotation.attributeId, { comment: entered.trim() });
                 }

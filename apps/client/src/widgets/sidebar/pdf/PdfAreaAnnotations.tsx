@@ -5,17 +5,13 @@ import { calculateHash } from "../../../services/link";
 import { copyTextWithToast } from "../../../services/clipboard_ext";
 import toast from "../../../services/toast";
 import contextMenu from "../../../menus/context_menu";
+import { textPrompt } from "../../../services/textPrompt";
 import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
+import { PDF_ANNOTATION_COLORS } from "./pdfAnnotationColors";
 import Icon from "../../react/Icon";
 import RightPanelWidget from "../RightPanelWidget";
 
-const PRESET_COLORS = [
-    { label: "Blue",   value: "#4a90d9" },
-    { label: "Yellow", value: "#f5c519" },
-    { label: "Green",  value: "#52b788" },
-    { label: "Red",    value: "#e63946" },
-    { label: "Purple", value: "#9c6ade" },
-];
+const PRESET_COLORS = PDF_ANNOTATION_COLORS;
 
 export default function PdfAreaAnnotations() {
     const { note, noteContext } = useActiveNoteContext();
@@ -146,12 +142,12 @@ function PdfAreaAnnotationItem({
                     uiIcon: "bx bx-trash"
                 }
             ],
-            selectMenuItemHandler: ({ command }) => {
+            selectMenuItemHandler: async ({ command }) => {
                 if (command === "copyLink") {
                     doCopyLink();
                 } else if (command === "editNote") {
                     const current = annotation.comment ?? "";
-                    const entered = window.prompt(t("pdf.area_note_prompt"), current);
+                    const entered = await textPrompt(t("pdf.area_note_prompt"), current);
                     if (entered !== null) {
                         onUpdate(annotation.attributeId, { comment: entered.trim() });
                     }

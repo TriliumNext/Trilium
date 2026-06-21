@@ -12,6 +12,9 @@ const PERSISTENT_OVERLAY_CLASS = "trilium-area-overlay";
 /** Persisted so pagerendered can re-draw overlays after virtual-scroll eviction. */
 let storedAreas: AreaEntry[] = [];
 
+/** Set when scrollToArea targets a page not yet rendered; cleared by pagerendered. */
+let pendingScrollTarget: { pageNumber: number; rect: AreaEntry["rect"] } | null = null;
+
 export function setupAreaAnnotation() {
     const toolbarRight = document.getElementById("toolbarViewerRight");
     if (!toolbarRight) return;
@@ -138,17 +141,27 @@ export function setupAreaAnnotation() {
 
     // Re-draw overlays on every page render (PDF.js may have evicted the page div
     // via its virtual scroller, removing our overlay child elements with it).
+    // Also: if a scroll-to-area was pending for this page, complete the precise
+    // vertical centering now that the page dimensions are fully known.
     app.eventBus.on("pagerendered", ({ pageNumber }: { pageNumber: number }) => {
         const areasForPage = storedAreas.filter((a) => a.pageNumber === pageNumber);
-        if (areasForPage.length === 0) return;
 
         const pageEl = container.querySelector<HTMLElement>(`.page[data-page-number="${pageNumber}"]`);
         if (!pageEl) return;
 
-        // Clean up any stale overlays that survived, then redraw.
+        // Redraw overlays
         pageEl.querySelectorAll(`.${PERSISTENT_OVERLAY_CLASS}`).forEach((el) => el.remove());
         for (const area of areasForPage) {
             pageEl.appendChild(createOverlay(area));
+        }
+
+        // Precise scroll: if we were waiting for this page to render, centre on the rect.
+        if (pendingScrollTarget?.pageNumber === pageNumber) {
+            const { rect } = pendingScrollTarget;
+            pendingScrollTarget = null;
+            const areaTop = pageEl.offsetTop + rect.y * pageEl.offsetHeight;
+            const areaCenter = areaTop + (rect.height * pageEl.offsetHeight) / 2;
+            container.scrollTo({ top: areaCenter - container.clientHeight / 2, behavior: "smooth" });
         }
     });
 
@@ -166,7 +179,6 @@ export function setupAreaAnnotation() {
 
         if (event.data?.type === "trilium-set-area-overlays") {
             const { areas } = event.data as { areas: AreaEntry[] };
-            console.log("[area] trilium-set-area-overlays received:", areas.length, "areas");
             setAreaOverlays(container, areas);
         }
     });
@@ -175,7 +187,6 @@ export function setupAreaAnnotation() {
     // This is a pull model: the parent may have sent trilium-set-area-overlays
     // before this listener was registered (the message would be silently dropped),
     // so we ask for it again now that we are ready.
-    console.log("[area] setupAreaAnnotation complete, signalling ready-for-overlays");
     window.parent.postMessage(
         { type: "pdfjs-viewer-ready-for-overlays" },
         window.location.origin
@@ -229,17 +240,11 @@ function setAreaOverlays(container: HTMLElement, areas: AreaEntry[]) {
 
     container.querySelectorAll(`.${PERSISTENT_OVERLAY_CLASS}`).forEach((el) => el.remove());
 
-    let drawn = 0;
     for (const area of areas) {
         const pageEl = container.querySelector<HTMLElement>(`.page[data-page-number="${area.pageNumber}"]`);
-        if (!pageEl) {
-            console.log(`[area] page ${area.pageNumber} not in DOM yet — will draw on pagerendered`);
-            continue;
-        }
+        if (!pageEl) continue;
         pageEl.appendChild(createOverlay(area));
-        drawn++;
     }
-    console.log(`[area] setAreaOverlays: ${drawn}/${areas.length} overlays drawn immediately`);
 }
 
 function captureAndSend(container: HTMLElement, left: number, top: number, width: number, height: number) {
@@ -327,6 +332,10 @@ function scrollToArea(
         });
         flashArea(targetPage, rect);
     } else {
+        // Page not rendered yet — scroll to estimated position and record a pending
+        // target so the pagerendered handler can perform a precise centre once the
+        // page's dimensions are actually known.
+        pendingScrollTarget = { pageNumber, rect };
         const numPages = window.PDFViewerApplication?.pdfDocument?.numPages ?? 1;
         const estimatedTop = (container.scrollHeight / numPages) * (pageNumber - 1);
         container.scrollTo({ top: estimatedTop, behavior: "smooth" });

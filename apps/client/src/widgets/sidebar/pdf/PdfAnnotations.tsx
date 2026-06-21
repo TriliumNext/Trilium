@@ -9,6 +9,7 @@ import contextMenu from "../../../menus/context_menu";
 import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import RightPanelWidget from "../RightPanelWidget";
+import { PDF_ANNOTATION_COLORS } from "./pdfAnnotationColors";
 
 const TYPE_ICONS: Record<string, string> = {
     text: "bx bxs-comment-detail",
@@ -16,14 +17,7 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 const MAX_PREVIEW_LENGTH = 60;
-
-const PRESET_COLORS = [
-    { label: "Blue",   value: "#4a90d9" },
-    { label: "Yellow", value: "#f5c519" },
-    { label: "Green",  value: "#52b788" },
-    { label: "Red",    value: "#e63946" },
-    { label: "Purple", value: "#9c6ade" },
-];
+const PRESET_COLORS = PDF_ANNOTATION_COLORS;
 
 export default function PdfAnnotations() {
     const { note, noteContext } = useActiveNoteContext();
@@ -43,7 +37,8 @@ export default function PdfAnnotations() {
             e.preventDefault();
             e.stopPropagation();
 
-            const annotationId = $item.attr("data-annotation-id")!;
+            const annotationId = $item.attr("data-annotation-id");
+            if (!annotationId) return;
             const annotation = annotationsData.annotations.find((a) => a.id === annotationId);
             const notePath = noteContext?.notePath ?? "";
             const noteTitleVal = note?.title ?? "";
