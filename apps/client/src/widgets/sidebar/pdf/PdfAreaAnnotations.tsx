@@ -132,7 +132,7 @@ function PdfAreaAnnotationItem({
                     items: PRESET_COLORS.map((c) => ({
                         title: c.label,
                         command: `color:${c.value}`,
-                        uiIcon: "bx bx-circle"
+                        uiIcon: `bx bx-circle ${c.cssClass}`
                     }))
                 },
                 { kind: "separator" },

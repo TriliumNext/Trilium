@@ -63,7 +63,7 @@ export default function PdfAnnotations() {
                     { title: t("pdf.copy_annotation_link"), command: "copyLink", uiIcon: "bx bx-link" },
                     {
                         title: t("pdf.area_change_color"), command: "changeColor", uiIcon: "bx bx-palette",
-                        items: PRESET_COLORS.map((c) => ({ title: c.label, command: `color:${c.value}`, uiIcon: "bx bx-circle" }))
+                        items: PRESET_COLORS.map((c) => ({ title: c.label, command: `color:${c.value}`, uiIcon: `bx bx-circle ${c.cssClass}` }))
                     },
                     { kind: "separator" },
                     { title: t("pdf.annotation_delete"), command: "delete", uiIcon: "bx bx-trash" }

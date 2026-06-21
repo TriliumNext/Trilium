@@ -1,3 +1,14 @@
+/* Colour the circle icons in the annotation colour-picker context menu.
+   These rules are global (CSS is not scoped) so they reach the context
+   menu DOM which lives directly in <body>, outside our component tree.
+   Specificity must beat .dropdown-item .tn-icon { color: !important } (0,2,0),
+   so we use .dropdown-item .tn-icon.<class> (0,3,0) to win. */
+.dropdown-item .tn-icon.pdf-color-blue   { color: #4a90d9 !important; }
+.dropdown-item .tn-icon.pdf-color-yellow { color: #f5c519 !important; }
+.dropdown-item .tn-icon.pdf-color-green  { color: #52b788 !important; }
+.dropdown-item .tn-icon.pdf-color-red    { color: #e63946 !important; }
+.dropdown-item .tn-icon.pdf-color-purple { color: #9c6ade !important; }
+
 .pdf-area-annotations-list {
     width: 100%;
 }

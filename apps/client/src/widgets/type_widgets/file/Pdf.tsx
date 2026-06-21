@@ -28,6 +28,9 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
     // Stores the annotation we intend to scroll to. Survives spurious noteSwitched
     // events that reset viewScope.annotationId to undefined before the scroll fires.
     const pendingAnnotationIdRef = useRef<string | undefined>(undefined);
+    // True once pdfjs-viewer-ready-for-overlays fires, meaning the iframe's
+    // trilium-scroll-to-area listener is registered and messages will be received.
+    const viewerAreaReadyRef = useRef(false);
 
     const spacedUpdate = useBlobEditorSpacedUpdate({
         note,
@@ -229,7 +232,8 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
 
             if (event.data.type === "pdfjs-viewer-ready-for-overlays") {
                 // The PDF viewer just registered its trilium-set-area-overlays listener.
-                // Send the current area overlays now that it's ready to receive them.
+                // Mark the viewer as ready so loadAreaAnnotations can scroll safely.
+                viewerAreaReadyRef.current = true;
                 const areaCtx = noteContext.getContextData("pdfAreaAnnotations");
                 if (areaCtx?.annotations.length) {
                     iframeRef.current?.contentWindow?.postMessage(
@@ -284,9 +288,12 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
         };
     }, [ note, historyConfig, componentId, blob, noteContext, isReadOnly, spacedUpdate ]);
 
-    // Load area annotations (image captures stored as attachments) when the PDF note changes.
+    // Load area annotations when the PDF note changes.
+    // Pass the pending-scroll refs so loadAreaAnnotations can trigger the scroll
+    // directly once the data arrives — this covers the fresh-mount path where
+    // noteSwitched fires before the component is mounted (and therefore missed).
     useEffect(() => {
-        loadAreaAnnotations(note, noteContext, iframeRef);
+        void loadAreaAnnotations(note, noteContext, iframeRef, pendingAnnotationIdRef, annotationScrolledRef, viewerAreaReadyRef);
     }, [ note.noteId ]);
 
     // Reset scroll state when the note changes (fresh PDF load).
@@ -297,6 +304,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
     useEffect(() => {
         annotationScrolledRef.current = false;
         pendingAnnotationIdRef.current = noteContext.viewScope?.annotationId;
+        viewerAreaReadyRef.current = false;   // viewer reloads on note change
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ note.noteId ]);
 
@@ -322,7 +330,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             if (!areaCtx) {
                 // Area annotations not loaded yet (context was cleared on navigate-away).
                 // loadAreaAnnotations will be called and will handle the scroll once done.
-                loadAreaAnnotations(note, noteContext, iframeRef, pendingAnnotationIdRef, annotationScrolledRef);
+                void loadAreaAnnotations(note, noteContext, iframeRef, pendingAnnotationIdRef, annotationScrolledRef, viewerAreaReadyRef);
             } else {
                 const area = areaCtx.annotations.find((a) => a.attachmentId === attachmentId);
                 if (area) {
@@ -416,34 +424,7 @@ interface PdfHeading {
     element: null;
 }
 
-/**
- * Find the annotation to scroll to from a list, given the viewScope from the navigation URL.
- *
- * Tries an exact ID match first. Falls back to page-number + content matching because
- * PDF.js reassigns annotation IDs when the PDF is saved (temporary editor IDs become
- * permanent PDF object references), so a link copied before saving will have a stale ID.
- */
-function resolveAnnotation(
-    annotations: PdfAnnotationInfo[],
-    viewScope: import("../../../services/link").ViewScope | undefined
-): PdfAnnotationInfo | undefined {
-    if (!viewScope?.annotationId) return undefined;
-
-    // 1. Exact ID match (works for existing PDF annotations and links copied after save).
-    const exact = annotations.find((a) => a.id === viewScope.annotationId);
-    if (exact) return exact;
-
-    // 2. Fallback: match by page number + content preview (handles ID rotation after save).
-    const page = viewScope.annotationPage;
-    const rawPreview = viewScope.annotationPreview?.replace(/…$/, "") ?? "";
-    if (!page || !rawPreview) return undefined;
-
-    return annotations.find(
-        (a) =>
-            a.pageNumber === page &&
-            (a.highlightedText.startsWith(rawPreview) || a.contents.startsWith(rawPreview))
-    );
-}
+import { resolveAnnotation } from "./pdfAnnotationResolver";
 
 /** Note label used to store area annotation metadata (attachmentId + page + rect). */
 const AREA_ANNOTATION_LABEL = "areaAnnotation";
@@ -453,7 +434,8 @@ async function loadAreaAnnotations(
     noteContext: NoteContext,
     iframeRef: RefObject<HTMLIFrameElement>,
     pendingAnnotationIdRef?: { current: string | undefined },
-    annotationScrolledRef?: { current: boolean }
+    annotationScrolledRef?: { current: boolean },
+    viewerAreaReadyRef?: { current: boolean }
 ) {
     const capturedNoteId = note.noteId;
     try {
@@ -545,12 +527,17 @@ async function loadAreaAnnotations(
             const attachmentId = pendingId.slice(5);
             const area = areaAnnotations.find((a) => a.attachmentId === attachmentId);
             if (area) {
-                if (annotationScrolledRef) annotationScrolledRef.current = true;
-                if (pendingAnnotationIdRef) pendingAnnotationIdRef.current = undefined;
                 iframeRef.current?.contentWindow?.postMessage(
                     { type: "trilium-scroll-to-area", pageNumber: area.pageNumber, rect: area.rect },
                     window.location.origin
                 );
+                // Only mark as done when the viewer's listener is registered (after
+                // pdfjs-viewer-ready-for-overlays fires). If the viewer isn't ready yet,
+                // leave pending state intact so the ready handler can scroll correctly.
+                if (viewerAreaReadyRef?.current) {
+                    if (annotationScrolledRef) annotationScrolledRef.current = true;
+                    if (pendingAnnotationIdRef) pendingAnnotationIdRef.current = undefined;
+                }
             }
         }
     } catch (e) {
@@ -638,7 +625,7 @@ function handleAreaRightClick(
                 items: AREA_PRESET_COLORS.map((c) => ({
                     title: c.label,
                     command: `color:${c.value}`,
-                    uiIcon: "bx bx-circle"
+                    uiIcon: `bx bx-circle ${c.cssClass}`
                 }))
             },
             { kind: "separator" },
