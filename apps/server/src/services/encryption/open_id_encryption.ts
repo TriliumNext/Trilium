@@ -1,4 +1,4 @@
-import { data_encryption } from "@triliumnext/core";
+import { data_encryption, date_utils } from "@triliumnext/core";
 import crypto from "crypto";
 
 import sql from "../sql.js";
@@ -6,7 +6,7 @@ import utils from "../utils.js";
 import myScryptService from "./my_scrypt.js";
 
 function saveUser(subjectIdentifier: string, name: string, email: string) {
-    if (isUserSaved()) return false;
+    if (isSubjectIdentifierSaved()) return false;
 
     const verificationSalt = utils.randomSecureToken(32);
     const derivedKeySalt = utils.randomSecureToken(32);
@@ -22,23 +22,27 @@ function saveUser(subjectIdentifier: string, name: string, email: string) {
         verificationSalt
     );
 
-    const data = {
-        tmpID: 0,
-        userIDVerificationHash: utils.toBase64(verificationHash),
-        salt: verificationSalt,
-        derivedKey: derivedKeySalt,
-        userIDEncryptedDataKey,
-        isSetup: "true",
-        username: name,
-        email
-    };
+    sql.transactional(() => {
+        sql.upsert("oauth_enrollment", "id", {
+            id: 0,
+            userIDVerificationHash: utils.toBase64(verificationHash),
+            salt: verificationSalt,
+            derivedKey: derivedKeySalt,
+            userIDEncryptedDataKey,
+        });
 
-    sql.upsert("user_data", "tmpID", data);
+        // Only update email; the local username stays "admin" to avoid unique-index conflicts.
+        sql.execute(
+            `UPDATE users SET email = ?, utcDateModified = ? WHERE isAdmin = 1 AND isDeleted = 0`,
+            [email || null, date_utils.utcNowDateTime()]
+        );
+    });
+
     return true;
 }
 
 function isSubjectIdentifierSaved() {
-    const value = sql.getValue("SELECT userIDEncryptedDataKey FROM user_data;");
+    const value = sql.getValue("SELECT userIDEncryptedDataKey FROM oauth_enrollment WHERE id = 0");
     if (value === undefined || value === null || value === "") return false;
     return true;
 }
@@ -52,7 +56,7 @@ function isSubjectIdentifierSaved() {
  */
 function verifySubjectIdentifier(subjectIdentifier: string): boolean {
     const row = sql.getRowOrNull<{ userIDVerificationHash: string; salt: string }>(
-        "SELECT userIDVerificationHash, salt FROM user_data;"
+        "SELECT userIDVerificationHash, salt FROM oauth_enrollment WHERE id = 0"
     );
 
     if (!row || !row.userIDVerificationHash || !row.salt) {
@@ -74,11 +78,6 @@ function constantTimeEquals(a: string, b: string): boolean {
         return false;
     }
     return crypto.timingSafeEqual(aBuffer, bBuffer);
-}
-
-function isUserSaved() {
-    const isSaved = sql.getValue<string>("SELECT isSetup FROM user_data;");
-    return isSaved === "true";
 }
 
 function setDataKey(

@@ -27,6 +27,8 @@ export declare module "express-serve-static-core" {
 export declare module "express-session" {
     interface SessionData {
         loggedIn: boolean;
+        /** The userId of the authenticated user, set on login and cleared on logout. */
+        userId?: string;
         lastAuthState: {
             totpEnabled: boolean;
             ssoEnabled: boolean;

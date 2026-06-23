@@ -91,6 +91,7 @@ function internalRoute<P extends ParamsDictionary>(method: HttpMethod, path: str
                 cls.set("componentId", req.headers["trilium-component-id"]);
                 cls.set("localNowDateTime", req.headers["trilium-local-now-datetime"]);
                 cls.set("hoistedNoteId", req.headers["trilium-hoisted-note-id"] || "root");
+                cls.set("userId", req.session?.userId);
 
                 const cb = () => routeHandler(req, res, next);
 
@@ -174,7 +175,7 @@ const uploadMiddleware = createUploadMiddleware();
 export const uploadMiddlewareWithErrorHandling = function (req: express.Request, res: express.Response, next: express.NextFunction) {
     uploadMiddleware(req, res, (err) => {
         if (err?.code === "LIMIT_FILE_SIZE") {
-            res.setHeader("Content-Type", "text/plain").status(400).send(`Cannot upload file because it excceeded max allowed file size of ${MAX_ALLOWED_FILE_SIZE_MB} MiB`);
+            res.setHeader("Content-Type", "text/plain").status(400).send(`Cannot upload file because it exceeded max allowed file size of ${MAX_ALLOWED_FILE_SIZE_MB} MiB`);
         } else if (err?.code === "LIMIT_FIELD_NESTING") {
             // Triggered by the fieldNestingDepth: 0 limit (CVE-2026-5079 guard). Without this branch the
             // error would be swallowed and the request forwarded to the handler with no file.

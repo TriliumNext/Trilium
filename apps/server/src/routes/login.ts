@@ -1,4 +1,4 @@
-import { i18n, password as passwordService, ValidationError } from "@triliumnext/core";
+import { i18n, password as passwordService, user_service, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from 'express';
 
 import appPath from "../services/app_path.js";
@@ -135,6 +135,7 @@ async function login(req: Request, res: Response) {
         };
 
         req.session.loggedIn = true;
+        req.session.userId = user_service.getAdminUserId();
         res.redirect('.');
     });
 }

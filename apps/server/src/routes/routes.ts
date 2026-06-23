@@ -21,6 +21,7 @@ import shareRoutes from "../share/routes.js";
 import clipperRoute from "./api/clipper.js";
 import databaseRoute from "./api/database.js";
 import etapiTokensApiRoutes from "./api/etapi_tokens.js";
+import usersApiRoute from "./api/users.js";
 import filesRoute from "./api/files.js";
 import fontsRoute from "./api/fonts.js";
 // API routes
@@ -139,6 +140,10 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/etapi-tokens", etapiTokensApiRoutes.createToken);
     apiRoute(PATCH, "/api/etapi-tokens/:etapiTokenId", etapiTokensApiRoutes.patchToken);
     apiRoute(DEL, "/api/etapi-tokens/:etapiTokenId", etapiTokensApiRoutes.deleteToken);
+
+    apiRoute(GET, "/api/users",             usersApiRoute.getUsers);
+    apiRoute(PST, "/api/users",             usersApiRoute.createUser);
+    apiRoute(DEL, "/api/users/:userId",     usersApiRoute.deleteUser);
 
     // in case of local electron, local calls are allowed unauthenticated, for server they need auth
     const clipperMiddleware = isElectron ? [] : [auth.checkEtapiToken];

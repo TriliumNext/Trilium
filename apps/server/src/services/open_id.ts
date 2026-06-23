@@ -1,4 +1,4 @@
-import { getLog, options } from "@triliumnext/core";
+import { getLog, options, user_service } from "@triliumnext/core";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 import type { Session } from "express-openid-connect";
 
@@ -42,22 +42,28 @@ function isOpenIDEnabled() {
 }
 
 function isUserSaved() {
-    const data = sql.getValue<string>("SELECT isSetup FROM user_data;");
-    return data === "true";
+    return openIDEncryption.isSubjectIdentifierSaved();
+}
+
+function getAdminUser() {
+    return sql.getRowOrNull<{ username: string; email: string | null }>(
+        "SELECT username, email FROM users WHERE isAdmin = 1 AND isDeleted = 0 LIMIT 1"
+    );
 }
 
 function getUsername() {
-    const username = sql.getValue<string>("SELECT username FROM user_data;");
-    return username;
+    return getAdminUser()?.username ?? null;
 }
 
 function getUserEmail() {
-    const email = sql.getValue<string>("SELECT email FROM user_data;");
-    return email;
+    return getAdminUser()?.email ?? null;
 }
 
 function clearSavedUser() {
-    sql.execute("DELETE FROM user_data");
+    sql.transactional(() => {
+        sql.execute("DELETE FROM oauth_enrollment");
+        sql.execute("UPDATE users SET email = NULL WHERE isAdmin = 1 AND isDeleted = 0");
+    });
     return {
         success: true,
         message: "Account data removed."
@@ -230,6 +236,7 @@ function generateOAuthConfig(endSessionSupported = false) {
             }
 
             req.session.loggedIn = true;
+            req.session.userId = user_service.getAdminUserId();
             req.session.lastAuthState = {
                 totpEnabled: false,
                 ssoEnabled: true

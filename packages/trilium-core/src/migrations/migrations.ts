@@ -9,6 +9,55 @@ export function getMaxMigrationVersion() {
 
 // Migrations should be kept in descending order, so the latest migration is first.
 export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Add multi-user identity tables (users, user_groups, user_group_members)
+    // and nullable ownership columns on notes/entity_changes/etapi_tokens.
+    // Admin-user seeding and user_data teardown happen in sql_init.ts after
+    // migrations complete, where the SQL instance is guaranteed to be set.
+    {
+        version: 239,
+        ignoreErrors: true,
+        sql: /*sql*/`
+            CREATE TABLE IF NOT EXISTS "users" (
+                userId          TEXT PRIMARY KEY NOT NULL,
+                username        TEXT NOT NULL,
+                email           TEXT,
+                passwordHash    TEXT,
+                passwordSalt    TEXT,
+                isAdmin         INT NOT NULL DEFAULT 0,
+                isDeleted       INT NOT NULL DEFAULT 0,
+                dateCreated     TEXT NOT NULL,
+                utcDateModified TEXT NOT NULL
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS IDX_users_username_active
+                ON users(username) WHERE isDeleted = 0;
+            CREATE INDEX IF NOT EXISTS IDX_users_email ON users(email);
+            CREATE TABLE IF NOT EXISTS "user_groups" (
+                groupId         TEXT PRIMARY KEY NOT NULL,
+                name            TEXT UNIQUE NOT NULL,
+                dateCreated     TEXT NOT NULL,
+                utcDateModified TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS "user_group_members" (
+                userId      TEXT NOT NULL,
+                groupId     TEXT NOT NULL,
+                dateCreated TEXT NOT NULL,
+                PRIMARY KEY (userId, groupId),
+                FOREIGN KEY (userId)  REFERENCES users(userId),
+                FOREIGN KEY (groupId) REFERENCES user_groups(groupId)
+            );
+            ALTER TABLE notes          ADD COLUMN ownerId TEXT DEFAULT NULL;
+            ALTER TABLE entity_changes ADD COLUMN userId  TEXT DEFAULT NULL;
+            ALTER TABLE etapi_tokens   ADD COLUMN userId  TEXT DEFAULT NULL;
+            CREATE TABLE IF NOT EXISTS "oauth_enrollment" (
+                id                      INTEGER PRIMARY KEY NOT NULL DEFAULT 0,
+                userIDVerificationHash  TEXT NOT NULL,
+                salt                    TEXT NOT NULL,
+                derivedKey              TEXT NOT NULL,
+                userIDEncryptedDataKey  TEXT NOT NULL
+            );
+            DROP TABLE IF EXISTS user_data;
+        `
+    },
     // Add description column to revisions table for manual revision comments
     {
         version: 238,
