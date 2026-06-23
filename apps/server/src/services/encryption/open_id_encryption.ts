@@ -31,10 +31,10 @@ function saveUser(subjectIdentifier: string, name: string, email: string) {
             userIDEncryptedDataKey,
         });
 
-        // Only update email; the local username stays "admin" to avoid unique-index conflicts.
+        const now = date_utils.utcNowDateTime();
         sql.execute(
-            `UPDATE users SET email = ?, utcDateModified = ? WHERE isAdmin = 1 AND isDeleted = 0`,
-            [email || null, date_utils.utcNowDateTime()]
+            `UPDATE users SET username = ?, email = ?, utcDateModified = ? WHERE isAdmin = 1 AND isDeleted = 0`,
+            [name || "admin", email || null, now]
         );
     });
 
