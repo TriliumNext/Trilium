@@ -210,7 +210,7 @@ export default class MathInputView extends View {
 				// Allows external listeners to inject custom MathLive shortcuts by mutating event.detail.
 				const customShortcuts: Record<string, string> = {};
 				document.dispatchEvent( new CustomEvent( 'mathlive:custom-shortcuts', { detail: customShortcuts } ) );
-				mf.inlineShortcuts = { ...mf.inlineShortcuts, dx: 'dx', dy: 'dy', dt: 'dt', ...customShortcuts };
+				mf.inlineShortcuts = { ...mf.inlineShortcuts, ...customShortcuts };
 			}
 		} catch {
 			// Inline shortcut configuration is optional; ignore failures to avoid breaking the math field.
