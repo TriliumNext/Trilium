@@ -55,6 +55,11 @@ export const MIGRATIONS: (SqlMigration | JsMigration)[] = [
                 derivedKey              TEXT NOT NULL,
                 userIDEncryptedDataKey  TEXT NOT NULL
             );
+            INSERT OR IGNORE INTO oauth_enrollment (id, userIDVerificationHash, salt, derivedKey, userIDEncryptedDataKey)
+                SELECT 0, userIDVerificationHash, salt, derivedKey, userIDEncryptedDataKey
+                FROM user_data
+                WHERE userIDEncryptedDataKey IS NOT NULL AND userIDEncryptedDataKey != ''
+                LIMIT 1;
             DROP TABLE IF EXISTS user_data;
         `
     },
