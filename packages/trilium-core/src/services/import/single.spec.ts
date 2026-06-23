@@ -8,7 +8,7 @@ import BNote from "../../becca/entities/bnote.js";
 import TaskContext from "../task_context.js";
 import sql_init from "../sql_init.js";
 import single from "./single.js";
-import stripBom from "strip-bom";
+import { stripBom } from "../utils/binary.js";
 import { getContext } from "../context.js";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 

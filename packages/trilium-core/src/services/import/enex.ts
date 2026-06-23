@@ -1,5 +1,4 @@
 import type { AttributeType } from "@triliumnext/commons";
-import sax from "sax";
 
 import type BNote from "../../becca/entities/bnote.js";
 import * as utils from "../utils/index.js";
@@ -55,6 +54,9 @@ let note: Partial<Note> = {};
 let resource: Resource;
 
 async function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote): Promise<BNote> {
+    // Imported dynamically so sax's module initialization is deferred to the first ENEX import
+    // rather than running at server startup (enex.ts is otherwise in the eager route graph).
+    const sax = (await import("sax")).default;
     const parser = sax.parser(true);
 
     const rootNoteTitle = file.originalname.toLowerCase().endsWith(".enex") ? file.originalname.substr(0, file.originalname.length - 5) : file.originalname;

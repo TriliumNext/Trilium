@@ -258,7 +258,9 @@
     },
     "in-progress": "Iompórtáil ar siúl: {{progress}}",
     "successful": "Críochnaíodh an t-allmhairiú go rathúil.",
-    "spreadsheetImportedAsSpreadsheet": "Iompórtáil comhaid CSV agus Excel mar scarbhileoga in-eagarthóireachta seachas comhaid"
+    "spreadsheetImportedAsSpreadsheet": "Iompórtáil comhaid CSV agus Excel mar scarbhileoga in-eagarthóireachta seachas comhaid",
+    "starting": "Ag iompórtáil…",
+    "in-progress-with-total": "Ag allmhairiú {{progress}} de {{total}}"
   },
   "include_note": {
     "dialog_title": "Cuir nóta san áireamh",
@@ -721,7 +723,8 @@
     "word_wrap_on": "Ar",
     "word_wrap_off": "As",
     "save_named_revision": "Sábháil athbhreithniú ainmnithe...",
-    "print_or_export_to_pdf": "Priontáil/onnmhairigh go PDF..."
+    "print_or_export_to_pdf": "Priontáil/onnmhairigh go PDF...",
+    "import_from_service": "Iompórtáil ó sheirbhís…"
   },
   "onclick_button": {
     "no_click_handler": "Níl aon láimhseálaí cliceáil sainithe ag an ngiuirléid cnaipe '{{componentId}}'"
@@ -1050,7 +1053,12 @@
   "book": {
     "no_children_help": "Níl aon nótaí faoi mhíbhuntáiste sa bhailiúchán seo mar sin níl aon rud le taispeáint.",
     "drag_locked_title": "Glasáilte le haghaidh eagarthóireachta",
-    "drag_locked_message": "Ní cheadaítear tarraingt ós rud é go bhfuil an bailiúchán faoi ghlas le haghaidh eagarthóireachta."
+    "drag_locked_message": "Ní cheadaítear tarraingt ós rud é go bhfuil an bailiúchán faoi ghlas le haghaidh eagarthóireachta.",
+    "archived_notes_hidden_one": "Cóipeáladh nóta cartlannaithe anseo ach fanann sé i bhfolach go dtí go gcumasóidh tú \"Taispeáin nótaí cartlannaithe\".",
+    "archived_notes_hidden_two": "Cóipeáladh {{count}} nótaí cartlannaithe anseo ach fanann siad i bhfolach go dtí go gcumasóidh tú \"Taispeáin nótaí cartlannaithe\".",
+    "archived_notes_hidden_few": "Cóipeáladh {{count}} nótaí cartlannaithe anseo ach fanann siad i bhfolach go dtí go gcumasóidh tú \"Taispeáin nótaí cartlannaithe\".",
+    "archived_notes_hidden_many": "Cóipeáladh {{count}} nótaí cartlannaithe anseo ach fanann siad i bhfolach go dtí go gcumasóidh tú \"Taispeáin nótaí cartlannaithe\".",
+    "archived_notes_hidden_other": "Cóipeáladh {{count}} nótaí cartlannaithe anseo ach fanann siad i bhfolach go dtí go gcumasóidh tú \"Taispeáin nótaí cartlannaithe\"."
   },
   "editable_code": {
     "placeholder": "Clóscríobh ábhar do nóta cóid anseo..."
@@ -1307,7 +1315,8 @@
     "erase_unused_attachments_now": "Scrios ceangaltáin neamhúsáidte anois",
     "unused_attachments_erased": "Scriosadh ceangaltáin neamhúsáidte.",
     "description": "Meastar nach n-úsáidtear ceangaltáin nach ndéantar tagairt dóibh a thuilleadh in aon nóta agus is féidir iad a scriosadh go huathoibríoch tar éis tréimhse ama.",
-    "erase_attachments_after_description": "Am sula scriostar ceangaltáin neamhúsáidte go buan."
+    "erase_attachments_after_description": "Am sula scriostar ceangaltáin neamhúsáidte go buan.",
+    "erase_now_button": "Scrios anois"
   },
   "network_connections": {
     "network_connections_title": "Líonra",
@@ -1321,7 +1330,8 @@
     "erase_deleted_notes_now": "Scrios nótaí scriosta anois",
     "deleted_notes_erased": "Tá nótaí scriosta scriosta.",
     "description": "Ní dhéantar nótaí scriosta a mharcáil ach mar scriosta ar dtús agus is féidir iad a aisghabháil ó Nótaí Le Déanaí. Tar éis tamaill, scriostar go buan iad.",
-    "erase_notes_after_description": "An t-am sula scriostar nótaí scriosta go buan."
+    "erase_notes_after_description": "An t-am sula scriostar nótaí scriosta go buan.",
+    "erase_now_button": "Scrios anois"
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "Eatramh Léirmheasa ar Nóta",
@@ -1337,7 +1347,8 @@
     "erase_excess_revision_snapshots": "Scrios na léargais athbhreithnithe breise anois",
     "erase_excess_revision_snapshots_prompt": "Scriosadh na léargais bhreise athbhreithnithe.",
     "note_revisions_snapshot_limit_description_short": "Uasmhéid athbhreithnithe in aghaidh an nóta. Úsáid -1 le haghaidh neamhtheoranta, 0 le díchumasú.",
-    "erase_excess_revision_snapshots_description": "Scrios athbhreithnithe a sháraíonn an teorainn do na nótaí uile."
+    "erase_excess_revision_snapshots_description": "Scrios athbhreithnithe a sháraíonn an teorainn do na nótaí uile.",
+    "erase_now_button": "Scrios anois"
   },
   "search_engine": {
     "title": "Inneall Cuardaigh",
@@ -1357,7 +1368,9 @@
   "tray": {
     "title": "Tráidire an Chórais",
     "enable_tray": "Deilbhín tráidire",
-    "enable_tray_description": "Caithfear Trilium a atosú chun go dtiocfaidh an t-athrú seo i bhfeidhm."
+    "enable_tray_description": "Cuirtear na hathruithe i bhfeidhm láithreach, cé go mb’fhéidir go mbeadh gá le Trilium a atosú ar roinnt ardán chun an deilbhín tráidire a cheilt.",
+    "close_to_tray": "In aice leis an tráidire",
+    "close_to_tray_description": "Nuair a dhúnann tú an fhuinneog, coinnigh Trilium ag rith sa tráidire córais in ionad é a scor. Éilíonn sé sin go mbeidh an deilbhín tráidire cumasaithe."
   },
   "heading_style": {
     "title": "Stíl ceannteidil",
@@ -1487,27 +1500,124 @@
     "change_password_description": "Nuashonraigh do phasfhocal reatha",
     "reset_password": "Athshocraigh an focal faire",
     "reset_password_description": "Caill rochtain ar nótaí faoi chosaint go buan",
-    "cancel": "Cealaigh"
+    "cancel": "Cealaigh",
+    "change_password_button": "Nuashonraigh an focal faire",
+    "reset_password_button": "Athshocraigh anois"
   },
   "multi_factor_authentication": {
     "recovery_keys_description_warning": "Ní thaispeánfar eochracha aisghabhála arís tar éis duit an leathanach a fhágáil, coinnigh iad in áit shábháilte agus slán.<br>Ní féidir eochair aisghabhála a úsáid arís tar éis í a úsáid.",
     "recovery_keys_error": "Earráid ag giniúint cóid aisghabhála",
     "recovery_keys_no_key_set": "Níl aon chóid aisghabhála socraithe",
-    "recovery_keys_regenerate": "Athghinigh Cóid Aisghabhála",
-    "oauth_title": "OAuth/OpenID",
-    "oauth_description": "Is bealach caighdeánaithe é OpenID a ligeann duit logáil isteach i suíomhanna gréasáin ag baint úsáide as cuntas ó sheirbhís eile, cosúil le Google, chun d’aitheantas a fhíorú. Is é Google an t-eisitheoir réamhshocraithe, ach is féidir leat é a athrú go haon soláthraí OpenID eile. Seiceáil <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">anseo</a> le haghaidh tuilleadh eolais. Lean na <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">treoracha</a> seo chun seirbhís OpenID a bhunú trí Google.",
-    "oauth_missing_vars": "Socruithe ar iarraidh: {{-variables}}",
-    "oauth_user_account": "Cuntas Úsáideora: ",
-    "oauth_user_email": "Ríomhphost an Úsáideora: ",
-    "oauth_user_not_logged_in": "Níl mé logáilte isteach!"
+    "recovery_keys_regenerate": "Athghin cóid aisghabhála",
+    "oauth_title": "OpenID Connect",
+    "oauth_description": "Le OpenID Connect, is féidir leat logáil isteach ag baint úsáide as cuntas ó sheirbhís eile, cosúil le Google, chun d’aitheantas a fhíorú. Is é Google an t-eisitheoir réamhshocraithe, ach is féidir leat é a athrú go haon soláthraí OpenID Connect eile. Seiceáil <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">anseo</a> le haghaidh tuilleadh eolais. Lean na <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">treoracha</a> seo chun seirbhís OpenID Connect a bhunú trí Google.",
+    "oauth_missing_vars": "Fágtha le cumrú: {{-variables}}",
+    "oauth_user_account": "Ainm an chuntais",
+    "oauth_user_email": "Seoladh ríomhphoist",
+    "oauth_user_not_logged_in": "Níl mé logáilte isteach!",
+    "authentication_title": "Fíordheimhniú",
+    "signin_method": "Sínigh isteach le",
+    "signin_local": "Pasfhocal áitiúil (le fíordheimhniú dhá fhachtóir más mian leat)",
+    "signin_oauth": "Soláthraí OpenID Connect (m.sh. Google)",
+    "signin_local_description": "Sínigh isteach le do phasfhocal Trilium. Is féidir leat fíordheimhniú dhá fhachtóir a chumasú más mian leat le haghaidh ciseal breise slándála.",
+    "totp_setup_label": "Pasfhocal aonuaire bunaithe ar am (TOTP)",
+    "totp_setup_description": "Gin cód bunaithe ar am ó aip fíordheimhnitheora mar do dhara fachtóir. Scanfaidh tú cód QR agus deimhneoidh tú cód chun críochnú. Eiseofar cóid aisghabhála ag an deireadh.",
+    "totp_setup_button": "Socraigh suas",
+    "totp_enroll_title": "Deimhnigh d’fhíordheimhneoir",
+    "totp_enroll_instructions": "Ní chuirfear TOTP ar siúl go dtí go ndeimhneoidh tú cód bailí thíos, mar sin ní féidir leat tú féin a ghlasáil amach trí dhearmad.",
+    "totp_enroll_step1_title": "1. Cuir an cuntas le d’aip fíordheimhnitheora",
+    "totp_enroll_step2_title": "2. Cuir isteach an cód fíoraithe",
+    "totp_enroll_scan": "Scan an cód QR seo:",
+    "totp_enroll_secret_label": "Nach féidir scanadh? Cuir isteach an cód seo de láimh",
+    "totp_enroll_code_label": "Cód fíoraithe",
+    "totp_enroll_code_placeholder": "000000",
+    "totp_enroll_verify": "Fíoraigh & lean ar aghaidh",
+    "totp_enroll_cancel": "Cealaigh",
+    "totp_enroll_invalid_code": "Níorbh ionann an cód sin. Seiceáil go bhfuil clog do ghléis ceart agus cuir isteach an cód is déanaí.",
+    "totp_enroll_generate_error": "Níorbh fhéidir rún TOTP a ghiniúint. Dún an dialóg seo agus déan iarracht arís.",
+    "totp_enroll_enabled": "Tá fíordheimhniú dhá fhachtóir cumasaithe anois.",
+    "totp_enroll_recovery_title": "Sábháil do chóid aisghabhála",
+    "totp_enroll_recovery_instructions": "Sábháil na cóid aisghabhála seo in áit shábháilte. Is féidir gach ceann acu a úsáid uair amháin chun síniú isteach má chailleann tú rochtain ar d'aip fíordheimhnitheora.",
+    "totp_enroll_recovery_copy": "Cóipeáil",
+    "totp_enroll_recovery_copied": "Cóipeadh cóid aisghabhála chuig an ghearrthaisce.",
+    "totp_enroll_recovery_download": "Íoslódáil",
+    "totp_enroll_saved_ack": "Tá mo chóid aisghabhála sábháilte agam in áit shábháilte",
+    "totp_enroll_finish": "Críochnaigh an socrú",
+    "totp_enroll_enable_error": "Níorbh fhéidir fíordheimhniú dhá fhachtóir a chumasú. Déan iarracht arís.",
+    "totp_section_title": "Fíordheimhniú dhá fhachtóir",
+    "totp_status_active": "Gníomhach",
+    "totp_status_inactive": "Neamhghníomhach",
+    "totp_remove_label": "Bain fíordheimhniú dhá fhachtóir",
+    "totp_remove_description": "Bain do shocrú fíordheimhnithe dhá fhachtóir go hiomlán. Murab ionann agus é a mhúchadh thuas, bheadh ort é a shocrú arís ón tús chun é a úsáid.",
+    "totp_remove_button": "Bain",
+    "totp_remove_confirm": "Ar mhaith leat fíordheimhniú dhá fhachtóir a bhaint go buan? Scriosfaidh sé seo do shocrú, ní hamháin go múchfaidh sé é, mar sin bheadh ort é a shocrú arís ón tús chun é a úsáid. Go dtí sin, ní bheidh ort ach do phasfhocal a shíniú isteach.",
+    "totp_removed": "Tá fíordheimhniú dhá fhachtóir bainte.",
+    "recovery_keys_regenerate_confirm": "An bhfuil tú ag iarraidh cóid aisghabhála a athghiniúint? Scoirfidh do chóid aisghabhála reatha de bheith ag obair láithreach, agus beidh ort na cinn nua a shábháil.",
+    "recovery_keys_regenerated_title": "Cóid aisghabhála nua",
+    "recovery_keys_regenerated_instructions": "Seo iad do chóid aisghabhála nua. Sábháil iad anois: cuirtear iad in ionad do chóid roimhe seo agus ní thaispeánfar arís iad.",
+    "recovery_keys_done": "Déanta",
+    "recovery_keys_label": "Cóid aisghabhála",
+    "recovery_keys_remaining": "{{remaining}} de {{total}} fágtha. Ní féidir é a thaispeáint arís, ach a athsholáthar.",
+    "recovery_keys_dot_available": "Ar fáil",
+    "recovery_keys_dot_used": "Úsáidte ar {{- date}}",
+    "oauth_status_connected": "Ceangailte",
+    "oauth_status_not_connected": "Gan cheangal",
+    "oauth_status_not_configured": "Gan chumrú",
+    "oauth_not_configured_title": "Socraigh OpenID Connect",
+    "oauth_not_configured_hint": "Ní mór OpenID Connect a chur ar bun tríd an config.ini nó na hathróga comhshaoil ar dtús.",
+    "oauth_how_to_enable": "Conas a chumasú",
+    "oauth_server_config_hint": "Cuir an méid seo a leanas le do chomhad config.ini agus atosú an feidhmchlár:",
+    "oauth_server_env_hint": "Nó socraigh na hathróga comhshaoil seo a leanas:",
+    "oauth_provider": "Soláthraí",
+    "oauth_provider_url": "URL an Eisitheora",
+    "oauth_provider_unknown": "Soláthraí anaithnid",
+    "oauth_not_enrolled_title": "Gan aon chuntas ceangailte",
+    "oauth_not_enrolled_hint": "Tá OpenID Connect cumraithe, ach níl aon chuntas ceangailte fós.",
+    "oauth_not_enrolled_details_label": "Cad is brí leis seo?",
+    "oauth_not_enrolled_details": "Go dtí go mbeidh cuntas ceangailte, ní bheidh OpenID Connect gníomhach agus leanfaidh tú ort ag síniú isteach le do phasfhocal. Ceangail do chuntas thíos chun é a chasadh air.",
+    "oauth_connect_label": "Ceangail cuntas",
+    "oauth_connect_description": "Sínigh isteach le do sholáthraí uair amháin chun do chuntas a cheangal. Ní bheidh ach an cuntas seo in ann síniú isteach ina dhiaidh sin.",
+    "oauth_connect_button": "Ceangail cuntas",
+    "oauth_disconnect_label": "Dícheangail cuntas",
+    "oauth_disconnect_description": "Dícheangal an cuntas ceangailte. Úsáidfear do phasfhocal arís chun logáil isteach go dtí go gceanglóidh tú cuntas arís.",
+    "oauth_disconnect_button": "Dícheangail",
+    "oauth_disconnect_confirm": "An bhfuil tú cinnte gur mian leat an cuntas seo a dhícheangal? Úsáidfear do phasfhocal arís le haghaidh logála isteach go dtí go gceanglóidh tú cuntas arís.",
+    "oauth_disconnected": "Dícheanglaíodh {{account}} ó {{provider}}.",
+    "oauth_connect_success": "Ceangailte le {{provider}} mar {{account}}.",
+    "oauth_connect_success_generic": "Ceanglaíodh an cuntas go rathúil.",
+    "oauth_account_unknown": "do chuntas"
   },
   "shortcuts": {
     "keyboard_shortcuts": "Aicearraí Méarchláir",
     "type_text_to_filter": "Clóscríobh téacs chun aicearraí a scagadh...",
-    "reload_app": "Athlódáil an aip chun na hathruithe a chur i bhfeidhm",
-    "set_all_to_default": "Socraigh gach aicearra go dtí an réamhshocrú",
+    "reload_app": "Athlódáil an aip",
+    "set_all_to_default": "Athshocraigh gach rud",
     "confirm_reset": "An bhfuil tú cinnte gur mhaith leat na haicearraí méarchláir go léir a athshocrú go dtí an rogha réamhshocraithe?",
-    "no_results": "Níor aimsíodh aon aicearraí a mheaitseálann '{{filter}}'"
+    "no_results": "Níor aimsíodh aon aicearraí a mheaitseálann '{{filter}}'",
+    "modified_from_default": "Tá an aicearra seo athraithe óna réamhshocrú.",
+    "revert_to_default": "Fill ar ais go dtí an réamhshocrú ({{shortcuts}})",
+    "no_default_shortcut": "gan aicearra",
+    "record_shortcut": "Cuir aicearra leis",
+    "remove_shortcut": "Bain an aicearra seo",
+    "press_keys": "Brúigh na heochracha…",
+    "recording_toast": "Brúigh teaglaim eochracha chun é a shannadh, nó Esc chun é a chealú.",
+    "make_global": "Déan aicearra domhanda de seo",
+    "make_local": "Déan aicearra san aip de seo",
+    "global_shortcut": "Aicearra domhanda ar fud an chórais, gníomhach ar an aip deisce amháin",
+    "conflict_chip": "Tá an teaglaim seo sannta do: {{actions}} freisin",
+    "no_conflicts": "Gan aicearraí contrártha.",
+    "no_matches": "Níl aon aicearraí ag teacht leis na scagairí roghnaithe.",
+    "filter": "Scagairí aicearraí",
+    "filter_all": "Gach aicearraí",
+    "filter_conflicts": "Coimhlintí ({{count}})",
+    "filter_global": "Aicearraí domhanda ({{count}})",
+    "filter_modified": "Athraithe ón réamhshocrú ({{count}})",
+    "conflicts_badge_one": "{{count}} coimhlint",
+    "conflicts_badge_two": "{{count}} coinbhleachtaí",
+    "conflicts_badge_few": "{{count}} coinbhleachtaí",
+    "conflicts_badge_many": "{{count}} coinbhleachtaí",
+    "conflicts_badge_other": "{{count}} coinbhleachtaí",
+    "conflicts_badge_tooltip": "Tá roinnt aicearraí sannta do níos mó ná gníomh amháin. Cliceáil chun na haicearraí contrártha amháin a thaispeáint."
   },
   "spellcheck": {
     "title": "Seiceáil Litrithe",
@@ -1519,7 +1629,8 @@
     "custom_dictionary_edit": "Focail saincheaptha",
     "custom_dictionary_edit_description": "Cuir an liosta focal in eagar nach ceart don seiceálaí litrithe a mharcáil. Beidh athruithe le feiceáil tar éis atosaithe.",
     "custom_dictionary_open": "Cuir an foclóir in eagar",
-    "related_description": "Cumraigh teangacha seiceála litrithe agus foclóir saincheaptha."
+    "related_description": "Cumraigh teangacha seiceála litrithe agus foclóir saincheaptha.",
+    "disabled_placeholder": "Tá an seiceáil litrithe múchta. Cumasaigh é chun teangacha a roghnú agus an foclóir saincheaptha a bhainistiú."
   },
   "sync_2": {
     "config_title": "Freastalaí Sioncrónaithe",
@@ -1530,7 +1641,7 @@
     "help": "Cabhair",
     "test_title": "Tástáil Ceangal",
     "test_description": "Déan tástáil ar an nasc leis an bhfreastalaí sioncrónaithe. Mura ndéantar é a thosú, socróidh sé seo sioncrónú.",
-    "test_button": "Tástáil sioncrónaithe",
+    "test_button": "Tástáil anois",
     "handshake_failed": "Theip ar chroitheadh láimhe an fhreastalaí sioncrónaithe, earráid: {{message}}",
     "timeout_description": "Am fanacht sula dtugann tú suas ar nasc mall.",
     "server_address_description": "URL an fhreastalaí Trilium le sioncrónú leis.",
@@ -2377,7 +2488,12 @@
     "previous-video": "Físeán roimhe seo: {{- title}}",
     "next-video": "An chéad fhíseán eile: {{- title}}",
     "previous-audio": "Fuaim roimhe seo: {{- title}}",
-    "next-audio": "An chéad fhuaim eile: {{- title}}"
+    "next-audio": "An chéad fhuaim eile: {{- title}}",
+    "seek": "Cuardaigh (eochracha saighe Clé/Deas)",
+    "play-mode-title": "Mód súgartha: {{mode}}",
+    "play-mode-once": "Seinn uair amháin",
+    "play-mode-loop": "Lúb",
+    "play-mode-next": "Seinn ina dhiaidh sin"
   },
   "mermaid": {
     "placeholder": "Clóscríobh ábhar do léaráid Maighdean Mhara nó bain úsáid as ceann de na léaráidí samplacha thíos.",
@@ -2525,7 +2641,8 @@
     "base_url": "Bun-URL",
     "base_url_description": "Roghnach. Sáraigh an pointe deiridh réamhshocraithe API — úsáideach do mhúnlaí féinóstáilte (Ollama, LM Studio, vLLM) nó do sheachfhreastalaithe.",
     "base_url_invalid": "Ní mór don bhun-URL a bheith ina URL bailí http:// nó https://",
-    "not_available_in_standalone": "Níl gnéithe AI/LLM ar fáil sa leagan neamhspleách de Trilium, toisc nach gceadaíonn soláthraithe LLM rochtain dhíreach ó bhrabhsálaí."
+    "not_available_in_standalone": "Níl gnéithe AI/LLM ar fáil sa leagan neamhspleách de Trilium, toisc nach gceadaíonn soláthraithe LLM rochtain dhíreach ó bhrabhsálaí.",
+    "disabled_placeholder": "Tá gnéithe AI múchta. Cumasaigh iad chun soláthraithe agus MCP a chumrú."
   },
   "ocr": {
     "extracted_text": "Téacs Bainte (OCR)",
@@ -2648,7 +2765,8 @@
     "source_description_llm": "Cruthaithe ag an gcúntóir AI",
     "source_description_restore": "Sábháilte roimh athchóiriú an athbhreithnithe roimhe seo",
     "source_description_unknown": "Foinse gan fáil",
-    "diff_identical": "Tá an t-athbhreithniú seo mar an gcéanna le hábhar an nóta reatha."
+    "diff_identical": "Tá an t-athbhreithniú seo mar an gcéanna le hábhar an nóta reatha.",
+    "back": "Ar ais"
   },
   "auto_link_attribute_list": {
     "title": "Tréithe an Chórais"
@@ -2759,7 +2877,10 @@
     "wrong-password": "Pasfhocal mícheart. Déan iarracht arís.",
     "language": "Teanga",
     "continue": "Lean ar aghaidh",
-    "your-ip-addresses": "Seoltaí don fheiste seo"
+    "your-ip-addresses": "Seoltaí don fheiste seo",
+    "sync-from-desktop-unreachable-title": "Ní féidir leis an ngléas seo teacht le gléasanna eile",
+    "sync-from-desktop-unreachable-description": "Chun sioncrónú a dhéanamh, caithfidh an deasc eile ceangal leis an gceann seo thar an líonra. Ar mhaithe le slándáil, ní ghlacann an aip deisce seo ach le naisc ón ríomhaire seo, agus mar sin ní féidir leis an deasc eile teacht air go fóill. Ceadaigh rochtain líonra thíos — atosóidh Trilium chun é a chur i bhfeidhm.",
+    "sync-from-desktop-allow-access": "Ceadaigh rochtain líonra & atosú"
   },
   "text-editor": {
     "checkbox-tooltip": "Cliceáil ar dheis le haghaidh tuilleadh staideanna tascanna.\nBrúigh {{shortcut}} chun dul idir staideanna.",
@@ -2815,7 +2936,11 @@
     "server_config_hint": "Cuir an méid seo a leanas le do chomhad config.ini:",
     "server_env_hint": "Nó socraigh an athróg timpeallachta seo a leanas:",
     "restart_required": "Tá atosú ag teastáil chun an t-athrú seo a chur i bhfeidhm.",
-    "restart_now": "Atosaigh an feidhmchlár anois"
+    "restart_now": "Atosaigh an feidhmchlár anois",
+    "lan_access_title": "Rochtain líonra",
+    "lan_access_section_description": "De réir réamhshocraithe, ní ghlacann an aip deisce ach le naisc ón ríomhaire seo. Ceadaigh rochtain ó do líonra áitiúil ionas gur féidir le gléasanna eile ceangal leis — mar shampla chun sioncrónú ó ghléas eile. Ní chumasaigh é seo ach ar líonraí a bhfuil muinín agat astu.",
+    "lan_access_label": "Ceadaigh naisc ó ghléasanna eile",
+    "lan_access_description": "Ceangail an freastalaí le gach comhéadan líonra seachas le localhost amháin."
   },
   "image_buttons": {
     "zoom_in": "Zúmáil isteach",
@@ -2843,5 +2968,45 @@
     "refresh-widget": "Athnuachan",
     "remove-widget": "Bain den phainéal",
     "empty-hint": "Is giuirléid aon nóta linbh. Tarraing nóta anseo ón gcrann nó cruthaigh ceann nua."
+  },
+  "import_provider": {
+    "title": "Iompórtáil ó sheirbhís",
+    "choose_provider": "Roghnaigh seirbhís le hallmhairiú uaidh:",
+    "back": "Ar ais"
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "Iompórtáil leabhair nótaí, rannóga agus leathanaigh ó do chuntas OneNote.",
+    "connect_description": "Sínigh isteach le do chuntas Microsoft chun do leabhair nótaí OneNote a allmhairiú.",
+    "connect": "Sínigh isteach le Microsoft",
+    "connecting": "Ag fanacht go gcríochnófar an síniú isteach…",
+    "connected_as": "Ceangailte mar {{name}}",
+    "disconnect": "Dícheangail",
+    "load_failed": "Níorbh fhéidir do leabhair nótaí OneNote a luchtú.",
+    "no_notebooks": "Ní bhfuarthas aon leabhair nótaí sa chuntas seo.",
+    "select_sections": "Roghnaigh na rannóga le hallmhairiú:",
+    "order_hint_title": "Ord na rannóg garbh",
+    "order_hint": "Ní chuimsíonn OneNote an t-ordú bunaidh sna sonraí allmhairithe, mar sin déantar rannóga agus grúpaí a shórtáil de réir dáta cruthaithe agus b'fhéidir nach n-oireann siad don chaoi a bhfeictear iad in OneNote.",
+    "import": "Iompórtáil roghnaithe",
+    "attach_source": "Ceangail HTML bunaidh (dífhabhtú)",
+    "attach_source_hint": "Sábhálann sé HTML OneNote neamhathraithe gach leathanaigh mar cheangaltán ar an nóta allmhairithe, chun comparáid a dhéanamh leis an toradh tiontaithe."
+  },
+  "desktop": {
+    "web_placeholder": "Ní bhaineann na roghanna seo ach le tógálacha deisce."
+  },
+  "startup": {
+    "title": "Tosaithe",
+    "launch_on_startup": "Seoladh ag am tosaithe",
+    "launch_on_startup_description": "Oscail Trilium go huathoibríoch nuair a logálann tú isteach i do ríomhaire.",
+    "hide_on_auto_start": "Tosaigh ag íoslaghdú go dtí an tráidire",
+    "hide_on_auto_start_description": "Nuair a sheoltar go huathoibríoch é ag logáil isteach, tosaíonn sé i bhfolach sa tráidire córais in ionad fuinneog a oscailt. Éilíonn sé seo seoladh ag am tosaithe agus deilbhín an tráidire a bheith cumasaithe."
+  },
+  "full_content_width_switch": {
+    "title": "Leithead iomlán"
+  },
+  "split_editor": {
+    "render_error": "Ní féidir an réamhamharc a rindreáil",
+    "show_details": "Taispeáin sonraí",
+    "last_valid_render": "Ag taispeáint an rindreála bailí deireanach"
   }
 }

@@ -149,7 +149,7 @@ jobs:
           path: upload
 
       - name: Publish stable release
-        uses: softprops/action-gh-release@v3.0.0
+        uses: softprops/action-gh-release@v3.0.1
         with:
           draft: false
           body_path: docs/Release Notes/Release Notes/${{ github.ref_name }}.md

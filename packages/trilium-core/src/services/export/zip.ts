@@ -16,7 +16,11 @@ import { getZipExportProviderFactory } from "./zip_export_provider_factory.js";
 import { AttachmentMeta, AttributeMeta, ExportFormat, NoteMeta, NoteMetaFile } from "../../meta";
 import { ValidationError } from "../../errors";
 import { extname } from "../utils/path";
+import { truncateUtf8Bytes } from "../utils/binary";
 import { rewriteMarkdownContentLinks, isMarkdownCodeNote } from "./rewrite_links.js";
+
+// Most filesystems cap a single path component at 255 bytes; keep exported file names within that.
+const MAX_FILENAME_BYTES = 255;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: Record<string, any>, setHeaders = true, zipExportOptions?: AdvancedExportOptions) {
@@ -66,27 +70,19 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             fileName = "note";
         }
 
-        // Crop fileName to avoid its length exceeding 30 and prevent cutting into the extension.
-        if (fileName.length > 30) {
-            // We use regex to match the extension to preserve multiple dots in extensions (e.g. .tar.gz).
-            const match = fileName.match(/(\.[a-zA-Z0-9_.!#-]+)$/);
-            const ext = match ? match[0] : "";
-            // Crop the extension if extension length exceeds 30
-            const croppedExt = ext.slice(-30);
-            // Crop the file name section and append the cropped extension
-            fileName = fileName.slice(0, 30 - croppedExt.length) + croppedExt;
-        }
-
         const existingExtension = extname(fileName).toLowerCase();
         const newExtension = provider.mapExtension(type, mime, existingExtension, format);
 
         // if the note is already named with the extension (e.g. "image.jpg"), then it's silly to append the exact same extension again
-        if (newExtension && existingExtension !== `.${newExtension.toLowerCase()}`) {
-            fileName += `.${newExtension}`;
-        }
+        const extension = newExtension && existingExtension !== `.${newExtension.toLowerCase()}` ? `.${newExtension}` : "";
 
+        // sanitize() strips illegal filename characters; we then byte-truncate the base
+        // name so the whole entry (extension included) stays within the 255-byte
+        // filesystem limit without ever chopping the extension off long / multi-byte
+        // titles and attachment names. This replaces the old arbitrary 30-char cap.
+        const base = truncateUtf8Bytes(sanitize(fileName), MAX_FILENAME_BYTES - extension.length);
 
-        return getUniqueFilename(existingFileNames, fileName);
+        return getUniqueFilename(existingFileNames, `${base}${extension}`);
     }
 
     function createNoteMeta(branch: BBranch, parentMeta: Partial<NoteMeta>, existingFileNames: Record<string, number>): NoteMeta | null {

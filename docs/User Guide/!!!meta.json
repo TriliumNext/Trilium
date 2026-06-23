@@ -2725,7 +2725,7 @@
                                                 {
                                                     "type": "relation",
                                                     "name": "internalLink",
-                                                    "value": "ivYnonVFBxbQ",
+                                                    "value": "oPVyFC7WL2Lp",
                                                     "isInheritable": false,
                                                     "position": 10
                                                 },
@@ -2748,12 +2748,28 @@
                                             "dataFileName": "Multiple selection.md",
                                             "attachments": [
                                                 {
+                                                    "attachmentId": "c6b9zmTA3IzP",
+                                                    "title": "image.png",
+                                                    "role": "image",
+                                                    "mime": "image/png",
+                                                    "position": 10,
+                                                    "dataFileName": "Multiple selection_image.png"
+                                                },
+                                                {
                                                     "attachmentId": "puanbWdFSfUM",
                                                     "title": "image.png",
                                                     "role": "image",
                                                     "mime": "image/jpg",
                                                     "position": 10,
-                                                    "dataFileName": "Multiple selection_image.png"
+                                                    "dataFileName": "1_Multiple selection_image.png"
+                                                },
+                                                {
+                                                    "attachmentId": "xZnYDX7rv0rW",
+                                                    "title": "image.png",
+                                                    "role": "image",
+                                                    "mime": "image/png",
+                                                    "position": 10,
+                                                    "dataFileName": "2_Multiple selection_image.png"
                                                 }
                                             ]
                                         },
@@ -11987,9 +12003,23 @@
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "R9pX4DGra2Vt",
+                                    "value": "0vhv7lsOLy82",
                                     "isInheritable": false,
                                     "position": 90
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "mT0HEkOsz6i1",
+                                    "isInheritable": false,
+                                    "position": 100
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "R9pX4DGra2Vt",
+                                    "isInheritable": false,
+                                    "position": 110
                                 },
                                 {
                                     "type": "label",
@@ -11997,20 +12027,6 @@
                                     "value": "bx bx-table",
                                     "isInheritable": false,
                                     "position": 30
-                                },
-                                {
-                                    "type": "relation",
-                                    "name": "internalLink",
-                                    "value": "0vhv7lsOLy82",
-                                    "isInheritable": false,
-                                    "position": 100
-                                },
-                                {
-                                    "type": "relation",
-                                    "name": "internalLink",
-                                    "value": "mT0HEkOsz6i1",
-                                    "isInheritable": false,
-                                    "position": 110
                                 }
                             ],
                             "format": "markdown",

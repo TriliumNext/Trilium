@@ -8,7 +8,7 @@ import yaml from "js-yaml";
 import path from "path";
 
 import packageJson from "../package.json" with { type: "json" };
-import { extractZip, importData, initializeEditDocsCore, startElectron } from "./utils.js";
+import { extractZip, importData, initializeEditDocsCore, rewriteHelpLinks, startElectron } from "./utils.js";
 
 interface NoteMapping {
     rootNoteId: string;
@@ -183,11 +183,7 @@ async function exportData(noteId: string, format: ExportFormat, outputPath: stri
                         return url ? `href="${url}"` : match;
                     });
 
-                    content = content.replace(/href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)[^"]*"/g, (match, targetNoteId) => {
-                        const components = match.split("/");
-                        components[components.length - 1] = `_help_${components[components.length - 1]}`;
-                        return components.join("/");
-                    });
+                    content = rewriteHelpLinks(content);
 
                     // Remove data-list-item-id created by CKEditor for lists
                     content = content.replace(/ data-list-item-id="[^"]*"/g, "");

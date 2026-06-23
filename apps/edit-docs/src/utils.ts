@@ -169,6 +169,29 @@ function waitForEnd(archive: Archiver, stream: WriteStream) {
     });
 }
 
+/**
+ * Rewrites internal `#root/...` note links in exported help HTML so that they resolve
+ * against the help subtree once imported into a production Trilium instance.
+ *
+ * In the edit-docs instance the help notes carry plain, randomly generated IDs, but in
+ * production they live under the `_help` subtree with a `_help_` prefix. This adds that
+ * prefix to the link's target note ID.
+ */
+export function rewriteHelpLinks(content: string): string {
+    return content.replace(/href="[^"]*#root[a-zA-Z0-9_/]*\/([a-zA-Z0-9_]+)[^"]*"/g, (match, targetNoteId) => {
+        // Canonical hidden-subtree notes (e.g. _options, _optionsTextNotes) keep their IDs in
+        // production, so they already start with an underscore. Only help notes (random
+        // alphanumeric IDs) get the `_help_` prefix; prefixing the others would produce broken
+        // `_help__optionsTextNotes`-style links (see issue #9646).
+        if (targetNoteId.startsWith("_")) {
+            return match;
+        }
+        const components = match.split("/");
+        components[components.length - 1] = `_help_${components[components.length - 1]}`;
+        return components.join("/");
+    });
+}
+
 export async function createZipFromDirectory(dirPath: string, zipPath: string) {
     const archive = new ZipArchive({ zlib: { level: 5 } });
     const outputStream = createWriteStream(zipPath);

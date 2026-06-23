@@ -1293,7 +1293,8 @@
     "erase_deleted_notes_now": "Effacer immédiatement les notes supprimées",
     "deleted_notes_erased": "Les notes supprimées ont été effacées.",
     "description": "Les notes supprimées sont d’abord simplement marquées comme supprimées et peuvent être restaurées depuis les Modifications récentes. Après un certain délai, elles sont définitivement effacées.",
-    "erase_notes_after_description": "Délai avant l'effacement définitif des notes supprimées."
+    "erase_notes_after_description": "Délai avant l'effacement définitif des notes supprimées.",
+    "erase_now_button": "Supprimer maintenant"
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "Intervalle des instantanés de révision de note",

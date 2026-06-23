@@ -1345,7 +1345,9 @@
     "subtree-hidden-tooltip_other": "{{count}} 個の子ノートがツリーで非表示になっています",
     "subtree-hidden-moved-title": "{{title}} に追加されました",
     "subtree-hidden-moved-description-collection": "このコレクションはツリー内の子ノートを非表示にします。",
-    "subtree-hidden-moved-description-other": "このノートのツリーでは子ノートは非表示になっています。"
+    "subtree-hidden-moved-description-other": "このノートのツリーでは子ノートは非表示になっています。",
+    "follow-active-note": "アクティブなノートに追従",
+    "follow-active-note-title": "ツリーをスクロールし、親ノードを展開してアクティブなノートを表示します。無効にすると、ツリーは固定されたままとなり、背景のハイライトのみが更新されます。"
   },
   "bulk_actions": {
     "bulk_actions": "一括操作",
@@ -1993,7 +1995,8 @@
     "create-child-note-title": "新しい子ノートを作成し、マップに追加する",
     "create-child-note-instruction": "地図をクリックしてその場所に新しいノートを作成するか、Esc キーを押して閉じます。",
     "unable-to-load-map": "マップを読み込めません。",
-    "create-child-note-text": "マーカーを追加"
+    "create-child-note-text": "マーカーを追加",
+    "create-child-note-toast-title": "新しいノート"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
@@ -2904,5 +2907,26 @@
     "import": "選択した項目をインポート",
     "attach_source": "元のHTMLを添付（デバッグ）",
     "attach_source_hint": "変換後の結果と比較できるように、各ページの変更されていない OneNote の HTML をインポートされたノートに添付ファイルとして保存します。"
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "Notion の HTML エクスポートファイル (.zip) からページをインポートします。",
+    "description_long": "Notion でワークスペースまたはページをサブページを含む HTML 形式でエクスポートし、生成された.zipファイルをここで選択してください。",
+    "choose_file": "Notion エクスポート (.zip)",
+    "import": "インポート"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "Google Keep のエクスポートファイル (.zip) からノートをインポートします。",
+    "description_long": "Google Takeout で Keep のデータを.zip 形式でエクスポートし、生成されたファイルをここで選択してください。",
+    "choose_file": "Google Keep エクスポート (.zip)",
+    "import": "インポート"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "Evernote のエクスポートファイル (.enex) からノートをインポートします。",
+    "description_long": "Evernote でノートブック（または一度に最大100件のノート）を ENEX ファイルとしてエクスポートし、1 つ以上の .enex ファイルをここで選択してください。各ファイルは個別のノートブックとしてインポートされます。",
+    "choose_file": "Evernote エクスポート (.enex)",
+    "import": "インポート"
   }
 }

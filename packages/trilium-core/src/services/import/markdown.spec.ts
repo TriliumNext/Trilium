@@ -43,7 +43,43 @@ describe("markdown", () => {
             # another one
             Hello, world
         `, "title");
-        expect(result).toBe(`<h2>Hello</h2><h2>world</h2><h2>another one</h2><p>Hello, world</p>`);
+        // <h1> is reserved for the note title, so the hierarchy is shifted down one
+        // level rather than collapsed: the two top-level `#` become <h2> siblings and
+        // the nested `##` becomes <h3>, preserving the author's nesting (#8383).
+        expect(result).toBe(`<h2>Hello</h2><h3>world</h3><h2>another one</h2><p>Hello, world</p>`);
+    });
+
+    it("preserves heading hierarchy by shifting levels when content starts at H1 (#8383)", () => {
+        // Content authored with H1 as the top level: every heading shifts down one
+        // level so the parent/child relationship survives instead of flattening onto H2.
+        expect(markdownService.renderToHtml(trimIndentation`\
+            # Main Section
+            ## Subsection A
+            ### Detail
+            ## Subsection B
+        `, "Notes")).toBe(`<h2>Main Section</h2><h3>Subsection A</h3><h4>Detail</h4><h3>Subsection B</h3>`);
+
+        // The first H1 matching the title is stripped; if a content H1 still remains,
+        // the rest is shifted, otherwise it is left untouched.
+        expect(markdownService.renderToHtml(trimIndentation`\
+            # Notes
+            # Chapter 1
+            ## Section
+        `, "Notes")).toBe(`<h2>Chapter 1</h2><h3>Section</h3>`);
+
+        // Common case: title is stripped and the content already starts at H2 — no shift.
+        expect(markdownService.renderToHtml(trimIndentation`\
+            # Notes
+            ## Section
+            ### Sub
+        `, "Notes")).toBe(`<h2>Section</h2><h3>Sub</h3>`);
+
+        // Deeper levels clamp at H6 (there is no H7 to shift into).
+        expect(markdownService.renderToHtml(trimIndentation`\
+            # Top
+            ##### Five
+            ###### Six
+        `, "Notes")).toBe(`<h2>Top</h2><h6>Five</h6><h6>Six</h6>`);
     });
 
     it("parses duplicate title with escape correctly", () => {

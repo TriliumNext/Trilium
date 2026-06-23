@@ -90,6 +90,36 @@ describe("#handleH1", () => {
             "w/ multiple <h1> tags, and the 1st matching NOT the title tag, it should NOT strip any other <h1> tags",
             ["<h1>Introduction</h1><h1>Topic ABC</h1><h1>Summary</h1>", "Topic ABC"],
             "<h2>Introduction</h2><h2>Topic ABC</h2><h2>Summary</h2>"
+        ],
+        [
+            "w/ a content <h1> followed by an <h2>, it should shift the hierarchy down instead of collapsing both onto <h2> (#8383)",
+            ["<h1>Main</h1><h2>Sub</h2>", "Title"],
+            "<h2>Main</h2><h3>Sub</h3>"
+        ],
+        [
+            "w/ the 1st <h1> matching the title and a remaining content <h1>, it should strip the title and shift the rest",
+            ["<h1>Title</h1><h1>Chapter</h1><h2>Section</h2>", "Title"],
+            "<h2>Chapter</h2><h3>Section</h3>"
+        ],
+        [
+            "w/ the 1st <h1> matching the title and only <h2> content remaining, it should strip the title without shifting",
+            ["<h1>Title</h1><h2>Section</h2>", "Title"],
+            "<h2>Section</h2>"
+        ],
+        [
+            "w/ headings deeper than <h2>, the shift should clamp at <h6>",
+            ["<h1>A</h1><h2>B</h2><h6>C</h6>", "Title"],
+            "<h2>A</h2><h3>B</h3><h6>C</h6>"
+        ],
+        [
+            "w/ a content <h1> containing inline markup, it should still be demoted and shifted",
+            ["<h1>Chapter <em>One</em></h1><h2>Intro</h2>", "Doc"],
+            "<h2>Chapter <em>One</em></h2><h3>Intro</h3>"
+        ],
+        [
+            "w/ a content <h1> carrying attributes, the attributes should be preserved on the demoted <h2>",
+            [`<h1 id="top">Main</h1><h2>Sub</h2>`, "Doc"],
+            `<h2 id="top">Main</h2><h3>Sub</h3>`
         ]
     ];
 

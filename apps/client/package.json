@@ -33,7 +33,6 @@
     "@triliumnext/codemirror": "workspace:*",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/highlightjs": "workspace:*",
-    "@triliumnext/share-theme": "workspace:*",
     "@triliumnext/split.js": "workspace:*",
     "@univerjs/preset-sheets-conditional-formatting": "0.24.0",
     "@univerjs/preset-sheets-core": "0.24.0",

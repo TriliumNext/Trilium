@@ -182,20 +182,66 @@ function getNormalizedMimeFromMarkdownLanguage(language: string | undefined): st
     return MIME_TYPE_AUTO;
 }
 
-function handleH1(content: string, title: string): string {
-    let isFirstH1Handled = false;
+/** Decodes HTML entities in heading text; supplied by each {@link demoteHeadings} caller. */
+export type EntityDecoder = (str: string) => string;
 
-    return content.replace(/<h1[^>]*>([^<]*)<\/h1>/gi, (match, text: string) => {
-        text = unescapeHtml(text);
-        const convertedContent = `<h2>${text}</h2>`;
+/**
+ * Trilium reserves `<h1>` for the note title and the editor only supports
+ * `<h2>`–`<h6>`. When rendered/imported content starts its hierarchy at `<h1>`,
+ * naively demoting every `<h1>` to `<h2>` while leaving `<h2>`–`<h6>` untouched
+ * collapses distinct levels onto the same `<h2>`, flattening the nesting (#8383).
+ *
+ * This strips the leading `<h1>` if it duplicates the title, then — if a content
+ * `<h1>` still remains — shifts the whole hierarchy down one level so the author's
+ * structure is preserved.
+ *
+ * The entity decoder is injected so each call-site keeps its own `unescapeHtml`
+ * semantics: the markdown renderer (here) decodes numeric/hex/named entities, while
+ * the HTML importer decodes only the five basic ones (matching `api.unescapeHtml`).
+ */
+export function demoteHeadings(
+    content: string,
+    title: string,
+    unescapeHtml: EntityDecoder
+): string {
+    content = stripDuplicateTitleHeading(content, title, unescapeHtml);
 
-        if (!isFirstH1Handled) {
-            isFirstH1Handled = true;
-            return title.trim() === text.trim() ? "" : convertedContent;
-        }
+    // If a content <h1> still remains, the hierarchy starts at level 1: shift every
+    // heading down one level (clamping at <h6>) so nesting is preserved instead of
+    // collapsing distinct <h1>/<h2> levels onto the same <h2>.
+    if (/<h1[^>]*>[\s\S]*?<\/h1>/i.test(content)) {
+        content = shiftHeadingsDown(content, unescapeHtml);
+    }
 
-        return convertedContent;
-    });
+    return content;
+}
+
+/** Removes the first `<h1>` when its (decoded) text equals the note title. */
+function stripDuplicateTitleHeading(
+    content: string,
+    title: string,
+    unescapeHtml: EntityDecoder
+): string {
+    // No `g` flag: only the very first <h1> is a title candidate. `[\s\S]*?` (not
+    // `[^<]*`) so headings with inline markup or attributes still match.
+    return content.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/i, (match, text: string) =>
+        unescapeHtml(text).trim() === title.trim() ? "" : match
+    );
+}
+
+/**
+ * Shifts `<h2>`–`<h5>` to `<h3>`–`<h6>` and the remaining `<h1>` to `<h2>`
+ * (preserving attributes and decoding text). `<h6>` stays put — there is no `<h7>`.
+ */
+function shiftHeadingsDown(content: string, unescapeHtml: EntityDecoder): string {
+    // Shift the sub-headings first so the <h1>→<h2> demotion below isn't re-shifted.
+    // `[\s\S]*?` matches headings containing inline markup; the captured attributes
+    // are carried over to the demoted <h2>.
+    return content
+        .replace(/<(\/?)h([2-5])\b([^>]*)>/gi, (_match, slash, level, rest) =>
+            `<${slash}h${Number(level) + 1}${rest}>`)
+        .replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, (_match, attrs, text) =>
+            `<h2${attrs}>${unescapeHtml(text)}</h2>`);
 }
 
 export function extractCodeBlocks(text: string): { processedText: string; placeholderMap: Map<string, string> } {
@@ -396,7 +442,7 @@ export function renderToHtml(content: string, title: string, options: RenderToHt
 
     // h1 handling needs to come before sanitization.
     if (options.demoteH1 !== false) {
-        html = handleH1(html, title);
+        html = demoteHeadings(html, title, unescapeHtml);
     }
     html = options.sanitize(html);
 

@@ -18,8 +18,6 @@
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
-    "@typescript-eslint/eslint-plugin": "8.61.1",
-    "@typescript-eslint/parser": "8.61.1",
     "@vitest/browser": "4.1.9",
     "ckeditor5": "48.2.0",
     "eslint": "10.5.0",

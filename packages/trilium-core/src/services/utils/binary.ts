@@ -1,5 +1,4 @@
 import chardet from "chardet";
-import stripBom from "strip-bom";
 
 const utf8Decoder = new TextDecoder("utf-8");
 const utf8Encoder = new TextEncoder();
@@ -47,6 +46,27 @@ export function encodeUtf8(string: string | Uint8Array) {
     return utf8Encoder.encode(unwrapStringOrBuffer(string));
 }
 
+/**
+ * Truncates a string so that its UTF-8 encoding does not exceed `maxBytes`,
+ * without ever splitting a multi-byte character (the cut is moved back to the
+ * nearest character boundary). Returns the input unchanged when it already fits.
+ */
+export function truncateUtf8Bytes(text: string, maxBytes: number): string {
+    const encoded = encodeUtf8(text);
+    if (encoded.length <= maxBytes) {
+        return text;
+    }
+
+    // UTF-8 continuation bytes match 0b10xxxxxx (0x80–0xBF); back up while the
+    // cut would land inside a multi-byte sequence so we never emit a partial char.
+    let end = Math.max(0, maxBytes);
+    while (end > 0 && (encoded[end] & 0xc0) === 0x80) {
+        end--;
+    }
+
+    return decodeUtf8(encoded.slice(0, end));
+}
+
 export function unwrapStringOrBuffer(stringOrBuffer: string | Uint8Array) {
     if (typeof stringOrBuffer === "string") {
         return stringOrBuffer;
@@ -61,6 +81,15 @@ export function wrapStringOrBuffer(stringOrBuffer: string | Uint8Array) {
     } else {
         return stringOrBuffer;
     }
+}
+
+/**
+ * Strips a leading byte order mark (U+FEFF) from a string, if present. A
+ * buffer-to-string conversion translates a UTF-8 BOM (EF BB BF) into the same
+ * U+FEFF code point, so this covers both UTF-8 and UTF-16 BOMs.
+ */
+export function stripBom(text: string): string {
+    return text.startsWith("\uFEFF") ? text.slice(1) : text;
 }
 
 /**

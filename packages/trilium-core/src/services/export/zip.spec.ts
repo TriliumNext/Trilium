@@ -230,6 +230,75 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(childIds).not.toContain(excluded.noteId);
         });
 
+        it("keeps note titles longer than 30 characters in the data file name", async () => {
+            // Regression for #10112: the base file name used to be hard-capped at
+            // 30 characters, mangling long titles in the export.
+            const longTitle = "This is a very long note title well beyond the old thirty char cap";
+            expect(longTitle.length).toBeGreaterThan(30);
+            const { note } = createNote("root", { title: longTitle, content: "<p>long</p>" });
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "html");
+            const rootMeta = parseMeta(entries).files[0];
+
+            expect(rootMeta.dataFileName).toBe(`${longTitle}.html`);
+            expect(entries[`${longTitle}.html`]).toBeDefined();
+        });
+
+        it("keeps the full UTF-8 title for accented note names (issue #10112)", async () => {
+            // The reporter's archive showed "Jean 15.1-8 - prédication corr.md",
+            // i.e. a longer accented title chopped at 30 chars before ".md".
+            const accentedTitle = "Jean 15.1-8 - prédication corrigée";
+            expect(accentedTitle.length).toBeGreaterThan(30);
+            const { note } = createNote("root", { title: accentedTitle, content: "<h2>Heading</h2>" });
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "markdown");
+            const rootMeta = parseMeta(entries).files[0];
+
+            expect(rootMeta.dataFileName).toBe(`${accentedTitle}.md`);
+            expect(entries[`${accentedTitle}.md`]).toBeDefined();
+        });
+
+        it("keeps long attachment names and strips illegal characters from them", async () => {
+            const { note } = createNote("root", { title: "AttachHost", content: "<p>host</p>" });
+            const longAttachmentTitle = "long attachment / with : illegal * chars beyond thirty characters";
+            getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: longAttachmentTitle, content: "data" })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "html");
+            const rootMeta = parseMeta(entries).files[0];
+
+            const attMeta = (rootMeta.attachments ?? [])[0];
+            expect(attMeta).toBeDefined();
+            const attFileName = attMeta.dataFileName ?? "";
+            // Not capped at 30: the old behaviour cropped to 30 chars + extension.
+            expect(attFileName.length).toBeGreaterThan(33);
+            // Illegal filename characters are stripped (previously left untouched).
+            expect(attFileName).not.toMatch(/[/\\:*?"<>|]/);
+            expect(entries[attFileName]).toBeDefined();
+        });
+
+        it("keeps the extension on very long multi-byte titles within the 255-byte limit", async () => {
+            // A title of 3-byte CJK characters long enough that, once the upstream
+            // 255-byte sanitize cap fills the base, appending the extension would
+            // push past 255 bytes. The extension must survive and the whole name
+            // must stay within the filesystem's 255-byte limit.
+            const cjkTitle = "汉".repeat(120);
+            const { note } = createNote("root", { title: cjkTitle, content: "<h2>Heading</h2>" });
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "markdown");
+            const rootMeta = parseMeta(entries).files[0];
+
+            const name = rootMeta.dataFileName ?? "";
+            expect(name.endsWith(".md")).toBe(true);
+            expect(Buffer.byteLength(name, "utf-8")).toBeLessThanOrEqual(255);
+            expect(entries[name]).toBeDefined();
+        });
+
         it("emits a .clone data file when the same note appears twice in the subtree", async () => {
             const { note: parent } = createNote("root", { title: "CloneHolder", content: "" });
             const { note: folderA } = createNote(parent.noteId, { title: "FolderA", content: "" });

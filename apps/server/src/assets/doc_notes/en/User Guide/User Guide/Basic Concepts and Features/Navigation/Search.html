@@ -290,7 +290,7 @@
 <p>The "full" syntax for searching by labels is:</p><pre><code class="language-text-x-trilium-auto">note.labels.publicationYear = 1954</code></pre>
 <p>For relations:</p><pre><code class="language-text-x-trilium-auto">note.relations.author.title *=* Tolkien</code></pre>
 <p>However, common label and relation searches have shortcut syntax:</p><pre><code class="language-text-x-trilium-auto">#publicationYear = 1954
-#author.title *=* Tolkien</code></pre>
+~author.title *=* Tolkien</code></pre>
 <h3>Separating Full-Text and Attribute Parts</h3>
 <p>Search syntax allows combining full-text search with attribute-based search.
   For example, <code spellcheck="false">tolkien #book</code> contains:</p>
@@ -334,22 +334,26 @@
   </thead>
   <tbody>
     <tr>
-      <td>MIN_FUZZY_TOKEN_LENGTH</td>
+      <td><code spellcheck="false">MIN_FUZZY_TOKEN_LENGTH</code>
+      </td>
       <td>3</td>
       <td>Minimum characters for fuzzy matching</td>
     </tr>
     <tr>
-      <td>MAX_EDIT_DISTANCE</td>
+      <td><code spellcheck="false">MAX_EDIT_DISTANCE</code>
+      </td>
       <td>2</td>
       <td>Maximum character changes allowed</td>
     </tr>
     <tr>
-      <td>RESULT_SUFFICIENCY_THRESHOLD</td>
+      <td><code spellcheck="false">RESULT_SUFFICIENCY_THRESHOLD</code>
+      </td>
       <td>5</td>
       <td>Minimum exact results before fuzzy fallback</td>
     </tr>
     <tr>
-      <td>MAX_CONTENT_SIZE</td>
+      <td><code spellcheck="false">MAX_CONTENT_SIZE</code>
+      </td>
       <td>10MB</td>
       <td>Maximum note content size for search processing</td>
     </tr>

@@ -39,7 +39,6 @@
     "better-sqlite3": "12.11.1",
     "html-to-text": "10.0.0",
     "i18next": "26.3.1",
-    "i18next-fs-backend": "2.6.6",
     "ipaddr.js": "^2.4.0",
     "js-yaml": "4.2.0",
     "unpdf": "1.6.2"
@@ -74,7 +73,6 @@
     "compression": "1.8.1",
     "cookie-parser": "1.4.7",
     "csrf-csrf": "4.0.3",
-    "debug": "4.4.3",
     "ejs": "6.0.1",
     "express": "5.2.1",
     "express-openid-connect": "3.0.0",

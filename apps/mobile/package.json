@@ -12,11 +12,11 @@
     "run:android": "cap run android"
   },
   "dependencies": {
-    "@capacitor/android": "8.4.0",
-    "@capacitor/core": "8.4.0",
+    "@capacitor/android": "8.4.1",
+    "@capacitor/core": "8.4.1",
     "@capacitor/splash-screen": "8.0.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "8.4.0"
+    "@capacitor/cli": "8.4.1"
   }
 }

@@ -1,20 +1,12 @@
+import { demoteHeadings } from "@triliumnext/commons/src/lib/markdown_renderer.js";
+
 import { unescapeHtml } from "../utils";
 
 function handleH1(content: string, title: string) {
-    let isFirstH1Handled = false;
-
-    return content.replace(/<h1[^>]*>([^<]*)<\/h1>/gi, (match, text) => {
-        text = unescapeHtml(text);
-        const convertedContent = `<h2>${text}</h2>`;
-
-        // strip away very first found h1 tag, if it matches the title
-        if (!isFirstH1Handled) {
-            isFirstH1Handled = true;
-            return title.trim() === text.trim() ? "" : convertedContent;
-        }
-
-        return convertedContent;
-    });
+    // Reserve <h1> for the note title and shift the content hierarchy to fit the
+    // editor's <h2>–<h6> range (see #8383). Pass our own `unescapeHtml`, which —
+    // unlike the markdown renderer's — only decodes the five basic HTML entities.
+    return demoteHeadings(content, title, unescapeHtml);
 }
 
 function extractHtmlTitle(content: string): string | null {

@@ -202,12 +202,12 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-或者，如果您安装了 Nix：
+或者，如果你安装了 Nix：
 ```shell
 # 直接运行 
 nix run .#edit-docs
 
-#或安装到您的配置文件 
+#或安装到你的配置文件 
 nix profile install .#edit-docs
 trilium-edit-docs
 ```

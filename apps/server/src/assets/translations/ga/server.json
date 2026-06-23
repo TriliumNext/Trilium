@@ -175,7 +175,9 @@
     "password": "Pasfhocal",
     "remember-me": "Cuimhnigh orm",
     "button": "Logáil Isteach",
-    "sign_in_with_sso": "Sínigh isteach le {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Sínigh isteach le {{ ssoIssuerName }}",
+    "sso-wrong-account": "Ní hé an cuntas sin an ceann atá nasctha leis an gcás Trilium seo. Sínigh isteach leis an gcuntas nasctha.",
+    "sso-not-enrolled": "Níl síniú isteach aonair socraithe fós. Sínigh isteach le do phasfhocal ar dtús, ansin nasc do chuntas ó na socruithe."
   },
   "set_password": {
     "title": "Socraigh Pasfhocal",
@@ -269,7 +271,7 @@
     "code-notes-title": "Nótaí Cód",
     "images-title": "Meáin",
     "spellcheck-title": "Seiceáil litrithe",
-    "password-title": "Pasfhocal",
+    "password-title": "Pasfhocal & Údarú",
     "multi-factor-authentication-title": "MFA",
     "etapi-title": "ETAPI",
     "backup-title": "Cúltaca",
@@ -296,7 +298,8 @@
     "task-state-attr-is-completed": "Comhaireamh mar chríochnaithe",
     "task-state-attr-color": "Dath",
     "task-state-attr-is-hidden": "I bhfolach ón liosta",
-    "security-title": "Slándáil"
+    "security-title": "Slándáil",
+    "desktop-title": "Deasc"
   },
   "notes": {
     "new-note": "Nóta nua",
@@ -417,6 +420,11 @@
     "backend-scripting": "Forghníomhú script chúltaca",
     "backend-scripting-warning": "Tá rochtain iomlán ag scripteanna cúil ar an bhfreastalaí, lena n-áirítear an córas comhad agus an líonra.",
     "sql-console": "Consól SQL",
-    "sql-console-warning": "Ceadaíonn consól SQL ceisteanna SQL treallacha a fhorghníomhú i gcoinne an bhunachar sonraí."
+    "sql-console-warning": "Ceadaíonn consól SQL ceisteanna SQL treallacha a fhorghníomhú i gcoinne an bhunachar sonraí.",
+    "lan-access": "rochtain líonra",
+    "lan-access-warning": "Beidh gléasanna eile ar do líonra áitiúil in ann ceangal leis an gcás Trilium seo."
+  },
+  "onenote_import": {
+    "root-title": "Allmhairiú OneNote"
   }
 }

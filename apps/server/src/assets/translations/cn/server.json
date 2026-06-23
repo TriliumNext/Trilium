@@ -76,12 +76,14 @@
     "password": "密码",
     "remember-me": "记住我",
     "button": "登录",
-    "sign_in_with_sso": "使用 {{ ssoIssuerName }} 登录"
+    "sign_in_with_sso": "使用 {{ ssoIssuerName }} 登录",
+    "sso-wrong-account": "该账户不是绑定到此 Trilium 实例的账户，请使用已绑定的账户登录。",
+    "sso-not-enrolled": "单点登录尚未设置。请先使用密码登录，然后在设置中绑定你的账户。"
   },
   "set_password": {
     "title": "设置密码",
     "heading": "设置密码",
-    "description": "在您能够从Web开始使用Trilium之前，您需要先设置一个密码。您之后将使用此密码登录。",
+    "description": "在你能够从Web开始使用Trilium之前，你需要先设置一个密码。你之后将使用此密码登录。",
     "password": "密码",
     "password-confirmation": "密码确认",
     "button": "设置密码"
@@ -167,7 +169,7 @@
     "code-notes-title": "代码笔记",
     "images-title": "媒体",
     "spellcheck-title": "拼写检查",
-    "password-title": "密码",
+    "password-title": "密码和身份验证",
     "multi-factor-authentication-title": "多因素认证",
     "etapi-title": "ETAPI",
     "backup-title": "备份",
@@ -197,7 +199,8 @@
     "task-state-attr-is-completed": "视为已完成",
     "task-state-attr-color": "颜色",
     "task-state-attr-is-hidden": "在列表中隐藏",
-    "security-title": "安全"
+    "security-title": "安全",
+    "desktop-title": "桌面"
   },
   "notes": {
     "new-note": "新建笔记",
@@ -229,7 +232,7 @@
     "open_new_window": "打开新窗口"
   },
   "migration": {
-    "old_version": "由您当前版本的直接迁移不被支持。请先升级到最新的 v0.60.4 然后再到这个版本。",
+    "old_version": "由你当前版本的直接迁移不被支持。请先升级到最新的 v0.60.4 然后再到这个版本。",
     "error_message": "迁移到版本 {{version}} 时发生错误: {{stack}}",
     "wrong_db_version": "数据库的版本（{{version}}）新于应用期望的版本（{{targetVersion}}），这意味着它由一个更加新的且不兼容的 Trilium 所创建。升级到最新版的 Trilium 以解决此问题。",
     "invalid_db_version": "数据库版本不是一个有效的数字。这通常表示数据库中的 'dbVersion' 选项已损坏。请从备份中恢复。",
@@ -377,7 +380,8 @@
     "presentation_slide_second": "第二张幻灯片",
     "background": "背景",
     "markdown-snippet": "Markdown 片段",
-    "code-snippet": "代码片段"
+    "code-snippet": "代码片段",
+    "dashboard": "仪表板"
   },
   "sql_init": {
     "db_not_initialized_desktop": "数据库尚未初始化，请依照屏幕提示操作。",
@@ -397,7 +401,7 @@
     }
   },
   "password": {
-    "incorrect": "您输入的密码不正确。"
+    "incorrect": "你输入的密码不正确。"
   },
   "script": {
     "wrong-environment": "无法执行笔记“{{-noteTitle}}”（{{-noteId}}）。这是一个 {{-actualEnv}} 脚本，但尝试在 {{-expectedEnv}} 中执行。"
@@ -405,7 +409,7 @@
   "security-dialog": {
     "enable-title": "启用{{settingLabel}}",
     "enable-message": "确定要启用{{settingLabel}}吗？",
-    "enable-detail": "{{warning}}\n\n只有在您明确需要使用此功能时才启用。如果是某个脚本或陌生笔记提示您这么做，请不要启用。\n\n此更改需要重启才能生效。",
+    "enable-detail": "{{warning}}\n\n只有在你明确需要使用此功能时才启用。如果是某个脚本或陌生笔记提示你这么做，请不要启用。\n\n此更改需要重启才能生效。",
     "disable-title": "禁用{{settingLabel}}",
     "disable-message": "{{settingLabel}}将被禁用。",
     "disable-detail": "此更改需要重启才能生效。",
@@ -416,6 +420,17 @@
     "backend-scripting": "后端脚本执行",
     "backend-scripting-warning": "后端脚本拥有服务器的完全访问权限，包括文件系统和网络。",
     "sql-console": "SQL 控制台",
-    "sql-console-warning": "SQL 控制台允许对数据库执行任意 SQL 查询。"
+    "sql-console-warning": "SQL 控制台允许对数据库执行任意 SQL 查询。",
+    "lan-access": "网络访问",
+    "lan-access-warning": "你本地网络中的其他设备将能够连接到此 Trilium 实例。"
+  },
+  "onenote_import": {
+    "root-title": "OneNote 导入"
+  },
+  "notion_import": {
+    "root-title": "Notion 导入"
+  },
+  "keep_import": {
+    "root-title": "Google Keep 导入"
   }
 }

@@ -425,6 +425,12 @@
     "lan-access-warning": "ローカルネットワーク上の他のデバイスが、この Trilium インスタンスに接続できるようになります。"
   },
   "onenote_import": {
-    "root-title": "OneNote からインポート"
+    "root-title": "OneNote インポート"
+  },
+  "notion_import": {
+    "root-title": "Notion インポート"
+  },
+  "keep_import": {
+    "root-title": "Google Keep インポート"
   }
 }
