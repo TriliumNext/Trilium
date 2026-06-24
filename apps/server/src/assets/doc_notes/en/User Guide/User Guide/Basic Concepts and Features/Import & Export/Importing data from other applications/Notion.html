@@ -67,7 +67,13 @@
   <li><a class="reference-link" href="#root/_help_mT0HEkOsz6i1">Images</a>&nbsp;and&nbsp;
     <a
     class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>.</li>
-  <li>Toggle sections</li>
+  <li>Toggle sections
+    <ul>
+      <li>Nested toggle sections are also supported.</li>
+      <li>Toggle headings are stripped of their toggle button and become normal
+        headings instead.</li>
+    </ul>
+  </li>
   <li><a class="reference-link" href="#root/_help_YfYAtQBcfo5V">Math Equations</a>&nbsp;(inline
     or block)</li>
   <li><a class="reference-link" href="#root/_help_UmgZAfcltxkS">Link Previews</a>
@@ -79,19 +85,23 @@
   <li>Links between other imported pages are converted to&nbsp;<a class="reference-link"
     href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;if they are
     part of the same import.</li>
-  <li>Databases are imported as&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/_help_GTwFsgaA0lCt">Collections</a>&nbsp;(see
+  <li>Databases are imported as&nbsp;<a class="reference-link" href="#root/_help_GTwFsgaA0lCt">Collections</a>&nbsp;(see
     below).</li>
   <li><a href="#root/_help_NwBbFdNZ9h7O">Admonitions</a> are preserved, including its
     emoji (added as part of the content).</li>
+  <li>Columns are imported as transparent <a href="#root/_help_NdowYOC1GFKS">tables</a>,
+    preserving the column definition.</li>
+  <li>Table of content blocks are <em>removed</em>, as the table of contents
+    is already present in the sidebar (see&nbsp;<a class="reference-link" href="#root/_help_BFvAtE74rbP6">Table of contents</a>),
+    as well as in shared notes.</li>
 </ul>
 <h2>Databases</h2>
-<p>Notion databases are imported into&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/_help_GTwFsgaA0lCt">Collections</a>,
+<p>Notion databases are imported into&nbsp;<a class="reference-link" href="#root/_help_GTwFsgaA0lCt">Collections</a>,
   where each item of the database is saved as a page in the collection. Through
-  the use of <a href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_bwZpz2ajCEwO">inherited</a>&nbsp;
-  <a
-  class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_OFXdgB2nNk1F">Promoted Attributes</a>, most of the page properties in Notion are preserved
-    by the import.</p>
-<p>The resulting collection will be&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/GTwFsgaA0lCt/_help_2FvYrpmOXm29">Table</a>&nbsp;regardless
+  the use of <a href="#root/_help_bwZpz2ajCEwO">inherited</a>&nbsp;<a class="reference-link"
+  href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>, most of the page properties
+  in Notion are preserved by the import.</p>
+<p>The resulting collection will be&nbsp;<a class="reference-link" href="#root/_help_2FvYrpmOXm29">Table</a>&nbsp;regardless
   of the original view the database was exported in. That's because the active
   view is not saved in the export and the table collection is the most compatible
   with Notion.</p>
@@ -117,7 +127,7 @@
       <tr>
         <td>ID</td>
         <td>Single-valued <code spellcheck="false">number</code> or <code spellcheck="false">text</code> label
-          (depending of whether a prefix is configured)</td>
+          (depending on whether a prefix is configured)</td>
       </tr>
       <tr>
         <td>Multi-select</td>
@@ -160,9 +170,9 @@
       </tr>
       <tr>
         <td>Relation</td>
-        <td>Mapped to <a href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_Cq5X6iKQop6R">relations</a>,
-          each link resolved to its target note via the existing cross-page map;
-          targets outside the import are dropped.</td>
+        <td>Mapped to <a href="#root/_help_Cq5X6iKQop6R">relations</a>, each link resolved
+          to its target note via the existing cross-page map; targets outside the
+          import are dropped.</td>
       </tr>
       <tr>
         <td>Files &amp; Media</td>
@@ -188,6 +198,22 @@
     </tbody>
   </table>
 </figure>
+<aside class="admonition note">
+  <p><strong>Technical information</strong>
+  </p>
+  <p>Every page property that can be preserved according to the table above
+    is saved as a label or relation to the corresponding note (except for creation
+    and modification dates which are saved at note level and files which are
+    saved as attachments).</p>
+  <p>To maintain a similar UX to Notion, every property is also turned into&nbsp;
+    <a
+    class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;at collection level. This also makes the
+      columns visible in the table collection. The promoted attributes are made
+      inheritable so that they appear when navigating in the child notes as well.</p>
+  <p>The names of the labels are intentionally converted to <code spellcheck="false">camelCase</code> to
+    match Trilium's conventions, but the full name of the column is preserved
+    through the <em>Alias</em> mechanism of promoted attributes.</p>
+</aside>
 <h2>Limitations</h2>
 <h3>Missing data from the import</h3>
 <p>The following information is not preserved by the import because it is
