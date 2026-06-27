@@ -4,7 +4,7 @@ import { cls } from "@triliumnext/core";
 
 import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler } from "./help_meta_generator.js";
 import fs from "fs/promises";
-import yaml from "js-yaml";
+import { load } from "js-yaml";
 import path from "path";
 
 import packageJson from "../package.json" with { type: "json" };
@@ -98,7 +98,7 @@ async function loadConfig() {
     }
 
     const configContent = await fs.readFile(CONFIG_PATH, "utf-8");
-    const config = yaml.load(configContent) as Config;
+    const config = load(configContent) as Config;
 
     BASE_URL = config.baseUrl;
     // Resolve all paths relative to the config file's directory (for flexibility with external configs)

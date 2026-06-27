@@ -452,78 +452,80 @@ for (const attr of parentNote.attributes) {
     <h3>Customizing logo</h3>
     <p>It's possible to adjust the logo which is displayed on the top-left of
       the left pane.</p>
-    <table>
-      <thead>
-        <tr>
-          <th>Attribute</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><code spellcheck="false">~shareLogo</code>
-          </td>
-          <td>Relation set to an image to use as logo. The image must be part of the
-            share tree (it can be hidden if needed).</td>
-        </tr>
-        <tr>
-          <td><code spellcheck="false">#shareLogoWidth</code>
-          </td>
-          <td>The width (in pixels, without unit) to set for the logo. Default is
-            <code
-            spellcheck="false">53</code>.</td>
-        </tr>
-        <tr>
-          <td><code spellcheck="false">#shareLogoHeight</code>
-          </td>
-          <td>The height (in pixels, without unit) to set for the logo. Default is
-            <code
-            spellcheck="false">40</code>.</td>
-        </tr>
-        <tr>
-          <td><code spellcheck="false">#shareRootLink</code>
-          </td>
-          <td>URL to navigate to when the logo is pressed.</td>
-        </tr>
-      </tbody>
-    </table>
-    
-<h3>Customizing OpenGraph</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Attribute</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><code spellcheck="false">#shareOpenGraphColor</code>
-          </td>
-          <td>This adjusts the <code spellcheck="false">theme-color</code> meta-property.</td>
-        </tr>
-        <tr>
-          <td><code spellcheck="false">#shareOpenGraphURL</code>
-          </td>
-          <td>This adjusts the <code spellcheck="false">og:url</code> and <code spellcheck="false">twitter:url</code> meta-properties.</td>
-        </tr>
-        <tr>
-          <td><code spellcheck="false">#shareOpenGraphDomain</code>
-          </td>
-          <td>Adjusts the <code spellcheck="false">twitter:domain</code> meta-property.</td>
-        </tr>
-        <tr>
-          <td><code spellcheck="false">#shareOpenGraphImage</code>&nbsp;
-            <br><code spellcheck="false">~shareOpenGraphImage</code>
-          </td>
-          <td>Can be either a label, case in which the value is passed on as-is, or
-            it can be a relation to an image&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>.
-            This controls the <code spellcheck="false">og:image</code> meta-property.</td>
-        </tr>
-      </tbody>
-    </table>
-    
-<h2>Credits</h2>
+    <figure class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>Attribute</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code spellcheck="false">~shareLogo</code>
+            </td>
+            <td>Relation set to an image to use as logo. The image must be part of the
+              share tree (it can be hidden if needed).</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareLogoWidth</code>
+            </td>
+            <td>The width (in pixels, without unit) to set for the logo. Default is
+              <code
+              spellcheck="false">53</code>.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareLogoHeight</code>
+            </td>
+            <td>The height (in pixels, without unit) to set for the logo. Default is
+              <code
+              spellcheck="false">40</code>.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareRootLink</code>
+            </td>
+            <td>URL to navigate to when the logo is pressed.</td>
+          </tr>
+        </tbody>
+      </table>
+    </figure>
+    <h3>Customizing OpenGraph</h3>
+    <figure class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>Attribute</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code spellcheck="false">#shareOpenGraphColor</code>
+            </td>
+            <td>This adjusts the <code spellcheck="false">theme-color</code> meta-property.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareOpenGraphURL</code>
+            </td>
+            <td>This adjusts the <code spellcheck="false">og:url</code> and <code spellcheck="false">twitter:url</code> meta-properties.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareOpenGraphDomain</code>
+            </td>
+            <td>Adjusts the <code spellcheck="false">twitter:domain</code> meta-property.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareOpenGraphImage</code>&nbsp;
+              <br><code spellcheck="false">~shareOpenGraphImage</code>
+            </td>
+            <td>Can be either a label, case in which the value is passed on as-is, or
+              it can be a relation to an image&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>.
+              This controls the <code spellcheck="false">og:image</code> meta-property.</td>
+          </tr>
+        </tbody>
+      </table>
+    </figure>
+    <h2>Credits</h2>
     <p>Since v0.95.0, a new theme was introduced (and enabled by default) which
       greatly improves the visual aspect of the Share feature, as well as its
       functionality (such as mobile support, dark/light mode, collapsible tree,

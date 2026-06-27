@@ -129,19 +129,12 @@
     "export_note_title": "匯出筆記",
     "close": "關閉",
     "export_type_subtree": "此筆記及其所有子筆記",
-    "format_html_zip": "HTML ZIP 封存 - 建議使用此選項，因為它保留了所有格式。",
-    "format_markdown": "Markdown - 保留大部分格式。",
-    "format_opml": "OPML - 大綱交換格式，僅限文字。不包括格式、圖片和檔案。",
-    "opml_version_1": "OPML v1.0 - 僅限純文字",
-    "opml_version_2": "OPML v2.0 - 還允許 HTML",
     "export_type_single": "僅此筆記，不包括子筆記",
     "export": "匯出",
     "choose_export_type": "請先選擇匯出類型",
     "export_in_progress": "正在匯出：{{progressCount}}",
     "export_finished_successfully": "成功匯出。",
-    "format_html": "HTML - 推薦，因為它保留了所有格式",
-    "format_pdf": "PDF - 用於列印或與他人分享。",
-    "share-format": "HTML 網頁發佈——使用與共享筆記相同的佈景主題，但可發佈為靜態網站。"
+    "format_pdf": "PDF - 用於列印或與他人分享。"
   },
   "help": {
     "noteNavigation": "筆記導航",
@@ -202,7 +195,6 @@
   "import": {
     "importIntoNote": "匯入至筆記",
     "chooseImportFile": "選擇檔案匯入",
-    "importDescription": "所選檔案的內容將作為子筆記匯入至",
     "options": "選項",
     "safeImportTooltip": "Trilium <code>.zip</code> 匯出的檔案可能包含可能有害的可執行腳本。安全匯入將停用所有匯入腳本的自動執行。僅當您完全信任匯入的可執行腳本的內容時，才取消勾選「安全匯入」。",
     "safeImport": "安全匯入",

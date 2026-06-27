@@ -148,9 +148,6 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                 <CommandItem icon="bx bx-import" text={t("note_actions.import_files")}
                     disabled={isInOptionsOrHelp || note.type === "search"}
                     command={() => parentComponent?.triggerCommand("showImportDialog", { noteId: note.noteId })} />
-                <CommandItem icon="bx bx-cloud-download" text={t("note_actions.import_from_service")}
-                    disabled={isInOptionsOrHelp || note.type === "search"}
-                    command={() => parentComponent?.triggerCommand("showImportProviderDialog", { noteId: note.noteId })} />
                 <CommandItem icon="bx bx-export" text={t("note_actions.export_note")}
                     disabled={isInOptionsOrHelp || note.noteId === "_backendLog"}
                     command={() => noteContext?.notePath && parentComponent?.triggerCommand("showExportDialog", {

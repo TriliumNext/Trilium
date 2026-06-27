@@ -21,10 +21,10 @@ export default function Admonition({ type, children, className, ...props }: Admo
 }
 
 interface ExtendedAdmonitionProps extends AdmonitionProps {
-    /** Boxicons class for the header icon, e.g. `bx bx-error-circle`. */
+    /** Boxicons class for the icon, e.g. `bx bx-error-circle`. */
     icon: string;
-    /** Bold heading shown next to the icon. */
-    title: string;
+    /** Bold heading shown next to the icon. Omit to show just the icon inline with the body. */
+    title?: string;
     /** Optional content revealed by a collapsible below the body. */
     details?: ComponentChildren;
     /** Label for the details collapsible toggle; provide it whenever `details` is set. */
@@ -38,12 +38,15 @@ interface ExtendedAdmonitionProps extends AdmonitionProps {
  */
 export function ExtendedAdmonition({ type, icon, title, details, detailsLabel, className, children, ...props }: ExtendedAdmonitionProps) {
     return (
-        <div className={clsx("admonition", "extended-admonition", type, className)} role="alert" {...props}>
-            <div className="admonition-header">
-                <Icon icon={icon} />
-                <span className="admonition-title">{title}</span>
-            </div>
+        <div className={clsx("admonition", "extended-admonition", type, className, { "no-title": !title })} role="alert" {...props}>
+            {title && (
+                <div className="admonition-header">
+                    <Icon icon={icon} />
+                    <span className="admonition-title">{title}</span>
+                </div>
+            )}
             <div className="admonition-body">
+                {!title && <Icon icon={icon} />}
                 {children}
             </div>
             {details && (

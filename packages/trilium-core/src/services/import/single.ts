@@ -6,6 +6,7 @@ import noteService from "../../services/notes.js";
 import protectedSessionService from "../protected_session.js";
 import type TaskContext from "../task_context.js";
 import type { File } from "./common.js";
+import { extractFrontmatter } from "./frontmatter.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
 import importUtils from "./utils.js";
@@ -208,7 +209,9 @@ function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, par
     const title = getNoteTitle(file.originalname, !!taskContext.data?.replaceUnderscoresWithSpaces);
 
     const markdownContent = processStringOrBuffer(file.buffer);
-    let htmlContent = markdownService.renderToHtml(markdownContent, title);
+    // YAML front matter (Obsidian/Jekyll/Hugo/…) is lifted into labels and stripped before rendering.
+    const { body, attributes } = extractFrontmatter(markdownContent);
+    let htmlContent = markdownService.renderToHtml(body, title);
 
     if (taskContext.data?.safeImport) {
         htmlContent = sanitizeHtml(htmlContent);
@@ -222,6 +225,10 @@ function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, par
         mime: "text/html",
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
+
+    for (const attribute of attributes) {
+        note.addLabel(attribute.name, attribute.value);
+    }
 
     taskContext.increaseProgressCount();
 

@@ -304,19 +304,12 @@
     "export_note_title": "ノートをエクスポート",
     "close": "閉じる",
     "export_type_subtree": "このノートとすべての子孫",
-    "format_html": "HTML - すべての書式が保たれるため、おすすめ",
-    "format_html_zip": "HTML ZIPアーカイブ - すべての書式が保たれるため、推奨されます。",
-    "format_markdown": "マークダウン - ほとんどの書式が維持される。",
-    "format_opml": "OPML - テキストのみのアウトライン交換フォーマットです。書式設定、画像、ファイルは含まれません。",
-    "opml_version_1": "OPML v1.0 - プレーンテキストのみ",
-    "opml_version_2": "OPML v2.0 - HTMLが許可されています",
     "export_type_single": "このノートのみで、子孫ノートは含まない",
     "export": "エクスポート",
     "choose_export_type": "最初にエクスポートタイプを選択してください",
     "export_in_progress": "エクスポート処理中: {{progressCount}}",
     "export_finished_successfully": "エクスポートが正常に完了しました。",
-    "format_pdf": "PDF - 印刷または共有目的に。",
-    "share-format": "web 公開用の HTML - 共有ノートで使用されるのと同じテーマを使用しますが、静的 web サイトとして公開できます。"
+    "format_pdf": "PDF - 印刷または共有目的に。"
   },
   "help": {
     "title": "チートシート",
@@ -377,7 +370,6 @@
   "import": {
     "importIntoNote": "ノートにインポート",
     "chooseImportFile": "インポートするファイルを選択",
-    "importDescription": "選択されたファイルの内容は、子ノートとしてインポートされます",
     "options": "オプション",
     "safeImportTooltip": "Triliumの <code>.zip</code> 形式のエクスポートファイルには、有害な動作を含む実行可能スクリプトが含まれている可能性があります。セーフインポートは、インポートされたすべてのスクリプトの自動実行を無効にします。インポートするファイルの内容を完全に信頼できる場合のみ、「セーフインポート」のチェックを外してください。",
     "safeImport": "セーフインポート",
@@ -536,8 +528,7 @@
     "word_wrap_on": "オン",
     "word_wrap_off": "オフ",
     "save_named_revision": "名前を付けて変更履歴を保存...",
-    "print_or_export_to_pdf": "印刷 / PDF へのエクスポート...",
-    "import_from_service": "サービスからインポート…"
+    "print_or_export_to_pdf": "印刷 / PDF へのエクスポート..."
   },
   "command_palette": {
     "export_note_title": "ノートをエクスポート",
@@ -714,7 +705,7 @@
     "open_custom": "プログラムから開く",
     "open_custom_title": "ファイルを外部アプリケーションで開き、変更を監視します。その後、変更されたバージョンをTriliumにアップロードできるようになります。",
     "rename_attachment": "添付ファイルの名前を変更",
-    "copy_link_to_clipboard": "リンクをクリップボードにコピー",
+    "copy_link_to_clipboard": "参照先をクリップボードにコピー",
     "convert_attachment_into_note": "添付ファイルをノートに変換",
     "delete_attachment": "添付ファイルを削除",
     "open_externally_detail_page": "添付ファイルを外部で開くは、詳細ページからのみ可能です。まず添付ファイル詳細をクリックしてから、再度操作を行ってください。",
@@ -2198,7 +2189,7 @@
     "will_be_deleted_soon": "この添付ファイルはすぐに自動的に削除されます",
     "deletion_reason": "、添付ファイルがノートのコンテンツにリンクされていないためです。削除されないようにするには、添付ファイルのリンクをコンテンツに再度追加するか、添付ファイルをノートに変換してください。",
     "role_and_size": "ロール: {{role}},サイズ: {{size}}, MIME: {{- mimeType}}",
-    "link_copied": "添付ファイルのリンクをクリップボードにコピーしました。",
+    "link_copied": "添付ファイルの参照先をクリップボードにコピーしました。",
     "unrecognized_role": "添付ファイルのロール「{{role}}」は認識されません。"
   },
   "presentation_view": {
@@ -2395,7 +2386,8 @@
     "play-mode-once": "1回再生",
     "play-mode-loop": "ループ",
     "play-mode-next": "次を再生",
-    "seek": "シーク（左右矢印キー）"
+    "seek": "シーク（左右矢印キー）",
+    "forward-10s": "10 秒進む (右矢印キー)"
   },
   "mermaid": {
     "placeholder": "マーメイド図の内容を入力するか、以下のサンプル図のいずれかを使用してください。",
@@ -2886,9 +2878,7 @@
     "title": "全幅"
   },
   "import_provider": {
-    "title": "サービスからインポート",
-    "choose_provider": "インポート元のサービスを選択してください:",
-    "back": "戻る"
+    "choose_provider": "インポート元のサービスを選択してください:"
   },
   "onenote_import": {
     "name": "Microsoft OneNote",

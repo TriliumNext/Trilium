@@ -12,13 +12,20 @@
 import { getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import { HTMLElement, parse } from "node-html-parser";
 
+import { getNotionId } from "./notion_id.js";
+
 export function convertNotionHtml(html: string): string {
     const root = parse(html);
     convertMath(root);
     stripDatePrefixes(root);
     convertTodoLists(root);
     convertToggles(root);
+    convertToggleHeadings(root);
+    dropTableOfContents(root);
     unwrapDisplayContents(root);
+    convertInlineDatabases(root);
+    mergeFragmentedLists(root);
+    convertColumns(root);
     convertTables(root);
     convertImages(root);
     convertAttachments(root);
@@ -212,6 +219,65 @@ function convertToggles(root: HTMLElement) {
 }
 // #endregion
 
+// #region Toggle headings
+/**
+ * A Notion *toggle heading* is a collapsible whose title is a heading. Unlike a list toggle it exports as a
+ * bare `<details>` (no `ul.toggle` wrapper) whose `<summary>` carries the heading's font-size — the only
+ * signal of its level. Trilium's collapsible can't hold a heading in its summary, so flatten each toggle
+ * heading into a plain heading: emit an `<hN>` from the summary, then hoist the toggle's body in its place
+ * (dropping the `.indented` wrapper Notion nests it in). The level is shifted down one to match how Notion
+ * exports ordinary headings — its content "Heading 1" is `<h2>` because the page title takes `<h1>` — so a
+ * toggle heading lands at the same level as the equivalent plain heading.
+ */
+function convertToggleHeadings(root: HTMLElement) {
+    for (const details of root.querySelectorAll("details")) {
+        const summary = directChild(details, (node) => isTag(node, "summary"));
+        const tag = summary ? toggleHeadingTag(summary) : undefined;
+        if (!summary || !tag) {
+            continue;
+        }
+
+        // Unwrap the `.indented` body wrapper so the toggle's content lands at the heading's level, not nested.
+        for (const child of [...details.childNodes]) {
+            if (child instanceof HTMLElement && child.classList.contains("indented")) {
+                child.replaceWith(...child.childNodes);
+            }
+        }
+        details.insertAdjacentHTML("beforebegin", `<${tag}>${summary.innerHTML.trim()}</${tag}>`);
+        summary.remove();
+        details.replaceWith(...details.childNodes);
+    }
+}
+
+/** Notion toggle-heading summary font-sizes, mapped to the Trilium heading tag (shifted to match plain headings). */
+const TOGGLE_HEADING_TAGS: Record<string, string> = {
+    "1.875em": "h2",
+    "1.5em": "h3",
+    "1.25em": "h4",
+    "1.125em": "h5"
+};
+
+/** The heading tag a toggle heading's summary encodes via its font-size, or undefined if it isn't a heading. */
+function toggleHeadingTag(summary: HTMLElement): string | undefined {
+    const fontSize = summary.getAttribute("style")?.match(/font-size:\s*([\d.]+em)/)?.[1];
+    return fontSize ? TOGGLE_HEADING_TAGS[fontSize] : undefined;
+}
+// #endregion
+
+// #region Table of contents
+/**
+ * Drops Notion's table-of-contents block (`<nav class="table_of_contents">`). It's a generated artifact, not
+ * authored content, and Trilium renders its own table of contents from the note's headings — in both the app
+ * and the shared view — so the imported one would only be a stale, duplicate list whose `#block-id` anchor
+ * links don't resolve in Trilium anyway.
+ */
+function dropTableOfContents(root: HTMLElement) {
+    for (const nav of root.querySelectorAll("nav.table_of_contents")) {
+        nav.remove();
+    }
+}
+// #endregion
+
 // #region display:contents wrappers
 /**
  * Notion wraps almost every block in a `<div style="display:contents">`, a layout no-op that survives
@@ -226,6 +292,154 @@ function unwrapDisplayContents(root: HTMLElement) {
             div.replaceWith(...div.childNodes);
         }
     }
+}
+// #endregion
+
+// #region Inline databases (collections)
+/**
+ * Notion renders an inline database as `<div class="collection-content" id="<db-id>">` — holding either a
+ * rendered `<table class="collection-content">` (a partial export) or a bare link to the separately-exported
+ * CSV (a full/workspace export). Either way the database is imported as its own collection note, so replace
+ * the whole block with a Trilium include-note placeholder carrying the database's Notion id. The id is read
+ * from the div's `id` (which the sanitizer later strips), and the importer resolves `data-notion-id` to the
+ * collection note's id once every note exists; the `data-notion-id`/`data-box-size` attributes and the
+ * `section` survive sanitization. A block without a resolvable id is left untouched.
+ */
+function convertInlineDatabases(root: HTMLElement) {
+    for (const block of root.querySelectorAll("div.collection-content")) {
+        const notionId = getNotionId(block.getAttribute("id") ?? "");
+        if (!notionId) {
+            continue;
+        }
+        block.insertAdjacentHTML("beforebegin", `<section class="include-note" data-notion-id="${notionId}" data-box-size="medium">&nbsp;</section>`);
+        block.remove();
+    }
+}
+// #endregion
+
+// #region List fragmentation
+/**
+ * Notion exports each list item as its own single-item `<ul>`/`<ol>` (so a three-item list is three lists),
+ * and fragments nested lists the same way. Merge each fragment into its previous sibling of the same kind —
+ * `bulleted-list` with `bulleted-list`, `numbered-list` with `numbered-list` — so a run of fragments becomes
+ * one list; document order makes the first fragment accumulate the rest, and nested fragments merge once the
+ * outer merge has reparented them. Any other element between two lists keeps them apart (so a paragraph splits
+ * a run), and a list never merges across types. The surviving lists are then stripped of Notion's list class
+ * and the `start`/`type`/`id` fragmentation artifacts, leaving clean `<ul>`/`<ol>`.
+ */
+function mergeFragmentedLists(root: HTMLElement) {
+    for (const list of root.querySelectorAll("ul.bulleted-list, ol.numbered-list")) {
+        const prev = list.previousElementSibling;
+        if (prev && prev.tagName === list.tagName && isMergeableList(prev)) {
+            for (const item of [...list.childNodes]) {
+                prev.appendChild(item);
+            }
+            list.remove();
+        }
+    }
+    for (const list of root.querySelectorAll("ul.bulleted-list, ol.numbered-list")) {
+        for (const attr of ["class", "start", "type", "id"]) {
+            list.removeAttribute(attr);
+        }
+    }
+}
+
+/** A Notion bulleted/numbered list — the kinds Notion fragments one item per list, to be merged back together. */
+function isMergeableList(el: HTMLElement): boolean {
+    return (isTag(el, "ul") && el.classList.contains("bulleted-list"))
+        || (isTag(el, "ol") && el.classList.contains("numbered-list"));
+}
+// #endregion
+
+// #region Columns
+/**
+ * Notion column layouts (`<div class="column-list">` of `<div class="column" style="width:N%">`) have no
+ * Trilium/CKEditor equivalent, so render each as a single-row borderless table — one `<td>` per column,
+ * carrying that column's width. Both the table and every cell get `border-color:transparent` so the result
+ * reads as side-by-side content rather than a grid, and the width is rounded to two decimals to match
+ * CKEditor's column widths. A column that is just a wrapper around a nested column list is flattened (its
+ * inner columns join the same row, scaled by the wrapper's share); a column that mixes loose content with a
+ * nested list stays one cell, the inner list becoming a nested table inside it so no content is lost.
+ */
+function convertColumns(root: HTMLElement) {
+    for (const columnList of root.querySelectorAll("div.column-list")) {
+        if (!columnList.parentNode) {
+            continue; // a nested list, already rendered as part of its parent
+        }
+        columnList.insertAdjacentHTML("beforebegin", columnListToFigure(columnList));
+        columnList.remove();
+    }
+}
+
+/** Renders a column list as the borderless single-row table figure CKEditor stores tables in. */
+function columnListToFigure(columnList: HTMLElement): string {
+    const cells = flattenColumns(columnList, 100)
+        .map(({ width, content }) => `<td style="border-color:transparent;width:${round2(width)}%;">${content}</td>`)
+        .join("");
+    return `<figure class="table"><table style="border-color:transparent;"><tbody><tr>${cells}</tr></tbody></table></figure>`;
+}
+
+/**
+ * Flattens a column list into the leaf cells of one row. Each column takes its share of `parentWidth` in
+ * proportion to its width among its siblings; a pure wrapper column ({@link pureWrapperList}) contributes its
+ * nested list's columns instead — scaled by the wrapper's share — so nested columns collapse into the same
+ * row. Every other column is one cell ({@link cellContent}).
+ */
+function flattenColumns(columnList: HTMLElement, parentWidth: number): { width: number; content: string }[] {
+    const columns = directChildren(columnList, "div").filter((column) => column.classList.contains("column"));
+    const widths = columns.map((column) => columnWidthValue(column) ?? 100 / columns.length);
+    const total = widths.reduce((sum, width) => sum + width, 0) || 1;
+
+    const leaves: { width: number; content: string }[] = [];
+    for (const [index, column] of columns.entries()) {
+        const share = parentWidth * ((widths[index] ?? 0) / total);
+        const wrapped = pureWrapperList(column);
+        if (wrapped) {
+            leaves.push(...flattenColumns(wrapped, share));
+        } else {
+            leaves.push({ width: share, content: cellContent(column) });
+        }
+    }
+    return leaves;
+}
+
+/** The nested column list a column merely wraps (its sole child apart from empty spacer paragraphs), else null. */
+function pureWrapperList(column: HTMLElement): HTMLElement | null {
+    const meaningful = column.childNodes.filter((node): node is HTMLElement => node instanceof HTMLElement && !isEmptyParagraph(node));
+    const [only] = meaningful;
+    return meaningful.length === 1 && only && only.classList.contains("column-list") ? only : null;
+}
+
+/** A Notion column's numeric width (`style="width:N%"` → `N`), or undefined when it has none. */
+function columnWidthValue(column: HTMLElement): number | undefined {
+    const raw = column.getAttribute("style")?.match(/width:\s*([\d.]+)%/)?.[1];
+    return raw !== undefined ? parseFloat(raw) : undefined;
+}
+
+/** Rounds to at most two decimals (`16.6667` → `16.67`, `50` → `50`). */
+function round2(value: number): number {
+    return Math.round(value * 100) / 100;
+}
+
+/** True for an empty `<p>` (Notion's layout spacers), which shouldn't count as a column's real content. */
+function isEmptyParagraph(node: HTMLElement): boolean {
+    return isTag(node, "p") && (node.textContent ?? "").trim() === "";
+}
+
+/**
+ * A column's cell content: a sole `<p>` is unwrapped (so a one-paragraph column is a plain cell); otherwise
+ * the column's content is kept as-is, except a nested column list is turned into a nested table so a mixed
+ * column (loose content plus a nested list) keeps both.
+ */
+function cellContent(column: HTMLElement): string {
+    const elements = column.childNodes.filter((node): node is HTMLElement => node instanceof HTMLElement);
+    const [only] = elements;
+    if (elements.length === 1 && only && isTag(only, "p")) {
+        return only.innerHTML;
+    }
+    return column.childNodes
+        .map((node) => (node instanceof HTMLElement && node.classList.contains("column-list") ? columnListToFigure(node) : node.toString()))
+        .join("");
 }
 // #endregion
 

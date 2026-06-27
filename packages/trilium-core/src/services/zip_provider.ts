@@ -1,5 +1,10 @@
 export interface ZipEntry {
     fileName: string;
+    /**
+     * The entry's last-modification time, when the provider can read it (the server's reader does; the
+     * standalone/WASM reader currently can't, so it's left undefined). ZIP carries no reliable creation time.
+     */
+    lastModified?: Date;
 }
 
 export interface ZipArchiveEntryOptions {

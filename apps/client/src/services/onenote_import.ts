@@ -40,7 +40,7 @@ function getNotebooks() {
 // Kicks off the import and returns as soon as the server has accepted it. The import itself runs in the
 // background on the server; progress, completion (navigation to the imported note) and any error all
 // arrive over the WebSocket via the shared "importNotes" toast handlers in import.ts.
-function runImport(payload: { parentNoteId: string; sections: OneNoteSectionSelection[]; taskId: string; debug?: boolean }) {
+function runImport(payload: { parentNoteId: string; sections: OneNoteSectionSelection[]; taskId: string; debug?: boolean; shrinkImages?: boolean }) {
     return server.post<void>("onenote-import/import", payload);
 }
 

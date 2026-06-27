@@ -662,9 +662,17 @@ function getDefaultKeyboardActions() {
         {
             actionName: "toggleRightPane",
             friendlyName: t("keyboard_action_names.toggle-right-pane"),
-            iconClass: "bx bx-dock-right",
+            iconClass: "bx bx-sidebar bx-flip-horizontal",
             defaultShortcuts: [],
             description: t("keyboard_actions.toggle-right-pane"),
+            scope: "window"
+        },
+        {
+            actionName: "peekRightPane",
+            friendlyName: t("keyboard_action_names.peek-right-pane"),
+            iconClass: "bx bx-sidebar bx-flip-horizontal",
+            defaultShortcuts: [],
+            description: t("keyboard_actions.peek-right-pane"),
             scope: "window"
         },
         {

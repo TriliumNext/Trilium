@@ -20,7 +20,7 @@ You can attach the whole file to the bug report (preferable) or open it and copy
 
 The backend logs are fully managed by the Trilium server. By default the last 90 days worth of logs are kept; the logs older than that are deleted in order to reduce the space consumption.
 
-It's possible to change the retention period by modifying the <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20e.md">Configuration (config.ini or environment variables)</a> via the `.ini` file:
+It's possible to change the retention period by modifying the <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a> via the `.ini` file:
 
 ```
 [Logging]

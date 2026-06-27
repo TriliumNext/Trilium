@@ -102,12 +102,13 @@
   with self-hosted sync server
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
-* [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
-  (publishing) notes to public internet
+* पब्लिक इंटरनेट पर नोट्स की
+  [शेयरिंग](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (पब्लिशिंग)
 * प्रति-नोट granularity के साथ मजबूत [नोट
   एन्क्रिप्शन](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
-* Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
-  "canvas")
+* डायग्राम्स स्केच करना, [एक्सकैलिड्रॉ](https://excalidraw.com/) पर आधारित (नोट
+  टाइप "कैनवास")
 * [Relation
   maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
   [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)

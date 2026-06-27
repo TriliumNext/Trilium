@@ -68,7 +68,7 @@
     "react-zoom-pan-pinch": "4.0.3",
     "reveal.js": "6.0.1",
     "svg-pan-zoom": "3.6.2",
-    "tabulator-tables": "6.5.1"
+    "tabulator-tables": "6.5.2"
   },
   "devDependencies": {
     "@types/aes-js": "3.1.4",

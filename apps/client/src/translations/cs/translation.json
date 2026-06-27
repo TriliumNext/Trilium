@@ -82,19 +82,12 @@
     "close": "Zavřít",
     "export_note_title": "Exportovat poznámku",
     "export_type_subtree": "Tato poznámka a všechny její odvozené poznámky",
-    "format_html": "HTML – doporučeno, protože zachovává veškeré formátování",
-    "format_html_zip": "HTML v archivu ZIP – toto se doporučuje, protože se tak zachová veškeré formátování.",
-    "format_markdown": "Markdown – zachovává většinu formátování.",
-    "format_opml": "OPML – formát pro výměnu osnov pouze pro text. Formátování, obrázky a soubory nejsou zahrnuty.",
-    "opml_version_1": "OPML v1.0 – pouze prostý text",
-    "opml_version_2": "OPML v2.0 – umožňuje také HTML",
     "export_type_single": "Pouze tato poznámka bez jejích potomků",
     "export": "Exportovat",
     "choose_export_type": "Nejprve vyberte typ exportu",
     "export_in_progress": "Export probíhá: {{progressCount}}",
     "export_finished_successfully": "Export byl úspěšně dokončen.",
-    "format_pdf": "PDF – pro tisk nebo sdílení.",
-    "share-format": "HTML pro publikování na webu – používá stejný motiv jako sdílené poznámky, ale lze jej publikovat jako statický web."
+    "format_pdf": "PDF – pro tisk nebo sdílení."
   },
   "clone_to": {
     "clone_notes_to": "Klonovat poznámky do...",
@@ -172,7 +165,6 @@
   "import": {
     "importIntoNote": "Import do poznámky",
     "chooseImportFile": "Vyberte soubor k importu",
-    "importDescription": "Obsah vybraných souborů bude importován jako dceřiné poznámky do",
     "importZipRecommendation": "Při importu ZIP souboru bude hierarchie poznámek odrážet strukturu podadresářů v archivu.",
     "options": "Nastavení",
     "safeImportTooltip": "Exportované soubory Trilium <code>.zip</code> mohou obsahovat spustitelné skripty, které mohou mít škodlivé chování. Bezpečný import deaktivuje automatické spouštění všech importovaných skriptů. Zrušte zaškrtnutí \"Bezpečný import\" pouze v případě, že importovaný archiv má obsahovat spustitelné skripty a plně důvěřujete obsahu importovaného souboru.",

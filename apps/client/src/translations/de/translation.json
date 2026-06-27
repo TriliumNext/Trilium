@@ -129,19 +129,12 @@
     "export_note_title": "Notiz exportieren",
     "close": "Schließen",
     "export_type_subtree": "Diese Notiz und alle ihre Unternotizen",
-    "format_html": "HTML - empfohlen, da dadurch alle Formatierungen erhalten bleiben",
-    "format_html_zip": "HTML im ZIP-Archiv – dies wird empfohlen, da dadurch die gesamte Formatierung erhalten bleibt.",
-    "format_markdown": "Markdown – dadurch bleiben die meisten Formatierungen erhalten.",
-    "format_opml": "OPML – Outliner-Austauschformat nur für Text. Formatierungen, Bilder und Dateien sind nicht enthalten.",
-    "opml_version_1": "OPML v1.0 – nur Klartext",
-    "opml_version_2": "OPML v2.0 – erlaubt auch HTML",
     "export_type_single": "Nur diese Notiz ohne ihre Unternotizen",
     "export": "Export",
     "choose_export_type": "Bitte wählen Sie zuerst den Exporttyp aus",
     "export_in_progress": "Export läuft: {{progressCount}}",
     "export_finished_successfully": "Der Export wurde erfolgreich abgeschlossen.",
-    "format_pdf": "PDF - für Ausdrucke oder Teilen.",
-    "share-format": "HTML für die Web-Veröffentlichung – verwendet dasselbe Theme wie bei freigegebenen Notizen, kann jedoch als statische Website veröffentlicht werden."
+    "format_pdf": "PDF - für Ausdrucke oder Teilen."
   },
   "help": {
     "noteNavigation": "Notiz Navigation",
@@ -202,7 +195,6 @@
   "import": {
     "importIntoNote": "In Notiz importieren",
     "chooseImportFile": "Importdatei auswählen",
-    "importDescription": "Der Inhalt der ausgewählten Datei(en) wird als untergeordnete Notiz(en) importiert",
     "options": "Optionen",
     "safeImportTooltip": "Trilium <code>.zip</code>-Exportdateien können ausführbare Skripte enthalten, die möglicherweise schädliches Verhalten aufweisen. Der sichere Import deaktiviert die automatische Ausführung aller importierten Skripte. Deaktivieren Sie 'Sicherer Import' nur, wenn das importierte Archiv ausführbare Skripte enthalten soll und Sie dem Inhalt der Importdatei vollständig vertrauen.",
     "safeImport": "Sicherer Import",
@@ -717,8 +709,7 @@
     "word_wrap_off": "Aus",
     "print_or_export_to_pdf": "Drucken/als PDF exportieren...",
     "save_named_revision": "Benannte Revision speichern...",
-    "word_wrap_auto_description": "Der globalen Einstellung folgen",
-    "import_from_service": "Von einem Dienst importieren…"
+    "word_wrap_auto_description": "Der globalen Einstellung folgen"
   },
   "onclick_button": {
     "no_click_handler": "Das Schaltflächen-Widget „{{componentId}}“ hat keinen definierten Klick-Handler"
@@ -2906,9 +2897,7 @@
     "empty-hint": "Jede untergeordnete Notiz wird zu einem Widget. Ziehen Sie eine Notiz aus der Baumstruktur hierher oder erstellen Sie eine neue."
   },
   "import_provider": {
-    "title": "Von einem Dienst importieren",
-    "choose_provider": "Wählen Sie einen Dienst zum Importieren:",
-    "back": "Zurück"
+    "choose_provider": "Wählen Sie einen Dienst zum Importieren:"
   },
   "onenote_import": {
     "name": "Microsoft OneNote",

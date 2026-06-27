@@ -110,10 +110,11 @@ export default function NoteTitleWidget(props: {className?: string}) {
                         return;
                     }
 
-                    // Focus on the note content when pressing enter.
+                    // Pressing Enter moves to the note content. For text notes this inserts a new empty
+                    // paragraph at the top of the document (Notion-like) rather than just focusing.
                     if (e.key === "Enter") {
                         e.preventDefault();
-                        parentComponent.triggerCommand("focusOnDetail", { ntxId: noteContext?.ntxId });
+                        parentComponent.triggerCommand("focusOnDetail", { ntxId: noteContext?.ntxId, insertNewlineAtTop: true });
                         return;
                     }
 

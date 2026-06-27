@@ -101,7 +101,7 @@ export default class NodejsZipProvider implements ZipProvider {
                 return await streamToBuffer(readStream);
             };
 
-            await processEntry({ fileName }, readContent);
+            await processEntry({ fileName, lastModified: entry.getLastModDate() }, readContent);
         }
     }
 }

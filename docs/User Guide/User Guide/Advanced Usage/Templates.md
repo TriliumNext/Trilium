@@ -21,7 +21,7 @@ An instance note is a note related to a template note. This relationship means t
 
 To create an instance note through the UI:
 
-![show child note templates](Templates_template-create-.png)
+![show child note templates](Templates_template-create-instance-note.png)
 
 For the template to appear in the menu, the template note must have the `#template` label. Do not confuse this with the `~template` relation, which links the instance note to the template note. If you use [workspaces](../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md), you can also mark templates with `#workspaceTemplate` to display them only in the workspace.
 

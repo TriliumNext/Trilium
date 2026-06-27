@@ -13,6 +13,7 @@
  * no type for — stays a string.
  */
 
+import { parseCsv } from "../csv.js";
 import {
     CellValueType,
     type ICellData,
@@ -28,7 +29,7 @@ const SHEET_ID = "sheet-0";
 
 /** Parses CSV text and produces a single-sheet UniversJS workbook. */
 export function parseCsvToWorkbook(csvText: string): PersistedData {
-    const rows = parseCsv(stripBom(csvText));
+    const rows = parseCsv(csvText);
     const cellData = buildCellData(rows);
     const maxColumns = rows.reduce((max, row) => Math.max(max, row.length), 0);
 
@@ -49,51 +50,6 @@ export function parseCsvToWorkbook(csvText: string): PersistedData {
             sheets: { [SHEET_ID]: sheet }
         }
     };
-}
-
-/**
- * Tokenizes CSV into a matrix of string fields. A single trailing record terminator does not
- * produce a spurious empty final row, but genuine blank lines in the middle are preserved.
- */
-function parseCsv(text: string): string[][] {
-    const rows: string[][] = [];
-    let row: string[] = [];
-    let field = "";
-    let inQuotes = false;
-    let i = 0;
-
-    while (i < text.length) {
-        const ch = text[i];
-
-        if (inQuotes) {
-            if (ch === "\"") {
-                // A doubled quote inside a quoted field is a literal quote; a lone one closes it.
-                if (text[i + 1] === "\"") { field += "\""; i += 2; continue; }
-                inQuotes = false; i++; continue;
-            }
-            field += ch; i++; continue;
-        }
-
-        if (ch === "\"") { inQuotes = true; i++; continue; }
-        if (ch === ",") { row.push(field); field = ""; i++; continue; }
-        if (ch === "\n") { row.push(field); field = ""; rows.push(row); row = []; i++; continue; }
-        if (ch === "\r") {
-            row.push(field); field = ""; rows.push(row); row = [];
-            i += text[i + 1] === "\n" ? 2 : 1; // swallow the LF of a CRLF pair
-            continue;
-        }
-
-        field += ch; i++;
-    }
-
-    row.push(field);
-    rows.push(row);
-
-    // A trailing terminator leaves a final [""] record; drop it (but keep real empty fields).
-    const last = rows[rows.length - 1];
-    if (last.length === 1 && last[0] === "") rows.pop();
-
-    return rows;
 }
 
 function buildCellData(rows: string[][]): Record<number, Record<number, ICellData>> {
@@ -124,8 +80,4 @@ function toCell(value: string): ICellData | null {
     }
 
     return { v: value, t: CellValueType.STRING };
-}
-
-function stripBom(text: string): string {
-    return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
 }

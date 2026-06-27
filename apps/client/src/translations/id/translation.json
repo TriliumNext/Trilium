@@ -133,19 +133,12 @@
     "export_note_title": "Ekspor catatan",
     "close": "Tutup",
     "export_type_subtree": "Catatan ini dan semua turunannya",
-    "format_html": "HTML - direkomendasikan karena mempertahankan seluruh format",
-    "format_html_zip": "HTML dalam arsip ZIP - ini direkomendasikan karena mempertahankan seluruh pemformatan.",
-    "format_markdown": "Markdown - mempertahankan sebagian besar pemformatan.",
-    "format_opml": "OPML - format pertukaran outliner untuk teks saja. Pemformatan, gambar, dan file tidak disertakan.",
-    "opml_version_1": "OPML v1.0 - hanya teks biasa",
-    "opml_version_2": "OPML v2.0 - juga mendukung HTML",
     "export_type_single": "Hanya catatan ini tanpa turunannya",
     "export": "Ekspor",
     "choose_export_type": "Silakan pilih jenis ekspor terlebih dahulu",
     "export_in_progress": "Ekspor sedang berlangsung: {{progressCount}}",
     "export_finished_successfully": "Ekspor selesai dengan sukses.",
-    "format_pdf": "PDF - untuk keperluan cetak atau berbagi.",
-    "share-format": "HTML untuk publikasi web - menggunakan tema yang sama dengan yang digunakan untuk catatan yang dibagikan, tetapi dapat dipublikasikan sebagai situs web statis."
+    "format_pdf": "PDF - untuk keperluan cetak atau berbagi."
   },
   "help": {
     "title": "Lembar contekan",
@@ -206,7 +199,6 @@
   "import": {
     "importIntoNote": "Impor ke dalam catatan",
     "chooseImportFile": "Pilih file impor",
-    "importDescription": "Isi file yang dipilih akan diimpor sebagai catatan anak ke dalam",
     "importZipRecommendation": "Saat mengimpor file ZIP, hierarki catatan akan mencerminkan struktur subdirektori di dalam arsip.",
     "options": "Opsi",
     "safeImportTooltip": "File ekspor Trilium <code>.zip</code> dapat berisi skrip yang dapat dieksekusi dan mungkin memiliki perilaku berbahaya. Impor aman akan menonaktifkan eksekusi otomatis semua skrip yang diimpor. Hapus centang \"Impor aman\" hanya jika arsip yang diimpor memang dimaksudkan berisi skrip yang dapat dieksekusi dan Anda sepenuhnya memercayai isi file impor tersebut.",
@@ -228,7 +220,9 @@
       "reset_button": "Atur Ulang ke Daftar Default"
     },
     "in-progress": "Impor sedang berlangsung: {{progress}}",
-    "successful": "Impor selesai dengan sukses."
+    "successful": "Impor selesai dengan sukses.",
+    "starting": "Mengimpor…",
+    "in-progress-with-total": "Mengimpor {{progress}} dari {{total}}"
   },
   "include_note": {
     "dialog_title": "Sertakan catatan",
@@ -396,7 +390,8 @@
     "source_description_etapi": "Dibuat melalui External Trilium API",
     "source_description_llm": "Dibuat oleh asisten AI",
     "source_description_restore": "Disimpan sebelum memulihkan revisi sebelumnya",
-    "source_description_unknown": "Sumber tidak tersedia"
+    "source_description_unknown": "Sumber tidak tersedia",
+    "back": "Kembali"
   },
   "sort_child_notes": {
     "sort_children_by": "Urutkan anak berdasarkan...",
@@ -676,7 +671,7 @@
     "download": "Unduh",
     "rename_attachment": "Ganti nama lampiran",
     "upload_new_revision": "Unggah revisi baru",
-    "copy_link_to_clipboard": "Salin tautan ke clipboard",
+    "copy_link_to_clipboard": "Salin referensi ke clipboard",
     "convert_attachment_into_note": "Ubah lampiran menjadi catatan",
     "delete_attachment": "Hapus lampiran",
     "upload_success": "Revisi lampiran baru telah diunggah.",
@@ -1137,7 +1132,8 @@
   "book": {
     "no_children_help": "Koleksi ini tidak memiliki catatan anak sehingga tidak ada yang dapat ditampilkan.",
     "drag_locked_title": "Terkunci untuk diedit",
-    "drag_locked_message": "Seret tidak diizinkan karena koleksi terkunci untuk diedit."
+    "drag_locked_message": "Seret tidak diizinkan karena koleksi terkunci untuk diedit.",
+    "archived_notes_hidden_other": "{{count}} catatan yang diarsipkan disalin ke sini tetapi tetap tersembunyi sampai Anda mengaktifkan \"Tampilkan catatan yang diarsipkan\"."
   },
   "editable_code": {
     "placeholder": "Ketik isi catatan kode Anda di sini..."
@@ -1179,7 +1175,13 @@
     "previous-video": "Video sebelumnya: {{- title}}",
     "next-video": "Video berikutnya: {{- title}}",
     "previous-audio": "Audio sebelumnya: {{- title}}",
-    "next-audio": "Audio berikutnya: {{- title}}"
+    "next-audio": "Audio berikutnya: {{- title}}",
+    "seek": "Geser posisi (tombol panah Kiri/Kanan)",
+    "forward-10s": "Maju 10 detik (tombol panah Kanan)",
+    "play-mode-title": "Mode putar: {{mode}}",
+    "play-mode-once": "Putar sekali",
+    "play-mode-loop": "Ulangi",
+    "play-mode-next": "Putar berikutnya"
   },
   "protected_session": {
     "enter_password_instruction": "Menampilkan catatan terlindungi memerlukan Anda memasukkan kata sandi:",
@@ -1233,7 +1235,7 @@
     "title": "Pemeriksaan Konsistensi",
     "find_and_fix_label": "Temukan dan perbaiki masalah konsistensi",
     "find_and_fix_description": "Pindai dan perbaiki secara otomatis setiap masalah konsistensi data di database.",
-    "find_and_fix_button": "Temukan dan perbaiki masalah konsistensi",
+    "find_and_fix_button": "Perbaiki masalah",
     "finding_and_fixing_message": "Sedang mencari dan memperbaiki masalah konsistensi...",
     "issues_fixed_message": "Semua masalah konsistensi yang mungkin ditemukan kini telah diperbaiki."
   },
@@ -1242,11 +1244,11 @@
     "description": "Buat salinan database yang telah dianonimkan untuk dibagikan kepada pengembang saat men-debug masalah, tanpa mengekspos data pribadi.",
     "full_anonymization": "Anonimisasi penuh",
     "full_anonymization_description": "Membuat salinan database dengan seluruh isi catatan dihapus, hanya menyisakan struktur dan metadata non-sensitif. Aman untuk dibagikan secara online saat men-debug masalah.",
-    "save_fully_anonymized_database": "Simpan database yang dianonimkan sepenuhnya",
+    "save_fully_anonymized_database": "Buat salinan",
     "light_anonymization": "Anonimisasi ringan",
     "light_anonymization_description": "Membuat salinan dengan isi catatan dihapus, tetapi judul, atribut, dan skrip/widget kustom tetap dipertahankan. Memberikan lebih banyak konteks untuk debugging.",
     "choose_anonymization": "Anda dapat memutuskan sendiri apakah ingin memberikan database yang dianonimkan sepenuhnya atau secara ringan. Database yang dianonimkan sepenuhnya tetap sangat berguna, namun dalam beberapa kasus database yang dianonimkan secara ringan dapat mempercepat proses identifikasi dan perbaikan bug.",
-    "save_lightly_anonymized_database": "Simpan database yang dianonimkan secara ringan",
+    "save_lightly_anonymized_database": "Buat salinan",
     "existing_anonymized_databases": "Database anonim yang sudah ada",
     "creating_fully_anonymized_database": "Sedang membuat database yang dianonimkan sepenuhnya...",
     "creating_lightly_anonymized_database": "Sedang membuat database yang dianonimkan secara ringan...",
@@ -1261,7 +1263,7 @@
     "title": "Pemeriksaan Integritas Database",
     "check_integrity_label": "Periksa integritas database",
     "check_integrity_description": "Verifikasi bahwa database tidak rusak pada level SQLite.",
-    "check_button": "Periksa integritas database",
+    "check_button": "Periksa integritas",
     "checking_integrity": "Sedang memeriksa integritas database...",
     "integrity_check_succeeded": "Pemeriksaan integritas berhasil - tidak ditemukan masalah.",
     "integrity_check_failed": "Pemeriksaan integritas gagal: {{results}}"
@@ -1270,10 +1272,10 @@
     "title": "Sinkronisasi",
     "force_full_sync_label": "Paksa sinkronisasi penuh",
     "force_full_sync_description": "Picu sinkronisasi lengkap dengan server sinkronisasi, dengan mengunggah ulang semua perubahan.",
-    "force_full_sync_button": "Paksa sinkronisasi penuh",
+    "force_full_sync_button": "Paksa sinkronisasi",
     "fill_entity_changes_label": "Isi perubahan entitas",
     "fill_entity_changes_description": "Bangun ulang catatan perubahan entitas. Gunakan ini jika sinkronisasi melewatkan beberapa perubahan.",
-    "fill_entity_changes_button": "Isi catatan perubahan entitas",
+    "fill_entity_changes_button": "Isi perubahan",
     "full_sync_triggered": "Sinkronisasi penuh dipicu",
     "filling_entity_changes": "Sedang mengisi baris perubahan entitas...",
     "sync_rows_filled_successfully": "Baris sinkronisasi berhasil diisi",
@@ -1288,7 +1290,7 @@
     "vacuum_label": "Vacuum database",
     "vacuum_description": "Bangun ulang database untuk mengurangi ukuran file. Tidak ada data yang akan diubah.",
     "description": "Ini akan membangun ulang database yang biasanya menghasilkan ukuran file database yang lebih kecil. Tidak ada data yang benar-benar diubah.",
-    "button_text": "Vacuum database",
+    "button_text": "Vacuum sekarang",
     "vacuuming_database": "Sedang menjalankan vacuum database...",
     "database_vacuumed": "Database telah di-vacuum"
   },
@@ -1433,8 +1435,9 @@
     "erase_attachments_after": "Hapus lampiran yang tidak digunakan setelah",
     "erase_attachments_after_description": "Jangka waktu sebelum lampiran yang tidak digunakan dihapus secara permanen.",
     "manual_erasing_description": "Picu penghapusan secara manual, abaikan batas waktu di atas.",
-    "erase_unused_attachments_now": "Hapus lampiran yang tidak digunakan sekarang",
-    "unused_attachments_erased": "Lampiran yang tidak digunakan telah dihapus."
+    "erase_unused_attachments_now": "Hapus lampiran yang tidak digunakan",
+    "unused_attachments_erased": "Lampiran yang tidak digunakan telah dihapus.",
+    "erase_now_button": "Hapus sekarang"
   },
   "network_connections": {
     "network_connections_title": "Jaringan",
@@ -1447,8 +1450,9 @@
     "erase_notes_after": "Hapus catatan setelah",
     "erase_notes_after_description": "Jangka waktu sebelum catatan yang dihapus dihapus secara permanen.",
     "manual_erasing_description": "Picu penghapusan secara manual, abaikan batas waktu di atas.",
-    "erase_deleted_notes_now": "Hapus catatan yang dihapus sekarang",
-    "deleted_notes_erased": "Catatan yang dihapus telah dihapus."
+    "erase_deleted_notes_now": "Hapus catatan yang dihapus",
+    "deleted_notes_erased": "Catatan yang dihapus telah dihapus.",
+    "erase_now_button": "Hapus sekarang"
   },
   "revisions_snapshot": {
     "title": "Revisi Catatan"
@@ -1465,9 +1469,10 @@
     "note_revisions_snapshot_limit_description_short": "Maksimum revisi per catatan. Gunakan -1 untuk tanpa batas, 0 untuk menonaktifkan.",
     "snapshot_number_limit_label": "Jumlah revisi maksimum",
     "snapshot_number_limit_unit": "snapshot",
-    "erase_excess_revision_snapshots": "Hapus snapshot revisi berlebih sekarang",
+    "erase_excess_revision_snapshots": "Hapus snapshot revisi berlebih",
     "erase_excess_revision_snapshots_description": "Hapus revisi yang melebihi batas untuk semua catatan.",
-    "erase_excess_revision_snapshots_prompt": "Snapshot revisi berlebih telah dihapus."
+    "erase_excess_revision_snapshots_prompt": "Snapshot revisi berlebih telah dihapus.",
+    "erase_now_button": "Hapus sekarang"
   },
   "search": {
     "title": "Pencarian",
@@ -1494,7 +1499,9 @@
   "tray": {
     "title": "System Tray",
     "enable_tray": "Ikon tray",
-    "enable_tray_description": "Trilium perlu dimulai ulang agar perubahan ini berlaku."
+    "enable_tray_description": "Perubahan langsung berlaku, meskipun pada beberapa platform menyembunyikan ikon tray mungkin memerlukan restart Trilium.",
+    "close_to_tray": "Tutup ke tray",
+    "close_to_tray_description": "Saat Anda menutup jendela, Trilium tetap berjalan di system tray alih-alih keluar. Memerlukan ikon tray diaktifkan."
   },
   "text_editor": {
     "title": "Editor",
@@ -1618,7 +1625,11 @@
     "server_config_hint": "Tambahkan berikut ini ke file config.ini Anda:",
     "server_env_hint": "Atau set environment variable berikut:",
     "restart_required": "Restart diperlukan agar perubahan ini berlaku.",
-    "restart_now": "Restart aplikasi sekarang"
+    "restart_now": "Restart aplikasi sekarang",
+    "lan_access_title": "Akses jaringan",
+    "lan_access_section_description": "Secara default, aplikasi desktop hanya menerima koneksi dari komputer ini. Izinkan akses dari jaringan lokal Anda agar perangkat lain dapat terhubung — misalnya untuk sinkronisasi dari perangkat lain. Aktifkan ini hanya pada jaringan yang Anda percayai.",
+    "lan_access_label": "Izinkan koneksi dari perangkat lain",
+    "lan_access_description": "Ikat server ke semua antarmuka jaringan alih-alih hanya localhost."
   },
   "password": {
     "heading": "Kata sandi",
@@ -1643,27 +1654,120 @@
     "set_password_heading": "Atur Kata Sandi",
     "set_password": "Atur Kata Sandi",
     "password_mismatch": "Kata sandi baru tidak sama.",
-    "password_changed_success": "Kata sandi telah diubah. Trilium akan dimuat ulang setelah Anda menekan OK."
+    "password_changed_success": "Kata sandi telah diubah. Trilium akan dimuat ulang setelah Anda menekan OK.",
+    "change_password_button": "Perbarui kata sandi",
+    "reset_password_button": "Reset sekarang"
   },
   "multi_factor_authentication": {
     "recovery_keys_description_warning": "Recovery key tidak akan ditampilkan lagi setelah meninggalkan halaman ini, jadi simpanlah di tempat yang aman dan terlindungi.<br>Setelah sebuah recovery key digunakan, key tersebut tidak dapat digunakan lagi.",
     "recovery_keys_error": "Kesalahan saat membuat recovery code",
     "recovery_keys_no_key_set": "Belum ada recovery code yang diatur",
-    "recovery_keys_regenerate": "Buat Ulang Recovery Code",
-    "oauth_title": "OAuth/OpenID",
-    "oauth_description": "OpenID adalah cara standar yang memungkinkan Anda login ke situs web menggunakan akun dari layanan lain, seperti Google, untuk memverifikasi identitas Anda. Issuer default adalah Google, tetapi Anda dapat mengubahnya ke penyedia OpenID lain. Lihat <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">di sini</a> untuk informasi lebih lanjut. Ikuti <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">petunjuk ini</a> untuk menyiapkan layanan OpenID melalui Google.",
-    "oauth_missing_vars": "Pengaturan yang belum ada: {{-variables}}",
-    "oauth_user_account": "Akun Pengguna: ",
-    "oauth_user_email": "Email Pengguna: ",
-    "oauth_user_not_logged_in": "Belum login!"
+    "recovery_keys_regenerate": "Buat ulang kode pemulihan",
+    "oauth_title": "OpenID Connect",
+    "oauth_description": "OpenID Connect memungkinkan Anda masuk menggunakan akun dari layanan lain, seperti Google, untuk memverifikasi identitas Anda. Penerbit default adalah Google, tetapi Anda dapat mengubahnya ke penyedia OpenID Connect lainnya. Lihat <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">di sini</a> untuk informasi lebih lanjut. Ikuti <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">petunjuk ini</a> untuk menyiapkan layanan OpenID Connect melalui Google.",
+    "oauth_missing_vars": "Tersisa untuk dikonfigurasi: {{-variables}}",
+    "oauth_user_account": "Nama akun",
+    "oauth_user_email": "Alamat email",
+    "oauth_user_not_logged_in": "Belum login!",
+    "authentication_title": "Autentikasi",
+    "signin_method": "Masuk dengan",
+    "signin_local": "Kata sandi lokal (opsional dengan autentikasi dua faktor)",
+    "signin_oauth": "Penyedia OpenID Connect (misalnya Google)",
+    "signin_local_description": "Masuk dengan kata sandi Trilium Anda. Anda dapat mengaktifkan autentikasi dua faktor secara opsional untuk lapisan keamanan tambahan.",
+    "totp_setup_label": "Kata sandi sekali pakai berbasis waktu (TOTP)",
+    "totp_setup_description": "Buat kode berbasis waktu dari aplikasi autentikator sebagai faktor kedua Anda. Anda akan memindai kode QR dan mengonfirmasi kode untuk menyelesaikannya. Kode pemulihan akan diberikan di akhir.",
+    "totp_setup_button": "Siapkan",
+    "totp_enroll_title": "Konfirmasi autentikator Anda",
+    "totp_enroll_instructions": "TOTP tidak akan diaktifkan sampai Anda mengonfirmasi kode yang valid di bawah ini, jadi Anda tidak akan terkunci secara tidak sengaja.",
+    "totp_enroll_step1_title": "1. Tambahkan akun ke aplikasi autentikator Anda",
+    "totp_enroll_step2_title": "2. Masukkan kode verifikasi",
+    "totp_enroll_scan": "Pindai kode QR ini:",
+    "totp_enroll_secret_label": "Tidak bisa memindai? Masukkan kode ini secara manual",
+    "totp_enroll_code_label": "Kode verifikasi",
+    "totp_enroll_code_placeholder": "000000",
+    "totp_enroll_verify": "Verifikasi & lanjutkan",
+    "totp_enroll_cancel": "Batal",
+    "totp_enroll_invalid_code": "Kode tersebut tidak cocok. Pastikan jam perangkat Anda benar dan masukkan kode terbaru.",
+    "totp_enroll_generate_error": "Tidak dapat membuat secret TOTP. Silakan tutup dialog ini dan coba lagi.",
+    "totp_enroll_enabled": "Autentikasi dua faktor kini telah diaktifkan.",
+    "totp_enroll_recovery_title": "Simpan kode pemulihan Anda",
+    "totp_enroll_recovery_instructions": "Simpan kode pemulihan ini di tempat yang aman. Masing-masing dapat digunakan satu kali untuk masuk jika Anda kehilangan akses ke aplikasi autentikator Anda.",
+    "totp_enroll_recovery_copy": "Salin",
+    "totp_enroll_recovery_copied": "Kode pemulihan disalin ke clipboard.",
+    "totp_enroll_recovery_download": "Unduh",
+    "totp_enroll_saved_ack": "Saya sudah menyimpan kode pemulihan saya di tempat yang aman",
+    "totp_enroll_finish": "Selesaikan penyiapan",
+    "totp_enroll_enable_error": "Tidak dapat mengaktifkan autentikasi dua faktor. Silakan coba lagi.",
+    "totp_section_title": "Autentikasi dua faktor",
+    "totp_status_active": "Aktif",
+    "totp_status_inactive": "Tidak aktif",
+    "totp_remove_label": "Hapus autentikasi dua faktor",
+    "totp_remove_description": "Hapus sepenuhnya penyiapan autentikasi dua faktor Anda. Berbeda dengan sekadar menonaktifkannya di atas, Anda harus menyiapkannya lagi dari awal untuk menggunakannya.",
+    "totp_remove_button": "Hapus",
+    "totp_remove_confirm": "Hapus autentikasi dua faktor secara permanen? Ini akan menghapus penyiapan Anda, bukan sekadar menonaktifkannya, jadi Anda harus menyiapkannya lagi dari awal untuk menggunakannya. Sampai saat itu, Anda akan masuk hanya dengan kata sandi Anda.",
+    "totp_removed": "Autentikasi dua faktor telah dihapus.",
+    "recovery_keys_regenerate_confirm": "Buat ulang kode pemulihan? Kode pemulihan Anda saat ini akan segera berhenti berfungsi, dan Anda perlu menyimpan yang baru.",
+    "recovery_keys_regenerated_title": "Kode pemulihan baru",
+    "recovery_keys_regenerated_instructions": "Berikut adalah kode pemulihan baru Anda. Simpan sekarang: kode ini menggantikan kode sebelumnya dan tidak akan ditampilkan lagi.",
+    "recovery_keys_done": "Selesai",
+    "recovery_keys_label": "Kode pemulihan",
+    "recovery_keys_remaining": "{{remaining}} dari {{total}} tersisa. Tidak dapat ditampilkan lagi, hanya bisa diganti.",
+    "recovery_keys_dot_available": "Tersedia",
+    "recovery_keys_dot_used": "Digunakan pada {{- date}}",
+    "oauth_status_connected": "Terhubung",
+    "oauth_status_not_connected": "Tidak terhubung",
+    "oauth_status_not_configured": "Belum dikonfigurasi",
+    "oauth_not_configured_title": "Siapkan OpenID Connect",
+    "oauth_not_configured_hint": "OpenID Connect perlu disiapkan terlebih dahulu melalui config.ini atau environment variable.",
+    "oauth_how_to_enable": "Cara mengaktifkan",
+    "oauth_server_config_hint": "Tambahkan berikut ini ke file config.ini Anda lalu restart aplikasi:",
+    "oauth_server_env_hint": "Atau atur environment variable berikut:",
+    "oauth_provider": "Penyedia",
+    "oauth_provider_url": "URL issuer",
+    "oauth_provider_unknown": "Penyedia tidak dikenal",
+    "oauth_not_enrolled_title": "Tidak ada akun yang terhubung",
+    "oauth_not_enrolled_hint": "OpenID Connect sudah dikonfigurasi, tetapi belum ada akun yang terhubung.",
+    "oauth_not_enrolled_details_label": "Apa artinya ini?",
+    "oauth_not_enrolled_details": "Sampai sebuah akun terhubung, OpenID Connect belum aktif dan Anda akan tetap masuk dengan kata sandi Anda. Hubungkan akun Anda di bawah ini untuk mengaktifkannya.",
+    "oauth_connect_label": "Hubungkan akun",
+    "oauth_connect_description": "Masuk dengan penyedia Anda sekali untuk menautkan akun Anda. Hanya akun ini yang nantinya dapat digunakan untuk masuk.",
+    "oauth_connect_button": "Hubungkan akun",
+    "oauth_disconnect_label": "Putuskan akun",
+    "oauth_disconnect_description": "Lepaskan tautan akun yang terhubung. Proses masuk akan kembali menggunakan kata sandi Anda sampai Anda menghubungkan akun lagi.",
+    "oauth_disconnect_button": "Putuskan",
+    "oauth_disconnect_confirm": "Apakah Anda yakin ingin memutuskan akun ini? Proses masuk akan kembali menggunakan kata sandi Anda sampai Anda menghubungkan akun lagi.",
+    "oauth_disconnected": "{{account}} diputuskan dari {{provider}}.",
+    "oauth_connect_success": "Terhubung ke {{provider}} sebagai {{account}}.",
+    "oauth_connect_success_generic": "Akun berhasil dihubungkan.",
+    "oauth_account_unknown": "akun Anda"
   },
   "shortcuts": {
     "keyboard_shortcuts": "Pintasan Keyboard",
     "type_text_to_filter": "Ketik teks untuk memfilter pintasan...",
-    "reload_app": "Muat ulang aplikasi untuk menerapkan perubahan",
-    "set_all_to_default": "Setel semua pintasan ke default",
+    "reload_app": "Muat ulang aplikasi",
+    "set_all_to_default": "Reset semua",
     "confirm_reset": "Apakah Anda benar-benar ingin mereset semua pintasan keyboard ke default?",
-    "no_results": "Tidak ada pintasan yang cocok dengan '{{filter}}'"
+    "no_results": "Tidak ada pintasan yang cocok dengan '{{filter}}'",
+    "modified_from_default": "Shortcut ini telah diubah dari default-nya.",
+    "revert_to_default": "Kembalikan ke default ({{shortcuts}})",
+    "no_default_shortcut": "tidak ada shortcut",
+    "record_shortcut": "Tambahkan shortcut",
+    "remove_shortcut": "Hapus shortcut ini",
+    "press_keys": "Tekan tombol…",
+    "recording_toast": "Tekan kombinasi tombol untuk menetapkannya, atau Esc untuk membatalkan.",
+    "make_global": "Jadikan ini shortcut tingkat sistem (global)",
+    "make_local": "Jadikan ini shortcut dalam aplikasi",
+    "global_shortcut": "Shortcut tingkat sistem (global), hanya aktif pada aplikasi desktop",
+    "conflict_chip": "Kombinasi ini juga ditetapkan untuk: {{actions}}",
+    "no_conflicts": "Tidak ada shortcut yang bentrok.",
+    "no_matches": "Tidak ada shortcut yang cocok dengan filter yang dipilih.",
+    "filter": "Filter shortcut",
+    "filter_all": "Semua shortcut",
+    "filter_conflicts": "Bentrok ({{count}})",
+    "filter_global": "Shortcut global ({{count}})",
+    "filter_modified": "Diubah dari default ({{count}})",
+    "conflicts_badge_other": "{{count}} bentrok",
+    "conflicts_badge_tooltip": "Beberapa shortcut ditetapkan ke lebih dari satu tindakan. Klik untuk hanya menampilkan shortcut yang bentrok."
   },
   "spellcheck": {
     "title": "Pemeriksa Ejaan",
@@ -1675,7 +1779,8 @@
     "custom_dictionary_edit": "Kata kustom",
     "custom_dictionary_edit_description": "Edit daftar kata yang tidak boleh ditandai oleh pemeriksa ejaan. Perubahan akan terlihat setelah restart.",
     "custom_dictionary_open": "Edit kamus",
-    "related_description": "Konfigurasikan bahasa pemeriksa ejaan dan kamus kustom."
+    "related_description": "Konfigurasikan bahasa pemeriksa ejaan dan kamus kustom.",
+    "disabled_placeholder": "Pemeriksaan ejaan dinonaktifkan. Aktifkan untuk memilih bahasa dan mengelola kamus kustom."
   },
   "sync_2": {
     "config_title": "Server Sinkronisasi",
@@ -1689,7 +1794,7 @@
     "help": "Bantuan",
     "test_title": "Uji Koneksi",
     "test_description": "Uji koneksi ke server sinkronisasi. Jika belum diinisialisasi, ini akan menyiapkan sinkronisasi.",
-    "test_button": "Uji sinkronisasi",
+    "test_button": "Uji sekarang",
     "handshake_failed": "Handshake server sinkronisasi gagal, error: {{message}}"
   },
   "api_log": {
@@ -1700,7 +1805,7 @@
     "will_be_deleted_soon": "Lampiran ini akan segera dihapus secara otomatis",
     "deletion_reason": ", karena lampiran tidak ditautkan di dalam konten catatan. Untuk mencegah penghapusan, tambahkan kembali tautan lampiran ke dalam konten atau ubah lampiran menjadi catatan.",
     "role_and_size": "Peran: {{role}}, ukuran: {{size}}, MIME: {{- mimeType}}",
-    "link_copied": "Tautan lampiran disalin ke clipboard.",
+    "link_copied": "Referensi lampiran disalin ke clipboard.",
     "unrecognized_role": "Peran lampiran '{{role}}' tidak dikenali."
   },
   "bookmark_switch": {
@@ -1913,7 +2018,9 @@
     "subtree-hidden-tooltip_other": "{{count}} catatan anak disembunyikan dari pohon",
     "subtree-hidden-moved-title": "Ditambahkan ke {{title}}",
     "subtree-hidden-moved-description-collection": "Koleksi ini menyembunyikan catatan anaknya di pohon.",
-    "subtree-hidden-moved-description-other": "Catatan anak disembunyikan di pohon untuk catatan ini."
+    "subtree-hidden-moved-description-other": "Catatan anak disembunyikan di pohon untuk catatan ini.",
+    "follow-active-note": "Ikuti catatan aktif",
+    "follow-active-note-title": "Menggulir tree dan memperluas node induk untuk menampilkan catatan aktif. Jika dinonaktifkan, tree tetap di tempat dan hanya highlight latar belakang yang diperbarui."
   },
   "mobile_note_navigator": {
     "back": "Naik satu tingkat",
@@ -2140,7 +2247,8 @@
     "create-child-note-title": "Buat catatan anak baru dan tambahkan ke peta",
     "create-child-note-text": "Tambahkan marker",
     "create-child-note-instruction": "Klik pada peta untuk membuat catatan baru di lokasi tersebut atau tekan Escape untuk menutup.",
-    "unable-to-load-map": "Tidak dapat memuat peta."
+    "unable-to-load-map": "Tidak dapat memuat peta.",
+    "create-child-note-toast-title": "Catatan baru"
   },
   "geo-map-context": {
     "open-location": "Buka lokasi",
@@ -2632,7 +2740,10 @@
     "wrong-password": "Kata sandi salah. Silakan coba lagi.",
     "language": "Bahasa",
     "continue": "Lanjutkan",
-    "your-ip-addresses": "Alamat untuk perangkat ini"
+    "your-ip-addresses": "Alamat untuk perangkat ini",
+    "sync-from-desktop-unreachable-title": "Perangkat ini tidak dapat dijangkau oleh perangkat lain",
+    "sync-from-desktop-unreachable-description": "Untuk sinkronisasi, desktop lain harus terhubung ke desktop ini melalui jaringan. Demi keamanan, aplikasi desktop ini hanya menerima koneksi dari komputer ini, sehingga desktop lain tersebut belum dapat menjangkaunya. Izinkan akses jaringan di bawah — Trilium akan restart untuk menerapkannya.",
+    "sync-from-desktop-allow-access": "Izinkan akses jaringan & restart"
   },
   "mind-map": {
     "addChild": "Tambahkan anak",
@@ -2696,7 +2807,8 @@
       "clone_note": "Kloning catatan",
       "search_icons": "Cari ikon"
     },
-    "not_available_in_standalone": "Fitur AI/LLM tidak tersedia dalam versi standalone Trilium, karena penyedia LLM tidak mengizinkan akses langsung dari browser."
+    "not_available_in_standalone": "Fitur AI/LLM tidak tersedia dalam versi standalone Trilium, karena penyedia LLM tidak mengizinkan akses langsung dari browser.",
+    "disabled_placeholder": "Fitur AI dinonaktifkan. Aktifkan untuk mengonfigurasi provider dan MCP."
   },
   "common": {
     "save": "Simpan",
@@ -2732,7 +2844,8 @@
     }
   },
   "options": {
-    "back": "Kembali ke semua opsi"
+    "back": "Kembali ke semua opsi",
+    "title": "Opsi"
   },
   "image_navigation": {
     "previous": "Gambar sebelumnya: {{- title}}",
@@ -2745,5 +2858,64 @@
     "refresh-widget": "Muat ulang",
     "remove-widget": "Hapus dari dasbor",
     "empty-hint": "Setiap catatan anak akan menjadi widget. Seret catatan ke sini dari pohon atau buat yang baru."
+  },
+  "import_provider": {
+    "choose_provider": "Pilih layanan untuk diimpor:"
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "Impor notebook, section, dan page dari akun OneNote Anda.",
+    "connect_description": "Masuk dengan akun Microsoft Anda untuk mengimpor notebook OneNote Anda.",
+    "connect": "Masuk dengan Microsoft",
+    "connecting": "Menunggu proses masuk selesai…",
+    "connected_as": "Terhubung sebagai {{name}}",
+    "disconnect": "Putuskan koneksi",
+    "load_failed": "Tidak dapat memuat notebook OneNote Anda.",
+    "no_notebooks": "Tidak ada notebook yang ditemukan di akun ini.",
+    "select_sections": "Pilih section yang akan diimpor:",
+    "order_hint_title": "Perkiraan urutan section",
+    "order_hint": "OneNote tidak menyertakan urutan asli dalam data impor, sehingga section dan group diurutkan berdasarkan tanggal pembuatan dan mungkin tidak sesuai dengan tampilan di OneNote.",
+    "import": "Impor yang dipilih",
+    "attach_source": "Lampirkan HTML asli (debug)",
+    "attach_source_hint": "Menyimpan HTML OneNote asli setiap page tanpa perubahan sebagai lampiran pada catatan yang diimpor, untuk membandingkannya dengan hasil konversi."
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "Impor page dari ekspor HTML Notion (.zip).",
+    "description_long": "Di Notion, ekspor workspace atau sebuah page sebagai HTML dengan subpage disertakan, lalu pilih file .zip yang dihasilkan di sini.",
+    "choose_file": "Ekspor Notion (.zip)",
+    "import": "Impor"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "Impor catatan dari ekspor Google Keep (.zip).",
+    "description_long": "Di Google Takeout, ekspor data Keep Anda sebagai file .zip, lalu pilih file yang dihasilkan di sini.",
+    "choose_file": "Ekspor Google Keep (.zip)",
+    "import": "Impor"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "Impor catatan dari ekspor Evernote (.enex).",
+    "description_long": "Di Evernote, ekspor sebuah notebook (atau hingga 100 catatan sekaligus) sebagai file ENEX, lalu pilih satu atau beberapa file .enex di sini. Setiap file akan diimpor sebagai notebook terpisah.",
+    "choose_file": "Ekspor Evernote (.enex)",
+    "import": "Impor"
+  },
+  "split_editor": {
+    "render_error": "Tidak dapat merender pratinjau",
+    "show_details": "Tampilkan detail",
+    "last_valid_render": "Menampilkan render valid terakhir"
+  },
+  "desktop": {
+    "web_placeholder": "Opsi ini hanya berlaku untuk build desktop."
+  },
+  "startup": {
+    "title": "Startup",
+    "launch_on_startup": "Jalankan saat startup",
+    "launch_on_startup_description": "Buka Trilium secara otomatis saat Anda masuk ke komputer.",
+    "hide_on_auto_start": "Mulai dalam keadaan diminimalkan ke tray",
+    "hide_on_auto_start_description": "Saat dijalankan otomatis saat login, mulai dalam keadaan tersembunyi di system tray alih-alih membuka jendela. Memerlukan opsi jalankan saat startup dan ikon tray diaktifkan."
+  },
+  "full_content_width_switch": {
+    "title": "Lebar penuh"
   }
 }

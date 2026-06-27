@@ -324,42 +324,43 @@
 </p>
 <h2>Search Configuration</h2>
 <h3>Parameters</h3>
-<table>
-  <thead>
-    <tr>
-      <th>Parameter</th>
-      <th>Value</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code spellcheck="false">MIN_FUZZY_TOKEN_LENGTH</code>
-      </td>
-      <td>3</td>
-      <td>Minimum characters for fuzzy matching</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">MAX_EDIT_DISTANCE</code>
-      </td>
-      <td>2</td>
-      <td>Maximum character changes allowed</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">RESULT_SUFFICIENCY_THRESHOLD</code>
-      </td>
-      <td>5</td>
-      <td>Minimum exact results before fuzzy fallback</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">MAX_CONTENT_SIZE</code>
-      </td>
-      <td>10MB</td>
-      <td>Maximum note content size for search processing</td>
-    </tr>
-  </tbody>
-</table>
-
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Parameter</th>
+        <th>Value</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">MIN_FUZZY_TOKEN_LENGTH</code>
+        </td>
+        <td>3</td>
+        <td>Minimum characters for fuzzy matching</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">MAX_EDIT_DISTANCE</code>
+        </td>
+        <td>2</td>
+        <td>Maximum character changes allowed</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">RESULT_SUFFICIENCY_THRESHOLD</code>
+        </td>
+        <td>5</td>
+        <td>Minimum exact results before fuzzy fallback</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">MAX_CONTENT_SIZE</code>
+        </td>
+        <td>10MB</td>
+        <td>Maximum note content size for search processing</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <h3>Limits</h3>
 <ul>
   <li>Searched note content is limited to 10MB per note to prevent performance

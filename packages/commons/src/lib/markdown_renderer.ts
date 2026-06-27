@@ -1,4 +1,4 @@
-import { Marked, Renderer, type Token, type Tokens } from "marked";
+import { Marked, type MarkedOptions, Renderer, type Token, type Tokens } from "marked";
 import markedFootnote from "marked-footnote";
 
 import { DEFAULT_TASK_STATES, type TaskStateDef } from "./task_states.js";
@@ -81,6 +81,8 @@ function createTaskStateDetector(states: TaskStateDef[]): (token: Token) => void
 
 import { getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "./mime_type.js";
 import {
+    createCommentExtension,
+    createHighlightExtension,
     createTransclusionExtension,
     createWikiLinkExtension,
     transclusionExtension,
@@ -100,6 +102,46 @@ export const ADMONITION_TYPE_MAPPINGS: Record<string, string> = {
     important: "IMPORTANT",
     caution: "CAUTION",
     warning: "WARNING"
+};
+
+/**
+ * Obsidian ships a much larger set of callout types than the five admonition
+ * types Trilium's editor supports. Each extra type (and its Obsidian aliases) is
+ * mapped onto the nearest native type. Types that already share a name with a
+ * native type (`note`, `tip`, `important`, `caution`, `warning`) are handled by
+ * {@link ADMONITION_TYPE_MAPPINGS} and intentionally omitted here.
+ *
+ * Only consulted when the `obsidian` option is enabled — generic Markdown import
+ * keeps GitHub's five-type behaviour.
+ */
+export const OBSIDIAN_CALLOUT_ALIASES: Record<string, string> = {
+    // Neutral / informational
+    abstract: "note",
+    summary: "note",
+    tldr: "note",
+    info: "note",
+    todo: "note",
+    quote: "note",
+    cite: "note",
+    // Advice / positive outcomes
+    hint: "tip",
+    success: "tip",
+    check: "tip",
+    done: "tip",
+    question: "tip",
+    help: "tip",
+    faq: "tip",
+    // Emphasis
+    example: "important",
+    // Mild warnings
+    attention: "warning",
+    // Errors / severe warnings
+    failure: "caution",
+    fail: "caution",
+    missing: "caution",
+    danger: "caution",
+    error: "caution",
+    bug: "caution"
 };
 
 /** Options for {@link renderToHtml}. */
@@ -140,6 +182,13 @@ export interface RenderToHtmlOptions {
      * (e.g. `[/]`) in list items. Defaults to {@link DEFAULT_TASK_STATES}.
      */
     taskStates?: TaskStateDef[];
+    /**
+     * Enable Obsidian-specific Markdown syntax: `==highlight==` → `<mark>` and
+     * `%% comment %%` → an HTML comment. Off by default so generic Markdown import,
+     * paste and the live editor preview are unaffected — only the Obsidian importer
+     * opts in.
+     */
+    obsidian?: boolean;
 }
 
 function escapeHtml(str: string): string {
@@ -315,6 +364,14 @@ function restoreFromMap(text: string, map: Map<string, string>): string {
  */
 export class CustomMarkdownRenderer extends Renderer {
 
+    /** Whether to recognise Obsidian's extended callout types, inline titles and fold markers. */
+    readonly #obsidianCallouts: boolean;
+
+    constructor(options?: MarkedOptions & { obsidianCallouts?: boolean }) {
+        super(options);
+        this.#obsidianCallouts = options?.obsidianCallouts ?? false;
+    }
+
     override heading(data: Tokens.Heading): string {
         if (data.depth === 1) {
             return `<h1>${data.text}</h1>`;
@@ -404,24 +461,68 @@ export class CustomMarkdownRenderer extends Renderer {
     override blockquote({ tokens }: Tokens.Blockquote): string {
         const body = this.parser.parse(tokens);
 
-        const admonitionMatch = /^<p>\[\!([A-Z]+)\]/.exec(body);
-        if (Array.isArray(admonitionMatch) && admonitionMatch.length === 2) {
-            const type = admonitionMatch[1].toLowerCase();
-
-            if (ADMONITION_TYPE_MAPPINGS[type]) {
-                const bodyWithoutHeader = body
-                    .replace(/^<p>\[\!([A-Z]+)\]\s*/, "<p>")
-                    .replace(/^<p><\/p>/, "")
-                    .trim();
-
-                // Empty admonition (`> [!NOTE]` with no body) — keep a non-breaking space
-                // so the callout still renders its title/icon row instead of collapsing.
-                const inner = bodyWithoutHeader || "&nbsp;";
-                return `<aside class="admonition ${type}">${inner}</aside>`;
-            }
+        const callout = this.#parseCallout(body);
+        if (callout) {
+            // Trilium admonitions have no dedicated title slot, so an Obsidian inline
+            // title is rendered as a bold lead paragraph.
+            const titleHtml = callout.title ? `<p><strong>${callout.title}</strong></p>` : "";
+            // Empty admonition (`> [!NOTE]` with no body) — keep a non-breaking space
+            // so the callout still renders its title/icon row instead of collapsing.
+            const inner = (titleHtml + callout.body) || "&nbsp;";
+            return `<aside class="admonition ${callout.type}">${inner}</aside>`;
         }
 
         return `<blockquote>${body}</blockquote>`;
+    }
+
+    /**
+     * Detects a `[!type]` callout at the start of a rendered blockquote. Matches the
+     * type case-insensitively, drops Obsidian's fold marker (`+`/`-`), and splits off
+     * an optional inline title from the body. Returns `null` for plain blockquotes and
+     * for callout types that don't resolve to a supported admonition.
+     */
+    #parseCallout(body: string): { type: string; title: string; body: string } | null {
+        const marker = /^<p>\[!([a-zA-Z]+)\]([-+]?)[ \t]*/.exec(body);
+        if (!marker) {
+            return null;
+        }
+
+        const type = this.#resolveAdmonitionType(marker[1].toLowerCase());
+        if (!type) {
+            return null;
+        }
+
+        const rest = body.slice(marker[0].length);
+        const newlineIdx = rest.indexOf("\n");
+        const paragraphEndIdx = rest.indexOf("</p>");
+
+        let title: string;
+        let inner: string;
+        if (paragraphEndIdx !== -1 && (newlineIdx === -1 || paragraphEndIdx < newlineIdx)) {
+            // The marker paragraph holds only an (optional) title; the body follows it.
+            title = rest.slice(0, paragraphEndIdx);
+            inner = rest.slice(paragraphEndIdx + "</p>".length);
+        } else if (newlineIdx !== -1) {
+            // A soft line break splits the title from the body within the marker paragraph.
+            title = rest.slice(0, newlineIdx);
+            inner = `<p>${rest.slice(newlineIdx + 1)}`;
+        } else {
+            title = rest;
+            inner = "";
+        }
+
+        return { type, title: title.trim(), body: inner.trim() };
+    }
+
+    /** Resolves a lowercase callout keyword to a supported admonition type, or `null`. */
+    #resolveAdmonitionType(type: string): string | null {
+        if (ADMONITION_TYPE_MAPPINGS[type]) {
+            return type;
+        }
+        if (this.#obsidianCallouts) {
+            return OBSIDIAN_CALLOUT_ALIASES[type] ?? null;
+        }
+        return null;
     }
 
     override codespan({ text }: Tokens.Codespan): string {
@@ -441,15 +542,17 @@ export function renderToHtml(content: string, title: string, options: RenderToHt
     const marked = new Marked({ async: false, gfm: true });
     marked.use(markedFootnote());
     marked.use({ walkTokens: createTaskStateDetector(options.taskStates ?? DEFAULT_TASK_STATES) });
-    marked.use({
-        // Order is important, especially for wikilinks.
-        extensions: [
-            options.transclusion ? createTransclusionExtension(options.transclusion) : transclusionExtension,
-            options.wikiLink ? createWikiLinkExtension(options.wikiLink) : wikiLinkExtension
-        ]
-    });
+    // Order is important, especially for wikilinks.
+    const extensions = [
+        options.transclusion ? createTransclusionExtension(options.transclusion) : transclusionExtension,
+        options.wikiLink ? createWikiLinkExtension(options.wikiLink) : wikiLinkExtension
+    ];
+    if (options.obsidian) {
+        extensions.push(createHighlightExtension(), createCommentExtension());
+    }
+    marked.use({ extensions });
 
-    const renderer = options.renderer ?? new CustomMarkdownRenderer({ async: false });
+    const renderer = options.renderer ?? new CustomMarkdownRenderer({ async: false, obsidianCallouts: options.obsidian });
     let html = marked.parse(processedText, { async: false, renderer }) as string;
 
     html = restoreFromMap(html, formulaMap);

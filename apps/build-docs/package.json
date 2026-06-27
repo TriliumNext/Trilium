@@ -14,7 +14,7 @@
   "keywords": [],
   "author": "Elian Doran <contact@eliandoran.me>",
   "license": "AGPL-3.0-only",
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@11.9.0",
   "dependencies": {
     "@triliumnext/core": "workspace:*",
     "@triliumnext/server": "workspace:*"
@@ -22,7 +22,7 @@
   "devDependencies": {
     "@redocly/cli": "2.34.0",
     "archiver": "8.0.0",
-    "js-yaml": "4.2.0",
+    "js-yaml": "5.1.0",
     "typedoc": "0.28.19",
     "typedoc-plugin-missing-exports": "4.1.3"
   }

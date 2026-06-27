@@ -52,7 +52,11 @@ export async function uploadFiles(entityType: string, parentNoteId: string, file
             type: "POST",
             timeout: 60 * 60 * 1000,
             error: function (xhr) {
-                toastService.showError(t("import.failed", { message: xhr.responseText }));
+                // Fallback toast for failures that never produced a WebSocket `taskError` (e.g. transport or
+                // auth errors raised before the importer runs). Deferred so the canonical WebSocket error —
+                // emitted alongside this same 500 — can claim the taskId first and win.
+                const message = t("import.failed", { message: xhr.responseText });
+                setTimeout(() => reportImportError(taskId, message), IMPORT_ERROR_FALLBACK_DELAY);
             },
             contentType: false, // NEEDED, DON'T REMOVE THIS
             processData: false // NEEDED, DON'T REMOVE THIS
@@ -64,7 +68,10 @@ function makeToast(id: string, message: string): ToastOptionsWithRequiredId {
     return {
         id,
         message,
-        icon: "plus"
+        icon: "bx bx-check",
+        // This toast replaces the in-progress one (same id), and showPersistent merges fields rather than
+        // swapping the object — so clear the progress explicitly, otherwise the finished bar lingers at 100%.
+        progress: undefined
     };
 }
 
@@ -94,14 +101,33 @@ function makeProgressToast(taskId: string, progressCount: number, totalCount?: n
     };
 }
 
+/**
+ * Shows an import failure exactly once per taskId. A failed import surfaces on two channels: the canonical
+ * WebSocket `taskError` message (clean text, paired with the progress toast) and this upload's AJAX error
+ * callback (a fallback for failures that never reach the task system). Both route through here, so whichever
+ * fires first wins and the duplicate is suppressed.
+ */
+const IMPORT_ERROR_FALLBACK_DELAY = 500;
+const reportedImportErrorTaskIds = new Set<string>();
+
+function reportImportError(taskId: string, message: string) {
+    if (reportedImportErrorTaskIds.has(taskId)) {
+        return;
+    }
+    reportedImportErrorTaskIds.add(taskId);
+    // Release the taskId once both channels have certainly fired, keeping the guard set bounded.
+    setTimeout(() => reportedImportErrorTaskIds.delete(taskId), 60_000);
+    toastService.closePersistent(taskId);
+    toastService.showError(message);
+}
+
 ws.subscribeToMessages(async (message) => {
     if (!("taskType" in message) || message.taskType !== "importNotes") {
         return;
     }
 
     if (message.type === "taskError") {
-        toastService.closePersistent(message.taskId);
-        toastService.showError(message.message);
+        reportImportError(message.taskId, message.message);
     } else if (message.type === "taskProgressCount") {
         toastService.showPersistent(makeProgressToast(message.taskId, message.progressCount, message.totalCount));
     } else if (message.type === "taskSucceeded") {
@@ -122,8 +148,7 @@ ws.subscribeToMessages(async (message: WebSocketMessage) => {
     }
 
     if (message.type === "taskError") {
-        toastService.closePersistent(message.taskId);
-        toastService.showError(message.message);
+        reportImportError(message.taskId, message.message);
     } else if (message.type === "taskProgressCount") {
         toastService.showPersistent(makeProgressToast(message.taskId, message.progressCount, message.totalCount));
     } else if (message.type === "taskSucceeded") {

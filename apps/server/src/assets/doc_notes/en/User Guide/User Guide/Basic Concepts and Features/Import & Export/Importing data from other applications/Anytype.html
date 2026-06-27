@@ -1,0 +1,173 @@
+<p>Starting with v0.104.0, Trilium is able to import data from Anytype from
+  JSON imports which preserve most of the formatting and the metainformation.</p>
+<h2>Import process</h2>
+<p>The first step is to export the data from Anytype:</p>
+<ul>
+  <li>To export a single page:
+    <ul>
+      <li>Select the page to export.</li>
+      <li>Press the […] at the top-right of the window and select <em>Export</em>.</li>
+      <li
+     >Ensure the following options are set:
+        <ul>
+          <li>Export format: Any-Block</li>
+          <li>File Format: JSON</li>
+          <li>Zip archive: On</li>
+          <li>Include linked objects: On</li>
+          <li>Include files: On</li>
+          <li>Include archived objects: On</li>
+        </ul>
+  </li>
+  </ul>
+  </li>
+  <li>To export an entire channel:
+    <ul>
+      <li>Select the desired channel from the left bar.</li>
+      <li>Underneath the channel icon in the left sidebar, press the name of the
+        channel with an arrow and select <em>Channel Settings</em>.</li>
+      <li>In the left sidebar, look for the <em>Integrations</em> section and select <em>Export</em>.</li>
+      <li
+     >Press <em>Any-Block</em>.</li>
+  <li>Ensure the following options are set:
+    <ul>
+      <li>File Format: JSON</li>
+      <li>Zip archive: On</li>
+      <li>Include files: On</li>
+      <li>Include archived objects: On</li>
+    </ul>
+  </li>
+  </ul>
+  </li>
+</ul>
+<p>In Trilium Notes:</p>
+<ol>
+  <li>In the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+    right click and select <em>Import into note</em>.</li>
+  <li>In the <em>Import from</em> section, select <em>Anytype</em>.</li>
+  <li>Upload the ZIP.</li>
+</ol>
+<aside class="admonition note">
+  <p>Exporting collections individually can sometimes miss information that
+    would otherwise be picked up from an export of the entire channel. The
+    reason is that Anytype leaves out some information when exporting individual
+    pages/collections.</p>
+</aside>
+<h2>Supported features</h2>
+<p>The following features are preserved by Trilium during the import process:</p>
+<ul>
+  <li>Basic formatting (bold, italic, underline, strikethrough, headings, colors,
+    highlights, inline code).</li>
+  <li><a class="reference-link" href="#root/_help_S6Xx8QIWTV66">Lists</a>&nbsp;(numbered
+    or bullet)</li>
+  <li><a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/_help_mT0HEkOsz6i1">Images</a>&nbsp;and
+    files are handled as&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_0vhv7lsOLy82">Attachments</a>.</li>
+  <li
+ >To-do lists</li>
+    <li>Toggle sections</li>
+    <li><a class="reference-link" href="#root/_help_NdowYOC1GFKS">Tables</a>
+    </li>
+    <li>Inline&nbsp;<a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>
+    </li>
+    <li><a class="reference-link" href="#root/_help_YfYAtQBcfo5V">Math Equations</a>
+    </li>
+    <li>Highlight blocks are imported as block quotes.</li>
+    <li><a class="reference-link" href="#root/_help_QxEyIjRBizuC">Code blocks</a>, with
+      a best-effort attempt to restore the language.</li>
+    <li>Links between other imported pages are converted to&nbsp;<a class="reference-link"
+      href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;if they are
+      part of the same import.
+      <ul>
+        <li>Applies to both block links and inline links.</li>
+      </ul>
+    </li>
+    <li>Collections are imported as&nbsp;Trilium-native&nbsp;<a class="reference-link"
+      href="#root/_help_GTwFsgaA0lCt">Collections</a>&nbsp;(see below).
+      <ul>
+        <li>Files inside collections are imported as&nbsp;<a class="reference-link"
+          href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_W8vYD3Q1zjCR">File</a>&nbsp;notes.</li>
+      </ul>
+    </li>
+    <li>Dividers (line, dots) are imported as horizontal rules.</li>
+    <li><a href="#root/_help_NwBbFdNZ9h7O">Admonitions</a> are preserved, including its
+      emoji (added as part of the content).</li>
+    <li>Creation and modification date of pages is preserved.</li>
+</ul>
+<h2>Collections</h2>
+<p>Collections created in Anytype are imported on a best-effort basis, preserving
+  both the view mode and the page properties as&nbsp;<a class="reference-link"
+  href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>.</p>
+<p>The following view modes are supported:</p>
+<ul>
+  <li>List as&nbsp;<a class="reference-link" href="#root/_help_mULW0Q3VojwY">List View</a>
+  </li>
+  <li>Gallery as&nbsp;<a class="reference-link" href="#root/_help_8QqnMzx393bx">Grid View</a>
+  </li>
+  <li><a class="reference-link" href="#root/_help_xWbu3jpNWapp">Calendar</a>, preserving
+    the attribute which identifies the date.</li>
+  <li><a class="reference-link" href="#root/_help_CtBQqbwXDx1w">Kanban Board</a>,
+    preserving the board group column.</li>
+  <li><a class="reference-link" href="#root/_help_2FvYrpmOXm29">Table</a>, also used
+    as fallback for unsupported collection layouts.</li>
+</ul>
+<p>The following types are supported:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Anytype property type</th>
+        <th scope="col">Trilium</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Text / Select</td>
+        <td>Single-valued <code spellcheck="false">text</code> label</td>
+      </tr>
+      <tr>
+        <td>Number</td>
+        <td>Single-valued <code spellcheck="false">number</code> label</td>
+      </tr>
+      <tr>
+        <td>Multi-select</td>
+        <td>One <code spellcheck="false">text</code> label per option (multi)</td>
+      </tr>
+      <tr>
+        <td>Date / Date with time</td>
+        <td>
+          <ul>
+            <li><code spellcheck="false">datetime</code> if the time is included.</li>
+            <li
+           ><code spellcheck="false">date</code> if only dates.</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>File</td>
+        <td>The files are preserved as attachments, and a link to them is prepended
+          to the content of the note for visibility.</td>
+      </tr>
+      <tr>
+        <td>Checkbox</td>
+        <td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/
+          <code
+          spellcheck="false">false</code>).</td>
+      </tr>
+      <tr>
+        <td>URL / Email / Phone</td>
+        <td><code spellcheck="false">url</code> label (<code spellcheck="false">mailto:</code>,
+          <code
+          spellcheck="false">tel:</code>prefix)</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h2>Reporting issues</h2>
+<p>When importing your Anytype notes, you might find issues in how a note
+  is imported; in that case consider <a href="#root/_help_wy8So3yZZlH9">reporting</a> it.</p>
+<p>When reporting such an issue make sure to provide the following information:</p>
+<ul>
+  <li>A .zip export of the original note (and children if applicable). This
+    allows us to reproduce the issue.</li>
+  <li>A screenshot with how it originally looked like before the import and
+    how it looks after the import.</li>
+</ul>

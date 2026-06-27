@@ -9,4 +9,4 @@ Trilium natively supports the following formats for both import and export.
 *   OPML (Outliner Interchange Format)
     *   Supports both OPML v1.0 for plain text and v2.0 with HTML support.
 
-To import from other applications, see <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications">Importing data from other applications</a>.
+To import from other applications such as OneNote, Notion and others, see <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications">Importing data from other applications</a>.

@@ -20,10 +20,10 @@ overrides:
   # facets to work. A partial bump leaves two copies in the tree, which breaks
   # both typechecking (nominal type clashes) and runtime (lint markers, etc.).
   # Keep every core singleton pinned here so the whole tree resolves to one copy.
-  "@codemirror/view": "6.43.1"
-  "@codemirror/state": "6.6.0"
+  "@codemirror/view": "6.43.2"
+  "@codemirror/state": "6.7.0"
   "@codemirror/language": "6.12.3"
-  "@codemirror/commands": "6.10.3"
+  "@codemirror/commands": "6.10.4"
   "@codemirror/autocomplete": "6.20.3"
   "@codemirror/lint": "6.9.7"
   "@codemirror/search": "6.7.1"

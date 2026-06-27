@@ -52,7 +52,7 @@ Custom icon packs are also supported by the <a class="reference-link" href="../
 
 If you are using a custom share theme, make sure it supports the `iconPackCss`, otherwise icons will not show up. Check the original share template source code for reference.
 
-Custom icon packs will also be preserved when <a class="reference-link" href="../../Advanced%20Usage/Sharing/Exporting%20static%20HTML%20for%20web%20.md">Exporting static HTML for web publishing</a>. In this case, there's no requirement to make the icon pack shared.
+Custom icon packs will also be preserved when <a class="reference-link" href="../../Advanced%20Usage/Sharing/Exporting%20static%20HTML%20for%20web%20publishing.md">Exporting static HTML for web publishing</a>. In this case, there's no requirement to make the icon pack shared.
 
 ## What happens if I remove an icon pack
 

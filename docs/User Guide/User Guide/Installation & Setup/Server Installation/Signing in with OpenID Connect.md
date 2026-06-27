@@ -1,7 +1,7 @@
 # Signing in with OpenID Connect
 OpenID is a standardized way to let you log into websites using an account from another service, like Google or Authelia, to verify your identity.
 
-When OpenID is activated, the password-based authentication in Trilium is replaced with a button that connects using your provider. This means that the configuration of <a class="reference-link" href="Multi-factor%20authentication%20wi.md">Multi-factor authentication with TOTP</a> no longer takes effect, since your provider has to handle any multi-factor authentication.
+When OpenID is activated, the password-based authentication in Trilium is replaced with a button that connects using your provider. This means that the configuration of <a class="reference-link" href="Multi-factor%20authentication%20with%20TOTP.md">Multi-factor authentication with TOTP</a> no longer takes effect, since your provider has to handle any multi-factor authentication.
 
 ## Setup
 
@@ -16,7 +16,7 @@ Setting up authentication with OpenID connect is a two-step process:
     
     1.  The redirect URL of Trilium is `https://<your-trilium-domain>/callback`.
     2.  You should obtain the base URL, client ID and client secret.
-2.  Set the following information using <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20e.md">Configuration (config.ini or environment variables)</a>:
+2.  Set the following information using <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a>:
     
     | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
     | --- | --- | --- | --- |

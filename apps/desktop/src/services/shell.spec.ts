@@ -390,8 +390,8 @@ describe("validateDownloadUrl", () => {
             .toBe("trilium-app://app/api/attachments/xyz/download?123");
         expect(validateDownloadUrl("trilium-app://app/api/revisions/r1/download", DESKTOP_PAGE_URL).toString())
             .toBe("trilium-app://app/api/revisions/r1/download");
-        expect(validateDownloadUrl("trilium-app://app/api/branches/b1/export/subtree/html/1/t1", DESKTOP_PAGE_URL).toString())
-            .toBe("trilium-app://app/api/branches/b1/export/subtree/html/1/t1");
+        expect(validateDownloadUrl("trilium-app://app/api/branches/b1/export/subtree/html/t1", DESKTOP_PAGE_URL).toString())
+            .toBe("trilium-app://app/api/branches/b1/export/subtree/html/t1");
     });
 
     it("accepts same-origin downloads via plain HTTP", () => {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-export SYSTEM "http://xml.evernote.com/pub/evernote-export2.dtd">
+<en-export export-date="20260417T081355Z" application="Evernote/Windows" version="6.x">
+<note><title>Metadata Note</title><content><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+<en-note><div>Body text</div></en-note>]]></content><created>20260417T081156Z</created><updated>20260417T081307Z</updated><note-attributes><source>desktop.win</source><source-url>https://triliumnotes.org/page</source-url></note-attributes><tag>important</tag><tag>archive</tag><resource><data encoding="base64">iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==</data><mime>image/png</mime><resource-attributes><file-name>orphan.png</file-name></resource-attributes></resource><resource><mime>application/octet-stream</mime><resource-attributes><file-name>empty.bin</file-name></resource-attributes></resource></note>
+</en-export>

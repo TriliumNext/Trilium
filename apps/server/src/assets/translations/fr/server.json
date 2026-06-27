@@ -76,7 +76,9 @@
     "remember-me": "Se souvenir de moi",
     "button": "Connexion",
     "sign_in_with_sso": "Se connecter avec {{ ssoIssuerName }}",
-    "incorrect-totp": "TOTP incorrect. Veuillez réessayer."
+    "incorrect-totp": "TOTP incorrect. Veuillez réessayer.",
+    "sso-wrong-account": "Ce compte n'est pas celui qui est lié à cette instance Trilium. Connectez-vous avec le compte lié.",
+    "sso-not-enrolled": "La connexion unique n'est pas encore configurée. Connectez-vous d'abord avec votre mot de passe, puis associez votre compte dans les paramètres."
   },
   "set_password": {
     "title": "Définir un mot de passe",
@@ -165,7 +167,7 @@
     "code-notes-title": "Notes de code",
     "images-title": "Médias",
     "spellcheck-title": "Correcteur orthographique",
-    "password-title": "Mot de passe",
+    "password-title": "Mot de passe et authentification",
     "etapi-title": "ETAPI",
     "backup-title": "Sauvegarde",
     "sync-title": "Synchronisation",
@@ -195,7 +197,8 @@
     "task-state-attr-is-completed": "Compte comme terminé",
     "task-state-attr-color": "Couleur",
     "task-state-attr-is-hidden": "Masqué de la liste",
-    "security-title": "Sécurité"
+    "security-title": "Sécurité",
+    "desktop-title": "Bureau"
   },
   "notes": {
     "new-note": "Nouvelle note",
@@ -354,7 +357,8 @@
     "expand": "Développer",
     "logo-alt": "Logo",
     "toggle-toc": "Afficher/Masquer la table des matières",
-    "toggle-navigation": "Afficher/Masquer la navigation"
+    "toggle-navigation": "Afficher/Masquer la navigation",
+    "login": "Se connecter"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Extrait de texte",
@@ -384,7 +388,8 @@
     "presentation_slide_second": "Deuxième diapositive",
     "background": "Arrière-plan",
     "markdown-snippet": "Extrait Markdown",
-    "code-snippet": "Extrait de code"
+    "code-snippet": "Extrait de code",
+    "dashboard": "Tableau de bord"
   },
   "password": {
     "incorrect": "Le mot de passe que vous avez saisi est incorrect."
@@ -416,6 +421,17 @@
     "backend-scripting": "Exécution de scripts backend",
     "backend-scripting-warning": "Les scripts backend ont un accès complet au serveur, y compris au système de fichiers et au réseau.",
     "sql-console": "Console SQL",
-    "sql-console-warning": "La console SQL permet d'exécuter des requêtes SQL arbitraires sur la base de données."
+    "sql-console-warning": "La console SQL permet d'exécuter des requêtes SQL arbitraires sur la base de données.",
+    "lan-access": "accès au réseau",
+    "lan-access-warning": "D'autres appareils de votre réseau local pourront se connecter à cette instance Trilium."
+  },
+  "onenote_import": {
+    "root-title": "Importation OneNote"
+  },
+  "notion_import": {
+    "root-title": "Importation Notion"
+  },
+  "keep_import": {
+    "root-title": "Importation Google Keep"
   }
 }

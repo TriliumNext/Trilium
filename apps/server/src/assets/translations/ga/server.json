@@ -350,7 +350,8 @@
     "expand": "Leathnaigh",
     "toggle-navigation": "Nascleanúint a Athrú",
     "toggle-toc": "Clár Ábhair a Athsholáthar",
-    "logo-alt": "Lógó"
+    "logo-alt": "Lógó",
+    "login": "Logáil Isteach"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Sleachta Téacs",
@@ -426,5 +427,11 @@
   },
   "onenote_import": {
     "root-title": "Allmhairiú OneNote"
+  },
+  "notion_import": {
+    "root-title": "Iompórtáil Notion"
+  },
+  "keep_import": {
+    "root-title": "Iompórtáil Google Keep"
   }
 }

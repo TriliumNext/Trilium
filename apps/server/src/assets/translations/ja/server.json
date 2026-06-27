@@ -338,7 +338,8 @@
     "expand": "展開",
     "toggle-navigation": "ナビゲーションの切り替え",
     "toggle-toc": "目次の切り替え",
-    "logo-alt": "ロゴ"
+    "logo-alt": "ロゴ",
+    "login": "ログイン"
   },
   "hidden_subtree_templates": {
     "text-snippet": "テキストスニペット",

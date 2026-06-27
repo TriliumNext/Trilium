@@ -8,7 +8,7 @@ If you are running Trilium on `localhost` only or if authentication is handled b
 noAuthentication=true
 ```
 
-Disabling authentication will bypass even the <a class="reference-link" href="Multi-factor%20authentication%20wi.md">Multi-Factor Authentication</a> since v0.94.1.
+Disabling authentication will bypass even the <a class="reference-link" href="Multi-factor%20authentication%20with%20TOTP.md">Multi-Factor Authentication</a> since v0.94.1.
 
 ## Understanding how the session works
 
@@ -35,4 +35,4 @@ Expired sessions are periodically cleaned by the server, generally an hourly int
 
 ## See also
 
-*   <a class="reference-link" href="Multi-factor%20authentication%20wi.md">Multi-Factor Authentication</a>
+*   <a class="reference-link" href="Multi-factor%20authentication%20with%20TOTP.md">Multi-Factor Authentication</a>

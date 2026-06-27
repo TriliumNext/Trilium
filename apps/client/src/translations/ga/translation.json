@@ -163,19 +163,12 @@
     "export_note_title": "Nóta easpórtála",
     "close": "Dún",
     "export_type_subtree": "An nóta seo agus a shliocht uile",
-    "format_html": "HTML - molta mar go gcoinníonn sé an fhormáid go léir",
-    "format_html_zip": "HTML i gcartlann ZIP - moltar é seo ós rud é go gcoimeádann sé seo an fhormáidiú go léir.",
-    "format_markdown": "Markdown - caomhnaíonn sé seo an chuid is mó den fhormáidiú.",
-    "format_opml": "OPML - formáid idirmhalartaithe imlíneach le haghaidh téacs amháin. Níl formáidiú, íomhánna agus comhaid san áireamh.",
-    "opml_version_1": "OPML v1.0 - téacs simplí amháin",
-    "opml_version_2": "OPML v2.0 - ceadaíonn HTML freisin",
     "export_type_single": "An nóta seo amháin gan a shliocht",
     "export": "Easpórtáil",
     "choose_export_type": "Roghnaigh cineál onnmhairithe ar dtús le do thoil",
     "export_in_progress": "Easpórtáil ar siúl: {{progressCount}}",
     "export_finished_successfully": "Críochnaíodh an easpórtáil go rathúil.",
-    "format_pdf": "PDF - le haghaidh priontála nó comhroinnte.",
-    "share-format": "HTML le haghaidh foilsitheoireachta gréasáin - úsáideann sé an téama céanna a úsáidtear le haghaidh nótaí comhroinnte, ach is féidir é a fhoilsiú mar shuíomh gréasáin statach."
+    "format_pdf": "PDF - le haghaidh priontála nó comhroinnte."
   },
   "help": {
     "title": "Bileog leideanna",
@@ -236,7 +229,6 @@
   "import": {
     "importIntoNote": "Iompórtáil isteach i nóta",
     "chooseImportFile": "Roghnaigh comhad allmhairithe",
-    "importDescription": "Déanfar ábhar an chomhaid/na gcomhad roghnaithe a allmhairiú mar nóta/nótaí linbh isteach",
     "importZipRecommendation": "Agus comhad ZIP á iompórtáil, léireoidh ordlathas na nótaí struchtúr an fho-eolaire laistigh den chartlann.",
     "options": "Roghanna",
     "safeImportTooltip": "Is féidir go mbeadh scripteanna inrite a d'fhéadfadh iompar díobhálach a bheith iontu i gcomhaid easpórtála Trilium <code>.zip</code>. Díghníomhachtóidh allmhairiú sábháilte forghníomhú uathoibríoch na scripteanna allmhairithe go léir. Díthiceáil \"Allmhairiú sábháilte\" ach amháin má tá sé i gceist go mbeadh scripteanna inrite sa chartlann allmhairithe agus má tá muinín iomlán agat as ábhar an chomhaid allmhairithe.",
@@ -723,8 +715,7 @@
     "word_wrap_on": "Ar",
     "word_wrap_off": "As",
     "save_named_revision": "Sábháil athbhreithniú ainmnithe...",
-    "print_or_export_to_pdf": "Priontáil/onnmhairigh go PDF...",
-    "import_from_service": "Iompórtáil ó sheirbhís…"
+    "print_or_export_to_pdf": "Priontáil/onnmhairigh go PDF..."
   },
   "onclick_button": {
     "no_click_handler": "Níl aon láimhseálaí cliceáil sainithe ag an ngiuirléid cnaipe '{{componentId}}'"
@@ -2969,9 +2960,7 @@
     "empty-hint": "Is giuirléid aon nóta linbh. Tarraing nóta anseo ón gcrann nó cruthaigh ceann nua."
   },
   "import_provider": {
-    "title": "Iompórtáil ó sheirbhís",
-    "choose_provider": "Roghnaigh seirbhís le hallmhairiú uaidh:",
-    "back": "Ar ais"
+    "choose_provider": "Roghnaigh seirbhís le hallmhairiú uaidh:"
   },
   "onenote_import": {
     "name": "Microsoft OneNote",

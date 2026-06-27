@@ -94,5 +94,5 @@ Apart from the data directory, some of the subdirectories of it can be moved els
 | `TRILIUM_LOG_DIR` | `${TRILIUM_DATA_DIR}/log` | Directory where daily <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a> are stored. |
 | `TRILIUM_TMP_DIR` | `${TRILIUM_DATA_DIR}/tmp` | Directory where temporary files are stored (for example when opening in an external app). |
 | `TRILIUM_ANONYMIZED_DB_DIR` | `${TRILIUM_DATA_DIR}/anonymized-db` | Directory where a <a class="reference-link" href="../Troubleshooting/Anonymized%20Database.md">Anonymized Database</a> is stored. |
-| `TRILIUM_CONFIG_INI_PATH` | `${TRILIUM_DATA_DIR}/config.ini` | Path to <a class="reference-link" href="../Advanced%20Usage/Configuration%20(config.ini%20or%20e.md">Configuration (config.ini or environment variables)</a> file. |
+| `TRILIUM_CONFIG_INI_PATH` | `${TRILIUM_DATA_DIR}/config.ini` | Path to <a class="reference-link" href="../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a> file. |
 | `TRILIUM_ELECTRON_DATA_DIR` | System appData | Directory for Electron internal data (caches, spell-check dictionaries, etc.). Set this in portable mode to avoid writing to the system profile (desktop only). |

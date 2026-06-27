@@ -129,19 +129,12 @@
     "export_note_title": "Exportar nota",
     "close": "Fechar",
     "export_type_subtree": "Esta nota e todos os seus descendentes",
-    "format_html": "HTML – recomendado, pois mantém toda a formatação",
-    "format_html_zip": "HTML em arquivo ZIP – recomendado, pois isso preserva toda a formatação.",
-    "format_markdown": "Markdown – isso preserva a maior parte da formatação.",
-    "format_opml": "OPML - formato de intercâmbio de outliners apenas para texto. Formatação, imagens e arquivos não estão incluídos.",
-    "opml_version_1": "OPML v1.0 – apenas texto simples",
-    "opml_version_2": "OPML v2.0 – permite também HTML",
     "export_type_single": "Apenas esta nota, sem seus descendentes",
     "export": "Exportar",
     "choose_export_type": "Por favor, escolha primeiro o tipo de exportação",
     "export_in_progress": "Exportação em andamento: {{progressCount}}",
     "export_finished_successfully": "Exportação concluída com sucesso.",
-    "format_pdf": "PDF – para impressão ou compartilhamento.",
-    "share-format": "HTML para publicação na web — usa o mesmo tema das notas compartilhadas, mas pode ser publicado como um site estático."
+    "format_pdf": "PDF – para impressão ou compartilhamento."
   },
   "help": {
     "noteNavigation": "Navegação de notas",
@@ -202,7 +195,6 @@
   "import": {
     "importIntoNote": "Importar para a nota",
     "chooseImportFile": "Escolher arquivo para importar",
-    "importDescription": "O conteúdo do(s) arquivo(s) selecionado(s) será importado como nota(s) filha(s) em",
     "options": "Opções",
     "safeImportTooltip": "Arquivos de exportação Trilium <code> .zip</code> podem conter scripts executáveis que podem apresentar comportamentos prejudiciais. A importação segura desativará a execução automática de todos os scripts importados. Desmarque “Importação segura” apenas se o arquivo de importação contiver scripts executáveis e você confiar totalmente no conteúdo do arquivo importado.",
     "safeImport": "Importação segura",

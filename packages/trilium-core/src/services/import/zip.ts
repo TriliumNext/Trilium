@@ -20,12 +20,16 @@ import mimeService from "./mime.js";
 import { AttributeMeta, NoteMeta } from "../../meta.js";
 import { isMarkdownCodeNote } from "../export/rewrite_links.js";
 import { sanitizeHtml } from "../sanitizer.js";
+import { extractFrontmatter, type FrontmatterAttribute } from "./frontmatter.js";
 
 // Source mimes that import as editable spreadsheet notes (parsed to Univer workbook JSON),
 // mirroring the single-file importer. As resolved by `mime-types` from the entry extension.
 const CSV_MIME = "text/csv";
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const SPREADSHEET_MIME = "text/x-spreadsheet";
+
+// Source mimes rendered from Markdown to HTML on import.
+const MARKDOWN_MIMES = ["text/markdown", "text/x-markdown", "text/mdx"];
 
 interface MetaFile {
     files: NoteMeta[];
@@ -410,7 +414,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Ui
     }
 
     function processNoteContent(noteMeta: NoteMeta | undefined, type: string, mime: string, content: string | Uint8Array, noteTitle: string, filePath: string) {
-        if ((noteMeta?.format === "markdown" || (!noteMeta && taskContext.data?.textImportedAsText && ["text/markdown", "text/x-markdown", "text/mdx"].includes(mime))) && typeof content === "string") {
+        if ((noteMeta?.format === "markdown" || (!noteMeta && taskContext.data?.textImportedAsText && MARKDOWN_MIMES.includes(mime))) && typeof content === "string") {
             content = markdownService.renderToHtml(content, noteTitle);
         }
 
@@ -559,6 +563,15 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Ui
 
         const noteTitle = getNoteTitle(filePath, taskContext.data?.replaceUnderscoresWithSpaces || false, noteMeta);
 
+        // Generic Markdown (not a Trilium export, which carries its attributes in !!!meta.json) may begin
+        // with a YAML front matter block; lift it into labels and strip it before the body is rendered.
+        let frontmatterAttributes: FrontmatterAttribute[] = [];
+        if (!noteMeta && typeof content === "string" && taskContext.data?.textImportedAsText && MARKDOWN_MIMES.includes(mime)) {
+            const parsed = extractFrontmatter(content);
+            content = parsed.body;
+            frontmatterAttributes = parsed.attributes;
+        }
+
         content = processNoteContent(noteMeta, type, mime, content, noteTitle || "", filePath);
 
         let note = becca.getNote(noteId);
@@ -632,6 +645,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Ui
             createdNoteIds.add(note.noteId);
 
             saveAttributes(note, noteMeta);
+            for (const attribute of frontmatterAttributes) {
+                note.addLabel(attribute.name, attribute.value);
+            }
 
             firstNote = firstNote || note;
         }

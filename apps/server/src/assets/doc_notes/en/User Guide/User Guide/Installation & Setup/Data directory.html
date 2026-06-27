@@ -86,69 +86,71 @@
 <h2>Fine-grained directory/path location</h2>
 <p>Apart from the data directory, some of the subdirectories of it can be
   moved elsewhere by changing an environment variable:</p>
-<table>
-  <thead>
-    <tr>
-      <th>Environment variable</th>
-      <th>Default value</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code spellcheck="false">TRILIUM_DOCUMENT_PATH</code>
-      </td>
-      <td><code spellcheck="false">${TRILIUM_DATA_DIR}/document.db</code>
-      </td>
-      <td>Path to the&nbsp;<a class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;(storing
-        all notes and metadata).</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">TRILIUM_BACKUP_DIR</code>
-      </td>
-      <td><code spellcheck="false">${TRILIUM_DATA_DIR}/backup</code>
-      </td>
-      <td>Directory where automated&nbsp;<a class="reference-link" href="#root/_help_ODY7qQn5m2FT">Backup</a>&nbsp;databases
-        are stored.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">TRILIUM_LOG_DIR</code>
-      </td>
-      <td><code spellcheck="false">${TRILIUM_DATA_DIR}/log</code>
-      </td>
-      <td>Directory where daily&nbsp;<a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>&nbsp;are
-        stored.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">TRILIUM_TMP_DIR</code>
-      </td>
-      <td><code spellcheck="false">${TRILIUM_DATA_DIR}/tmp</code>
-      </td>
-      <td>Directory where temporary files are stored (for example when opening in
-        an external app).</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">TRILIUM_ANONYMIZED_DB_DIR</code>
-      </td>
-      <td><code spellcheck="false">${TRILIUM_DATA_DIR}/anonymized-db</code>
-      </td>
-      <td>Directory where a&nbsp;<a class="reference-link" href="#root/_help_x59R8J8KV5Bp">Anonymized Database</a>&nbsp;is
-        stored.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">TRILIUM_CONFIG_INI_PATH</code>
-      </td>
-      <td><code spellcheck="false">${TRILIUM_DATA_DIR}/config.ini</code>
-      </td>
-      <td>Path to&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>&nbsp;file.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">TRILIUM_ELECTRON_DATA_DIR</code>
-      </td>
-      <td>System appData</td>
-      <td>Directory for Electron internal data (caches, spell-check dictionaries,
-        etc.). Set this in portable mode to avoid writing to the system profile
-        (desktop only).</td>
-    </tr>
-  </tbody>
-</table>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Environment variable</th>
+        <th>Default value</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">TRILIUM_DOCUMENT_PATH</code>
+        </td>
+        <td><code spellcheck="false">${TRILIUM_DATA_DIR}/document.db</code>
+        </td>
+        <td>Path to the&nbsp;<a class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;(storing
+          all notes and metadata).</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">TRILIUM_BACKUP_DIR</code>
+        </td>
+        <td><code spellcheck="false">${TRILIUM_DATA_DIR}/backup</code>
+        </td>
+        <td>Directory where automated&nbsp;<a class="reference-link" href="#root/_help_ODY7qQn5m2FT">Backup</a>&nbsp;databases
+          are stored.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">TRILIUM_LOG_DIR</code>
+        </td>
+        <td><code spellcheck="false">${TRILIUM_DATA_DIR}/log</code>
+        </td>
+        <td>Directory where daily&nbsp;<a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>&nbsp;are
+          stored.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">TRILIUM_TMP_DIR</code>
+        </td>
+        <td><code spellcheck="false">${TRILIUM_DATA_DIR}/tmp</code>
+        </td>
+        <td>Directory where temporary files are stored (for example when opening in
+          an external app).</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">TRILIUM_ANONYMIZED_DB_DIR</code>
+        </td>
+        <td><code spellcheck="false">${TRILIUM_DATA_DIR}/anonymized-db</code>
+        </td>
+        <td>Directory where a&nbsp;<a class="reference-link" href="#root/_help_x59R8J8KV5Bp">Anonymized Database</a>&nbsp;is
+          stored.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">TRILIUM_CONFIG_INI_PATH</code>
+        </td>
+        <td><code spellcheck="false">${TRILIUM_DATA_DIR}/config.ini</code>
+        </td>
+        <td>Path to&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>&nbsp;file.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">TRILIUM_ELECTRON_DATA_DIR</code>
+        </td>
+        <td>System appData</td>
+        <td>Directory for Electron internal data (caches, spell-check dictionaries,
+          etc.). Set this in portable mode to avoid writing to the system profile
+          (desktop only).</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>

@@ -65,6 +65,18 @@ describe("processNoteContent", () => {
         await sql_init.dbReady;
     });
 
+    it("imports YAML front matter from a generic Markdown file in a ZIP as labels", async () => {
+        const buffer = await createZipBuffer({
+            "Note.md": "---\nfirst: First value\ntags:\n  - Tag\n  - AnotherTag\n---\nThe body."
+        });
+        const { importedNote } = await testImportBuffer(buffer, "import-frontmatter-zip");
+
+        expect(importedNote.title).toBe("Note");
+        expect(importedNote.getContent().toString()).toBe("<p>The body.</p>");
+        expect(importedNote.getOwnedLabelValue("first")).toBe("First value");
+        expect(importedNote.getOwnedLabelValues("tags")).toEqual(["Tag", "AnotherTag"]);
+    });
+
     it("treats single MDX as Markdown in ZIP as text note", async () => {
         const { importedNote } = await testImport("mdx.zip");
         expect(importedNote.mime).toBe("text/mdx");

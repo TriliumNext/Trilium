@@ -76,7 +76,7 @@
     "reveal.js": "6.0.1",
     "rrule": "2.8.1",
     "svg-pan-zoom": "3.6.2",
-    "tabulator-tables": "6.5.1"
+    "tabulator-tables": "6.5.2"
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": "5.0.2",

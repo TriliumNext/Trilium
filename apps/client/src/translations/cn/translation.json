@@ -128,19 +128,12 @@
     "export_note_title": "导出笔记",
     "close": "关闭",
     "export_type_subtree": "此笔记及其所有子笔记",
-    "format_html": "HTML - 推荐，因为它保留所有格式",
-    "format_html_zip": "HTML ZIP 归档 - 建议使用此选项，因为它保留了所有格式。",
-    "format_markdown": "Markdown - 保留大部分格式。",
-    "format_opml": "OPML - 大纲交换格式，仅限文本。不包括格式、图像和文件。",
-    "opml_version_1": "OPML v1.0 - 仅限纯文本",
-    "opml_version_2": "OPML v2.0 - 还允许 HTML",
     "export_type_single": "仅此笔记，不包括子笔记",
     "export": "导出",
     "choose_export_type": "请先选择导出类型",
     "export_in_progress": "导出进行中：{{progressCount}}",
     "export_finished_successfully": "导出成功完成。",
-    "format_pdf": "PDF - 用于打印或共享目的。",
-    "share-format": "HTML 网页发布——采用与共享笔记相同的主题，但可发布为静态网站。"
+    "format_pdf": "PDF - 用于打印或共享目的。"
   },
   "help": {
     "noteNavigation": "笔记导航",
@@ -201,7 +194,6 @@
   "import": {
     "importIntoNote": "导入到笔记",
     "chooseImportFile": "选择导入文件",
-    "importDescription": "所选文件的内容将作为子笔记导入到",
     "options": "选项",
     "safeImportTooltip": "Trilium <code>.zip</code> 导出文件可能包含可能有害的可执行脚本。安全导入将停用所有导入脚本的自动执行。仅当导入的归档文件原本就包含可执行脚本，且你完全信任导入的可执行脚本的内容时，才取消选中“安全导入”。",
     "safeImport": "安全导入",
@@ -719,8 +711,7 @@
     "word_wrap_on": "开启",
     "word_wrap_off": "关闭",
     "print_or_export_to_pdf": "打印/导出为 PDF…",
-    "save_named_revision": "保存已命名的修订...",
-    "import_from_service": "从服务导入…"
+    "save_named_revision": "保存已命名的修订..."
   },
   "onclick_button": {
     "no_click_handler": "按钮组件'{{componentId}}'没有定义点击处理程序"
@@ -2859,9 +2850,7 @@
     "tooltip": "一段可重复使用的文本或代码，可插入编辑器中（通过工具栏的片段菜单，或使用斜杠命令）。"
   },
   "import_provider": {
-    "title": "从服务导入",
-    "choose_provider": "选择要导入的服务：",
-    "back": "返回"
+    "choose_provider": "选择要导入的服务："
   },
   "onenote_import": {
     "name": "Microsoft OneNote",

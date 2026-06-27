@@ -79,6 +79,7 @@ const enum KeyboardActionNamesEnum {
     toggleRibbonTabNotePaths,
     toggleRibbonTabSimilarNotes,
     toggleRightPane,
+    peekRightPane,
     printActiveNote,
     exportAsPdf,
     openNoteExternally,

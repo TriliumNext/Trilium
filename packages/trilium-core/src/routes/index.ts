@@ -151,7 +151,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     //#region Import/export
     asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
     route(PST, "/api/notes/:parentNoteId/attachments-import", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
-    asyncRoute(GET, "/api/branches/:branchId/export/:type/:format/:version/:taskId", [checkApiAuthOrElectron], exportRoute.exportBranch);
+    asyncRoute(GET, "/api/branches/:branchId/export/:type/:format/:taskId", [checkApiAuthOrElectron], exportRoute.exportBranch);
     //#endregion
 
     apiRoute(GET, "/api/quick-search/:searchString", searchRoute.quickSearch);

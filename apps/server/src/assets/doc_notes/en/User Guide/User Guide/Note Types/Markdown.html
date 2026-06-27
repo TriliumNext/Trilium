@@ -146,15 +146,39 @@
   <li>Use the <code spellcheck="false">/image</code> slash command.</li>
 </ul>
 <p>An image reference to an attachment looks like this:</p><pre><code class="language-text-x-trilium-auto">![Name.jpeg](api/attachments/z50RceuHXe9J/image/image)</code></pre>
-<h3>Slash commands</h3>
+<h3>Auto-completion</h3>
+<h4>Slash commands</h4>
 <p>Just like&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes,
   Markdown notes support a selection of slash commands:</p>
 <ul>
-  <li>Creating <a href="#root/_help_NwBbFdNZ9h7O">admonitions</a> (e.g. <code spellcheck="false">/tip</code>)</li>
-  <li>Uploading images (<code spellcheck="false">/image</code>).</li>
   <li>Inserting the current date &amp; time (<code spellcheck="false">/date</code>).</li>
+  <li><a href="#root/_help_nBAXQFj20hS1">Including</a> another note (<code spellcheck="false">/include</code>).</li>
+  <li>Uploading and inserting an image (<code spellcheck="false">/image</code>).</li>
+  <li>Inserting a note link (<code spellcheck="false">/link</code>).</li>
+  <li>Inserting a math equation block (<code spellcheck="false">/math</code>).</li>
+  <li>Inserting a <a href="#root/_help_AgjCISero73a">footnote</a> (<code spellcheck="false">/footnote</code>).</li>
+  <li>Inserting a <a href="#root/_help_s1aBHPd79XYj">Mermaid</a> diagram (<code spellcheck="false">/mermaid</code>),
+    with one variant per sample template (e.g. <code spellcheck="false">/mermaid:flowchart</code>).</li>
+  <li>Inserting a collapsible block (<code spellcheck="false">/collapsible</code>).</li>
+  <li>Inserting a page break for printing (<code spellcheck="false">/page-break</code>).</li>
+  <li>Inserting a table (<code spellcheck="false">/table</code>).</li>
+  <li>Creating admonitions (e.g. <code spellcheck="false">/tip</code>, <code spellcheck="false">/note</code>,
+    <code
+    spellcheck="false">/important</code>, <code spellcheck="false">/caution</code>, <code spellcheck="false">/warning</code>).</li>
+  <li>Inserting task items (<code spellcheck="false">/todo:&lt;state&gt;</code>,
+    e.g. <code spellcheck="false">/todo:done</code>), one per configured task
+    state.</li>
+  <li>Inserting code snippets (<code spellcheck="false">/snippet:&lt;name&gt;</code>)
+    from your Markdown/plain-text snippet notes.</li>
 </ul>
-<p>Note that slash commands only work outside of inline&nbsp;</p>
+<p>Note that slash commands only work outside of code blocks and inline code.</p>
+<h4>Code block language auto-completion</h4>
+<p>Starting with v0.104.0, typing ``` to insert a code block will automatically
+  open a list of suggested language types which have syntax highlighting.</p>
+<p>The list of languages matches the one for&nbsp;<a class="reference-link"
+  href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;notes set in&nbsp;<a class="reference-link"
+  href="#root/_help_4TIF1oA4VQRO">Options</a>, it's not the full list of languages
+  supported by Trilium.</p>
 <h3>Other features</h3>
 <ul>
   <li>The&nbsp;<a class="reference-link" href="#root/_help_BFvAtE74rbP6">Table of contents</a>&nbsp;will
