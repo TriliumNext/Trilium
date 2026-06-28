@@ -112,6 +112,15 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
             codeEditor.setText(content ?? "");
             codeEditor.setMimeType(note.mime);
             codeEditor.clearHistory();
+            if (note?.hasLabel("openAtBottom")) {
+                requestAnimationFrame(() => {
+                    editorRef.current?.scrollToEnd();
+                    const scrollContainer = containerRef.current?.closest(".scrolling-container");
+                    if (scrollContainer instanceof HTMLElement) {
+                        scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: "instant" });
+                    }
+                });
+            }
         },
         dataSaved,
         updateInterval
