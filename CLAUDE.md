@@ -144,15 +144,15 @@ Fluent builder pattern: `.child()`, `.class()`, `.css()` chaining with position-
 - **Reuse existing components** instead of building custom markup — prefer `FormTextBox`, `FormTextBoxWithUnit`, `FormSelect`, `Slider`, `Button`, etc. over hand-rolled `<input>`, `<select>`, or `<button>` elements.
 
 #### API Architecture
-- **Internal API**: REST endpoints in `apps/server/src/routes/api/`
+- **Internal API**: REST endpoints — most are **core-shared** in `packages/trilium-core/src/routes/api/` (registered via `buildSharedApiRoutes`, so they also run in the standalone WASM build); server-only routes live in `apps/server/src/routes/api/`
 - **ETAPI**: External API for third-party integrations (`apps/server/src/etapi/`)
-- **WebSocket**: Real-time synchronization (`apps/server/src/services/ws.ts`)
+- **WebSocket**: Real-time synchronization (`packages/trilium-core/src/services/ws.ts`)
 
 ### API Architecture
 
-- **Internal API** (`apps/server/src/routes/api/`): REST endpoints, trusts frontend
+- **Internal API**: REST endpoints, trusts frontend — most are **core-shared** in `packages/trilium-core/src/routes/api/`, server-only ones in `apps/server/src/routes/api/`
 - **ETAPI** (`apps/server/src/etapi/`): External API with basic auth tokens — maintain backwards compatibility
-- **WebSocket** (`apps/server/src/services/ws.ts`): Real-time sync
+- **WebSocket** (`packages/trilium-core/src/services/ws.ts`): Real-time sync
 
 ### Platform Abstraction
 
@@ -186,8 +186,8 @@ Import via `import { binary_utils } from "@triliumnext/core"` or directly from t
 
 SQLite via `better-sqlite3`. SQL abstraction in `packages/trilium-core/src/services/sql/` with `DatabaseProvider` interface, prepared statement caching, and transaction support.
 
-- Schema: `apps/server/src/assets/db/schema.sql`
-- Migrations: `apps/server/src/migrations/YYMMDD_HHMM__description.sql`
+- Schema (fresh installs): `packages/trilium-core/src/assets/schema.sql`
+- Migrations: integer-versioned entries in the `MIGRATIONS` array in `packages/trilium-core/src/migrations/migrations.ts` (see "Database Migrations" below)
 
 ### Testing Strategy
 - Server tests run sequentially due to shared database
@@ -218,7 +218,7 @@ SQLite via `better-sqlite3`. SQL abstraction in `packages/trilium-core/src/servi
 - **Preload script** (`apps/desktop/src/preload.ts`): Uses `contextBridge.exposeInMainWorld("electronApi", ...)` to expose a whitelisted API to the renderer. Compiled to CJS via esbuild (dev: `scripts/electron-start.mts`, prod: `apps/desktop/scripts/build.ts`).
 - **ElectronApi interface** (`packages/commons/src/lib/electron_api_interface.ts`): Shared type definition used by both the preload script (`satisfies ElectronApi`) and the client (`window.electronApi`). Grouped into sub-objects: `window`, `clipboard`, `shell`, `contextMenu`, `spellcheck`, `tray`, `printing`, `navigation`.
 - **Client-side access**: Use `window.electronApi?.group.method()` — never use `require("electron")` or `dynamicRequire()` in client code.
-- **Adding new Electron APIs**: Add the method to the interface in commons, implement it in `preload.ts`, add the IPC handler in `apps/desktop/src/services/window.ts`, and add a test in `apps/desktop/spec/preload.spec.ts`.
+- **Adding new Electron APIs**: Add the method to the interface in commons, implement it in `preload.ts`, register the IPC handler in the relevant `apps/desktop/src/services/*.ts` module (handlers are split across ~7 modules — e.g. `window.ts`, `shell.ts`, `printing.ts`, `tray.ts` — each wired up by a `setupX()` call in `main.ts`; **a new handler module is dead until that call is added**), and add a test in `apps/desktop/src/preload.spec.ts`.
 - **IPC handlers**: Use `electron.ipcMain.on(channel, handler)` for fire-and-forget, `electron.ipcMain.handle(channel, handler)` for async request/response, `ipcMain.on` + `event.returnValue` for synchronous queries.
 - Electron-only features should check `isElectron()` from `apps/client/src/services/utils.ts` (client) or `utils.isElectron` (server)
 - **`@electron/remote` is removed** — do not use it. All renderer↔main communication goes through the preload bridge.
@@ -241,8 +241,8 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 - **Do not use `localStorage`** for user preferences — Trilium has a synced options system that persists across devices
 - To add a new user preference:
   1. Add the option type to `OptionDefinitions` in `packages/commons/src/lib/options_interface.ts`
-  2. Add a default value in `apps/server/src/services/options_init.ts` in the `defaultOptions` array
-  3. **Whitelist the option** in `apps/server/src/routes/api/options.ts` by adding it to the `ALLOWED_OPTIONS` array — **without this, the API will reject changes with "Option 'X' is not allowed to be changed"**
+  2. Add a default value in `packages/trilium-core/src/services/options_init.ts` in the `defaultOptions` array
+  3. **Whitelist the option** in `packages/trilium-core/src/routes/api/options.ts` by adding it to the `ALLOWED_OPTIONS` array — **without this, the API will reject changes with "Option 'X' is not allowed to be changed"** (and a secret/token belongs in `WRITE_ONLY_OPTIONS`, not `ALLOWED_OPTIONS`, or it leaks in every `GET /api/options`)
   4. If the option should be user-editable in the UI, add a control in the appropriate settings component (e.g., `apps/client/src/widgets/type_widgets/options/other.tsx`) and a translation key in `apps/client/src/translations/en/translation.json`
   5. Use `useTriliumOption("optionName")` hook in React components to read/write the option
 - Available hooks: `useTriliumOption` (string), `useTriliumOptionBool`, `useTriliumOptionInt`, `useTriliumOptionJson`
@@ -284,6 +284,13 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 - `docs/User Guide/` — Edit via `pnpm edit-docs:edit-docs`, not manually
 - `docs/Developer Guide/` and `docs/Release Notes/` — Safe for direct Markdown editing
 
+## Custom Skills
+
+Reusable AI-assistant skills live in `.claude/skills/<name>/` (a `SKILL.md`, plus optional `references/` and `scripts/`). They capture recurring, footgun-dense workflows so the assistant doesn't re-derive them each time.
+
+- **When adding or updating a skill, commit it with the `chore(skills)` prefix** (e.g. `chore(skills): add evolving-the-data-model skill`) — one skill per commit.
+- Keep each `SKILL.md` footgun-first and lean; push depth into `references/*.md` loaded on demand. Cite real `file:line` and verify it before shipping.
+
 ## Key Entry Points
 
 - `apps/server/src/main.ts` — Server startup
@@ -294,9 +301,9 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 - `packages/trilium-core/src/services/sql/sql.ts` — Database abstraction
 
 ### Adding Hidden System Notes
-The hidden subtree (`_hidden`) contains system notes with predictable IDs (prefixed with `_`). Defined in `apps/server/src/services/hidden_subtree.ts` via the `HiddenSubtreeItem` interface from `@triliumnext/commons`.
+The hidden subtree (`_hidden`) contains system notes with predictable IDs (prefixed with `_`). Defined in `packages/trilium-core/src/services/hidden_subtree.ts` via the `HiddenSubtreeItem` interface from `@triliumnext/commons`.
 
-1. Add the note definition to `buildHiddenSubtreeDefinition()` in `apps/server/src/services/hidden_subtree.ts`
+1. Add the note definition to `buildHiddenSubtreeDefinition()` in `packages/trilium-core/src/services/hidden_subtree.ts`
 2. Add a translation key for the title in `apps/server/src/assets/translations/en/server.json` under `"hidden-subtree"`
 3. The note is auto-created on startup by `checkHiddenSubtree()` — uses deterministic IDs so all sync cluster instances generate the same structure
 4. Key properties: `id` (must start with `_`), `title`, `type`, `icon` (format: `bx-icon-name` without `bx ` prefix), `attributes`, `children`, `content`
@@ -304,7 +311,7 @@ The hidden subtree (`_hidden`) contains system notes with predictable IDs (prefi
 6. For launcher bar entries, see `hidden_subtree_launcherbar.ts`; for templates, see `hidden_subtree_templates.ts`
 
 ### Writing to Notes from Server Services
-- `note.setContent()` requires a CLS (Continuation Local Storage) context — wrap calls in `cls.init(() => { ... })` (from `apps/server/src/services/cls.ts`)
+- `note.setContent()` requires a CLS (Continuation Local Storage) context — wrap calls in `cls.init(() => { ... })` (import `cls` from `@triliumnext/core`; the namespace provider is `apps/server/src/cls_provider.ts`)
 - Operations called from Express routes already have CLS context; standalone services (schedulers, Electron IPC handlers) do not
 
 ### Adding New LLM Tools
@@ -323,8 +330,10 @@ Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/`
 4. Commit all changes including updated viewer files
 
 ### Database Migrations
-- Add migration scripts in `apps/server/src/migrations/`
-- Update schema in `apps/server/src/assets/db/schema.sql`
+- Migrations are **not** dated `.sql` files. Add a new entry to the `MIGRATIONS` array in `packages/trilium-core/src/migrations/migrations.ts`: `{ version, sql }` for DDL/data SQL, or `{ version, module: async () => import("./0NNN__desc.js") }` for a JS/TS data migration.
+- The array is kept in **descending** version order (newest first). `dbVersion` is auto-derived from `MIGRATIONS[0].version` — adding your entry anywhere but the top means the app thinks the DB is already up to date and never runs it.
+- A schema change (e.g. `ALTER TABLE ... ADD COLUMN`, with `ignoreErrors: true`) must **also** be mirrored into `packages/trilium-core/src/assets/schema.sql` — fresh installs run `schema.sql` and never replay migrations.
+- JS/TS migrations that touch becca/notes must wrap work in `getContext().init(() => { ... })` (no CLS context = crash).
 
 ### Server-Side Static Assets
 - Static assets (templates, SQL, translations, etc.) go in `apps/server/src/assets/`

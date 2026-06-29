@@ -24,7 +24,18 @@ Also follow `CLAUDE.md`: write **concise** tests (group related assertions in on
 | A shared **core** API route (`packages/trilium-core/src/routes/api/*`) | `CoreApiTester` — in-process, cross-runtime, real services (incl. zip export/import/multipart), minimal mocks | [server-and-core.md](server-and-core.md) Pattern 0 |
 | An internal REST API route's Express transport (CSRF/auth/wiring) | `supertest` agent + `/login` + `/bootstrap` CSRF | [server-and-core.md](server-and-core.md) Pattern 1 |
 | An ETAPI endpoint | `supertest` + basic-auth via `spec/etapi/utils.ts` | [server-and-core.md](server-and-core.md) |
+| A CKEditor 5 plugin in **Trilium's own bundle** (`packages/ckeditor5`) | Browser-mode (headless Chrome): `ClassicEditor.create` + `licenseKey: "GPL"` + `_setModelData`, co-located `src/**/*.spec.ts` | **trilium-ckeditor5-integration** skill |
 | Pure logic (parsers, formatters, math, data maps) | Plain Vitest, no harness | any reference |
+
+### Specialized harnesses (owned by sibling skills)
+
+Some layers have a purpose-built spec harness documented in the skill that owns the feature — route there instead of re-deriving it:
+
+| You're testing… | Harness shape | Skill |
+|---|---|---|
+| A DB migration (`packages/trilium-core/src/migrations/*`) | `getSql()` captured **in `beforeEach`** (not at describe time — core isn't initialized yet) + `sql.rebuildFromBuffer(fixtureDb)` per test, mutated inside `cls.getContext().init` | **evolving-the-data-model** |
+| An LLM / MCP tool (`apps/server/src/services/llm/tools/*`) | `getTool(name)` walks the registry + `cls.init(() => getTool(name).execute(...))` | **adding-llm-mcp-tools** |
+| An Electron preload bridge method (`apps/desktop/src/preload.ts`) | `vi.mock("electron", …)` mirroring the IPC channels into in-memory maps; assert the exposed `window.electronApi` shape (`apps/desktop/src/preload.spec.ts`) | **electron-desktop-bridge** |
 
 ## Running tests
 
@@ -35,6 +46,20 @@ Also follow `CLAUDE.md`: write **concise** tests (group related assertions in on
 - Server tests run **sequentially** (shared DB, `pool: "forks"`, fork isolation is **per file**). Client/package tests run in parallel.
 
 > **Windows/sandbox note:** `pnpm --filter … exec vitest` can trigger a pnpm auto-install that hits `EPERM`. If so, run the hoisted binary directly (it lives in the **repo-root** `node_modules`): `CI=true node node_modules/vitest/vitest.mjs run <spec> --root apps/client`, or `node_modules/.bin/vitest.CMD run <spec> --root apps/<app>`.
+
+## Core specs run twice (server + standalone WASM)
+
+Every `packages/trilium-core/src/**/*.spec.ts` runs **a second time** under the standalone suite — `apps/standalone/vite.config.mts` pulls them into its `test.include` and runs them in happy-dom against **sqlite-wasm** with the browser crypto/SQL providers. Consequences:
+
+- **A green server run isn't a green standalone run.** Before calling a core change done, run `pnpm --filter standalone test <spec>` too — node-only assumptions diverge there (`process.memoryUsage` is undefined, `better-sqlite3`-only `serialize()` throws, `window` exists).
+- **WASM scrypt is ~10x slower** (pure-JS `scrypt-js` under V8 coverage). scrypt/login/password specs bump the timeout for the standalone runtime only — copy this guard for any new core spec that hashes (`packages/trilium-core/src/routes/api/login.spec.ts:13`):
+    ```ts
+    const isBrowserRuntime = typeof window !== "undefined";
+    if (isBrowserRuntime) {
+        vi.setConfig({ testTimeout: 60000, hookTimeout: 60000 });
+    }
+    ```
+- The shims that make this work live in `apps/standalone/src/test_setup.ts` (a `file://` fetch interceptor, a non-streaming `WebAssembly.instantiate` fallback, and a happy-dom `<pre>` leading-newline patch) — you don't add them per-spec, but they explain why a core spec can behave slightly differently under standalone.
 
 ## Coverage config rules (Vitest 4)
 
@@ -61,4 +86,4 @@ coverage: {
 - **`vi.mock` is hoisted** above imports. Put component/module imports *after* the `vi.mock(...)` calls; mock factories can't reference outer non-hoisted variables. Partial-mock with `async (importOriginal) => ({ ...(await importOriginal()), onlyThis: vi.fn() })`.
 - **Don't assert on translated (i18n) strings** — assert structure/keys/behavior (classes, counts, ids), not human-readable English.
 - **happy-dom is not a browser:** `getBoundingClientRect()` returns zeros, `ResizeObserver`/layout/visibility are stubs. Anything pixel/size/scroll-based needs `@vitest/browser`, not happy-dom.
-- Reserve `@vitest/browser` (already a dependency, currently unconfigured) for real-layout/integration needs (CKEditor, Excalidraw, Modal transitions, size measurement) — not for normal unit tests.
+- **`@vitest/browser` real-browser mode IS configured** — the `packages/ckeditor5`, `-mermaid`, and `-math` bundles run their co-located `src/**/*.spec.ts` in headless Chrome (`@vitest/browser-webdriverio`; see `packages/ckeditor5/vitest.config.ts`). These are the browser-mode `test:sequential` suites. Reserve real-browser mode for genuine layout/integration needs (CKEditor, Excalidraw, Modal transitions, size measurement); normal unit tests stay on happy-dom.
