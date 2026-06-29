@@ -32,11 +32,11 @@
     "proxy-nginx-subdir": "docker run --name trilium-nginx-subdir --rm --network=host -v ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro nginx:latest"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "3.0.86",
-    "@ai-sdk/google": "3.0.83",
-    "@ai-sdk/openai": "3.0.74",
+    "@ai-sdk/anthropic": "3.0.87",
+    "@ai-sdk/google": "3.0.84",
+    "@ai-sdk/openai": "3.0.75",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "ai": "6.0.209",
+    "ai": "6.0.212",
     "better-sqlite3": "12.11.1",
     "html-to-text": "10.0.0",
     "i18next": "26.3.2",
