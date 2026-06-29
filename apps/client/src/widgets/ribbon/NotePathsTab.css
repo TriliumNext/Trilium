@@ -3,64 +3,109 @@ body.experimental-feature-new-layout .note-paths-widget {
         color: var(--muted-text-color);
     }
 
-    .note-path-list {
+    .note-path-list,
+    .note-path-inverse-tree-container {
         margin: 12px 0;
         padding: 0;
         list-style: none;
+    }
 
-        /* Note path card */
-        li {
-            --border-radius: 6px;
+    .note-path-list li {
+        --border-radius: 6px;
+        position: relative;
+        background: var(--card-background-color);
+        padding: 8px 20px 8px 25px;
 
-            position: relative;
-            background: var(--card-background-color);
-            padding: 8px 20px 8px 25px;
-
-            &:first-child {
-                border-top-left-radius: var(--border-radius);
-                border-top-right-radius: var(--border-radius);
-            }
-
-            &:last-child {
-                border-bottom-left-radius: var(--border-radius);
-                border-bottom-right-radius: var(--border-radius);
-            }
-
-            & + li {
-                margin-top: 2px;
-            }
-
-            /* Current path arrow */
-            &.path-current::before {
-                position: absolute;
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                content: "\ee8f";
-                top: 0;
-                left: 0;
-                width: 20px;
-                bottom: 0;
-                font-family: "boxicons";
-                font-size: .75em;
-                color: var(--menu-item-icon-color);
-            }
+        &:first-child {
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
         }
 
-        /* Note path segment */
-        a {
-            margin-inline: 2px;
-            padding-inline: 2px;
-            color: currentColor;
-            font-weight: normal;
-            text-decoration: none;
-
-            /* The last segment of the note path */
-            &.basename {
-                color: var(--muted-text-color);
-            }
+        &:last-child {
+            border-bottom-left-radius: var(--border-radius);
+            border-bottom-right-radius: var(--border-radius);
         }
 
+        & + li {
+            margin-top: 2px;
+        }
+
+        &.path-current::before {
+            position: absolute;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            content: "\ee8f";
+            top: 0;
+            left: 0;
+            width: 20px;
+            bottom: 0;
+            font-family: "boxicons";
+            font-size: .75em;
+            color: var(--menu-item-icon-color);
+        }
+    }
+
+    .note-path-inverse-tree {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        background: var(--card-background-color);
+        border-radius: 6px;
+        padding: 8px 12px;
+    }
+
+    .note-path-node {
+        position: relative;
+        list-style: none;
+    }
+
+    .note-path-row {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background-color: var(--hover-background-color, rgba(0, 0, 0, 0.04));
+        }
+    }
+
+    .note-path-node.path-on-active-branch > .note-path-row::before {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        content: "\ee8f";
+        left: -12px;
+        top: 0;
+        bottom: 0;
+        font-family: "boxicons";
+        font-size: .75em;
+        color: var(--menu-item-icon-color);
+    }
+
+    .note-path-tree-branches {
+        list-style: none;
+        margin: 0;
+        padding-left: 20px;
+        position: relative;
+
+        border-left: 1px dashed var(--border-color, rgba(0, 0, 0, 0.12));
+    }
+
+    a {
+        margin-inline: 2px;
+        padding-inline: 2px;
+        color: currentColor;
+        font-weight: normal;
+        text-decoration: none;
+
+        &.basename {
+            color: var(--muted-text-color);
+        }
     }
 }
 
@@ -74,14 +119,24 @@ body.experimental-feature-new-layout .note-paths-widget {
     margin-top: 10px;
 }
 
-.note-path-list .path-current a {
+.note-path-list .path-current a,
+.note-path-node.path-current > .note-path-row a {
     font-weight: bold;
 }
 
-.note-path-list .path-archived a {
+.note-path-list .path-archived a,
+.note-path-node.path-archived > .note-path-row a {
     color: var(--muted-text-color) !important;
 }
 
-.note-path-list .path-search a {
+.note-path-list .path-search a,
+.note-path-node.path-search > .note-path-row a {
     font-style: italic;
+}
+
+.note-path-row .separator {
+    color: var(--muted-text-color);
+    opacity: 0.5;
+    font-size: 0.9em;
+    padding-left: 2px;
 }
