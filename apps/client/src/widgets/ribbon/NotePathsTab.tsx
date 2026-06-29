@@ -220,14 +220,6 @@ function InverseTreeNodeComponent({
     const [isExpanded, setIsExpanded] = useState(true);
     const hasChildren = node.children.size > 0;
 
-    const isPartofCurrentPath = useMemo(() => {
-        if (!currentNotePath) return false;
-        return (
-            currentNotePath === node.fullPathString ||
-            currentNotePath.startsWith(node.fullPathString + "/")
-        );
-    }, [node.fullPathString, currentNotePath]);
-
     const [classes, icons] = useMemo(() => {
         const classList: string[] = ["note-path-node"];
         const iconList: { icon: string; title: string }[] = [];
@@ -259,7 +251,7 @@ function InverseTreeNodeComponent({
         }
 
         return [classList.join(" "), iconList];
-    }, [node, isPartofCurrentPath]);
+    }, [node]);
 
     const childNodes = Array.from(node.children.values());
 
