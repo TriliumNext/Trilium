@@ -156,7 +156,7 @@ export function NotePathsWidget({
                                 isTreeView ? "bx bx-list-ul" : "bx bx-git-merge"
                             }
                         />
-                        {isTreeView ? "Show Flat List" : "Show Inverse Tree"}
+                        {isTreeView ? t("note_paths.show_flat_list") : t("note_paths.show_inverse_tree")}
                     </button>
                 )}
             </div>
@@ -319,7 +319,7 @@ function InverseTreeNodeComponent({
                 >
                     {childNodes.map((childNode) => (
                         <InverseTreeNodeComponent
-                            key={childNode.branchId}
+                            key={childNode.noteId}
                             node={childNode}
                             currentNotePath={currentNotePath}
                             isRoot={false}

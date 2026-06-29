@@ -48,7 +48,6 @@ body.experimental-feature-new-layout .note-paths-widget {
 
     .note-path-inverse-tree {
         list-style: none;
-        padding: 0;
         margin: 0;
         background: var(--card-background-color);
         border-radius: 6px;
