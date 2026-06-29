@@ -77,9 +77,14 @@ export function NotePathsWidget({
                 } else {
                     // If the node was previously created by another clone path,
                     // override it if this iteration represents the actual current path context.
-                    if (realPath === currentNotePath) {
-                        node.isCurrent = true;
+                    if (
+                        realPath === currentNotePath ||
+                        currentNotePath?.startsWith(`${realPath}/`)
+                    ) {
                         node.fullPathString = realPath;
+                        if (realPath === currentNotePath) {
+                            node.isCurrent = true;
+                        }
                     }
                 }
 
