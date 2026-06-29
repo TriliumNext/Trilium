@@ -67,7 +67,6 @@ export function NotePathsWidget({
 
                 if (!node) {
                     node = {
-                        branchId,
                         noteId,
                         fullPathString: realPath,
                         isCurrent: realPath === currentNotePath,
@@ -75,6 +74,13 @@ export function NotePathsWidget({
                         children: new Map()
                     };
                     currentLevel.set(branchId, node);
+                } else {
+                    // If the node was previously created by another clone path,
+                    // override it if this iteration represents the actual current path context.
+                    if (realPath === currentNotePath) {
+                        node.isCurrent = true;
+                        node.fullPathString = realPath;
+                    }
                 }
 
                 if (i === originalPath.length - 1) {
