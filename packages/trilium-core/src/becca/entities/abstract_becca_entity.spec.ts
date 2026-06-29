@@ -5,6 +5,7 @@ import noteService from "../../services/notes.js";
 import protectedSessionService from "../../services/protected_session.js";
 import { getSql } from "../../services/sql/index.js";
 import { encodeUtf8, unwrapStringOrBuffer } from "../../services/utils/binary.js";
+import { exceedsBlobContentLimit, MAX_BLOB_CONTENT_LENGTH } from "./abstract_becca_entity.js";
 import type BNote from "./bnote.js";
 import BBlob from "./bblob.js";
 import BOption from "./boption.js";
@@ -128,6 +129,53 @@ describe("AbstractBeccaEntity (real DB)", () => {
             expect(() =>
                 getContext().init(() => note.setContent(undefined as unknown as string))
             ).toThrow(/Cannot set null content/);
+        });
+
+        it("denies content that exceeds the blob limit at creation time", () => {
+            const note = createNote();
+            // allocUnsafe (no zeroing) so the ~373 MiB buffer is cheap; _setContent rejects it before any copy.
+            const tooBig = Buffer.allocUnsafe(MAX_BLOB_CONTENT_LENGTH + 1);
+            expect(() => getContext().init(() => note.setContent(tooBig))).toThrow(/too large to store/);
+        });
+
+        it("allows content within the blob limit", () => {
+            const note = createNote();
+            expect(() => getContext().init(() => note.setContent("still fine"))).not.toThrow();
+        });
+    });
+
+    describe("blob content limit", () => {
+        it("derives a limit in the expected range (~373 MiB, base64 of it under both the V8 string cap and the 500 MiB body limit)", () => {
+            // Bounded by the HTTP body limit (the tighter ceiling): 500 MiB - 2 MiB envelope, * 3/4.
+            expect(MAX_BLOB_CONTENT_LENGTH).toBe(Math.floor(((500 * 1024 * 1024 - 2 * 1024 * 1024) * 3) / 4));
+            expect(Math.round(MAX_BLOB_CONTENT_LENGTH / 1024 / 1024)).toBe(374);
+
+            // The whole point: its base64 form must fit under V8's max string length.
+            const base64Length = 4 * Math.ceil(MAX_BLOB_CONTENT_LENGTH / 3);
+            expect(base64Length).toBeLessThan(0x1fffffe8);
+        });
+
+        it("flags binary content strictly above the limit", () => {
+            expect(exceedsBlobContentLimit(new Uint8Array(10), 10)).toBe(false); // exactly at the limit is allowed
+            expect(exceedsBlobContentLimit(new Uint8Array(11), 10)).toBe(true);
+            expect(exceedsBlobContentLimit(new Uint8Array(0), 10)).toBe(false);
+        });
+
+        it("measures string content by its UTF-8 byte length, not character count", () => {
+            // ASCII: bytes == chars.
+            expect(exceedsBlobContentLimit("a".repeat(10), 10)).toBe(false);
+            expect(exceedsBlobContentLimit("a".repeat(11), 10)).toBe(true);
+
+            // Multi-byte: "€" is 3 UTF-8 bytes, so 4 of them (12 bytes) exceed a 10-byte limit even though
+            // there are only 4 characters — exercising the exact-measurement path past the cheap upper bound.
+            expect(exceedsBlobContentLimit("€€€€", 10)).toBe(true);
+            // 3 of them = 9 bytes, under the limit.
+            expect(exceedsBlobContentLimit("€€€", 10)).toBe(false);
+        });
+
+        it("short-circuits without measuring when the character count alone is safely under the limit", () => {
+            // 3 chars * 3 (max bytes/char) = 9 <= 10, so it returns false via the cheap bound.
+            expect(exceedsBlobContentLimit("abc", 10)).toBe(false);
         });
     });
 

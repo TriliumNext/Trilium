@@ -231,7 +231,9 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
         if (demoFile) {
             const { default: zipImportService } = await import("./import/zip.js");
             const dummyTaskContext = new TaskContext("no-progress-reporting", "importNotes", null);
-            await zipImportService.importZip(dummyTaskContext, demoFile, rootNote);
+            // The demo archive is a whole-database export whose top note IS "root"; restore it onto the
+            // existing root rather than nesting it in a redundant "root" wrapper note.
+            await zipImportService.importZip(dummyTaskContext, demoFile, rootNote, { restoreAsRoot: true });
         }
     }
 

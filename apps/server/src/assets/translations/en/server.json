@@ -53,6 +53,7 @@
     "toggle-link-map": "Toggle Link Map",
     "other": "Other",
     "toggle-right-pane": "Toggle the display of the right pane, which includes Table of Contents and Highlights",
+    "peek-right-pane": "Peek the right pane as a temporary panel that floats over the content and closes when it loses focus",
     "open-note-externally": "Open note as a file with default application",
     "render-active-note": "Render (re-render) active note",
     "run-active-note": "Run active JavaScript (frontend/backend) code note",
@@ -148,6 +149,7 @@
     "toggle-ribbon-tab-note-paths": "Toggle Ribbon Tab Note Paths",
     "toggle-ribbon-tab-similar-notes": "Toggle Ribbon Tab Similar Notes",
     "toggle-right-pane": "Toggle Right Pane",
+    "peek-right-pane": "Peek Right Pane",
     "print-active-note": "Print Active Note",
     "export-active-note-as-pdf": "Export Active Note as PDF",
     "open-note-externally": "Open Note Externally",
@@ -320,10 +322,26 @@
     "root-title": "OneNote import"
   },
   "notion_import": {
-    "root-title": "Notion import"
+    "root-title": "Notion import",
+    "markdown-export-unsupported": "This looks like a Notion \"Markdown & CSV\" export, which Trilium cannot import. Please re-export your Notion workspace using the \"HTML\" export format and import that instead.",
+    "subpage-folders-disabled": "This Notion export was created without the \"Create folders for subpages\" option, so the page hierarchy cannot be reconstructed. Please re-export from Notion with \"Create folders for subpages\" enabled and import that instead."
   },
   "keep_import": {
     "root-title": "Google Keep import"
+  },
+  "anytype_import": {
+    "root-title": "Anytype import",
+    "protobuf-export-unsupported": "This looks like an Anytype \"Protobuf\" export, which Trilium cannot import. Please re-export your Anytype space using the \"Any-Block\" format with \"JSON\" selected and import that instead.",
+    "markdown-export-unsupported": "This looks like an Anytype \"Markdown\" export, which Trilium cannot import. Please re-export your Anytype space using the \"Any-Block\" format with \"JSON\" selected and import that instead."
+  },
+  "obsidian_import": {
+    "root-title": "Obsidian import"
+  },
+  "export": {
+    "zip_filter": "ZIP archive (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "The file selection has expired or is invalid. Please choose the file again."
   },
   "pdf": {
     "export_filter": "PDF Document (*.pdf)",
@@ -362,7 +380,8 @@
     "expand": "Expand",
     "toggle-navigation": "Toggle Navigation",
     "toggle-toc": "Toggle Table of Contents",
-    "logo-alt": "Logo"
+    "logo-alt": "Logo",
+    "login": "Login"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",

@@ -1,14 +1,3 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notes
 
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran) ![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)  
@@ -18,7 +7,7 @@
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Arabic](./docs/README-ar.md) | [Chinese (Simplified Han script)](./docs/README-ZH_CN.md) | [Chinese (Traditional Han script)](./docs/README-ZH_TW.md) | [Czech](./docs/README-cs.md) | [English (United Kingdom)](./docs/README-en_GB.md) | [English](./docs/README.md) | [French](./docs/README-fr.md) | [German](./docs/README-de.md) | [Greek](./docs/README-el.md) | [Irish](./docs/README-ga.md) | [Italian](./docs/README-it.md) | [Japanese](./docs/README-ja.md) | [Korean](./docs/README-ko.md) | [Polish](./docs/README-pl.md) | [Romanian](./docs/README-ro.md) | [Russian](./docs/README-ru.md) | [Spanish](./docs/README-es.md) | [Ukrainian](./docs/README-uk.md) | [Uyghur](./docs/README-ug.md)
+[Arabic](./docs/README-ar.md) | [Chinese (Simplified Han script)](./docs/README-ZH_CN.md) | [Chinese (Traditional Han script)](./docs/README-ZH_TW.md) | [Czech](./docs/README-cs.md) | [English (United Kingdom)](./docs/README-en_GB.md) | [English](./docs/README.md) | [French](./docs/README-fr.md) | [German](./docs/README-de.md) | [Greek](./docs/README-el.md) | [Indonesian](./docs/README-id.md) | [Irish](./docs/README-ga.md) | [Italian](./docs/README-it.md) | [Japanese](./docs/README-ja.md) | [Korean](./docs/README-ko.md) | [Polish](./docs/README-pl.md) | [Romanian](./docs/README-ro.md) | [Russian](./docs/README-ru.md) | [Spanish](./docs/README-es.md) | [Ukrainian](./docs/README-uk.md) | [Urdu](./docs/README-ur.md) | [Uyghur](./docs/README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes is a free and open-source, cross-platform hierarchical note taking application with focus on building large personal knowledge bases.

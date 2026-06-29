@@ -8,6 +8,7 @@
     "dev": "cross-env NODE_ENV=development TRILIUM_ENV=dev TRILIUM_DATA_DIR=data TRILIUM_RESOURCE_DIR=src tsx watch --ignore '../client/node_modules/.vite-temp' ./src/main.ts",
     "dev-alt": "cross-env NODE_ENV=development TRILIUM_ENV=dev TRILIUM_DATA_DIR=data2 TRILIUM_RESOURCE_DIR=src tsx watch --ignore '../client/node_modules/.vite-temp' ./src/main.ts",
     "start-no-dir": "cross-env NODE_ENV=development TRILIUM_ENV=dev TRILIUM_RESOURCE_DIR=src tsx watch --ignore '../client/node_modules/.vite-temp' ./src/main.ts",
+    "profile": "cross-env NODE_ENV=development TRILIUM_ENV=dev TRILIUM_DATA_DIR=data TRILIUM_RESOURCE_DIR=src TRILIUM_PROFILE=1 node --import tsx ./src/main.ts",
     "edit-integration-db": "cross-env NODE_ENV=development TRILIUM_PORT=8086 TRILIUM_ENV=dev TRILIUM_DATA_DIR=spec/db TRILIUM_INTEGRATION_TEST=edit TRILIUM_RESOURCE_DIR=src tsx watch --ignore '../client/node_modules/.vite-temp' ./src/main.ts",
     "build": "tsx scripts/build.ts",
     "package": "pnpm build && bash scripts/build-server.sh",
@@ -31,16 +32,16 @@
     "proxy-nginx-subdir": "docker run --name trilium-nginx-subdir --rm --network=host -v ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro nginx:latest"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "3.0.85",
-    "@ai-sdk/google": "3.0.83",
-    "@ai-sdk/openai": "3.0.73",
+    "@ai-sdk/anthropic": "4.0.0",
+    "@ai-sdk/google": "4.0.0",
+    "@ai-sdk/openai": "4.0.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "ai": "6.0.208",
+    "ai": "7.0.2",
     "better-sqlite3": "12.11.1",
     "html-to-text": "10.0.0",
-    "i18next": "26.3.1",
+    "i18next": "26.3.2",
     "ipaddr.js": "^2.4.0",
-    "js-yaml": "4.2.0",
+    "js-yaml": "5.1.0",
     "unpdf": "1.6.2"
   },
   "devDependencies": {
@@ -57,7 +58,6 @@
     "@types/express-session": "1.19.0",
     "@types/html": "1.0.4",
     "@types/ini": "4.1.1",
-    "@types/js-yaml": "4.0.9",
     "@types/multer": "2.1.0",
     "@types/safe-compare": "1.1.2",
     "@types/serve-favicon": "2.5.7",
@@ -93,7 +93,7 @@
     "mime-types": "3.0.2",
     "multer": "2.2.0",
     "normalize-strings": "1.1.1",
-    "officeparser": "7.2.1",
+    "officeparser": "7.2.2",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
     "serve-favicon": "2.5.1",
@@ -101,7 +101,7 @@
     "tesseract.js": "7.0.0",
     "time2fa": "1.4.2",
     "tmp": "0.2.7",
-    "vite": "8.0.16",
+    "vite": "8.1.0",
     "yauzl": "3.4.0"
   }
 }

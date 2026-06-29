@@ -128,20 +128,31 @@
   "export": {
     "export_note_title": "Export note",
     "close": "Close",
-    "export_type_subtree": "This note and all of its descendants",
-    "format_html": "HTML - recommended as it keeps all format",
-    "format_html_zip": "HTML in ZIP archive - this is recommended since this preserves all the formatting.",
-    "format_markdown": "Markdown - this preserves most of the formatting.",
-    "format_opml": "OPML - outliner interchange format for text only. Formatting, images and files are not included.",
-    "opml_version_1": "OPML v1.0 - plain text only",
-    "opml_version_2": "OPML v2.0 - allows also HTML",
-    "export_type_single": "Only this note without its descendants",
+    "what_to_export": "What to export",
+    "export_type_subtree": "This note & all descendants",
+    "export_type_single": "Only this note",
+    "format": "Format",
+    "format_html_name": "HTML",
+    "format_html_description": "Keeps all formatting",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Preserves most formatting",
+    "format_opml_name": "OPML",
+    "format_opml_description": "Outline format with HTML content",
+    "format_share_name": "HTML for web",
+    "format_share_description": "Publishable static site using the shared-notes theme",
+    "recommended": "Recommended",
+    "result_subtree_html": "A ZIP archive where text notes are saved as HTML. Code, images and other files keep their original format.",
+    "result_subtree_markdown": "A ZIP archive where text notes are saved as Markdown. Code, images and other files keep their original format.",
+    "result_share": "A ZIP archive containing a publishable static website that uses the shared-notes theme.",
+    "result_opml": "A single OPML outline file. Note titles and text are included; images, code files and attachments are not.",
+    "result_single_html": "A single HTML file. Images and attachments are embedded into it.",
+    "result_single_markdown": "A single Markdown (.md) file.",
     "export": "Export",
     "choose_export_type": "Choose export type first please",
-    "export_in_progress": "Export in progress: {{progressCount}}",
+    "preparing_export": "Preparing for export…",
+    "export_in_progress_with_total": "Exported {{progressCount}} notes out of {{totalCount}}",
     "export_finished_successfully": "Export finished successfully.",
-    "format_pdf": "PDF - for printing or sharing purposes.",
-    "share-format": "HTML for web publishing - uses the same theme that is used shared notes, but can be published as a static website."
+    "format_pdf": "PDF - for printing or sharing purposes."
   },
   "help": {
     "title": "Cheatsheet",
@@ -201,15 +212,19 @@
   },
   "import": {
     "importIntoNote": "Import into note",
+    "importIntoNoteNamed": "Import into {{- title}}",
+    "import_from": "Import from",
+    "cardName": "Files & other formats",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, images and more",
     "chooseImportFile": "Choose import file",
-    "importDescription": "Content of the selected file(s) will be imported as child note(s) into",
     "importZipRecommendation": "When importing a ZIP file, the note hierarchy will reflect the subdirectory structure within the archive.",
     "options": "Options",
-    "safeImportTooltip": "Trilium <code>.zip</code> export files can contain executable scripts which may contain harmful behavior. Safe import will deactivate automatic execution of all imported scripts. Uncheck \"Safe import\" only if the imported archive is supposed to contain executable scripts and you completely trust the contents of the import file.",
+    "safeImportTooltip": "Trilium <code>.zip</code> exports can contain executable scripts. Safe import disables them; uncheck only if the archive is meant to run scripts and you trust its contents.",
     "safeImport": "Safe import",
-    "explodeArchivesTooltip": "If this is checked then Trilium will read <code>.zip</code>, <code>.enex</code> and <code>.opml</code> files and create notes from files insides those archives. If unchecked, then Trilium will attach the archives themselves to the note.",
+    "explodeArchivesTooltip": "Creates notes from the files inside <code>.zip</code>, <code>.enex</code> and <code>.opml</code> archives. When off, the archives are attached as-is.",
     "explodeArchives": "Read contents of <code>.zip</code>, <code>.enex</code> and <code>.opml</code> archives.",
-    "shrinkImagesTooltip": "<p>If you check this option, Trilium will attempt to shrink the imported images by scaling and optimization which may affect the perceived image quality. If unchecked, images will be imported without changes.</p><p>This doesn't apply to <code>.zip</code> imports with metadata since it is assumed these files are already optimized.</p>",
+    "shrinkImagesTooltip": "Scales and optimizes images to save space, which may slightly reduce quality. Doesn't apply to <code>.zip</code> imports with metadata, which are assumed already optimized.",
+    "shrinkImagesProviderTooltip": "Scales and optimizes imported images to save space, which may slightly reduce quality.",
     "shrinkImages": "Shrink images",
     "textImportedAsText": "Import HTML, Markdown and TXT as text notes if it's unclear from metadata",
     "codeImportedAsCode": "Import recognized code files (e.g. <code>.json</code>) as code notes if it's unclear from metadata",
@@ -224,49 +239,72 @@
       "reset_button": "Reset to Default List"
     },
     "starting": "Importing…",
-    "in-progress": "Import in progress: {{progress}}",
-    "in-progress-with-total": "Importing {{progress}} of {{total}}",
+    "in-progress": "Imported {{progress}} notes",
+    "in-progress-with-total": "Imported {{progress}} notes out of {{total}}",
+    "extracting": "Extracted {{progress}} items out of {{total}}",
+    "processing": "Processed {{progress}} notes out of {{total}}",
     "successful": "Import finished successfully."
   },
+  "file_upload": {
+    "drop_or_browse_single": "Drag and drop a file here, or click to browse",
+    "drop_or_browse_multiple": "Drag and drop files here, or click to browse",
+    "browse_single": "Tap to choose a file",
+    "browse_multiple": "Tap to choose files",
+    "selected_one": "{{count}} file selected",
+    "selected_other": "{{count}} files selected"
+  },
   "import_provider": {
-    "title": "Import from a service",
-    "choose_provider": "Choose a service to import from:",
-    "back": "Back"
+    "choose_provider": "Choose a service above to import from."
   },
   "onenote_import": {
     "name": "Microsoft OneNote",
-    "description": "Import notebooks, sections and pages from your OneNote account.",
+    "description": "Connects to your account",
     "connect_description": "Sign in with your Microsoft account to import your OneNote notebooks.",
     "connect": "Sign in with Microsoft",
+    "section_heading": "Microsoft OneNote",
+    "checking": "Checking your OneNote connection…",
     "connecting": "Waiting for sign-in to complete…",
     "connected_as": "Connected as {{name}}",
     "disconnect": "Disconnect",
     "load_failed": "Could not load your OneNote notebooks.",
     "no_notebooks": "No notebooks were found in this account.",
-    "select_sections": "Select the sections to import:",
-    "order_hint_title": "Approximate section order",
-    "order_hint": "OneNote doesn't include the original ordering in the import data, so sections and groups are sorted by creation date and may not match how they appear in OneNote.",
+    "select_sections": "Select the sections to import",
+    "select_sections_hint": "OneNote doesn't include the original ordering in the import data, so sections and groups are sorted by creation date and may not match how they appear in OneNote.",
     "import": "Import selected",
     "attach_source": "Attach original HTML (debug)",
     "attach_source_hint": "Saves each page's unmodified OneNote HTML as an attachment on the imported note, for comparing against the converted result."
   },
   "notion_import": {
     "name": "Notion",
-    "description": "Import pages from a Notion HTML export (.zip).",
+    "description": "From an HTML export",
     "description_long": "In Notion, export your workspace or a page as HTML with subpages included, then choose the resulting .zip file here.",
     "choose_file": "Notion export (.zip)",
     "import": "Import"
   },
   "keep_import": {
     "name": "Google Keep",
-    "description": "Import notes from a Google Keep export (.zip).",
+    "description": "From a Takeout export",
     "description_long": "In Google Takeout, export your Keep data as a .zip, then choose the resulting file here.",
     "choose_file": "Google Keep export (.zip)",
     "import": "Import"
   },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "From a JSON export",
+    "description_long": "In Anytype, export your space using the \"Any-Block\" format with \"JSON\" selected, then choose the resulting .zip file here. Only pages and their text are imported for now.",
+    "choose_file": "Anytype export (.zip)",
+    "import": "Import"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "From a vault",
+    "description_long": "Zip your Obsidian vault folder, then choose the resulting .zip file here.",
+    "choose_file": "Obsidian vault (.zip)",
+    "import": "Import"
+  },
   "evernote_import": {
     "name": "Evernote",
-    "description": "Import notes from an Evernote export (.enex).",
+    "description": "From .enex files",
     "description_long": "In Evernote, export a notebook (or up to 100 notes at a time) as an ENEX file, then choose one or more .enex files here. Each file is imported as a separate notebook.",
     "choose_file": "Evernote export (.enex)",
     "import": "Import"
@@ -311,13 +349,16 @@
     "mermaid": "Insert a Mermaid diagram",
     "mermaid_template": "Insert a \"{{name}}\" Mermaid diagram",
     "collapsible": "Insert a collapsible block",
+    "page_break": "Insert a page break (for printing)",
+    "table": "Insert a table",
     "admonition": "Insert {{type}} admonition",
     "todo": "Insert a \"{{title}}\" task item",
     "todo_nonstandard": "Insert a \"{{title}}\" task item (non-standard)",
     "placeholders": {
       "math": "equation",
       "collapsible_summary": "Summary",
-      "collapsible_details": "Details"
+      "collapsible_details": "Details",
+      "table_column": "Column {{number}}"
     }
   },
   "slash_commands": {
@@ -718,7 +759,7 @@
     "download": "Download",
     "rename_attachment": "Rename attachment",
     "upload_new_revision": "Upload new revision",
-    "copy_link_to_clipboard": "Copy link to clipboard",
+    "copy_link_to_clipboard": "Copy reference to clipboard",
     "convert_attachment_into_note": "Convert attachment into note",
     "delete_attachment": "Delete attachment",
     "upload_success": "New attachment revision has been uploaded.",
@@ -763,7 +804,9 @@
     "year_previous": "Previous year",
     "year_next": "Next year",
     "list": "List",
-    "today": "Today"
+    "today": "Today",
+    "pin_date": "Pin the current date so the calendar always opens on this interval instead of today",
+    "unpin_date": "Unpin the date so the calendar opens on today's date again"
   },
   "close_pane_button": {
     "close_this_pane": "Close this pane"
@@ -851,7 +894,6 @@
     "open_note_custom": "Open note custom",
     "open_note_on_server": "Open note on server",
     "import_files": "Import files",
-    "import_from_service": "Import from a service…",
     "export_note": "Export note",
     "delete_note": "Delete note",
     "print_note": "Print note...",
@@ -883,7 +925,7 @@
     "update_available": "Update available"
   },
   "note_launcher": {
-    "this_launcher_doesnt_define_target_note": "This launcher doesn't define target note."
+    "this_launcher_doesnt_define_target_note": "This launcher has no target note configured, so there's nothing to open. Set its \"target\" relation to point it at a note."
   },
   "code_buttons": {
     "execute_button_title": "Execute script",
@@ -982,7 +1024,7 @@
     "open_all_in_tabs_tooltip": "Open all results in new tabs",
     "open_all_confirm_one": "This will open {{count}} note in new tabs. Continue?",
     "open_all_confirm_other": "This will open {{count}} notes in new tabs. Continue?",
-    "open_all_too_many": "Too many results ({{count}}). Maximum is {{max}}."
+    "open_all_too_many": "Too many notes to open at once ({{count}}). The maximum is {{max}}, try narrowing the results first."
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -1233,7 +1275,7 @@
     "pause": "Pause (Space)",
     "seek": "Seek (Left/Right arrow keys)",
     "back-10s": "Back 10s (Left arrow key)",
-    "forward-30s": "Forward 30s",
+    "forward-10s": "Forward 10s (Right arrow key)",
     "previous-video": "Previous video: {{- title}}",
     "next-video": "Next video: {{- title}}",
     "previous-audio": "Previous audio: {{- title}}",
@@ -1737,7 +1779,7 @@
     "set_password_heading": "Set Password",
     "set_password": "Set Password",
     "password_mismatch": "New passwords are not the same.",
-    "password_changed_success": "Password has been changed. Trilium will be reloaded after you press OK."
+    "password_changed_success": "Password changed successfully."
   },
   "multi_factor_authentication": {
     "authentication_title": "Authentication",
@@ -1887,7 +1929,7 @@
     "will_be_deleted_soon": "This attachment will be automatically deleted soon",
     "deletion_reason": ", because the attachment is not linked in the note's content. To prevent deletion, add the attachment link back into the content or convert the attachment into note.",
     "role_and_size": "Role: {{role}}, size: {{size}}, MIME: {{- mimeType}}",
-    "link_copied": "Attachment link copied to clipboard.",
+    "link_copied": "Attachment reference copied to clipboard.",
     "unrecognized_role": "Unrecognized attachment role '{{role}}'."
   },
   "bookmark_switch": {
@@ -2681,6 +2723,10 @@
     "empty_message": "Nothing to show for this note",
     "empty_button": "Hide the panel",
     "toggle": "Toggle right panel",
+    "peek": "Peek right pane",
+    "hide": "Hide right pane",
+    "dock": "Dock panel",
+    "close": "Close panel",
     "custom_widget_go_to_source": "Go to source code"
   },
   "print_preview": {
@@ -2801,7 +2847,34 @@
     "sample_venn": "Venn",
     "sample_ishikawa": "Ishikawa",
     "sample_treeview": "TreeView",
-    "sample_wardley": "Wardley Map"
+    "sample_wardley": "Wardley Map",
+    "sample_cynefin": "Cynefin",
+    "sample_swimlane": "Swimlane",
+    "sample_railroad": "Railroad"
+  },
+  "login": {
+    "heading": "Log in to Trilium Notes",
+    "password": "Password",
+    "totp-token": "One-time password or recovery code",
+    "button": "Log in",
+    "remember-me": "Remember me",
+    "incorrect-password": "Password is incorrect. Please try again.",
+    "incorrect-totp": "One-time password is incorrect. Please try again.",
+    "incorrect-recovery-code": "Recovery code is incorrect, or has already been used.",
+    "too-many-attempts": "Too many login attempts. Please wait a few minutes and try again.",
+    "connection-error": "Couldn't reach the server. Check your connection and try again.",
+    "sign_in_with_sso": "Sign in with {{ssoIssuerName}}",
+    "sso-wrong-account": "That account isn't the one linked to this Trilium instance. Sign in with the linked account.",
+    "sso-not-enrolled": "Single sign-on isn't set up yet. Sign in with your password first, then link your account from the settings."
+  },
+  "set_password": {
+    "heading": "Set password",
+    "description": "Before you can start using Trilium from web, you need to set a password first. You will then use this password to login.",
+    "password": "Password",
+    "password-confirmation": "Password confirmation",
+    "button": "Set password",
+    "password-too-short": "Password must be at least {{length}} characters long.",
+    "passwords-dont-match": "The entered passwords don't match."
   },
   "setup": {
     "heading": "Get started with Trilium",

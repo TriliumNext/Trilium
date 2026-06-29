@@ -10,8 +10,9 @@ import type { ExportFormat, NoteMetaFile } from "../../meta.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
 import sql_init from "../sql_init.js";
-import { getZipProvider } from "../zip_provider.js";
-import zip from "./zip.js";
+import type { ZipArchive, ZipArchiveEntryOptions, ZipProvider } from "../zip_provider.js";
+import { getZipProvider, initZipProvider } from "../zip_provider.js";
+import zip, { shouldStoreUncompressed } from "./zip.js";
 
 // happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
 const isBrowserRuntime = typeof window !== "undefined";
@@ -281,6 +282,85 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(entries[attFileName]).toBeDefined();
         });
 
+        it("round-trips binary attachment content byte-for-byte", async () => {
+            const { note } = createNote("root", { title: "BinaryAttachHost", content: "<p>host</p>" });
+            // Bytes that are not valid UTF-8 (0x00, 0xFF, lone 0x80 continuation byte)
+            // so any accidental string coercion in the export path would corrupt them.
+            const binaryContent = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x80, 0x01, 0xfe]);
+            getContext().init(() =>
+                note.saveAttachment({ role: "image", mime: "image/png", title: "pixel.png", content: binaryContent })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "html");
+            const rootMeta = parseMeta(entries).files[0];
+
+            const attMeta = (rootMeta.attachments ?? [])[0];
+            expect(attMeta).toBeDefined();
+            const attFileName = attMeta.dataFileName ?? "";
+            expect(entries[attFileName]).toBeDefined();
+            // The exported bytes must equal the stored bytes exactly.
+            expect(Buffer.compare(entries[attFileName], binaryContent)).toBe(0);
+        });
+
+        it("pipes the archive to the response before appending any content", async () => {
+            // Memory efficiency: the archive must start streaming to the response
+            // before note/attachment content is appended, so blobs drain to the
+            // client as they are added rather than all being buffered in memory.
+            const { note } = createNote("root", { title: "StreamOrder", content: "<p>x</p>" });
+            getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "a.txt", content: "data" })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const events: string[] = [];
+            const original = getZipProvider();
+            const spy: ZipProvider = {
+                detectFilenameEncoding: (b) => original.detectFilenameEncoding(b),
+                readZipFile: (b, fn, enc) => original.readZipFile(b, fn, enc),
+                createFileStream: (p) => original.createFileStream(p),
+                createZipArchive() {
+                    const real = original.createZipArchive();
+                    const wrapper: ZipArchive = {
+                        append(content: string | Uint8Array, options: ZipArchiveEntryOptions) {
+                            events.push(`append:${options.name}`);
+                            real.append(content, options);
+                        },
+                        pipe(dest: unknown) {
+                            events.push("pipe");
+                            real.pipe(dest);
+                        },
+                        finalize() {
+                            events.push("finalize");
+                            return real.finalize();
+                        }
+                    };
+                    return wrapper;
+                }
+            };
+
+            initZipProvider(spy);
+            try {
+                const taskContext = (await import("../task_context.js")).default;
+                const ctx = new taskContext("no-progress-reporting", "export", null);
+                const res = new FakeResponse();
+                const done = collect(res);
+                await zip.exportToZip(ctx, branch, "html", res as unknown as Record<string, unknown>);
+                await done;
+            } finally {
+                initZipProvider(original);
+            }
+
+            // The pipe is the very first archive operation and precedes every append.
+            const pipeIdx = events.indexOf("pipe");
+            const firstAppendIdx = events.findIndex((e) => e.startsWith("append:"));
+            expect(pipeIdx).toBe(0);
+            expect(firstAppendIdx).toBeGreaterThan(pipeIdx);
+            // Content really was appended (note data + attachment), and finalize closes it.
+            expect(events).toContain("append:!!!meta.json");
+            expect(events[events.length - 1]).toBe("finalize");
+        });
+
         it("keeps the extension on very long multi-byte titles within the 255-byte limit", async () => {
             // A title of 3-byte CJK characters long enough that, once the upstream
             // 255-byte sanitize cap fills the base, appending the extension would
@@ -364,5 +444,80 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
                 getContext().init(() => zip.exportToZipFile("missingNoteId123", "html", join(tempDir, "never.zip")))
             ).rejects.toThrow(/not found/);
         });
+    });
+
+    describe("exportBranchToZipFile", () => {
+        let tempDir: string;
+
+        beforeAll(() => {
+            tempDir = mkdtempSync(join(tmpdir(), "trilium-zip-branch-export-"));
+        });
+
+        it("streams a subtree export for the given branch to a file path", async () => {
+            const { note, branch } = createNote("root", { title: "BranchFileExport", content: "<p>branch to file</p>" });
+            const zipPath = join(tempDir, `branch-export-${note.noteId}.zip`);
+            const { branchId } = branch;
+            if (!branchId) {
+                throw new Error("branch was not saved");
+            }
+
+            await getContext().init(() =>
+                zip.exportBranchToZipFile(branchId, "html", zipPath, "no-progress-reporting")
+            );
+
+            const buffer = readFileSync(zipPath);
+            const entries = await readArchive(buffer);
+            const rootMeta = parseMeta(entries).files[0];
+
+            expect(rootMeta.noteId).toBe(note.noteId);
+            const dataFileName = rootMeta.dataFileName ?? "";
+            expect(entries[dataFileName].toString("utf-8")).toContain("branch to file");
+
+            rmSync(zipPath, { force: true });
+        });
+
+        it("throws a ValidationError for a non-existent branch", async () => {
+            await expect(
+                getContext().init(() =>
+                    zip.exportBranchToZipFile("missingBranch123", "html", join(tempDir, "never.zip"), "no-progress-reporting")
+                )
+            ).rejects.toThrow(/not found/);
+        });
+    });
+});
+
+describe("shouldStoreUncompressed", () => {
+    it("stores already-compressed payloads uncompressed", () => {
+        for (const mime of [
+            "image/jpeg", "image/png", "image/gif", "image/webp", "image/avif",
+            "video/mp4", "video/webm", "audio/mpeg", "audio/ogg",
+            "application/pdf", "application/zip", "application/gzip",
+            "application/x-7z-compressed", "font/woff2",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
+            "application/vnd.oasis.opendocument.spreadsheet", // ods
+            "application/epub+zip"
+        ]) {
+            expect(shouldStoreUncompressed(mime), mime).toBe(true);
+        }
+    });
+
+    it("compresses text and other deflate-friendly payloads", () => {
+        for (const mime of [
+            "text/html", "text/plain", "text/markdown", "application/json",
+            "application/xml", "application/javascript",
+            "image/svg+xml", "image/bmp", "image/x-icon", "image/tiff",
+            "audio/wav", "audio/x-wav", "audio/aiff"
+        ]) {
+            expect(shouldStoreUncompressed(mime), mime).toBe(false);
+        }
+    });
+
+    it("normalizes case and ignores parameters, and treats missing mime as compressible", () => {
+        expect(shouldStoreUncompressed("IMAGE/JPEG")).toBe(true);
+        expect(shouldStoreUncompressed("image/png; charset=binary")).toBe(true);
+        expect(shouldStoreUncompressed("  text/html ; charset=utf-8 ")).toBe(false);
+        expect(shouldStoreUncompressed(undefined)).toBe(false);
+        expect(shouldStoreUncompressed(null)).toBe(false);
+        expect(shouldStoreUncompressed("")).toBe(false);
     });
 });

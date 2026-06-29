@@ -7,6 +7,7 @@ import { useRef, useState } from "preact/hooks";
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import dialogService from "../../services/dialog";
+import toast from "../../services/toast";
 import { ViewTypeOptions } from "../collections/interface";
 import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
@@ -70,7 +71,7 @@ function OpenAllButton({ note, isOpening, setIsOpening }: {
         if (count === 0) return;
 
         if (count > MAX_OPEN_TABS) {
-            await dialogService.info(t("book_properties.open_all_too_many", { count, max: MAX_OPEN_TABS }));
+            toast.showError(t("book_properties.open_all_too_many", { count, max: MAX_OPEN_TABS }));
             return;
         }
 

@@ -43,6 +43,11 @@ export default function ActionButton({ text, icon, className, triggerCommand, ti
 
     return <button
         ref={buttonRef}
+        // An action button is driven by its onClick — it must never act as a form's
+        // implicit submit button (a <button> defaults to type="submit"). Otherwise,
+        // inside a <form>, pressing Enter could activate it instead of submitting
+        // (e.g. the error-dismiss button stealing the login form's Enter).
+        type="button"
         class={`${className ?? ""} ${!noIconActionClass ? "icon-action" : "btn"} ${icon} ${frame ? "btn btn-primary" : ""} ${disabled ? "disabled" : ""} ${active ? "active" : ""}`}
         data-trigger-command={triggerCommand}
         disabled={disabled}

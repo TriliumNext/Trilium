@@ -9,8 +9,8 @@ import TaskContext from "../../services/task_context.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils/index.js";
 import { NotFoundError, ValidationError } from "../../errors.js";
 
-async function exportBranch(req: Request<{ branchId: string; type: string; format: string; version: string; taskId: string }>, res: Response) {
-    const { branchId, type, format, version, taskId } = req.params;
+async function exportBranch(req: Request<{ branchId: string; type: string; format: string; taskId: string }>, res: Response) {
+    const { branchId, type, format, taskId } = req.params;
     const branch = becca.getBranch(branchId);
 
     if (!branch) {
@@ -32,7 +32,7 @@ async function exportBranch(req: Request<{ branchId: string; type: string; forma
             }
             singleExportService.exportSingleNote(taskContext, branch, format, res);
         } else if (format === "opml") {
-            opmlExportService.exportToOpml(taskContext, branch, version, res);
+            opmlExportService.exportToOpml(taskContext, branch, res);
         } else {
             throw new NotFoundError(`Unrecognized export format '${format}'`);
         }

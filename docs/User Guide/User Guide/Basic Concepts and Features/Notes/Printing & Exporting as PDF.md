@@ -1,5 +1,5 @@
 # Printing & Exporting as PDF
-<figure class="image"><img style="aspect-ratio:2023/1488;" src="1_Printing &amp; Exporting as PD.png" width="2023" height="1488"><figcaption>Screenshot of the Print preview functionality introduced in v0.103.0.</figcaption></figure>
+<figure class="image"><img style="aspect-ratio:2023/1488;" src="1_Printing &amp; Exporting as PDF_image.png" width="2023" height="1488"><figcaption>Screenshot of the Print preview functionality introduced in v0.103.0.</figcaption></figure>
 
 Trilium allows printing notes to a real printer, or generating a structured PDF for a single note or for multiple notes through <a class="reference-link" href="../../Collections.md">Collections</a>.
 
@@ -45,13 +45,13 @@ Additional interaction:
 
 This feature allows printing of notes. It works on both the desktop client, but also on the web.
 
-To print a note, select the <img src="Printing &amp; Exporting as PD.png" width="29" height="31"> button to the right of the note and select _Print note_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
+To print a note, select the <img src="Printing &amp; Exporting as PDF_image.png" width="29" height="31"> button to the right of the note and select _Print note_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
 
 On the server or PWA (mobile), the option is not available due to technical constraints and it will be hidden.
 
 ## Reporting issues with the rendering
 
-Should you encounter any visual issues in the resulting PDF file (e.g. a table does not fit properly, there is cut off text, etc.) feel free to [report the issue](../../Troubleshooting/Reporting%20issues.md). In this case, it's best to offer a sample note (click on the <img src="Printing &amp; Exporting as PD.png" width="29" height="31"> button, select Export note → This note and all of its descendants → HTML in ZIP archive). Make sure not to accidentally leak any personal information.
+Should you encounter any visual issues in the resulting PDF file (e.g. a table does not fit properly, there is cut off text, etc.) feel free to [report the issue](../../Troubleshooting/Reporting%20issues.md). In this case, it's best to offer a sample note (click on the <img src="Printing &amp; Exporting as PDF_image.png" width="29" height="31"> button, select Export note → This note and all of its descendants → HTML in ZIP archive). Make sure not to accidentally leak any personal information.
 
 Consider adjusting font sizes and using [page breaks](../../Note%20Types/Text/Insert%20buttons.md) to work around the layout.
 

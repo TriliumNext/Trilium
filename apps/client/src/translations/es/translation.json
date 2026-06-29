@@ -128,19 +128,11 @@
     "export_note_title": "Exportar nota",
     "close": "Cerrar",
     "export_type_subtree": "Esta nota y todos sus descendientes",
-    "format_html": "HTML - ya que preserva todo el formato",
-    "format_html_zip": "HTML en un archivo ZIP: se recomienda ya que conserva todo el formato.",
-    "format_markdown": "Markdown: esto conserva la mayor parte del formato.",
-    "format_opml": "OPML: formato de intercambio de esquemas solo para texto. El formato, las imágenes y los archivos no están incluidos.",
-    "opml_version_1": "OPML v1.0: solo texto sin formato",
-    "opml_version_2": "OPML v2.0 - también permite HTML",
     "export_type_single": "Sólo esta nota sin sus descendientes",
     "export": "Exportar",
     "choose_export_type": "Por favor, elija primero el tipo de exportación",
-    "export_in_progress": "Exportación en curso: {{progressCount}}",
     "export_finished_successfully": "La exportación finalizó exitosamente.",
-    "format_pdf": "PDF - para propósitos de impresión o compartición.",
-    "share-format": "HTML para publicación web: utiliza el mismo tema que se utiliza en las notas compartidas, pero se puede publicar como un sitio web estático."
+    "format_pdf": "PDF - para propósitos de impresión o compartición."
   },
   "help": {
     "noteNavigation": "Navegación de notas",
@@ -201,7 +193,6 @@
   "import": {
     "importIntoNote": "Importar a nota",
     "chooseImportFile": "Elija el archivo de importación",
-    "importDescription": "El contenido de los archivos seleccionados se importará como notas secundarias en",
     "options": "Opciones",
     "safeImportTooltip": "Los archivos <code>.zip</code> de Trilium pueden contener scripts ejecutables que pudieran tener un comportamiento peligroso. La importación segura va a desactivar la ejecución automática de todos los scripts importados. Desmarque \"Importación segura\" solo si el archivo importado contiene scripts ejecutables y usted confía totalmente en el contenido del archivo importado.",
     "safeImport": "Importación segura",
@@ -2280,7 +2271,6 @@
     "play": "Reproducir (Espacio)",
     "pause": "Pausa (Espacio)",
     "back-10s": "Retroceder 10s (tecla de flecha izquierda)",
-    "forward-30s": "Adelantar 30s",
     "mute": "Silenciar (M)",
     "unmute": "Activar sonido (M)",
     "playback-speed": "Velocidad de reproducción",

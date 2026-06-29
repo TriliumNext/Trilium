@@ -3,17 +3,19 @@
  *
  * Notion exports each page as `Page Title <id>.html`; a page that has children also gets a sibling
  * folder `Page Title <id>/` holding those children. Internal links and attachments reference the same
- * id-suffixed names. This first iteration reconstructs only the *structure* — the page hierarchy, titles
- * and original timestamps — copying each page's body HTML across roughly as-is. Faithful HTML cleanup,
- * link rewriting, images/attachments and database (CSV) handling are deliberately deferred.
+ * id-suffixed names. This module reconstructs the *structure* — the page hierarchy, titles, body HTML,
+ * timestamps, images and attachments, and cross-page links. Database (collection) handling — turning a
+ * row's properties into Trilium attributes/relations and the shared schema into promoted definitions —
+ * lives in `collection.ts`, and shared path/id helpers in `paths.ts`.
  *
  * Invoked from the shared file-import dispatcher (routes/api/import.ts) when the upload is tagged
  * `format=notion`, so progress, completion and failure are reported by that dispatcher's TaskContext —
  * this service just builds the tree and returns its root note, like the zip/enex importers.
  */
 
+import { parseCsv } from "@triliumnext/commons/src/lib/csv.js";
 import { t } from "i18next";
-import { HTMLElement, parse } from "node-html-parser";
+import { type HTMLElement, parse } from "node-html-parser";
 
 import type BNote from "../../../becca/entities/bnote.js";
 import imageService from "../../image.js";
@@ -22,52 +24,45 @@ import protectedSessionService from "../../protected_session.js";
 import { sanitizeHtml } from "../../sanitizer.js";
 import type TaskContext from "../../task_context.js";
 import dateUtils from "../../utils/date.js";
-import { getZipProvider } from "../../zip_provider.js";
+import { getZipProvider, type ZipSource } from "../../zip_provider.js";
 import mimeService from "../mime.js";
+import { toAttributeName } from "../collection_utils.js";
+import { applyDatabaseSchemas, applyOwnedProperties, applyRelationProperties, extractProperties, reconcileDateColumns, resolveDatabaseContainers } from "./collection.js";
 import { convertNotionHtml } from "./converter.js";
+import type { LinkTarget, ParsedPage } from "./model.js";
 import { getNotionId, stripNotionId } from "./notion_id.js";
+import { baseName, firstChildNotionId, folderDepth, internalPageId, isDirectory, normalizePath, ownedFolderKey, parentFolderKey, removeExtension, resolveResourcePath } from "./paths.js";
 
-interface ParsedPage {
-    /** The page's own Notion id, used to resolve cross-page links pointing at it. */
-    id: string;
-    title: string;
-    /** Path of the .html entry inside the zip; drives both image resolution and folder-based parenting. */
-    path: string;
-    /** The page's body HTML, sanitized; empty when the body could not be located. */
-    content: string;
-    utcDateCreated?: string;
-    utcDateModified?: string;
-}
-
-async function importNotion(taskContext: TaskContext<"importNotes">, fileBuffer: Uint8Array, importRootNote: BNote): Promise<BNote> {
-    const { pages, resources, csvPaths } = await parseZip(fileBuffer);
-    addDatabaseContainers(pages, csvPaths);
+async function importNotion(taskContext: TaskContext<"importNotes">, source: ZipSource, importRootNote: BNote): Promise<BNote> {
+    const { pages, resources, csvPaths, csvColumnsByFolder, markdownFileCount, csvRowTitles } = await parseZip(source);
+    if (pages.length === 0 && markdownFileCount > 0) {
+        // The user exported from Notion as "Markdown & CSV", but this importer only understands the HTML
+        // export — it reconstructs databases by correlating each `.csv` with the surrounding `.html` pages,
+        // which a Markdown export doesn't have. Fail with actionable guidance rather than silently producing
+        // an empty tree (or orphaning every page as a `.md` attachment).
+        throw new Error(t("notion_import.markdown-export-unsupported"));
+    }
+    // Notion's "Create folders for subpages" export option, when disabled, drops every page to the archive
+    // root with no per-page folders. Cross-page links survive (they carry the page id), but the folder
+    // structure is the only thing that conveys nesting and database-row membership — so the hierarchy would
+    // silently collapse. Detect it (every page at the root, yet a page still references another imported page
+    // as a subpage) and fail with guidance. A single-page export has no such references and is never caught.
+    if (pages.length > 1 && pages.every((page) => !page.path.includes("/"))) {
+        const pageIds = new Set(pages.map((page) => page.id));
+        const hasFlattenedSubpage = pages.some((page) => page.linkedPageIds.some((id) => id !== page.id && pageIds.has(id)));
+        // A flattened database: its row pages sit at the root with titles matching the CSV's first column,
+        // rather than nesting under the database. A folders-on database keeps its rows in folders, so it
+        // never reaches here (some page would carry a "/"); an empty database has no row titles to match.
+        const hasFlattenedDatabaseRow = pages.some((page) => csvRowTitles.has(page.title));
+        if (hasFlattenedSubpage || hasFlattenedDatabaseRow) {
+            throw new Error(t("notion_import.subpage-folders-disabled"));
+        }
+    }
+    resolveDatabaseContainers(pages, csvPaths);
+    reconcileDateColumns(pages);
     taskContext.setTotalCount(pages.length);
 
-    return createNotes(importRootNote, pages, resources, taskContext);
-}
-
-/**
- * A Notion inline/linked database exports as a `<Name> <id>.csv` with no matching `.html` page, while its
- * rows are `.html` files in a sibling `<Name>/` folder — so nothing owns that folder and the rows would
- * orphan to the import root. Synthesize an (empty) container page for each such database, named after it,
- * so its rows nest under it. A database that also has its own page is left to that page (no duplicate).
- */
-function addDatabaseContainers(pages: ParsedPage[], csvPaths: string[]) {
-    const owned = new Set(pages.map((page) => ownedFolderKey(page.path)));
-    for (const csvPath of csvPaths) {
-        const key = ownedFolderKey(csvPath);
-        if (owned.has(key)) {
-            continue;
-        }
-        owned.add(key);
-        pages.push({
-            id: getNotionId(baseName(csvPath)) ?? "",
-            title: stripNotionId(removeExtension(baseName(csvPath))) || "Database",
-            path: csvPath,
-            content: ""
-        });
-    }
+    return createNotes(importRootNote, pages, resources, taskContext, csvColumnsByFolder);
 }
 
 /**
@@ -80,15 +75,25 @@ function addDatabaseContainers(pages: ParsedPage[], csvPaths: string[]) {
  */
 const MAX_NESTED_ZIP_DEPTH = 2;
 
-async function parseZip(fileBuffer: Uint8Array): Promise<{ pages: ParsedPage[]; resources: Map<string, Uint8Array>; csvPaths: string[] }> {
+async function parseZip(source: ZipSource): Promise<{ pages: ParsedPage[]; resources: Map<string, Uint8Array>; csvPaths: string[]; csvColumnsByFolder: Map<string, string[]>; markdownFileCount: number; csvRowTitles: Set<string> }> {
     const provider = getZipProvider();
     const pages: ParsedPage[] = [];
     const resources = new Map<string, Uint8Array>();
     const csvPaths: string[] = [];
+    // Database folder key → its columns (sanitized), in the CSV export's order — the authoritative column order.
+    const csvColumnsByFolder = new Map<string, string[]>();
+    // Notion's "Markdown & CSV" export emits pages as `.md`; the HTML export this importer is built around
+    // never does. Counting them lets importNotion detect that wrong export format and fail with guidance.
+    let markdownFileCount = 0;
+    // Title of every database row (a CSV's first column), used to detect a "Create folders for subpages"-
+    // disabled export, where row pages are flattened to the root instead of nesting under the database.
+    const csvRowTitles = new Set<string>();
 
-    const readArchive = async (buffer: Uint8Array, depth: number): Promise<void> => {
-        const filenameEncoding = await provider.detectFilenameEncoding(buffer);
-        await provider.readZipFile(buffer, async (entry, readContent) => {
+    // `nestedSource` is the top-level archive (possibly a path, streamed from disk) on the first call, and a
+    // nested zip's bytes (read into memory) on deeper calls — both are valid ZipSources.
+    const readArchive = async (nestedSource: ZipSource, depth: number): Promise<void> => {
+        const filenameEncoding = await provider.detectFilenameEncoding(nestedSource);
+        await provider.readZipFile(nestedSource, async (entry, readContent) => {
             const path = entry.fileName;
             if (isDirectory(path)) {
                 return;
@@ -106,17 +111,35 @@ async function parseZip(fileBuffer: Uint8Array): Promise<{ pages: ParsedPage[]; 
                     pages.push(parsed);
                 }
             } else if (path.toLowerCase().endsWith(".csv")) {
-                // Notion databases export as CSVs; we only need the path to reconstruct the hierarchy.
+                // A Notion database exports as a CSV: its path reconstructs the hierarchy (a database with no
+                // own page), and its header row lists every column in the database's order.
                 csvPaths.push(path);
+                const [header = [], ...rows] = parseCsv(new TextDecoder().decode(await readContent()));
+                // Trim before sanitizing so a padded CSV header (`Name, Age , …`) still matches the HTML
+                // property `<th>` text, which is trimmed on extraction.
+                csvColumnsByFolder.set(ownedFolderKey(path), header.map((column) => toAttributeName(column.trim())));
+                // The first column is each row's title; collect them so a flattened database (rows at the
+                // root, matching these titles, rather than nested under the database) can be detected.
+                for (const row of rows) {
+                    const rowTitle = row[0]?.trim();
+                    if (rowTitle) {
+                        csvRowTitles.add(rowTitle);
+                    }
+                }
             } else {
+                // Keep the file as a resource so a genuine `.md` attachment inside an HTML export survives,
+                // but tally markdown pages so the wrong export format can be detected.
+                if (path.toLowerCase().endsWith(".md")) {
+                    markdownFileCount++;
+                }
                 resources.set(normalizePath(path), await readContent());
             }
         }, filenameEncoding);
     };
 
-    await readArchive(fileBuffer, 0);
+    await readArchive(source, 0);
 
-    return { pages, resources, csvPaths };
+    return { pages, resources, csvPaths, csvColumnsByFolder, markdownFileCount, csvRowTitles };
 }
 
 function parsePage(path: string, html: string): ParsedPage | null {
@@ -135,11 +158,24 @@ function parsePage(path: string, html: string): ParsedPage | null {
     const pageBody = root.querySelector(".page-body");
     const content = pageBody ? sanitizeHtml(convertNotionHtml(pageBody.innerHTML)) : "";
 
+    // Capture subpage references from the raw HTML (before conversion rewrites them): a `link-to-page` block
+    // is a child page or explicit page link, and a collection table's cells link to the database's rows.
+    // Inline page mentions are deliberately excluded — only these structural references signal nesting.
+    const linkedPageIds: string[] = [];
+    for (const anchor of root.querySelectorAll("figure.link-to-page a, .collection-content a")) {
+        const linkedId = internalPageId(anchor.getAttribute("href"));
+        if (linkedId) {
+            linkedPageIds.push(linkedId);
+        }
+    }
+
     return {
         id,
         title,
         path,
         content,
+        linkedPageIds,
+        properties: extractProperties(root),
         utcDateCreated: extractDate(root, "property-row-created_time"),
         utcDateModified: extractDate(root, "property-row-last_edited_time")
     };
@@ -152,14 +188,15 @@ function parsePage(path: string, html: string): ParsedPage | null {
  * matched on a normalized, id-stripped folder path so it works whether or not the folders carry ids.
  * Pages are created shallowest-first, so a parent's note exists before its children. Returns the root.
  */
-function createNotes(importRootNote: BNote, pages: ParsedPage[], resources: Map<string, Uint8Array>, taskContext: TaskContext<"importNotes">): BNote {
+function createNotes(importRootNote: BNote, pages: ParsedPage[], resources: Map<string, Uint8Array>, taskContext: TaskContext<"importNotes">, csvColumnsByFolder: Map<string, string[]>): BNote {
     /* v8 ignore next -- the protected branch needs a protected import root with an active protected session, which the in-memory test DB has no way to set up */
     const isProtected = importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
+    const shrinkImages = !!taskContext.data?.shrinkImages;
 
     const rootNote = noteService.createNewNote({ parentNoteId: importRootNote.noteId, title: t("notion_import.root-title"), content: "", type: "text", mime: "text/html", isProtected }).note;
     rootNote.addLabel("iconClass", "bx bx-import");
 
-    const noteIdByFolder = new Map<string, string>();
+    const noteByFolder = new Map<string, BNote>();
     const targetByPageId = new Map<string, LinkTarget>();
     const created: { note: BNote; content: string; page: ParsedPage }[] = [];
     const ordered = [...pages].sort((a, b) => folderDepth(a.path) - folderDepth(b.path));
@@ -167,32 +204,51 @@ function createNotes(importRootNote: BNote, pages: ParsedPage[], resources: Map<
     // First pass: create every note (so cross-page links can resolve in the second pass) and save its
     // referenced images as attachments. Content is only rewritten/saved once, in the second pass.
     for (const page of ordered) {
-        const targetParentId = noteIdByFolder.get(parentFolderKey(page.path)) ?? rootNote.noteId;
+        const targetParentId = noteByFolder.get(parentFolderKey(page.path))?.noteId ?? rootNote.noteId;
 
+        // A Notion database imports as a Trilium table collection: an (empty) `book` whose rows are its
+        // children and whose columns are the promoted-attribute definitions added below. `table` is the
+        // only view the export preserves — every Notion database exports as a rendered table regardless of
+        // its actual view (board/calendar/…), so that information is gone and table is the faithful mapping.
         const { note } = noteService.createNewNote({
             parentNoteId: targetParentId,
             title: page.title,
             content: page.content,
-            type: "text",
-            mime: "text/html",
+            type: page.isDatabase ? "book" : "text",
+            mime: page.isDatabase ? "" : "text/html",
             isProtected
         });
-        noteIdByFolder.set(ownedFolderKey(page.path), note.noteId);
+        noteByFolder.set(ownedFolderKey(page.path), note);
         targetByPageId.set(page.id, { noteId: note.noteId, title: page.title });
+        if (page.isDatabase) {
+            note.addLabel("viewType", "table");
+        }
+
+        // Carry the page's own database property values over (file columns become attachments, the rest
+        // labels); relations are deferred to the second pass, once every target note exists. A file column
+        // also returns reference-links, prepended to the body so its files are reachable from the content.
+        const fileLinks = applyOwnedProperties(note, page, resources);
+        const body = fileLinks + page.content;
 
         // Attachments hang off the note, so this must run after creation; it returns the content with the
         // <img> srcs and file links pointing at the saved attachments.
-        const withImages = rewriteImages(note, page.content, page.path, resources);
+        const withImages = rewriteImages(note, body, page.path, resources, shrinkImages);
         created.push({ note, content: rewriteAttachments(note, withImages, page.path, resources), page });
         taskContext.increaseProgressCount();
     }
 
-    // Second pass: now that every page has a note, resolve cross-page links and persist the final content.
+    // Now that every container and its rows exist, define the database schema once per container.
+    applyDatabaseSchemas(pages, noteByFolder, csvColumnsByFolder);
+
+    // Second pass: now that every page has a note, resolve cross-page links and relations, then persist.
+    const resolveTarget = (notionId: string): LinkTarget | null => targetByPageId.get(notionId) ?? null;
     for (const { note, content, page } of created) {
-        const finalContent = rewriteLinks(content, (notionId) => targetByPageId.get(notionId) ?? null);
+        const finalContent = rewriteCollectionIncludes(rewriteLinks(content, resolveTarget), resolveTarget);
         if (finalContent !== page.content) {
             note.setContent(finalContent);
         }
+
+        applyRelationProperties(note, page, resolveTarget);
 
         // Preserve Notion's original timestamps. Must run after the content save above, which would
         // otherwise re-stamp the modification date with "now".
@@ -209,7 +265,7 @@ function createNotes(importRootNote: BNote, pages: ParsedPage[], resources: Map<
  * point at it. References that don't resolve to a bundled file (e.g. external image URLs) are left as-is.
  * Returns the (possibly unchanged) content.
  */
-function rewriteImages(note: BNote, content: string, pagePath: string, resources: Map<string, Uint8Array>): string {
+function rewriteImages(note: BNote, content: string, pagePath: string, resources: Map<string, Uint8Array>, shrinkImages: boolean): string {
     const root = parse(content);
     let changed = false;
 
@@ -223,7 +279,7 @@ function rewriteImages(note: BNote, content: string, pagePath: string, resources
         if (!bytes) {
             continue;
         }
-        const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, bytes, baseName(resourcePath), false);
+        const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, bytes, baseName(resourcePath), shrinkImages);
         /* v8 ignore next -- saveImageToAttachment always returns the id of the attachment it just created, so this guard is never false in practice */
         if (attachmentId) {
             img.setAttribute("src", `api/attachments/${attachmentId}/image/${encodeURIComponent(title)}`);
@@ -269,12 +325,6 @@ function rewriteAttachments(note: BNote, content: string, pagePath: string, reso
     return changed ? root.toString() : content;
 }
 
-/** A resolved import target: the note created for a Notion page, plus that page's title. */
-export interface LinkTarget {
-    noteId: string;
-    title: string;
-}
-
 /**
  * Resolves Notion page-to-page links. Notion exports an internal link as an `<a>` whose href points at
  * the target page's exported HTML file (e.g. `Folder/Subpage 386c…cd5.html`), with the 32-hex Notion id
@@ -306,104 +356,34 @@ export function rewriteLinks(html: string, resolve: (notionId: string) => LinkTa
     return changed ? root.toString() : html;
 }
 
-/** Extracts the target page's Notion id from an internal `.html` link href, or null if it isn't one. */
-function internalPageId(href: string | undefined): string | null {
-    if (!href) {
-        return null;
-    }
-    let decoded = href;
-    try {
-        decoded = decodeURIComponent(href);
-    } catch {
-        // Leave malformed percent-encoding as-is rather than throwing.
-    }
-    const path = decoded.split(/[?#]/)[0];
-    if (!path.toLowerCase().endsWith(".html")) {
-        return null;
-    }
-    // Match against the path only: a 32-hex sequence in a query/hash must not be mistaken for the page id.
-    return getNotionId(path) ?? null;
-}
-
 /**
- * Resolves an `<img src>` (zip-relative, percent-encoded) against the page's directory in the zip,
- * returning a normalized path that matches the keys collected in {@link parseZip}.
+ * Resolves the inline-database include-note placeholders the converter emits — `<section class="include-note"
+ * data-notion-id="…">` — to the imported collection note. Notion renders an inline database inside a page as
+ * a rendered table (a partial export) or a bare link to its separately-exported CSV (a full/workspace
+ * export); the converter normalizes both to this placeholder carrying the database's Notion id. The database
+ * itself is imported as a collection note (built from its CSV plus rows folder), so swap that id for the
+ * note's id. A placeholder whose database wasn't imported is dropped rather than left as a dangling include.
  */
-export function resolveResourcePath(pagePath: string, src: string): string {
-    let decoded = src;
-    try {
-        decoded = decodeURIComponent(src);
-    } catch {
-        // Leave malformed percent-encoding as-is rather than throwing.
-    }
-    const lastSlash = pagePath.lastIndexOf("/");
-    const baseDir = lastSlash >= 0 ? pagePath.slice(0, lastSlash) : "";
-    return normalizePath(baseDir ? `${baseDir}/${decoded}` : decoded);
-}
+export function rewriteCollectionIncludes(html: string, resolve: (notionId: string) => LinkTarget | null): string {
+    const root = parse(html);
+    let changed = false;
 
-/** Collapses `.`/`..` segments in a forward-slash zip path and drops empty segments. */
-function normalizePath(path: string): string {
-    const parts: string[] = [];
-    for (const segment of path.split("/")) {
-        if (segment === "" || segment === ".") {
+    for (const section of root.querySelectorAll("section.include-note")) {
+        const notionId = section.getAttribute("data-notion-id");
+        if (!notionId) {
             continue;
         }
-        if (segment === "..") {
-            parts.pop();
+        section.removeAttribute("data-notion-id");
+        const target = resolve(notionId);
+        if (target) {
+            section.setAttribute("data-note-id", target.noteId);
         } else {
-            parts.push(segment);
+            section.remove();
         }
+        changed = true;
     }
-    return parts.join("/");
-}
 
-/** Folder depth of a page path — pages are created shallowest-first so parents precede their children. */
-function folderDepth(path: string): number {
-    return path.split("/").length;
-}
-
-/**
- * The folder a page's children live in: its directory plus its own title (the file's id and extension
- * dropped). Keyed against {@link parentFolderKey} to attach children to their parent.
- */
-export function ownedFolderKey(path: string): string {
-    const title = stripNotionId(removeExtension(baseName(path)));
-    const dir = dirname(path);
-    return folderKey(dir ? `${dir}/${title}` : title);
-}
-
-/** A page's containing folder (its path's directory), normalized for matching against an owned folder. */
-export function parentFolderKey(path: string): string {
-    return folderKey(dirname(path));
-}
-
-/** Strips the Notion id from each segment so a title-only folder (`Title`) and a page (`Title <id>`) match. */
-function folderKey(folderPath: string): string {
-    return folderPath.split("/").map((segment) => stripNotionId(segment)).join("/");
-}
-
-function dirname(path: string): string {
-    const lastSlash = path.lastIndexOf("/");
-    return lastSlash >= 0 ? path.slice(0, lastSlash) : "";
-}
-
-/**
- * Returns the Notion id of `body`'s page-wrapper child. Only `body`'s direct children are considered: a
- * nested block whose id happens to match the 32-hex pattern must not be taken for the page id.
- */
-export function firstChildNotionId(body: HTMLElement | null): string | undefined {
-    if (!body) {
-        return undefined;
-    }
-    for (const child of body.childNodes) {
-        if (child instanceof HTMLElement) {
-            const id = getNotionId(child.getAttribute("id") ?? "");
-            if (id) {
-                return id;
-            }
-        }
-    }
-    return undefined;
+    return changed ? root.toString() : html;
 }
 
 /**
@@ -418,19 +398,6 @@ function extractDate(root: HTMLElement, rowClass: string): string | undefined {
     }
     const date = new Date(text);
     return Number.isNaN(date.getTime()) ? undefined : dateUtils.utcDateTimeStr(date);
-}
-
-function isDirectory(path: string): boolean {
-    return path.endsWith("/");
-}
-
-function baseName(path: string): string {
-    /* v8 ignore next -- String.split always yields at least one element (""), so pop() is never undefined and the `?? path` fallback is unreachable */
-    return path.split("/").pop() ?? path;
-}
-
-function removeExtension(name: string): string {
-    return name.replace(/\.[^.]+$/, "");
 }
 
 export default { importNotion };

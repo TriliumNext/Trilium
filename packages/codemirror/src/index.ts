@@ -275,6 +275,26 @@ export default class CodeMirror extends EditorView {
         });
     }
 
+    /**
+     * Inserts a blank line at the very top of the document and places the cursor on it — the code-note
+     * analog of the Notion-like behavior when pressing Enter in the note title. If the first line is
+     * already empty, the cursor is simply moved there instead of inserting another blank line, so a
+     * brand-new (empty) note does not end up with two blank lines. No-op for read-only editors, since
+     * CodeMirror's `readOnly` facet does not block programmatic transactions.
+     */
+    insertBlankLineAtTop() {
+        if (this.config.readOnly) {
+            return;
+        }
+        const firstLineEmpty = this.state.doc.line(1).length === 0;
+        this.dispatch({
+            ...(firstLineEmpty ? {} : { changes: { from: 0, insert: "\n" } }),
+            selection: EditorSelection.cursor(0),
+            // Reveal the new top line — the cursor may have been at the bottom of a long note.
+            scrollIntoView: true
+        });
+    }
+
     async performFind(searchTerm: string, matchCase: boolean, wholeWord: boolean) {
         const plugin = createSearchHighlighter();
         this.dispatch({

@@ -317,7 +317,11 @@ function createNewNote(params: NoteParams): {
         eventService.emit(eventService.ENTITY_CHANGED, { entityName: "branches", entity: branch });
         eventService.emit(eventService.CHILD_NOTE_CREATED, { childNote: note, parentNote });
 
-        getLog().info(`Created new note '${note.noteId}', branch '${branch.branchId}' of type '${note.type}', mime '${note.mime}'`);
+        if (!isEntityEventsDisabled) {
+            // Skip per-note logging during bulk operations (e.g. import), where it would otherwise
+            // emit one line per created note and flood the log on large imports.
+            getLog().info(`Created new note '${note.noteId}', branch '${branch.branchId}' of type '${note.type}', mime '${note.mime}'`);
+        }
 
         return {
             note,

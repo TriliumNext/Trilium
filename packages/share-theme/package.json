@@ -24,9 +24,10 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
+    "@triliumnext/commons": "workspace:*",
     "fuse.js": "7.4.2",
     "katex": "0.17.0",
-    "mermaid": "11.15.0"
+    "mermaid": "11.16.0"
   },
   "devDependencies": {
     "@digitak/esrun": "3.2.26",

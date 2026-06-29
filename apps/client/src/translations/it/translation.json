@@ -137,18 +137,10 @@
     "export_note_title": "Esporta la nota",
     "export": "Esporta",
     "choose_export_type": "Scegli prima il tipo di esportazione, per favore",
-    "export_in_progress": "Esportazione in corso: {{progressCount}}",
     "export_finished_successfully": "Esportazione terminata con successo.",
     "format_pdf": "PDF- allo scopo di stampa o esportazione.",
     "export_type_subtree": "Questa nota e tutti i suoi discendenti",
-    "format_html": "HTML - raccomandato in quanto mantiene tutti i formati",
-    "format_html_zip": "HTML in archivio ZIP - questo è raccomandato in quanto conserva tutta la formattazione.",
-    "format_markdown": "Markdown: preserva la maggior parte della formattazione.",
-    "export_type_single": "Solo questa nota, senza le sottostanti",
-    "format_opml": "OPML - formato per scambio informazioni outline. Formattazione, immagini e files non sono inclusi.",
-    "opml_version_1": "OPML v.1.0 - solo testo semplice",
-    "opml_version_2": "OPML v2.0 - supporta anche HTML",
-    "share-format": "HTML per la pubblicazione sul web - utilizza lo stesso tema utilizzato per le note condivise, ma può essere pubblicato come sito web statico."
+    "export_type_single": "Solo questa nota, senza le sottostanti"
   },
   "password_not_set": {
     "body1": "Le note protette sono crittografate utilizzando una password utente, ma la password non è stata ancora impostata.",
@@ -709,7 +701,6 @@
   "import": {
     "importIntoNote": "Importa nella nota",
     "chooseImportFile": "Scegli file di importazione",
-    "importDescription": "Il contenuto dei file selezionati verranno importati come note secondarie in",
     "options": "Opzioni",
     "safeImportTooltip": "I file di esportazione Trilium <code>.zip</code> possono contenere script eseguibili che potrebbero avere comportamenti dannosi. L'importazione sicura disattiverà l'esecuzione automatica di tutti gli script importati. Deseleziona “Importazione sicura” solo se l'archivio importato dovrebbe contenere script eseguibili e ti fidi completamente del contenuto del file di importazione.",
     "safeImport": "Importazione sicura",
@@ -2319,7 +2310,6 @@
     "play": "Gioca (Barra spaziatrice)",
     "pause": "Pausa (Barra spaziatrice)",
     "back-10s": "Indietro di 10 (tasto freccia sinistra)",
-    "forward-30s": "Avanti 30s",
     "mute": "Muto (M)",
     "unmute": "Riattiva audio (M)",
     "playback-speed": "Velocità di riproduzione",

@@ -41,9 +41,8 @@
 ## ⏬ डाउनलोड कीजिए
 - [लेटेस्ट रिलीज़](https://github.com/TriliumNext/Trilium/releases/latest) –
   स्थिर (stable) वर्ज़न, अधिकांश यूज़र्स के लिए अनुशंसित।
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+- [नाइटली बिल्ड](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
+  अनस्टेबल डेवलपमेंट वर्ज़न, जो नए फीचर्स और फिक्सेस के साथ रोज़ अपडेट होता है।
 
 ## 📚 डॉक्यूमेंटेशन
 
@@ -56,8 +55,7 @@
   देखें
 - **इन-ऐप हेल्प**: उसी डॉक्यूमेंटेशन को सीधे ऐप में एक्सेस करने के लिए ट्रिलियम
   के अंदर `F1` दबाएँ
-- **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
-  this repository
+- **GitHub**: इस रिपॉजिटरी में [यूज़र गाइड](./User%20Guide/User%20Guide/) देखें
 
 ### Quick Links
 - [Getting Started Guide](https://docs.triliumnotes.org/)
@@ -66,10 +64,10 @@
   सेटअप](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
 - [TriliumNext को अपग्रेड
   करना](https://docs.triliumnotes.org/user-guide/setup/upgrading)
-- [Basic Concepts and
-  Features](https://docs.triliumnotes.org/user-guide/concepts/notes)
-- [Patterns of Personal Knowledge
-  Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [बुनियादी कॉन्सेप्ट्स और
+  फीचर्स](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- [व्यक्तिगत नॉलेज बेस के
+  पैटर्न्स](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 खासियतें
 
@@ -88,12 +86,13 @@
   नेविगेशन](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
   फुल टेक्स्ट सर्च और [नोट
   होइस्टिंग](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
-* Seamless [note
-  versioning](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
-* Note
-  [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
-  can be used for note organization, querying and advanced
-  [scripting](https://docs.triliumnotes.org/user-guide/scripts)
+* निर्बाध [नोट
+  वर्ज़निंग](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* नोट
+  [एट्रीब्यूट्स](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  का उपयोग नोट्स ऑर्गेनाइज़ करने, क्वेरी करने और एडवांस्ड
+  [स्क्रिप्टिंग](https://docs.triliumnotes.org/user-guide/scripts) के लिए किया
+  जा सकता है
 * UI available in English, German, Spanish, French, Romanian, and Chinese
   (simplified and traditional)
 * Direct [OpenID and TOTP
@@ -103,12 +102,13 @@
   with self-hosted sync server
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
-* [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
-  (publishing) notes to public internet
+* पब्लिक इंटरनेट पर नोट्स की
+  [शेयरिंग](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (पब्लिशिंग)
 * प्रति-नोट granularity के साथ मजबूत [नोट
   एन्क्रिप्शन](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
-* Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
-  "canvas")
+* डायग्राम्स स्केच करना, [एक्सकैलिड्रॉ](https://excalidraw.com/) पर आधारित (नोट
+  टाइप "कैनवास")
 * [Relation
   maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
   [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)

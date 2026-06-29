@@ -101,18 +101,10 @@
     "export_type_single": "이 노트에만 해당(후손 노트를 포함하지 않음)",
     "export": "내보내기",
     "choose_export_type": "내보내기 타입을 선택해 주세요",
-    "export_in_progress": "내보내기 진행 중: {{progressCount}}",
     "export_finished_successfully": "내보내기를 성공적으로 완료했습니다.",
     "format_pdf": "PDF - 인쇄 또는 공유용",
-    "share-format": "웹 게시용 HTML - 공유 노트에 사용되는 것과 동일한 테마를 사용하지만 정적 웹사이트로 게시할 수 있습니다.",
     "close": "닫기",
-    "export_type_subtree": "이 노트와 모든 후손 노트",
-    "format_html": "HTML - 모든 형식 유지됨, 권장",
-    "format_html_zip": "HTML(ZIP 아카이브) - 모든 서식이 유지됨, 권장.",
-    "format_markdown": "마크다운 - 대부분의 서식이 유지됩니다.",
-    "format_opml": "OPML은 텍스트 전용 아웃라이너 교환 형식입니다. 서식, 이미지 및 파일은 포함되지 않습니다.",
-    "opml_version_1": "OPML v1.0 - 일반 텍스트만",
-    "opml_version_2": "OPML v2.0 - HTML 지원"
+    "export_type_subtree": "이 노트와 모든 후손 노트"
   },
   "help": {
     "title": "치트 시트",

@@ -143,7 +143,7 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         isFullHeight: true
     },
     markdown: {
-        view: () => import("./type_widgets/code/Markdown"),
+        view: () => import("./type_widgets/markdown/Markdown"),
         className: "note-detail-markdown",
         printable: true,
         isFullHeight: true

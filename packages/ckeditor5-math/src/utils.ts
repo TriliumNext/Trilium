@@ -133,7 +133,8 @@ export async function renderEquation(
 					katex.render( equation, el, {
 						throwOnError: false,
 						displayMode: display,
-						...katexRenderOptions
+						...katexRenderOptions,
+						...normalizeKatexMacros( katexRenderOptions )
 					} );
 				}
 				if ( preview ) {
@@ -213,6 +214,18 @@ export function getBalloonPositionData( editor: Editor ): {
 			]
 		};
 	}
+}
+
+// CKEditor stores plain-object config values with a null prototype (`Object.create( null )`),
+// but KaTeX calls `macros.hasOwnProperty()` directly while expanding macros, which throws on a
+// prototype-less object. Rebuild `macros` as an ordinary object so the lookup works (this also
+// hands KaTeX a disposable copy it can safely mutate, e.g. via `\gdef`).
+function normalizeKatexMacros( options: KatexOptions ): { macros?: object } {
+	const { macros } = options;
+	if ( macros && typeof macros === 'object' ) {
+		return { macros: { ...macros } };
+	}
+	return {};
 }
 
 function selectRenderMode(

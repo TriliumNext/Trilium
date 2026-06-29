@@ -6,6 +6,7 @@ import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getContext } from "../../context.js";
 import TaskContext from "../../task_context.js";
+import { decodeUtf8 } from "../../utils/binary.js";
 import keepImporter from "./importer.js";
 
 /** Builds an in-memory zip from a map of entry name -> contents. */
@@ -121,5 +122,76 @@ describe("Google Keep importer — integration", () => {
         });
 
         expect(note.getOwnedLabelValue("color")).toBe("#95d641");
+    });
+
+    it("preserves an image attachment, embedding it inline as a role:image attachment after the body", async () => {
+        const note = await importSingleNote({
+            "Takeout/Keep/note.json": JSON.stringify({
+                title: "Note with image",
+                textContent: "see below",
+                attachments: [{ filePath: "photo.png", mimetype: "image/png" }]
+            }),
+            "Takeout/Keep/photo.png": Buffer.from("\x89PNG\r\n\x1a\nfake-png-bytes")
+        });
+
+        // The image becomes a role:"image" attachment titled from the file name.
+        const attachments = note.getAttachmentsByRole("image");
+        expect(attachments.map((a) => a.title)).toEqual(["photo.png"]);
+
+        // The body keeps its text and gains an <img> pointing at the attachment URL.
+        const content = decodeUtf8(note.getContent() ?? "");
+        expect(content).toContain("see below");
+        expect(content).toContain(`<img src="api/attachments/${attachments[0].attachmentId}/image/photo.png"`);
+    });
+
+    it("preserves a non-image attachment as a role:file attachment with a reference link in the body", async () => {
+        const note = await importSingleNote({
+            "Takeout/Keep/note.json": JSON.stringify({
+                title: "Note with recording",
+                attachments: [{ filePath: "memo.3gp", mimetype: "audio/3gpp" }]
+            }),
+            "Takeout/Keep/memo.3gp": Buffer.from("fake-audio-bytes")
+        });
+
+        const attachments = note.getAttachmentsByRole("file");
+        expect(attachments.map((a) => a.title)).toEqual(["memo.3gp"]);
+        // The MIME is derived from the extension.
+        expect(attachments[0].mime).toBe("video/3gpp");
+        expect(decodeUtf8(attachments[0].getContent() ?? "")).toBe("fake-audio-bytes");
+
+        const content = decodeUtf8(note.getContent() ?? "");
+        // `&` is HTML-encoded to `&amp;` by the sanitizer in the persisted content.
+        expect(content).toContain(`href="#root/${note.noteId}?viewMode=attachments&amp;attachmentId=${attachments[0].attachmentId}"`);
+        expect(content).toContain(">memo.3gp</a>");
+    });
+
+    it("preserves every attachment when a note has more than one", async () => {
+        const note = await importSingleNote({
+            "Takeout/Keep/note.json": JSON.stringify({
+                attachments: [
+                    { filePath: "a.png", mimetype: "image/png" },
+                    { filePath: "b.png", mimetype: "image/png" }
+                ]
+            }),
+            "Takeout/Keep/a.png": Buffer.from("\x89PNG\r\n\x1a\na"),
+            "Takeout/Keep/b.png": Buffer.from("\x89PNG\r\n\x1a\nb")
+        });
+
+        expect(note.getAttachmentsByRole("image").map((a) => a.title)).toEqual(["a.png", "b.png"]);
+    });
+
+    it("skips an attachment whose binary is missing from the export, without failing the import", async () => {
+        const note = await importSingleNote({
+            "Takeout/Keep/note.json": JSON.stringify({
+                title: "Broken image",
+                textContent: "body",
+                attachments: [{ filePath: "gone.png", mimetype: "image/png" }]
+            })
+        });
+
+        expect(note.getAttachmentsByRole("image")).toHaveLength(0);
+        // No broken <img> is left behind; the original body is untouched.
+        const content = decodeUtf8(note.getContent() ?? "");
+        expect(content).toBe("<p>body</p>");
     });
 });

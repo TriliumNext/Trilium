@@ -282,15 +282,33 @@ function installStreamingBridge(
 ): StreamingBridge {
     let streaming = false;
     let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
+    // Set when write() signalled backpressure (returned false). The producer
+    // (e.g. archiver's pipe) then pauses until we emit a 'drain' event.
+    let producerPaused = false;
     const origWrite = res.write.bind(res);
     const origEnd = res.end.bind(res);
+
+    // Bound how much streamed-but-unread data sits in the queue. Without this a
+    // consumer slower than the producer — e.g. Electron writing a multi-GB
+    // export to disk — would let the whole payload pile up in memory.
+    const HIGH_WATER_MARK = 1024 * 1024; // 1 MiB
+
+    function resumeProducerIfReady() {
+        if (producerPaused && controller && controller.desiredSize !== null && controller.desiredSize > 0) {
+            producerPaused = false;
+            res.emit("drain");
+        }
+    }
 
     function commit() {
         if (streaming) return;
         streaming = true;
         const body = new ReadableStream<Uint8Array>({
-            start(c) { controller = c; }
-        });
+            start(c) { controller = c; },
+            // The consumer pulled (queue has capacity again) → release a producer
+            // that paused on backpressure.
+            pull() { resumeProducerIfReady(); }
+        }, new ByteLengthQueuingStrategy({ highWaterMark: HIGH_WATER_MARK }));
         try {
             onCommit(new Response(body, {
                 /* v8 ignore next -- defensive: statusCode is always set before flushHeaders */
@@ -332,6 +350,12 @@ function installStreamingBridge(
         write(chunk: unknown, ...rest: unknown[]): boolean {
             if (streaming) {
                 enqueue(chunk);
+                // Honour backpressure: once the queue is full, tell the producer
+                // to pause until the consumer drains it (pull → 'drain').
+                if (controller && controller.desiredSize !== null && controller.desiredSize <= 0) {
+                    producerPaused = true;
+                    return false;
+                }
                 return true;
             }
             return (origWrite as (...a: unknown[]) => boolean)(chunk, ...rest);

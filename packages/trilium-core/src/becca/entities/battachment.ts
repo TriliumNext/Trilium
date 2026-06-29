@@ -10,7 +10,7 @@ import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import type BBranch from "./bbranch.js";
 import type BNote from "./bnote.js";
 import { getSql } from "../../services/sql/index.js";
-import { formatDownloadTitle, isStringNote, replaceAll } from "../../services/utils";
+import { escapeRegExp, formatDownloadTitle, isStringNote, replaceAll } from "../../services/utils";
 
 const attachmentRoleToNoteTypeMapping = {
     image: "image",
@@ -172,27 +172,48 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
             isProtected: this.isProtected
         });
 
+        const attachmentId = this.attachmentId;
+
         this.markAsDeleted();
 
         const parentNote = this.getNote();
 
-        if (this.role === "image" && parentNote.type === "text") {
+        if (parentNote.type === "text") {
             const origContent = parentNote.getContent();
 
             if (typeof origContent !== "string") {
-                throw new Error(`Note with ID '${note.noteId} has a text type but non-string content.`);
+                throw new Error(`Note with ID '${note.noteId}' has a text type but non-string content.`);
             }
 
-            const oldAttachmentUrl = `api/attachments/${this.attachmentId}/image/`;
-            const newNoteUrl = `api/images/${note.noteId}/`;
+            let fixedContent = origContent;
 
-            const fixedContent = replaceAll(origContent, oldAttachmentUrl, newNoteUrl);
+            if (this.role === "image") {
+                // Rewrite embedded images (`<img src="api/attachments/{attachmentId}/image/...">`)
+                // to point at the new image note.
+                const oldAttachmentUrl = `api/attachments/${attachmentId}/image/`;
+                const newNoteUrl = `api/images/${note.noteId}/`;
+
+                fixedContent = replaceAll(fixedContent, oldAttachmentUrl, newNoteUrl);
+            }
+
+            // Rewrite reference links to the attachment so they point at the new note instead of
+            // resolving to "[missing attachment]" once the attachment is gone. These links are stored
+            // as `<a href="#root/{ownerId}?viewMode=attachments&attachmentId={attachmentId}">` (the `&`
+            // may be HTML-encoded as `&amp;`), which we collapse to a plain note link `#root/{noteId}`.
+            if (attachmentId) {
+                fixedContent = fixedContent.replace(
+                    new RegExp(`href="[^"]*attachmentId=${escapeRegExp(attachmentId)}[^"]*"`, "g"),
+                    `href="#root/${note.noteId}"`
+                );
+            }
 
             if (fixedContent !== origContent) {
                 parentNote.setContent(fixedContent);
             }
 
-            noteService.asyncPostProcessContent(note, fixedContent);
+            // Re-scan the parent (not the new image/file note, which has no scannable links) so its
+            // link relations are updated to reflect the rewritten URLs and reference links.
+            noteService.asyncPostProcessContent(parentNote, fixedContent);
         }
 
         return { note, branch };

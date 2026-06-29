@@ -2,7 +2,7 @@
 // DOMPurify relies on browser-faithful DOM traversal (NodeIterator); happy-dom
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
-import { trimIndentation } from "@triliumnext/commons";
+import { KATEX_MACROS, trimIndentation } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import FAttachment from "../entities/fattachment";
@@ -202,9 +202,10 @@ describe("Text content renderer", () => {
         // The math span is preserved through the rendering pass.
         expect(contentEl.querySelector("span.math-tex")).not.toBeNull();
         // The conditional KaTeX auto-render branch ran: it was invoked exactly once
-        // with the rendered content element ($renderedContent[0]) and the trust flag.
+        // with the rendered content element ($renderedContent[0]), the trust flag, and the
+        // shared MathLive→KaTeX macros (spread into a fresh object KaTeX may mutate).
         expect(renderMathInElementSpy).toHaveBeenCalledTimes(1);
-        expect(renderMathInElementSpy).toHaveBeenCalledWith(contentEl, { trust: true, throwOnError: false });
+        expect(renderMathInElementSpy).toHaveBeenCalledWith(contentEl, { trust: true, throwOnError: false, macros: { ...KATEX_MACROS } });
     });
 
     it("does not invoke KaTeX inline rendering when no math-tex spans are present", async () => {

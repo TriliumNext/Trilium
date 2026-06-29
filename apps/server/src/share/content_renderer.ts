@@ -184,7 +184,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     }
 
     const { header, content, isEmpty } = getContent(note);
-    const showLoginInShareTheme = options.getOption("showLoginInShareTheme");
+    const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
     const opts = {
         note,
         header,

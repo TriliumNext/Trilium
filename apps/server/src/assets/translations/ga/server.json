@@ -350,7 +350,8 @@
     "expand": "Leathnaigh",
     "toggle-navigation": "Nascleanúint a Athrú",
     "toggle-toc": "Clár Ábhair a Athsholáthar",
-    "logo-alt": "Lógó"
+    "logo-alt": "Lógó",
+    "login": "Logáil Isteach"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Sleachta Téacs",
@@ -426,5 +427,18 @@
   },
   "onenote_import": {
     "root-title": "Allmhairiú OneNote"
+  },
+  "notion_import": {
+    "root-title": "Iompórtáil Notion",
+    "markdown-export-unsupported": "Breathnaíonn sé seo cosúil le easpórtáil \"Markdown & CSV\" de chuid Notion, nach féidir le Trilium a allmhairiú. Ath-easpórtáil do spás oibre Notion ag baint úsáide as an bhformáid easpórtála \"HTML\" agus allmhairigh é sin ina ionad.",
+    "subpage-folders-disabled": "Cruthaíodh an easpórtáil Notion seo gan an rogha \"Cruthaigh fillteáin do fho-leathanaigh\", mar sin ní féidir ordlathas an leathanaigh a atógáil. Ath-easpórtáil ó Notion le \"Cruthaigh fillteáin do fho-leathanaigh\" cumasaithe agus allmhairigh é sin ina ionad."
+  },
+  "keep_import": {
+    "root-title": "Iompórtáil Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Iompórtáil Anytype",
+    "protobuf-export-unsupported": "Breathnaíonn sé seo cosúil le heaspórtáil \"Protobuf\" de chuid Anytype, nach féidir le Trilium a allmhairiú. Ath-easpórtáil do spás Anytype ag baint úsáide as an bhformáid \"Any-Block\" le \"JSON\" roghnaithe agus allmhairigh é sin ina ionad.",
+    "markdown-export-unsupported": "Breathnaíonn sé seo cosúil le heaspórtáil \"Markdown\" de chuid Anytype, nach féidir le Trilium a allmhairiú. Ath-easpórtáil do spás Anytype ag baint úsáide as an bhformáid \"Any-Block\" le \"JSON\" roghnaithe agus allmhairigh é sin ina ionad."
   }
 }

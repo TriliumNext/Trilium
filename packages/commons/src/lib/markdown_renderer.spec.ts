@@ -91,6 +91,26 @@ describe("extractCodeBlocks", () => {
         const hasFencedBlock = values.some((v) => v.includes("print('hello')"));
         expect(hasFencedBlock).toBe(true);
     });
+
+    it("should extract a fenced code block nested in a blockquote, prefixes and all (#10268)", () => {
+        const input = [ "> ```", "> echo ${VAR} ${VAR2}", "> ```" ].join("\n");
+        const { processedText, placeholderMap } = extractCodeBlocks(input);
+
+        expect(placeholderMap.size).toBe(1);
+        expect(processedText).not.toContain("```");
+        // The whole block, including the `> ` prefixes, is captured verbatim so the
+        // blockquote still renders after restoration.
+        expect([...placeholderMap.values()][0]).toBe(input);
+    });
+
+    it("should extract a fenced code block in a doubly-nested blockquote", () => {
+        const input = [ "> > ```", "> > $ $", "> > ```" ].join("\n");
+        const { processedText, placeholderMap } = extractCodeBlocks(input);
+
+        expect(placeholderMap.size).toBe(1);
+        expect(processedText).not.toContain("```");
+        expect([...placeholderMap.values()][0]).toBe(input);
+    });
 });
 
 describe("renderToHtml", () => {
@@ -321,6 +341,19 @@ describe("renderToHtml", () => {
         });
     });
 
+    describe("tables (CustomMarkdownRenderer.table)", () => {
+        it("wraps a table in <figure class=\"table\"> to match CKEditor's structure (#10270)", () => {
+            const html = render("| a | b |\n|---|---|\n| c | d |");
+            expect(html).toContain('<figure class="table">');
+            expect(html).toContain("</figure>");
+            // The wrapper hugs the table with no stray whitespace between them.
+            expect(html).toContain('<figure class="table"><table>');
+            expect(html).toContain("</table></figure>");
+            expect(html).toContain("<th>a</th>");
+            expect(html).toContain("<td>c</td>");
+        });
+    });
+
     describe("blockquotes / admonitions (CustomMarkdownRenderer.blockquote)", () => {
         it("renders a [!NOTE] admonition", () => {
             expect(render("> [!NOTE]\n> body")).toBe('<aside class="admonition note"><p>body</p></aside>');
@@ -347,6 +380,56 @@ describe("renderToHtml", () => {
 
         it("renders a plain blockquote", () => {
             expect(render("> just quote")).toBe("<blockquote><p>just quote</p></blockquote>");
+        });
+
+        it("matches the admonition type case-insensitively (Obsidian uses lowercase)", () => {
+            expect(render("> [!note]\n> body")).toBe('<aside class="admonition note"><p>body</p></aside>');
+        });
+
+        describe("Obsidian callouts (obsidian: true)", () => {
+            it("maps extended callout types to the nearest Trilium admonition type", () => {
+                const obsidian = { obsidian: true };
+                expect(render("> [!success]\n> done", "", obsidian))
+                    .toBe('<aside class="admonition tip"><p>done</p></aside>');
+                expect(render("> [!question]\n> q", "", obsidian))
+                    .toBe('<aside class="admonition tip"><p>q</p></aside>');
+                expect(render("> [!danger]\n> bad", "", obsidian))
+                    .toBe('<aside class="admonition caution"><p>bad</p></aside>');
+                expect(render("> [!info]\n> i", "", obsidian))
+                    .toBe('<aside class="admonition note"><p>i</p></aside>');
+                expect(render("> [!example]\n> e", "", obsidian))
+                    .toBe('<aside class="admonition important"><p>e</p></aside>');
+            });
+
+            it("renders an inline custom title as a bold lead paragraph", () => {
+                expect(render("> [!note] Custom Title\n> body", "", { obsidian: true }))
+                    .toBe('<aside class="admonition note"><p><strong>Custom Title</strong></p><p>body</p></aside>');
+            });
+
+            it("supports a title separated from the body by a blank line", () => {
+                expect(render("> [!tip] Heads up\n>\n> body", "", { obsidian: true }))
+                    .toBe('<aside class="admonition tip"><p><strong>Heads up</strong></p><p>body</p></aside>');
+            });
+
+            it("drops the fold marker (+/-) while keeping the title", () => {
+                expect(render("> [!note]- Folded\n> body", "", { obsidian: true }))
+                    .toBe('<aside class="admonition note"><p><strong>Folded</strong></p><p>body</p></aside>');
+                expect(render("> [!note]+\n> body", "", { obsidian: true }))
+                    .toBe('<aside class="admonition note"><p>body</p></aside>');
+            });
+
+            it("keeps an unknown callout type as a plain blockquote", () => {
+                const html = render("> [!frobnicate]\n> body", "", { obsidian: true });
+                expect(html).toContain("<blockquote>");
+                expect(html).not.toContain("admonition");
+            });
+        });
+
+        it("does not treat extended Obsidian callout types as admonitions without the obsidian flag", () => {
+            const html = render("> [!success]\n> x");
+            expect(html).toContain("<blockquote>");
+            expect(html).not.toContain("admonition");
+            expect(html).toContain("[!success]");
         });
     });
 
@@ -388,6 +471,16 @@ describe("renderToHtml", () => {
             expect(render("$$$x$$")).toBe("<p>$$$x$$</p>");
             expect(render("$$e=mc^2$")).not.toContain("math-tex");
         });
+
+        it("does not treat dollars in a blockquoted code block as formulas (#10268)", () => {
+            // The fence lines carry a `> ` prefix, so the code block must still be shielded
+            // from formula extraction — otherwise `${VAR} ${VAR2}` is mangled into a math span.
+            const html = render([ "> ```", "> echo ${VAR} ${VAR2}", "> ```" ].join("\n"));
+            expect(html).toContain("echo ${VAR} ${VAR2}");
+            expect(html).not.toContain("math-tex");
+            expect(html).not.toContain("FORMULA");
+            expect(html).toContain("<blockquote>");
+        });
     });
 
     describe("wiki links and transclusions", () => {
@@ -409,6 +502,44 @@ describe("renderToHtml", () => {
         it("renders a transclusion with a custom src format", () => {
             const html = render("![[abc123]]", "", { transclusion: { formatSrc: (id) => `/api/images/${id}` } });
             expect(html).toBe('<p><img src="/api/images/abc123"></p>');
+        });
+    });
+
+    describe("Obsidian syntax (obsidian option)", () => {
+        it("renders ==text== as a background-coloured span only when the obsidian flag is set", () => {
+            expect(render("==hi==", "", { obsidian: true }))
+                .toBe('<p><span style="background-color:hsl(60, 75%, 60%);">hi</span></p>');
+            // Off by default so generic Markdown is untouched.
+            expect(render("==hi==")).toBe("<p>==hi==</p>");
+        });
+
+        it("parses inner markdown inside a highlight", () => {
+            expect(render("==**bold**==", "", { obsidian: true }))
+                .toBe('<p><span style="background-color:hsl(60, 75%, 60%);"><strong>bold</strong></span></p>');
+        });
+
+        it("leaves ==== and spaced == as literal text", () => {
+            expect(render("====", "", { obsidian: true })).toBe("<p>====</p>");
+            expect(render("a == b", "", { obsidian: true })).toBe("<p>a == b</p>");
+        });
+
+        it("does not highlight == inside inline code", () => {
+            expect(render("`==x==`", "", { obsidian: true }))
+                .toBe('<p><code spellcheck="false">==x==</code></p>');
+        });
+
+        it("turns %% comment %% into an HTML comment only when the obsidian flag is set", () => {
+            expect(render("a %%secret%% b", "", { obsidian: true })).toBe("<p>a <!-- secret --> b</p>");
+            // Off by default so generic Markdown is untouched.
+            expect(render("a %%secret%% b")).toBe("<p>a %%secret%% b</p>");
+        });
+
+        it("handles a single-block comment spanning lines", () => {
+            expect(render("%%\nhidden\nnote\n%%", "", { obsidian: true })).toBe("<p><!-- hidden\nnote --></p>");
+        });
+
+        it("neutralises a comment terminator in the body so it cannot break out", () => {
+            expect(render("%%a-->b%%", "", { obsidian: true })).toBe("<p><!-- a-- >b --></p>");
         });
     });
 

@@ -173,10 +173,6 @@ export function getDownloadMatrix(t: TFunction<"translation", undefined>): Downl
                         recommended: true,
                         name: t("download_helper_server_hosted.download_pikapod"),
                         url: "https://www.pikapods.com/pods?run=trilium-next"
-                    },
-                    triliumcc: {
-                        name: t("download_helper_server_hosted.download_triliumcc"),
-                        url: "https://trilium.cc/"
                     }
                 }
             }

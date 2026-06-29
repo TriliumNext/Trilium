@@ -137,6 +137,16 @@ async function loadScripts() {
         return;
     }
 
+    if (glob.passwordSet === false) {
+        await import("./set_password.js");
+        return;
+    }
+
+    if (glob.loggedIn === false) {
+        await import("./login.js");
+        return;
+    }
+
     switch (glob.device) {
         case "mobile":
             await import("./mobile.js");

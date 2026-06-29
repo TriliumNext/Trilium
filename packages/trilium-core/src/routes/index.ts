@@ -52,10 +52,11 @@ interface SharedApiRoutesContext {
     loginRateLimiter: any;
     checkCredentials: any;
     uploadMiddlewareWithErrorHandling: any;
+    importMiddlewareWithErrorHandling: any;
     csrfMiddleware: any;
 }
 
-export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
+export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, importMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
     apiRoute(GET, '/api/tree', treeApiRoute.getTree);
     apiRoute(PST, '/api/tree/load', treeApiRoute.load);
 
@@ -149,9 +150,9 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     route(GET, "/api/sync/stats", [], syncApiRoute.getStats, apiResultHandler);
 
     //#region Import/export
-    asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
-    route(PST, "/api/notes/:parentNoteId/attachments-import", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
-    asyncRoute(GET, "/api/branches/:branchId/export/:type/:format/:version/:taskId", [checkApiAuthOrElectron], exportRoute.exportBranch);
+    asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
+    route(PST, "/api/notes/:parentNoteId/attachments-import", [checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
+    asyncRoute(GET, "/api/branches/:branchId/export/:type/:format/:taskId", [checkApiAuthOrElectron], exportRoute.exportBranch);
     //#endregion
 
     apiRoute(GET, "/api/quick-search/:searchString", searchRoute.quickSearch);

@@ -81,7 +81,7 @@ export default function VideoPreview({ note, noteContext, isVisible = true }: { 
                         <MediaSiblingButton navigation={siblingNavigation} direction="previous" tooltipI18nKey="media.previous-video" />
                         <SkipButton mediaRef={videoRef} seconds={-10} icon="bx bx-rewind" text={t("media.back-10s")} />
                         <PlayPauseButton playing={playing} togglePlayback={togglePlayback} />
-                        <SkipButton mediaRef={videoRef} seconds={30} icon="bx bx-fast-forward" text={t("media.forward-30s")} />
+                        <SkipButton mediaRef={videoRef} seconds={10} icon="bx bx-fast-forward" text={t("media.forward-10s")} />
                         <MediaSiblingButton navigation={siblingNavigation} direction="next" tooltipI18nKey="media.next-video" />
                     </div>
                     <div className="right">

@@ -1,3 +1,5 @@
+import { KATEX_MACROS } from "@triliumnext/commons";
+
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import { default as content_renderer, type RenderOptions } from "./content_renderer.js";
@@ -45,7 +47,8 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
         // throwOnError: false makes KaTeX render invalid formulas as an inline red error
         // (with the parse message as a tooltip) instead of throwing and leaving raw `$…$`
         // text plus a console error — matching the editor's behavior.
-        renderMathInElement($renderedContent[0], { trust: true, throwOnError: false });
+        // Spread KATEX_MACROS into a fresh object: KaTeX may mutate it (e.g. via `\gdef`).
+        renderMathInElement($renderedContent[0], { trust: true, throwOnError: false, macros: { ...KATEX_MACROS } });
     }
 
     const getNoteIdFromLink = (el: HTMLElement) => tree.getNoteIdFromUrl($(el).attr("href") || "");

@@ -173,7 +173,9 @@
     "year_previous": "前の年",
     "year_next": "次の年",
     "list": "リスト",
-    "today": "今日"
+    "today": "今日",
+    "pin_date": "現在の日付を固定し、カレンダーが「今日」ではなく常にこの日付で開くようにする",
+    "unpin_date": "日付の固定を解除し、カレンダーが再び「今日」の日付で開くようにする"
   },
   "note_icon": {
     "change_note_icon": "ノートアイコンの変更",
@@ -303,20 +305,29 @@
   "export": {
     "export_note_title": "ノートをエクスポート",
     "close": "閉じる",
-    "export_type_subtree": "このノートとすべての子孫",
-    "format_html": "HTML - すべての書式が保たれるため、おすすめ",
-    "format_html_zip": "HTML ZIPアーカイブ - すべての書式が保たれるため、推奨されます。",
-    "format_markdown": "マークダウン - ほとんどの書式が維持される。",
-    "format_opml": "OPML - テキストのみのアウトライン交換フォーマットです。書式設定、画像、ファイルは含まれません。",
-    "opml_version_1": "OPML v1.0 - プレーンテキストのみ",
-    "opml_version_2": "OPML v2.0 - HTMLが許可されています",
-    "export_type_single": "このノートのみで、子孫ノートは含まない",
+    "export_type_subtree": "このノートとすべての子孫ノート",
+    "export_type_single": "このノートのみ",
     "export": "エクスポート",
     "choose_export_type": "最初にエクスポートタイプを選択してください",
-    "export_in_progress": "エクスポート処理中: {{progressCount}}",
     "export_finished_successfully": "エクスポートが正常に完了しました。",
     "format_pdf": "PDF - 印刷または共有目的に。",
-    "share-format": "web 公開用の HTML - 共有ノートで使用されるのと同じテーマを使用しますが、静的 web サイトとして公開できます。"
+    "what_to_export": "エクスポート対象",
+    "format": "フォーマット",
+    "format_html_name": "HTML",
+    "format_html_description": "すべての書式を保持",
+    "format_markdown_name": "マークダウン",
+    "format_markdown_description": "ほとんどの書式を保持",
+    "format_opml_name": "OPML",
+    "format_opml_description": "HTML コンテンツを含むアウトライン形式",
+    "format_share_name": "Web 用 HTML",
+    "format_share_description": "共有ノートテーマを使用した公開可能な静的サイト",
+    "recommended": "推奨",
+    "result_subtree_html": "テキストノートを HTML 形式で保存した ZIP アーカイブ。コード、画像、その他のファイルは元の形式が保持されます。",
+    "result_subtree_markdown": "テキストノートをマークダウン形式で保存した ZIP アーカイブ。コード、画像、その他のファイルは元の形式が保持されます。",
+    "result_share": "共有ノートテーマを使用した、公開可能な静的ウェブサイトを含む ZIP アーカイブ。",
+    "result_opml": "単一の OPML アウトラインファイル。ノートのタイトルとテキストは含まれますが、画像、コードファイル、添付ファイルは含まれません。",
+    "result_single_html": "単一の HTML ファイル。画像や添付ファイルが埋め込まれます。",
+    "result_single_markdown": "単一のマークダウン (.md) ファイル。"
   },
   "help": {
     "title": "チートシート",
@@ -377,12 +388,11 @@
   "import": {
     "importIntoNote": "ノートにインポート",
     "chooseImportFile": "インポートするファイルを選択",
-    "importDescription": "選択されたファイルの内容は、子ノートとしてインポートされます",
     "options": "オプション",
-    "safeImportTooltip": "Triliumの <code>.zip</code> 形式のエクスポートファイルには、有害な動作を含む実行可能スクリプトが含まれている可能性があります。セーフインポートは、インポートされたすべてのスクリプトの自動実行を無効にします。インポートするファイルの内容を完全に信頼できる場合のみ、「セーフインポート」のチェックを外してください。",
+    "safeImportTooltip": "Triliumの <code>.zip</code> エクスポートには、実行可能スクリプトが含まれている可能性があります。セーフインポートではこれらが無効化されます。アーカイブ内のスクリプトの実行が含まれており、かつその内容を信頼できる場合にのみ、このチェックを外してください。",
     "safeImport": "セーフインポート",
-    "explodeArchivesTooltip": "これがチェックされている場合、Triliumは<code>.zip</code>、<code>.enex</code>、<code>.opml</code>ファイルを読み込み、それらのアーカイブからノートを作成します。チェックされていない場合、Triliumはアーカイブ自体をノートに添付します。",
-    "shrinkImagesTooltip": "<p>これをチェックすると、Triliumはインポートされた画像を、拡大縮小や最適化によって縮小しようとします。これにより、画像の品質が損なわれる可能性があります。チェックを外すと、画像は変更されずにインポートされます。</p><p>これは、メタデータ付きの<code>.zip</code>インポートには適用されません。これらのファイルは既に最適化されていると考えられるためです。</p>",
+    "explodeArchivesTooltip": "<code>.zip</code>, <code>.enex</code> および <code>.opml</code> アーカイブ内のファイルからノートを作成します。この機能をオフにすると、アーカイブはそのまま添付されます。",
+    "shrinkImagesTooltip": "画像をリサイズおよび最適化して容量を節約しますが、画質がわずかに低下する可能性があります。メタデータを含む <code>.zip</code> ファイルのインポートには適用されません。これらはすでに最適化済みとみなされます。",
     "shrinkImages": "画像を縮小",
     "textImportedAsText": "メタデータから判断できない場合は、HTML、マークダウン、TXTをテキストノートとしてインポート",
     "codeImportedAsCode": "メタデータから判断できない場合は、コードファイル（例: <code>.json</code>）をコードノートとしてインポート",
@@ -401,7 +411,12 @@
     "importZipRecommendation": "ZIP ファイルをインポートすると、ノートの階層はアーカイブ内のサブディレクトリ構造を反映します。",
     "spreadsheetImportedAsSpreadsheet": "CSV ファイルや Excel ファイルを、ファイルとしてではなく編集可能なスプレッドシートとしてインポートする",
     "starting": "インポート中…",
-    "in-progress-with-total": "{{total}} 件中 {{progress}} 件をインポート中"
+    "in-progress-with-total": "{{total}} 件中 {{progress}} 件をインポート中",
+    "importIntoNoteNamed": "{{- title}} にインポート",
+    "import_from": "インポート元",
+    "cardName": "ファイルとその他のフォーマット",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, 画像など",
+    "shrinkImagesProviderTooltip": "インポートした画像のサイズを調整および最適化して容量を節約しますが、画質が若干低下する場合があります。"
   },
   "password_not_set": {
     "title": "パスワードが設定されていない",
@@ -536,8 +551,7 @@
     "word_wrap_on": "オン",
     "word_wrap_off": "オフ",
     "save_named_revision": "名前を付けて変更履歴を保存...",
-    "print_or_export_to_pdf": "印刷 / PDF へのエクスポート...",
-    "import_from_service": "サービスからインポート…"
+    "print_or_export_to_pdf": "印刷 / PDF へのエクスポート..."
   },
   "command_palette": {
     "export_note_title": "ノートをエクスポート",
@@ -714,7 +728,7 @@
     "open_custom": "プログラムから開く",
     "open_custom_title": "ファイルを外部アプリケーションで開き、変更を監視します。その後、変更されたバージョンをTriliumにアップロードできるようになります。",
     "rename_attachment": "添付ファイルの名前を変更",
-    "copy_link_to_clipboard": "リンクをクリップボードにコピー",
+    "copy_link_to_clipboard": "参照先をクリップボードにコピー",
     "convert_attachment_into_note": "添付ファイルをノートに変換",
     "delete_attachment": "添付ファイルを削除",
     "open_externally_detail_page": "添付ファイルを外部で開くは、詳細ページからのみ可能です。まず添付ファイル詳細をクリックしてから、再度操作を行ってください。",
@@ -2198,7 +2212,7 @@
     "will_be_deleted_soon": "この添付ファイルはすぐに自動的に削除されます",
     "deletion_reason": "、添付ファイルがノートのコンテンツにリンクされていないためです。削除されないようにするには、添付ファイルのリンクをコンテンツに再度追加するか、添付ファイルをノートに変換してください。",
     "role_and_size": "ロール: {{role}},サイズ: {{size}}, MIME: {{- mimeType}}",
-    "link_copied": "添付ファイルのリンクをクリップボードにコピーしました。",
+    "link_copied": "添付ファイルの参照先をクリップボードにコピーしました。",
     "unrecognized_role": "添付ファイルのロール「{{role}}」は認識されません。"
   },
   "presentation_view": {
@@ -2304,7 +2318,11 @@
     "empty_message": "このノートには何も表示されません",
     "empty_button": "パネルを非表示",
     "toggle": "右パネルを切り替え",
-    "custom_widget_go_to_source": "ソースコードへ移動"
+    "custom_widget_go_to_source": "ソースコードへ移動",
+    "peek": "右ペインをピーク表示",
+    "hide": "右ペインを非表示",
+    "dock": "パネルをドッキング",
+    "close": "パネルを閉じる"
   },
   "attributes_panel": {
     "title": "ノート属性"
@@ -2376,7 +2394,6 @@
     "play": "再生 (スペース)",
     "pause": "一時停止 (スペース)",
     "back-10s": "10 秒戻る (左矢印キー)",
-    "forward-30s": "30 秒進む",
     "mute": "ミュート (M)",
     "unmute": "ミュート解除 (M)",
     "playback-speed": "再生速度",
@@ -2396,7 +2413,8 @@
     "play-mode-once": "1回再生",
     "play-mode-loop": "ループ",
     "play-mode-next": "次を再生",
-    "seek": "シーク（左右矢印キー）"
+    "seek": "シーク（左右矢印キー）",
+    "forward-10s": "10 秒進む (右矢印キー)"
   },
   "mermaid": {
     "placeholder": "マーメイド図の内容を入力するか、以下のサンプル図のいずれかを使用してください。",
@@ -2715,8 +2733,11 @@
     "placeholders": {
       "math": "数式",
       "collapsible_summary": "概要",
-      "collapsible_details": "詳細"
-    }
+      "collapsible_details": "詳細",
+      "table_column": "{{number}} 列"
+    },
+    "page_break": "改ページを挿入（印刷用）",
+    "table": "表を挿入"
   },
   "mobile_note_navigator": {
     "back": "1つ上の階層へ移動",
@@ -2887,13 +2908,11 @@
     "title": "全幅"
   },
   "import_provider": {
-    "title": "サービスからインポート",
-    "choose_provider": "インポート元のサービスを選択してください:",
-    "back": "戻る"
+    "choose_provider": "インポート元のサービスを上記から選択してください。"
   },
   "onenote_import": {
     "name": "Microsoft OneNote",
-    "description": "OneNote アカウントからノートブック、セクション、ページをインポートします。",
+    "description": "アカウントに接続",
     "connect_description": "Microsoft アカウントでサインインして、OneNote ノートブックをインポートしてください。",
     "connect": "Microsoft でサインイン",
     "connecting": "サインインが完了するまでお待ちください…",
@@ -2901,32 +2920,54 @@
     "disconnect": "接続を解除",
     "load_failed": "OneNote ノートブックを読み込めませんでした。",
     "no_notebooks": "このアカウントにはノートブックが見つかりませんでした。",
-    "select_sections": "インポートするセクションを選択:",
-    "order_hint_title": "セクションの並び順",
-    "order_hint": "OneNote のインポートデータには元の並び順が含まれていないため、セクションとグループは作成日順に並べ替えられ、OneNote での表示と一致しない場合があります。",
+    "select_sections": "インポートするセクションを選択",
     "import": "選択した項目をインポート",
     "attach_source": "元のHTMLを添付（デバッグ）",
-    "attach_source_hint": "変換後の結果と比較できるように、各ページの変更されていない OneNote の HTML をインポートされたノートに添付ファイルとして保存します。"
+    "attach_source_hint": "変換後の結果と比較できるように、各ページの変更されていない OneNote の HTML をインポートされたノートに添付ファイルとして保存します。",
+    "section_heading": "Microsoft OneNote",
+    "checking": "OneNote への接続を確認中…",
+    "select_sections_hint": "OneNote のインポートデータには元の並び順が含まれないため、セクションやグループは作成日順に並べ替えられます。そのため、OneNote 上での表示順序とは異なる場合があります。"
   },
   "notion_import": {
     "name": "Notion",
-    "description": "Notion の HTML エクスポートファイル (.zip) からページをインポートします。",
+    "description": "HTML エクスポートから",
     "description_long": "Notion でワークスペースまたはページをサブページを含む HTML 形式でエクスポートし、生成された.zipファイルをここで選択してください。",
     "choose_file": "Notion エクスポート (.zip)",
     "import": "インポート"
   },
   "keep_import": {
     "name": "Google Keep",
-    "description": "Google Keep のエクスポートファイル (.zip) からノートをインポートします。",
+    "description": "Takeout エクスポートから",
     "description_long": "Google Takeout で Keep のデータを.zip 形式でエクスポートし、生成されたファイルをここで選択してください。",
     "choose_file": "Google Keep エクスポート (.zip)",
     "import": "インポート"
   },
   "evernote_import": {
     "name": "Evernote",
-    "description": "Evernote のエクスポートファイル (.enex) からノートをインポートします。",
+    "description": ".enex ファイルから",
     "description_long": "Evernote でノートブック（または一度に最大100件のノート）を ENEX ファイルとしてエクスポートし、1 つ以上の .enex ファイルをここで選択してください。各ファイルは個別のノートブックとしてインポートされます。",
     "choose_file": "Evernote エクスポート (.enex)",
+    "import": "インポート"
+  },
+  "file_upload": {
+    "drop_or_browse_single": "ここにファイルをドラッグ＆ドロップするか、クリックして選択",
+    "drop_or_browse_multiple": "ここにファイルをドラッグ＆ドロップするか、クリックして選択",
+    "browse_single": "タップしてファイルを選択",
+    "browse_multiple": "タップしてファイルを選択",
+    "selected_other": "{{count}} 件のファイルを選択済み"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "JSON エクスポートから",
+    "description_long": "Anytypeで、\"Any-Block\" 形式かつ \"JSON\" を選択してスペースをエクスポートし、作成された .zip ファイルをここで選択してください。現時点では、ページとそのテキストのみがインポートされます。",
+    "choose_file": "Anytype エクスポート (.zip)",
+    "import": "インポート"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "Vault から",
+    "description_long": "Obsidian の Vault フォルダを ZIP 形式で圧縮し、作成された .zip ファイルをここで選択してください。",
+    "choose_file": "Obsidian vault (.zip)",
     "import": "インポート"
   }
 }

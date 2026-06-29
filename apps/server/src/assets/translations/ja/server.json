@@ -66,7 +66,8 @@
     "force-save-revision": "アクティブノートの新しいノートリヴィジョンを強制する",
     "toggle-classic-editor-toolbar": "固定ツールバーエディターの書式設定タブ切り替え",
     "save-named-revision": "アクティブなノートの変更履歴を名前を付けて保存",
-    "toggle-archived-notes": "ノートツリーでアーカイブされたノートを表示 / 非表示にする"
+    "toggle-archived-notes": "ノートツリーでアーカイブされたノートを表示 / 非表示にする",
+    "peek-right-pane": "右ペインを、コンテンツの上にフローティング表示し、フォーカスが外れると閉じる一時的なパネルとしてプレビューします"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -165,7 +166,8 @@
     "toggle-ribbon-tab-classic-editor": "リボンタブのクラシックエディターに切り替える",
     "toggle-ribbon-tab-promoted-attributes": "リボンタブ切り替え：プロモート属性",
     "save-named-revision": "変更履歴を名前を付けて保存",
-    "toggle-archived-notes": "アーカイブ済みノートの表示の切り替え"
+    "toggle-archived-notes": "アーカイブ済みノートの表示の切り替え",
+    "peek-right-pane": "右ペインをピーク表示"
   },
   "login": {
     "title": "ログイン",
@@ -338,7 +340,8 @@
     "expand": "展開",
     "toggle-navigation": "ナビゲーションの切り替え",
     "toggle-toc": "目次の切り替え",
-    "logo-alt": "ロゴ"
+    "logo-alt": "ロゴ",
+    "login": "ログイン"
   },
   "hidden_subtree_templates": {
     "text-snippet": "テキストスニペット",
@@ -428,9 +431,19 @@
     "root-title": "OneNote インポート"
   },
   "notion_import": {
-    "root-title": "Notion インポート"
+    "root-title": "Notion インポート",
+    "markdown-export-unsupported": "これは Notion の \"Markdown & CSV\" エクスポートのようですが、Trilium ではインポートできません。Notion のワークスペースを \"HTML\" 形式で再度エクスポートし、そちらをインポートしてください。",
+    "subpage-folders-disabled": "この Notion エクスポートは \"サブページ用のフォルダーを作成\" オプションを無効にして作成されているため、ページの階層構造を復元できません。Notion から \"サブページ用のフォルダーを作成\" を有効にして再度エクスポートし、そちらをインポートしてください。"
   },
   "keep_import": {
     "root-title": "Google Keep インポート"
+  },
+  "anytype_import": {
+    "root-title": "Anytype インポート",
+    "protobuf-export-unsupported": "これは Anytype の \"Protobuf\" エクスポートのようですが、 Trilium ではインポートできません。Anytype のスペースを、\"Any-Block\" 形式で \"JSON\" を選択して再度エクスポートし、そちらをインポートしてください。",
+    "markdown-export-unsupported": "これは Anytype の \"Markdown\" エクスポートのようですが、 Trilium ではインポートできません。Anytype のスペースを、\"Any-Block\" 形式で \"JSON\" を選択して再度エクスポートし、そちらをインポートしてください。"
+  },
+  "obsidian_import": {
+    "root-title": "Obsidian インポート"
   }
 }

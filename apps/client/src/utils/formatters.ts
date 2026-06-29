@@ -12,10 +12,20 @@ export function formatDateTime(date: string | Date | number | null | undefined, 
 
     const locale = normalizeLocale(options.get("formattingLocale") || options.get("locale") || navigator.language);
 
-    let parsedDate;
+    let parsedDate: Date;
     if (typeof date === "string" || typeof date === "number") {
-        // Parse the given string as a date
-        parsedDate = new Date(date);
+        const dateOnlyMatch = typeof date === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+        if (dateOnlyMatch) {
+            // A date-only string ("YYYY-MM-DD") is parsed as UTC midnight by the Date
+            // constructor, so it rolls back to the previous day when displayed in a
+            // negative UTC offset (e.g. the Recent Changes date headers). Treat it as a
+            // local calendar date so the same day is shown regardless of timezone.
+            const [ , year, month, day ] = dateOnlyMatch;
+            parsedDate = new Date(Number(year), Number(month) - 1, Number(day));
+        } else {
+            // Parse the given string as a date
+            parsedDate = new Date(date);
+        }
     } else if (date instanceof Date) {
         // The given date is already a Date instance or a number
         parsedDate = date;

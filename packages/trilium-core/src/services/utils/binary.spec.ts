@@ -212,7 +212,12 @@ describe("binary utils", () => {
             expect(processStringOrBuffer(buffer)).toBe("Hello UTF-8 world with enough text to detect");
         });
 
-        it("decodes a UTF-16LE buffer and strips the BOM", () => {
+        it("decodes multi-byte (CJK) UTF-8 content", () => {
+            const buffer = encodeUtf8("中文测试内容");
+            expect(processStringOrBuffer(buffer)).toBe("中文测试内容");
+        });
+
+        it("decodes a UTF-16LE buffer with a BOM and strips the BOM", () => {
             // BOM (0xFF 0xFE) followed by "Hi" in little-endian UTF-16
             const buffer = new Uint8Array([0xff, 0xfe, 0x48, 0x00, 0x69, 0x00]);
             const result = processStringOrBuffer(buffer);
@@ -221,8 +226,14 @@ describe("binary utils", () => {
             expect(result.charCodeAt(0)).not.toBe(0xfeff);
         });
 
-        it("falls back to UTF-8 decoding for undetected encodings", () => {
-            // a short ASCII buffer that chardet may not classify as UTF-16
+        it("treats UTF-16 without a BOM as UTF-8 (matching the previous chardet behaviour)", () => {
+            // "Hi" in little-endian UTF-16 but with no BOM: chardet never classified this as UTF-16LE
+            // either, so it was — and still is — decoded byte-wise as UTF-8 (null high bytes preserved).
+            const buffer = new Uint8Array([0x48, 0x00, 0x69, 0x00]);
+            expect([...processStringOrBuffer(buffer)].map((c) => c.charCodeAt(0))).toEqual([0x48, 0x00, 0x69, 0x00]);
+        });
+
+        it("decodes a plain ASCII buffer as UTF-8", () => {
             const buffer = new Uint8Array([0x61, 0x62, 0x63]); // "abc"
             expect(processStringOrBuffer(buffer)).toBe("abc");
         });

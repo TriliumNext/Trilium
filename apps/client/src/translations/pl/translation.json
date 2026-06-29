@@ -103,19 +103,11 @@
     "close": "Zamknij",
     "export_note_title": "Eksportuj notatkę",
     "export_type_subtree": "Ta notatka i wszystkie jej elementy podrzędne",
-    "format_html": "HTML - zalecane, ponieważ zachowuje pełne formatowanie",
-    "format_html_zip": "HTML w archiwum ZIP - zalecane, ponieważ zachowuje pełne formatowanie.",
-    "format_markdown": "Markdown - zachowuje większość formatowania.",
-    "format_opml": "OPML - format wymiany konspektów (tylko tekst). Formatowanie, obrazy i pliki nie są dołączane.",
-    "opml_version_1": "OPML v1.0 - tylko zwykły tekst",
-    "opml_version_2": "OPML v2.0 - dopuszcza również HTML",
     "export_type_single": "Tylko ta notatka (bez elementów podrzędnych)",
     "export": "Eksportuj",
     "choose_export_type": "Proszę najpierw wybrać typ eksportu",
-    "export_in_progress": "Eksport w toku: {{progressCount}}",
     "export_finished_successfully": "Eksport zakończony pomyślnie.",
-    "format_pdf": "PDF - do druku lub udostępniania.",
-    "share-format": "HTML do publikacji w sieci - używa tego samego motywu co udostępnione notatki, ale może być opublikowany jako statyczna strona."
+    "format_pdf": "PDF - do druku lub udostępniania."
   },
   "clone_to": {
     "clone_notes_to": "Sklonuj notatki do...",
@@ -420,7 +412,6 @@
   "import": {
     "importIntoNote": "Importuj do notatki",
     "chooseImportFile": "Wybierz plik importu",
-    "importDescription": "Zawartość wybranego pliku/plików zostanie zaimportowana jako notatka/notatki podrzędne do",
     "options": "Opcje",
     "shrinkImages": "Zmniejsz obrazy",
     "safeImport": "Bezpieczny import",
@@ -2148,7 +2139,6 @@
     "picture-in-picture": "Obraz w obrazie",
     "pause": "Zatrzymaj (Space)",
     "back-10s": "Cofnij 10s (Lewa strzałka)",
-    "forward-30s": "Do przodu 30s",
     "playback-speed": "Szybkość odtwarzania",
     "exit-picture-in-picture": "Wyjdź z obrazu w obrazie",
     "zoom-to-fit": "Powiększ aby wypełnić",

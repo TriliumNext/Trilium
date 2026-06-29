@@ -1,5 +1,3 @@
-import chardet from "chardet";
-
 const utf8Decoder = new TextDecoder("utf-8");
 const utf8Encoder = new TextEncoder();
 
@@ -111,13 +109,13 @@ export function processStringOrBuffer(data: string | Uint8Array | null) {
         return data;
     }
 
-    const detectedEncoding = chardet.detect(data);
-    switch (detectedEncoding) {
-        case "UTF-16LE":
-            return stripBom(new TextDecoder("utf-16le").decode(data));
-        /* v8 ignore next -- empty fall-through label; coverage is attributed to the shared `default` body */
-        case "UTF-8":
-        default:
-            return utf8Decoder.decode(data);
+    // The only non-UTF-8 encoding we decode is UTF-16LE. Detection previously used chardet, but chardet
+    // only ever resolved to UTF-16LE when the FF FE byte-order mark was present — BOM-less UTF-16 was
+    // detected as a single-byte encoding and decoded as UTF-8 anyway. A cheap BOM check reproduces that
+    // behaviour exactly, without running statistical charset detection on every imported note's content.
+    if (data.length >= 2 && data[0] === 0xFF && data[1] === 0xFE) {
+        return stripBom(new TextDecoder("utf-16le").decode(data));
     }
+
+    return utf8Decoder.decode(data);
 }

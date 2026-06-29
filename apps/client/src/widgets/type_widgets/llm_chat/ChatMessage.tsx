@@ -1,5 +1,5 @@
 import "./ChatMessage.css";
-import "../code/MarkdownCommons.css";
+import "../markdown/MarkdownCommons.css";
 
 import { type LlmCitation } from "@triliumnext/commons";
 import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer";

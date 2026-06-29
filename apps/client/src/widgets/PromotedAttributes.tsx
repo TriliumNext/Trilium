@@ -320,6 +320,7 @@ function RelationInput({ inputId, ...props }: CellProps & { inputId: string }) {
         <NoteAutocomplete
             id={inputId}
             noteId={props.cell.valueAttr.value}
+            opts={{ allowCreatingNotes: true }}
             noteIdChanged={async (value) => {
                 const { note, cell, componentId, setCells } = props;
                 await updateAttribute(note, cell, componentId, value, setCells);

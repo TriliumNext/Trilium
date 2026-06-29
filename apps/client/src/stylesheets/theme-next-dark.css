@@ -190,6 +190,10 @@
     --center-pane-horiz-layout-background-color-bgfx: #1e1e1ec7;
 
     --right-pane-heading-color: gray;
+    --right-pane-peek-background: #303030dc;
+    
+    --peek-pane-backdrop-color: #00000032;
+    --peek-pane-shadow-color: #000000a8;
 
     --root-background: var(--left-pane-background-color);
 

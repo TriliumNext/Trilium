@@ -93,7 +93,15 @@ export type CommandMappings = {
     "api-log-messages": CommandData;
     focusTree: CommandData;
     focusOnTitle: CommandData;
-    focusOnDetail: CommandData;
+    focusOnDetail: CommandData & {
+        /**
+         * When set, instead of merely focusing the editor, an empty paragraph is inserted at the very
+         * top of the document and the cursor is placed there (Notion-like behavior when pressing Enter
+         * in the title). Only honored by text notes. If the first block is already an empty paragraph,
+         * the cursor is placed in it rather than stacking another empty paragraph.
+         */
+        insertNewlineAtTop?: boolean;
+    };
     searchNotes: CommandData & {
         searchString?: string;
         ancestorNoteId?: string | null;
@@ -136,7 +144,6 @@ export type CommandMappings = {
     showConfirmDialog: ConfirmWithMessageOptions;
     showRecentChanges: CommandData & { ancestorNoteId: string };
     showImportDialog: CommandData & { noteId: string };
-    showImportProviderDialog: CommandData & { noteId: string };
     openNewNoteSplit: NoteCommandData;
     openInWindow: NoteCommandData;
     openInPopup: CommandData & { noteIdOrPath: string; };
@@ -346,6 +353,7 @@ export type CommandMappings = {
     toggleRibbonTabNotePaths: CommandData;
     toggleRibbonTabSimilarNotes: CommandData;
     toggleRightPane: CommandData;
+    peekRightPane: CommandData;
     printActiveNote: CommandData;
     exportAsPdf: CommandData;
     showPrintPreview: PrintPreviewData;

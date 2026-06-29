@@ -190,7 +190,7 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         }
     }, [ isZoomableImage ]);
 
-    async function copyAttachmentLinkToClipboard() {
+    async function copyAttachmentReferenceToClipboard() {
         if (attachment.role === "image") {
             const $img = refToJQuerySelector(isZoomableImage ? imageViewerWrapper : contentWrapper).find("img");
             if ($img.length) image.copyImageReferenceToClipboard($img.parent());
@@ -217,7 +217,7 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
                 <div className="attachment-title-line">
                     <AttachmentActions
                         attachment={attachment}
-                        copyAttachmentLinkToClipboard={copyAttachmentLinkToClipboard}
+                        copyAttachmentReferenceToClipboard={copyAttachmentReferenceToClipboard}
                         onShowOcr={supportsOcr ? () => appContext.triggerCommand("showOcrTextDialog", {
                             textUrl: `ocr/attachments/${attachment.attachmentId}/text`,
                             processUrl: `ocr/process-attachment/${attachment.attachmentId}`
@@ -286,7 +286,7 @@ function DeletionAlert({ utcDateScheduledForErasureSince }: { utcDateScheduledFo
     );
 }
 
-function AttachmentActions({ attachment, copyAttachmentLinkToClipboard, onShowOcr }: { attachment: FAttachment, copyAttachmentLinkToClipboard: () => void, onShowOcr?: () => void }) {
+function AttachmentActions({ attachment, copyAttachmentReferenceToClipboard, onShowOcr }: { attachment: FAttachment, copyAttachmentReferenceToClipboard: () => void, onShowOcr?: () => void }) {
     const isElectron = utils.isElectron();
     const fileUploadRef = useRef<HTMLInputElement>(null);
 
@@ -317,8 +317,8 @@ function AttachmentActions({ attachment, copyAttachmentLinkToClipboard, onShowOc
                     onClick={() => open.downloadAttachment(attachment.attachmentId)}
                 >{t("attachments_actions.download")}</FormListItem>
                 <FormListItem
-                    icon="bx bx-link"
-                    onClick={copyAttachmentLinkToClipboard}
+                    icon="bx bx-copy"
+                    onClick={copyAttachmentReferenceToClipboard}
                 >{t("attachments_actions.copy_link_to_clipboard")}</FormListItem>
                 {onShowOcr && (
                     <FormListItem

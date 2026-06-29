@@ -160,7 +160,7 @@ describe("route wrapper branches (via controlled handlers)", () => {
     it("provides no-op middleware and an init guard", async () => {
         buildRouter();
         // No-op middleware stubs do nothing and never throw.
-        for (const mw of [ctx.checkApiAuth, ctx.checkApiAuthOrElectron, ctx.checkCredentials, ctx.loginRateLimiter, ctx.uploadMiddlewareWithErrorHandling, ctx.csrfMiddleware]) {
+        for (const mw of [ctx.checkApiAuth, ctx.checkApiAuthOrElectron, ctx.checkCredentials, ctx.loginRateLimiter, ctx.uploadMiddlewareWithErrorHandling, ctx.importMiddlewareWithErrorHandling, ctx.csrfMiddleware]) {
             expect(() => (mw as () => void)()).not.toThrow();
         }
         // checkAppNotInitialized throws while the DB is initialized...

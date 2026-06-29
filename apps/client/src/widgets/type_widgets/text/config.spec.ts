@@ -146,6 +146,15 @@ describe("CK config", () => {
         expect(languages).not.toContain("application-javascript-env-frontend");
         expect(languages).not.toContain("application-javascript-env-backend");
     });
+
+    it("wires the MathLive→KaTeX compatibility macros into the math engine", async () => {
+        const config = await buildConfig(baseOpts());
+
+        const macros = (config.math as { katexRenderOptions?: { macros?: Record<string, string> } } | undefined)
+            ?.katexRenderOptions?.macros;
+        // Without this mapping, MathLive's \differentialD renders as raw error text (issue #9523).
+        expect(macros?.["\\differentialD"]).toBe("\\mathrm{d}");
+    });
 });
 
 describe("CK config - licensing", () => {

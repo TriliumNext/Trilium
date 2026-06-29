@@ -198,6 +198,33 @@ button.tn-low-profile:hover {
 }
 
 /*
+ * Selectable cards (import/export pickers) — mirror the button-group look: borderless, a recessed
+ * group background, and a raised "selected" chip with a subtle shadow. The base component styling
+ * (SelectableCard.css) uses theme-agnostic tokens so the legacy theme keeps working; these Next-theme
+ * tokens only exist here, so the override lives in the theme. The `:root` prefix matches the
+ * button-group convention above and keeps these rules winning over the component's base rules.
+ */
+:root .selectable-card {
+    border-color: transparent;
+    background: var(--button-group-background-color);
+    color: var(--cmd-button-text-color);
+    transition: background-color 150ms ease-in-out, color 150ms ease-in-out, box-shadow 150ms ease-in-out;
+}
+
+:root .selectable-card:hover {
+    border-color: transparent;
+    background: var(--cmd-button-hover-background-color);
+    color: var(--cmd-button-hover-text-color);
+}
+
+:root .selectable-card.selected {
+    border-color: transparent;
+    background: var(--button-group-active-button-background-color);
+    color: var(--button-group-active-button-color);
+    box-shadow: 1px 1px 1px var(--button-group-active-button-shadow-color);
+}
+
+/*
  * Input boxes
  */
 

@@ -66,5 +66,12 @@
 
 #content-footer .updated time {
     font-weight: bold;
-    
+
+}
+
+#content-footer .login {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    font-size: smaller;
 }

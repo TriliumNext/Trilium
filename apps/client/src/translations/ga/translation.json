@@ -162,20 +162,29 @@
   "export": {
     "export_note_title": "Nóta easpórtála",
     "close": "Dún",
-    "export_type_subtree": "An nóta seo agus a shliocht uile",
-    "format_html": "HTML - molta mar go gcoinníonn sé an fhormáid go léir",
-    "format_html_zip": "HTML i gcartlann ZIP - moltar é seo ós rud é go gcoimeádann sé seo an fhormáidiú go léir.",
-    "format_markdown": "Markdown - caomhnaíonn sé seo an chuid is mó den fhormáidiú.",
-    "format_opml": "OPML - formáid idirmhalartaithe imlíneach le haghaidh téacs amháin. Níl formáidiú, íomhánna agus comhaid san áireamh.",
-    "opml_version_1": "OPML v1.0 - téacs simplí amháin",
-    "opml_version_2": "OPML v2.0 - ceadaíonn HTML freisin",
-    "export_type_single": "An nóta seo amháin gan a shliocht",
+    "export_type_subtree": "An nóta seo & gach sliocht",
+    "export_type_single": "An nóta seo amháin",
     "export": "Easpórtáil",
     "choose_export_type": "Roghnaigh cineál onnmhairithe ar dtús le do thoil",
-    "export_in_progress": "Easpórtáil ar siúl: {{progressCount}}",
     "export_finished_successfully": "Críochnaíodh an easpórtáil go rathúil.",
     "format_pdf": "PDF - le haghaidh priontála nó comhroinnte.",
-    "share-format": "HTML le haghaidh foilsitheoireachta gréasáin - úsáideann sé an téama céanna a úsáidtear le haghaidh nótaí comhroinnte, ach is féidir é a fhoilsiú mar shuíomh gréasáin statach."
+    "what_to_export": "Cad atá le honnmhairiú",
+    "format": "Formáid",
+    "format_html_name": "HTML",
+    "format_html_description": "Coinníonn sé gach formáidiú",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Coinníonn sé an chuid is mó den fhormáidiú",
+    "format_opml_name": "OPML",
+    "format_opml_description": "Formáid imlíne le hábhar HTML",
+    "format_share_name": "HTML don ghréasán",
+    "format_share_description": "Suíomh statach infhoilsithe ag baint úsáide as an téama nótaí comhroinnte",
+    "recommended": "Molta",
+    "result_subtree_html": "Cartlann ZIP ina sábháiltear nótaí téacs mar HTML. Coinníonn cód, íomhánna agus comhaid eile a bhformáid bhunaidh.",
+    "result_subtree_markdown": "Cartlann ZIP ina sábháiltear nótaí téacs mar Markdown. Coinníonn cód, íomhánna agus comhaid eile a bhformáid bhunaidh.",
+    "result_share": "Cartlann ZIP ina bhfuil suíomh gréasáin statach infhoilsithe a úsáideann an téama nótaí comhroinnte.",
+    "result_opml": "Comhad imlíne OPML aonair. Tá teidil nótaí agus téacs san áireamh; níl íomhánna, comhaid chóid agus ceangaltáin san áireamh.",
+    "result_single_html": "Comhad HTML aonair. Tá íomhánna agus ceangaltáin leabaithe ann.",
+    "result_single_markdown": "Comhad Markdown (.md) aonair."
   },
   "help": {
     "title": "Bileog leideanna",
@@ -236,14 +245,13 @@
   "import": {
     "importIntoNote": "Iompórtáil isteach i nóta",
     "chooseImportFile": "Roghnaigh comhad allmhairithe",
-    "importDescription": "Déanfar ábhar an chomhaid/na gcomhad roghnaithe a allmhairiú mar nóta/nótaí linbh isteach",
     "importZipRecommendation": "Agus comhad ZIP á iompórtáil, léireoidh ordlathas na nótaí struchtúr an fho-eolaire laistigh den chartlann.",
     "options": "Roghanna",
-    "safeImportTooltip": "Is féidir go mbeadh scripteanna inrite a d'fhéadfadh iompar díobhálach a bheith iontu i gcomhaid easpórtála Trilium <code>.zip</code>. Díghníomhachtóidh allmhairiú sábháilte forghníomhú uathoibríoch na scripteanna allmhairithe go léir. Díthiceáil \"Allmhairiú sábháilte\" ach amháin má tá sé i gceist go mbeadh scripteanna inrite sa chartlann allmhairithe agus má tá muinín iomlán agat as ábhar an chomhaid allmhairithe.",
+    "safeImportTooltip": "Is féidir scripteanna inrite a bheith in easpórtálacha Trilium <code>.zip</code>. Díchumasaíonn allmhairiú sábháilte iad; díthiceáil ach amháin má tá an chartlann ceaptha scripteanna a rith agus má tá muinín agat as a bhfuil ann.",
     "safeImport": "Allmhairiú sábháilte",
-    "explodeArchivesTooltip": "Má tá tic sa bhosca seo léifidh Trilium comhaid <code>.zip</code>, <code>.enex</code> agus <code>.opml</code> agus cruthóidh sé nótaí ó chomhaid laistigh de na cartlanna sin. Mura bhfuil an tic sa bhosca seo, ceanglóidh Trilium na cartlanna féin leis an nóta.",
+    "explodeArchivesTooltip": "Cruthaíonn sé nótaí ó na comhaid atá i gcartlanna <code>.zip</code>, <code>.enex</code> agus <code>.opml</code>. Nuair a bhíonn sé múchta, ceanglaítear na cartlanna mar atá.",
     "explodeArchives": "Léigh ábhar na gcartlann <code>.zip</code>, <code>.enex</code> agus <code>.opml</code>.",
-    "shrinkImagesTooltip": "<p>Má roghnaíonn tú an rogha seo, déanfaidh Trilium iarracht na híomhánna allmhairithe a chrapadh trí scálú agus uasmhéadú a d'fhéadfadh difear a dhéanamh don cháilíocht íomhá a bhraitear. Mura roghnaítear é, allmhaireofar íomhánna gan athruithe.</p><p>Ní bhaineann sé seo le hallmhairí <code>.zip</code> le meiteashonraí ós rud é go nglactar leis go bhfuil na comhaid seo uasmhéadaithe cheana féin.</p>",
+    "shrinkImagesTooltip": "Déanann sé íomhánna a scálú agus a bharrfheabhsú chun spás a shábháil, rud a d'fhéadfadh an caighdeán a laghdú beagán. Ní bhaineann sé seo le hallmhairí <code>.zip</code> le meiteashonraí, a nglactar leo go bhfuil siad optamaithe cheana féin.",
     "shrinkImages": "Laghdaigh íomhánna",
     "textImportedAsText": "Iompórtáil HTML, Markdown agus TXT mar nótaí téacs mura bhfuil sé soiléir ó na meiteashonraí",
     "codeImportedAsCode": "Iompórtáil comhaid chód aitheanta (m.sh. <code>.json</code>) mar nótaí cóid mura bhfuil sé soiléir ó na meiteashonraí",
@@ -260,7 +268,11 @@
     "successful": "Críochnaíodh an t-allmhairiú go rathúil.",
     "spreadsheetImportedAsSpreadsheet": "Iompórtáil comhaid CSV agus Excel mar scarbhileoga in-eagarthóireachta seachas comhaid",
     "starting": "Ag iompórtáil…",
-    "in-progress-with-total": "Ag allmhairiú {{progress}} de {{total}}"
+    "in-progress-with-total": "Ag allmhairiú {{progress}} de {{total}}",
+    "importIntoNoteNamed": "Iompórtáil isteach i {{- title}}",
+    "import_from": "Iompórtáil ó",
+    "cardName": "Comhaid & formáidí eile",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, íomhánna agus tuilleadh"
   },
   "include_note": {
     "dialog_title": "Cuir nóta san áireamh",
@@ -610,7 +622,7 @@
     "download": "Íoslódáil",
     "rename_attachment": "Athainmnigh an ceangaltán",
     "upload_new_revision": "Uaslódáil athbhreithniú nua",
-    "copy_link_to_clipboard": "Cóipeáil nasc chuig an ghearrthaisce",
+    "copy_link_to_clipboard": "Cóipeáil tagairt chuig an ghearrthaisce",
     "convert_attachment_into_note": "Tiontaigh an ceangaltán ina nóta",
     "delete_attachment": "Scrios an ceangaltán",
     "upload_success": "Tá athbhreithniú nua ar an gceangaltán uaslódáilte.",
@@ -655,7 +667,9 @@
     "year_previous": "An bhliain roimhe sin",
     "year_next": "An bhliain seo chugainn",
     "list": "Liosta",
-    "today": "Inniu"
+    "today": "Inniu",
+    "pin_date": "Prínnigh an dáta reatha ionas go n-osclófar an féilire i gcónaí ar an eatramh seo seachas an lá inniu",
+    "unpin_date": "Díbhínigh an dáta ionas go n-osclófar an féilire ar dháta an lae inniu arís"
   },
   "close_pane_button": {
     "close_this_pane": "Dún an phainéal seo"
@@ -723,8 +737,7 @@
     "word_wrap_on": "Ar",
     "word_wrap_off": "As",
     "save_named_revision": "Sábháil athbhreithniú ainmnithe...",
-    "print_or_export_to_pdf": "Priontáil/onnmhairigh go PDF...",
-    "import_from_service": "Iompórtáil ó sheirbhís…"
+    "print_or_export_to_pdf": "Priontáil/onnmhairigh go PDF..."
   },
   "onclick_button": {
     "no_click_handler": "Níl aon láimhseálaí cliceáil sainithe ag an ngiuirléid cnaipe '{{componentId}}'"
@@ -1828,7 +1841,9 @@
     "subtree-hidden-tooltip_other": "{{count}} nótaí linbh atá i bhfolach ón gcrann",
     "subtree-hidden-moved-title": "Curtha le {{title}}",
     "subtree-hidden-moved-description-collection": "Cuireann an bailiúchán seo a nótaí faoi bhun an tsean-nótaí i bhfolach sa chrann.",
-    "subtree-hidden-moved-description-other": "Tá nótaí linbh i bhfolach sa chrann don nóta seo."
+    "subtree-hidden-moved-description-other": "Tá nótaí linbh i bhfolach sa chrann don nóta seo.",
+    "follow-active-note": "Lean nóta gníomhach",
+    "follow-active-note-title": "Scrollaíonn sé an crann agus leathnaíonn sé nóid tuismitheora chun an nóta gníomhach a thaispeáint. Nuair a bhíonn sé díchumasaithe, fanann an crann ina áit agus ní dhéantar ach an aibhsiú cúlra a nuashonrú."
   },
   "title_bar_buttons": {
     "window-on-top": "Coinnigh an Fhuinneog ar a Bharr"
@@ -2049,7 +2064,8 @@
     "create-child-note-title": "Cruthaigh nóta nua do pháistí agus cuir leis an léarscáil é",
     "create-child-note-text": "Cuir marcóir leis",
     "create-child-note-instruction": "Cliceáil ar an léarscáil chun nóta nua a chruthú ag an suíomh sin nó brúigh Escape chun é a dhíbhe.",
-    "unable-to-load-map": "Ní féidir an léarscáil a luchtú."
+    "unable-to-load-map": "Ní féidir an léarscáil a luchtú.",
+    "create-child-note-toast-title": "Nóta nua"
   },
   "geo-map-context": {
     "open-location": "Oscail suíomh",
@@ -2473,7 +2489,6 @@
     "play": "Seinn (Spás)",
     "pause": "Sos (Spás)",
     "back-10s": "10 soicind ar ais (eochair saighead chlé)",
-    "forward-30s": "Ar aghaidh 30s",
     "mute": "Balbhaigh (M)",
     "unmute": "Díbhalbhaigh (M)",
     "playback-speed": "Luas athsheinm",
@@ -2493,7 +2508,8 @@
     "play-mode-title": "Mód súgartha: {{mode}}",
     "play-mode-once": "Seinn uair amháin",
     "play-mode-loop": "Lúb",
-    "play-mode-next": "Seinn ina dhiaidh sin"
+    "play-mode-next": "Seinn ina dhiaidh sin",
+    "forward-10s": "Ar Aghaidh 10s (Eochair saighead ar dheis)"
   },
   "mermaid": {
     "placeholder": "Clóscríobh ábhar do léaráid Maighdean Mhara nó bain úsáid as ceann de na léaráidí samplacha thíos.",
@@ -2812,8 +2828,11 @@
     "placeholders": {
       "math": "cothromóid",
       "collapsible_summary": "Achoimre",
-      "collapsible_details": "Sonraí"
-    }
+      "collapsible_details": "Sonraí",
+      "table_column": "Colún {{number}}"
+    },
+    "page_break": "Cuir briseadh leathanaigh isteach (le haghaidh priontála)",
+    "table": "Cuir tábla isteach"
   },
   "mobile_note_navigator": {
     "back": "Téigh suas leibhéal amháin",
@@ -2970,13 +2989,11 @@
     "empty-hint": "Is giuirléid aon nóta linbh. Tarraing nóta anseo ón gcrann nó cruthaigh ceann nua."
   },
   "import_provider": {
-    "title": "Iompórtáil ó sheirbhís",
-    "choose_provider": "Roghnaigh seirbhís le hallmhairiú uaidh:",
-    "back": "Ar ais"
+    "choose_provider": "Roghnaigh seirbhís thuas le hallmhairiú uaithi."
   },
   "onenote_import": {
     "name": "Microsoft OneNote",
-    "description": "Iompórtáil leabhair nótaí, rannóga agus leathanaigh ó do chuntas OneNote.",
+    "description": "Ceanglaíonn le do chuntas",
     "connect_description": "Sínigh isteach le do chuntas Microsoft chun do leabhair nótaí OneNote a allmhairiú.",
     "connect": "Sínigh isteach le Microsoft",
     "connecting": "Ag fanacht go gcríochnófar an síniú isteach…",
@@ -2985,8 +3002,6 @@
     "load_failed": "Níorbh fhéidir do leabhair nótaí OneNote a luchtú.",
     "no_notebooks": "Ní bhfuarthas aon leabhair nótaí sa chuntas seo.",
     "select_sections": "Roghnaigh na rannóga le hallmhairiú:",
-    "order_hint_title": "Ord na rannóg garbh",
-    "order_hint": "Ní chuimsíonn OneNote an t-ordú bunaidh sna sonraí allmhairithe, mar sin déantar rannóga agus grúpaí a shórtáil de réir dáta cruthaithe agus b'fhéidir nach n-oireann siad don chaoi a bhfeictear iad in OneNote.",
     "import": "Iompórtáil roghnaithe",
     "attach_source": "Ceangail HTML bunaidh (dífhabhtú)",
     "attach_source_hint": "Sábhálann sé HTML OneNote neamhathraithe gach leathanaigh mar cheangaltán ar an nóta allmhairithe, chun comparáid a dhéanamh leis an toradh tiontaithe."
@@ -3008,5 +3023,44 @@
     "render_error": "Ní féidir an réamhamharc a rindreáil",
     "show_details": "Taispeáin sonraí",
     "last_valid_render": "Ag taispeáint an rindreála bailí deireanach"
+  },
+  "file_upload": {
+    "drop_or_browse_single": "Tarraing agus scaoil comhad anseo, nó cliceáil chun brabhsáil",
+    "drop_or_browse_multiple": "Tarraing agus scaoil comhaid anseo, nó cliceáil chun brabhsáil",
+    "browse_single": "Tapáil chun comhad a roghnú",
+    "browse_multiple": "Tapáil chun comhaid a roghnú",
+    "selected_one": "{{count}} comhad roghnaithe",
+    "selected_two": "{{count}} comhaid roghnaithe",
+    "selected_few": "{{count}} comhaid roghnaithe",
+    "selected_many": "{{count}} comhaid roghnaithe",
+    "selected_other": "{{count}} comhaid roghnaithe"
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "Ó easpórtáil HTML",
+    "description_long": "In Notion, easpórtáil do spás oibre nó leathanach mar HTML le fo-leathanaigh san áireamh, ansin roghnaigh an comhad .zip a eascraíonn as seo anseo.",
+    "choose_file": "Easpórtáil Notion (.zip)",
+    "import": "Iompórtáil"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "Ó easpórtáil Takeout",
+    "description_long": "In Google Takeout, easpórtáil do shonraí Keep mar chomhad .zip, agus ansin roghnaigh an comhad a eascraíonn as seo anseo.",
+    "choose_file": "Easpórtáil Google Keep (.zip)",
+    "import": "Iompórtáil"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "Ó easpórtáil JSON",
+    "description_long": "In Anytype, easpórtáil do spás ag baint úsáide as an bhformáid \"Any-Block\" le \"JSON\" roghnaithe, ansin roghnaigh an comhad .zip a eascraíonn as anseo. Ní allmhairítear ach leathanaigh agus a dtéacs faoi láthair.",
+    "choose_file": "Easpórtáil Anytype (.zip)",
+    "import": "Iompórtáil"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "Ó chomhaid .enex",
+    "description_long": "In Evernote, easpórtáil leabhar nótaí (nó suas le 100 nóta ag an am céanna) mar chomhad ENEX, ansin roghnaigh comhad .enex amháin nó níos mó anseo. Déantar gach comhad a allmhairiú mar leabhar nótaí ar leith.",
+    "choose_file": "Easpórtáil Evernote (.enex)",
+    "import": "Iompórtáil"
   }
 }

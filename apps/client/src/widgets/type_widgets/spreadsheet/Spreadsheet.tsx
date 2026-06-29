@@ -31,6 +31,7 @@ import { useColorScheme, useEffectiveReadOnly, useTriliumEvent, useTriliumEvents
 import { TypeWidgetProps } from "../type_widget";
 import useSpreadsheetExport from "./export";
 import { loadUniverLocale, UniverLocale } from "./locales";
+import useClampEdgeNavigation from "./navigation";
 import usePersistence from "./persistence";
 
 function buildReadOnlyLocaleOverrides() {
@@ -92,6 +93,7 @@ function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetPr
 
     useInitializeSpreadsheet(containerRef, apiRef, readOnly, locale);
     useReleaseFillShortcuts(apiRef);
+    useClampEdgeNavigation(apiRef);
     useDarkMode(apiRef);
     usePersistence(note, noteContext, apiRef, containerRef);
     useSpreadsheetExport(apiRef, note, noteContext);

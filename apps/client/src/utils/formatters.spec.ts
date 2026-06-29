@@ -49,6 +49,22 @@ describe("formatters", () => {
         expect(formatDateTime(new Date(), "none", "full")).toBeTruthy();
     });
 
+    it("renders a date-only string as the same calendar day in any timezone", () => {
+        // Regression for #8497: a "YYYY-MM-DD" string was parsed as UTC midnight by the
+        // Date constructor, which rolls back to the previous day for negative UTC
+        // offsets (e.g. the Recent Changes date headers showed yesterday for a UTC-8
+        // user). It must be treated as a local calendar date instead.
+        options.set("formattingLocale", "en-US");
+
+        // The date header itself must match the local calendar day, not a UTC shift.
+        expect(formatDateTime("2026-01-25", "full", "none")).toBe(new Date(2026, 0, 25).toLocaleDateString("en-US", { dateStyle: "full" }));
+
+        // Timezone-independent guard: a correctly parsed date-only string is *local*
+        // midnight in any timezone, so its time renders as 00:00. The buggy UTC parse
+        // produced a non-midnight local time in every zone east/west of UTC.
+        expect(formatDateTime("2026-01-25", "none", "short")).toBe("12:00 AM");
+    });
+
     it("falls back to the locale option then navigator.language", () => {
         // Empty formattingLocale forces the `|| options.get("locale")` branch.
         options.set("formattingLocale", "");

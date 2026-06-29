@@ -12,7 +12,7 @@ export interface ButtonProps {
     name?: string;
     /** Reference to the button element. Mostly useful for requesting focus. */
     buttonRef?: RefObject<HTMLButtonElement>;
-    text: string;
+    text: string | ComponentChildren;
     className?: string;
     icon?: string;
     keyboardShortcut?: string;

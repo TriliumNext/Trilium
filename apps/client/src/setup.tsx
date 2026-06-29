@@ -2,15 +2,14 @@ import "./setup.css";
 
 import { LOCALES, NetworkAddressesResponse, SetupSyncFromServerResponse } from "@triliumnext/commons";
 import clsx from "clsx";
-import { ComponentChildren, render } from "preact";
+import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useTranslation } from "react-i18next";
 
 import logo from "./assets/icon-color.svg?url";
 import { getCurrentLanguage, initLocale, t } from "./services/i18n";
 import server from "./services/server";
-import { isElectron, isMobileApp, replaceHtmlEscapedSlashes } from "./services/utils";
-import ActionButton from "./widgets/react/ActionButton";
+import { isElectron, isMobileApp } from "./services/utils";
 import Admonition, { ExtendedAdmonition } from "./widgets/react/Admonition";
 import Button from "./widgets/react/Button";
 import { Card, CardFrame, CardSection } from "./widgets/react/Card";
@@ -18,6 +17,7 @@ import FormGroup from "./widgets/react/FormGroup";
 import { FormListItem } from "./widgets/react/FormList";
 import FormTextBox from "./widgets/react/FormTextBox";
 import Icon from "./widgets/react/Icon";
+import SetupPage from "./widgets/react/SetupPage";
 
 async function main() {
     await initLocale();
@@ -108,6 +108,7 @@ function SelectLanguage({ setState }: { setState: (state: State) => void }) {
                             key={locale.id}
                             value={locale.id}
                             active={locale.id === currentLocale}
+                            rtl={locale.rtl}
                             onClick={async () => {
                                 await i18n.changeLanguage(locale.id);
                                 setCurrentLocale(locale.id);
@@ -527,53 +528,6 @@ function SetupOptionCard({ title, description, icon, onClick, disabled }: { titl
                 <p>{description}</p>
             </div>
         </CardFrame>
-    );
-}
-
-function SetupPage({ title, description, className, illustration, children, footer, error, errorId, onBack }: {
-    title: string;
-    description?: string;
-    error?: string | null;
-    errorId?: number;
-    className?: string;
-    illustration?: ComponentChildren;
-    children?: ComponentChildren;
-    footer?: ComponentChildren;
-    onBack?: () => void;
-}) {
-    const [ showError, setShowError ] = useState(!!error);
-    useEffect(() => {
-        if (error) {
-            setShowError(true);
-        }
-    }, [ error, errorId ]);
-
-    return (
-        <div className={clsx("page", className, { "contentless": !children })}>
-            {onBack && (
-                <Button
-                    className="back-button"
-                    icon="bx bx-arrow-back"
-                    text={t("setup.button-back")}
-                    onClick={onBack}
-                    kind="lowProfile"
-                />
-            )}
-            {error && showError && (
-                <Admonition className="page-error" type="caution">
-                    <ActionButton icon="bx bx-x" text={t("setup.dismiss-error")} onClick={() => setShowError(false)}  />
-                    {replaceHtmlEscapedSlashes(error)}
-                </Admonition>
-            )}
-
-            {illustration}
-            <h1>{title}</h1>
-            {description && <p class="page-description">{description}</p>}
-            {children && <main>
-                {children}
-            </main>}
-            {footer && <footer>{footer}</footer>}
-        </div>
     );
 }
 

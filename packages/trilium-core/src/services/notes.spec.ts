@@ -1,9 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
-import { getContext } from "./context.js";
+import { disableEntityEvents, getContext } from "./context.js";
+import { getLog } from "./log.js";
 import noteService, { prepareTitle, saveLinks } from "./notes.js";
 import optionService from "./options.js";
 import { getSql } from "./sql/index.js";
@@ -123,6 +124,40 @@ describe("notes service (real DB)", () => {
 
             expect(note.mime).toBe("text/special");
             expect(note.getRelationValue("template")).toBe(template.note.noteId);
+        });
+    });
+
+    describe("createNewNote logging", () => {
+        const isCreatedNoteLog = (call: unknown[]) => typeof call[0] === "string" && call[0].includes("Created new note");
+
+        it("logs a line for an interactive note creation", () => {
+            const info = vi.spyOn(getLog(), "info");
+            try {
+                createNote("root", { title: "spec-log-interactive" });
+                expect(info.mock.calls.some(isCreatedNoteLog)).toBe(true);
+            } finally {
+                info.mockRestore();
+            }
+        });
+
+        it("skips the per-note log line during bulk operations (entity events disabled)", () => {
+            const info = vi.spyOn(getLog(), "info");
+            try {
+                getContext().init(() => {
+                    // Mirrors what the import route does: it disables entity events for the whole bulk run,
+                    // which createNewNote uses to suppress its otherwise-per-note log line.
+                    disableEntityEvents();
+                    noteService.createNewNote({
+                        parentNoteId: "root",
+                        title: "spec-log-bulk",
+                        content: "<p>x</p>",
+                        type: "text"
+                    });
+                });
+                expect(info.mock.calls.some(isCreatedNoteLog)).toBe(false);
+            } finally {
+                info.mockRestore();
+            }
         });
     });
 

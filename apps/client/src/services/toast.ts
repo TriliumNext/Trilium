@@ -12,6 +12,12 @@ export interface ToastOptions {
     message: string;
     timeout?: number;
     progress?: number;
+    /**
+     * When `false`, the toast renders without its close (×) button so the user can't dismiss it. Use for
+     * persistent in-progress toasts whose underlying operation keeps running regardless of the toast — a
+     * dismissable × there reads as "cancel", which it isn't. Defaults to dismissable.
+     */
+    dismissible?: boolean;
     buttons?: {
         text: string;
         onClick: (api: { dismissToast: () => void }) => void;

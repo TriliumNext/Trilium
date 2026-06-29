@@ -45,6 +45,7 @@ describe("isValidDocName", () => {
         expect(isValidDocName("quick_start_guide")).toBe(true);
         expect(isValidDocName("quick-start-guide")).toBe(true);
         expect(isValidDocName("User Guide/User Guide/Advanced Usage/Text Extraction (OCR)")).toBe(true);
+        expect(isValidDocName("User Guide/Basic Concepts and Features/Import & Export/Microsoft OneNote")).toBe(true);
     });
 
     it("rejects path traversal attacks", () => {
@@ -113,6 +114,12 @@ describe("renderDoc", () => {
         const loadSpy = stubLoad(() => {});
         await renderDoc(fakeNote("User Guide/Quick Start"));
         expect(loadSpy.mock.calls[0][0]).toBe("assets/doc_notes/en/User%20Guide/Quick%20Start.html");
+    });
+
+    it("percent-encodes ampersands in the docName (e.g. \"Import & Export\")", async () => {
+        const loadSpy = stubLoad(() => {});
+        await renderDoc(fakeNote("User Guide/Basic Concepts and Features/Import & Export/Microsoft OneNote"));
+        expect(loadSpy.mock.calls[0][0]).toBe("assets/doc_notes/en/User%20Guide/Basic%20Concepts%20and%20Features/Import%20%26%20Export/Microsoft%20OneNote.html");
     });
 
     it("falls back to the English doc when the localized load errors", async () => {

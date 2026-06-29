@@ -167,6 +167,18 @@ describe("WebSocketMessagingProvider", () => {
             const { server } = init();
             expect(() => server.emit("error", new Error("ws boom"))).not.toThrow();
         });
+
+        it("handles a per-connection error without throwing and untracks the client", () => {
+            // A protocol error on a single socket (e.g. WS_ERR_INVALID_CLOSE_CODE) must not
+            // bubble up as an uncaught exception that crashes the process. See issue #9598.
+            const { server } = init();
+            const ws = makeSocket();
+            server.emit("connection", ws, {});
+            expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(true);
+
+            expect(() => ws.emit("error", new Error("WS_ERR_INVALID_CLOSE_CODE"))).not.toThrow();
+            expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(false);
+        });
     });
 
     describe("sendMessageToAllClients", () => {

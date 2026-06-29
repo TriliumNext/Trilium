@@ -47,6 +47,16 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
 
             console.log(`websocket client connected`);
 
+            ws.on("error", (error) => {
+                // A protocol error on a single connection (e.g. WS_ERR_INVALID_CLOSE_CODE from a
+                // malformed close frame sent by a browser going to sleep) emits an "error" event on
+                // this socket. Without a listener, Node's EventEmitter rethrows it as an uncaught
+                // exception and crashes the whole process. Log and drop the connection instead.
+                // https://github.com/TriliumNext/Trilium/issues/9598
+                console.error("WebSocket connection error:", error);
+                this.clientMap.delete(id);
+            });
+
             ws.on("message", (messageJson) => {
                 void (async () => {
                     try {

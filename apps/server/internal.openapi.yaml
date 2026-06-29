@@ -2159,7 +2159,7 @@ paths:
                 format: binary
 
   # Import/Export
-  /api/branches/{branchId}/export/{type}/{format}/{version}/{taskId}:
+  /api/branches/{branchId}/export/{type}/{format}/{taskId}:
     get:
       tags: [Import/Export]
       summary: Export branch
@@ -2182,11 +2182,6 @@ paths:
           schema:
             type: string
             enum: [html, markdown, opml]
-        - name: version
-          in: path
-          required: true
-          schema:
-            type: string
         - name: taskId
           in: path
           required: true

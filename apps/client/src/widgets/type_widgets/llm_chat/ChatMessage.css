@@ -13,6 +13,11 @@
 .llm-chat-message-wrapper-user {
     margin-left: auto;
     max-width: 70%;
+    /* Shrink to fit the content (capped by max-width) instead of collapsing to
+       min-content. Without an explicit width, an `auto` cross-axis margin inside
+       a flex column (the sidebar chat) squeezes short messages until single words
+       wrap character-by-character. */
+    width: fit-content;
 }
 
 .llm-chat-message-wrapper-assistant {
@@ -32,8 +37,6 @@
 
 .llm-chat-message-user {
     background: var(--accented-background-color);
-    max-width: 85%;
-    margin-left: auto;
 }
 
 .llm-chat-message-content {

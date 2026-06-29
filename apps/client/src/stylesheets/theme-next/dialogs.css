@@ -106,6 +106,16 @@
     border-top: unset;
 }
 
+/*
+ * Footer buttons indicate focus on plain :focus (not only :focus-visible) so the
+ * dialog's auto-focused default action (e.g. the OK button of a confirm dialog) shows a
+ * ring even when the dialog was opened by mouse — programmatic focus after a pointer
+ * interaction does not match :focus-visible.
+ */
+.modal .modal-footer button.btn:focus {
+    outline: 2px solid var(--input-focus-outline-color);
+}
+
 /* Tool dialogs - small dialogs without a backdrop */
 div.tn-tool-dialog {
     border-radius: 10px;

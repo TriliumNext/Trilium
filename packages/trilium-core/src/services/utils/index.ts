@@ -410,6 +410,29 @@ export function stripTags(text: string) {
     return text.replace(/<(?:.|\n)*?>/gm, "");
 }
 
+/**
+ * Generates a list of unique slugs for the given heading titles, preserving
+ * document order. Titles are stripped of HTML tags and slugified; when the same
+ * slug would be produced more than once (e.g. multiple headings sharing a
+ * title), subsequent occurrences get a numeric suffix (`foo`, `foo-1`, `foo-2`, …).
+ *
+ * This keeps anchor IDs and their table-of-contents links unique on shared
+ * pages, so clicking a duplicate heading in the ToC jumps to the right one.
+ */
+export function slugifyHeadings(titles: string[]): string[] {
+    const used = new Set<string>();
+    return titles.map((title) => {
+        const base = slugify(stripTags(title));
+        let slug = base;
+        let counter = 1;
+        while (used.has(slug)) {
+            slug = `${base}-${counter++}`;
+        }
+        used.add(slug);
+        return slug;
+    });
+}
+
 export function toObject<T, K extends string | number | symbol, V>(array: T[], fn: (item: T) => [K, V]): Record<K, V> {
     const obj: Record<K, V> = {} as Record<K, V>;
 

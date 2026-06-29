@@ -1,4 +1,5 @@
 export * from "./lib/i18n.js";
+export * from "./lib/katex_macros.js";
 export * from "./lib/options_interface.js";
 export * from "./lib/keyboard_actions_interface.js";
 export * from "./lib/hidden_subtree.js";

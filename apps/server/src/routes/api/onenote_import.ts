@@ -87,7 +87,7 @@ async function runImport(req: Request) {
         return [401, "Not connected to OneNote."];
     }
 
-    const { parentNoteId, sections, taskId, debug } = req.body as { parentNoteId: string; sections: OneNoteSectionSelection[]; taskId: string; debug?: boolean };
+    const { parentNoteId, sections, taskId, debug, shrinkImages } = req.body as { parentNoteId: string; sections: OneNoteSectionSelection[]; taskId: string; debug?: boolean; shrinkImages?: boolean };
     if (!parentNoteId || !taskId) {
         throw new ValidationError("parentNoteId and taskId are required.");
     }
@@ -100,7 +100,7 @@ async function runImport(req: Request) {
     // we return immediately and let the import report progress, completion and any error over the
     // WebSocket (taskType "importNotes"). importSelection catches and reports its own failures, so the
     // detached promise never rejects.
-    void importer.importSelection({ accessToken, parentNoteId, sections, taskId, debug: !!debug });
+    void importer.importSelection({ accessToken, parentNoteId, sections, taskId, debug: !!debug, shrinkImages: !!shrinkImages });
     return {};
 }
 

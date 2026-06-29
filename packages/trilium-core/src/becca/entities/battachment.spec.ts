@@ -382,6 +382,90 @@ describe("BAttachment (real DB)", () => {
 
             expect(() => getContext().init(() => att.convertToNote())).toThrow(/non-string content/);
         });
+
+        it("rewrites a reference link to a converted 'file' attachment so it points at the new note", () => {
+            const note = createNote({ content: "<p>placeholder</p>" });
+            const att = getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "doc-" + counter, content: "file body" })
+            );
+            const attachmentId = att.attachmentId;
+            expect(attachmentId).toBeDefined();
+
+            // CKEditor stores attachment reference links with the `&` HTML-encoded as `&amp;`.
+            const refContent = `<p>see <a class="reference-link" href="#root/${note.noteId}?viewMode=attachments&amp;attachmentId=${attachmentId}">doc</a></p>`;
+            getContext().init(() => note.setContent(refContent));
+
+            const { note: created } = getContext().init(() => att.convertToNote());
+
+            // The dangling attachment link is collapsed into a plain note link to the new note.
+            const expected = `<p>see <a class="reference-link" href="#root/${created.noteId}">doc</a></p>`;
+            expect(unwrapStringOrBuffer(note.getContent())).toBe(expected);
+
+            // ...and the parent gains an internal-link relation to the new note (no longer a [missing attachment]).
+            const internalLinks = note
+                .getRelations()
+                .filter((rel) => rel.name === "internalLink")
+                .map((rel) => rel.value);
+            expect(internalLinks).toContain(created.noteId);
+        });
+
+        it("rewrites a reference link that uses an unencoded '&' separator", () => {
+            const note = createNote({ content: "<p>x</p>" });
+            const att = getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "raw-" + counter, content: "y" })
+            );
+            const attachmentId = att.attachmentId;
+
+            const refContent = `<a href="#root/${note.noteId}?viewMode=attachments&attachmentId=${attachmentId}">raw</a>`;
+            getContext().init(() => note.setContent(refContent));
+
+            const { note: created } = getContext().init(() => att.convertToNote());
+
+            expect(unwrapStringOrBuffer(note.getContent())).toBe(`<a href="#root/${created.noteId}">raw</a>`);
+        });
+
+        it("rewrites both the embedded image and a reference link when converting an 'image' attachment", () => {
+            const note = createNote({ content: "<p>x</p>" });
+            const att = getContext().init(() =>
+                note.saveAttachment({ role: "image", mime: "image/png", title: "pic-" + counter, content: "binarydata" })
+            );
+            const attachmentId = att.attachmentId;
+            expect(attachmentId).toBeDefined();
+
+            const refContent =
+                `<img src="api/attachments/${attachmentId}/image/pic.png">` +
+                `<a class="reference-link" href="#root/${note.noteId}?viewMode=attachments&amp;attachmentId=${attachmentId}">pic</a>`;
+            getContext().init(() => note.setContent(refContent));
+
+            const { note: created } = getContext().init(() => att.convertToNote());
+
+            const expected =
+                `<img src="api/images/${created.noteId}/pic.png">` +
+                `<a class="reference-link" href="#root/${created.noteId}">pic</a>`;
+            expect(unwrapStringOrBuffer(note.getContent())).toBe(expected);
+        });
+
+        it("leaves reference links to other attachments untouched when converting one of them", () => {
+            const note = createNote({ content: "<p>x</p>" });
+            const target = getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "target-" + counter, content: "a" })
+            );
+            const other = getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "other-" + counter, content: "b" })
+            );
+
+            const otherHref = `#root/${note.noteId}?viewMode=attachments&amp;attachmentId=${other.attachmentId}`;
+            const refContent =
+                `<a href="#root/${note.noteId}?viewMode=attachments&amp;attachmentId=${target.attachmentId}">target</a>` +
+                `<a href="${otherHref}">other</a>`;
+            getContext().init(() => note.setContent(refContent));
+
+            const { note: created } = getContext().init(() => target.convertToNote());
+
+            // Only the converted attachment's link is rewritten; the other attachment's link is left intact.
+            const expected = `<a href="#root/${created.noteId}">target</a>` + `<a href="${otherHref}">other</a>`;
+            expect(unwrapStringOrBuffer(note.getContent())).toBe(expected);
+        });
     });
 
     describe("getPojo / getPojoToSave", () => {

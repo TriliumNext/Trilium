@@ -1,0 +1,56 @@
+:where(:root) {
+    --peek-button-arrow-color: var(--muted-text-color);
+    --peek-button-arrow-color-hover: var(--item-hover-text-color);
+    
+    --peek-button-expand-background-color: var(--note-split-background-color, var(--main-background-color));
+    --peek-button-expand-hover-background-color: var(--hover-item-background-color);
+
+    --peek-button-collapse-background-color: var(--right-pane-background-color);
+    --peek-button-expand-collapse-background-color: var(--hover-item-background-color);
+}
+
+/* The peek button is absolutely positioned in a reserved gutter on the right edge of
+   #vertical-main-container, so it stays fixed at the viewport's right side and fully
+   owns its background — independent of whether the right pane is open or collapsed. */
+.right-pane-peek-button {
+    /* Pinned to the reserved gutter (see #vertical-main-container in RightPanelContainer.css);
+       width inherits --right-pane-peek-button-width, with a fallback for safety. */
+    position: absolute;
+    inset-inline-end: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--right-pane-peek-button-width, 12px);
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-bottom: 1px solid var(--status-bar-border-color);
+    background: transparent;
+    padding: 0;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--peek-button-arrow-color);
+    transition: background 250ms ease-in, color 250ms ease-in;
+
+    &.right-pane-peek-button-action-expand {
+        background: var(--peek-button-expand-background-color);
+        
+        &:hover {
+            background: var(--peek-button-expand-hover-background-color);
+        }
+    }
+
+    &.right-pane-peek-button-action-collapse {
+        background: var(--peek-button-collapse-background-color);
+
+        &:hover {
+            background: var(--peek-button-collapse-hover-background-color);
+        }
+    }
+
+    &:hover {
+        color: var(--peek-button-arrow-color-hover);
+        transition: initial;
+    }
+}

@@ -26,7 +26,7 @@ import { changeEvent, newEvent } from "./api";
 import Calendar from "./calendar";
 import { openCalendarContextMenu } from "./context_menu";
 import { buildEvents, buildEventsForCalendar } from "./event_builder";
-import { parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
+import { formatDateToLocalISO, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 
 interface CalendarViewData {
 
@@ -199,11 +199,37 @@ function CalendarCollectionProperties({ note, calendarRef }: {
                 <span className="title">{title}</span>
                 <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} onClick={() => calendarRef.current?.next()} />
                 <Button text={t("calendar.today")} onClick={() => calendarRef.current?.today()} />
+                <PinDateButton note={note} calendarRef={calendarRef} />
                 {isMobileLocal && <MobileCalendarViewSwitcher calendarRef={calendarRef} />}
             </>}
             rightChildren={<>
                 {!isMobileLocal && <DesktopCalendarViewSwitcher calendarRef={calendarRef} />}
             </>}
+        />
+    );
+}
+
+function PinDateButton({ note, calendarRef }: {
+    note: FNote;
+    calendarRef: RefObject<FullCalendar>;
+}) {
+    const [ initialDate, setInitialDate ] = useNoteLabel(note, "calendar:initialDate");
+    const isPinned = !!initialDate;
+
+    return (
+        <ActionButton
+            icon={isPinned ? "bx bxs-pin" : "bx bx-pin"}
+            text={isPinned ? t("calendar.unpin_date") : t("calendar.pin_date")}
+            onClick={() => {
+                if (isPinned) {
+                    setInitialDate(null);
+                } else {
+                    const date = formatDateToLocalISO(calendarRef.current?.view.currentStart);
+                    if (date) {
+                        setInitialDate(date);
+                    }
+                }
+            }}
         />
     );
 }

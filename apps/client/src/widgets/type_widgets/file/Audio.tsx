@@ -75,7 +75,7 @@ export default function AudioPreview({ note, noteContext, isVisible = true }: { 
                         <MediaSiblingButton navigation={siblingNavigation} direction="previous" tooltipI18nKey="media.previous-audio" />
                         <SkipButton mediaRef={audioRef} seconds={-10} icon="bx bx-rewind" text={t("media.back-10s")} />
                         <PlayPauseButton playing={playing} togglePlayback={togglePlayback} />
-                        <SkipButton mediaRef={audioRef} seconds={30} icon="bx bx-fast-forward" text={t("media.forward-30s")} />
+                        <SkipButton mediaRef={audioRef} seconds={10} icon="bx bx-fast-forward" text={t("media.forward-10s")} />
                         <MediaSiblingButton navigation={siblingNavigation} direction="next" tooltipI18nKey="media.next-audio" />
                     </div>
 

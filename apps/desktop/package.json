@@ -45,7 +45,7 @@
     "@triliumnext/core": "workspace:*",
     "@triliumnext/server": "workspace:*",
     "@types/electron-squirrel-startup": "1.0.2",
-    "electron": "42.4.1",
+    "electron": "42.5.0",
     "node-mocks-http": "1.17.2",
     "prebuild-install": "7.1.3"
   }

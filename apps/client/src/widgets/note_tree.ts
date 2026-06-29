@@ -12,7 +12,6 @@ import type FNote from "../entities/fnote.js";
 import contextMenu from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import branchService from "../services/branches.js";
-import dialogService from "../services/dialog.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import { t } from "../services/i18n.js";
@@ -548,6 +547,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         return false;
                     } else if (node.data.noteId.startsWith("_options")) {
                         return false;
+                    } else if (node.data.noteId === hoistedNoteService.getHoistedNoteId()) {
+                        // The hoisted note is the tree root, so it has no visible siblings to drop before/after.
+                        // Only allow dropping into it to avoid the easy-to-hit "dropping not allowed" strips.
+                        return ["over"];
                     } else if (node.data.noteType === "launcher") {
                         return ["before", "after"];
                     } else if (["_lbAvailableLaunchers", "_lbVisibleLaunchers"].includes(node.data.noteId)) {
@@ -561,7 +564,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         (data.hitMode === "over" && node.data.noteType === "search") ||
                         (["after", "before"].includes(data.hitMode) && (node.data.noteId === hoistedNoteService.getHoistedNoteId() || node.getParent().data.noteType === "search"))
                     ) {
-                        await dialogService.info(t("note_tree.dropping-not-allowed"));
+                        toastService.showError(t("note_tree.dropping-not-allowed"));
 
                         return;
                     }

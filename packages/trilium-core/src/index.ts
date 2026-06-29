@@ -118,6 +118,8 @@ export * as routeHelpers from "./routes/helpers";
 
 export { getZipProvider, type ZipArchive, type ZipProvider } from "./services/zip_provider";
 export { default as zipImportService } from "./services/import/zip";
+export { default as importDispatchService, type ImportOptions } from "./services/import/dispatch";
+export type { File } from "./services/import/common";
 export { default as zipExportService } from "./services/export/zip";
 export { type AdvancedExportOptions, type ZipExportProviderData } from "./services/export/zip/abstract_provider";
 export { ZipExportProvider } from "./services/export/zip/abstract_provider";
