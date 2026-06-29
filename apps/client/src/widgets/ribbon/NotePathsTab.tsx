@@ -13,7 +13,6 @@ import { joinElements, ParentComponent } from "../react/react_utils";
 import { TabContext } from "./ribbon-interface";
 
 interface InverseTreeNode {
-    branchId: string;
     noteId: string;
     fullPathString: string;
     isCurrent: boolean;
@@ -177,7 +176,7 @@ export function NotePathsWidget({
                     >
                         {treeRoots.map((rootNode) => (
                             <InverseTreeNodeComponent
-                                key={rootNode.branchId}
+                                key={rootNode.noteId}
                                 node={rootNode}
                                 currentNotePath={currentNotePath}
                                 isRoot={true}
