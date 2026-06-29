@@ -17,6 +17,7 @@ interface UserTheme {
     title: string; // title of the theme, displayed in the UI
     noteId: string; // ID of the note containing the theme
     icon: string; // icon class of the note
+    appThemeBase?: "next" | "next-light" | "next-dark"; // optional base theme to load underneath the custom theme
 }
 
 // options allowed to be updated directly in the Options dialog
@@ -71,6 +72,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "nativeTitleBarVisible",
     "headingStyle",
     "autoCollapseNoteTree",
+    "treeScrollFollowNavigation",
     "autoReadonlySizeText",
     "customDateTimeFormat",
     "autoReadonlySizeCode",
@@ -90,9 +92,11 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "highlightsList",
     "checkForUpdates",
     "disableTray",
+    "closeToTray",
+    "launchOnStartup",
+    "hideOnAutoStart",
     "eraseUnusedAttachmentsAfterSeconds",
     "eraseUnusedAttachmentsAfterTimeScale",
-    "disableTray",
     "customSearchEngineName",
     "customSearchEngineUrl",
     "editedNotesOpenInRibbon",
@@ -119,9 +123,9 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "seenCallToActions",
     "experimentalFeatures",
     "newLayout",
-    "mfaEnabled",
     "mfaMethod",
     // LLM options
+    "aiEnabled",
     "llmProviders",
     "mcpEnabled",
     // OCR options
@@ -157,6 +161,8 @@ function getOptions() {
     // Expose scripting config (read-only, from config.ini / env vars)
     resultMap["backendScriptingEnabled"] = config.Security.backendScriptingEnabled ? "true" : "false";
     resultMap["sqlConsoleEnabled"] = config.Security.sqlConsoleEnabled ? "true" : "false";
+    // Desktop LAN-access override (read-only; toggled via the Electron security bridge)
+    resultMap["allowLanAccess"] = config.Security.allowLanAccess ? "true" : "false";
 
     // Detect if the user has any backend scripts with #run labels (backendStartup, hourly, daily).
     // Filter by MIME type since #run can also appear on frontend scripts.
@@ -239,7 +245,8 @@ function getUserThemes() {
             val: value,
             title,
             noteId: note.noteId,
-            icon: note.getIcon()
+            icon: note.getIcon(),
+            appThemeBase: (note.getLabelValue("appThemeBase") ?? undefined) as "next" | "next-light" | "next-dark" | undefined
         });
     }
 

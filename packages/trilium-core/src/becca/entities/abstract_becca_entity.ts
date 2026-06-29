@@ -80,7 +80,8 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     }
 
     hasStringContent(): boolean {
-        // TODO: Not sure why some entities don't implement it.
+        // Default for entities without binary content; overridden by content-bearing entities
+        // (BNote, BRevision, BAttachment) whose content may be binary.
         return true;
     }
 
@@ -93,7 +94,8 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     abstract updateFromRow(row: unknown): void;
 
     get isDeleted(): boolean {
-        // TODO: Not sure why some entities don't implement it.
+        // Default for entities without a soft-delete column; overridden by those that have one
+        // (BNote, BBranch, BAttribute, BEtapiToken).
         return false;
     }
 
@@ -146,6 +148,14 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
         if (content === null || content === undefined) {
             const constructorData = this.constructor as unknown as ConstructorData<T>;
             throw new Error(`Cannot set null content to ${constructorData.primaryKeyName} '${(this as any)[constructorData.primaryKeyName]}'`);
+        }
+
+        // Deny oversized content at the point a blob is created. Sync serialises blob content as a single
+        // base64 JS string, so content above this threshold can never be synced (it would throw V8's
+        // "Cannot create a string longer than 0x1fffffe8"); rejecting it here keeps un-syncable blobs out of
+        // the database in the first place. See MAX_BLOB_CONTENT_LENGTH below for how the threshold is derived.
+        if (exceedsBlobContentLimit(content)) {
+            throw new Error(`Content is too large to store: the maximum is ${MAX_BLOB_CONTENT_LENGTH} bytes (~${Math.round(MAX_BLOB_CONTENT_LENGTH / 1024 / 1024)} MiB), beyond which it can no longer be synchronised.`);
         }
 
         if (this.hasStringContent()) {
@@ -332,3 +342,48 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
 }
 
 export default AbstractBeccaEntity;
+
+/**
+ * Maximum byte length of a single blob's content.
+ *
+ * The sync protocol serialises a blob's content as **one base64 JS string** embedded in a JSON
+ * request body (see `sync.ts` `getEntityChangeRow`). Two ceilings bound that encoded form:
+ *
+ *  1. **V8's maximum string length** — `0x1fffffe8` = 536,870,888 bytes (empirically
+ *     `require("buffer").constants.MAX_STRING_LENGTH` on 64-bit). A blob whose base64 form exceeds
+ *     it can never be encoded, throwing `Cannot create a string longer than 0x1fffffe8 characters`
+ *     and wedging sync — the original motivation for the import size cap (zadam/trilium#3108).
+ *  2. **The HTTP JSON body limit** — `express.json({ limit: "500mb" })` in `apps/server/src/app.ts`,
+ *     which the *receiving* instance parses every sync push through.
+ *
+ * base64 inflates by 4/3, so the largest blob whose encoded form clears the **tighter** of the two
+ * ceilings — minus headroom for the surrounding JSON envelope (field names, the entity-change
+ * metadata, quotes) — is the real limit. With the body limit binding, that lands at ~373 MiB.
+ *
+ * This replaces the blunt 250 MiB multipart-upload cap, which conflated the size of an *archive*
+ * (e.g. a ZIP, whose many entries are each their own blob) with the size of a single blob, and —
+ * because it bounded only the *compressed* upload — didn't reliably protect against an oversized
+ * blob decompressed out of a small archive anyway.
+ */
+const V8_MAX_STRING_LENGTH = 536_870_888;
+const HTTP_BODY_LIMIT = 500 * 1024 * 1024;
+const JSON_ENVELOPE_MARGIN = 2 * 1024 * 1024;
+
+export const MAX_BLOB_CONTENT_LENGTH = Math.floor(((Math.min(V8_MAX_STRING_LENGTH, HTTP_BODY_LIMIT) - JSON_ENVELOPE_MARGIN) * 3) / 4);
+
+/**
+ * Whether `content` exceeds {@link MAX_BLOB_CONTENT_LENGTH} once measured the way sync will encode it
+ * (UTF-8 bytes for string content, raw bytes for binary). `limit` is injectable for testing.
+ */
+export function exceedsBlobContentLimit(content: string | Uint8Array, limit = MAX_BLOB_CONTENT_LENGTH): boolean {
+    if (typeof content !== "string") {
+        return content.length > limit;
+    }
+    // A UTF-16 code unit encodes to at most 3 UTF-8 bytes (surrogate pairs average 2 bytes/unit), so
+    // this cheap upper bound avoids encoding the whole string in the common case; only when it's close
+    // to the limit do we pay for an exact measurement.
+    if (content.length * 3 <= limit) {
+        return false;
+    }
+    return encodeUtf8(content).length > limit;
+}

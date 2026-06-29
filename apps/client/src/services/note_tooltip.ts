@@ -78,7 +78,10 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
 
     let renderPromise;
     let note: FNote | null = null;
-    if (url && url.startsWith("#") && !url.startsWith("#root/")) {
+    // In-page anchors and footnotes are always bare `#fragment` references; a `?` means this is a
+    // note link carrying view params (e.g. the calendar's `#<noteId>?popup`), which must render a
+    // note tooltip rather than being fed into a jQuery selector (the `?` is an invalid selector).
+    if (url && url.startsWith("#") && !url.startsWith("#root/") && !url.includes("?")) {
         renderPromise = renderFootnoteOrAnchor($link, url);
     } else {
         note = await froca.getNote(noteId);

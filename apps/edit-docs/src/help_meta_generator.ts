@@ -46,12 +46,25 @@ export function parseNoteMetaFile(noteMetaFile: NoteMetaFile, handleTextNote: Te
     }
 
     const metaRoot = noteMetaFile.files[0];
-    const parsedMetaRoot = parseNoteMeta(metaRoot, handleTextNote, "/" + (metaRoot.dirFileName ?? ""), baseUrl);
+    const docNameRoot = "/" + (metaRoot.dirFileName ?? "");
+
+    // A note cloned into several help locations appears once per location, but the runtime
+    // hidden-subtree check enforces a single set of attributes per noteId. The per-occurrence
+    // `iconClass`/`docName` would therefore conflict and flip-flop on every check. Index the
+    // primary (non-clone) occurrence's values up front so every clone can reuse them.
+    const canonicalByNoteId = new Map<string, CanonicalOccurrence>();
+    indexPrimaryOccurrences(metaRoot, docNameRoot, canonicalByNoteId);
+
+    const parsedMetaRoot = parseNoteMeta(metaRoot, handleTextNote, docNameRoot, canonicalByNoteId, baseUrl);
     return parsedMetaRoot?.children ?? [];
 }
 
-function parseNoteMeta(noteMeta: NoteMeta, handleTextNote: TextNoteHandler, docNameRoot: string, parentUrl?: string): HiddenSubtreeItem | null {
-    let iconClass: string = "bx bx-file";
+interface CanonicalOccurrence {
+    iconClass: string;
+    docPath?: string;
+}
+
+function parseNoteMeta(noteMeta: NoteMeta, handleTextNote: TextNoteHandler, docNameRoot: string, canonicalByNoteId: Map<string, CanonicalOccurrence>, parentUrl?: string): HiddenSubtreeItem | null {
     const item: HiddenSubtreeItem = {
         id: `_help_${noteMeta.noteId}`,
         title: noteMeta.title ?? "",
@@ -61,7 +74,6 @@ function parseNoteMeta(noteMeta: NoteMeta, handleTextNote: TextNoteHandler, docN
 
     // Handle folder notes
     if (!noteMeta.dataFileName) {
-        iconClass = "bx bx-folder";
         item.type = "book";
     }
 
@@ -72,11 +84,6 @@ function parseNoteMeta(noteMeta: NoteMeta, handleTextNote: TextNoteHandler, docN
 
     // Handle attributes
     for (const attribute of noteMeta.attributes ?? []) {
-        if (attribute.name === "iconClass") {
-            iconClass = attribute.value;
-            continue;
-        }
-
         if (attribute.name === "webViewSrc") {
             item.attributes?.push({
                 type: "label",
@@ -90,9 +97,14 @@ function parseNoteMeta(noteMeta: NoteMeta, handleTextNote: TextNoteHandler, docN
         }
     }
 
+    // Clones share the underlying note, so resolve their per-occurrence icon/docName to the
+    // primary occurrence's values; otherwise the two occurrences would enforce conflicting ones.
+    const canonical = noteMeta.isClone ? canonicalByNoteId.get(noteMeta.noteId ?? "") : undefined;
+    const iconClass = canonical?.iconClass ?? computeIconClass(noteMeta);
+
     // Handle text notes
     if (noteMeta.type === "text" && noteMeta.dataFileName) {
-        const docPath = `${docNameRoot}/${path.basename(noteMeta.dataFileName, ".html")}`.substring(1);
+        const docPath = canonical?.docPath ?? computeDocPath(docNameRoot, noteMeta.dataFileName);
         if (!handleTextNote(item, docPath, noteUrl)) {
             return null;
         }
@@ -109,7 +121,7 @@ function parseNoteMeta(noteMeta: NoteMeta, handleTextNote: TextNoteHandler, docN
         const children: HiddenSubtreeItem[] = [];
         for (const childMeta of noteMeta.children) {
             const newDocNameRoot = noteMeta.dirFileName ? `${docNameRoot}/${noteMeta.dirFileName}` : docNameRoot;
-            const child = parseNoteMeta(childMeta, handleTextNote, newDocNameRoot, currentUrl);
+            const child = parseNoteMeta(childMeta, handleTextNote, newDocNameRoot, canonicalByNoteId, currentUrl);
             if (child) {
                 children.push(child);
             }
@@ -125,4 +137,34 @@ function parseNoteMeta(noteMeta: NoteMeta, handleTextNote: TextNoteHandler, docN
     });
 
     return item;
+}
+
+/** Records the `iconClass`/`docName` of every primary (non-clone) occurrence so clones can reuse them. */
+function indexPrimaryOccurrences(noteMeta: NoteMeta, docNameRoot: string, out: Map<string, CanonicalOccurrence>): void {
+    if (!noteMeta.isClone && noteMeta.noteId) {
+        out.set(noteMeta.noteId, {
+            iconClass: computeIconClass(noteMeta),
+            docPath: noteMeta.type === "text" && noteMeta.dataFileName ? computeDocPath(docNameRoot, noteMeta.dataFileName) : undefined
+        });
+    }
+
+    if (noteMeta.children) {
+        const childDocNameRoot = noteMeta.dirFileName ? `${docNameRoot}/${noteMeta.dirFileName}` : docNameRoot;
+        for (const childMeta of noteMeta.children) {
+            indexPrimaryOccurrences(childMeta, childDocNameRoot, out);
+        }
+    }
+}
+
+function computeIconClass(noteMeta: NoteMeta): string {
+    // An explicit iconClass wins; otherwise folders default to bx-folder and files to bx-file.
+    const explicit = noteMeta.attributes?.find((a) => a.name === "iconClass")?.value;
+    if (explicit) {
+        return explicit;
+    }
+    return noteMeta.dataFileName ? "bx bx-file" : "bx bx-folder";
+}
+
+function computeDocPath(docNameRoot: string, dataFileName: string): string {
+    return `${docNameRoot}/${path.basename(dataFileName, ".html")}`.substring(1);
 }

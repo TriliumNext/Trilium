@@ -1,4 +1,4 @@
-import { app_info as appInfo, cls, date_utils as dateUtils, options, options as optionService } from "@triliumnext/core";
+import { app_info as appInfo, cls, date_utils as dateUtils, options } from "@triliumnext/core";
 import type { Application, Request } from "express";
 import supertest from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -102,8 +102,7 @@ describe("Login (token) API", () => {
 
     it("rejects login when TOTP is enabled and the submitted token is wrong", async () => {
         cls.init(() => {
-            optionService.setOption("mfaEnabled", "true");
-            totpService.createSecret(); // stores a secret so TOTP counts as enabled
+            totpService.setSecret("JBSWY3DPEHPK3PXP"); // stores a secret so TOTP counts as enabled
         });
 
         const req = { body: { password: "demo1234", totpToken: "000000" } } as unknown as Request;

@@ -101,8 +101,7 @@ export default class RootCommandExecutor extends Component {
 
     async showLaunchBarSubtreeCommand() {
         const rootNote = utils.isMobile() ? "_lbMobileRoot" : "_lbRoot";
-        await this.showAndHoistSubtree(rootNote);
-        this.showLeftPaneCommand();
+        appContext.triggerCommand("openInTreePopup", { noteIdOrPath: rootNote, hoistedNoteId: rootNote });
     }
 
     async showShareSubtreeCommand() {
@@ -111,13 +110,6 @@ export default class RootCommandExecutor extends Component {
 
     async showHiddenSubtreeCommand() {
         await this.showAndHoistSubtree("_hidden");
-    }
-
-    async showOptionsCommand({ section }: CommandListenerData<"showOptions">) {
-        await appContext.tabManager.openContextWithNote(section || "_options", {
-            activate: true,
-            hoistedNoteId: "_options"
-        });
     }
 
     async showSQLConsoleHistoryCommand() {
@@ -248,7 +240,7 @@ export default class RootCommandExecutor extends Component {
         const tab = mainNoteContexts[index];
 
         if (tab) {
-            appContext.tabManager.activateNoteContext(tab.ntxId);
+            appContext.tabManager.activateTabContext(tab.ntxId);
         }
     }
 

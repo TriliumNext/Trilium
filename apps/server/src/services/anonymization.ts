@@ -84,11 +84,14 @@ function getExistingAnonymizedDatabases() {
 
     return fs
         .readdirSync(dataDir.ANONYMIZED_DB_DIR)
-        .filter((fileName) => fileName.includes("anonymized"))
-        .map((fileName) => ({
-            fileName,
-            filePath: path.resolve(dataDir.ANONYMIZED_DB_DIR, fileName)
-        })) satisfies AnonymizedDbResponse[];
+        // The .db check excludes intermediate SQLite files (e.g. *.db-journal) created while an anonymization is in progress.
+        .filter((fileName) => fileName.includes("anonymized") && fileName.endsWith(".db"))
+        .map((fileName) => {
+            const filePath = path.resolve(dataDir.ANONYMIZED_DB_DIR, fileName);
+            const stat = fs.statSync(filePath);
+
+            return { fileName, filePath, mtime: stat.mtime, fileSize: stat.size };
+        }) satisfies AnonymizedDbResponse[];
 }
 
 export default {

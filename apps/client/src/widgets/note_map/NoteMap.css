@@ -55,3 +55,8 @@
 }
 
 /* End of styling the slider */
+
+.style-resolver {
+    color: var(--muted-text-color);
+    display: none;
+}

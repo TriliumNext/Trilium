@@ -445,6 +445,32 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("drops data-trilium-collapsed but keeps the collapsed item's children as bullets", () => {
+        // Collapsing is editor-only UI state (the nested items live in the content, hidden via
+        // CSS), and Markdown has no syntax for it — so the attribute is dropped on export while
+        // the nested structure still round-trips as ordinary bullets.
+        const html = trimIndentation/*html*/`\
+            <ul>
+                <li data-trilium-collapsed="true">
+                    Parent
+                    <ul>
+                        <li>
+                            Child
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Sibling
+                </li>
+            </ul>
+        `;
+        const expected = trimIndentation`\
+            *   Parent
+                *   Child
+            *   Sibling`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
     it("exports jQuery code in table properly", () => {
         const html = trimIndentation`\
             <figure class="table">

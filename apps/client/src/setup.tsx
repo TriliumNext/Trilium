@@ -1,23 +1,23 @@
 import "./setup.css";
 
-import { LOCALES, SetupSyncFromServerResponse } from "@triliumnext/commons";
+import { LOCALES, NetworkAddressesResponse, SetupSyncFromServerResponse } from "@triliumnext/commons";
 import clsx from "clsx";
-import { ComponentChildren, render } from "preact";
+import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useTranslation } from "react-i18next";
 
 import logo from "./assets/icon-color.svg?url";
-import { initLocale, t } from "./services/i18n";
+import { getCurrentLanguage, initLocale, t } from "./services/i18n";
 import server from "./services/server";
-import { isElectron, isMobileApp, replaceHtmlEscapedSlashes } from "./services/utils";
-import ActionButton from "./widgets/react/ActionButton";
-import Admonition from "./widgets/react/Admonition";
+import { isElectron, isMobileApp } from "./services/utils";
+import Admonition, { ExtendedAdmonition } from "./widgets/react/Admonition";
 import Button from "./widgets/react/Button";
 import { Card, CardFrame, CardSection } from "./widgets/react/Card";
 import FormGroup from "./widgets/react/FormGroup";
 import { FormListItem } from "./widgets/react/FormList";
 import FormTextBox from "./widgets/react/FormTextBox";
 import Icon from "./widgets/react/Icon";
+import SetupPage from "./widgets/react/SetupPage";
 
 async function main() {
     await initLocale();
@@ -108,6 +108,7 @@ function SelectLanguage({ setState }: { setState: (state: State) => void }) {
                             key={locale.id}
                             value={locale.id}
                             active={locale.id === currentLocale}
+                            rtl={locale.rtl}
                             onClick={async () => {
                                 await i18n.changeLanguage(locale.id);
                                 setCurrentLocale(locale.id);
@@ -307,7 +308,7 @@ function CreateNewDocumentOptions({ setState }: { setState: (state: State) => vo
 
 function CreateNewDocumentInProgress({ withDemo = false }: { withDemo?: boolean }) {
     useEffect(() => {
-        server.post(`setup/new-document${withDemo ? "" : "?skipDemoDb"}`).then(onSetupFinished);
+        server.post(`setup/new-document${withDemo ? "" : "?skipDemoDb"}`, { locale: getCurrentLanguage() }).then(onSetupFinished);
     }, [ withDemo ]);
 
     return (
@@ -410,9 +411,22 @@ function SyncFromServer({ setState }: { setState: (state: State) => void }) {
 }
 
 function SyncFromDesktop({ setState }: { setState: (state: State) => void }) {
-    const networkAddresses = getNetworkAddresses();
+    const [ networkInfo, setNetworkInfo ] = useState<NetworkAddressesResponse | null>(null);
 
     useEffect(() => {
+        getNetworkAddresses().then(setNetworkInfo);
+    }, []);
+
+    // Don't wait for an incoming connection that can't arrive: when the host is
+    // only bound to loopback the advertised addresses are unreachable, so the
+    // other device will never connect. Hold off polling until reachability is
+    // confirmed.
+    const reachable = networkInfo?.reachableOnNetwork ?? false;
+
+    useEffect(() => {
+        if (!reachable) {
+            return;
+        }
         const interval = setInterval(async () => {
             const status = await server.get<{ schemaExists: boolean }>("setup/status");
             if (status.schemaExists) {
@@ -420,7 +434,7 @@ function SyncFromDesktop({ setState }: { setState: (state: State) => void }) {
             }
         }, 1000);
         return () => clearInterval(interval);
-    }, [setState]);
+    }, [setState, reachable]);
 
     return (
         <SetupPage
@@ -429,28 +443,51 @@ function SyncFromDesktop({ setState }: { setState: (state: State) => void }) {
             illustration={<SyncIllustration targetDevice="desktop" />}
             onBack={() => setState("firstOptions")}
         >
-            <div class="card-columns">
-                <Card heading="On the other device">
-                    <CardSection>1. {t("setup.sync-from-desktop-step1")}</CardSection>
-                    <CardSection>2. {t("setup.sync-from-desktop-step2")}</CardSection>
-                    <CardSection>3. {t("setup.sync-from-desktop-step3")}</CardSection>
-                    <CardSection>4. {t("setup.sync-from-desktop-step4")}</CardSection>
-                    <CardSection>5. {t("setup.sync-from-desktop-step5")}</CardSection>
-                </Card>
+            {networkInfo && !networkInfo.reachableOnNetwork ? (
+                <ExtendedAdmonition
+                    type="caution"
+                    className="sync-from-desktop-unreachable"
+                    icon="bx bx-wifi-off"
+                    title={t("setup.sync-from-desktop-unreachable-title")}
+                >
+                    <p>{t("setup.sync-from-desktop-unreachable-description")}</p>
+                    {isElectron() && (
+                        <div class="unreachable-actions">
+                            <Button
+                                kind="primary"
+                                icon="bx bx-broadcast"
+                                text={t("setup.sync-from-desktop-allow-access")}
+                                onClick={() => void allowLanAccessAndRestart()}
+                            />
+                        </div>
+                    )}
+                </ExtendedAdmonition>
+            ) : (
+                <>
+                    <div class="card-columns">
+                        <Card heading="On the other device">
+                            <CardSection>1. {t("setup.sync-from-desktop-step1")}</CardSection>
+                            <CardSection>2. {t("setup.sync-from-desktop-step2")}</CardSection>
+                            <CardSection>3. {t("setup.sync-from-desktop-step3")}</CardSection>
+                            <CardSection>4. {t("setup.sync-from-desktop-step4")}</CardSection>
+                            <CardSection>5. {t("setup.sync-from-desktop-step5")}</CardSection>
+                        </Card>
 
-                {networkAddresses.length > 0 && (
-                    <Card heading={t("setup.your-ip-addresses")} className="ip-addresses">
-                        {networkAddresses.map((addr) => (
-                            <CardSection key={addr}>{addr}</CardSection>
-                        ))}
-                    </Card>
-                )}
-            </div>
+                        {networkInfo && networkInfo.addresses.length > 0 && (
+                            <Card heading={t("setup.your-ip-addresses")} className="ip-addresses">
+                                {networkInfo.addresses.map((addr) => (
+                                    <CardSection key={addr}>{addr}</CardSection>
+                                ))}
+                            </Card>
+                        )}
+                    </div>
 
-            <div class="sync-from-desktop-waiting">
-                <div class="main"><Icon icon="bx bx-loader-circle bx-spin" />{" "} {t("setup.sync-from-desktop-waiting")}</div>
-                <div class="subtle">{t("setup.sync-from-desktop-warning")}</div>
-            </div>
+                    <div class="sync-from-desktop-waiting">
+                        <div class="main"><Icon icon="bx bx-loader-circle bx-spin" />{" "} {t("setup.sync-from-desktop-waiting")}</div>
+                        <div class="subtle">{t("setup.sync-from-desktop-warning")}</div>
+                    </div>
+                </>
+            )}
         </SetupPage>
     );
 }
@@ -494,84 +531,30 @@ function SetupOptionCard({ title, description, icon, onClick, disabled }: { titl
     );
 }
 
-function SetupPage({ title, description, className, illustration, children, footer, error, errorId, onBack }: {
-    title: string;
-    description?: string;
-    error?: string | null;
-    errorId?: number;
-    className?: string;
-    illustration?: ComponentChildren;
-    children?: ComponentChildren;
-    footer?: ComponentChildren;
-    onBack?: () => void;
-}) {
-    const [ showError, setShowError ] = useState(!!error);
-    useEffect(() => {
-        if (error) {
-            setShowError(true);
-        }
-    }, [ error, errorId ]);
-
-    return (
-        <div className={clsx("page", className, { "contentless": !children })}>
-            {onBack && (
-                <Button
-                    className="back-button"
-                    icon="bx bx-arrow-back"
-                    text={t("setup.button-back")}
-                    onClick={onBack}
-                    kind="lowProfile"
-                />
-            )}
-            {error && showError && (
-                <Admonition className="page-error" type="caution">
-                    <ActionButton icon="bx bx-x" text={t("setup.dismiss-error")} onClick={() => setShowError(false)}  />
-                    {replaceHtmlEscapedSlashes(error)}
-                </Admonition>
-            )}
-
-            {illustration}
-            <h1>{title}</h1>
-            {description && <p class="page-description">{description}</p>}
-            {children && <main>
-                {children}
-            </main>}
-            {footer && <footer>{footer}</footer>}
-        </div>
-    );
-}
-
-function getNetworkAddresses(): string[] {
+async function getNetworkAddresses(): Promise<NetworkAddressesResponse> {
     if (!isElectron()) {
-        return [`${location.protocol}//${location.host}`];
+        // The browser already reached this server over the network, so the
+        // address it's using is reachable by definition.
+        return { addresses: [`${location.protocol}//${location.host}`], reachableOnNetwork: true };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const os = require("os") as typeof import("os");
-    const interfaces = os.networkInterfaces();
-    const addresses: string[] = [];
-
-    for (const nets of Object.values(interfaces)) {
-        if (!nets) continue;
-        for (const net of nets) {
-            if (net.internal) continue;
-            if (net.family === "IPv6" && net.scopeid !== 0) continue;
-            addresses.push(net.address);
-        }
-    }
-
-    // Sort by likelihood of being the local network address.
-    addresses.sort((a, b) => networkScore(a) - networkScore(b));
-
-    return addresses.map((addr) => `${location.protocol}//${addr}:${location.port}`);
+    // Node's `os` module isn't available in the renderer (node integration is
+    // disabled), and the desktop renderer's `location` points at the internal
+    // `trilium-app://` protocol rather than the real HTTP listener. So the
+    // server enumerates its interfaces and builds the reachable URLs (correct
+    // protocol and port included), and reports whether it's actually bound to a
+    // network-reachable interface.
+    return await server.get<NetworkAddressesResponse>("network-addresses");
 }
 
-function networkScore(addr: string): number {
-    if (addr.startsWith("192.168.")) return 0;
-    if (addr.startsWith("10.")) return 1;
-    if (/^172\.(1[6-9]|2\d|3[01])\./.test(addr)) return 2;
-    if (addr.includes(":")) return 4; // IPv6
-    return 3;
+async function allowLanAccessAndRestart() {
+    // Shows a native confirmation dialog (LAN exposure is a security tradeoff)
+    // and persists the choice to security.json. Only restart once the user has
+    // actually confirmed — otherwise the binding wouldn't change anyway.
+    const confirmed = await window.electronApi?.security.setLanAccessEnabled(true);
+    if (confirmed) {
+        window.electronApi?.window.restartApp();
+    }
 }
 
 function onSetupFinished() {

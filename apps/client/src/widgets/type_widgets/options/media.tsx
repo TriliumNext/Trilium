@@ -7,6 +7,7 @@ import { isElectron } from "../../../services/utils";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import Slider from "../../react/Slider";
+import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import RelatedSettings from "./components/RelatedSettings";
@@ -14,6 +15,7 @@ import RelatedSettings from "./components/RelatedSettings";
 export default function MediaSettings() {
     return (
         <>
+            <OptionsPageHeader />
             <ImageSettings />
             <OcrSettings />
         </>

@@ -1,6 +1,6 @@
 import "./TableOfContents.css";
 
-import { attributeChangeAffectsHeading, CKTextEditor, ModelElement, type ModelNode } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, ModelElement, ModelNode } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -152,25 +152,38 @@ function EditableTextTableOfContents() {
         const headings = extractTocFromTextEditor(textEditor);
         setHeadings(headings);
 
-        // React to changes.
-        const changeCallback = () => {
-            const changes = textEditor.model.document.differ.getChanges();
+        // React to changes. The helper lives in the CKEditor bundle, which is statically heavy
+        // but guaranteed to be loaded by now (a text editor instance exists), so resolving it
+        // via a dynamic import keeps it out of this component's startup graph.
+        let disposed = false;
+        let removeListener: (() => void) | undefined;
+        void import("@triliumnext/ckeditor5").then(({ attributeChangeAffectsHeading }) => {
+            if (disposed) return;
 
-            const affectsHeadings = changes.some( change => {
-                return (
-                    change.type === 'insert' || change.type === 'remove' ||
-                    (change.type === 'attribute' && attributeChangeAffectsHeading(change, textEditor))
-                );
-            });
-            if (affectsHeadings) {
-                requestAnimationFrame(() => {
-                    setHeadings(extractTocFromTextEditor(textEditor));
+            const changeCallback = () => {
+                const changes = textEditor.model.document.differ.getChanges();
+
+                const affectsHeadings = changes.some( change => {
+                    return (
+                        change.type === 'insert' || change.type === 'remove' ||
+                        (change.type === 'attribute' && attributeChangeAffectsHeading(change, textEditor))
+                    );
                 });
-            }
-        };
+                if (affectsHeadings) {
+                    requestAnimationFrame(() => {
+                        setHeadings(extractTocFromTextEditor(textEditor));
+                    });
+                }
+            };
 
-        textEditor.model.document.on("change:data", changeCallback);
-        return () => textEditor.model.document.off("change:data", changeCallback);
+            textEditor.model.document.on("change:data", changeCallback);
+            removeListener = () => textEditor.model.document.off("change:data", changeCallback);
+        });
+
+        return () => {
+            disposed = true;
+            removeListener?.();
+        };
     }, [ textEditor, note ]);
 
     const scrollToHeading = useCallback((heading: CKHeading) => {

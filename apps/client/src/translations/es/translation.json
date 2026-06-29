@@ -128,20 +128,11 @@
     "export_note_title": "Exportar nota",
     "close": "Cerrar",
     "export_type_subtree": "Esta nota y todos sus descendientes",
-    "format_html": "HTML - ya que preserva todo el formato",
-    "format_html_zip": "HTML en un archivo ZIP: se recomienda ya que conserva todo el formato.",
-    "format_markdown": "Markdown: esto conserva la mayor parte del formato.",
-    "format_opml": "OPML: formato de intercambio de esquemas solo para texto. El formato, las imágenes y los archivos no están incluidos.",
-    "opml_version_1": "OPML v1.0: solo texto sin formato",
-    "opml_version_2": "OPML v2.0 - también permite HTML",
     "export_type_single": "Sólo esta nota sin sus descendientes",
     "export": "Exportar",
     "choose_export_type": "Por favor, elija primero el tipo de exportación",
-    "export_status": "Estado de exportación",
-    "export_in_progress": "Exportación en curso: {{progressCount}}",
     "export_finished_successfully": "La exportación finalizó exitosamente.",
-    "format_pdf": "PDF - para propósitos de impresión o compartición.",
-    "share-format": "HTML para publicación web: utiliza el mismo tema que se utiliza en las notas compartidas, pero se puede publicar como un sitio web estático."
+    "format_pdf": "PDF - para propósitos de impresión o compartición."
   },
   "help": {
     "noteNavigation": "Navegación de notas",
@@ -202,7 +193,6 @@
   "import": {
     "importIntoNote": "Importar a nota",
     "chooseImportFile": "Elija el archivo de importación",
-    "importDescription": "El contenido de los archivos seleccionados se importará como notas secundarias en",
     "options": "Opciones",
     "safeImportTooltip": "Los archivos <code>.zip</code> de Trilium pueden contener scripts ejecutables que pudieran tener un comportamiento peligroso. La importación segura va a desactivar la ejecución automática de todos los scripts importados. Desmarque \"Importación segura\" solo si el archivo importado contiene scripts ejecutables y usted confía totalmente en el contenido del archivo importado.",
     "safeImport": "Importación segura",
@@ -221,7 +211,6 @@
       "placeholder": "Ingrese las etiquetas HTML, una por línea",
       "reset_button": "Restablecer a lista por defecto"
     },
-    "import-status": "Estado de importación",
     "in-progress": "Importación en progreso: {{progress}}",
     "successful": "Importación finalizada exitosamente.",
     "importZipRecommendation": "Al importar un archivo ZIP, la jerarquía de notas reflejará la estructura de subdirectorios dentro del archivo comprimido."
@@ -819,7 +808,9 @@
     "hide_child_notes": "Ocultar subnotas en el árbol",
     "open_all_in_tabs": "Abrir todo",
     "open_all_in_tabs_tooltip": "Abrir todos los resultados en nuevas pestañas",
-    "open_all_confirm": "Esto abrirá {{count}} notas en nuevas pestañas. ¿Continuar?",
+    "open_all_confirm_one": "Esto abrirá {{count}} notas en nuevas pestañas. ¿Continuar?",
+    "open_all_confirm_many": "",
+    "open_all_confirm_other": "",
     "open_all_too_one": " ",
     "open_all_too_many": " ",
     "open_all_too_other": " "
@@ -866,7 +857,9 @@
     "note_size": "Tamaño de nota",
     "note_size_info": "El tamaño de la nota proporciona una estimación aproximada de los requisitos de almacenamiento para esta nota. Toma en cuenta el contenido de la nota y el contenido de sus revisiones de nota.",
     "calculate": "calcular",
-    "subtree_size": "(tamaño del subárbol: {{size}} en {{count}} notas)",
+    "subtree_size_one": "(tamaño del subárbol: {{size}} en {{count}} notas)",
+    "subtree_size_many": "",
+    "subtree_size_other": "",
     "title": "Información de nota",
     "mime": "Tipo MIME",
     "show_similar_notes": "Mostrar notas similares"
@@ -877,7 +870,9 @@
     "title": "Mapa de notas",
     "fix-nodes": "Fijar nodos",
     "link-distance": "Distancia de enlace",
-    "too-many-notes": "Este subárbol contiene {{count}} notas, lo que excede el límite de {{max}} que se puede mostrar en el mapa de notas."
+    "too-many-notes_one": "Este subárbol contiene {{count}} notas, lo que excede el límite de {{max}} que se puede mostrar en el mapa de notas.",
+    "too-many-notes_many": "",
+    "too-many-notes_other": ""
   },
   "note_paths": {
     "title": "Rutas de nota",
@@ -1063,9 +1058,7 @@
     "protecting-finished-successfully": "La protección finalizó exitosamente.",
     "unprotecting-finished-successfully": "La desprotección finalizó exitosamente.",
     "protecting-in-progress": "Protección en progreso: {{count}}",
-    "unprotecting-in-progress-count": "Desprotección en progreso: {{count}}",
-    "protecting-title": "Estado de protección",
-    "unprotecting-title": "Estado de desprotección"
+    "unprotecting-in-progress-count": "Desprotección en progreso: {{count}}"
   },
   "relation_map": {
     "remove_note": "Quitar nota",
@@ -1184,8 +1177,6 @@
     "disabled": "desactivado"
   },
   "ribbon": {
-    "widgets": "Widgets de cinta",
-    "promoted_attributes_message": "La pestaña de la cinta Atributos promovidos se abrirá automáticamente si los atributos promovidos están presentes en la nota",
     "edited_notes_message": "La pestaña de la cinta Notas editadas se abrirá automáticamente en las notas del día"
   },
   "theme": {
@@ -1404,7 +1395,6 @@
     "title": "Respaldo"
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI es una REST API que se utiliza para acceder a la instancia de Trilium mediante programación, sin interfaz de usuario.",
     "create_token": "Crear nuevo token ETAPI",
     "existing_tokens": "Tokens existentes",
@@ -1454,33 +1444,12 @@
     "cancel": "Cancelar"
   },
   "multi_factor_authentication": {
-    "title": "Autenticación Multi-Factor",
-    "description": "La autenticación multifactor (MFA) agrega una capa adicional de seguridad a su cuenta. En lugar de solo ingresar una contraseña para iniciar sesión, MFA requiere que proporcione una o más pruebas adicionales para verificar su identidad. De esta manera, incluso si alguien se apodera de su contraseña, aún no puede acceder a su cuenta sin la segunda pieza de información. Es como agregar una cerradura adicional a su puerta, lo que hace que sea mucho más difícil para cualquier otra persona entrar.<br><br>Por favor siga las instrucciones a continuación para habilitar MFA. Si no lo configura correctamente, el inicio de sesión volverá a solo contraseña.",
-    "mfa_enabled": "Habilitar la autenticación multifactor",
-    "mfa_method": "Método MFA",
-    "electron_disabled": "Actualmente la autenticación multifactor no está soportada en la compilación de escritorio.",
-    "totp_title": "Contraseña de un solo uso basada en el tiempo (TOTP)",
-    "totp_description": "TOTP (contraseña de un solo uso basada en el tiempo) es una característica de seguridad que genera un código temporal único que cambia cada 30 segundos. Utiliza este código, junto con su contraseña para iniciar sesión en su cuenta, lo que hace que sea mucho más difícil para cualquier otra persona acceder a ella.",
-    "totp_secret_title": "Generar secreto TOTP",
-    "totp_secret_generate": "Generar secreto TOTP",
-    "totp_secret_regenerate": "Regenerar secreto TOTP",
-    "no_totp_secret_warning": "Para habilitar TOTP, primero debe de generar un secreto TOTP.",
-    "totp_secret_description_warning": "Después de generar un nuevo secreto TOTP, le será requerido que inicie sesión otra vez con el nuevo secreto TOTP.",
-    "totp_secret_generated": "Secreto TOTP generado",
-    "totp_secret_warning": "Por favor guarde el secreto generado en una ubicación segura. No será mostrado de nuevo.",
-    "totp_secret_regenerate_confirm": "¿Está seguro que desea regenerar el secreto TOTP? Esto va a invalidar el secreto TOTP previo y todos los códigos de recuperación existentes.",
-    "recovery_keys_title": "Claves de recuperación para un solo inicio de sesión",
-    "recovery_keys_description": "Las claves de recuperación para un solo inicio de sesión son usadas para iniciar sesión incluso cuando no puede acceder a los códigos de su autentificador.",
     "recovery_keys_description_warning": "Las claves de recuperación no son mostrada de nuevo después de dejar esta página, manténgalas en un lugar seguro.<br>Después de que una clave de recuperación es utilizada ya no puede utilizarse de nuevo.",
     "recovery_keys_error": "Error al generar códigos de recuperación",
     "recovery_keys_no_key_set": "No hay códigos de recuperación establecidos",
-    "recovery_keys_generate": "Generar códigos de recuperación",
     "recovery_keys_regenerate": "Regenerar códigos de recuperación",
-    "recovery_keys_used": "Usado: {{date}}",
-    "recovery_keys_unused": "El código de recuperación {{index}} está sin usar",
     "oauth_title": "OAuth/OpenID",
     "oauth_description": "OpenID es un método estandarizado que permite iniciar sesión en sitios web usando una cuenta de otro servicio, como Google, para verificar tu identidad. El emisor predeterminado es Google, pero se puede cambiar a cualquier otro proveedor de OpenID. Consulta <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">aquí</a> para más información. Sigue estas <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instrucciones</a> para configurar un servicio OpenID a través de Google.",
-    "oauth_description_warning": "Para habilitar OAuth/OpenID, necesita establecer la URL base de OAuth/OpenID, ID de cliente y secreto de cliente en el archivo config.ini y reiniciar la aplicación. Si desea establecerlas desde variables de ambiente, por favor establezca TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID y TRILIUM_OAUTH_CLIENT_SECRET.",
     "oauth_missing_vars": "Ajustes faltantes: {{-variables}}",
     "oauth_user_account": "Cuenta de usuario: ",
     "oauth_user_email": "Correo electrónico de usuario: ",
@@ -1488,13 +1457,7 @@
   },
   "shortcuts": {
     "keyboard_shortcuts": "Atajos de teclado",
-    "multiple_shortcuts": "Varios atajos para la misma acción se pueden separar mediante comas.",
-    "electron_documentation": "Consulte la <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">documentación de Electron</a> para los modificadores y códigos de tecla disponibles.",
     "type_text_to_filter": "Escriba texto para filtrar los accesos directos...",
-    "action_name": "Nombre de la acción",
-    "shortcuts": "Atajos",
-    "default_shortcuts": "Atajos predeterminados",
-    "description": "Descripción",
     "reload_app": "Vuelva a cargar la aplicación para aplicar los cambios",
     "set_all_to_default": "Establecer todos los accesos directos al valor predeterminado",
     "confirm_reset": "¿Realmente desea restablecer todos los atajos de teclado a sus valores predeterminados?",
@@ -1505,7 +1468,6 @@
     "description": "Estas opciones se aplican sólo para compilaciones de escritorio; los navegadores utilizarán su corrector ortográfico nativo.",
     "enable": "Comprobación ortográfica",
     "language_code_label": "Idiomas del corrector ortográfico",
-    "restart-required": "Los cambios en las opciones de corrección ortográfica entrarán en vigor después del reinicio de la aplicación.",
     "custom_dictionary_title": "Diccionario personalizado",
     "custom_dictionary_description": "Las palabras agregadas al diccionario se sincronizan en todos sus dispositivos.",
     "custom_dictionary_edit": "Palabras personalizadas",
@@ -1585,7 +1547,9 @@
     "export": "Exportar",
     "import-into-note": "Importar a nota",
     "apply-bulk-actions": "Aplicar acciones en lote",
-    "converted-to-attachments": "{{count}} notas han sido convertidas en archivos adjuntos.",
+    "converted-to-attachments_one": "{{count}} notas han sido convertidas en archivos adjuntos.",
+    "converted-to-attachments_many": "",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "¿Está seguro que desea convertir las notas seleccionadas en archivos adjuntos de sus notas padres? Esta operación solo aplica a notas de Imagen, otras notas serán omitidas.",
     "open-in-popup": "Edición rápida",
     "archive": "Archivar",
@@ -1790,7 +1754,6 @@
   },
   "branches": {
     "cannot-move-notes-here": "No se pueden mover notas aquí.",
-    "delete-status": "Estado de eliminación",
     "delete-notes-in-progress": "Eliminación de notas en progreso: {{count}}",
     "delete-finished-successfully": "La eliminación finalizó exitosamente.",
     "undeleting-notes-in-progress": "Recuperación de notas en progreso: {{count}}",
@@ -2103,7 +2066,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} notas",
+    "total_notes_one": "{{count}} notas",
+    "total_notes_many": "",
+    "total_notes_other": "",
     "prev_page": "Página anterior",
     "next_page": "Página siguiente"
   },
@@ -2154,7 +2119,9 @@
     "code_note_switcher": "Cambiar modo de idioma",
     "tab_width": "Ancho de tabulación: {{width}}",
     "tab_width_title": "Cambiar ancho de tabulación",
-    "tab_width_spaces": "{{count}} espacios",
+    "tab_width_spaces_one": "{{count}} espacios",
+    "tab_width_spaces_many": "",
+    "tab_width_spaces_other": "",
     "tab_width_spaces_short": "Espacios: {{width}}",
     "tab_width_tabs": "Tabulaciones: {{width}}",
     "tab_width_use_default": "Usar predeterminado ({{width}})",
@@ -2304,12 +2271,9 @@
     "play": "Reproducir (Espacio)",
     "pause": "Pausa (Espacio)",
     "back-10s": "Retroceder 10s (tecla de flecha izquierda)",
-    "forward-30s": "Adelantar 30s",
     "mute": "Silenciar (M)",
     "unmute": "Activar sonido (M)",
     "playback-speed": "Velocidad de reproducción",
-    "loop": "Bucle",
-    "disable-loop": "Deshabilitar bucle",
     "rotate": "Rotar",
     "picture-in-picture": "Imagen en imagen",
     "exit-picture-in-picture": "Salir del modo imagen en imagen",
@@ -2541,8 +2505,6 @@
     "summary": "Resumen"
   },
   "llm": {
-    "settings_title": "IA / LLM",
-    "settings_description": "Configure integraciones de inteligencia artificial y modelos de lenguaje.",
     "feature_not_enabled": "Active la función experimental LLM en Ajustes → Avanzado → Funciones experimentales para usar integraciones de IA.",
     "add_provider": "Añadir proveedor",
     "add_provider_title": "Añadir proveedor de IA",

@@ -43,7 +43,8 @@ for (let i = 1; i <= 19; i++) {
     keyMap[`f${i}`] = [ keyCode ];
 }
 
-const KEYCODES_WITH_NO_MODIFIER = new Set([
+// Key codes (e.g. function keys, Delete, Enter) that are allowed as shortcuts without a modifier.
+export const KEYCODES_WITH_NO_MODIFIER = new Set([
     "Delete",
     "Enter",
     "NumpadEnter",
@@ -226,6 +227,36 @@ export function keyMatches(e: KeyboardEvent, key: string): boolean {
     // For regular keys, check both key and code as fallback
     return e.key.toLowerCase() === key.toLowerCase() ||
            e.code.toLowerCase() === key.toLowerCase();
+}
+
+/**
+ * Reduces a shortcut string to a canonical form so that two shortcuts that fire on the *same*
+ * physical key combination compare equal, mirroring the runtime semantics of {@link matchesShortcut}:
+ *  - modifiers are compared as an unordered set (so `Ctrl+Shift+J` === `Shift+Ctrl+J`),
+ *  - modifier aliases collapse (`Control`→`ctrl`, `Cmd`/`Command`→`meta`),
+ *  - the final key is mapped through {@link keyMap} so aliases collapse (`Del`===`Delete`, `Enter`===`Return`).
+ *
+ * Intended for conflict detection in the settings UI, not for binding.
+ */
+export function canonicalizeShortcut(shortcut: string): string {
+    const parts = shortcut.toLowerCase().split("+").map((p) => p.trim()).filter(Boolean);
+    if (parts.length === 0) {
+        return "";
+    }
+
+    const rawKey = parts[parts.length - 1];
+    const modifiers = new Set<string>();
+    for (const modifier of parts.slice(0, -1)) {
+        if (modifier === "ctrl" || modifier === "control") modifiers.add("ctrl");
+        else if (modifier === "meta" || modifier === "cmd" || modifier === "command") modifiers.add("meta");
+        else if (modifier === "alt" || modifier === "shift") modifiers.add(modifier);
+        else modifiers.add(modifier);
+    }
+
+    // Collapse key aliases (e.g. "del" and "delete" both resolve to the same canonical token).
+    const canonicalKey = keyMap[rawKey]?.[0]?.toLowerCase() ?? rawKey;
+
+    return [ ...[ ...modifiers ].sort(), canonicalKey ].join("+");
 }
 
 /**

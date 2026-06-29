@@ -107,6 +107,8 @@ export function startElectron(callback: () => void): DeferredPromise<void> {
         // IPC calls hit no listener — which storms the TabHistoryNavigationButtons
         // render loop with tens of thousands of blocking sendSync calls and pegs
         // the renderer. Desktop registers these in apps/desktop/src/main.ts.
+        // (This also installs the WebContents security policy — webview-attach
+        // vetting, window-open/navigation guards, permission handlers.)
         setupWindowing();
 
         // Create the main window.
@@ -164,6 +166,29 @@ function waitForEnd(archive: Archiver, stream: WriteStream) {
         stream.on("error", rej);
         archive.on("error", rej);
         archive.finalize().catch(rej);
+    });
+}
+
+/**
+ * Rewrites internal `#root/...` note links in exported help HTML so that they resolve
+ * against the help subtree once imported into a production Trilium instance.
+ *
+ * In the edit-docs instance the help notes carry plain, randomly generated IDs, but in
+ * production they live under the `_help` subtree with a `_help_` prefix. This adds that
+ * prefix to the link's target note ID.
+ */
+export function rewriteHelpLinks(content: string): string {
+    return content.replace(/href="[^"]*#root[a-zA-Z0-9_/]*\/([a-zA-Z0-9_]+)[^"]*"/g, (match, targetNoteId) => {
+        // Canonical hidden-subtree notes (e.g. _options, _optionsTextNotes) keep their IDs in
+        // production, so they already start with an underscore. Only help notes (random
+        // alphanumeric IDs) get the `_help_` prefix; prefixing the others would produce broken
+        // `_help__optionsTextNotes`-style links (see issue #9646).
+        if (targetNoteId.startsWith("_")) {
+            return match;
+        }
+        const components = match.split("/");
+        components[components.length - 1] = `_help_${components[components.length - 1]}`;
+        return components.join("/");
     });
 }
 

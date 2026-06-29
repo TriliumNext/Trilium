@@ -1,12 +1,20 @@
 {
   "about": {
-    "data_directory": "Đường dẫn dữ liệu:"
+    "data_directory": "Đường dẫn dữ liệu:",
+    "version_label": "Phiên bản:",
+    "donate": "Quyên góp",
+    "donate_tooltip": "Quyên góp để ủng hộ dự án này",
+    "license_tooltip": "Bản quyền",
+    "role_brief_history": {
+      "lead-dev": "Elian Doran thành lập Trilium Next - một dự án cộng đồng - vào năm 2024, sau khi Zadam rời khỏi. Sau này, Zadam đã bàn giao kho lưu trữ gốc của dự án cho nhóm TriliumNext và kết hợp hai dự án làm một."
+    }
   },
   "add_link": {
     "add_link": "Thêm liên kết",
     "button_add_link": "Thêm liên kết",
     "help_on_links": "Trợ giúp về các liên kết",
-    "link_title": "Đề mục liên kết"
+    "link_title": "Đề mục liên kết",
+    "note": "Ghi chú"
   },
   "bulk_actions": {
     "other": "Khác"
@@ -95,5 +103,9 @@
   },
   "abstract_bulk_action": {
     "remove_this_search_action": "Xoá hành động tìm kiếm này"
+  },
+  "active_content_badges": {
+    "menu_run_daily": "Mỗi ngày",
+    "menu_run_hourly": "Mỗi giờ"
   }
 }

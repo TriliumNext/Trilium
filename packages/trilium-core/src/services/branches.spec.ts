@@ -8,14 +8,6 @@ import { getContext } from "./context.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 
-/**
- * Wraps a callback in a CLS context. Entity mutations (createNewNote,
- * branch.save(), branch.markAsDeleted()) require CLS to be initialised.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /**
@@ -25,7 +17,7 @@ let counter = 0;
  */
 function createNote(parentNoteId: string): { note: BNote; branch: BBranch } {
     counter++;
-    return withContext(() =>
+    return getContext().init(() =>
         noteService.createNewNote({
             parentNoteId,
             title: `branches-spec-${counter}`,
@@ -40,7 +32,7 @@ describe("branches service (real DB)", () => {
         it("is a no-op when the branch already lives under the target parent", () => {
             const { branch } = createNote("root");
 
-            const res = withContext(() => branchService.moveBranchToNote(branch, "root"));
+            const res = getContext().init(() => branchService.moveBranchToNote(branch, "root"));
 
             expect(res).toEqual({ success: true });
             // The original branch must remain, no clone created.
@@ -59,7 +51,7 @@ describe("branches service (real DB)", () => {
                 [parent.note.noteId]
             );
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 branchService.moveBranchToNote(child.branch, parent.note.noteId)
             ) as { success: boolean; branch: BBranch };
 
@@ -86,7 +78,7 @@ describe("branches service (real DB)", () => {
 
             const someParent = createNote("root");
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 branchService.moveBranchToNote(rootBranch!, someParent.note.noteId)
             ) as [number, { success: boolean; message?: string }];
 
@@ -104,7 +96,7 @@ describe("branches service (real DB)", () => {
             const descendant = createNote(ancestor.note.noteId);
 
             // Moving the ancestor under its own descendant is a cycle.
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 branchService.moveBranchToNote(ancestor.branch, descendant.note.noteId)
             ) as [number, { success: boolean; message?: string }];
 
@@ -122,7 +114,7 @@ describe("branches service (real DB)", () => {
 
             targetParent.branch.isExpanded = false;
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 branchService.moveBranchToBranch(child.branch, targetParent.branch, "ignored-branch-id")
             ) as { success: boolean; branch: BBranch };
 
@@ -138,7 +130,7 @@ describe("branches service (real DB)", () => {
 
             targetParent.branch.isExpanded = true;
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 branchService.moveBranchToBranch(child.branch, targetParent.branch, "ignored-branch-id")
             ) as { success: boolean; branch: BBranch };
 
@@ -152,7 +144,7 @@ describe("branches service (real DB)", () => {
 
             targetParent.branch.isExpanded = false;
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 branchService.moveBranchToBranch(child.branch, targetParent.branch, "ignored-branch-id")
             );
 
@@ -168,7 +160,7 @@ describe("branches service (real DB)", () => {
 
             targetParent.branch.isExpanded = false;
 
-            const res = withContext(() =>
+            const res = getContext().init(() =>
                 branchService.moveBranchToBranch(rootBranch!, targetParent.branch, "ignored-branch-id")
             ) as [number, { success: boolean }];
 

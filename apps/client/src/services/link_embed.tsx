@@ -109,10 +109,15 @@ function EmbedPreview({ meta, editable }: { meta: EmbedMetadata; editable?: bool
         : null;
 
     if (videoId) {
+        // The `origin` param is only valid for a real web origin. On desktop the
+        // renderer is served from `trilium-app://app`, which YouTube's player
+        // rejects ("video player configuration error"), so omit it there.
+        const webOrigin = window.location.protocol.startsWith("http") ? window.location.origin : null;
+        const embedSrc = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0${webOrigin ? `&origin=${encodeURIComponent(webOrigin)}` : ""}`;
         return (
             <div className="link-embed-video">
                 <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${videoId}?origin=${encodeURIComponent(window.location.origin)}&rel=0`}
+                    src={embedSrc}
                     frameBorder="0"
                     allowFullScreen
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

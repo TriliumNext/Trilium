@@ -1,17 +1,20 @@
-import { AnonymizedDbResponse, DatabaseAnonymizeResponse, DatabaseCheckIntegrityResponse } from "@triliumnext/commons";
+import { AnonymizedDbResponse, DatabaseAnonymizeResponse, DatabaseCheckIntegrityResponse, ExistingAnonymizedDatabasesResponse } from "@triliumnext/commons";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
-import { getAvailableExperimentalFeatures, type ExperimentalFeatureId } from "../../../services/experimental_features";
+import { type ExperimentalFeatureId, getAvailableExperimentalFeatures } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import FormText from "../../react/FormText";
 import { useTriliumOptionJson } from "../../react/hooks";
+import DatabaseFileList from "./components/DatabaseFileList";
+import OptionsPageHeader from "./components/OptionsPageHeader";
 import { OptionsRowWithButton, OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 
 export default function AdvancedSettings() {
     return <>
+        <OptionsPageHeader />
         <DatabaseOptions />
         <DatabaseAnonymizationOptions />
         <ExperimentalOptions />
@@ -25,6 +28,7 @@ function AdvancedSyncOptions() {
             <OptionsRowWithButton
                 label={t("sync.force_full_sync_label")}
                 description={t("sync.force_full_sync_description")}
+                buttonText={t("sync.force_full_sync_button")}
                 onClick={async () => {
                     await server.post("sync/force-full-sync");
                     toast.showMessage(t("sync.full_sync_triggered"));
@@ -34,6 +38,7 @@ function AdvancedSyncOptions() {
             <OptionsRowWithButton
                 label={t("sync.fill_entity_changes_label")}
                 description={t("sync.fill_entity_changes_description")}
+                buttonText={t("sync.fill_entity_changes_button")}
                 onClick={async () => {
                     toast.showMessage(t("sync.filling_entity_changes"));
                     await server.post("sync/fill-entity-changes");
@@ -50,6 +55,7 @@ function DatabaseOptions() {
             <OptionsRowWithButton
                 label={t("database_integrity_check.check_integrity_label")}
                 description={t("database_integrity_check.check_integrity_description")}
+                buttonText={t("database_integrity_check.check_button")}
                 onClick={async () => {
                     toast.showMessage(t("database_integrity_check.checking_integrity"));
 
@@ -66,6 +72,7 @@ function DatabaseOptions() {
             <OptionsRowWithButton
                 label={t("consistency_checks.find_and_fix_label")}
                 description={t("consistency_checks.find_and_fix_description")}
+                buttonText={t("consistency_checks.find_and_fix_button")}
                 onClick={async () => {
                     toast.showMessage(t("consistency_checks.finding_and_fixing_message"));
                     await server.post("database/find-and-fix-consistency-issues");
@@ -76,6 +83,7 @@ function DatabaseOptions() {
             <OptionsRowWithButton
                 label={t("vacuum_database.vacuum_label")}
                 description={t("vacuum_database.vacuum_description")}
+                buttonText={t("vacuum_database.button_text")}
                 onClick={async () => {
                     toast.showMessage(t("vacuum_database.vacuuming_database"));
                     await server.post("database/vacuum-database");
@@ -87,82 +95,89 @@ function DatabaseOptions() {
 }
 
 function DatabaseAnonymizationOptions() {
-    const [existingAnonymizedDatabases, setExistingAnonymizedDatabases] = useState<AnonymizedDbResponse[]>([]);
+    const [databases, setDatabases] = useState<AnonymizedDbResponse[]>([]);
+    const [anonymizedFolderPath, setAnonymizedFolderPath] = useState<string | null>(null);
+    const [anonymizationInProgress, setAnonymizationInProgress] = useState(false);
 
-    function refreshAnonymizedDatabase() {
-        server.get<AnonymizedDbResponse[]>("database/anonymized-databases").then(setExistingAnonymizedDatabases);
-    }
+    const refreshAnonymizedDatabases = useCallback(() => {
+        server.get<ExistingAnonymizedDatabasesResponse>("database/anonymized-databases").then((response) => {
+            setDatabases(response.databases);
+            setAnonymizedFolderPath(response.anonymizedFolderPath);
+        });
+    }, []);
 
-    useEffect(refreshAnonymizedDatabase, []);
+    useEffect(refreshAnonymizedDatabases, []);
+
+    const anonymize = async (type: "full" | "light") => {
+        setAnonymizationInProgress(true);
+        try {
+            toast.showMessage(type === "full"
+                ? t("database_anonymization.creating_fully_anonymized_database")
+                : t("database_anonymization.creating_lightly_anonymized_database"));
+            const resp = await server.post<DatabaseAnonymizeResponse>(`database/anonymize/${type}`);
+
+            if (!resp.success) {
+                toast.showError(t("database_anonymization.error_creating_anonymized_database"));
+            } else {
+                toast.showMessage(type === "full"
+                    ? t("database_anonymization.successfully_created_fully_anonymized_database", { anonymizedFilePath: resp.anonymizedFilePath })
+                    : t("database_anonymization.successfully_created_lightly_anonymized_database", { anonymizedFilePath: resp.anonymizedFilePath }), 10000);
+                refreshAnonymizedDatabases();
+            }
+        } finally {
+            setAnonymizationInProgress(false);
+        }
+    };
 
     return (
-        <OptionsSection title={t("database_anonymization.title")}>
-            <FormText>{t("database_anonymization.description")}</FormText>
+        <>
+            <OptionsSection
+                title={t("database_anonymization.title")}
+                description={t("database_anonymization.description")}
+            >
+                <OptionsRowWithButton
+                    label={t("database_anonymization.full_anonymization")}
+                    description={t("database_anonymization.full_anonymization_description")}
+                    buttonText={t("database_anonymization.save_fully_anonymized_database")}
+                    disabled={anonymizationInProgress}
+                    onClick={() => anonymize("full")}
+                />
 
-            <OptionsRowWithButton
-                label={t("database_anonymization.full_anonymization")}
-                description={t("database_anonymization.full_anonymization_description")}
-                onClick={async () => {
-                    toast.showMessage(t("database_anonymization.creating_fully_anonymized_database"));
-                    const resp = await server.post<DatabaseAnonymizeResponse>("database/anonymize/full");
+                <OptionsRowWithButton
+                    label={t("database_anonymization.light_anonymization")}
+                    description={t("database_anonymization.light_anonymization_description")}
+                    buttonText={t("database_anonymization.save_lightly_anonymized_database")}
+                    disabled={anonymizationInProgress}
+                    onClick={() => anonymize("light")}
+                />
+            </OptionsSection>
 
-                    if (!resp.success) {
-                        toast.showError(t("database_anonymization.error_creating_anonymized_database"));
-                    } else {
-                        toast.showMessage(t("database_anonymization.successfully_created_fully_anonymized_database", { anonymizedFilePath: resp.anonymizedFilePath }), 10000);
-                        refreshAnonymizedDatabase();
-                    }
-                }}
-            />
-
-            <OptionsRowWithButton
-                label={t("database_anonymization.light_anonymization")}
-                description={t("database_anonymization.light_anonymization_description")}
-                onClick={async () => {
-                    toast.showMessage(t("database_anonymization.creating_lightly_anonymized_database"));
-                    const resp = await server.post<DatabaseAnonymizeResponse>("database/anonymize/light");
-
-                    if (!resp.success) {
-                        toast.showError(t("database_anonymization.error_creating_anonymized_database"));
-                    } else {
-                        toast.showMessage(t("database_anonymization.successfully_created_lightly_anonymized_database", { anonymizedFilePath: resp.anonymizedFilePath }), 10000);
-                        refreshAnonymizedDatabase();
-                    }
-                }}
-            />
-
-            <hr />
-
-            <ExistingAnonymizedDatabases databases={existingAnonymizedDatabases} />
-        </OptionsSection>
+            <ExistingAnonymizedDatabases databases={databases} anonymizedFolderPath={anonymizedFolderPath} />
+        </>
     );
 }
 
-function ExistingAnonymizedDatabases({ databases }: { databases: AnonymizedDbResponse[] }) {
-    if (!databases.length) {
-        return <FormText>{t("database_anonymization.no_anonymized_database_yet")}</FormText>;
-    }
-
+function ExistingAnonymizedDatabases({ databases, anonymizedFolderPath }: { databases: AnonymizedDbResponse[]; anonymizedFolderPath: string | null }) {
     return (
-        <table className="table table-stripped">
-            <thead>
-                <th>{t("database_anonymization.existing_anonymized_databases")}</th>
-            </thead>
-            <tbody>
-                {databases.map(({ filePath }) => (
-                    <tr>
-                        <td>{filePath}</td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
+        <DatabaseFileList
+            title={t("database_anonymization.existing_anonymized_databases")}
+            locationDescription={anonymizedFolderPath && t("database_anonymization.anonymized_databases_location", { anonymizedFolder: anonymizedFolderPath })}
+            files={databases}
+            downloadEndpoint="api/database/anonymized/download"
+            rowName="anonymized-database"
+            downloadText={t("database_anonymization.download")}
+            emptyIcon="bx bx-glasses"
+            emptyText={t("database_anonymization.no_anonymized_database_yet")}
+        />
     );
 }
 
 
 function ExperimentalOptions() {
     const [enabledFeatures, setEnabledFeatures] = useTriliumOptionJson<ExperimentalFeatureId[]>("experimentalFeatures", true);
-    const filteredFeatures = useMemo(() => getAvailableExperimentalFeatures().filter(e => e.id !== "new-layout"), []);
+    // Features with dedicated controls elsewhere (appearance settings and the AI/LLM page, respectively).
+    const integratedFeatures: ExperimentalFeatureId[] = ["new-layout", "llm"];
+    const filteredFeatures = useMemo(() => getAvailableExperimentalFeatures().filter(e => !integratedFeatures.includes(e.id)), []);
 
     const toggleFeature = useCallback((featureId: ExperimentalFeatureId, enabled: boolean) => {
         if (enabled) {

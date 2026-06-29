@@ -2,6 +2,8 @@ import { DEFAULT_TASK_STATES, DONE_STATE_NAME, isAnchorState, NONE_STATE_NAME, t
 import { Tooltip } from "bootstrap";
 import { Command, getEnvKeystrokeText, ListEditing, Plugin, TodoList, type Editor, type ModelElement, type ViewElement } from "ckeditor5";
 
+import { onTodoRowSplit } from "../todo_list_uncheck_on_enter.js";
+
 export const TASK_STATE_ATTRIBUTE = "taskState";
 const TODO_LIST_CHECKED_ATTRIBUTE = "todoListChecked";
 
@@ -115,6 +117,18 @@ export default class TodoListMultistateEditing extends Plugin {
                     this._checkboxTooltips.add(input);
                 }
             }
+        });
+
+        // A new row split off with Enter inherits the previous row's `taskState` (writer.split
+        // copies block attributes). Drop it so each new task starts in the plain "none" state.
+        // Without this, `TodoListUncheckOnEnter` clears the new row's checkbox but the inherited
+        // `taskState` survives, leaving an inconsistent row (e.g. a completed "review" state with
+        // an unchecked box) and carrying #10084 over to custom states. The post-fixer below can't
+        // catch it: it reacts to taskState *changes*, but on a split the attribute arrives as part
+        // of the inserted node, not as a diff. `TodoListUncheckOnEnter` clears the companion
+        // `todoListChecked` via the same seam.
+        onTodoRowSplit(this, (writer, block) => {
+            writer.removeAttribute(TASK_STATE_ATTRIBUTE, block);
         });
 
         editor.model.document.registerPostFixer((writer) => {

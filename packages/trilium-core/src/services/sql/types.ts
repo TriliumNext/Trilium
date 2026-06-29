@@ -22,7 +22,8 @@ export interface DatabaseProvider {
     loadFromFile(path: string, isReadOnly: boolean): void;
     loadFromMemory(): void;
     loadFromBuffer(buffer: Uint8Array): void;
-    backup(destinationFile: string): void;
+    /** Copies the database to the given file, resolving only once the copy has fully completed. */
+    backup(destinationFile: string): void | Promise<void>;
     /**
      * Serialize the database to a byte array.
      * Optional - only implemented by browser-based providers.

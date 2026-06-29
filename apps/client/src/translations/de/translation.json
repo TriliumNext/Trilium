@@ -129,20 +129,11 @@
     "export_note_title": "Notiz exportieren",
     "close": "Schließen",
     "export_type_subtree": "Diese Notiz und alle ihre Unternotizen",
-    "format_html": "HTML - empfohlen, da dadurch alle Formatierungen erhalten bleiben",
-    "format_html_zip": "HTML im ZIP-Archiv – dies wird empfohlen, da dadurch die gesamte Formatierung erhalten bleibt.",
-    "format_markdown": "Markdown – dadurch bleiben die meisten Formatierungen erhalten.",
-    "format_opml": "OPML – Outliner-Austauschformat nur für Text. Formatierungen, Bilder und Dateien sind nicht enthalten.",
-    "opml_version_1": "OPML v1.0 – nur Klartext",
-    "opml_version_2": "OPML v2.0 – erlaubt auch HTML",
     "export_type_single": "Nur diese Notiz ohne ihre Unternotizen",
     "export": "Export",
     "choose_export_type": "Bitte wählen Sie zuerst den Exporttyp aus",
-    "export_status": "Exportstatus",
-    "export_in_progress": "Export läuft: {{progressCount}}",
     "export_finished_successfully": "Der Export wurde erfolgreich abgeschlossen.",
-    "format_pdf": "PDF - für Ausdrucke oder Teilen.",
-    "share-format": "HTML für die Web-Veröffentlichung – verwendet dasselbe Theme wie bei freigegebenen Notizen, kann jedoch als statische Website veröffentlicht werden."
+    "format_pdf": "PDF - für Ausdrucke oder Teilen."
   },
   "help": {
     "noteNavigation": "Notiz Navigation",
@@ -203,7 +194,6 @@
   "import": {
     "importIntoNote": "In Notiz importieren",
     "chooseImportFile": "Importdatei auswählen",
-    "importDescription": "Der Inhalt der ausgewählten Datei(en) wird als untergeordnete Notiz(en) importiert",
     "options": "Optionen",
     "safeImportTooltip": "Trilium <code>.zip</code>-Exportdateien können ausführbare Skripte enthalten, die möglicherweise schädliches Verhalten aufweisen. Der sichere Import deaktiviert die automatische Ausführung aller importierten Skripte. Deaktivieren Sie 'Sicherer Import' nur, wenn das importierte Archiv ausführbare Skripte enthalten soll und Sie dem Inhalt der Importdatei vollständig vertrauen.",
     "safeImport": "Sicherer Import",
@@ -222,10 +212,12 @@
       "placeholder": "HTML tags eintragen, pro Zeile nur einer pro Zeile",
       "reset_button": "Zur Standardliste zurücksetzen"
     },
-    "import-status": "Importstatus",
     "in-progress": "Import läuft: {{progress}}",
     "successful": "Import erfolgreich abgeschlossen.",
-    "importZipRecommendation": "Beim Import einer ZIP-Datei wird die Notizhierarchie aus der Ordnerstruktur im Archiv übernommen."
+    "importZipRecommendation": "Beim Import einer ZIP-Datei wird die Notizhierarchie aus der Ordnerstruktur im Archiv übernommen.",
+    "spreadsheetImportedAsSpreadsheet": "CSV- und Excel-Dateien als bearbeitbare Tabellen statt als Dateien importieren",
+    "starting": "Wird importiert…",
+    "in-progress-with-total": "Importiere {{progress}} von {{total}}"
   },
   "include_note": {
     "dialog_title": "Notiz beifügen",
@@ -816,7 +808,9 @@
     "hide_child_notes": "Untergeordnete Notizen im Baum ausblenden",
     "open_all_in_tabs": "Alle öffnen",
     "open_all_in_tabs_tooltip": "Alle Resultate in neuen Tabs öffnen",
-    "open_all_confirm": "Dies öffnet {{count}} Notizen in neuen Tabs. Fortfahren?"
+    "open_all_confirm_one": "Dies öffnet {{count}} Notiz in neuem Tab. Fortfahren?",
+    "open_all_confirm_other": "Dies öffnet {{count}} Notizen in neuen Tabs. Fortfahren?",
+    "dashboard": "Dashboard"
   },
   "edited_notes": {
     "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet...",
@@ -860,7 +854,8 @@
     "note_size": "Notengröße",
     "note_size_info": "Die Notizgröße bietet eine grobe Schätzung des Speicherbedarfs für diese Notiz. Es berücksichtigt den Inhalt der Notiz und den Inhalt ihrer Notizrevisionen.",
     "calculate": "berechnen",
-    "subtree_size": "(Zweiggröße: {{size}} in {{count}} Notizen)",
+    "subtree_size_one": "(Zweiggröße: {{size}} in {{count}} Notiz)",
+    "subtree_size_other": "(Zweiggröße: {{size}} in {{count}} Notizen)",
     "title": "Notizinfo",
     "mime": "MIME Typ",
     "show_similar_notes": "Zeige ähnliche Notizen"
@@ -871,7 +866,8 @@
     "title": "Notizkarte",
     "fix-nodes": "Knoten fixieren",
     "link-distance": "Verbindungslänge",
-    "too-many-notes": "Dieser Bereich enthält {{count}} Notizen. Die Anzeige aller Notizen kann die Leistung beeinträchtigen.",
+    "too-many-notes_one": "Dieser Bereich enthält {{count}} Notiz. Die Anzeige kann die Leistung beeinträchtigen.",
+    "too-many-notes_other": "Dieser Bereich enthält {{count}} Notizen. Die Anzeige aller Notizen kann die Leistung beeinträchtigen.",
     "show-anyway": "Karte anzeigen"
   },
   "note_paths": {
@@ -1026,7 +1022,9 @@
   "book": {
     "no_children_help": "Diese Sammlung enthält keine untergeordnete Notizen, daher gibt es nichts anzuzeigen.",
     "drag_locked_title": "Für Bearbeitung gesperrt",
-    "drag_locked_message": "Das Ziehen ist nicht möglich, da die Sammlung für die Bearbeitung gesperrt ist."
+    "drag_locked_message": "Das Ziehen ist nicht möglich, da die Sammlung für die Bearbeitung gesperrt ist.",
+    "archived_notes_hidden_one": "Eine archivierte Notiz wurde hierher kopiert, bleibt aber ausgeblendet bis Sie \"Archivierte Notizen anzeigen\" aktivieren.",
+    "archived_notes_hidden_other": "{{count}} archivierte Notizen wurden hierher kopiert, bleiben aber ausgeblendet bis Sie \"Archivierte Notizen anzeigen\" aktivieren."
   },
   "editable_code": {
     "placeholder": "Geben Sie hier den Inhalt Ihrer Codenotiz ein..."
@@ -1058,9 +1056,7 @@
     "protecting-finished-successfully": "Geschützt erfolgreich beendet.",
     "unprotecting-finished-successfully": "Ungeschützt erfolgreich beendet.",
     "protecting-in-progress": "Schützen läuft: {{count}}",
-    "unprotecting-in-progress-count": "Entschützen läuft: {{count}}",
-    "protecting-title": "Geschützt-Status",
-    "unprotecting-title": "Ungeschützt-Status"
+    "unprotecting-in-progress-count": "Entschützen läuft: {{count}}"
   },
   "relation_map": {
     "remove_note": "Notiz entfernen",
@@ -1085,7 +1081,7 @@
   },
   "consistency_checks": {
     "title": "Konsistenzprüfungen",
-    "find_and_fix_button": "Konsistenzprobleme finden und beheben",
+    "find_and_fix_button": "Probleme beheben",
     "finding_and_fixing_message": "Konsistenzprobleme finden und beheben...",
     "issues_fixed_message": "Konsistenzprobleme sollten behoben werden.",
     "find_and_fix_label": "Konsistenzprobleme finden und beheben",
@@ -1095,11 +1091,11 @@
     "title": "Datenbankanonymisierung",
     "full_anonymization": "Vollständige Anonymisierung",
     "full_anonymization_description": "Erstellt eine Kopie der Datenbank, wo der Inhalt der Notizen entfernt wurde. Es vergleicht lediglich die Struktur sowie nicht-kritische Metadaten. Sicher zum teilen für die Fehlerdiagnose.",
-    "save_fully_anonymized_database": "Speichere eine vollständig anonymisierte Datenbank",
+    "save_fully_anonymized_database": "Kopie erstellen",
     "light_anonymization": "Leichte Anonymisierung",
     "light_anonymization_description": "Erstellt eine Kopie wo der Inhalt der Notiz entfernt ist, jedoch Title, Attribute und benutzerdefinierte Skripte erhalten bleiben. Hilfreich zur Fehlerdiagnose.",
     "choose_anonymization": "Sie können selbst entscheiden, ob Sie eine vollständig oder leicht anonymisierte Datenbank bereitstellen möchten. Selbst eine vollständig anonymisierte Datenbank ist sehr hilfreich.",
-    "save_lightly_anonymized_database": "Speichere eine leicht anonymisierte Datenbank",
+    "save_lightly_anonymized_database": "Kopie erstellen",
     "existing_anonymized_databases": "Vorhandene anonymisierte Datenbanken",
     "creating_fully_anonymized_database": "Vollständig anonymisierte Datenbank erstellen...",
     "creating_lightly_anonymized_database": "Erstellen einer leicht anonymisierten Datenbank...",
@@ -1107,11 +1103,13 @@
     "successfully_created_fully_anonymized_database": "Vollständig anonymisierte Datenbank in {{anonymizedFilePath}} erstellt",
     "successfully_created_lightly_anonymized_database": "Leicht anonymisierte Datenbank in {{anonymizedFilePath}} erstellt",
     "no_anonymized_database_yet": "Noch keine anonymisierte Datenbank.",
-    "description": "Erstellt eine anonymisierte Kopie Ihrer Datenbank für den Austausch mit Entwicklern zur Fehlerdiagnose, ohne persönliche Daten preiszugeben."
+    "description": "Erstellt eine anonymisierte Kopie Ihrer Datenbank für den Austausch mit Entwicklern zur Fehlerdiagnose, ohne persönliche Daten preiszugeben.",
+    "anonymized_databases_location": "Anonymisierte Datenbanken werden in {{- anonymizedFolder}} gespeichert.",
+    "download": "Herunterladen"
   },
   "database_integrity_check": {
     "title": "Datenbankintegritätsprüfung",
-    "check_button": "Überprüfe die Datenbankintegrität",
+    "check_button": "Integrität überprüfen",
     "checking_integrity": "Datenbankintegrität prüfen...",
     "integrity_check_succeeded": "Integritätsprüfung erfolgreich – keine Probleme gefunden.",
     "integrity_check_failed": "Integritätsprüfung fehlgeschlagen: {{results}}",
@@ -1120,8 +1118,8 @@
   },
   "sync": {
     "title": "Synchronisieren",
-    "force_full_sync_button": "Vollständige Synchronisierung erzwingen",
-    "fill_entity_changes_button": "Entitätsänderungsdatensätze füllen",
+    "force_full_sync_button": "Synchronisierung erzwingen",
+    "fill_entity_changes_button": "Änderungen befüllen",
     "full_sync_triggered": "Vollständige Synchronisierung ausgelöst",
     "filling_entity_changes": "Entitätsänderungszeilen werden gefüllt...",
     "sync_rows_filled_successfully": "Synchronisierungszeilen erfolgreich gefüllt",
@@ -1135,7 +1133,7 @@
   "vacuum_database": {
     "title": "Datenbank aufräumen",
     "description": "Dadurch wird die Datenbank neu erstellt, was normalerweise zu einer kleineren Datenbankdatei führt. Es werden keine Daten tatsächlich geändert.",
-    "button_text": "Datenbank aufräumen",
+    "button_text": "Jetzt bereinigen",
     "vacuuming_database": "Datenbank wird geleert...",
     "database_vacuumed": "Die Datenbank wurde geleert",
     "vacuum_label": "Datenbank bereinigen",
@@ -1179,8 +1177,6 @@
     "disabled": "deaktiviert"
   },
   "ribbon": {
-    "widgets": "Multifunktionsleisten-Widgets",
-    "promoted_attributes_message": "Die „Hervorgehobene Attribute“-Leiste wird automatisch geöffnet, wenn in der Notiz hervorgehobene Attribute vorhanden sind",
     "edited_notes_message": "Die Multifunktionsleisten-Registerkarte „Bearbeitete Notizen“ wird bei Tagesnotizen automatisch geöffnet"
   },
   "theme": {
@@ -1261,10 +1257,11 @@
     "attachment_erasure_timeout": "Nicht verwendete Anhänge",
     "erase_attachments_after": "Nicht verwendete Anhänge löschen nach",
     "manual_erasing_description": "Manuelle Löschung aktivieren, ignoriert den obigen Zeitpunkt.",
-    "erase_unused_attachments_now": "Nicht verwendete Anhänge jetzt löschen",
+    "erase_unused_attachments_now": "Ungenutzte Anhänge löschen",
     "unused_attachments_erased": "Nicht verwendete Anhänge wurden gelöscht.",
     "description": "Anhänge, auf die keine Notiz mehr verweist, gelten als ungenutzt und können nach einer gewissen Zeit automatisch gelöscht werden.",
-    "erase_attachments_after_description": "Zeitraum, nach dem ungenutzte Anhänge dauerhaft gelöscht werden."
+    "erase_attachments_after_description": "Zeitraum, nach dem ungenutzte Anhänge dauerhaft gelöscht werden.",
+    "erase_now_button": "Jetzt löschen"
   },
   "network_connections": {
     "network_connections_title": "Netzwerk",
@@ -1275,10 +1272,11 @@
     "note_erasure_timeout_title": "Gelöschte Notizen",
     "erase_notes_after": "Notizen löschen nach",
     "manual_erasing_description": "Löschung manuell auslösen, ignoriert den oben eingestellten Zeitraum.",
-    "erase_deleted_notes_now": "Jetzt gelöschte Notizen löschen",
+    "erase_deleted_notes_now": "Gelöschte Notizen löschen",
     "deleted_notes_erased": "Gelöschte Notizen wurden gelöscht.",
     "description": "Gelöschte Notizen werden zunächst nur als gelöscht markiert und können unter „Letzte Notizen“ wiederhergestellt werden. Nach einer gewissen Zeit werden sie dauerhaft gelöscht.",
-    "erase_notes_after_description": "Zeitraum, nach dem gelöschte Notizen dauerhaft gelöscht werden."
+    "erase_notes_after_description": "Zeitraum, nach dem gelöschte Notizen dauerhaft gelöscht werden.",
+    "erase_now_button": "Jetzt löschen"
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "Schnappschuss-Intervall für Notizrevisionen",
@@ -1290,11 +1288,12 @@
     "note_revisions_snapshot_limit_title": "Limit für Notizrevision-Snapshots",
     "note_revisions_snapshot_limit_description": "Das Limit für Notizrevision-Snapshots bezieht sich auf die maximale Anzahl von Revisionen, die für jede Notiz gespeichert werden können. Dabei bedeutet -1, dass es kein Limit gibt, und 0 bedeutet, dass alle Revisionen gelöscht werden. Sie können das maximale Limit für Revisionen einer einzelnen Notiz über das Label #versioningLimit festlegen.",
     "snapshot_number_limit_label": "Maximale Revisionen",
-    "erase_excess_revision_snapshots": "Überschüssige Revision-Snapshots jetzt löschen",
+    "erase_excess_revision_snapshots": "Überschüssige Revision-Snapshots löschen",
     "erase_excess_revision_snapshots_prompt": "Überschüssige Revision-Snapshots wurden gelöscht.",
     "snapshot_number_limit_unit": "Momentaufnahmen",
     "note_revisions_snapshot_limit_description_short": "Maximale Anzahl an Revisionen pro Notiz. Nutze -1 für unlimitiert oder 0 zum deaktivieren.",
-    "erase_excess_revision_snapshots_description": "Lösche Revisionen aller Notizen die das Limit überschreiten."
+    "erase_excess_revision_snapshots_description": "Lösche Revisionen aller Notizen die das Limit überschreiten.",
+    "erase_now_button": "Jetzt löschen"
   },
   "search_engine": {
     "title": "Suchmaschine",
@@ -1314,7 +1313,9 @@
   "tray": {
     "title": "Systemablage",
     "enable_tray": "Tray-Symbol",
-    "enable_tray_description": "Trilium muss neu gestartet werden, damit diese Änderung wirksam wird."
+    "enable_tray_description": "Änderungen werden sofort übernommen, auf manchen Plattformen ist jedoch ein Neustart von Trilium erforderlich, um das Tray-Symbol auszublenden.",
+    "close_to_tray": "In den Tray minimieren",
+    "close_to_tray_description": "Beim Schließen des Fensters läuft Trilium im Systemtray weiter statt zu beenden. Erfordert ein aktiviertes Tray-Symbol."
   },
   "heading_style": {
     "title": "Überschriftenstil",
@@ -1383,10 +1384,12 @@
     "database_backed_up_to": "Die Datenbank wurde gesichert unter {{- backupFilePath}}",
     "no_backup_yet": "noch kein Backup",
     "title": "Sicherung",
-    "download": "Download"
+    "download": "Download",
+    "automatic_backups_title": "Automatische Sicherungen",
+    "automatic_backups_description": "Trilium kann die Datenbank automatisch sichern. Es wird empfohlen, die Sicherung aktiviert zu lassen, dies kann jedoch den Programmstart bei großen Datenbanken und/oder langsamen Speichermedien verlangsamen.",
+    "backup_location_description": "Sicherungen werden in {{- backupFolder}} gespeichert."
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI ist eine REST-API, die für den programmgesteuerten Zugriff auf die Trilium-Instanz ohne Benutzeroberfläche verwendet wird.",
     "create_token": "Neues ETAPI-Token erstellen",
     "existing_tokens": "Vorhandene Token",
@@ -1404,7 +1407,8 @@
     "delete_token": "Dieses Token löschen/deaktivieren",
     "rename_token_title": "Token umbenennen",
     "rename_token_message": "Bitte gebe den Namen des neuen Tokens ein",
-    "delete_token_confirmation": "Sind Sie sicher, dass Sie den ETAPI-Token „{{name}}“ löschen möchten?"
+    "delete_token_confirmation": "Sind Sie sicher, dass Sie den ETAPI-Token „{{name}}“ löschen möchten?",
+    "no_tokens": "Es sind noch keine Token vorhanden."
   },
   "options_widget": {
     "options_status": "Optionsstatus",
@@ -1433,34 +1437,51 @@
     "change_password_description": "Aktualisieren Sie Ihr aktuelles Passwort",
     "reset_password": "Passwort zurücksetzen",
     "cancel": "Abbrechen",
-    "reset_password_description": "Dauerhaften Zugriff auf geschützte Notizen verlieren"
+    "reset_password_description": "Dauerhaften Zugriff auf geschützte Notizen verlieren",
+    "change_password_button": "Passwort ändern",
+    "reset_password_button": "Jetzt zurücksetzen"
   },
   "shortcuts": {
     "keyboard_shortcuts": "Tastaturkürzel",
-    "multiple_shortcuts": "Mehrere Tastenkombinationen für dieselbe Aktion können durch Komma getrennt werden.",
-    "electron_documentation": "Siehe <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">Electron documentation</a> für verfügbare Modifier und key codes.",
     "type_text_to_filter": "Gebe Text ein, um Verknüpfungen zu filtern...",
-    "action_name": "Aktionsname",
-    "shortcuts": "Tastenkürzel",
-    "default_shortcuts": "Standardtastenkürzel",
-    "description": "Beschreibung",
-    "reload_app": "App neu laden, um die Änderungen zu übernehmen",
-    "set_all_to_default": "Alle Verknüpfungen auf die Standardeinstellungen zurücksetzen",
+    "reload_app": "App neu laden",
+    "set_all_to_default": "Alle zurücksetzen",
     "confirm_reset": "Möchten Sie wirklich alle Tastaturkürzel auf die Standardeinstellungen zurücksetzen?",
-    "no_results": "Keine Tastenkürzel für '{{filter}}' gefunden"
+    "no_results": "Keine Tastenkürzel für '{{filter}}' gefunden",
+    "modified_from_default": "Diese Tastenkombination wurde gegenüber dem Standard geändert.",
+    "revert_to_default": "Auf Standard zurücksetzen ({{shortcuts}})",
+    "no_default_shortcut": "Keine Tastenkombination",
+    "record_shortcut": "Tastenkombination hinzufügen",
+    "remove_shortcut": "Diese Tastenkombination entfernen",
+    "press_keys": "Tasten drücken…",
+    "recording_toast": "Eine Tastenkombination drücken um sie zuzuweisen, oder Esc zum Abbrechen.",
+    "make_global": "Als systemweite (globale) Tastenkombination festlegen",
+    "make_local": "Als anwendungsinterne Tastenkombination festlegen",
+    "global_shortcut": "Systemweite (globale) Tastenkombination, nur in der Desktop-App aktiv",
+    "conflict_chip": "Diese Kombination ist auch zugewiesen an: {{actions}}",
+    "no_conflicts": "Keine Konflikte bei Tastenkombinationen.",
+    "no_matches": "Keine Tastenkombinationen entsprechen den ausgewählten Filtern.",
+    "filter": "Tastenkombinationen filtern",
+    "filter_all": "Alle Tastenkombinationen",
+    "filter_conflicts": "Konflikte ({{count}})",
+    "filter_global": "Globale Tastenkombinationen ({{count}})",
+    "filter_modified": "Vom Standard abweichend ({{count}})",
+    "conflicts_badge_one": "{{count}} Konflikt",
+    "conflicts_badge_other": "{{count}} Konflikte",
+    "conflicts_badge_tooltip": "Einige Tastenkombinationen sind mehreren Aktionen zugewiesen. Klicken Sie hier, um nur die konfliktbehafteten Tastenkombinationen anzuzeigen."
   },
   "spellcheck": {
     "title": "Rechtschreibprüfung",
     "description": "Diese Optionen gelten nur für Desktop-Builds. Browser verwenden ihre eigene native Rechtschreibprüfung.",
     "enable": "Rechtschreibprüfung aktivieren",
     "language_code_label": "Rechtschreibprüfungs-Sprachen",
-    "restart-required": "Änderungen an den Rechtschreibprüfungsoptionen werden nach dem Neustart der Anwendung wirksam.",
     "custom_dictionary_title": "Benutzerdefiniertes Wörterbuch",
     "custom_dictionary_edit": "Benutzerdefiniert Wörter",
     "custom_dictionary_open": "Wörterbuch bearbeiten",
     "related_description": "Sprachen der Rechtschreibprüfung und benutzerdefiniertes Wörterbuch konfigurieren.",
     "custom_dictionary_description": "Zum Wörterbuch hinzugefügte Wörter werden auf all Ihren Geräten synchronisiert.",
-    "custom_dictionary_edit_description": "Bearbeiten Sie die Liste der Wörter, die von der Rechtschreibprüfung nicht markiert werden sollen. Änderungen werden nach einem Neustart sichtbar."
+    "custom_dictionary_edit_description": "Bearbeiten Sie die Liste der Wörter, die von der Rechtschreibprüfung nicht markiert werden sollen. Änderungen werden nach einem Neustart sichtbar.",
+    "disabled_placeholder": "Die Rechtschreibprüfung ist deaktiviert. Aktivieren Sie sie, um Sprachen auszuwählen und das benutzerdefinierte Wörterbuch zu verwalten."
   },
   "sync_2": {
     "config_title": "Sync-Server",
@@ -1471,7 +1492,7 @@
     "help": "Helfen",
     "test_title": "Verbindung testen",
     "test_description": "Die Verbindung zum Synchronisierungsserver wird getestet. Ist der Server noch nicht initialisiert, wird die Synchronisierung mit dem lokalen Dokument eingerichtet.",
-    "test_button": "Teste die Synchronisierung",
+    "test_button": "Jetzt testen",
     "handshake_failed": "Handshake des Synchronisierungsservers fehlgeschlagen, Fehler: {{message}}",
     "server_address_description": "URL des Trilium-Servers, mit dem synchronisiert werden soll.",
     "proxy_description": "Leer lassen, um den System-Proxy zu verwenden (nur Desktop). Verwenden Sie \"noproxy\", um alle Proxys zu umgehen.",
@@ -1534,7 +1555,8 @@
     "export": "Exportieren",
     "import-into-note": "In Notiz importieren",
     "apply-bulk-actions": "Massenaktionen anwenden",
-    "converted-to-attachments": "{{count}} Notizen wurden als Anhang konvertiert.",
+    "converted-to-attachments_one": "{{count}} Notiz wurde als Anhang konvertiert.",
+    "converted-to-attachments_other": "{{count}} Notizen wurden als Anhang konvertiert.",
     "convert-to-attachment-confirm": "Sind Sie sicher, dass Sie die ausgewählten Notizen in Anhänge ihrer übergeordneten Notizen umwandeln möchten? Diese Operation wird nur auf Bildnotizen angewandt. Andere Notizen werden übersprungen.",
     "open-in-popup": "Schnellbearbeitung",
     "archive": "Archiviere",
@@ -1658,7 +1680,10 @@
     "print_report_collection_content_one": "{{count}} Notiz in der Sammlung konnte nicht gedruckt werden, weil sie nicht unterstützt oder geschützt ist.",
     "print_report_collection_content_other": "{{count}} Notizen in der Sammlung konnten nicht gedruckt werden, weil sie nicht unterstützt oder geschützt sind.",
     "print_report_error_title": "Druck fehlgeschlagen",
-    "print_report_stack_trace": "Stapelzurückverfolgung"
+    "print_report_stack_trace": "Stapelzurückverfolgung",
+    "content_load_error": "Der Inhalt der Notiz konnte nicht geladen werden.",
+    "content_load_retry": "Erneut versuchen",
+    "content_load_stalled": "Inhalt der Notiz wird noch geladen…"
   },
   "note_title": {
     "placeholder": "Titel der Notiz hier eingeben…",
@@ -1699,7 +1724,10 @@
     "reopen_last_tab": "Zuletzt geschlossenen Tab erneut öffnen",
     "move_tab_to_new_window": "Tab in neues Fenster verschieben",
     "copy_tab_to_new_window": "Tab in neues Fenster kopieren",
-    "new_tab": "Neuer Tab"
+    "new_tab": "Neuer Tab",
+    "pin_tab": "Tab anheften",
+    "unpin_tab": "Tab lösen",
+    "pinned_prefix": "Angeheftet: "
   },
   "toc": {
     "table_of_contents": "Inhaltsverzeichnis",
@@ -1741,7 +1769,6 @@
   },
   "branches": {
     "cannot-move-notes-here": "Notizen können hier nicht verschoben werden.",
-    "delete-status": "Löschstatus",
     "delete-notes-in-progress": "Löschen von Notizen in Bearbeitung: {{count}}",
     "delete-finished-successfully": "Löschen erfolgreich abgeschlossen.",
     "undeleting-notes-in-progress": "Wiederherstellen von Notizen in Bearbeitung: {{count}}",
@@ -1905,37 +1932,87 @@
     "description_short": "Das Format des über die Werkzeugleiste eingefügten Datums und der Uhrzeit anpassen."
   },
   "multi_factor_authentication": {
-    "title": "Multi-Faktor-Authentifizierung",
-    "description": "Die Multi-Faktor-Authentifizierung (MFA) bietet Ihrem Konto eine zusätzliche Sicherheitsebene. Anstatt sich lediglich mit einem Passwort anzumelden, müssen bei der MFA ein oder mehrere zusätzliche Nachweise erbracht werden, um die Identität zu bestätigen. Auf diese Weise kann selbst bei Bekanntwerden des Passworts, ohne die zweite Information nicht auf Ihr Konto zugegriffen werden. Das ist so, als würden Sie ein zusätzliches Schloss an einer Tür anbringen, wodurch es für andere viel schwieriger wird, einzubrechen.<br><br>Befolgen Sie bitte die nachstehenden Anweisungen, um MFA zu aktivieren. Wenn Sie die Konfiguration nicht korrekt vornehmen, erfolgt die Anmeldung weiterhin nur mit dem Passwort.",
-    "mfa_enabled": "Aktiviere Multi-Faktor-Authentifizierung",
-    "mfa_method": "MFA Methode",
-    "electron_disabled": "Multi-Faktor-Authentifizierung wird aktuell nicht in der Desktop-Version unterstützt.",
-    "totp_title": "Zeitbasiertes Einmalpasswort (TOTP)",
-    "totp_description": "TOTP (Zeitbasiertes Einmalpasswort) ist eine Sicherheitsfunktion, die einen einzigartigen, temporären Code generiert, der sich alle 30 Sekunden ändert. Sie verwenden diesen Code zusammen mit Ihrem Passwort, um sich bei Ihrem Konto anzumelden, wodurch es für andere Personen wesentlich schwieriger wird, darauf unbefugt zuzugreifen.",
-    "totp_secret_title": "Generiere TOTP Geheimnis",
-    "totp_secret_generate": "Generiere TOTP Geheimnis",
-    "totp_secret_regenerate": "TOTP-Geheimnis neu generieren",
-    "no_totp_secret_warning": "Um TOTP zu aktivieren, muss zunächst ein TOTP Geheimnis generiert werden.",
-    "totp_secret_description_warning": "Nach der Generierung des TOTP Geheimnisses ist eine Neuanmeldung mit dem TOTP Geheimnis erforderlich.",
-    "totp_secret_generated": "TOTP Geheimnis generiert",
-    "totp_secret_warning": "Bitte speichere das generierte Geheimnis an einem sicheren Ort. Es wird nicht noch einmal angezeigt.",
-    "totp_secret_regenerate_confirm": "Möchten Sie das TOTP-Geheimnis wirklich neu generieren? Dadurch werden das bisherige TOTP-Geheimnis und alle vorhandenen Wiederherstellungscodes ungültig.",
-    "recovery_keys_title": "Einmalige Wiederherstellungsschlüssel",
-    "recovery_keys_description": "Einmalige Wiederherstellungsschlüssel werden verwendet, um sich anzumelden, falls Sie keinen Zugriff auf Ihre Authentifizierungscodes haben.",
     "recovery_keys_description_warning": "Wiederherstellungsschlüssel werden nach dem Verlassen der Seite nicht erneut angezeigt. Bewahren Sie sie an einem sicheren Ort auf.<br>Wiederherstellungsschlüssel können nach ihrer Verwendung nicht erneut verwendet werden.",
     "recovery_keys_error": "Fehler beim Generieren der Wiederherstellungscodes",
     "recovery_keys_no_key_set": "Keine Wiederherstellungscodes eingerichtet",
-    "recovery_keys_generate": "Generiere Wiederherstellungscodes",
     "recovery_keys_regenerate": "Wiederherstellungscodes erneut generieren",
-    "recovery_keys_used": "Verwendet: {{date}}",
-    "recovery_keys_unused": "Wiederherstellungscode {{index}} ist unbenutzt",
-    "oauth_title": "OAuth/OpenID",
-    "oauth_description": "OpenID ist ein standardisiertes Verfahren, mit dem Sie sich über ein Konto eines anderen Dienstes, beispielsweise Google, bei Websites anmelden können, um Ihre Identität zu bestätigen. Der Standardaussteller ist Google, Sie können jedoch jeden anderen OpenID-Anbieter auswählen. Weitere Informationen finden Sie <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">hier</a>. Befolgen Sie diese <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">Anweisungen</a>, um einen OpenID-Dienst über Google einzurichten.",
-    "oauth_description_warning": "Um OAuth/OpenID zu aktivieren, müssen Sie die OAuth/OpenID-Basis-URL, die Client-ID und den Client-Secret in der Datei config.ini festlegen und die Anwendung neu starten. Wenn Sie die Einstellungen über Umgebungsvariablen vornehmen möchten, legen Sie bitte TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID und TRILIUM_OAUTH_CLIENT_SECRET fest.",
-    "oauth_missing_vars": "Fehlende Einstellung: {{-variables}}",
-    "oauth_user_account": "Benutzerkonto: ",
-    "oauth_user_email": "Benutzer E-Mail: ",
-    "oauth_user_not_logged_in": "Nicht eingeloggt!"
+    "oauth_title": "OpenID Connect",
+    "oauth_description": "OpenID Connect ermöglicht die Anmeldung über ein Konto eines anderen Dienstes, beispielsweise Google, um Ihre Identität zu bestätigen. Der Standardaussteller ist Google, Sie können jedoch jeden anderen OpenID-Connect-Anbieter verwenden. Weitere Informationen finden Sie <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">hier</a>. Befolgen Sie diese <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">Anweisungen</a>, um OpenID Connect über Google einzurichten.",
+    "oauth_missing_vars": "Noch zu konfigurieren: {{-variables}}",
+    "oauth_user_account": "Kontoname",
+    "oauth_user_email": "E-Mail-Adresse",
+    "oauth_user_not_logged_in": "Nicht eingeloggt!",
+    "authentication_title": "Authentifizierung",
+    "signin_method": "Anmelden mit",
+    "signin_local": "Lokales Passwort (optional mit Zwei-Faktor-Authentifizierung)",
+    "signin_oauth": "OpenID-Connect-Anbieter (z. B. Google)",
+    "signin_local_description": "Melden Sie sich mit Ihrem Trilium-Passwort an. Optional können Sie die Zwei-Faktor-Authentifizierung für eine zusätzliche Sicherheitsebene aktivieren.",
+    "totp_setup_label": "Zeitbasiertes Einmalpasswort (TOTP)",
+    "totp_setup_description": "Generieren Sie einen zeitbasierten Code aus einer Authenticator-App als zweiten Faktor. Scannen Sie einen QR-Code und bestätigen Sie einen Code zum Abschluss. Am Ende werden Wiederherstellungscodes ausgestellt.",
+    "totp_setup_button": "Einrichten",
+    "totp_enroll_title": "Authenticator bestätigen",
+    "totp_enroll_instructions": "TOTP wird erst aktiviert wenn Sie unten einen gültigen Code bestätigen, sodass Sie sich nicht versehentlich aussperren können.",
+    "totp_enroll_step1_title": "1. Konto zur Authenticator-App hinzufügen",
+    "totp_enroll_step2_title": "2. Bestätigungscode eingeben",
+    "totp_enroll_scan": "Diesen QR-Code scannen:",
+    "totp_enroll_secret_label": "Kein Scan möglich? Diesen Code manuell eingeben",
+    "totp_enroll_code_label": "Bestätigungscode",
+    "totp_enroll_code_placeholder": "000000",
+    "totp_enroll_verify": "Bestätigen und fortfahren",
+    "totp_enroll_cancel": "Abbrechen",
+    "totp_enroll_invalid_code": "Dieser Code stimmt nicht überein. Überprüfen Sie die Uhrzeit Ihres Geräts und geben Sie den aktuellen Code ein.",
+    "totp_enroll_generate_error": "TOTP-Geheimnis konnte nicht generiert werden. Bitte schließen Sie diesen Dialog und versuchen Sie es erneut.",
+    "totp_enroll_enabled": "Zwei-Faktor-Authentifizierung ist jetzt aktiviert.",
+    "totp_enroll_recovery_title": "Wiederherstellungscodes speichern",
+    "totp_enroll_recovery_instructions": "Speichern Sie diese Wiederherstellungscodes an einem sicheren Ort. Jeder Code kann einmalig zur Anmeldung verwendet werden falls Sie keinen Zugriff mehr auf Ihre Authenticator-App haben.",
+    "totp_enroll_recovery_copy": "Kopieren",
+    "totp_enroll_recovery_copied": "Wiederherstellungscodes in die Zwischenablage kopiert.",
+    "totp_enroll_recovery_download": "Herunterladen",
+    "totp_enroll_saved_ack": "Ich habe meine Wiederherstellungscodes sicher gespeichert",
+    "totp_enroll_finish": "Einrichtung abschließen",
+    "totp_enroll_enable_error": "Zwei-Faktor-Authentifizierung konnte nicht aktiviert werden. Bitte versuchen Sie es erneut.",
+    "totp_section_title": "Zwei-Faktor-Authentifizierung",
+    "totp_remove_label": "Zwei-Faktor-Authentifizierung entfernen",
+    "totp_remove_description": "Zwei-Faktor-Authentifizierung vollständig entfernen. Im Gegensatz zum einfachen Deaktivieren müssten Sie die Einrichtung von Grund auf neu vornehmen.",
+    "totp_remove_button": "Entfernen",
+    "totp_remove_confirm": "Zwei-Faktor-Authentifizierung dauerhaft entfernen? Dadurch wird die Einrichtung gelöscht und nicht nur deaktiviert, sodass Sie sie von Grund auf neu einrichten müssten. Bis dahin melden Sie sich nur mit Ihrem Passwort an.",
+    "totp_removed": "Zwei-Faktor-Authentifizierung wurde entfernt.",
+    "recovery_keys_regenerate_confirm": "Wiederherstellungscodes neu generieren? Ihre aktuellen Wiederherstellungscodes werden sofort ungültig und Sie müssen die neuen speichern.",
+    "recovery_keys_regenerated_title": "Neue Wiederherstellungscodes",
+    "recovery_keys_regenerated_instructions": "Hier sind Ihre neuen Wiederherstellungscodes. Speichern Sie diese jetzt: Sie ersetzen Ihre bisherigen Codes und werden nicht erneut angezeigt.",
+    "recovery_keys_done": "Fertig",
+    "recovery_keys_label": "Wiederherstellungscodes",
+    "recovery_keys_remaining": "{{remaining}} von {{total}} verbleibend. Können nicht erneut angezeigt, nur ersetzt werden.",
+    "recovery_keys_dot_available": "Verfügbar",
+    "recovery_keys_dot_used": "Verwendet am {{- date}}",
+    "oauth_status_not_configured": "Nicht konfiguriert",
+    "oauth_not_configured_hint": "OpenID Connect muss zunächst über die config.ini oder Umgebungsvariablen eingerichtet werden.",
+    "oauth_how_to_enable": "Aktivierung",
+    "oauth_server_config_hint": "Fügen Sie Folgendes in Ihre config.ini-Datei ein und starten Sie die Anwendung neu:",
+    "oauth_server_env_hint": "Oder setzen Sie folgende Umgebungsvariablen:",
+    "totp_status_active": "Aktiv",
+    "totp_status_inactive": "Inaktiv",
+    "oauth_status_connected": "Verbunden",
+    "oauth_status_not_connected": "Nicht verbunden",
+    "oauth_not_configured_title": "OpenID Connect einrichten",
+    "oauth_provider": "Anbieter",
+    "oauth_provider_url": "Aussteller-URL",
+    "oauth_provider_unknown": "Unbekannter Anbieter",
+    "oauth_not_enrolled_title": "Kein Konto verknüpft",
+    "oauth_not_enrolled_hint": "OpenID Connect ist konfiguriert, aber es ist noch kein Konto verknüpft.",
+    "oauth_not_enrolled_details_label": "Was bedeutet das?",
+    "oauth_not_enrolled_details": "Solange kein Konto verknüpft ist, ist OpenID Connect nicht aktiv und Sie melden sich weiterhin mit Ihrem Passwort an. Verknüpfen Sie Ihr Konto unten, um es zu aktivieren.",
+    "oauth_connect_label": "Konto verknüpfen",
+    "oauth_connect_description": "Melden Sie sich einmalig bei Ihrem Anbieter an, um Ihr Konto zu verknüpfen. Danach kann sich nur dieses Konto anmelden.",
+    "oauth_connect_button": "Konto verknüpfen",
+    "oauth_disconnect_label": "Kontoverbindung trennen",
+    "oauth_disconnect_description": "Verknüpftes Konto lösen. Die Anmeldung erfolgt wieder über Ihr Passwort bis ein neues Konto verknüpft wird.",
+    "oauth_disconnect_button": "Trennen",
+    "oauth_disconnect_confirm": "Möchten Sie dieses Konto wirklich trennen? Die Anmeldung erfolgt wieder über Ihr Passwort bis ein neues Konto verknüpft wird.",
+    "oauth_disconnected": "{{account}} wurde von {{provider}} getrennt.",
+    "oauth_connect_success": "Als {{account}} mit {{provider}} verbunden.",
+    "oauth_connect_success_generic": "Konto erfolgreich verknüpft.",
+    "oauth_account_unknown": "Ihr Konto"
   },
   "share": {
     "title": "Freigabe",
@@ -2075,10 +2152,15 @@
     "search_history_title": "Zeige Suchhistorie",
     "search_history_description": "Zeige vorherige Suchen",
     "configure_launch_bar_title": "Startleiste anpassen",
-    "configure_launch_bar_description": "Öffnen Sie die Einstellungen der Startleiste, um Elemente hinzuzufügen oder zu entfernen."
+    "configure_launch_bar_description": "Öffnen Sie die Einstellungen der Startleiste, um Elemente hinzuzufügen oder zu entfernen.",
+    "pin_tab_title": "Tab anheften",
+    "pin_tab_description": "Diese Notiz immer in diesem Tab am Anfang der Tab-Leiste geöffnet halten und versehentliches Schließen verhindern",
+    "unpin_tab_title": "Tab lösen",
+    "unpin_tab_description": "Diesen Tab lösen, sodass er geschlossen und frei verschoben werden kann"
   },
   "content_renderer": {
-    "open_externally": "Extern öffnen"
+    "open_externally": "Extern öffnen",
+    "mermaid_diagram_error": "Mermaid-Diagramm konnte nicht gerendert werden: {{error}}"
   },
   "call_to_action": {
     "next_theme_title": "Teste das neue Trilium Design",
@@ -2090,7 +2172,10 @@
     "dismiss": "Ablehnen",
     "new_layout_title": "Neues Layout",
     "new_layout_message": "Wir haben ein modernisiertes Layout für Trilium eingeführt. Die Multifunktionsleiste wurde entfernt und als neue Statusanzeige und ausklappbaren Sektionen (wie hervorgehobenen Attributen), welche Schlüsselfunktionen übernehmen, nahtlos in das Hauptinterface integriert.\n\nDas neue Layout ist standardmäßig aktiviert und kann temporär in Optionen → Anzeige deaktiviert werden.",
-    "new_layout_button": "Mehr Informationen"
+    "new_layout_button": "Mehr Informationen",
+    "scripting_disabled_title": "Backend-Skripting wurde deaktiviert",
+    "scripting_disabled_button": "Sicherheitseinstellungen öffnen",
+    "scripting_disabled_message": "Backend-Skripting ist aus Sicherheitsgründen jetzt standardmäßig deaktiviert. Ihre Notizen enthalten Backend-Skripte (Notizen mit dem Label #run), die nicht mehr automatisch ausgeführt werden.\n\nWenn Sie auf diese Skripte angewiesen sind, können Sie Backend-Skripting in den Sicherheitseinstellungen wieder aktivieren."
   },
   "settings": {
     "related_settings": "Ähnliche Einstellungen"
@@ -2108,7 +2193,8 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} Notizen",
+    "total_notes_one": "{{count}} Notiz",
+    "total_notes_other": "{{count}} Notizen",
     "prev_page": "Vorherige Seite",
     "next_page": "Nächste Seite"
   },
@@ -2207,7 +2293,8 @@
     "note_paths_other": "{{count}} Pfade",
     "note_paths_title": "Notizpfade",
     "code_note_switcher": "Sprachmodus ändern",
-    "tab_width_spaces": "{{count}} Leerzeichen",
+    "tab_width_spaces_one": "{{count}} Leerzeichen",
+    "tab_width_spaces_other": "{{count}} Leerzeichen",
     "tab_width_spaces_short": "Leerzeichen: {{width}}",
     "tab_width_use_default": "Standard verwenden ({{width}})",
     "tab_width_use_default_style": "Standard verwenden ({{style}})",
@@ -2291,7 +2378,8 @@
     "menu_run_mobile_startup": "Wenn das mobile Frontend startet",
     "menu_change_to_widget": "Zum Widget wechseln",
     "menu_change_to_frontend_script": "Zum Frontend-Skript wechseln",
-    "menu_theme_base": "Themenbasis"
+    "menu_theme_base": "Themenbasis",
+    "type_custom_request_handler": "Benutzerdefinierter Anfrage-Handler"
   },
   "setup_form": {
     "more_info": "Mehr erfahren"
@@ -2300,12 +2388,9 @@
     "play": "Abspielen (Arbeitsbereich)",
     "pause": "Pausieren (Arbeitsbereich)",
     "back-10s": "10 s zurück (Linke Pfeiltaste)",
-    "forward-30s": "30 s vorwärts",
     "mute": "Stumm (M)",
     "unmute": "Stummschaltung aufheben (M)",
     "playback-speed": "Wiedergabegeschwindigkeit",
-    "loop": "Schleife",
-    "disable-loop": "Schleife deaktivieren",
     "rotate": "Rotieren",
     "picture-in-picture": "Bild-in-Bild",
     "exit-picture-in-picture": "Bild-in-Bild verlassen",
@@ -2313,7 +2398,16 @@
     "exit-fullscreen": "Vollbild verlassen",
     "unsupported-format": "Medienvorschau ist für dieses Format nicht verfügbar:\n{{mime}}",
     "zoom-to-fit": "Zoomen um auszufüllen",
-    "zoom-reset": "Zoomen um auszufüllen zurücksetzen"
+    "zoom-reset": "Zoomen um auszufüllen zurücksetzen",
+    "previous-video": "Vorheriges Video: {{- title}}",
+    "next-video": "Nächstes Video: {{- title}}",
+    "previous-audio": "Vorherige Audiodatei: {{- title}}",
+    "next-audio": "Nächste Audiodatei: {{- title}}",
+    "seek": "Springen (Pfeil links/rechts)",
+    "play-mode-title": "Wiedergabemodus: {{mode}}",
+    "play-mode-once": "Einmal abspielen",
+    "play-mode-loop": "Wiederholen",
+    "play-mode-next": "Nächstes abspielen"
   },
   "mermaid": {
     "placeholder": "Geben den Inhalt des Mermaid-Diagramms ein oder verwenden eine der folgenden Beispieldiagramme.",
@@ -2437,7 +2531,8 @@
       "get_attachment": "Anhang abrufen",
       "get_attachment_content": "Anhangsinhalt lesen",
       "set_note_content": "Notizinhalt ersetzen",
-      "edit_note_content": "Notiz bearbeiten"
+      "edit_note_content": "Notiz bearbeiten",
+      "search_icons": "Symbole suchen"
     },
     "cancel": "Abbrechen",
     "api_key": "API Schlüssel",
@@ -2445,10 +2540,8 @@
     "actions": "Aktionen",
     "provider_type": "Anbieter",
     "provider_name": "Name",
-    "settings_title": "KI / LLM",
     "add_provider": "Anbieter hinzufügen",
     "add_provider_title": "KI-Anbieter hinzufügen",
-    "settings_description": "KI- und Large-Language-Model-Integrationen konfigurieren.",
     "feature_not_enabled": "Aktivieren Sie die experimentelle LLM-Funktion unter Einstellungen → Erweitert → Experimentelle Funktionen, um KI-Integrationen zu verwenden.",
     "configured_providers": "Konfigurierte Anbieter",
     "no_providers_configured": "Noch keine Anbieter konfiguriert.",
@@ -2461,7 +2554,9 @@
     "mcp_endpoint_description": "Fügen Sie diese URL zur MCP-Konfiguration Ihres KI-Assistenten hinzu",
     "base_url": "Basis-URL",
     "base_url_description": "Optional. Überschreibt den Standard-API-Endpunkt – nützlich für selbst gehostete Modelle (Ollama, LM Studio, vLLM) oder Proxys.",
-    "base_url_invalid": "Die Basis-URL muss eine gültige http://- oder https://-URL sein"
+    "base_url_invalid": "Die Basis-URL muss eine gültige http://- oder https://-URL sein",
+    "disabled_placeholder": "KI-Funktionen sind deaktiviert. Aktivieren Sie sie, um Anbieter und MCP zu konfigurieren.",
+    "not_available_in_standalone": "KI/LLM-Funktionen sind in der Standalone-Version von Trilium nicht verfügbar, da LLM-Anbieter keinen direkten Zugriff aus einem Browser erlauben."
   },
   "mind-map": {
     "summary": "Zusammenfassung",
@@ -2549,7 +2644,8 @@
     "source_description_llm": "Vom KI-Assistenten erstellt",
     "source_description_restore": "Gespeichert vor dem Wiederherstellen einer vorherigen Revision",
     "source_description_unknown": "Quelle nicht verfügbar",
-    "diff_identical": "Diese Revision ist identisch mit dem aktuellen Notizinhalt."
+    "diff_identical": "Diese Revision ist identisch mit dem aktuellen Notizinhalt.",
+    "back": "Zurück"
   },
   "markdown_editor": {
     "image_upload_failed": "Bild \"{{name}}\" kann nicht hochgeladen werden."
@@ -2580,7 +2676,11 @@
     "title": "Revisionsverlauf"
   },
   "spreadsheet": {
-    "read-only": "Diese Notiz ist schreibgeschützt."
+    "read-only": "Diese Notiz ist schreibgeschützt.",
+    "export-xlsx": "Als Excel exportieren (.xlsx)",
+    "export-csv": "Als CSV exportieren (.csv)",
+    "export-failed": "Die Tabelle konnte nicht als Excel-Datei exportiert werden.",
+    "export-csv-failed": "Die Tabelle konnte nicht als CSV-Datei exportiert werden."
   },
   "common": {
     "cancel": "Abbrechen",
@@ -2688,7 +2788,10 @@
     "button-finish-setup": "Einrichtung abschließen",
     "create-new-document-options-empty-description": "Mit einer leeren Wissensbasis starten. Demo-Notizen können später importiert werden.",
     "create-new-document-title": "Wissensbasis wird vorbereitet",
-    "dismiss-error": "Fehler schließen"
+    "dismiss-error": "Fehler schließen",
+    "sync-from-desktop-unreachable-title": "Dieses Gerät ist für andere Geräte nicht erreichbar",
+    "sync-from-desktop-unreachable-description": "Zur Synchronisierung muss sich der andere Desktop über das Netzwerk mit diesem verbinden. Aus Sicherheitsgründen akzeptiert diese Desktop-App nur Verbindungen von diesem Computer, sodass der andere Desktop sie noch nicht erreichen kann. Erlauben Sie unten den Netzwerkzugriff — Trilium wird neu gestartet, um die Einstellung anzuwenden.",
+    "sync-from-desktop-allow-access": "Netzwerkzugriff erlauben und neu starten"
   },
   "text-editor": {
     "checkbox-tooltip": "Rechtsklick für weitere Aufgabenzustände.\n{{shortcut}} drücken, um zwischen den Zuständen zu wechseln.",
@@ -2730,5 +2833,87 @@
     "page_break_description": "Seitenumbruch einfügen (zum Drucken)",
     "markdown_import_description": "Markdown-Datei in diese Notiz importieren",
     "anchor_description": "Anker für interne Verlinkung einfügen"
+  },
+  "image_buttons": {
+    "zoom_in": "Vergrößern",
+    "zoom_out": "Verkleinern",
+    "reset_zoom": "Zoom zurücksetzen"
+  },
+  "image_navigation": {
+    "previous": "Vorheriges Bild: {{- title}}",
+    "next": "Nächstes Bild: {{- title}}"
+  },
+  "image_viewer": {
+    "loading_error": "Beim Laden des Bildes ist ein Fehler aufgetreten."
+  },
+  "security": {
+    "backend_scripting_title": "Backend-Skripting",
+    "backend_scripting_section_description": "Backend-Skripte haben vollen Serverzugriff, einschließlich Dateisystem, Netzwerk und Betriebssystembefehle. Sie können über Synchronisierung, Import oder beliebige Inhalte mit ausführbaren Attributen ausgelöst werden. Frontend-Skripte sind stets aktiviert, da sie in einer abgesicherten Browser-Umgebung ausgeführt werden.",
+    "backend_scripting_label": "Ausführung von Backend-Skripten",
+    "backend_scripting_description": "Ausführung von Backend-Skripten erlauben (Startskripte, benutzerdefinierte Anfrage-Handler, Ereignis-Handler, geplante Skripte usw.).",
+    "sql_console_title": "SQL-Konsole",
+    "sql_console_section_description": "Die SQL-Konsole ermöglicht die Ausführung beliebiger SQL-Abfragen gegen die Datenbank. Sie kann genutzt werden, um sensible Daten auszulesen (z. B. Synchronisierungsgeheimnisse, API-Schlüssel) sowie beliebige Daten zu ändern oder zu löschen. Ein schädliches Frontend-Skript könnte ebenfalls programmatisch auf die SQL-Konsolen-API zugreifen.",
+    "sql_console_label": "SQL-Konsole",
+    "sql_console_description": "Ausführung von Abfragen in der SQL-Konsole erlauben.",
+    "how_to_enable": "Aktivierung",
+    "server_config_hint": "Fügen Sie Folgendes in Ihre config.ini-Datei ein:",
+    "server_env_hint": "Oder setzen Sie folgende Umgebungsvariable:",
+    "restart_required": "Ein Neustart ist erforderlich.",
+    "restart_now": "Anwendung jetzt neu starten",
+    "lan_access_title": "Netzwerkzugriff",
+    "lan_access_section_description": "Standardmäßig akzeptiert die Desktop-App nur Verbindungen von diesem Computer. Erlauben Sie den Zugriff aus Ihrem lokalen Netzwerk, damit andere Geräte sich verbinden können — zum Beispiel zur Synchronisierung. Aktivieren Sie dies nur in vertrauenswürdigen Netzwerken.",
+    "lan_access_label": "Verbindungen von anderen Geräten erlauben",
+    "lan_access_description": "Server an alle Netzwerkschnittstellen statt nur an localhost binden."
+  },
+  "snippet_badge": {
+    "label": "{{type}} Snippet",
+    "type_text": "Text",
+    "type_code": "Code",
+    "tooltip": "Ein wiederverwendbares Text- oder Code-Fragment, das in den Editor eingefügt werden kann (über das Snippet-Menü in der Symbolleiste oder per Slash-Befehl)."
+  },
+  "options": {
+    "title": "Optionen",
+    "back": "Zurück zu allen Optionen"
+  },
+  "split_editor": {
+    "render_error": "Vorschau konnte nicht gerendert werden",
+    "show_details": "Details anzeigen",
+    "last_valid_render": "Zeigt letzte gültige Darstellung"
+  },
+  "desktop": {
+    "web_placeholder": "Diese Optionen gelten nur für Desktop-Versionen."
+  },
+  "startup": {
+    "title": "Programmstart",
+    "launch_on_startup": "Bei Systemstart starten",
+    "launch_on_startup_description": "Trilium automatisch öffnen wenn Sie sich an Ihrem Computer anmelden.",
+    "hide_on_auto_start": "Minimiert im Tray starten",
+    "hide_on_auto_start_description": "Bei automatischem Start zur Anmeldung im Systemtray starten statt ein Fenster zu öffnen. Erfordert den aktivierten Programmstart und ein aktiviertes Tray-Symbol."
+  },
+  "dashboard_view": {
+    "refresh-widget": "Aktualisieren",
+    "remove-widget": "Vom Dashboard entfernen",
+    "empty-hint": "Jede untergeordnete Notiz wird zu einem Widget. Ziehen Sie eine Notiz aus der Baumstruktur hierher oder erstellen Sie eine neue."
+  },
+  "import_provider": {
+    "choose_provider": "Wählen Sie einen Dienst zum Importieren:"
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "Notizbücher, Abschnitte und Seiten aus Ihrem OneNote-Konto importieren.",
+    "connect_description": "Melden Sie sich mit Ihrem Microsoft-Konto an, um Ihre OneNote-Notizbücher zu importieren.",
+    "connect": "Mit Microsoft anmelden",
+    "connecting": "Warte auf Abschluss der Anmeldung…",
+    "connected_as": "Verbunden als {{name}}",
+    "disconnect": "Trennen",
+    "load_failed": "Ihre OneNote-Notizbücher konnten nicht geladen werden.",
+    "no_notebooks": "In diesem Konto wurden keine Notizbücher gefunden.",
+    "select_sections": "Wählen Sie die zu importierenden Abschnitte:",
+    "import": "Auswahl importieren",
+    "attach_source": "Original-HTML anhängen (Debug)",
+    "attach_source_hint": "Speichert das unveränderte OneNote-HTML jeder Seite als Anhang der importierten Notiz, um es mit dem konvertierten Ergebnis zu vergleichen."
+  },
+  "full_content_width_switch": {
+    "title": "Volle Breite"
   }
 }

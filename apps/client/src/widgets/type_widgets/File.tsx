@@ -10,7 +10,7 @@ import { TypeWidgetProps } from "./type_widget";
 
 const TEXT_MAX_NUM_CHARS = 5000;
 
-export default function FileTypeWidget({ note, parentComponent, noteContext }: TypeWidgetProps) {
+export default function FileTypeWidget({ note, parentComponent, noteContext, isVisible }: TypeWidgetProps) {
     const blob = useNoteBlob(note, parentComponent?.componentId);
 
     if (blob?.content) {
@@ -18,9 +18,9 @@ export default function FileTypeWidget({ note, parentComponent, noteContext }: T
     } else if (note.mime === "application/pdf") {
         return noteContext && <PdfPreview blob={blob} note={note} componentId={parentComponent?.componentId} noteContext={noteContext} />;
     } else if (note.mime.startsWith("video/")) {
-        return <VideoPreview note={note} />;
+        return <VideoPreview note={note} noteContext={noteContext} isVisible={isVisible} />;
     } else if (note.mime.startsWith("audio/")) {
-        return <AudioPreview note={note} />;
+        return <AudioPreview note={note} noteContext={noteContext} isVisible={isVisible} />;
     }
     return <NoPreview />;
 

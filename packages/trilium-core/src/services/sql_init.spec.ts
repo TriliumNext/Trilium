@@ -5,14 +5,6 @@ import eventService from "./events.js";
 import { getSql } from "./sql/index.js";
 import sqlInit from "./sql_init.js";
 
-/**
- * Wraps a callback in a CLS context. Some sql_init code paths
- * (initDbConnection, optionService.setOption) require an initialised context.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 describe("sql_init (real DB)", () => {
     beforeAll(() => {
         // The shared in-memory fixture DB is already initialised by the suite
@@ -82,7 +74,7 @@ describe("sql_init (real DB)", () => {
 
     describe("initDbConnection", () => {
         it("creates the param_list and user_data tables and resolves dbReady", async () => {
-            await withContext(() => sqlInit.initDbConnection());
+            await getContext().init(() => sqlInit.initDbConnection());
 
             // The connection setup creates these auxiliary tables idempotently.
             expect(

@@ -3,30 +3,7 @@
     font-family: var(--detail-font-family);
     font-size: var(--detail-font-size);
     contain: none;
-
-    &.fixed-tree {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-
-        .fixed-note-tree-container {
-            height: 60%;
-            border-bottom: 1px solid var(--main-border-color);
-            overflow: auto;
-
-            .tree-wrapper {
-                padding: 0;
-            }
-
-            .tree {
-                padding: 0;
-            }
-
-            ul {
-                margin: 0;
-            }
-        }
-    }
+    position: relative; /* anchor for the content-loading overlay */
 }
 
 body.prefers-centered-content .note-detail {
@@ -36,4 +13,37 @@ body.prefers-centered-content .note-detail {
 
 .note-detail > * {
     contain: none;
+}
+
+.note-detail-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--main-background-color);
+    animation: note-detail-loading-overlay-fade-in 100ms ease-in;
+
+    > .bx-loader-alt {
+        font-size: 2em;
+        color: var(--muted-text-color);
+    }
+}
+
+/* Dialogs (e.g. the quick-edit popup) paint their content area with the modal background,
+   so the overlay must match it there instead of the main background. */
+.modal .note-detail-loading-overlay {
+    background: var(--modal-background-color);
+}
+
+@keyframes note-detail-loading-overlay-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }

@@ -128,21 +128,31 @@
   "export": {
     "export_note_title": "Export note",
     "close": "Close",
-    "export_type_subtree": "This note and all of its descendants",
-    "format_html": "HTML - recommended as it keeps all format",
-    "format_html_zip": "HTML in ZIP archive - this is recommended since this preserves all the formatting.",
-    "format_markdown": "Markdown - this preserves most of the formatting.",
-    "format_opml": "OPML - outliner interchange format for text only. Formatting, images and files are not included.",
-    "opml_version_1": "OPML v1.0 - plain text only",
-    "opml_version_2": "OPML v2.0 - allows also HTML",
-    "export_type_single": "Only this note without its descendants",
+    "what_to_export": "What to export",
+    "export_type_subtree": "This note & all descendants",
+    "export_type_single": "Only this note",
+    "format": "Format",
+    "format_html_name": "HTML",
+    "format_html_description": "Keeps all formatting",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Preserves most formatting",
+    "format_opml_name": "OPML",
+    "format_opml_description": "Outline format with HTML content",
+    "format_share_name": "HTML for web",
+    "format_share_description": "Publishable static site using the shared-notes theme",
+    "recommended": "Recommended",
+    "result_subtree_html": "A ZIP archive where text notes are saved as HTML. Code, images and other files keep their original format.",
+    "result_subtree_markdown": "A ZIP archive where text notes are saved as Markdown. Code, images and other files keep their original format.",
+    "result_share": "A ZIP archive containing a publishable static website that uses the shared-notes theme.",
+    "result_opml": "A single OPML outline file. Note titles and text are included; images, code files and attachments are not.",
+    "result_single_html": "A single HTML file. Images and attachments are embedded into it.",
+    "result_single_markdown": "A single Markdown (.md) file.",
     "export": "Export",
     "choose_export_type": "Choose export type first please",
-    "export_status": "Export status",
-    "export_in_progress": "Export in progress: {{progressCount}}",
+    "preparing_export": "Preparing for export…",
+    "export_in_progress_with_total": "Exported {{progressCount}} notes out of {{totalCount}}",
     "export_finished_successfully": "Export finished successfully.",
-    "format_pdf": "PDF - for printing or sharing purposes.",
-    "share-format": "HTML for web publishing - uses the same theme that is used shared notes, but can be published as a static website."
+    "format_pdf": "PDF - for printing or sharing purposes."
   },
   "help": {
     "title": "Cheatsheet",
@@ -202,18 +212,23 @@
   },
   "import": {
     "importIntoNote": "Import into note",
+    "importIntoNoteNamed": "Import into {{- title}}",
+    "import_from": "Import from",
+    "cardName": "Files & other formats",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, images and more",
     "chooseImportFile": "Choose import file",
-    "importDescription": "Content of the selected file(s) will be imported as child note(s) into",
     "importZipRecommendation": "When importing a ZIP file, the note hierarchy will reflect the subdirectory structure within the archive.",
     "options": "Options",
-    "safeImportTooltip": "Trilium <code>.zip</code> export files can contain executable scripts which may contain harmful behavior. Safe import will deactivate automatic execution of all imported scripts. Uncheck \"Safe import\" only if the imported archive is supposed to contain executable scripts and you completely trust the contents of the import file.",
+    "safeImportTooltip": "Trilium <code>.zip</code> exports can contain executable scripts. Safe import disables them; uncheck only if the archive is meant to run scripts and you trust its contents.",
     "safeImport": "Safe import",
-    "explodeArchivesTooltip": "If this is checked then Trilium will read <code>.zip</code>, <code>.enex</code> and <code>.opml</code> files and create notes from files insides those archives. If unchecked, then Trilium will attach the archives themselves to the note.",
+    "explodeArchivesTooltip": "Creates notes from the files inside <code>.zip</code>, <code>.enex</code> and <code>.opml</code> archives. When off, the archives are attached as-is.",
     "explodeArchives": "Read contents of <code>.zip</code>, <code>.enex</code> and <code>.opml</code> archives.",
-    "shrinkImagesTooltip": "<p>If you check this option, Trilium will attempt to shrink the imported images by scaling and optimization which may affect the perceived image quality. If unchecked, images will be imported without changes.</p><p>This doesn't apply to <code>.zip</code> imports with metadata since it is assumed these files are already optimized.</p>",
+    "shrinkImagesTooltip": "Scales and optimizes images to save space, which may slightly reduce quality. Doesn't apply to <code>.zip</code> imports with metadata, which are assumed already optimized.",
+    "shrinkImagesProviderTooltip": "Scales and optimizes imported images to save space, which may slightly reduce quality.",
     "shrinkImages": "Shrink images",
     "textImportedAsText": "Import HTML, Markdown and TXT as text notes if it's unclear from metadata",
     "codeImportedAsCode": "Import recognized code files (e.g. <code>.json</code>) as code notes if it's unclear from metadata",
+    "spreadsheetImportedAsSpreadsheet": "Import CSV and Excel files as editable spreadsheets rather than files",
     "replaceUnderscoresWithSpaces": "Replace underscores with spaces in imported note names",
     "import": "Import",
     "failed": "Import failed: {{message}}.",
@@ -223,9 +238,76 @@
       "placeholder": "Enter HTML tags, one per line",
       "reset_button": "Reset to Default List"
     },
-    "import-status": "Import status",
-    "in-progress": "Import in progress: {{progress}}",
+    "starting": "Importing…",
+    "in-progress": "Imported {{progress}} notes",
+    "in-progress-with-total": "Imported {{progress}} notes out of {{total}}",
+    "extracting": "Extracted {{progress}} items out of {{total}}",
+    "processing": "Processed {{progress}} notes out of {{total}}",
     "successful": "Import finished successfully."
+  },
+  "file_upload": {
+    "drop_or_browse_single": "Drag and drop a file here, or click to browse",
+    "drop_or_browse_multiple": "Drag and drop files here, or click to browse",
+    "browse_single": "Tap to choose a file",
+    "browse_multiple": "Tap to choose files",
+    "selected_one": "{{count}} file selected",
+    "selected_other": "{{count}} files selected"
+  },
+  "import_provider": {
+    "choose_provider": "Choose a service above to import from."
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "Connects to your account",
+    "connect_description": "Sign in with your Microsoft account to import your OneNote notebooks.",
+    "connect": "Sign in with Microsoft",
+    "section_heading": "Microsoft OneNote",
+    "checking": "Checking your OneNote connection…",
+    "connecting": "Waiting for sign-in to complete…",
+    "connected_as": "Connected as {{name}}",
+    "disconnect": "Disconnect",
+    "load_failed": "Could not load your OneNote notebooks.",
+    "no_notebooks": "No notebooks were found in this account.",
+    "select_sections": "Select the sections to import",
+    "select_sections_hint": "OneNote doesn't include the original ordering in the import data, so sections and groups are sorted by creation date and may not match how they appear in OneNote.",
+    "import": "Import selected",
+    "attach_source": "Attach original HTML (debug)",
+    "attach_source_hint": "Saves each page's unmodified OneNote HTML as an attachment on the imported note, for comparing against the converted result."
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "From an HTML export",
+    "description_long": "In Notion, export your workspace or a page as HTML with subpages included, then choose the resulting .zip file here.",
+    "choose_file": "Notion export (.zip)",
+    "import": "Import"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "From a Takeout export",
+    "description_long": "In Google Takeout, export your Keep data as a .zip, then choose the resulting file here.",
+    "choose_file": "Google Keep export (.zip)",
+    "import": "Import"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "From a JSON export",
+    "description_long": "In Anytype, export your space using the \"Any-Block\" format with \"JSON\" selected, then choose the resulting .zip file here. Only pages and their text are imported for now.",
+    "choose_file": "Anytype export (.zip)",
+    "import": "Import"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "From a vault",
+    "description_long": "Zip your Obsidian vault folder, then choose the resulting .zip file here.",
+    "choose_file": "Obsidian vault (.zip)",
+    "import": "Import"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "From .enex files",
+    "description_long": "In Evernote, export a notebook (or up to 100 notes at a time) as an ENEX file, then choose one or more .enex files here. Each file is imported as a separate notebook.",
+    "choose_file": "Evernote export (.enex)",
+    "import": "Import"
   },
   "include_note": {
     "dialog_title": "Include note",
@@ -267,13 +349,16 @@
     "mermaid": "Insert a Mermaid diagram",
     "mermaid_template": "Insert a \"{{name}}\" Mermaid diagram",
     "collapsible": "Insert a collapsible block",
+    "page_break": "Insert a page break (for printing)",
+    "table": "Insert a table",
     "admonition": "Insert {{type}} admonition",
     "todo": "Insert a \"{{title}}\" task item",
     "todo_nonstandard": "Insert a \"{{title}}\" task item (non-standard)",
     "placeholders": {
       "math": "equation",
       "collapsible_summary": "Summary",
-      "collapsible_details": "Details"
+      "collapsible_details": "Details",
+      "table_column": "Column {{number}}"
     }
   },
   "slash_commands": {
@@ -340,6 +425,7 @@
   },
   "revisions": {
     "note_revisions": "Note Revisions",
+    "back": "Back",
     "delete_all_revisions": "Delete all revisions of this note",
     "delete_all_button": "Delete all revisions",
     "help_title": "Help on Note Revisions",
@@ -673,7 +759,7 @@
     "download": "Download",
     "rename_attachment": "Rename attachment",
     "upload_new_revision": "Upload new revision",
-    "copy_link_to_clipboard": "Copy link to clipboard",
+    "copy_link_to_clipboard": "Copy reference to clipboard",
     "convert_attachment_into_note": "Convert attachment into note",
     "delete_attachment": "Delete attachment",
     "upload_success": "New attachment revision has been uploaded.",
@@ -718,7 +804,9 @@
     "year_previous": "Previous year",
     "year_next": "Next year",
     "list": "List",
-    "today": "Today"
+    "today": "Today",
+    "pin_date": "Pin the current date so the calendar always opens on this interval instead of today",
+    "unpin_date": "Unpin the date so the calendar opens on today's date again"
   },
   "close_pane_button": {
     "close_this_pane": "Close this pane"
@@ -734,6 +822,10 @@
   },
   "show_highlights_list_widget_button": {
     "show_highlights_list": "Show Highlights List"
+  },
+  "options": {
+    "title": "Options",
+    "back": "Back to all options"
   },
   "global_menu": {
     "menu": "Menu",
@@ -833,7 +925,7 @@
     "update_available": "Update available"
   },
   "note_launcher": {
-    "this_launcher_doesnt_define_target_note": "This launcher doesn't define target note."
+    "this_launcher_doesnt_define_target_note": "This launcher has no target note configured, so there's nothing to open. Set its \"target\" relation to point it at a note."
   },
   "code_buttons": {
     "execute_button_title": "Execute script",
@@ -860,6 +952,18 @@
     "reset_pan_zoom_title": "Reset pan & zoom to initial coordinates and magnification",
     "zoom_in_title": "Zoom In",
     "zoom_out_title": "Zoom Out"
+  },
+  "image_buttons": {
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "reset_zoom": "Reset zoom"
+  },
+  "image_navigation": {
+    "previous": "Previous image: {{- title}}",
+    "next": "Next image: {{- title}}"
+  },
+  "image_viewer": {
+    "loading_error": "There was an error loading the image."
   },
   "zpetne_odkazy": {
     "backlink_one": "{{count}} Backlink",
@@ -913,12 +1017,14 @@
     "geo-map": "Geo Map",
     "board": "Board",
     "presentation": "Presentation",
+    "dashboard": "Dashboard",
     "include_archived_notes": "Show archived notes",
     "hide_child_notes": "Hide child notes in tree",
     "open_all_in_tabs": "Open all",
     "open_all_in_tabs_tooltip": "Open all results in new tabs",
-    "open_all_confirm": "This will open {{count}} notes in new tabs. Continue?",
-    "open_all_too_many": "Too many results ({{count}}). Maximum is {{max}}."
+    "open_all_confirm_one": "This will open {{count}} note in new tabs. Continue?",
+    "open_all_confirm_other": "This will open {{count}} notes in new tabs. Continue?",
+    "open_all_too_many": "Too many notes to open at once ({{count}}). The maximum is {{max}}, try narrowing the results first."
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -966,7 +1072,8 @@
     "note_size": "Note size",
     "note_size_info": "Note size provides rough estimate of storage requirements for this note. It takes into account note's content and content of its note revisions.",
     "calculate": "calculate",
-    "subtree_size": "(subtree size: {{size}} in {{count}} notes)",
+    "subtree_size_one": "(subtree size: {{size}} in {{count}} note)",
+    "subtree_size_other": "(subtree size: {{size}} in {{count}} notes)",
     "title": "Note Info",
     "show_similar_notes": "Show similar notes"
   },
@@ -976,7 +1083,8 @@
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
     "link-distance": "Link distance",
-    "too-many-notes": "There are {{count}} notes here. Showing them all may slow things down.",
+    "too-many-notes_one": "There is {{count}} note here. Showing it may slow things down.",
+    "too-many-notes_other": "There are {{count}} notes here. Showing them all may slow things down.",
     "show-anyway": "Show map"
   },
   "note_paths": {
@@ -1131,10 +1239,17 @@
   "book": {
     "no_children_help": "This collection doesn't have any child notes so there's nothing to display.",
     "drag_locked_title": "Locked for editing",
-    "drag_locked_message": "Dragging not allowed since the collection is locked for editing."
+    "drag_locked_message": "Dragging not allowed since the collection is locked for editing.",
+    "archived_notes_hidden_one": "An archived note was copied here but stays hidden until you enable \"Show archived notes\".",
+    "archived_notes_hidden_other": "{{count}} archived notes were copied here but stay hidden until you enable \"Show archived notes\"."
   },
   "editable_code": {
     "placeholder": "Type the content of your code note here..."
+  },
+  "split_editor": {
+    "render_error": "Unable to render the preview",
+    "show_details": "Show details",
+    "last_valid_render": "Showing last valid render"
   },
   "editable_text": {
     "placeholder": "Type the content of your note here...",
@@ -1158,13 +1273,20 @@
   "media": {
     "play": "Play (Space)",
     "pause": "Pause (Space)",
+    "seek": "Seek (Left/Right arrow keys)",
     "back-10s": "Back 10s (Left arrow key)",
-    "forward-30s": "Forward 30s",
+    "forward-10s": "Forward 10s (Right arrow key)",
+    "previous-video": "Previous video: {{- title}}",
+    "next-video": "Next video: {{- title}}",
+    "previous-audio": "Previous audio: {{- title}}",
+    "next-audio": "Next audio: {{- title}}",
     "mute": "Mute (M)",
     "unmute": "Unmute (M)",
     "playback-speed": "Playback speed",
-    "loop": "Loop",
-    "disable-loop": "Disable loop",
+    "play-mode-title": "Play mode: {{mode}}",
+    "play-mode-once": "Play once",
+    "play-mode-loop": "Loop",
+    "play-mode-next": "Play next",
     "rotate": "Rotate",
     "picture-in-picture": "Picture-in-picture",
     "exit-picture-in-picture": "Exit picture-in-picture",
@@ -1182,9 +1304,7 @@
     "protecting-finished-successfully": "Protecting finished successfully.",
     "unprotecting-finished-successfully": "Unprotecting finished successfully.",
     "protecting-in-progress": "Protecting in progress: {{count}}",
-    "unprotecting-in-progress-count": "Unprotecting in progress: {{count}}",
-    "protecting-title": "Protecting status",
-    "unprotecting-title": "Unprotecting status"
+    "unprotecting-in-progress-count": "Unprotecting in progress: {{count}}"
   },
   "relation_map": {
     "remove_note": "Remove note",
@@ -1228,7 +1348,7 @@
     "title": "Consistency Checks",
     "find_and_fix_label": "Find and fix consistency issues",
     "find_and_fix_description": "Scan for and automatically repair any data consistency issues in the database.",
-    "find_and_fix_button": "Find and fix consistency issues",
+    "find_and_fix_button": "Fix issues",
     "finding_and_fixing_message": "Finding and fixing consistency issues...",
     "issues_fixed_message": "Any consistency issue which may have been found is now fixed."
   },
@@ -1237,12 +1357,14 @@
     "description": "Create an anonymized copy of your database for sharing with developers when debugging issues, without exposing personal data.",
     "full_anonymization": "Full anonymization",
     "full_anonymization_description": "Creates a copy of the database with all note content removed, leaving only structure and non-sensitive metadata. Safe for sharing online when debugging issues.",
-    "save_fully_anonymized_database": "Save fully anonymized database",
+    "save_fully_anonymized_database": "Create copy",
     "light_anonymization": "Light anonymization",
     "light_anonymization_description": "Creates a copy with note content removed, but titles, attributes, and custom scripts/widgets remain. Provides more context for debugging.",
     "choose_anonymization": "You can decide yourself if you want to provide a fully or lightly anonymized database. Even fully anonymized DB is very useful, however in some cases lightly anonymized database can speed up the process of bug identification and fixing.",
-    "save_lightly_anonymized_database": "Save lightly anonymized database",
+    "save_lightly_anonymized_database": "Create copy",
     "existing_anonymized_databases": "Existing anonymized databases",
+    "anonymized_databases_location": "Anonymized databases are stored in {{- anonymizedFolder}}.",
+    "download": "Download",
     "creating_fully_anonymized_database": "Creating fully anonymized database...",
     "creating_lightly_anonymized_database": "Creating lightly anonymized database...",
     "error_creating_anonymized_database": "Could not create anonymized database, check backend logs for details",
@@ -1254,7 +1376,7 @@
     "title": "Database Integrity Check",
     "check_integrity_label": "Check database integrity",
     "check_integrity_description": "Verify that the database is not corrupted on the SQLite level.",
-    "check_button": "Check database integrity",
+    "check_button": "Check integrity",
     "checking_integrity": "Checking database integrity...",
     "integrity_check_succeeded": "Integrity check succeeded - no problems found.",
     "integrity_check_failed": "Integrity check failed: {{results}}"
@@ -1263,10 +1385,10 @@
     "title": "Sync",
     "force_full_sync_label": "Force full sync",
     "force_full_sync_description": "Trigger a complete synchronization with the sync server, re-uploading all changes.",
-    "force_full_sync_button": "Force full sync",
+    "force_full_sync_button": "Force sync",
     "fill_entity_changes_label": "Fill entity changes",
     "fill_entity_changes_description": "Rebuild entity change records. Use this if sync is missing some changes.",
-    "fill_entity_changes_button": "Fill entity changes records",
+    "fill_entity_changes_button": "Fill changes",
     "full_sync_triggered": "Full sync triggered",
     "filling_entity_changes": "Filling entity changes rows...",
     "sync_rows_filled_successfully": "Sync rows filled successfully",
@@ -1281,7 +1403,7 @@
     "vacuum_label": "Vacuum database",
     "vacuum_description": "Rebuild the database to reduce file size. No data will be changed.",
     "description": "This will rebuild the database which will typically result in a smaller database file. No data will be actually changed.",
-    "button_text": "Vacuum database",
+    "button_text": "Vacuum now",
     "vacuuming_database": "Vacuuming database...",
     "database_vacuumed": "Database has been vacuumed"
   },
@@ -1331,8 +1453,6 @@
     "disabled": "disabled"
   },
   "ribbon": {
-    "widgets": "Ribbon widgets",
-    "promoted_attributes_message": "Promoted Attributes ribbon tab will automatically open if promoted attributes are present on the note",
     "edited_notes_message": "Edited Notes ribbon tab will automatically open on day notes"
   },
   "theme": {
@@ -1428,7 +1548,8 @@
     "erase_attachments_after": "Erase unused attachments after",
     "erase_attachments_after_description": "Time before unused attachments are permanently erased.",
     "manual_erasing_description": "Trigger erasing manually, ignoring the timeout above.",
-    "erase_unused_attachments_now": "Erase unused attachments now",
+    "erase_unused_attachments_now": "Erase unused attachments",
+    "erase_now_button": "Erase now",
     "unused_attachments_erased": "Unused attachments have been erased."
   },
   "network_connections": {
@@ -1442,7 +1563,8 @@
     "erase_notes_after": "Erase notes after",
     "erase_notes_after_description": "Time before deleted notes are permanently erased.",
     "manual_erasing_description": "Trigger erasing manually, ignoring the timeout above.",
-    "erase_deleted_notes_now": "Erase deleted notes now",
+    "erase_deleted_notes_now": "Erase deleted notes",
+    "erase_now_button": "Erase now",
     "deleted_notes_erased": "Deleted notes have been erased."
   },
   "revisions_snapshot": {
@@ -1460,8 +1582,9 @@
     "note_revisions_snapshot_limit_description_short": "Max revisions per note. Use -1 for unlimited, 0 to disable.",
     "snapshot_number_limit_label": "Maximum revisions",
     "snapshot_number_limit_unit": "snapshots",
-    "erase_excess_revision_snapshots": "Erase excess revision snapshots now",
+    "erase_excess_revision_snapshots": "Erase excess revision snapshots",
     "erase_excess_revision_snapshots_description": "Delete revisions exceeding the limit for all notes.",
+    "erase_now_button": "Erase now",
     "erase_excess_revision_snapshots_prompt": "Excess revision snapshots have been erased."
   },
   "search": {
@@ -1486,10 +1609,22 @@
     "custom_url_placeholder": "Search engine URL",
     "save_button": "Save"
   },
+  "desktop": {
+    "web_placeholder": "These options apply only for desktop builds."
+  },
+  "startup": {
+    "title": "Startup",
+    "launch_on_startup": "Launch on startup",
+    "launch_on_startup_description": "Open Trilium automatically when you log into your computer.",
+    "hide_on_auto_start": "Start minimized to tray",
+    "hide_on_auto_start_description": "When launched automatically at login, start hidden in the system tray instead of opening a window. Requires launch on startup and the tray icon to be enabled."
+  },
   "tray": {
     "title": "System Tray",
     "enable_tray": "Tray icon",
-    "enable_tray_description": "Trilium needs to be restarted for this change to take effect."
+    "enable_tray_description": "Changes apply immediately, though on some platforms hiding the tray icon may require restarting Trilium.",
+    "close_to_tray": "Close to tray",
+    "close_to_tray_description": "When you close the window, keep Trilium running in the system tray instead of quitting. Requires the tray icon to be enabled."
   },
   "text_editor": {
     "title": "Editor",
@@ -1559,13 +1694,16 @@
     "title": "Backup",
     "automatic_backup": "Automatic backup",
     "automatic_backup_description": "Trilium can back up the database automatically:",
-    "enable_daily_backup": "Backup daily",
-    "enable_weekly_backup": "Backup weekly",
-    "enable_monthly_backup": "Backup monthly",
+    "automatic_backups_title": "Automatic backups",
+    "automatic_backups_description": "Trilium can back up the database automatically. It's recommended to keep the backup turned on, but this can make application startup slow with large databases and/or slow storage devices.",
+    "enable_daily_backup": "Daily backup",
+    "enable_weekly_backup": "Weekly backup",
+    "enable_monthly_backup": "Monthly backup",
     "backup_recommendation": "It's recommended to keep the backup turned on, but this can make application startup slow with large databases and/or slow storage devices.",
     "backup_now": "Backup now",
     "backup_database_now": "Backup database now",
     "existing_backups": "Existing backups",
+    "backup_location_description": "Backups are stored in {{- backupFolder}}.",
     "date-and-time": "Date & time",
     "path": "Path",
     "database_backed_up_to": "Database has been backed up to {{- backupFilePath}}",
@@ -1573,11 +1711,11 @@
     "download": "Download"
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI is a REST API used to access Trilium instance programmatically, without UI.",
     "create_token": "Create new ETAPI token",
     "existing_tokens": "Existing tokens",
     "no_tokens_yet": "There are no tokens yet. Click on the button above to create one.",
+    "no_tokens": "There are no tokens yet.",
     "token_name": "Token name",
     "created": "Created",
     "actions": "Actions",
@@ -1606,6 +1744,10 @@
     "sql_console_section_description": "The SQL console allows running raw SQL queries against the database. This can be used to read sensitive data (e.g. sync secrets, API keys) and alter or delete any data. A malicious frontend script could also access the SQL console API programmatically.",
     "sql_console_label": "SQL console",
     "sql_console_description": "Allow execution of queries in the SQL console.",
+    "lan_access_title": "Network access",
+    "lan_access_section_description": "By default the desktop app only accepts connections from this computer. Allow access from your local network so other devices can connect to it — for example to sync from another device. Only enable this on networks you trust.",
+    "lan_access_label": "Allow connections from other devices",
+    "lan_access_description": "Bind the server to all network interfaces instead of localhost only.",
     "how_to_enable": "How to enable",
     "server_config_hint": "Add the following to your config.ini file:",
     "server_env_hint": "Or set the following environment variable:",
@@ -1621,8 +1763,10 @@
     "new_password_confirmation": "New password confirmation",
     "change_password": "Change password",
     "change_password_description": "Update your current password",
+    "change_password_button": "Update password",
     "reset_password": "Reset password",
     "reset_password_description": "Permanently lose access to protected notes",
+    "reset_password_button": "Reset now",
     "cancel": "Cancel",
     "protected_session_timeout": "Protected Session",
     "protected_session_timeout_description": "Time of inactivity before the session is cleared from browser memory. See",
@@ -1635,61 +1779,126 @@
     "set_password_heading": "Set Password",
     "set_password": "Set Password",
     "password_mismatch": "New passwords are not the same.",
-    "password_changed_success": "Password has been changed. Trilium will be reloaded after you press OK."
+    "password_changed_success": "Password changed successfully."
   },
   "multi_factor_authentication": {
-    "title": "Multi-Factor Authentication",
-    "description": "Multi-Factor Authentication (MFA) adds an extra layer of security to your account. Instead of just entering a password to log in, MFA requires you to provide one or more additional pieces of evidence to verify your identity. This way, even if someone gets hold of your password, they still can't access your account without the second piece of information. It's like adding an extra lock to your door, making it much harder for anyone else to break in.<br><br>Please follow the instructions below to enable MFA. If you don't config correctly, login will fall back to password only.",
-    "mfa_enabled": "Enable Multi-Factor Authentication",
-    "mfa_method": "MFA Method",
-    "electron_disabled": "Multi-Factor Authentication is not supported in the desktop build currently.",
-    "totp_title": "Time-based One-Time Password (TOTP)",
-    "totp_description": "TOTP (Time-Based One-Time Password) is a security feature that generates a unique, temporary code which changes every 30 seconds. You use this code, along with your password to log into your account, making it much harder for anyone else to access it.",
-    "totp_secret_title": "Generate TOTP Secret",
-    "totp_secret_generate": "Generate TOTP Secret",
-    "totp_secret_regenerate": "Regenerate TOTP Secret",
-    "no_totp_secret_warning": "To enable TOTP, you need to generate a TOTP secret first.",
-    "totp_secret_description_warning": "After generating a new TOTP secret, you will be required to login again with the new TOTP secret.",
-    "totp_secret_generated": "TOTP Secret Generated",
-    "totp_secret_warning": "Please save the generated secret in a secure location. It will not be shown again.",
-    "totp_secret_regenerate_confirm": "Are you sure you want to regenerate the TOTP secret? This will invalidate previous TOTP secret and all existing recovery codes.",
-    "recovery_keys_title": "Single Sign-on Recovery Keys",
-    "recovery_keys_description": "Single sign-on recovery keys are used to login in the even you cannot access your Authenticator codes.",
+    "authentication_title": "Authentication",
+    "signin_method": "Sign-in with",
+    "signin_local": "Local password (optionally with two-factor authentication)",
+    "signin_oauth": "OpenID Connect provider (e.g. Google)",
+    "signin_local_description": "Sign in with your Trilium password. You can optionally enable two-factor authentication for an extra layer of security.",
+    "totp_setup_label": "Time-based one-time password (TOTP)",
+    "totp_setup_description": "Generate a time-based code from an authenticator app as your second factor. You'll scan a QR code and confirm a code to finish. Recovery codes are issued at the end.",
+    "totp_setup_button": "Set up",
+    "totp_enroll_title": "Confirm your authenticator",
+    "totp_enroll_instructions": "TOTP won't be enabled until you confirm a valid code below, so you can't lock yourself out by mistake.",
+    "totp_enroll_step1_title": "1. Add the account to your authenticator app",
+    "totp_enroll_step2_title": "2. Enter the verification code",
+    "totp_enroll_scan": "Scan this QR code:",
+    "totp_enroll_secret_label": "Can't scan? Enter this code manually",
+    "totp_enroll_code_label": "Verification code",
+    "totp_enroll_code_placeholder": "000000",
+    "totp_enroll_verify": "Verify & continue",
+    "totp_enroll_cancel": "Cancel",
+    "totp_enroll_invalid_code": "That code didn't match. Check that your device's clock is correct and enter the latest code.",
+    "totp_enroll_generate_error": "Couldn't generate a TOTP secret. Please close this dialog and try again.",
+    "totp_enroll_enabled": "Two-factor authentication is now enabled.",
+    "totp_enroll_recovery_title": "Save your recovery codes",
+    "totp_enroll_recovery_instructions": "Save these recovery codes somewhere safe. Each one can be used once to sign in if you lose access to your authenticator app.",
+    "totp_enroll_recovery_copy": "Copy",
+    "totp_enroll_recovery_copied": "Recovery codes copied to clipboard.",
+    "totp_enroll_recovery_download": "Download",
+    "totp_enroll_saved_ack": "I've saved my recovery codes somewhere safe",
+    "totp_enroll_finish": "Finish setup",
+    "totp_enroll_enable_error": "Couldn't enable two-factor authentication. Please try again.",
+    "totp_section_title": "Two-factor authentication",
+    "totp_status_active": "Active",
+    "totp_status_inactive": "Inactive",
+    "totp_remove_label": "Remove two-factor authentication",
+    "totp_remove_description": "Completely remove your two-factor authentication setup. Unlike switching it off above, you'd have to set it up again from scratch to use it.",
+    "totp_remove_button": "Remove",
+    "totp_remove_confirm": "Permanently remove two-factor authentication? This erases your setup, not just switches it off, so you'd have to set it up again from scratch to use it. Until then, you'll sign in with just your password.",
+    "totp_removed": "Two-factor authentication has been removed.",
     "recovery_keys_description_warning": "Recovery keys won't be shown again after leaving the page, keep them somewhere safe and secure.<br>After a recovery key is used it cannot be used again.",
     "recovery_keys_error": "Error generating recovery codes",
     "recovery_keys_no_key_set": "No recovery codes set",
-    "recovery_keys_generate": "Generate Recovery Codes",
-    "recovery_keys_regenerate": "Regenerate Recovery Codes",
-    "recovery_keys_used": "Used: {{date}}",
-    "recovery_keys_unused": "Recovery code {{index}} is unused",
-    "oauth_title": "OAuth/OpenID",
-    "oauth_description": "OpenID is a standardized way to let you log into websites using an account from another service, like Google, to verify your identity. The default issuer is Google, but you can change it to any other OpenID provider. Check <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">here</a> for more information. Follow these <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instructions</a> to setup an OpenID service through Google.",
-    "oauth_description_warning": "To enable OAuth/OpenID, you need to set the OAuth/OpenID base URL, client ID and client secret in the config.ini file and restart the application. If you want to set from environment variables, please set TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID and TRILIUM_OAUTH_CLIENT_SECRET.",
-    "oauth_missing_vars": "Missing settings: {{-variables}}",
-    "oauth_user_account": "User Account: ",
-    "oauth_user_email": "User Email: ",
-    "oauth_user_not_logged_in": "Not logged in!"
+    "recovery_keys_regenerate": "Regenerate recovery codes",
+    "recovery_keys_regenerate_confirm": "Regenerate recovery codes? Your current recovery codes will stop working immediately, and you'll need to save the new ones.",
+    "recovery_keys_regenerated_title": "New recovery codes",
+    "recovery_keys_regenerated_instructions": "Here are your new recovery codes. Save them now: they replace your previous codes and won't be shown again.",
+    "recovery_keys_done": "Done",
+    "recovery_keys_label": "Recovery codes",
+    "recovery_keys_remaining": "{{remaining}} of {{total}} remaining. Can't be shown again, only replaced.",
+    "recovery_keys_dot_available": "Available",
+    "recovery_keys_dot_used": "Used on {{- date}}",
+    "oauth_title": "OpenID Connect",
+    "oauth_status_connected": "Connected",
+    "oauth_status_not_connected": "Not connected",
+    "oauth_status_not_configured": "Not configured",
+    "oauth_description": "OpenID Connect lets you log in using an account from another service, like Google, to verify your identity. The default issuer is Google, but you can change it to any other OpenID Connect provider. Check <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">here</a> for more information. Follow these <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instructions</a> to set up an OpenID Connect service through Google.",
+    "oauth_not_configured_title": "Set up OpenID Connect",
+    "oauth_not_configured_hint": "OpenID Connect needs to be set up through the config.ini or environment variables first.",
+    "oauth_missing_vars": "Left to configure: {{-variables}}",
+    "oauth_how_to_enable": "How to enable",
+    "oauth_server_config_hint": "Add the following to your config.ini file and restart the application:",
+    "oauth_server_env_hint": "Or set the following environment variables:",
+    "oauth_provider": "Provider",
+    "oauth_provider_url": "Issuer URL",
+    "oauth_provider_unknown": "Unknown provider",
+    "oauth_user_account": "Account name",
+    "oauth_user_email": "Email address",
+    "oauth_user_not_logged_in": "Not logged in!",
+    "oauth_not_enrolled_title": "No account connected",
+    "oauth_not_enrolled_hint": "OpenID Connect is configured, but no account is connected yet.",
+    "oauth_not_enrolled_details_label": "What does this mean?",
+    "oauth_not_enrolled_details": "Until an account is connected, OpenID Connect isn't active and you'll keep signing in with your password. Connect your account below to switch it on.",
+    "oauth_connect_label": "Connect account",
+    "oauth_connect_description": "Sign in with your provider once to bind your account. Only this account will be able to sign in afterwards.",
+    "oauth_connect_button": "Connect account",
+    "oauth_disconnect_label": "Disconnect account",
+    "oauth_disconnect_description": "Unbind the connected account. Sign-in will fall back to your password until you connect an account again.",
+    "oauth_disconnect_button": "Disconnect",
+    "oauth_disconnect_confirm": "Are you sure you want to disconnect this account? Sign-in will fall back to your password until you connect an account again.",
+    "oauth_disconnected": "Disconnected {{account}} from {{provider}}.",
+    "oauth_connect_success": "Connected to {{provider}} as {{account}}.",
+    "oauth_connect_success_generic": "Account connected successfully.",
+    "oauth_account_unknown": "your account"
   },
   "shortcuts": {
     "keyboard_shortcuts": "Keyboard Shortcuts",
-    "multiple_shortcuts": "Multiple shortcuts for the same action can be separated by comma.",
-    "electron_documentation": "See <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">Electron documentation</a> for available modifiers and key codes.",
     "type_text_to_filter": "Type text to filter shortcuts...",
-    "action_name": "Action name",
-    "shortcuts": "Shortcuts",
-    "default_shortcuts": "Default shortcuts",
-    "description": "Description",
-    "reload_app": "Reload app to apply changes",
-    "set_all_to_default": "Set all shortcuts to the default",
+    "reload_app": "Reload app",
+    "set_all_to_default": "Reset all",
     "confirm_reset": "Do you really want to reset all keyboard shortcuts to the default?",
-    "no_results": "No shortcuts found matching '{{filter}}'"
+    "no_results": "No shortcuts found matching '{{filter}}'",
+    "modified_from_default": "This shortcut has been changed from its default.",
+    "revert_to_default": "Revert to default ({{shortcuts}})",
+    "no_default_shortcut": "no shortcut",
+    "record_shortcut": "Add a shortcut",
+    "remove_shortcut": "Remove this shortcut",
+    "press_keys": "Press keys…",
+    "recording_toast": "Press a key combination to assign it, or Esc to cancel.",
+    "make_global": "Make this a system-wide (global) shortcut",
+    "make_local": "Make this an in-app shortcut",
+    "global_shortcut": "System-wide (global) shortcut, only active on the desktop app",
+    "conflict_chip": "This combination is also assigned to: {{actions}}",
+    "no_conflicts": "No conflicting shortcuts.",
+    "no_matches": "No shortcuts match the selected filters.",
+    "filter": "Filter shortcuts",
+    "filter_all": "All shortcuts",
+    "filter_conflicts": "Conflicts ({{count}})",
+    "filter_global": "Global shortcuts ({{count}})",
+    "filter_modified": "Changed from default ({{count}})",
+    "conflicts_badge_one": "{{count}} conflict",
+    "conflicts_badge_other": "{{count}} conflicts",
+    "conflicts_badge_tooltip": "Some shortcuts are assigned to more than one action. Click to show only the conflicting shortcuts."
   },
   "spellcheck": {
     "title": "Spell Check",
     "description": "These options apply only for desktop builds, browsers will use their own native spell check.",
     "enable": "Check spelling",
+    "disabled_placeholder": "Spell check is turned off. Enable it to choose languages and manage the custom dictionary.",
     "language_code_label": "Spell Check Languages",
-    "restart-required": "Changes to the spell check options will take effect after application restart.",
     "custom_dictionary_title": "Custom Dictionary",
     "custom_dictionary_description": "Words added to the dictionary are synced across all your devices.",
     "custom_dictionary_edit": "Custom words",
@@ -1709,7 +1918,7 @@
     "help": "Help",
     "test_title": "Test Connection",
     "test_description": "Test the connection to the sync server. If not initialized, this will set up syncing.",
-    "test_button": "Test sync",
+    "test_button": "Test now",
     "handshake_failed": "Sync server handshake failed, error: {{message}}"
   },
   "api_log": {
@@ -1720,7 +1929,7 @@
     "will_be_deleted_soon": "This attachment will be automatically deleted soon",
     "deletion_reason": ", because the attachment is not linked in the note's content. To prevent deletion, add the attachment link back into the content or convert the attachment into note.",
     "role_and_size": "Role: {{role}}, size: {{size}}, MIME: {{- mimeType}}",
-    "link_copied": "Attachment link copied to clipboard.",
+    "link_copied": "Attachment reference copied to clipboard.",
     "unrecognized_role": "Unrecognized attachment role '{{role}}'."
   },
   "bookmark_switch": {
@@ -1774,7 +1983,8 @@
     "export": "Export",
     "import-into-note": "Import into note",
     "apply-bulk-actions": "Apply bulk actions",
-    "converted-to-attachments": "{{count}} notes have been converted to attachments.",
+    "converted-to-attachments_one": "{{count}} note has been converted to attachments.",
+    "converted-to-attachments_other": "{{count}} notes have been converted to attachments.",
     "convert-to-attachment-confirm": "Are you sure you want to convert the selected notes into attachments of their parent notes? This operation only applies to Image notes, other notes will be skipped.",
     "open-in-popup": "Quick edit"
   },
@@ -1886,6 +2096,9 @@
     "toggle-on-hint": "Make the note a template",
     "toggle-off-hint": "Remove the note as a template"
   },
+  "full_content_width_switch": {
+    "title": "Full width"
+  },
   "open-help-page": "Open help page",
   "find": {
     "case_sensitive": "Case sensitive",
@@ -1918,6 +2131,8 @@
     "hide-archived-notes": "Hide archived notes",
     "automatically-collapse-notes": "Automatically collapse notes",
     "automatically-collapse-notes-title": "Notes will be collapsed after period of inactivity to declutter the tree.",
+    "follow-active-note": "Follow active note",
+    "follow-active-note-title": "Scrolls the tree and expands parent nodes to show the active note. When disabled, the tree stays in place and only the background highlight is updated.",
     "save-changes": "Save & apply changes",
     "auto-collapsing-notes-after-inactivity": "Auto collapsing notes after inactivity...",
     "saved-search-note-refreshed": "Saved search note refreshed.",
@@ -1950,6 +2165,9 @@
     "window-on-top": "Keep Window on Top"
   },
   "note_detail": {
+    "content_load_error": "The note's content could not be loaded.",
+    "content_load_retry": "Retry",
+    "content_load_stalled": "Still loading the note's content…",
     "could_not_find_typewidget": "Could not find typeWidget for type '{{type}}'",
     "printing": "Printing in progress...",
     "printing_pdf": "Preparing print preview...",
@@ -1997,6 +2215,9 @@
     "close_other_tabs": "Close other tabs",
     "close_right_tabs": "Close tabs to the right",
     "close_all_tabs": "Close all tabs",
+    "pin_tab": "Pin tab",
+    "unpin_tab": "Unpin tab",
+    "pinned_prefix": "Pinned: ",
     "reopen_last_tab": "Reopen last closed tab",
     "move_tab_to_new_window": "Move this tab to a new window",
     "copy_tab_to_new_window": "Copy this tab to a new window",
@@ -2042,7 +2263,6 @@
   },
   "branches": {
     "cannot-move-notes-here": "Cannot move notes here.",
-    "delete-status": "Delete status",
     "delete-notes-in-progress": "Delete notes in progress: {{count}}",
     "delete-finished-successfully": "Delete finished successfully.",
     "undeleting-notes-in-progress": "Undeleting notes in progress: {{count}}",
@@ -2172,6 +2392,7 @@
     "create-child-note-title": "Create a new child note and add it to the map",
     "create-child-note-text": "Add marker",
     "create-child-note-instruction": "Click on the map to create a new note at that location or press Escape to dismiss.",
+    "create-child-note-toast-title": "New note",
     "unable-to-load-map": "Unable to load map."
   },
   "geo-map-context": {
@@ -2322,6 +2543,11 @@
     "edit-column-title": "Click to edit column title",
     "column-already-exists": "This column already exists on the board."
   },
+  "dashboard_view": {
+    "refresh-widget": "Refresh",
+    "remove-widget": "Remove from dashboard",
+    "empty-hint": "Any child note becomes a widget. Drag a note here from tree or create a new one."
+  },
   "presentation_view": {
     "edit-slide": "Edit this slide",
     "start-presentation": "Start presentation",
@@ -2360,10 +2586,15 @@
     "search_history_title": "Show Search History",
     "search_history_description": "View previous searches",
     "configure_launch_bar_title": "Configure Launch Bar",
-    "configure_launch_bar_description": "Open the launch bar configuration, to add or remove items."
+    "configure_launch_bar_description": "Open the launch bar configuration, to add or remove items.",
+    "pin_tab_title": "Pin Tab",
+    "pin_tab_description": "Always keep this note open in this tab at the start of the tab bar and prevent it from being accidentally closed",
+    "unpin_tab_title": "Unpin Tab",
+    "unpin_tab_description": "Unpin this tab, allowing it to be closed and moved freely"
   },
   "content_renderer": {
-    "open_externally": "Open externally"
+    "open_externally": "Open externally",
+    "mermaid_diagram_error": "Mermaid diagram failed to render: {{error}}"
   },
   "modal": {
     "close": "Close",
@@ -2400,7 +2631,8 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} notes",
+    "total_notes_one": "{{count}} note",
+    "total_notes_other": "{{count}} notes",
     "prev_page": "Previous page",
     "next_page": "Next page"
   },
@@ -2480,7 +2712,8 @@
     "code_note_switcher": "Change language mode",
     "tab_width": "Tab Width: {{width}}",
     "tab_width_title": "Change tab width",
-    "tab_width_spaces": "{{count}} spaces",
+    "tab_width_spaces_one": "{{count}} space",
+    "tab_width_spaces_other": "{{count}} spaces",
     "tab_width_spaces_short": "Spaces: {{width}}",
     "tab_width_tabs": "Tabs: {{width}}",
     "tab_width_use_default": "Use default ({{width}})",
@@ -2498,6 +2731,10 @@
     "empty_message": "Nothing to show for this note",
     "empty_button": "Hide the panel",
     "toggle": "Toggle right panel",
+    "peek": "Peek right pane",
+    "hide": "Hide right pane",
+    "dock": "Dock panel",
+    "close": "Close panel",
     "custom_widget_go_to_source": "Go to source code"
   },
   "print_preview": {
@@ -2554,9 +2791,16 @@
   "bookmark_buttons": {
     "bookmarks": "Bookmarks"
   },
+  "snippet_badge": {
+    "label": "{{type}} snippet",
+    "type_text": "Text",
+    "type_code": "Code",
+    "tooltip": "A reusable piece of text or code, meant to be inserted into the editor (from the snippet menu in the toolbar, or via a slash command)."
+  },
   "active_content_badges": {
     "type_icon_pack": "Icon pack",
     "type_backend_script": "Backend script",
+    "type_custom_request_handler": "Custom request handler",
     "type_frontend_script": "Frontend script",
     "type_widget": "Widget",
     "type_app_css": "Custom CSS",
@@ -2613,6 +2857,30 @@
     "sample_treeview": "TreeView",
     "sample_wardley": "Wardley Map"
   },
+  "login": {
+    "heading": "Log in to Trilium Notes",
+    "password": "Password",
+    "totp-token": "One-time password or recovery code",
+    "button": "Log in",
+    "remember-me": "Remember me",
+    "incorrect-password": "Password is incorrect. Please try again.",
+    "incorrect-totp": "One-time password is incorrect. Please try again.",
+    "incorrect-recovery-code": "Recovery code is incorrect, or has already been used.",
+    "too-many-attempts": "Too many login attempts. Please wait a few minutes and try again.",
+    "connection-error": "Couldn't reach the server. Check your connection and try again.",
+    "sign_in_with_sso": "Sign in with {{ssoIssuerName}}",
+    "sso-wrong-account": "That account isn't the one linked to this Trilium instance. Sign in with the linked account.",
+    "sso-not-enrolled": "Single sign-on isn't set up yet. Sign in with your password first, then link your account from the settings."
+  },
+  "set_password": {
+    "heading": "Set password",
+    "description": "Before you can start using Trilium from web, you need to set a password first. You will then use this password to login.",
+    "password": "Password",
+    "password-confirmation": "Password confirmation",
+    "button": "Set password",
+    "password-too-short": "Password must be at least {{length}} characters long.",
+    "passwords-dont-match": "The entered passwords don't match."
+  },
   "setup": {
     "heading": "Get started with Trilium",
     "new-document": "New knowledge base",
@@ -2651,6 +2919,9 @@
     "sync-from-desktop-step5": "Click the \"Test sync\" button to verify connection is successful.",
     "sync-from-desktop-warning": "Make sure both devices are on the same network.",
     "sync-from-desktop-waiting": "Waiting for connection...",
+    "sync-from-desktop-unreachable-title": "This device can't be reached by other devices",
+    "sync-from-desktop-unreachable-description": "To sync, the other desktop has to connect to this one over the network. For security, this desktop app only accepts connections from this computer, so that other desktop can't reach it yet. Allow network access below — Trilium will restart to apply it.",
+    "sync-from-desktop-allow-access": "Allow network access & restart",
     "advanced-options": "Advanced options",
     "sync-failed": "Failed to sync: {{message}}",
     "server-host": "Trilium server address",
@@ -2680,8 +2951,8 @@
     "summary": "Summary"
   },
   "llm": {
-    "settings_title": "AI / LLM",
-    "settings_description": "Configure AI and Large Language Model integrations.",
+    "disabled_placeholder": "AI features are turned off. Enable them to configure providers and MCP.",
+    "not_available_in_standalone": "AI/LLM features are not available in the standalone version of Trilium, as LLM providers do not allow direct access from a browser.",
     "feature_not_enabled": "Enable the LLM experimental feature in Settings → Advanced → Experimental features to use AI integrations.",
     "add_provider": "Add Provider",
     "add_provider_title": "Add AI Provider",
@@ -2726,7 +2997,8 @@
       "rename_note": "Rename note",
       "delete_note": "Delete note",
       "move_note": "Move note",
-      "clone_note": "Clone note"
+      "clone_note": "Clone note",
+      "search_icons": "Search icons"
     }
   },
   "common": {
@@ -2734,7 +3006,11 @@
     "cancel": "Cancel"
   },
   "spreadsheet": {
-    "read-only": "This note is read-only."
+    "read-only": "This note is read-only.",
+    "export-xlsx": "Export to Excel (.xlsx)",
+    "export-csv": "Export to CSV (.csv)",
+    "export-failed": "Failed to export the spreadsheet to Excel.",
+    "export-csv-failed": "Failed to export the spreadsheet to CSV."
   },
   "text-editor": {
     "checkbox-tooltip": "Right click for more task states.\nPress {{shortcut}} to cycle between states.",

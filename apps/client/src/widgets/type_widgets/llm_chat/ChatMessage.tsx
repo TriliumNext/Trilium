@@ -1,7 +1,8 @@
 import "./ChatMessage.css";
-import "../code/MarkdownCommons.css";
+import "../markdown/MarkdownCommons.css";
 
-import { CustomMarkdownRenderer, type LlmCitation, renderToHtml } from "@triliumnext/commons";
+import { type LlmCitation } from "@triliumnext/commons";
+import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer";
 import DOMPurify from "dompurify";
 import type { Tokens } from "marked";
 import { useMemo } from "preact/hooks";

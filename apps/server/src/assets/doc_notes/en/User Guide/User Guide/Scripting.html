@@ -14,8 +14,8 @@
 </ul>
 <p>So we have frontend and backend, each with their own set of responsibilities,
   but their common feature is that they both run JavaScript code. Add to
-  this the fact, that we're able to create JavaScript <a class="reference-link"
-  href="#root/_help_6f9hih2hXXZk">code notes</a> and we're onto something.</p>
+  this the fact, that we're able to create JavaScript&nbsp;<a class="reference-link"
+  href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;and we're onto something.</p>
 <h2>Use cases</h2>
 <ul>
   <li><a class="reference-link" href="#root/_help_TjLYAo3JMO8X">"New Task" launcher button</a>
@@ -41,7 +41,29 @@
 <p>(<code spellcheck="false">#run=frontendStartup</code> does not work for
   <a
   href="#root/_help_RDslemsQ6gCp">Mobile frontend</a>- if you want to have scripts running there, give the
-    script <code spellcheck="false">#run=mobileStartup</code> label)</p>
+    script <code spellcheck="false">#run=mobileStartup</code> label).</p>
+<h3>Execute button</h3>
+<p>Runnable code notes (frontend or backend) and saved SQL consoles can optionally
+  have a dedicated execute button alongside a description.</p>
+<p>To do so, apply the following <a href="#root/_help_HI6GBBIduIgv">labels</a>:</p>
+<ul>
+  <li>A <code spellcheck="false">#executeButton</code> with the value of the label
+    being displayed as the label of the button.</li>
+  <li>An optional <code spellcheck="false">#executeDescription</code> which adds
+    explanatory text beside it.</li>
+</ul>
+<h2>Autocomplete &amp; linting</h2>
+<p>Starting with Trilium v0.104.0, frontend scripts, backend scripts and
+  render notes benefit from an autocomplete system.</p>
+<p>The autocomplete triggers automatically when typing <kbd>.</kbd> or manually
+  by pressing <kbd>Ctrl</kbd>+<kbd>Space</kbd>.</p>
+<p>In addition to that, the editor will also display syntax errors and warnings
+  such as unreachable code.</p>
+<aside class="admonition note">
+  <p>If you notice a false positive in regards with the errors/warnings reported
+    or an incorrect or missing API, feel free to <a href="#root/_help_wy8So3yZZlH9">open a issue</a> with
+    a code sample.</p>
+</aside>
 <h2>More showcases</h2>
 <p>You can see more scripting with explanation in&nbsp;<a class="reference-link"
   href="#root/_help_5668rwcirq1t">Advanced Showcases</a>.</p>

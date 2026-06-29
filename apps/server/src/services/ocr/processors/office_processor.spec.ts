@@ -22,6 +22,7 @@ let OfficeProcessor: typeof import('./office_processor.js').OfficeProcessor;
 
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const ODT = 'application/vnd.oasis.opendocument.text';
+const RTF = 'application/rtf';
 
 beforeEach(async () => {
     vi.clearAllMocks();
@@ -40,6 +41,8 @@ describe('OfficeProcessor', () => {
 
         expect(processor.canProcess(DOCX)).toBe(true);
         expect(processor.canProcess(ODT)).toBe(true);
+        expect(processor.canProcess(RTF)).toBe(true);
+        expect(processor.canProcess('text/rtf')).toBe(true);
         expect(processor.canProcess('application/pdf')).toBe(false);
         expect(processor.getSupportedMimeTypes()).toContain(DOCX);
         expect(processor.getProcessingType()).toBe('office');
@@ -58,8 +61,22 @@ describe('OfficeProcessor', () => {
         expect(mockParseOffice).toHaveBeenCalledWith(buffer, {
             outputErrorToConsole: false,
             newlineDelimiter: '\n',
+            ignoreNotes: false
+        });
+    });
+
+    it('passes an explicit fileType hint for RTF, whose buffer auto-detection is unreliable', async () => {
+        const processor = new OfficeProcessor();
+        mockParseOffice.mockResolvedValue({ toText: () => 'rtf body' });
+
+        const result = await processor.extractText(buffer, { mimeType: RTF });
+
+        expect(result.text).toBe('rtf body');
+        expect(mockParseOffice).toHaveBeenCalledWith(buffer, {
+            outputErrorToConsole: false,
+            newlineDelimiter: '\n',
             ignoreNotes: false,
-            putNotesAtLast: false
+            fileType: 'rtf'
         });
     });
 

@@ -1,6 +1,6 @@
 <%
 const strippedName = utils.stripTags(entry.name);
-const slug = utils.slugify(strippedName);
+const slug = entry.slug ?? utils.slugify(strippedName);
 %>
 
 <li>

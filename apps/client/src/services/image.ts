@@ -125,7 +125,10 @@ export function getFileNameFromSrc(src: string, mimeType?: string) {
     try {
         name = decodeURIComponent(lastSegment) || "image";
     } catch {
-        // A malformed %-escape in the segment would make decodeURIComponent throw.
+        // A malformed %-escape in the segment would make decodeURIComponent throw, so the catch is
+        // only reached when lastSegment contains a `%` and is therefore always non-empty here —
+        // the `|| "image"` fallback is unreachable defensive code.
+        /* v8 ignore next -- unreachable: lastSegment is always truthy inside the catch */
         name = lastSegment || "image";
     }
 

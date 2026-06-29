@@ -2,7 +2,10 @@ import { app_info, cls, events, getLog, keyboard_actions as keyboardActionsServi
 import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
 import { type BrowserWindow, type BrowserWindowConstructorOptions, default as electron, type Session, type WebContents } from "electron";
 import path from "path";
-import url from "url";
+
+import { markStartupMetric } from "./startup_metrics.js";
+import { TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
+import { setupWebContentsSecurity } from "./web_contents_security.js";
 
 // Preload bundle path. Two layouts:
 //   - Dev: this file lives at apps/desktop/src/services/window.ts, and the
@@ -32,6 +35,12 @@ let mainWindow: BrowserWindow | null;
 let setupWindow: BrowserWindow | null;
 let allWindows: BrowserWindow[] = []; // Used to store all windows, sorted by the order of focus.
 const loadedSpellcheckSessions = new WeakSet<Session>();
+const exportRevealSessions = new WeakSet<Session>();
+
+// Set to `true` once the app is genuinely quitting (via `before-quit`, which fires
+// for every real quit path: Cmd+Q, the tray "Quit" item, the app menu, OS shutdown).
+// The close-to-tray interceptor checks this so a true quit isn't swallowed into a hide.
+let isQuitting = false;
 
 function trackWindowFocus(win: BrowserWindow) {
     // We need to get the last focused window from allWindows. If the last window is closed, we return the previous window.
@@ -65,7 +74,11 @@ async function createExtraWindow(extraWindowHash: string) {
             nodeIntegration: false,
             contextIsolation: true,
             preload: getPreloadScript(),
-            spellcheck: spellcheckEnabled,
+            // Always attach Chromium's spell-check subsystem so it can be toggled at
+            // runtime via session.setSpellCheckerEnabled(); the actual on/off state is
+            // applied from the option in configureWebContents(). webPreferences.spellcheck
+            // is immutable after creation, so leaving it false would force a restart to enable.
+            spellcheck: true,
             webviewTag: true
         },
         ...getWindowExtraOpts(),
@@ -73,14 +86,14 @@ async function createExtraWindow(extraWindowHash: string) {
     });
 
     win.setMenuBarVisibility(false);
-    win.loadURL(`trilium-app://app/?extraWindow=1${extraWindowHash}`);
+    win.loadURL(`${TRILIUM_APP_BASE_URL}?extraWindow=1${extraWindowHash}`);
 
     configureWebContents(win.webContents, spellcheckEnabled);
 
     trackWindowFocus(win);
 }
 
-async function createMainWindow() {
+async function createMainWindow(startHidden = false) {
     if ("setUserTasks" in electron.app) {
         electron.app.setUserTasks([
             {
@@ -114,21 +127,44 @@ async function createMainWindow() {
         minWidth: 500,
         minHeight: 400,
         title: "Trilium Notes",
+        // Start hidden (launched at login with hide-on-autostart) means the window
+        // is never shown until the user summons it from the tray. Constructing it
+        // hidden avoids a visible flash that show()-then-hide() would cause.
+        show: !startHidden,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
             preload: getPreloadScript(),
-            spellcheck: spellcheckEnabled,
+            // Always attach Chromium's spell-check subsystem so it can be toggled at
+            // runtime via session.setSpellCheckerEnabled(); the actual on/off state is
+            // applied from the option in configureWebContents(). webPreferences.spellcheck
+            // is immutable after creation, so leaving it false would force a restart to enable.
+            spellcheck: true,
             webviewTag: true
         },
         icon: getIcon(),
         ...getWindowExtraOpts()
     });
 
+    markStartupMetric("main-window-created");
+    // First time the renderer has produced a frame of the page — the closest
+    // main-process signal to "the window displays something".
+    mainWindow.once("ready-to-show", () => markStartupMetric("main-window-first-paint"));
+    mainWindow.webContents.once("did-finish-load", () => markStartupMetric("main-window-load-finished"));
+
     mainWindowState.manage(mainWindow);
 
     mainWindow.setMenuBarVisibility(false);
-    mainWindow.loadURL("trilium-app://app/");
+    mainWindow.loadURL(TRILIUM_APP_BASE_URL);
+    // Close-to-tray: when enabled, closing the main window hides it to the tray
+    // instead of quitting. Only intercepts a genuine window close (not an app
+    // quit, which sets `isQuitting` first). Extra windows are unaffected.
+    mainWindow.on("close", (event) => {
+        if (!isQuitting && !optionService.getOptionBool("disableTray") && optionService.getOptionBool("closeToTray")) {
+            event.preventDefault();
+            mainWindow?.hide();
+        }
+    });
     mainWindow.on("closed", () => (mainWindow = null));
 
     configureWebContents(mainWindow.webContents, spellcheckEnabled);
@@ -158,9 +194,6 @@ function getWindowExtraOpts() {
                 extraOpts.visualEffectState = "active";
             } else if (coreUtils.isWindows()) {
                 extraOpts.backgroundMaterial = "auto";
-            } else {
-                // Linux or other platforms.
-                extraOpts.transparent = true;
             }
         }
     }
@@ -169,32 +202,12 @@ function getWindowExtraOpts() {
 }
 
 async function configureWebContents(webContents: WebContents, spellcheckEnabled: boolean) {
-    webContents.setWindowOpenHandler((details) => {
-        async function openExternal() {
-            (await import("electron")).shell.openExternal(details.url);
-        }
+    // Window-open and navigation policy is NOT applied here: it is installed
+    // globally for every WebContents (including setup and print windows,
+    // which never pass through this function) by web_contents_security.ts.
 
-        openExternal().catch(err => {
-            getLog().error(`Failed to open external URL ${details.url}: ${err}`);
-        });
-        return { action: "deny" };
-    });
-
-    // prevent drag & drop to navigate away from trilium
-    webContents.on("will-navigate", (ev, targetUrl) => {
-        const parsedUrl = url.parse(targetUrl);
-
-        // we still need to allow internal redirects from setup and migration pages
-        const isInternal = parsedUrl.protocol === "trilium-app:"
-            || ["localhost", "127.0.0.1"].includes(parsedUrl.hostname || "");
-        if (!isInternal || (parsedUrl.path && parsedUrl.path !== "/" && parsedUrl.path !== "/?")) {
-            ev.preventDefault();
-        }
-    });
-
-    if (spellcheckEnabled) {
-        setupSpellcheckForSession(webContents.session);
-    }
+    setupSpellcheckForSession(webContents.session, spellcheckEnabled);
+    setupExportRevealForSession(webContents.session);
 
     // Forward full-screen events to the renderer via IPC.
     const win = electron.BrowserWindow.fromWebContents(webContents);
@@ -206,6 +219,15 @@ async function configureWebContents(webContents: WebContents, spellcheckEnabled:
     // Forward navigation events to the renderer for back/forward button state.
     webContents.on("did-navigate", () => webContents.send("did-navigate"));
     webContents.on("did-navigate-in-page", () => webContents.send("did-navigate-in-page"));
+
+    // Keep the renderer informed about whether DevTools is docked into this window, where
+    // Chromium disables the native window material (Mica / vibrancy) and the renderer should
+    // suspend its transparent background effects. Re-checked on focus because re-docking an
+    // already open DevTools emits no dedicated event.
+    const sendDevToolsDockState = () => webContents.send("dev-tools-dock-changed", isDevToolsDocked(webContents));
+    webContents.on("devtools-opened", sendDevToolsDockState);
+    webContents.on("devtools-focused", sendDevToolsDockState);
+    webContents.on("devtools-closed", sendDevToolsDockState);
 
     // Forward context-menu event to the renderer with only the fields we need.
     webContents.on("context-menu", (_event, params) => {
@@ -228,17 +250,89 @@ async function configureWebContents(webContents: WebContents, spellcheckEnabled:
     });
 }
 
-function setupSpellcheckForSession(session: Session) {
+/** Whether DevTools for the given contents is open and docked into the page's own window (as opposed to a separate window). */
+function isDevToolsDocked(webContents: WebContents) {
+    const devToolsWebContents = webContents.devToolsWebContents;
+    if (!webContents.isDevToolsOpened() || !devToolsWebContents) {
+        return false;
+    }
+
+    // A docked DevTools view is hosted by the same BrowserWindow as the page itself; when
+    // detached it lives in its own native window, which is not a BrowserWindow and for which
+    // fromWebContents() returns null.
+    const devToolsWindow = electron.BrowserWindow.fromWebContents(devToolsWebContents);
+    return devToolsWindow !== null && devToolsWindow === electron.BrowserWindow.fromWebContents(webContents);
+}
+
+/**
+ * Reveals note exports in the OS file manager once their download finishes, matching the native subtree
+ * export (which reveals via shell.showItemInFolder). Single-note and OPML exports go through Electron's
+ * download manager rather than the native handler, so they're caught here. Scoped to `/export/` URLs so
+ * attachment/revision/file downloads are left alone, and registered once per session.
+ */
+function setupExportRevealForSession(session: Session) {
+    if (exportRevealSessions.has(session)) {
+        return;
+    }
+    exportRevealSessions.add(session);
+
+    session.on("will-download", (_event, item) => {
+        if (!/\/export\//.test(item.getURL())) {
+            return;
+        }
+        item.once("done", (_e, state) => {
+            if (state === "completed") {
+                electron.shell.showItemInFolder(item.getSavePath());
+            }
+        });
+    });
+}
+
+function setupSpellcheckForSession(session: Session, enabled: boolean) {
+    session.setSpellCheckerEnabled(enabled);
+    // Preload the configured languages once per session (idempotent thereafter via the
+    // WeakSet guard) so a later live enable already has them. Harmless while disabled.
     if (!loadedSpellcheckSessions.has(session)) {
         loadedSpellcheckSessions.add(session);
+        session.setSpellCheckerLanguages(getConfiguredSpellcheckLanguages());
+    }
+}
 
-        const languageCodes = optionService
-            .getOption("spellCheckLanguageCode")
-            .split(",")
-            .map((code) => code.trim())
-            .filter(Boolean);
+function getConfiguredSpellcheckLanguages(): string[] {
+    return optionService
+        .getOption("spellCheckLanguageCode")
+        .split(",")
+        .map((code) => code.trim())
+        .filter(Boolean);
+}
 
+/**
+ * Re-applies the spell-check language list to every open window's session so a
+ * language change in the settings takes effect without restarting the app.
+ * Sessions are deduplicated because all windows share the default session.
+ */
+function applySpellcheckLanguages(languageCodes: string[]) {
+    const sessions = new Set<Session>();
+    for (const win of electron.BrowserWindow.getAllWindows()) {
+        sessions.add(win.webContents.session);
+    }
+    for (const session of sessions) {
         session.setSpellCheckerLanguages(languageCodes);
+    }
+}
+
+/**
+ * Enables or disables the spell checker on every open window's session so the
+ * toggle in settings takes effect without restarting the app. Relies on the
+ * windows having been created with `webPreferences.spellcheck: true`.
+ */
+function applySpellcheckEnabled(enabled: boolean) {
+    const sessions = new Set<Session>();
+    for (const win of electron.BrowserWindow.getAllWindows()) {
+        sessions.add(win.webContents.session);
+    }
+    for (const session of sessions) {
+        session.setSpellCheckerEnabled(enabled);
     }
 }
 
@@ -274,7 +368,7 @@ async function createSetupWindow() {
         }
     });
     setupWindow.removeMenu();
-    setupWindow.loadURL("trilium-app://app/");
+    setupWindow.loadURL(TRILIUM_APP_BASE_URL);
     setupWindow.on("closed", () => (setupWindow = null));
 }
 
@@ -360,6 +454,18 @@ function getAllWindows() {
  * Call once during desktop startup, before `app.ready` fires.
  */
 export function setupWindowing() {
+    // Window-open, navigation, <webview>-attach and permission policy is applied
+    // to every WebContents the app creates. Installed here rather than left to
+    // each entry point so a new Electron launcher cannot silently ship without
+    // the renderer/main security boundary.
+    setupWebContentsSecurity();
+
+    // Mark a genuine quit so the close-to-tray interceptor lets windows close for
+    // real. Fires for every quit path (Cmd+Q, tray "Quit", app menu, OS shutdown).
+    electron.app.on("before-quit", () => {
+        isQuitting = true;
+    });
+
     electron.ipcMain.on("create-extra-window", (_event, arg) => {
         createExtraWindow(arg.extraWindowHash);
     });
@@ -388,6 +494,8 @@ export function setupWindowing() {
         }
     });
 
+    electron.ipcMain.handle("read-clipboard-text", () => electron.clipboard.readText());
+
     electron.ipcMain.on("show-window", (event) => {
         electron.BrowserWindow.fromWebContents(event.sender)?.show();
     });
@@ -407,6 +515,14 @@ export function setupWindowing() {
 
     electron.ipcMain.on("get-available-spellchecker-languages", (event) => {
         event.returnValue = event.sender.session.availableSpellCheckerLanguages;
+    });
+
+    electron.ipcMain.on("set-spellchecker-languages", (_event, languageCodes: string[]) => {
+        applySpellcheckLanguages(languageCodes);
+    });
+
+    electron.ipcMain.on("set-spellchecker-enabled", (_event, enabled: boolean) => {
+        applySpellcheckEnabled(enabled);
     });
 
     // Window management IPC handlers (replacing @electron/remote for renderer access)
@@ -438,6 +554,10 @@ export function setupWindowing() {
 
     electron.ipcMain.on("toggle-dev-tools", (event) => {
         event.sender.toggleDevTools();
+    });
+
+    electron.ipcMain.on("is-dev-tools-docked", (event) => {
+        event.returnValue = isDevToolsDocked(event.sender);
     });
 
     electron.ipcMain.on("is-full-screen", (event) => {

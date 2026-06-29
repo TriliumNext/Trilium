@@ -1,4 +1,5 @@
 export * from "./lib/i18n.js";
+export * from "./lib/katex_macros.js";
 export * from "./lib/options_interface.js";
 export * from "./lib/keyboard_actions_interface.js";
 export * from "./lib/hidden_subtree.js";
@@ -14,13 +15,17 @@ export * from "./lib/attribute_names.js";
 export * from "./lib/utils.js";
 export * from "./lib/dayjs.js";
 export * from "./lib/notes.js";
+export * from "./lib/onenote.js";
 export * from "./lib/week_utils.js";
 export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";
-export * from "./lib/spreadsheet/extract_text.js";
-export * from "./lib/spreadsheet/render_to_html.js";
+// The spreadsheet modules are deliberately not re-exported here: they pull in numfmt, and the
+// barrel is imported by virtually every client module. Import them via their subpath instead,
+// e.g. "@triliumnext/commons/src/lib/spreadsheet/render_to_html".
 export * from "./lib/electron_api_interface.js";
 export * from "./lib/link_embed.js";
 export * from "./lib/llm_api.js";
 export * from "./lib/marked_extensions.js";
-export * from "./lib/markdown_renderer.js";
+// The markdown renderer is deliberately not re-exported here: it pulls in marked, and the barrel
+// is imported by virtually every client module. Import it via its subpath instead,
+// e.g. "@triliumnext/commons/src/lib/markdown_renderer".
 export * from "./lib/task_states.js";

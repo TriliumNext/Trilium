@@ -73,7 +73,14 @@
         "mobile_answer": "Saat ini belum ada aplikasi mobile resmi. Namun, jika Anda memiliki server, Anda dapat mengaksesnya menggunakan browser web dan bahkan menginstalnya sebagai PWA. Untuk Android, tersedia aplikasi tidak resmi bernama TriliumDroid yang dapat bekerja secara offline (sama seperti aplikasi desktop).",
         "database_question": "Di manakah data disimpan?",
         "database_answer": "Semua catatan Anda akan disimpan dalam basis data SQLite di dalam sebuah folder aplikasi. Alasan mengapa Trilium menggunakan basis data alih-alih file teks biasa adalah demi performa dan karena beberapa fitur akan jauh lebih sulit untuk diterapkan, seperti klon (catatan yang sama di beberapa tempat dalam hierarki). Untuk menemukan folder aplikasinya, cukup buka jendela 'Tentang'.",
-        "server_question": "Apakah saya butuh server untuk menjalankan Trilium?"
+        "server_question": "Apakah saya butuh server untuk menjalankan Trilium?",
+        "scaling_question": "Seberapa baik aplikasi ini dapat diskalakan dengan jumlah catatan yang besar?",
+        "scaling_answer": "Tergantung pada penggunaan, aplikasi ini seharusnya dapat menangani setidaknya 100.000 catatan tanpa masalah. Perlu dicatat bahwa proses sinkronisasi kadang dapat gagal jika mengunggah banyak file berukuran besar (1 GB per file), karena Trilium lebih ditujukan sebagai aplikasi knowledge base daripada penyimpanan file seperti NextCloud, misalnya.",
+        "network_share_question": "Bisakah saya membagikan basis data saya melalui drive jaringan?",
+        "network_share_answer": "Tidak, secara umum bukan ide yang baik untuk membagikan basis data SQLite melalui drive jaringan. Meskipun kadang-kadang mungkin berfungsi, ada kemungkinan basis data menjadi rusak akibat penguncian file yang tidak sempurna melalui jaringan.",
+        "security_question": "Bagaimana data saya dilindungi?",
+        "security_answer": "Secara default, catatan tidak terenkripsi dan dapat dibaca langsung dari basis data. Setelah sebuah catatan ditandai sebagai terenkripsi, catatan tersebut dienkripsi menggunakan AES-128-CBC.",
+        "server_answer": "Tidak, server memungkinkan akses melalui browser web dan mengelola sinkronisasi jika Anda memiliki beberapa perangkat. Untuk memulai, cukup download aplikasi desktop dan langsung gunakan."
     },
     "extensibility_benefits": {
         "share_title": "Bagikan catatan di web",
@@ -85,5 +92,118 @@
         "scripting_description": "Bangun integrasi Anda sendiri di dalam Trilium dengan widget khusus, atau logika sisi server.",
         "api_title": "REST API",
         "api_description": "Berinteraksi dengan Trilium secara terprogram menggunakan API REST bawaannya."
+    },
+    "final_cta": {
+        "title": "Siap memulai dengan Trilium Notes?",
+        "description": "Bangun knowledge base pribadi Anda dengan fitur-fitur canggih dan privasi penuh.",
+        "get_started": "Mulai"
+    },
+    "components": {
+        "link_learn_more": "Pelajari lebih lanjut..."
+    },
+    "download_now": {
+        "text": "Unduh sekarang ",
+        "platform_big": "v{{version}} untuk {{platform}}",
+        "platform_small": "untuk {{platform}}",
+        "linux_big": "v{{version}} untuk Linux",
+        "linux_small": "untuk Linux",
+        "more_platforms": "Platform lainnya & penyiapan server"
+    },
+    "header": {
+        "get-started": "Mulai",
+        "documentation": "Dokumentasi",
+        "resources": "Sumber daya",
+        "support-us": "Dukung kami"
+    },
+    "footer": {
+        "copyright_and_the": " dan ",
+        "copyright_community": "komunitas"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "Diskusi GitHub",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    },
+    "support_us": {
+        "title": "Dukung kami",
+        "financial_donations_title": "Donasi finansial",
+        "financial_donations_description": "Trilium dibangun dan dipelihara dengan <Link>ratusan jam kerja</Link>. Dukungan Anda membantu menjaganya tetap open-source, meningkatkan fitur, dan menutupi biaya seperti hosting.",
+        "financial_donations_cta": "Pertimbangkan untuk mendukung pengembang utama (<Link>eliandoran</Link>) aplikasi ini melalui:",
+        "github_sponsors": "GitHub Sponsors",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Buy Me A Coffee"
+    },
+    "contribute": {
+        "title": "Cara lain untuk berkontribusi",
+        "way_translate": "Terjemahkan aplikasi ke bahasa asli Anda melalui <Link>Weblate</Link>.",
+        "way_community": "Berinteraksilah dengan komunitas di <Discussions>Diskusi GitHub</Discussions> atau di <Matrix>Matrix</Matrix>.",
+        "way_reports": "Laporkan bug melalui <Link>GitHub issues</Link>.",
+        "way_document": "Tingkatkan dokumentasi dengan memberi tahu kami tentang kekurangan dalam dokumentasi atau berkontribusi pada panduan, FAQ, atau tutorial.",
+        "way_market": "Sebarkan kabar ini: Bagikan Trilium Notes kepada teman, atau di blog dan media sosial."
+    },
+    "404": {
+        "title": "404: Tidak Ditemukan",
+        "description": "Halaman yang Anda cari tidak dapat ditemukan. Mungkin halaman tersebut telah dihapus atau URL-nya tidak benar."
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64-bit",
+        "title_arm64": "Windows di ARM",
+        "description_x64": "Kompatibel dengan perangkat Intel atau AMD yang menjalankan Windows 10 dan 11.",
+        "description_arm64": "Kompatibel dengan perangkat ARM (misalnya dengan Qualcomm Snapdragon).",
+        "quick_start": "Untuk menginstal melalui Winget:",
+        "download_exe": "Unduh Installer (.exe)",
+        "download_zip": "Portabel (.zip)",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64-bit",
+        "title_arm64": "Linux di ARM",
+        "description_x64": "Untuk sebagian besar distribusi Linux, kompatibel dengan arsitektur x86_64.",
+        "description_arm64": "Untuk distribusi Linux berbasis ARM, kompatibel dengan arsitektur aarch64.",
+        "quick_start": "Pilih format paket yang sesuai, tergantung pada distribusi Anda:",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_appimage": ".AppImage",
+        "download_flatpak": ".flatpak",
+        "download_zip": "Portabel (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS untuk Intel",
+        "title_arm64": "macOS untuk Apple Silicon",
+        "description_x64": "Untuk Mac berbasis Intel yang menjalankan macOS Monterey atau versi lebih baru.",
+        "description_arm64": "Untuk Mac Apple Silicon seperti yang menggunakan chip M1 dan M2.",
+        "quick_start": "Untuk menginstal melalui Homebrew:",
+        "download_dmg": "Unduh Installer (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "Portabel (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Self-hosted menggunakan Docker",
+        "description": "Dapat digunakan dengan mudah di Windows, Linux, atau macOS menggunakan kontainer Docker.",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "Dihosting sendiri di Linux",
+        "description": "Deploy Trilium Notes di server atau VPS Anda sendiri, kompatibel dengan sebagian besar distribusi.",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "Modul NixOS"
+    },
+    "download_helper_server_hosted": {
+        "title": "Hosting berbayar",
+        "description": "Trilium Notes dihosting di PikaPods, sebuah layanan berbayar untuk akses dan pengelolaan yang mudah. Tidak berafiliasi langsung dengan tim Trilium.",
+        "download_pikapod": "Siapkan di PikaPods",
+        "download_triliumcc": "Atau lihat trilium.cc"
+    },
+    "resources": {
+        "title": "Sumber daya",
+        "icon_packs": "Paket ikon",
+        "icon_packs_intro": "Perluas pilihan ikon yang tersedia untuk catatan Anda dengan menggunakan paket ikon. Untuk informasi lebih lanjut tentang paket ikon, lihat <DocumentationLink>dokumentasi resmi</DocumentationLink>.",
+        "download": "Unduh",
+        "website": "Situs web"
     }
 }

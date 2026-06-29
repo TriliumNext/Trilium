@@ -1,10 +1,9 @@
 import type { DatabaseBackup } from "@triliumnext/commons";
-import { BackupOptionsService, BackupService, sync_mutex as syncMutexService } from "@triliumnext/core";
+import { BackupOptionsService, BackupService, getLog, sync_mutex as syncMutexService } from "@triliumnext/core";
 import fs from "fs";
 import path from "path";
 
 import dataDir from "./services/data_dir.js";
-import { getLog } from "@triliumnext/core";
 import sql from "./services/sql.js";
 
 export default class ServerBackupService extends BackupService {
@@ -19,13 +18,18 @@ export default class ServerBackupService extends BackupService {
 
         return fs
             .readdirSync(dataDir.BACKUP_DIR)
-            .filter((fileName) => fileName.includes("backup"))
+            // The .db check excludes intermediate SQLite files (e.g. *.db-journal) created while a backup is in progress.
+            .filter((fileName) => fileName.includes("backup") && fileName.endsWith(".db"))
             .map((fileName) => {
                 const filePath = path.resolve(dataDir.BACKUP_DIR, fileName);
                 const stat = fs.statSync(filePath);
 
-                return { fileName, filePath, mtime: stat.mtime };
+                return { fileName, filePath, mtime: stat.mtime, fileSize: stat.size };
             });
+    }
+
+    override getBackupFolderPath(): string {
+        return path.resolve(dataDir.BACKUP_DIR);
     }
 
     override scheduleBackups(): void {

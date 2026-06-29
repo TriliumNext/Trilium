@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import shortcuts, { type Handler, isIMEComposing, keyMatches, matchesShortcut, removeIndividualBinding } from "./shortcuts.js";
+import shortcuts, { canonicalizeShortcut, type Handler, isIMEComposing, keyMatches, matchesShortcut, removeIndividualBinding } from "./shortcuts.js";
 import utils from "./utils.js";
 
 // Mock utils module
@@ -31,6 +31,38 @@ describe("shortcuts", () => {
     afterEach(() => {
         // Clean up any active bindings after each test
         shortcuts.removeGlobalShortcut("test-namespace");
+    });
+
+    describe("canonicalizeShortcut", () => {
+        it("treats modifiers as an unordered set", () => {
+            expect(canonicalizeShortcut("Ctrl+Shift+J")).toBe(canonicalizeShortcut("Shift+Ctrl+J"));
+            expect(canonicalizeShortcut("Ctrl+Alt+Shift+Meta+K")).toBe(canonicalizeShortcut("Meta+Shift+Alt+Ctrl+K"));
+        });
+
+        it("collapses modifier aliases", () => {
+            expect(canonicalizeShortcut("Control+A")).toBe(canonicalizeShortcut("Ctrl+A"));
+            expect(canonicalizeShortcut("Cmd+A")).toBe(canonicalizeShortcut("Meta+A"));
+            expect(canonicalizeShortcut("Command+A")).toBe(canonicalizeShortcut("Meta+A"));
+        });
+
+        it("collapses key aliases via keyMap", () => {
+            expect(canonicalizeShortcut("Ctrl+Del")).toBe(canonicalizeShortcut("Ctrl+Delete"));
+            expect(canonicalizeShortcut("Ctrl+Enter")).toBe(canonicalizeShortcut("Ctrl+Return"));
+            expect(canonicalizeShortcut("Ctrl+Esc")).toBe(canonicalizeShortcut("Ctrl+Escape"));
+        });
+
+        it("is case insensitive and ignores surrounding whitespace", () => {
+            expect(canonicalizeShortcut("CTRL + j")).toBe(canonicalizeShortcut("ctrl+J"));
+        });
+
+        it("distinguishes genuinely different combinations", () => {
+            expect(canonicalizeShortcut("Ctrl+J")).not.toBe(canonicalizeShortcut("Ctrl+Shift+J"));
+            expect(canonicalizeShortcut("Ctrl+J")).not.toBe(canonicalizeShortcut("Alt+J"));
+        });
+
+        it("returns an empty string for an empty shortcut", () => {
+            expect(canonicalizeShortcut("")).toBe("");
+        });
     });
 
     describe("normalizeShortcut", () => {

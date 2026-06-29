@@ -172,5 +172,40 @@ describe("createPartialContentHandler tests", () => {
         expect(false);
       }
     });
+    it("sets the ETag header when the content provides one", async () => {
+      req.headers = { range: "bytes=0-5" };
+      const result = ({ pipe() { return result; } } as any) as Stream;
+      const content: Content = {
+        fileName: "file.txt",
+        totalSize: 10,
+        mimeType: "text/plain",
+        etag: "abc123",
+        getStream(range?: Range) {
+          return result;
+        }
+      };
+      const contentProvider = vi.fn().mockResolvedValue(content) as ContentProvider<{}>;
+      const handler = createPartialContentHandler(contentProvider, logger);
+      const setETagHeaderSpy = vi.spyOn(utils, "setETagHeader");
+      await handler(req, res);
+      expect(setETagHeaderSpy).toHaveBeenCalledExactlyOnceWith("abc123", res);
+    });
+    it("does not set the ETag header when the content omits one", async () => {
+      req.headers = { range: "bytes=0-5" };
+      const result = ({ pipe() { return result; } } as any) as Stream;
+      const content: Content = {
+        fileName: "file.txt",
+        totalSize: 10,
+        mimeType: "text/plain",
+        getStream(range?: Range) {
+          return result;
+        }
+      };
+      const contentProvider = vi.fn().mockResolvedValue(content) as ContentProvider<{}>;
+      const handler = createPartialContentHandler(contentProvider, logger);
+      const setETagHeaderSpy = vi.spyOn(utils, "setETagHeader");
+      await handler(req, res);
+      expect(setETagHeaderSpy).not.toHaveBeenCalled();
+    });
   });
 });

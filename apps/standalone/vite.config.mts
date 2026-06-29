@@ -218,10 +218,13 @@ export default defineConfig(() => ({
     cacheDir: '../../../node_modules/.vite/apps/standalone',
     base: "",
     plugins,
-    esbuild: {
-        jsx: 'automatic',
-        jsxImportSource: 'preact',
-        jsxDev: isDev
+    // Use oxc for JSX transformation (Vite 8+ replaced the deprecated `esbuild` option with `oxc`)
+    oxc: {
+        jsx: {
+            runtime: 'automatic',
+            importSource: 'preact',
+            development: isDev
+        }
     },
     css: {
         transformer: 'lightningcss',
@@ -341,7 +344,20 @@ export default defineConfig(() => ({
             // Vite `root` above is `src`, so coverage include globs resolve relative to src/.
             // `../../../` walks src -> standalone -> apps -> repo root to reach the core package.
             include: ["**/*.{ts,tsx}", "../../../packages/trilium-core/src/**/*.{ts,tsx}"],
-            exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"],
+            exclude: [
+                "**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}",
+                "**/*.d.ts",
+                // Build/E2E config, not unit-testable.
+                "**/playwright.config.ts",
+                // Test harness, not product code.
+                "**/test_setup.ts",
+                // Thin re-export entry (forwards the client desktop entry).
+                "**/desktop.ts",
+                // The web-worker entry boots @triliumnext/core (and a second SQLite
+                // WASM init) on load, which conflicts with the unit-test harness's own
+                // core initialization; it is exercised by the Playwright e2e suite instead.
+                "**/local-server-worker.ts"
+            ],
             reporter: ["text", "html", "lcov"]
         },
         server: {

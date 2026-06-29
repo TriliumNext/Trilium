@@ -1,11 +1,10 @@
 import type { WebSocketMessage } from "@triliumnext/commons";
-import type { ClientMessageHandler, MessagingProvider } from "@triliumnext/core";
+import { getLog, shouldLogMessage, type ClientMessageHandler, type MessagingProvider } from "@triliumnext/core";
 import type { IncomingMessage, Server as HttpServer } from "http";
 import type express from "express";
 import { WebSocket, WebSocketServer } from "ws";
 
 import config from "./config.js";
-import { getLog } from "@triliumnext/core";
 import { randomString } from "./utils.js";
 
 type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
@@ -48,6 +47,16 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
 
             console.log(`websocket client connected`);
 
+            ws.on("error", (error) => {
+                // A protocol error on a single connection (e.g. WS_ERR_INVALID_CLOSE_CODE from a
+                // malformed close frame sent by a browser going to sleep) emits an "error" event on
+                // this socket. Without a listener, Node's EventEmitter rethrows it as an uncaught
+                // exception and crashes the whole process. Log and drop the connection instead.
+                // https://github.com/TriliumNext/Trilium/issues/9598
+                console.error("WebSocket connection error:", error);
+                this.clientMap.delete(id);
+            });
+
             ws.on("message", (messageJson) => {
                 void (async () => {
                     try {
@@ -86,7 +95,7 @@ export default class WebSocketMessagingProvider implements MessagingProvider {
         const jsonStr = JSON.stringify(message);
 
         if (this.webSocketServer) {
-            if (message.type !== "sync-failed" && message.type !== "api-log-messages") {
+            if (shouldLogMessage(message)) {
                 getLog().info(`Sending message to all clients: ${jsonStr}`);
             }
 

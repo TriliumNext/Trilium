@@ -2,10 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import debounce from "./debounce.js";
 
-// The source types the returned function with no declared params (it forwards `arguments`),
-// so widen it to a variadic callable for the tests.
-type Debounced = ((...args: any[]) => any) & { clear(): void; flush(): void };
-
 describe("debounce", () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -17,7 +13,7 @@ describe("debounce", () => {
 
     it("defers a trailing call until the wait elapses after the last invocation", () => {
         const fn = vi.fn();
-        const debounced = debounce(fn, 100) as Debounced;
+        const debounced = debounce(fn, 100);
 
         debounced("a");
         // Re-invoking before the wait elapses keeps deferring (reschedule branch in `later`).
@@ -32,12 +28,24 @@ describe("debounce", () => {
         expect(fn).toHaveBeenCalledWith("b");
     });
 
+    it("forwards multiple positional arguments to the wrapped function", () => {
+        // Mirrors the snippets.ts call site, which invokes the debounced handler
+        // with two arguments — the case the old 0-param typing couldn't express.
+        const fn = vi.fn((a: string, b: number) => `${a}:${b}`);
+        const debounced = debounce(fn, 100);
+
+        debounced("x", 7);
+        vi.advanceTimersByTime(100);
+        expect(fn).toHaveBeenCalledTimes(1);
+        expect(fn).toHaveBeenCalledWith("x", 7);
+    });
+
     it("preserves `this` context and returns the previous trailing result", () => {
         const ctx = { value: 42 };
         const fn = vi.fn(function (this: typeof ctx, n: number) {
             return this.value + n;
         });
-        const debounced = debounce(fn, 100) as Debounced;
+        const debounced = debounce(fn, 100);
 
         // First trailing invocation: nothing computed yet, returns undefined.
         expect(debounced.call(ctx, 1)).toBeUndefined();
@@ -53,7 +61,7 @@ describe("debounce", () => {
 
     it("invokes on the leading edge when `immediate` is true and does not re-fire on trailing", () => {
         const fn = vi.fn((x: string) => x.toUpperCase());
-        const debounced = debounce(fn, 100, true) as Debounced;
+        const debounced = debounce(fn, 100, true);
 
         // Leading call fires synchronously (callNow branch) and returns the result.
         expect(debounced("hi")).toBe("HI");
@@ -75,7 +83,7 @@ describe("debounce", () => {
     it("defaults the wait to 100ms when called with a nullish wait", () => {
         const fn = vi.fn();
         // Force the `null == waitMs` branch (the type says number, but runtime guards null/undefined).
-        const debounced = debounce(fn, null as unknown as number) as Debounced;
+        const debounced = debounce(fn, null as unknown as number);
 
         debounced();
         vi.advanceTimersByTime(99);
@@ -86,7 +94,7 @@ describe("debounce", () => {
 
     it("clear() cancels a pending trailing call and is a no-op when nothing is pending", () => {
         const fn = vi.fn();
-        const debounced = debounce(fn, 100) as Debounced;
+        const debounced = debounce(fn, 100);
 
         debounced();
         debounced.clear();
@@ -100,7 +108,7 @@ describe("debounce", () => {
 
     it("flush() invokes immediately with the latest args and is a no-op when nothing is pending", () => {
         const fn = vi.fn((x: number) => x * 2);
-        const debounced = debounce(fn, 100) as Debounced;
+        const debounced = debounce(fn, 100);
 
         debounced(5);
         expect(debounced.flush()).toBeUndefined(); // flush returns nothing
@@ -118,7 +126,7 @@ describe("debounce", () => {
 
     it("flush() does not re-fire after a leading-edge call when `immediate` is true", () => {
         const fn = vi.fn((x: string) => x.toUpperCase());
-        const debounced = debounce(fn, 100, true) as Debounced;
+        const debounced = debounce(fn, 100, true);
 
         // Leading-edge call fires once and nulls `args` while the trailing timer stays live.
         expect(debounced("hi")).toBe("HI");
@@ -136,7 +144,7 @@ describe("debounce", () => {
 
     it("reschedules in `later` when the system clock jumps backwards (last < 0)", () => {
         const fn = vi.fn();
-        const debounced = debounce(fn, 100) as Debounced;
+        const debounced = debounce(fn, 100);
 
         const nowSpy = vi.spyOn(Date, "now");
         // timestamp recorded at invocation time = 1000.

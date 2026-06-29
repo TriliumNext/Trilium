@@ -64,17 +64,18 @@ function fileContentProvider(req: Request<{ noteId: string }>) {
     // Read the file name from route params.
     const note = becca.getNoteOrThrow(req.params.noteId);
 
-    return streamContent(note.getContent(), note.getFileName(), note.mime);
+    // blobId is a content hash, so it's a stable ETag that changes only when the content does.
+    return streamContent(note.getContent(), note.getFileName(), note.mime, note.blobId);
 }
 
 function attachmentContentProvider(req: Request<{ attachmentId: string }>) {
     // Read the file name from route params.
     const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
 
-    return streamContent(attachment.getContent(), attachment.getFileName(), attachment.mime);
+    return streamContent(attachment.getContent(), attachment.getFileName(), attachment.mime, attachment.blobId);
 }
 
-async function streamContent(content: string | Uint8Array, fileName: string, mimeType: string) {
+async function streamContent(content: string | Uint8Array, fileName: string, mimeType: string, etag?: string) {
     if (typeof content === "string") {
         content = Buffer.from(content, "utf8");
     }
@@ -96,6 +97,7 @@ async function streamContent(content: string | Uint8Array, fileName: string, mim
         fileName,
         totalSize,
         mimeType,
+        etag,
         getStream
     };
 }

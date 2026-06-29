@@ -1,3 +1,5 @@
+import "./CollectionPropertiesTab.css";
+
 import { ComponentChildren } from "preact";
 import { useContext, useMemo } from "preact/hooks";
 
@@ -23,7 +25,8 @@ export const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
     table: t("book_properties.table"),
     geoMap: t("book_properties.geo-map"),
     board: t("book_properties.board"),
-    presentation: t("book_properties.presentation")
+    presentation: t("book_properties.presentation"),
+    dashboard: t("book_properties.dashboard")
 };
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");

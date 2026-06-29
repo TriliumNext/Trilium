@@ -3,7 +3,6 @@
     "back-in-note-history": "Navigate to previous note in history",
     "forward-in-note-history": "Navigate to next note in history",
     "open-jump-to-note-dialog": "Open \"Jump to note\" dialog",
-    "open-command-palette": "Open command palette",
     "scroll-to-active-note": "Scroll note tree to active note",
     "quick-search": "Activate quick search bar",
     "search-in-subtree": "Search for notes in the active note's subtree",
@@ -16,11 +15,6 @@
     "create-note-after": "Create note after active note",
     "create-note-into": "Create note as child of active note",
     "create-note-into-inbox": "Create a note in the inbox (if defined) or day note",
-    "delete-note": "Delete note",
-    "move-note-up": "Move note up",
-    "move-note-down": "Move note down",
-    "move-note-up-in-hierarchy": "Move note up in hierarchy",
-    "move-note-down-in-hierarchy": "Move note down in hierarchy",
     "edit-note-title": "Jump from tree to the note detail and edit title",
     "edit-branch-prefix": "Show \"Edit branch prefix\" dialog",
     "clone-notes-to": "Clone selected notes",
@@ -30,27 +24,12 @@
     "paste-notes-from-clipboard": "Paste notes from the clipboard into active note",
     "cut-notes-to-clipboard": "Cut selected notes to the clipboard",
     "select-all-notes-in-parent": "Select all notes from the current note level",
-    "add-note-above-to-the-selection": "Add note above to the selection",
-    "add-note-below-to-selection": "Add note below to the selection",
-    "duplicate-subtree": "Duplicate subtree",
     "tabs-and-windows": "Tabs & Windows",
-    "open-new-tab": "Open new tab",
-    "close-active-tab": "Close active tab",
     "reopen-last-tab": "Reopen the last closed tab",
     "activate-next-tab": "Activate tab on the right",
     "activate-previous-tab": "Activate tab on the left",
     "open-new-window": "Open new empty window",
     "toggle-tray": "Show/hide the application from the system tray",
-    "first-tab": "Activate the first tab in the list",
-    "second-tab": "Activate the second tab in the list",
-    "third-tab": "Activate the third tab in the list",
-    "fourth-tab": "Activate the fourth tab in the list",
-    "fifth-tab": "Activate the fifth tab in the list",
-    "sixth-tab": "Activate the sixth tab in the list",
-    "seventh-tab": "Activate the seventh tab in the list",
-    "eight-tab": "Activate the eighth tab in the list",
-    "ninth-tab": "Activate the ninth tab in the list",
-    "last-tab": "Activate the last tab in the list",
     "dialogs": "Dialogs",
     "show-note-source": "Show \"Note Source\" dialog",
     "show-options": "Open \"Options\" page",
@@ -67,44 +46,27 @@
     "paste-markdown-into-text": "Pastes Markdown from clipboard into text note",
     "cut-into-note": "Cuts the selection from the current note and creates subnote with the selected text",
     "add-include-note-to-text": "Opens the dialog to include a note",
-    "edit-readonly-note": "Edit a read-only note",
     "attributes-labels-and-relations": "Attributes (labels & relations)",
     "add-new-label": "Create new label",
     "create-new-relation": "Create new relation",
     "ribbon-tabs": "Ribbon tabs",
-    "toggle-basic-properties": "Toggle Basic Properties",
-    "toggle-file-properties": "Toggle File Properties",
-    "toggle-image-properties": "Toggle Image Properties",
-    "toggle-owned-attributes": "Toggle Owned Attributes",
-    "toggle-inherited-attributes": "Toggle Inherited Attributes",
-    "toggle-promoted-attributes": "Toggle Promoted Attributes",
     "toggle-link-map": "Toggle Link Map",
-    "toggle-note-info": "Toggle Note Info",
-    "toggle-note-paths": "Toggle Note Paths",
-    "toggle-similar-notes": "Toggle Similar Notes",
     "other": "Other",
     "toggle-right-pane": "Toggle the display of the right pane, which includes Table of Contents and Highlights",
-    "print-active-note": "Print active note",
+    "peek-right-pane": "Peek the right pane as a temporary panel that floats over the content and closes when it loses focus",
     "open-note-externally": "Open note as a file with default application",
     "render-active-note": "Render (re-render) active note",
     "run-active-note": "Run active JavaScript (frontend/backend) code note",
     "toggle-note-hoisting": "Toggle note hoisting of active note",
     "unhoist": "Unhoist from anywhere",
-    "reload-frontend-app": "Reload frontend",
-    "open-dev-tools": "Open developer tools",
     "find-in-text": "Toggle search panel",
     "toggle-left-note-tree-panel": "Toggle left (note tree) panel",
-    "toggle-full-screen": "Toggle full screen",
-    "zoom-out": "Zoom Out",
-    "zoom-in": "Zoom In",
     "note-navigation": "Note navigation",
-    "reset-zoom-level": "Reset zoom level",
     "copy-without-formatting": "Copy selected text without formatting",
     "force-save-revision": "Force creating / saving new note revision of the active note",
     "save-named-revision": "Save a named revision of the active note",
     "toggle-book-properties": "Toggle Collection Properties",
     "toggle-classic-editor-toolbar": "Toggle the Formatting tab for the editor with fixed toolbar",
-    "export-as-pdf": "Export the current note as a PDF",
     "toggle-zen-mode": "Enables/disables the zen mode (minimal UI for more focused editing)"
   },
   "keyboard_action_names": {
@@ -187,6 +149,7 @@
     "toggle-ribbon-tab-note-paths": "Toggle Ribbon Tab Note Paths",
     "toggle-ribbon-tab-similar-notes": "Toggle Ribbon Tab Similar Notes",
     "toggle-right-pane": "Toggle Right Pane",
+    "peek-right-pane": "Peek Right Pane",
     "print-active-note": "Print Active Note",
     "export-active-note-as-pdf": "Export Active Note as PDF",
     "open-note-externally": "Open Note Externally",
@@ -214,7 +177,9 @@
     "password": "Password",
     "remember-me": "Remember me",
     "button": "Login",
-    "sign_in_with_sso": "Sign in with {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Sign in with {{ ssoIssuerName }}",
+    "sso-wrong-account": "That account isn't the one linked to this Trilium instance. Sign in with the linked account.",
+    "sso-not-enrolled": "Single sign-on isn't set up yet. Sign in with your password first, then link your account from the settings."
   },
   "password": {
     "incorrect": "The password you entered is incorrect."
@@ -324,8 +289,9 @@
     "code-notes-title": "Code Notes",
     "images-title": "Media",
     "spellcheck-title": "Spellcheck",
+    "desktop-title": "Desktop",
     "security-title": "Security",
-    "password-title": "Password",
+    "password-title": "Password & Auth",
     "multi-factor-authentication-title": "MFA",
     "etapi-title": "ETAPI",
     "backup-title": "Backup",
@@ -351,6 +317,31 @@
   },
   "content_renderer": {
     "note-cannot-be-displayed": "This note type cannot be displayed."
+  },
+  "onenote_import": {
+    "root-title": "OneNote import"
+  },
+  "notion_import": {
+    "root-title": "Notion import",
+    "markdown-export-unsupported": "This looks like a Notion \"Markdown & CSV\" export, which Trilium cannot import. Please re-export your Notion workspace using the \"HTML\" export format and import that instead.",
+    "subpage-folders-disabled": "This Notion export was created without the \"Create folders for subpages\" option, so the page hierarchy cannot be reconstructed. Please re-export from Notion with \"Create folders for subpages\" enabled and import that instead."
+  },
+  "keep_import": {
+    "root-title": "Google Keep import"
+  },
+  "anytype_import": {
+    "root-title": "Anytype import",
+    "protobuf-export-unsupported": "This looks like an Anytype \"Protobuf\" export, which Trilium cannot import. Please re-export your Anytype space using the \"Any-Block\" format with \"JSON\" selected and import that instead.",
+    "markdown-export-unsupported": "This looks like an Anytype \"Markdown\" export, which Trilium cannot import. Please re-export your Anytype space using the \"Any-Block\" format with \"JSON\" selected and import that instead."
+  },
+  "obsidian_import": {
+    "root-title": "Obsidian import"
+  },
+  "export": {
+    "zip_filter": "ZIP archive (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "The file selection has expired or is invalid. Please choose the file again."
   },
   "pdf": {
     "export_filter": "PDF Document (*.pdf)",
@@ -389,10 +380,13 @@
     "expand": "Expand",
     "toggle-navigation": "Toggle Navigation",
     "toggle-toc": "Toggle Table of Contents",
-    "logo-alt": "Logo"
+    "logo-alt": "Logo",
+    "login": "Login"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",
+    "markdown-snippet": "Markdown Snippet",
+    "code-snippet": "Code Snippet",
     "description": "Description",
     "list-view": "List View",
     "grid-view": "Grid View",
@@ -417,7 +411,8 @@
     "presentation_slide": "Presentation slide",
     "presentation_slide_first": "First slide",
     "presentation_slide_second": "Second slide",
-    "background": "Background"
+    "background": "Background",
+    "dashboard": "Dashboard"
   },
   "sql_init": {
     "db_not_initialized_desktop": "DB not initialized, please follow on-screen instructions.",
@@ -453,6 +448,8 @@
     "backend-scripting": "Backend script execution",
     "backend-scripting-warning": "Backend scripts have full access to the server, including the file system and network.",
     "sql-console": "SQL console",
-    "sql-console-warning": "The SQL console allows executing arbitrary SQL queries against the database."
+    "sql-console-warning": "The SQL console allows executing arbitrary SQL queries against the database.",
+    "lan-access": "network access",
+    "lan-access-warning": "Other devices on your local network will be able to connect to this Trilium instance."
   }
 }

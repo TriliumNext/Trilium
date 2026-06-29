@@ -20,7 +20,7 @@ When the database is in read-only mode, the Trilium application can be used as n
 
 ## Setting a database as read-only
 
-First, make sure the database is initialized (e.g. the first set up is complete). Then modify the [config.ini](Configuration%20\(config.ini%20or%20e.md) by looking for the `[General]` section and adding a new `readOnly` field:
+First, make sure the database is initialized (e.g. the first set up is complete). Then modify the [config.ini](Configuration%20\(config.ini%20or%20environment%20variables\).md) by looking for the `[General]` section and adding a new `readOnly` field:
 
 ```
 [General]

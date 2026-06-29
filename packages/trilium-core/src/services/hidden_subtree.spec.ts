@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
@@ -21,7 +21,7 @@ import noteService from "./notes.js";
  * deprecated entries live directly under "_options" in the definition.
  */
 function materialiseDeprecatedNote(noteId: string) {
-    withContext(() =>
+    getContext().init(() =>
         noteService.createNewNote({
             noteId,
             title: `deprecated-${noteId}`,
@@ -33,16 +33,8 @@ function materialiseDeprecatedNote(noteId: string) {
     );
 }
 
-/**
- * Entity mutations performed by checkHiddenSubtree (createNewNote, save,
- * markAsDeleted) require an initialised CLS context.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 function checkHiddenSubtree(force = false) {
-    return withContext(() => hiddenSubtreeService.checkHiddenSubtree(force));
+    return getContext().init(() => hiddenSubtreeService.checkHiddenSubtree(force));
 }
 
 describe("hidden_subtree (real DB)", () => {
@@ -126,7 +118,7 @@ describe("hidden_subtree (real DB)", () => {
             expect(hidden.getOwnedLabelValue("docName")).toBe("hidden");
 
             // Inject a stray owned label, then re-run the integrity check.
-            withContext(() => {
+            getContext().init(() => {
                 hidden.addLabel("strayLabelXyz", "should-be-removed");
             });
             expect(hidden.hasOwnedLabel("strayLabelXyz")).toBe(true);
@@ -139,12 +131,30 @@ describe("hidden_subtree (real DB)", () => {
             expect(hidden.getOwnedLabelValue("docName")).toBe("hidden");
         });
 
+        it("does not re-save a value-less enforced attribute on every run", () => {
+            // `_template_text_snippet` declares `#textSnippet`/`#template` with no value, so they
+            // are stored as "". The enforcement compare used the raw (undefined) definition value,
+            // so `"" !== undefined` re-saved them on every run — and save() always emits a sync
+            // entity change, which churned `entitiesReloaded` and tore down every open text editor.
+            // The compare now normalizes undefined → "" to match what is actually written.
+            const snippet = becca.notes["_template_text_snippet"];
+            expect(snippet).toBeDefined();
+            const textSnippetAttr = snippet.getOwnedAttributes("label", "textSnippet")[0];
+            expect(textSnippetAttr).toBeDefined();
+            expect(textSnippetAttr.value).toBe("");
+
+            const saveSpy = vi.spyOn(textSnippetAttr, "save");
+            checkHiddenSubtree();
+            expect(saveSpy).not.toHaveBeenCalled();
+            saveSpy.mockRestore();
+        });
+
         it("repairs a modified value on an enforced attribute", () => {
             const hidden = becca.notes["_hidden"];
             const docNameAttr = hidden.getOwnedAttributes("label", "docName")[0];
             expect(docNameAttr).toBeDefined();
 
-            withContext(() => {
+            getContext().init(() => {
                 docNameAttr.value = "tampered";
                 docNameAttr.save();
             });
@@ -204,7 +214,7 @@ describe("hidden_subtree (real DB)", () => {
             // Declared as a book.
             expect(options.type).toBe("book");
 
-            withContext(() => {
+            getContext().init(() => {
                 options.type = "text";
                 options.save();
             });

@@ -82,17 +82,9 @@
     "export_note_title": "Izvezi belešku",
     "close": "Zatvori",
     "export_type_subtree": "Ova beleška i svi njeni potomci",
-    "format_html": "HTML - preporučuje se jer čuva formatiranje",
-    "format_html_zip": "HTML u ZIP arhivi - ovo se preporučuje jer se na taj način čuva celokupno formatiranje.",
-    "format_markdown": "Markdown - ovo čuva većinu formatiranja.",
-    "format_opml": "OPML - format za razmenu okvira samo za tekst. Formatiranje, slike i datoteke nisu uključeni.",
-    "opml_version_1": "OPML v1.0 - samo običan tekst",
-    "opml_version_2": "OPML v2.0 - dozvoljava i HTML",
     "export_type_single": "Samo ovu belešku bez njenih potomaka",
     "export": "Izvoz",
     "choose_export_type": "Molimo vas da prvo izaberete tip izvoza",
-    "export_status": "Status izvoza",
-    "export_in_progress": "Izvoz u toku: {{progressCount}}",
     "export_finished_successfully": "Izvoz je uspešno završen.",
     "format_pdf": "PDF - za namene štampanja ili deljenja."
   },
@@ -152,7 +144,6 @@
   "import": {
     "importIntoNote": "Uvezi u belešku",
     "chooseImportFile": "Izaberi datoteku za uvoz",
-    "importDescription": "Sadržaj izabranih datoteka će biti uvezen kao podbeleške u",
     "options": "Opcije",
     "safeImportTooltip": "Trilium <code>.zip</code> izvozne datoteke mogu da sadrže izvršne skripte koje mogu imati štetno ponašanje. Bezbedan uvoz će deaktivirati automatsko izvršavanje svih uvezenih skripti. Isključite \"Bezbedan uvoz\" samo ako uvezena arhiva treba da sadrži izvršne skripte i ako potpuno verujete sadržaju uvezene datoteke.",
     "safeImport": "Bezbedan uvoz",
@@ -171,7 +162,6 @@
       "placeholder": "Unesite HTML oznake, po jednu u svaki red",
       "reset_button": "Vrati na podrazumevanu listu"
     },
-    "import-status": "Status uvoza",
     "in-progress": "Uvoz u toku: {{progress}}",
     "successful": "Uvoz je uspešno završen."
   },

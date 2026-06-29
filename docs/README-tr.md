@@ -52,8 +52,8 @@ edin(https://docs.triliumnotes.org/)**
 Dokümantasyonumuz birden fazla formatta mevcuttur:
 - **Çevrimiçi Dökümantasyon**: Tüm dökümantasyonu görebilmek için
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)'a uğrayın
-- **Uygulama içi Yardım**: Aynı dökümantasyona ulaşmak için Trillium
-  içerisindeyken `F1` tuşuna basın
+- Uygulama İçi Yardım: Trilium içinde F1 tuşuna basarak aynı belgelere doğrudan
+  uygulama içerisinden erişebilirsiniz.
 - **Github**: Bu repodaki [Kullanıcı Rehberi] sayfasına yönelin
 
 ### Hızlı linkler
@@ -67,9 +67,9 @@ Dokümantasyonumuz birden fazla formatta mevcuttur:
 
 ## 🎁 Özellikler
 
-* Notlar keyfi derinlikte bir ağaç hiyerarşisinde yapılandırılabilir. Münferit
-  bir not, ağaç yapısı içinde birden fazla noktaya konumlandırılabilir (bkz.
-  [cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
+* Notlar hiyerarşik bir kök düzeninde keyfi olarak düzenlenebilir. Tek bir not
+  bu hiyerarşik kök yapısında birden fazla yere yerleştirilebilir (bkz.
+  [klonlama](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
 * Tablolar, resimler ve [matematiksel
   formüller](https://docs.triliumnotes.org/user-guide/note-types/text) gibi
   ögeleri barındıran, markdown [otomatik

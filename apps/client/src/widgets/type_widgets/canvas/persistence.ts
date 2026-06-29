@@ -8,6 +8,7 @@ import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import server from "../../../services/server";
 import { SavedData, useEditorSpacedUpdate } from "../../react/hooks";
+import { buildNewImageAttachments, CANVAS_EXPORT_TITLE, IMAGE_ROLE, loadImageAttachments } from "./image_attachments";
 
 interface AttachmentMetadata {
     title: string;
@@ -40,6 +41,16 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
     const libraryCache = useRef<LibraryItem[]>([]);
     const attachmentMetadata = useRef<AttachmentMetadata[]>([]);
 
+    // fileIds of images this session owns as attachments (loaded at start + uploaded this session).
+    // Drives both skip-reupload and orphan cleanup: an owned fileId no longer on the canvas marks
+    // its attachment for deletion (mirrors the library-item cleanup above).
+    const persistedImageFileIds = useRef<Set<string>>(new Set());
+
+    // The note being loaded by the latest onContentChange. Async loads below capture the id they
+    // started for and bail if the user switched notes before they resolved, so a stale load can't
+    // inject the previous note's images or overwrite the new note's owned-fileId set.
+    const activeNoteIdRef = useRef<string | null>(null);
+
     const appStateToCompare = useRef<Partial<ImportantAppState>>({});
 
     const spacedUpdate = useEditorSpacedUpdate({
@@ -52,6 +63,11 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
 
             libraryCache.current = [];
             attachmentMetadata.current = [];
+            persistedImageFileIds.current = new Set();
+
+            // The note this load run belongs to; async results below are ignored if it's superseded.
+            const loadedNoteId = note.noteId;
+            activeNoteIdRef.current = loadedNoteId;
 
             // load saved content into excalidraw canvas
             let content: CanvasContent = {
@@ -69,11 +85,23 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
 
             loadData(api, content, theme);
 
+            // Images live as attachments (titled with their fileId); fetch them, rebuild their
+            // data URLs and inject them so elements referencing those fileIds render. Legacy notes
+            // that still carry inline images in `content.files` were already loaded by loadData().
+            loadImageAttachments(note).then(({ files, metadata }) => {
+                if (activeNoteIdRef.current !== loadedNoteId) return; // note switched mid-load
+                if (files.length > 0) {
+                    api.addFiles(files);
+                }
+                persistedImageFileIds.current = new Set(metadata.map((m) => m.fileId));
+            });
+
             // Initialize tracking state after loading to prevent redundant updates from initial onChange events
             currentSceneVersion.current = getSceneVersion(api.getSceneElements());
 
             // load the library state
             loadLibrary(note).then(({ libraryItems, metadata }) => {
+                if (activeNoteIdRef.current !== loadedNoteId) return; // note switched mid-load
                 // Update the library and save to independent variables
                 api.updateLibrary({ libraryItems, merge: false });
 
@@ -85,8 +113,17 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
         async getData() {
             const api = apiRef.current;
             if (!api) return;
-            const { content, svg } = await getData(api, appStateToCompare);
-            const attachments: SavedData["attachments"] = [{ role: "image", title: "canvas-export.svg", mime: "image/svg+xml", content: svg, position: 0 }];
+            const { content, svg, activeFiles } = await getData(api, appStateToCompare);
+            const attachments: SavedData["attachments"] = [{ role: IMAGE_ROLE, title: CANVAS_EXPORT_TITLE, mime: "image/svg+xml", content: svg, position: 0 }];
+
+            // Persist newly inserted images as attachments. `content` carries only the fileId
+            // references (see getData), so the bytes live here. Removed images are not deleted from
+            // the client: the server's saveLinks/checkImageAttachments scans the saved scene JSON and
+            // schedules now-unreferenced image attachments for erasure (same as the spreadsheet).
+            for (const attachment of buildNewImageAttachments(activeFiles, persistedImageFileIds.current)) {
+                attachments.push(attachment);
+                persistedImageFileIds.current.add(attachment.title);
+            }
 
             // libraryChanged is unset in dataSaved()
             if (libraryChanged.current) {
@@ -231,7 +268,10 @@ async function getData(api: ExcalidrawImperativeAPI, appStateToCompare: RefObjec
         type: "excalidraw",
         version: 2,
         elements,
-        files: activeFiles,
+        // Images are persisted as attachments (keyed by fileId), not inline, so the content stays
+        // small. Elements keep their `fileId`; the bytes are reattached on load. Kept as an empty
+        // object for shape compatibility with loadData() and legacy content.
+        files: {} as Record<string, BinaryFileData>,
         appState: {
             scrollX: appState.scrollX,
             scrollY: appState.scrollY,
@@ -242,7 +282,8 @@ async function getData(api: ExcalidrawImperativeAPI, appStateToCompare: RefObjec
 
     return {
         content,
-        svg: svgString
+        svg: svgString,
+        activeFiles
     };
 }
 
@@ -254,14 +295,11 @@ function loadData(api: ExcalidrawImperativeAPI, content: CanvasContent, theme: A
     // files are expected in an array when loading. they are stored as a key-index object
     // see example for loading here:
     // https://github.com/excalidraw/excalidraw/blob/c5a7723185f6ca05e0ceb0b0d45c4e3fbcb81b2a/src/packages/excalidraw/example/App.js#L68
+    // Only legacy notes still carry inline images here; new saves persist images as attachments
+    // (loaded separately via loadImageAttachments) and leave `content.files` empty.
     const fileArray: BinaryFileData[] = [];
     for (const fileId in files) {
-        const file = files[fileId];
-        // TODO: dataURL is replaceable with a trilium image url
-        //       maybe we can save normal images (pasted) with base64 data url, and trilium images
-        //       with their respective url! nice
-        // file.dataURL = "http://localhost:8080/api/images/ltjOiU8nwoZx/start.png";
-        fileArray.push(file);
+        fileArray.push(files[fileId]);
     }
 
     // Update the scene

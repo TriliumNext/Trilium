@@ -4,9 +4,10 @@ import { t } from "i18next";
 import { ComponentChildren } from "preact";
 import { useRef, useState } from "preact/hooks";
 
-import FNote from "../../entities/fnote";
 import appContext from "../../components/app_context";
+import FNote from "../../entities/fnote";
 import dialogService from "../../services/dialog";
+import toast from "../../services/toast";
 import { ViewTypeOptions } from "../collections/interface";
 import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
@@ -24,7 +25,8 @@ export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     table: "bx bx-table",
     geoMap: "bx bx-map-alt",
     board: "bx bx-columns",
-    presentation: "bx bx-rectangle"
+    presentation: "bx bx-rectangle",
+    dashboard: "bx bxs-dashboard"
 };
 
 const MAX_OPEN_TABS = 50;
@@ -69,7 +71,7 @@ function OpenAllButton({ note, isOpening, setIsOpening }: {
         if (count === 0) return;
 
         if (count > MAX_OPEN_TABS) {
-            await dialogService.info(t("book_properties.open_all_too_many", { count, max: MAX_OPEN_TABS }));
+            toast.showError(t("book_properties.open_all_too_many", { count, max: MAX_OPEN_TABS }));
             return;
         }
 
@@ -124,6 +126,7 @@ function ViewTypeSwitcher({ viewType, setViewType }: { viewType: ViewTypeOptions
                     selected={viewType === key}
                     disabled={viewType === key}
                     icon={ICON_MAPPINGS[key as ViewTypeOptions]}
+                    badges={key === "dashboard" ? [{ text: t("note_types.beta-feature") }] : undefined}
                 >{label}</FormListItem>
             ))}
         </Dropdown>

@@ -1,3 +1,5 @@
+import "./ScriptTab.css";
+
 import { t } from "../../services/i18n";
 import Button from "../react/Button";
 import { useNoteLabel } from "../react/hooks";

@@ -17,28 +17,28 @@ import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
 import auth from "../services/auth.js";
 import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
-
 import shareRoutes from "../share/routes.js";
 import clipperRoute from "./api/clipper.js";
 import databaseRoute from "./api/database.js";
 import etapiTokensApiRoutes from "./api/etapi_tokens.js";
 import filesRoute from "./api/files.js";
 import fontsRoute from "./api/fonts.js";
+// API routes
+import linkEmbedRoute from "./api/link_embed.js";
 import llmChatRoute from "./api/llm_chat.js";
 import llmSpecialNotesRoute from "./api/llm_special_notes.js";
 import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
 import ocrRoute from "./api/ocr.js";
+import onenoteImportRoute from "./api/onenote_import.js";
 import recoveryCodes from './api/recovery_codes.js';
 import senderRoute from "./api/sender.js";
 import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
-// API routes
-import linkEmbedRoute from "./api/link_embed.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
 // page routes
 import setupRoute from "./setup.js";
 
@@ -66,15 +66,18 @@ function register(app: express.Application) {
 
 
     apiRoute(GET, '/api/totp/generate', totp.generateSecret);
+    apiRoute(PST, '/api/totp/verify', totp.verifySecret);
+    apiRoute(PST, '/api/totp/enable', totp.enableSecret);
     apiRoute(GET, '/api/totp/status', totp.getTOTPStatus);
     apiRoute(GET, '/api/totp/get', totp.getSecret);
+    apiRoute(PST, '/api/totp/reset', totp.resetTOTP);
 
     apiRoute(GET, '/api/oauth/status', openID.getOAuthStatus);
     asyncApiRoute(GET, '/api/oauth/validate', openID.isTokenValid);
+    apiRoute(PST, '/api/oauth/disconnect', openID.clearSavedUser);
 
-    apiRoute(PST, '/api/totp_recovery/set', recoveryCodes.setRecoveryCodes);
     apiRoute(PST, '/api/totp_recovery/verify', recoveryCodes.verifyRecoveryCode);
-    apiRoute(GET, '/api/totp_recovery/generate', recoveryCodes.generateRecoveryCodes);
+    apiRoute(PST, '/api/totp_recovery/regenerate', recoveryCodes.regenerateRecoveryCodes);
     apiRoute(GET, '/api/totp_recovery/enabled', recoveryCodes.checkForRecoveryKeys);
     apiRoute(GET, '/api/totp_recovery/used', recoveryCodes.getUsedRecoveryCodes);
 
@@ -90,6 +93,7 @@ function register(app: express.Application) {
         checkCredentials: auth.checkCredentials,
         loginRateLimiter,
         uploadMiddlewareWithErrorHandling,
+        importMiddlewareWithErrorHandling,
         csrfMiddleware
     });
 
@@ -124,6 +128,7 @@ function register(app: express.Application) {
 
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
     apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
+    apiRoute(GET, "/api/network-addresses", systemInfoRoute.getNetworkAddresses);
 
     // docker health check
     route(GET, "/api/health-check", [], () => ({ status: "ok" }), apiResultHandler);
@@ -152,6 +157,7 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/special-notes/save-llm-chat", llmSpecialNotesRoute.saveLlmChat);
     asyncRoute(PST, "/api/database/anonymize/:type", [auth.checkApiAuthOrElectron, csrfMiddleware], databaseRoute.anonymize, apiResultHandler);
     apiRoute(GET, "/api/database/anonymized-databases", databaseRoute.getExistingAnonymizedDatabases);
+    route(GET, "/api/database/anonymized/download", [auth.checkApiAuthOrElectron], databaseRoute.downloadAnonymizedDatabase);
 
     if (process.env.TRILIUM_INTEGRATION_TEST === "memory") {
         asyncRoute(PST, "/api/database/rebuild/", [auth.checkApiAuthOrElectron], databaseRoute.rebuildIntegrationTestDatabase, apiResultHandler);
@@ -176,6 +182,15 @@ function register(app: express.Application) {
 
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);
     asyncApiRoute(GET, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
+
+    apiRoute(GET, "/api/onenote-import/auth-url", onenoteImportRoute.getAuthUrl);
+    // Plain GET (no CSRF/auth headers): this is a top-level browser redirect back from Microsoft.
+    // The OAuth `state` validated against the session is what guards it.
+    asyncRoute(GET, "/api/onenote-import/callback", [], onenoteImportRoute.callback);
+    apiRoute(GET, "/api/onenote-import/status", onenoteImportRoute.getStatus);
+    asyncApiRoute(PST, "/api/onenote-import/disconnect", onenoteImportRoute.disconnect);
+    asyncApiRoute(GET, "/api/onenote-import/notebooks", onenoteImportRoute.getNotebooks);
+    asyncApiRoute(PST, "/api/onenote-import/import", onenoteImportRoute.runImport);
 
     shareRoutes.register(router);
 

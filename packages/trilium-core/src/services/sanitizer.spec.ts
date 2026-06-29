@@ -51,6 +51,23 @@ describe("sanitize", () => {
         expect(sanitizeHtml(dirty)).toBe(clean);
     });
 
+    it("keeps the hidden-border style on table header cells", () => {
+        // The OneNote importer maps hidden borders to border-color:transparent on table, td and th —
+        // all three must survive sanitization, or header cells render with visible borders.
+        const dirty = `<table style="border-color:transparent"><tr><th style="border-color:transparent">H</th><td style="border-color:transparent">C</td></tr></table>`;
+        expect(sanitizeHtml(dirty)).toBe(dirty);
+    });
+
+    it("keeps the open attribute on <details> (collapsible state from imports)", () => {
+        const dirty = `<details open class="trilium-collapsible"><summary>T</summary><p>body</p></details>`;
+        expect(sanitizeHtml(dirty)).toBe(dirty);
+    });
+
+    it("keeps the scope attribute on table header cells", () => {
+        const dirty = `<table><thead><tr><th scope="col">C</th></tr></thead><tbody><tr><th scope="row">R</th><td>A</td></tr></tbody></table>`;
+        expect(sanitizeHtml(dirty)).toBe(dirty);
+    });
+
     describe("bookmark anchors", () => {
         it("preserves id attribute on empty <a> tags (CKEditor bookmarks)", () => {
             const dirty = `<a id="my-bookmark"></a>`;

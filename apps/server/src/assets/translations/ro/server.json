@@ -5,10 +5,7 @@
     "add-include-note-to-text": "Deschide fereastra de includere notițe",
     "add-link-to-text": "Deschide fereastra de adaugă legături în text",
     "add-new-label": "Crează o nouă etichetă",
-    "add-note-above-to-the-selection": "Adaugă notița deasupra selecției",
-    "add-note-below-to-selection": "Adaugă notița deasupra selecției",
     "attributes-labels-and-relations": "Atribute (etichete și relații)",
-    "close-active-tab": "Închide tab-ul activ",
     "collapse-subtree": "Minimizează ierarhia notiței curente",
     "collapse-tree": "Minimizează întreaga ierarhie de notițe",
     "copy-notes-to-clipboard": "Copiază notițele selectate în clipboard",
@@ -18,47 +15,27 @@
     "cut-notes-to-clipboard": "Decupează notițele selectate în clipboard",
     "creating-and-moving-notes": "Crearea și mutarea notițelor",
     "cut-into-note": "Decupează selecția din notița curentă și crează o subnotiță cu textul selectat",
-    "delete-note": "Șterge notița",
     "dialogs": "Ferestre",
-    "duplicate-subtree": "Dublifică subnotițele",
     "edit-branch-prefix": "Afișează ecranul „Editează prefixul ramurii”",
     "edit-note-title": "Sare de la arborele notițelor la detaliile notiței și editează titlul",
-    "edit-readonly-note": "Editează o notiță care este în modul doar în citire",
-    "eight-tab": "Activează cel de-al optelea tab din listă",
     "expand-subtree": "Expandează ierarhia notiței curente",
-    "fifth-tab": "Activează cel de-al cincelea tab din listă",
-    "first-tab": "Activează cel primul tab din listă",
     "follow-link-under-cursor": "Urmărește legătura de sub poziția cursorului",
     "force-save-revision": "Forțează crearea/salvarea unei noi revizii ale notiției curente",
-    "fourth-tab": "Activează cel de-al patrulea tab din listă",
     "insert-date-and-time-to-text": "Inserează data curentă și timpul în text",
-    "last-tab": "Activează ultimul tab din listă",
-    "move-note-down": "Mută notița mai jos",
-    "move-note-down-in-hierarchy": "Mută notița mai jos în ierarhie",
-    "move-note-up": "Mută notița mai sus",
-    "move-note-up-in-hierarchy": "Mută notița mai sus în ierarhie",
-    "ninth-tab": "Activează cel de-al nouălea tab din listă",
     "note-clipboard": "Clipboard-ul notițelor",
     "note-navigation": "Navigarea printre notițe",
-    "open-dev-tools": "Deschide uneltele de dezvoltator",
     "open-jump-to-note-dialog": "Deschide ecranul „Sari la notiță”",
-    "open-new-tab": "Deschide un tab nou",
     "open-new-window": "Deschide o nouă fereastră goală",
     "open-note-externally": "Deschide notița ca un fișier utilizând aplicația implicită",
     "other": "Altele",
     "paste-markdown-into-text": "Lipește text Markdown din clipboard în notița de tip text",
     "paste-notes-from-clipboard": "Lipește notițele din clipboard în notița activă",
-    "print-active-note": "Imprimă notița activă",
-    "reload-frontend-app": "Reîncarcă interfața grafică",
     "render-active-note": "Reîmprospătează notița activă",
     "reopen-last-tab": "Deschide din nou ultimul tab închis",
-    "reset-zoom-level": "Resetează nivelul de magnificare",
     "ribbon-tabs": "Tab-urile din panglică",
     "run-active-note": "Rulează notița curentă de tip JavaScript (frontend sau backend)",
     "search-in-subtree": "Caută notițe în ierarhia notiței active",
-    "second-tab": "Activează cel de-al doilea tab din listă",
     "select-all-notes-in-parent": "Selectează toate notițele din nivelul notiței curente",
-    "seventh-tab": "Activează cel de-al șaptelea tab din listă",
     "show-backend-log": "Afișează fereastra „Log-uri din backend”",
     "show-help": "Afișează informații utile",
     "show-note-source": "Afișează fereastra „Sursa notiței”",
@@ -66,33 +43,18 @@
     "show-recent-changes": "Afișează fereastra „Schimbări recente”",
     "show-revisions": "Afișează fereastra „Revizii ale notiței”",
     "show-sql-console": "Afișează ecranul „Consolă SQL”",
-    "sixth-tab": "Activează cel de-al șaselea tab din listă",
     "sort-child-notes": "Ordonează subnotițele",
     "toggle-archived-notes": "Afișează/ascunde notițele arhivate din arborele de notițe",
     "tabs-and-windows": "Tab-uri și ferestre",
     "text-note-operations": "Operații asupra notițelor text",
-    "third-tab": "Activează cel de-al treilea tab din listă",
-    "toggle-basic-properties": "Comută tab-ul „Proprietăți de bază”",
     "toggle-book-properties": "Comută tab-ul „Proprietăți ale cărții”",
-    "toggle-file-properties": "Comută tab-ul „Proprietăți fișier”",
-    "toggle-full-screen": "Comută modul ecran complet",
-    "toggle-image-properties": "Comută tab-ul „Proprietăți imagini”",
-    "toggle-inherited-attributes": "Comută tab-ul „Atribute moștenite”",
     "toggle-left-note-tree-panel": "Comută panoul din stânga (arborele notițelor)",
     "toggle-link-map": "Comută harta legăturilor",
     "toggle-note-hoisting": "Comută focalizarea pe notița curentă",
-    "toggle-note-info": "Comută tab-ul „Informații despre notiță”",
-    "toggle-note-paths": "Comută tab-ul „Căile notiței”",
-    "toggle-owned-attributes": "Comută tab-ul „Atribute proprii”",
-    "toggle-promoted-attributes": "Comută tab-ul „Atribute promovate”",
     "toggle-right-pane": "Comută afișarea panoului din dreapta, ce include tabela de conținut și evidențieri",
-    "toggle-similar-notes": "Comută tab-ul „Notițe similare”",
     "toggle-tray": "Afișează/ascunde aplicația din tray-ul de sistem",
     "unhoist": "Defocalizează complet",
-    "zoom-in": "Mărește zoom-ul",
-    "zoom-out": "Micșorează zoom-ul",
     "toggle-classic-editor-toolbar": "Comută tab-ul „Formatare” pentru editorul cu bară fixă",
-    "export-as-pdf": "Exportă notița curentă ca PDF",
     "show-cheatsheet": "Afișează o fereastră cu scurtături de la tastatură comune",
     "toggle-zen-mode": "Activează/dezactivează modul zen (o interfață minimală, fără distrageri)",
     "back-in-note-history": "Mergi la notița anterioară din istoric",
@@ -104,7 +66,7 @@
     "clone-notes-to": "Clonează notițele selectate",
     "move-notes-to": "Mută notițele selectate",
     "find-in-text": "Afișează/ascunde panoul de căutare",
-    "open-command-palette": "Deschide paleta de comenzi"
+    "save-named-revision": "Salvează o revizie cu nume a notiței active"
   },
   "login": {
     "button": "Autentifică",
@@ -158,7 +120,8 @@
     "december": "Decembrie"
   },
   "special_notes": {
-    "search_prefix": "Căutare:"
+    "search_prefix": "Căutare:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "Calea către serverul de sincronizare nu este configurată. Configurați sincronizarea înainte.",
@@ -216,7 +179,23 @@
     "inbox-title": "Inbox",
     "command-palette": "Deschide paleta de comenzi",
     "zen-mode": "Mod zen",
-    "tab-switcher-title": "Schimbător de taburi"
+    "tab-switcher-title": "Schimbător de taburi",
+    "llm-chat-history-title": "Istoric conversații AI",
+    "task-states-title": "Stări listă de sarcini",
+    "task-state-none": "Niciuna",
+    "task-state-doing": "În lucru",
+    "task-state-done": "Finalizat",
+    "task-state-maybe": "Poate",
+    "task-state-cancelled": "Anulat",
+    "task-state-attr-state-id": "Identificator (obligatoriu)",
+    "task-state-attr-markdown-symbol": "Simbol Markdown",
+    "task-state-attr-is-completed": "Contează ca finalizat",
+    "task-state-attr-color": "Culoare",
+    "task-state-attr-is-hidden": "Ascuns din listă",
+    "custom-dictionary-title": "Dicționar personalizat",
+    "security-title": "Securitate",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "Chat AI"
   },
   "notes": {
     "new-note": "Notiță nouă",
@@ -250,7 +229,9 @@
   "migration": {
     "error_message": "Eroare la migrarea către versiunea {{version}}: {{stack}}",
     "old_version": "Nu se poate migra la ultima versiune direct de la versiunea dvs. Actualizați mai întâi la versiunea v0.60.4 și ulterior la această versiune.",
-    "wrong_db_version": "Versiunea actuală a bazei de date ({{version}}) este mai nouă decât versiunea de bază de date suportată de aplicație ({{targetVersion}}), ceea ce înseamnă că a fost creată de către o versiune mai nouă de Trilium. Actualizați aplicația la ultima versiune pentru a putea continua."
+    "wrong_db_version": "Versiunea actuală a bazei de date ({{version}}) este mai nouă decât versiunea de bază de date suportată de aplicație ({{targetVersion}}), ceea ce înseamnă că a fost creată de către o versiune mai nouă de Trilium. Actualizați aplicația la ultima versiune pentru a putea continua.",
+    "automatic_migrations_disabled": "Migrările automate ale bazei de date sunt dezactivate prin variabila de mediu TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}",
+    "invalid_db_version": "Versiunea bazei de date nu este un număr valid. Acest lucru indică de obicei o opțiune „dbVersion” coruptă în baza de date. Vă rugăm să restaurați dintr-o copie de rezervă."
   },
   "modals": {
     "error_title": "Eroare"
@@ -351,7 +332,8 @@
     "reset-zoom-level": "Resetează nivelul de zoom",
     "copy-without-formatting": "Copiază fără formatare",
     "force-save-revision": "Forțează salvarea unei revizii",
-    "command-palette": "Paleta de comenzi"
+    "command-palette": "Paleta de comenzi",
+    "save-named-revision": "Salvează revizie cu nume"
   },
   "weekdayNumber": "Săptămâna {weekNumber}",
   "quarterNumber": "Trimestrul {quarterNumber}",
@@ -362,7 +344,10 @@
     "last-updated": "Ultima actualizare: {{- date}}",
     "subpages": "Subpagini:",
     "on-this-page": "Pe această pagină",
-    "expand": "Expandează"
+    "expand": "Expandează",
+    "toggle-navigation": "Comută navigarea",
+    "toggle-toc": "Comută cuprinsul",
+    "logo-alt": "Logo"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Fragment de text",
@@ -398,5 +383,37 @@
   },
   "desktop": {
     "instance_already_running": "Se focalizează o instanță a aplicației deja existentă."
+  },
+  "password": {
+    "incorrect": "Parola introdusă este incorectă."
+  },
+  "script": {
+    "wrong-environment": "Notița „{{- noteTitle}}” ({{- noteId}}) nu poate fi executată. Acesta este un script {{- actualEnv}}, dar execuția a fost încercată în {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Eroare în {{- context}}: {{- message}}",
+      "reserved-keyword": "„{{- token}}” este un cuvânt cheie rezervat. Pentru a căuta o valoare literală, folosiți ghilimele: „{{- token}}”",
+      "cannot-compare-with": "nu se poate compara cu „{{- token}}”. Pentru a căuta o valoare literală, folosiți ghilimele: „{{- token}}”",
+      "misplaced-expression": "Expresie plasată greșit sau incompletă „{{- token}}”",
+      "fulltext-after-expression": "„{{- token}}” nu este o expresie validă. Pentru a căuta text, plasați-l înaintea filtrelor de atribute (de ex. „{{- token}} #label” în loc de „#label {{- token}}”).",
+      "unrecognized-expression": "Expresie nerecunoscută „{{- token}}”"
+    }
+  },
+  "security-dialog": {
+    "enable-title": "Activează {{settingLabel}}",
+    "enable-message": "Sigur doriți să activați {{settingLabel}}?",
+    "enable-detail": "{{warning}}\n\nActivați această opțiune doar dacă intenționați în mod explicit să folosiți această funcție. Nu o activați dacă vi se solicită de către un script sau o notiță necunoscută.\n\nAceastă modificare necesită o repornire pentru a avea efect.",
+    "disable-title": "Dezactivează {{settingLabel}}",
+    "disable-message": "Opțiunea {{settingLabel}} va fi dezactivată.",
+    "disable-detail": "Această modificare necesită o repornire pentru a avea efect.",
+    "cancel": "Anulează",
+    "enable": "Activează",
+    "disable": "Dezactivează",
+    "dont-ask-again": "Nu mai întreba până la repornire",
+    "backend-scripting": "Execuția scripturilor backend",
+    "backend-scripting-warning": "Scripturile backend au acces complet la server, inclusiv la sistemul de fișiere și la rețea.",
+    "sql-console": "Consolă SQL",
+    "sql-console-warning": "Consola SQL permite executarea de interogări SQL arbitrare asupra bazei de date."
   }
 }

@@ -1,0 +1,31 @@
+.note-info-widget {
+    padding: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+}
+
+.note-info-item {
+    display: flex;
+    align-items: baseline;
+    padding-inline-end: 15px;
+    padding-block: 5px;
+}
+
+.note-info-item > span:first-child {
+    padding-inline-end: 5px;
+}
+
+.note-info-mime {
+    max-width: 13em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.note-info-id {
+    font-variant: none;
+    font-family: var(--monospace-font-family);
+    font-size: 0.8em;
+    vertical-align: middle !important;
+}

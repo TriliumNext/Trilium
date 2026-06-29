@@ -5,23 +5,6 @@ import contentHash from "./content_hash.js";
 import { getSql } from "./sql/index.js";
 import { hash } from "./utils/index.js";
 
-/**
- * Wraps a callback in CLS context and waits for it to complete.
- * `getEntityHashes` reads the `disableSlowQueryLogging` flag from the
- * context and calls `eraseUnusedBlobs` (a write), so a context is required.
- */
-function withContext<T>(fn: () => T): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-        getContext().init(async () => {
-            try {
-                resolve(await fn());
-            } catch (e) {
-                reject(e);
-            }
-        });
-    });
-}
-
 let testCounter = 0;
 
 /**
@@ -54,8 +37,8 @@ function insertEntityChange(opts: {
 
 describe("content_hash", () => {
     describe("getEntityHashes", () => {
-        it("computes a per-sector hash keyed by entity name and first id char", async () => {
-            const result = await withContext(() => {
+        it("computes a per-sector hash keyed by entity name and first id char", () => {
+            const result = getContext().init(() => {
                 insertEntityChange({ entityName: "spec_a", entityId: "Xfoo111", hash: "AAA" });
                 insertEntityChange({ entityName: "spec_a", entityId: "Xbar222", hash: "BBB" });
                 return contentHash.getEntityHashes();
@@ -73,8 +56,8 @@ describe("content_hash", () => {
             expect(sectorHashes["X"]).toBe(expected);
         });
 
-        it("segments different first id chars into separate sectors", async () => {
-            const result = await withContext(() => {
+        it("segments different first id chars into separate sectors", () => {
+            const result = getContext().init(() => {
                 insertEntityChange({ entityName: "spec_b", entityId: "1one", hash: "H1" });
                 insertEntityChange({ entityName: "spec_b", entityId: "2two", hash: "H2" });
                 return contentHash.getEntityHashes();
@@ -88,9 +71,9 @@ describe("content_hash", () => {
             expect(sectorHashes["1"]).not.toBe(sectorHashes["2"]);
         });
 
-        it("incorporates the isErased flag and excludes unsynced and note_reordering rows", async () => {
+        it("incorporates the isErased flag and excludes unsynced and note_reordering rows", () => {
             const erasedId = `Eerased${testCounter}`;
-            const result = await withContext(() => {
+            const result = getContext().init(() => {
                 insertEntityChange({ entityName: "spec_c", entityId: erasedId, hash: "ER", isErased: true });
                 // Not synced -> must be ignored entirely.
                 insertEntityChange({ entityName: "spec_c", entityId: "EunsyncedZ", hash: "NO", isSynced: false });
@@ -106,8 +89,8 @@ describe("content_hash", () => {
             expect(result).not.toHaveProperty("note_reordering");
         });
 
-        it("returns the seeded demo entity types from the fixture DB", async () => {
-            const result = await withContext(() => contentHash.getEntityHashes());
+        it("returns the seeded demo entity types from the fixture DB", () => {
+            const result = getContext().init(() => contentHash.getEntityHashes());
 
             // The fixture document.db is seeded with real notes/branches.
             expect(result).toHaveProperty("notes");
@@ -122,8 +105,8 @@ describe("content_hash", () => {
     });
 
     describe("checkContentHashes", () => {
-        it("reports no failed checks when the supplied hashes match local hashes", async () => {
-            const failed = await withContext(() => {
+        it("reports no failed checks when the supplied hashes match local hashes", () => {
+            const failed = getContext().init(() => {
                 const local = contentHash.getEntityHashes();
                 return contentHash.checkContentHashes(local);
             });
@@ -131,8 +114,8 @@ describe("content_hash", () => {
             expect(failed).toEqual([]);
         });
 
-        it("flags a sector whose remote hash differs from the local one", async () => {
-            const failed = await withContext(() => {
+        it("flags a sector whose remote hash differs from the local one", () => {
+            const failed = getContext().init(() => {
                 insertEntityChange({ entityName: "spec_d", entityId: "Mmismatch", hash: "LOCAL" });
                 const local = contentHash.getEntityHashes();
 
@@ -148,8 +131,8 @@ describe("content_hash", () => {
             expect(mismatch?.sector).toBe("M");
         });
 
-        it("flags a sector present locally but missing entirely from the remote", async () => {
-            const failed = await withContext(() => {
+        it("flags a sector present locally but missing entirely from the remote", () => {
+            const failed = getContext().init(() => {
                 insertEntityChange({ entityName: "spec_e", entityId: "Olocalonly", hash: "ONLY" });
                 const local = contentHash.getEntityHashes();
 

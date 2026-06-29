@@ -15,9 +15,21 @@ minimumReleaseAge: 0
 pmOnFail: ignore
 
 overrides:
-  "@codemirror/language": "6.12.3"
-  "@lezer/highlight": "1.2.3"
+  # CodeMirror 6 is a swarm of packages that peer-depend on a shared runtime
+  # (view/state/language/...) and rely on single-instance object identity for
+  # facets to work. A partial bump leaves two copies in the tree, which breaks
+  # both typechecking (nominal type clashes) and runtime (lint markers, etc.).
+  # Keep every core singleton pinned here so the whole tree resolves to one copy.
+  "@codemirror/view": "6.43.3"
+  "@codemirror/state": "6.7.0"
+  "@codemirror/language": "6.12.4"
+  "@codemirror/commands": "6.10.4"
+  "@codemirror/autocomplete": "6.20.3"
+  "@codemirror/lint": "6.9.7"
+  "@codemirror/search": "6.7.1"
   "@lezer/common": "1.5.2"
+  "@lezer/highlight": "1.2.3"
+  "@lezer/lr": "1.4.10"
   "mermaid": "11.15.0"
   "preact": "10.29.2"
   "roughjs": "4.6.6"
@@ -82,10 +94,15 @@ overrides:
   "hono@>=4.0.0 <=4.12.11": ">=4.12.12"
   "@hono/node-server@<1.19.13": ">=1.19.13"
   "basic-ftp@=5.2.0": ">=5.2.1"
+  # extract-zip's yauzl@2 hangs electron-forge packaging on Node >=24.16 (electron/forge#4277,
+  # electron/electron#51619). yauzl@>=3.3.1 is the maintainer-recommended fix.
+  "extract-zip>yauzl": "3.4.0"
 
 patchedDependencies:
   "@ckeditor/ckeditor5-mention": patches/@ckeditor__ckeditor5-mention.patch
   "@ckeditor/ckeditor5-code-block": patches/@ckeditor__ckeditor5-code-block.patch
+  '@maplibre/maplibre-gl-leaflet@0.1.3': patches/@maplibre__maplibre-gl-leaflet@0.1.3.patch
+  leaflet@1.9.4: patches/leaflet@1.9.4.patch
 
 allowBuilds:
   better-sqlite3: true

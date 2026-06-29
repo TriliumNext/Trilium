@@ -1,31 +1,30 @@
 import type { Request } from "express";
+
 import type { File } from "../../services/import/common.js";
 
 type ImportRequest<P> = Omit<Request<P>, "file"> & { file?: File };
 
 import becca from "../../becca/becca.js";
+import becca_loader from "../../becca/becca_loader.js";
 import type BNote from "../../becca/entities/bnote.js";
-import enexImportService from "../../services/import/enex.js";
-import opmlImportService from "../../services/import/opml.js";
+import { ValidationError } from "../../errors.js";
+import * as cls from "../../services/context.js";
+import importFile from "../../services/import/dispatch.js";
 import singleImportService from "../../services/import/single.js";
-import zipImportService from "../../services/import/zip.js";
 import { getLog } from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils/index.js";
-import * as cls from "../../services/context.js";
-import { ValidationError } from "../../errors.js";
-import becca_loader from "../../becca/becca_loader.js";
-import { extname } from "../../services/utils/path.js";
 
 async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>) {
     const { parentNoteId } = req.params;
-    const { taskId, last } = req.body;
+    const { taskId, last, format } = req.body;
 
     const options = {
         safeImport: req.body.safeImport !== "false",
         shrinkImages: req.body.shrinkImages !== "false",
         textImportedAsText: req.body.textImportedAsText !== "false",
         codeImportedAsCode: req.body.codeImportedAsCode !== "false",
+        spreadsheetImportedAsSpreadsheet: req.body.spreadsheetImportedAsSpreadsheet !== "false",
         explodeArchives: req.body.explodeArchives !== "false",
         replaceUnderscoresWithSpaces: req.body.replaceUnderscoresWithSpaces !== "false"
     };
@@ -37,8 +36,6 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
     }
 
     const parentNote = becca.getNoteOrThrow(parentNoteId);
-
-    const extension = extname(file.originalname).toLowerCase();
 
     // running all the event handlers on imported notes (and attributes) is slow
     // and may produce unintended consequences
@@ -52,25 +49,12 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
     const taskContext = TaskContext.getInstance(taskId, "importNotes", options);
 
     try {
-        if (extension === ".zip" && options.explodeArchives && typeof file.buffer !== "string") {
-            note = await zipImportService.importZip(taskContext, file.buffer, parentNote);
-        } else if (extension === ".opml" && options.explodeArchives) {
-            const importResult = await opmlImportService.importOpml(taskContext, file.buffer, parentNote);
-            if (!Array.isArray(importResult)) {
-                note = importResult;
-            } else {
-                return importResult;
-            }
-        } else if (extension === ".enex" && options.explodeArchives) {
-            const importResult = await enexImportService.importEnex(taskContext, file, parentNote);
-            if (!Array.isArray(importResult)) {
-                note = importResult;
-            } else {
-                return importResult;
-            }
-        } else {
-            note = singleImportService.importSingleFile(taskContext, file, parentNote);
+        const importResult = await importFile(taskContext, file, parentNote, options, format);
+        if (Array.isArray(importResult)) {
+            // OPML reports a structured failure as a `[httpStatus, message]` tuple — pass it straight through.
+            return importResult;
         }
+        note = importResult;
     } catch (e: unknown) {
         const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
         console.warn(e);

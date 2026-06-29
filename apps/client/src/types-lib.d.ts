@@ -74,6 +74,7 @@ declare module "preact" {
             src: string;
             class: string;
             key?: string | number;
+            partition?: string;
         }
 
         interface IntrinsicElements {

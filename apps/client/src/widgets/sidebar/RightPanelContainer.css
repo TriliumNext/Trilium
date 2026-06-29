@@ -1,6 +1,110 @@
+:where(:root) {
+    --peek-pane-backdrop-color: #0000000d;
+    --peek-pane-shadow-depth: 42px;
+    --peek-pane-shadow-color: #0000002b;
+
+    --right-pane-peek-border-radius: 8px 0 0 8px;
+    --right-pane-peek-background: #ffffffe7;
+    --right-pane-peek-backdrop-filter: blur(12px) saturate(1.5);
+    --right-pane-header-height: 30px;
+}
+
+/* Reserve a fixed-width gutter on the viewport's right edge for the peek button, which is
+   absolutely positioned within it (see RightPanePeekButton.css). Split sizes the panes
+   inside the padded content box, so they never sit under the button, and the button stays put
+   regardless of whether the right pane is open. */
+body.experimental-feature-new-layout #vertical-main-container {
+    --right-pane-peek-button-width: 12px;
+    /* +4px leaves a small gap between the right pane (and #center-pane) and the peek button. */
+    --right-pane-peek-button-gutter: calc(var(--right-pane-peek-button-width) + 4px);
+    position: relative;
+    padding-inline-end: var(--right-pane-peek-button-gutter);
+}
+
+/* Persistent host wrapping the spacer + #right-pane (see RightPanelContainer.tsx), so #right-pane
+   never reparents between modes. A flex row: docked it fills with the pane (spacer hidden); peek
+   it lays out [spacer | gutter | pane]. */
+body.experimental-feature-new-layout #right-pane-host {
+    display: flex;
+    flex-direction: row;
+}
+
+/* Docked: #right-pane fills the host (which Split sizes against #center-pane). */
+body.experimental-feature-new-layout #right-pane-host:not(.peek) > #right-pane {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* When closing the peek, the host goes in-flow a frame before Split.destroy (run in an effect)
+   removes its resize gutter. Keep any gutter inside a non-peek host out of the flow so that
+   lingering 5px gutter can't briefly widen the host and reflow the content. */
+body.experimental-feature-new-layout #right-pane-host:not(.peek) > .gutter {
+    display: none;
+}
+
+/* Peek: float the host above the content as an absolute layer, so the content never reflows. */
+body.experimental-feature-new-layout #right-pane-host.peek {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inset-inline-end: var(--right-pane-peek-button-gutter);
+    z-index: 15;
+    animation: right-pane-peek-in 200ms ease-out;
+    background: var(--peek-pane-backdrop-color);
+}
+
+@keyframes right-pane-peek-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Peek: Split sizes the spacer and the pane via inline widths, so flex must not override them. */
+body.experimental-feature-new-layout #right-pane-host.peek > .right-pane-peek-spacer,
+body.experimental-feature-new-layout #right-pane-host.peek > #right-pane {
+    flex: 0 0 auto;
+}
+
+body.experimental-feature-new-layout #right-pane-host.peek > #right-pane {
+    box-shadow: calc(-1 * var(--peek-pane-shadow-depth)) 0 var(--peek-pane-shadow-depth) calc(-1 * var(--peek-pane-shadow-depth)) var(--peek-pane-shadow-color) ;
+}
+
+/* The spacer is the left Split target and, in peek mode, the faint click-to-dismiss backdrop
+   over the content (it also shields the PDF iframe during a resize drag). Hidden when docked. */
+body.experimental-feature-new-layout .right-pane-peek-spacer {
+    display: none;
+}
+
+body.experimental-feature-new-layout #right-pane-host.peek > .right-pane-peek-spacer {
+    display: block;
+    min-width: 0;
+}
+
+/* Pin/close controls, shown whenever the pane is open (pin only in peek mode). */
+body.experimental-feature-new-layout #right-pane .right-pane-actions {
+    --icon-button-size: 24px;
+    
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 80px;
+    height: var(--right-pane-header-height);
+    z-index: 1;
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
 body.experimental-feature-new-layout #right-pane {
+    position: relative;
     display: flex;
     flex-direction: column;
+
+    &.right-pane-mode-peek {
+        background: var(--right-pane-peek-background);
+        backdrop-filter: var(--right-pane-peek-backdrop-filter);
+        border-radius: var(--right-pane-peek-border-radius);
+    }
 
     .card {
         margin-inline: 0;
@@ -38,6 +142,13 @@ body.experimental-feature-new-layout #right-pane {
 
         &.collapsed .card-header > .icon-action {
             transform: rotate(-90deg);
+        }
+    }
+
+    .right-pane-actions + * {
+    /* TODO: Find a more elegant way to avoid the right-pane-actions overlapping the card-header. */
+        .card-header {
+            padding-inline-end: 80px;
         }
     }
 

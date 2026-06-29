@@ -18,15 +18,16 @@ describe("llm skills", () => {
         expect(summary).toContain('"search_syntax"');
         expect(summary).toContain('"backend_scripting"');
         expect(summary).toContain('"frontend_scripting"');
+        expect(summary).toContain('"dashboards"');
     });
 
     describe("load_skill tool", () => {
-        it("loads the markdown content of a known skill", () => {
-            const result = loadSkillTool().execute({ name: "search_syntax" }) as {
+        it.each([ "search_syntax", "backend_scripting", "frontend_scripting", "dashboards" ])("loads the markdown content of the '%s' skill", (name) => {
+            const result = loadSkillTool().execute({ name }) as {
                 skill: string;
                 instructions: string;
             };
-            expect(result.skill).toBe("search_syntax");
+            expect(result.skill).toBe(name);
             expect(typeof result.instructions).toBe("string");
             expect(result.instructions.length).toBeGreaterThan(0);
         });

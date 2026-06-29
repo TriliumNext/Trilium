@@ -8,7 +8,7 @@ describe("markdown", () => {
         const conversionTable = {
             "nginx": "language-text-x-nginx-conf",
             "diff": "language-text-x-diff",
-            "javascript": "language-application-javascript-env-backend",
+            "javascript": "language-text-javascript",
             "css": "language-text-css",
             "mips": "language-text-x-asm-mips",
             "jsx": "language-text-jsx",
@@ -43,7 +43,43 @@ describe("markdown", () => {
             # another one
             Hello, world
         `, "title");
-        expect(result).toBe(`<h2>Hello</h2><h2>world</h2><h2>another one</h2><p>Hello, world</p>`);
+        // <h1> is reserved for the note title, so the hierarchy is shifted down one
+        // level rather than collapsed: the two top-level `#` become <h2> siblings and
+        // the nested `##` becomes <h3>, preserving the author's nesting (#8383).
+        expect(result).toBe(`<h2>Hello</h2><h3>world</h3><h2>another one</h2><p>Hello, world</p>`);
+    });
+
+    it("preserves heading hierarchy by shifting levels when content starts at H1 (#8383)", () => {
+        // Content authored with H1 as the top level: every heading shifts down one
+        // level so the parent/child relationship survives instead of flattening onto H2.
+        expect(markdownService.renderToHtml(trimIndentation`\
+            # Main Section
+            ## Subsection A
+            ### Detail
+            ## Subsection B
+        `, "Notes")).toBe(`<h2>Main Section</h2><h3>Subsection A</h3><h4>Detail</h4><h3>Subsection B</h3>`);
+
+        // The first H1 matching the title is stripped; if a content H1 still remains,
+        // the rest is shifted, otherwise it is left untouched.
+        expect(markdownService.renderToHtml(trimIndentation`\
+            # Notes
+            # Chapter 1
+            ## Section
+        `, "Notes")).toBe(`<h2>Chapter 1</h2><h3>Section</h3>`);
+
+        // Common case: title is stripped and the content already starts at H2 — no shift.
+        expect(markdownService.renderToHtml(trimIndentation`\
+            # Notes
+            ## Section
+            ### Sub
+        `, "Notes")).toBe(`<h2>Section</h2><h3>Sub</h3>`);
+
+        // Deeper levels clamp at H6 (there is no H7 to shift into).
+        expect(markdownService.renderToHtml(trimIndentation`\
+            # Top
+            ##### Five
+            ###### Six
+        `, "Notes")).toBe(`<h2>Top</h2><h6>Five</h6><h6>Six</h6>`);
     });
 
     it("parses duplicate title with escape correctly", () => {
@@ -237,18 +273,38 @@ $$`;
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
     });
 
-    it("preserves escaped math expressions", () => {
-        const scenarios = [
-            "\\$\\$\sqrt{x^{2}+1}\\$\\$",
-            "The equation is \\$e=mc^{2}\\$."
+    it("renders escaped math delimiters as literal dollars without rendering math (#10179)", () => {
+        // `\$` is a standard Markdown escape: the backslash is consumed and the dollar
+        // is kept literal (never treated as a formula delimiter). The escape must NOT
+        // leak extra backslashes into the output — the reported bug doubled them to `\\$`.
+        const scenarios: [input: string, expected: string][] = [
+            ["\\$\\$\sqrt{x^{2}+1}\\$\\$", `<p>$$\sqrt{x^{2}+1}$$</p>`],
+            ["The equation is \\$e=mc^{2}\\$.", `<p>The equation is $e=mc^{2}$.</p>`]
         ];
-        for (const scenario of scenarios) {
-            expect(markdownService.renderToHtml(scenario, "Title")).toStrictEqual(`<p>${scenario}</p>`);
+        for (const [input, expected] of scenarios) {
+            const html = markdownService.renderToHtml(input, "Title");
+            expect(html).toStrictEqual(expected);
+            expect(html).not.toContain("math-tex");
         }
     });
 
     it("preserves table with column widths", () => {
         const html = /*html*/`<figure class="table" style="width:100%;"><table class="ck-table-resized"><colgroup><col style="width:2.77%;"><col style="width:33.42%;"><col style="width:63.81%;"></colgroup><thead><tr><th>&nbsp;</th><th>&nbsp;</th><th>&nbsp;</th></tr></thead><tbody><tr><td>1</td><td><img class="image_resized" style="aspect-ratio:562/454;width:100%;" src="1_Geo Map_image.png" width="562" height="454"></td><td>Go to any location on openstreetmap.org and right click to bring up the context menu. Select the “Show address” item.</td></tr><tr><td>2</td><td><img class="image_resized" style="aspect-ratio:696/480;width:100%;" src="Geo Map_image.png" width="696" height="480"></td><td>The address will be visible in the top-left of the screen, in the place of the search bar.&nbsp;&nbsp;&nbsp;&nbsp;<br><br>Select the coordinates and copy them into the clipboard.</td></tr><tr><td>3</td><td><img class="image_resized" style="aspect-ratio:640/276;width:100%;" src="5_Geo Map_image.png" width="640" height="276"></td><td>Simply paste the value inside the text box into the <code>#geolocation</code> attribute of a child note of the map and then it should be displayed on the map.</td></tr></tbody></table></figure>`;
+        expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
+    });
+
+    it("preserves table cell colspan", () => {
+        const html = /*html*/`<figure class="table"><table><tbody><tr><td colspan="2">Merged</td></tr><tr><td>A</td><td>B</td></tr></tbody></table></figure>`;
+        expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
+    });
+
+    it("preserves table cell rowspan", () => {
+        const html = /*html*/`<figure class="table"><table><tbody><tr><td rowspan="2">Merged</td><td>A</td></tr><tr><td>B</td></tr></tbody></table></figure>`;
+        expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
+    });
+
+    it("preserves colspan and rowspan together on header and body cells", () => {
+        const html = /*html*/`<figure class="table"><table><thead><tr><th colspan="2">Header</th></tr></thead><tbody><tr><td rowspan="2">Side</td><td>A</td></tr><tr><td>B</td></tr></tbody></table></figure>`;
         expect(markdownService.renderToHtml(html, "Title")).toStrictEqual(html);
     });
 

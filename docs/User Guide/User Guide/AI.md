@@ -29,7 +29,12 @@ One of the key changes that lead to the reimplementation is that now we are usin
 
 ## Sample use-cases
 
-<table class="ck-table-resized"><colgroup><col style="width:38.77%;"><col style="width:61.23%;"></colgroup><thead><tr><th>Use case</th><th>Sample prompt</th></tr></thead><tbody><tr><td>Easily create a&nbsp;<a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>.</td><td><blockquote><p><em>Create for me a render note which allows me to play tic-tac-toe. Make sure to use Preact instead of the legacy jQuery.</em></p></blockquote></td></tr></tbody></table>
+*   Create any type of <a class="reference-link" href="Scripting/Frontend%20Basics/Custom%20Widgets.md">Custom Widgets</a>.
+*   Easily create a <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>, e.g. _Create for me a render note which allows me to play tic-tac-toe. Make sure to use Preact instead of the legacy jQuery._
+*   Create widgets for a <a class="reference-link" href="Collections/Dashboard.md">Dashboard</a>, such as a calculator, a stopwatch, a pomodoro timer.
+
+> [!NOTE]
+> Claude Sonnet is known to produce very good frontend or backend scripts with little guidance, as the AI has been instructed in how to produce them.
 
 ## LLM Providers
 

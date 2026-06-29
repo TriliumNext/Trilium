@@ -2,23 +2,22 @@ import config from "./config.js";
 import { isElectron } from "./utils.js";
 
 function getHost() {
+    if (isElectron) {
+        // Desktop ignores the [Network] host config — that setting is for web
+        // deployments. The renderer reaches the server in-process via
+        // `trilium-app://`, so the TCP listener binds loopback and stays off the
+        // LAN by default. The user opts into LAN access (e.g. to sync from
+        // another device) with the `allowLanAccess` security override, which the
+        // desktop main process applies to the config at startup.
+        return config["Security"]["allowLanAccess"] ? "0.0.0.0" : "127.0.0.1";
+    }
+
     const envHost = process.env.TRILIUM_HOST;
-    if (envHost && !isElectron) {
+    if (envHost) {
         return envHost;
     }
 
-    const configHost = config["Network"]["host"];
-    if (configHost) {
-        return configHost;
-    }
-
-    // The desktop renderer talks to the server via the `trilium-app://`
-    // custom protocol (in-process); the TCP listener only needs to serve
-    // same-host traffic (the renderer's WebSocket). Binding loopback by
-    // default keeps the local port off the LAN — defense in depth on top
-    // of the per-request auth marker. A user who wants LAN access can still
-    // set `[Network] host=` in config.ini.
-    return isElectron ? "127.0.0.1" : "0.0.0.0";
+    return config["Network"]["host"];
 }
 
 export default getHost();

@@ -351,12 +351,22 @@ describe("electron-aware helpers", () => {
 
     it("reloadTray invokes electron tray when present and is a no-op otherwise", () => {
         const reloadTray = vi.fn();
-        (window as any).electronApi = { tray: { reloadTray } };
+        (window as any).electronApi = { systemIntegration: { reloadTray } };
         utils.reloadTray();
         expect(reloadTray).toHaveBeenCalled();
 
         delete (window as any).electronApi;
         expect(() => utils.reloadTray()).not.toThrow();
+    });
+
+    it("reapplyLaunchOnStartup invokes electron systemIntegration when present and is a no-op otherwise", () => {
+        const reapplyLaunchOnStartup = vi.fn();
+        (window as any).electronApi = { systemIntegration: { reapplyLaunchOnStartup } };
+        utils.reapplyLaunchOnStartup();
+        expect(reapplyLaunchOnStartup).toHaveBeenCalled();
+
+        delete (window as any).electronApi;
+        expect(() => utils.reapplyLaunchOnStartup()).not.toThrow();
     });
 
     it("clearBrowserCache calls electron clearCache when available", async () => {

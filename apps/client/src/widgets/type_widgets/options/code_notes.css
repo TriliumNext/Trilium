@@ -1,20 +1,3 @@
-/* #region CodeMimeTypesList */
-.options-mime-types {
-    list-style-type: none;
-    column-width: 250px;
-    padding-inline-start: 0;
-
-    & > section {
-        margin-bottom: 1em;
-        break-inside: avoid-column;
-    }
-
-    ul {
-        padding-inline-start: 0;
-    }
-}
-/* #endregion */
-
 .note-detail-content-widget-content.options {
     /* #region Code Preview */
     .options-section.code-block-appearance .options-section-card {

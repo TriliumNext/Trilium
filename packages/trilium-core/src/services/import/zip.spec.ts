@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -18,7 +19,7 @@ async function testImport(fileName: string) {
     return testImportBuffer(buffer);
 }
 
-async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData: Record<string, unknown> = { textImportedAsText: true }) {
+async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData: Record<string, unknown> = { textImportedAsText: true }, opts?: { restoreAsRoot?: boolean; preserveIds?: boolean }) {
     const taskContext = TaskContext.getInstance(taskId, "importNotes", taskData);
 
     return new Promise<{ importedNote: BNote; rootNote: BNote }>((resolve, reject) => {
@@ -29,7 +30,7 @@ async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData:
                 return;
             }
 
-            const importedNote = await zip.importZip(taskContext, buffer, rootNote as BNote);
+            const importedNote = await zip.importZip(taskContext, buffer, rootNote as BNote, opts);
             resolve({
                 importedNote,
                 rootNote
@@ -62,6 +63,18 @@ describe("processNoteContent", () => {
 
         sql_init.initializeDb();
         await sql_init.dbReady;
+    });
+
+    it("imports YAML front matter from a generic Markdown file in a ZIP as labels", async () => {
+        const buffer = await createZipBuffer({
+            "Note.md": "---\nfirst: First value\ntags:\n  - Tag\n  - AnotherTag\n---\nThe body."
+        });
+        const { importedNote } = await testImportBuffer(buffer, "import-frontmatter-zip");
+
+        expect(importedNote.title).toBe("Note");
+        expect(importedNote.getContent().toString()).toBe("<p>The body.</p>");
+        expect(importedNote.getOwnedLabelValue("first")).toBe("First value");
+        expect(importedNote.getOwnedLabelValues("tags")).toEqual(["Tag", "AnotherTag"]);
     });
 
     it("treats single MDX as Markdown in ZIP as text note", async () => {
@@ -178,7 +191,253 @@ describe("processNoteContent", () => {
         expect(content).toContain("/image/image.jpg)");
         expect(content).not.toContain("Markdown Note_image.jpg");
     });
+
+    it("imports a CSV entry as an editable spreadsheet note", async () => {
+        const zipBuffer = await createZipBuffer({ "csv_import_sample.csv": "a,b\r\n1,2" });
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-csv", { spreadsheetImportedAsSpreadsheet: true });
+
+        const note = rootNote.getChildNotes().find((n) => n.title === "csv_import_sample");
+        expect(note?.type).toBe("spreadsheet");
+        expect(note?.mime).toBe("text/x-spreadsheet");
+
+        const sheet = parseWorkbookSheet(note?.getContent());
+        expect(sheet.cellData[0][0].v).toBe("a");
+        expect(sheet.cellData[1][1].v).toBe(2);
+    });
+
+    it("imports an XLSX entry as an editable spreadsheet note", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("Sheet1");
+        ws.getCell("A1").value = "hello";
+        ws.getCell("B1").value = 42;
+        const xlsxBuffer = Buffer.from(await wb.xlsx.writeBuffer());
+
+        const zipBuffer = await createZipBuffer({ "xlsx_import_sample.xlsx": xlsxBuffer });
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-xlsx", { spreadsheetImportedAsSpreadsheet: true });
+
+        const note = rootNote.getChildNotes().find((n) => n.title === "xlsx_import_sample");
+        expect(note?.type).toBe("spreadsheet");
+        expect(note?.mime).toBe("text/x-spreadsheet");
+
+        const sheet = parseWorkbookSheet(note?.getContent());
+        expect(sheet.cellData[0][0].v).toBe("hello");
+        expect(sheet.cellData[0][1].v).toBe(42);
+    });
+
+    it("each phase's running count lands exactly on its total (the bar reaches 100% in both phases)", async () => {
+        // fresh task id -> a new TaskContext whose constructor increment happens before we spy
+        const taskContext = TaskContext.getInstance("import-progress-total", "importNotes", { textImportedAsText: true });
+        const setTotalSpy = vi.spyOn(taskContext, "setTotalCount");
+        const increaseSpy = vi.spyOn(taskContext, "increaseProgressCount");
+        const resetSpy = vi.spyOn(taskContext, "resetProgressCount");
+
+        const zipBuffer = await createZipBuffer({
+            "a.txt": "first",
+            "b.txt": "second",
+            "sub/c.txt": "third"
+        });
+
+        await new Promise<void>((resolve, reject) => {
+            getContext().init(async () => {
+                const rootNote = becca.getNote("root");
+                if (!rootNote) {
+                    reject(new Error("missing root note"));
+                    return;
+                }
+                await zip.importZip(taskContext, zipBuffer, rootNote as BNote);
+                resolve();
+            });
+        });
+
+        // two labelled phases — extraction (archive entries) then processing (created notes) — each reset
+        // to zero and given its own total, so each drives an independent 0→100% bar
+        expect(setTotalSpy).toHaveBeenCalledTimes(2);
+        expect(resetSpy).toHaveBeenCalledTimes(2);
+
+        const extractionTotal = setTotalSpy.mock.calls[0]?.[0] ?? 0;
+        const processingTotal = setTotalSpy.mock.calls[1]?.[0] ?? 0;
+        // the constructor's first increment ran before the spy; every later increment belongs to one of the
+        // two phases, so the captured increments equal the two phase totals combined — i.e. each phase counts
+        // up to exactly its own total
+        expect(increaseSpy.mock.calls.length).toBe(extractionTotal + processingTotal);
+    });
+
+    it("drives extraction and post-processing as two separate, labelled phases", async () => {
+        const taskContext = TaskContext.getInstance("import-progress-phases", "importNotes", { textImportedAsText: true });
+        const setTotalSpy = vi.spyOn(taskContext, "setTotalCount");
+        const setPhaseSpy = vi.spyOn(taskContext, "setPhase");
+
+        // Flat files at the root: 3 entries, each becomes a note, no folder notes, no meta file.
+        const zipBuffer = await createZipBuffer({ "a.txt": "first", "b.txt": "second", "c.txt": "third" });
+
+        await new Promise<void>((resolve, reject) => {
+            getContext().init(async () => {
+                const rootNote = becca.getNote("root");
+                if (!rootNote) {
+                    reject(new Error("missing root note"));
+                    return;
+                }
+                await zip.importZip(taskContext, zipBuffer, rootNote as BNote);
+                resolve();
+            });
+        });
+
+        // extraction is announced first (counting archive entries), then processing (counting created notes)
+        expect(setPhaseSpy.mock.calls.map((call) => call[0])).toEqual(["extracting", "processing"]);
+        // 3 entries extracted, then the 3 created notes processed — the denominator deliberately switches
+        // between phases rather than being summed into one inflated total
+        expect(setTotalSpy.mock.calls.map((call) => call[0])).toEqual([3, 3]);
+    });
+
+    it("imports an exported root note as a regular note instead of corrupting the system root", async () => {
+        // Exporting a root note that has its own content yields a meta entry with noteId "root" AND a
+        // data file. The "root" id must be remapped on import (like any other note) so the archived root
+        // lands as an ordinary note under the import target - rather than overwriting the destination's
+        // real root note and creating a self-referential root->root branch that breaks loading.
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "root",
+                title: "root",
+                type: "text",
+                mime: "text/html",
+                format: "html",
+                dataFileName: "root.html",
+                dirFileName: "root",
+                attributes: [],
+                attachments: [],
+                children: [{
+                    noteId: "1giO9zlsdvT6",
+                    title: "Hi",
+                    type: "text",
+                    mime: "text/html",
+                    format: "html",
+                    dataFileName: "Hi.html",
+                    attributes: [],
+                    attachments: []
+                }]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "root.html": "<p>archived root content</p>",
+            "root/Hi.html": "<p>hi content</p>"
+        });
+
+        const { importedNote, rootNote } = await testImportBuffer(zipBuffer, "import-root-note");
+
+        // The archived root becomes a fresh, ordinary note placed under the import target - not the system root.
+        expect(importedNote.noteId).not.toBe("root");
+        expect(importedNote.title).toBe("root");
+        expect(importedNote.getContent().toString()).toContain("archived root content");
+        expect(rootNote.getChildNotes().map((n) => n.noteId)).toContain(importedNote.noteId);
+
+        // Its child came along under the new note.
+        const hi = importedNote.getChildNotes().find((n) => n.title === "Hi");
+        expect(hi?.getContent().toString()).toContain("hi content");
+
+        // No corruption: the system root keeps its own content and gains no self-referential branch.
+        expect(rootNote.getContent().toString()).not.toContain("archived root content");
+        expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+    });
+
+    it("restoreAsRoot maps the archived root onto the destination root instead of wrapping it (demo-content shape)", async () => {
+        // The demo archive (and a whole-database restore) is an export whose top note IS "root" with no
+        // own content - just children. With restoreAsRoot those children must land directly under the
+        // destination root, not inside a redundant "root" wrapper note (which produced "two root folders").
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "root",
+                title: "root",
+                type: "text",
+                mime: "text/html",
+                format: "html",
+                dirFileName: "root",
+                attributes: [],
+                attachments: [],
+                children: [
+                    { noteId: "demoChildA", title: "Journal", type: "text", mime: "text/html", format: "html", dataFileName: "Journal.html", attributes: [], attachments: [] },
+                    { noteId: "demoChildB", title: "Miscellaneous", type: "text", mime: "text/html", format: "html", dataFileName: "Miscellaneous.html", attributes: [], attachments: [] }
+                ]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "root/Journal.html": "<p>journal</p>",
+            "root/Miscellaneous.html": "<p>misc</p>"
+        });
+
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-restore-as-root", { textImportedAsText: true }, { restoreAsRoot: true });
+
+        // The archived root's children are DIRECT children of the destination root - a "root" wrapper note
+        // would interpose itself as their parent instead (the "two root folders" regression).
+        const journal = rootNote.getChildNotes().find((n) => n.title === "Journal");
+        const misc = rootNote.getChildNotes().find((n) => n.title === "Miscellaneous");
+        expect(journal?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
+        expect(misc?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
+        // And no self-referential root branch.
+        expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+    });
+
+    it("restoreAsRoot merges an archived root that has its own content into the destination root", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "root",
+                title: "root",
+                type: "text",
+                mime: "text/html",
+                format: "html",
+                dataFileName: "root.html",
+                dirFileName: "root",
+                attributes: [],
+                attachments: [],
+                children: [
+                    { noteId: "restoreChild1", title: "Restored Child", type: "text", mime: "text/html", format: "html", dataFileName: "Restored Child.html", attributes: [], attachments: [] }
+                ]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "root.html": "<p>restored root content</p>",
+            "root/Restored Child.html": "<p>child content</p>"
+        });
+
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-restore-root-content", { textImportedAsText: true }, { restoreAsRoot: true });
+
+        // The archived root's content is written onto the real root, and its child attaches directly to
+        // root - no wrapper note, no self-referential branch.
+        expect(rootNote.getContent().toString()).toContain("restored root content");
+        const child = rootNote.getChildNotes().find((n) => n.title === "Restored Child");
+        expect(child?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
+        expect(child?.getContent().toString()).toContain("child content");
+        expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+    });
+
+    it("imports a CSV entry as a plain file note when the spreadsheet option is off", async () => {
+        const zipBuffer = await createZipBuffer({ "csv_as_file_sample.csv": "a,b\r\n1,2" });
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-csv-off", { spreadsheetImportedAsSpreadsheet: false });
+
+        const note = rootNote.getChildNotes().find((n) => n.title === "csv_as_file_sample");
+        expect(note?.type).toBe("file");
+        expect(note?.mime).toBe("text/csv");
+    });
 }, 60_000);
+
+/** Parses a spreadsheet note's content and returns its single (first) sheet's data. */
+function parseWorkbookSheet(content: string | Uint8Array | undefined) {
+    expect(typeof content).toBe("string");
+    const parsed = JSON.parse(content as string);
+    const sheetId = parsed.workbook.sheetOrder[0];
+    return parsed.workbook.sheets[sheetId];
+}
 
 function getNoteByTitlePath(parentNote: BNote, ...titlePath: string[]) {
     let cursor = parentNote;

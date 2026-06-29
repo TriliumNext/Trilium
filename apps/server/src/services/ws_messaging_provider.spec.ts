@@ -46,7 +46,13 @@ vi.mock("ws", () => ({
 }));
 vi.mock("./config.js", () => ({ default: configMock }));
 vi.mock("./utils.js", () => ({ randomString: randomStringMock }));
-vi.mock("@triliumnext/core", () => ({ getLog: () => getLogMock }));
+vi.mock("@triliumnext/core", async () => {
+    // use the real shouldLogMessage so the suppression tests cover the actual filter
+    const { shouldLogMessage } = await vi.importActual<typeof import("@triliumnext/core/src/services/messaging/index.js")>(
+        "@triliumnext/core/src/services/messaging/index.js"
+    );
+    return { getLog: () => getLogMock, shouldLogMessage };
+});
 
 import WebSocketMessagingProvider from "./ws_messaging_provider.js";
 
@@ -161,6 +167,18 @@ describe("WebSocketMessagingProvider", () => {
             const { server } = init();
             expect(() => server.emit("error", new Error("ws boom"))).not.toThrow();
         });
+
+        it("handles a per-connection error without throwing and untracks the client", () => {
+            // A protocol error on a single socket (e.g. WS_ERR_INVALID_CLOSE_CODE) must not
+            // bubble up as an uncaught exception that crashes the process. See issue #9598.
+            const { server } = init();
+            const ws = makeSocket();
+            server.emit("connection", ws, {});
+            expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(true);
+
+            expect(() => ws.emit("error", new Error("WS_ERR_INVALID_CLOSE_CODE"))).not.toThrow();
+            expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(false);
+        });
     });
 
     describe("sendMessageToAllClients", () => {
@@ -171,17 +189,24 @@ describe("WebSocketMessagingProvider", () => {
             server.clients.add(open);
             server.clients.add(closed);
 
-            provider.sendMessageToAllClients({ type: "frontend-update" } as WebSocketMessage);
+            provider.sendMessageToAllClients({ type: "sync-finished" } as WebSocketMessage);
             expect(open.sent).toHaveLength(1);
             expect(closed.sent).toHaveLength(0);
             expect(getLogMock.info).toHaveBeenCalled();
         });
 
         it("does not log for suppressed message types", () => {
-            init();
+            const { server } = init();
+            const open = makeSocket(OPEN);
+            server.clients.add(open);
+
+            provider.sendMessageToAllClients({ type: "frontend-update" } as WebSocketMessage);
             provider.sendMessageToAllClients({ type: "sync-failed" } as WebSocketMessage);
             provider.sendMessageToAllClients({ type: "api-log-messages" } as WebSocketMessage);
+
             expect(getLogMock.info).not.toHaveBeenCalled();
+            // suppressing the log must not suppress delivery
+            expect(open.sent).toHaveLength(3);
         });
 
         it("is a no-op when the server is not initialized", () => {

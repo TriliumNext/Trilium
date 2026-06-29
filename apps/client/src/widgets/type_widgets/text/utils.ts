@@ -7,18 +7,25 @@ import { openAnnotationOverlay } from "../../../services/image_annotation";
 import link, { ViewScope } from "../../../services/link";
 import utils from "../../../services/utils";
 
-export async function loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>) {
+export async function loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
     const note = await froca.getNote(noteId);
     if (!note) return;
 
-    // Get the box size from the parent section element
-    const $section = $el.closest('section.include-note');
-    const boxSize = $section.attr('data-box-size');
-    const isExpandable = boxSize === 'expandable';
+    // The box size is supplied explicitly by the editing-view downcast; for the other
+    // callers (read-only rendering, script API refresh) fall back to reading it from the DOM.
+    const effectiveBoxSize = boxSize ?? $el.closest('section.include-note').attr('data-box-size');
+    const isExpandable = effectiveBoxSize === 'expandable';
 
+    // The editing-view downcast passes the `.include-note-wrapper` element itself as $el, whereas the
+    // read-only and refresh paths pass the outer `section.include-note`. Build the content in a
+    // detached wrapper either way (so the old content stays visible during the async render — no
+    // flicker), then swap it in; when $el is already the wrapper we move the built children straight
+    // into it instead of nesting a redundant second `.include-note-wrapper`.
+    const isWrapper = $el.hasClass('include-note-wrapper');
     const $wrapper = $('<div class="include-note-wrapper">');
     const $link = await link.createLink(note.noteId, {
-        showTooltip: false
+        showTooltip: false,
+        showNoteIcon: true
     });
 
     if (isExpandable) {
@@ -30,7 +37,7 @@ export async function loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>)
         $titleRow.append($toggle, $title);
         $wrapper.append($titleRow);
 
-        const { $renderedContent, type } = await content_renderer.getRenderedContent(note);
+        const { $renderedContent, type } = await content_renderer.getRenderedContent(note, { interactive: true });
         const $content = $(`<div class="include-note-content type-${type}" style="display: none;">`).append($renderedContent);
         $wrapper.append($content);
 
@@ -46,42 +53,15 @@ export async function loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>)
         // Standard display
         $wrapper.append($('<h4 class="include-note-title">').append($link));
 
-        const { $renderedContent, type } = await content_renderer.getRenderedContent(note);
+        const { $renderedContent, type } = await content_renderer.getRenderedContent(note, { interactive: true });
         $wrapper.append($(`<div class="include-note-content type-${type}">`).append($renderedContent));
     }
 
-    $el.empty().append($wrapper);
-
-    // Watch for box-size attribute changes and re-render
-    setupBoxSizeObserver($section[0], noteId, $el);
-}
-
-// Track observers to avoid duplicates
-const boxSizeObservers = new WeakMap<Element, MutationObserver>();
-
-function setupBoxSizeObserver(section: Element, noteId: string, $el: JQuery<HTMLElement>) {
-    // Clean up existing observer if any
-    const existingObserver = boxSizeObservers.get(section);
-    if (existingObserver) {
-        existingObserver.disconnect();
-    }
-
-    const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'data-box-size') {
-                // Re-render the included note with the new box size
-                loadIncludedNote(noteId, $el);
-                break;
-            }
-        }
-    });
-
-    observer.observe(section, {
-        attributes: true,
-        attributeFilter: ['data-box-size']
-    });
-
-    boxSizeObservers.set(section, observer);
+    // Unmount any interactive widgets from a previous render of this include (e.g. on a box-size
+    // change or refreshIncludedNote) before $el.empty() discards their DOM — otherwise their
+    // standalone Preact roots (collections, web views) would leak.
+    content_renderer.disposeInteractiveContent($el);
+    $el.empty().append(isWrapper ? $wrapper.children() : $wrapper);
 }
 
 export function refreshIncludedNote(container: HTMLDivElement, noteId: string) {

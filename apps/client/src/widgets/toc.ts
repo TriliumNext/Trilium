@@ -19,7 +19,6 @@ import RightPanelWidget from "./right_panel_widget.js";
 import options from "../services/options.js";
 import OnClickButtonWidget from "./buttons/onclick_button.js";
 import appContext, { type EventData } from "../components/app_context.js";
-import katex from "../services/math.js";
 import type FNote from "../entities/fnote.js";
 import DOMPurify, { type Config as DOMPurifyConfig } from "dompurify";
 
@@ -274,7 +273,9 @@ export default class TocWidget extends RightPanelWidget {
         let modifiedText = html;
 
         if (matches.length > 0) {
-            // Process all matches asynchronously
+            // KaTeX is heavy, so the math service is only loaded when there are formulas to render.
+            const { default: katex } = await import("../services/math.js");
+
             for (const match of matches) {
                 let latexCode = match[1];
                 let rendered;
@@ -284,20 +285,8 @@ export default class TocWidget extends RightPanelWidget {
                         throwOnError: false
                     });
                 } catch (e) {
-                    if (e instanceof ReferenceError && e.message.includes("katex is not defined")) {
-                        // Load KaTeX if it is not already loaded
-                        try {
-                            rendered = katex.renderToString(latexCode, {
-                                throwOnError: false
-                            });
-                        } catch (renderError) {
-                            console.error("KaTeX rendering error after loading library:", renderError);
-                            rendered = match[0]; // Fall back to original if error persists
-                        }
-                    } else {
-                        console.error("KaTeX rendering error:", e);
-                        rendered = match[0]; // Fall back to original on error
-                    }
+                    console.error("KaTeX rendering error:", e);
+                    rendered = match[0]; // Fall back to original on error
                 }
 
                 // Replace the matched formula in the modified text

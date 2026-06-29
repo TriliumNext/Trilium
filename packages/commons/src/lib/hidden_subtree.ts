@@ -23,6 +23,11 @@ export interface HiddenSubtreeItem {
     title: string;
     type: LauncherNoteType;
     /**
+     * The MIME type to use for this item (e.g. `text/x-markdown`). Only relevant for code notes;
+     * if omitted, the default MIME for the type is used.
+     */
+    mime?: string;
+    /**
      * The icon to use for this item, in the format "bx-icon-name" (e.g., `bx-file-blank`), *without* the leading `bx `.
      */
     icon?: string;

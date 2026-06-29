@@ -37,6 +37,7 @@ type TaskDataDefinitions = {
     importNotes: {
         textImportedAsText?: boolean;
         codeImportedAsCode?: boolean;
+        spreadsheetImportedAsSpreadsheet?: boolean;
         replaceUnderscoresWithSpaces?: boolean;
         shrinkImages?: boolean;
         safeImport?: boolean;
@@ -64,12 +65,23 @@ export type TaskType = keyof TaskDataDefinitions | keyof TaskResultDefinitions;
 export type TaskData<T extends TaskType> = TaskDataDefinitions[T];
 export type TaskResult<T extends TaskType> = TaskResultDefinitions[T];
 
+/**
+ * Identifies which phase of a multi-phase task a progress message belongs to, so the client can label
+ * the bar accordingly (e.g. zip import counts archive entries while "extracting", then notes while
+ * "processing"). Single-phase tasks omit it and the client falls back to a generic message.
+ */
+export type ProgressPhase = "extracting" | "processing";
+
 type TaskDefinition<T extends TaskType> = {
     type: "taskProgressCount",
     taskId: string;
     taskType: T;
     data: TaskData<T>,
-    progressCount: number
+    progressCount: number;
+    /** Total expected units of work, when known up front; lets the client show a progress bar. */
+    totalCount?: number;
+    /** Which phase of a multi-phase task this count belongs to; lets the client pick a phase-specific label. */
+    phase?: ProgressPhase;
 } | {
     type: "taskError",
     taskId: string;

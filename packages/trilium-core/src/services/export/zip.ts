@@ -16,7 +16,11 @@ import { getZipExportProviderFactory } from "./zip_export_provider_factory.js";
 import { AttachmentMeta, AttributeMeta, ExportFormat, NoteMeta, NoteMetaFile } from "../../meta";
 import { ValidationError } from "../../errors";
 import { extname } from "../utils/path";
+import { truncateUtf8Bytes } from "../utils/binary";
 import { rewriteMarkdownContentLinks, isMarkdownCodeNote } from "./rewrite_links.js";
+
+// Most filesystems cap a single path component at 255 bytes; keep exported file names within that.
+const MAX_FILENAME_BYTES = 255;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: Record<string, any>, setHeaders = true, zipExportOptions?: AdvancedExportOptions) {
@@ -66,27 +70,19 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             fileName = "note";
         }
 
-        // Crop fileName to avoid its length exceeding 30 and prevent cutting into the extension.
-        if (fileName.length > 30) {
-            // We use regex to match the extension to preserve multiple dots in extensions (e.g. .tar.gz).
-            const match = fileName.match(/(\.[a-zA-Z0-9_.!#-]+)$/);
-            const ext = match ? match[0] : "";
-            // Crop the extension if extension length exceeds 30
-            const croppedExt = ext.slice(-30);
-            // Crop the file name section and append the cropped extension
-            fileName = fileName.slice(0, 30 - croppedExt.length) + croppedExt;
-        }
-
         const existingExtension = extname(fileName).toLowerCase();
         const newExtension = provider.mapExtension(type, mime, existingExtension, format);
 
         // if the note is already named with the extension (e.g. "image.jpg"), then it's silly to append the exact same extension again
-        if (newExtension && existingExtension !== `.${newExtension.toLowerCase()}`) {
-            fileName += `.${newExtension}`;
-        }
+        const extension = newExtension && existingExtension !== `.${newExtension.toLowerCase()}` ? `.${newExtension}` : "";
 
+        // sanitize() strips illegal filename characters; we then byte-truncate the base
+        // name so the whole entry (extension included) stays within the 255-byte
+        // filesystem limit without ever chopping the extension off long / multi-byte
+        // titles and attachment names. This replaces the old arbitrary 30-char cap.
+        const base = truncateUtf8Bytes(sanitize(fileName), MAX_FILENAME_BYTES - extension.length);
 
-        return getUniqueFilename(existingFileNames, fileName);
+        return getUniqueFilename(existingFileNames, `${base}${extension}`);
     }
 
     function createNoteMeta(branch: BBranch, parentMeta: Partial<NoteMeta>, existingFileNames: Record<string, number>): NoteMeta | null {
@@ -317,9 +313,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         return content;
     }
 
-    function saveNote(noteMeta: NoteMeta, filePathPrefix: string) {
-        log.info(`Exporting note '${noteMeta.noteId}'`);
-
+    async function saveNote(noteMeta: NoteMeta, filePathPrefix: string) {
         if (!noteMeta.noteId || noteMeta.title === undefined) {
             throw new Error("Missing note meta.");
         }
@@ -351,8 +345,13 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
             archive.append(content as string | Uint8Array, {
                 name: filePathPrefix + noteMeta.dataFileName,
-                date: dateUtils.parseDateTime(note.utcDateModified)
+                date: dateUtils.parseDateTime(note.utcDateModified),
+                store: shouldStoreUncompressed(noteMeta.mime)
             });
+
+            // Pace the synchronous tree walk against the archive's drain so the
+            // whole export isn't buffered into archiver's queue at once.
+            await archive.waitForCapacity?.();
         }
 
         taskContext.increaseProgressCount();
@@ -363,12 +362,18 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             }
 
             const attachment = note.getAttachmentById(attachmentMeta.attachmentId);
+            // getContent() already returns a string or a Uint8Array; the binary
+            // case can be appended as-is (the zip provider handles the Buffer
+            // conversion), so avoid an extra full copy of the blob here.
             const content = attachment.getContent();
 
-            archive.append(typeof content === "string" ? content : new Uint8Array(content), {
+            archive.append(content, {
                 name: filePathPrefix + attachmentMeta.dataFileName,
-                date: dateUtils.parseDateTime(note.utcDateModified)
+                date: dateUtils.parseDateTime(note.utcDateModified),
+                store: shouldStoreUncompressed(attachmentMeta.mime)
             });
+
+            await archive.waitForCapacity?.();
         }
 
         if (noteMeta.children?.length || 0 > 0) {
@@ -380,7 +385,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             }
 
             for (const childMeta of noteMeta.children || []) {
-                saveNote(childMeta, `${directoryPath}/`);
+                await saveNote(childMeta, `${directoryPath}/`);
             }
         }
     }
@@ -434,14 +439,6 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         }
     }
 
-    const metaFileJson = JSON.stringify(metaFile, null, "\t");
-
-    archive.append(metaFileJson, { name: "!!!meta.json" });
-
-    saveNote(rootMeta, "");
-
-    provider.afterDone(rootMeta);
-
     const note = branch.getNote();
     const zipFileName = `${branch.prefix ? `${branch.prefix} - ` : ""}${note.getTitleOrProtected()}.zip`;
 
@@ -450,12 +447,50 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         res.setHeader("Content-Type", "application/zip");
     }
 
+    // Start streaming to the destination *before* appending content. The archiver
+    // drains each appended blob as it is added, so memory stays bounded instead of
+    // buffering the whole export. Trade-off: a failure while reading content mid-
+    // export can no longer produce a clean HTTP error (bytes are already on the
+    // wire); the validation that can fail cleanly runs in the try/catch above.
     archive.pipe(res);
+
+    const metaFileJson = JSON.stringify(metaFile, null, "\t");
+
+    archive.append(metaFileJson, { name: "!!!meta.json" });
+
+    // The metadata pass above already drove the bare progress count. Reset it and seed the total with the
+    // number of notes about to be written so the content-writing pass renders a clean 0→100% progress bar.
+    taskContext.resetProgressCount();
+    const noteCount = countMetaNodes(rootMeta);
+    taskContext.setTotalCount(noteCount);
+
+    // A single summary line instead of one log entry per note — per-note logging floods the log file and
+    // stdout on large exports (e.g. 20k lines for a 20k-note subtree) for no operational benefit.
+    log.info(`Exporting ${noteCount} notes with format '${format}'`);
+
+    await saveNote(rootMeta, "");
+
+    provider.afterDone(rootMeta);
+
     await archive.finalize();
 
-    taskContext.taskSucceeded(null);
+    // Report success here only for an HTTP response, whose bytes are on the wire once finalize() resolves.
+    // A file (or other) stream isn't durably written until its "finish" event — which the caller awaits via
+    // waitForFinish() — so for those the caller emits taskSucceeded after the flush, not here, to avoid
+    // reporting success before a late write error (e.g. a full disk) leaves a truncated archive.
+    if ("setHeader" in res) {
+        taskContext.taskSucceeded(null);
+    }
 }
 
+/** Counts the notes in a metadata tree — i.e. the number of `saveNote()` calls the content-writing pass will make. */
+function countMetaNodes(meta: NoteMeta): number {
+    let count = 1;
+    for (const child of meta.children || []) {
+        count += countMetaNodes(child);
+    }
+    return count;
+}
 
 async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath: string, zipExportOptions?: AdvancedExportOptions) {
     const { destination, waitForFinish } = getZipProvider().createFileStream(zipFilePath);
@@ -473,7 +508,89 @@ async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath
     getLog().info(`Exported '${noteId}' with format '${format}' to '${zipFilePath}'`);
 }
 
+/**
+ * Streams a subtree (branch) export straight to a file on disk, reporting
+ * progress/success/failure over the WebSocket via `taskId`. Used by the desktop
+ * "native export" flow, which writes directly to a user-chosen path instead of
+ * routing a potentially multi-GB archive through an in-memory HTTP response.
+ */
+async function exportBranchToZipFile(branchId: string, format: ExportFormat, zipFilePath: string, taskId: string) {
+    const branch = becca.getBranch(branchId);
+    if (!branch) {
+        throw new ValidationError(`Branch ${branchId} not found.`);
+    }
+
+    const taskContext = new TaskContext(taskId, "export", null);
+    const { destination, waitForFinish } = getZipProvider().createFileStream(zipFilePath);
+
+    try {
+        await exportToZip(taskContext, branch, format, destination as Record<string, any>, false);
+        await waitForFinish();
+        // exportToZip defers success for non-HTTP destinations: only now, with the file fully flushed to
+        // disk, is the export genuinely complete — so report it here rather than before the final write.
+        taskContext.taskSucceeded(null);
+    } catch (e: unknown) {
+        taskContext.reportError(`Export failed with error: ${e instanceof Error ? e.message : String(e)}`);
+        throw e;
+    }
+
+    getLog().info(`Exported branch '${branchId}' with format '${format}' to '${zipFilePath}'`);
+}
+
 export default {
     exportToZip,
-    exportToZipFile
+    exportToZipFile,
+    exportBranchToZipFile
 };
+
+/**
+ * Whether a payload of the given MIME type is already compressed and should be
+ * stored uncompressed in a ZIP rather than re-deflated. Deflating these wastes
+ * CPU (often the export bottleneck) for negligible — sometimes negative — size
+ * change. Conservative: anything not known-compressed returns false and is
+ * compressed normally, so text/HTML/SVG/JSON/code all still deflate.
+ */
+export function shouldStoreUncompressed(mime: string | undefined | null): boolean {
+    if (!mime) {
+        return false;
+    }
+    const m = mime.toLowerCase().split(";")[0].trim();
+
+    // Codec-compressed media. PCM/AIFF are uncompressed, so let them deflate.
+    if (m.startsWith("video/")) {
+        return true;
+    }
+    if (m.startsWith("audio/")) {
+        return !UNCOMPRESSED_AUDIO.has(m);
+    }
+
+    return ALREADY_COMPRESSED.has(m) || isZipBasedContainer(m);
+}
+
+// Office / e-book / package formats that are ZIP containers under the hood.
+function isZipBasedContainer(mime: string): boolean {
+    return (
+        mime.startsWith("application/vnd.openxmlformats-officedocument.") || // docx/xlsx/pptx
+        mime.startsWith("application/vnd.oasis.opendocument.") ||            // odt/ods/odp
+        mime === "application/epub+zip" ||
+        mime === "application/java-archive" ||
+        mime === "application/vnd.android.package-archive"
+    );
+}
+
+const UNCOMPRESSED_AUDIO = new Set([
+    "audio/wav", "audio/x-wav", "audio/wave", "audio/aiff", "audio/x-aiff"
+]);
+
+const ALREADY_COMPRESSED = new Set([
+    // Raster images (SVG/BMP/ICO/TIFF deliberately excluded — they deflate well)
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "image/avif", "image/heic", "image/heif", "image/jp2", "image/apng",
+    // Archives / compressed streams
+    "application/zip", "application/x-zip-compressed", "application/gzip",
+    "application/x-gzip", "application/x-bzip2", "application/x-xz",
+    "application/x-7z-compressed", "application/x-rar-compressed",
+    "application/x-apple-diskimage",
+    // Already-compressed documents / fonts
+    "application/pdf", "font/woff", "font/woff2"
+]);

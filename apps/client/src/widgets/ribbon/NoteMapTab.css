@@ -1,0 +1,13 @@
+.note-map-ribbon-widget {
+    position: relative;
+}
+
+.note-map-ribbon-widget .note-map-container {
+    height: 100%;
+}
+
+.note-map-ribbon-widget .open-full-button, .note-map-ribbon-widget .collapse-button {
+    position: absolute;
+    inset-inline-end: 5px;
+    bottom: 5px;
+}

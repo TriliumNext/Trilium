@@ -8,16 +8,18 @@ CRITICAL: In JSX notes, always use top-level `import` statements (e.g. `import {
 
 ## Creating a frontend script
 
-1. Create a Code note with language "JSX" (preferred) or "JS frontend" (legacy only).
+1. Create a Code note with language "JSX" (preferred) or "JavaScript (Trilium frontend)" (legacy only).
 2. Add `#widget` label for widgets, or `#run=frontendStartup` for auto-run scripts.
 3. For mobile, use `#run=mobileStartup` instead.
+
+NOTE: `#widget`, `#run` and `~renderNote` enable code execution, so `set_attribute` refuses them as dangerous. Create the code note yourself, then ask the user to add the activating attribute, telling them exactly which note to open and what to type into its attribute area.
 
 ## Script types
 
 | Type | Language | Required attribute |
 |---|---|---|
 | Custom widget | JSX (preferred) | `#widget` |
-| Regular script | JS frontend | `#run=frontendStartup` (optional) |
+| Regular script | JavaScript (Trilium frontend) | `#run=frontendStartup` (optional) |
 | Render note | JSX | None (used via `~renderNote` relation) |
 
 ## Custom widgets (Preact JSX) — preferred
@@ -99,7 +101,8 @@ export default defineWidget({
 ```jsx
 // API methods
 import { showMessage, showError, getNote, searchForNotes, activateNote,
-         runOnBackend, getActiveContextNote } from "trilium:api";
+         runOnBackend, runAsyncOnBackendWithManualTransactionHandling,
+         getActiveContextNote } from "trilium:api";
 
 // Hooks and components
 import { defineWidget, defineLauncherWidget,
@@ -125,9 +128,16 @@ import { ActionButton, Button, LinkButton, Modal,
 For rendering custom content inside a note:
 1. Create a "render note" (type: Render Note) where you want the content to appear.
 2. Create a JSX code note **as a child** of the render note, exporting a default component.
-3. On the render note, add a `~renderNote` relation pointing to the child JSX note.
+3. Ask the user to add a `~renderNote` relation on the render note pointing to the child JSX note (you cannot set this dangerous attribute yourself).
 
 IMPORTANT: Always create the JSX code note as a child of the render note, not as a sibling or at the root. This keeps them organized together.
+
+IMPORTANT: To reference "this widget's note" from inside a render note component, use `originEntity` — for render notes it is the note being rendered (the one carrying the `~renderNote` relation). Do NOT use `getActiveContextNote()` for this: it returns the note the user currently has open in the UI, which is the render note's *host* (e.g. a dashboard or a book view), not the render note itself.
+
+```jsx
+import { originEntity } from "trilium:api";
+// originEntity = the render note hosting this component
+```
 
 Stateless example:
 
@@ -182,7 +192,21 @@ import { showMessage } from "trilium:api";
 
 ## Script API
 
-In JSX, use `import { method } from "trilium:api"`. In JS frontend, use the `api` global.
+In JSX, use `import { method } from "trilium:api"`. In JavaScript (Trilium frontend), use the `api` global.
+
+### Script context
+- `startNote` - note where the script execution started (the entry point of the script bundle). All module notes loaded by the same execution share one `startNote`; `log()` messages are grouped under it.
+- `currentNote` - note containing the source code currently executing. Equal to `startNote` except inside child module notes. NOT the note open in the UI — that is `getActiveContextNote()`.
+- `originEntity` - note whose event triggered this execution, or `null`. Usually `null` (scripts started by the user or the UI). It is set for render notes — the note being rendered, i.e. the one carrying the `~renderNote` relation — and for `api.runOnFrontend()` calls from the backend (the backend's `originEntity`, if it was a note).
+
+Concrete examples:
+
+| Scenario | `startNote` | `currentNote` | `originEntity` |
+|---|---|---|---|
+| Widget script "Clock" (`#widget`) | "Clock" | "Clock" (a child module note while its code runs) | `null` |
+| Startup script (`#run=frontendStartup`) or manual Execute on "Setup" | "Setup" | "Setup" (or module note) | `null` |
+| Render note "Stats" with `~renderNote` → JSX note "StatsComponent" | "StatsComponent" | "StatsComponent" (or module note) | "Stats" (the render note) |
+| `api.runOnFrontend()` called from a backend script | the backend execution's `currentNote` | same | the backend's `originEntity` if it was a note, else `null` |
 
 ### Navigation & tabs
 - `activateNote(notePath)` - navigate to a note
@@ -215,7 +239,21 @@ In JSX, use `import { method } from "trilium:api"`. In JS frontend, use the `api
 - `showPromptDialog(msg)` - prompt dialog (returns user input)
 
 ### Backend integration
-- `runOnBackend(func, params)` - execute a function on the backend
+- `runOnBackend(func, params)` - execute a function on the backend. The function **MUST be synchronous** — do NOT pass an `async` function. `runOnBackend` wraps the call in a SQL transaction, which does not support async; passing an `async` function triggers the warning *"You're passing an async function to `api.runOnBackend()` which will likely not work as you intended"* and the transaction will not behave correctly.
+- `runAsyncOnBackendWithManualTransactionHandling(func, params)` - use this instead when the backend function genuinely needs to be `async` (e.g. it `await`s a `fetch()`). Automatic transaction management is disabled, so wrap any DB writes in `api.transactional(...)` yourself inside the function.
+
+```jsx
+// ✅ Synchronous backend work — use runOnBackend
+const title = await runOnBackend((noteId) => {
+    return api.getNote(noteId).title;
+}, [noteId]);
+
+// ✅ Async backend work (e.g. fetch) — use the manual-transaction variant
+const data = await runAsyncOnBackendWithManualTransactionHandling(async (url) => {
+    const response = await fetch(url);
+    return await response.json();
+}, [url]);
+```
 
 ### UI interaction
 - `triggerCommand(name, data)` - trigger a command
@@ -330,7 +368,7 @@ Avoid `require("electron")`, `@electron/remote`, and `process` — `nodeIntegrat
 Only use legacy widgets if you specifically need jQuery or cannot use JSX.
 
 ```javascript
-// Language: JS frontend, Label: #widget
+// Language: JavaScript (Trilium frontend), Label: #widget
 class MyWidget extends api.BasicWidget {
     get position() { return 1; }
     get parentWidget() { return "center-pane"; }
@@ -354,4 +392,4 @@ Key differences from Preact:
 
 ## Module system
 
-For JSX, use `import`/`export` syntax between notes. For JS frontend, use `module.exports` and function parameters matching child note titles.
+For JSX, use `import`/`export` syntax between notes. For JavaScript (Trilium frontend), use `module.exports` and function parameters matching child note titles.

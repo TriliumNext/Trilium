@@ -34,6 +34,7 @@ import ImageActions from "./plugins/image_actions.js";
 // import "@triliumnext/ckeditor5-math/index.css";
 import CodeBlockToolbar from "./plugins/code_block_toolbar.js";
 import CodeBlockLanguageDropdown from "./plugins/code_block_language_dropdown.js";
+import CodeBlockInsertParagraph from "./plugins/code_block_insert_paragraph.js";
 import MoveBlockUpDownPlugin from "./plugins/move_block_updown.js";
 import ScrollOnUndoRedoPlugin from "./plugins/scroll_on_undo_redo.js"
 import InlineCodeNoSpellcheck from "./plugins/inline_code_no_spellcheck.js";
@@ -44,6 +45,8 @@ import IncludeNoteBoxSizeDropdown from "./plugins/include_note_box_size_dropdown
 import IncludeNoteToolbar from "./plugins/include_note_toolbar.js";
 import LinkEmbedToolbar from "./plugins/link_embed_toolbar.js";
 import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multistate.js";
+import TodoListUncheckOnEnter from "./plugins/todo_list_uncheck_on_enter.js";
+import CollapsibleListItems from "./plugins/collapsible_list_items.js";
 
 /**
  * Plugins that are specific to Trilium and not part of the CKEditor 5 core, included in both text editors but not in the attribute editor.
@@ -64,6 +67,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     SyntaxHighlighting,
     CodeBlockLanguageDropdown,
     CodeBlockToolbar,
+    CodeBlockInsertParagraph,
     MoveBlockUpDownPlugin,
     ScrollOnUndoRedoPlugin,
     InlineCodeNoSpellcheck,
@@ -74,6 +78,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     IncludeNoteToolbar,
     LinkEmbedToolbar,
     TodoListMultistate,
+    CollapsibleListItems,
     CopyAnchorLinkButton,
     AnnotateImagePlugin,
     CopyLinkUrlButton,
@@ -148,6 +153,7 @@ export const COMMON_PLUGINS: typeof Plugin[] = [
 	List,
 	ListProperties,
 	TodoList,
+	TodoListUncheckOnEnter,
 	PasteFromOffice,
 	PictureEditing,
 	Table,

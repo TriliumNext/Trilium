@@ -131,6 +131,7 @@ export default class StandaloneLogService extends FileBasedLogService {
 
             // OPFS doesn't provide mtime directly, so we parse from filename
             const match = name.match(/trilium-(\d{4})-(\d{2})-(\d{2})\.log/);
+            /* v8 ignore next -- @preserve: `name` already matched LOG_FILE_PATTERN above, so this equivalent regex always matches. */
             if (match) {
                 const mtime = new Date(
                     parseInt(match[1]),

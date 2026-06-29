@@ -310,6 +310,7 @@ async function initialize(): Promise<void> {
                 logService.info("[Worker] Database not initialized, skipping becca load (will be loaded during DB initialization)");
             }
 
+            coreModule.sync.startSyncTimer();
             coreModule.scheduler.startScheduler();
 
             logService.info("[Worker] Initialization complete");

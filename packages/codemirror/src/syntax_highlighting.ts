@@ -1,21 +1,14 @@
 import { LanguageSupport, type StreamParser } from "@codemirror/language";
-import {linter as linterExtension, lintGutter } from "@codemirror/lint";
 import type { Extension } from "@codemirror/state";
 import { SupportedMimeTypes } from "@triliumnext/commons";
 
-async function buildJavaScript(mimeType: string) {
-    const { javascript, esLint } = await import('@codemirror/lang-javascript');
-    const lint = (await import("./extensions/eslint.js")).lint;
-    const extensions: Extension[] = [ javascript() ];
-
-    const result = await lint(mimeType);
-    if ("linter" in result) {
-        const { linter, config } = result;
-        extensions.push(linterExtension(esLint(linter, config)));
-        extensions.push(lintGutter())
-    }
-
-    return extensions;
+async function buildJavaScript() {
+    // Syntax highlighting only. Code notes are stored snippets, not linted; the
+    // executed script notes (env=backend / env=frontend) instead get full
+    // diagnostics and completion from the TypeScript language service, wired in
+    // separately via ./type_completion.
+    const { javascript } = await import('@codemirror/lang-javascript');
+    return [ javascript() ];
 }
 
 async function buildMermaid() {
@@ -23,14 +16,23 @@ async function buildMermaid() {
     return [ mermaid(), foldByIndent() ];
 }
 
+async function buildJson() {
+    // `jsonParseLinter` validates with the real JSON.parse, so it reports precise,
+    // correctly-positioned syntax errors (unlike a tolerant Lezer grammar). The
+    // gutter marker mirrors the TypeScript script linter and the Mermaid linter.
+    const { json, jsonParseLinter } = await import('@codemirror/lang-json');
+    const { linter, lintGutter } = await import('@codemirror/lint');
+    return [ json(), linter(jsonParseLinter()), lintGutter() ];
+}
+
 const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown> | LanguageSupport | Extension[]>) | null> = {
     "text/plain": null,
 
     "application/dart": async () => (await import('@codemirror/legacy-modes/mode/clike')).dart,
     "application/edn": async () => (await import('@codemirror/legacy-modes/mode/clojure')).clojure,
-    "application/javascript;env=backend": async () => buildJavaScript("application/javascript;env=backend"),
-    "application/javascript;env=frontend": async () => buildJavaScript("application/javascript;env=frontend"),
-    "application/json": async () => ((await import('@codemirror/lang-json')).json()),
+    "application/javascript;env=backend": async () => buildJavaScript(),
+    "application/javascript;env=frontend": async () => buildJavaScript(),
+    "application/json": async () => buildJson(),
     "application/ld+json": async () => (await import('@codemirror/legacy-modes/mode/javascript')).jsonld,
     "application/mbox": async () => (await import('@codemirror/legacy-modes/mode/mbox')).mbox,
     "application/n-triples": async () => (await import('@codemirror/legacy-modes/mode/ntriples')).ntriples,
@@ -53,6 +55,7 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/coffeescript": async () => (await import('@codemirror/legacy-modes/mode/coffeescript')).coffeeScript,
     "text/css": async () => (await import('@codemirror/lang-css')).css(),
     "text/html": async () => (await import('@codemirror/lang-html')).html(),
+    "text/javascript": async () => buildJavaScript(),
     "text/jinja2": async () => (await import('@codemirror/legacy-modes/mode/jinja2')).jinja2,
     "text/jsx": async () => (await import('@codemirror/lang-javascript')).javascript({ jsx: true }),
     "text/mirc": async () => (await import('@codemirror/legacy-modes/mode/mirc')).mirc,
@@ -204,5 +207,14 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/x-z80": async () => (await import('@codemirror/legacy-modes/mode/z80')).z80,
     "text/xml": async () => (await import('@codemirror/lang-xml')).xml()
 }
+
+/**
+ * Maps MIME types that aren't first-class code-note languages onto an equivalent
+ * {@link byMimeType} language for syntax highlighting. For example, SVG image notes
+ * (`image/svg+xml`) are XML under the hood, so their source view highlights as XML.
+ */
+export const MIME_ALIASES: Record<string, SupportedMimeTypes> = {
+    "image/svg+xml": "text/xml"
+};
 
 export default byMimeType;

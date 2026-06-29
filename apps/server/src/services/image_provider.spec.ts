@@ -189,4 +189,64 @@ describe('serverImageProvider.processImage', () => {
         expect(tooHigh).toBe(at75);
         expect(valid).not.toBe(at75);
     });
+
+    it('bakes EXIF orientation into the pixels when shrinking a rotated photo (#4254)', async () => {
+        setOptions({ compressImages: 'true', imageMaxWidthHeight: '100' });
+
+        // A 600x400 landscape JPEG tagged "rotate 90 CW" (orientation 6) is how a portrait photo
+        // shot on a rotated camera is stored. Shrinking re-encodes to JPEG and drops the EXIF tag,
+        // so the rotation must be baked into the pixels — otherwise the saved image is displayed
+        // sideways (the original bug). Re-decoding the shrunk output must therefore be portrait.
+        const oriented = await makeOrientedJpeg(600, 400, 6);
+        const result = await serverImageProvider.processImage(oriented, 'portrait.jpg', true);
+
+        expect(result.format).toEqual({ ext: 'jpg', mime: 'image/jpeg' });
+        // Smaller than the original proves the resize/re-encode path actually ran (where the bug lived).
+        expect(result.buffer.byteLength).toBeLessThan(oriented.byteLength);
+
+        const decoded = await Jimp.read(Buffer.from(result.buffer));
+        expect(decoded.bitmap.height).toBeGreaterThan(decoded.bitmap.width);
+    });
+
+    it('leaves a genuinely landscape photo landscape after shrinking (#4254 control)', async () => {
+        setOptions({ compressImages: 'true', imageMaxWidthHeight: '100' });
+
+        // Identical pixels with a normal orientation tag (1) must stay landscape — proving the
+        // portrait result above comes from honouring EXIF, not an unconditional rotation.
+        const landscape = await makeOrientedJpeg(600, 400, 1);
+        const result = await serverImageProvider.processImage(landscape, 'landscape.jpg', true);
+
+        const decoded = await Jimp.read(Buffer.from(result.buffer));
+        expect(decoded.bitmap.width).toBeGreaterThan(decoded.bitmap.height);
+    });
 });
+
+/**
+ * Builds a noisy `width`x`height` JPEG (stored at those dimensions) carrying an EXIF Orientation
+ * tag. Orientation 6 ("rotate 90 CW") means a 600x400 stored image should be displayed as 400x600
+ * portrait; orientation 1 means no rotation. Used to reproduce the rotated-on-import bug (#4254).
+ */
+async function makeOrientedJpeg(width: number, height: number, orientation: number): Promise<Uint8Array> {
+    const image = new Jimp({ width, height, color: 0x3366ccff });
+    for (let x = 0; x < width; x++) {
+        for (let y = 0; y < height; y++) {
+            const r = (x * 31 + y * 17) % 256;
+            const g = (x * 13 + y * 7) % 256;
+            const b = (x * 5 + y * 23) % 256;
+            image.setPixelColor((((r << 24) | (g << 16) | (b << 8) | 0xff) >>> 0), x, y);
+        }
+    }
+    const jpeg = Buffer.from(await image.getBuffer('image/jpeg', { quality: 90 }));
+    const tiff = Buffer.from([
+        0x4d, 0x4d, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x08, // "MM" (big-endian), magic 42, IFD0 offset 8
+        0x00, 0x01,                                     // one directory entry
+        0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, // Orientation tag (0x0112), type SHORT, count 1
+        0x00, orientation, 0x00, 0x00,                  // value: big-endian SHORT, right-padded
+        0x00, 0x00, 0x00, 0x00                          // next-IFD offset (none)
+    ]);
+    const payload = Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), tiff]);
+    const length = payload.length + 2;
+    const app1 = Buffer.concat([Buffer.from([0xff, 0xe1, (length >> 8) & 0xff, length & 0xff]), payload]);
+    // The APP1/EXIF segment must sit immediately after the SOI marker (0xFFD8).
+    return new Uint8Array(Buffer.concat([jpeg.subarray(0, 2), app1, jpeg.subarray(2)]));
+}

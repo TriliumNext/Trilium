@@ -33,6 +33,7 @@ function toExpressLikeReq(req: BrowserRequest) {
         params: req.params,
         query: req.query,
         body: req.body,
+        /* v8 ignore next -- @preserve: BrowserRouter.dispatch always sets req.headers, so the ?? fallback is unreachable. */
         headers: req.headers ?? {},
         method: req.method,
         file: req.file,
@@ -45,6 +46,7 @@ function toExpressLikeReq(req: BrowserRequest) {
  * mirroring what the server does in route_api.ts.
  */
 function setContextFromHeaders(req: BrowserRequest) {
+    /* v8 ignore next -- @preserve: BrowserRouter.dispatch always sets req.headers, so the ?? fallback is unreachable. */
     const headers = req.headers ?? {};
     const ctx = getContext();
     ctx.set("componentId", headers["trilium-component-id"]);
@@ -283,6 +285,9 @@ export function registerRoutes(router: BrowserRouter): void {
         checkCredentials: noopMiddleware,
         loginRateLimiter: noopMiddleware,
         uploadMiddlewareWithErrorHandling: noopMiddleware,
+        // The browser variant has no disk; uploads already arrive as a buffer (see browser_router.ts), so
+        // imports use the same no-op middleware rather than the server's disk-storage one.
+        importMiddlewareWithErrorHandling: noopMiddleware,
         csrfMiddleware: noopMiddleware
     });
     apiRoute('get', '/bootstrap', bootstrapRoute);

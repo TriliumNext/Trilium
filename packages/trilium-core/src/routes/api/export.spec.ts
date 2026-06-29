@@ -12,8 +12,8 @@ import { CoreApiTester } from "../../test/api_tester";
 let api: CoreApiTester;
 let branchId: string;
 
-function exportPath(type: string, format: string, version = "1.0", taskId = "exportTask") {
-    return `/api/branches/${branchId}/export/${type}/${format}/${version}/${taskId}`;
+function exportPath(type: string, format: string, taskId = "exportTask") {
+    return `/api/branches/${branchId}/export/${type}/${format}/${taskId}`;
 }
 
 /** A real zip always begins with the "PK" local-file-header signature. */
@@ -60,7 +60,7 @@ describe("Export API (core)", () => {
     });
 
     it("exports as real opml", async () => {
-        const res = await api.get(exportPath("subtree", "opml", "2.0"));
+        const res = await api.get(exportPath("subtree", "opml"));
         expect(res.status).toBe(200);
         expect(res.headers["Content-Type"]).toBe("text/x-opml");
         expect(res.body?.toString()).toContain("outline");

@@ -10,15 +10,12 @@ import type { ExportFormat, NoteMetaFile } from "../../meta.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
 import sql_init from "../sql_init.js";
-import { getZipProvider } from "../zip_provider.js";
-import zip from "./zip.js";
+import type { ZipArchive, ZipArchiveEntryOptions, ZipProvider } from "../zip_provider.js";
+import { getZipProvider, initZipProvider } from "../zip_provider.js";
+import zip, { shouldStoreUncompressed } from "./zip.js";
 
 // happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
 const isBrowserRuntime = typeof window !== "undefined";
-
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
 
 let counter = 0;
 
@@ -32,7 +29,7 @@ function createNote(
     overrides: Partial<{ title: string; content: string; type: BNote["type"]; mime: string }> = {}
 ): { note: BNote; branch: BBranch } {
     counter++;
-    return withContext(() =>
+    return getContext().init(() =>
         noteService.createNewNote({
             parentNoteId,
             title: overrides.title ?? `zip-spec-${counter}`,
@@ -199,7 +196,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             // to save but must be filtered out of the export meta.
             const { note: outsider } = createNote("root", { title: "Outsider", content: "<p>o</p>" });
             const { note } = createNote("root", { title: "Attributed", content: "<p>x</p>" });
-            withContext(() => {
+            getContext().init(() => {
                 note.addLabel("myLabel", "labelValue");
                 // Relation to "root" is a named noteId and is preserved.
                 note.addRelation("rootRel", "root");
@@ -223,7 +220,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             const { note: parent } = createNote("root", { title: "WithExcluded", content: "" });
             const { note: kept } = createNote(parent.noteId, { title: "Kept", content: "<p>kept</p>" });
             const { note: excluded } = createNote(parent.noteId, { title: "Excluded", content: "<p>no</p>" });
-            withContext(() => excluded.addLabel("excludeFromExport"));
+            getContext().init(() => excluded.addLabel("excludeFromExport"));
             const branch = parent.getParentBranches()[0];
 
             const { entries } = await exportSubtree(branch, "html");
@@ -234,6 +231,154 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(childIds).not.toContain(excluded.noteId);
         });
 
+        it("keeps note titles longer than 30 characters in the data file name", async () => {
+            // Regression for #10112: the base file name used to be hard-capped at
+            // 30 characters, mangling long titles in the export.
+            const longTitle = "This is a very long note title well beyond the old thirty char cap";
+            expect(longTitle.length).toBeGreaterThan(30);
+            const { note } = createNote("root", { title: longTitle, content: "<p>long</p>" });
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "html");
+            const rootMeta = parseMeta(entries).files[0];
+
+            expect(rootMeta.dataFileName).toBe(`${longTitle}.html`);
+            expect(entries[`${longTitle}.html`]).toBeDefined();
+        });
+
+        it("keeps the full UTF-8 title for accented note names (issue #10112)", async () => {
+            // The reporter's archive showed "Jean 15.1-8 - prédication corr.md",
+            // i.e. a longer accented title chopped at 30 chars before ".md".
+            const accentedTitle = "Jean 15.1-8 - prédication corrigée";
+            expect(accentedTitle.length).toBeGreaterThan(30);
+            const { note } = createNote("root", { title: accentedTitle, content: "<h2>Heading</h2>" });
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "markdown");
+            const rootMeta = parseMeta(entries).files[0];
+
+            expect(rootMeta.dataFileName).toBe(`${accentedTitle}.md`);
+            expect(entries[`${accentedTitle}.md`]).toBeDefined();
+        });
+
+        it("keeps long attachment names and strips illegal characters from them", async () => {
+            const { note } = createNote("root", { title: "AttachHost", content: "<p>host</p>" });
+            const longAttachmentTitle = "long attachment / with : illegal * chars beyond thirty characters";
+            getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: longAttachmentTitle, content: "data" })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "html");
+            const rootMeta = parseMeta(entries).files[0];
+
+            const attMeta = (rootMeta.attachments ?? [])[0];
+            expect(attMeta).toBeDefined();
+            const attFileName = attMeta.dataFileName ?? "";
+            // Not capped at 30: the old behaviour cropped to 30 chars + extension.
+            expect(attFileName.length).toBeGreaterThan(33);
+            // Illegal filename characters are stripped (previously left untouched).
+            expect(attFileName).not.toMatch(/[/\\:*?"<>|]/);
+            expect(entries[attFileName]).toBeDefined();
+        });
+
+        it("round-trips binary attachment content byte-for-byte", async () => {
+            const { note } = createNote("root", { title: "BinaryAttachHost", content: "<p>host</p>" });
+            // Bytes that are not valid UTF-8 (0x00, 0xFF, lone 0x80 continuation byte)
+            // so any accidental string coercion in the export path would corrupt them.
+            const binaryContent = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x80, 0x01, 0xfe]);
+            getContext().init(() =>
+                note.saveAttachment({ role: "image", mime: "image/png", title: "pixel.png", content: binaryContent })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "html");
+            const rootMeta = parseMeta(entries).files[0];
+
+            const attMeta = (rootMeta.attachments ?? [])[0];
+            expect(attMeta).toBeDefined();
+            const attFileName = attMeta.dataFileName ?? "";
+            expect(entries[attFileName]).toBeDefined();
+            // The exported bytes must equal the stored bytes exactly.
+            expect(Buffer.compare(entries[attFileName], binaryContent)).toBe(0);
+        });
+
+        it("pipes the archive to the response before appending any content", async () => {
+            // Memory efficiency: the archive must start streaming to the response
+            // before note/attachment content is appended, so blobs drain to the
+            // client as they are added rather than all being buffered in memory.
+            const { note } = createNote("root", { title: "StreamOrder", content: "<p>x</p>" });
+            getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "a.txt", content: "data" })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const events: string[] = [];
+            const original = getZipProvider();
+            const spy: ZipProvider = {
+                detectFilenameEncoding: (b) => original.detectFilenameEncoding(b),
+                readZipFile: (b, fn, enc) => original.readZipFile(b, fn, enc),
+                createFileStream: (p) => original.createFileStream(p),
+                createZipArchive() {
+                    const real = original.createZipArchive();
+                    const wrapper: ZipArchive = {
+                        append(content: string | Uint8Array, options: ZipArchiveEntryOptions) {
+                            events.push(`append:${options.name}`);
+                            real.append(content, options);
+                        },
+                        pipe(dest: unknown) {
+                            events.push("pipe");
+                            real.pipe(dest);
+                        },
+                        finalize() {
+                            events.push("finalize");
+                            return real.finalize();
+                        }
+                    };
+                    return wrapper;
+                }
+            };
+
+            initZipProvider(spy);
+            try {
+                const taskContext = (await import("../task_context.js")).default;
+                const ctx = new taskContext("no-progress-reporting", "export", null);
+                const res = new FakeResponse();
+                const done = collect(res);
+                await zip.exportToZip(ctx, branch, "html", res as unknown as Record<string, unknown>);
+                await done;
+            } finally {
+                initZipProvider(original);
+            }
+
+            // The pipe is the very first archive operation and precedes every append.
+            const pipeIdx = events.indexOf("pipe");
+            const firstAppendIdx = events.findIndex((e) => e.startsWith("append:"));
+            expect(pipeIdx).toBe(0);
+            expect(firstAppendIdx).toBeGreaterThan(pipeIdx);
+            // Content really was appended (note data + attachment), and finalize closes it.
+            expect(events).toContain("append:!!!meta.json");
+            expect(events[events.length - 1]).toBe("finalize");
+        });
+
+        it("keeps the extension on very long multi-byte titles within the 255-byte limit", async () => {
+            // A title of 3-byte CJK characters long enough that, once the upstream
+            // 255-byte sanitize cap fills the base, appending the extension would
+            // push past 255 bytes. The extension must survive and the whole name
+            // must stay within the filesystem's 255-byte limit.
+            const cjkTitle = "汉".repeat(120);
+            const { note } = createNote("root", { title: cjkTitle, content: "<h2>Heading</h2>" });
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "markdown");
+            const rootMeta = parseMeta(entries).files[0];
+
+            const name = rootMeta.dataFileName ?? "";
+            expect(name.endsWith(".md")).toBe(true);
+            expect(Buffer.byteLength(name, "utf-8")).toBeLessThanOrEqual(255);
+            expect(entries[name]).toBeDefined();
+        });
+
         it("emits a .clone data file when the same note appears twice in the subtree", async () => {
             const { note: parent } = createNote("root", { title: "CloneHolder", content: "" });
             const { note: folderA } = createNote(parent.noteId, { title: "FolderA", content: "" });
@@ -242,7 +387,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
 
             // Clone the note into a second folder inside the same exported subtree.
             const cloningService = (await import("../cloning.js")).default;
-            const cloneRes = withContext(() => cloningService.cloneNoteToParentNote(original.noteId, folderB.noteId));
+            const cloneRes = getContext().init(() => cloningService.cloneNoteToParentNote(original.noteId, folderB.noteId));
             expect(cloneRes.success).toBe(true);
 
             const branch = parent.getParentBranches()[0];
@@ -282,7 +427,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             const { note } = createNote("root", { title: "FileExport", content: "<p>to file</p>" });
             const zipPath = join(tempDir, `export-${note.noteId}.zip`);
 
-            await withContext(() => zip.exportToZipFile(note.noteId, "html", zipPath));
+            await getContext().init(() => zip.exportToZipFile(note.noteId, "html", zipPath));
 
             const buffer = readFileSync(zipPath);
             const entries = await readArchive(buffer);
@@ -296,8 +441,83 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
 
         it("throws a ValidationError for a non-existent note", async () => {
             await expect(
-                withContext(() => zip.exportToZipFile("missingNoteId123", "html", join(tempDir, "never.zip")))
+                getContext().init(() => zip.exportToZipFile("missingNoteId123", "html", join(tempDir, "never.zip")))
             ).rejects.toThrow(/not found/);
         });
+    });
+
+    describe("exportBranchToZipFile", () => {
+        let tempDir: string;
+
+        beforeAll(() => {
+            tempDir = mkdtempSync(join(tmpdir(), "trilium-zip-branch-export-"));
+        });
+
+        it("streams a subtree export for the given branch to a file path", async () => {
+            const { note, branch } = createNote("root", { title: "BranchFileExport", content: "<p>branch to file</p>" });
+            const zipPath = join(tempDir, `branch-export-${note.noteId}.zip`);
+            const { branchId } = branch;
+            if (!branchId) {
+                throw new Error("branch was not saved");
+            }
+
+            await getContext().init(() =>
+                zip.exportBranchToZipFile(branchId, "html", zipPath, "no-progress-reporting")
+            );
+
+            const buffer = readFileSync(zipPath);
+            const entries = await readArchive(buffer);
+            const rootMeta = parseMeta(entries).files[0];
+
+            expect(rootMeta.noteId).toBe(note.noteId);
+            const dataFileName = rootMeta.dataFileName ?? "";
+            expect(entries[dataFileName].toString("utf-8")).toContain("branch to file");
+
+            rmSync(zipPath, { force: true });
+        });
+
+        it("throws a ValidationError for a non-existent branch", async () => {
+            await expect(
+                getContext().init(() =>
+                    zip.exportBranchToZipFile("missingBranch123", "html", join(tempDir, "never.zip"), "no-progress-reporting")
+                )
+            ).rejects.toThrow(/not found/);
+        });
+    });
+});
+
+describe("shouldStoreUncompressed", () => {
+    it("stores already-compressed payloads uncompressed", () => {
+        for (const mime of [
+            "image/jpeg", "image/png", "image/gif", "image/webp", "image/avif",
+            "video/mp4", "video/webm", "audio/mpeg", "audio/ogg",
+            "application/pdf", "application/zip", "application/gzip",
+            "application/x-7z-compressed", "font/woff2",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
+            "application/vnd.oasis.opendocument.spreadsheet", // ods
+            "application/epub+zip"
+        ]) {
+            expect(shouldStoreUncompressed(mime), mime).toBe(true);
+        }
+    });
+
+    it("compresses text and other deflate-friendly payloads", () => {
+        for (const mime of [
+            "text/html", "text/plain", "text/markdown", "application/json",
+            "application/xml", "application/javascript",
+            "image/svg+xml", "image/bmp", "image/x-icon", "image/tiff",
+            "audio/wav", "audio/x-wav", "audio/aiff"
+        ]) {
+            expect(shouldStoreUncompressed(mime), mime).toBe(false);
+        }
+    });
+
+    it("normalizes case and ignores parameters, and treats missing mime as compressible", () => {
+        expect(shouldStoreUncompressed("IMAGE/JPEG")).toBe(true);
+        expect(shouldStoreUncompressed("image/png; charset=binary")).toBe(true);
+        expect(shouldStoreUncompressed("  text/html ; charset=utf-8 ")).toBe(false);
+        expect(shouldStoreUncompressed(undefined)).toBe(false);
+        expect(shouldStoreUncompressed(null)).toBe(false);
+        expect(shouldStoreUncompressed("")).toBe(false);
     });
 });

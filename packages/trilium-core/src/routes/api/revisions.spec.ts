@@ -298,6 +298,20 @@ describe("Revisions API (core)", () => {
             // Base64 output, decodes back to the original content.
             expect(Buffer.from(res.body.content, "base64").toString()).toContain("binary-image-bytes");
         });
+
+        it("returns SVG image revision content as raw text, not base64", async () => {
+            // SVG is text-based and is rendered client-side from a URL-encoded data URI, so it must not
+            // be base64-encoded (regression from the Uint8Array compatibility refactor — see getRevision).
+            const svg = "<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>";
+            const revisionId = await createTypedRevision("image", "image/svg+xml", svg);
+
+            const res = await api.get<{ content: string; type: string; mime: string }>(`/api/revisions/${revisionId}`);
+            expect(res.status).toBe(200);
+            expect(res.body.type).toBe("image");
+            expect(res.body.mime).toBe("image/svg+xml");
+            // Returned verbatim, not base64-encoded.
+            expect(res.body.content).toBe(svg);
+        });
     });
 
     describe("excess revisions", () => {

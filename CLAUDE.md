@@ -27,7 +27,7 @@ pnpm desktop:build             # Electron
 # Test
 pnpm test:all                  # All tests (parallel + sequential)
 pnpm test:parallel             # Client + most package tests
-pnpm test:sequential           # Server, ckeditor5-mermaid, ckeditor5-math (shared DB)
+pnpm test:sequential           # Server (shared DB) + browser-mode tests (ckeditor5, ckeditor5-mermaid, ckeditor5-math)
 pnpm --filter server test      # Single package tests
 pnpm coverage                  # Coverage reports
 
@@ -131,6 +131,7 @@ Common UI components are available in `apps/client/src/widgets/react/` — **alw
 - `Slider` - Range slider with label
 - `Checkbox`, `RadioButton` - Form controls
 - `CollapsibleSection` - Expandable content sections
+- `Badge` - Colored pill/label with optional icon, tooltip, and `onClick` (for counts, status flags). Set its color via the `--color` CSS variable on a wrapper class (not inline styles); pass `outline` for a colored-border/transparent-fill variant instead of a solid background. `BadgeWithDropdown` pairs a badge with a dropdown menu. Don't hand-roll pill/badge markup — reuse it
 
 Fluent builder pattern: `.child()`, `.class()`, `.css()` chaining with position-based ordering.
 
@@ -168,7 +169,7 @@ Fluent builder pattern: `.child()`, `.class()`, `.css()` chaining with position-
 - **No Node.js built-in modules in core** — core runs in both Node.js and the browser (standalone). Use platform-agnostic alternatives or platform providers
 - **Platform detection via functions** — `isElectron()`, `isMac()`, `isWindows()` from `utils/index.ts` are functions (not constants) that call `getPlatform()`. They can only be called after `initializeCore()`, not at module top-level. If used in static definitions, wrap in a closure: `value: () => isWindows() ? "0.9" : "1.0"`
 - **Barrel import caution** — `import { x } from "@triliumnext/core"` loads ALL core exports. Early-loading modules like `config.ts` should import specific subpaths (e.g. `@triliumnext/core/src/services/utils/index`) to avoid circular dependencies or initialization ordering issues
-- **Electron IPC** — In desktop mode, client API calls use Electron IPC (not HTTP). The IPC handler in `apps/server/src/routes/electron.ts` must be registered via `utils.isElectron` from the **server's** utils (which correctly checks `process.versions["electron"]`), not from core's utils
+- **Electron custom protocol** — In desktop mode, the renderer loads the UI and makes API calls via the `trilium-app://` custom protocol (not HTTP). `apps/desktop/src/protocol.ts` dispatches these requests into the Express app running in the main process; the dispatcher tags them via `apps/server/src/services/electron_request.ts` so auth/CSRF middleware can distinguish them from external TCP traffic
 
 ### Binary Utilities
 
@@ -212,16 +213,17 @@ SQLite via `better-sqlite3`. SQL abstraction in `packages/trilium-core/src/servi
 - **Interpolation**: Use `{{variable}}` for normal interpolation; use `{{- variable}}` (with hyphen) for **unescaped** interpolation when the value contains special characters like quotes that shouldn't be HTML-escaped
 
 ### Electron Desktop App
-- Desktop entry point: `apps/desktop/src/main.ts`, window management: `apps/server/src/services/window.ts`
+- Desktop entry point: `apps/desktop/src/main.ts`, window management: `apps/desktop/src/services/window.ts`
 - **Security**: `nodeIntegration` is **disabled** and `contextIsolation` is **enabled**. The renderer has no access to Node.js APIs or Electron internals.
 - **Preload script** (`apps/desktop/src/preload.ts`): Uses `contextBridge.exposeInMainWorld("electronApi", ...)` to expose a whitelisted API to the renderer. Compiled to CJS via esbuild (dev: `scripts/electron-start.mts`, prod: `apps/desktop/scripts/build.ts`).
 - **ElectronApi interface** (`packages/commons/src/lib/electron_api_interface.ts`): Shared type definition used by both the preload script (`satisfies ElectronApi`) and the client (`window.electronApi`). Grouped into sub-objects: `window`, `clipboard`, `shell`, `contextMenu`, `spellcheck`, `tray`, `printing`, `navigation`.
 - **Client-side access**: Use `window.electronApi?.group.method()` — never use `require("electron")` or `dynamicRequire()` in client code.
-- **Adding new Electron APIs**: Add the method to the interface in commons, implement it in `preload.ts`, add the IPC handler in `apps/server/src/services/window.ts`, and add a test in `apps/desktop/spec/preload.spec.ts`.
+- **Adding new Electron APIs**: Add the method to the interface in commons, implement it in `preload.ts`, add the IPC handler in `apps/desktop/src/services/window.ts`, and add a test in `apps/desktop/spec/preload.spec.ts`.
 - **IPC handlers**: Use `electron.ipcMain.on(channel, handler)` for fire-and-forget, `electron.ipcMain.handle(channel, handler)` for async request/response, `ipcMain.on` + `event.returnValue` for synchronous queries.
 - Electron-only features should check `isElectron()` from `apps/client/src/services/utils.ts` (client) or `utils.isElectron` (server)
 - **`@electron/remote` is removed** — do not use it. All renderer↔main communication goes through the preload bridge.
-- **Spurious `electron.app is undefined` error** — when running Electron-based apps (`pnpm desktop:start`, `pnpm edit-docs:edit-docs`, etc.), the console may print `TypeError: Cannot read properties of undefined (reading 'commandLine')` from `apps/server/src/services/window.ts` (the `electron.app.commandLine.appendSwitch("disable-http-cache")` line). This is **not a real failure** — the app runs correctly. Do not try to fix it, guard it, or investigate electron initialization order unless the user explicitly raises it as a bug.
+- **Spurious `electron.app is undefined` error** — when running Electron-based apps (`pnpm desktop:start`, `pnpm edit-docs:edit-docs`, etc.), the console may print `TypeError: Cannot read properties of undefined (reading 'commandLine')` from `apps/desktop/src/main.ts` (the `app.commandLine.appendSwitch("disable-http-cache")` line). This is **not a real failure** — the app runs correctly. Do not try to fix it, guard it, or investigate electron initialization order unless the user explicitly raises it as a bug.
+- **`ELECTRON_RUN_AS_NODE` leak crashes Electron launches** — shells spawned by Electron-based tools (the VS Code extension host, AI coding agents running inside it) often inherit `ELECTRON_RUN_AS_NODE=1`. With it set, launching the desktop app (`pnpm desktop:start`, `pnpm --filter desktop start-prod`, `electron dist`) crashes at startup with `TypeError: Not running in an Electron environment!` (thrown by `electron-is-dev`, because `require("electron")` resolves to the npm stub's path string instead of the built-in module). This is an environment problem, not an app bug — unset the variable before launching: `Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue` (PowerShell) or `unset ELECTRON_RUN_AS_NODE` (bash).
 
 Three inheritance mechanisms:
 1. **Standard**: `note.getInheritableAttributes()` walks parent tree
@@ -267,6 +269,7 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 - Unix line endings
 - Import sorting via `eslint-plugin-simple-import-sort`
 - **Never use the TypeScript non-null assertion operator (postfix `!`)** — including in tests. Narrow instead: optional chaining (`?.`), a `?? fallback`, an explicit null check before use, or an `*OrThrow` accessor (e.g. `becca.getNoteOrThrow(id)` rather than `becca.getNote(id)!`).
+- **Helper placement** — when extracting a standalone helper function from a component, widget, hook, or route, place it **below** the primary export it supports (or in a separate module), not wedged between the imports and the main definition. Keep the file's primary export near the top so the entry point reads first; supporting helpers follow it.
 
 ## Testing
 

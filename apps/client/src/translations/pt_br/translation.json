@@ -129,20 +129,11 @@
     "export_note_title": "Exportar nota",
     "close": "Fechar",
     "export_type_subtree": "Esta nota e todos os seus descendentes",
-    "format_html": "HTML – recomendado, pois mantém toda a formatação",
-    "format_html_zip": "HTML em arquivo ZIP – recomendado, pois isso preserva toda a formatação.",
-    "format_markdown": "Markdown – isso preserva a maior parte da formatação.",
-    "format_opml": "OPML - formato de intercâmbio de outliners apenas para texto. Formatação, imagens e arquivos não estão incluídos.",
-    "opml_version_1": "OPML v1.0 – apenas texto simples",
-    "opml_version_2": "OPML v2.0 – permite também HTML",
     "export_type_single": "Apenas esta nota, sem seus descendentes",
     "export": "Exportar",
     "choose_export_type": "Por favor, escolha primeiro o tipo de exportação",
-    "export_status": "Status da exportação",
-    "export_in_progress": "Exportação em andamento: {{progressCount}}",
     "export_finished_successfully": "Exportação concluída com sucesso.",
-    "format_pdf": "PDF – para impressão ou compartilhamento.",
-    "share-format": "HTML para publicação na web — usa o mesmo tema das notas compartilhadas, mas pode ser publicado como um site estático."
+    "format_pdf": "PDF – para impressão ou compartilhamento."
   },
   "help": {
     "noteNavigation": "Navegação de notas",
@@ -203,7 +194,6 @@
   "import": {
     "importIntoNote": "Importar para a nota",
     "chooseImportFile": "Escolher arquivo para importar",
-    "importDescription": "O conteúdo do(s) arquivo(s) selecionado(s) será importado como nota(s) filha(s) em",
     "options": "Opções",
     "safeImportTooltip": "Arquivos de exportação Trilium <code> .zip</code> podem conter scripts executáveis que podem apresentar comportamentos prejudiciais. A importação segura desativará a execução automática de todos os scripts importados. Desmarque “Importação segura” apenas se o arquivo de importação contiver scripts executáveis e você confiar totalmente no conteúdo do arquivo importado.",
     "safeImport": "Importação segura",
@@ -222,7 +212,6 @@
       "placeholder": "Digite as tags HTML, uma por linha",
       "reset_button": "Redefinir para lista padrão"
     },
-    "import-status": "Status da importação",
     "in-progress": "Importação em andamento: {{progress}}",
     "successful": "Importação concluída com sucesso.",
     "importZipRecommendation": "Ao importar um arquivo ZIP, a hierarquia de notas refletirá a estrutura de subdiretórios dentro do arquivo."
@@ -634,7 +623,9 @@
     "export": "Exportar",
     "import-into-note": "Importar na nota",
     "apply-bulk-actions": "Aplicar ações em massa",
-    "converted-to-attachments": "{{count}} notas foram convertidas em anexos.",
+    "converted-to-attachments_one": "{{count}} notas foram convertidas em anexos.",
+    "converted-to-attachments_many": "",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "Tem certeza de que deseja converter as notas selecionadas em anexos de suas notas pai? Esta operação se aplica apenas a notas de imagem; outras notas serão ignoradas.",
     "open-in-popup": "Edição rápida",
     "archive": "Ficheiro",
@@ -931,7 +922,9 @@
     "note_size": "Tamanho da nota",
     "calculate": "calcular",
     "title": "Informações da nota",
-    "subtree_size": "(tamanho da subárvore: {{size}} em {{count}} notas)",
+    "subtree_size_one": "(tamanho da subárvore: {{size}} em {{count}} notas)",
+    "subtree_size_many": "",
+    "subtree_size_other": "",
     "note_size_info": "O tamanho da nota fornece uma estimativa aproximada dos requisitos de armazenamento para esta nota. Leva em conta o conteúdo e o conteúdo de suas revisões de nota.",
     "mime": "Tipo MIME",
     "show_similar_notes": "Mostrar notas semelhantes"
@@ -1102,8 +1095,6 @@
     "unprotecting-finished-successfully": "A remoção da proteção foi finalizada com sucesso.",
     "protecting-in-progress": "Proteções em andamento: {{count}}",
     "unprotecting-in-progress-count": "Remoções de proteção em andamento: {{count}}",
-    "protecting-title": "Estado da proteção",
-    "unprotecting-title": "Estado da remoção de proteção",
     "start_session_button": "Iniciar sessão protegida"
   },
   "relation_map": {
@@ -1235,8 +1226,6 @@
     "successfully_created_lightly_anonymized_database": "Banco de dados levemente anonimizado criado em {{anonymizedFilePath}}"
   },
   "ribbon": {
-    "widgets": "Widgets de fita",
-    "promoted_attributes_message": "A aba de Atributos Promovidos irá abrir automaticamente se existirem atributos promovidos na nota",
     "edited_notes_message": "A aba de Notas Editadas será aberta automaticamente nas notas do dia"
   },
   "ui-performance": {
@@ -1571,7 +1560,6 @@
   },
   "branches": {
     "cannot-move-notes-here": "Não é possível mover notas para cá.",
-    "delete-status": "Remover estado",
     "delete-notes-in-progress": "Exclusão de notas em andamento: {{count}}",
     "delete-finished-successfully": "Exclusão concluída com sucesso.",
     "undeleting-notes-in-progress": "Restauração de notas em andamento: {{count}}",
@@ -1844,7 +1832,6 @@
     "drag_locked_message": "Arrastar não é permitido pois a coleção está bloqueada para edição."
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI é uma API REST usada para acessar a instância do Trilium programaticamente, sem interface gráfica.",
     "create_token": "Criar novo token ETAPI",
     "existing_tokens": "Tokens existentes",
@@ -1891,33 +1878,12 @@
     "cancel": "Cancelar"
   },
   "multi_factor_authentication": {
-    "title": "Autenticação Multifator",
-    "description": "A Autenticação Multifator (MFA) adiciona uma camada extra de segurança à sua conta. Em vez de apenas digitar uma senha para fazer login, a MFA exige que você forneça uma ou mais evidências adicionais para verificar sua identidade. Dessa forma, mesmo que alguém obtenha sua senha, ainda não poderá acessar sua conta sem a segunda informação. É como adicionar uma fechadura extra à sua porta, tornando muito mais difícil para qualquer outra pessoa invadir.<br><br>Siga as instruções abaixo para ativar a MFA. Se a configuração não for feita corretamente, o login voltará a usar apenas a senha.",
-    "mfa_enabled": "Habilitar a Autenticação Multifator",
-    "mfa_method": "Método MFA",
-    "electron_disabled": "A Autenticação Multifator não é suportada na versão desktop atualmente.",
-    "totp_title": "Senha Única Temporária baseada em Tempo (TOTP)",
-    "totp_description": "\"TOTP (Senha Única Temporária baseada em Tempo) é um recurso de segurança que gera um código único e temporário, que muda a cada 30 segundos. Você utiliza esse código junto com sua senha para fazer login na conta, tornando muito mais difícil para qualquer outra pessoa acessá-la.",
-    "totp_secret_title": "Gerar segredo TOTP",
-    "totp_secret_generate": "Gerar segredo TOTP",
-    "totp_secret_regenerate": "Regenerar segredo TOTP",
-    "no_totp_secret_warning": "Para habilitar o TOTP, você precisa primeiro gerar um segredo TOTP.",
-    "totp_secret_description_warning": "Após gerar um novo segredo TOTP, será necessário fazer login novamente com o novo segredo TOTP.",
-    "totp_secret_generated": "Segredo TOTP gerado",
-    "totp_secret_warning": "Por favor, salve o segredo gerado em um local seguro. Ele não será exibido novamente.",
-    "totp_secret_regenerate_confirm": "Tem certeza de que deseja regenerar o segredo TOTP? Isso invalidará o segredo TOTP anterior e todos os códigos de recuperação existentes.",
-    "recovery_keys_title": "Chaves de Recuperação do Single Sign-On",
-    "recovery_keys_description": "As chaves de recuperação do Single Sign-On são usadas para fazer login caso você não consiga acessar seus códigos do Authenticator.",
     "recovery_keys_description_warning": "As chaves de recuperação não serão exibidas novamente após sair da página. Mantenha-as em um local seguro.<br>Após o uso, uma chave de recuperação não poderá ser usada novamente.",
     "recovery_keys_error": "Erro ao gerar códigos de recuperação",
     "recovery_keys_no_key_set": "Nenhum código de recuperação definido",
-    "recovery_keys_generate": "Gerar Códigos de Recuperação",
     "recovery_keys_regenerate": "Regenerar Códigos de Recuperação",
-    "recovery_keys_used": "Usado: {{date}}",
-    "recovery_keys_unused": "Código de recuperação {{index}} não utilizado",
     "oauth_title": "OAuth/OpenID",
     "oauth_description": "OpenID é uma forma padronizada de permitir que você faça login em sites usando uma conta de outro serviço, como o Google, para verificar sua identidade. O emissor padrão é o Google, mas você pode alterá-lo para qualquer outro provedor OpenID. Consulte <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">aqui</a> para mais informações. Siga estas <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instruções</a> para configurar um serviço OpenID através do Google.",
-    "oauth_description_warning": "Para habilitar o OAuth/OpenID, você precisa definir a URL base do OAuth/OpenID, o client ID e o client secret no arquivo config.ini e reiniciar a aplicação. Se quiser configurar via variáveis de ambiente, defina TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID e TRILIUM_OAUTH_CLIENT_SECRET.",
     "oauth_missing_vars": "Configurações ausentes: {{-variables}}",
     "oauth_user_account": "Conta do Usuário: ",
     "oauth_user_email": "E-mail do Usuário: ",
@@ -1925,23 +1891,16 @@
   },
   "shortcuts": {
     "keyboard_shortcuts": "Atalhos de Teclado",
-    "multiple_shortcuts": "Atalhos múltiplos para a mesma ação podem ser separados por vírgula.",
-    "electron_documentation": "Consulte a <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\\\">documentação do Electron</a> para ver os modificadores e códigos de teclas disponíveis.",
-    "action_name": "Nome da ação",
-    "default_shortcuts": "Atalhos padrão",
     "type_text_to_filter": "Digite para filtrar atalhos...",
-    "description": "Descrição",
     "reload_app": "Recarregar aplicação para aplicar alterações",
     "set_all_to_default": "Redefinir todos os atalhos para o padrão",
-    "confirm_reset": "Tem certeza de que deseja redefinir todos os atalhos de teclado para o padrão?",
-    "shortcuts": "Atalhos"
+    "confirm_reset": "Tem certeza de que deseja redefinir todos os atalhos de teclado para o padrão?"
   },
   "spellcheck": {
     "title": "Verificação Ortográfica",
     "description": "Estas opções se aplicam apenas às versões desktop; os navegadores usarão sua própria verificação ortográfica nativa.",
     "enable": "Habilitar verificação ortográfica",
-    "language_code_label": "Código(s) de idioma",
-    "restart-required": "As alterações nas opções de verificação ortográfica terão efeito após reiniciar o aplicativo."
+    "language_code_label": "Código(s) de idioma"
   },
   "sync_2": {
     "config_title": "Configuração da Sincronização",
@@ -1961,7 +1920,9 @@
     "shared_locally": "Esta nota é compartilhada localmente em {{- link}}."
   },
   "pagination": {
-    "total_notes": "{{count}} notas"
+    "total_notes_one": "{{count}} notas",
+    "total_notes_many": "",
+    "total_notes_other": ""
   },
   "collections": {
     "rendering_error": "Não foi possível exibir o conteúdo devido a um erro."
@@ -2086,7 +2047,6 @@
     "menu_run_mobile_startup": "Quando a interface móvel é iniciada"
   },
   "media": {
-    "loop": "Ciclo",
     "rotate": "Rotacionar"
   },
   "mermaid": {
@@ -2162,9 +2122,7 @@
     "mcp_title": "MCP (Protocolo de Contexto do Modelo)",
     "api_key_placeholder": "Insira sua chave API",
     "api_key": "Chave API",
-    "delete_provider_confirmation": "Tem certeza de que deseja excluir o provedor \"{{name}}\"?",
-    "settings_description": "Configure as integrações de IA e de modelos de linguagem de grande porte.",
-    "settings_title": "IA / LLM"
+    "delete_provider_confirmation": "Tem certeza de que deseja excluir o provedor \"{{name}}\"?"
   },
   "mind-map": {
     "summary": "Sumário",

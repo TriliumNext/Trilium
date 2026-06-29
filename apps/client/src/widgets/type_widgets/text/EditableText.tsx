@@ -91,10 +91,14 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         editor.editing.view.focus();
     });
 
-    useTriliumEvent("focusOnDetail", async ({ ntxId: eventNtxId }) => {
+    useTriliumEvent("focusOnDetail", async ({ ntxId: eventNtxId, insertNewlineAtTop }) => {
         if (eventNtxId !== ntxId) return;
-        const editor = await waitForEditor();
-        editor?.editing.view.focus();
+        const editor = await waitForEditor() as CKTextEditor | undefined;
+        if (!editor) return;
+        if (insertNewlineAtTop) {
+            placeCursorInNewTopParagraph(editor);
+        }
+        editor.editing.view.focus();
     });
 
     useLegacyImperativeHandlers({
@@ -292,6 +296,39 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     );
 }
 
+/**
+ * Inserts an empty paragraph at the very top of the document and places the cursor in it, giving the
+ * Notion-like behavior when pressing Enter in the note title. If the first block is already an empty
+ * paragraph, the cursor is placed in it rather than stacking another empty paragraph.
+ */
+function placeCursorInNewTopParagraph(editor: CKTextEditor) {
+    editor.model.change((writer) => {
+        const root = editor.model.document.getRoot();
+        if (!root) return;
+
+        const firstChild = root.getChild(0);
+        if (firstChild?.is("element", "paragraph") && firstChild.isEmpty) {
+            writer.setSelection(firstChild, "in");
+            return;
+        }
+
+        const paragraph = writer.createElement("paragraph");
+        writer.insert(paragraph, root, 0);
+        writer.setSelection(paragraph, "in");
+    });
+
+    // The scrolling container scrolls, not the editor itself, and the inline title may have scrolled
+    // out of view (e.g. the cursor was at the bottom of a long note), so the selection change alone
+    // won't move the viewport. Explicitly reveal the new top paragraph once it has rendered.
+    requestAnimationFrame(() => {
+        // The editor may have been destroyed while waiting for the frame (e.g. the user navigated
+        // away from the note), in which case `editing` is nulled — bail out instead of throwing.
+        if (editor.editing?.view) {
+            editor.editing.view.scrollToTheSelection();
+        }
+    });
+}
+
 function useTemplates() {
     const [ templates, setTemplates ] = useState<TemplateDefinition[]>();
 
@@ -351,7 +388,12 @@ function useWatchdogCrashHandling() {
                 timeout: 20_000
             });
         } else if (currentState === "crashedPermanently") {
-            dialog.info(t("editable_text.keeps-crashing"));
+            toast.showPersistent({
+                id: "editor-crashed-permanently",
+                icon: "bx bx-error-circle",
+                title: t("editable_text.editor_crashed_title"),
+                message: t("editable_text.keeps-crashing")
+            });
             watchdog.editor?.enableReadOnlyMode("crashed-editor");
         }
     }, []);

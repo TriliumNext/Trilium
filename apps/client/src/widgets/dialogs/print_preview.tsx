@@ -5,8 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks"
 import FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import toast from "../../services/toast";
-
-
 import Button, { ButtonGroup } from "../react/Button";
 import Dropdown from "../react/Dropdown";
 import { FormListHeader, FormListItem } from "../react/FormList";
@@ -275,6 +273,115 @@ export default function PrintPreviewDialog() {
             onHidden={handleClose}
             stackable
             footerAlignment="between"
+            sidebar={
+                <div class="print-preview-settings">
+                    <OptionsSection noCard>
+                        <OptionsRow name="destination" label={t("print_preview.destination")} stacked>
+                            <Dropdown
+                                disabled={loading}
+                                text={<DestinationLabel destination={destination} printers={printers} />}
+                            >
+                                <FormListItem
+                                    icon="bx bxs-file-pdf"
+                                    selected={destination === DESTINATION_PDF}
+                                    onClick={() => setDestination(DESTINATION_PDF)}
+                                >
+                                    {t("print_preview.destination_pdf")}
+                                </FormListItem>
+                                {printers.length > 0 && <FormListHeader text={t("print_preview.destination_printers")} />}
+                                {printers.map((printer) => (
+                                    <FormListItem
+                                        key={printer.name}
+                                        icon="bx bx-printer"
+                                        selected={destination === printer.name}
+                                        onClick={() => setDestination(printer.name)}
+                                        description={buildPrinterDescription(printer)}
+                                    >
+                                        {printer.displayName || printer.name}
+                                    </FormListItem>
+                                ))}
+                            </Dropdown>
+                        </OptionsRow>
+
+                        <OptionsRow name="orientation" label={t("print_preview.orientation")} stacked>
+                            <ButtonGroup className="print-preview-orientation">
+                                <Button
+                                    text={t("print_preview.portrait")}
+                                    icon="bx-rectangle bx-rotate-90"
+                                    className={!landscape ? "active" : ""}
+                                    onClick={() => setLandscape(false)}
+                                    disabled={loading}
+                                    size="small"
+                                />
+                                <Button
+                                    text={t("print_preview.landscape")}
+                                    icon="bx-rectangle"
+                                    className={landscape ? "active" : ""}
+                                    onClick={() => setLandscape(true)}
+                                    disabled={loading}
+                                    size="small"
+                                />
+                            </ButtonGroup>
+                        </OptionsRow>
+
+                        <OptionsRow name="pageSize" label={t("print_preview.page_size")}>
+                            <FormSelect
+                                values={PAGE_SIZES.map((size) => ({ key: size, title: size }))}
+                                keyProperty="key"
+                                titleProperty="title"
+                                currentValue={pageSize}
+                                onChange={setPageSize}
+                                disabled={loading}
+                            />
+                        </OptionsRow>
+
+                        <OptionsRow name="scale" label={t("print_preview.scale")} description={`${Math.round(scale * 100)}%`}>
+                            <Slider
+                                value={scale}
+                                min={0.1}
+                                max={2}
+                                step={0.1}
+                                onChange={handleScaleChange}
+                            />
+                        </OptionsRow>
+
+                        <OptionsRow name="margins" label={t("print_preview.margins")}>
+                            <FormSelect
+                                values={[
+                                    { key: "default", title: t("print_preview.margins_default") },
+                                    { key: "none", title: t("print_preview.margins_none") },
+                                    { key: "minimum", title: t("print_preview.margins_minimum") },
+                                    { key: "custom", title: t("print_preview.margins_custom") },
+                                ]}
+                                keyProperty="key"
+                                titleProperty="title"
+                                currentValue={marginPreset}
+                                onChange={(value) => setMarginsStr(serializeMargins(value as MarginPreset | "custom", customMargins))}
+                                disabled={loading}
+                            />
+                        </OptionsRow>
+
+                        {marginPreset === "custom" && (
+                            <MarginEditor margins={customMargins} onChange={handleCustomMarginChange} disabled={loading} />
+                        )}
+
+                        <OptionsRow
+                            name="pageRanges"
+                            label={t("print_preview.page_ranges")}
+                            description={!pageRangesValid ? t("print_preview.page_ranges_invalid") : t("print_preview.page_ranges_hint")}
+                            stacked
+                        >
+                            <FormTextBox
+                                className={`print-preview-page-ranges ${!pageRangesValid ? "is-invalid" : ""}`}
+                                currentValue={pageRanges}
+                                placeholder={t("print_preview.page_ranges_placeholder")}
+                                onChange={(value) => setPageRanges(value)}
+                                disabled={loading}
+                            />
+                        </OptionsRow>
+                    </OptionsSection>
+                </div>
+            }
             footer={
                 <>
                     <a
@@ -300,120 +407,13 @@ export default function PrintPreviewDialog() {
                 </>
             }
         >
-            <div class="print-preview-settings">
-                <OptionsSection>
-                    <OptionsRow name="destination" label={t("print_preview.destination")}>
-                        <Dropdown
-                            disabled={loading}
-                            text={<DestinationLabel destination={destination} printers={printers} />}
-                        >
-                            <FormListItem
-                                icon="bx bxs-file-pdf"
-                                selected={destination === DESTINATION_PDF}
-                                onClick={() => setDestination(DESTINATION_PDF)}
-                            >
-                                {t("print_preview.destination_pdf")}
-                            </FormListItem>
-                            {printers.length > 0 && <FormListHeader text={t("print_preview.destination_printers")} />}
-                            {printers.map((printer) => (
-                                <FormListItem
-                                    key={printer.name}
-                                    icon="bx bx-printer"
-                                    selected={destination === printer.name}
-                                    onClick={() => setDestination(printer.name)}
-                                    description={buildPrinterDescription(printer)}
-                                >
-                                    {printer.displayName || printer.name}
-                                </FormListItem>
-                            ))}
-                        </Dropdown>
-                    </OptionsRow>
-
-                    <OptionsRow name="orientation" label={t("print_preview.orientation")}>
-                        <ButtonGroup>
-                            <Button
-                                text={t("print_preview.portrait")}
-                                icon="bx-rectangle bx-rotate-90"
-                                className={!landscape ? "active" : ""}
-                                onClick={() => setLandscape(false)}
-                                disabled={loading}
-                                size="small"
-                            />
-                            <Button
-                                text={t("print_preview.landscape")}
-                                icon="bx-rectangle"
-                                className={landscape ? "active" : ""}
-                                onClick={() => setLandscape(true)}
-                                disabled={loading}
-                                size="small"
-                            />
-                        </ButtonGroup>
-                    </OptionsRow>
-
-                    <OptionsRow name="pageSize" label={t("print_preview.page_size")}>
-                        <FormSelect
-                            values={PAGE_SIZES.map((size) => ({ key: size, title: size }))}
-                            keyProperty="key"
-                            titleProperty="title"
-                            currentValue={pageSize}
-                            onChange={setPageSize}
-                            disabled={loading}
-                        />
-                    </OptionsRow>
-
-                    <OptionsRow name="scale" label={t("print_preview.scale")} description={`${Math.round(scale * 100)}%`}>
-                        <Slider
-                            value={scale}
-                            min={0.1}
-                            max={2}
-                            step={0.1}
-                            onChange={handleScaleChange}
-                        />
-                    </OptionsRow>
-
-                    <OptionsRow name="margins" label={t("print_preview.margins")}>
-                        <FormSelect
-                            values={[
-                                { key: "default", title: t("print_preview.margins_default") },
-                                { key: "none", title: t("print_preview.margins_none") },
-                                { key: "minimum", title: t("print_preview.margins_minimum") },
-                                { key: "custom", title: t("print_preview.margins_custom") },
-                            ]}
-                            keyProperty="key"
-                            titleProperty="title"
-                            currentValue={marginPreset}
-                            onChange={(value) => setMarginsStr(serializeMargins(value as MarginPreset | "custom", customMargins))}
-                            disabled={loading}
-                        />
-                    </OptionsRow>
-
-                    {marginPreset === "custom" && (
-                        <MarginEditor margins={customMargins} onChange={handleCustomMarginChange} disabled={loading} />
-                    )}
-
-                    <OptionsRow
-                        name="pageRanges"
-                        label={t("print_preview.page_ranges")}
-                        description={!pageRangesValid ? t("print_preview.page_ranges_invalid") : t("print_preview.page_ranges_hint")}
-                    >
-                        <FormTextBox
-                            className={`print-preview-page-ranges ${!pageRangesValid ? "is-invalid" : ""}`}
-                            currentValue={pageRanges}
-                            placeholder={t("print_preview.page_ranges_placeholder")}
-                            onChange={(value) => setPageRanges(value)}
-                            disabled={loading}
-                        />
-                    </OptionsRow>
-                </OptionsSection>
-            </div>
-
             <div class="print-preview-pane">
                 {loading && (
                     <div class="print-preview-loading-overlay">
                         <span class="bx bx-loader-circle bx-spin" />
                     </div>
                 )}
-                {pdfUrl && <PdfViewer pdfUrl={pdfUrl} toolbar={false} disableSelection />}
+                {pdfUrl && <PdfViewer pdfUrl={pdfUrl} toolbar={false} disableSelection minPixelRatio={2} />}
             </div>
         </Modal>
     );

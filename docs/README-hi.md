@@ -11,13 +11,13 @@
 
 # ट्रिलियम नोट्स
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub प्रायोजक](https://img.shields.io/github/sponsors/eliandoran)
+![LiberaPay संरक्षक](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker पुल्स](https://img.shields.io/docker/pulls/triliumnext/trilium)
+![GitHub डाउनलोड (सभी संपत्तियां, सभी
+रिलीज़)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![अनुवाद की
+स्थिति](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -32,17 +32,17 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Uyghur](./README-ug.md)
 <!-- translate:on -->
 
-Trilium Notes is a free and open-source, cross-platform hierarchical note taking
-application with focus on building large personal knowledge bases.
+ट्रिलियम नोट्स (Trilium Notes) एक मुफ़्त और ओपन-सोर्स, क्रॉस-प्लेटफ़ॉर्म
+श्रेणीबद्ध (hierarchical) नोट लेने वाला एप्लिकेशन है, जिसका मुख्य ध्यान बड़े
+व्यक्तिगत ज्ञान आधार (knowledge bases) बनाने पर है।
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ डाउनलोड कीजिए
-- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+- [लेटेस्ट रिलीज़](https://github.com/TriliumNext/Trilium/releases/latest) –
+  स्थिर (stable) वर्ज़न, अधिकांश यूज़र्स के लिए अनुशंसित।
+- [नाइटली बिल्ड](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
+  अनस्टेबल डेवलपमेंट वर्ज़न, जो नए फीचर्स और फिक्सेस के साथ रोज़ अपडेट होता है।
 
 ## 📚 डॉक्यूमेंटेशन
 
@@ -55,8 +55,7 @@ application with focus on building large personal knowledge bases.
   देखें
 - **इन-ऐप हेल्प**: उसी डॉक्यूमेंटेशन को सीधे ऐप में एक्सेस करने के लिए ट्रिलियम
   के अंदर `F1` दबाएँ
-- **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
-  this repository
+- **GitHub**: इस रिपॉजिटरी में [यूज़र गाइड](./User%20Guide/User%20Guide/) देखें
 
 ### Quick Links
 - [Getting Started Guide](https://docs.triliumnotes.org/)
@@ -65,10 +64,10 @@ application with focus on building large personal knowledge bases.
   सेटअप](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
 - [TriliumNext को अपग्रेड
   करना](https://docs.triliumnotes.org/user-guide/setup/upgrading)
-- [Basic Concepts and
-  Features](https://docs.triliumnotes.org/user-guide/concepts/notes)
-- [Patterns of Personal Knowledge
-  Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [बुनियादी कॉन्सेप्ट्स और
+  फीचर्स](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- [व्यक्तिगत नॉलेज बेस के
+  पैटर्न्स](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 खासियतें
 
@@ -87,12 +86,13 @@ application with focus on building large personal knowledge bases.
   नेविगेशन](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
   फुल टेक्स्ट सर्च और [नोट
   होइस्टिंग](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
-* Seamless [note
-  versioning](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
-* Note
-  [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
-  can be used for note organization, querying and advanced
-  [scripting](https://docs.triliumnotes.org/user-guide/scripts)
+* निर्बाध [नोट
+  वर्ज़निंग](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* नोट
+  [एट्रीब्यूट्स](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  का उपयोग नोट्स ऑर्गेनाइज़ करने, क्वेरी करने और एडवांस्ड
+  [स्क्रिप्टिंग](https://docs.triliumnotes.org/user-guide/scripts) के लिए किया
+  जा सकता है
 * UI available in English, German, Spanish, French, Romanian, and Chinese
   (simplified and traditional)
 * Direct [OpenID and TOTP
@@ -102,12 +102,13 @@ application with focus on building large personal knowledge bases.
   with self-hosted sync server
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
-* [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
-  (publishing) notes to public internet
+* पब्लिक इंटरनेट पर नोट्स की
+  [शेयरिंग](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (पब्लिशिंग)
 * प्रति-नोट granularity के साथ मजबूत [नोट
   एन्क्रिप्शन](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
-* Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
-  "canvas")
+* डायग्राम्स स्केच करना, [एक्सकैलिड्रॉ](https://excalidraw.com/) पर आधारित (नोट
+  टाइप "कैनवास")
 * [Relation
   maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
   [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)

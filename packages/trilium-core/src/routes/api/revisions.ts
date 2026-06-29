@@ -52,7 +52,9 @@ function getRevision(req: Request<{ revisionId: string }>) {
     } else {
         revision.content = revision.getContent();
 
-        if (revision.content && revision.type === "image") {
+        // SVG is text-based and is rendered client-side from a UTF-8 (URL-encoded) data URI, so it is
+        // returned as-is. Other (binary) image formats are base64-encoded for transport in the JSON response.
+        if (revision.content && revision.type === "image" && revision.mime !== "image/svg+xml") {
             revision.content = binary_utils.encodeBase64(revision.content);
         }
     }

@@ -4,7 +4,7 @@ import { dayjs, type RevisionItem, type RevisionPojo } from "@triliumnext/common
 import clsx from "clsx";
 import { diffWords } from "diff";
 import HtmlDiff from "htmldiff-js";
-import { Fragment } from "preact";
+import { ComponentChildren, Fragment } from "preact";
 import type { CSSProperties } from "preact/compat";
 import { Dispatch, StateUpdater, useEffect, useRef, useState } from "preact/hooks";
 
@@ -13,7 +13,6 @@ import FNote from "../../entities/fnote";
 import dialog from "../../services/dialog";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import { renderMathInElement } from "../../services/math";
 import open from "../../services/open";
 import options from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
@@ -26,7 +25,7 @@ import Button from "../react/Button";
 import Dropdown from "../react/Dropdown";
 import FormList, { FormDropdownDivider, FormListItem } from "../react/FormList";
 import FormToggle from "../react/FormToggle";
-import { useTriliumEvent } from "../react/hooks";
+import { useMobileMasterDetail, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
 import { RawHtmlBlock, SanitizedHtml } from "../react/RawHtml";
@@ -42,11 +41,16 @@ export default function RevisionsDialog() {
     const [ shown, setShown ] = useState(false);
     const [ showDiff, setShowDiff ] = useState(true);
     const [ refreshCounter, setRefreshCounter ] = useState(0);
+    const modalRef = useRef<HTMLDivElement>(null);
+    const { isMasterDetail, mobileView, switchMobileView, resetMobileView } = useMobileMasterDetail(modalRef, "revision-slide");
+    const isMobile = utils.isMobile();
 
     useTriliumEvent("showRevisions", async ({ noteId }) => {
         const note = await getNote(noteId);
         if (note) {
             setNote(note);
+            // Mobile opens on the revision list; selecting one slides to its detail.
+            resetMobileView("list");
             setShown(true);
         }
     });
@@ -105,67 +109,136 @@ export default function RevisionsDialog() {
         );
     }
 
+    const selectRevision = (revisionId: string) => {
+        const correspondingRevision = (revisions ?? []).find((r) => r.revisionId === revisionId);
+        if (correspondingRevision) {
+            setCurrentRevision(correspondingRevision);
+        }
+        switchMobileView("page");
+    };
+
+    const revisionsList = (
+        <RevisionsList
+            revisions={revisions ?? []}
+            onSelect={selectRevision}
+            currentRevision={currentRevision}
+            detailed={utils.isMobile()}
+        />
+    );
+
+    const handleRevisionDeleted = () => {
+        setRefreshCounter(c => c + 1);
+        setCurrentRevision(undefined);
+        // The detail is now empty; on mobile slide back to the list.
+        switchMobileView("list");
+    };
+
+    const menu = note && (
+        <RevisionsMenu
+            note={note}
+            onRevisionSaved={() => {
+                setRefreshCounter(c => c + 1);
+                setCurrentRevision(undefined);
+            }}
+            onAllDeleted={() => {
+                setRevisions([]);
+                setCurrentRevision(undefined);
+            }}
+            hasRevisions={true}
+        />
+    );
+
     return (
         <Modal
+            modalRef={modalRef}
             className="revisions-dialog"
             size="xl"
             title={t("revisions.note_revisions")}
             helpPageId="vZWERwf8U3nx"
-            header={note && (
-                <RevisionsMenu
-                    note={note}
-                    onRevisionSaved={() => {
-                        setRefreshCounter(c => c + 1);
-                        setCurrentRevision(undefined);
-                    }}
-                    onAllDeleted={() => {
-                        setRevisions([]);
-                        setCurrentRevision(undefined);
-                    }}
-                    hasRevisions={true}
-                />
-            )}
-            sidebar={
-                <RevisionsList
-                    revisions={revisions ?? []}
-                    onSelect={(revisionId) => {
-                        const correspondingRevision = (revisions ?? []).find((r) => r.revisionId === revisionId);
-                        if (correspondingRevision) {
-                            setCurrentRevision(correspondingRevision);
-                        }
-                    }}
-                    currentRevision={currentRevision}
-                />
-            }
+            header={isMasterDetail
+                ? (
+                    <RevisionsMobileHeader
+                        inPage={mobileView === "page"}
+                        onBack={() => switchMobileView("list")}
+                        revisionItem={currentRevision}
+                        menu={menu}
+                    />
+                )
+                : menu}
+            sidebar={isMasterDetail ? undefined : revisionsList}
             onHidden={onHidden}
             show={shown}
         >
-            <RevisionToolbar
-                revisionItem={currentRevision}
-                showDiff={showDiff}
-                setShowDiff={setShowDiff}
-                setShown={setShown}
-                onRevisionDeleted={() => {
-                    setRefreshCounter(c => c + 1);
-                    setCurrentRevision(undefined);
-                }}
-                onDescriptionUpdated={(revisionId, description) => {
-                    setRevisions(prev => prev?.map(r =>
-                        r.revisionId === revisionId ? { ...r, description } : r
-                    ));
-                    if (currentRevision?.revisionId === revisionId) {
-                        setCurrentRevision({ ...currentRevision, description });
-                    }
-                }}
-            />
-            <div className="revision-content-wrapper">
-                <RevisionPreview
-                    noteContent={noteContent}
+            {isMasterDetail && (
+                <div className="revision-mobile-nav">
+                    {revisionsList}
+                </div>
+            )}
+            <div className="revision-detail">
+                <RevisionToolbar
                     revisionItem={currentRevision}
                     showDiff={showDiff}
+                    setShowDiff={setShowDiff}
+                    setShown={setShown}
+                    // On mobile the action buttons move to a bottom footer instead of the toolbar.
+                    showActions={!isMobile}
+                    onRevisionDeleted={handleRevisionDeleted}
+                    onDescriptionUpdated={(revisionId, description) => {
+                        setRevisions(prev => prev?.map(r =>
+                            r.revisionId === revisionId ? { ...r, description } : r
+                        ));
+                        if (currentRevision?.revisionId === revisionId) {
+                            setCurrentRevision({ ...currentRevision, description });
+                        }
+                    }}
                 />
+                <div className="revision-content-wrapper">
+                    <RevisionPreview
+                        noteContent={noteContent}
+                        revisionItem={currentRevision}
+                        showDiff={showDiff}
+                    />
+                </div>
+                {isMobile && currentRevision && canInteractWithRevision(currentRevision) && (
+                    <div className="revision-detail-footer">
+                        <RevisionActions
+                            revisionItem={currentRevision}
+                            setShown={setShown}
+                            onRevisionDeleted={handleRevisionDeleted}
+                            variant="footer"
+                        />
+                    </div>
+                )}
             </div>
         </Modal>
+    );
+}
+
+/**
+ * Replaces the static "Note revisions" title on narrow mobile (the master-detail flow). In the list
+ * view a decorative history icon precedes the dialog title and the actions menu stays available; in
+ * the page view a back button returns to the list, followed by the revision's date.
+ */
+function RevisionsMobileHeader({ inPage, onBack, revisionItem, menu }: {
+    inPage: boolean,
+    onBack: () => void,
+    revisionItem?: RevisionItem,
+    menu?: ComponentChildren
+}) {
+    const pageTitle = revisionItem?.dateCreated
+        ? dayjs(revisionItem.dateCreated).format("MMM D, YYYY · HH:mm")
+        : t("revisions.note_revisions");
+
+    return (
+        <div className="revision-mobile-header">
+            {inPage ? (
+                <ActionButton icon="bx bx-chevron-left" text={t("revisions.back")} onClick={onBack} />
+            ) : (
+                <span className="revision-header-icon icon-action bx bx-history" aria-hidden="true" />
+            )}
+            <h5 className="revision-mobile-title">{inPage ? pageTitle : t("revisions.note_revisions")}</h5>
+            {!inPage && menu}
+        </div>
     );
 }
 
@@ -314,15 +387,22 @@ function buildRevisionTooltip(item: RevisionItem): string {
     ].filter(Boolean).join("\n");
 }
 
-function RevisionsList({ revisions, onSelect, currentRevision }: { revisions: RevisionItem[], onSelect: (val: string) => void, currentRevision?: RevisionItem }) {
+function RevisionsList({ revisions, onSelect, currentRevision, detailed }: { revisions: RevisionItem[], onSelect: (val: string) => void, currentRevision?: RevisionItem, detailed?: boolean }) {
     let lastGroup: DateGroup | "" = "";
 
     return (
-        <FormList onSelect={onSelect} fullHeight wrapperClassName="revision-list">
+        <FormList onSelect={onSelect} fullHeight wrapperClassName={clsx("revision-list", detailed && "detailed")}>
             {revisions.map((item) => {
                 const group = item.dateCreated ? getDateGroup(item.dateCreated) : "" as DateGroup;
                 const showHeader = group !== lastGroup;
                 lastGroup = group;
+
+                // On touch devices the hover tooltip is unreachable, so the source/size it carries are
+                // surfaced inline as a meta line instead.
+                const meta = detailed && [
+                    getRevisionSourceTitle(item.source),
+                    item.contentLength && utils.formatSize(item.contentLength)
+                ].filter(Boolean).join(" · ");
 
                 return (
                     <Fragment key={item.revisionId}>
@@ -333,7 +413,7 @@ function RevisionsList({ revisions, onSelect, currentRevision }: { revisions: Re
                             key={item.revisionId}
                             value={item.revisionId}
                             icon={REVISION_SOURCE_ICONS[item.source ?? ""] ?? DEFAULT_REVISION_ICON}
-                            title={buildRevisionTooltip(item)}
+                            title={detailed ? undefined : buildRevisionTooltip(item)}
                             active={currentRevision && item.revisionId === currentRevision.revisionId}
                         >
                             <div>
@@ -345,6 +425,11 @@ function RevisionsList({ revisions, onSelect, currentRevision }: { revisions: Re
                                         {item.description}
                                     </div>
                                 )}
+                                {meta && (
+                                    <div className="revision-item-meta">
+                                        {meta}
+                                    </div>
+                                )}
                             </div>
                         </FormListItem>
                     </Fragment>
@@ -353,16 +438,18 @@ function RevisionsList({ revisions, onSelect, currentRevision }: { revisions: Re
         </FormList>);
 }
 
-function RevisionToolbar({ revisionItem, showDiff, setShowDiff, setShown, onRevisionDeleted, onDescriptionUpdated }: {
+function RevisionToolbar({ revisionItem, showDiff, setShowDiff, setShown, showActions, onRevisionDeleted, onDescriptionUpdated }: {
     revisionItem?: RevisionItem,
     showDiff: boolean,
     setShowDiff: Dispatch<StateUpdater<boolean>>,
     setShown: Dispatch<StateUpdater<boolean>>,
+    /** Whether the delete/download/restore buttons are shown inline; on mobile they move to a footer. */
+    showActions: boolean,
     onRevisionDeleted?: () => void,
     onDescriptionUpdated?: (revisionId: string, description: string) => void,
 }) {
     const canShowDiff = DIFFABLE_TYPES.includes(revisionItem?.type ?? "");
-    const canInteract = revisionItem && (!revisionItem.isProtected || protected_session_holder.isProtectedSessionAvailable());
+    const canInteract = revisionItem && canInteractWithRevision(revisionItem);
     const [ editingDescription, setEditingDescription ] = useState(false);
     const [ descriptionDraft, setDescriptionDraft ] = useState("");
 
@@ -372,7 +459,7 @@ function RevisionToolbar({ revisionItem, showDiff, setShowDiff, setShown, onRevi
 
     return (
         <div className="revision-toolbar">
-            {revisionItem && (
+            {revisionItem && (canShowDiff || (showActions && canInteract)) && (
                 <div className="revision-toolbar-actions">
                     {canShowDiff && (
                         <FormToggle
@@ -383,38 +470,13 @@ function RevisionToolbar({ revisionItem, showDiff, setShowDiff, setShown, onRevi
                         />
                     )}
                     <div style="flex-grow: 1" />
-                    {canInteract && (
-                        <>
-                            <ActionButton
-                                icon="bx bx-trash"
-                                text={t("revisions.delete_button")}
-                                onClick={async () => {
-                                    if (await dialog.confirm(t("revisions.confirm_delete"))) {
-                                        await server.remove(`revisions/${revisionItem.revisionId}`);
-                                        toast.showMessage(t("revisions.revision_deleted"));
-                                        onRevisionDeleted?.();
-                                    }
-                                }} frame />
-                            <ActionButton
-                                icon="bx bx-download"
-                                text={t("revisions.download_button")}
-                                onClick={() => {
-                                    if (revisionItem.revisionId) {
-                                        open.downloadRevision(revisionItem.noteId, revisionItem.revisionId);
-                                    }
-                                }}
-                                frame />
-                            <Button
-                                icon="bx bx-history"
-                                text={t("revisions.restore_button")}
-                                onClick={async () => {
-                                    if (await dialog.confirm(t("revisions.confirm_restore"))) {
-                                        await server.post(`revisions/${revisionItem.revisionId}/restore`);
-                                        setShown(false);
-                                        toast.showMessage(t("revisions.revision_restored"));
-                                    }
-                                }}/>
-                        </>
+                    {showActions && canInteract && (
+                        <RevisionActions
+                            revisionItem={revisionItem}
+                            setShown={setShown}
+                            onRevisionDeleted={onRevisionDeleted}
+                            variant="toolbar"
+                        />
                     )}
                 </div>
             )}
@@ -438,6 +500,61 @@ function RevisionToolbar({ revisionItem, showDiff, setShowDiff, setShown, onRevi
                 />
             )}
         </div>
+    );
+}
+
+/** Whether the user may delete/download/restore the revision (protected revisions need an unlocked session). */
+function canInteractWithRevision(revisionItem: RevisionItem) {
+    return !revisionItem.isProtected || protected_session_holder.isProtectedSessionAvailable();
+}
+
+/**
+ * The delete/download/restore actions for the current revision. Rendered inline in the toolbar on
+ * desktop (`variant="toolbar"`, icon-only) and as labelled buttons in the detail footer on mobile
+ * (`variant="footer"`).
+ */
+function RevisionActions({ revisionItem, setShown, onRevisionDeleted, variant }: {
+    revisionItem: RevisionItem,
+    setShown: Dispatch<StateUpdater<boolean>>,
+    onRevisionDeleted?: () => void,
+    variant: "toolbar" | "footer"
+}) {
+    const onDelete = async () => {
+        if (await dialog.confirm(t("revisions.confirm_delete"))) {
+            await server.remove(`revisions/${revisionItem.revisionId}`);
+            toast.showMessage(t("revisions.revision_deleted"));
+            onRevisionDeleted?.();
+        }
+    };
+    const onDownload = () => {
+        if (revisionItem.revisionId) {
+            open.downloadRevision(revisionItem.noteId, revisionItem.revisionId);
+        }
+    };
+    const onRestore = async () => {
+        if (await dialog.confirm(t("revisions.confirm_restore"))) {
+            await server.post(`revisions/${revisionItem.revisionId}/restore`);
+            setShown(false);
+            toast.showMessage(t("revisions.revision_restored"));
+        }
+    };
+
+    if (variant === "footer") {
+        return (
+            <>
+                <ActionButton icon="bx bx-trash" text={t("revisions.delete_button")} onClick={onDelete} frame />
+                <ActionButton icon="bx bx-download" text={t("revisions.download_button")} onClick={onDownload} frame />
+                <Button kind="primary" icon="bx bx-history" text={t("revisions.restore_button")} onClick={onRestore} />
+            </>
+        );
+    }
+
+    return (
+        <>
+            <ActionButton icon="bx bx-trash" text={t("revisions.delete_button")} onClick={onDelete} frame />
+            <ActionButton icon="bx bx-download" text={t("revisions.download_button")} onClick={onDownload} frame />
+            <Button icon="bx bx-history" text={t("revisions.restore_button")} onClick={onRestore} />
+        </>
     );
 }
 
@@ -546,7 +663,7 @@ function RevisionContent({ noteContent, revisionItem, fullRevision, showDiff }: 
                     //Base64 of other format images may be embedded in svg
                     const encodedSVG = encodeURIComponent(content as string);
                     return <img
-                        src={`data:${fullRevision.mime};utf8,${encodedSVG}`}
+                        src={`data:${fullRevision.mime},${encodedSVG}`}
                         style={IMAGE_STYLE} />;
                 }
                 default: {
@@ -577,7 +694,14 @@ function RevisionContentText({ content }: { content: string | Uint8Array | undef
     const contentRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         if (contentRef.current?.querySelector("span.math-tex")) {
-            renderMathInElement(contentRef.current, { trust: true });
+            // KaTeX is heavy, so the math service is only loaded when there are formulas to render.
+            void import("../../services/math").then(({ renderMathInElement }) => {
+                if (contentRef.current) {
+                    // throwOnError: false renders invalid formulas as an inline red error
+                    // instead of throwing and logging to the console.
+                    renderMathInElement(contentRef.current, { trust: true, throwOnError: false });
+                }
+            });
         }
     }, [content]);
     return <RawHtmlBlock containerRef={contentRef} className="ck-content" html={sanitizeNoteContentHtml(content as string)} />;

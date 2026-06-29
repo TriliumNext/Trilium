@@ -1,3 +1,9 @@
+// Loaded for its side effect: this eagerly-instantiated executor owns the import/export commands, so
+// importing the service here registers its task-progress toast subscriptions at startup. The import/export
+// dialogs are lazy-loaded, so relying on them to register would mean an in-progress import/export toast
+// never reappears after a page refresh.
+import "../services/import.js";
+
 import branchService from "../services/branches.js";
 import clipboard from "../services/clipboard.js";
 import froca from "../services/froca.js";

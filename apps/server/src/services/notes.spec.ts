@@ -1,6 +1,6 @@
-import { BAttribute, becca_easy_mocking, checkImageAttachments, findBookmarks, findLlmChatLinks, saveLinks } from "@triliumnext/core";
+import { BAttribute, becca, becca_easy_mocking, checkImageAttachments, collectCanvasImageFileIds, findBookmarks, findLlmChatLinks, saveLinks } from "@triliumnext/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { becca } from "@triliumnext/core";
+
 import { randomString } from "./utils.js";
 
 const { buildNote } = becca_easy_mocking;
@@ -24,6 +24,30 @@ vi.mock("./ws.js", () => ({
 vi.mock("./entity_changes.js", () => ({
     default: { putEntityChange: () => {} }
 }));
+
+describe("collectCanvasImageFileIds", () => {
+    it("collects fileIds from image elements in the scene JSON", () => {
+        const content = JSON.stringify({
+            elements: [
+                { type: "image", fileId: "file-1" },
+                { type: "rectangle" },
+                { type: "image", fileId: "file-2" }
+            ]
+        });
+        expect(collectCanvasImageFileIds(content)).toEqual(new Set([ "file-1", "file-2" ]));
+    });
+
+    it("returns an empty set for malformed content (e.g. note type just changed)", () => {
+        expect(collectCanvasImageFileIds("not json")).toEqual(new Set());
+        expect(collectCanvasImageFileIds(JSON.stringify({}))).toEqual(new Set());
+    });
+
+    it("returns an empty set when the JSON shape is unexpected (null / non-array elements)", () => {
+        expect(collectCanvasImageFileIds(JSON.stringify(null))).toEqual(new Set());
+        expect(collectCanvasImageFileIds(JSON.stringify({ elements: 5 }))).toEqual(new Set());
+        expect(collectCanvasImageFileIds(JSON.stringify({ elements: "oops" }))).toEqual(new Set());
+    });
+});
 
 describe("findBookmarks", () => {
     it("extracts bookmark IDs from empty anchor tags", () => {
@@ -98,6 +122,17 @@ describe("checkImageAttachments", () => {
 
             expect(att.save).toHaveBeenCalled();
             expect(att.utcDateScheduledForErasureSince).toBeTruthy();
+        });
+
+        it("leaves non-embeddable roles untouched even when unreferenced", () => {
+            const note = buildNote({ title: "Test", attachments: [{ title: "OneNote source.html", role: "importSource", mime: "text/html" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            checkImageAttachments(note, "<p>No images here</p>");
+
+            expect(att.save).not.toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeFalsy();
         });
 
         it("cancels erasure when attachment is re-referenced", () => {
@@ -190,6 +225,133 @@ describe("checkImageAttachments", () => {
             expect(att2.save).not.toHaveBeenCalled();
             expect(att3.save).toHaveBeenCalled();
             expect(att3.utcDateScheduledForErasureSince).toBeTruthy();
+        });
+    });
+
+    describe("Spreadsheet content", () => {
+        /** Wraps a drawing source URL into the JSON shape a spreadsheet note persists. */
+        function spreadsheetContent(source: string) {
+            return JSON.stringify({
+                version: 1,
+                workbook: {
+                    resources: [{
+                        name: "SHEET_DRAWING_PLUGIN",
+                        data: JSON.stringify({ "sheet-1": { data: { img1: { imageSourceType: "URL", source } }, order: ["img1"] } })
+                    }]
+                }
+            });
+        }
+
+        it("keeps an attachment referenced by the workbook drawing source alive", () => {
+            const note = buildNote({ title: "Sheet", type: "spreadsheet", mime: "application/json", attachments: [{ title: "image.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            checkImageAttachments(note, spreadsheetContent(`api/attachments/${att.attachmentId}/image/image.png`));
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+
+        it("schedules an inserted-then-removed image for erasure", () => {
+            const note = buildNote({ title: "Sheet", type: "spreadsheet", mime: "application/json", attachments: [{ title: "image.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            checkImageAttachments(note, spreadsheetContent("api/attachments/someOtherId/image/image.png"));
+
+            expect(att.save).toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeTruthy();
+        });
+
+        it("never schedules the preview thumbnail for erasure even though it is unreferenced", () => {
+            const note = buildNote({ title: "Sheet", type: "spreadsheet", mime: "application/json", attachments: [{ title: "spreadsheet-export.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [thumbnail] = note.getAttachments();
+
+            // Content with no drawing images at all — the thumbnail is the only "image" attachment.
+            checkImageAttachments(note, JSON.stringify({ version: 1, workbook: { resources: [] } }));
+
+            expect(thumbnail.save).not.toHaveBeenCalled();
+            expect(thumbnail.utcDateScheduledForErasureSince).toBeFalsy();
+        });
+
+        it("cancels erasure when the image is re-referenced", () => {
+            const note = buildNote({ title: "Sheet", type: "spreadsheet", mime: "application/json", attachments: [{ title: "image.png", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+            att.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
+
+            checkImageAttachments(note, spreadsheetContent(`api/attachments/${att.attachmentId}/image/image.png`));
+
+            expect(att.save).toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeNull();
+        });
+    });
+
+    describe("Canvas content", () => {
+        /** Wraps image fileIds into the JSON shape a canvas note persists (one element per fileId). */
+        function canvasContent(...fileIds: string[]) {
+            return JSON.stringify({
+                type: "excalidraw",
+                version: 2,
+                elements: fileIds.map((fileId) => ({ type: "image", fileId })),
+                files: {},
+                appState: {}
+            });
+        }
+
+        it("keeps an image referenced by the scene (attachment titled with its fileId) alive", () => {
+            const note = buildNote({ title: "Canvas", type: "canvas", mime: "application/json", attachments: [{ title: "fileId-1", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            checkImageAttachments(note, canvasContent("fileId-1"));
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+
+        it("schedules an inserted-then-removed image for erasure", () => {
+            const note = buildNote({ title: "Canvas", type: "canvas", mime: "application/json", attachments: [{ title: "fileId-1", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            // Scene no longer references fileId-1 (the image was deleted from the canvas).
+            checkImageAttachments(note, canvasContent("fileId-2"));
+
+            expect(att.save).toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeTruthy();
+        });
+
+        it("never schedules the SVG export preview for erasure even though it is unreferenced", () => {
+            const note = buildNote({ title: "Canvas", type: "canvas", mime: "application/json", attachments: [{ title: "canvas-export.svg", role: "image", mime: "image/svg+xml" }] });
+            mockAttachmentSaves(note);
+            const [exportPreview] = note.getAttachments();
+
+            checkImageAttachments(note, canvasContent());
+
+            expect(exportPreview.save).not.toHaveBeenCalled();
+            expect(exportPreview.utcDateScheduledForErasureSince).toBeFalsy();
+        });
+
+        it("cancels erasure when the image is re-referenced (e.g. undo)", () => {
+            const note = buildNote({ title: "Canvas", type: "canvas", mime: "application/json", attachments: [{ title: "fileId-1", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+            att.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
+
+            checkImageAttachments(note, canvasContent("fileId-1"));
+
+            expect(att.save).toHaveBeenCalled();
+            expect(att.utcDateScheduledForErasureSince).toBeNull();
+        });
+
+        it("does not perform foreign-attachment copying (no forceFrontendReload)", () => {
+            const note = buildNote({ title: "Canvas", type: "canvas", mime: "application/json", attachments: [{ title: "fileId-1", role: "image", mime: "image/png" }] });
+            mockAttachmentSaves(note);
+
+            const result = checkImageAttachments(note, canvasContent("fileId-1"));
+
+            expect(result.forceFrontendReload).toBe(false);
         });
     });
 

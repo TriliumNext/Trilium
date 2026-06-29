@@ -63,14 +63,8 @@
   "export": {
     "export_note_title": "Vie muistio",
     "close": "Sulje",
-    "format_html": "HTML - suositeltu, sillä se säilyttää kaikki formatoinnit",
-    "format_markdown": "Markdown - tämä säilyttää suurimman osan formatoinneista.",
-    "opml_version_1": "OPML v1.0 - pelkkä teksti",
-    "opml_version_2": "OPML v2.0 - sallii myös HTML:n",
     "export": "Vie",
     "choose_export_type": "Valitse ensin viennin tyyppi",
-    "export_status": "Viennin tila",
-    "export_in_progress": "Vienti käynnissä: {{progressCount}}",
     "export_finished_successfully": "Vienti valmistui onnistuneesti.",
     "format_pdf": "PDF - tulostukseen ja jakamiseen."
   },
@@ -115,7 +109,6 @@
       "title": "HTML Tuonnin Tunnisteet",
       "placeholder": "Lisää HTML tunnisteet, yksi per rivi"
     },
-    "import-status": "Tuonnin tila",
     "in-progress": "Tuonti vaiheessa: {{progress}}",
     "successful": "Tuonti valmistui onnistuneesti."
   },

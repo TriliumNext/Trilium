@@ -1,0 +1,190 @@
+<p>OpenID is a standardized way to let you log into websites using an account
+  from another service, like Google or Authelia, to verify your identity.</p>
+<p>When OpenID is activated, the password-based authentication in Trilium
+  is replaced with a button that connects using your provider. This means
+  that the configuration of&nbsp;<a class="reference-link" href="#root/_help_7DAiwaf8Z7Rz">Multi-factor authentication with TOTP</a>&nbsp;no
+  longer takes effect, since your provider has to handle any multi-factor
+  authentication.</p>
+<h2>Setup</h2>
+<p>Setting up authentication with OpenID connect is a two-step process:</p>
+<ol>
+  <li>First the Trilium server must be configured with information about your
+    authentication provider such as the URL, client ID and secret.</li>
+  <li>Second, the user must connect from options to create a link between the
+    account on the provider and the one Trilium has.</li>
+</ol>
+<h3>Configuring the authentication provider</h3>
+<ol>
+  <li>
+    <p>First, make sure the authentication provider (e.g. Google, Authelia) is
+      configured properly.</p>
+    <ol>
+      <li>The redirect URL of Trilium is <code spellcheck="false">https://&lt;your-trilium-domain&gt;/callback</code>.</li>
+      <li>You should obtain the base URL, client ID and client secret.</li>
+    </ol>
+  </li>
+  <li>
+    <p>Set the following information using&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>:</p>
+    <figure
+    class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>Configuration</th>
+            <th><code spellcheck="false">config.ini</code> in <code spellcheck="false">[MultiFactorAuthentication]</code> section</th>
+            <th>Environment variable</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Base URL*</td>
+            <td><code spellcheck="false">oauthBaseUrl</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>
+            </td>
+            <td>The URL of your Trilium instance (e.g. <code spellcheck="false">https://example.com</code>).</td>
+          </tr>
+          <tr>
+            <td>Client ID*</td>
+            <td><code spellcheck="false">oauthClientId</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>
+            </td>
+            <td>The client ID from your provider configuration.</td>
+          </tr>
+          <tr>
+            <td>Client Secret*</td>
+            <td><code spellcheck="false">oauthClientSecret</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
+            </td>
+            <td>The client secret from your provider configuration.</td>
+          </tr>
+        </tbody>
+      </table>
+      </figure>
+      <p>Asterisk (*) marks a required field</p>
+  </li>
+  <li>
+    <p>The default OAuth issuer is Google. To use other services such as Authentik
+      or Auth0, you can configure the settings via <code spellcheck="false">oauthIssuerBaseUrl</code>,
+      <code
+      spellcheck="false">oauthIssuerName</code>, and <code spellcheck="false">oauthIssuerIcon</code> in
+        the <code spellcheck="false">config.ini</code> file. Alternatively, these
+        values can be set using environment variables:</p>
+    <figure class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>Configuration</th>
+            <th><code spellcheck="false">config.ini</code> in <code spellcheck="false">[MultiFactorAuthentication]</code> section</th>
+            <th>Environment variable</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Issuer base URL</td>
+            <td><code spellcheck="false">oauthIssuerBaseUrl</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>
+            </td>
+            <td>The URL of your provider (e.g. <code spellcheck="false">https://auth.example.com:9091</code>)</td>
+          </tr>
+          <tr>
+            <td>Issuer name</td>
+            <td><code spellcheck="false">oauthIssuerName</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>
+            </td>
+            <td>The name of your authentication provider, used for reference on the login
+              screen and in settings. Default is “Google”.</td>
+          </tr>
+          <tr>
+            <td>Issuer icon</td>
+            <td><code spellcheck="false">oauthIssuerIcon</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
+            </td>
+            <td>Optionally, the URL to a logo of the provider. By default it will try
+              to obtain the favicon from the website, so it's optional.</td>
+          </tr>
+        </tbody>
+      </table>
+    </figure>
+    <p>All the fields here are optional, since the default OAuth issuer is Google.</p>
+  </li>
+  <li>
+    <p>Restart the server so that the changes are applied.</p>
+  </li>
+</ol>
+<aside class="admonition note">
+  <p>Legacy environment variables are also supported: <code spellcheck="false">TRILIUM_OAUTH_BASE_URL</code>,
+    <code
+    spellcheck="false">TRILIUM_OAUTH_CLIENT_ID</code>, <code spellcheck="false">TRILIUM_OAUTH_CLIENT_SECRET</code>,
+      and for customizing the provider: <code spellcheck="false">TRILIUM_OAUTH_ISSUER_BASE_URL</code>,
+      <code
+      spellcheck="false">TRILIUM_OAUTH_ISSUER_NAME</code>, <code spellcheck="false">TRILIUM_OAUTH_ISSUER_ICON</code>
+  </p>
+</aside>
+<h2>Connecting to the authentication provider</h2>
+<p>Once the server has been configured at the previous step, the next step
+  is to create a link between your account on the authentication provider
+  and the Trilium instance. This makes sure that only you can access the
+  Trilium instance, and not just any other valid account.</p>
+<p>To do so:</p>
+<ol>
+  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Password &amp; Auth.</em>
+  </li>
+  <li>In the <em>Sign-in with</em> field, choose <em>OpenID Connect provider.</em>
+  </li>
+  <li>In the <em>OpenID Connect</em> section, look for the <em>Connect account</em> button.</li>
+  <li>This will redirect you to your authentication provider, where you can
+    sign in or confirm the action if needed.</li>
+  <li>Once you are authenticated you will be redirected back to the Trilium
+    application.</li>
+</ol>
+<h2>Logging out</h2>
+<p>When logging out of Trilium, a request is made to the authentication provider
+  to log out from there as well. This feature depends on the authentication
+  provider, so it may not be honored (Google and Authelia are known cases
+  in which they don't respect the logout feature).</p>
+<h2>Switching providers</h2>
+<p>When switching providers (e.g. going from Google to Authelia), it's important
+  to take the following steps:</p>
+<ol>
+  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Password &amp; Auth</em>.</li>
+  <li>In the <em>OpenID Connect</em> section, press the <em>Disconnect</em> button.</li>
+  <li>Wait for the section to indicate that you are disconnected.</li>
+  <li>Change the configuration pointing to the new provider.</li>
+  <li>Restart your server.</li>
+  <li>Repeat the normal steps to connect to the authentication provider.</li>
+</ol>
+<p>Failing to disconnect before switching providers might temporarily lock
+  you in, as you will not be able to login (credentials won't match). Should
+  this happen:</p>
+<ol>
+  <li>Modify the server configuration again to your old provider.</li>
+  <li>Restart the server and follow the disconnect instructions above.</li>
+  <li>Modify the server configuration again to your new provider.</li>
+  <li>Restart again the server.</li>
+</ol>
+<h2>Deactivating OpenID Connect temporarily</h2>
+<p>To disable the OpenID Connect authentication and instead rely on the local
+  password temporarily, you must:</p>
+<ol>
+  <li>Modify the <code spellcheck="false">config.ini</code> or environment variables
+    (depending on how you set up the provider information) and temporarily
+    deactivate the multi-factor authentication section by renaming <code spellcheck="false">[MultiFactorAuthentication]</code> to
+    something else (e.g. <code spellcheck="false">[MultiFactorAuthentication.bak]</code>.</li>
+  <li>Restart the server for the changes to take effect.</li>
+</ol>
+<h2>Troubleshooting</h2>
+<h3>Setup fails with “invalid user”</h3>
+<p>If you are running behind a <a href="#root/_help_vcjrb3VVYPZI">reverse proxy</a>,
+  a buffer overflow can cause this issue. Here is a sample fix for&nbsp;
+  <a
+  class="reference-link" href="#root/_help_ud6MShXL4WpO">Nginx</a>: </p><pre><code class="language-text-x-trilium-auto">proxy_buffer_size 128k;
+proxy_buffers 4 256k;
+proxy_busy_buffers_size 256k;</code></pre>

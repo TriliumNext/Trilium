@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
@@ -66,7 +66,7 @@ jobs:
           retention-days: 30
 
       - name: Upload client coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         if: always()
         with:
           files: apps/client/test-output/vitest/coverage/lcov.info
@@ -83,7 +83,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload server coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         if: always()
         with:
           files: apps/server/test-output/vitest/coverage/lcov.info
@@ -107,7 +107,7 @@ jobs:
         run: pnpm run --filter=standalone test --coverage
 
       - name: Upload standalone coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         if: always()
         with:
           files: apps/standalone/test-output/vitest/coverage/lcov.info
@@ -130,11 +130,34 @@ jobs:
           pnpm run --filter=ckeditor5-mermaid test
           pnpm run --filter=ckeditor5-math test
 
+      - name: Run the CKEditor 5 aggregate tests
+        run: |
+          export CHROMEDRIVER_PATH=$(which chromedriver || find /usr/local/share -name chromedriver -type f 2>/dev/null | head -1)
+          echo "Using chromedriver at: $CHROMEDRIVER_PATH"
+          pnpm run --filter=ckeditor5 test --coverage
+
+      - name: Upload ckeditor5 coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: always()
+        with:
+          files: packages/ckeditor5/test-output/vitest/coverage/lcov.info
+          flags: ckeditor5
+          fail_ci_if_error: false
+
+      - name: Upload ckeditor5 test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/ckeditor5/test-output/vitest/junit.xml
+          flags: ckeditor5
+          fail_ci_if_error: false
+
       - name: Run the desktop tests
         run: pnpm run --filter=desktop test --coverage
 
       - name: Upload desktop coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         if: always()
         with:
           files: apps/desktop/test-output/vitest/coverage/lcov.info
@@ -154,7 +177,7 @@ jobs:
         run: pnpm run --filter=commons test --coverage
 
       - name: Upload commons coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         if: always()
         with:
           files: packages/commons/test-output/vitest/coverage/lcov.info
@@ -171,7 +194,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Run the rest of the tests
-        run: pnpm run --filter=\!client --filter=\!standalone --filter=\!server --filter=\!desktop --filter=\!commons --filter=\!ckeditor5-mermaid --filter=\!ckeditor5-math test
+        run: pnpm run --filter=\!client --filter=\!standalone --filter=\!server --filter=\!desktop --filter=\!commons --filter=\!ckeditor5-mermaid --filter=\!ckeditor5-math --filter=\!ckeditor5 test
 
   build_docker:
     name: Build Docker image
@@ -179,7 +202,7 @@ jobs:
     needs:
       - test_dev
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
@@ -214,7 +237,7 @@ jobs:
           - dockerfile: Dockerfile
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies

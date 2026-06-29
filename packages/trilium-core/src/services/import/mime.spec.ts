@@ -22,6 +22,16 @@ describe("#getMime", () => {
         ],
 
         [
+            "File extension ('.js') resolves to plain JavaScript via mimeTypes.lookup",
+            ["test.js"], "text/javascript"
+        ],
+
+        [
+            "File extension ('.mjs') resolves to plain JavaScript via mimeTypes.lookup",
+            ["test.mjs"], "text/javascript"
+        ],
+
+        [
             "File extension ('.excalidraw') that is defined in EXTENSION_TO_MIME",
             ["test.excalidraw"], "application/json"
         ],
@@ -134,6 +144,11 @@ describe("#getType", () => {
         ],
 
         [
+            "w/ codeImportedAsCode: true and 'text/javascript' mime type – it should return 'code'",
+            [{codeImportedAsCode: true}, "text/javascript"], "code"
+        ],
+
+        [
             "w/ textImportedAsText: false and 'text/html' mime type – it should return 'file'",
             [{textImportedAsText: false}, "text/html"], "file"
         ],
@@ -172,6 +187,14 @@ describe("#normalizeMimeType", () => {
         [
             "a mime that's defined in CODE_MIME_TYPES with a 'rewrite rule' should return the rewritten mime",
             ["text/markdown"], "text/x-markdown"
+        ],
+        [
+            "'application/javascript' is rewritten to plain (non-Trilium) JavaScript",
+            ["application/javascript"], "text/javascript"
+        ],
+        [
+            "plain 'text/javascript' is kept as-is",
+            ["text/javascript"], "text/javascript"
         ]
     ];
 

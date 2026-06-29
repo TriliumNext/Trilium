@@ -19,13 +19,15 @@ interface BadgeProps extends Pick<HTMLAttributes<HTMLDivElement>, "onClick" | "s
     className?: string;
     tooltip?: string;
     href?: string;
+    /** Renders the badge as a colored outline (transparent fill) instead of a solid background. */
+    outline?: boolean;
 }
 
 export default function SimpleBadge({ title, className }: SimpleBadgeProps) {
     return <span class={`badge ${className ?? ""}`}>{title}</span>;
 }
 
-export function Badge({ icon, className, text, tooltip, href, ...containerProps }: BadgeProps) {
+export function Badge({ icon, className, text, tooltip, href, outline, ...containerProps }: BadgeProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     useStaticTooltip(containerRef, {
         placement: "bottom",
@@ -44,7 +46,7 @@ export function Badge({ icon, className, text, tooltip, href, ...containerProps 
     return (
         <div
             ref={containerRef}
-            className={clsx("ext-badge", className, { "clickable": !!containerProps.onClick })}
+            className={clsx("ext-badge", className, { "clickable": !!containerProps.onClick, "outline": outline })}
             {...containerProps}
         >
             {href ? <a href={href}>{content}</a> : <span>{content}</span>}

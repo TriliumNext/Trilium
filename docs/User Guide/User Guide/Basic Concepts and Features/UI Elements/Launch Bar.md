@@ -44,7 +44,7 @@ Drag-and-drop the items in the tree in order to change their order. See <a cl
 
 ## Customizing the launcher
 
-*   The icon of a launcher can be changed just like a normal note. See <a class="reference-link" href="../Notes/Note%20Icons.md">Note Icons</a> for more information.
+*   The icon of a launcher can be changed just like a normal note. See <a class="reference-link" href="../Notes/Note%20Icons%20%26%20Colors.md">Note Icons</a> for more information.
 *   The title of the launcher can also be changed.
 
 ### Resetting

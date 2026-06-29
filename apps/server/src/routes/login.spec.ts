@@ -24,15 +24,12 @@ describe("Login Route test", () => {
         vi.useRealTimers();
     });
 
-    it("should return the login page, when using a GET request", async () => {
-
-        // RegExp for login page specific string in HTML
+    it("redirects GET /login to the SPA root, since login is served client-side", async () => {
         const res = await supertest(app)
             .get("/login")
-            .expect(200);
+            .expect(302);
 
-        expect(res.text).toMatch(/assets\/v[0-9.a-z]+\/src\/login\.js/);
-
+        expect(res.headers.location).toBe(".");
     });
 
     it("returns a 401 status, when login fails with wrong password", async () => {

@@ -1,0 +1,29 @@
+.basic-properties-widget {
+    padding: 0px 12px 6px 12px;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.basic-properties-widget > * {
+    margin-top: 9px;
+    margin-bottom: 2px;
+    margin-inline-end: 30px;
+}
+
+.note-type-container,
+.editability-select-container,
+.note-language-container {
+    display: flex;
+    align-items: center;
+}
+
+.note-type-dropdown {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.editability-dropdown {
+    width: 300px;
+}

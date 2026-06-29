@@ -11,20 +11,25 @@
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/turndown-plugin-gfm": "workspace:*",
     "async-mutex": "0.5.0",
-    "chardet": "2.1.1",
+    "chardet": "2.2.0",
     "escape-html": "1.0.3",
-    "i18next": "26.3.0",
+    "i18next": "26.3.2",
+    "js-yaml": "5.1.0",
+    "lz-string": "1.5.0",
     "mime-types": "3.0.2",
-    "node-html-parser": "7.1.0",
+    "node-html-parser": "8.0.3",
     "sanitize-filename": "1.6.4",
-    "sanitize-html": "2.17.4",
-    "strip-bom": "5.0.0",
+    "sanitize-html": "2.17.5",
+    "sax": "1.6.0",
+    "striptags": "3.2.0",
     "sucrase": "3.35.1",
-    "unescape": "1.0.1"
+    "turnish": "1.12.2",
+    "xml2js": "0.6.2"
   },
   "devDependencies": {
     "@types/escape-html": "1.0.4",
     "@types/mime-types": "3.0.1",
-    "@types/sanitize-html": "2.16.1"
+    "@types/sanitize-html": "2.16.1",
+    "@types/xml2js": "0.4.14"
   }
 }

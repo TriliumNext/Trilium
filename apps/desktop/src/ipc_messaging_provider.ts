@@ -1,5 +1,5 @@
 import type { WebSocketMessage } from "@triliumnext/commons";
-import { getLog, type ClientMessageHandler, type MessagingProvider } from "@triliumnext/core";
+import { getLog, shouldLogMessage, type ClientMessageHandler, type MessagingProvider } from "@triliumnext/core";
 import electron from "electron";
 
 /**
@@ -48,9 +48,7 @@ export default class IpcMessagingProvider implements MessagingProvider {
     }
 
     sendMessageToAllClients(message: WebSocketMessage): void {
-        // Match the WS provider's log-filtering so noisy sync-failed /
-        // api-log-messages traffic doesn't flood the log.
-        if (message.type !== "sync-failed" && message.type !== "api-log-messages") {
+        if (shouldLogMessage(message)) {
             getLog().info(`Sending message to all windows: ${JSON.stringify(message)}`);
         }
 

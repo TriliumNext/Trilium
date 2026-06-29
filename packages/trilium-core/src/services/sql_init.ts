@@ -1,4 +1,4 @@
-import { deferred, OptionRow } from "@triliumnext/commons";
+import { deferred, isDisplayableLocale, OptionRow } from "@triliumnext/commons";
 import { getSql } from "./sql";
 import { getLog } from "./log";
 import { getBackup } from "./backup";
@@ -120,9 +120,10 @@ function initializeDb() {
  * Applies the database schema, creating the necessary tables and importing the demo content.
  *
  * @param skipDemoDb if set to `true`, then the demo database will not be imported, resulting in an empty root note.
+ * @param locale the display language chosen during setup; persisted as the `locale` option when it is a valid, displayable locale (otherwise the default is kept).
  * @throws {Error} if the database is already initialized.
  */
-async function createInitialDatabase(skipDemoDb?: boolean) {
+async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     if (isDbInitialized()) {
         throw new Error("DB is already initialized");
     }
@@ -163,6 +164,10 @@ async function createInitialDatabase(skipDemoDb?: boolean) {
         initDocumentOptions();
         initNotSyncedOptions(true, {});
         initStartupOptions();
+        // Persist the language chosen during setup, overriding the default ("en").
+        if (isDisplayableLocale(locale)) {
+            optionService.setOption("locale", locale);
+        }
         passwordService.resetPassword();
     });
 
@@ -180,7 +185,9 @@ async function createInitialDatabase(skipDemoDb?: boolean) {
         if (demoFile) {
             const { default: zipImportService } = await import("./import/zip.js");
             const dummyTaskContext = new TaskContext("no-progress-reporting", "importNotes", null);
-            await zipImportService.importZip(dummyTaskContext, demoFile, rootNote);
+            // The demo archive is a whole-database export whose top note IS "root"; restore it onto the
+            // existing root rather than nesting it in a redundant "root" wrapper note.
+            await zipImportService.importZip(dummyTaskContext, demoFile, rootNote, { restoreAsRoot: true });
         }
     }
 

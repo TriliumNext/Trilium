@@ -21,7 +21,10 @@ function fakeRes() {
 describe("Database API", () => {
     it("returns existing backups and anonymized databases", async () => {
         expect(Array.isArray(await databaseRoute.getExistingBackups())).toBe(true);
-        expect(Array.isArray(databaseRoute.getExistingAnonymizedDatabases())).toBe(true);
+
+        const { anonymizedFolderPath, databases } = databaseRoute.getExistingAnonymizedDatabases();
+        expect(anonymizedFolderPath).toBe(path.resolve(dataDir.ANONYMIZED_DB_DIR));
+        expect(Array.isArray(databases)).toBe(true);
     });
 
     it("runs an integrity check that reports 'ok'", () => {
@@ -89,6 +92,31 @@ describe("Database API", () => {
                 expect(downloadArgs[0]).toBe(path.resolve(filePath));
                 // A timestamped download filename is generated from the file mtime.
                 expect(String(downloadArgs[1])).toMatch(/spec-backup_.*\.db/);
+            } finally {
+                fs.rmSync(filePath, { force: true });
+            }
+        });
+    });
+
+    describe("downloadAnonymizedDatabase", () => {
+        it("is restricted to the anonymized-db directory", () => {
+            // A backup file path is valid for downloadBackup but must be rejected here.
+            const { res, calls } = fakeRes();
+            const filePath = path.join(dataDir.BACKUP_DIR, "backup-now.db");
+            databaseRoute.downloadAnonymizedDatabase({ query: { filePath } } as unknown as Request, res);
+            expect(calls.status).toBe(403);
+        });
+
+        it("streams an existing anonymized database via res.download", () => {
+            const filePath = path.join(dataDir.ANONYMIZED_DB_DIR, "anonymized-light-spec.db");
+            fs.mkdirSync(dataDir.ANONYMIZED_DB_DIR, { recursive: true });
+            fs.writeFileSync(filePath, "anonymized-bytes");
+            try {
+                const { res, calls } = fakeRes();
+                databaseRoute.downloadAnonymizedDatabase({ query: { filePath } } as unknown as Request, res);
+                const downloadArgs = calls.download ?? [];
+                expect(downloadArgs[0]).toBe(path.resolve(filePath));
+                expect(String(downloadArgs[1])).toMatch(/anonymized-light-spec_.*\.db/);
             } finally {
                 fs.rmSync(filePath, { force: true });
             }

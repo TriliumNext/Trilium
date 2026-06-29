@@ -50,6 +50,7 @@ export class CopyToClipboardCommand extends Command {
 
         // Try inline code (text with 'code' attribute)
         const position = selection.getFirstPosition();
+        /* v8 ignore next 1 -- getFirstPosition() never returns null in a live editor selection */
         if (position) {
             const textNode = position.textNode || position.nodeBefore || position.nodeAfter;
             if (textNode && "data" in textNode && textNode.hasAttribute?.("code")) {

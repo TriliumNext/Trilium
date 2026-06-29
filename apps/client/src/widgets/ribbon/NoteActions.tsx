@@ -1,3 +1,5 @@
+import "./NoteActions.css";
+
 import { ConvertToAttachmentResponse } from "@triliumnext/commons";
 import { Dropdown as BootstrapDropdown } from "bootstrap";
 import { ComponentChildren, RefObject } from "preact";
@@ -19,6 +21,7 @@ import ws from "../../services/ws";
 import ClosePaneButton from "../buttons/close_pane_button";
 import CreatePaneButton from "../buttons/create_pane_button";
 import MovePaneButton from "../buttons/move_pane_button";
+import { isAlwaysFullWidthByType } from "../note_wrapper";
 import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
@@ -82,6 +85,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
         || (note.noteId === "_backendLog");
     const isInOptionsOrHelp = note?.noteId.startsWith("_options") || note?.noteId.startsWith("_help");
     const isExportableToImage = ["mermaid", "mindMap"].includes(noteType);
+    const isExportableToXlsx = noteType === "spreadsheet";
     const isContentAvailable = note.isContentAvailable();
     const isPrintable = isContentAvailable && (
         ["text", "code", "spreadsheet"].includes(noteType) ||
@@ -90,7 +94,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     );
     const isElectron = getIsElectron();
     const isMac = getIsMac();
-    const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "spreadsheet", "llmChat"].includes(noteType);
+    const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "spreadsheet", "llmChat"].includes(noteType) || note.isSvg();
     const isSearchOrBook = ["search", "book"].includes(noteType);
     const isHelpPage = note.noteId.startsWith("_help");
     const [syncServerHost] = useTriliumOption("syncServerHost");
@@ -151,6 +155,18 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                         defaultType: "single"
                     })} />
                 {isExportableToImage && isNormalViewMode && isContentAvailable && <ExportAsImage ntxId={noteContext.ntxId} parentComponent={parentComponent} />}
+                {isExportableToXlsx && isNormalViewMode && isContentAvailable && (
+                    <>
+                        <FormListItem
+                            icon="bx bxs-spreadsheet"
+                            onClick={() => parentComponent?.triggerEvent("exportXlsx", { ntxId: noteContext.ntxId })}
+                        >{t("spreadsheet.export-xlsx")}</FormListItem>
+                        <FormListItem
+                            icon="bx bxs-spreadsheet"
+                            onClick={() => parentComponent?.triggerEvent("exportCsv", { ntxId: noteContext.ntxId })}
+                        >{t("spreadsheet.export-csv")}</FormListItem>
+                    </>
+                )}
                 <CommandItem command="printActiveNote" icon="bx bx-printer" disabled={!isPrintable}
                     text={isElectron ? t("note_actions.print_or_export_to_pdf") : t("note_actions.print_note")}
                 />
@@ -219,6 +235,7 @@ function NoteBasicProperties({ note, focus }: {
     const [ isBookmarked, setIsBookmarked ] = useNoteBookmarkState(note);
     const [ isShared, switchShareState ] = useShareState(note);
     const [ isTemplate, setIsTemplate ] = useNoteLabelBoolean(note, "template");
+    const [ isFullContentWidth, setIsFullContentWidth ] = useNoteLabelBoolean(note, "fullContentWidth");
     const isProtected = useNoteProperty(note, "isProtected");
 
     useEffect(() => {
@@ -260,6 +277,13 @@ function NoteBasicProperties({ note, focus }: {
             helpPage="KC1HB96bqqHX"
             disabled={note?.noteId.startsWith("_options")}
         />
+        {!isAlwaysFullWidthByType(note) &&
+            <FormListToggleableItem
+                icon="bx bx-expand-horizontal"
+                title={t("full_content_width_switch.title")}
+                currentValue={isFullContentWidth} onChange={setIsFullContentWidth}
+            />
+        }
     </>;
 }
 

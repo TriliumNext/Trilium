@@ -12,6 +12,7 @@ import { useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel,
 import { useShareState } from "../ribbon/BasicPropertiesTab";
 import { useShareInfo } from "../shared_info";
 import { ActiveContentBadges } from "./ActiveContentBadges";
+import { SnippetBadge } from "./SnippetBadge";
 
 export default function NoteBadges() {
     return (
@@ -21,6 +22,7 @@ export default function NoteBadges() {
             <ShareBadge />
             <ClippedNoteBadge />
             <ExecuteBadge />
+            <SnippetBadge />
             <ActiveContentBadges />
         </div>
     );

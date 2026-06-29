@@ -1,6 +1,6 @@
 import "./mobile_editor_toolbar.css";
 
-import { CKTextEditor, ClassicEditor } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, ClassicEditor } from "@triliumnext/ckeditor5";
 import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { isIOS } from "../../../services/utils";

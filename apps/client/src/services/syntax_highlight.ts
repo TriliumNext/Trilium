@@ -1,5 +1,7 @@
 import { MimeType } from "@triliumnext/commons";
-import { type AutoHighlightResult, ensureMimeTypes, highlight, highlightAuto, type HighlightResult, loadTheme, type Theme,Themes } from "@triliumnext/highlightjs";
+// highlight.js is heavy and this module is reachable from the startup graph (note tooltips →
+// content renderer), so the library itself is only imported dynamically when highlighting runs.
+import type { AutoHighlightResult, HighlightResult, Theme } from "@triliumnext/highlightjs";
 
 import { copyText, copyTextWithToast } from "./clipboard_ext.js";
 import { t } from "./i18n.js";
@@ -75,7 +77,7 @@ export async function formatCodeBlocks($container: JQuery<HTMLElement>) {
         }
 
         if (syntaxHighlightingEnabled) {
-            applySingleBlockSyntaxHighlight($(codeBlock), normalizedMimeType);
+            await applySingleBlockSyntaxHighlight($(codeBlock), normalizedMimeType);
         }
     }
 
@@ -137,9 +139,11 @@ export async function applySingleBlockSyntaxHighlight($codeBlock: JQuery<HTMLEle
     let highlightedText: HighlightResult | AutoHighlightResult | null = null;
     if (normalizedMimeType === mime_types.MIME_TYPE_AUTO && !isShare) {
         await ensureMimeTypesForHighlighting();
+        const { highlightAuto } = await import("@triliumnext/highlightjs");
         highlightedText = highlightAuto(text);
     } else if (normalizedMimeType) {
         await ensureMimeTypesForHighlighting(normalizedMimeType);
+        const { highlight } = await import("@triliumnext/highlightjs");
         try {
             highlightedText = highlight(text, { language: normalizedMimeType });
         } catch (e) {
@@ -179,12 +183,14 @@ export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
         mimeTypes = mime_types.getMimeTypes();
     }
 
+    const { ensureMimeTypes } = await import("@triliumnext/highlightjs");
     await ensureMimeTypes(mimeTypes);
 
     highlightingLoaded = true;
 }
 
 export async function loadHighlightingTheme(themeName: string) {
+    const { loadTheme, Themes } = await import("@triliumnext/highlightjs");
     const themePrefix = "default:";
     let theme: Theme | null = null;
     if (glob.device === "print") {

@@ -63,28 +63,24 @@ jobs:
       TRILIUM_DATA_DIR: "${{ github.workspace }}/apps/server/spec/db"
       TRILIUM_INTEGRATION_TEST: memory
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           filter: tree:0
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
+      # The build-server composite already sets up pnpm, Node (with the pnpm
+      # cache) and installs dependencies. Running setup-node a second time at the
+      # job level registered a duplicate pnpm cache post-step that failed the job
+      # during cleanup ("Path Validation Error ... do not exist"), so we rely on
+      # the composite alone for environment setup.
       - name: Build the server
         uses: ./.github/actions/build-server
         with:
           os: linux
           arch: ${{ matrix.arch }}
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
 
       - name: Copy test fixture database
         run: cp packages/trilium-core/src/test/fixtures/document.db apps/server/spec/db/document.db
@@ -134,7 +130,7 @@ jobs:
       TRILIUM_DOCKER: 1
       TRILIUM_PORT: 8082
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           filter: tree:0
           fetch-depth: 0

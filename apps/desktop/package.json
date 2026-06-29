@@ -24,7 +24,7 @@
     "test": "vitest --config vitest.config.mts"
   },
   "dependencies": {
-    "better-sqlite3": "12.10.0",
+    "better-sqlite3": "12.11.1",
     "electron-debug": "4.1.0",
     "electron-dl": "4.0.0",
     "electron-squirrel-startup": "1.0.1",
@@ -40,13 +40,13 @@
     "@electron-forge/maker-zip": "7.11.2",
     "@electron-forge/plugin-auto-unpack-natives": "7.11.2",
     "@electron-forge/plugin-fuses": "7.11.2",
-    "@electron/fuses": "2.1.1",
+    "@electron/fuses": "2.1.2",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/core": "workspace:*",
     "@triliumnext/server": "workspace:*",
     "@types/electron-squirrel-startup": "1.0.2",
-    "copy-webpack-plugin": "14.0.0",
-    "electron": "41.7.1",
+    "electron": "42.5.0",
+    "node-mocks-http": "1.17.2",
     "prebuild-install": "7.1.3"
   }
 }

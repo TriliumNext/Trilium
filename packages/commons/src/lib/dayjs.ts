@@ -1,14 +1,10 @@
 import { default as dayjs, type Dayjs } from "dayjs";
 
-import "dayjs/plugin/advancedFormat";
-import "dayjs/plugin/duration";
-import "dayjs/plugin/isBetween";
-import "dayjs/plugin/isoWeek";
-import "dayjs/plugin/isSameOrAfter";
-import "dayjs/plugin/isSameOrBefore";
-import "dayjs/plugin/quarterOfYear";
-import "dayjs/plugin/relativeTime";
-import "dayjs/plugin/utc";
+// Loads the dayjs plugin type augmentations without putting their bare import specifiers in the
+// runtime module graph (see dayjs_augmentations.ts for the why). This must be a type-only
+// re-export rather than a type-only import, so that it survives declaration emit and the
+// augmentations also reach consumers of the compiled .d.ts files.
+export type * from "./dayjs_augmentations.js";
 
 //#region Plugins
 import advancedFormat from "dayjs/plugin/advancedFormat.js";
@@ -45,6 +41,7 @@ export const DAYJS_LOADER: Record<DISPLAYABLE_LOCALE_IDS, () => Promise<typeof i
     "es": () => import("dayjs/locale/es.js"),
     "fr": () => import("dayjs/locale/fr.js"),
     "ga": () => import("dayjs/locale/ga.js"),
+    "id": () => import("dayjs/locale/id.js"),
     "it": () => import("dayjs/locale/it.js"),
     "hi": () => import("dayjs/locale/hi.js"),
     "ja": () => import("dayjs/locale/ja.js"),

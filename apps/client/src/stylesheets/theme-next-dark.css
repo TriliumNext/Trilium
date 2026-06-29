@@ -190,6 +190,10 @@
     --center-pane-horiz-layout-background-color-bgfx: #1e1e1ec7;
 
     --right-pane-heading-color: gray;
+    --right-pane-peek-background: #303030dc;
+    
+    --peek-pane-backdrop-color: #00000032;
+    --peek-pane-shadow-color: #000000a8;
 
     --root-background: var(--left-pane-background-color);
 
@@ -218,6 +222,7 @@
     --badge-temporaraily-editable-background-color: #297331;
     --badge-read-only-background-color: #af4340;
     --badge-share-background-color: #4d4d4d;
+    --badge-snippet-background-color: #4d4d4d;
     --badge-clipped-note-background-color: #295773;
     --badge-doc-url-background-color: #1e5c42;
     --badge-execute-background-color: #604180;

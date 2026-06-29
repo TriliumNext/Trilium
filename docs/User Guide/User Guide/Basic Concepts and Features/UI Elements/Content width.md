@@ -13,4 +13,10 @@ By default, the content is aligned to the left, but it can be centered horizonta
 
 ## Adjusting at note level
 
-For notes with large elements such as Tables, it sometimes makes sense to avoid the content width without affecting other notes. To do so, apply the `fullContentWidth` [label](../../Advanced%20Usage/Attributes/Labels.md) to the note.
+For notes with large elements such as <a class="reference-link" href="../../Note%20Types/Text/Tables.md">Tables</a>, it sometimes makes sense to avoid the content width without affecting other notes. To do so:
+
+*   Since v0.104.0 in the <a class="reference-link" href="New%20Layout.md">New Layout</a> only, go to <a class="reference-link" href="Note%20buttons.md">Note buttons</a> and toggle _Full width_.
+*   Or manually apply the `fullContentWidth` [label](../../Advanced%20Usage/Attributes/Labels.md) to the note.
+
+> [!NOTE]
+> Some [note types](../../Note%20Types.md) are full width by default, such as the <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a>. In that case the _Full width_ toggle will not be displayed and the label will have no effect.

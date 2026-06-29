@@ -57,13 +57,15 @@
 }
 
 @container (max-width: 600px) {
-    .option-row:not(.option-row-link):not(.stacked):not(:has(.switch-widget)) {
+    /* Rows with compact inputs (toggles, icon buttons) keep the inline layout;
+       only rows with wide inputs (text boxes, selects) stack on narrow widths. */
+    .option-row:not(.option-row-link):not(.stacked):not(:has(.switch-widget)):not(:has(.icon-action)) {
         flex-direction: column;
         align-items: stretch;
         gap: 8px;
     }
 
-    .option-row:not(.option-row-link):not(.stacked):not(:has(.switch-widget)) .option-row-input {
+    .option-row:not(.option-row-link):not(.stacked):not(:has(.switch-widget)):not(:has(.icon-action)) .option-row-input {
         width: 100%;
     }
 }
@@ -92,6 +94,11 @@ button.option-row-link {
 
 button.option-row-link:last-child {
     border-bottom: none;
+}
+
+button.option-row-link:disabled {
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 .search-engine-templates {

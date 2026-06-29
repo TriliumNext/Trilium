@@ -6,12 +6,18 @@ import server from "../../../services/server";
 import toast from "../../../services/toast";
 import FormTextBox from "../../react/FormTextBox";
 import { useTriliumOption } from "../../react/hooks";
+import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithButton } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import TimeSelector from "./components/TimeSelector";
 
 export default function SyncOptions() {
-    return <SyncConfiguration />;
+    return (
+        <>
+            <OptionsPageHeader helpUrl="cbkrhQjrkKrh" />
+            <SyncConfiguration />
+        </>
+    );
 }
 
 export function SyncConfiguration() {
@@ -24,7 +30,7 @@ export function SyncConfiguration() {
     useEffect(() => setLocalProxy(syncProxy), [syncProxy]);
 
     return (
-        <OptionsSection helpUrl="cbkrhQjrkKrh">
+        <OptionsSection>
             <OptionsRow name="sync-server-host" label={t("sync_2.server_address")} description={t("sync_2.server_address_description")} stacked>
                 <FormTextBox
                     placeholder="https://<host>:<port>"
@@ -53,8 +59,9 @@ export function SyncConfiguration() {
             </OptionsRow>
 
             <OptionsRowWithButton
-                label={t("sync_2.test_button")}
+                label={t("sync_2.test_title")}
                 description={t("sync_2.test_description")}
+                buttonText={t("sync_2.test_button")}
                 onClick={async () => {
                     await Promise.all([
                         setSyncServerHost(localHost),

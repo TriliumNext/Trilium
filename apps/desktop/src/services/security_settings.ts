@@ -9,6 +9,7 @@ const SECURITY_JSON_PATH = path.join(dataDirs.TRILIUM_DATA_DIR, "security.json")
 interface SecuritySettings {
     backendScriptingEnabled?: boolean;
     sqlConsoleEnabled?: boolean;
+    allowLanAccess?: boolean;
 }
 
 function readSettings(): SecuritySettings {
@@ -120,5 +121,11 @@ export function registerSecurityIpcHandlers(): void {
         "sqlConsoleEnabled",
         "security-dialog.sql-console",
         "security-dialog.sql-console-warning"
+    );
+    registerToggleHandler(
+        "security-set-lan-access",
+        "allowLanAccess",
+        "security-dialog.lan-access",
+        "security-dialog.lan-access-warning"
     );
 }

@@ -6,7 +6,7 @@
 import type { LlmMessage, LlmMessagePart } from "@triliumnext/commons";
 import { decodeUtf8 } from "@triliumnext/core/src/services/utils/binary.js";
 import { type FilePart, generateText, type ImagePart, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type TextPart, type ToolSet } from "ai";
-import yaml from "js-yaml";
+import { dump } from "js-yaml";
 
 import { becca, getLog } from "@triliumnext/core";
 import { getNoteMeta,SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
@@ -33,7 +33,7 @@ function buildNoteHint(noteId: string, hasAttachments: boolean): string | null {
         return null;
     }
 
-    const metadata = yaml.dump(getNoteMeta(note, SYSTEM_PROMPT_LIMITS), { lineWidth: -1 });
+    const metadata = dump(getNoteMeta(note, SYSTEM_PROMPT_LIMITS), { lineWidth: -1 });
     const lines = [
         "The user is currently viewing the following note.",
         "Use this metadata (including contentPreview) to answer questions about the note without calling tools when possible.",
@@ -207,6 +207,9 @@ export abstract class BaseProvider implements LlmProvider {
             );
             parts.push(
                 `After a successful write tool call (set_note_content, append_to_note, edit_note_content, create_note), the tool's result already contains the resulting content of the note. Do not call get_note_content to verify the write — trust the returned content.`
+            );
+            parts.push(
+                `Never prepend emojis or other decorative characters to note titles. To give a note a visual marker, find a fitting icon with search_icons and assign it via set_attribute as the note's 'iconClass' label (e.g. value 'bx bx-rocket').`
             );
         } else if (config.contextNoteId) {
             parts.push(

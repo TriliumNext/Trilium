@@ -22,14 +22,6 @@ if (isBrowserRuntime) {
     vi.setConfig({ testTimeout: 60000, hookTimeout: 60000 });
 }
 
-/**
- * Wraps a callback in a CLS context. setDataKey calls options.setOption, which
- * saves a BOption entity and therefore requires an initialised CLS context.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 describe("password_encryption (real DB)", () => {
     describe("verifyPassword", () => {
         it("returns true for the seeded fixture password and false for a wrong one", async () => {
@@ -76,7 +68,7 @@ describe("password_encryption (real DB)", () => {
             const oldCipher = options.getOption("encryptedDataKey");
 
             const plainTextKey = "0123456789abcdef"; // 16 chars
-            await withContext(() =>
+            await getContext().init(() =>
                 passwordEncryption.setDataKey(FIXTURE_PASSWORD, plainTextKey)
             );
 
@@ -94,7 +86,7 @@ describe("password_encryption (real DB)", () => {
             const otherPassword = "another-pass-789";
             const rawKey = Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
 
-            await withContext(() => passwordEncryption.setDataKey(otherPassword, rawKey));
+            await getContext().init(() => passwordEncryption.setDataKey(otherPassword, rawKey));
 
             const recovered = (await passwordEncryption.getDataKey(otherPassword)) as Uint8Array;
             expect(Array.from(recovered)).toEqual(Array.from(rawKey));
@@ -117,7 +109,7 @@ describe("password_encryption (real DB)", () => {
     describe("verifyPassword without a stored hash", () => {
         it("returns false for any password once passwordVerificationHash is empty", async () => {
             // Kept last: clearing the stored hash is destructive for this fork's DB.
-            withContext(() => options.setOption("passwordVerificationHash", ""));
+            getContext().init(() => options.setOption("passwordVerificationHash", ""));
 
             expect(await passwordEncryption.verifyPassword(FIXTURE_PASSWORD)).toBe(false);
             expect(await passwordEncryption.verifyPassword("anything")).toBe(false);

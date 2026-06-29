@@ -98,6 +98,15 @@ describe("security_settings", () => {
             expect(result).toBe(false);
             expect(h.fileStore.has(SETTINGS_PATH)).toBe(false);
         });
+
+        it("registers and persists the LAN access toggle", async () => {
+            h.showMessageBox.mockResolvedValue({ response: 1, checkboxChecked: false });
+
+            const result = await invoke("security-set-lan-access", true);
+
+            expect(result).toBe(true);
+            expect(JSON.parse(h.fileStore.get(SETTINGS_PATH) ?? "{}")).toEqual({ allowLanAccess: true });
+        });
     });
 
     describe("registerSecurityIpcHandlers — disabling", () => {

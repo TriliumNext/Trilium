@@ -1,9 +1,9 @@
 # "New Task" launcher button
-In this example we are going to extend the functionality of <a class="reference-link" href="../../../Advanced%20Usage/Advanced%20Showcases/Task%20Manager.md">Task Manager</a> showcase (which comes by default with Trilium) by adding a button in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>  (![](New%20Task%20launcher%20button_i.png)) to create a new task automatically and open it.
+In this example we are going to extend the functionality of <a class="reference-link" href="../../../Advanced%20Usage/Advanced%20Showcases/Task%20Manager.md">Task Manager</a> showcase (which comes by default with Trilium) by adding a button in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>  (![](New%20Task%20launcher%20button_image.png)) to create a new task automatically and open it.
 
 ## Creating the note
 
-1.  First, create a new <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> note type with the _JS frontend_ language.
+1.  First, create a new <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> note type with the _JavaScript (Trilium frontend)_ language.
 2.  Define the `#run=frontendStartup` label in <a class="reference-link" href="../../../Advanced%20Usage/Attributes.md">Attributes</a>.
 
 ## Content of the script

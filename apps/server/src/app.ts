@@ -5,7 +5,6 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import ejs from "ejs";
 import express from "express";
-import { auth } from "express-openid-connect";
 import helmet from "helmet";
 import { t } from "i18next";
 import path from "path";
@@ -19,7 +18,7 @@ import mcpRoutes from "./routes/mcp.js";
 import routes from "./routes/routes.js";
 import config from "./services/config.js";
 import { getLog } from "@triliumnext/core";
-import openID from "./services/open_id.js";
+import { createReactiveOidcMiddleware } from "./services/open_id.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
 import utils, { getResourceDir, isDev } from "./services/utils.js";
 
@@ -111,8 +110,11 @@ export default async function buildApp() {
     startSessionCleanup();
     app.use(favicon(path.join(assetsDir, isDev ? "icon-dev.ico" : "icon.ico")));
 
-    if (openID.isOpenIDEnabled())
-        app.use(auth(openID.generateOAuthConfig()));
+    // Always mount the OIDC middleware, but have it activate reactively from the current `mfaMethod`
+    // option rather than from a one-time startup check. This lets a switch to (or away from) OpenID take
+    // effect without a server restart; the underlying express-openid-connect handler is built lazily on
+    // first use, so it costs nothing while OAuth is unselected. See createReactiveOidcMiddleware.
+    app.use(createReactiveOidcMiddleware());
 
     await assets.register(app);
     routes.register(app);

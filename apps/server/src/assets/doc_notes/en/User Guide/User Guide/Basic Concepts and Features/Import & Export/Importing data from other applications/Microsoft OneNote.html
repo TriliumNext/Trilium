@@ -1,0 +1,98 @@
+<p>Trilium allows importing from OneNote. Currently the only mechanism supported
+  is via the Microsoft Graph API which requires you to authenticate in a
+  browser in order for the notes to be obtained by Trilium.</p>
+<h2>Import process</h2>
+<ol>
+  <li>In the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+    right click and select <em>Import into note</em>.</li>
+  <li>In the <em>Import from</em> section, select <em>OneNote</em>.</li>
+  <li>Press the <em>Connect</em> button, you will be redirected to Microsoft's
+    authentication screen where you can log into your account.</li>
+  <li>After the connection is successful, you should be able to see a list of
+    sections that can be imported. Simply check the ones to import and press
+    the <em>Import selected</em> button.</li>
+  <li>Wait for the import to finish.</li>
+</ol>
+<h2>Supported features</h2>
+<p>The following features are preserved by Trilium during the import process:</p>
+<ul>
+  <li>Basic formatting (bold, italic, underline, strikethrough, subscript, super
+    script, inline code, font sizes, headings, colors, highlights).
+    <ul>
+      <li>Black-colored text is intentionally stripped to allow it to work in dark
+        themes.</li>
+    </ul>
+  </li>
+  <li><a class="reference-link" href="#root/_help_S6Xx8QIWTV66">Lists</a>&nbsp;with
+    different bullet types.</li>
+  <li><a class="reference-link" href="#root/_help_NdowYOC1GFKS">Tables</a>
+  </li>
+  <li>Images and&nbsp;<a class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>.</li>
+  <li>To-do lists</li>
+  <li>Hand-drawing is preserved and displayed as an SVG image (however there
+    are some</li>
+  <li>Links between other imported pages are converted to&nbsp;<a class="reference-link"
+    href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;if the text
+    of the link matches the name of the page, or plain links otherwise. If
+    the pages are not part of the import, the original <code spellcheck="false">onenote:</code> link
+    is kept.</li>
+  <li>Tags (apart from to-do lists) are mildly preserved by converting them
+    to emojis. This loses their searchability. Since Trilium has no concept
+    of inline attributes or badges, this is considered a middle-ground.</li>
+</ul>
+<p>Regarding the note structure:</p>
+<ul>
+  <li>The order of the pages within a section is maintained.</li>
+  <li>Sub-pages and section groups are maintained by nesting notes in a hierarchical
+    structure.</li>
+  <li>Creation and modification of both notes and sections is preserved. The
+    order of section or section groups is not preserved (see limitations).</li>
+</ul>
+<h2>Limitations</h2>
+<h3>Regarding OneNote's freehand structure</h3>
+<p>OneNote is fundamentally different to Trilium in structure because it
+  allows freehand drawing to coexist with text, and text boxes can be placed
+  anywhere in the document (e.g. a common use case is to have columns). Trilium
+  has a document flow mechanism for&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes
+  which means that it can't be freely positioned.</p>
+<p>To cope with this difference, Trilium will flatten the text structure
+  into normal paragraphs. The paragraphs will be ordered visually based on
+  the original position of the text boxes, but their horizontal position
+  will not be preserved. Parallel text such as columns may appear interleaved
+  which can cause problems.</p>
+<p>In addition, drawing in OneNote can be interleaved with text boxes. Text
+  notes in Trilium do not allow for this feature, so all drawing will appear
+  at the end. For some use cases (diagrams, for example) this will work fine,
+  but if you have highlights or other text-dependent drawings they will appear
+  out of order.</p>
+<aside class="admonition note">
+  <p>There are plans to support drawing-heavy notes that interleave with text
+    boxes by converting them to a&nbsp;<a class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>&nbsp;instead.</p>
+</aside>
+<h2>Other limitations</h2>
+<p>The following are known limitations due to how the information comes from
+  the import (Microsoft Graph API), which means that they cannot be fixed.</p>
+<ul>
+  <li>The order of the sections (and section groups) is not available, the sections
+    are ordered by creation date instead.</li>
+  <li>Revision history.</li>
+  <li>Paragraph indentation.</li>
+  <li>Section colors.</li>
+</ul>
+<h2>Reporting issues</h2>
+<p>When importing notes, you might find that some text is not rendered properly
+  or the structure is not properly maintained. As long as this issue is not
+  a fundamental issue (like the issue with freehand text not being preserved
+  exactly), it's a good idea to <a href="#root/_help_wy8So3yZZlH9">report it</a>.</p>
+<p>When reporting, make sure that you provide the following information:</p>
+<ul>
+  <li>Import again the section, checking the debug checkbox before importing.
+    This preserves the original document (and the hand-drawing data if any)
+    as it came through from OneNote's cloud API so that it can be used for
+    comparison.</li>
+  <li>Export only the affected page as ZIP, making sure not to accidentally
+    expose any sensitive information.</li>
+  <li>Take screenshots of how the note looked like in OneNote and how it ends
+    up in Trilium.</li>
+  <li>Attach the ZIP and the screenshots to the issue report.</li>
+</ul>

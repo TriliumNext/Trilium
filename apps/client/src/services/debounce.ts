@@ -12,12 +12,25 @@
  * @param whether to execute at the beginning (`false`)
  * @api public
  */
-function debounce<T>(func: (...args: any[]) => T, waitMs: number, immediate: boolean = false) {
+type AnyFunction = (...args: any[]) => any;
+
+/**
+ * The wrapper returned by {@link debounce}: it accepts the same arguments as the
+ * wrapped function and returns its last result (or `undefined` before the first
+ * trailing call), plus `clear`/`flush` controls.
+ */
+export interface DebouncedFunction<F extends AnyFunction> {
+    (...args: Parameters<F>): ReturnType<F> | undefined;
+    clear(): void;
+    flush(): void;
+}
+
+function debounce<F extends AnyFunction>(func: F, waitMs: number, immediate: boolean = false): DebouncedFunction<F> {
     let timeout: any; // TODO: fix once we split client and server.
     let args: unknown[] | null;
     let context: unknown;
     let timestamp: number;
-    let result: T;
+    let result: ReturnType<F>;
     if (null == waitMs) waitMs = 100;
 
     function later() {

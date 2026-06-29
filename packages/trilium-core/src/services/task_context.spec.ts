@@ -96,6 +96,43 @@ describe("TaskContext", () => {
 
             expect(sendMessageToAllClients).not.toHaveBeenCalled();
         });
+
+        it("includes the total once set, and omits it until then", () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(1_000);
+
+            const ctx = new TaskContext("total-1", "importNotes", importData);
+            // The constructor's first message has no total yet.
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.not.objectContaining({ totalCount: expect.anything() }));
+
+            ctx.setTotalCount(10);
+            vi.setSystemTime(1_300);
+            ctx.increaseProgressCount();
+
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.objectContaining({ progressCount: 1, totalCount: 10 }));
+        });
+    });
+
+    describe("setPhase", () => {
+        it("tags subsequent progress messages with the phase and flushes the next one immediately", () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(1_000);
+
+            const ctx = new TaskContext("phase-1", "importNotes", importData);
+            // The constructor's first message carries no phase.
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.not.objectContaining({ phase: expect.anything() }));
+
+            // setPhase resets the throttle, so the very next increment sends even within the 300ms window.
+            ctx.setPhase("extracting");
+            vi.setSystemTime(1_100);
+            ctx.increaseProgressCount();
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.objectContaining({ phase: "extracting" }));
+
+            ctx.setPhase("processing");
+            vi.setSystemTime(1_200);
+            ctx.increaseProgressCount();
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.objectContaining({ phase: "processing" }));
+        });
     });
 
     describe("reportError", () => {

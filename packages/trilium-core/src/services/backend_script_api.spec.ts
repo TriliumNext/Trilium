@@ -32,3 +32,20 @@ describe("BackendScriptApi.log", () => {
         );
     });
 });
+
+describe("BackendScriptApi markdown conversion", () => {
+    beforeEach(() => becca.reset());
+
+    function makeApi() {
+        const startNote = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
+        return new BackendScriptApi(startNote, { startNote });
+    }
+
+    it("htmlToMarkdown converts HTML to Markdown", () => {
+        expect(makeApi().htmlToMarkdown("<p>This is <strong>bold</strong>.</p>")).toBe("This is **bold**.");
+    });
+
+    it("markdownToHtml converts Markdown to HTML", () => {
+        expect(makeApi().markdownToHtml("This is **bold**.")).toContain("<strong>bold</strong>");
+    });
+});

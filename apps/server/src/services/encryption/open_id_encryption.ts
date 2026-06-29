@@ -1,8 +1,8 @@
-import { data_encryption, OpenIdError } from "@triliumnext/core";
+import { data_encryption } from "@triliumnext/core";
+import crypto from "crypto";
 
 import sql from "../sql.js";
-import sqlInit from "../sql_init.js";
-import utils, { constantTimeCompare } from "../utils.js";
+import utils from "../utils.js";
 import myScryptService from "./my_scrypt.js";
 
 function saveUser(subjectIdentifier: string, name: string, email: string) {
@@ -15,20 +15,12 @@ function saveUser(subjectIdentifier: string, name: string, email: string) {
         subjectIdentifier,
         verificationSalt
     );
-    if (!verificationHash) {
-        throw new OpenIdError("Verification hash undefined!");
-    }
 
     const userIDEncryptedDataKey = setDataKey(
         subjectIdentifier,
         utils.randomSecureToken(16),
         verificationSalt
     );
-
-    if (!userIDEncryptedDataKey) {
-        console.error("UserID encrypted data key null");
-        return undefined;
-    }
 
     const data = {
         tmpID: 0,
@@ -51,46 +43,42 @@ function isSubjectIdentifierSaved() {
     return true;
 }
 
-function isUserSaved() {
-    const isSaved = sql.getValue<string>("SELECT isSetup FROM user_data;");
-    return isSaved === "true";
-}
+/**
+ * Checks whether an OAuth subject identifier matches the one bound to this instance during
+ * enrollment. Used at login to enforce that only the enrolled account may sign in — without it, any
+ * identity the IdP authenticates would be granted access. The plaintext `sub` is never stored; we
+ * recompute its scrypt verification hash against the saved salt and compare it (in constant time) to
+ * the stored hash, mirroring how passwords are verified.
+ */
+function verifySubjectIdentifier(subjectIdentifier: string): boolean {
+    const row = sql.getRowOrNull<{ userIDVerificationHash: string; salt: string }>(
+        "SELECT userIDVerificationHash, salt FROM user_data;"
+    );
 
-function verifyOpenIDSubjectIdentifier(subjectIdentifier: string) {
-    if (!sqlInit.isDbInitialized()) {
-        throw new OpenIdError("Database not initialized!");
-    }
-
-    if (isUserSaved()) {
+    if (!row || !row.userIDVerificationHash || !row.salt) {
         return false;
     }
 
-    const salt = sql.getValue("SELECT salt FROM user_data;");
-    if (salt == undefined) {
-        console.log("Salt undefined");
-        return undefined;
-    }
-
-    const givenHash = myScryptService
-        .getSubjectIdentifierVerificationHash(subjectIdentifier)
-        ?.toString("base64");
-    if (givenHash === undefined) {
-        console.log("Sub id hash undefined!");
-        return undefined;
-    }
-
-    const savedHash = sql.getValue(
-        "SELECT userIDVerificationHash FROM user_data"
+    const computedHash = utils.toBase64(
+        myScryptService.getSubjectIdentifierVerificationHash(subjectIdentifier, row.salt)
     );
-    /* v8 ignore next 4 -- unreachable: the same single user_data row already
-       yielded a non-null salt above, so this column query cannot return undefined
-       (a NULL column yields null, not undefined). */
-    if (savedHash === undefined) {
-        console.log("verification hash undefined");
-        return undefined;
-    }
 
-    return constantTimeCompare(givenHash, savedHash as string);
+    return constantTimeEquals(computedHash, row.userIDVerificationHash);
+}
+
+/** Length-safe, constant-time string comparison so the match check can't be timing-probed. */
+function constantTimeEquals(a: string, b: string): boolean {
+    const aBuffer = Buffer.from(a);
+    const bBuffer = Buffer.from(b);
+    if (aBuffer.length !== bBuffer.length) {
+        return false;
+    }
+    return crypto.timingSafeEqual(aBuffer, bBuffer);
+}
+
+function isUserSaved() {
+    const isSaved = sql.getValue<string>("SELECT isSetup FROM user_data;");
+    return isSaved === "true";
 }
 
 function setDataKey(
@@ -101,47 +89,12 @@ function setDataKey(
     const subjectIdentifierDerivedKey =
         myScryptService.getSubjectIdentifierDerivedKey(subjectIdentifier, salt);
 
-    if (subjectIdentifierDerivedKey === undefined) {
-        console.error("SOMETHING WENT WRONG SAVING USER ID DERIVED KEY");
-        return undefined;
-    }
-    const newEncryptedDataKey = data_encryption.encrypt(
-        subjectIdentifierDerivedKey,
-        plainTextDataKey
-    );
-
-    return newEncryptedDataKey;
-}
-
-function getDataKey(subjectIdentifier: string) {
-    const subjectIdentifierDerivedKey =
-        myScryptService.getSubjectIdentifierDerivedKey(subjectIdentifier);
-
-    const encryptedDataKey = sql.getValue(
-        "SELECT userIDEncryptedDataKey FROM user_data"
-    );
-
-    if (!encryptedDataKey) {
-        console.error("Encrypted data key empty!");
-        return undefined;
-    }
-
-    if (!subjectIdentifierDerivedKey) {
-        console.error("SOMETHING WENT WRONG SAVING USER ID DERIVED KEY");
-        return undefined;
-    }
-    const decryptedDataKey = data_encryption.decrypt(
-        subjectIdentifierDerivedKey,
-        encryptedDataKey.toString()
-    );
-
-    return decryptedDataKey;
+    return data_encryption.encrypt(subjectIdentifierDerivedKey, plainTextDataKey);
 }
 
 export default {
-    verifyOpenIDSubjectIdentifier,
-    getDataKey,
     setDataKey,
     saveUser,
     isSubjectIdentifierSaved,
+    verifySubjectIdentifier,
 };

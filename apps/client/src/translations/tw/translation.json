@@ -129,20 +129,11 @@
     "export_note_title": "匯出筆記",
     "close": "關閉",
     "export_type_subtree": "此筆記及其所有子筆記",
-    "format_html_zip": "HTML ZIP 封存 - 建議使用此選項，因為它保留了所有格式。",
-    "format_markdown": "Markdown - 保留大部分格式。",
-    "format_opml": "OPML - 大綱交換格式，僅限文字。不包括格式、圖片和檔案。",
-    "opml_version_1": "OPML v1.0 - 僅限純文字",
-    "opml_version_2": "OPML v2.0 - 還允許 HTML",
     "export_type_single": "僅此筆記，不包括子筆記",
     "export": "匯出",
     "choose_export_type": "請先選擇匯出類型",
-    "export_status": "匯出狀態",
-    "export_in_progress": "正在匯出：{{progressCount}}",
     "export_finished_successfully": "成功匯出。",
-    "format_html": "HTML - 推薦，因為它保留了所有格式",
-    "format_pdf": "PDF - 用於列印或與他人分享。",
-    "share-format": "HTML 網頁發佈——使用與共享筆記相同的佈景主題，但可發佈為靜態網站。"
+    "format_pdf": "PDF - 用於列印或與他人分享。"
   },
   "help": {
     "noteNavigation": "筆記導航",
@@ -203,7 +194,6 @@
   "import": {
     "importIntoNote": "匯入至筆記",
     "chooseImportFile": "選擇檔案匯入",
-    "importDescription": "所選檔案的內容將作為子筆記匯入至",
     "options": "選項",
     "safeImportTooltip": "Trilium <code>.zip</code> 匯出的檔案可能包含可能有害的可執行腳本。安全匯入將停用所有匯入腳本的自動執行。僅當您完全信任匯入的可執行腳本的內容時，才取消勾選「安全匯入」。",
     "safeImport": "安全匯入",
@@ -222,7 +212,6 @@
       "placeholder": "輸入 HTML 標籤，每行一個",
       "reset_button": "重設為預設列表"
     },
-    "import-status": "匯入狀態",
     "in-progress": "正在匯入：{{progress}}",
     "successful": "匯入成功。",
     "importZipRecommendation": "匯入 ZIP 檔案時，筆記層級將反映壓縮檔內的子目錄結構。"
@@ -814,7 +803,8 @@
     "hide_child_notes": "隱藏樹中的子筆記",
     "open_all_in_tabs": "全部打開",
     "open_all_in_tabs_tooltip": "在新分頁中開啟所有結果",
-    "open_all_confirm": "這將在新分頁中開啟 {{count}} 則筆記。要繼續嗎？"
+    "open_all_confirm_one": "這將在新分頁中開啟 {{count}} 則筆記。要繼續嗎？",
+    "open_all_confirm_other": ""
   },
   "edited_notes": {
     "no_edited_notes_found": "今天還沒有編輯過的筆記...",
@@ -858,7 +848,8 @@
     "note_size": "筆記大小",
     "note_size_info": "筆記大小提供了該筆記儲存需求的粗略估計。它考慮了筆記及其歷史的內容。",
     "calculate": "計算",
-    "subtree_size": "（子階層大小: {{size}}, 共計 {{count}} 個筆記）",
+    "subtree_size_one": "（子階層大小: {{size}}, 共計 {{count}} 個筆記）",
+    "subtree_size_other": "",
     "title": "筆記資訊",
     "mime": "MIME 類型",
     "show_similar_notes": "顯示相似筆記"
@@ -869,7 +860,8 @@
     "title": "筆記地圖",
     "fix-nodes": "固定節點",
     "link-distance": "連結距離",
-    "too-many-notes": "此子樹包含 {{count}} 則筆記，已超過筆記地圖中可顯示的 {{max}} 則上限。"
+    "too-many-notes_one": "此子樹包含 {{count}} 則筆記，已超過筆記地圖中可顯示的 {{max}} 則上限。",
+    "too-many-notes_other": ""
   },
   "note_paths": {
     "title": "筆記路徑",
@@ -1055,9 +1047,7 @@
     "protecting-finished-successfully": "已成功完成保護操作。",
     "unprotecting-finished-successfully": "已成功解除保護操作。",
     "protecting-in-progress": "保護進行中：{{count}}",
-    "unprotecting-in-progress-count": "解除保護進行中：{{count}}",
-    "protecting-title": "保護狀態",
-    "unprotecting-title": "解除保護狀態"
+    "unprotecting-in-progress-count": "解除保護進行中：{{count}}"
   },
   "relation_map": {
     "remove_note": "刪除筆記",
@@ -1176,8 +1166,6 @@
     "disabled": "禁用"
   },
   "ribbon": {
-    "widgets": "功能區元件",
-    "promoted_attributes_message": "如果筆記中存在升級屬性，則自動打開升級屬性功能區分頁",
     "edited_notes_message": "日記筆記中自動打開編輯過的筆記功能區分頁"
   },
   "theme": {
@@ -1371,7 +1359,6 @@
     "title": "備份"
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI 是一個 REST API，用於以編程方式訪問 Trilium 實例，而無需 UI。",
     "create_token": "新增 ETAPI 令牌",
     "existing_tokens": "現有令牌",
@@ -1422,13 +1409,7 @@
   },
   "shortcuts": {
     "keyboard_shortcuts": "快捷鍵",
-    "multiple_shortcuts": "同一操作的多個快捷鍵可以用逗號分隔。",
-    "electron_documentation": "請參閱 <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">Electron 文檔</a>，了解可用的修飾符和鍵碼。",
     "type_text_to_filter": "輸入文字以過濾快捷鍵...",
-    "action_name": "操作名稱",
-    "shortcuts": "快捷鍵",
-    "default_shortcuts": "預設快捷鍵",
-    "description": "描述",
     "reload_app": "重新載入應用以套用更改",
     "set_all_to_default": "將所有快捷鍵重設為預設值",
     "confirm_reset": "您確定要將所有鍵盤快捷鍵重設為預設值嗎？",
@@ -1439,7 +1420,6 @@
     "description": "這些選項僅適用於桌面版，瀏覽器將使用其原生的拼寫檢查功能。",
     "enable": "拼寫檢查",
     "language_code_label": "拼寫檢查語言",
-    "restart-required": "拼寫檢查選項的更改將在應用重啟後生效。",
     "custom_dictionary_title": "自訂字典",
     "custom_dictionary_description": "新增至字典的詞彙會同步至您所有的裝置。",
     "custom_dictionary_edit": "自訂詞彙",
@@ -1518,7 +1498,8 @@
     "export": "匯出",
     "import-into-note": "匯入至筆記",
     "apply-bulk-actions": "套用批次操作",
-    "converted-to-attachments": "{{count}} 個筆記已被轉換為附件。",
+    "converted-to-attachments_one": "{{count}} 個筆記已被轉換為附件。",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "確定要將所選的筆記轉換為其父級筆記的附件嗎？此操作僅適用於圖像筆記，其他筆記將被跳過。",
     "duplicate": "複製副本",
     "open-in-popup": "快速編輯",
@@ -1721,7 +1702,6 @@
   },
   "branches": {
     "cannot-move-notes-here": "無法將筆記移動至這裡。",
-    "delete-status": "刪除狀態",
     "delete-notes-in-progress": "正在刪除筆記：{{count}}",
     "delete-finished-successfully": "成功刪除。",
     "undeleting-notes-in-progress": "正在還原刪除的筆記：{{count}}",
@@ -1834,33 +1814,12 @@
     "preview": "預覽：{{preview}}"
   },
   "multi_factor_authentication": {
-    "title": "多重身份驗證（MFA）",
-    "description": "多重身份驗證（MFA）為您的帳戶增加了一層額外的安全性。它要求您提供一個或多個額外的資訊來驗證您的身份，而不是只輸入密碼來登入。如此一來，即便有人取得您的密碼，如果沒有第二項資訊，他們仍然無法存取您的帳戶。這就像在您的門上多加了一把鎖，讓其他人更難破門而入。<br><br>請按照以下指示啟用 MFA。如果您沒有正確設定，登入方式將變回僅使用密碼。",
-    "mfa_enabled": "啟用多重身份驗證",
-    "mfa_method": "MFA 方法",
-    "electron_disabled": "目前桌面版本尚未支援多重身份驗證。",
-    "totp_title": "基於時間的一次性密碼（TOTP）",
-    "totp_description": "TOTP（基於時間的一次性密碼）是一種安全功能，可產生一個每 30 秒變更一次的唯一臨時代碼。您可以使用此代碼和密碼登入帳戶，使其他人更難存取您的帳戶。",
-    "totp_secret_title": "生成 TOTP 金鑰",
-    "totp_secret_generate": "生成 TOTP 金鑰",
-    "totp_secret_regenerate": "重新生成 TOTP 金鑰",
-    "no_totp_secret_warning": "您需要一個 TOTP 金鑰以啟用 TOTP。",
-    "totp_secret_description_warning": "在生成新的 TOTP 金鑰後，您需要使用新的金鑰重新登入。",
-    "totp_secret_generated": "已生成 TOTP 金鑰",
-    "totp_secret_warning": "請將生成的金鑰妥善保管。金鑰將不會再次顯示。",
-    "totp_secret_regenerate_confirm": "您確定要重新產生 TOTP 金鑰嗎？這將使之前的 TOTP 密碼和所有的復原碼失效。",
-    "recovery_keys_title": "單一登入復原金鑰",
-    "recovery_keys_description": "單一登入復原金鑰用於您無法存取 Authenticator 代碼時登入。",
     "recovery_keys_description_warning": "離開頁面後，將不會再顯示復原金鑰，請妥善保管。<br>復原金鑰使用後將無法再次使用。",
     "recovery_keys_error": "生成復原碼時出錯",
     "recovery_keys_no_key_set": "尚未設置復原碼",
-    "recovery_keys_generate": "生成復原碼",
     "recovery_keys_regenerate": "重新生成復原碼",
-    "recovery_keys_used": "已使用：{{date}}",
-    "recovery_keys_unused": "復原碼 {{index}} 未使用",
     "oauth_title": "OAuth / OpenID 驗證",
     "oauth_description": "OpenID 是一種標準化的方式，可讓您使用其他服務（如 Google）的帳號登入網站，以驗證您的身份。預設的提供者是 Google，但您可以將其變更為任何其他 OpenID 提供者。查看<a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">此處</a>以瞭解更多資訊。依照這些 <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">指示</a>以透過 Google 設定 OpenID 服務。",
-    "oauth_description_warning": "要啟用 OAuth / OpenID，您需要設定 config.ini 文件中的 OAuth / OpenID 基礎 URL、客戶端 ID 和客戶端金鑰，並重新啟動應用程式。如果要從環境變數設置，請設定 TRILIUM_OAUTH_BASE_URL、TRILIUM_OAUTH_CLIENT_ID 和 TRILIUM_OAUTH_CLIENT_SECRET 環境變數。",
     "oauth_missing_vars": "缺少以下設定：{{-variables}}",
     "oauth_user_account": "用戶帳號： ",
     "oauth_user_email": "用戶信箱： ",
@@ -2089,7 +2048,8 @@
     "app-restart-required": "需要重啟程式"
   },
   "pagination": {
-    "total_notes": "{{count}} 筆記",
+    "total_notes_one": "{{count}} 筆記",
+    "total_notes_other": "",
     "prev_page": "上一頁",
     "next_page": "下一頁"
   },
@@ -2188,7 +2148,8 @@
     "code_note_switcher": "更改語言模式",
     "tab_width": "制表符寬度：{{width}}",
     "tab_width_title": "變更制表符寬度",
-    "tab_width_spaces": "{{count}} 個空格",
+    "tab_width_spaces_one": "{{count}} 個空格",
+    "tab_width_spaces_other": "",
     "tab_width_spaces_short": "空格：{{width}}",
     "tab_width_tabs": "製表符：{{width}}",
     "tab_width_use_default": "使用預設值 ({{width}})",
@@ -2279,12 +2240,9 @@
     "play": "播放 (空白鍵)",
     "pause": "暫停 (空白鍵)",
     "back-10s": "往前 10 秒 (左方向鍵)",
-    "forward-30s": "往後 30 秒",
     "mute": "靜音 (M)",
     "unmute": "解除靜音 (M)",
     "playback-speed": "播放速度",
-    "loop": "循環",
-    "disable-loop": "解除循環",
     "rotate": "旋轉",
     "picture-in-picture": "畫中畫",
     "exit-picture-in-picture": "退出畫中畫",
@@ -2389,8 +2347,6 @@
     "summary": "摘要"
   },
   "llm": {
-    "settings_title": "AI / LLM",
-    "settings_description": "設定 AI 及大型語言模型整合。",
     "feature_not_enabled": "請前往「設定」→「進階」→「實驗性功能」啟用 LLM 實驗性功能，即可使用 AI 整合。",
     "add_provider": "新增提供者",
     "add_provider_title": "新增 AI 提供者",

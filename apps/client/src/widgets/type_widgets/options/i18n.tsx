@@ -1,6 +1,7 @@
 import { useMemo } from "preact/hooks";
 import { getAvailableLocales, t } from "../../../services/i18n";
 import FormSelect from "../../react/FormSelect";
+import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import { useTriliumOption, useTriliumOptionJson } from "../../react/hooks";
@@ -15,6 +16,7 @@ import { LocaleSelector } from "./components/LocaleSelector";
 export default function InternationalizationOptions() {
     return (
         <>
+            <OptionsPageHeader />
             <LocalizationOptions />
             <ContentLanguages />
             {isElectron() && (

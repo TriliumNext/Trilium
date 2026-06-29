@@ -201,6 +201,15 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniatura da página { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Selecionar a página { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Página { $page } de { $total }
 
 ## Find panel button title and messages
 
@@ -286,9 +295,13 @@ pdfjs-web-fonts-disabled = Os tipos de letra web estão desativados: não é pos
 
 pdfjs-editor-free-text-button =
     .title = Texto
+pdfjs-editor-color-picker-free-text-input =
+    .title = Alterar cor do texto
 pdfjs-editor-free-text-button-label = Texto
 pdfjs-editor-ink-button =
     .title = Desenhar
+pdfjs-editor-color-picker-ink-input =
+    .title = Alterar a cor de desenho
 pdfjs-editor-ink-button-label = Desenhar
 pdfjs-editor-stamp-button =
     .title = Adicionar ou editar imagens
@@ -672,6 +685,7 @@ pdfjs-views-manager-pages-status-action-button-label = Gerir
 pdfjs-views-manager-pages-status-copy-button-label = Copiar
 pdfjs-views-manager-pages-status-cut-button-label = Cortar
 pdfjs-views-manager-pages-status-delete-button-label = Eliminar
+pdfjs-views-manager-pages-status-export-selected-button-label = Exportar selecionado…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =
@@ -693,6 +707,30 @@ pdfjs-views-manager-pages-status-undo-delete-label =
         [one] 1 página eliminada
        *[other] { $count } páginas eliminadas
     }
+pdfjs-views-manager-pages-status-waiting-ready-label = A preparar o seu ficheiro…
+pdfjs-views-manager-pages-status-waiting-uploading-label = A carregar ficheiro…
+pdfjs-views-manager-status-warning-cut-label = Não foi possível cortar. Atualize a página e tente novamente.
+pdfjs-views-manager-status-warning-copy-label = Não foi possível copiar. Atualize a página e tente novamente.
+pdfjs-views-manager-status-warning-delete-label = Não foi possível eliminar. Atualize a página e tente novamente.
+pdfjs-views-manager-status-warning-save-label = Não foi possível guardar. Atualize a página e tente novamente.
+pdfjs-views-manager-status-undo-button-label = Desfazer
+pdfjs-views-manager-status-done-button-label = Feito
+pdfjs-views-manager-status-close-button =
+    .title = Fechar
+pdfjs-views-manager-status-close-button-label = Fechar
+pdfjs-views-manager-paste-button-label = Colar
+pdfjs-views-manager-paste-button-before =
+    .title = Colar antes da primeira página
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Colar depois da página { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NOVO
+pdfjs-views-manager-waiting-for-file = A carregar ficheiro…
+pdfjs-toggle-views-manager-button1 =
+    .title = Gerir páginas
 
 ## Main menu for adding/removing signatures
 

@@ -23,16 +23,43 @@ describe("recovery_codes", () => {
         expect(recoveryCodes.getRecoveryCodes()).toEqual([]);
 
         cls.init(() => {
-            recoveryCodes.setRecoveryCodes([CODE_A, CODE_B].join(","));
+            recoveryCodes.setRecoveryCodes([ CODE_A, CODE_B ].join(","));
         });
 
         expect(recoveryCodes.isRecoveryCodeSet()).toBe(true);
-        expect(recoveryCodes.getRecoveryCodes()).toEqual([CODE_A, CODE_B]);
+        expect(recoveryCodes.getRecoveryCodes()).toEqual([ CODE_A, CODE_B ]);
+    });
+
+    it("clearRecoveryCodes wipes the stored codes", () => {
+        cls.init(() => {
+            recoveryCodes.setRecoveryCodes([ CODE_A, CODE_B ].join(","));
+        });
+        expect(recoveryCodes.isRecoveryCodeSet()).toBe(true);
+
+        cls.init(() => {
+            recoveryCodes.clearRecoveryCodes();
+        });
+
+        expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);
+        expect(recoveryCodes.getRecoveryCodes()).toEqual([]);
+    });
+
+    it("createRecoveryCodes returns 8 well-formed codes without persisting them", () => {
+        cls.init(() => {
+            recoveryCodes.clearRecoveryCodes();
+        });
+
+        const codes = recoveryCodes.createRecoveryCodes();
+        expect(codes).toHaveLength(8);
+        // Each code matches the verification format (24 chars ending in "==").
+        expect(codes.every((c) => /^.{22}==$/.test(c))).toBe(true);
+        // Creating must not store anything — that's what enrollment's "enable" step is for.
+        expect(recoveryCodes.isRecoveryCodeSet()).toBe(false);
     });
 
     it("rejects codes failing the format regex without consuming a code", () => {
         cls.init(() => {
-            recoveryCodes.setRecoveryCodes([CODE_A, CODE_B].join(","));
+            recoveryCodes.setRecoveryCodes([ CODE_A, CODE_B ].join(","));
         });
 
         let result: boolean | undefined;
@@ -41,12 +68,12 @@ describe("recovery_codes", () => {
         });
         expect(result).toBe(false);
         // both codes still present
-        expect(recoveryCodes.getRecoveryCodes()).toEqual([CODE_A, CODE_B]);
+        expect(recoveryCodes.getRecoveryCodes()).toEqual([ CODE_A, CODE_B ]);
     });
 
     it("matches a valid code, consumes it (replaced with a date), and rejects reuse", () => {
         cls.init(() => {
-            recoveryCodes.setRecoveryCodes([CODE_A, CODE_B].join(","));
+            recoveryCodes.setRecoveryCodes([ CODE_A, CODE_B ].join(","));
         });
 
         let firstMatch: boolean | undefined;

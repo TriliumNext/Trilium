@@ -12,9 +12,10 @@ interface FakeWindow {
 interface SecuritySettings {
     backendScriptingEnabled?: boolean;
     sqlConsoleEnabled?: boolean;
+    allowLanAccess?: boolean;
 }
 
-// A tiny real deferred so serverInitializedPromise behaves like the real thing.
+// A tiny real deferred so the core/server init promises behave like the real thing.
 function makeDeferred<T>() {
     let resolve!: (value: T | PromiseLike<T>) => void;
     let reject!: (reason?: unknown) => void;
@@ -30,6 +31,9 @@ function makeDeferred<T>() {
 const h = vi.hoisted(() => ({
     // Captured app.on(...) handlers.
     appOn: new Map<string, Handler>(),
+    // Captured ipcMain.on / ipcMain.handle registrations.
+    ipcOn: new Map<string, Handler>(),
+    ipcHandle: new Map<string, Handler>(),
     // Captured stdout/stderr "error" handlers.
     streamErrorHandlers: [] as Handler[],
     // Captured commandLine.appendSwitch calls.
@@ -63,7 +67,14 @@ const h = vi.hoisted(() => ({
     createSetupWindow: vi.fn((..._a: unknown[]) => Promise.resolve()),
     createExtraWindow: vi.fn((..._a: unknown[]) => {}),
     registerGlobalShortcuts: vi.fn((..._a: unknown[]) => Promise.resolve()),
-    unregisterAll: vi.fn()
+    setupAutoLaunch: vi.fn(),
+    applyLaunchOnStartup: vi.fn(),
+    wasLaunchedHidden: vi.fn(() => false),
+    disableTray: false,
+    mainWindow: null as FakeWindow | null,
+    unregisterAll: vi.fn(),
+    // Controllable server start so tests can simulate a slow/hanging server.
+    startServer: (() => Promise.resolve({})) as () => Promise<unknown>
 }));
 
 vi.mock("electron", () => {
@@ -86,11 +97,16 @@ vi.mock("electron", () => {
     const globalShortcut = {
         unregisterAll: (...a: unknown[]) => h.unregisterAll(...a)
     };
+    const ipcMain = {
+        on: (channel: string, fn: Handler) => h.ipcOn.set(channel, fn),
+        handle: (channel: string, fn: Handler) => h.ipcHandle.set(channel, fn)
+    };
     return {
         app: appObj,
         BrowserWindow,
         globalShortcut,
-        default: { app: appObj, BrowserWindow, globalShortcut }
+        ipcMain,
+        default: { app: appObj, BrowserWindow, globalShortcut, ipcMain }
     };
 });
 
@@ -110,12 +126,15 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
             h.initConfig = config;
             return Promise.resolve();
         }),
-        options: { getOptionOrNull: (key: string) => {
-            if (key === "smoothScrollEnabled") return h.smoothScroll;
-            if (key === "locale") return h.locale;
-            if (key === "formattingLocale") return h.formattingLocale;
-            return null;
-        } },
+        options: {
+            getOptionOrNull: (key: string) => {
+                if (key === "smoothScrollEnabled") return h.smoothScroll;
+                if (key === "locale") return h.locale;
+                if (key === "formattingLocale") return h.formattingLocale;
+                return null;
+            },
+            getOptionBool: (key: string) => (key === "disableTray" ? h.disableTray : false)
+        },
         sql_init: { isDbInitialized: () => h.isDbInitialized, dbReady: Promise.resolve() },
         ws: { sendTransactionEntityChangesToAllClients: (...a: unknown[]) => h.sendTransactionEntityChangesToAllClients(...a) },
         cls: { getAndClearEntityChangeIds: () => h.entityChangeIds },
@@ -156,12 +175,13 @@ vi.mock("@triliumnext/server/src/services/config.js", () => ({
 vi.mock("@triliumnext/server/src/services/export/zip/factory.js", () => ({ serverZipExportProviderFactory: vi.fn() }));
 vi.mock("@triliumnext/server/src/services/i18n.js", () => ({ initializeTranslations: vi.fn() }));
 vi.mock("@triliumnext/server/src/services/image_provider.js", () => ({ serverImageProvider: {} }));
-vi.mock("@triliumnext/server/src/www.js", () => ({ default: vi.fn(() => Promise.resolve({})) }));
+vi.mock("@triliumnext/server/src/www.js", () => ({ default: vi.fn(() => h.startServer()) }));
 
 vi.mock("./services/request", () => ({ default: class {} }));
 vi.mock("./services/window", () => ({
     default: {
         getLastFocusedWindow: () => h.lastFocusedWindow,
+        getMainWindow: () => h.mainWindow,
         createExtraWindow: (...a: unknown[]) => h.createExtraWindow(...a),
         createMainWindow: (...a: unknown[]) => h.createMainWindow(...a),
         createSetupWindow: (...a: unknown[]) => h.createSetupWindow(...a),
@@ -175,10 +195,20 @@ vi.mock("./protocol", () => ({ registerTriliumAppScheme: vi.fn(), setupTriliumAp
 vi.mock("./services/custom_dictionary", () => ({ setupCustomDictionary: vi.fn() }));
 vi.mock("./services/printing", () => ({ setupPrintingHandlers: vi.fn() }));
 vi.mock("./services/tray", () => ({ setupSystemTray: vi.fn() }));
+vi.mock("./services/auto_launch", () => ({
+    setupAutoLaunch: (...a: unknown[]) => h.setupAutoLaunch(...a),
+    applyLaunchOnStartup: (...a: unknown[]) => h.applyLaunchOnStartup(...a),
+    wasLaunchedHidden: () => h.wasLaunchedHidden()
+}));
 vi.mock("./services/shell", () => ({ setupShellHandlers: vi.fn() }));
+vi.mock("./services/onenote", () => ({ setupOneNoteHandlers: vi.fn() }));
 vi.mock("./services/security_settings", () => ({
     getSecuritySettings: () => h.securitySettings,
     registerSecurityIpcHandlers: vi.fn()
+}));
+vi.mock("./services/startup_metrics", () => ({
+    markStartupMetric: vi.fn(),
+    setupStartupMetricsIpc: vi.fn()
 }));
 
 const realPlatform = process.platform;
@@ -205,6 +235,7 @@ function resetState() {
     h.isDbInitialized = true;
     h.securitySettings = {};
     h.lastFocusedWindow = null;
+    h.mainWindow = null;
     h.entityChangeIds = [];
     h.locale = null;
     h.formattingLocale = null;
@@ -219,6 +250,7 @@ function resetState() {
     h.createExtraWindow.mockClear();
     h.registerGlobalShortcuts.mockClear();
     h.unregisterAll.mockClear();
+    h.startServer = () => Promise.resolve({});
 }
 
 beforeEach(() => {
@@ -283,6 +315,13 @@ describe("main() bootstrap", () => {
         expect(h.appOn.has("ready")).toBe(true);
         expect(h.appOn.has("will-quit")).toBe(true);
         expect(h.appOn.has("second-instance")).toBe(true);
+
+        // Startup instrumentation is wired up and the boot phases are marked.
+        const { markStartupMetric, setupStartupMetricsIpc } = await import("./services/startup_metrics.js");
+        expect(setupStartupMetricsIpc).toHaveBeenCalled();
+        for (const phase of ["main-process-start", "database-opened", "core-initialized", "server-started"]) {
+            expect(markStartupMetric).toHaveBeenCalledWith(phase);
+        }
     });
 
     it("appends no disable-http-cache switch when TRILIUM_ENV is not dev, and skips smooth-scroll switch when enabled", async () => {
@@ -409,6 +448,9 @@ describe("app event handlers", () => {
 
             expect(h.createMainWindow).toHaveBeenCalledTimes(1);
             expect(h.registerGlobalShortcuts).toHaveBeenCalled();
+            // The autostart entry is reconciled with the stored option on a DB-ready boot.
+            expect(h.setupAutoLaunch).toHaveBeenCalled();
+            expect(h.applyLaunchOnStartup).toHaveBeenCalled();
 
             // The "activate" handler is registered on darwin.
             const activate = h.appOn.get("activate");
@@ -419,10 +461,25 @@ describe("app event handlers", () => {
             await activate?.();
             expect(h.createMainWindow).toHaveBeenCalledTimes(2);
 
-            // Existing windows → do not create another.
+            // Existing windows → do not create another; instead reveal the
+            // (possibly close-to-tray-hidden) last focused window.
+            const show = vi.fn();
+            const focus = vi.fn();
             h.allWindows = [{}];
+            h.lastFocusedWindow = { isMinimized: () => false, restore: vi.fn(), show, focus };
             await activate?.();
             expect(h.createMainWindow).toHaveBeenCalledTimes(2);
+            expect(show).toHaveBeenCalled();
+            expect(focus).toHaveBeenCalled();
+
+            // Hidden-on-autostart window was never focused → fall back to the main window.
+            const mainShow = vi.fn();
+            const mainFocus = vi.fn();
+            h.lastFocusedWindow = null;
+            h.mainWindow = { isMinimized: () => false, restore: vi.fn(), show: mainShow, focus: mainFocus };
+            await activate?.();
+            expect(mainShow).toHaveBeenCalled();
+            expect(mainFocus).toHaveBeenCalled();
         });
 
         it("does not register activate on non-darwin even when DB is initialized", async () => {
@@ -443,6 +500,43 @@ describe("app event handlers", () => {
             expect(h.banner).toHaveBeenCalled();
             expect(h.createSetupWindow).toHaveBeenCalled();
             expect(h.createMainWindow).not.toHaveBeenCalled();
+        });
+
+        it("rejects the express-app promise but still creates the window when the server fails to start", async () => {
+            h.isDbInitialized = true;
+            h.startServer = () => Promise.reject(new Error("server exploded"));
+            const { main } = await importMain();
+            const mainPromise = main();
+
+            const ready = h.appOn.get("ready");
+            expect(ready).toBeDefined();
+            await ready?.();
+            expect(h.createMainWindow).toHaveBeenCalledTimes(1);
+
+            // main() itself fails, and the promise handed to the protocol
+            // handler rejects so pending renderer requests fail instead of hanging.
+            // (lastCall: the protocol mock's call history survives vi.resetModules.)
+            await expect(mainPromise).rejects.toThrow("server exploded");
+            const { setupTriliumAppProtocol } = await import("./protocol.js");
+            const appPromise = vi.mocked(setupTriliumAppProtocol).mock.lastCall?.[0];
+            await expect(appPromise).rejects.toThrow("server exploded");
+        });
+
+        it("creates the main window while the server is still starting", async () => {
+            h.isDbInitialized = true;
+            // The server never finishes starting; the window is gated on core
+            // initialization only, so it must still be created.
+            h.startServer = () => new Promise(() => {});
+            const { main } = await importMain();
+            void main(); // intentionally not awaited — it only settles once the server starts
+
+            // The ready handler is registered synchronously; awaiting it blocks
+            // only on core initialization, which completes despite the hung server.
+            const ready = h.appOn.get("ready");
+            expect(ready).toBeDefined();
+            await ready?.();
+
+            expect(h.createMainWindow).toHaveBeenCalledTimes(1);
         });
     });
 });
@@ -465,6 +559,16 @@ describe("security settings override", () => {
         };
         expect(config.Security.backendScriptingEnabled).toBe(true);
         expect(config.Security.sqlConsoleEnabled).toBe(true);
+    });
+
+    it("applies the allowLanAccess override", async () => {
+        h.securitySettings = { allowLanAccess: true };
+        const { main } = await importMain();
+        await main();
+        const config = (await import("@triliumnext/server/src/services/config.js")).default as {
+            Security: { allowLanAccess?: boolean };
+        };
+        expect(config.Security.allowLanAccess).toBe(true);
     });
 });
 

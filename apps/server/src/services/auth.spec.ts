@@ -3,10 +3,11 @@ import { Application } from "express";
 import supertest from "supertest";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import auth, { refreshAuth } from "./auth";
+import auth, { refreshAuth, verifyLoginCredentials } from "./auth";
 import { cls } from "@triliumnext/core";
 import config from "./config";
 import { markAsInternalElectronRequest } from "./electron_request";
+import recoveryCodeService from "./encryption/recovery_codes";
 import etapiTokens from "./etapi_tokens";
 import openID from "./open_id";
 import sqlInit from "./sql_init";
@@ -26,28 +27,24 @@ describe("Auth", () => {
             refreshAuth();
         });
 
-        it("goes to login and asks for TOTP if enabled", async () => {
+        it("bootstrap login payload asks for TOTP when enabled", async () => {
             cls.init(() => {
-                options.setOption("mfaEnabled", "true");
                 options.setOption("mfaMethod", "totp");
                 options.setOption("totpVerificationHash", "hi");
             });
-            const response = await supertest(app)
-                .get("/")
-                .redirects(1)
-                .expect(200);
-            expect(response.text).toContain(`id="totpToken"`);
+            // The login screen is rendered client-side now; the server reports the TOTP
+            // requirement through the (unauthenticated) bootstrap payload.
+            const response = await supertest(app).get("/bootstrap").expect(200);
+            expect(response.body.loggedIn).toBe(false);
+            expect(response.body.login?.totpEnabled).toBe(true);
         });
 
-        it("goes to login and doesn't ask for TOTP is disabled", async () => {
+        it("bootstrap login payload doesn't ask for TOTP when disabled", async () => {
             cls.init(() => {
-                options.setOption("mfaEnabled", "false");
+                options.setOption("totpVerificationHash", "");
             });
-            const response = await supertest(app)
-                .get("/")
-                .redirects(1)
-                .expect(200);
-            expect(response.text).not.toContain(`id="totpToken"`);
+            const response = await supertest(app).get("/bootstrap").expect(200);
+            expect(response.body.login?.totpEnabled).toBe(false);
         });
     });
 
@@ -59,7 +56,6 @@ describe("Auth", () => {
 
         it("doesn't ask for authentication when disabled, even if TOTP is enabled", async () => {
             cls.init(() => {
-                options.setOption("mfaEnabled", "true");
                 options.setOption("mfaMethod", "totp");
                 options.setOption("totpVerificationHash", "hi");
             });
@@ -70,7 +66,7 @@ describe("Auth", () => {
 
         it("doesn't ask for authentication when disabled, with TOTP disabled", async () => {
             cls.init(() => {
-                options.setOption("mfaEnabled", "false");
+                options.setOption("totpVerificationHash", "");
             });
             await supertest(app)
                 .get("/")
@@ -147,24 +143,31 @@ describe("Auth", () => {
             expect(next).toHaveBeenCalled();
         });
 
-        it("checkAuth redirects to login when not logged in (no bare-domain redirect)", () => {
+        it("checkAuth serves the SPA (next) when not logged in (no bare-domain redirect)", () => {
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
             vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(false);
             cls.init(() => options.setOption("redirectBareDomain", "false"));
             const res = makeRes();
-            auth.checkAuth(makeReq({ session: { loggedIn: false } }), res as never, vi.fn());
-            expect(res.redirectedTo).toBe("login");
+            const next = vi.fn();
+            // The login screen is served by the SPA now, so checkAuth falls through.
+            auth.checkAuth(makeReq({ session: { loggedIn: false } }), res as never, next);
+            expect(next).toHaveBeenCalled();
+            expect(res.redirectedTo).toBeUndefined();
         });
 
-        it("checkAuth honours redirectBareDomain: 404 when no shareRoot, else redirects to share", () => {
+        it("checkAuth honours redirectBareDomain: redirects to share when a shareRoot exists, else serves the SPA", () => {
             vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
             vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(false);
             cls.init(() => options.setOption("redirectBareDomain", "true"));
 
+            // No shareRoot configured: fall through to the SPA login screen instead of a
+            // 404 dead-end (#7869).
             const labelSpy = vi.spyOn(attributes, "getNotesWithLabel").mockReturnValue([]);
-            const res404 = makeRes();
-            auth.checkAuth(makeReq({ session: { loggedIn: false } }), res404 as never, vi.fn());
-            expect(res404.statusCode).toBe(404);
+            const resLogin = makeRes();
+            const nextLogin = vi.fn();
+            auth.checkAuth(makeReq({ session: { loggedIn: false } }), resLogin as never, nextLogin);
+            expect(nextLogin).toHaveBeenCalled();
+            expect(resLogin.statusCode).not.toBe(404);
 
             labelSpy.mockReturnValue([{ noteId: "x" } as never]);
             const resShare = makeRes();
@@ -308,7 +311,8 @@ describe("Auth", () => {
             const unsetSpy = vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(false);
             const resSet = makeRes();
             auth.checkPasswordSet(makeReq(), resSet as never, vi.fn());
-            expect(resSet.redirectedTo).toBe("set-password");
+            // The set-password screen is now served by the SPA at the root.
+            expect(resSet.redirectedTo).toBe(".");
 
             const nextNotSet = vi.fn();
             auth.checkPasswordNotSet(makeReq(), makeRes() as never, nextNotSet);
@@ -417,6 +421,70 @@ describe("Auth", () => {
             await auth.checkCredentials(makeReq({ headers: { "trilium-cred": cred } }), makeRes() as never, next);
 
             expect(next).toHaveBeenCalled();
+        });
+    });
+
+    describe("verifyLoginCredentials", () => {
+        // Any string works — verifyRecoveryCode is mocked, so the actual code format is irrelevant.
+        const RECOVERY_CODE = "AAAAAAAAAAAAAAAAAAAAAA==";
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it("does not consume a recovery code when the password is wrong", async () => {
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(false as never);
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            const validateSpy = vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(true);
+
+            expect(await verifyLoginCredentials("wrong-password", RECOVERY_CODE)).toBe("password");
+
+            // The second factor must never be evaluated when the password is wrong: verifying a
+            // recovery code consumes it, so doing so here would burn a single-use code on a login
+            // that ultimately fails on the password.
+            expect(validateSpy).not.toHaveBeenCalled();
+            expect(recoverySpy).not.toHaveBeenCalled();
+        });
+
+        it("returns null for a correct password when TOTP is disabled", async () => {
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(false);
+            const validateSpy = vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+
+            expect(await verifyLoginCredentials("correct", "")).toBeNull();
+            // With TOTP disabled the second factor is skipped entirely.
+            expect(validateSpy).not.toHaveBeenCalled();
+        });
+
+        it("returns null for a correct password with a valid TOTP token, without touching recovery codes", async () => {
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(totp, "validateTOTP").mockReturnValue(true);
+            const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
+
+            expect(await verifyLoginCredentials("correct", "123456")).toBeNull();
+            // A valid TOTP token short-circuits, so recovery codes are never inspected.
+            expect(recoverySpy).not.toHaveBeenCalled();
+        });
+
+        it("consumes a recovery code only after the password is verified", async () => {
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            const recoverySpy = vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(true);
+
+            expect(await verifyLoginCredentials("correct", RECOVERY_CODE)).toBeNull();
+            expect(recoverySpy).toHaveBeenCalledWith(RECOVERY_CODE);
+        });
+
+        it("rejects a correct password paired with an invalid second factor", async () => {
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(totp, "validateTOTP").mockReturnValue(false);
+            vi.spyOn(recoveryCodeService, "verifyRecoveryCode").mockReturnValue(false);
+
+            expect(await verifyLoginCredentials("correct", "000000")).toBe("totp");
         });
     });
 }, 60_000);

@@ -1,0 +1,42 @@
+.modal.tree-popup-editor-dialog .modal-dialog {
+    width: 90vw;
+    max-width: 1100px;
+    height: 80vh;
+}
+
+.modal.tree-popup-editor-dialog .modal-content {
+    height: 80vh;
+
+    .note-detail-doc-content {
+        padding: unset;
+    }
+}
+
+/* Sidebar holding the hoisted note tree. */
+body.desktop .modal.tree-popup-editor-dialog .modal-sidebar {
+    width: 300px;
+}
+
+body.mobile .modal.tree-popup-editor-dialog .modal-sidebar {
+    border-top: 1px solid var(--main-border-color);
+}
+
+/* Match the normal left-pane sidebar so the tree blends in instead of sitting on the plain modal
+   background (mirrors how the Options modal tints its own sidebar). */
+.modal.tree-popup-editor-dialog .modal-sidebar {
+    color: var(--left-pane-text-color);
+    background-color: var(--left-pane-background-color);
+}
+
+.modal.tree-popup-editor-dialog .tree-popup-sidebar {
+    flex-grow: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.modal.tree-popup-editor-dialog .tree-popup-sidebar .fancytree-container {
+    height: 100%;
+}
+
+/* The header note title (icon + editable title) reuses the quick-edit TitleRow styling — see the
+   shared `.popup-editor-dialog, .tree-popup-editor-dialog` rules in PopupEditor.css. */

@@ -70,7 +70,7 @@ The mobile view can be set up as a PWA. While this does not offer any offline ca
 
 ## Testing via the desktop application
 
-If you are running Trilium without a dedicated [server installation](Server%20Installation.md), you can still test the mobile application using the desktop application. For more information, see <a class="reference-link" href="Desktop%20Installation/Using%20the%20desktop%20application%20.md">Using the desktop application as a server</a>. To access it go to `http://<ip>:37840/login?mobile` .
+If you are running Trilium without a dedicated [server installation](Server%20Installation.md), you can still test the mobile application using the desktop application. For more information, see <a class="reference-link" href="Desktop%20Installation/Using%20the%20desktop%20application%20as%20a%20server.md">Using the desktop application as a server</a>. To access it go to `http://<ip>:37840/login?mobile` .
 
 ## Forcing mobile/desktop frontend
 

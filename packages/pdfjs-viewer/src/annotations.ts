@@ -105,13 +105,18 @@ async function extractAndSendAnnotations() {
  * newly created highlights with their overlaidText), then closes it.
  */
 export async function extractFromSavedData(data: ArrayBuffer | Uint8Array) {
+    let loadingTask: any;
     try {
-        const tempDoc = await (globalThis as any).pdfjsLib.getDocument({ data }).promise;
+        loadingTask = (globalThis as any).pdfjsLib.getDocument({ data });
+        const tempDoc = await loadingTask.promise;
         const annotations = await extractFromDocument(tempDoc);
-        tempDoc.destroy();
         sendAnnotations(annotations);
     } catch (error) {
         console.error("Error extracting annotations from saved data:", error);
+    } finally {
+        // PDFDocumentProxy.destroy() was removed in pdf.js v6; tear the temporary
+        // document (and its worker) down via the loading task instead.
+        await loadingTask?.destroy();
     }
 }
 

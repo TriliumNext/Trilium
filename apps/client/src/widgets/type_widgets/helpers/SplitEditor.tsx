@@ -4,16 +4,20 @@ import Split from "@triliumnext/split.js";
 import { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
+import { t } from "../../../services/i18n";
 import { DEFAULT_GUTTER_SIZE } from "../../../services/resizer";
 import utils, { isMobile } from "../../../services/utils";
 import ActionButton, { ActionButtonProps } from "../../react/ActionButton";
-import Admonition from "../../react/Admonition";
+import { ExtendedAdmonition } from "../../react/Admonition";
+import { Badge } from "../../react/Badge";
 import { useEffectiveReadOnly, useNoteBlob, useNoteLabel, useTriliumOption } from "../../react/hooks";
 import { EditableCode, EditableCodeProps, ReadOnlyCode } from "../code/Code";
 
 export interface SplitEditorProps extends EditableCodeProps {
     className?: string;
     error?: string | null;
+    /** When the preview still shows a previous successful render despite the current {@link error}. */
+    previewStale?: boolean;
     splitOptions?: Split.Options;
     previewContent: ComponentChildren;
     previewButtons?: ComponentChildren;
@@ -37,7 +41,7 @@ export interface SplitEditorProps extends EditableCodeProps {
  * - Can display errors to the user via {@link setError}.
  * - Horizontal or vertical orientation for the editor/preview split, adjustable via the switch split orientation button floating button.
  */
-export default function SplitEditor({ note, noteContext, error, splitOptions, previewContent, previewButtons, className, editorBefore, forceOrientation, extraContent, ...editorProps }: SplitEditorProps) {
+export default function SplitEditor({ note, noteContext, error, previewStale, splitOptions, previewContent, previewButtons, className, editorBefore, forceOrientation, extraContent, ...editorProps }: SplitEditorProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const splitEditorOrientation = useSplitOrientation(forceOrientation);
     const [ displayMode ] = useNoteLabel(note, "displayMode");
@@ -80,17 +84,13 @@ export default function SplitEditor({ note, noteContext, error, splitOptions, pr
                         {...editorProps}
                     />}
             </div>
-            {error && (
-                <Admonition type="caution" className="note-detail-error-container">
-                    {error}
-                </Admonition>
-            )}
             {extraContent}
         </div>
     );
 
     const preview = previewMounted.current && <PreviewContainer
         error={error}
+        previewStale={previewStale}
         previewContent={previewContent}
         previewButtons={previewButtons}
     />;
@@ -123,21 +123,60 @@ export default function SplitEditor({ note, noteContext, error, splitOptions, pr
     );
 }
 
-function PreviewContainer({ error, previewContent, previewButtons }: {
+function PreviewContainer({ error, previewStale, previewContent, previewButtons }: {
     error?: string | null;
+    previewStale?: boolean;
     previewContent: ComponentChildren;
     previewButtons?: ComponentChildren;
 }) {
+    const { summary, details } = error ? splitPreviewError(error) : {};
     return (
         <div className="note-detail-split-preview-col">
             <div className={`note-detail-split-preview ${error ? "on-error" : ""}`}>
                 {previewContent}
             </div>
+            {error && (
+                <ExtendedAdmonition
+                    className="note-detail-error-card"
+                    type="caution"
+                    icon="bx bx-error-circle"
+                    title={t("split_editor.render_error")}
+                    detailsLabel={t("split_editor.show_details")}
+                    details={details && <pre>{details}</pre>}
+                >
+                    <div className="note-detail-error-message">{summary}</div>
+                </ExtendedAdmonition>
+            )}
+            {error && previewStale && (
+                <Badge
+                    className="note-detail-error-stale-badge"
+                    icon="bx bx-history"
+                    text={t("split_editor.last_valid_render")}
+                />
+            )}
             <div className="btn-group btn-group-sm map-type-switcher content-floating-buttons preview-buttons bottom-right" role="group">
                 {previewButtons}
             </div>
         </div>
     );
+}
+
+/**
+ * Splits a raw preview/render error into its first line, shown under the title as a
+ * headline, and the remaining lines, revealed by the "show details" collapsible. The
+ * first line is never repeated in the details; `details` is omitted when the error is
+ * a single line.
+ */
+function splitPreviewError(error: string): { summary: string; details?: string } {
+    const trimmed = error.trim();
+    const newlineIndex = trimmed.indexOf("\n");
+    if (newlineIndex < 0) {
+        return { summary: trimmed };
+    }
+    return {
+        summary: trimmed.slice(0, newlineIndex).trim(),
+        details: trimmed.slice(newlineIndex + 1).trim() || undefined
+    };
 }
 
 export function PreviewButton(props: Omit<ActionButtonProps, "titlePosition">) {

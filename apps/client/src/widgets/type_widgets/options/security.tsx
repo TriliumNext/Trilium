@@ -5,6 +5,7 @@ import { isElectron, restartDesktopApp } from "../../../services/utils";
 import Button from "../../react/Button";
 import Collapsible from "../../react/Collapsible";
 import { useTriliumOptionBool } from "../../react/hooks";
+import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 
@@ -13,16 +14,20 @@ export default function SecuritySettings() {
     // null = no change made yet, use the live config value.
     const [pendingBackendScripting, setPendingBackendScripting] = useState<boolean | null>(null);
     const [pendingSqlConsole, setPendingSqlConsole] = useState<boolean | null>(null);
+    const [pendingLanAccess, setPendingLanAccess] = useState<boolean | null>(null);
 
     const [liveBackendScripting] = useTriliumOptionBool("backendScriptingEnabled");
     const [liveSqlConsole] = useTriliumOptionBool("sqlConsoleEnabled");
+    const [liveLanAccess] = useTriliumOptionBool("allowLanAccess");
 
     const hasPendingChanges =
         (pendingBackendScripting !== null && pendingBackendScripting !== liveBackendScripting) ||
-        (pendingSqlConsole !== null && pendingSqlConsole !== liveSqlConsole);
+        (pendingSqlConsole !== null && pendingSqlConsole !== liveSqlConsole) ||
+        (pendingLanAccess !== null && pendingLanAccess !== liveLanAccess);
 
     return (
         <>
+            <OptionsPageHeader />
             <BackendScriptingSettings
                 liveValue={liveBackendScripting}
                 pendingValue={pendingBackendScripting}
@@ -33,6 +38,13 @@ export default function SecuritySettings() {
                 pendingValue={pendingSqlConsole}
                 setPendingValue={setPendingSqlConsole}
             />
+            {isElectron() && (
+                <LanAccessSettings
+                    liveValue={liveLanAccess}
+                    pendingValue={pendingLanAccess}
+                    setPendingValue={setPendingLanAccess}
+                />
+            )}
             {hasPendingChanges && isElectron() && (
                 <OptionsSection noCard>
                     <OptionsRow name="restart" centered>
@@ -139,6 +151,38 @@ function SqlConsoleSettings({ liveValue, pendingValue, setPendingValue }: Toggle
             <ServerConfigHint
                 configKey="sqlConsoleEnabled"
                 envVar="TRILIUM_SECURITY_SQL_CONSOLE_ENABLED"
+            />
+        </OptionsSection>
+    );
+}
+
+// Desktop only: a server build is already reachable on its bound interface
+// (configured via [Network] host), so this toggle is gated behind isElectron()
+// by the caller.
+function LanAccessSettings({ liveValue, pendingValue, setPendingValue }: ToggleSectionProps) {
+    const displayValue = pendingValue ?? liveValue;
+    const hasPendingChange = pendingValue !== null && pendingValue !== liveValue;
+
+    async function handleToggle(enabled: boolean) {
+        const confirmed = await window.electronApi?.security.setLanAccessEnabled(enabled);
+        if (confirmed) {
+            setPendingValue(enabled === liveValue ? null : enabled);
+        }
+    }
+
+    return (
+        <OptionsSection
+            title={t("security.lan_access_title")}
+            description={t("security.lan_access_section_description")}
+        >
+            <OptionsRowWithToggle
+                name="lan-access-enabled"
+                label={t("security.lan_access_label")}
+                description={hasPendingChange
+                    ? t("security.restart_required")
+                    : t("security.lan_access_description")}
+                currentValue={displayValue}
+                onChange={handleToggle}
             />
         </OptionsSection>
     );

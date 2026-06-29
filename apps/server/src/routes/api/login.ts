@@ -4,14 +4,13 @@
  * Protected session routes (loginToProtectedSession, logoutFromProtectedSession,
  * touchProtectedSession) are now in core and registered via buildSharedApiRoutes.
  */
-import { app_info as appInfo, date_utils as dateUtils, getInstanceId, options, password_encryption as passwordEncryptionService } from "@triliumnext/core";
+import { app_info as appInfo, date_utils as dateUtils, getInstanceId, options } from "@triliumnext/core";
 import type { Request } from "express";
 
-import recoveryCodeService from "../../services/encryption/recovery_codes";
+import { verifyLoginCredentials } from "../../services/auth.js";
 import etapiTokenService from "../../services/etapi_tokens.js";
 import sql from "../../services/sql.js";
 import sqlInit from "../../services/sql_init.js";
-import totp from "../../services/totp";
 import utils from "../../services/utils.js";
 
 /**
@@ -133,13 +132,7 @@ async function token(req: Request) {
     const password = req.body.password;
     const submittedTotpToken = req.body.totpToken;
 
-    if (totp.isTotpEnabled()) {
-        if (!verifyTOTP(submittedTotpToken)) {
-            return [401, "Incorrect credential"];
-        }
-    }
-
-    if (!(await passwordEncryptionService.verifyPassword(password))) {
+    if (await verifyLoginCredentials(password, submittedTotpToken)) {
         return [401, "Incorrect credential"];
     }
 
@@ -149,14 +142,6 @@ async function token(req: Request) {
     const { authToken } = etapiTokenService.createToken(tokenName);
 
     return { token: authToken };
-}
-
-function verifyTOTP(submittedTotpToken: string) {
-    if (totp.validateTOTP(submittedTotpToken)) return true;
-
-    const recoveryCodeValidates = recoveryCodeService.verifyRecoveryCode(submittedTotpToken);
-
-    return recoveryCodeValidates;
 }
 
 export default {

@@ -3,7 +3,6 @@
     "back-in-note-history": "履歴内の前のノートに移動",
     "forward-in-note-history": "履歴内の次のノートに移動",
     "open-jump-to-note-dialog": "「ノートへ移動」 ダイアログを開く",
-    "open-command-palette": "コマンドパレットを開く",
     "scroll-to-active-note": "ノートツリーをアクティブなノートまでスクロールする",
     "search-in-subtree": "アクティブなノートのサブツリー内でノートを検索する",
     "expand-subtree": "現在のノートのサブツリーを展開",
@@ -12,11 +11,6 @@
     "creating-and-moving-notes": "ノートの作成と移動",
     "create-note-after": "アクティブなノートの後にノートを作成する",
     "create-note-into": "アクティブなノートの子ノートを作成する",
-    "delete-note": "ノートを削除",
-    "move-note-up": "ノートを上に移動",
-    "move-note-down": "ノートを下に移動",
-    "move-note-up-in-hierarchy": "ノートを上の階層に移動",
-    "move-note-down-in-hierarchy": "ノートを下の階層に移動",
     "edit-note-title": "ツリーからノートの詳細にジャンプして、タイトルを編集",
     "clone-notes-to": "選択したノートを複製",
     "move-notes-to": "選択したノートを移動",
@@ -24,26 +18,12 @@
     "paste-notes-from-clipboard": "クリップボードからアクティブなノートにノートを貼り付け",
     "cut-notes-to-clipboard": "選択したノートをクリップボードに切り取り",
     "select-all-notes-in-parent": "現在のノートレベルと同じノートをすべて選択する",
-    "add-note-above-to-the-selection": "上のノートを選択範囲に追加",
-    "add-note-below-to-selection": "下のノートを選択範囲に追加",
     "tabs-and-windows": "タブとウィンドウ",
-    "open-new-tab": "新しいタブを開く",
-    "close-active-tab": "アクティブなタブを閉じる",
     "reopen-last-tab": "最後に閉じたタブを開く",
     "activate-next-tab": "右のタブをアクティブにする",
     "activate-previous-tab": "左のタブをアクティブにする",
     "open-new-window": "新しい空のウィンドウを開く",
     "toggle-tray": "システムトレイアイコンの表示/非表示",
-    "first-tab": "最初のタブをアクティブにする",
-    "second-tab": "2番目のタブをアクティブにする",
-    "third-tab": "3番目のタブをアクティブにする",
-    "fourth-tab": "4番目のタブをアクティブにする",
-    "fifth-tab": "5番目のタブをアクティブにする",
-    "sixth-tab": "6番目のタブをアクティブにする",
-    "seventh-tab": "7番目のタブをアクティブにする",
-    "eight-tab": "8番目のタブをアクティブにする",
-    "ninth-tab": "9番目のタブをアクティブにする",
-    "last-tab": "最後のタブをアクティブにする",
     "dialogs": "ダイアログ",
     "show-note-source": "「ノートのソース」ダイアログを表示",
     "show-options": "「設定」ページを開く",
@@ -56,56 +36,38 @@
     "add-link-to-text": "テキストにリンクを追加ダイアログを開く",
     "follow-link-under-cursor": "カーソル下のリンク先へ移動",
     "insert-date-and-time-to-text": "現在の日時を挿入する",
-    "paste-markdown-into-text": "クリップボードからMarkdownをテキストノートに貼り付けます",
+    "paste-markdown-into-text": "クリップボードからマークダウンをテキストノートに貼り付けます",
     "cut-into-note": "現在のノートから選択範囲を切り取り、サブノートを作成",
-    "edit-readonly-note": "読み取り専用ノートの編集",
     "ribbon-tabs": "リボンタブ",
     "toggle-link-map": "リンクマップ切り替え",
-    "toggle-note-info": "ノート情報切り替え",
-    "toggle-note-paths": "ノートパス切り替え",
-    "toggle-similar-notes": "類似ノート切り替え",
     "other": "その他",
     "toggle-right-pane": "目次とハイライトを含む右ペインの表示を切り替え",
-    "print-active-note": "アクティブノートを印刷",
     "open-note-externally": "デフォルトのアプリケーションでノートをファイルとして開く",
     "render-active-note": "アクティブなノートを再描画（再レンダリング）する",
     "run-active-note": "アクティブなJavaScript（フロントエンド/バックエンド）のコードノートを実行する",
-    "reload-frontend-app": "フロントエンドをリロード",
-    "open-dev-tools": "開発者ツールを開く",
     "find-in-text": "検索パネルの切り替え",
     "toggle-left-note-tree-panel": "左パネルの切り替え (ノートツリー)",
-    "toggle-full-screen": "フルスクリーンの切り替え",
     "note-navigation": "ノートナビゲーション",
     "copy-without-formatting": "選択したテキストを書式なしでコピーする",
-    "export-as-pdf": "現在のノートをPDFとしてエクスポートする",
-    "zoom-out": "ズームアウト",
-    "zoom-in": "ズームイン",
-    "reset-zoom-level": "ズームレベルのリセット",
     "quick-search": "クイック検索バーを有効にする",
     "sort-child-notes": "子ノートを並べ替える",
     "create-note-into-inbox": "inbox（定義されている場合）またはデイノートにノートを作成する",
     "note-clipboard": "ノートクリップボード",
-    "duplicate-subtree": "サブツリーの複製",
     "edit-branch-prefix": "「ブランチ接頭辞の編集」ダイアログを表示",
     "show-revisions": "「ノートの変更履歴」ダイアログを表示",
     "attributes-labels-and-relations": "属性（ラベルとリレーション）",
     "add-new-label": "新しいラベルを作成する",
     "create-new-relation": "新しいリレーションを作成する",
-    "toggle-basic-properties": "基本属性切り替え",
-    "toggle-file-properties": "ファイル属性切り替え",
-    "toggle-image-properties": "画像属性切り替え",
-    "toggle-owned-attributes": "所有属性切り替え",
-    "toggle-inherited-attributes": "継承属性切り替え",
     "toggle-note-hoisting": "ノートホイスト切り替え",
     "unhoist": "すべてのホイストを無効にする",
     "toggle-book-properties": "コレクションプロパティ切り替え",
     "toggle-zen-mode": "禅モード（集中した編集のための最小限のUI）を有効/無効にする",
     "add-include-note-to-text": "ノートを埋め込むダイアログを開く",
-    "toggle-promoted-attributes": "プロモート属性切り替え",
     "force-save-revision": "アクティブノートの新しいノートリヴィジョンを強制する",
     "toggle-classic-editor-toolbar": "固定ツールバーエディターの書式設定タブ切り替え",
     "save-named-revision": "アクティブなノートの変更履歴を名前を付けて保存",
-    "toggle-archived-notes": "ノートツリーでアーカイブされたノートを表示 / 非表示にする"
+    "toggle-archived-notes": "ノートツリーでアーカイブされたノートを表示 / 非表示にする",
+    "peek-right-pane": "右ペインを、コンテンツの上にフローティング表示し、フォーカスが外れると閉じる一時的なパネルとしてプレビューします"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -161,7 +123,7 @@
     "add-link-to-text": "テキストにリンクを追加",
     "follow-link-under-cursor": "カーソル下のリンクをたどる",
     "insert-date-and-time-to-text": "日時を挿入",
-    "paste-markdown-into-text": "Markdownをテキストに貼り付け",
+    "paste-markdown-into-text": "マークダウンをテキストに貼り付け",
     "cut-into-note": "ノートから切り取り",
     "edit-read-only-note": "読み取り専用ノートの編集",
     "toggle-right-pane": "右ペイン切り替え",
@@ -204,7 +166,8 @@
     "toggle-ribbon-tab-classic-editor": "リボンタブのクラシックエディターに切り替える",
     "toggle-ribbon-tab-promoted-attributes": "リボンタブ切り替え：プロモート属性",
     "save-named-revision": "変更履歴を名前を付けて保存",
-    "toggle-archived-notes": "アーカイブ済みノートの表示の切り替え"
+    "toggle-archived-notes": "アーカイブ済みノートの表示の切り替え",
+    "peek-right-pane": "右ペインをピーク表示"
   },
   "login": {
     "title": "ログイン",
@@ -214,7 +177,9 @@
     "password": "パスワード",
     "button": "ログイン",
     "remember-me": "ログイン情報を記憶する",
-    "sign_in_with_sso": "{{ ssoIssuerName }}でログイン"
+    "sign_in_with_sso": "{{ ssoIssuerName }}でログイン",
+    "sso-wrong-account": "そのアカウントはこの Trilium インスタンスにリンクされているものではありません。リンクされているアカウントでサインインしてください。",
+    "sso-not-enrolled": "シングルサインオンはまだ設定されていません。まずパスワードでサインインし、設定からアカウントをリンクしてください。"
   },
   "set_password": {
     "title": "パスワードの設定",
@@ -264,7 +229,7 @@
     "code-notes-title": "コードノート",
     "images-title": "メディア",
     "spellcheck-title": "スペルチェック",
-    "password-title": "パスワード",
+    "password-title": "パスワードと認証",
     "backup-title": "バックアップ",
     "other": "その他",
     "advanced-title": "高度",
@@ -322,7 +287,9 @@
     "task-state-attr-markdown-symbol": "マークダウン記号",
     "task-state-attr-is-completed": "完了としてカウント",
     "task-state-attr-color": "色",
-    "task-state-attr-is-hidden": "リストから非表示"
+    "task-state-attr-is-hidden": "リストから非表示",
+    "security-title": "セキュリティ",
+    "desktop-title": "デスクトップ"
   },
   "notes": {
     "new-note": "新しいノート",
@@ -373,7 +340,8 @@
     "expand": "展開",
     "toggle-navigation": "ナビゲーションの切り替え",
     "toggle-toc": "目次の切り替え",
-    "logo-alt": "ロゴ"
+    "logo-alt": "ロゴ",
+    "login": "ログイン"
   },
   "hidden_subtree_templates": {
     "text-snippet": "テキストスニペット",
@@ -401,7 +369,10 @@
     "presentation_slide": "プレゼンテーションスライド",
     "presentation_slide_first": "最初のスライド",
     "presentation_slide_second": "2番目のスライド",
-    "background": "背景"
+    "background": "背景",
+    "markdown-snippet": "マークダウンスニペット",
+    "code-snippet": "コードスニペット",
+    "dashboard": "ダッシュボード"
   },
   "share_404": {
     "title": "該当なし",
@@ -437,5 +408,42 @@
   },
   "password": {
     "incorrect": "入力されたパスワードが間違っています。"
+  },
+  "security-dialog": {
+    "enable-title": "{{settingLabel}} を有効",
+    "enable-message": "{{settingLabel}} を有効にしますか？",
+    "enable-detail": "{{warning}}\n\nこの機能を意図的に使用する場合にのみ有効にしてください。スクリプトや見慣れないメッセージが表示された場合は有効にしないでください。\n\nこの変更を有効にするには、再起動が必要です。",
+    "disable-title": "{{settingLabel}} を無効",
+    "disable-message": "{{settingLabel}} は無効になります。",
+    "disable-detail": "この変更を有効にするには再起動が必要です。",
+    "cancel": "キャンセル",
+    "enable": "有効",
+    "disable": "無効",
+    "dont-ask-again": "再起動するまで再度表示しない",
+    "backend-scripting": "バックエンドスクリプトの実行",
+    "backend-scripting-warning": "バックエンドスクリプトは、ファイルシステムやネットワークを含むサーバーへのフルアクセス権限を持ちます。",
+    "sql-console": "SQL コンソール",
+    "sql-console-warning": "SQL コンソールを使用すると、データベースに対して任意の SQL クエリを実行できます。",
+    "lan-access": "ネットワークアクセス",
+    "lan-access-warning": "ローカルネットワーク上の他のデバイスが、この Trilium インスタンスに接続できるようになります。"
+  },
+  "onenote_import": {
+    "root-title": "OneNote インポート"
+  },
+  "notion_import": {
+    "root-title": "Notion インポート",
+    "markdown-export-unsupported": "これは Notion の \"Markdown & CSV\" エクスポートのようですが、Trilium ではインポートできません。Notion のワークスペースを \"HTML\" 形式で再度エクスポートし、そちらをインポートしてください。",
+    "subpage-folders-disabled": "この Notion エクスポートは \"サブページ用のフォルダーを作成\" オプションを無効にして作成されているため、ページの階層構造を復元できません。Notion から \"サブページ用のフォルダーを作成\" を有効にして再度エクスポートし、そちらをインポートしてください。"
+  },
+  "keep_import": {
+    "root-title": "Google Keep インポート"
+  },
+  "anytype_import": {
+    "root-title": "Anytype インポート",
+    "protobuf-export-unsupported": "これは Anytype の \"Protobuf\" エクスポートのようですが、 Trilium ではインポートできません。Anytype のスペースを、\"Any-Block\" 形式で \"JSON\" を選択して再度エクスポートし、そちらをインポートしてください。",
+    "markdown-export-unsupported": "これは Anytype の \"Markdown\" エクスポートのようですが、 Trilium ではインポートできません。Anytype のスペースを、\"Any-Block\" 形式で \"JSON\" を選択して再度エクスポートし、そちらをインポートしてください。"
+  },
+  "obsidian_import": {
+    "root-title": "Obsidian インポート"
   }
 }

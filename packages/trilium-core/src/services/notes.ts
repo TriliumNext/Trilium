@@ -1,6 +1,6 @@
 import { type AttachmentRow, type AttributeRow, type BranchRow, dayjs, type NoteRow, type NoteType } from "@triliumnext/commons";
-import html2plaintext from "html2plaintext";
 import { t } from "i18next";
+import { parse as parseHtml } from "node-html-parser";
 import url from "url";
 
 import becca from "../becca/becca.js";
@@ -317,7 +317,11 @@ function createNewNote(params: NoteParams): {
         eventService.emit(eventService.ENTITY_CHANGED, { entityName: "branches", entity: branch });
         eventService.emit(eventService.CHILD_NOTE_CREATED, { childNote: note, parentNote });
 
-        getLog().info(`Created new note '${note.noteId}', branch '${branch.branchId}' of type '${note.type}', mime '${note.mime}'`);
+        if (!isEntityEventsDisabled) {
+            // Skip per-note logging during bulk operations (e.g. import), where it would otherwise
+            // emit one line per created note and flood the log on large imports.
+            getLog().info(`Created new note '${note.noteId}', branch '${branch.branchId}' of type '${note.type}', mime '${note.mime}'`);
+        }
 
         return {
             note,
@@ -416,34 +420,78 @@ function protectNote(note: BNote, protect: boolean) {
     }
 }
 
+/**
+ * Title of the spreadsheet preview image. Unlike the inline drawing images, this attachment is not
+ * referenced from the note content — it is the note's rendered thumbnail, looked up by title by the
+ * image endpoint — so it must be exempt from the orphan-erasure scheduling below.
+ */
+const SPREADSHEET_PREVIEW_ATTACHMENT_TITLE = "spreadsheet-export.png";
+
+/**
+ * Title of the canvas SVG export image. Like the spreadsheet thumbnail, it is the note's rendered
+ * preview (looked up by title, not referenced from the scene JSON), so it must be exempt from the
+ * orphan-erasure scheduling below.
+ */
+const CANVAS_EXPORT_ATTACHMENT_TITLE = "canvas-export.svg";
+
 export function checkImageAttachments(note: BNote, content: string) {
+    // Canvas references images by the Excalidraw fileId stored as the attachment *title* in its
+    // scene JSON, so orphans are detected by title; every other type references them by attachmentId
+    // embedded in the content (an image URL or attachment link).
+    const isCanvas = note.type === "canvas";
     const foundAttachmentIds = new Set<string>();
-    let match;
+    const foundCanvasFileIds = isCanvas ? collectCanvasImageFileIds(content) : new Set<string>();
 
-    const patterns = note.isMarkdown()
-        ? [
-            // ![...](api/attachments/{id}/image/...) or similar markdown image syntax
-            /api\/attachments\/([a-zA-Z0-9_]+)\/image/g,
-            // [...](#root/{noteId}?viewMode=attachments&attachmentId={id})
-            /attachmentId=([a-zA-Z0-9_]+)/g
-        ]
-        : [
-            // <img src="api/attachments/{id}/image/...">
-            /src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image/g,
-            // <a href="...attachmentId={id}">
-            /href="[^"]+attachmentId=([a-zA-Z0-9_]+)/g
-        ];
+    if (!isCanvas) {
+        let match;
 
-    for (const pattern of patterns) {
-        while ((match = pattern.exec(content))) {
-        foundAttachmentIds.add(match[1]);
+        // Spreadsheet content is JSON storing inline images as bare `api/attachments/{id}/image/...`
+        // URLs (no `src="..."` wrapper), so it scans with the same loose pattern as Markdown.
+        const patterns = (note.isMarkdown() || note.type === "spreadsheet")
+            ? [
+                // ![...](api/attachments/{id}/image/...) or similar markdown image syntax
+                /api\/attachments\/([a-zA-Z0-9_]+)\/image/g,
+                // [...](#root/{noteId}?viewMode=attachments&attachmentId={id})
+                /attachmentId=([a-zA-Z0-9_]+)/g
+            ]
+            : [
+                // <img src="api/attachments/{id}/image/...">
+                /src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image/g,
+                // <a href="...attachmentId={id}">
+                /href="[^"]+attachmentId=([a-zA-Z0-9_]+)/g
+            ];
+
+        for (const pattern of patterns) {
+            while ((match = pattern.exec(content))) {
+            foundAttachmentIds.add(match[1]);
+            }
         }
     }
 
     const attachments = note.getAttachments();
 
     for (const attachment of attachments) {
-        const attachmentInContent = attachment.attachmentId && foundAttachmentIds.has(attachment.attachmentId);
+        // Only attachments that are meant to be embedded in the note content (images, files) are
+        // auto-scheduled for erasure when no longer referenced. Other roles (e.g. "viewConfig",
+        // "importSource") are managed explicitly by their owners and must not be cleaned up here.
+        if (attachment.role !== "image" && attachment.role !== "file") {
+            continue;
+        }
+
+        // The spreadsheet preview thumbnail is never referenced from the content, so leave it alone
+        // (otherwise it would be scheduled for erasure on every save).
+        if (note.type === "spreadsheet" && attachment.title === SPREADSHEET_PREVIEW_ATTACHMENT_TITLE) {
+            continue;
+        }
+
+        // Likewise for the canvas SVG export preview.
+        if (isCanvas && attachment.title === CANVAS_EXPORT_ATTACHMENT_TITLE) {
+            continue;
+        }
+
+        const attachmentInContent = isCanvas
+            ? foundCanvasFileIds.has(attachment.title)
+            : !!attachment.attachmentId && foundAttachmentIds.has(attachment.attachmentId);
 
         if (attachment.utcDateScheduledForErasureSince && attachmentInContent) {
             attachment.utcDateScheduledForErasureSince = null;
@@ -452,6 +500,12 @@ export function checkImageAttachments(note: BNote, content: string) {
             attachment.utcDateScheduledForErasureSince = date_utils.utcNowDateTime();
             attachment.save();
         }
+    }
+
+    // Canvas references images by title, not by attachmentId, so the foreign-attachment copy step
+    // (which keys off attachmentIds found in the content) does not apply.
+    if (isCanvas) {
+        return { forceFrontendReload: false, content };
     }
 
     const existingAttachmentIds = new Set<string | undefined>(attachments.map((att) => att.attachmentId));
@@ -495,6 +549,30 @@ export function checkImageAttachments(note: BNote, content: string) {
         forceFrontendReload: unknownAttachments.length > 0,
         content
     };
+}
+
+/**
+ * Collects the Excalidraw `fileId`s referenced by a canvas note's scene JSON. Canvas images are
+ * stored as attachments titled with these fileIds, so the set identifies which image attachments are
+ * still in use (the persisted scene contains only non-deleted elements). Returns an empty set for
+ * malformed content rather than throwing, so a save is never blocked.
+ */
+export function collectCanvasImageFileIds(content: string): Set<string> {
+    const fileIds = new Set<string>();
+
+    try {
+        const parsed = JSON.parse(content) as { elements?: { fileId?: string }[] };
+        const elements = Array.isArray(parsed?.elements) ? parsed.elements : [];
+        for (const element of elements) {
+            if (element?.fileId) {
+                fileIds.add(element.fileId);
+            }
+        }
+    } catch {
+        // Malformed content (e.g. note type just changed) — treat as referencing nothing.
+    }
+
+    return fileIds;
 }
 
 function findImageLinks(content: string, foundLinks: FoundLink[]) {
@@ -843,6 +921,17 @@ function downloadImages(noteId: string, content: string) {
     return content;
 }
 
+/**
+ * Derives a plain-text attachment title from the inner HTML of an inline
+ * attachment's link label: strips tags, decodes HTML entities, collapses
+ * whitespace and trims.
+ */
+export function prepareTitle(html: string): string {
+    // `.text` strips tags and decodes HTML entities (via `he`); we then collapse
+    // whitespace and trim, matching the former `html2plaintext` behavior.
+    return parseHtml(html).text.replace(/\s+/g, " ").trim();
+}
+
 function saveAttachments(note: BNote, content: string) {
     const inlineAttachmentRe = /<a[^>]*?\shref=['"]data:([^;'">]+);base64,([^'">]+)['"][^>]*>(.*?)<\/a>/gim;
     let attachmentMatch;
@@ -853,7 +942,7 @@ function saveAttachments(note: BNote, content: string) {
         const base64data = attachmentMatch[2];
         const buffer = decodeBase64(base64data);
 
-        const title = html2plaintext(attachmentMatch[3]);
+        const title = prepareTitle(attachmentMatch[3]);
 
         const attachment = note.saveAttachment({
             role: "file",
@@ -874,7 +963,7 @@ function saveAttachments(note: BNote, content: string) {
 
 
 export function saveLinks(note: BNote, content: string | Uint8Array) {
-    if ((note.type !== "text" && note.type !== "relationMap" && note.type !== "llmChat" && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
+    if ((note.type !== "text" && note.type !== "relationMap" && note.type !== "llmChat" && note.type !== "spreadsheet" && note.type !== "canvas" && !note.isMarkdown()) || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
         return {
             forceFrontendReload: false,
             content
@@ -897,6 +986,16 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
     } else if (note.isMarkdown() && typeof content === "string") {
         findMarkdownImageLinks(content, foundLinks);
         findMarkdownInternalLinks(content, foundLinks);
+        ({ forceFrontendReload, content } = checkImageAttachments(note, content));
+    } else if (note.type === "spreadsheet" && typeof content === "string") {
+        // Spreadsheet images are stored as attachments referenced from the workbook JSON; scan for
+        // orphans (inserted-then-removed images) so they get scheduled for erasure. There are no
+        // Trilium internal links to extract from spreadsheet content.
+        ({ forceFrontendReload, content } = checkImageAttachments(note, content));
+    } else if (note.type === "canvas" && typeof content === "string") {
+        // Canvas images are stored as attachments titled with the Excalidraw fileId referenced from
+        // the scene JSON; scan for orphans (inserted-then-removed images) so they get scheduled for
+        // erasure. There are no Trilium internal links to extract from canvas content.
         ({ forceFrontendReload, content } = checkImageAttachments(note, content));
     } else if (note.type === "relationMap" && typeof content === "string") {
         findRelationMapLinks(content, foundLinks);

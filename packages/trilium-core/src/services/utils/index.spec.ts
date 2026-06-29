@@ -142,8 +142,30 @@ describe("#escapeHtml", () => {
 });
 
 describe("#unescapeHtml", () => {
-    it("should re-export 'unescape' npm module as unescapeHtml", () => {
-        expect(utils.unescapeHtml).toBeTypeOf("function");
+    it("decodes the five default HTML entities (named and numeric short forms)", () => {
+        expect(utils.unescapeHtml("a &amp; b")).toBe("a & b");
+        expect(utils.unescapeHtml("&#38;")).toBe("&");
+        expect(utils.unescapeHtml("x &lt; y &gt; z")).toBe("x < y > z");
+        expect(utils.unescapeHtml("&#60; &#62;")).toBe("< >");
+        expect(utils.unescapeHtml("&quot;hi&quot; &#34;")).toBe("\"hi\" \"");
+        expect(utils.unescapeHtml("it&apos;s &#39;")).toBe("it's '");
+    });
+
+    it("leaves entities outside the default set untouched", () => {
+        // other numeric, hex, nbsp, unknown-named and wrong-case are NOT decoded
+        expect(utils.unescapeHtml("&copy; &#169; &#x26; &nbsp; &hellip; &AMP;"))
+            .toBe("&copy; &#169; &#x26; &nbsp; &hellip; &AMP;");
+    });
+
+    it("handles double-escaped entities and query-string URLs", () => {
+        expect(utils.unescapeHtml("&amp;amp;")).toBe("&amp;");
+        expect(utils.unescapeHtml("http://x/?a=1&amp;b=2")).toBe("http://x/?a=1&b=2");
+    });
+
+    it("returns an empty string for empty or non-string input", () => {
+        expect(utils.unescapeHtml("")).toBe("");
+        expect(utils.unescapeHtml(null as unknown as string)).toBe("");
+        expect(utils.unescapeHtml(undefined as unknown as string)).toBe("");
     });
 });
 
@@ -259,6 +281,11 @@ describe("#isStringNote", () => {
             "w/ non-string note type (file), but mime type starting with 'text/', it should return true",
             [ "file", "text/html" ],
             true
+        ],
+        [
+            "w/ 'undefined' note type and the InkML mime type, it should return true",
+            [ undefined, "application/inkml+xml" ],
+            true
         ]
     ];
 
@@ -281,6 +308,8 @@ describe("#removeFileExtension", () => {
         [ "w/ 'test.markdown' it should strip '.markdown'", [ "test.markdown" ], "test" ],
         [ "w/ 'test.html' it should strip '.html'", [ "test.html" ], "test" ],
         [ "w/ 'test.htm' it should strip '.htm'", [ "test.htm" ], "test" ],
+        [ "w/ 'test.xlsx' it should strip '.xlsx'", [ "test.xlsx" ], "test" ],
+        [ "w/ 'test.csv' it should strip '.csv'", [ "test.csv" ], "test" ],
         [ "w/ 'test.zip' it should NOT strip '.zip'", [ "test.zip" ], "test.zip" ]
     ];
 
@@ -762,6 +791,29 @@ describe("#slugify", () => {
         const expectedSlug = "café-naïve-façade-jalapeño";
         const result = utils.slugify(testString);
         expect(result).toBe(expectedSlug);
+    });
+});
+
+describe("#slugifyHeadings", () => {
+    it("slugifies each heading in order", () => {
+        expect(utils.slugifyHeadings(["First Section", "Second Section"])).toStrictEqual(["first-section", "second-section"]);
+    });
+
+    it("disambiguates duplicate titles with a numeric suffix", () => {
+        expect(utils.slugifyHeadings(["Notes", "Notes", "Notes"])).toStrictEqual(["notes", "notes-1", "notes-2"]);
+    });
+
+    it("avoids colliding a suffix with an existing slug", () => {
+        // "Notes 1" naturally slugifies to "notes-1", so the second "Notes" must skip to "notes-2"
+        expect(utils.slugifyHeadings(["Notes", "Notes 1", "Notes"])).toStrictEqual(["notes", "notes-1", "notes-2"]);
+    });
+
+    it("strips HTML tags before slugifying", () => {
+        expect(utils.slugifyHeadings(["<b>Bold</b> Heading"])).toStrictEqual(["bold-heading"]);
+    });
+
+    it("returns an empty array for no headings", () => {
+        expect(utils.slugifyHeadings([])).toStrictEqual([]);
     });
 });
 

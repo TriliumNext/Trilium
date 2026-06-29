@@ -32,7 +32,7 @@ export type {
     ElectronPrintingApi,
     ElectronShellApi,
     ElectronSpellcheckApi,
-    ElectronTrayApi,
+    ElectronSystemIntegrationApi,
     ElectronWindowApi
 } from "../../../packages/commons/src/lib/electron_api_interface.js";
 

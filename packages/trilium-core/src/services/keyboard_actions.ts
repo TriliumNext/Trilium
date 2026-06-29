@@ -53,7 +53,6 @@ function getDefaultKeyboardActions() {
             actionName: "commandPalette",
             friendlyName: t("keyboard_action_names.command-palette"),
             defaultShortcuts: ["CommandOrControl+Shift+J"],
-            description: t("keyboard_actions.open-command-palette"),
             scope: "window",
             ignoreFromCommandPalette: true
         },
@@ -110,7 +109,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.sort-child-notes"),
             iconClass: "bx bx-sort-down",
             defaultShortcuts: ["Alt+S"],
-            description: t("keyboard_actions.sort-child-notes"),
             scope: "note-tree"
         },
         {
@@ -154,7 +152,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.delete-notes"),
             iconClass: "bx bx-trash",
             defaultShortcuts: ["Delete"],
-            description: t("keyboard_actions.delete-note"),
             scope: "note-tree"
         },
         {
@@ -162,7 +159,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.move-note-up"),
             iconClass: "bx bx-up-arrow-alt",
             defaultShortcuts: isMac() ? ["Alt+Up"] : ["CommandOrControl+Up"],
-            description: t("keyboard_actions.move-note-up"),
             scope: "note-tree"
         },
         {
@@ -170,7 +166,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.move-note-down"),
             iconClass: "bx bx-down-arrow-alt",
             defaultShortcuts: isMac() ? ["Alt+Down"] : ["CommandOrControl+Down"],
-            description: t("keyboard_actions.move-note-down"),
             scope: "note-tree"
         },
         {
@@ -178,7 +173,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.move-note-up-in-hierarchy"),
             iconClass: "bx bx-arrow-from-bottom",
             defaultShortcuts: isMac() ? ["Alt+Left"] : ["CommandOrControl+Left"],
-            description: t("keyboard_actions.move-note-up-in-hierarchy"),
             scope: "note-tree"
         },
         {
@@ -186,7 +180,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.move-note-down-in-hierarchy"),
             iconClass: "bx bx-arrow-from-top",
             defaultShortcuts: isMac() ? ["Alt+Right"] : ["CommandOrControl+Right"],
-            description: t("keyboard_actions.move-note-down-in-hierarchy"),
             scope: "note-tree"
         },
         {
@@ -262,7 +255,6 @@ function getDefaultKeyboardActions() {
             actionName: "addNoteAboveToSelection",
             friendlyName: t("keyboard_action_names.add-note-above-to-selection"),
             defaultShortcuts: ["Shift+Up"],
-            description: t("keyboard_actions.add-note-above-to-the-selection"),
             scope: "note-tree",
             ignoreFromCommandPalette: true
         },
@@ -270,7 +262,6 @@ function getDefaultKeyboardActions() {
             actionName: "addNoteBelowToSelection",
             friendlyName: t("keyboard_action_names.add-note-below-to-selection"),
             defaultShortcuts: ["Shift+Down"],
-            description: t("keyboard_actions.add-note-below-to-selection"),
             scope: "note-tree",
             ignoreFromCommandPalette: true
         },
@@ -279,7 +270,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.duplicate-subtree"),
             iconClass: "bx bx-outline",
             defaultShortcuts: [],
-            description: t("keyboard_actions.duplicate-subtree"),
             scope: "note-tree"
         },
 
@@ -291,7 +281,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.open-new-tab"),
             iconClass: "bx bx-plus",
             defaultShortcuts: isElectron() ? ["CommandOrControl+T"] : [],
-            description: t("keyboard_actions.open-new-tab"),
             scope: "window"
         },
         {
@@ -299,7 +288,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.close-active-tab"),
             iconClass: "bx bx-minus",
             defaultShortcuts: isElectron() ? ["CommandOrControl+W"] : [],
-            description: t("keyboard_actions.close-active-tab"),
             scope: "window"
         },
         {
@@ -357,7 +345,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.switch-to-first-tab"),
             iconClass: "bx bx-rectangle",
             defaultShortcuts: ["CommandOrControl+1"],
-            description: t("keyboard_actions.first-tab"),
             scope: "window"
         },
         {
@@ -365,7 +352,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.switch-to-second-tab"),
             iconClass: "bx bx-rectangle",
             defaultShortcuts: ["CommandOrControl+2"],
-            description: t("keyboard_actions.second-tab"),
             scope: "window"
         },
         {
@@ -373,7 +359,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.switch-to-third-tab"),
             iconClass: "bx bx-rectangle",
             defaultShortcuts: ["CommandOrControl+3"],
-            description: t("keyboard_actions.third-tab"),
             scope: "window"
         },
         {
@@ -381,7 +366,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.switch-to-fourth-tab"),
             iconClass: "bx bx-rectangle",
             defaultShortcuts: ["CommandOrControl+4"],
-            description: t("keyboard_actions.fourth-tab"),
             scope: "window"
         },
         {
@@ -389,7 +373,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.switch-to-fifth-tab"),
             iconClass: "bx bx-rectangle",
             defaultShortcuts: ["CommandOrControl+5"],
-            description: t("keyboard_actions.fifth-tab"),
             scope: "window"
         },
         {
@@ -397,7 +380,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.switch-to-sixth-tab"),
             iconClass: "bx bx-rectangle",
             defaultShortcuts: ["CommandOrControl+6"],
-            description: t("keyboard_actions.sixth-tab"),
             scope: "window"
         },
         {
@@ -405,7 +387,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.switch-to-seventh-tab"),
             iconClass: "bx bx-rectangle",
             defaultShortcuts: ["CommandOrControl+7"],
-            description: t("keyboard_actions.seventh-tab"),
             scope: "window"
         },
         {
@@ -413,7 +394,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.switch-to-eighth-tab"),
             iconClass: "bx bx-rectangle",
             defaultShortcuts: ["CommandOrControl+8"],
-            description: t("keyboard_actions.eight-tab"),
             scope: "window"
         },
         {
@@ -421,15 +401,15 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.switch-to-ninth-tab"),
             iconClass: "bx bx-rectangle",
             defaultShortcuts: ["CommandOrControl+9"],
-            description: t("keyboard_actions.ninth-tab"),
             scope: "window"
         },
         {
             actionName: "lastTab",
             friendlyName: t("keyboard_action_names.switch-to-last-tab"),
             iconClass: "bx bx-rectangle",
-            defaultShortcuts: ["CommandOrControl+0"],
-            description: t("keyboard_actions.last-tab"),
+            // Unbound by default: CommandOrControl+0 is the conventional "reset zoom" key (see zoomReset),
+            // and "switch to last tab" is a niche action, so it no longer squats on that combination.
+            defaultShortcuts: [],
             scope: "window"
         },
 
@@ -558,7 +538,6 @@ function getDefaultKeyboardActions() {
             actionName: "editReadOnlyNote",
             iconClass: "bx bx-edit-alt",
             defaultShortcuts: [],
-            description: t("keyboard_actions.edit-readonly-note"),
             scope: "window"
         },
 
@@ -600,7 +579,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-ribbon-tab-basic-properties"),
             iconClass: "bx bx-slider",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-basic-properties"),
             scope: "window"
         },
         {
@@ -616,7 +594,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-ribbon-tab-file-properties"),
             iconClass: "bx bx-file",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-file-properties"),
             scope: "window"
         },
         {
@@ -624,7 +601,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-ribbon-tab-image-properties"),
             iconClass: "bx bx-image",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-image-properties"),
             scope: "window"
         },
         {
@@ -632,7 +608,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-ribbon-tab-owned-attributes"),
             iconClass: "bx bx-list-check",
             defaultShortcuts: ["Alt+A"],
-            description: t("keyboard_actions.toggle-owned-attributes"),
             scope: "window"
         },
         {
@@ -640,7 +615,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-ribbon-tab-inherited-attributes"),
             iconClass: "bx bx-list-plus",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-inherited-attributes"),
             scope: "window"
         },
         // TODO: Remove or change since promoted attributes have been changed.
@@ -649,7 +623,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-ribbon-tab-promoted-attributes"),
             iconClass: "bx bx-star",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-promoted-attributes"),
             scope: "window"
         },
         {
@@ -665,7 +638,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-ribbon-tab-note-info"),
             iconClass: "bx bx-info-circle",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-note-info"),
             scope: "window"
         },
         {
@@ -673,7 +645,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-ribbon-tab-note-paths"),
             iconClass: "bx bx-collection",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-note-paths"),
             scope: "window"
         },
         {
@@ -681,7 +652,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-ribbon-tab-similar-notes"),
             iconClass: "bx bx-bar-chart",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-similar-notes"),
             scope: "window"
         },
 
@@ -692,9 +662,17 @@ function getDefaultKeyboardActions() {
         {
             actionName: "toggleRightPane",
             friendlyName: t("keyboard_action_names.toggle-right-pane"),
-            iconClass: "bx bx-dock-right",
+            iconClass: "bx bx-sidebar bx-flip-horizontal",
             defaultShortcuts: [],
             description: t("keyboard_actions.toggle-right-pane"),
+            scope: "window"
+        },
+        {
+            actionName: "peekRightPane",
+            friendlyName: t("keyboard_action_names.peek-right-pane"),
+            iconClass: "bx bx-sidebar bx-flip-horizontal",
+            defaultShortcuts: [],
+            description: t("keyboard_actions.peek-right-pane"),
             scope: "window"
         },
         {
@@ -702,7 +680,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.print-active-note"),
             iconClass: "bx bx-printer",
             defaultShortcuts: [],
-            description: t("keyboard_actions.print-active-note"),
             scope: "window"
         },
         {
@@ -710,7 +687,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.export-active-note-as-pdf"),
             iconClass: "bx bxs-file-pdf",
             defaultShortcuts: [],
-            description: t("keyboard_actions.export-as-pdf"),
             scope: "window"
         },
         {
@@ -758,7 +734,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.reload-frontend-app"),
             iconClass: "bx bx-refresh",
             defaultShortcuts: ["F5", "CommandOrControl+R"],
-            description: t("keyboard_actions.reload-frontend-app"),
             scope: "window"
         },
         {
@@ -767,7 +742,6 @@ function getDefaultKeyboardActions() {
             iconClass: "bx bx-bug-alt",
             defaultShortcuts: isElectron() ? ["CommandOrControl+Shift+I"] : [],
             isElectronOnly: true,
-            description: t("keyboard_actions.open-dev-tools"),
             scope: "window"
         },
         {
@@ -791,7 +765,6 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.toggle-full-screen"),
             iconClass: "bx bx-fullscreen",
             defaultShortcuts: ["F11"],
-            description: t("keyboard_actions.toggle-full-screen"),
             scope: "window"
         },
         {
@@ -800,14 +773,12 @@ function getDefaultKeyboardActions() {
             iconClass: "bx bx-zoom-out",
             defaultShortcuts: isElectron() ? ["CommandOrControl+-"] : [],
             isElectronOnly: true,
-            description: t("keyboard_actions.zoom-out"),
             scope: "window"
         },
         {
             actionName: "zoomIn",
             friendlyName: t("keyboard_action_names.zoom-in"),
             iconClass: "bx bx-zoom-in",
-            description: t("keyboard_actions.zoom-in"),
             defaultShortcuts: isElectron() ? ["CommandOrControl+="] : [],
             isElectronOnly: true,
             scope: "window"
@@ -816,7 +787,6 @@ function getDefaultKeyboardActions() {
             actionName: "zoomReset",
             friendlyName: t("keyboard_action_names.reset-zoom-level"),
             iconClass: "bx bx-search-alt",
-            description: t("keyboard_actions.reset-zoom-level"),
             defaultShortcuts: isElectron() ? ["CommandOrControl+0"] : [],
             isElectronOnly: true,
             scope: "window"
@@ -866,6 +836,7 @@ function getKeyboardActions() {
 
     for (const action of actions) {
         if ("effectiveShortcuts" in action && action.effectiveShortcuts) {
+            /* v8 ignore next -- no default action pre-defines effectiveShortcuts; defensive seeding */
             action.effectiveShortcuts = action.defaultShortcuts ? action.defaultShortcuts.slice() : [];
         }
     }

@@ -102,13 +102,15 @@ describe("IpcMessagingProvider", () => {
             ]);
         });
 
-        it("still delivers noisy log-filtered message types (sync-failed / api-log-messages)", () => {
+        it("still delivers noisy log-filtered message types (frontend-update / sync-failed / api-log-messages)", () => {
             const w = newWindow();
 
+            provider.sendMessageToAllClients({ type: "frontend-update" } as any);
             provider.sendMessageToAllClients({ type: "sync-failed" } as any);
             provider.sendMessageToAllClients({ type: "api-log-messages" } as any);
 
             expect(sends).toEqual([
+                { windowId: w.id, channel: "trilium-ws-message", payload: { type: "frontend-update" } },
                 { windowId: w.id, channel: "trilium-ws-message", payload: { type: "sync-failed" } },
                 { windowId: w.id, channel: "trilium-ws-message", payload: { type: "api-log-messages" } }
             ]);

@@ -26,7 +26,7 @@ If you are using the _Fixed_ formatting toolbar, all the formatting buttons for 
 *   _**Bookmark**_ toggles the display of the current note into the [Launch Bar](Launch%20Bar.md) for easy access. See [Bookmarks](../Navigation/Bookmarks.md) for more information.
 *   _**Shared**_ toggles whether the current note is publicly accessible if you have a [server instance](../../Installation%20%26%20Setup/Server%20Installation.md) set up. See [Sharing](../../Advanced%20Usage/Sharing.md) for more information.
 *   _**Template**_ toggles whether the current note is considered a template and can be used to easily create notes with the same content. See [Template](../../Advanced%20Usage/Templates.md) for more information.
-*   _**Language**_ changes the main language of the current note, mostly useful for spell checking or right-to-left support. See [Content language & Right-to-left support](../../Note%20Types/Text/Content%20language%20%26%20Right-to-le.md) for more information.
+*   _**Language**_ changes the main language of the current note, mostly useful for spell checking or right-to-left support. See [Content language & Right-to-left support](../../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md) for more information.
 
 ### Owned Attributes
 

@@ -3,24 +3,33 @@ import "./Video.css";
 import { RefObject } from "preact";
 import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import { getUrlForDownload } from "../../../services/open";
 import ActionButton from "../../react/ActionButton";
 import NoItems from "../../react/NoItems";
-import { LoopButton, PlaybackSpeed, PlayPauseButton, SeekBar, SkipButton, VolumeControl } from "./MediaPlayer";
+import { MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 
 const AUTO_HIDE_DELAY = 3000;
 
-export default function VideoPreview({ note }: { note: FNote }) {
+export default function VideoPreview({ note, noteContext, isVisible = true }: { note: FNote, noteContext?: NoteContext, isVisible?: boolean }) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [playing, setPlaying] = useState(false);
     const [error, setError] = useState(false);
     const { visible: controlsVisible, onMouseMove, flash: flashControls } = useAutoHideControls(videoRef, playing);
 
-    useEffect(() => setError(false), [note.noteId]);
+    useEffect(() => {
+        setError(false);
+        // The player instance is reused across notes (just a new src), which stops playback but doesn't
+        // reliably fire "pause" — reset so the controls don't keep showing the previous note's playing state.
+        setPlaying(false);
+    }, [note.noteId]);
     const onError = useCallback(() => setError(true), []);
+    // Mirror the element's real play state on every transition: "pause" isn't fired reliably when a track
+    // ends or its src is swapped, so derive from `paused` rather than assuming play→true / pause→false.
+    const syncPlaying = useCallback(() => setPlaying(!!videoRef.current && !videoRef.current.paused), []);
 
     const togglePlayback = useCallback(() => {
         const video = videoRef.current;
@@ -38,6 +47,8 @@ export default function VideoPreview({ note }: { note: FNote }) {
     }, [togglePlayback]);
 
     const onKeyDown = useKeyboardShortcuts(videoRef, wrapperRef, togglePlayback, flashControls);
+    const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, videoRef);
+    const siblingNavigation = useMediaSessionController(note, noteContext, "video/", videoRef, isVisible, playMode);
 
     if (error) {
         return <NoItems icon="bx bx-video-off" text={t("media.unsupported-format", { mime: note.mime.replace("/", "-") })} />;
@@ -50,8 +61,10 @@ export default function VideoPreview({ note }: { note: FNote }) {
                 class="video-preview"
                 src={getUrlForDownload(`api/notes/${note.noteId}/open-partial`)}
                 datatype={note?.mime}
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
+                onPlay={syncPlaying}
+                onPause={syncPlaying}
+                onEnded={syncPlaying}
+                onEmptied={syncPlaying}
                 onError={onError}
             />
 
@@ -60,14 +73,16 @@ export default function VideoPreview({ note }: { note: FNote }) {
                 <div class="media-buttons-row">
                     <div className="left">
                         <PlaybackSpeed mediaRef={videoRef} />
+                        <PlayModeButton mode={playMode} onSelectMode={setPlayMode} />
                         <RotateButton videoRef={videoRef} />
                     </div>
                     <div className="center">
                         <div className="spacer" />
+                        <MediaSiblingButton navigation={siblingNavigation} direction="previous" tooltipI18nKey="media.previous-video" />
                         <SkipButton mediaRef={videoRef} seconds={-10} icon="bx bx-rewind" text={t("media.back-10s")} />
                         <PlayPauseButton playing={playing} togglePlayback={togglePlayback} />
-                        <SkipButton mediaRef={videoRef} seconds={30} icon="bx bx-fast-forward" text={t("media.forward-30s")} />
-                        <LoopButton mediaRef={videoRef} />
+                        <SkipButton mediaRef={videoRef} seconds={10} icon="bx bx-fast-forward" text={t("media.forward-10s")} />
+                        <MediaSiblingButton navigation={siblingNavigation} direction="next" tooltipI18nKey="media.next-video" />
                     </div>
                     <div className="right">
                         <VolumeControl mediaRef={videoRef} />

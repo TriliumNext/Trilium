@@ -33,9 +33,12 @@ Currently only text extraction is supported and not OCR.
 The text will be extracted from the following file formats:
 
 *   Microsoft Word documents
-*   Microsoft Excel documents (only the raw text information, the cell structure is not maintained).
+*   Microsoft Excel documents
+    *   Only the raw text information, the cell structure is not maintained.
+    *   Values are extracted raw, so searching for dates will not work. The OpenDocument alternative will actually extract the properly formatted value.
 *   Microsoft PowerPoint documents
 *   The OpenDocument alternatives to the previous formats (Text, Spreadsheet, Presentation), created by editors such as LibreOffice and OpenOffice.
+*   Rich Text Format (RTF), since v0.104.0.
 
 ## Configuring and triggering OCR
 
@@ -65,7 +68,7 @@ When there are no content languages defined, the user interface _Language_ is us
 
 After making this change, the automatic processing or manual reprocessing will take into consideration the new languages.
 
-To enforce the detection in a particular language for a given note, use the `language` [attribute](Attributes.md), similar to [text content language](../Note%20Types/Text/Content%20language%20%26%20Right-to-le.md). For <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>, it's not possible to manually adjust the language.
+To enforce the detection in a particular language for a given note, use the `language` [attribute](Attributes.md), similar to [text content language](../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md). For <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>, it's not possible to manually adjust the language.
 
 > [!NOTE]
 > The trained data for each language is not packaged with Trilium, as that would require a significant amount of space that might not be otherwise needed. As such, when the trained data will be downloaded automatically via [Tesseract.js](https://github.com/naptha/tesseract.js/).

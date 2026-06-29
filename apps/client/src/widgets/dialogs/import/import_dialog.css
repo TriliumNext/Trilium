@@ -1,0 +1,93 @@
+.modal.import-provider-dialog {
+    /* Each region (provider picker, file upload, options) is its own card, like the delete dialog. */
+    .tn-card {
+        margin-bottom: 1rem;
+    }
+
+    .tn-card:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Local file import is grouped on its own, full-width, beneath the service grid. */
+    .import-provider-local {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75em;
+        margin-top: 1em;
+        padding-top: 1em;
+        border-top: 1px solid var(--main-border-color);
+    }
+
+    .import-files-description {
+        margin-bottom: 0.75em;
+        color: var(--muted-text-color);
+    }
+
+    /* Collapsed-by-default options: the section header toggles the option rows below. */
+    .import-options-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    /* Some option descriptions carry rich HTML (e.g. multi-paragraph hints); keep them tight. */
+    .option-row-description p {
+        margin: 0;
+    }
+
+    .option-row-description p + p {
+        margin-top: 0.4em;
+    }
+
+    .import-provider-hint {
+        color: var(--muted-text-color);
+        text-align: center;
+        margin: 1.5em 0;
+    }
+
+    .onenote-account {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1em;
+        padding-bottom: 0.75em;
+        border-bottom: 1px solid var(--main-border-color);
+    }
+
+    .onenote-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    .onenote-notebooks {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        max-height: 45vh;
+        overflow-y: auto;
+    }
+
+    .onenote-notebook {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25em;
+    }
+
+    .onenote-section-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25em;
+        padding-left: 1.25em;
+        border-left: 1px solid var(--main-border-color);
+        margin-left: 0.25em;
+    }
+
+    .onenote-section-group-title {
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+        font-weight: bold;
+    }
+}

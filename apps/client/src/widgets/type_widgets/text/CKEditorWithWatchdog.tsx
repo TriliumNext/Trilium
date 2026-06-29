@@ -5,7 +5,7 @@ import { HTMLProps, RefObject, useEffect, useImperativeHandle, useRef, useState 
 import froca from "../../../services/froca";
 import link from "../../../services/link";
 import linkEmbedService, { type EmbedMetadata } from "../../../services/link_embed";
-import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption } from "../../react/hooks";
+import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { buildConfig, BuildEditorOptions } from "./config";
 
 export type BoxSize = "small" | "medium" | "full" | "expandable";
@@ -42,6 +42,9 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const watchdogRef = useRef<EditorWatchdog>(null);
     const [ uiLanguage ] = useTriliumOption("locale");
+    // Read purely as a rebuild trigger: the value is consumed by buildToolbarConfig() via options.get() at
+    // editor-creation time, so the editor must be recreated when it changes.
+    const [ multilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar");
     const [ editor, setEditor ] = useState<CKTextEditor>();
     const { parentComponent, ntxId } = useNoteContext();
 
@@ -202,6 +205,11 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         let isStale = false;
 
         const init = async () => {
+            // Preserve the scroll position across editor recreation: rebuilding the editor briefly
+            // empties the content, which collapses the surrounding scrolling container back to the top.
+            const scrollContainer = container.closest<HTMLElement>(".scrolling-container");
+            const scrollTop = scrollContainer?.scrollTop ?? 0;
+
             // Ensure any previous watchdog is fully destroyed
             if (watchdogRef.current) {
                 try {
@@ -253,6 +261,18 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
             }
 
             await watchdog.create(container, {});
+
+            if (isStale || !scrollContainer || !scrollTop) return;
+
+            // Restore after the content has been set and laid out, otherwise the container is still
+            // collapsed and the assignment gets clamped to a smaller scroll height.
+            requestAnimationFrame(() => {
+                if (!isStale) {
+                    // `behavior: "instant"` overrides the container's `scroll-behavior: smooth`,
+                    // so the position is restored without an animation.
+                    scrollContainer.scrollTo({ top: scrollTop, behavior: "instant" });
+                }
+            });
         };
 
         init();
@@ -260,7 +280,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         return () => {
             isStale = true;
         };
-    }, [ contentLanguage, templates, uiLanguage ]);
+    }, [ contentLanguage, templates, uiLanguage, isClassicEditor, multilineToolbar ]);
 
 
     // React to notification warning callback.

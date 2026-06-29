@@ -255,16 +255,15 @@ describe("protectNotes task ws handler", () => {
         });
 
         // Beyond id/icon, the toast must carry the interpolated progress text
-        // (protecting key + the progressCount) and the protecting title. The
-        // mocked `t` serializes the selected KEY and `count`, so we assert
-        // structure/args, never a translated string.
+        // (protecting key + the progressCount). The mocked `t` serializes the
+        // selected KEY and `count`, so we assert structure/args, never a
+        // translated string.
         const toast = showPersistent.mock.calls[0][0] as ToastOptionsWithRequiredId;
         expect(showPersistent).toHaveBeenCalledWith(
             expect.objectContaining({
                 id: "task-prot",
                 icon: "check-shield",
-                message: "protected_session.protecting-in-progress:count=5",
-                title: "protected_session.protecting-title"
+                message: "protected_session.protecting-in-progress:count=5"
             })
         );
         // The progressCount must be interpolated into the message.
@@ -287,8 +286,7 @@ describe("protectNotes task ws handler", () => {
             expect.objectContaining({
                 id: "task-unprot",
                 icon: "shield",
-                message: "protected_session.unprotecting-in-progress-count:count=2",
-                title: "protected_session.unprotecting-title"
+                message: "protected_session.unprotecting-in-progress-count:count=2"
             })
         );
         expect(toast.message).toContain("count=2");
@@ -317,10 +315,9 @@ describe("protectNotes task ws handler", () => {
 
         const protectingToast = showPersistent.mock.calls[0][0] as ToastOptionsWithRequiredId;
         const unprotectingToast = showPersistent.mock.calls[1][0] as ToastOptionsWithRequiredId;
-        // Same progressCount, opposite protect flag => the message/title text must
+        // Same progressCount, opposite protect flag => the message text must
         // diverge (different translation keys are selected per branch).
         expect(protectingToast.message).not.toBe(unprotectingToast.message);
-        expect(protectingToast.title).not.toBe(unprotectingToast.title);
     });
 
     it("shows a timed success toast on taskSucceeded for both protecting and unprotecting", async () => {

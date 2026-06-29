@@ -56,6 +56,10 @@ export default function NoteIcon() {
             dropdownRef={dropdownRef}
             dropdownContainerStyle={{ width: "620px" }}
             dropdownOptions={{ autoClose: "outside" }}
+            // The inline title sets `container-type: inline-size`, which makes it a backdrop root and
+            // flattens the menu's blur into a flat tint. Portal the menu out of that subtree; it stays
+            // wrapped in a `.note-icon-widget` div so the picker's scoped CSS keeps applying.
+            portalToBody
             buttonClassName={`note-icon tn-focusable-button ${icon ?? "bx bx-empty"}`}
             hideToggleArrow
             disabled={isDisabled}

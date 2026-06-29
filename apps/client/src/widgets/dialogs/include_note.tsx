@@ -9,7 +9,7 @@ import { Suggestion, triggerRecentNotes } from "../../services/note_autocomplete
 import tree from "../../services/tree";
 import froca from "../../services/froca";
 import { useTriliumEvent, useTriliumOption } from "../react/hooks";
-import { type BoxSize, CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
+import type { BoxSize, CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
 
 export interface IncludeNoteOpts {
     editorApi: Pick<CKEditorApi, "addIncludeNote" | "addImage">;

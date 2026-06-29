@@ -1,5 +1,8 @@
+import "./OptionsSection.css";
+
 import type { ComponentChildren } from "preact";
 import { CSSProperties } from "preact/compat";
+
 import HelpButton from "../../../react/HelpButton";
 
 interface OptionsSectionProps {

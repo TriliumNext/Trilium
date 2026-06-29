@@ -126,6 +126,7 @@ Common UI components are available in `apps/client/src/widgets/react/` — **alw
 - `Slider` - Range slider with label
 - `Checkbox`, `RadioButton` - Form controls
 - `CollapsibleSection` - Expandable content sections
+- `Badge` - Colored pill/label with optional icon, tooltip, and `onClick` (for counts, status flags). Set its color via the `--color` CSS variable on a wrapper class (not inline styles); pass `outline` for a colored-border/transparent-fill variant instead of a solid background. `BadgeWithDropdown` pairs a badge with a dropdown menu. Don't hand-roll pill/badge markup — reuse it
 
 **Do not use Bootstrap utility classes** (e.g. `form-control-sm`, `form-select-sm`, `input-group`) on these components — they manage their own styling internally. If you need to adjust sizing or layout, use props provided by the component or CSS custom properties, not Bootstrap overrides.
 
@@ -147,7 +148,7 @@ pnpm server:start-prod                          # Production mode server
 pnpm desktop:start                              # Desktop app development
 pnpm server:test spec/etapi/search.spec.ts     # Run specific test
 pnpm test:parallel                              # Client tests (can run parallel)
-pnpm test:sequential                            # Server tests (sequential due to shared DB)
+pnpm test:sequential                            # Server tests (shared DB) + browser-mode editor tests
 pnpm test:all                                   # All tests (parallel + sequential)
 pnpm coverage                                   # Generate coverage reports
 pnpm typecheck                                  # Type check all projects
@@ -241,6 +242,8 @@ Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/`
 
 10. **Attribute inheritance can be complex** - When checking for labels/relations, use `note.getOwnedAttribute()` for direct attributes or `note.getAttribute()` for inherited ones. Don't assume attributes are directly on the note.
 
+11. **`ELECTRON_RUN_AS_NODE` leak crashes Electron launches** - Shells spawned by Electron-based tools (the VS Code extension host, AI coding agents running inside it) often inherit `ELECTRON_RUN_AS_NODE=1`. With it set, launching the desktop app (`pnpm desktop:start`, `pnpm --filter desktop start-prod`) crashes with `TypeError: Not running in an Electron environment!` because `require("electron")` resolves to the npm stub's path string instead of the built-in module. Unset the variable before launching: `Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue` (PowerShell) or `unset ELECTRON_RUN_AS_NODE` (bash).
+
 ## MCP Server
 - Trilium exposes an MCP (Model Context Protocol) server at `http://localhost:8080/mcp`, configured in `.mcp.json`
 - The MCP server is **only available when the Trilium server is running** (`pnpm run server:start`)
@@ -255,6 +258,7 @@ Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/`
 - **Build system**: Uses Vite for fast development, ESBuild for production optimization
 - **Patches**: Custom patches in `patches/` directory for CKEditor and other dependencies
 - **No non-null assertions**: Never use the TypeScript non-null assertion operator (postfix `!`), including in tests. Narrow instead — optional chaining (`?.`), a `?? fallback`, an explicit null check, or an `*OrThrow` accessor (e.g. `becca.getNoteOrThrow(id)` rather than `becca.getNote(id)!`).
+- **Helper placement**: When extracting a standalone helper function from a component, widget, hook, or route, place it below the primary export it supports (or in a separate module), not wedged between the imports and the main definition. The file's primary export stays near the top; supporting helpers follow it.
 
 ## Key Files for Context
 

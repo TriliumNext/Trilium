@@ -4,6 +4,8 @@ import fs from "fs/promises";
 import { t } from "i18next";
 import path from "path";
 
+import { TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
+
 // Preload bundle path — built next to main.cjs in production by
 // apps/desktop/scripts/build.ts, or compiled in-place by the dev runner
 // (scripts/electron-start.mts) into apps/desktop/src/preload.compiled.cjs.
@@ -140,7 +142,7 @@ async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, ac
         // would split origins — the main window's session cookie wouldn't
         // reach the print window, auth would redirect to /login, and the
         // print page would never render.
-        await browserWindow.loadURL(`trilium-app://app/?print#${notePath}`);
+        await browserWindow.loadURL(`${TRILIUM_APP_BASE_URL}?print#${notePath}`);
     } catch (err) {
         getLog().error(`Failed to load print window: ${err}`);
         ipcMain.off("print-progress", progressCallback);

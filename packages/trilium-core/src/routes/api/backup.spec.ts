@@ -1,3 +1,4 @@
+import type { ExistingBackupsResponse } from "@triliumnext/commons";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { getBackup } from "../../services/backup";
@@ -25,10 +26,11 @@ describe("Backup API (core)", () => {
         vi.restoreAllMocks();
     });
 
-    it("lists existing backups as an array (real service)", async () => {
-        const res = await api.get(`/api/database/backups`);
+    it("lists existing backups with their folder path (real service)", async () => {
+        const res = await api.get<ExistingBackupsResponse>(`/api/database/backups`);
         expect(res.status).toBe(200);
-        expect(Array.isArray(res.body)).toBe(true);
+        expect(Array.isArray(res.body.backups)).toBe(true);
+        expect(res.body).toHaveProperty("backupFolderPath");
     });
 
     it("creates a backup and returns the resulting file", async () => {

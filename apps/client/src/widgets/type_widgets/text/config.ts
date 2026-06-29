@@ -1,6 +1,6 @@
 import { buildExtraCommands, type EditorConfig, getCkLocale, loadPremiumPlugins, TemplateDefinition } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
-import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { t } from "../../../services/i18n.js";
@@ -41,7 +41,10 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 (window as any).katex = (await import("../../../services/math.js")).default;
             },
             forceOutputType: false, // forces output to use outputType
-            enablePreview: true // Enable preview view
+            enablePreview: true, // Enable preview view
+            // Map MathLive-only commands (e.g. \differentialD) onto KaTeX equivalents so
+            // formulas produced by the visual editor render instead of erroring out (#9523).
+            katexRenderOptions: { macros: KATEX_MACROS }
         },
         mermaid: {
             lazyLoad: async () => (await import("mermaid")).default, // FIXME
@@ -257,6 +260,10 @@ function buildListOfLanguages() {
     const userLanguages = mimeTypesService
         .getMimeTypes()
         .filter((mt) => mt.enabled)
+        // The `env=frontend`/`env=backend` JavaScript variants are Trilium script environments,
+        // which are meaningless inside a (display-only) code block. Plain `text/javascript`
+        // already provides JavaScript highlighting, so omit the script-specific variants here.
+        .filter((mt) => mt.mime && !mt.mime.startsWith("application/javascript;env="))
         .map((mt) => ({
             language: normalizeMimeTypeForCKEditor(mt.mime),
             label: mt.title

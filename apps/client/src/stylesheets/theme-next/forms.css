@@ -198,6 +198,33 @@ button.tn-low-profile:hover {
 }
 
 /*
+ * Selectable cards (import/export pickers) — mirror the button-group look: borderless, a recessed
+ * group background, and a raised "selected" chip with a subtle shadow. The base component styling
+ * (SelectableCard.css) uses theme-agnostic tokens so the legacy theme keeps working; these Next-theme
+ * tokens only exist here, so the override lives in the theme. The `:root` prefix matches the
+ * button-group convention above and keeps these rules winning over the component's base rules.
+ */
+:root .selectable-card {
+    border-color: transparent;
+    background: var(--button-group-background-color);
+    color: var(--cmd-button-text-color);
+    transition: background-color 150ms ease-in-out, color 150ms ease-in-out, box-shadow 150ms ease-in-out;
+}
+
+:root .selectable-card:hover {
+    border-color: transparent;
+    background: var(--cmd-button-hover-background-color);
+    color: var(--cmd-button-hover-text-color);
+}
+
+:root .selectable-card.selected {
+    border-color: transparent;
+    background: var(--button-group-active-button-background-color);
+    color: var(--button-group-active-button-color);
+    box-shadow: 1px 1px 1px var(--button-group-active-button-shadow-color);
+}
+
+/*
  * Input boxes
  */
 
@@ -749,6 +776,117 @@ a.tn-link:hover[href^="https://"]:not(.no-arrow)::after,
 
 input[type="range"] {
     background: transparent;
+}
+
+/*
+ * Sliders rendered through the shared <Slider> component (.slider). Styled to
+ * match the toggle switch design language: a muted pill track that fills with
+ * the accent colour, topped by a round thumb sharing the switch colour tokens.
+ *
+ * The filled portion is driven by --slider-fill-percent (set by the Slider
+ * component) for WebKit/Blink, which has no native progress pseudo-element;
+ * Firefox uses ::-moz-range-progress and ignores the variable.
+ *
+ * Selectors are intentionally kept at class-only specificity so that contexts
+ * with their own slider styling (e.g. the note map's `.fixnodes-type-switcher`)
+ * keep winning the cascade and stay untouched.
+ */
+
+.slider {
+    --slider-track-height: 6px;
+    --slider-thumb-size: 16px;
+    --slider-fill-percent: 0%;
+
+    --slider-track-background: var(--cmd-button-background-color);
+    --slider-fill-background: var(--cmd-button-text-color);
+    /* Opaque foreground — the alpha-blended --cmd-button-text-color used by the
+       track would otherwise leave the handle looking semitransparent. */
+    --slider-thumb-background: var(--main-text-color);
+
+    appearance: none;
+    -webkit-appearance: none;
+    width: 200px;
+    height: var(--slider-thumb-size);
+    background: transparent;
+    cursor: pointer;
+}
+
+/* Track — WebKit/Blink (the filled portion is painted via the gradient stop) */
+.slider::-webkit-slider-runnable-track {
+    height: var(--slider-track-height);
+    border-radius: calc(var(--slider-track-height) / 2);
+    background: linear-gradient(
+        to right,
+        var(--slider-fill-background) var(--slider-fill-percent),
+        var(--slider-track-background) var(--slider-fill-percent)
+    );
+}
+
+/* Track — Firefox */
+.slider::-moz-range-track {
+    height: var(--slider-track-height);
+    border-radius: calc(var(--slider-track-height) / 2);
+    background: var(--slider-track-background);
+}
+
+.slider::-moz-range-progress {
+    height: var(--slider-track-height);
+    border-radius: calc(var(--slider-track-height) / 2);
+    background: var(--slider-fill-background);
+}
+
+/* Thumb — WebKit/Blink */
+.slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: var(--slider-thumb-size);
+    height: var(--slider-thumb-size);
+    margin-top: calc((var(--slider-track-height) - var(--slider-thumb-size)) / 2);
+    border: unset;
+    border-radius: 50%;
+    background: var(--slider-thumb-background);
+    transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Thumb — Firefox */
+.slider::-moz-range-thumb {
+    width: var(--slider-thumb-size);
+    height: var(--slider-thumb-size);
+    border: unset;
+    border-radius: 50%;
+    background: var(--slider-thumb-background);
+    transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Grow the thumb slightly on hover / drag for a tactile feel */
+.slider:not(:disabled):hover::-webkit-slider-thumb,
+.slider:not(:disabled):active::-webkit-slider-thumb {
+    transform: scale(1.15);
+}
+
+.slider:not(:disabled):hover::-moz-range-thumb,
+.slider:not(:disabled):active::-moz-range-thumb {
+    transform: scale(1.15);
+}
+
+/* Focus — outline the thumb, consistent with the switch and other inputs */
+.slider:focus {
+    outline: unset;
+}
+
+.slider:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--input-focus-outline-color);
+    outline-offset: 2px;
+}
+
+.slider:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--input-focus-outline-color);
+    outline-offset: 2px;
+}
+
+/* Disabled (opacity is handled by the generic input:disabled rule above) */
+.slider:disabled {
+    cursor: default;
 }
 
 /*

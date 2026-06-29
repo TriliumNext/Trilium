@@ -24,6 +24,21 @@ function setRecoveryCodes(recoveryCodes: string) {
     return false;
 }
 
+/** Generates a fresh set of recovery codes WITHOUT persisting them (the caller decides when to commit). */
+function createRecoveryCodes(): string[] {
+    return Array.from({ length: 8 }, () => crypto.randomBytes(16).toString('base64'));
+}
+
+function clearRecoveryCodes() {
+    sql.transactional(() => {
+        optionService.setOption('recoveryCodeInitialVector', '');
+        optionService.setOption('recoveryCodeSecurityKey', '');
+        optionService.setOption('recoveryCodesEncrypted', '');
+        optionService.setOption('encryptedRecoveryCodes', 'false');
+        return true;
+    });
+}
+
 function getRecoveryCodes() {
     if (!isRecoveryCodeSet()) {
         return []
@@ -78,6 +93,8 @@ function verifyRecoveryCode(recoveryCodeGuess: string) {
 
 export default {
     setRecoveryCodes,
+    createRecoveryCodes,
+    clearRecoveryCodes,
     getRecoveryCodes,
     verifyRecoveryCode,
     isRecoveryCodeSet

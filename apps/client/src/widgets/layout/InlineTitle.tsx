@@ -25,6 +25,7 @@ export default function InlineTitle() {
     const { note, parentComponent, viewScope } = useNoteContext();
     const type = useNoteProperty(note, "type");
     const mime = useNoteProperty(note, "mime");
+    const isOptions = note?.noteId?.startsWith("_options") ?? false;
     const [ shown, setShown ] = useState(shouldShow(note, type, viewScope));
     const containerRef = useRef<HTMLDivElement>(null);
     const [ titleHidden, setTitleHidden ] = useState(false);
@@ -32,6 +33,18 @@ export default function InlineTitle() {
     useLayoutEffect(() => {
         setShown(shouldShow(note, type, viewScope));
     }, [ note, type, mime, viewScope ]);
+
+    // Options pages render their own title (OptionsPageHeader) inside the content, so collapse the
+    // note's own sticky title-row for them — `hide-title` only fades it (keeping its height), which
+    // would leave an empty band above the embedded header, so hide the row outright instead.
+    useLayoutEffect(() => {
+        if (!isOptions) return;
+        const titleRow = parentComponent.$widget[0].closest(".note-split")?.querySelector<HTMLElement>(":scope > .title-row");
+        if (!titleRow) return;
+        const previousDisplay = titleRow.style.display;
+        titleRow.style.display = "none";
+        return () => { titleRow.style.display = previousDisplay; };
+    }, [ isOptions, parentComponent ]);
 
     useLayoutEffect(() => {
         if (!shown) return;
@@ -74,7 +87,9 @@ export default function InlineTitle() {
 
 function shouldShow(note: FNote | null | undefined, type: NoteType | undefined, viewScope: ViewScope | undefined) {
     if (viewScope?.viewMode !== "default") return false;
-    if (note?.noteId?.startsWith("_options")) return true;
+    // Options pages provide their own title via OptionsPageHeader, so this inline title stays hidden
+    // for them (and the sticky title-row is hidden too — see the effect in InlineTitle).
+    if (note?.noteId?.startsWith("_options")) return false;
     if (note?.isTriliumSqlite()) return false;
     if (note?.isMarkdown()) return false;
     return type && supportedNoteTypes.has(type);

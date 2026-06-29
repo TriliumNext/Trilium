@@ -1,0 +1,29 @@
+.book-properties-widget {
+    padding: 12px 12px 6px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    overflow: visible;
+    align-items: center;
+}
+
+.book-properties-widget > * {
+    flex-shrink: 0;
+}
+
+.book-properties-widget > .type-number > label {
+    display: flex;
+    align-items: baseline;
+}
+
+.book-properties-widget input[type="checkbox"] {
+    margin-inline-end: 5px;
+}
+
+.book-properties-widget label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-overflow: clip;
+    white-space: nowrap;
+}

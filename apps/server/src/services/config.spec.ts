@@ -320,6 +320,32 @@ corsAllowOrigin=https://ini-cors.com
             expect(fs.writeFileSync).toHaveBeenCalledWith("/test/config.ini", sampleContents);
             expect(config.General.instanceName).toBe("from-sample");
         });
+
+        it("uses the trimmed desktop sample under Electron", async () => {
+            const originalElectron = process.versions.electron;
+            Object.defineProperty(process.versions, "electron", { value: "41.0.0", configurable: true });
+            try {
+                vi.mocked(fs.existsSync).mockReturnValue(false);
+                const desktopSample = "[General]\ninstanceName=desktop-sample";
+                vi.mocked(fs.readFileSync).mockImplementation((path) => {
+                    if (String(path).includes("config-sample-desktop.ini")) {
+                        return Buffer.from(desktopSample) as any;
+                    }
+                    return desktopSample as any;
+                });
+
+                const { default: config } = await import("./config.js");
+
+                expect(fs.writeFileSync).toHaveBeenCalledWith("/test/config.ini", desktopSample);
+                expect(config.General.instanceName).toBe("desktop-sample");
+            } finally {
+                if (originalElectron === undefined) {
+                    delete (process.versions as { electron?: string }).electron;
+                } else {
+                    Object.defineProperty(process.versions, "electron", { value: originalElectron, configurable: true });
+                }
+            }
+        });
     });
 
     describe("Boolean transformation edge cases", () => {
@@ -345,7 +371,7 @@ corsAllowOrigin=https://ini-cors.com
             expect(config.General.noDesktopIcon).toBe(false);
             expect(config.General.readOnly).toBe(false);
 
-            // Network defaults
+            // Network defaults (host is the web/server bind address)
             expect(config.Network.host).toBe("0.0.0.0");
             expect(config.Network.port).toBe("3000");
             expect(config.Network.https).toBe(false);
@@ -374,6 +400,11 @@ corsAllowOrigin=https://ini-cors.com
 
             // Logging defaults
             expect(config.Logging.retentionDays).toBe(90);
+
+            // Security defaults (allowLanAccess is the desktop LAN-bind override)
+            expect(config.Security.backendScriptingEnabled).toBe(false);
+            expect(config.Security.sqlConsoleEnabled).toBe(false);
+            expect(config.Security.allowLanAccess).toBe(false);
         });
     });
 });

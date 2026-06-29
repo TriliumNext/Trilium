@@ -14,14 +14,6 @@ import { getContext } from "./context.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import { createTaskStateNote, generateTaskStateCss, getTaskStates } from "./task_states.js";
 
-/**
- * Entity mutations (createNewNote, BAttribute.save, branch.save, markAsDeleted)
- * require an initialised CLS context.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /** A self-contained, valid custom state with a unique name/symbol per call. */
@@ -42,7 +34,7 @@ describe("task_states (real DB)", () => {
     beforeAll(() => {
         // Materialise the _taskStates container with its none/done anchors and the
         // seeded custom defaults into the shared in-memory fixture DB. Idempotent.
-        withContext(() => hiddenSubtreeService.checkHiddenSubtree());
+        getContext().init(() => hiddenSubtreeService.checkHiddenSubtree());
     });
 
     describe("getTaskStates", () => {
@@ -67,10 +59,10 @@ describe("task_states (real DB)", () => {
         });
 
         it("ignores archived definition notes entirely", () => {
-            const note = withContext(() =>
+            const note = getContext().init(() =>
                 createTaskStateNote(customState({ name: "archivedState", markdownSymbol: "@" }))
             );
-            withContext(() => note.addLabel("archived"));
+            getContext().init(() => note.addLabel("archived"));
             expect(note.isArchived).toBe(true);
 
             const names = getTaskStates().map((s) => s.name);
@@ -79,7 +71,7 @@ describe("task_states (real DB)", () => {
 
         it("drops invalid custom states while keeping the valid ones", () => {
             // A custom state with a name containing a space fails validation and is dropped.
-            const invalid = withContext(() =>
+            const invalid = getContext().init(() =>
                 createTaskStateNote(customState({ name: "not valid", markdownSymbol: "!" }))
             );
 
@@ -113,7 +105,7 @@ describe("task_states (real DB)", () => {
                 icon: "bx bx-search"
             });
 
-            const note = withContext(() => createTaskStateNote(state));
+            const note = getContext().init(() => createTaskStateNote(state));
 
             expect(note.type).toBe("doc");
             expect(note.title).toBe("Review");
@@ -139,7 +131,7 @@ describe("task_states (real DB)", () => {
         it("honours the explicit noteId and title overrides", () => {
             counter++;
             const noteId = `customTaskStateSpec${counter}`;
-            const note = withContext(() =>
+            const note = getContext().init(() =>
                 createTaskStateNote(customState({ name: `over${counter}`, markdownSymbol: "" }), {
                     noteId,
                     title: "Overridden title"
@@ -161,7 +153,7 @@ describe("task_states (real DB)", () => {
                 icon: "bx bx-time"
             });
 
-            const note: BNote = withContext(() => createTaskStateNote(state));
+            const note: BNote = getContext().init(() => createTaskStateNote(state));
             const read = getTaskStates().find((s) => s.id === note.noteId);
 
             expect(read).toBeDefined();
@@ -194,12 +186,12 @@ describe("task_states (real DB)", () => {
 
         it("computes a hue var for chromatic colors and leaves grayscale colors as unset", () => {
             // "maybe" is seeded without a color → no hue, color falls back to inherit.
-            const maybeNote = withContext(() =>
+            const maybeNote = getContext().init(() =>
                 createTaskStateNote(
                     customState({ name: "graystate", markdownSymbol: "g", color: "#808080" })
                 )
             );
-            const colorNote = withContext(() =>
+            const colorNote = getContext().init(() =>
                 createTaskStateNote(
                     customState({ name: "colorstate", markdownSymbol: "c", color: "#ff0000" })
                 )
@@ -227,7 +219,7 @@ describe("task_states (real DB)", () => {
         });
 
         it("skips states whose icon cannot be resolved to a glyph", () => {
-            const note = withContext(() =>
+            const note = getContext().init(() =>
                 createTaskStateNote(
                     customState({ name: "noicon", markdownSymbol: "n", icon: "bx bx-this-icon-does-not-exist" })
                 )

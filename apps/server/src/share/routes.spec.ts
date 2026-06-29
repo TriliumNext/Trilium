@@ -1,3 +1,4 @@
+import { cls, options } from "@triliumnext/core";
 import type { Application, NextFunction,Request, Response } from "express";
 import supertest from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -37,6 +38,24 @@ describe("Share API test", () => {
             .get("/share/YjlPRj2E9fOV")
             .expect(401)
             .expect("WWW-Authenticate", 'Basic realm="User Visible Realm", charset="UTF-8"');
+        expect(cannotSetHeadersCount).toBe(0);
+    });
+
+    it("shows the login link in the share theme only when showLoginInShareTheme is enabled", async () => {
+        // Regression test for #8323: the login link was lost when the share theme was
+        // rewritten. It must render on the share root landing page (the redirectBareDomain
+        // target) when the option is enabled, and stay hidden otherwise.
+        const disabled = await supertest(app).get("/share/").expect(200);
+        expect(disabled.text).not.toContain("login-link");
+
+        cls.init(() => options.setOption("showLoginInShareTheme", "true"));
+        try {
+            const enabled = await supertest(app).get("/share/").expect(200);
+            expect(enabled.text).toContain(`class="login-link"`);
+            expect(enabled.text).toContain(`href="../login"`);
+        } finally {
+            cls.init(() => options.setOption("showLoginInShareTheme", "false"));
+        }
         expect(cannotSetHeadersCount).toBe(0);
     });
 

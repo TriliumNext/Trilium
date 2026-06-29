@@ -213,7 +213,6 @@ function filterRootNote(branchIds: string[]) {
 function makeToast(id: string, message: string): ToastOptionsWithRequiredId {
     return {
         id,
-        title: t("branches.delete-status"),
         message,
         icon: "trash"
     };

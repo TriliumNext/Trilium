@@ -5,12 +5,11 @@ import { t } from "../../../services/i18n";
 import search from "../../../services/search";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import { isElectron } from "../../../services/utils";
-import { Badge } from "../../react/Badge";
 import Button from "../../react/Button";
 import FormText from "../../react/FormText";
-import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
+import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
+import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithButton, OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import TimeSelector from "./components/TimeSelector";
@@ -18,11 +17,8 @@ import TimeSelector from "./components/TimeSelector";
 export default function OtherSettings() {
     return (
         <>
+            <OptionsPageHeader />
             <SearchSettings />
-            {isElectron() && <>
-                <SearchEngineSettings />
-                <TrayOptionsSettings />
-            </>}
             <NoteErasureTimeout />
             <AttachmentErasureTimeout />
             <RevisionSettings />
@@ -58,71 +54,6 @@ function SearchSettings() {
     );
 }
 
-function SearchEngineSettings() {
-    const [ customSearchEngineName, setCustomSearchEngineName ] = useTriliumOption("customSearchEngineName");
-    const [ customSearchEngineUrl, setCustomSearchEngineUrl ] = useTriliumOption("customSearchEngineUrl");
-
-    const searchEngines = useMemo(() => {
-        return [
-            { url: "https://duckduckgo.com/?q={keyword}", name: t("search_engine.duckduckgo") },
-            { url: "https://www.bing.com/search?q={keyword}", name: t("search_engine.bing"), icon: "bx bxl-bing" },
-            { url: "https://www.baidu.com/s?wd={keyword}", name: t("search_engine.baidu"), icon: "bx bxl-baidu" },
-            { url: "https://www.google.com/search?q={keyword}", name: t("search_engine.google"), icon: "bx bxl-google" }
-        ];
-    }, []);
-
-    return (
-        <OptionsSection title={t("search_engine.title")} description={t("search_engine.custom_search_engine_info")}>
-            <OptionsRow name="predefined-templates" label={t("search_engine.predefined_templates_label")}>
-                <div className="search-engine-templates">
-                    {searchEngines.map(engine => (
-                        <Badge
-                            key={engine.url}
-                            icon={engine.icon}
-                            text={engine.name}
-                            className={customSearchEngineUrl === engine.url ? "selected" : ""}
-                            onClick={() => {
-                                setCustomSearchEngineName(engine.name);
-                                setCustomSearchEngineUrl(engine.url);
-                            }}
-                        />
-                    ))}
-                </div>
-            </OptionsRow>
-
-            <OptionsRow name="custom-name" label={t("search_engine.custom_name_label")}>
-                <FormTextBox
-                    currentValue={customSearchEngineName} onBlur={setCustomSearchEngineName}
-                    placeholder={t("search_engine.custom_name_placeholder")}
-                />
-            </OptionsRow>
-
-            <OptionsRow name="custom-url" label={t("search_engine.custom_url_label")} description={t("search_engine.custom_url_description")} stacked>
-                <FormTextBox
-                    currentValue={customSearchEngineUrl} onBlur={setCustomSearchEngineUrl}
-                    placeholder={t("search_engine.custom_url_placeholder")}
-                />
-            </OptionsRow>
-        </OptionsSection>
-    );
-}
-
-function TrayOptionsSettings() {
-    const [ disableTray, setDisableTray ] = useTriliumOptionBool("disableTray");
-
-    return (
-        <OptionsSection title={t("tray.title")}>
-            <OptionsRowWithToggle
-                name="tray-enabled"
-                label={t("tray.enable_tray")}
-                description={t("tray.enable_tray_description")}
-                currentValue={!disableTray}
-                onChange={trayEnabled => setDisableTray(!trayEnabled)}
-            />
-        </OptionsSection>
-    );
-}
-
 function NoteErasureTimeout() {
     return (
         <OptionsSection title={t("note_erasure_timeout.note_erasure_timeout_title")}>
@@ -138,6 +69,7 @@ function NoteErasureTimeout() {
             <OptionsRowWithButton
                 label={t("note_erasure_timeout.erase_deleted_notes_now")}
                 description={t("note_erasure_timeout.manual_erasing_description")}
+                buttonText={t("note_erasure_timeout.erase_now_button")}
                 onClick={() => {
                     server.post("notes/erase-deleted-notes-now").then(() => {
                         toast.showMessage(t("note_erasure_timeout.deleted_notes_erased"));
@@ -163,6 +95,7 @@ function AttachmentErasureTimeout() {
             <OptionsRowWithButton
                 label={t("attachment_erasure_timeout.erase_unused_attachments_now")}
                 description={t("attachment_erasure_timeout.manual_erasing_description")}
+                buttonText={t("attachment_erasure_timeout.erase_now_button")}
                 onClick={() => {
                     server.post("notes/erase-unused-attachments-now").then(() => {
                         toast.showMessage(t("attachment_erasure_timeout.unused_attachments_erased"));
@@ -203,6 +136,7 @@ function RevisionSettings() {
             <OptionsRowWithButton
                 label={t("revisions_snapshot_limit.erase_excess_revision_snapshots")}
                 description={t("revisions_snapshot_limit.erase_excess_revision_snapshots_description")}
+                buttonText={t("revisions_snapshot_limit.erase_now_button")}
                 onClick={async () => {
                     await server.post("revisions/erase-all-excess-revisions");
                     toast.showMessage(t("revisions_snapshot_limit.erase_excess_revision_snapshots_prompt"));

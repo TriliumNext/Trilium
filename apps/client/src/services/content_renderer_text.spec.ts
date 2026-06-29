@@ -1,4 +1,8 @@
-import { trimIndentation } from "@triliumnext/commons";
+// @vitest-environment jsdom
+// DOMPurify relies on browser-faithful DOM traversal (NodeIterator); happy-dom
+// mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
+// sanitization-dependent specs under jsdom, which matches real-browser behavior.
+import { KATEX_MACROS, trimIndentation } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import FAttachment from "../entities/fattachment";
@@ -7,15 +11,32 @@ import server from "./server";
 import { buildNote } from "../test/easy-froca";
 
 // `applyInlineMermaid` dynamically imports "mermaid"; provide a controllable
-// stub whose behavior we tune per-test via the shared `mermaidRunImpl` hook.
-let mermaidRunImpl: (args: { nodes: HTMLElement[] }) => void | Promise<void> = () => {};
+// stub whose behavior we tune per-test via the shared `mermaidRenderImpl` hook.
+let mermaidRenderImpl: (id: string, source: string) => { svg: string } | Promise<{ svg: string }>
+    = (_id, source) => ({ svg: `<svg>${source}</svg>` });
 const mermaidInitialize = vi.fn();
 vi.mock("mermaid", () => ({
     default: {
         initialize: (...args: unknown[]) => mermaidInitialize(...args),
-        run: (args: { nodes: HTMLElement[] }) => mermaidRunImpl(args)
+        // loadElkIfNeeded() probes the source via parse(); no ELK layout in tests.
+        parse: async () => undefined,
+        render: (id: string, source: string) => mermaidRenderImpl(id, source)
     }
 }));
+
+// i18n isn't initialized with resources in tests, so `t` returns an empty
+// string. Stub the one key this suite asserts on so the surfaced error text is
+// real; other keys fall through to the bare key (irrelevant to these tests).
+vi.mock("./i18n.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("./i18n.js")>();
+    return {
+        ...actual,
+        t: (key: string, opts?: { error?: string }) =>
+            key === "content_renderer.mermaid_diagram_error"
+                ? `Mermaid diagram failed to render: ${opts?.error}`
+                : key
+    };
+});
 
 // Spy on the KaTeX auto-render entry point so we can assert that
 // `postProcessRichContent` only invokes it when a `span.math-tex` is present.
@@ -181,9 +202,10 @@ describe("Text content renderer", () => {
         // The math span is preserved through the rendering pass.
         expect(contentEl.querySelector("span.math-tex")).not.toBeNull();
         // The conditional KaTeX auto-render branch ran: it was invoked exactly once
-        // with the rendered content element ($renderedContent[0]) and the trust flag.
+        // with the rendered content element ($renderedContent[0]), the trust flag, and the
+        // shared MathLive→KaTeX macros (spread into a fresh object KaTeX may mutate).
         expect(renderMathInElementSpy).toHaveBeenCalledTimes(1);
-        expect(renderMathInElementSpy).toHaveBeenCalledWith(contentEl, { trust: true });
+        expect(renderMathInElementSpy).toHaveBeenCalledWith(contentEl, { trust: true, throwOnError: false, macros: { ...KATEX_MACROS } });
     });
 
     it("does not invoke KaTeX inline rendering when no math-tex spans are present", async () => {
@@ -353,7 +375,7 @@ describe("rewriteMermaidDiagramsInContainer", () => {
 
 describe("applyInlineMermaid", () => {
     beforeEach(() => {
-        mermaidRunImpl = () => {};
+        mermaidRenderImpl = (_id, source) => ({ svg: `<svg>${source}</svg>` });
         mermaidInitialize.mockClear();
     });
 
@@ -377,33 +399,22 @@ describe("applyInlineMermaid", () => {
 
     it("renders a pending diagram and caches the produced SVG", async () => {
         const container = makeContainer(["graph A"]);
-        mermaidRunImpl = ({ nodes }) => {
-            for (const node of nodes) {
-                node.innerHTML = "<svg>A</svg>";
-                node.setAttribute("data-processed", "true");
-            }
-        };
         await applyInlineMermaid(container);
         expect(mermaidInitialize).toHaveBeenCalledTimes(1);
         const visible = container.querySelector("div.mermaid-diagram") as HTMLElement;
-        expect(visible.innerHTML).toBe("<svg>A</svg>");
+        expect(visible.innerHTML).toBe("<svg>graph A</svg>");
         expect(visible.getAttribute("data-processed")).toBe("true");
-        // Offscreen render container is cleaned up.
-        expect(document.body.querySelectorAll("div").length).toBe(0);
     });
 
-    it("paints cached SVG without re-running mermaid on a second pass", async () => {
+    it("paints cached SVG without re-rendering mermaid on a second pass", async () => {
         const container = makeContainer(["graph CACHE"]);
-        let runCount = 0;
-        mermaidRunImpl = ({ nodes }) => {
-            runCount++;
-            for (const node of nodes) {
-                node.innerHTML = "<svg>CACHE</svg>";
-                node.setAttribute("data-processed", "true");
-            }
+        let renderCount = 0;
+        mermaidRenderImpl = (_id, source) => {
+            renderCount++;
+            return { svg: `<svg>${source}</svg>` };
         };
         await applyInlineMermaid(container);
-        expect(runCount).toBe(1);
+        expect(renderCount).toBe(1);
 
         // Reset the visible node so we can observe the cached repaint.
         const node = container.querySelector("div.mermaid-diagram") as HTMLElement;
@@ -413,20 +424,14 @@ describe("applyInlineMermaid", () => {
 
         await applyInlineMermaid(container);
         // No new render: cache hit short-circuits and pending stays empty.
-        expect(runCount).toBe(1);
+        expect(renderCount).toBe(1);
         expect(mermaidInitialize).not.toHaveBeenCalled();
-        expect(node.innerHTML).toBe("<svg>CACHE</svg>");
+        expect(node.innerHTML).toBe("<svg>graph CACHE</svg>");
         expect(node.getAttribute("data-processed")).toBe("true");
     });
 
     it("shows the previous SVG as a placeholder while the new diagram renders", async () => {
         const container = makeContainer(["graph V1"]);
-        mermaidRunImpl = ({ nodes }) => {
-            for (const node of nodes) {
-                node.innerHTML = `<svg>${node.textContent}</svg>`;
-                node.setAttribute("data-processed", "true");
-            }
-        };
         await applyInlineMermaid(container);
 
         // Edit the diagram source in place; the old SVG should be used as the
@@ -435,27 +440,18 @@ describe("applyInlineMermaid", () => {
         const previousSvg = node.innerHTML;
         node.textContent = "graph V2";
 
-        let placeholderDuringRun = "";
-        mermaidRunImpl = ({ nodes }) => {
-            placeholderDuringRun = node.innerHTML;
-            for (const clone of nodes) {
-                clone.innerHTML = `<svg>${clone.textContent}</svg>`;
-                clone.setAttribute("data-processed", "true");
-            }
+        let placeholderDuringRender = "";
+        mermaidRenderImpl = (_id, source) => {
+            placeholderDuringRender = node.innerHTML;
+            return { svg: `<svg>${source}</svg>` };
         };
         await applyInlineMermaid(container);
-        expect(placeholderDuringRun).toBe(previousSvg);
+        expect(placeholderDuringRender).toBe(previousSvg);
         expect(node.innerHTML).toBe("<svg>graph V2</svg>");
     });
 
     it("evicts cache entries whose source is no longer present", async () => {
         const container = makeContainer(["graph KEEP", "graph DROP"]);
-        mermaidRunImpl = ({ nodes }) => {
-            for (const node of nodes) {
-                node.innerHTML = `<svg>${node.textContent}</svg>`;
-                node.setAttribute("data-processed", "true");
-            }
-        };
         await applyInlineMermaid(container);
 
         // Remove the second diagram so its cached source must be evicted.
@@ -469,26 +465,61 @@ describe("applyInlineMermaid", () => {
         expect(remaining.innerHTML).toBe("<svg>graph KEEP</svg>");
     });
 
-    it("logs but does not throw when mermaid.run rejects", async () => {
+    it("logs and surfaces the error in place when mermaid.render rejects", async () => {
         const error = vi.spyOn(console, "error").mockImplementation(() => {});
         const container = makeContainer(["graph BOOM"]);
-        mermaidRunImpl = () => {
+        mermaidRenderImpl = () => {
             throw new Error("mermaid failed");
         };
         await applyInlineMermaid(container);
         expect(error).toHaveBeenCalled();
+        const node = container.querySelector("div.mermaid-diagram") as HTMLElement;
+        // The failure is rendered into the node (not left as raw source), so it's
+        // visible in the UI instead of swallowed to the console.
+        expect(node.classList.contains("mermaid-error")).toBe(true);
+        expect(node.textContent).toContain("mermaid failed");
+        expect(node.getAttribute("data-processed")).toBeNull();
         error.mockRestore();
     });
 
-    it("leaves the visible node untouched when the offscreen clone was not processed", async () => {
-        const container = makeContainer(["graph SKIP"]);
-        mermaidRunImpl = () => {
-            // Render succeeds but never marks the clone as processed.
+    it("renders the valid diagram even when a sibling diagram fails", async () => {
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        const container = makeContainer(["graph OK", "graph BAD"]);
+        mermaidRenderImpl = (_id, source) => {
+            if (source === "graph BAD") throw new Error("bad diagram");
+            return { svg: `<svg>${source}</svg>` };
         };
         await applyInlineMermaid(container);
+        const [ ok, bad ] = container.querySelectorAll<HTMLElement>("div.mermaid-diagram");
+        // The good diagram still renders; only the failing one shows the error.
+        expect(ok.innerHTML).toBe("<svg>graph OK</svg>");
+        expect(bad.classList.contains("mermaid-error")).toBe(true);
+        expect(bad.textContent).toContain("bad diagram");
+        error.mockRestore();
+    });
+
+    it("surfaces the error on a failed re-render even when a previous render exists", async () => {
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        const container = makeContainer(["graph V1"]);
+        await applyInlineMermaid(container);
+
+        // Break the source: the stale render must not mask the failure — otherwise
+        // the diagram looks fine until a full refresh.
         const node = container.querySelector("div.mermaid-diagram") as HTMLElement;
-        // Visible node keeps its original source text; no SVG was applied.
-        expect(node.getAttribute("data-processed")).toBeNull();
-        expect(node.innerHTML).toBe("graph SKIP");
+        node.textContent = "graph BROKEN";
+        mermaidRenderImpl = () => {
+            throw new Error("still broken");
+        };
+        await applyInlineMermaid(container);
+        expect(node.classList.contains("mermaid-error")).toBe(true);
+        expect(node.textContent).toContain("still broken");
+
+        // Recovery: fixing the source clears the error state and renders cleanly.
+        node.textContent = "graph FIXED";
+        mermaidRenderImpl = (_id, source) => ({ svg: `<svg>${source}</svg>` });
+        await applyInlineMermaid(container);
+        expect(node.classList.contains("mermaid-error")).toBe(false);
+        expect(node.innerHTML).toBe("<svg>graph FIXED</svg>");
+        error.mockRestore();
     });
 });

@@ -10,10 +10,6 @@ import {
     initInAppHelp
 } from "./in_app_help.js";
 
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 /** Minimal concrete provider so the abstract `cleanUpHelp` logic can be exercised. */
 class TestHelpProvider extends InAppHelpProvider {
 
@@ -30,7 +26,7 @@ const noteService = (await import("./notes.js")).default;
 
 /** Creates a note with a forced id under the given parent within the help subtree. */
 function createHelpNote(noteId: string, parentNoteId: string) {
-    return withContext(
+    return getContext().init(
         () =>
             noteService.createNewNote({
                 noteId,
@@ -92,7 +88,7 @@ describe("in_app_help - cleanUpHelp", () => {
             }
         ];
 
-        withContext(() => cleanUpHelp(definition));
+        getContext().init(() => cleanUpHelp(definition));
 
         // The stale note is gone; the kept notes (incl. nested child and root) survive.
         expect(becca.getNote("_helpStale")?.isDeleted ?? true).toBe(true);
@@ -104,10 +100,10 @@ describe("in_app_help - cleanUpHelp", () => {
     it("is a no-op when the _help subtree does not exist", () => {
         // Remove the whole _help subtree, so becca.getNote("_help") is null and
         // the recursive flattener hits its empty-note short-circuit.
-        withContext(() => becca.getNote("_help")?.deleteNote());
+        getContext().init(() => becca.getNote("_help")?.deleteNote());
         expect(becca.getNote("_help")).toBeNull();
 
-        expect(() => withContext(() => cleanUpHelp([]))).not.toThrow();
+        expect(() => getContext().init(() => cleanUpHelp([]))).not.toThrow();
     });
 });
 

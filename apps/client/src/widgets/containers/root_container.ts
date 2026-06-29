@@ -1,12 +1,22 @@
-import { LOCALES } from "@triliumnext/commons";
+import { LOCALES, OptionNames } from "@triliumnext/commons";
 
 import { EventData } from "../../components/app_context.js";
 import { getEnabledExperimentalFeatureIds } from "../../services/experimental_features.js";
+import { applyFontsFromOptions } from "../../services/font.js";
 import options from "../../services/options.js";
+import { applyThemeFromOptions, updateColorSchemeClasses, updateThemeCapabilities } from "../../services/theme.js";
 import utils, { isIOS, isMobile } from "../../services/utils.js";
-import { readCssVar } from "../../utils/css-var.js";
 import type BasicWidget from "../basic_widget.js";
 import FlexContainer from "./flex_container.js";
+
+/** Font options whose change requires re-applying the server-generated fonts stylesheet. */
+const FONT_OPTIONS: OptionNames[] = [
+    "overrideThemeFonts",
+    "mainFontFamily", "mainFontSize",
+    "treeFontFamily", "treeFontSize",
+    "detailFontFamily", "detailFontSize",
+    "monospaceFontFamily", "monospaceFontSize"
+];
 
 /**
  * The root container is the top-most widget/container, from which the entire layout derives.
@@ -42,7 +52,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
         this.#setMotion();
         this.#setShadows();
         this.#setBackdropEffects();
-        this.#setThemeCapabilities();
+        updateThemeCapabilities();
         this.#setLocaleAndDirection(options.get("locale"));
         this.#setExperimentalFeatures();
         this.#initPWATopbarColor();
@@ -51,6 +61,14 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
     }
 
     entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
+        if (loadResults.isOptionReloaded("theme")) {
+            void applyThemeFromOptions();
+        }
+
+        if (FONT_OPTIONS.some((optionName) => loadResults.isOptionReloaded(optionName))) {
+            applyFontsFromOptions();
+        }
+
         if (loadResults.isOptionReloaded("motionEnabled")) {
             this.#setMotion();
         }
@@ -71,7 +89,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
     }
 
     #initTheme() {
-        const colorSchemeChangeObserver = matchMedia("(prefers-color-scheme: dark)")
+        const colorSchemeChangeObserver = matchMedia("(prefers-color-scheme: dark)");
         colorSchemeChangeObserver.addEventListener("change", () => this.#updateColorScheme());
         this.#updateColorScheme();
         
@@ -79,10 +97,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
     }
 
     #updateColorScheme() {
-        const colorScheme = readCssVar(document.body, "theme-style").asString();
-        
-        document.body.classList.toggle("light-theme", colorScheme === "light");
-        document.body.classList.toggle("dark-theme", colorScheme === "dark");
+        updateColorSchemeClasses();
     }
 
     #onMobileResize() {
@@ -116,15 +131,6 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
     #setBackdropEffects() {
         const enabled = options.is("backdropEffectsEnabled") && !isMobile();
         document.body.classList.toggle("backdrop-effects-disabled", !enabled);
-    }
-
-    #setThemeCapabilities() {
-        // Supports background effects
-
-        const useBgfx = readCssVar(document.documentElement, "allow-background-effects")
-            .asBoolean(false);
-
-        document.body.classList.toggle("theme-supports-background-effects", useBgfx);
     }
 
     #setExperimentalFeatures() {

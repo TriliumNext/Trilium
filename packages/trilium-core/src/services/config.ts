@@ -22,6 +22,7 @@ export interface CoreConfig {
     Security: {
         backendScriptingEnabled: boolean;
         sqlConsoleEnabled: boolean;
+        allowLanAccess: boolean;
     };
 }
 
@@ -37,7 +38,8 @@ const EMPTY_CONFIG: CoreConfig = {
     },
     Security: {
         backendScriptingEnabled: false,
-        sqlConsoleEnabled: false
+        sqlConsoleEnabled: false,
+        allowLanAccess: false
     }
 };
 

@@ -1,4 +1,4 @@
-import debounce from "debounce";
+import debounce from "../../../services/debounce.js";
 import froca from "../../../services/froca.js";
 import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
@@ -22,8 +22,13 @@ const debouncedHandleContentUpdate = debounce(handleContentUpdate, 1000);
  */
 export default async function getTemplates() {
     try {
-        // Build the definitions and populate the cache.
-        const snippets = await search.searchForNotes("#textSnippet");
+        // Text snippets carry the legacy `#textSnippet` label; the unified `#snippet` notes also
+        // cover Markdown/Code. Restrict to text notes so only HTML/rich-text snippets reach the
+        // CKEditor list. The type filter is applied client-side rather than in the query: a query
+        // starting with "(" trips the search lexer (the leading paren is dropped, see lex.ts), which
+        // corrupts the parse and matches every note.
+        const snippets = (await search.searchForNotes("#textSnippet OR #snippet"))
+            .filter((snippet) => snippet.type === "text" && !snippet.isArchived && snippet.isContentAvailable());
         const definitions: TemplateDefinition[] = [];
         for (const snippet of snippets) {
             const { description } = await invalidateCacheFor(snippet);
@@ -43,7 +48,9 @@ export default async function getTemplates() {
 }
 
 async function invalidateCacheFor(snippet: FNote) {
-    const description = snippet.getLabelValue("textSnippetDescription");
+    // Prefer the unified `snippetDescription`, falling back to the legacy `textSnippetDescription`
+    // so existing text snippets keep showing their description without any migration.
+    const description = snippet.getLabelValue("snippetDescription") ?? snippet.getLabelValue("textSnippetDescription");
     const data: TemplateData = {
         title: snippet.title,
         description: description ?? undefined,

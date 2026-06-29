@@ -92,7 +92,7 @@ export { default as SearchContext } from "./services/search/search_context";
 export { default as search, } from "./services/search/services/search";
 export { type default as SearchResult } from "./services/search/search_result";
 export { type SearchParams } from "./services/search/services/types";
-export { checkImageAttachments, default as note_service, findBookmarks, findLlmChatLinks, saveLinks } from "./services/notes";
+export { checkImageAttachments, collectCanvasImageFileIds, default as note_service, findBookmarks, findLlmChatLinks, saveLinks } from "./services/notes";
 export type { NoteParams } from "./services/notes";
 export * as sanitize from "./services/sanitizer";
 export * as routes from "./routes";
@@ -117,6 +117,8 @@ export * as routeHelpers from "./routes/helpers";
 
 export { getZipProvider, type ZipArchive, type ZipProvider } from "./services/zip_provider";
 export { default as zipImportService } from "./services/import/zip";
+export { default as importDispatchService, type ImportOptions } from "./services/import/dispatch";
+export type { File } from "./services/import/common";
 export { default as zipExportService } from "./services/export/zip";
 export { type AdvancedExportOptions, type ZipExportProviderData } from "./services/export/zip/abstract_provider";
 export { ZipExportProvider } from "./services/export/zip/abstract_provider";

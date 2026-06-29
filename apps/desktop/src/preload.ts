@@ -1,5 +1,5 @@
-import type { ElectronApi, ElectronContextMenuParams } from "@triliumnext/commons";
-import { contextBridge, ipcRenderer, webFrame } from "electron";
+import type { ElectronApi, ElectronContextMenuParams, NativeImportOptions, OneNoteLoginResult, RendererStartupMetric } from "@triliumnext/commons";
+import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
 
 contextBridge.exposeInMainWorld("electronApi", {
     window: {
@@ -66,6 +66,9 @@ contextBridge.exposeInMainWorld("electronApi", {
         toggleDevTools() {
             ipcRenderer.send("toggle-dev-tools");
         },
+        isDevToolsDocked(): boolean {
+            return ipcRenderer.sendSync("is-dev-tools-docked");
+        },
 
         // App lifecycle
         reloadAllWindows() {
@@ -83,6 +86,9 @@ contextBridge.exposeInMainWorld("electronApi", {
         showWindow() {
             ipcRenderer.send("show-window");
         },
+        reportStartupMetric(metric: RendererStartupMetric) {
+            ipcRenderer.send("report-startup-metric", metric);
+        },
 
         // Background effects
         setBackgroundMaterial(material: string) {
@@ -98,12 +104,18 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         onOpenInSameTab(callback: (noteId: string) => void) {
             ipcRenderer.on("openInSameTab", (_event, noteId) => callback(noteId));
+        },
+        onDevToolsDockChanged(callback: (docked: boolean) => void) {
+            ipcRenderer.on("dev-tools-dock-changed", (_event, docked: boolean) => callback(docked));
         }
     },
 
     clipboard: {
         copyImageToClipboard(buffer: Uint8Array) {
             ipcRenderer.send("copy-image-to-clipboard", buffer);
+        },
+        readText() {
+            return ipcRenderer.invoke("read-clipboard-text");
         }
     },
 
@@ -140,12 +152,21 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         getAvailableSpellCheckerLanguages(): string[] {
             return ipcRenderer.sendSync("get-available-spellchecker-languages");
+        },
+        setSpellCheckerLanguages(languageCodes: string[]) {
+            ipcRenderer.send("set-spellchecker-languages", languageCodes);
+        },
+        setSpellCheckerEnabled(enabled: boolean) {
+            ipcRenderer.send("set-spellchecker-enabled", enabled);
         }
     },
 
-    tray: {
+    systemIntegration: {
         reloadTray() {
             ipcRenderer.send("reload-tray");
+        },
+        reapplyLaunchOnStartup() {
+            ipcRenderer.send("reapply-launch-on-startup");
         }
     },
 
@@ -180,6 +201,29 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         printFromPreview(opts: Record<string, unknown>) {
             ipcRenderer.send("print-from-preview", opts);
+        }
+    },
+
+    nativeExport: {
+        exportSubtreeToFile(opts: { branchId: string; format: string; title: string; taskId: string }) {
+            return ipcRenderer.invoke("export-subtree-to-file", opts);
+        }
+    },
+
+    nativeImport: {
+        pickFiles() {
+            return ipcRenderer.invoke("import-pick-files");
+        },
+        grantDroppedFiles(files: File[]) {
+            // Resolve each dropped File to its on-disk path here in the preload: getPathForFile returns a
+            // real path only for a genuinely user-supplied file (empty for anything a script built), so the
+            // File is the capability. Only the resolved paths cross to the main process — the path-accepting
+            // channel is never exposed to the renderer, so a script can't smuggle in an arbitrary path.
+            const paths = files.map((file) => webUtils.getPathForFile(file)).filter((path) => !!path);
+            return ipcRenderer.invoke("import-grant-dropped", paths);
+        },
+        importFromToken(opts: { token: string; parentNoteId: string; taskId: string; options: NativeImportOptions; last: boolean; format?: string }) {
+            return ipcRenderer.invoke("import-from-token", opts);
         }
     },
 
@@ -236,6 +280,15 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         setSqlConsoleEnabled(enabled: boolean): Promise<boolean> {
             return ipcRenderer.invoke("security-set-sql-console", enabled);
+        },
+        setLanAccessEnabled(enabled: boolean): Promise<boolean> {
+            return ipcRenderer.invoke("security-set-lan-access", enabled);
+        }
+    },
+
+    onenote: {
+        login(): Promise<OneNoteLoginResult> {
+            return ipcRenderer.invoke("onenote-login");
         }
     }
 } satisfies ElectronApi);

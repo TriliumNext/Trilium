@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import imageService, { copyImageReferenceToClipboard, downloadImage, getFileNameFromSrc, getImageDownloadUrl, isImageCopySupported } from "./image.js";
+import imageService, { copyImageReferenceToClipboard, copyImageToClipboard, downloadImage, getFileNameFromSrc, getImageDownloadUrl, isImageCopySupported } from "./image.js";
 import open from "./open.js";
 import * as toastModule from "./toast.js";
 import toastService from "./toast.js";
@@ -137,6 +137,13 @@ describe("getFileNameFromSrc", () => {
     it("falls back to the raw segment when it is a malformed URI", () => {
         expect(getFileNameFromSrc("api/images/abc/%E0%A4%A")).toBe("%E0%A4%A");
     });
+
+    it("leaves the name unchanged when the MIME type yields no extension", () => {
+        // "image/" -> split("/")[1] is "" -> extension is falsy, so no suffix is appended.
+        expect(getFileNameFromSrc("api/images/abc/screenshot", "image/")).toBe("screenshot");
+        // A MIME type without a slash -> split("/")[1] is undefined -> optional chaining short-circuits.
+        expect(getFileNameFromSrc("api/images/abc/screenshot", "image")).toBe("screenshot");
+    });
 });
 
 describe("isImageCopySupported", () => {
@@ -198,4 +205,143 @@ describe("downloadImage", () => {
         expect(showErrorSpy).toHaveBeenCalledTimes(1);
         showErrorSpy.mockRestore();
     });
+
+    it("falls back to fetching a blob and saving it via an object URL", async () => {
+        vi.useFakeTimers();
+        try {
+            vi.mocked(utils.isElectron).mockReturnValue(false);
+            (window as any).logError = vi.fn();
+
+            const blob = new Blob(["x"], { type: "image/png" });
+            vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, blob: async () => blob })));
+            const createObjectURLSpy = vi.fn(() => "blob:fake");
+            const revokeObjectURLSpy = vi.fn();
+            vi.stubGlobal("URL", { createObjectURL: createObjectURLSpy, revokeObjectURL: revokeObjectURLSpy });
+            const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+            // A data: URL doesn't map to a download endpoint, so the blob fallback runs.
+            await downloadImage("data:image/png;base64,AAAA");
+
+            expect(createObjectURLSpy).toHaveBeenCalledWith(blob);
+            expect(clickSpy).toHaveBeenCalledTimes(1);
+            // Revocation is deferred via setTimeout; it hasn't run until timers advance.
+            expect(revokeObjectURLSpy).not.toHaveBeenCalled();
+            vi.runAllTimers();
+            expect(revokeObjectURLSpy).toHaveBeenCalledWith("blob:fake");
+
+            clickSpy.mockRestore();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });
+
+describe("copyImageToClipboard", () => {
+    beforeEach(() => {
+        (window as any).logError = vi.fn();
+        vi.spyOn(toastService, "showMessage").mockImplementation(() => {});
+        vi.spyOn(toastModule, "showError").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+        delete (window as any).electronApi;
+    });
+
+    it("copies the raw image bytes via the Electron clipboard bridge", async () => {
+        vi.mocked(utils.isElectron).mockReturnValue(true);
+        vi.stubGlobal("fetch", vi.fn(async () => ({
+            ok: true,
+            blob: async () => ({ arrayBuffer: async () => new Uint8Array([1, 2, 3, 4]).buffer })
+        })));
+        const copySpy = vi.fn();
+        (window as any).electronApi = { clipboard: { copyImageToClipboard: copySpy } };
+
+        await copyImageToClipboard("api/images/abc/x.png");
+
+        expect(copySpy).toHaveBeenCalledTimes(1);
+        const [buffer] = copySpy.mock.calls[0];
+        expect(buffer).toBeInstanceOf(Uint8Array);
+        expect(Array.from(buffer as Uint8Array)).toEqual([1, 2, 3, 4]);
+        expect(toastService.showMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders the image to a PNG and writes it via the Web Clipboard API", async () => {
+        vi.mocked(utils.isElectron).mockReturnValue(false);
+        stubDrawableImage();
+        const pngBlob = new Blob(["x"], { type: "image/png" });
+        stubCanvasFactory({ toBlob: (cb: (b: Blob | null) => void) => cb(pngBlob) });
+        vi.stubGlobal("ClipboardItem", class {
+            constructor(public readonly data: unknown) {}
+        });
+        const writeSpy = vi.fn(async () => {});
+        vi.stubGlobal("navigator", { clipboard: { write: writeSpy } });
+
+        await copyImageToClipboard("data:image/png;base64,AAAA");
+
+        expect(writeSpy).toHaveBeenCalledTimes(1);
+        expect(toastService.showMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports an error when the image has no drawable dimensions", async () => {
+        vi.mocked(utils.isElectron).mockReturnValue(false);
+        stubDrawableImage();
+        // getContext returns null -> renderImageToPng throws before encoding.
+        stubCanvasFactory({ getContext: () => null });
+        const showErrorSpy = vi.spyOn(toastModule, "showError").mockImplementation(() => {});
+
+        await copyImageToClipboard("data:image/png;base64,AAAA");
+
+        expect((window as any).logError).toHaveBeenCalledTimes(1);
+        expect(showErrorSpy).toHaveBeenCalledTimes(1);
+        expect(toastService.showMessage).not.toHaveBeenCalled();
+    });
+
+    it("reports an error when the canvas cannot encode the image as PNG", async () => {
+        vi.mocked(utils.isElectron).mockReturnValue(false);
+        stubDrawableImage();
+        // toBlob calls back with null -> the encoding promise rejects.
+        stubCanvasFactory({ toBlob: (cb: (b: Blob | null) => void) => cb(null) });
+        vi.stubGlobal("ClipboardItem", class {
+            constructor(public readonly data: unknown) {}
+        });
+        vi.stubGlobal("navigator", { clipboard: { write: vi.fn(async () => {}) } });
+        const showErrorSpy = vi.spyOn(toastModule, "showError").mockImplementation(() => {});
+
+        await copyImageToClipboard("data:image/png;base64,AAAA");
+
+        expect((window as any).logError).toHaveBeenCalledTimes(1);
+        expect(showErrorSpy).toHaveBeenCalledTimes(1);
+        expect(toastService.showMessage).not.toHaveBeenCalled();
+    });
+});
+
+/** happy-dom's `Image` reports `naturalWidth` 0 and can't decode, so stub a drawable one. */
+function stubDrawableImage() {
+    vi.stubGlobal("Image", class {
+        naturalWidth = 10;
+        naturalHeight = 10;
+        set src(_v: string) {}
+        decode() {
+            return Promise.resolve();
+        }
+    });
+}
+
+/**
+ * Spies on `document.createElement` so that a "canvas" tag returns a fake canvas with controllable
+ * `getContext`/`toBlob`; every other tag delegates to the real factory.
+ */
+function stubCanvasFactory(overrides: { getContext?: () => unknown; toBlob?: (cb: (b: Blob | null) => void) => void }) {
+    const realCreateElement = document.createElement.bind(document);
+    const fakeCanvas = {
+        width: 0,
+        height: 0,
+        getContext: overrides.getContext ?? (() => ({ drawImage: vi.fn() })),
+        toBlob: overrides.toBlob ?? ((cb: (b: Blob | null) => void) => cb(new Blob(["x"], { type: "image/png" })))
+    };
+    vi.spyOn(document, "createElement").mockImplementation((tagName: string, options?: ElementCreationOptions) =>
+        tagName === "canvas" ? (fakeCanvas as unknown as HTMLElement) : realCreateElement(tagName, options)
+    );
+}

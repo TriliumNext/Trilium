@@ -17,6 +17,7 @@ function withSecurity(security: Partial<CoreConfig["Security"]>) {
         Security: {
             backendScriptingEnabled: false,
             sqlConsoleEnabled: false,
+            allowLanAccess: false,
             ...security
         }
     });

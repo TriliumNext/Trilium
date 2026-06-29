@@ -304,6 +304,27 @@ describe("search", () => {
     });
 });
 
+describe("markdown conversion", () => {
+    it("htmlToMarkdown posts the HTML to the server and returns the markdown", async () => {
+        const post = vi.spyOn(server, "post").mockResolvedValue({ markdownContent: "# Hi" } as never);
+
+        const result = await makeApi().htmlToMarkdown("<h1>Hi</h1>");
+
+        expect(post).toHaveBeenCalledWith("other/to-markdown", { htmlContent: "<h1>Hi</h1>" });
+        expect(result).toBe("# Hi");
+    });
+
+    it("markdownToHtml renders to HTML locally without hitting the server", async () => {
+        const post = vi.spyOn(server, "post");
+
+        const html = await makeApi().markdownToHtml("This is **bold**.");
+
+        expect(html).toContain("<strong>bold</strong>");
+        // The conversion runs entirely in the browser — no server round-trip.
+        expect(post).not.toHaveBeenCalled();
+    });
+});
+
 describe("froca passthroughs", () => {
     it("getNote / getNotes / reloadNotes delegate to froca", async () => {
         const note = buildNote({ title: "N" });

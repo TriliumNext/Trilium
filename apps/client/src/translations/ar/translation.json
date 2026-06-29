@@ -405,7 +405,12 @@
     "expand_nth_level": "توسيع {{depth}} مستويات",
     "expand_all_levels": "توسيع كل المستويات",
     "hide_child_notes": "إخفاء الملاحظات الفرعية في الشجرة",
-    "open_all_confirm": "سيؤدي هذا إلى فتح {{count}} من الملاحظات في تبويبات جديدة. هل تريد المتابعة؟",
+    "open_all_confirm_zero": "سيؤدي هذا إلى فتح {{count}} من الملاحظات في تبويبات جديدة. هل تريد المتابعة؟",
+    "open_all_confirm_one": "",
+    "open_all_confirm_two": "",
+    "open_all_confirm_few": "",
+    "open_all_confirm_many": "",
+    "open_all_confirm_other": "",
     "expand_tooltip": "يوسّع العناصر الفرعية المباشرة لهذه المجموعة (مستوى واحد فقط). لمزيد من الخيارات، اضغط السهم الموجود على اليمين.",
     "open_all_in_tabs_tooltip": "فتح جميع النتائج في علامات تبويب جديدة",
     "open_all_too_zero": "book_properties.open_all_too",
@@ -449,7 +454,12 @@
     "title": "معلومات الملاحظة",
     "mime": "نوع MIME",
     "show_similar_notes": "عرض ملاحظات مشابهة",
-    "subtree_size": "(حجم الشجرة الفرعية: {{size}} في {{count}} ملاحظات)",
+    "subtree_size_zero": "(حجم الشجرة الفرعية: {{size}} في {{count}} ملاحظات)",
+    "subtree_size_one": "",
+    "subtree_size_two": "",
+    "subtree_size_few": "",
+    "subtree_size_many": "",
+    "subtree_size_other": "",
     "note_size_info": "حجم الملاحظة يعطي تقديرًا تقريبيًا لمتطلبات التخزين لهذه الملاحظة، ويأخذ بعين الاعتبار محتوى الملاحظة ومحتوى إصداراتها ."
   },
   "note_paths": {
@@ -620,20 +630,11 @@
     "close": "غلق",
     "export": "تصدير",
     "export_note_title": "تصدير الملاحظة",
-    "export_status": "حالة التصدير",
     "export_finished_successfully": "اكتمل التصدير بنجاح.",
-    "export_in_progress": "جار التصدير: {{progressCount}}",
     "choose_export_type": "اختر نوع التصدير اولا من فضلك",
     "export_type_single": "هذه الملاحظة فقط دون الملاحظات الفرعية التابعة لها",
     "format_pdf": "PDF - لأغراض الطباعة أو المشاركة.",
-    "share-format": "HTML للنشر على الويب - يستخدم نفس القالب المستخدم في الملاحظات المشتركة، ويمكن نشره كموقع ويب ثابت.",
-    "opml_version_1": "‏OPML v1.0 - نص عادي فقط",
-    "opml_version_2": "‏OPML v2.0 - يسمح أيضًا باستخدام HTML",
-    "export_type_subtree": "هذه الملاحظة وجميع الملاحظات التابعة لها",
-    "format_html": "HTML - يُوصى به لأنه يحافظ على جميع التنسيقات",
-    "format_html_zip": "HTML داخل أرشيف ZIP - يُوصى بهذا لأنه يحافظ على جميع التنسيقات.",
-    "format_markdown": "Markdown - يحافظ هذا على معظم التنسيقات.",
-    "format_opml": "OPML - صيغة تبادل للمخططات النصية فقط. لا يتم تضمين التنسيق أو الصور أو الملفات."
+    "export_type_subtree": "هذه الملاحظة وجميع الملاحظات التابعة لها"
   },
   "help": {
     "troubleshooting": "أستكشاف الاخطاء واصلاحها",
@@ -696,7 +697,6 @@
     "import": "استيراد",
     "safeImport": "أستيراد آمن",
     "shrinkImages": "تقليل حجم الصور",
-    "import-status": "حالة الاستبراد",
     "importIntoNote": "استيراد الى الملاحظة",
     "chooseImportFile": "اختر ملف الاستيراد",
     "failed": "فشل الاستيراد: {{messege}}.",
@@ -708,7 +708,6 @@
     },
     "successful": "اكتمل الاستيراد بنجاح.",
     "in-progress": "جار الاستيراد: {{progress}}",
-    "importDescription": "سيتم استيراد محتوى الملف (أو الملفات) المحددة كملاحظات فرعية داخل",
     "importZipRecommendation": "عند استيراد ملف ZIP، سيعكس تسلسل الملاحظات الهيكل الهرمي للمجلدات الفرعية داخل الأرشيف.",
     "safeImportTooltip": "قد تحتوي ملفات التصدير من Trilium بصيغة <code>.zip</code> على سكربتات قابلة للتنفيذ قد تتضمن سلوكًا ضارًا. يؤدي الاستيراد الآمن إلى تعطيل التنفيذ التلقائي لجميع السكربتات المستوردة. قم بإلغاء تحديد خيار \"الاستيراد الآمن\" فقط إذا كان الأرشيف المستورد من المفترض أن يحتوي على سكربتات قابلة للتنفيذ وكنت تثق تمامًا بمحتواه.",
     "explodeArchivesTooltip": "إذا كان هذا الخيار مفعّلًا، فسيقوم Trilium بقراءة ملفات <code>.zip</code> و<code>.enex</code> و<code>.opml</code> وإنشاء ملاحظات من الملفات الموجودة داخل تلك الأرشيفات. أما إذا كان غير مفعّل، فسيتم إرفاق الأرشيفات نفسها داخل الملاحظة.",
@@ -957,7 +956,6 @@
   "etapi": {
     "created": "تم الأنشاء",
     "actions": "أجراءات",
-    "title": "ETAPI",
     "existing_tokens": "الرموز الموجودة",
     "token_name": "اسم الرمز",
     "default_token_name": "رمز جديد",
@@ -1001,18 +999,12 @@
     "password_changed_success": "تم تغيير كلمة المرور. سيتم إعادة تحميل Trilium Notes بعد الضغط على OK."
   },
   "shortcuts": {
-    "shortcuts": "أختصارات",
-    "description": "الوصف",
     "keyboard_shortcuts": "اختصارات لوحة المفاتيح",
-    "action_name": "اسم الاجراء",
-    "default_shortcuts": "اختصارات افتراضية",
     "type_text_to_filter": "اكتب نصًا لتصفية الاختصارات...",
     "reload_app": "أعد تحميل التطبيق لتطبيق التغييرات",
     "no_results": "لا توجد اختصارات تطابق '{{filter}}'",
     "set_all_to_default": "إعادة تعيين جميع الاختصارات إلى الوضع الافتراضي",
-    "multiple_shortcuts": "يمكن فصل عدة اختصارات لنفس الإجراء باستخدام فاصلة.",
-    "confirm_reset": "هل تريد حقًا إعادة تعيين جميع اختصارات لوحة المفاتيح إلى الإعدادات الافتراضية؟",
-    "electron_documentation": "راجع توثيق Electron للاطلاع على المُعدِّلات ورموز المفاتيح المتاحة.<a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">"
+    "confirm_reset": "هل تريد حقًا إعادة تعيين جميع اختصارات لوحة المفاتيح إلى الإعدادات الافتراضية؟"
   },
   "sync_2": {
     "save": "حفظ",
@@ -1173,7 +1165,12 @@
     "copy-note-path-to-clipboard": "نسخ مسار الملاحظة إلى الحافظة",
     "open-in-a-new-window": "فتح في نافذة جديدة",
     "convert-to-attachment-confirm": "هل أنت متأكد أنك تريد تحويل الملاحظات المحددة إلى مرفقات ضمن ملاحظاتها الأب؟ ستُطبق هذه العملية فقط على ملاحظات الصور، وسيتم تجاهل الملاحظات الأخرى.",
-    "converted-to-attachments": "تم تحويل {{count}} ملاحظة إلى مرفقات."
+    "converted-to-attachments_zero": "تم تحويل {{count}} ملاحظة إلى مرفقات.",
+    "converted-to-attachments_one": "",
+    "converted-to-attachments_two": "",
+    "converted-to-attachments_few": "",
+    "converted-to-attachments_many": "",
+    "converted-to-attachments_other": ""
   },
   "note_types": {
     "text": "نص",
@@ -1369,36 +1366,15 @@
   },
   "multi_factor_authentication": {
     "oauth_title": "OAuth/OpenID",
-    "title": "المصادقة متعددة العوامل",
-    "mfa_method": "طريقة المصادقة متعددة العوامل",
     "oauth_user_account": "حساب المستخدم: ",
     "oauth_user_email": "البريد الإلكتروني للمستخدم: ",
-    "recovery_keys_used": "مستخدم: {{date}}",
-    "mfa_enabled": "تمكين المصادقة متعددة العوامل",
-    "recovery_keys_generate": "انشاء رموز الاسترداد",
     "recovery_keys_regenerate": "اعادة انشاء رموز الاسترداد",
     "oauth_user_not_logged_in": "لم يتم تسجيل الدخول!",
-    "totp_secret_generate": "توليد TOTP السري",
-    "totp_secret_regenerate": "اعادة توليد TOTP السري",
-    "totp_secret_generated": "تم انشاء TOTP السري",
     "oauth_missing_vars": "اعدادات مفقودة: {{-variables}}",
-    "totp_secret_title": "توليد TOTP سري",
-    "totp_title": "كلمة مرور لمرة واحدة معتمدة على الوقت (TOTP)",
-    "recovery_keys_title": "مفاتيح استرداد تسجيل الدخول الاحادي",
     "recovery_keys_error": "حدث خطأ اثناء توليد رموز الاسترجاع",
     "recovery_keys_no_key_set": "لاتوجد رموز استرجاع معينة",
-    "recovery_keys_unused": "رمز الاسترداد {{index}} غير مستخدم",
-    "electron_disabled": "المصادقة متعددة العوامل غير مدعومة حاليًا في إصدار سطح المكتب.",
-    "no_totp_secret_warning": "لتفعيل TOTP، تحتاج أولًا إلى إنشاء مفتاح سري (TOTP secret).",
-    "totp_secret_warning": "يرجى حفظ السر الذي تم إنشاؤه في مكان آمن. لن يتم عرضه مرة أخرى.",
-    "recovery_keys_description": "—تُستخدم مفاتيح استعادة تسجيل الدخول الموحد لتسجيل الدخول في حال عدم قدرتك على الوصول إلى رموز تطبيق المصادقة الخاص بك.",
-    "totp_secret_description_warning": "بعد إنشاء سر TOTP جديد، ستحتاج إلى تسجيل الدخول مرة أخرى باستخدام السر الجديد.",
-    "totp_secret_regenerate_confirm": "هل أنت متأكد أنك تريد إعادة إنشاء سر TOTP؟ سيؤدي ذلك إلى إبطال السر السابق وجميع رموز الاسترداد الحالية.",
     "recovery_keys_description_warning": "لن يتم عرض مفاتيح الاسترداد مرة أخرى بعد مغادرة الصفحة، لذا احتفظ بها في مكان آمن. <br>بعد استخدام مفتاح الاسترداد، لا يمكن استخدامه مرة أخرى.",
-    "totp_description": "TOTP (كلمة مرور لمرة واحدة تعتمد على الوقت) هي ميزة أمان تُنشئ رمزًا مؤقتًا فريدًا يتغير كل 30 ثانية. تستخدم هذا الرمز مع كلمة المرور لتسجيل الدخول إلى حسابك، مما يجعل من الصعب جدًا على أي شخص آخر الوصول إليه.",
-    "oauth_description": "OpenID هو معيار يتيح لك تسجيل الدخول إلى المواقع باستخدام حساب من خدمة أخرى، مثل Google، للتحقق من هويتك. المُصدر الافتراضي هو Google، ولكن يمكنك تغييره إلى أي مزود OpenID آخر. راجع <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">هنا</a> لمزيد من المعلومات. اتبع هذه <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">الإرشادات</a> لإعداد خدمة OpenID عبر Google.",
-    "description": "تُضيف المصادقة متعددة العوامل (Multi-Factor Authentication - MFA) طبقة أمان إضافية إلى حسابك. بدلًا من إدخال كلمة المرور فقط لتسجيل الدخول، تتطلب MFA تقديم عنصر أو أكثر إضافيًا للتحقق من هويتك. بهذه الطريقة، حتى لو حصل شخص ما على كلمة المرور الخاصة بك، فلن يتمكن من الوصول إلى حسابك دون العامل الثاني من المعلومات. يمكن تشبيه ذلك بإضافة قفل إضافي لبابك، مما يجعل اختراقه أكثر صعوبة.\n\n<br><br>\n\nيرجى اتباع التعليمات أدناه لتمكين MFA. إذا لم يتم التكوين بشكل صحيح، فسيعود تسجيل الدخول إلى استخدام كلمة المرور فقط.",
-    "oauth_description_warning": "لتمكين OAuth/OpenID، تحتاج إلى ضبط عنوان URL الأساسي لـ OAuth/OpenID ومعرّف العميل (Client ID) وسر العميل (Client Secret) في ملف config.ini ثم إعادة تشغيل التطبيق.\n\nإذا كنت ترغب في الإعداد عبر متغيرات البيئة، يرجى تعيين:\n\nTRILIUM_OAUTH_BASE_URL\n\nTRILIUM_OAUTH_CLIENT_ID\n\nTRILIUM_OAUTH_CLIENT_SECRET"
+    "oauth_description": "OpenID هو معيار يتيح لك تسجيل الدخول إلى المواقع باستخدام حساب من خدمة أخرى، مثل Google، للتحقق من هويتك. المُصدر الافتراضي هو Google، ولكن يمكنك تغييره إلى أي مزود OpenID آخر. راجع <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">هنا</a> لمزيد من المعلومات. اتبع هذه <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">الإرشادات</a> لإعداد خدمة OpenID عبر Google."
   },
   "execute_script": {
     "execute_script": "تنفيذ السكريبت",
@@ -1531,7 +1507,12 @@
     "open_full": "توسيع للعرض الكامل",
     "collapse": "طي الى الحجم الطبيعي",
     "show-anyway": "عرض الخريطة",
-    "too-many-notes": "يوجد {{count}} ملاحظة هنا. عرضها جميعًا قد يؤدي إلى بطء الأداء."
+    "too-many-notes_zero": "يوجد {{count}} ملاحظة هنا. عرضها جميعًا قد يؤدي إلى بطء الأداء.",
+    "too-many-notes_one": "",
+    "too-many-notes_two": "",
+    "too-many-notes_few": "",
+    "too-many-notes_many": "",
+    "too-many-notes_other": ""
   },
   "owned_attribute_list": {
     "owned_attributes": "السمات المملوكة"
@@ -1568,8 +1549,6 @@
   },
   "protected_session": {
     "wrong_password": "كلمة المرور خاطئة",
-    "protecting-title": "الحالة المحمية",
-    "unprotecting-title": "الحالة الغير محمية",
     "protecting-finished-successfully": "تم الحماية بنجاح.",
     "unprotecting-finished-successfully": "تم ازالة الحماية بنجاح.",
     "start_session_button": "البدء بالجلسة المحمية",
@@ -1632,9 +1611,7 @@
     "vacuum_description": "إعادة بناء قاعدة البيانات لتقليل حجم الملف. لن يتم تغيير أي بيانات."
   },
   "ribbon": {
-    "widgets": "ادوات الشريط",
-    "edited_notes_message": "سيتم فتح تبويب الشريط \"الملاحظات المعدلة\" تلقائيًا عند ملاحظات اليوم",
-    "promoted_attributes_message": "سيتم فتح تبويب الشريط \"السمات المروّجة\" تلقائيًا إذا كانت السمات المروّجة موجودة في الملاحظة"
+    "edited_notes_message": "سيتم فتح تبويب الشريط \"الملاحظات المعدلة\" تلقائيًا عند ملاحظات اليوم"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "اختصارات لوحة المفاتيح باسلوب Vim",
@@ -1686,7 +1663,6 @@
     "custom_dictionary_open": "تعديل القاموس",
     "description": "تنطبق هذه الخيارات فقط على إصدارات سطح المكتب، بينما ستستخدم المتصفحات تدقيق الإملاء الخاص بها.",
     "custom_dictionary_edit_description": "قم بتعديل قائمة الكلمات التي يجب عدم تمييزها بواسطة المدقق الإملائي. ستظهر التغييرات بعد إعادة التشغيل.",
-    "restart-required": "ستصبح التغييرات على خيارات التدقيق الإملائي سارية المفعول بعد إعادة تشغيل التطبيق.",
     "custom_dictionary_description": "الكلمات التي تتم إضافتها إلى القاموس تتم مزامنتها عبر جميع أجهزتك.",
     "related_description": "تكوين لغات التدقيق الإملائي والقاموس المخصص."
   },
@@ -1705,7 +1681,6 @@
     "save-named-revision-message": "أدخل اسمًا لهذا الإصدار (اتركه فارغًا لعدم تسمية الإصدار):"
   },
   "branches": {
-    "delete-status": "حالة الحذف",
     "delete-finished-successfully": "تم الحذف بنجاح.",
     "cannot-move-notes-here": "لايمكن نقل الملاحظات الى هنا.",
     "undeleting-notes-finished-successfully": "تم استرجاع الملاحظات بنجاح.",
@@ -1828,7 +1803,12 @@
     "related_settings": "اعدادات متعلقة"
   },
   "pagination": {
-    "total_notes": "{{count}} ملاحظات",
+    "total_notes_zero": "{{count}} ملاحظات",
+    "total_notes_one": "",
+    "total_notes_two": "",
+    "total_notes_few": "",
+    "total_notes_many": "",
+    "total_notes_other": "",
     "prev_page": "الصفحة السابقة",
     "next_page": "الصفحة التالية"
   },
@@ -2195,17 +2175,14 @@
     "menu_run_mobile_startup": "عند بدء تشغيل واجهة الهاتف المحمول"
   },
   "media": {
-    "loop": "حلقة",
     "rotate": "تدوير",
     "picture-in-picture": "صورة داخل صورة",
     "play": "تشغيل (مسافة)",
     "pause": "إيقاف مؤقت (مسافة)",
     "back-10s": "رجوع 10 ثوانٍ (سهم لليسار)",
-    "forward-30s": "تقديم 30 ثانية",
     "mute": "كتم الصوت (M)",
     "unmute": "إلغاء كتم الصوت (M)",
     "playback-speed": "سرعة التشغيل",
-    "disable-loop": "إيقاف التكرار",
     "exit-picture-in-picture": "الخروج من وضع الصورة داخل الصورة",
     "fullscreen": "ملء الشاشة (F)",
     "exit-fullscreen": "الخروج من وضع ملء الشاشة",
@@ -2320,7 +2297,6 @@
       "create_note": "إنشاء ملاحظة",
       "note_in_parent": "‎<Note/> في ‎<Parent/>‎"
     },
-    "settings_title": "الذكاء الاصطناعي / نموذج اللغة الكبير",
     "add_provider_title": "إضافة مزوّد ذكاء اصطناعي",
     "no_providers_configured": "لم يتم إعداد أي مزوّدين بعد.",
     "api_key_placeholder": "أدخل مفتاح API الخاص بك",
@@ -2331,8 +2307,7 @@
     "base_url_invalid": "يجب أن يكون الرابط الأساسي (Base URL) رابطًا صالحًا يبدأ بـ http:// أو https://",
     "feature_not_enabled": "قم بتمكين ميزة LLM التجريبية من خلال: الإعدادات → متقدم → الميزات التجريبية لاستخدام تكاملات الذكاء الاصطناعي.",
     "base_url_description": "اختياري. يمكنك تجاوز نقطة نهاية الـ API الافتراضية — وهو مفيد للنماذج المستضافة محليًا (مثل Ollama أو LM Studio أو vLLM) أو عند استخدام بروكسي.",
-    "mcp_enabled_description": "إتاحة نقطة نهاية بروتوكول سياق النموذج (Model Context Protocol - MCP) بحيث يمكن لمساعدي البرمجة بالذكاء الاصطناعي (مثل Claude Code و GitHub Copilot) قراءة وتعديل ملاحظاتك. تكون نقطة النهاية متاحة فقط من localhost.",
-    "settings_description": "تكوين تكاملات الذكاء الاصطناعي ونماذج اللغة الكبيرة (LLM)."
+    "mcp_enabled_description": "إتاحة نقطة نهاية بروتوكول سياق النموذج (Model Context Protocol - MCP) بحيث يمكن لمساعدي البرمجة بالذكاء الاصطناعي (مثل Claude Code و GitHub Copilot) قراءة وتعديل ملاحظاتك. تكون نقطة النهاية متاحة فقط من localhost."
   },
   "markdown_editor": {
     "image_upload_failed": "لا يمكن رفع الصورة \"{{name}}\"."
@@ -2413,7 +2388,12 @@
     "backlinks_title_few": "عرض الروابط الخلفية",
     "backlinks_title_many": "عرض رابط الخلفي",
     "backlinks_title_other": "عرض رابط خلفي",
-    "tab_width_spaces": "{{count}} مسافات",
+    "tab_width_spaces_zero": "{{count}} مسافات",
+    "tab_width_spaces_one": "",
+    "tab_width_spaces_two": "",
+    "tab_width_spaces_few": "",
+    "tab_width_spaces_many": "",
+    "tab_width_spaces_other": "",
     "tab_width_spaces_short": "مسافات: {{width}}",
     "tab_width_tabs": "تبويبات: {{width}}",
     "tab_width_display_header": "عرض العرض",

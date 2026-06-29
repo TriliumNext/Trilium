@@ -4,7 +4,6 @@ import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
 import { extensions as mimeToExt, types as extToMime } from "mime-types";
 import escape from "escape-html";
-import unescape from "unescape";
 import { basename, extname } from "./path";
 import { NoteMeta } from "../../meta";
 
@@ -15,7 +14,7 @@ export function isWindows() { return getPlatform().isWindows; }
 
 // render and book are string note in the sense that they are expected to contain empty string
 const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
-const STRING_MIME_TYPES = new Set(["application/javascript", "application/x-javascript", "application/json", "application/x-sql", "image/svg+xml"]);
+const STRING_MIME_TYPES = new Set(["application/javascript", "application/x-javascript", "application/json", "application/x-sql", "image/svg+xml", "application/inkml+xml"]);
 
 export function hash(text: string) {
     return encodeBase64(getCrypto().createHash("sha1", text.normalize()));
@@ -30,7 +29,6 @@ export function isStringNote(type: string | undefined, mime: string) {
     return (type && STRING_NOTE_TYPES.has(type)) || mime.startsWith("text/") || STRING_MIME_TYPES.has(mime);
 }
 
-// TODO: Refactor to use getCrypto() directly.
 export function randomString(length: number) {
     return getCrypto().randomString(length);
 }
@@ -217,7 +215,30 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
 
 export const escapeHtml = escape;
 
-export const unescapeHtml = unescape;
+/**
+ * Decodes the five HTML entities (and their numeric short forms) that the
+ * former `unescape` npm dependency handled in its default mode: `&`, `<`, `>`,
+ * `"` and `'`. Entities outside this set (other numeric/hex codes, named
+ * entities such as `&nbsp;`/`&copy;`) are intentionally left untouched, and
+ * non-string input yields an empty string — matching the previous behavior
+ * exactly, since this backs the public `api.unescapeHtml` script API.
+ */
+const HTML_ENTITY_REPLACEMENTS: Record<string, string> = {
+    "&quot;": "\"", "&#34;": "\"",
+    "&apos;": "'", "&#39;": "'",
+    "&amp;": "&", "&#38;": "&",
+    "&gt;": ">", "&#62;": ">",
+    "&lt;": "<", "&#60;": "<"
+};
+
+const HTML_ENTITY_RE = /&(?:quot|apos|amp|gt|lt|#34|#39|#38|#62|#60);/g;
+
+export function unescapeHtml(str: string): string {
+    if (!str || typeof str !== "string") {
+        return "";
+    }
+    return str.replace(HTML_ENTITY_RE, (entity) => HTML_ENTITY_REPLACEMENTS[entity]);
+}
 
 export function randomSecureToken(bytes = 32) {
     return encodeBase64(getCrypto().randomBytes(bytes));
@@ -261,6 +282,8 @@ export function removeFileExtension(filePath: string, mime?: string) {
         case ".mermaid":
         case ".mmd":
         case ".pdf":
+        case ".xlsx":
+        case ".csv":
             return filePath.substring(0, filePath.length - extension.length);
         default:
             return filePath;
@@ -387,8 +410,31 @@ export function stripTags(text: string) {
     return text.replace(/<(?:.|\n)*?>/gm, "");
 }
 
+/**
+ * Generates a list of unique slugs for the given heading titles, preserving
+ * document order. Titles are stripped of HTML tags and slugified; when the same
+ * slug would be produced more than once (e.g. multiple headings sharing a
+ * title), subsequent occurrences get a numeric suffix (`foo`, `foo-1`, `foo-2`, …).
+ *
+ * This keeps anchor IDs and their table-of-contents links unique on shared
+ * pages, so clicking a duplicate heading in the ToC jumps to the right one.
+ */
+export function slugifyHeadings(titles: string[]): string[] {
+    const used = new Set<string>();
+    return titles.map((title) => {
+        const base = slugify(stripTags(title));
+        let slug = base;
+        let counter = 1;
+        while (used.has(slug)) {
+            slug = `${base}-${counter++}`;
+        }
+        used.add(slug);
+        return slug;
+    });
+}
+
 export function toObject<T, K extends string | number | symbol, V>(array: T[], fn: (item: T) => [K, V]): Record<K, V> {
-    const obj: Record<K, V> = {} as Record<K, V>; // TODO: unsafe?
+    const obj: Record<K, V> = {} as Record<K, V>;
 
     for (const item of array) {
         const ret = fn(item);

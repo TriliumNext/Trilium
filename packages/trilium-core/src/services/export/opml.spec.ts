@@ -9,14 +9,6 @@ import sql_init from "../sql_init.js";
 import TaskContext from "../task_context.js";
 import opml from "./opml.js";
 
-/**
- * Wraps a callback in a CLS context. Entity mutations (createNewNote,
- * addLabel) require CLS to be initialised.
- */
-function withContext<T>(fn: () => T): T {
-    return getContext().init(fn);
-}
-
 let counter = 0;
 
 /**
@@ -29,7 +21,7 @@ function createNote(
     overrides: Partial<{ title: string; content: string; type: BNote["type"]; mime: string }> = {}
 ): { note: BNote; branch: BBranch } {
     counter++;
-    return withContext(() =>
+    return getContext().init(() =>
         noteService.createNewNote({
             parentNoteId,
             title: overrides.title ?? `opml-export-spec-${counter}`,
@@ -71,9 +63,9 @@ function getTaskContext() {
     return TaskContext.getInstance("opml-export-spec", "export", null);
 }
 
-function runExport(branch: BBranch, version: string): FakeResponse {
+function runExport(branch: BBranch): FakeResponse {
     const res = new FakeResponse();
-    opml.exportToOpml(getTaskContext(), branch, version, res as unknown as Response);
+    opml.exportToOpml(getTaskContext(), branch, res as unknown as Response);
     return res;
 }
 
@@ -83,71 +75,43 @@ describe("exportToOpml (real DB)", () => {
         await sql_init.dbReady;
     });
 
-    it("rejects an unrecognized OPML version before touching the response", () => {
-        const { branch } = createNote("root");
-        const res = new FakeResponse();
-
-        expect(() => opml.exportToOpml(getTaskContext(), branch, "9.9", res as unknown as Response)).toThrow(/9\.9/);
-        // Nothing should have been written when the version is invalid.
-        expect(res.chunks).toHaveLength(0);
-        expect(res.ended).toBe(false);
-    });
-
-    it("exports a v1.0 document with the opml header, download headers and stripped text content", () => {
+    it("exports a document with the opml header, download headers and text/_note attribute pair", () => {
         const { note, branch } = createNote("root", {
-            title: "Root v1",
-            content: "<p>line one</p><p>line two</p>"
-        });
-
-        const res = runExport(branch, "1.0");
-
-        // Streaming the export sets the OPML download headers.
-        expect(res.headers["Content-Type"]).toBe("text/x-opml");
-        expect(res.headers["Content-Disposition"]).toContain("Root%20v1.opml");
-        expect(res.ended).toBe(true);
-
-        const body = res.body;
-        // The XML/opml envelope is emitted with the requested version.
-        expect(body).toContain(`<opml version="1.0">`);
-        expect(body).toContain("<title>Trilium export</title>");
-        expect(body.trim().endsWith("</opml>")).toBe(true);
-
-        // v1 uses the `title`/`text` attribute pair; every <p> opener (including
-        // the leading one) becomes a newline encoded as &#10; and the surrounding
-        // tags are stripped.
-        expect(body).toContain(`<outline title="Root v1" text="&#10;line one&#10;line two">`);
-        expect(body).toContain("</outline>");
-        // The note was counted in the export progress (no throw from increaseProgressCount).
-        expect(note.title).toBe("Root v1");
-    });
-
-    it("exports a v2.0 document using the text/_note attribute pair with raw escaped HTML", () => {
-        const { branch } = createNote("root", {
-            title: "Root v2",
+            title: "Root note",
             content: "<p>body</p>"
         });
 
-        const res = runExport(branch, "2.0");
+        const res = runExport(branch);
 
+        // Streaming the export sets the OPML download headers.
         expect(res.headers["Content-Type"]).toBe("text/x-opml");
+        expect(res.headers["Content-Disposition"]).toContain("Root%20note.opml");
+        expect(res.ended).toBe(true);
+
         const body = res.body;
+        // The XML/opml envelope is always emitted as OPML 2.0.
         expect(body).toContain(`<opml version="2.0">`);
-        // v2 keeps the raw HTML content but XML-escapes it into the _note attribute.
-        expect(body).toContain(`<outline text="Root v2" _note="&lt;p&gt;body&lt;/p&gt;">`);
+        expect(body).toContain("<title>Trilium export</title>");
+        expect(body.trim().endsWith("</opml>")).toBe(true);
+
+        // The title goes in the standard `text` attribute; the raw HTML content is
+        // XML-escaped into the `_note` extension attribute.
+        expect(body).toContain(`<outline text="Root note" _note="&lt;p&gt;body&lt;/p&gt;">`);
+        expect(body).toContain("</outline>");
+        // The note was counted in the export progress (no throw from increaseProgressCount).
+        expect(note.title).toBe("Root note");
     });
 
-    it("escapes XML-significant characters in titles for both versions", () => {
+    it("escapes XML-significant characters in titles", () => {
         const { branch } = createNote("root", {
             title: `A & B <c> "d" 'e'`,
             content: ""
         });
 
-        const v1 = runExport(branch, "1.0").body;
-        const v2 = runExport(branch, "2.0").body;
+        const body = runExport(branch).body;
 
         const escapedTitle = `A &amp; B &lt;c&gt; &quot;d&quot; &apos;e&apos;`;
-        expect(v1).toContain(`<outline title="${escapedTitle}" text="">`);
-        expect(v2).toContain(`<outline text="${escapedTitle}" _note="">`);
+        expect(body).toContain(`<outline text="${escapedTitle}" _note="">`);
     });
 
     it("recursively exports child notes nested inside the parent outline", () => {
@@ -155,7 +119,7 @@ describe("exportToOpml (real DB)", () => {
         createNote(parent.noteId, { title: "Child A", content: "<p>a</p>" });
         createNote(parent.noteId, { title: "Child B", content: "<p>b</p>" });
 
-        const body = runExport(branch, "2.0").body;
+        const body = runExport(branch).body;
 
         // The parent outline is opened, both children appear nested before it closes.
         const parentIdx = body.indexOf(`text="Parent node"`);
@@ -174,9 +138,9 @@ describe("exportToOpml (real DB)", () => {
         const { note: parent, branch } = createNote("root", { title: "Export parent", content: "" });
         createNote(parent.noteId, { title: "Kept child", content: "<p>keep</p>" });
         const { note: excluded } = createNote(parent.noteId, { title: "Excluded child", content: "<p>no</p>" });
-        withContext(() => excluded.addLabel("excludeFromExport"));
+        getContext().init(() => excluded.addLabel("excludeFromExport"));
 
-        const body = runExport(branch, "2.0").body;
+        const body = runExport(branch).body;
 
         expect(body).toContain(`text="Kept child"`);
         expect(body).not.toContain(`text="Excluded child"`);
@@ -186,21 +150,21 @@ describe("exportToOpml (real DB)", () => {
 
     it("includes the branch prefix in the title and the download filename", () => {
         const { note, branch } = createNote("root", { title: "Prefixed", content: "" });
-        withContext(() => {
+        getContext().init(() => {
             branch.prefix = "Pre";
             branch.save();
         });
 
-        const res = runExport(branch, "1.0");
+        const res = runExport(branch);
 
         expect(res.headers["Content-Disposition"]).toContain("Pre%20-%20Prefixed.opml");
-        expect(res.body).toContain(`<outline title="Pre - Prefixed" text="">`);
+        expect(res.body).toContain(`<outline text="Pre - Prefixed" _note="">`);
         expect(note.title).toBe("Prefixed");
     });
 
-    it("leaves text empty for non-string (binary) content notes", () => {
+    it("leaves the _note attribute empty for non-string (binary) content notes", () => {
         // An image note has binary content, so hasStringContent() is false and the
-        // text/_note attribute must be emitted empty rather than dumping the buffer.
+        // _note attribute must be emitted empty rather than dumping the buffer.
         const { branch } = createNote("root", {
             title: "Binary note",
             type: "image",
@@ -208,10 +172,8 @@ describe("exportToOpml (real DB)", () => {
             content: "not-really-png-bytes"
         });
 
-        const v1 = runExport(branch, "1.0").body;
-        const v2 = runExport(branch, "2.0").body;
+        const body = runExport(branch).body;
 
-        expect(v1).toContain(`<outline title="Binary note" text="">`);
-        expect(v2).toContain(`<outline text="Binary note" _note="">`);
+        expect(body).toContain(`<outline text="Binary note" _note="">`);
     });
 }, 60_000);

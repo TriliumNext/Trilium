@@ -17,7 +17,7 @@ const DANGEROUS_ATTRIBUTES = BUILTIN_ATTRIBUTES.filter(a => a.isDangerous || NON
 const activeContentLabels = [ "iconPack", "widget", "appCss", "appTheme" ] as const;
 
 interface ActiveContentInfo {
-    type: "iconPack" | "backendScript" | "frontendScript" | "widget" | "appCss" | "renderNote" | "webView" | "appTheme";
+    type: "iconPack" | "backendScript" | "customRequestHandler" | "frontendScript" | "widget" | "appCss" | "renderNote" | "webView" | "appTheme";
     isEnabled: boolean;
     canToggleEnabled: boolean;
 }
@@ -65,6 +65,12 @@ const typeMappings: Record<ActiveContentInfo["type"], {
                 ]
             }
         ]
+    },
+    customRequestHandler: {
+        title: t("active_content_badges.type_custom_request_handler"),
+        icon: "bx bx-world",
+        helpPage: "J5Ex1ZrMbyJ6",
+        apiDocsPage: "MEtfsqa5VwNi",
     },
     frontendScript: {
         title: t("active_content_badges.type_frontend_script"),
@@ -240,12 +246,21 @@ function useActiveContentInfo(note: FNote | null | undefined) {
             type = "webView";
             isEnabled = note.hasLabel("webViewSrc");
         } else if (noteType === "code" && noteMime === "application/javascript;env=backend") {
-            type = "backendScript";
-            for (const backendLabel of [ "run", "customRequestHandler", "customResourceProvider" ]) {
-                isEnabled ||= note.hasLabel(backendLabel);
+            if (note.hasLabelOrDisabled("customRequestHandler")) {
+                // A custom request handler takes precedence over the generic backend script badge:
+                // it's invoked via the /custom/* route with req/res, so the run/execute controls
+                // (which provide no req/res) don't apply.
+                type = "customRequestHandler";
+                isEnabled = note.hasLabel("customRequestHandler");
+                canToggleEnabled = true;
+            } else {
+                type = "backendScript";
+                for (const backendLabel of [ "run", "customRequestHandler", "customResourceProvider" ]) {
+                    isEnabled ||= note.hasLabel(backendLabel);
 
-                if (!canToggleEnabled && note.hasLabelOrDisabled(backendLabel)) {
-                    canToggleEnabled = true;
+                    if (!canToggleEnabled && note.hasLabelOrDisabled(backendLabel)) {
+                        canToggleEnabled = true;
+                    }
                 }
             }
         } else if (noteType === "code" && noteMime === "application/javascript;env=frontend") {

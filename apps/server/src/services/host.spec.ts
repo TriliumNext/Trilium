@@ -15,32 +15,42 @@ describe("host", () => {
         vi.doUnmock("./utils.js");
     });
 
-    async function loadHost(opts: { isElectron: boolean; configHost: string }) {
+    async function loadHost(opts: { isElectron: boolean; configHost?: string; allowLanAccess?: boolean }) {
         vi.resetModules();
         vi.doMock("./utils.js", () => ({ isElectron: opts.isElectron }));
-        vi.doMock("./config.js", () => ({ default: { Network: { host: opts.configHost } } }));
+        vi.doMock("./config.js", () => ({
+            default: {
+                Network: { host: opts.configHost ?? "" },
+                Security: { allowLanAccess: opts.allowLanAccess ?? false }
+            }
+        }));
         return (await import("./host.js")).default;
     }
 
-    it("prefers TRILIUM_HOST env var when not running under Electron", async () => {
+    // Desktop: the [Network] host config (and TRILIUM_HOST) are for web
+    // deployments — the listener binds loopback unless LAN access is allowed.
+    it("binds loopback under Electron, ignoring the config host and TRILIUM_HOST", async () => {
+        process.env.TRILIUM_HOST = "env-host";
+        expect(await loadHost({ isElectron: true, configHost: "config-host" })).toBe("127.0.0.1");
+    });
+
+    it("binds all interfaces under Electron when LAN access is allowed", async () => {
+        expect(await loadHost({ isElectron: true, allowLanAccess: true })).toBe("0.0.0.0");
+    });
+
+    // Server: TRILIUM_HOST > config host > all-interfaces default.
+    it("prefers TRILIUM_HOST env var on the server", async () => {
         process.env.TRILIUM_HOST = "env-host";
         expect(await loadHost({ isElectron: false, configHost: "config-host" })).toBe("env-host");
     });
 
-    it("ignores TRILIUM_HOST under Electron and falls back to config host", async () => {
-        process.env.TRILIUM_HOST = "env-host";
-        expect(await loadHost({ isElectron: true, configHost: "config-host" })).toBe("config-host");
-    });
-
-    it("uses the config host when no env var is set", async () => {
+    it("uses the config host on the server when no env var is set", async () => {
         expect(await loadHost({ isElectron: false, configHost: "config-host" })).toBe("config-host");
     });
 
-    it("defaults to loopback under Electron when nothing else is set", async () => {
-        expect(await loadHost({ isElectron: true, configHost: "" })).toBe("127.0.0.1");
-    });
-
-    it("defaults to all interfaces on the server when nothing else is set", async () => {
-        expect(await loadHost({ isElectron: false, configHost: "" })).toBe("0.0.0.0");
+    // The all-interfaces default lives in the config layer (configMapping.Network.host),
+    // so host.ts just returns whatever config resolves — here, that default.
+    it("returns the all-interfaces config default on the server", async () => {
+        expect(await loadHost({ isElectron: false, configHost: "0.0.0.0" })).toBe("0.0.0.0");
     });
 });

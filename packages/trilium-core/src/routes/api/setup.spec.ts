@@ -37,7 +37,14 @@ describe("Setup API (core)", () => {
         const createInitial = vi.spyOn(sqlInit, "createInitialDatabase").mockResolvedValue(undefined);
         const res = await api.post("/api/setup/new-document", { query: { skipDemoDb: "1" } });
         expect(res.status).toBe(204);
-        expect(createInitial).toHaveBeenCalledWith(true);
+        expect(createInitial).toHaveBeenCalledWith(true, undefined);
+    });
+
+    it("forwards the locale chosen during setup to createInitialDatabase", async () => {
+        const createInitial = vi.spyOn(sqlInit, "createInitialDatabase").mockResolvedValue(undefined);
+        const res = await api.post("/api/setup/new-document", { query: { skipDemoDb: "1" }, body: { locale: "de" } });
+        expect(res.status).toBe(204);
+        expect(createInitial).toHaveBeenCalledWith(true, "de");
     });
 
     it("returns the sync seed shape", async () => {
