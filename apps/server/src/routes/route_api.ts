@@ -1,4 +1,6 @@
 import { entity_changes as entityChangesService, NotFoundError, routes, utils as coreUtils, ValidationError } from "@triliumnext/core";
+import { cls } from "@triliumnext/core";
+import { getLog } from "@triliumnext/core";
 import express, { type RequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
 import { mkdirSync } from "fs";
@@ -8,8 +10,6 @@ import { join } from "path";
 
 import { namespace } from "../cls_provider.js";
 import auth from "../services/auth.js";
-import { cls } from "@triliumnext/core";
-import { getLog } from "@triliumnext/core";
 import dataDirs from "../services/data_dir.js";
 import sql from "../services/sql.js";
 import { safeExtractMessageAndStackFromError } from "../services/utils.js";
@@ -94,6 +94,7 @@ function internalRoute<P extends ParamsDictionary>(method: HttpMethod, path: str
                 cls.set("componentId", req.headers["trilium-component-id"]);
                 cls.set("localNowDateTime", req.headers["trilium-local-now-datetime"]);
                 cls.set("hoistedNoteId", req.headers["trilium-hoisted-note-id"] || "root");
+                cls.set("userId", req.session?.userId);
 
                 const cb = () => routeHandler(req, res, next);
 

@@ -1,9 +1,10 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { getContext } from "./context.js";
 import eventService from "./events.js";
 import { getSql } from "./sql/index.js";
 import sqlInit from "./sql_init.js";
+import { SqlService } from "./sql/sql.js";
 
 describe("sql_init (real DB)", () => {
     beforeAll(() => {
@@ -58,13 +59,13 @@ describe("sql_init (real DB)", () => {
     });
 
     describe("setDbAsInitialized", () => {
-        it("is a no-op when the DB is already initialized and does not re-emit DB_INITIALIZED", () => {
+        it("is a no-op when the DB is already initialized and does not re-emit DB_INITIALIZED", async () => {
             let dbInitializedEmitted = false;
             eventService.subscribe(eventService.DB_INITIALIZED, () => {
                 dbInitializedEmitted = true;
             });
 
-            sqlInit.setDbAsInitialized();
+            await sqlInit.setDbAsInitialized();
 
             // The `!isDbInitialized()` guard skips both the option write and the event emit.
             expect(dbInitializedEmitted).toBe(false);
@@ -73,15 +74,16 @@ describe("sql_init (real DB)", () => {
     });
 
     describe("initDbConnection", () => {
-        it("creates the param_list and user_data tables and resolves dbReady", async () => {
+        it("creates the param_list and users tables and resolves dbReady", async () => {
             await getContext().init(() => sqlInit.initDbConnection());
 
             // The connection setup creates these auxiliary tables idempotently.
+            // user_data was replaced by the users table in migration 239.
             expect(
                 getSql().getValue(
-                    "SELECT name FROM sqlite_master WHERE type IN ('table') AND name = 'user_data'"
+                    "SELECT name FROM sqlite_master WHERE type IN ('table') AND name = 'users'"
                 )
-            ).toBe("user_data");
+            ).toBe("users");
             expect(
                 getSql().getValue(
                     "SELECT name FROM sqlite_temp_master WHERE type = 'table' AND name = 'param_list'"
@@ -91,6 +93,91 @@ describe("sql_init (real DB)", () => {
             // dbReady is the exported deferred promise, resolved once the
             // connection is ready; awaiting it must not hang.
             await expect(Promise.resolve(sqlInit.dbReady)).resolves.toBeUndefined();
+        });
+
+        it("seeds an admin user and writes adminUserId to options", async () => {
+            await getContext().init(() => sqlInit.initDbConnection());
+
+            const adminCount = getSql().getValue<number>(
+                "SELECT COUNT(*) FROM users WHERE isAdmin = 1 AND isDeleted = 0"
+            );
+            expect(adminCount).toBeGreaterThan(0);
+
+            const adminUserId = getSql().getValue<string | null>(
+                "SELECT value FROM options WHERE name = 'adminUserId'"
+            );
+            expect(typeof adminUserId).toBe("string");
+            expect(adminUserId).toBeTruthy();
+
+            // The stored adminUserId must match an actual admin user row.
+            const userExists = getSql().getValue<number>(
+                "SELECT COUNT(*) FROM users WHERE userId = ? AND isAdmin = 1 AND isDeleted = 0",
+                [adminUserId]
+            );
+            expect(userExists).toBe(1);
+        });
+    });
+
+    describe("seedAdminUser promotion path", () => {
+        // Save and restore state so other tests aren't affected.
+        let savedAdminRows: unknown[];
+        let savedAdminUserId: string | null;
+
+        beforeAll(() => {
+            const sql = getSql();
+            savedAdminRows = sql.getRows("SELECT * FROM users WHERE isAdmin = 1");
+            savedAdminUserId = sql.getValue<string | null>(
+                "SELECT value FROM options WHERE name = 'adminUserId'"
+            );
+        });
+
+        afterEach(() => {
+            const sql = getSql();
+            sql.execute("DELETE FROM users WHERE username = 'admin'");
+            for (const row of savedAdminRows) {
+                const r = row as Record<string, unknown>;
+                sql.execute(
+                    `INSERT OR REPLACE INTO users (userId, username, email, isAdmin, isDeleted, dateCreated, utcDateModified)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [r.userId, r.username, r.email, r.isAdmin, r.isDeleted, r.dateCreated, r.utcDateModified]
+                );
+            }
+            if (savedAdminUserId) {
+                sql.execute(
+                    `INSERT OR REPLACE INTO options (name, value, isSynced, utcDateModified) VALUES ('adminUserId', ?, 0, datetime('now'))`,
+                    [savedAdminUserId]
+                );
+            }
+        });
+
+        it("promotes an existing non-admin 'admin' user when no admin row exists", () => {
+            const sql = getSql();
+
+            // Remove the seeded admin row and the option so seedAdminUser enters the fresh-insert path.
+            sql.execute("UPDATE users SET isDeleted = 1 WHERE isAdmin = 1");
+            sql.execute("DELETE FROM options WHERE name = 'adminUserId'");
+
+            // Insert a non-admin user occupying the 'admin' username — OR IGNORE will skip the insert.
+            const nonAdminId = "test-non-admin-01";
+            sql.execute(
+                `INSERT OR IGNORE INTO users (userId, username, email, isAdmin, isDeleted, dateCreated, utcDateModified)
+                 VALUES (?, 'admin', NULL, 0, 0, datetime('now'), datetime('now'))`,
+                [nonAdminId]
+            );
+
+            sqlInit.seedAdminUser(sql as SqlService);
+
+            // The non-admin user should have been promoted to admin.
+            const isNowAdmin = sql.getValue<number>(
+                "SELECT isAdmin FROM users WHERE userId = ?", [nonAdminId]
+            );
+            expect(isNowAdmin).toBe(1);
+
+            // adminUserId option must point to the promoted user.
+            const adminUserId = sql.getValue<string | null>(
+                "SELECT value FROM options WHERE name = 'adminUserId'"
+            );
+            expect(adminUserId).toBe(nonAdminId);
         });
     });
 });

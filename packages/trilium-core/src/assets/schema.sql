@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS "entity_changes" (
                                                 `componentId` TEXT NOT NULL,
                                                 `instanceId` TEXT NOT NULL,
                                                 `isSynced` INTEGER NOT NULL,
-                                                `utcDateChanged` TEXT NOT NULL
+                                                `utcDateChanged` TEXT NOT NULL,
+                                                `userId` TEXT DEFAULT NULL
                                                 );
 CREATE TABLE IF NOT EXISTS "etapi_tokens"
 (
@@ -17,7 +18,8 @@ CREATE TABLE IF NOT EXISTS "etapi_tokens"
     tokenHash TEXT NOT NULL,
     utcDateCreated TEXT NOT NULL,
     utcDateModified TEXT NOT NULL,
-    isDeleted INT NOT NULL DEFAULT 0);
+    isDeleted INT NOT NULL DEFAULT 0,
+    userId TEXT DEFAULT NULL);
 CREATE TABLE IF NOT EXISTS "branches" (
                                           `branchId`	TEXT NOT NULL,
                                           `noteId`	TEXT NOT NULL,
@@ -42,6 +44,7 @@ CREATE TABLE IF NOT EXISTS "notes" (
                                        `dateModified`	TEXT NOT NULL,
                                        `utcDateCreated`	TEXT NOT NULL,
                                        `utcDateModified`	TEXT NOT NULL,
+                                       `ownerId` TEXT DEFAULT NULL,
                                        PRIMARY KEY(`noteId`));
 CREATE TABLE IF NOT EXISTS "revisions" (`revisionId`	TEXT NOT NULL PRIMARY KEY,
                                              `noteId`	TEXT NOT NULL,
@@ -129,19 +132,54 @@ CREATE TABLE IF NOT EXISTS "attachments"
     utcDateScheduledForErasureSince TEXT DEFAULT NULL,
     isDeleted    INT  not null,
     deleteId    TEXT DEFAULT NULL);
-CREATE TABLE IF NOT EXISTS "user_data"
+CREATE TABLE IF NOT EXISTS "users"
 (
-    tmpID INT,
-    username TEXT,
-    email TEXT,
-    userIDEncryptedDataKey TEXT,
-    userIDVerificationHash TEXT,
-    salt TEXT,
-    derivedKey TEXT,
-    isSetup TEXT DEFAULT "false",
-    UNIQUE (tmpID),
-    PRIMARY KEY (tmpID)
+    userId          TEXT PRIMARY KEY NOT NULL,
+    username        TEXT NOT NULL,
+    email           TEXT,
+    passwordHash    TEXT,
+    passwordSalt    TEXT,
+    isAdmin         INT NOT NULL DEFAULT 0,
+    isDeleted       INT NOT NULL DEFAULT 0,
+    dateCreated     TEXT NOT NULL,
+    utcDateModified TEXT NOT NULL
 );
+-- Soft-delete: deleted usernames can be reused. The partial index enforces
+-- uniqueness only among active (non-deleted) accounts.
+CREATE UNIQUE INDEX IF NOT EXISTS IDX_users_username_active
+    ON users(username) WHERE isDeleted = 0;
+CREATE INDEX IF NOT EXISTS IDX_users_email ON users(email);
+
+CREATE TABLE IF NOT EXISTS "user_groups"
+(
+    groupId         TEXT PRIMARY KEY NOT NULL,
+    name            TEXT UNIQUE NOT NULL,
+    dateCreated     TEXT NOT NULL,
+    utcDateModified TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "user_group_members"
+(
+    userId      TEXT NOT NULL,
+    groupId     TEXT NOT NULL,
+    dateCreated TEXT NOT NULL,
+    PRIMARY KEY (userId, groupId),
+    FOREIGN KEY (userId)  REFERENCES users(userId),
+    FOREIGN KEY (groupId) REFERENCES user_groups(groupId)
+);
+
+-- Single-row table that holds the cryptographic OAuth enrollment for the instance owner.
+-- Separate from `users` because this data (scrypt hash, encrypted data key) is server-only
+-- and must never be synced.
+CREATE TABLE IF NOT EXISTS "oauth_enrollment"
+(
+    id                      INTEGER PRIMARY KEY NOT NULL DEFAULT 0,
+    userIDVerificationHash  TEXT NOT NULL,
+    salt                    TEXT NOT NULL,
+    derivedKey              TEXT NOT NULL,
+    userIDEncryptedDataKey  TEXT NOT NULL
+);
+
 CREATE INDEX IDX_attachments_ownerId_role
     on attachments (ownerId, role);
 
