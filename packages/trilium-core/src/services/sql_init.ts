@@ -95,8 +95,9 @@ function seedAdminUser(sql: SqlService) {
         }
     }
 
-    tryExecute(sql, `UPDATE notes        SET ownerId = ? WHERE ownerId IS NULL`, [adminUserId], "notes backfill");
-    tryExecute(sql, `UPDATE etapi_tokens SET userId  = ? WHERE userId  IS NULL`, [adminUserId], "etapi_tokens backfill");
+    tryExecute(sql, `UPDATE notes          SET ownerId = ? WHERE ownerId IS NULL`, [adminUserId], "notes backfill");
+    tryExecute(sql, `UPDATE etapi_tokens   SET userId  = ? WHERE userId  IS NULL`, [adminUserId], "etapi_tokens backfill");
+    tryExecute(sql, `UPDATE entity_changes SET userId  = ? WHERE userId  IS NULL`, [adminUserId], "entity_changes backfill");
 
     sql.execute(
         `INSERT OR REPLACE INTO options (name, value, isSynced, utcDateModified) VALUES ('adminUserId', ?, 0, ?)`,

@@ -62,7 +62,7 @@ function getUserEmail() {
 function clearSavedUser() {
     sql.transactional(() => {
         sql.execute("DELETE FROM oauth_enrollment");
-        sql.execute("UPDATE users SET email = NULL WHERE isAdmin = 1 AND isDeleted = 0");
+        sql.execute("UPDATE users SET username = 'admin', email = NULL WHERE isAdmin = 1 AND isDeleted = 0");
     });
     return {
         success: true,
