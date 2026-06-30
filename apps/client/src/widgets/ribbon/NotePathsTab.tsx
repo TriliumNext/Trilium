@@ -44,7 +44,7 @@ export function NotePathsWidget({
     currentNotePath?: string | null | undefined;
 }) {
     const parentComponent = useContext(ParentComponent);
-    const [isTreeView, setIsTreeView] = useState(true);
+    const [isTreeView, setIsTreeView] = useState(false);
 
     // Track total parent paths available to check if clones exist
     const hasMultiplePaths = useMemo(() => (sortedNotePaths?.length ?? 0) >= 2, [sortedNotePaths]);
