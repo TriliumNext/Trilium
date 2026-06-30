@@ -14,7 +14,8 @@ import { TabContext } from "./ribbon-interface";
 
 interface InverseTreeNode {
     noteId: string;
-    fullPathString: string;
+    fullPathString: string;       // Direct path to this specific ancestor note
+    fullNotePathString: string;   // Full destination path to the active note via this branch
     isCurrent: boolean;
     isOnActiveTrail: boolean;
     record?: NotePathRecord;
@@ -45,6 +46,9 @@ export function NotePathsWidget({
     const parentComponent = useContext(ParentComponent);
     const [isTreeView, setIsTreeView] = useState(true);
 
+    // Track total parent paths available to check if clones exist
+    const hasMultiplePaths = useMemo(() => (sortedNotePaths?.length ?? 0) >= 2, [sortedNotePaths]);
+
     const treeRoots = useMemo(() => {
         if (!sortedNotePaths || !isTreeView) return [];
 
@@ -69,14 +73,13 @@ export function NotePathsWidget({
                     node = {
                         noteId,
                         fullPathString: realPath,
+                        fullNotePathString: originalPath.join("/"), // Capture full line down to target note
                         isCurrent: realPath === currentNotePath,
                         isOnActiveTrail: false,
                         children: new Map()
                     };
                     currentLevel.set(branchId, node);
                 } else {
-                    // If the node was previously created by another clone path,
-                    // override it if this iteration represents the actual current path context.
                     if (
                         realPath === currentNotePath ||
                         currentNotePath?.startsWith(`${realPath}/`)
@@ -191,6 +194,7 @@ export function NotePathsWidget({
                                 node={rootNode}
                                 currentNotePath={currentNotePath}
                                 isRoot={true}
+                                hasMultiplePaths={hasMultiplePaths}
                             />
                         ))}
                     </ul>
@@ -222,11 +226,13 @@ export function NotePathsWidget({
 function InverseTreeNodeComponent({
     node,
     currentNotePath,
-    isRoot = false
+    isRoot = false,
+    hasMultiplePaths = false
 }: {
     node: InverseTreeNode;
     currentNotePath?: string | null | undefined;
     isRoot?: boolean;
+    hasMultiplePaths?: boolean;
 }) {
     const [isExpanded, setIsExpanded] = useState(true);
     const hasChildren = node.children.size > 0;
@@ -277,7 +283,7 @@ function InverseTreeNodeComponent({
         >
             <div
                 className="note-path-row"
-                style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+                style={{ display: "flex", alignItems: "center", gap: "0.25rem", flexWrap: "wrap" }}
             >
                 {hasChildren && (
                     <span
@@ -303,6 +309,7 @@ function InverseTreeNodeComponent({
                     </span>
                 )}
 
+                {/* Main link: Jumps directly up to this ancestor note */}
                 <NoteLink
                     notePath={node.fullPathString}
                     className={clsx({
@@ -312,21 +319,49 @@ function InverseTreeNodeComponent({
                     noPreview
                 />
 
+                {/* Separator: Only shows if note has children to walk down to */}
                 {hasChildren && (
-                    <span className="separator">
+                    <span className="separator" style={{ margin: "0 4px", opacity: 0.5 }}>
                         {NOTE_PATH_TITLE_SEPARATOR}
                     </span>
                 )}
 
+                {/* Contextual Action Capsule Block instead of bare auto-titled text */}
+                {hasMultiplePaths && !node.isOnActiveTrail && (
+                    <span
+                        className="btn btn-xs btn-outline-secondary py-0 px-2"
+                        style={{
+                            fontSize: "0.65rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            marginLeft: "12px",
+                            height: "20px",
+                            borderRadius: "3px",
+                            pointerEvents: "none" // Prevents the whole capsule wrapper from triggering navigation clicks
+                        }}
+                    >
+                        <i className="bx bx-git-branch" style={{ fontSize: "0.75rem", opacity: 0.7 }} />
+
+                        <span style={{ pointerEvents: "auto", fontWeight: "bold" }}>
+                            <NoteLink
+                                notePath={node.fullNotePathString}
+                                style={{ textDecoration: "underline" }}
+                                noPreview
+                            />
+                        </span>
+                    </span>
+                )}
+
                 {icons.map(({ icon, title }) => (
-                    <i key={title} className={icon} title={title} />
+                    <i key={title} className={icon} title={title} style={{ marginLeft: "4px" }} />
                 ))}
             </div>
 
             {hasChildren && isExpanded && (
                 <ul
                     className="note-path-tree-branches"
-                    style={{ listStyleType: "none", margin: "0.1rem 0 0 0" }}
+                    style={{ listStyleType: "none", margin: "0.1rem 0 0 1.2rem", padding: 0 }}
                 >
                     {childNodes.map((childNode) => (
                         <InverseTreeNodeComponent
@@ -334,6 +369,7 @@ function InverseTreeNodeComponent({
                             node={childNode}
                             currentNotePath={currentNotePath}
                             isRoot={false}
+                            hasMultiplePaths={hasMultiplePaths}
                         />
                     ))}
                 </ul>
