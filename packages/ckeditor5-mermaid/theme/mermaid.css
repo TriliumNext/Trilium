@@ -21,6 +21,11 @@
 .ck-mermaid__preview {
 	display: flex;
 	justify-content: center;
+	background: var(--mermaid-preview-bg, #fff);
+	resize: both;
+	overflow: auto;
+	min-height: 100px;
+	min-width: 200px;
 }
 
 /* Preview error state */
