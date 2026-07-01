@@ -794,6 +794,9 @@
     "october": "October",
     "november": "November",
     "december": "December",
+    "day": "Day",
+    "day_previous": "Previous Day",
+    "day_next": "Next Day",
     "week": "Week",
     "week_previous": "Previous week",
     "week_next": "Next week",
@@ -2555,7 +2558,9 @@
     "slide-overview": "Toggle an overview of the slides"
   },
   "calendar_view": {
-    "delete_note": "Delete note..."
+    "delete_note": "Delete note...",
+    "set_slot_duration": "Set slot duration",
+    "set_slot_label_interval": "Set slot label interval"
   },
   "ocr": {
     "extracted_text": "Extracted Text (OCR)",

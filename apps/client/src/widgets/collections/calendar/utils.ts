@@ -1,5 +1,6 @@
 import { DateSelectArg } from "@fullcalendar/core/index.js";
 import { EventImpl } from "@fullcalendar/core/internal";
+import { dayjs } from "@triliumnext/commons";
 import FNote from "../../../entities/fnote";
 
 export function parseStartEndDateFromEvent(e: DateSelectArg | EventImpl) {
@@ -79,6 +80,17 @@ export function getCustomisableLabel(note: FNote, defaultLabelName: string, cust
     }
 
     return note.getLabelValue(defaultLabelName);
+}
+
+export function isValidDuration(str: string | null | undefined): boolean {
+    if (!str || !/^(\d{2}):([0-5]\d):([0-5]\d)$/.test(str)) return false;
+
+    const [hours, minutes, seconds] = str.split(":").map(Number);
+    const totalMs = dayjs.duration({ hours, minutes, seconds }).asMilliseconds();
+    const oneMinute = dayjs.duration(1, "minute").asMilliseconds();
+    const twentyFourHours = dayjs.duration(24, "hours").asMilliseconds();
+
+    return totalMs >= oneMinute && totalMs <= twentyFourHours;
 }
 
 // Source: https://stackoverflow.com/a/30465299/4898894
