@@ -52,6 +52,7 @@ This is a list of labels that Trilium natively supports.
 | `hidePromotedAttributes` | Hide <a class="reference-link" href="Promoted%20Attributes.md">Promoted Attributes</a> on this note. Generally useful when defining inherited attributes, but the parent note doesn't need them. |
 | `readOnly` | Marks a note to always be [read-only](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), if it's a supported note (text, code, mermaid). |
 | `autoReadOnlyDisabled` | Disables automatic [read-only mode](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) for the given note. |
+| `openAtBottom` | When opening a text or code note, scrolls the viewport to the bottom of the content. Useful for append-only notes such as logs or journals. |
 | `appCss` | Marks CSS notes which are loaded into the Trilium application and can thus be used to modify Trilium's looks. See <a class="reference-link" href="../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> for more info. |
 | `appTheme` | Marks CSS notes which are full Trilium themes and are thus available in Trilium options. See <a class="reference-link" href="../../Theme%20development.md">Theme development</a> for more information. |
 | `appThemeBase` | Set to `next`, `next-light`, or `next-dark` to use the corresponding TriliumNext theme (auto, light or dark) as the base for a custom theme, instead of the legacy one. See <a class="reference-link" href="../../Theme%20development/Customize%20the%20Next%20theme.md">Customize the Next theme</a> for more information. |
