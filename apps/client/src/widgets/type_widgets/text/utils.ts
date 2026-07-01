@@ -1,6 +1,9 @@
+import type { CKTextEditor, ModelElement } from "@triliumnext/ckeditor5";
+
 import appContext from "../../../components/app_context";
 import content_renderer from "../../../services/content_renderer";
 import froca from "../../../services/froca";
+import { openAnnotationOverlay } from "../../../services/image_annotation";
 import link, { ViewScope } from "../../../services/link";
 import utils from "../../../services/utils";
 
@@ -133,4 +136,46 @@ async function parseFromImage($img: JQuery<HTMLElement>): Promise<{ noteId: stri
     }
 
     return null;
+}
+
+import { ATTACHMENT_API_RE, IMAGE_API_RE } from "./image_url_patterns.js";
+export { ATTACHMENT_API_RE, IMAGE_API_RE };
+
+async function resolveEmbeddedImageEntity(src: string) {
+    const imageMatch = src.match(IMAGE_API_RE);
+    if (imageMatch) return await froca.getNote(imageMatch[1]);
+
+    const attachmentMatch = src.match(ATTACHMENT_API_RE);
+    if (attachmentMatch) return await froca.getAttachment(attachmentMatch[1]) ?? null;
+
+    return null;
+}
+
+interface AnnotateImageEventEmitter {
+    on(event: "annotateImage:open", handler: (evt: unknown, data: { src: string; element: ModelElement }) => void): void;
+}
+
+export function setupImageAnnotationButton(editor: CKTextEditor) {
+    
+    (editor as unknown as AnnotateImageEventEmitter).on("annotateImage:open", async (_evt, data) => {
+        const { src, element: capturedElement } = data;
+        const normalizedSrc = src.startsWith("http") || src.startsWith("/") ? src : `/${src}`;
+        const entity = await resolveEmbeddedImageEntity(normalizedSrc);
+        if (!entity) return;
+
+        openAnnotationOverlay({
+            entity,
+            imageUrl: normalizedSrc,
+            onSaved: (newUrl) => {
+                const resolvedNewUrl = newUrl.startsWith("/") ? newUrl : `/${newUrl}`;
+                try {
+                    editor.model.change((writer) => {
+                        writer.setAttribute("src", resolvedNewUrl, capturedElement);
+                    });
+                } catch {
+
+                }
+            }
+        });
+    });
 }

@@ -24,6 +24,7 @@ import { Collapsible } from "@triliumnext/ckeditor5-collapsible";
 import { Footnotes } from "@triliumnext/ckeditor5-footnotes";
 import { Math, AutoformatMath } from "@triliumnext/ckeditor5-math";
 import CopyAnchorLinkButton from "./plugins/copy_anchor_link.js";
+import AnnotateImagePlugin from "./plugins/annotate_image.js";
 import CopyLinkUrlButton from "./plugins/copy_link_url.js";
 import ImageActions from "./plugins/image_actions.js";
 
@@ -79,6 +80,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     TodoListMultistate,
     CollapsibleListItems,
     CopyAnchorLinkButton,
+    AnnotateImagePlugin,
     CopyLinkUrlButton,
     ImageActions,
 ];
