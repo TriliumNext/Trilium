@@ -62,7 +62,7 @@ async function saveTriliumServerSetup(e) {
         $triliumServerPassword.val('');
 
         browser.storage.sync.set({
-            triliumServerUrl: triliumServerUrl,
+            triliumServerUrl,
             authToken: json.token
         });
 
@@ -136,4 +136,26 @@ async function restoreOptions() {
     $triliumDesktopPort.val(triliumDesktopPort);
 }
 
-$(restoreOptions);
+const $darkModeButton = $("#dark-mode-button");
+
+async function loadDarkModePreference() {
+    const {darkMode} = await browser.storage.sync.get<{ darkMode: boolean }>("darkMode");
+    if (darkMode) {
+        document.body.classList.add('dark-mode');
+        $darkModeButton.text('Light mode');
+    } else {
+        document.body.classList.remove('dark-mode');
+        $darkModeButton.text('Dark mode');
+    }
+}
+
+$darkModeButton.on("click", async () => {
+    const isDarkMode = document.body.classList.toggle('dark-mode');
+    await browser.storage.sync.set({darkMode: isDarkMode});
+    $darkModeButton.text(isDarkMode ? 'Light mode' : 'Dark mode');
+});
+
+$(async () => {
+    await loadDarkModePreference();
+    await restoreOptions();
+});
