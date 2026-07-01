@@ -62,6 +62,12 @@ export interface ViewScope {
     tocCollapsedHeadings?:  Set<string>;
     /** When set, scrolls to a bookmark anchor within the note after navigation. */
     bookmark?: string;
+    /** When set, scrolls to a specific annotation within a PDF note after navigation. */
+    annotationId?: string;
+    /** Page number of the annotation. Used as fallback when annotationId no longer matches (IDs rotate after PDF save). */
+    annotationPage?: number;
+    /** Short preview of the annotation text (highlighted text or comment), shown in reference link labels and used for ID-mismatch fallback matching. */
+    annotationPreview?: string;
 }
 
 interface CreateLinkOptions {
@@ -185,7 +191,10 @@ export function calculateHash({ notePath, ntxId, hoistedNoteId, viewScope = {} }
         ntxId ? { ntxId } : null,
         hoistedNoteId && hoistedNoteId !== "root" ? { hoistedNoteId } : null,
         viewScope.viewMode && viewScope.viewMode !== "default" ? { viewMode: viewScope.viewMode } : null,
-        viewScope.attachmentId ? { attachmentId: viewScope.attachmentId } : null
+        viewScope.attachmentId ? { attachmentId: viewScope.attachmentId } : null,
+        viewScope.annotationId ? { annotationId: viewScope.annotationId } : null,
+        viewScope.annotationPage ? { annotationPage: String(viewScope.annotationPage) } : null,
+        viewScope.annotationPreview ? { annotationPreview: viewScope.annotationPreview } : null
     ].filter((p) => !!p);
 
     const paramStr = params
@@ -250,8 +259,10 @@ export function parseNavigationStateFromUrl(url: string | undefined) {
                 hoistedNoteId = value;
             } else if (name === "searchString") {
                 searchString = value; // supports triggering search from URL, e.g. #?searchString=blabla
-            } else if (["viewMode", "attachmentId", "bookmark"].includes(name)) {
+            } else if (["viewMode", "attachmentId", "bookmark", "annotationId", "annotationPreview"].includes(name)) {
                 (viewScope as any)[name] = value;
+            } else if (name === "annotationPage") {
+                viewScope.annotationPage = parseInt(value, 10) || undefined;
             } else if (name === "popup") {
                 openInPopup = true;
             } else {
@@ -442,7 +453,9 @@ async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | n
         ));
     }
 
-    if (note) {
+    if (viewScope?.annotationId) {
+        $el.prepend($("<span>").addClass("bx bx-highlight").css("marginRight", "4px"));
+    } else if (note) {
         const icon = await getLinkIcon(noteId, viewScope.viewMode);
 
         if (icon) {
@@ -468,6 +481,12 @@ async function getReferenceLinkTitle(href: string) {
         return attachment ? attachment.title : "[missing attachment]";
     }
 
+    if (viewScope?.annotationId) {
+        return viewScope.annotationPreview
+            ? `${note.title} › "${viewScope.annotationPreview}"`
+            : `${note.title} (annotation)`;
+    }
+
     return note.title;
 }
 
@@ -490,6 +509,12 @@ function getReferenceLinkTitleSync(href: string) {
         const attachment = note.attachments.find((att) => att.attachmentId === viewScope.attachmentId);
 
         return attachment ? attachment.title : "[missing attachment]";
+    }
+
+    if (viewScope?.annotationId) {
+        return viewScope.annotationPreview
+            ? `${note.title} › "${viewScope.annotationPreview}"`
+            : `${note.title} (annotation)`;
     }
 
     if (viewScope?.bookmark) {

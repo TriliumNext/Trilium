@@ -54,6 +54,18 @@ export async function setupPdfAnnotations() {
         if (event.data?.type === "trilium-scroll-to-annotation") {
             scrollToAnnotation(event.data.annotationId, event.data.pageNumber);
         }
+
+        if (event.data?.type === "trilium-request-annotations") {
+            extractAndSendAnnotations();
+        }
+
+        if (event.data?.type === "trilium-set-annotation-color") {
+            setAnnotationColor(event.data.annotationId, event.data.color);
+        }
+
+        if (event.data?.type === "trilium-delete-annotation") {
+            deleteAnnotationById(event.data.annotationId, event.data.pageNumber);
+        }
     });
 }
 
@@ -163,7 +175,18 @@ function sendAnnotations(annotations: PdfAnnotationInfo[]) {
     } satisfies PdfViewerAnnotationsMessage, window.location.origin);
 }
 
+// Tracks the pending MutationObserver so a new scroll request can cancel the old one.
+// Without this, clicking annotation B while A's observer is still waiting causes A's
+// observer to fire later and scroll back to A.
+let activeScrollObserver: MutationObserver | null = null;
+
 function scrollToAnnotation(annotationId: string, pageNumber: number) {
+    // Cancel any pending scroll from a previous request before starting a new one.
+    if (activeScrollObserver) {
+        activeScrollObserver.disconnect();
+        activeScrollObserver = null;
+    }
+
     const app = window.PDFViewerApplication;
     const container = app.pdfViewer.container as HTMLElement;
 
@@ -184,18 +207,41 @@ function scrollToAnnotation(annotationId: string, pageNumber: number) {
         return;
     }
 
-    // Element not in DOM yet — jump to the page and wait for it to render
-    app.pdfViewer.currentPageNumber = pageNumber;
+    // Element not in DOM yet. Scroll the container to the estimated position of the
+    // target page instead of using app.pdfViewer.currentPageNumber = pageNumber.
+    //
+    // The currentPageNumber setter calls PDF.js's scrollPageIntoView, which checks
+    // the page div's offsetParent. When the PDF is cached and loads fast, PDF.js's
+    // virtual scroller may have removed off-screen page divs from the DOM, making
+    // their offsetParent null → "offsetParent is not set -- cannot scroll" → the
+    // viewport never moves → the annotation div never renders → MutationObserver times out.
+    //
+    // Scrolling the container directly bypasses that check. PDF.js's scroll handler
+    // then renders pages around the new viewport position, making the annotation
+    // element appear in the DOM.
+    const numPages = app.pdfDocument?.numPages ?? 1;
+    const estimatedTop = (container.scrollHeight / numPages) * (pageNumber - 1);
+    container.scrollTo({ top: estimatedTop, behavior: "smooth" });
+
     const observer = new MutationObserver(() => {
-        const el = document.querySelector(`[data-annotation-id="${CSS.escape(annotationId)}"]`);
-        if (el) {
+        const found = document.querySelector(`[data-annotation-id="${CSS.escape(annotationId)}"]`);
+        if (found) {
             observer.disconnect();
-            scrollToEl(el);
+            if (activeScrollObserver === observer) {
+                activeScrollObserver = null;
+            }
+            scrollToEl(found);
         }
     });
+    activeScrollObserver = observer;
     observer.observe(document.getElementById("viewer")!, { childList: true, subtree: true });
     // Clean up if annotation never appears
-    setTimeout(() => observer.disconnect(), 3000);
+    setTimeout(() => {
+        observer.disconnect();
+        if (activeScrollObserver === observer) {
+            activeScrollObserver = null;
+        }
+    }, 3000);
 }
 
 export function rgbToHex(rgb: Uint8ClampedArray | Record<number, number> | number[]): string {
@@ -203,4 +249,45 @@ export function rgbToHex(rgb: Uint8ClampedArray | Record<number, number> | numbe
     const g = rgb[1];
     const b = rgb[2];
     return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+    const v = parseInt(hex.replace("#", ""), 16);
+    return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+}
+
+function setAnnotationColor(annotationId: string, color: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const storage: any = window.PDFViewerApplication?.pdfDocument?.annotationStorage;
+    if (!storage) return;
+
+    const editor = storage.getEditor?.(annotationId);
+    if (editor) {
+        // PDF.js stores highlight colours as an RGB array (0-255 per channel).
+        // Setting .color and calling onSetModified triggers the auto-save flow.
+        editor.color = hexToRgb(color);
+        storage.onSetModified?.();
+    } else {
+        storage.setValue?.(annotationId, { color: hexToRgb(color) });
+        storage.onSetModified?.();
+    }
+}
+
+function deleteAnnotationById(annotationId: string, _pageNumber: number) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const storage: any = window.PDFViewerApplication?.pdfDocument?.annotationStorage;
+    if (!storage) return;
+
+    const editor = storage.getEditor?.(annotationId);
+    if (editor) {
+        if (typeof editor.remove === "function") {
+            editor.remove();
+        } else {
+            storage.setValue?.(annotationId, { deleted: true });
+            storage.onSetModified?.();
+        }
+    } else {
+        storage.setValue?.(annotationId, { deleted: true });
+        storage.onSetModified?.();
+    }
 }

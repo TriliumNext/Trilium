@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
     test: {
+        name: "@triliumnext/ckeditor5:test",
         browser: {
             enabled: true,
             provider: webdriverio(),

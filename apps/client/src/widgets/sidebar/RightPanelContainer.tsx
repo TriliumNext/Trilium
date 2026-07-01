@@ -21,6 +21,7 @@ import { PaneMode, usePaneMode, usePeekDismiss } from "../react/peek_pane";
 import LegacyRightPanelWidget from "../right_panel_widget";
 import HighlightsList from "./HighlightsList";
 import PdfAnnotations from "./pdf/PdfAnnotations";
+import PdfAreaAnnotations from "./pdf/PdfAreaAnnotations";
 import PdfAttachments from "./pdf/PdfAttachments";
 import PdfLayers from "./pdf/PdfLayers";
 import PdfPages from "./pdf/PdfPages";
@@ -131,6 +132,10 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent) {
         },
         {
             el: <PdfAnnotations />,
+            enabled: isPdf,
+        },
+        {
+            el: <PdfAreaAnnotations />,
             enabled: isPdf,
         },
         {

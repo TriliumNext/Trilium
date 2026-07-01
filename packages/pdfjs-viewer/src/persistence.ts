@@ -14,7 +14,10 @@ export default function interceptViewHistory(customOptions?: object) {
     const originalGetItem = Storage.prototype.getItem;
     Storage.prototype.getItem = function (key: string) {
         if (key === "pdfjs.preferences") {
-            return JSON.stringify(customOptions);
+            // JSON.stringify(undefined) returns undefined (not a string), which
+            // causes JSON.parse to throw. Return null when no custom options are
+            // provided so PDF.js treats it as "key not present" and uses defaults.
+            return customOptions !== undefined ? JSON.stringify(customOptions) : null;
         }
 
         if (key === "pdfjs.history") {
