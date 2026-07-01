@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import becca from "../becca.js";
+import { getBecca } from "../becca.js";
 import BEtapiToken from "./betapi_token.js";
 import { getContext } from "../../services/context.js";
 import { getSql } from "../../services/sql/index.js";
@@ -34,11 +34,11 @@ describe("BEtapiToken constructor", () => {
         expect(token.isDeleted).toBe(false);
         expect(typeof token.utcDateCreated).toBe("string");
         expect(token.utcDateModified).toBe(token.utcDateCreated);
-        expect(becca.etapiTokens["betapi-spec-1"]).toBe(token);
+        expect(getBecca().etapiTokens["betapi-spec-1"]).toBe(token);
     });
 
     it("does not register the token in becca when the id is missing", () => {
-        const before = Object.keys(becca.etapiTokens).length;
+        const before = Object.keys(getBecca().etapiTokens).length;
 
         const token = new BEtapiToken({
             etapiTokenId: undefined,
@@ -49,7 +49,7 @@ describe("BEtapiToken constructor", () => {
         // updateFromRow and init both skip registration since etapiTokenId is falsy.
         expect(token.etapiTokenId).toBeUndefined();
         expect(token.name).toBe("idless token");
-        expect(Object.keys(becca.etapiTokens).length).toBe(before);
+        expect(Object.keys(getBecca().etapiTokens).length).toBe(before);
     });
 
     it("keeps supplied dates and reflects the deleted flag", () => {
@@ -76,10 +76,10 @@ describe("BEtapiToken init", () => {
             tokenHash: "hash-init"
         });
 
-        delete becca.etapiTokens["betapi-spec-init-1"];
+        delete getBecca().etapiTokens["betapi-spec-init-1"];
         token.init();
 
-        expect(becca.etapiTokens["betapi-spec-init-1"]).toBe(token);
+        expect(getBecca().etapiTokens["betapi-spec-init-1"]).toBe(token);
     });
 });
 
@@ -125,7 +125,7 @@ describe("BEtapiToken save (beforeSaving)", () => {
         expect(row).toBeDefined();
         expect(row?.name).toBe("save token");
         expect(row?.tokenHash).toBe("hash-save");
-        expect(becca.etapiTokens[etapiTokenId]).toBe(token);
+        expect(getBecca().etapiTokens[etapiTokenId]).toBe(token);
         // beforeSaving refreshes utcDateModified to "now", differing from the supplied value.
         expect(typeof token.utcDateModified).toBe("string");
     });

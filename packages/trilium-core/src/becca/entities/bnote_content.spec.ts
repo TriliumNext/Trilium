@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { dayjs } from "@triliumnext/commons";
 
-import becca from "../becca.js";
+import { getBecca } from "../becca.js";
 import { getContext } from "../../services/context.js";
 import eraseService from "../../services/erase.js";
 import noteService from "../../services/notes.js";
@@ -261,7 +261,7 @@ describe("BNote content / misc getters", () => {
             const res = getContext().init(() => source.cloneTo(target.noteId));
 
             expect(res.success).toBe(true);
-            expect(becca.getBranchFromChildAndParent(source.noteId, target.noteId)).not.toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(source.noteId, target.noteId)).not.toBeNull();
         });
 
         it("fails when the target parent cannot be resolved to a branch", () => {

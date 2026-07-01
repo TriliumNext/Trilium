@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import bulkActionService from "../../services/bulk_actions.js";
 
 function execute(req: Request) {
@@ -10,7 +10,7 @@ function execute(req: Request) {
 
     const affectedNoteIds = getAffectedNoteIds(noteIds, includeDescendants);
 
-    const bulkActionNote = becca.getNoteOrThrow("_bulkAction");
+    const bulkActionNote = getBecca().getNoteOrThrow("_bulkAction");
 
     if (actions && actions.length > 0) {
         for (const action of actions) {
@@ -38,7 +38,7 @@ function getAffectedNoteIds(noteIds: string[], includeDescendants: boolean) {
     const affectedNoteIds = new Set<string>();
 
     for (const noteId of noteIds) {
-        const note = becca.getNote(noteId);
+        const note = getBecca().getNote(noteId);
 
         if (!note) {
             continue;

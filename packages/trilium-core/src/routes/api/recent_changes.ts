@@ -1,6 +1,6 @@
 import protectedSessionService from "../../services/protected_session.js";
 import noteService from "../../services/notes.js";
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type { Request } from "express";
 import type { RecentChangeRow } from "@triliumnext/commons";
 import { getSql } from "../../services/sql/index.js";
@@ -26,7 +26,7 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }>) {
             JOIN notes USING(noteId)`);
 
     for (const revisionRow of revisionRows) {
-        const note = becca.getNote(revisionRow.noteId);
+        const note = getBecca().getNote(revisionRow.noteId);
 
         // for deleted notes, the becca note is null, and it's not possible to (easily) determine if it belongs to a subtree
         if (ancestorNoteId === "root" || note?.hasAncestor(ancestorNoteId)) {
@@ -62,7 +62,7 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }>) {
             WHERE notes.isDeleted = 1`);
 
     for (const noteRow of noteRows) {
-        const note = becca.getNote(noteRow.noteId);
+        const note = getBecca().getNote(noteRow.noteId);
 
         // for deleted notes, the becca note is null, and it's not possible to (easily) determine if it belongs to a subtree
         if (ancestorNoteId === "root" || note?.hasAncestor(ancestorNoteId)) {

@@ -3,7 +3,7 @@ import { isScriptingEnabled } from "./scripting_guard.js";
 import scriptService from "./script.js";
 import treeService from "./tree.js";
 import noteService from "./notes.js";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import oneTimeTimer from "./one_time_timer.js";
@@ -35,7 +35,7 @@ eventService.subscribe(eventService.NOTE_TITLE_CHANGED, (note) => {
     runAttachedRelations(note, "runOnNoteTitleChange", note);
 
     if (!note.isRoot()) {
-        const noteFromCache = becca.notes[note.noteId];
+        const noteFromCache = getBecca().notes[note.noteId];
 
         if (!noteFromCache) {
             return;
@@ -66,13 +66,13 @@ eventService.subscribe([eventService.ENTITY_CHANGED, eventService.ENTITY_DELETED
 
 eventService.subscribe(eventService.ENTITY_CHANGED, ({ entityName, entity }) => {
     if (entityName === "branches") {
-        const parentNote = becca.getNote(entity.parentNoteId);
+        const parentNote = getBecca().getNote(entity.parentNoteId);
 
         if (parentNote?.hasLabel("sorted")) {
             treeService.sortNotesIfNeeded(parentNote.noteId);
         }
 
-        const childNote = becca.getNote(entity.noteId);
+        const childNote = getBecca().getNote(entity.noteId);
 
         if (childNote) {
             runAttachedRelations(childNote, "runOnBranchChange", entity);
@@ -89,12 +89,12 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
         runAttachedRelations(entity.getNote(), "runOnAttributeCreation", entity);
 
         if (entity.type === "relation" && entity.name === "template") {
-            const note = becca.getNote(entity.noteId);
+            const note = getBecca().getNote(entity.noteId);
             if (!note) {
                 return;
             }
 
-            const templateNote = becca.getNote(entity.value);
+            const templateNote = getBecca().getNote(entity.value);
 
             if (!templateNote) {
                 return;
@@ -168,7 +168,7 @@ function handleSortedAttribute(entity: BAttribute) {
     treeService.sortNotesIfNeeded(entity.noteId);
 
     if (entity.isInheritable) {
-        const note = becca.notes[entity.noteId];
+        const note = getBecca().notes[entity.noteId];
 
         if (note) {
             for (const noteId of note.getSubtreeNoteIds()) {
@@ -180,7 +180,7 @@ function handleSortedAttribute(entity: BAttribute) {
 
 function handleMaybeSortingLabel(entity: BAttribute) {
     // check if this label is used for sorting, if yes force re-sort
-    const note = becca.notes[entity.noteId];
+    const note = getBecca().notes[entity.noteId];
 
     // this will not work on deleted notes, but in that case we don't really need to re-sort
     if (note) {

@@ -3,7 +3,7 @@ import eraseService from "../../services/erase.js";
 import eventService from "../../services/events.js";
 import type { Request } from "express";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import entityChangesService from "../../services/entity_changes.js";
 import { getLog } from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
@@ -20,8 +20,8 @@ import { ValidationError } from "../../errors.js";
 function moveBranchToParent(req: Request<{ branchId: string, parentBranchId: string }>) {
     const { branchId, parentBranchId } = req.params;
 
-    const branchToMove = becca.getBranch(branchId);
-    const targetParentBranch = becca.getBranch(parentBranchId);
+    const branchToMove = getBecca().getBranch(branchId);
+    const targetParentBranch = getBecca().getBranch(parentBranchId);
 
     if (!branchToMove || !targetParentBranch) {
         throw new ValidationError(`One or both branches '${branchId}', '${parentBranchId}' have not been found`);
@@ -33,8 +33,8 @@ function moveBranchToParent(req: Request<{ branchId: string, parentBranchId: str
 function moveBranchBeforeNote(req: Request<{ branchId: string, beforeBranchId: string }>) {
     const { branchId, beforeBranchId } = req.params;
 
-    const branchToMove = becca.getBranchOrThrow(branchId);
-    const beforeBranch = becca.getBranchOrThrow(beforeBranchId);
+    const branchToMove = getBecca().getBranchOrThrow(branchId);
+    const beforeBranch = getBecca().getBranchOrThrow(beforeBranchId);
 
     const validationResult = treeService.validateParentChild(beforeBranch.parentNoteId, branchToMove.noteId, branchId);
 
@@ -50,7 +50,7 @@ function moveBranchBeforeNote(req: Request<{ branchId: string, beforeBranchId: s
     getSql().execute("UPDATE branches SET notePosition = notePosition + 10 WHERE parentNoteId = ? AND notePosition >= ? AND isDeleted = 0", [beforeBranch.parentNoteId, originalBeforeNotePosition]);
 
     // also need to update becca positions
-    const parentNote = becca.getNoteOrThrow(beforeBranch.parentNoteId);
+    const parentNote = getBecca().getNoteOrThrow(beforeBranch.parentNoteId);
 
     for (const childBranch of parentNote.getChildBranches()) {
         if (childBranch.notePosition >= originalBeforeNotePosition) {
@@ -81,8 +81,8 @@ function moveBranchBeforeNote(req: Request<{ branchId: string, beforeBranchId: s
 function moveBranchAfterNote(req: Request<{ branchId: string, afterBranchId: string }>) {
     const { branchId, afterBranchId } = req.params;
 
-    const branchToMove = becca.getBranchOrThrow(branchId);
-    const afterNote = becca.getBranchOrThrow(afterBranchId);
+    const branchToMove = getBecca().getBranchOrThrow(branchId);
+    const afterNote = getBecca().getBranchOrThrow(afterBranchId);
 
     const validationResult = treeService.validateParentChild(afterNote.parentNoteId, branchToMove.noteId, branchId);
 
@@ -97,7 +97,7 @@ function moveBranchAfterNote(req: Request<{ branchId: string, afterBranchId: str
     getSql().execute("UPDATE branches SET notePosition = notePosition + 10 WHERE parentNoteId = ? AND notePosition > ? AND isDeleted = 0", [afterNote.parentNoteId, originalAfterNotePosition]);
 
     // also need to update becca positions
-    const parentNote = becca.getNoteOrThrow(afterNote.parentNoteId);
+    const parentNote = getBecca().getNoteOrThrow(afterNote.parentNoteId);
 
     for (const childBranch of parentNote.getChildBranches()) {
         if (childBranch.notePosition > originalAfterNotePosition) {
@@ -136,7 +136,7 @@ function setExpanded(req: Request<{ branchId: string, expanded: string }>) {
         // we don't sync expanded label
         // also this does not trigger updates to the frontend, this would trigger too many reloads
 
-        const branch = becca.branches[branchId];
+        const branch = getBecca().branches[branchId];
 
         if (branch) {
             branch.isExpanded = !!expanded;
@@ -176,7 +176,7 @@ function setExpandedForSubtree(req: Request<{ branchId: string, expanded: string
     sql.executeMany(/*sql*/`UPDATE branches SET isExpanded = ${expandedValue} WHERE branchId IN (???)`, branchIds);
 
     for (const branchId of branchIds) {
-        const branch = becca.branches[branchId];
+        const branch = getBecca().branches[branchId];
 
         if (branch) {
             branch.isExpanded = !!expanded;
@@ -236,7 +236,7 @@ function setExpandedForSubtree(req: Request<{ branchId: string, expanded: string
 function deleteBranch(req: Request<{ branchId: string }>) {
     const last = req.query.last === "true";
     const eraseNotes = req.query.eraseNotes === "true";
-    const branch = becca.getBranchOrThrow(req.params.branchId);
+    const branch = getBecca().getBranchOrThrow(req.params.branchId);
 
     const taskContext = TaskContext.getInstance(req.query.taskId as string, "deleteNotes", null);
 
@@ -266,7 +266,7 @@ function setPrefix(req: Request<{ branchId: string }>) {
     //TriliumNextTODO: req.body arrives as string, so req.body.prefix will be undefined – did the code below ever even work?
     const prefix = isEmptyOrWhitespace(req.body.prefix) ? null : req.body.prefix;
 
-    const branch = becca.getBranchOrThrow(branchId);
+    const branch = getBecca().getBranchOrThrow(branchId);
     branch.prefix = prefix;
     branch.save();
 }
@@ -287,7 +287,7 @@ function setPrefixBatch(req: Request) {
     let updatedCount = 0;
 
     for (const branchId of branchIds) {
-        const branch = becca.getBranch(branchId);
+        const branch = getBecca().getBranch(branchId);
         if (branch) {
             branch.prefix = normalizedPrefix;
             branch.save();

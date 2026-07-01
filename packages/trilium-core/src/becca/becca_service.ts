@@ -1,19 +1,19 @@
 "use strict";
 
-import becca from "./becca.js";
+import { getBecca } from "./becca.js";
 import { getLog } from "../services/log.js";
 import { getHoistedNoteId } from "../services/context.js";
 
 function isNotePathArchived(notePath: string[]) {
     const noteId = notePath[notePath.length - 1];
-    const note = becca.notes[noteId];
+    const note = getBecca().notes[noteId];
 
     if (note.isArchived) {
         return true;
     }
 
     for (let i = 0; i < notePath.length - 1; i++) {
-        const note = becca.notes[notePath[i]];
+        const note = getBecca().notes[notePath[i]];
 
         // this is going through parents so archived must be inheritable
         if (note.hasInheritableArchivedLabel()) {
@@ -25,8 +25,8 @@ function isNotePathArchived(notePath: string[]) {
 }
 
 function getNoteTitle(childNoteId: string, parentNoteId?: string) {
-    const childNote = becca.notes[childNoteId];
-    const parentNote = parentNoteId ? becca.notes[parentNoteId] : null;
+    const childNote = getBecca().notes[childNoteId];
+    const parentNote = parentNoteId ? getBecca().notes[parentNoteId] : null;
 
     if (!childNote) {
         getLog().info(`Cannot find note '${childNoteId}'`);
@@ -35,7 +35,7 @@ function getNoteTitle(childNoteId: string, parentNoteId?: string) {
 
     const title = childNote.getTitleOrProtected();
 
-    const branch = parentNote ? becca.getBranchFromChildAndParent(childNote.noteId, parentNote.noteId) : null;
+    const branch = parentNote ? getBecca().getBranchFromChildAndParent(childNote.noteId, parentNote.noteId) : null;
 
     return `${branch && branch.prefix ? `${branch.prefix} - ` : ""}${title}`;
 }
@@ -46,8 +46,8 @@ function getNoteTitle(childNoteId: string, parentNoteId?: string) {
  * @returns An object containing the title and icon class of the note.
  */
 function getNoteTitleAndIcon(childNoteId: string, parentNoteId?: string) {
-    const childNote = becca.notes[childNoteId];
-    const parentNote = parentNoteId ? becca.notes[parentNoteId] : null;
+    const childNote = getBecca().notes[childNoteId];
+    const parentNote = parentNoteId ? getBecca().notes[parentNoteId] : null;
 
     if (!childNote) {
         getLog().info(`Cannot find note '${childNoteId}'`);
@@ -59,7 +59,7 @@ function getNoteTitleAndIcon(childNoteId: string, parentNoteId?: string) {
     const title = childNote.getTitleOrProtected();
     const icon = childNote.getIcon();
 
-    const branch = parentNote ? becca.getBranchFromChildAndParent(childNote.noteId, parentNote.noteId) : null;
+    const branch = parentNote ? getBecca().getBranchFromChildAndParent(childNote.noteId, parentNote.noteId) : null;
 
     return {
         icon,

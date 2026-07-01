@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import { disableEntityEvents, getContext } from "./context.js";
@@ -50,7 +50,7 @@ describe("notes service (real DB)", () => {
         it("creates a text note under root with content, branch and derived mime", () => {
             const { note, branch } = createNote("root", { title: "spec-create-basic", content: "<p>body</p>" });
 
-            expect(becca.notes[note.noteId]).toBe(note);
+            expect(getBecca().notes[note.noteId]).toBe(note);
             expect(note.title).toBe("spec-create-basic");
             expect(note.type).toBe("text");
             expect(note.mime).toBe("text/html");
@@ -61,7 +61,7 @@ describe("notes service (real DB)", () => {
             // position derives from MAX existing position + 10 and is therefore positive.
             expect(branch.notePosition).toBeGreaterThan(0);
 
-            // The note row is persisted in the DB, not just becca.
+            // The note row is persisted in the DB, not just getBecca().
             const row = getSql().getRow<{ title: string }>("SELECT title FROM notes WHERE noteId = ?", [note.noteId]);
             expect(row.title).toBe("spec-create-basic");
         });

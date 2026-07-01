@@ -3,14 +3,14 @@ import searchService from "./search.js";
 import BNote from "../../../becca/entities/bnote.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import SearchContext from "../search_context.js";
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import { findNoteByTitle, note, NoteBuilder } from "../../../test/becca_mocking.js";
 
 describe("Progressive Search Strategy", () => {
     let rootNote: any;
 
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
 
         rootNote = new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
         new BBranch({
@@ -94,7 +94,7 @@ describe("Progressive Search Strategy", () => {
             expect(searchResults.length).toBe(4);
 
             // Get the note titles in result order
-            const resultTitles = searchResults.map(r => becca.notes[r.noteId].title);
+            const resultTitles = searchResults.map(r => getBecca().notes[r.noteId].title);
             
             // Find positions of exact and fuzzy matches
             const exactPositions = resultTitles.map((title, index) => 
@@ -181,8 +181,8 @@ describe("Progressive Search Strategy", () => {
             expect(searchResults.length).toBe(2);
             
             // Find the exact and fuzzy match results
-            const exactResult = searchResults.find(r => becca.notes[r.noteId].title === "Test Document");
-            const fuzzyResult = searchResults.find(r => becca.notes[r.noteId].title.includes("Tset"));
+            const exactResult = searchResults.find(r => getBecca().notes[r.noteId].title === "Test Document");
+            const fuzzyResult = searchResults.find(r => getBecca().notes[r.noteId].title.includes("Tset"));
 
             expect(exactResult).toBeTruthy();
             expect(fuzzyResult).toBeTruthy();

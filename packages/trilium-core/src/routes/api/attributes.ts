@@ -1,7 +1,7 @@
 import { UpdateAttributeResponse } from "@triliumnext/commons";
 import type { Request } from "express";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import BAttribute from "../../becca/entities/battribute.js";
 import attributeService from "../../services/attributes.js";
 import { getLog } from "../../services/log.js";
@@ -9,7 +9,7 @@ import { getSql } from "../../services/sql/index.js";
 import { ValidationError } from "../../errors.js";
 
 function getEffectiveNoteAttributes(req: Request<{ noteId: string }>) {
-    const note = becca.getNote(req.params.noteId);
+    const note = getBecca().getNote(req.params.noteId);
 
     return note?.getAttributes();
 }
@@ -20,7 +20,7 @@ function updateNoteAttribute(req: Request<{ noteId: string }>) {
 
     let attribute: BAttribute;
     if (body.attributeId) {
-        attribute = becca.getAttributeOrThrow(body.attributeId);
+        attribute = getBecca().getAttributeOrThrow(body.attributeId);
 
         if (attribute.noteId !== noteId) {
             throw new ValidationError(`Attribute '${body.attributeId}' is not owned by ${noteId}`);
@@ -75,7 +75,7 @@ function setNoteAttribute(req: Request) {
     const attributeId = getSql().getValue<string | null>(/*sql*/`SELECT attributeId FROM attributes WHERE isDeleted = 0 AND noteId = ? AND type = ? AND name = ?`, [noteId, body.type, body.name]);
 
     if (attributeId) {
-        const attr = becca.getAttribute(attributeId);
+        const attr = getBecca().getAttribute(attributeId);
         /* v8 ignore next 3 -- unreachable: the attributeId comes from a SQL query over non-deleted rows, which are always present in becca, so getAttribute cannot return null here */
         if (!attr) {
             throw new ValidationError(`Missing attribute with ID ${attributeId}.`);
@@ -101,7 +101,7 @@ function deleteNoteAttribute(req: Request<{ noteId: string; attributeId: string 
     const noteId = req.params.noteId;
     const attributeId = req.params.attributeId;
 
-    const attribute = becca.getAttribute(attributeId);
+    const attribute = getBecca().getAttribute(attributeId);
 
     if (attribute) {
         if (attribute.noteId !== noteId) {
@@ -116,7 +116,7 @@ function updateNoteAttributes(req: Request<{ noteId: string }>) {
     const noteId = req.params.noteId;
     const incomingAttributes = req.body;
 
-    const note = becca.getNote(noteId);
+    const note = getBecca().getNote(noteId);
     if (!note) {
         throw new ValidationError(`Cannot find note with ID ${noteId}.`);
     }
@@ -144,7 +144,7 @@ function updateNoteAttributes(req: Request<{ noteId: string }>) {
         }
 
         if (incAttr.type === "relation") {
-            const targetNote = becca.getNote(incAttr.value);
+            const targetNote = getBecca().getNote(incAttr.value);
 
             if (!targetNote) {
                 getLog().error(`Target note of relation ${JSON.stringify(incAttr)} does not exist or is deleted`);
@@ -204,7 +204,7 @@ function createRelation(req: Request<{ noteId: string; targetNoteId: string; nam
         name,
         targetNoteId
     ]);
-    let attribute = becca.getAttribute(attributeId);
+    let attribute = getBecca().getAttribute(attributeId);
 
     if (!attribute) {
         attribute = new BAttribute({
@@ -230,7 +230,7 @@ function deleteRelation(req: Request) {
     ]);
 
     if (attributeId) {
-        const attribute = becca.getAttribute(attributeId);
+        const attribute = getBecca().getAttribute(attributeId);
         if (attribute) {
             attribute.markAsDeleted();
         }

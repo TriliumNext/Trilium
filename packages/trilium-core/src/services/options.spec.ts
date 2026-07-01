@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { getContext } from "./context.js";
 import optionService from "./options.js";
 import { getSql } from "./sql/index.js";
@@ -95,9 +95,9 @@ describe("options service (real DB)", () => {
                 optionService.createOption(localName as any, "local-value", false);
             });
 
-            expect(becca.getOption(syncedName)?.value).toBe("synced-value");
-            expect(becca.getOption(syncedName)?.isSynced).toBe(true);
-            expect(becca.getOption(localName)?.isSynced).toBe(false);
+            expect(getBecca().getOption(syncedName)?.value).toBe("synced-value");
+            expect(getBecca().getOption(syncedName)?.isSynced).toBe(true);
+            expect(getBecca().getOption(localName)?.isSynced).toBe(false);
 
             expect(readFromDb(syncedName)).toBe("synced-value");
             expect(readFromDb(localName)).toBe("local-value");
@@ -121,7 +121,7 @@ describe("options service (real DB)", () => {
             getContext().init(() => optionService.setOption(name as any, "created-by-set"));
 
             expect(optionService.getOption(name as any)).toBe("created-by-set");
-            expect(becca.getOption(name)?.isSynced).toBe(false);
+            expect(getBecca().getOption(name)?.isSynced).toBe(false);
             expect(readFromDb(name)).toBe("created-by-set");
         });
     });

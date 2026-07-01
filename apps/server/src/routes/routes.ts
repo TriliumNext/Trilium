@@ -21,7 +21,6 @@ import shareRoutes from "../share/routes.js";
 import clipperRoute from "./api/clipper.js";
 import databaseRoute from "./api/database.js";
 import etapiTokensApiRoutes from "./api/etapi_tokens.js";
-import usersApiRoute from "./api/users.js";
 import filesRoute from "./api/files.js";
 import fontsRoute from "./api/fonts.js";
 // API routes
@@ -32,10 +31,12 @@ import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
 import ocrRoute from "./api/ocr.js";
 import onenoteImportRoute from "./api/onenote_import.js";
+import permissionsApiRoute from "./api/permissions.js";
 import recoveryCodes from './api/recovery_codes.js';
 import senderRoute from "./api/sender.js";
 import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
+import usersApiRoute from "./api/users.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute from "./login.js";
@@ -145,6 +146,10 @@ function register(app: express.Application) {
     apiRoute(GET, "/api/users",             usersApiRoute.getUsers);
     apiRoute(PST, "/api/users",             usersApiRoute.createUser);
     apiRoute(DEL, "/api/users/:userId",     usersApiRoute.deleteUser);
+
+    apiRoute(GET,  "/api/notes/:noteId/permissions",        permissionsApiRoute.listPermissions);
+    apiRoute(PST,  "/api/permissions",                      permissionsApiRoute.createPermission);
+    apiRoute(DEL,  "/api/permissions/:permissionId",        permissionsApiRoute.deletePermission);
 
     // in case of local electron, local calls are allowed unauthenticated, for server they need auth
     const clipperMiddleware = isElectron ? [] : [auth.checkEtapiToken];

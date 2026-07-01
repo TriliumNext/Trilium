@@ -1,6 +1,6 @@
 import type { NoteRow, NoteType } from "@triliumnext/commons";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
@@ -8,7 +8,7 @@ import { randomString } from "../services/utils/index.js";
 import SearchResult from "../services/search/search_result.js";
 
 export function findNoteByTitle(searchResults: Array<SearchResult>, title: string): BNote | undefined {
-    return searchResults.map((sr) => becca.notes[sr.noteId]).find((note) => note.title === title);
+    return searchResults.map((sr) => getBecca().notes[sr.noteId]).find((note) => note?.title === title);
 }
 
 export class NoteBuilder {

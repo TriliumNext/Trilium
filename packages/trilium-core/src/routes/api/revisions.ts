@@ -1,7 +1,7 @@
 import { EditedNotesResponse, RevisionItem, RevisionPojo } from "@triliumnext/commons";
 import type { Request, Response } from "express";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
 import blobService from "../../services/blob.js";
@@ -30,7 +30,7 @@ function getRevisionBlob(req: Request<{ revisionId: string }>) {
 }
 
 function getRevisions(req: Request<{ noteId: string }>) {
-    return becca.getRevisionsFromQuery(
+    return getBecca().getRevisionsFromQuery(
         `
         SELECT revisions.*,
                 LENGTH(blobs.content) AS contentLength
@@ -43,7 +43,7 @@ function getRevisions(req: Request<{ noteId: string }>) {
 }
 
 function getRevision(req: Request<{ revisionId: string }>) {
-    const revision = becca.getRevisionOrThrow(req.params.revisionId);
+    const revision = getBecca().getRevisionOrThrow(req.params.revisionId);
 
     if (revision.type === "file") {
         if (revision.hasStringContent()) {
@@ -85,7 +85,7 @@ function getRevisionFilename(revision: BRevision) {
 }
 
 function downloadRevision(req: Request<{ revisionId: string }>, res: Response) {
-    const revision = becca.getRevisionOrThrow(req.params.revisionId);
+    const revision = getBecca().getRevisionOrThrow(req.params.revisionId);
 
     if (!revision.isContentAvailable()) {
         return res.setHeader("Content-Type", "text/plain").status(401).send("Protected session not available");
@@ -110,7 +110,7 @@ function eraseRevision(req: Request<{ revisionId: string }>) {
 }
 
 function updateRevisionDescription(req: Request<{ revisionId: string }>) {
-    const revision = becca.getRevisionOrThrow(req.params.revisionId);
+    const revision = getBecca().getRevisionOrThrow(req.params.revisionId);
     const { description } = req.body;
 
     if (typeof description !== "string") {
@@ -124,12 +124,12 @@ function updateRevisionDescription(req: Request<{ revisionId: string }>) {
 function eraseAllExcessRevisions() {
     const allNoteIds = getSql().getRows("SELECT noteId FROM notes WHERE SUBSTRING(noteId, 1, 1) != '_'") as { noteId: string }[];
     allNoteIds.forEach((row) => {
-        becca.getNote(row.noteId)?.eraseExcessRevisionSnapshots();
+        getBecca().getNote(row.noteId)?.eraseExcessRevisionSnapshots();
     });
 }
 
 function restoreRevision(req: Request<{ revisionId: string }>) {
-    const revision = becca.getRevision(req.params.revisionId);
+    const revision = getBecca().getRevision(req.params.revisionId);
 
     if (revision) {
         const note = revision.getNote();
@@ -180,7 +180,7 @@ function getEditedNotesOnDate(req: Request) {
     { date: `${req.params.date}%` }
     );
 
-    let notes = becca.getNotes(noteIds, true);
+    let notes = getBecca().getNotes(noteIds, true);
 
     // Narrow down the results if a note is hoisted, similar to "Jump to note".
     const hoistedNoteId = cls.getHoistedNoteId();
@@ -210,7 +210,7 @@ function getNotePathData(note: BNote): NotePath | undefined {
             branchId = "none_root";
         } else {
             const parentNote = note.parents[0];
-            branchId = becca.getBranchFromChildAndParent(note.noteId, parentNote.noteId)?.branchId;
+            branchId = getBecca().getBranchFromChildAndParent(note.noteId, parentNote.noteId)?.branchId;
         }
 
         return {

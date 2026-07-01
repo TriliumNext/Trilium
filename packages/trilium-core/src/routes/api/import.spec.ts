@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca.js";
 import enexImportService from "../../services/import/enex";
 import singleImportService from "../../services/import/single";
 import TaskContext from "../../services/task_context";
@@ -29,7 +29,7 @@ function file(originalname: string, buffer: Buffer | string, mimetype = "text/pl
 }
 
 function noteContent(noteId: string): string {
-    return unwrapStringOrBuffer(becca.getNote(noteId)!.getContent());
+    return unwrapStringOrBuffer(getBecca().getNote(noteId)!.getContent());
 }
 
 describe("Import API (core)", () => {
@@ -61,7 +61,7 @@ describe("Import API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.noteId).toBeTruthy();
 
-            const note = becca.getNote(res.body.noteId);
+            const note = getBecca().getNote(res.body.noteId);
             expect(note).toBeTruthy();
             expect(note!.getParentBranches().some((b) => b.parentNoteId === parentNoteId)).toBe(true);
             // plain text is wrapped in HTML paragraphs by the real importer
@@ -88,7 +88,7 @@ describe("Import API (core)", () => {
             );
             expect(Buffer.isBuffer(zip.body)).toBe(true);
 
-            const before = becca.getNote(parentNoteId)!.getChildNotes().length;
+            const before = getBecca().getNote(parentNoteId)!.getChildNotes().length;
             const res = await api.post<{ noteId: string }>(
                 `/api/notes/${parentNoteId}/notes-import`,
                 { body: {}, file: { originalname: "roundtrip.zip", mimetype: "application/zip", buffer: zip.body } }
@@ -96,8 +96,8 @@ describe("Import API (core)", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.noteId).toBeTruthy();
-            expect(becca.getNote(res.body.noteId)).toBeTruthy();
-            expect(becca.getNote(parentNoteId)!.getChildNotes().length).toBeGreaterThan(before);
+            expect(getBecca().getNote(res.body.noteId)).toBeTruthy();
+            expect(getBecca().getNote(parentNoteId)!.getChildNotes().length).toBeGreaterThan(before);
         });
 
         it("returns 500 when the zip importer throws on garbage bytes", async () => {
@@ -154,7 +154,7 @@ describe("Import API (core)", () => {
             expect(res.status).toBe(200);
             // root note title is the filename without the .enex extension
             expect(res.body.title).toBe("book");
-            const root = becca.getNote(res.body.noteId)!;
+            const root = getBecca().getNote(res.body.noteId)!;
             expect(root.getChildNotes().some((c) => c.title === "Enex Note")).toBe(true);
         });
 
@@ -226,7 +226,7 @@ describe("Import API (core)", () => {
                 [parentNoteId]
             );
             expect(after).toBe(before + 1);
-            expect(becca.getNote(parentNoteId)!.getAttachments().some((a) => a.title === "attach.txt")).toBe(true);
+            expect(getBecca().getNote(parentNoteId)!.getAttachments().some((a) => a.title === "attach.txt")).toBe(true);
         });
 
         it("returns 500 when the attachment importer throws", async () => {

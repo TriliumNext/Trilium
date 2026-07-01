@@ -3,7 +3,7 @@ import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 import url from "url";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttachment from "../becca/entities/battachment.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BBranch from "../becca/entities/bbranch.js";
@@ -175,7 +175,7 @@ interface GetValidateParams {
 }
 
 function getAndValidateParent(params: GetValidateParams) {
-    const parentNote = becca.notes[params.parentNoteId];
+    const parentNote = getBecca().notes[params.parentNoteId];
 
     if (!parentNote) {
         throw new ValidationError(`Parent note '${params.parentNoteId}' was not found.`);
@@ -227,7 +227,7 @@ function createNewNote(params: NoteParams): {
     // When creating from a template, inherit the template's type and mime if not explicitly provided.
     // This ensures binary types (PDF, images, etc.) get the correct mime from the start.
     if (params.templateNoteId) {
-        const templateNote = becca.getNote(params.templateNoteId);
+        const templateNote = getBecca().getNote(params.templateNoteId);
         if (templateNote) {
             if (!params.mime) {
                 params.mime = templateNote.mime;
@@ -257,7 +257,8 @@ function createNewNote(params: NoteParams): {
                 type: params.type,
                 mime: deriveMime(params.type, params.mime),
                 dateCreated: params.dateCreated,
-                utcDateCreated: params.utcDateCreated
+                utcDateCreated: params.utcDateCreated,
+                ownerId: cls.getUserId() ?? optionService.getOptionOrNull("adminUserId")
             }).save();
 
             // Create attributes atomically.
@@ -286,7 +287,7 @@ function createNewNote(params: NoteParams): {
         }
 
         if (params.templateNoteId) {
-            const templateNote = becca.getNote(params.templateNoteId);
+            const templateNote = getBecca().getNote(params.templateNoteId);
             if (!templateNote) {
                 throw new Error(`Template note '${params.templateNoteId}' does not exist.`);
             }
@@ -332,7 +333,7 @@ function createNewNote(params: NoteParams): {
 
 function createNewNoteWithTarget(target: "into" | "after" | "before", targetBranchId: string | undefined, params: NoteParams) {
     if (!params.type) {
-        const parentNote = becca.notes[params.parentNoteId];
+        const parentNote = getBecca().notes[params.parentNoteId];
 
         // code note type can be inherited, otherwise "text" is the default
         params.type = parentNote.type === "code" ? "code" : "text";
@@ -342,7 +343,7 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
     if (target === "into") {
         return createNewNote(params);
     } else if (target === "after" && targetBranchId) {
-        const afterBranch = becca.branches[targetBranchId];
+        const afterBranch = getBecca().branches[targetBranchId];
 
         // not updating utcDateModified to avoid having to sync whole rows
         getSql().execute("UPDATE branches SET notePosition = notePosition + 10 WHERE parentNoteId = ? AND notePosition > ? AND isDeleted = 0", [params.parentNoteId, afterBranch.notePosition]);
@@ -355,7 +356,7 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
 
         return retObject;
     } else if (target === "before" && targetBranchId) {
-        const beforeBranch = becca.branches[targetBranchId];
+        const beforeBranch = getBecca().branches[targetBranchId];
 
         // not updating utcDateModified to avoid having to sync whole rows
         getSql().execute("UPDATE branches SET notePosition = notePosition - 10 WHERE parentNoteId = ? AND notePosition < ? AND isDeleted = 0", [params.parentNoteId, beforeBranch.notePosition]);
@@ -510,7 +511,7 @@ export function checkImageAttachments(note: BNote, content: string) {
 
     const existingAttachmentIds = new Set<string | undefined>(attachments.map((att) => att.attachmentId));
     const unknownAttachmentIds = Array.from(foundAttachmentIds).filter((foundAttId) => !existingAttachmentIds.has(foundAttId));
-    const unknownAttachments = becca.getAttachments(unknownAttachmentIds);
+    const unknownAttachments = getBecca().getAttachments(unknownAttachmentIds);
 
     for (const unknownAttachment of unknownAttachments) {
         // the attachment belongs to a different note (was copy-pasted). Attachments can be linked only from the note
@@ -846,7 +847,7 @@ function downloadImages(noteId: string, content: string) {
             }
 
             if (url in imageUrlToAttachmentIdMapping) {
-                const attachment = becca.getAttachment(imageUrlToAttachmentIdMapping[url]);
+                const attachment = getBecca().getAttachment(imageUrlToAttachmentIdMapping[url]);
 
                 if (!attachment) {
                     delete imageUrlToAttachmentIdMapping[url];
@@ -879,10 +880,10 @@ function downloadImages(noteId: string, content: string) {
 
             cls.getContext().init(() => {
                 getSql().transactional(() => {
-                const imageNotes = becca.getNotes(Object.values(imageUrlToAttachmentIdMapping), true);
+                const imageNotes = getBecca().getNotes(Object.values(imageUrlToAttachmentIdMapping), true);
                     const log = getLog();
 
-                const origNote = becca.getNote(noteId);
+                const origNote = getBecca().getNote(noteId);
 
                 if (!origNote) {
                     log.error(`Cannot find note '${noteId}' to replace image link.`);
@@ -1008,7 +1009,7 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
     const existingLinks = note.getRelations().filter((rel) => ["internalLink", "imageLink", "relationMapLink", "includeNoteLink"].includes(rel.name));
 
     for (const foundLink of foundLinks) {
-        const targetNote = becca.notes[foundLink.value];
+        const targetNote = getBecca().notes[foundLink.value];
         if (!targetNote) {
             continue;
         }
@@ -1059,7 +1060,7 @@ function saveRevisionIfNeeded(note: BNote) {
 }
 
 function updateNoteData(noteId: string, content: string, attachments: AttachmentRow[] = []) {
-    const note = becca.getNote(noteId);
+    const note = getBecca().getNote(noteId);
 
     if (!note || !note.isContentAvailable()) {
         throw new Error(`Note '${noteId}' is not available for change!`);
@@ -1133,7 +1134,7 @@ function undeleteBranch(branchId: string, deleteId: string, taskContext: TaskCon
 
     if (noteRow.isDeleted && noteRow.deleteId === deleteId) {
         // becca entity was already created as skeleton in "new Branch()" above
-        const noteEntity = becca.getNote(noteRow.noteId);
+        const noteEntity = getBecca().getNote(noteRow.noteId);
         if (!noteEntity) {
             throw new Error("Unable to find the just restored branch.");
         }
@@ -1254,7 +1255,7 @@ function duplicateSubtree(origNoteId: string, newParentNoteId: string) {
 
     getLog().info(`Duplicating '${origNoteId}' subtree into '${newParentNoteId}'`);
 
-    const origNote = becca.notes[origNoteId];
+    const origNote = getBecca().notes[origNoteId];
     // might be null if orig note is not in the target newParentNoteId
     const origBranch = origNote.getParentBranches().find((branch) => branch.parentNoteId === newParentNoteId);
 
@@ -1278,7 +1279,7 @@ function duplicateSubtreeWithoutRoot(origNoteId: string, newNoteId: string) {
         throw new Error("Duplicating root is not possible");
     }
 
-    const origNote = becca.getNote(origNoteId);
+    const origNote = getBecca().getNote(origNoteId);
     if (origNote == null) {
         throw new Error("Unable to find note to duplicate.");
     }
@@ -1352,7 +1353,7 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
         return newNote;
     }
 
-    const existingNote = becca.notes[newNoteId];
+    const existingNote = getBecca().notes[newNoteId];
 
     if (existingNote && existingNote.title !== undefined) {
         // checking that it's not just note's skeleton created because of Branch above

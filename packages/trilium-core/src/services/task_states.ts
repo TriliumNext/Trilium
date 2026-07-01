@@ -2,7 +2,7 @@ import { DEFAULT_CUSTOM_TASK_STATES, DEFAULT_TASK_STATES, DONE_STATE_ID, DONE_TA
 import Color from "color";
 import { t } from "i18next";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getIconPacks } from "./icon_packs.js";
@@ -16,7 +16,7 @@ import noteService from "./notes.js";
  * missing or empty.
  */
 export function getTaskStates(): TaskStateDef[] {
-    const container = becca.notes[TASK_STATES_CONTAINER_ID];
+    const container = getBecca().notes[TASK_STATES_CONTAINER_ID];
     if (!container) {
         return DEFAULT_TASK_STATES;
     }
@@ -105,7 +105,7 @@ export function seedDefaultTaskStates() {
 
     // Apply the default ordering (None, Doing, Done, Maybe, Cancelled) across all states.
     DEFAULT_TASK_STATES.forEach((state, index) => {
-        const note = state.id ? becca.notes[state.id] : undefined;
+        const note = state.id ? getBecca().notes[state.id] : undefined;
         const branch = note?.getParentBranches().find((b) => b.parentNoteId === TASK_STATES_CONTAINER_ID);
         if (branch) {
             branch.notePosition = index * 10;

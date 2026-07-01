@@ -3,7 +3,7 @@ import { default as path, dirname } from "path";
 import { fileURLToPath } from "url";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { getContext } from "../context.js";
 import sql_init from "../sql_init.js";
@@ -20,7 +20,7 @@ async function testImport(fileName: string) {
 
     return new Promise<{ importedNote: BNote; rootNote: BNote; taskContext: TaskContext<"importNotes"> }>((resolve, reject) => {
         getContext().init(async () => {
-            const rootNote = becca.getNote("root");
+            const rootNote = getBecca().getNote("root");
             if (!rootNote) {
                 expect(rootNote).toBeTruthy();
                 return;
