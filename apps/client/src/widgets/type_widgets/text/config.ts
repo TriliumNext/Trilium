@@ -202,6 +202,14 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
     const imageToolbar = (config.image as { toolbar: (string | object)[] }).toolbar;
     imageToolbar.push("|", ...(imageService.isImageCopySupported() ? ["copyImageToClipboard"] : []), "downloadImage");
 
+    // Embed internal images as data: URIs when content is copied out to external apps, while
+    // keeping internal Trilium paste reference-based (see the ClipboardImageEmbed plugin). The
+    // resolver does the synchronous canvas encoding; the hidden option is a kill-switch.
+    (config as Record<string, unknown>).clipboardImageEmbed = {
+        enabled: options.get("clipboardImageEmbedEnabled") === "true",
+        embedImage: (src: string) => imageService.embedReferenceImageAsDataUrl(src)
+    };
+
     // Set up content language.
     const { contentLanguage } = opts;
     if (contentLanguage) {
