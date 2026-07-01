@@ -110,15 +110,25 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
         const noteQuery = isAdmin
             ? /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
                         FROM notes WHERE isDeleted = 0`
-            : /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
+            : /*sql*/`WITH RECURSIVE visible_roots(noteId) AS (
+                          SELECT noteId FROM notes
+                           WHERE isDeleted = 0 AND ownerId = ?
+                          UNION
+                          SELECT noteId FROM note_permissions
+                           WHERE userId = ?
+                              OR groupId IN (SELECT groupId FROM user_group_members WHERE userId = ?)
+                      ),
+                      visible_notes(noteId) AS (
+                          SELECT noteId FROM visible_roots
+                          UNION
+                          SELECT b.noteId
+                            FROM branches b
+                            JOIN visible_notes vn ON b.parentNoteId = vn.noteId
+                           WHERE b.isDeleted = 0
+                      )
+                      SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
                         FROM notes
-                       WHERE isDeleted = 0
-                         AND (ownerId = ?
-                              OR noteId IN (
-                                  SELECT noteId FROM note_permissions
-                                   WHERE userId = ?
-                                      OR groupId IN (SELECT groupId FROM user_group_members WHERE userId = ?)
-                              ))`;
+                       WHERE isDeleted = 0 AND noteId IN visible_notes`;
 
         const noteParams = isAdmin ? [] : [userId, userId, userId];
 
@@ -136,7 +146,9 @@ export async function loadBeccaForUser(target: import("./becca-interface.js").de
         );
         branchRows.sort((a, b) => ((a[4] as number) || 0) - ((b[4] as number) || 0));
         for (const row of branchRows) {
-            if (visibleNoteIds.has(row[1] as string)) {
+            const noteId = row[1] as string;
+            const parentNoteId = row[2] as string;
+            if (visibleNoteIds.has(noteId) && (parentNoteId === "none" || visibleNoteIds.has(parentNoteId))) {
                 new BBranch().update(row).init();
             }
         }

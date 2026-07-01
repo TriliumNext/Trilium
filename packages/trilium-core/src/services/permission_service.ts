@@ -29,44 +29,23 @@ function cacheKey(noteId: string, userId: string) {
     return `${noteId}\0${userId}`;
 }
 
-// Walks the full ancestor chain across every branch so clones are handled correctly.
+// Collects permissions from the note and all its ancestors across every branch (handles clones).
 function collectAncestorPermissions(noteId: string, userId: string): PermissionRow[] {
-    const sql = getSql();
-    const visited = new Set<string>();
-    const permissions: PermissionRow[] = [];
-
-    // Fetch once up front so each node's permission query doesn't repeat the subquery.
-    const groupIds = sql.getColumn<string>(
-        "SELECT groupId FROM user_group_members WHERE userId = ?", [userId]
+    return getSql().getRows<PermissionRow>(
+        `WITH RECURSIVE ancestors(noteId) AS (
+             SELECT ?
+             UNION
+             SELECT b.parentNoteId
+               FROM branches b
+               JOIN ancestors a ON b.noteId = a.noteId
+              WHERE b.isDeleted = 0 AND b.parentNoteId != 'none'
+         )
+         SELECT ${PERMISSION_COLS}
+           FROM note_permissions
+          WHERE noteId IN ancestors
+            AND (userId = ? OR groupId IN (SELECT groupId FROM user_group_members WHERE userId = ?))`,
+        [noteId, userId, userId]
     );
-    const groupPlaceholders = groupIds.length > 0 ? groupIds.map(() => "?").join(",") : "NULL";
-
-    function walk(id: string) {
-        if (visited.has(id)) return;
-        visited.add(id);
-
-        const rows = sql.getRows<PermissionRow>(
-            `SELECT ${PERMISSION_COLS}
-               FROM note_permissions
-              WHERE noteId = ?
-                AND (userId = ? OR groupId IN (${groupPlaceholders}))`,
-            [id, userId, ...groupIds]
-        );
-
-        permissions.push(...rows);
-
-        // Walk up through every parent branch (handles clones).
-        const parentIds = sql.getColumn<string>(
-            "SELECT DISTINCT parentNoteId FROM branches WHERE noteId = ? AND isDeleted = 0 AND parentNoteId != 'none'",
-            [id]
-        );
-        for (const parentId of parentIds) {
-            walk(parentId);
-        }
-    }
-
-    walk(noteId);
-    return permissions;
 }
 
 function getEffectivePermission(noteId: string, userId: string): EffectivePermission | null {

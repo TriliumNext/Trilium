@@ -22,11 +22,14 @@ import { getSql } from "../../services/sql/index.js";
 import { formatDownloadTitle, isStringNote, normalize, randomString, replaceAll } from "../../services/utils/index.js";
 
 // ownerId exists only after migration 239. Saves that run during migrations 220-238
-// must skip it or the INSERT fails. PRAGMA table_info is O(1) on SQLite.
+// must skip it or the INSERT fails. Result is cached so the PRAGMA runs once per process.
+let ownerIdColExists: boolean | undefined;
 function ownerIdColumnExists(): boolean {
+    if (ownerIdColExists !== undefined) return ownerIdColExists;
     try {
         const cols = getSql().getColumn<string>("SELECT name FROM pragma_table_info('notes')");
-        return cols.includes("ownerId");
+        ownerIdColExists = cols.includes("ownerId");
+        return ownerIdColExists;
     } catch {
         return false;
     }

@@ -3,7 +3,6 @@
 import Becca from "./becca-interface.js";
 import { getCachedBecca, setCachedBecca } from "./becca_cache.js";
 import { getUserId, get } from "../services/context.js";
-import { getLog } from "../services/log.js";
 import { getSql } from "../services/sql/index.js";
 
 const adminBecca = new Becca();
@@ -42,8 +41,7 @@ export function getBecca(): Becca {
         return userBecca;
     }
 
-    getLog().warn(`getBecca: cache miss for user ${userId}, falling back to adminBecca; ensure warmBeccaForUser() runs before request handlers`);
-    return adminBecca;
+    throw new Error(`getBecca: no cached Becca for user ${userId}; warmBeccaForUser() must run before request handlers`);
 }
 
 export async function warmBeccaForUser(userId: string): Promise<Becca> {

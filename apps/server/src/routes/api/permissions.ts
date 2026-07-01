@@ -30,10 +30,10 @@ function createPermission(req: Request) {
     if (!userId && !groupId) {
         return [400, { message: "userId or groupId is required." }];
     }
-    if (userId !== undefined && (typeof userId !== "string" || userId.trim() === "")) {
+    if (userId !== undefined && userId !== null && (typeof userId !== "string" || userId.trim() === "")) {
         return [400, { message: "userId must be a non-empty string." }];
     }
-    if (groupId !== undefined && (typeof groupId !== "string" || groupId.trim() === "")) {
+    if (groupId !== undefined && groupId !== null && (typeof groupId !== "string" || groupId.trim() === "")) {
         return [400, { message: "groupId must be a non-empty string." }];
     }
 
