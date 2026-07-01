@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import branchService from "./branches.js";
@@ -61,8 +61,8 @@ describe("branches service (real DB)", () => {
             expect(res.branch.noteId).toBe(child.note.noteId);
             expect(res.branch.notePosition).toBe(maxPos + 10);
 
-            // The freshly created branch is reachable through becca.
-            expect(becca.getBranchFromChildAndParent(child.note.noteId, parent.note.noteId)).toBe(res.branch);
+            // The freshly created branch is reachable through getBecca().
+            expect(getBecca().getBranchFromChildAndParent(child.note.noteId, parent.note.noteId)).toBe(res.branch);
             // The note is now a child of the target parent.
             expect(parent.note.getChildNotes().some((n) => n.noteId === child.note.noteId)).toBe(true);
             // The original branch (under root) has been deleted.
@@ -73,7 +73,7 @@ describe("branches service (real DB)", () => {
 
         it("refuses to move protected structural notes and returns the validation tuple", () => {
             // The root branch cannot be relocated; validateParentChild rejects it.
-            const rootBranch = becca.getBranchFromChildAndParent("root", "none");
+            const rootBranch = getBecca().getBranchFromChildAndParent("root", "none");
             expect(rootBranch).not.toBeNull();
 
             const someParent = createNote("root");
@@ -88,7 +88,7 @@ describe("branches service (real DB)", () => {
             expect(typeof res[1].message).toBe("string");
 
             // No clone was created under the candidate parent.
-            expect(becca.getBranchFromChildAndParent("root", someParent.note.noteId)).toBeNull();
+            expect(getBecca().getBranchFromChildAndParent("root", someParent.note.noteId)).toBeNull();
         });
 
         it("refuses a move that would create a tree cycle", () => {
@@ -156,7 +156,7 @@ describe("branches service (real DB)", () => {
 
         it("propagates a validation failure and does not expand the target", () => {
             const targetParent = createNote("root");
-            const rootBranch = becca.getBranchFromChildAndParent("root", "none");
+            const rootBranch = getBecca().getBranchFromChildAndParent("root", "none");
 
             targetParent.branch.isExpanded = false;
 

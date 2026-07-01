@@ -1,6 +1,6 @@
 import type { Request } from "express";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import bulkActionService from "../../services/bulk_actions.js";
 import hoistedNoteService from "../../services/hoisted_note.js";
@@ -12,7 +12,7 @@ import becca_service from "../../becca/becca_service.js";
 import { getHoistedNoteId } from "../../services/context.js";
 
 function searchFromNote(req: Request<{ noteId: string }>): SearchNoteResult {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     /* v8 ignore next 4 -- unreachable: getNoteOrThrow already throws on a missing note */
     if (!note) {
@@ -28,7 +28,7 @@ function searchFromNote(req: Request<{ noteId: string }>): SearchNoteResult {
 }
 
 function searchAndExecute(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     /* v8 ignore next 4 -- unreachable: getNoteOrThrow already throws on a missing note */
     if (!note) {

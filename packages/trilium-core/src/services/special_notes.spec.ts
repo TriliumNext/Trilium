@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import attributeService from "./attributes.js";
 import { getContext } from "./context.js";
@@ -61,7 +61,7 @@ describe("special_notes (core, real DB)", () => {
 
             expect(result.success).toBe(true);
             expect(result.branchId).toBeTruthy();
-            expect(becca.getBranch(result.branchId!)).toBeTruthy();
+            expect(getBecca().getBranch(result.branchId!)).toBeTruthy();
 
             // After saving, the console must no longer hang off the hidden subtree.
             const liveParents = note.getParentBranches().filter((b) => !b.isDeleted);
@@ -71,7 +71,7 @@ describe("special_notes (core, real DB)", () => {
 
         it("uses an explicit #sqlConsoleHome target note when present", async () => {
             // A real, root-anchored note used as the clone target.
-            const home = becca.getNoteOrThrow("root").getChildNotes()[0];
+            const home = getBecca().getNoteOrThrow("root").getChildNotes()[0];
             vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(home);
 
             const note = getContext().init(() => specialNotes.createSqlConsole());
@@ -132,7 +132,7 @@ describe("special_notes (core, real DB)", () => {
 
             expect(result.success).toBe(true);
             expect(result.branchId).toBeTruthy();
-            expect(becca.getBranch(result.branchId!)).toBeTruthy();
+            expect(getBecca().getBranch(result.branchId!)).toBeTruthy();
 
             const liveParents = note.getParentBranches().filter((b) => !b.isDeleted);
             expect(liveParents.length).toBeGreaterThan(0);
@@ -147,7 +147,7 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("returns the #inbox-labelled note when at the root workspace", () => {
-            const inbox = becca.getNoteOrThrow("root").getChildNotes()[0];
+            const inbox = getBecca().getNoteOrThrow("root").getChildNotes()[0];
             vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(inbox);
 
             const result = specialNotes.getInboxNote("2026-05-29");
@@ -165,8 +165,8 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("prefers #workspaceInbox over #inbox within a non-root workspace", () => {
-            const workspaceInbox = becca.getNoteOrThrow("root").getChildNotes()[0];
-            const plainInbox = becca.getNoteOrThrow("root").getChildNotes()[1];
+            const workspaceInbox = getBecca().getNoteOrThrow("root").getChildNotes()[0];
+            const plainInbox = getBecca().getNoteOrThrow("root").getChildNotes()[1];
             const workspace = makeWorkspaceStub({
                 "#workspaceInbox": workspaceInbox,
                 "#inbox": plainInbox
@@ -243,7 +243,7 @@ describe("special_notes (core, real DB)", () => {
 
             getContext().init(() => specialNotes.resetLauncher(note.noteId));
 
-            expect(becca.getNote(note.noteId)?.isDeleted ?? true).toBe(true);
+            expect(getBecca().getNote(note.noteId)?.isDeleted ?? true).toBe(true);
         });
 
         it("only resets the children (not the root note itself) for the launchbar roots", () => {
@@ -256,7 +256,7 @@ describe("special_notes (core, real DB)", () => {
                 deleteNote: vi.fn(),
                 getChildNotes: () => [childA, childB]
             };
-            vi.spyOn(becca, "getNote").mockReturnValue(rootNote as any);
+            vi.spyOn(getBecca(), "getNote").mockReturnValue(rootNote as any);
 
             getContext().init(() => specialNotes.resetLauncher("_lbRoot"));
 
@@ -272,7 +272,7 @@ describe("special_notes (core, real DB)", () => {
             getContext().init(() => specialNotes.resetLauncher(plain.noteId));
 
             // Search notes are not launchbar config, so they are left intact.
-            expect(becca.getNote(plain.noteId)?.isDeleted).toBe(false);
+            expect(getBecca().getNote(plain.noteId)?.isDeleted).toBe(false);
         });
     });
 
@@ -367,7 +367,7 @@ describe("special_notes (core, real DB)", () => {
  * searchNoteInSubtree is global, so genuine labels would collide between tests).
  */
 function makeWorkspaceStub(found: Record<string, unknown>) {
-    const real = becca.getNoteOrThrow("root").getChildNotes()[0];
+    const real = getBecca().getNoteOrThrow("root").getChildNotes()[0];
     return new Proxy(real, {
         get(target, prop) {
             if (prop === "isRoot") {

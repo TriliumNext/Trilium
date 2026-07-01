@@ -1,6 +1,6 @@
 import BAttribute from "../../becca/entities/battribute";
 import BNote from "../../becca/entities/bnote";
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca.js";
 import type { BacklinkCountResponse, BacklinksResponse } from "@triliumnext/commons";
 import type { Request } from "express";
 import { HTMLElement, parse, TextNode } from "node-html-parser";
@@ -20,7 +20,7 @@ function buildDescendantCountMap(noteIdsToCount: string[]) {
 
     function getCount(noteId: string): number {
         if (!(noteId in noteIdToCountMap)) {
-            const note = becca.getNote(noteId);
+            const note = getBecca().getNote(noteId);
             /* v8 ignore next 3 -- defensive guard: noteIds come from real notes / their resolved children */
             if (!note) {
                 return 0;
@@ -98,7 +98,7 @@ function getNeighbors(note: BNote, depth: number): string[] {
 }
 
 function getLinkMap(req: Request<{ noteId: string }>) {
-    const mapRootNote = becca.getNoteOrThrow(req.params.noteId);
+    const mapRootNote = getBecca().getNoteOrThrow(req.params.noteId);
 
     // if the map root itself has "excludeFromNoteMap" attribute (journal typically) then there wouldn't be anything
     // to display, so we'll just ignore it
@@ -134,19 +134,19 @@ function getLinkMap(req: Request<{ noteId: string }>) {
     const noteIdsArray = Array.from(noteIds);
 
     const notes = noteIdsArray.map((noteId) => {
-        const note = becca.getNoteOrThrow(noteId);
+        const note = getBecca().getNoteOrThrow(noteId);
 
         return [note.noteId, note.getTitleOrProtected(), note.type, note.getLabelValue("color")];
     });
 
-    const links = Object.values(becca.attributes)
+    const links = Object.values(getBecca().attributes)
         .filter((rel) => {
             if (rel.type !== "relation" || rel.name === "relationMapLink" || rel.name === "template" || rel.name === "inherit") {
                 return false;
             } else if (!noteIds.has(rel.noteId) || !noteIds.has(rel.value)) {
                 return false;
             } else if (rel.name === "imageLink") {
-                const parentNote = becca.getNote(rel.noteId);
+                const parentNote = getBecca().getNote(rel.noteId);
                 /* v8 ignore next 3 -- defensive guard: rel.noteId is already constrained to noteIds (existing notes) */
                 if (!parentNote) {
                     return false;
@@ -176,7 +176,7 @@ function getLinkMap(req: Request<{ noteId: string }>) {
 }
 
 function getTreeMap(req: Request<{ noteId: string }>) {
-    const mapRootNote = becca.getNoteOrThrow(req.params.noteId);
+    const mapRootNote = getBecca().getNoteOrThrow(req.params.noteId);
     // if the map root itself has "excludeFromNoteMap" (journal typically) then there wouldn't be anything to display,
     // so we'll just ignore it
     const ignoreExcludeFromNoteMap = mapRootNote.isLabelTruthy("excludeFromNoteMap");
@@ -232,7 +232,7 @@ function getTreeMap(req: Request<{ noteId: string }>) {
 
 function updateDescendantCountMapForSearch(noteIdToDescendantCountMap: Record<string, number>, relationships: { parentNoteId: string; childNoteId: string }[]) {
     for (const { parentNoteId, childNoteId } of relationships) {
-        const parentNote = becca.notes[parentNoteId];
+        const parentNote = getBecca().notes[parentNoteId];
         if (!parentNote || parentNote.type !== "search") {
             continue;
         }
@@ -352,7 +352,7 @@ function getFilteredBacklinks(note: BNote): BAttribute[] {
 
 function getBacklinks(req: Request<{ noteId: string }>): BacklinksResponse {
     const { noteId } = req.params;
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     let backlinksWithExcerptCount = 0;
 
@@ -379,7 +379,7 @@ function getBacklinks(req: Request<{ noteId: string }>): BacklinksResponse {
 function getBacklinkCount(req: Request<{ noteId: string }>): BacklinkCountResponse {
     const { noteId } = req.params;
 
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     return {
         count: getFilteredBacklinks(note).length

@@ -1,7 +1,7 @@
 import { trimIndentation } from "@triliumnext/commons";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import config from "./config.js";
 import { getContext } from "./context.js";
@@ -22,7 +22,7 @@ describe("Script", () => {
 
     beforeEach(() => {
 
-        becca.reset();
+        getBecca().reset();
         vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {}).mockClear();
 
         buildNote({ id: "root", title: "root" });
@@ -122,7 +122,7 @@ describe("Script", () => {
 
 describe("getScriptBundle", () => {
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
     });
 
     it("returns a bundle for a backend script", () => {
@@ -194,7 +194,7 @@ describe("getScriptBundle", () => {
 
 describe("executeNote", () => {
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
         vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {}).mockClear();
     });
 
@@ -222,7 +222,7 @@ describe("executeNote", () => {
 
 describe("getScriptBundleForFrontend", () => {
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
         vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {}).mockClear();
     });
 
@@ -379,14 +379,14 @@ describe("executeScript", () => {
     });
 
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
     });
 
     it("executes a frontend script excerpt in the backend context", () => {
         const note = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
 
         getContext().init(() => {
-            const result = scriptService.executeScript(`() => "hello from excerpt"`, [], note.noteId, note.noteId, "notes", note.noteId, becca);
+            const result = scriptService.executeScript(`() => "hello from excerpt"`, [], note.noteId, note.noteId, "notes", note.noteId, getBecca());
             expect(result).toBe("hello from excerpt");
         });
     });
@@ -395,14 +395,14 @@ describe("executeScript", () => {
         const note = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
 
         getContext().init(() => {
-            const result = scriptService.executeScript(`(count, label) => label + ":" + (count + 1)`, [4, "n"], note.noteId, note.noteId, "notes", note.noteId, becca);
+            const result = scriptService.executeScript(`(count, label) => label + ":" + (count + 1)`, [4, "n"], note.noteId, note.noteId, "notes", note.noteId, getBecca());
             expect(result).toBe("n:5");
         });
     });
 
     it("throws when the current note cannot be found", () => {
         getContext().init(() => {
-            expect(() => scriptService.executeScript(`() => 1`, [], "missing", "missing", "notes", "missing", becca)).toThrow(/Cannot find note/);
+            expect(() => scriptService.executeScript(`() => 1`, [], "missing", "missing", "notes", "missing", getBecca())).toThrow(/Cannot find note/);
         });
     });
 });
@@ -419,7 +419,7 @@ describe("executeNoteNoException", () => {
     });
 
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
     });
 
     it("swallows runtime errors thrown by the script", () => {

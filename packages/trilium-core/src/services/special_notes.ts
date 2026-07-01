@@ -1,6 +1,6 @@
 import attributeService from "./attributes.js";
 import dateNoteService from "./date_notes.js";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import noteService from "./notes.js";
 import dateUtils from "./utils/date.js";
 import { getLog } from "./log.js";
@@ -53,7 +53,7 @@ function createSqlConsole() {
 }
 
 async function saveSqlConsole(sqlConsoleNoteId: string) {
-    const sqlConsoleNote = becca.getNote(sqlConsoleNoteId);
+    const sqlConsoleNote = getBecca().getNote(sqlConsoleNoteId);
     if (!sqlConsoleNote) throw new Error(`Unable to find SQL console note ID: ${sqlConsoleNoteId}`);
     const today = dateUtils.localNowDate();
 
@@ -105,7 +105,7 @@ function getSearchHome() {
 }
 
 function saveSearchNote(searchNoteId: string) {
-    const searchNote = becca.getNote(searchNoteId);
+    const searchNote = getBecca().getNote(searchNoteId);
     if (!searchNote) {
         throw new Error("Unable to find search note");
     }
@@ -212,7 +212,7 @@ function createLauncher({ parentNoteId, launcherType, noteId }: LauncherConfig) 
 }
 
 function resetLauncher(noteId: string) {
-    const note = becca.getNote(noteId);
+    const note = getBecca().getNote(noteId);
 
     if (note?.isLaunchBarConfig()) {
         if (note) {
@@ -253,7 +253,7 @@ function createOrUpdateScriptLauncherFromApi(opts: { id: string; title: string; 
         throw new Error("Title is mandatory property to create or update a launcher.");
     }
 
-    const launcherNote = becca.getNote(launcherId) || createScriptLauncher("_lbVisibleLaunchers", launcherId);
+    const launcherNote = getBecca().getNote(launcherId) || createScriptLauncher("_lbVisibleLaunchers", launcherId);
 
     launcherNote.title = opts.title;
     launcherNote.setContent(`(${opts.action})()`);

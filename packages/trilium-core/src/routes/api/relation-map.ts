@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import { RelationMapPostResponse } from "@triliumnext/commons";
 import { getSql } from "../../services/sql/index.js";
 
@@ -22,7 +22,7 @@ function getRelationMap(req: Request) {
 
     const questionMarks = noteIds.map((_noteId) => "?").join(",");
 
-    const relationMapNote = becca.getNoteOrThrow(relationMapNoteId);
+    const relationMapNote = getBecca().getNoteOrThrow(relationMapNoteId);
 
     const displayRelationsVal = relationMapNote.getLabelValue("displayRelations");
     const displayRelations = !displayRelationsVal ? [] : displayRelationsVal.split(",").map((token) => token.trim());
@@ -31,7 +31,7 @@ function getRelationMap(req: Request) {
     const hideRelations = !hideRelationsVal ? [] : hideRelationsVal.split(",").map((token) => token.trim());
 
     const foundNoteIds = getSql().getColumn<string>(/*sql*/`SELECT noteId FROM notes WHERE isDeleted = 0 AND noteId IN (${questionMarks})`, noteIds);
-    const notes = becca.getNotes(foundNoteIds);
+    const notes = getBecca().getNotes(foundNoteIds);
 
     for (const note of notes) {
         resp.noteTitles[note.noteId] = note.title;

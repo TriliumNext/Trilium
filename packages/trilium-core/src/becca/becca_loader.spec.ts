@@ -5,7 +5,7 @@ import eventService from "../services/events.js";
 import noteService from "../services/notes.js";
 import { getSql } from "../services/sql/index.js";
 import ws from "../services/ws.js";
-import becca from "./becca.js";
+import { getBecca } from "./becca.js";
 import beccaLoader, { load, reload } from "./becca_loader.js";
 import BNote from "./entities/bnote.js";
 
@@ -25,17 +25,17 @@ function createNote(parentNoteId: string): BNote {
 
 describe("becca_loader", () => {
     afterEach(() => {
-        // The shared fixture DB is loaded (becca.loaded === true) after setup;
+        // The shared fixture DB is loaded (getBecca().loaded === true) after setup;
         // some tests flip this, so always restore it.
-        becca.loaded = true;
+        getBecca().loaded = true;
         vi.restoreAllMocks();
     });
 
     describe("ENTITY_CHANGE_SYNCED listener", () => {
         it("returns early without touching becca when becca is not loaded", () => {
-            becca.loaded = false;
+            getBecca().loaded = false;
 
-            const before = Object.keys(becca.notes).length;
+            const before = Object.keys(getBecca().notes).length;
             eventService.emit(eventService.ENTITY_CHANGE_SYNCED, {
                 entityName: "notes",
                 entityRow: {
@@ -49,8 +49,8 @@ describe("becca_loader", () => {
             });
 
             // Nothing was created since the listener bailed out.
-            expect(becca.getNote("loaderNotLoaded")).toBeNull();
-            expect(Object.keys(becca.notes).length).toBe(before);
+            expect(getBecca().getNote("loaderNotLoaded")).toBeNull();
+            expect(Object.keys(getBecca().notes).length).toBe(before);
         });
 
         it("updates an existing becca entity from the synced row", () => {
@@ -68,14 +68,14 @@ describe("becca_loader", () => {
                 }
             });
 
-            const updated = becca.getNoteOrThrow(note.noteId);
+            const updated = getBecca().getNoteOrThrow(note.noteId);
             expect(updated.title).toBe("synced-updated-title");
             expect(updated.type).toBe("code");
         });
 
         it("creates a brand-new becca entity from a synced row when not yet present", () => {
             const newNoteId = "loaderBrandNew1";
-            expect(becca.getNote(newNoteId)).toBeNull();
+            expect(getBecca().getNote(newNoteId)).toBeNull();
 
             eventService.emit(eventService.ENTITY_CHANGE_SYNCED, {
                 entityName: "notes",
@@ -89,7 +89,7 @@ describe("becca_loader", () => {
                 }
             });
 
-            const created = becca.getNoteOrThrow(newNoteId);
+            const created = getBecca().getNoteOrThrow(newNoteId);
             expect(created).toBeInstanceOf(BNote);
             expect(created.title).toBe("brand-new");
             // init() ran, so the derived collections are initialised.
@@ -110,7 +110,7 @@ describe("becca_loader", () => {
 
     describe("ENTITY_DELETED listener", () => {
         it("branchDeleted returns early for an unknown branch id", () => {
-            const branchesBefore = Object.keys(becca.branches).length;
+            const branchesBefore = Object.keys(getBecca().branches).length;
 
             expect(() =>
                 eventService.emit(eventService.ENTITY_DELETED, {
@@ -120,11 +120,11 @@ describe("becca_loader", () => {
             ).not.toThrow();
 
             // No branches were removed.
-            expect(Object.keys(becca.branches).length).toBe(branchesBefore);
+            expect(Object.keys(getBecca().branches).length).toBe(branchesBefore);
         });
 
         it("attributeDeleted returns early for an unknown attribute id", () => {
-            const attributesBefore = Object.keys(becca.attributes).length;
+            const attributesBefore = Object.keys(getBecca().attributes).length;
 
             expect(() =>
                 eventService.emit(eventService.ENTITY_DELETED, {
@@ -133,13 +133,13 @@ describe("becca_loader", () => {
                 })
             ).not.toThrow();
 
-            expect(Object.keys(becca.attributes).length).toBe(attributesBefore);
+            expect(Object.keys(getBecca().attributes).length).toBe(attributesBefore);
         });
     });
 
     describe("ENTER_PROTECTED_SESSION listener", () => {
         it("swallows errors thrown while decrypting protected notes", () => {
-            const spy = vi.spyOn(becca, "decryptProtectedNotes").mockImplementation(() => {
+            const spy = vi.spyOn(getBecca(), "decryptProtectedNotes").mockImplementation(() => {
                 throw new Error("boom");
             });
 
@@ -165,10 +165,10 @@ describe("becca_loader", () => {
                 load();
             });
 
-            const token = becca.getEtapiToken(etapiTokenId);
+            const token = getBecca().getEtapiToken(etapiTokenId);
             expect(token).not.toBeNull();
             expect(token?.name).toBe("loader-test-token");
-            expect(becca.loaded).toBe(true);
+            expect(getBecca().loaded).toBe(true);
         });
     });
 
@@ -178,7 +178,7 @@ describe("becca_loader", () => {
 
             getContext().init(() => reload("custom reason"));
 
-            expect(becca.loaded).toBe(true);
+            expect(getBecca().loaded).toBe(true);
             expect(spy).toHaveBeenCalledWith("custom reason");
         });
 

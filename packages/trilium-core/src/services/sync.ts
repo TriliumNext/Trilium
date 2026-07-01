@@ -1,6 +1,6 @@
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import appInfo from "./app_info.js";
 import * as cls from "./context.js";
 import consistency_checks from "./consistency_checks.js";
@@ -429,7 +429,7 @@ function getLastSyncedPull() {
 }
 
 function setLastSyncedPull(entityChangeId: number) {
-    const lastSyncedPullOption = becca.getOption("lastSyncedPull");
+    const lastSyncedPullOption = getBecca().getOption("lastSyncedPull");
 
     if (lastSyncedPullOption) {
         // might be null in initial sync when becca is not loaded
@@ -451,7 +451,7 @@ function getLastSyncedPush() {
 function setLastSyncedPush(entityChangeId: number) {
     ws.setLastSyncedPush(entityChangeId);
 
-    const lastSyncedPushOption = becca.getOption("lastSyncedPush");
+    const lastSyncedPushOption = getBecca().getOption("lastSyncedPush");
 
     if (lastSyncedPushOption) {
         // might be null in initial sync when becca is not loaded

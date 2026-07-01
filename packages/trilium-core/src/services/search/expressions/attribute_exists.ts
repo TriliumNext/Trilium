@@ -3,7 +3,7 @@
 import NoteSet from "../note_set.js";
 import type SearchContext from "../search_context.js";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import Expression from "./expression.js";
 
 class AttributeExistsExp extends Expression {
@@ -23,7 +23,7 @@ class AttributeExistsExp extends Expression {
     }
 
     execute(inputNoteSet: NoteSet, executionContext: {}, searchContext: SearchContext) {
-        const attrs = this.prefixMatch ? becca.findAttributesWithPrefix(this.attributeType, this.attributeName) : becca.findAttributes(this.attributeType, this.attributeName);
+        const attrs = this.prefixMatch ? getBecca().findAttributesWithPrefix(this.attributeType, this.attributeName) : getBecca().findAttributes(this.attributeType, this.attributeName);
 
         const resultNoteSet = new NoteSet();
 

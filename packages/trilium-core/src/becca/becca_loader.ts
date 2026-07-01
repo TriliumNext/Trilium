@@ -13,7 +13,7 @@ import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
-import { getContext } from "../services/context.js";
+import { getContext, set as ctxSet } from "../services/context.js";
 
 export const beccaLoaded = new Promise<void>(async (res, rej) => {
     // We have to import async since options init requires keyboard actions which require translations.
@@ -28,6 +28,13 @@ export const beccaLoaded = new Promise<void>(async (res, rej) => {
     });
 });
 
+function notesHasOwnerIdColumn(): boolean {
+    const cols = getSql().getColumn<string>(
+        "SELECT name FROM pragma_table_info('notes')"
+    );
+    return cols.includes("ownerId");
+}
+
 function load() {
     const start = Date.now();
     becca.reset();
@@ -38,7 +45,15 @@ function load() {
         // using a raw query and passing arrays to avoid allocating new objects,
         // this is worth it for the becca load since it happens every run and blocks the app until finished
 
-        for (const row of sql.getRawRows(/*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified FROM notes WHERE isDeleted = 0`)) {
+        // ownerId was added in migration 239; during the migration chain from older DBs the column
+        // may not exist yet. Detect at runtime so old JS migration modules (like 0220) can still call
+        // load() without crashing.
+        const hasOwnerId = notesHasOwnerIdColumn();
+        const noteQuery = hasOwnerId
+            ? /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId FROM notes WHERE isDeleted = 0`
+            : /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified FROM notes WHERE isDeleted = 0`;
+
+        for (const row of sql.getRawRows(noteQuery)) {
             new BNote().update(row).init();
         }
 
@@ -77,6 +92,84 @@ function reload(reason: string) {
     load();
 
     ws.reloadFrontend(reason || "becca reloaded");
+}
+
+/**
+ * Loads notes (and branches/attributes) visible to a specific user into the given Becca instance.
+ * Admin users get the unfiltered set. Non-admin users see only notes they own or have been
+ * explicitly granted access to via note_permissions.
+ */
+export async function loadBeccaForUser(target: import("./becca-interface.js").default, userId: string, isAdmin: boolean): Promise<void> {
+    const start = Date.now();
+    target.reset();
+
+    ctxSet("loadingBecca", target);
+
+    const sql = getSql();
+    sql.disableSlowQueryLogging(() => {
+        const noteQuery = isAdmin
+            ? /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
+                        FROM notes WHERE isDeleted = 0`
+            : /*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId
+                        FROM notes
+                       WHERE isDeleted = 0
+                         AND (ownerId = ?
+                              OR noteId IN (
+                                  SELECT noteId FROM note_permissions
+                                   WHERE userId = ?
+                                      OR groupId IN (SELECT groupId FROM user_group_members WHERE userId = ?)
+                              ))`;
+
+        const noteParams = isAdmin ? [] : [userId, userId, userId];
+
+        const visibleNoteIds = new Set<string>();
+
+        for (const row of sql.getRawRows(noteQuery, noteParams)) {
+            const note = new BNote().update(row);
+            visibleNoteIds.add(row[0] as string);
+            note.init();
+        }
+
+        const branchRows = sql.getRawRows(
+            /*sql*/`SELECT branchId, noteId, parentNoteId, prefix, notePosition, isExpanded, utcDateModified
+                      FROM branches WHERE isDeleted = 0`
+        );
+        branchRows.sort((a, b) => ((a[4] as number) || 0) - ((b[4] as number) || 0));
+        for (const row of branchRows) {
+            if (visibleNoteIds.has(row[1] as string)) {
+                new BBranch().update(row).init();
+            }
+        }
+
+        for (const row of sql.getRawRows(
+            /*sql*/`SELECT attributeId, noteId, type, name, value, isInheritable, position, utcDateModified
+                      FROM attributes WHERE isDeleted = 0`
+        )) {
+            if (visibleNoteIds.has(row[1] as string)) {
+                new BAttribute().update(row).init();
+            }
+        }
+
+        // Options and ETAPI tokens are global; load them for every user.
+        for (const row of sql.getRows<OptionRow>(/*sql*/`SELECT name, value, isSynced, utcDateModified FROM options`)) {
+            new BOption(row);
+        }
+
+        for (const row of sql.getRows<EtapiTokenRow>(
+            /*sql*/`SELECT etapiTokenId, name, tokenHash, utcDateCreated, utcDateModified FROM etapi_tokens WHERE isDeleted = 0`
+        )) {
+            new BEtapiToken(row);
+        }
+    });
+
+    for (const noteId in target.notes) {
+        target.notes[noteId].sortParents();
+    }
+
+    ctxSet("loadingBecca", undefined);
+
+    target.loaded = true;
+    getLog().info(`Becca user load (userId=${userId}) took ${Date.now() - start}ms`);
 }
 
 eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entityName, entityRow }) => {

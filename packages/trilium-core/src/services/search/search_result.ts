@@ -1,4 +1,4 @@
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import becca_service from "../../becca/becca_service.js";
 import {
     calculateOptimizedEditDistance,
@@ -55,7 +55,7 @@ class SearchResult {
         this.score = 0;
         this.fuzzyScore = 0; // Reset fuzzy score tracking
 
-        const note = becca.notes[this.noteId];
+        const note = getBecca().notes[this.noteId];
         // normalizeSearchText already lowercases — no need for .toLowerCase() first
         const normalizedQuery = normalizeSearchText(fulltextQuery);
         const normalizedTitle = normalizeSearchText(note.title);

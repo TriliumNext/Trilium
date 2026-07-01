@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import BNote from "../../../becca/entities/bnote.js";
 import { note, NoteBuilder } from "../../../test/becca_mocking.js";
@@ -20,9 +20,9 @@ function searchContext(overrides: Record<string, unknown> = {}) {
     } as any;
 }
 
-/** Build a NoteSet containing every note currently registered in becca. */
+/** Build a NoteSet containing every note currently registered in getBecca(). */
 function allNotesSet() {
-    return new NoteSet(Object.values(becca.notes));
+    return new NoteSet(Object.values(getBecca().notes));
 }
 
 function execute(exp: NoteFlatTextExp, ctx = searchContext(), inputNoteSet = allNotesSet()) {
@@ -39,7 +39,7 @@ let rootNote: NoteBuilder;
 
 describe("NoteFlatTextExp", () => {
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
 
         rootNote = new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
         new BBranch({

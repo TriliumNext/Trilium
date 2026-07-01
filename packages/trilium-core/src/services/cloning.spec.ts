@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import cloningService from "./cloning.js";
@@ -40,7 +40,7 @@ describe("cloning service (real DB)", () => {
             expect(res.success).toBe(true);
             expect(res.branchId).toBeDefined();
 
-            const branch = becca.getBranchFromChildAndParent(source.note.noteId, target.note.noteId);
+            const branch = getBecca().getBranchFromChildAndParent(source.note.noteId, target.note.noteId);
             expect(branch).not.toBeNull();
             expect(branch!.branchId).toBe(res.branchId);
             expect(branch!.prefix).toBe("my-prefix");
@@ -78,7 +78,7 @@ describe("cloning service (real DB)", () => {
 
             expect(res.success).toBe(false);
             expect(res.message).toBe("Can't clone into a search note");
-            expect(becca.getBranchFromChildAndParent(source.note.noteId, search.note.noteId)).toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(source.note.noteId, search.note.noteId)).toBeNull();
         });
 
         it("propagates a validation failure (clone already present under the parent)", () => {
@@ -109,7 +109,7 @@ describe("cloning service (real DB)", () => {
             // The parent branch is expanded so the clone is immediately visible.
             expect(targetParent.branch.isExpanded).toBe(true);
 
-            const branch = becca.getBranchFromChildAndParent(source.note.noteId, targetParent.note.noteId);
+            const branch = getBecca().getBranchFromChildAndParent(source.note.noteId, targetParent.note.noteId);
             expect(branch).not.toBeNull();
             expect(branch!.prefix).toBe("px");
         });
@@ -187,16 +187,16 @@ describe("cloning service (real DB)", () => {
 
             // Add a second branch so removing it does not delete the note.
             getContext().init(() => cloningService.cloneNoteToParentNote(source.note.noteId, target.note.noteId));
-            expect(becca.getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).not.toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).not.toBeNull();
 
             const res = getContext().init(() =>
                 cloningService.ensureNoteIsAbsentFromParent(source.note.noteId, target.note.noteId)
             );
 
             expect(res).toEqual({ success: true });
-            expect(becca.getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).toBeNull();
             // The note still exists via its original branch under root.
-            expect(becca.notes[source.note.noteId]).toBeDefined();
+            expect(getBecca().notes[source.note.noteId]).toBeDefined();
             expect(source.note.isDeleted).toBe(false);
         });
 
@@ -210,7 +210,7 @@ describe("cloning service (real DB)", () => {
             expect(res.success).toBe(false);
             expect(typeof res.message).toBe("string");
             // The branch is preserved.
-            expect(becca.getBranchFromChildAndParent(source.note.noteId, "root")).not.toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(source.note.noteId, "root")).not.toBeNull();
         });
 
         it("returns undefined when there is no matching branch to remove", () => {
@@ -234,14 +234,14 @@ describe("cloning service (real DB)", () => {
 
             expect(present.success).toBe(true);
             expect(present.branch).not.toBeNull();
-            expect(becca.getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).not.toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).not.toBeNull();
 
             const absent = getContext().init(() =>
                 cloningService.toggleNoteInParent(false, source.note.noteId, target.note.noteId)
             );
 
             expect(absent).toEqual({ success: true });
-            expect(becca.getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).toBeNull();
+            expect(getBecca().getBranchFromChildAndParent(source.note.noteId, target.note.noteId)).toBeNull();
         });
     });
 
@@ -261,7 +261,7 @@ describe("cloning service (real DB)", () => {
             expect(res.success).toBe(true);
             expect(res.branchId).toBeDefined();
 
-            const newBranch = becca.getBranch(res.branchId!);
+            const newBranch = getBecca().getBranch(res.branchId!);
             expect(newBranch).not.toBeNull();
             expect(newBranch!.parentNoteId).toBe(parent.note.noteId);
             expect(newBranch!.noteId).toBe(source.note.noteId);

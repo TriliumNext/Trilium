@@ -1,6 +1,6 @@
 "use strict";
 
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca.js";
 import keyboard_actions from "../../services/keyboard_actions";
 
 function getKeyboardActions() {
@@ -8,10 +8,10 @@ function getKeyboardActions() {
 }
 
 function getShortcutsForNotes() {
-    const labels = becca.findAttributes("label", "keyboardShortcut");
+    const labels = getBecca().findAttributes("label", "keyboardShortcut");
 
     // launchers have different handling
-    return labels.filter((attr) => becca.getNote(attr.noteId)?.type !== "launcher");
+    return labels.filter((attr) => getBecca().getNote(attr.noteId)?.type !== "launcher");
 }
 
 export default {
