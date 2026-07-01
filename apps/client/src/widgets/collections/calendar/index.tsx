@@ -170,6 +170,14 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 handleWindowResize={false}
                 initialDate={initialDate || undefined}
                 locale={locale}
+                lazyFetching={false}
+                eventDataTransform={(e) => {
+                    // Hide events that shouldn't be shown in this view. We use the view from the calendar ref since viewDidMount runs after this is called.
+                    if(e.hideInViews && e.hideInViews.split(",").includes(calendarRef.current?.view.type)) {
+                        e.display = "none";
+                    }
+                    return e;
+                }}
                 {...editingProps}
                 eventDidMount={eventDidMount}
                 viewDidMount={({ view }) => {
