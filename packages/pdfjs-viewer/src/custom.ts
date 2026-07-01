@@ -40,7 +40,6 @@ async function main() {
     if (isEditable) {
         app.eventBus.on("documentloaded", () => {
             manageSave();
-            manageDownload();
             extractAndSendToc();
             setupScrollToHeading();
             setupActiveHeadingTracking();
@@ -152,17 +151,6 @@ function manageSave() {
     app.eventBus.on("editingstateschanged", ({ details }: { details: Record<string, boolean> }) => {
         if (details.hasSomethingToUndo) {
             onChange();
-        }
-    });
-}
-
-function manageDownload() {
-    window.addEventListener("message", event => {
-        if (event.origin !== window.location.origin) return;
-
-        if (event.data?.type === "trilium-request-download") {
-            const app = window.PDFViewerApplication;
-            app.eventBus.dispatch("download", { source: window });
         }
     });
 }

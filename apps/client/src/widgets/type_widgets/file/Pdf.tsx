@@ -4,6 +4,7 @@ import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
 import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
+import open from "../../../services/open";
 import { useViewModeConfig } from "../../collections/NoteList";
 import { useBlobEditorSpacedUpdate, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
 import PdfViewer from "./PdfViewer";
@@ -187,11 +188,16 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
         };
     }, [ note, historyConfig, componentId, blob, noteContext, isReadOnly, spacedUpdate ]);
 
-    useTriliumEvent("customDownload", ({ ntxId }) => {
+    useTriliumEvent("customDownload", async ({ ntxId }) => {
         if (ntxId !== noteContext.ntxId) return;
-        iframeRef.current?.contentWindow?.postMessage({
-            type: "trilium-request-download"
-        });
+
+        // Flush any pending in-viewer edits (e.g. annotations) to the server before
+        // downloading, so the file reflects the latest state and not just the last
+        // debounced auto-save. No-op for read-only PDFs, which have nothing to save.
+        await spacedUpdate.updateNowIfNecessary();
+
+        const url = `${open.getUrlForDownload(`api/notes/${note.noteId}/download`)}?${Date.now()}`;
+        open.download(url);
     });
 
     useTriliumEvent("printActiveNote", () => {
