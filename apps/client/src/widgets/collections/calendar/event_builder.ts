@@ -121,6 +121,11 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
         }
 
         endDate = (endTime ? `${endDate}T${endTime}:00` : endDate);
+        // If the end date is now before the start date, bump it a day forward to account for times spanning the day boundary
+        if (endDate && endTime && dayjs(endDate).isBefore(dayjs(startDate))) {
+            endDate = dayjs(endDate).add(1, "day").format("YYYY-MM-DDTHH:mm:ss");
+        }
+
         const eventData: EventInput = {
             id: note.noteId,
             title,
