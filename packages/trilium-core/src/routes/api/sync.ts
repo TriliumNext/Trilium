@@ -182,18 +182,28 @@ function getChanged(req: Request) {
         getLog().info(`Returning ${entityChangeRecords.length} entity changes in ${Date.now() - startTime}ms`);
     }
 
-    return {
-        entityChanges: entityChangeRecords,
-        lastEntityChangeId,
-        outstandingPullCount: sql.getValue(
-            `
+    // `outstandingPullCount` is a progress estimate returned on every pull request. Counting with
+    // only `isSynced` + `id` is an index-only range scan on IDX_entity_changes_isSynced_id; adding
+    // an `instanceId != ?` filter (instanceId is not in the index) forces a table lookup per row,
+    // which made this query the single most expensive part of serving a large initial sync.
+    //
+    // Dropping the instanceId filter can transiently count the client's own pushed changes (which
+    // are then skipped when returned), so the estimate may over-count slightly mid-sync but always
+    // converges to 0 as `lastEntityChangeId` advances. During an initial sync the client has no rows
+    // on the server, so the count is exact.
+    const outstandingPullCount = sql.getValue(
+        `
             SELECT COUNT(id)
             FROM entity_changes
             WHERE isSynced = 1
-            AND instanceId != ?
             AND id > ?`,
-            [clientInstanceId, lastEntityChangeId]
-        )
+        [lastEntityChangeId]
+    );
+
+    return {
+        entityChanges: entityChangeRecords,
+        lastEntityChangeId,
+        outstandingPullCount
     };
 }
 

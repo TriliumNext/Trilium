@@ -39,6 +39,15 @@ export interface CryptoProvider {
      * @returns true if arrays are equal, false otherwise
      */
     constantTimeCompare(a: Uint8Array, b: Uint8Array): boolean;
+
+    /**
+     * Encodes raw bytes to a standard (RFC 4648) base64 string. Platform-optimized: server and
+     * desktop use Node's native `Buffer`; standalone uses a chunked browser implementation.
+     */
+    base64Encode(bytes: Uint8Array): string;
+
+    /** Decodes a standard (RFC 4648) base64 string back into raw bytes. */
+    base64Decode(base64: string): Uint8Array;
 }
 
 let crypto: CryptoProvider | null = null;

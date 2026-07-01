@@ -11,7 +11,7 @@ import options from "./options.js";
 import { type ExecOpts, initRequest, type RequestProvider } from "./request.js";
 import { getSql } from "./sql/index.js";
 import setupService from "./setup.js";
-import syncService from "./sync.js";
+import syncService, { estimateEntityChangeRecordSize } from "./sync.js";
 import syncOptions from "./sync_options.js";
 import dateUtils from "./utils/date.js";
 
@@ -111,6 +111,19 @@ describe("sync service", () => {
         expect(urls.some((u) => u.includes("/api/sync/changed"))).toBe(true);
         expect(urls.some((u) => u.includes("/api/sync/finished"))).toBe(true);
         expect(urls.some((u) => u.includes("/api/sync/check"))).toBe(true);
+    });
+
+    it("persists an advanced cursor even when the server returns an empty change batch", async () => {
+        // The server may skip past changes owned by this instance and return no entity changes but an
+        // advanced lastEntityChangeId. The client must persist that advance, otherwise every subsequent
+        // sync re-requests (and the server re-scans) the same skipped range.
+        config.login = { instanceId: "REMOTE_INSTANCE", maxEntityChangeId: 100 }; // don't lower our cursor on login
+        config.changed = [{ entityChanges: [], lastEntityChangeId: 20, outstandingPullCount: 0 }];
+        cls.init(() => options.setOption("lastSyncedPull", "5"));
+
+        await runSync();
+
+        expect(Number(options.getOption("lastSyncedPull"))).toBe(20);
     });
 
     it("re-runs the content check while the server reports outstanding pulls", async () => {
@@ -254,8 +267,8 @@ describe("sync service", () => {
             const records = syncService.getEntityChangeRecords([
                 ec({ entityName: "blobs", entityId: "sync_big_blob" }),
                 ec({ entityName: "blobs", entityId: "sync_small_blob" })
-            ]);
-            // The big blob fills the budget so the small one is not included.
+            ], 1_000_000);
+            // The big blob alone exceeds the (explicit) cap, so the small one is not included.
             expect(records).toHaveLength(1);
             expect(records[0]?.entityChange.entityId).toBe("sync_big_blob");
         });
@@ -281,6 +294,27 @@ describe("sync service", () => {
 
         expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 60000);
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 5000);
+    });
+});
+
+describe("estimateEntityChangeRecordSize", () => {
+    const ec = {} as EntityChange;
+
+    it("uses (base64) string content length plus a fixed metadata allowance", () => {
+        expect(estimateEntityChangeRecordSize({ entityChange: ec, entity: { content: "A".repeat(1000) } as never })).toBe(1300);
+    });
+
+    it("handles binary (Uint8Array) content", () => {
+        expect(estimateEntityChangeRecordSize({ entityChange: ec, entity: { content: new Uint8Array(500) } as never })).toBe(800);
+    });
+
+    it("returns just the allowance for records without content (metadata / erased)", () => {
+        expect(estimateEntityChangeRecordSize({ entityChange: ec })).toBe(300);
+        expect(estimateEntityChangeRecordSize({ entityChange: ec, entity: {} as never })).toBe(300);
+    });
+
+    it("a single large blob record exceeds the ~1 MB cap threshold", () => {
+        expect(estimateEntityChangeRecordSize({ entityChange: ec, entity: { content: "x".repeat(1_000_001) } as never })).toBeGreaterThan(1_000_000);
     });
 });
 

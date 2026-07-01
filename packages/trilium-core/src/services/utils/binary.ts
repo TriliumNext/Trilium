@@ -1,3 +1,5 @@
+import { getCrypto } from "../encryption/crypto.js";
+
 const utf8Decoder = new TextDecoder("utf-8");
 const utf8Encoder = new TextEncoder();
 
@@ -8,28 +10,18 @@ export function concat2(a: Uint8Array, b: Uint8Array): Uint8Array {
     return out;
 }
 
+/**
+ * Encodes a string (UTF-8) or raw bytes to a standard base64 string. The heavy lifting is
+ * delegated to the active crypto provider so each platform uses its fastest implementation
+ * (native `Buffer` on server/desktop, a chunked encoder in the browser).
+ */
 export function encodeBase64(stringOrBuffer: string | Uint8Array): string {
-    const bytes = wrapStringOrBuffer(stringOrBuffer);
-    let binary = "";
-    const len = bytes.length;
-
-    for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-
-    return btoa(binary);
+    return getCrypto().base64Encode(wrapStringOrBuffer(stringOrBuffer));
 }
 
+/** Decodes a standard base64 string into raw bytes via the active crypto provider. */
 export function decodeBase64(base64: string): Uint8Array {
-    const binary = atob(base64);
-    const len = binary.length;
-
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binary.charCodeAt(i);
-    }
-
-    return bytes;
+    return getCrypto().base64Decode(base64);
 }
 
 export function decodeUtf8(stringOrBuffer: string | Uint8Array) {

@@ -94,6 +94,28 @@ export default class BrowserCryptoProvider implements CryptoProvider {
         }
         return result === 0;
     }
+
+    base64Encode(bytes: Uint8Array): string {
+        // Build the binary string in 32K chunks via fromCharCode.apply. This avoids both the
+        // pathological per-byte string concatenation of a naive loop and the call-stack limit
+        // of applying fromCharCode to the whole array at once.
+        const CHUNK = 0x8000; // 32768
+        let binary = "";
+        for (let i = 0; i < bytes.length; i += CHUNK) {
+            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK) as unknown as number[]);
+        }
+        return btoa(binary);
+    }
+
+    base64Decode(base64: string): Uint8Array {
+        const binary = atob(base64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+    }
 }
 
 /**

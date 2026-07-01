@@ -14,7 +14,7 @@ import { getSql } from "./sql/index.js";
 import syncMutexService from "./sync_mutex.js";
 import syncOptions from "./sync_options.js";
 import syncUpdateService from "./sync_update.js";
-import { randomString, timeLimit } from "./utils/index.js";
+import { isLinux, isMac, isWindows, randomString, timeLimit } from "./utils/index.js";
 import ws from "./ws.js";
 import getInstanceId from "./instance_id.js";
 import request, { CookieJar, ExecOpts } from "./request.js";
@@ -163,64 +163,130 @@ async function doLogin(): Promise<SyncContext> {
 
 async function pullChanges(syncContext: SyncContext) {
     const log = getLog();
+    const maxBatchBytes = getMaxPullBatchBytes();
 
     while (true) {
-        const lastSyncedPull = getLastSyncedPull();
-        const logMarkerId = randomString(10); // to easily pair sync events between client and server logs
-        const changesUri = `/api/sync/changed?instanceId=${getInstanceId()}&lastEntityChangeId=${lastSyncedPull}&logMarkerId=${logMarkerId}`;
+        // Fetch phase: pull consecutive chunks (each needs its own HTTP round-trip) until we've
+        // accumulated ~maxBatchBytes worth of content, then apply them all in a single transaction.
+        // The commit itself carries a large fixed per-transaction overhead, so committing once per
+        // pulled chunk dominates initial-sync time; batching amortizes it across many chunks. The
+        // batch is bounded by bytes (not chunk count) to keep peak memory in check, since a single
+        // chunk may already carry a large blob.
+        const batch: ChangesResponse[] = [];
+        let batchBytes = 0;
+        let cursor = getLastSyncedPull();
+        let noMoreChanges = false;
+        const fetchStart = Date.now();
 
-        const startDate = Date.now();
+        do {
+            const logMarkerId = randomString(10); // to easily pair sync events between client and server logs
+            const changesUri = `/api/sync/changed?instanceId=${getInstanceId()}&lastEntityChangeId=${cursor}&logMarkerId=${logMarkerId}`;
 
-        const resp = await syncRequest<ChangesResponse>(syncContext, "GET", changesUri);
-        if (!resp) {
-            throw new Error("Request failed.");
-        }
-        const { entityChanges, lastEntityChangeId } = resp;
-
-        outstandingPullCount = resp.outstandingPullCount;
-
-        const hasPendingChanges = entityChanges.length > 0 || outstandingPullCount > 0;
-        if (hasPendingChanges && optionService.getOptionOrNull("syncIncomplete") !== "true") {
-            optionService.setOption("syncIncomplete", "true");
-
-            getLog().info("Marking sync as incomplete — consistency checks will be deferred until sync converges.");
-        }
-
-        if (totalPullCount === null) {
-            totalPullCount = entityChanges.length + outstandingPullCount;
-        }
-
-        const pulledDate = Date.now();
-
-        getSql().transactional(() => {
-            if (syncContext.instanceId) {
-                syncUpdateService.updateEntities(entityChanges, syncContext.instanceId);
+            const resp = await syncRequest<ChangesResponse>(syncContext, "GET", changesUri);
+            if (!resp) {
+                throw new Error("Request failed.");
             }
 
-            if (lastSyncedPull !== lastEntityChangeId) {
-                setLastSyncedPull(lastEntityChangeId);
+            outstandingPullCount = resp.outstandingPullCount;
+
+            // Advance the cursor to whatever the server has processed — even when it returns no entity
+            // changes, since it may have skipped past changes owned by this instance. Capturing it here
+            // (before the empty-response break) lets the apply phase persist the advance, so we don't
+            // re-request the skipped range on every subsequent sync.
+            cursor = resp.lastEntityChangeId;
+
+            const hasPendingChanges = resp.entityChanges.length > 0 || outstandingPullCount > 0;
+            if (hasPendingChanges && optionService.getOptionOrNull("syncIncomplete") !== "true") {
+                optionService.setOption("syncIncomplete", "true");
+
+                getLog().info("Marking sync as incomplete — consistency checks will be deferred until sync converges.");
+            }
+
+            if (totalPullCount === null) {
+                totalPullCount = resp.entityChanges.length + outstandingPullCount;
+            }
+
+            if (resp.entityChanges.length === 0) {
+                noMoreChanges = true;
+                break;
+            }
+
+            batch.push(resp);
+            batchBytes += estimatePullResponseBytes(resp);
+        } while (batchBytes < maxBatchBytes);
+
+        // Nothing to apply and the cursor didn't move → fully caught up. If the cursor DID advance (the
+        // server skipped this instance's own changes and returned nothing), fall through so the apply
+        // phase persists the advance.
+        if (batch.length === 0 && getLastSyncedPull() === cursor) {
+            break;
+        }
+
+        // Apply phase: all fetched chunks in a single transaction.
+        const applyStart = Date.now();
+        let batchChanges = 0;
+
+        getSql().transactional(() => {
+            for (const resp of batch) {
+                if (syncContext.instanceId) {
+                    syncUpdateService.updateEntities(resp.entityChanges, syncContext.instanceId);
+                }
+
+                batchChanges += resp.entityChanges.length;
+            }
+
+            if (getLastSyncedPull() !== cursor) {
+                setLastSyncedPull(cursor);
             }
         });
 
-        if (entityChanges.length === 0) {
-            break;
-        } else {
-            try {
-                // https://github.com/zadam/trilium/issues/4310
-                const sizeInKb = Math.round(JSON.stringify(resp).length / 1024);
+        if (batch.length > 0) {
+            log.info(
+                `Sync: pulled ${batch.length} chunk(s) (${batchChanges} changes, ~${Math.round(batchBytes / 1_048_576)} MB) in ${applyStart - fetchStart}ms and applied them in ${Date.now() - applyStart}ms, ${outstandingPullCount} outstanding pulls`
+            );
+        }
 
-                log.info(
-                    `Sync ${logMarkerId}: Pulled ${entityChanges.length} changes in ${sizeInKb} KB, starting at entityChangeId=${lastSyncedPull} in ${pulledDate - startDate}ms and applied them in ${Date.now() - pulledDate}ms, ${outstandingPullCount} outstanding pulls`
-                );
-            } catch (e: any) {
-                log.error(`Error occurred ${e.message} ${e.stack}`);
-            }
+        if (noMoreChanges) {
+            break;
         }
     }
 
     log.info("Finished pull");
 
     totalPullCount = null;
+}
+
+/**
+ * Maximum accumulated content size (in bytes) to buffer across pulled chunks before applying them
+ * in a single transaction during {@link pullChanges}. Larger batches mean fewer commits (each of
+ * which carries a large fixed overhead) at the cost of higher peak memory while the batch is held
+ * in memory. The standalone/browser build runs SQLite (sql.js) fully in memory, so it uses a much
+ * smaller budget than native desktop/server builds.
+ */
+function getMaxPullBatchBytes() {
+    // Standalone/browser is the only platform reporting none of mac/windows/linux.
+    const isBrowser = !isMac() && !isWindows() && !isLinux();
+
+    return isBrowser ? 16 * 1024 * 1024 : 32 * 1024 * 1024;
+}
+
+/** Rough in-memory size of a pulled changes response, dominated by (base64-encoded) blob content. */
+function estimatePullResponseBytes(resp: ChangesResponse) {
+    let bytes = 0;
+
+    for (const { entity } of resp.entityChanges) {
+        const content = entity?.content;
+
+        if (typeof content === "string") {
+            bytes += content.length;
+        } else if (content) {
+            bytes += content.length; // Uint8Array
+        }
+
+        bytes += 128; // rough per-record metadata overhead
+    }
+
+    return bytes;
 }
 
 async function pushChanges(syncContext: SyncContext) {
@@ -393,7 +459,18 @@ function getEntityChangeRow(entityChange: EntityChange) {
 
 }
 
-function getEntityChangeRecords(entityChanges: EntityChange[]) {
+/**
+ * Soft upper bound on the (estimated) size of a single pull response. Larger responses mean fewer
+ * HTTP round-trips, which is the dominant cost of an initial sync over a high-latency link; on a 2 GB
+ * benchmark, going from 1 MB to 8 MB cut the request count ~3x (1030 -> 333). It stays well under the
+ * tens-of-MB responses a single large blob already produces (so it is within what existing reverse
+ * proxies tolerate), and below the client's pull-batch memory budget, so it does not raise the
+ * receiver's peak memory. It is a soft cap: a response is at least one record, and the record that
+ * crosses the threshold is still included.
+ */
+const MAX_PULL_RESPONSE_BYTES = 8 * 1024 * 1024;
+
+function getEntityChangeRecords(entityChanges: EntityChange[], maxResponseBytes = MAX_PULL_RESPONSE_BYTES) {
     const records: EntityChangeRecord[] = [];
     let length = 0;
 
@@ -413,15 +490,28 @@ function getEntityChangeRecords(entityChanges: EntityChange[]) {
 
         records.push(record);
 
-        length += JSON.stringify(record).length;
+        length += estimateEntityChangeRecordSize(record);
 
-        if (length > 1_000_000) {
-            // each sync request/response should have at most ~1 MB.
+        if (length > maxResponseBytes) {
             break;
         }
     }
 
     return records;
+}
+
+/**
+ * Rough serialized byte size of an entity-change record, used only to bound a sync response to
+ * ~1 MB. Avoids a full `JSON.stringify(record)` here — the record's (base64-encoded) blob content
+ * would otherwise be serialized just to be measured, then serialized again when the response is
+ * sent. Blob content dominates the payload; a fixed allowance covers the entityChange plus the
+ * record's other (small) entity fields, which is precise enough for a size threshold.
+ */
+export function estimateEntityChangeRecordSize(record: EntityChangeRecord): number {
+    const content = record.entity?.content;
+    const contentLength = typeof content === "string" ? content.length : content?.length ?? 0;
+
+    return contentLength + 300;
 }
 
 function getLastSyncedPull() {
