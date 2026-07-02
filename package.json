@@ -53,7 +53,7 @@
   },
   "private": true,
   "devDependencies": {
-    "@electron/rebuild": "4.0.5",
+    "@electron/rebuild": "4.0.6",
     "@fast-csv/parse": "5.0.7",
     "@playwright/test": "1.61.1",
     "@triliumnext/server": "workspace:*",
