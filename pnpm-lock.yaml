@@ -775,8 +775,8 @@ importers:
         specifier: 1.1.1
         version: 1.1.1
       officeparser:
-        specifier: 7.2.2
-        version: 7.2.2(encoding@0.1.13)
+        specifier: 7.2.3
+        version: 7.2.3(encoding@0.1.13)
       rand-token:
         specifier: 1.0.1
         version: 1.0.1
@@ -10984,9 +10984,6 @@ packages:
   node-notifier@10.0.1:
     resolution: {integrity: sha512-YX7TSyDukOZ0g+gmzjB6abKu+hTGvO8+8+gIFDsRCU2t8fLV/P2unmt+LGFaIa4y64aX98Qksa97rgz4vMNeLQ==}
 
-  node-readable-to-web-readable-stream@0.4.2:
-    resolution: {integrity: sha512-/cMZNI34v//jUTrI+UIo4ieHAB5EZRY/+7OmXZgBxaWBMcW2tGdceIw06RFxWxrKZ5Jp3sI2i5TsRo+CBhtVLQ==}
-
   node-releases@2.0.44:
     resolution: {integrity: sha512-5WUyunoPMsvvEhS8AxHtRzP+oA8UCkJ7YRxatWKjngndhDGLiqEVAQKWjFAiAiuL8zMRGzGSJxFnLetoa43qGQ==}
 
@@ -11075,8 +11072,8 @@ packages:
   ofetch@1.5.1:
     resolution: {integrity: sha512-2W4oUZlVaqAPAil6FUg/difl6YhqhUR7x2eZY4bQCko22UXg3hptq9KLQdqFClV+Wu85UX7hNtdGTngi/1BxcA==}
 
-  officeparser@7.2.2:
-    resolution: {integrity: sha512-W49PyMsOebNsEVEh6jYerNDakK+Se0YdUMwfTjTRQD7qFJqrEuSB7oEagLSnB7YOmZmvpKKz7wJEgeUeJzw5vg==}
+  officeparser@7.2.3:
+    resolution: {integrity: sha512-/Ids2DGCw8gt5EDnsk4lB8ABCVEpE067I50jMiuH7GFR2hBGL6PXwWm/GycjuNXzBLAxAOmQhR2XE+S5hR1qwQ==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -11362,12 +11359,12 @@ packages:
     resolution: {integrity: sha512-Wv0yo0+uZepnoNEKsquhar1F18LogB8oeEikIhUXG16udbiXG7JecHGySwoo6kuMgjmbQYzdrTZlO+/K9t8eZg==}
     hasBin: true
 
-  pdfjs-dist@5.6.205:
-    resolution: {integrity: sha512-tlUj+2IDa7G1SbvBNN74UHRLJybZDWYom+k6p5KIZl7huBvsA4APi6mKL+zCxd3tLjN5hOOEE9Tv7VdzO88pfg==}
-    engines: {node: '>=20.19.0 || >=22.13.0 || >=24'}
-
   pdfjs-dist@6.0.227:
     resolution: {integrity: sha512-/P6M4SXw+70waMVLUM7rdRtvo+dEzqE1t6W/zQNvBETo2MaRa5rrvCcAYdfWGiUzadTgM0lJmRApUrW0d9zgKg==}
+    engines: {node: '>=22.13.0 || >=24'}
+
+  pdfjs-dist@6.1.200:
+    resolution: {integrity: sha512-o8MolyzirkkLrcdsae/HEOiIcXWI7DS5zGpvqW8xTC2YUsW30rltFw2bDGvw/fskUdEMrQm2br68jzDS5BH2vw==}
     engines: {node: '>=22.13.0 || >=24'}
 
   pe-library@1.0.1:
@@ -25894,9 +25891,6 @@ snapshots:
       uuid: 8.3.2
       which: 2.0.2
 
-  node-readable-to-web-readable-stream@0.4.2:
-    optional: true
-
   node-releases@2.0.44: {}
 
   node-releases@2.0.50: {}
@@ -25994,12 +25988,12 @@ snapshots:
       node-fetch-native: 1.6.7
       ufo: 1.6.4
 
-  officeparser@7.2.2(encoding@0.1.13):
+  officeparser@7.2.3(encoding@0.1.13):
     dependencies:
       '@xmldom/xmldom': 0.9.10
       fflate: 0.8.3
       file-type: 22.0.1
-      pdfjs-dist: 5.6.205
+      pdfjs-dist: 6.1.200
       tesseract.js: 7.0.0(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -26290,12 +26284,11 @@ snapshots:
     dependencies:
       resolve-protobuf-schema: 2.1.0
 
-  pdfjs-dist@5.6.205:
-    optionalDependencies:
-      '@napi-rs/canvas': 0.1.100
-      node-readable-to-web-readable-stream: 0.4.2
-
   pdfjs-dist@6.0.227:
+    optionalDependencies:
+      '@napi-rs/canvas': 1.0.0
+
+  pdfjs-dist@6.1.200:
     optionalDependencies:
       '@napi-rs/canvas': 1.0.0
 

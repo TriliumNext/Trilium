@@ -93,7 +93,7 @@
     "mime-types": "3.0.2",
     "multer": "2.2.0",
     "normalize-strings": "1.1.1",
-    "officeparser": "7.2.2",
+    "officeparser": "7.2.3",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
     "serve-favicon": "2.5.1",
