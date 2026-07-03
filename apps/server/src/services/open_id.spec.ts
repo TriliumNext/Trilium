@@ -214,20 +214,38 @@ describe("open_id", () => {
             expect(cfg.session?.absoluteDuration).toBe(config.Session.cookieMaxAge);
         });
 
-        it("requests offline access only when the scope opts into it", () => {
+        it("requests offline access per-issuer, and only when the scope opts into it", () => {
             setOauthConfig(true);
 
             // Default scope: no offline access params — matches the standard sign-in flow.
             mfa.oauthScope = "openid profile email";
             const plain = openID.generateOAuthConfig().authorizationParams as Record<string, unknown>;
+            expect(plain.scope).toBe("openid profile email");
             expect(plain.access_type).toBeUndefined();
             expect(plain.prompt).toBeUndefined();
 
-            // offline_access requested: add access_type=offline + prompt=consent so a refresh token is issued.
+            // Spec-compliant issuer: the offline_access scope IS the refresh-token request. No
+            // Google-specific params — prompt=consent would force the consent screen on every login.
             mfa.oauthScope = "openid profile email offline_access";
-            const offline = openID.generateOAuthConfig().authorizationParams as Record<string, unknown>;
-            expect(offline.access_type).toBe("offline");
-            expect(offline.prompt).toBe("consent");
+            const spec = openID.generateOAuthConfig().authorizationParams as Record<string, unknown>;
+            expect(spec.scope).toBe("openid profile email offline_access");
+            expect(spec.access_type).toBeUndefined();
+            expect(spec.prompt).toBeUndefined();
+
+            // Google: offline_access is not a valid Google scope (invalid_scope), so it is stripped
+            // and replaced with Google's own mechanism (access_type=offline + prompt=consent).
+            mfa.oauthIssuerBaseUrl = "https://accounts.google.com/";
+            const google = openID.generateOAuthConfig().authorizationParams as Record<string, unknown>;
+            expect(google.scope).toBe("openid profile email");
+            expect(google.access_type).toBe("offline");
+            expect(google.prompt).toBe("consent");
+
+            // Google without the opt-in: untouched.
+            mfa.oauthScope = "openid profile email";
+            const googlePlain = openID.generateOAuthConfig().authorizationParams as Record<string, unknown>;
+            expect(googlePlain.scope).toBe("openid profile email");
+            expect(googlePlain.access_type).toBeUndefined();
+            expect(googlePlain.prompt).toBeUndefined();
         });
 
         it("returns the session unchanged when the DB is not initialized", async () => {
@@ -741,6 +759,43 @@ describe("refreshOidcTokenIfNeeded", () => {
         expect(next).toHaveBeenCalledOnce();
         // checkAuth (downstream) sees !loggedIn and redirects to /login.
         expect(session?.loggedIn).toBe(false);
+    });
+
+    it("propagates rotated tokens into piggybacking requests' appSession", async () => {
+        // Each request decodes its own copy of the appSession cookie; the library's refresh() only
+        // updates the initiator's copy. The middleware must copy the rotated tokens into piggybackers
+        // so their (rolling) response cookies don't clobber the fresh pair with the consumed one.
+        const staleTokens = { access_token: "at-old", refresh_token: "rt-old", id_token: "idt-old", token_type: "Bearer", expires_at: 1 };
+        const appSession1 = { ...staleTokens };
+        const appSession2 = { ...staleTokens };
+
+        let resolveRefresh: () => void = () => undefined;
+        const refresh1 = vi.fn(() => new Promise<void>((resolve) => { resolveRefresh = resolve; }));
+        const req1 = {
+            ...makeReq(expiredOidc(refresh1), { loggedIn: true }, "shared-sid").req,
+            appSession: appSession1
+        } as unknown as ExpressRequest;
+        const req2 = {
+            ...makeReq(expiredOidc(vi.fn()), { loggedIn: true }, "shared-sid").req,
+            appSession: appSession2
+        } as unknown as ExpressRequest;
+        const next1 = vi.fn();
+        const next2 = vi.fn();
+
+        refreshOidcTokenIfNeeded(req1, res, next1 as NextFunction);
+        refreshOidcTokenIfNeeded(req2, res, next2 as NextFunction);
+
+        // Simulate the library: refresh() writes the rotated tokens into the initiator's appSession.
+        Object.assign(appSession1, { access_token: "at-new", refresh_token: "rt-new", expires_at: 999 });
+        resolveRefresh();
+        await flushMicrotasks();
+
+        expect(next1).toHaveBeenCalledOnce();
+        expect(next2).toHaveBeenCalledOnce();
+        // The piggybacker's session now carries the rotated pair, not the consumed one.
+        expect(appSession2.access_token).toBe("at-new");
+        expect(appSession2.refresh_token).toBe("rt-new");
+        expect(appSession2.expires_at).toBe(999);
     });
 
     it("coalesces concurrent refreshes for the same session into a single IdP call", async () => {

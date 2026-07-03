@@ -68,7 +68,7 @@ If you want Trilium to keep a valid provider access token — for example so it 
 1.  Add `offline_access` to the `oauthScope` setting (e.g. `oauthScope=openid profile email offline_access`, or the `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE` / `TRILIUM_OAUTH_SCOPE` environment variable).
 2.  Restart the server and reconnect your account so the provider issues a refresh token.
 
-When offline access is requested, Trilium additionally sends `access_type=offline` and `prompt=consent` to the authorization endpoint (required for Google to issue and re-issue a refresh token). These parameters are **not** sent otherwise, so the normal sign-in flow is unaffected.
+How the request is made depends on your provider. For spec-compliant providers (Authelia, Authentik, Keycloak, Okta, Auth0, …) the `offline_access` scope itself is the refresh-token request and is passed through as-is. For **Google**, which does not accept `offline_access` as a scope, Trilium strips it from the requested scopes and instead sends Google's own mechanism: `access_type=offline` and `prompt=consent` (required for Google to issue and re-issue a refresh token). Without `offline_access` in the scope, none of this happens and the normal sign-in flow is unaffected.
 
 With a refresh token present, Trilium transparently refreshes an expired access token on the next request. If the provider rejects the refresh token (`invalid_grant` — e.g. the session was revoked or consent was withdrawn), you are signed out and redirected to the login screen. Transient provider errors (network blips, 5xx) do **not** sign you out — your local Trilium session remains valid.
 
