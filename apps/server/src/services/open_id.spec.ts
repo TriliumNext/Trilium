@@ -194,6 +194,26 @@ describe("open_id", () => {
             expect(openID.generateOAuthConfig(true).idpLogout).toBe(true);
         });
 
+        it("requests the scope configured via oauthScope", () => {
+            setOauthConfig(true);
+            mfa.oauthScope = "openid profile email offline_access";
+            expect(openID.generateOAuthConfig().authorizationParams.scope).toBe("openid profile email offline_access");
+        });
+
+        it("passes the configured oauthHttpTimeout through to the library", () => {
+            setOauthConfig(true);
+            mfa.oauthHttpTimeout = 45000;
+            expect(openID.generateOAuthConfig().httpTimeout).toBe(45000);
+        });
+
+        it("bounds the OIDC appSession lifetime to cookieMaxAge (rolling + absolute)", () => {
+            setOauthConfig(true);
+            const cfg = openID.generateOAuthConfig();
+            expect(cfg.session?.rolling).toBe(true);
+            expect(cfg.session?.rollingDuration).toBe(config.Session.cookieMaxAge);
+            expect(cfg.session?.absoluteDuration).toBe(config.Session.cookieMaxAge);
+        });
+
         it("returns the session unchanged when the DB is not initialized", async () => {
             const cfg = buildConfig();
             const spy = vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
