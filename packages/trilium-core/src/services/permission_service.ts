@@ -3,6 +3,7 @@ import { getLog } from "./log.js";
 import { newEntityId } from "./utils/index.js";
 import dateUtils from "./utils/date.js";
 import userService from "./user_service.js";
+import { evictUser } from "../becca/becca_cache.js";
 
 interface PermissionRow {
     permissionId: string;
@@ -99,6 +100,20 @@ function canUserWriteNote(noteId: string, userId: string): boolean {
     return getEffectivePermission(noteId, userId)?.canWrite ?? false;
 }
 
+function evictAffectedUsers(userId: string | null, groupId: string | null): void {
+    if (userId) {
+        evictUser(userId);
+    }
+    if (groupId) {
+        const members = getSql().getColumn<string>(
+            "SELECT userId FROM user_group_members WHERE groupId = ?", [groupId]
+        );
+        for (const memberId of members) {
+            evictUser(memberId);
+        }
+    }
+}
+
 function grantPermission(
     noteId: string,
     userId: string | null,
@@ -120,12 +135,13 @@ function grantPermission(
 
     // Permission changes affect the whole inheritance chain; clear everything.
     clearPermissionCache();
+    evictAffectedUsers(userId, groupId);
     return permissionId;
 }
 
 function revokePermission(permissionId: string): void {
-    const row = getSql().getRowOrNull<{ noteId: string }>(
-        "SELECT noteId FROM note_permissions WHERE permissionId = ?",
+    const row = getSql().getRowOrNull<{ noteId: string; userId: string | null; groupId: string | null }>(
+        "SELECT noteId, userId, groupId FROM note_permissions WHERE permissionId = ?",
         [permissionId]
     );
 
@@ -137,6 +153,7 @@ function revokePermission(permissionId: string): void {
     getSql().execute("DELETE FROM note_permissions WHERE permissionId = ?", [permissionId]);
     // Permission changes affect the whole inheritance chain; clear everything.
     clearPermissionCache();
+    evictAffectedUsers(row.userId, row.groupId);
 }
 
 function getPermissionsForNote(noteId: string): PermissionRow[] {

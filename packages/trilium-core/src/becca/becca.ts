@@ -2,7 +2,7 @@
 
 import Becca from "./becca-interface.js";
 import { getCachedBecca, setCachedBecca } from "./becca_cache.js";
-import { getUserId, get } from "../services/context.js";
+import { getUserId, get, set as ctxSet } from "../services/context.js";
 import { getSql } from "../services/sql/index.js";
 
 const adminBecca = new Becca();
@@ -20,6 +20,8 @@ function isUserAdmin(userId: string): boolean {
 
 // "loadingBecca" in CLS is set by loadBeccaForUser so entity constructors
 // register into the target Becca being built, not adminBecca.
+// "resolvedBecca" is set once by warmBeccaForUser to avoid re-running the admin
+// SQL check on every getBecca() call within the same request.
 // Outside a request, or for admins, falls back to adminBecca.
 export function getBecca(): Becca {
     const loadingBecca = get<Becca>("loadingBecca");
@@ -30,6 +32,11 @@ export function getBecca(): Becca {
     const userId = getUserId();
     if (!userId) {
         return adminBecca;
+    }
+
+    const resolved = get<Becca>("resolvedBecca");
+    if (resolved) {
+        return resolved;
     }
 
     if (isUserAdmin(userId)) {
@@ -45,18 +52,25 @@ export function getBecca(): Becca {
 }
 
 export async function warmBeccaForUser(userId: string): Promise<Becca> {
+    let becca: Becca;
+
     if (isUserAdmin(userId)) {
-        return adminBecca;
+        becca = adminBecca;
+    } else {
+        const existing = getCachedBecca(userId);
+        if (existing) {
+            becca = existing;
+        } else {
+            const { loadBeccaForUser } = await import("./becca_loader.js");
+            const userBecca = new Becca();
+            await loadBeccaForUser(userBecca, userId, false);
+            setCachedBecca(userId, userBecca);
+            becca = userBecca;
+        }
     }
 
-    const existing = getCachedBecca(userId);
-    if (existing) return existing;
-
-    const { loadBeccaForUser } = await import("./becca_loader.js");
-    const userBecca = new Becca();
-    await loadBeccaForUser(userBecca, userId, false);
-    setCachedBecca(userId, userBecca);
-    return userBecca;
+    ctxSet("resolvedBecca", becca);
+    return becca;
 }
 
 export { adminBecca };
