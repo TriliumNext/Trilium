@@ -78,6 +78,83 @@ function getOAuthStatus() {
     };
 }
 
+/**
+ * In-flight refresh promises keyed by trilium.sid session ID, so concurrent expired-token requests
+ * share a single network call to the IdP. Without this, refresh-token rotation (Authentik, Auth0,
+ * Okta default) breaks under load: the first request consumes the refresh token, the rest see
+ * invalid_grant on a now-stale token and would (per the policy below) be force-logged-out.
+ */
+const inFlightRefreshes = new Map<string, Promise<void>>();
+
+/** Test-only: clear the in-flight refresh cache between cases. */
+export function _resetInFlightRefreshesForTesting() {
+    inFlightRefreshes.clear();
+}
+
+/**
+ * Express middleware that refreshes the OIDC access token in-place when it is expired.
+ *
+ * Why this exists: express-openid-connect stores `access_token` and `refresh_token` in the appSession
+ * cookie but does not auto-refresh on expiry. Without this middleware the access token goes stale after
+ * the IdP-configured TTL (typically 1 hour) even though the appSession cookie itself lives for
+ * `cookieMaxAge` (21 days), and Trilium never learns about an upstream revocation until the next manual
+ * logout.
+ *
+ * Behavior:
+ *   - Skipped when the user is not OIDC-authenticated, the access token is still valid, or no refresh
+ *     token is present (the configured `oauthScope` didn't include `offline_access`, so the provider
+ *     never issued one — the common case, and a no-op here).
+ *   - On `invalid_grant` (RFC 6749: refresh token revoked / expired / consent withdrawn): marks the
+ *     local session as not-authenticated. The downstream `auth.checkAuth` sees `!loggedIn` and redirects
+ *     to /login. This matches Auth0/Okta/Logto guidance that invalid_grant is terminal.
+ *   - On other errors (network blip, IdP 5xx): logs and proceeds. The local trilium.sid session is the
+ *     source of truth for "is this user logged in," so a transient IdP outage doesn't bounce the user.
+ *   - Concurrent requests with the same trilium.sid share one in-flight refresh promise, preventing
+ *     refresh-token-rotation races.
+ */
+export function refreshOidcTokenIfNeeded(req: Request, res: Response, next: NextFunction) {
+    if (!req.oidc?.isAuthenticated() || !req.session?.loggedIn) {
+        return next();
+    }
+
+    const accessToken = req.oidc.accessToken;
+    if (!accessToken || !accessToken.isExpired()) {
+        return next();
+    }
+
+    if (!req.oidc.refreshToken) {
+        return next();
+    }
+
+    const sessionId = req.sessionID;
+    let refreshPromise = inFlightRefreshes.get(sessionId);
+    if (!refreshPromise) {
+        // The library exposes refresh() on the AccessToken (it performs the refresh_token grant and
+        // updates the appSession in place), not on req.oidc itself.
+        refreshPromise = accessToken
+            .refresh()
+            .then(() => undefined)
+            .finally(() => {
+                inFlightRefreshes.delete(sessionId);
+            });
+        inFlightRefreshes.set(sessionId, refreshPromise);
+    }
+
+    refreshPromise
+        .then(() => next())
+        .catch((err: unknown) => {
+            const oauthError = (err as { error?: string })?.error;
+            const message = err instanceof Error ? err.message : String(err);
+            if (oauthError === "invalid_grant") {
+                getLog().info(`OIDC refresh token rejected by IdP (invalid_grant): ${message}. Forcing re-authentication.`);
+                req.session.loggedIn = false;
+                return next();
+            }
+            getLog().info(`OIDC token refresh failed: ${message}. Continuing with the expired access token.`);
+            next();
+        });
+}
+
 async function isTokenValid(req: Request, res: Response, next: NextFunction) {
     const userStatus = openIDEncryption.isSubjectIdentifierSaved();
 
@@ -144,6 +221,19 @@ function generateOAuthConfig(endSessionSupported = false) {
     const logoutParams = {
     };
 
+    // Refresh tokens are only issued when the operator opts in by adding `offline_access` to oauthScope.
+    // Only then do we ask for offline access at the authorization endpoint: `access_type=offline` is
+    // required for Google to return a refresh token, and `prompt=consent` makes Google re-issue one on
+    // subsequent logins (it otherwise returns a refresh token only on the very first consent). Both are
+    // omitted by default so the standard sign-in flow stays clean — matching upstream's removal of the
+    // unconditional offline params — and are added back only for the refresh-token use case.
+    const wantsOfflineAccess = config.MultiFactorAuthentication.oauthScope
+        .split(/\s+/)
+        .includes("offline_access");
+    const offlineAccessParams = wantsOfflineAccess
+        ? { access_type: "offline", prompt: "consent" }
+        : {};
+
     const authConfig = {
         authRequired: false,
         auth0Logout: false,
@@ -156,6 +246,7 @@ function generateOAuthConfig(endSessionSupported = false) {
         authorizationParams: {
             response_type: "code",
             scope: config.MultiFactorAuthentication.oauthScope,
+            ...offlineAccessParams,
         },
         // Override the library's default 5000 ms timeout for discovery / token-exchange / userinfo requests.
         // Cold-start IdP responses (e.g. a scaled-to-zero provider) routinely exceed 5s and manifest as a
@@ -348,6 +439,7 @@ export default {
     isTokenValid,
     isUserSaved,
     isRpInitiatedLogoutSupported,
+    refreshOidcTokenIfNeeded,
 };
 
 const GOOGLE_ISSUER = "https://accounts.google.com";
