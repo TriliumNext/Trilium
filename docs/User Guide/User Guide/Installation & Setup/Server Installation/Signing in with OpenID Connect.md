@@ -59,6 +59,19 @@ To do so:
 4.  This will redirect you to your authentication provider, where you can sign in or confirm the action if needed.
 5.  Once you are authenticated you will be redirected back to the Trilium application.
 
+## Refreshing tokens (offline access)
+
+By default Trilium requests only the `openid profile email` scopes, and the access token it receives from your provider is not automatically refreshed — it simply expires after the provider-configured lifetime (often an hour), which is harmless because Trilium's own session cookie is the source of truth for whether you are signed in.
+
+If you want Trilium to keep a valid provider access token — for example so it can detect when your provider revokes your session — request offline access:
+
+1.  Add `offline_access` to the `oauthScope` setting (e.g. `oauthScope=openid profile email offline_access`, or the `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE` / `TRILIUM_OAUTH_SCOPE` environment variable).
+2.  Restart the server and reconnect your account so the provider issues a refresh token.
+
+How the request is made depends on your provider. For spec-compliant providers (Authelia, Authentik, Keycloak, Okta, Auth0, …) the `offline_access` scope itself is the refresh-token request and is passed through as-is. For **Google**, which does not accept `offline_access` as a scope, Trilium strips it from the requested scopes and instead sends Google's own mechanism: `access_type=offline` and `prompt=consent` (required for Google to issue and re-issue a refresh token). Without `offline_access` in the scope, none of this happens and the normal sign-in flow is unaffected.
+
+With a refresh token present, Trilium transparently refreshes an expired access token on the next request. If the provider rejects the refresh token (`invalid_grant` — e.g. the session was revoked or consent was withdrawn), you are signed out and redirected to the login screen. Transient provider errors (network blips, 5xx) do **not** sign you out — your local Trilium session remains valid.
+
 ## Logging out
 
 When logging out of Trilium, a request is made to the authentication provider to log out from there as well. This feature depends on the authentication provider, so it may not be honored (Google and Authelia are known cases in which they don't respect the logout feature).

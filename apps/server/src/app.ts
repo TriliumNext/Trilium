@@ -18,7 +18,7 @@ import mcpRoutes from "./routes/mcp.js";
 import routes from "./routes/routes.js";
 import config from "./services/config.js";
 import { getLog } from "@triliumnext/core";
-import { createReactiveOidcMiddleware } from "./services/open_id.js";
+import { createReactiveOidcMiddleware, refreshOidcTokenIfNeeded } from "./services/open_id.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
 import utils, { getResourceDir, isDev } from "./services/utils.js";
 
@@ -115,6 +115,10 @@ export default async function buildApp() {
     // effect without a server restart; the underlying express-openid-connect handler is built lazily on
     // first use, so it costs nothing while OAuth is unselected. See createReactiveOidcMiddleware.
     app.use(createReactiveOidcMiddleware());
+    // Refresh an expired OIDC access token before the request is handled. Mounted immediately after the
+    // OIDC middleware so `req.oidc` is populated; it no-ops for non-OIDC requests and when no refresh
+    // token is present, so it is safe to mount unconditionally alongside the reactive OIDC middleware.
+    app.use(refreshOidcTokenIfNeeded);
 
     await assets.register(app);
     routes.register(app);

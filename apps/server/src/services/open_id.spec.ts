@@ -1,10 +1,10 @@
 import { cls, options } from "@triliumnext/core";
 import type { NextFunction, Request as ExpressRequest, RequestHandler, Response as ExpressResponse } from "express";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import config from "./config.js";
 import openIDEncryption from "./encryption/open_id_encryption.js";
-import openID, { createReactiveOidcMiddleware, resolveOAuthIdentity, supportsRpInitiatedLogout } from "./open_id.js";
+import openID, { _resetInFlightRefreshesForTesting, createReactiveOidcMiddleware, refreshOidcTokenIfNeeded, resolveOAuthIdentity, supportsRpInitiatedLogout } from "./open_id.js";
 import sql from "./sql.js";
 import sqlInit from "./sql_init.js";
 
@@ -212,6 +212,40 @@ describe("open_id", () => {
             expect(cfg.session?.rolling).toBe(true);
             expect(cfg.session?.rollingDuration).toBe(config.Session.cookieMaxAge);
             expect(cfg.session?.absoluteDuration).toBe(config.Session.cookieMaxAge);
+        });
+
+        it("requests offline access per-issuer, and only when the scope opts into it", () => {
+            setOauthConfig(true);
+
+            // Default scope: no offline access params — matches the standard sign-in flow.
+            mfa.oauthScope = "openid profile email";
+            const plain = openID.generateOAuthConfig().authorizationParams as Record<string, unknown>;
+            expect(plain.scope).toBe("openid profile email");
+            expect(plain.access_type).toBeUndefined();
+            expect(plain.prompt).toBeUndefined();
+
+            // Spec-compliant issuer: the offline_access scope IS the refresh-token request. No
+            // Google-specific params — prompt=consent would force the consent screen on every login.
+            mfa.oauthScope = "openid profile email offline_access";
+            const spec = openID.generateOAuthConfig().authorizationParams as Record<string, unknown>;
+            expect(spec.scope).toBe("openid profile email offline_access");
+            expect(spec.access_type).toBeUndefined();
+            expect(spec.prompt).toBeUndefined();
+
+            // Google: offline_access is not a valid Google scope (invalid_scope), so it is stripped
+            // and replaced with Google's own mechanism (access_type=offline + prompt=consent).
+            mfa.oauthIssuerBaseUrl = "https://accounts.google.com/";
+            const google = openID.generateOAuthConfig().authorizationParams as Record<string, unknown>;
+            expect(google.scope).toBe("openid profile email");
+            expect(google.access_type).toBe("offline");
+            expect(google.prompt).toBe("consent");
+
+            // Google without the opt-in: untouched.
+            mfa.oauthScope = "openid profile email";
+            const googlePlain = openID.generateOAuthConfig().authorizationParams as Record<string, unknown>;
+            expect(googlePlain.scope).toBe("openid profile email");
+            expect(googlePlain.access_type).toBeUndefined();
+            expect(googlePlain.prompt).toBeUndefined();
         });
 
         it("returns the session unchanged when the DB is not initialized", async () => {
@@ -605,5 +639,185 @@ describe("createReactiveOidcMiddleware", () => {
         const { req, res } = await run(t.middleware);
         expect(t.buildAuth).toHaveBeenCalledOnce();
         expect(t.oidcHandler).toHaveBeenCalledWith(req, res, expect.any(Function));
+    });
+});
+
+describe("refreshOidcTokenIfNeeded", () => {
+    const res = {} as ExpressResponse;
+    let sessionCounter = 0;
+
+    beforeEach(() => {
+        _resetInFlightRefreshesForTesting();
+    });
+
+    // Waits for the microtask chain (refreshPromise.then/catch → next) to settle.
+    function flushMicrotasks() {
+        return new Promise((resolve) => setImmediate(resolve));
+    }
+
+    function makeReq(oidc: Record<string, unknown> | undefined, session: Record<string, unknown> | undefined, sessionID?: string) {
+        sessionCounter += 1;
+        const req = { oidc, session, sessionID: sessionID ?? `sid-${sessionCounter}` } as unknown as ExpressRequest;
+        return { req, session };
+    }
+
+    function expiredOidc(refresh: ReturnType<typeof vi.fn>) {
+        // refresh() lives on the AccessToken, matching the library API the middleware calls.
+        return {
+            isAuthenticated: vi.fn(() => true),
+            accessToken: { isExpired: vi.fn(() => true), refresh },
+            refreshToken: "rt"
+        };
+    }
+
+    it("passes through without refreshing when the user is not OIDC-authenticated", () => {
+        const refresh = vi.fn();
+        const next = vi.fn();
+        const { req } = makeReq({ isAuthenticated: vi.fn(() => false), refresh }, { loggedIn: true });
+
+        refreshOidcTokenIfNeeded(req, res, next as NextFunction);
+
+        expect(next).toHaveBeenCalledOnce();
+        expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it("passes through when the local session is not logged in", () => {
+        const refresh = vi.fn();
+        const next = vi.fn();
+        const { req } = makeReq({ isAuthenticated: vi.fn(() => true), refresh }, { loggedIn: false });
+
+        refreshOidcTokenIfNeeded(req, res, next as NextFunction);
+
+        expect(next).toHaveBeenCalledOnce();
+        expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it("passes through when the access token is still valid", () => {
+        const refresh = vi.fn();
+        const next = vi.fn();
+        const { req } = makeReq(
+            { isAuthenticated: vi.fn(() => true), accessToken: { isExpired: vi.fn(() => false) }, refreshToken: "rt", refresh },
+            { loggedIn: true }
+        );
+
+        refreshOidcTokenIfNeeded(req, res, next as NextFunction);
+
+        expect(next).toHaveBeenCalledOnce();
+        expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it("passes through when no refresh token is present (offline_access not granted)", () => {
+        const refresh = vi.fn();
+        const next = vi.fn();
+        // Built inline: passing undefined to expiredOidc's defaulted param would resurrect the default.
+        const { req } = makeReq(
+            { isAuthenticated: vi.fn(() => true), accessToken: { isExpired: vi.fn(() => true), refresh }, refreshToken: undefined },
+            { loggedIn: true }
+        );
+
+        refreshOidcTokenIfNeeded(req, res, next as NextFunction);
+
+        expect(next).toHaveBeenCalledOnce();
+        expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it("refreshes the token and calls next on success", async () => {
+        const refresh = vi.fn().mockResolvedValue(undefined);
+        const next = vi.fn();
+        const { req } = makeReq(expiredOidc(refresh), { loggedIn: true });
+
+        refreshOidcTokenIfNeeded(req, res, next as NextFunction);
+        await flushMicrotasks();
+
+        expect(refresh).toHaveBeenCalledOnce();
+        expect(next).toHaveBeenCalledOnce();
+    });
+
+    it("soft-fails on a transient refresh error so the local session survives an IdP outage", async () => {
+        const refresh = vi.fn().mockRejectedValue(new Error("network down"));
+        const next = vi.fn();
+        const { req, session } = makeReq(expiredOidc(refresh), { loggedIn: true });
+
+        refreshOidcTokenIfNeeded(req, res, next as NextFunction);
+        await flushMicrotasks();
+
+        expect(refresh).toHaveBeenCalledOnce();
+        expect(next).toHaveBeenCalledOnce();
+        expect(session?.loggedIn).toBe(true);
+    });
+
+    it("forces re-authentication on invalid_grant by marking the session not-logged-in", async () => {
+        const invalidGrant = Object.assign(new Error("Token revoked"), { error: "invalid_grant" });
+        const refresh = vi.fn().mockRejectedValue(invalidGrant);
+        const next = vi.fn();
+        const { req, session } = makeReq(expiredOidc(refresh), { loggedIn: true });
+
+        refreshOidcTokenIfNeeded(req, res, next as NextFunction);
+        await flushMicrotasks();
+
+        expect(refresh).toHaveBeenCalledOnce();
+        expect(next).toHaveBeenCalledOnce();
+        // checkAuth (downstream) sees !loggedIn and redirects to /login.
+        expect(session?.loggedIn).toBe(false);
+    });
+
+    it("propagates rotated tokens into piggybacking requests' appSession", async () => {
+        // Each request decodes its own copy of the appSession cookie; the library's refresh() only
+        // updates the initiator's copy. The middleware must copy the rotated tokens into piggybackers
+        // so their (rolling) response cookies don't clobber the fresh pair with the consumed one.
+        const staleTokens = { access_token: "at-old", refresh_token: "rt-old", id_token: "idt-old", token_type: "Bearer", expires_at: 1 };
+        const appSession1 = { ...staleTokens };
+        const appSession2 = { ...staleTokens };
+
+        let resolveRefresh: () => void = () => undefined;
+        const refresh1 = vi.fn(() => new Promise<void>((resolve) => { resolveRefresh = resolve; }));
+        const req1 = {
+            ...makeReq(expiredOidc(refresh1), { loggedIn: true }, "shared-sid").req,
+            appSession: appSession1
+        } as unknown as ExpressRequest;
+        const req2 = {
+            ...makeReq(expiredOidc(vi.fn()), { loggedIn: true }, "shared-sid").req,
+            appSession: appSession2
+        } as unknown as ExpressRequest;
+        const next1 = vi.fn();
+        const next2 = vi.fn();
+
+        refreshOidcTokenIfNeeded(req1, res, next1 as NextFunction);
+        refreshOidcTokenIfNeeded(req2, res, next2 as NextFunction);
+
+        // Simulate the library: refresh() writes the rotated tokens into the initiator's appSession.
+        Object.assign(appSession1, { access_token: "at-new", refresh_token: "rt-new", expires_at: 999 });
+        resolveRefresh();
+        await flushMicrotasks();
+
+        expect(next1).toHaveBeenCalledOnce();
+        expect(next2).toHaveBeenCalledOnce();
+        // The piggybacker's session now carries the rotated pair, not the consumed one.
+        expect(appSession2.access_token).toBe("at-new");
+        expect(appSession2.refresh_token).toBe("rt-new");
+        expect(appSession2.expires_at).toBe(999);
+    });
+
+    it("coalesces concurrent refreshes for the same session into a single IdP call", async () => {
+        let resolveRefresh: () => void = () => undefined;
+        const refresh1 = vi.fn(() => new Promise<void>((resolve) => { resolveRefresh = resolve; }));
+        const refresh2 = vi.fn();
+        const next1 = vi.fn();
+        const next2 = vi.fn();
+        const { req: req1 } = makeReq(expiredOidc(refresh1), { loggedIn: true }, "shared-sid");
+        const { req: req2 } = makeReq(expiredOidc(refresh2), { loggedIn: true }, "shared-sid");
+
+        refreshOidcTokenIfNeeded(req1, res, next1 as NextFunction);
+        refreshOidcTokenIfNeeded(req2, res, next2 as NextFunction);
+
+        // Only the first request hits the IdP; the second piggy-backs on the in-flight promise.
+        expect(refresh1).toHaveBeenCalledOnce();
+        expect(refresh2).not.toHaveBeenCalled();
+
+        resolveRefresh();
+        await flushMicrotasks();
+
+        expect(next1).toHaveBeenCalledOnce();
+        expect(next2).toHaveBeenCalledOnce();
     });
 });
