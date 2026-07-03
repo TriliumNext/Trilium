@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import becca from "./becca.js";
+import { getBecca } from "./becca.js";
 import beccaService from "./becca_service.js";
 import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";
@@ -163,7 +163,7 @@ describe("becca_service", () => {
             const child = buildNote({ id: childId, title: "Child" });
             const grandChild = buildNote({ id: grandChildId, title: "Grandchild" });
 
-            const root = becca.notes["root"];
+            const root = getBecca().notes["root"];
             expect(root).toBeDefined();
             linkBranch(childId, "root");
             linkBranch(grandChildId, childId);

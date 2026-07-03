@@ -57,6 +57,13 @@ export interface MessagingProvider {
     onMessage?(handler: MessageHandler): () => void;
 
     /**
+     * Send a message only to connections belonging to a specific user.
+     * Not all transports support per-user routing (e.g. IPC has a single renderer),
+     * so this is optional. Broadcast routing via entity_changes.userId is Phase 3.
+     */
+    sendMessageToUserClients?(userId: string, message: WebSocketMessage): void;
+
+    /**
      * Get the number of connected clients.
      */
     getClientCount?(): number;

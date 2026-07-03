@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import BNote from "../../../becca/entities/bnote.js";
 import { note, NoteBuilder } from "../../../test/becca_mocking.js";
 import NoteSet from "../note_set.js";
 import PropertyComparisonExp from "./property_comparison.js";
 
-/** Build a NoteSet that contains every note currently registered in becca. */
+/** Build a NoteSet that contains every note currently registered in getBecca(). */
 function allNotesSet() {
-    return new NoteSet(Object.values(becca.notes));
+    return new NoteSet(Object.values(getBecca().notes));
 }
 
 function execute(exp: PropertyComparisonExp, searchContext: any = {}, inputNoteSet = allNotesSet()) {
@@ -24,7 +24,7 @@ let rootNote: NoteBuilder;
 
 describe("PropertyComparisonExp", () => {
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
 
         rootNote = new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
         new BBranch({

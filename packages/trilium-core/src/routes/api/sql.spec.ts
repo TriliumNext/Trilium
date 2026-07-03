@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca.js";
 import config from "../../services/config";
 import { getSql } from "../../services/sql/index";
 import { createTextNote } from "../../test/api_fixtures";
@@ -120,9 +120,9 @@ describe("SQL API (core)", () => {
 
         it("rejects a note whose content is not a string", async () => {
             const { noteId } = await createTextNote(api, { title: "Binary content" });
-            const note = becca.getNoteOrThrow(noteId);
+            const note = getBecca().getNoteOrThrow(noteId);
             vi.spyOn(note, "getContent").mockReturnValue(new Uint8Array([ 1, 2, 3 ]));
-            vi.spyOn(becca, "getNoteOrThrow").mockReturnValue(note);
+            vi.spyOn(getBecca(), "getNoteOrThrow").mockReturnValue(note);
 
             const res = await api.post<{ message: string }>(`/api/sql/execute/${noteId}`);
             expect(res.status).toBe(400);

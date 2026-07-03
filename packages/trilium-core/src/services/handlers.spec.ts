@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BBranch from "../becca/entities/bbranch.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
@@ -33,7 +33,7 @@ describe("handlers", () => {
     let scheduleExecution: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
         buildNote({ id: "root", title: "root" });
         config.Security.backendScriptingEnabled = true;
 
@@ -94,7 +94,7 @@ describe("handlers", () => {
         it("re-sorts a sorted parent", () => {
             buildNote({ id: "par2", children: [{ id: "chld2" }] });
             addAttribute("par2", "label", "sorted", "");
-            const child = becca.notes["chld2"];
+            const child = getBecca().notes["chld2"];
             expect(child).toBeDefined();
 
             eventService.emit(eventService.NOTE_TITLE_CHANGED, child);

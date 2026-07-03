@@ -11,7 +11,7 @@ import { NoteParams } from "./notes.js";
 import SearchContext from "./search/search_context";
 import syncMutex from "./sync_mutex";
 import zipExportService from "./export/zip";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BAttachment from "../becca/entities/battachment.js";
 import type BAttribute from "../becca/entities/battribute.js";
 import type BBranch from "../becca/entities/bbranch.js";
@@ -515,16 +515,16 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
     this.cheerio = cheerio;
     this.htmlParser = htmlParser;
     this.getInstanceName = () => (config.General ? config.General.instanceName : null);
-    this.getNote = (noteId) => becca.getNote(noteId);
-    this.getBranch = (branchId) => becca.getBranch(branchId);
-    this.getAttribute = (attributeId) => becca.getAttribute(attributeId);
-    this.getAttachment = (attachmentId) => becca.getAttachment(attachmentId);
-    this.getRevision = (revisionId) => becca.getRevision(revisionId);
-    this.getEtapiToken = (etapiTokenId) => becca.getEtapiToken(etapiTokenId);
-    this.getEtapiTokens = () => becca.getEtapiTokens();
-    this.getOption = (optionName) => becca.getOption(optionName);
+    this.getNote = (noteId) => getBecca().getNote(noteId);
+    this.getBranch = (branchId) => getBecca().getBranch(branchId);
+    this.getAttribute = (attributeId) => getBecca().getAttribute(attributeId);
+    this.getAttachment = (attachmentId) => getBecca().getAttachment(attachmentId);
+    this.getRevision = (revisionId) => getBecca().getRevision(revisionId);
+    this.getEtapiToken = (etapiTokenId) => getBecca().getEtapiToken(etapiTokenId);
+    this.getEtapiTokens = () => getBecca().getEtapiTokens();
+    this.getOption = (optionName) => getBecca().getOption(optionName);
     this.getOptions = () => optionsService.getOptions();
-    this.getAttribute = (attributeId) => becca.getAttribute(attributeId);
+    this.getAttribute = (attributeId) => getBecca().getAttribute(attributeId);
 
     this.htmlToMarkdown = (html) => markdownExport.toMarkdown(html);
     this.markdownToHtml = (markdown) => markdownImport.renderToHtml(markdown, "");
@@ -540,7 +540,7 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
 
         const noteIds = searchService.findResultsWithQuery(query, new SearchContext(searchParams)).map((sr) => sr.noteId);
 
-        return becca.getNotes(noteIds);
+        return getBecca().getNotes(noteIds);
     };
 
     this.searchForNote = (query, searchParams = {}) => {
@@ -574,7 +574,7 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
     this.createNewNote = noteService.createNewNote;
 
     this.createNote = (parentNoteId, title, content = "", _extraOptions = {}) => {
-        const parentNote = becca.getNote(parentNoteId);
+        const parentNote = getBecca().getNote(parentNoteId);
         if (!parentNote) {
             throw new Error(`Unable to find parent note with ID ${parentNote}.`);
         }
@@ -698,7 +698,7 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
         const noteId = `al_${opts.id}`;
 
         const launcherNote =
-            becca.getNote(noteId) ||
+            getBecca().getNote(noteId) ||
             specialNotesService.createLauncher({
                 noteId,
                 parentNoteId,
@@ -782,7 +782,7 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
     this.duplicateSubtree = noteService.duplicateSubtree;
 
     this.__private = {
-        becca
+        becca: getBecca()
     };
 }
 

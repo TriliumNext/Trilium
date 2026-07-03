@@ -6,7 +6,7 @@ import { getContext } from "../../services/context.js";
 import noteService from "../../services/notes.js";
 import protectedSessionService from "../../services/protected_session.js";
 import { encodeUtf8, unwrapStringOrBuffer } from "../../services/utils/binary.js";
-import becca from "../becca.js";
+import { getBecca } from "../becca.js";
 import BAttachment from "./battachment.js";
 import type BNote from "./bnote.js";
 
@@ -173,7 +173,7 @@ describe("BAttachment (real DB)", () => {
             protectedSessionService.resetDataKey();
 
             // Reload from the DB so a protected, encrypted-from-row instance is produced.
-            const reloaded = attachmentId ? becca.getAttachmentOrThrow(attachmentId) : att;
+            const reloaded = attachmentId ? getBecca().getAttachmentOrThrow(attachmentId) : att;
             expect(reloaded.isProtected).toBe(true);
             expect(reloaded.isContentAvailable()).toBe(false);
             expect(reloaded.getTitleOrProtected()).toBe("[protected]");
@@ -195,7 +195,7 @@ describe("BAttachment (real DB)", () => {
             expect(attachmentId).toBeDefined();
 
             // Reload with the session still available -> decrypt() runs the try branch.
-            const reloaded = attachmentId ? becca.getAttachmentOrThrow(attachmentId) : att;
+            const reloaded = attachmentId ? getBecca().getAttachmentOrThrow(attachmentId) : att;
             expect(reloaded.isProtected).toBe(true);
             expect(reloaded.title).toBe(plainTitle);
             expect(reloaded.isDecrypted).toBe(true);
@@ -218,7 +218,7 @@ describe("BAttachment (real DB)", () => {
             // decryptString returns null -> the `|| ""` fallback is exercised.
             vi.spyOn(protectedSessionService, "decryptString").mockReturnValue(null);
 
-            const reloaded = attachmentId ? becca.getAttachmentOrThrow(attachmentId) : att;
+            const reloaded = attachmentId ? getBecca().getAttachmentOrThrow(attachmentId) : att;
             expect(reloaded.title).toBe("");
             expect(reloaded.isDecrypted).toBe(true);
         });
@@ -242,7 +242,7 @@ describe("BAttachment (real DB)", () => {
                 throw new Error("kaput");
             });
 
-            const reloaded = attachmentId ? becca.getAttachmentOrThrow(attachmentId) : att;
+            const reloaded = attachmentId ? getBecca().getAttachmentOrThrow(attachmentId) : att;
             expect(reloaded.isProtected).toBe(true);
             // The catch branch was taken: isDecrypted was never flipped to true.
             expect(reloaded.isDecrypted).toBeFalsy();
@@ -291,7 +291,7 @@ describe("BAttachment (real DB)", () => {
             expect(attachmentId).toBeDefined();
 
             protectedSessionService.resetDataKey();
-            const reloaded = attachmentId ? becca.getAttachmentOrThrow(attachmentId) : att;
+            const reloaded = attachmentId ? getBecca().getAttachmentOrThrow(attachmentId) : att;
 
             expect(() => getContext().init(() => reloaded.convertToNote())).toThrow(/protected session/);
         });
@@ -316,7 +316,7 @@ describe("BAttachment (real DB)", () => {
             expect(created.title).toBe("fileconv-" + counter);
             expect(branch.parentNoteId).toBe(note.noteId);
             // The attachment row is now soft-deleted, so it is no longer retrievable.
-            expect(attachmentId ? becca.getAttachment(attachmentId) : null).toBeFalsy();
+            expect(attachmentId ? getBecca().getAttachment(attachmentId) : null).toBeFalsy();
             // Parent content is unchanged (no image-url rewrite for a 'file' role).
             expect(unwrapStringOrBuffer(note.getContent())).toBe(parentContent);
         });
@@ -545,7 +545,7 @@ describe("BAttachment (real DB)", () => {
             expect(attachmentId).toBeDefined();
 
             protectedSessionService.resetDataKey();
-            const reloaded = attachmentId ? becca.getAttachmentOrThrow(attachmentId) : att;
+            const reloaded = attachmentId ? getBecca().getAttachmentOrThrow(attachmentId) : att;
             // Loaded protected attachment outside a session is not decrypted.
             expect(reloaded.isDecrypted).toBeFalsy();
 

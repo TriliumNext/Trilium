@@ -5,7 +5,7 @@
 
 import sanitizeFilename from "sanitize-filename";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { getContext } from "./context.js";
 import { getLog } from "./log.js";
 import { getImageProvider } from "./image_provider.js";
@@ -24,7 +24,7 @@ function updateImage(noteId: string, uploadBuffer: Uint8Array, originalName: str
 
     originalName = sanitizeHtml(originalName);
 
-    const note = becca.getNote(noteId);
+    const note = getBecca().getNote(noteId);
     if (!note) {
         throw new Error("Unable to find note.");
     }
@@ -58,7 +58,7 @@ function saveImage(
     }
 
     const fileName = sanitizeFilename(originalName);
-    const parentNote = becca.getNote(parentNoteId);
+    const parentNote = getBecca().getNote(parentNoteId);
     if (!parentNote) {
         throw new Error("Unable to find parent note.");
     }
@@ -113,7 +113,7 @@ function saveImageToAttachment(
     }
 
     const fileName = sanitizeFilename(originalName);
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
 
     let attachment = note.saveAttachment({
         role: "image",
@@ -125,7 +125,7 @@ function saveImageToAttachment(
     setTimeout(() => {
         getContext().init(() => {
             getSql().transactional(() => {
-                const note = becca.getNoteOrThrow(noteId);
+                const note = getBecca().getNoteOrThrow(noteId);
                 noteService.asyncPostProcessContent(note, note.getContent());
             });
         });
@@ -139,7 +139,7 @@ function saveImageToAttachment(
                 if (!attachmentId) {
                     throw new Error("Missing attachment ID.");
                 }
-                attachment = becca.getAttachmentOrThrow(attachmentId);
+                attachment = getBecca().getAttachmentOrThrow(attachmentId);
 
                 attachment.mime = getImageMimeFromExtension(format.ext);
 

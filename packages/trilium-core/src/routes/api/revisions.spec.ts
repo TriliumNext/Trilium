@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca.js";
 import * as cls from "../../services/context";
 import { getSql } from "../../services/sql/index";
 import { unwrapStringOrBuffer } from "../../services/utils/binary";
@@ -412,9 +412,9 @@ describe("Revisions API (core)", () => {
             // A real protected revision needs a protected session to set up; instead
             // override the lookup (getRevisionOrThrow builds a fresh BRevision per call)
             // to report its content as unavailable.
-            const revision = becca.getRevisionOrThrow(revisionId);
+            const revision = getBecca().getRevisionOrThrow(revisionId);
             revision.isContentAvailable = () => false;
-            vi.spyOn(becca, "getRevisionOrThrow").mockReturnValue(revision);
+            vi.spyOn(getBecca(), "getRevisionOrThrow").mockReturnValue(revision);
 
             const res = await api.get<string>(`/api/revisions/${revisionId}/download`);
             expect(res.status).toBe(401);
@@ -426,9 +426,9 @@ describe("Revisions API (core)", () => {
 
             // Force the defensive "missing creation date" guard in getRevisionFilename
             // (real revisions always have a creation date).
-            const revision = becca.getRevisionOrThrow(revisionId);
+            const revision = getBecca().getRevisionOrThrow(revisionId);
             revision.dateCreated = undefined as never;
-            vi.spyOn(becca, "getRevisionOrThrow").mockReturnValue(revision);
+            vi.spyOn(getBecca(), "getRevisionOrThrow").mockReturnValue(revision);
 
             const res = await api.get(`/api/revisions/${revisionId}/download`);
             expect(res.status).toBe(500);

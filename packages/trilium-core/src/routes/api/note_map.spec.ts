@@ -1,7 +1,7 @@
 import { trimIndentation } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca.js";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 import { buildNote, buildNotes } from "../../test/becca_easy_mocking";
@@ -351,7 +351,7 @@ describe("Note map service (branch coverage)", () => {
     it("updateDescendantCountMapForSearch: search parent aggregates child counts", () => {
         const target = buildNote({ id: "udcTarget", title: "Target", children: [ { id: "udcChild", title: "Child" } ] });
         const searchNote = buildNote({ id: "udcSearch", title: "Search", type: "search" });
-        const spy = vi.spyOn(searchNote, "getSearchResultNotes").mockReturnValue([ becca.notes["udcTarget"]! ]);
+        const spy = vi.spyOn(searchNote, "getSearchResultNotes").mockReturnValue([ getBecca().notes["udcTarget"]! ]);
 
         const res = note_map.getTreeMap(req(searchNote.noteId)) as TreeMapResponse;
         // the search note's descendant count is derived from its resolved results

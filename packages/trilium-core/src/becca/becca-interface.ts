@@ -368,4 +368,5 @@ export interface NotePojo {
     dateModified?: string;
     utcDateCreated: string;
     utcDateModified?: string;
+    ownerId?: string | null;
 }

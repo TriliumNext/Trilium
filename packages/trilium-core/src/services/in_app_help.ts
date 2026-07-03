@@ -1,6 +1,6 @@
 import type { HiddenSubtreeItem } from "@triliumnext/commons";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 
 export abstract class InAppHelpProvider {
@@ -44,7 +44,7 @@ export abstract class InAppHelpProvider {
         }
 
         const definitionHelpIds = new Set(getFlatIds(helpDefinition));
-        const realHelpIds = getFlatIdsFromNote(becca.getNote("_help"));
+        const realHelpIds = getFlatIdsFromNote(getBecca().getNote("_help"));
 
         for (const realHelpId of realHelpIds) {
             if (realHelpId === "_help") {
@@ -52,7 +52,7 @@ export abstract class InAppHelpProvider {
             }
 
             if (!definitionHelpIds.has(realHelpId)) {
-                becca.getNote(realHelpId)?.deleteNote();
+                getBecca().getNote(realHelpId)?.deleteNote();
             }
         }
     }
