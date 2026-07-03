@@ -483,7 +483,7 @@ const configMapping = {
             iniGetter: () => getIniSection("MultiFactorAuthentication")?.oauthHttpTimeout,
             defaultValue: 30000,
             transformer: (value: unknown) => {
-                const parsed = parseInt(String(value));
+                const parsed = parseInt(String(value), 10);
                 // express-openid-connect requires httpTimeout >= 500; fall back to the default otherwise.
                 return Number.isFinite(parsed) && parsed >= 500 ? parsed : 30000;
             }
@@ -496,9 +496,9 @@ const configMapping = {
             transformer: (value: unknown) => {
                 const trimmed = String(value).trim();
                 if (!trimmed) return 'openid profile email';
-                // 'openid' is required by the OIDC spec; silently prepend it if the user forgot.
+                // Normalize internal whitespace, and prepend the spec-required 'openid' if the user forgot it.
                 const tokens = trimmed.split(/\s+/);
-                return tokens.includes('openid') ? trimmed : `openid ${trimmed}`;
+                return tokens.includes('openid') ? tokens.join(' ') : `openid ${tokens.join(' ')}`;
             }
         }
     },

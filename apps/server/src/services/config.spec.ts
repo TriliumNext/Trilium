@@ -200,6 +200,12 @@ describe("Config Service", () => {
             config = (await import("./config.js")).default;
             expect(config.MultiFactorAuthentication.oauthHttpTimeout).toBe(30000);
             expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email");
+
+            // Internal whitespace is normalized to single spaces even when 'openid' is already present.
+            process.env.TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE = "openid   profile\t email";
+            vi.resetModules();
+            config = (await import("./config.js")).default;
+            expect(config.MultiFactorAuthentication.oauthScope).toBe("openid profile email");
         });
 
         it("should handle all Sync environment variables correctly", async () => {
