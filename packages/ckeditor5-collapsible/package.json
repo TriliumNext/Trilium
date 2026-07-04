@@ -21,7 +21,7 @@
     "ckeditor5": "48.2.0",
     "happy-dom": "20.10.6",
     "typescript": "6.0.3",
-    "vite-plugin-svgo": "2.0.0",
+    "vite-plugin-svgo": "3.0.0",
     "vitest": "4.1.9"
   },
   "peerDependencies": {
