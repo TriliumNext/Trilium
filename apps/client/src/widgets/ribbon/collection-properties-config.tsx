@@ -59,6 +59,12 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                 icon: "bx bx-hash",
                 type: "checkbox",
                 bindToLabel: "calendar:weekNumbers"
+            },
+            {
+                label: t("book_properties_config.show-hidden-events"),
+                icon: "bx bx-show",
+                type: "checkbox",
+                bindToLabel: "calendar:showHiddenEvents"
             }
         ]
     },

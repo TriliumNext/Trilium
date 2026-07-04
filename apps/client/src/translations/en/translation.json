@@ -2470,7 +2470,8 @@
     "vector_light": "Vector (Light)",
     "vector_dark": "Vector (Dark)",
     "show-scale": "Show scale",
-    "show-labels": "Show marker names"
+    "show-labels": "Show marker names",
+    "show-hidden-events": "Show hidden events"
   },
   "table_context_menu": {
     "delete_row": "Delete row"
@@ -2504,7 +2505,10 @@
     "slide-overview": "Toggle an overview of the slides"
   },
   "calendar_view": {
-    "delete_note": "Delete note..."
+    "delete_note": "Delete note...",
+    "hidden": "Hidden in current view",
+    "show_in_view": "Show in view \"{{view}}\"",
+    "hide_from_view": "Hide from view \"{{view}}\""
   },
   "ocr": {
     "extracted_text": "Extracted Text (OCR)",
