@@ -1422,6 +1422,22 @@
     "vacuuming_database": "Vacuuming database...",
     "database_vacuumed": "Database has been vacuumed"
   },
+  "wipe_database": {
+    "title": "Wipe database",
+    "description": "Permanently delete every note and start over with an empty database. Useful for resetting a device without reinstalling.",
+    "wipe_label": "Wipe the database",
+    "wipe_description": "Deletes all notes, attachments, revisions and settings from this device, then rebuilds an empty database. This cannot be undone.",
+    "wipe_button": "Wipe database…",
+    "dialog_title": "Wipe the database?",
+    "warning_heading": "This permanently deletes everything and cannot be undone.",
+    "warning_body": "All notes, attachments, revisions, attributes and settings on this device will be erased and replaced with a fresh, empty database.",
+    "backup_hint": "If you are not completely sure, make a backup first. Anything not synced elsewhere will be lost forever.",
+    "cancel": "Cancel",
+    "confirm_button": "Wipe everything",
+    "confirm_button_countdown": "Wipe everything ({{seconds}})",
+    "wipe_succeeded": "Database wiped. Reloading…",
+    "wipe_failed": "Could not wipe the database, check the logs for details."
+  },
   "experimental_features": {
     "title": "Experimental Options",
     "disclaimer": "These options are experimental and may cause instability. Use with caution.",

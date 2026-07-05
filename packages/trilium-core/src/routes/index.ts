@@ -32,6 +32,7 @@ import backendLogRoute from "./api/backend_log";
 import backupRoute from "./api/backup";
 import passwordApiRoute from "./api/password";
 import loginApiRoute from "./api/login";
+import databaseApiRoute from "./api/database";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -212,6 +213,11 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     asyncApiRoute(GET, "/api/database/backups", backupRoute.getExistingBackups);
     asyncApiRoute(PST, "/api/database/backup-database", backupRoute.backupDatabase);
     asyncRoute(GET, "/api/database/backup/download", [checkApiAuthOrElectron], backupRoute.downloadBackup);
+
+    // Wipe the whole document and rebuild an empty database. Registered in the shared builder so it
+    // is available on every platform (server, desktop and standalone/mobile). Mirrors the setup route
+    // in that it (re)creates the initial database via createInitialDatabase.
+    asyncRoute(PST, "/api/database/wipe", [checkApiAuthOrElectron, csrfMiddleware], databaseApiRoute.wipeDatabase, apiResultHandler);
 
     apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);

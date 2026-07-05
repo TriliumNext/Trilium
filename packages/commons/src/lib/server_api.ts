@@ -86,6 +86,10 @@ export interface DatabaseAnonymizeResponse {
     anonymizedFilePath: string;
 }
 
+export interface WipeDatabaseResponse {
+    success: boolean;
+}
+
 export interface AnonymizedDbResponse {
     filePath: string;
     fileName: string;
