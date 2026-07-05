@@ -52,16 +52,24 @@ function WipeDatabaseModal({ show, onHidden }: WipeDatabaseModalProps) {
     const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
     const [wiping, setWiping] = useState(false);
 
-    // Restart the countdown every time the dialog is opened so the delay can't be skipped by
-    // reopening, and tick it down once per second while the dialog is visible.
+    // Reset state every time the dialog opens: restart the countdown (so the delay can't be skipped
+    // by reopening) and clear any stale `wiping` flag left behind if a previous attempt's dialog was
+    // dismissed while its request was still pending. The interval stops itself once it reaches zero.
     useEffect(() => {
         if (!show) {
             return;
         }
 
         setSecondsLeft(COUNTDOWN_SECONDS);
+        setWiping(false);
+
+        let remaining = COUNTDOWN_SECONDS;
         const interval = setInterval(() => {
-            setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
+            remaining -= 1;
+            setSecondsLeft(remaining);
+            if (remaining <= 0) {
+                clearInterval(interval);
+            }
         }, 1000);
 
         return () => clearInterval(interval);

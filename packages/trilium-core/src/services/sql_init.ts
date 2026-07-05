@@ -235,6 +235,12 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
  *
  * This is destructive and irreversible: there is no undo. It works identically on every platform
  * (server, desktop and standalone/mobile) because it operates purely through the SQL layer.
+ *
+ * On standalone/mobile the whole route runs inside a single transaction (the browser router wraps it
+ * in `transactionalAsync`), so the drop-and-rebuild is atomic. On the multi-request server build the
+ * drop commits before {@link createInitialDatabase} rebuilds the schema, leaving a brief window where
+ * a concurrent request could observe missing tables — an acceptable trade-off for a deliberate,
+ * one-off reset that immediately reloads the whole application.
  */
 async function wipeDatabase() {
     const sql = getSql();
