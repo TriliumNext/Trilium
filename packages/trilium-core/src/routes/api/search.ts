@@ -11,6 +11,14 @@ import { ValidationError } from "../../errors.js";
 import becca_service from "../../becca/becca_service.js";
 import { getHoistedNoteId } from "../../services/context.js";
 
+// Number of results returned to the dropdown. Above this the user is better
+// served by "Show in full search" which renders a paginated UI.
+const QUICK_SEARCH_MAX_RESULTS = 50;
+
+// Snippet extraction reads the blob for each note — capping it to the first
+// batch the dropdown actually displays keeps the endpoint responsive.
+const QUICK_SEARCH_SNIPPET_LIMIT = 15;
+
 function searchFromNote(req: Request<{ noteId: string }>): SearchNoteResult {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
@@ -57,20 +65,27 @@ function quickSearch(req: Request<{ searchString: string }>) {
         ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId()
     });
 
-    // Execute search with our context
     const allSearchResults = searchService.findResultsWithQuery(searchString, searchContext);
-    const trimmed = allSearchResults.slice(0, 200);
+    const trimmed = allSearchResults.slice(0, QUICK_SEARCH_MAX_RESULTS);
 
-    // Extract snippets using highlightedTokens from our context
-    for (const result of trimmed) {
-        result.contentSnippet = searchService.extractContentSnippet(result.noteId, searchContext.highlightedTokens);
-        result.attributeSnippet = searchService.extractAttributeSnippet(result.noteId, searchContext.highlightedTokens);
+    // Snippet extraction is the dominant per-result cost; only run it for the
+    // first batch the dropdown actually displays. Results beyond the limit still
+    // appear in the dropdown as plain links — explicitly assign empty snippets
+    // so downstream code (highlighter, API mapper) sees a consistent string shape
+    // rather than mixing strings with undefined.
+    for (let i = 0; i < trimmed.length; i++) {
+        const result = trimmed[i];
+        if (i < QUICK_SEARCH_SNIPPET_LIMIT) {
+            result.contentSnippet = searchService.extractContentSnippet(result.noteId, searchContext.highlightedTokens);
+            result.attributeSnippet = searchService.extractAttributeSnippet(result.noteId, searchContext.highlightedTokens);
+        } else {
+            result.contentSnippet = "";
+            result.attributeSnippet = "";
+        }
     }
 
-    // Highlight the results
     searchService.highlightSearchResults(trimmed, searchContext.highlightedTokens, searchContext.ignoreInternalAttributes);
 
-    // Map to API format
     const searchResults = trimmed.map((result) => {
         const { title, icon } = becca_service.getNoteTitleAndIcon(result.noteId);
         return {
