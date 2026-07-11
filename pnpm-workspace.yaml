@@ -101,8 +101,6 @@ overrides:
 patchedDependencies:
   "@ckeditor/ckeditor5-mention": patches/@ckeditor__ckeditor5-mention.patch
   "@ckeditor/ckeditor5-code-block": patches/@ckeditor__ckeditor5-code-block.patch
-  '@maplibre/maplibre-gl-leaflet@0.1.3': patches/@maplibre__maplibre-gl-leaflet@0.1.3.patch
-  leaflet@1.9.4: patches/leaflet@1.9.4.patch
 
 allowBuilds:
   better-sqlite3: true

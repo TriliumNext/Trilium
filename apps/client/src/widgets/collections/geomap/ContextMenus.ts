@@ -1,4 +1,5 @@
-import type { LatLng, LeafletMouseEvent } from "leaflet";
+import { MapMouseEvent } from "maplibre-gl";
+import { useCallback, useContext, useEffect } from "preact/hooks";
 
 import appContext, { type CommandMappings } from "../../../components/app_context.js";
 import FNote from "../../../entities/fnote.js";
@@ -9,8 +10,42 @@ import { copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { t } from "../../../services/i18n.js";
 import link from "../../../services/link.js";
 import { createNewNote } from "./api.js";
+import { type GeoMouseEvent,ParentMap, toMapLibreEvent } from "./map.js";
+import { MARKER_LAYER } from "./Markers.js";
 
-export default function openContextMenu(noteId: string, e: LeafletMouseEvent, isEditable: boolean) {
+export default function ContextMenus({ note, isReadOnly }: { note: FNote, isReadOnly: boolean }) {
+    const map = useContext(ParentMap);
+
+    const onContextMenu = useCallback((e: GeoMouseEvent) => {
+        if (!map) return;
+        const features = map.queryRenderedFeatures(e.point, {
+            layers: [ MARKER_LAYER ]
+        });
+
+        if (features.length > 0) {
+            // Marker context menu.
+            openContextMenu(features[0].properties.id, e, !isReadOnly);
+        } else {
+            // Empty area context menu.
+            openMapContextMenu(note, e, !isReadOnly);
+        }
+    }, [ map, note, isReadOnly ]);
+
+    useEffect(() => {
+        if (!onContextMenu || !map) return;
+
+        const handler = (e: MapMouseEvent) => {
+            e.preventDefault();
+            onContextMenu(toMapLibreEvent(e));
+        };
+        map.on("contextmenu", handler);
+        return () => { map.off("contextmenu", handler); };
+    }, [ map, onContextMenu ]);
+
+    return null;
+}
+
+export function openContextMenu(noteId: string, e: GeoMouseEvent, isEditable: boolean) {
     let items: MenuItem<keyof CommandMappings>[] = [
         ...buildGeoLocationItem(e),
         { kind: "separator" },
@@ -46,7 +81,7 @@ export default function openContextMenu(noteId: string, e: LeafletMouseEvent, is
     });
 }
 
-export function openMapContextMenu(note: FNote, e: LeafletMouseEvent, isEditable: boolean) {
+export function openMapContextMenu(note: FNote, e: GeoMouseEvent, isEditable: boolean) {
     let items: MenuItem<keyof CommandMappings>[] = [
         ...buildGeoLocationItem(e)
     ];
@@ -73,8 +108,8 @@ export function openMapContextMenu(note: FNote, e: LeafletMouseEvent, isEditable
     });
 }
 
-function buildGeoLocationItem(e: LeafletMouseEvent) {
-    function formatGeoLocation(latlng: LatLng, precision: number = 6) {
+function buildGeoLocationItem(e: GeoMouseEvent) {
+    function formatGeoLocation(latlng: { lat: number; lng: number }, precision: number = 6) {
         return `${latlng.lat.toFixed(precision)}, ${latlng.lng.toFixed(precision)}`;
     }
 

@@ -1,3 +1,5 @@
+export {};
+
 declare module "htmldiff-js" {
     const HtmlDiff: {
         execute(oldHtml: string, newHtml: string): string;
@@ -37,26 +39,6 @@ declare module "katex/contrib/auto-render" {
         trust: boolean;
     }) => void;
     export default renderMathInElement;
-}
-
-import * as L from "leaflet";
-
-declare module "leaflet" {
-    interface GPXMarker {
-        startIcon?: DivIcon | Icon | string | undefined;
-        endIcon?: DivIcon | Icon | string | undefined;
-        wptIcons?: {
-            [key: string]: DivIcon | Icon | string;
-        };
-        wptTypeIcons?: {
-            [key: string]: DivIcon | Icon | string;
-        };
-        pointMatchers?: Array<{ regex: RegExp; icon: DivIcon | Icon | string}>;
-    }
-
-    interface GPXOptions {
-        markers?: GPXMarker | undefined;
-    }
 }
 
 declare global {

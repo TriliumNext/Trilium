@@ -1,6 +1,7 @@
 import "./NoteDetail.css";
 
 import clsx from "clsx";
+import { note } from "mermaid/dist/rendering-util/rendering-elements/shapes/note.js";
 import { isValidElement, VNode } from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
