@@ -213,6 +213,12 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
     // Used to track whether the user is performing character composition with an input method (such as Chinese Pinyin, Japanese, Korean, etc.) and to avoid triggering a search during the composition process.
     let isComposingInput = false;
+    // Setting the selected value can re-query and auto-select a stale create-note row before the
+    // dropdown finishes closing.
+    let hasTerminalSelection = false;
+    $el.on("input", () => {
+        hasTerminalSelection = false;
+    });
     $el.on("compositionstart", () => {
         isComposingInput = true;
     });
@@ -280,6 +286,15 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             event.stopImmediatePropagation();
             event.preventDefault();
             fullTextSearch($el, options);
+        }
+    });
+    $el.on("keydown", (event) => {
+        const isPlainEnter = event.key === "Enter"
+            && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey;
+        if (hasTerminalSelection && isPlainEnter) {
+            // Stop autocomplete from consuming the stale create-note row, but leave the default
+            // form submission intact.
+            event.stopImmediatePropagation();
         }
     });
 
@@ -376,6 +391,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             $el.setSelectedExternalLink(suggestion.externalLink);
 
             $el.autocomplete("val", suggestion.externalLink);
+            hasTerminalSelection = true;
 
             $el.autocomplete("close");
 
@@ -385,6 +401,10 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         }
 
         if (suggestion.action === "create-note") {
+            if (hasTerminalSelection) {
+                return;
+            }
+
             const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
             if (!success) {
                 return;
@@ -410,6 +430,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         $el.setSelectedExternalLink(null);
 
         $el.autocomplete("val", suggestion.noteTitle);
+        hasTerminalSelection = true;
 
         $el.autocomplete("close");
 

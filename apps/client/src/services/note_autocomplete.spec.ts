@@ -607,6 +607,20 @@ describe("initNoteAutocomplete wiring", () => {
         expect(selected).not.toHaveBeenCalled();
     });
 
+    it("leaves Enter available for form submission after a terminal selection", () => {
+        const $el = makeEl();
+        noteAutocomplete.initNoteAutocomplete($el);
+        ($el as any).trigger("autocomplete:selected", { notePath: "root/n", noteTitle: "N" });
+
+        const autocompleteKeydown = vi.fn((event: JQuery.KeyDownEvent) => event.preventDefault());
+        $el.on("keydown.aa", autocompleteKeydown);
+        const event = $.Event("keydown", { key: "Enter" });
+        $el.trigger(event);
+
+        expect(autocompleteKeydown).not.toHaveBeenCalled();
+        expect(event.isDefaultPrevented()).toBe(false);
+    });
+
     it("composition end re-sets the autocomplete value", () => {
         const $el = makeEl();
         noteAutocomplete.initNoteAutocomplete($el);
@@ -689,6 +703,26 @@ describe("autocomplete:selected handler", () => {
         expect(handlers["autocomplete:externallinkselected"]).toBeDefined();
     });
 
+    it("ignores a stale create-note selection after selecting an external link", async () => {
+        chooseNoteType.mockResolvedValue({ success: false });
+        const { $el } = initWithSelected();
+        const externalLinkSelected = vi.fn();
+        $el.on("autocomplete:externallinkselected", externalLinkSelected);
+
+        ($el as any).trigger("autocomplete:selected", {
+            action: "external-link",
+            externalLink: "https://e.com"
+        });
+        await fireSelected($el, {
+            action: "create-note",
+            noteTitle: "https://e.com",
+            parentNoteId: "parent"
+        });
+
+        expect(externalLinkSelected).toHaveBeenCalledOnce();
+        expect(chooseNoteType).not.toHaveBeenCalled();
+    });
+
     it("handles a search-notes selection by triggering searchNotes", async () => {
         const { $el } = initWithSelected();
         await fireSelected($el, { action: "search-notes", noteTitle: "query" });
@@ -701,7 +735,7 @@ describe("autocomplete:selected handler", () => {
         createNote.mockResolvedValue({ note: { getBestNotePathString: () => "root/created" } });
         const { $el, handlers } = initWithSelected();
         await fireSelected($el, { action: "create-note", noteTitle: "Created", parentNoteId: "parent" });
-        expect(chooseNoteType).toHaveBeenCalled();
+        expect(chooseNoteType).toHaveBeenCalledOnce();
         expect(createNote).toHaveBeenCalledWith("parent", expect.objectContaining({ title: "Created", type: "text" }));
         expect(handlers["autocomplete:noteselected"]).toBeDefined();
         expect(handlers["autocomplete:noteselected"].notePath).toBe("root/created");
@@ -737,6 +771,34 @@ describe("autocomplete:selected handler", () => {
         await fireSelected($el, { action: undefined, notePath: "root/n", noteTitle: "N" });
         expect($el.attr("data-note-path")).toBe("root/n");
         expect(handlers["autocomplete:noteselected"]).toBeDefined();
+    });
+
+    it("ignores a stale create-note selection after selecting a note", async () => {
+        chooseNoteType.mockResolvedValue({ success: false });
+        const { $el } = initWithSelected();
+        const noteSelected = vi.fn();
+        $el.on("autocomplete:noteselected", noteSelected);
+
+        ($el as any).trigger("autocomplete:selected", { notePath: "root/n", noteTitle: "N" });
+        await fireSelected($el, { action: "create-note", noteTitle: "N", parentNoteId: "parent" });
+
+        expect(noteSelected).toHaveBeenCalledOnce();
+        expect(chooseNoteType).not.toHaveBeenCalled();
+    });
+
+    it("re-enables create-note selection after the input is edited", async () => {
+        chooseNoteType.mockResolvedValue({ success: false });
+        const { $el } = initWithSelected();
+
+        await fireSelected($el, { notePath: "root/n", noteTitle: "N" });
+        $el.val("New note").trigger("input");
+        await fireSelected($el, {
+            action: "create-note",
+            noteTitle: "New note",
+            parentNoteId: "parent"
+        });
+
+        expect(chooseNoteType).toHaveBeenCalledOnce();
     });
 });
 
