@@ -107,6 +107,23 @@ interface PdfViewerLayersMessage {
     toggleLayer?: (layerId: string, visible: boolean) => void;
 }
 
+interface PdfAnnotationInfo {
+    id: string;
+    type: string;
+    contents: string;
+    highlightedText: string;
+    author: string;
+    pageNumber: number;
+    color: string | null;
+    creationDate: string | null;
+    modificationDate: string | null;
+}
+
+interface PdfViewerAnnotationsMessage {
+    type: "pdfjs-viewer-annotations";
+    annotations: PdfAnnotationInfo[];
+}
+
 type PdfMessageEvent = MessageEvent<
     PdfDocumentModifiedMessage
     | PdfSaveViewHistoryMessage
@@ -117,5 +134,6 @@ type PdfMessageEvent = MessageEvent<
     | PdfViewerThumbnailMessage
     | PdfViewerAttachmentsMessage
     | PdfViewerLayersMessage
+    | PdfViewerAnnotationsMessage
     | PdfDocumentBlobResultMessage
 >;

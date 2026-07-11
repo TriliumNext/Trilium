@@ -1,15 +1,398 @@
-:root {
-    color-scheme: var(--tn-theme-style);
+/* #region General */
 
-    --body-bg-color: transparent;
-    --toolbar-bg-color: transparent;
+:root {    
     --main-color: var(--tn-main-text-color);
+    --body-bg-color: transparent;
+    --outline-color: gray;
+    --focus-ring-color: var(--tn-input-focus-outline-color);
     --toolbar-border-color: var(--tn-main-border-color);
+    --toolbar-icon-bg-color: var(--tn-main-text-color);
+    --toolbar-bg-color: transparent;
     --toolbar-icon-opacity: 1;
+    --toggled-btn-bg-color: var(--tn-hover-item-background-color);
+    --doorhanger-bg-color: var(--tn-menu-background-color);
+    --doorhanger-separator-color: var(--tn-main-border-color);
 
     --page-margin: 12px auto;
     --spreadHorizontalWrapped-margin-LR: 4px;
+
+    color-scheme: var(--tn-theme-style);
+    font-size: 16px;
 }
+
+body.read-only-document {
+    #editorModeButtons,
+    #editorModeSeparator,
+    .editToolbar {
+        display: none !important;
+    }
+}
+
+body.no-toolbar {
+    --toolbar-height: 0;
+    .toolbar {
+        display: none !important;
+    }
+}
+
+:root button,
+:root dialog,
+:root #toolbarContainer,
+:root .toolbarButton,
+:root #scaleSelect,
+:root .toolbarButtonWithContainer .editorParamsToolbar .editorParamsLabel,
+:root #toolbarContainer #toolbarViewer input,
+:root #editorUndoBar,
+:root .dialogButton {
+    font-family: Inter, sans-serif;
+}
+
+#secondaryToolbar,
+#documentPropertiesDialog,
+#findbar.doorHanger,
+.doorHangerRight,
+#printServiceDialog,
+:root :is(.annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor, .signatureEditor), .textLayer) .editToolbar,
+#viewerContainer .editToolbar .colorPicker .dropdown,
+#editorUndoBar {
+    border: 1px solid var(--tn-dropdown-border-color);
+    border-radius: var(--tn-dropdown-border-radius);
+    background-color: var(--tn-menu-background-color);
+    padding: var(--tn-menu-padding-size);
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--tn-dropdown-shadow-opacity));
+    backdrop-filter: var(--tn-dropdown-backdrop-filter);
+}
+
+.doorHangerRight,
+.doorHangerLeft,
+.doorHanger {
+    &::after, &::before {
+        display: none;
+    }
+}
+
+:root .toggle-button {
+    --toggle-border-color: transparent;
+    --toggle-background-color: var(--tn-input-background-color);
+    --toggle-background-color-hover: var(--toggle-background-color);
+    --toggle-dot-background-color: var(--tn-input-text-color);
+    --toggle-background-color-pressed: var(--tn-input-text-color);
+    --toggle-background-color-pressed-hover: var(--toggle-background-color-pressed);
+    cursor: pointer;
+}
+
+:root .colorPicker {
+    --hover-outline-color: var(--tn-input-focus-outline-color);
+    --selected-outline-color: var(--tn-main-text-color);
+
+    outline-offset: 3px;
+}
+
+/* Text boxes */
+input:not([type]),
+input[type="number"] {
+    --field-border-color: transparent;
+    --field-bg-color: var(--tn-input-background-color);
+    --field-color: var(--tn-input-text-color);
+    --input-horizontal-padding: 8px;
+
+    border-radius: 4px !important;
+    font-size: .85rem;
+
+    &:hover {
+        --field-bg-color: var(--tn-input-hover-background);
+        --field-color: var(--tn-input-hover-color);
+    }
+
+    &:focus {
+        border-color: transparent !important;
+        outline: 2px solid var(--tn-input-focus-outline-color);
+        --field-bg-color: var(--tn-input-focus-background);
+        --field-color: var(--tn-input-focus-color);
+    }
+
+    &::placeholder {
+        color: var(--tn-input-placeholder-color)
+    }
+
+    &::selection {
+        background-color: var(--tn-input-selection-background);
+        color: var(--tn-input-selection-text-color);
+    }
+}
+
+input[type="color"] {
+    border: 0;
+    outline: 0;
+    background: transparent;
+    border-radius: 4px;
+
+    &:hover {
+        opacity: .75;
+    }
+
+    &:focus {
+        outline: 2px solid var(--tn-input-focus-outline-color);
+        outline-offset: 2px;
+    }
+}
+
+/* #endregion */
+
+/* #region Toolbar */
+
+#toolbarContainer select#scaleSelect,
+#toolbarContainer input#pageNumber {
+    height: calc(var(--toolbar-height) - 8px);
+    padding-block: 0;
+    font-size: 13px;
+}
+
+
+#toolbarContainer {
+    padding-inline: 12px;
+}
+
+.toolbarButton {
+    border-radius: 6px;
+
+    &:not(.labeled):active::before {
+        transform: scale(.85) !important;
+    }
+
+    &:hover {
+        background: var(--tn-hover-item-background-color);
+        color: var(--tn-hover-item-text-color);
+    }
+
+    &.toggled {
+        /* Icon-only button */
+        &:not(.labeled) {
+            background: var(--tn-ck-editor-toolbar-button-on-background);
+
+            &&::before {
+                background: var(--tn-ck-editor-toolbar-button-on-color);
+            }
+        }
+
+        &::before {
+            color: var(--tn-menu-item-icon-color);
+        }
+    }
+}
+.verticalToolbarSeparator,
+.splitToolbarButtonSeparator {
+    --separator-color: transparent;
+}
+
+.verticalToolbarSeparator {
+    margin-inline: 4px;
+}
+
+:root #findbar {
+    --toolbar-height: 40px;
+
+    padding: 0 4px;
+
+    /* Search input */
+    .loadingInput {
+        margin-inline-end: 8px;
+    }
+
+    /* Search input - no results */
+    #findInputContainer #findInput[data-status="notFound"] {
+        --tn-input-focus-outline-color: var(--tn-dropdown-item-icon-destructive-color);
+        background: inherit;
+    }
+
+    /* Option buttons */
+    .toggleButton.toolbarLabel,
+    .toolbarButton {
+        height: calc(var(--toolbar-height) - 12px);
+        padding-inline: 10px;
+        border-radius: 6px;
+        aspect-ratio: unset;
+    }
+
+    /* Toggable option buttons */
+    .toggleButton.toolbarLabel {
+        --main-color: var(--tn-main-text-color);
+        --button-hover-color: var(--tn-hover-item-background-color);
+        --toggled-btn-bg-color: var(--tn-ck-editor-toolbar-button-on-background);
+        --toggled-btn-color: var(--tn-ck-editor-toolbar-button-on-color);
+    }
+
+    /* Search status text */
+    #findbarMessageContainer #findResultsCount,
+    #findMsg {
+        background-color: transparent;
+        color: var(--tn-main-text-color);
+        opacity: .5;
+    };
+
+    /* Not found message */
+    #findMsg[data-status="notFound"] {
+        color: var(--tn-dropdown-item-icon-destructive-color);
+        opacity: 1;
+    }
+}
+
+#toolbarContainer #toolbarViewer #pageNumber {
+    font-weight: 600;
+}
+
+#numPages {
+    font-size: 13px;
+    line-height: unset;
+}
+
+#scaleSelectContainer {
+    --dropdown-btn-bg-color: transparent;
+    --button-hover-color: transparent;
+    border-radius: 6px;
+    margin-top: 1px;
+
+    &:hover,
+    &:focus-within{
+        background-color: var(--tn-hover-item-background-color);
+    }
+}
+
+/* Toolbar editor dropdowns */
+:root .editorParamsToolbar:not(.menu),
+:root #highlightParamsToolbarContainer {
+    padding: 10px 16px;
+}
+
+/* Toolbar dropdowns */
+:root .editorParamsToolbar {
+    .menu {
+        padding: 8px;
+    }
+
+    .editorParamsToolbarContainer {
+        padding: 0;
+    }
+}
+
+/* Overflow menu */
+:root #secondaryToolbar {
+    --toolbar-icon-bg-color: var(--tn-menu-item-icon-color);
+    --toolbar-icon-hover-bg-color: var(--tn-menu-item-icon-color);
+    --toggled-btn-bg-color: transparent;
+    --toggled-btn-color: currentColor;
+    --doorhanger-icon-opacity: 1;
+    padding: var(--tn-menu-padding-size);
+    width: auto;
+    min-width: 220px;
+    max-width: 400px;
+    
+    .toolbarButton.labeled {
+        color: var(--tn-menu-text-color);
+        padding-inline-end: 12px;
+        padding-block: 6px;
+        font-size: .9rem;
+    }
+}
+
+/* Horizontal menu dividers */
+:root #highlightParamsToolbarContainer #editorHighlightVisibility .divider,
+:root .horizontalToolbarSeparator {
+    position: relative;
+    overflow: visible;
+    background: unset;
+    border: none;
+
+    &:before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        border-top: 1px solid var(--tn-main-border-color);
+    }
+}
+
+/* Radio menu items */
+#cursorToolButtons .toolbarButton,
+#scrollModeButtons .toolbarButton,
+#spreadModeButtons .toolbarButton {
+    --toggled-hover-active-btn-color: var(--tn-hover-item-background-color);
+    position: relative;
+
+    &::after {
+        display: block;
+        content: "";
+        position: absolute;
+        right: 0;
+        width: 2em;
+        height: 100%;
+        /* https://pictogrammers.com/library/mdi/icon/radiobox-blank/ */
+        mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3ctitle%3eradiobox-blank%3c/title%3e%3cpath d='M12%2c20A8%2c8 0 0%2c1 4%2c12A8%2c8 0 0%2c1 12%2c4A8%2c8 0 0%2c1 20%2c12A8%2c8 0 0%2c1 12%2c20M12%2c2A10%2c10 0 0%2c0 2%2c12A10%2c10 0 0%2c0 12%2c22A10%2c10 0 0%2c0 22%2c12A10%2c10 0 0%2c0 12%2c2Z' /%3e%3c/svg%3e");
+        mask-size: 16px;
+        mask-repeat: no-repeat;
+        mask-position: center center;
+        background-color: var(--tn-main-text-color);
+    }
+
+    &.toggled::after {
+        /* https://pictogrammers.com/library/mdi/icon/radiobox-marked/ */
+        mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3ctitle%3eradiobox-marked%3c/title%3e%3cpath d='M12%2c20A8%2c8 0 0%2c1 4%2c12A8%2c8 0 0%2c1 12%2c4A8%2c8 0 0%2c1 20%2c12A8%2c8 0 0%2c1 12%2c20M12%2c2A10%2c10 0 0%2c0 2%2c12A10%2c10 0 0%2c0 12%2c22A10%2c10 0 0%2c0 22%2c12A10%2c10 0 0%2c0 12%2c2M12%2c7A5%2c5 0 0%2c0 7%2c12A5%2c5 0 0%2c0 12%2c17A5%2c5 0 0%2c0 17%2c12A5%2c5 0 0%2c0 12%2c7Z' /%3e%3c/svg%3e");
+    }
+}
+
+/* Permanently removed buttons */
+#viewsManagerToggleButton,
+#downloadButton,
+#secondaryDownload,
+#secondaryOpenFile,
+#editorCommentButton {
+    display: none;
+}
+
+/* The separator after the hidden "Open" item */
+#secondaryToolbarButtonContainer div.visibleMediumView + .horizontalToolbarSeparator {
+    display: none;
+}
+
+/* #endregion */
+
+/* #region Properties Dialog */
+
+#documentPropertiesDialog {
+    --separator-color: transparent;
+    
+    user-select: none;
+    padding: 1em;
+
+    .row {
+        line-height: 1.5;
+
+        > span {
+            font-weight: bold;
+            opacity: .5;
+        }
+
+        > p {
+            user-select: all;
+        }
+    }
+
+    /* Hide irrelevant properties */
+    > .row:has(#fileNameField),
+    > .row:has(#linearizedField) {
+        display: none;
+    }
+
+    #documentPropertiesClose {
+        /* TODO: restyle */
+        border-radius: 6px;
+        cursor: pointer;
+    }
+}
+
+/* #endregion */
+
+/* #region Viewer Area */
 
 .pdfViewer {
     .page,
@@ -24,29 +407,55 @@
     }
 }
 
-/* #region Toolbar */
-
-/* Permanently removed buttons */
-#viewsManagerToggleButton,
-#downloadButton,
-#secondaryDownload,
-#secondaryOpenFile {
+#viewsManager {
     display: none;
 }
 
-/* The separator after the hidden "Open" item */
-#secondaryToolbarButtonContainer div.visibleMediumView + .horizontalToolbarSeparator {
-    display: none;
+:root :is(.annotationEditorLayer :is(.freeTextEditor, .inkEditor, .stampEditor, .highlightEditor, .signatureEditor), .textLayer) .editToolbar {
+    --editor-toolbar-fg-color: var(--tn-main-text-color);
+    --editor-toolbar-hover-bg-color: var(--tn-hover-item-background-color);
+    --editor-toolbar-hover-fg-color: var(--tn-hover-item-text-color);
+    --editor-toolbar-hover-outline: transparent;
+
+    padding: 4px;
+
+    .divider {
+        display: none;
+    }
+
+    .buttons {
+        gap: 2px;
+
+        > * {
+            border-radius: 6px !important;
+        }
+
+        .deleteButton::before {
+            background-color: var(--tn-dropdown-item-icon-destructive-color);
+        }
+    }
 }
 
-/* #endregion */
+#viewerContainer .editToolbar .colorPicker .dropdown {
+    padding: 12px 6px;
 
-/* #region Properties Dialog */
+    &::before {
+        display: block;
+        position: absolute;
+        content: "";
+        inset: 0;
+        border: 1px solid var(--tn-dropdown-border-color);
+        border-radius: var(--tn-dropdown-border-radius);
+        backdrop-filter: var(--tn-dropdown-backdrop-filter);
+        z-index: -1;
+    }
+}
 
-/* Hide irrelevant properties */
-#documentPropertiesDialog > .row:has(#fileNameField),
-#documentPropertiesDialog > .row:has(#linearizedField) {
-    display: none;
+#editorUndoBar {
+    --message-bar-fg-color: var(--tn-main-text-color);
+    --message-bar-icon-color: var(--tn-menu-item-icon-color);
+    --undo-button-border: transparent;
+    padding-inline: 20px;
 }
 
 /* #endregion */

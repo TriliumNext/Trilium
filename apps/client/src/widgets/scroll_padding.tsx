@@ -8,7 +8,10 @@ export default function ScrollPadding() {
     const [height, setHeight] = useState<number>(10);
     const isEnabled = ["text", "code"].includes(note?.type ?? "")
         && viewScope?.viewMode === "default"
-        && !note?.isTriliumSqlite();
+        && note?.isContentAvailable()
+        && !note?.isTriliumSqlite()
+        && !note?.isMarkdown()
+        && !note?.isIconPack();
 
     const refreshHeight = () => {
         if (!ref.current) return;

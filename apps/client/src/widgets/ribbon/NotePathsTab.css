@@ -17,11 +17,13 @@ body.experimental-feature-new-layout .note-paths-widget {
             padding: 8px 20px 8px 25px;
 
             &:first-child {
-                border-radius: var(--border-radius) var(--border-radius) 0 0;
+                border-top-left-radius: var(--border-radius);
+                border-top-right-radius: var(--border-radius);
             }
 
             &:last-child {
-                border-radius: 0 0 var(--border-radius) var(--border-radius);
+                border-bottom-left-radius: var(--border-radius);
+                border-bottom-right-radius: var(--border-radius);
             }
 
             & + li {
@@ -60,4 +62,26 @@ body.experimental-feature-new-layout .note-paths-widget {
         }
 
     }
+}
+
+.note-paths-widget {
+    padding: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.note-path-list {
+    margin-top: 10px;
+}
+
+.note-path-list .path-current a {
+    font-weight: bold;
+}
+
+.note-path-list .path-archived a {
+    color: var(--muted-text-color) !important;
+}
+
+.note-path-list .path-search a {
+    font-style: italic;
 }

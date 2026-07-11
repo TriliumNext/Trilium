@@ -1,9 +1,13 @@
-import { useEffect, useState } from "preact/hooks";
-import { t } from "../services/i18n";
-import Alert from "./react/Alert";
-import { useNoteContext,  useTriliumEvent } from "./react/hooks";
 import "./search_result.css";
+
+import clsx from "clsx";
+import { useEffect, useState } from "preact/hooks";
+
+import { t } from "../services/i18n";
 import { SearchNoteList } from "./collections/NoteList";
+import Button from "./react/Button";
+import { useNoteContext,  useTriliumEvent } from "./react/hooks";
+import NoItems from "./react/NoItems";
 
 enum SearchResultState {
     NO_RESULTS,
@@ -42,13 +46,15 @@ export default function SearchResult() {
     });
 
     return (
-        <div className={`search-result-widget ${!state ? "hidden-ext" : ""}`}>
+        <div className={clsx("search-result-widget", state === undefined && "hidden-ext")}>
             {state === SearchResultState.NOT_EXECUTED && (
-                <Alert type="info" className="search-not-executed-yet">{t("search_result.search_not_executed")}</Alert>
+                <NoItems icon="bx bx-file-find" text={t("search_result.search_not_executed")}>
+                    <Button text={t("search_result.search_now")} triggerCommand="searchNotes" />
+                </NoItems>
             )}
 
             {state === SearchResultState.NO_RESULTS && (
-                <Alert type="info" className="search-no-results">{t("search_result.no_notes_found")}</Alert>
+                <NoItems icon="bx bx-rectangle" text={t("search_result.no_notes_found")} />
             )}
 
             {state === SearchResultState.GOT_RESULTS && (

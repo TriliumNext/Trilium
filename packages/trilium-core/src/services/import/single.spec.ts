@@ -1,0 +1,180 @@
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import ExcelJS from "exceljs";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import becca from "../../becca/becca.js";
+import BNote from "../../becca/entities/bnote.js";
+import TaskContext from "../task_context.js";
+import sql_init from "../sql_init.js";
+import single from "./single.js";
+import { stripBom } from "../utils/binary.js";
+import { getContext } from "../context.js";
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+
+async function testImport(fileName: string, mimetype: string, bufferOverride?: Buffer, extraOptions?: Record<string, unknown>) {
+    const buffer = bufferOverride ?? fs.readFileSync(`${scriptDir}/samples/${fileName}`);
+    // getInstance caches by task id, so a caller needing distinct options (e.g. safeImport) must
+    // use a distinct id rather than reusing the shared "import-mdx" context.
+    const taskContext = TaskContext.getInstance(extraOptions ? `import-${fileName}` : "import-mdx", "importNotes", {
+        textImportedAsText: true,
+        codeImportedAsCode: true,
+        spreadsheetImportedAsSpreadsheet: true,
+        ...extraOptions
+    });
+
+    return new Promise<{ buffer: Buffer; importedNote: BNote }>((resolve, reject) => {
+        getContext().init(async () => {
+            const rootNote = becca.getNote("root");
+            if (!rootNote) {
+                reject("Missing root note.");
+                return;
+            }
+
+            const importedNote = await single.importSingleFile(
+                taskContext,
+                {
+                    originalname: fileName,
+                    mimetype,
+                    buffer: buffer
+                },
+                rootNote as BNote
+            );
+            if (importedNote === null) {
+                reject("Import failed.");
+                return;
+            }
+            resolve({
+                buffer,
+                importedNote
+            });
+        });
+    });
+}
+
+describe("processNoteContent", () => {
+    beforeAll(async () => {
+        // Prevent download of images.
+        vi.mock("../image.js", () => {
+            return {
+                default: { saveImageToAttachment: () => {} }
+            };
+        });
+
+        sql_init.initializeDb();
+        await sql_init.dbReady;
+    });
+
+    it("treats single MDX as Markdown", async () => {
+        const { importedNote } = await testImport("Text Note.mdx", "text/mdx");
+        expect(importedNote.mime).toBe("text/html");
+        expect(importedNote.type).toBe("text");
+        expect(importedNote.title).toBe("Text Note");
+    });
+
+    it("supports HTML note with UTF-16 (w/ BOM) from Microsoft Outlook", async () => {
+        const { importedNote } = await testImport("IREN Reports Q2 FY25 Results.htm", "text/html");
+        expect(importedNote.mime).toBe("text/html");
+        expect(importedNote.title).toBe("IREN Reports Q2 FY25 Results");
+        expect(importedNote.getContent().toString().substring(0, 5)).toEqual("<html");
+    });
+
+    it("safe import preserves data-trilium-collapsed on list items", async () => {
+        const html = `<ul><li data-trilium-collapsed="true">Parent<ul><li>Child</li></ul></li></ul>`;
+        const { importedNote } = await testImport("collapsed-list.html", "text/html", Buffer.from(html), { safeImport: true });
+
+        expect(importedNote.mime).toBe("text/html");
+        // safeImport runs the content through the sanitizer; data-* attributes are whitelisted, so
+        // the collapsed-state flag survives along with the nested item.
+        const content = importedNote.getContent().toString();
+        expect(content).toContain(`data-trilium-collapsed="true"`);
+        expect(content).toContain("Child");
+    });
+
+    it("supports code note with UTF-16", async () => {
+        const { importedNote, buffer } = await testImport("UTF-16LE Code Note.json", "application/json");
+        expect(importedNote.mime).toBe("application/json");
+        expect(importedNote.getContent().toString()).toStrictEqual(stripBom(buffer.toString("utf-16le")));
+    });
+
+    it("supports plain text note with UTF-16", async () => {
+        const { importedNote } = await testImport("UTF-16LE Text Note.txt", "text/plain");
+        expect(importedNote.mime).toBe("text/html");
+        expect(importedNote.getContent().toString()).toBe("<p>Plain text goes here.<br></p>");
+    });
+
+    it("supports markdown note with UTF-16", async () => {
+        const { importedNote } = await testImport("UTF-16LE Text Note.md", "text/markdown");
+        expect(importedNote.mime).toBe("text/html");
+        expect(importedNote.getContent().toString()).toBe("<h2>Hello world</h2><p>Plain text goes here.</p>");
+    });
+
+    it("imports YAML front matter as labels and strips it from a Markdown note", async () => {
+        const md = "---\nfirst: First value\ntags:\n  - Tag\n  - AnotherTag\n---\nThe body.";
+        const { importedNote } = await testImport("Frontmatter.md", "text/markdown", Buffer.from(md));
+        expect(importedNote.getContent().toString()).toBe("<p>The body.</p>");
+        expect(importedNote.getOwnedLabelValue("first")).toBe("First value");
+        expect(importedNote.getOwnedLabelValues("tags")).toEqual(["Tag", "AnotherTag"]);
+    });
+
+    it("only creates labels from front matter — never relations (no script triggers)", async () => {
+        const md = '---\n"~runOnNoteCreation": evil\ntemplate: x\n---\nBody.';
+        const { importedNote } = await testImport("Safe.md", "text/markdown", Buffer.from(md));
+        // Front matter applies via addLabel, so the only script-execution / template vector (a relation)
+        // can never appear — even a key that looks like one lands as a harmless label.
+        expect(importedNote.getOwnedAttributes().filter((a) => a.type === "relation")).toHaveLength(0);
+        expect(importedNote.getOwnedAttributes().every((a) => a.type === "label")).toBe(true);
+    });
+
+    it("supports excalidraw note", async () => {
+        const { importedNote } = await testImport("New note.excalidraw", "application/json");
+        expect(importedNote.mime).toBe("application/json");
+        expect(importedNote.type).toBe("canvas");
+        expect(importedNote.title).toBe("New note");
+    });
+
+    it("imports .mermaid as mermaid note", async () => {
+        const { importedNote } = await testImport("New note.mermaid", "application/json");
+        expect(importedNote).toMatchObject({
+            mime: "text/vnd.mermaid",
+            type: "mermaid",
+            title: "New note"
+        });
+    });
+
+    it("imports .mmd as mermaid note", async () => {
+        const { importedNote } = await testImport("New note.mmd", "application/json");
+        expect(importedNote).toMatchObject({
+            mime: "text/vnd.mermaid",
+            type: "mermaid",
+            title: "New note"
+        });
+    });
+
+    it("imports .xlsx as a spreadsheet note", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("Sheet1");
+        ws.getCell("A1").value = "Hello";
+        ws.getCell("B1").value = 42;
+        const xlsxBuffer = Buffer.from(await wb.xlsx.writeBuffer());
+
+        const { importedNote } = await testImport(
+            "Budget.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            xlsxBuffer
+        );
+
+        expect(importedNote).toMatchObject({
+            mime: "text/x-spreadsheet",
+            type: "spreadsheet",
+            title: "Budget"
+        });
+        expect(importedNote.getLabelValue("originalFileName")).toBe("Budget.xlsx");
+
+        // Content is the persisted Univer workbook with our imported values.
+        const parsed = JSON.parse(importedNote.getContent().toString());
+        const sheet = parsed.workbook.sheets[parsed.workbook.sheetOrder[0]];
+        expect(sheet.cellData[0][0].v).toBe("Hello");
+        expect(sheet.cellData[0][1].v).toBe(42);
+    });
+}, 60_000);

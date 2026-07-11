@@ -1,0 +1,116 @@
+.dashboard-view {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .dashboard-scroll-container {
+        flex: 1;
+        overflow-y: auto;
+        position: relative;
+        padding: 0 calc(var(--content-margin-inline) - 8px);
+    }
+
+    /* Empty-state illustration: ghost tiles laid out on the same metrics as the real grid
+       (12 columns, 80px rows, 8px gaps) so they preview where widgets will land, with the hint
+       flowing below them rather than overlapping. */
+    .dashboard-empty-state {
+        pointer-events: none;
+        padding: 8px;
+    }
+
+    .dashboard-ghost-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        grid-auto-rows: 80px;
+        gap: 8px;
+    }
+
+    .dashboard-ghost-widget {
+        border: 2px dashed var(--main-border-color);
+        border-radius: 6px;
+        opacity: 0.5;
+
+        &:nth-child(1) { grid-area: 1 / 1 / 4 / 5; }
+        &:nth-child(2) { grid-area: 1 / 5 / 3 / 9; }
+        &:nth-child(3) { grid-area: 1 / 9 / 5 / 13; }
+        &:nth-child(4) { grid-area: 4 / 1 / 6 / 5; }
+        &:nth-child(5) { grid-area: 3 / 5 / 6 / 9; }
+    }
+
+    .dashboard-empty-hint {
+        margin-top: 1.5em;
+        color: var(--muted-text-color);
+        text-align: center;
+
+        p {
+            margin: 0 auto;
+            max-width: 22em;
+        }
+    }
+
+    /* Match the grid view's card look: translucent fill + soft (transparent-by-default) border
+       rather than a hard outline, so widgets read as cards instead of flat boxes. */
+    .dashboard-widget {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--card-border-color, var(--main-border-color));
+        border-radius: var(--card-border-radius, 8px);
+        background: var(--card-background-color);
+        box-shadow: var(--card-box-shadow);
+        overflow: hidden;
+
+        &.archived {
+            opacity: 0.6;
+        }
+    }
+
+    .grid-stack-static .dashboard-widget-header {
+        cursor: default;
+    }
+
+    /* Layout, title color and ellipsis are shared with the grid/list card header
+       (.note-book-header) in ListOrGridView.css; only dashboard-specific chrome lives here. */
+    .dashboard-widget-header {
+        padding: 0.45rem 0.5rem 0.45rem 0.85rem;
+        cursor: grab;
+        border-bottom: 1px solid var(--card-border-color, var(--main-border-color));
+        flex-shrink: 0;
+
+        .tn-icon + span {
+            flex-grow: 1;
+
+            a {
+                font-weight: 500;
+            }
+        }
+    }
+
+    .dashboard-widget-content {
+        flex: 1;
+        overflow: auto;
+        font-size: 0.8rem;
+
+        .note-book-content {
+            height: 100%;
+
+            .rendered-content {
+                padding: 8px 16px;
+            }
+
+            /* Media fills the widget edge-to-edge, like the grid view — no inner padding. */
+            &.type-image,
+            &.type-pdf,
+            &.type-canvas,
+            &.type-video,
+            &.type-code,
+            &.type-mindMap,
+            &.type-webView {
+                padding: 0;
+
+                .rendered-content {
+                    padding: 0;
+                }
+            }
+        }
+    }
+}

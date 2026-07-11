@@ -8,6 +8,7 @@ import FNote from "../../entities/fnote";
 import { removeOwnedAttributesByNameOrType } from "../../services/attributes";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
+import { openInAppHelpFromUrl } from "../../services/utils";
 import Admonition from "../react/Admonition";
 import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
@@ -165,7 +166,10 @@ function SearchStringOption({ note, refreshResults, error, ...restProps }: Searc
             title={t("search_string.title_column")}
             className={clsx({ "has-error": !!error })}
             help={<>
-                <strong>{t("search_string.search_syntax")}</strong> - {t("search_string.also_see")} <a href="#" data-help-page="search.html">{t("search_string.complete_help")}</a>
+                <strong>{t("search_string.search_syntax")}</strong> - {t("search_string.also_see")} <a href="#" onClick={(e) => {
+                    e.preventDefault();
+                    openInAppHelpFromUrl("eIg8jdvaoNNd");
+                }}>{t("search_string.complete_help")}</a>
                 <ul style="marigin-bottom: 0;">
                     <li>{t("search_string.full_text_search")}</li>
                     <li><code>#abc</code> - {t("search_string.label_abc")}</li>

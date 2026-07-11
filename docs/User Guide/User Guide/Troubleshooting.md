@@ -43,25 +43,7 @@ Trilium makes regular automatic backups. If issues become severe, you can [resto
 
 ## Forgotten Password
 
-If you forget your password:
-
-*   Protected notes are irretrievable without the password.
-*   Unprotected notes can be recovered. Follow these steps:
-
-Access the [database](Advanced%20Usage/Database.md) file in the [data directory](Installation%20%26%20Setup/Data%20directory.md). Open the `document.db` file with an SQLite client (e.g., [DB Browser](https://sqlitebrowser.org/)) and execute the following queries:
-
-```
-UPDATE options SET value = '77/twC5O00cuQgNC63VK32qOKKYwj21ev3jZDXoytVU=' WHERE name = 'passwordVerificationSalt';
-UPDATE options SET value = '710BMasZCAgibzIc07X4P9Q4TeBd4ONnqJOho+pWcBM=' WHERE name = 'passwordDerivedKeySalt';
-UPDATE options SET value = 'Eb8af1/T57b89lCRuS97tPEl4CwxsAWAU7YNJ77oY+s=' WHERE name = 'passwordVerificationHash';
-UPDATE options SET value = 'QpC8XoiYYeqHPtHKRtbNxfTHsk+pEBqVBODYp0FkPBa22tlBBKBMigdLu5GNX8Uu' WHERE name = 'encryptedDataKey';
-```
-
-After executing the changes, commit/write the changes. **This sets the password to "password," allowing you to log in again.**
-
-For pre-existing protected notes (now unrecoverable), consider deleting them or exporting the unprotected notes. Then, delete `document.db` and start fresh.
-
-If you continue using the existing document file, change your password (Options -> Change Password).
+See <a class="reference-link" href="Installation%20%26%20Setup/Server%20Installation/Authentication/Resetting%20your%20password.md">Resetting your password</a>.
 
 ## Reporting Bugs
 

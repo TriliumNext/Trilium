@@ -1,17 +1,18 @@
 import "./TabHistoryNavigationButtons.css";
 
-import { useEffect, useMemo, useState } from "preact/hooks";
+import type { ElectronApi } from "@triliumnext/commons";
+import { useEffect, useState } from "preact/hooks";
 
 import { t } from "../services/i18n";
-import { dynamicRequire, isElectron } from "../services/utils";
+import { isElectron } from "../services/utils";
 import { handleHistoryContextMenu } from "./launch_bar/HistoryNavigation";
 import ActionButton from "./react/ActionButton";
 import { useLauncherVisibility } from "./react/hooks";
 
 export default function TabHistoryNavigationButtons() {
-    const webContents = useMemo(() => isElectron() ? dynamicRequire("@electron/remote").getCurrentWebContents() : undefined, []);
-    const onContextMenu = webContents ? handleHistoryContextMenu(webContents) : undefined;
-    const { canGoBack, canGoForward } = useBackForwardState(webContents);
+    const hasApi = isElectron() && window.electronApi;
+    const onContextMenu = hasApi ? handleHistoryContextMenu() : undefined;
+    const { canGoBack, canGoForward } = useBackForwardState(hasApi);
     const legacyBackVisible = useLauncherVisibility("_lbBackInHistory");
     const legacyForwardVisible = useLauncherVisibility("_lbForwardInHistory");
 
@@ -35,30 +36,25 @@ export default function TabHistoryNavigationButtons() {
     );
 }
 
-function useBackForwardState(webContents: Electron.WebContents | undefined) {
-    const [ canGoBack, setCanGoBack ] = useState(webContents?.navigationHistory.canGoBack());
-    const [ canGoForward, setCanGoForward ] = useState(webContents?.navigationHistory.canGoForward());
+function useBackForwardState(hasApi: boolean | ElectronApi | undefined) {
+    const [ canGoBack, setCanGoBack ] = useState(() => hasApi ? window.electronApi?.navigation.navigationCanGoBack() ?? true : true);
+    const [ canGoForward, setCanGoForward ] = useState(() => hasApi ? window.electronApi?.navigation.navigationCanGoForward() ?? true : true);
 
     useEffect(() => {
-        if (!webContents) return;
-
+        const api = window.electronApi?.navigation;
+        if (!api) return;
         const updateNavigationState = () => {
-            setCanGoBack(webContents.navigationHistory.canGoBack());
-            setCanGoForward(webContents.navigationHistory.canGoForward());
+            setCanGoBack(api.navigationCanGoBack());
+            setCanGoForward(api.navigationCanGoForward());
         };
 
-        webContents.on("did-navigate", updateNavigationState);
-        webContents.on("did-navigate-in-page", updateNavigationState);
+        api.onDidNavigate(updateNavigationState);
+        api.onDidNavigateInPage(updateNavigationState);
 
         return () => {
-            webContents.removeListener("did-navigate", updateNavigationState);
-            webContents.removeListener("did-navigate-in-page", updateNavigationState);
+            api.removeDidNavigateListeners();
         };
-    }, [ webContents ]);
-
-    if (!webContents) {
-        return { canGoBack: true, canGoForward: true };
-    }
+    }, [hasApi]);
 
     return { canGoBack, canGoForward };
 }

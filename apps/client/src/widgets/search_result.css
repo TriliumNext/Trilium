@@ -1,16 +1,14 @@
 .search-result-widget {
     flex-grow: 100000;
     flex-shrink: 100000;
-    height: 100%;
-    overflow: auto;
     contain: none !important;
 }
 
-.search-result-widget .note-list {
-    padding: 10px;
+.search-result-widget .note-list-wrapper {
+    margin-inline: var(--content-margin-inline);
 }
 
-.search-no-results, .search-not-executed-yet {
-    margin: 20px;
-    padding: 20px !important;
+.note-split.type-search .scrolling-container {
+    display: flex;
+    flex-direction: column;
 }

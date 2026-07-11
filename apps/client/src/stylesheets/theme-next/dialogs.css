@@ -26,7 +26,8 @@
 .modal .modal-header .btn-close,
 .modal .modal-header .help-button,
 .modal .modal-header .custom-title-bar-button,
-#toast-container .toast .toast-header .btn-close {
+#toast-container .toast .toast-header .btn-close,
+#toast-container .toast .toast-close .btn-close {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -46,12 +47,14 @@
 }
 
 .modal .modal-header .btn-close,
-#toast-container .toast .toast-header .btn-close {
+#toast-container .toast .toast-header .btn-close,
+#toast-container .toast .toast-close .btn-close {
     --modal-control-button-hover-background: var(--modal-close-button-hover-background);
 }
 
 .modal .modal-header .btn-close::after,
-#toast-container .toast .toast-header .btn-close::after {
+#toast-container .toast .toast-header .btn-close::after,
+#toast-container .toast .toast-close .btn-close::after {
     content: "\ec8d";
     font-family: boxicons;
 }
@@ -67,7 +70,8 @@
 .modal .modal-header .btn-close:hover,
 .modal .modal-header .help-button:hover,
 .modal .modal-header .custom-title-bar-button:hover,
-#toast-container .toast .toast-header .btn-close:hover {
+#toast-container .toast .toast-header .btn-close:hover,
+#toast-container .toast .toast-close .btn-close:hover {
     background: var(--modal-control-button-hover-background);
     color: var(--modal-control-button-hover-color);
 }
@@ -75,19 +79,22 @@
 .modal .modal-header .btn-close:active,
 .modal .modal-header .help-button:active,
 .modal .modal-header .custom-title-bar-button:active,
-#toast-container .toast .toast-header .btn-close:active {
+#toast-container .toast .toast-header .btn-close:active,
+#toast-container .toast .toast-close .btn-close:active {
     transform: scale(.85);
 }
 
 .modal .modal-header .btn-close:focus,
 .modal .modal-header .help-button:focus,
-#toast-container .toast .toast-header .btn-close:focus {
+#toast-container .toast .toast-header .btn-close:focus,
+#toast-container .toast .toast-close .btn-close:focus {
     box-shadow: none !important;
 }
 
 .modal .modal-header .btn-close:focus-visible,
 .modal .modal-header .help-button:focus-visible,
-#toast-container .toast .toast-header .btn-close:focus-visible {
+#toast-container .toast .toast-header .btn-close:focus-visible,
+#toast-container .toast .toast-close .btn-close:focus-visible {
     outline: 2px solid var(--input-focus-outline-color);
     outline-offset: 2px;
 }
@@ -97,6 +104,16 @@
     background: var(--modal-footer-background);
     color: var(--modal-footer-color);
     border-top: unset;
+}
+
+/*
+ * Footer buttons indicate focus on plain :focus (not only :focus-visible) so the
+ * dialog's auto-focused default action (e.g. the OK button of a confirm dialog) shows a
+ * ring even when the dialog was opened by mouse — programmatic focus after a pointer
+ * interaction does not match :focus-visible.
+ */
+.modal .modal-footer button.btn:focus {
+    outline: 2px solid var(--input-focus-outline-color);
 }
 
 /* Tool dialogs - small dialogs without a backdrop */
@@ -246,7 +263,7 @@ div.tn-tool-dialog {
 }
 
 /* Item title for deleted notes */
-.recent-changes-content ul li.deleted-note .note-title {
+.recent-changes-dialog-view-mode-all-changes  ul li.deleted-note .note-title {
     text-decoration: line-through;
 }
 
@@ -366,15 +383,23 @@ div.tn-tool-dialog {
 /* Keyboard shortcut */
 .help-dialog .help-cards kbd,
 .ck-content kbd {
-    box-shadow: var(--help-kbd-shortcut-shadow);
-    margin: 0 4px;
-    border: none;
-    border-radius: 4px;
-    padding: 2px 10px;
+    display: inline-block;
+    margin: 0 2px 2px !important;
+    border: 1px solid var(--help-kbd-shortcut-border);
+    border-radius: 5px;
+    padding: 2px 8px;
     background: var(--help-kbd-shortcut-background);
+    box-shadow:
+        0 2px 0 var(--help-kbd-shortcut-border),
+        inset 0 -1px 0 var(--help-kbd-shortcut-border);
     color: var(--help-kbd-shortcut-color);
-    font-weight: 500;
+    font-family: var(--main-font-family) !important;
+    font-size: 0.75em;
+    font-weight: normal;
+    line-height: 1.4;
     letter-spacing: 0.5pt;
+    vertical-align: 1px;
+    white-space: nowrap;
 }
 
 .help-dialog .help-cards kbd:first-child {
@@ -390,10 +415,6 @@ div.tn-tool-dialog {
 }
 
 /* DELETE NOTE PREVIEW DIALOG */
-
-.delete-notes-dialog .modal-dialog {
-    --bs-modal-width: fit-content;
-}
 
 .delete-notes-list .note-path {
     padding-inline-start: 8px;

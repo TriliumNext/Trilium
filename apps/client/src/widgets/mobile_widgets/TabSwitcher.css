@@ -82,7 +82,8 @@
                 user-select: none;
                 pointer-events: none;
 
-                &.type-text {
+                &.type-text,
+                &.type-code .type-markdown {
                     padding: 10px;
                     --ck-content-todo-list-checkmark-size: 8px;
 
@@ -108,6 +109,11 @@
                     justify-content: center;
                     font-size: 1.25em;
                     color: var(--muted-text-color);
+
+                    .note-book-content {
+                        display: flex;
+                        align-items: center;
+                    }
                 }
 
                 .preview-placeholder {

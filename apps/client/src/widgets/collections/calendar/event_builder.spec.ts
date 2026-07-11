@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildNote, buildNotes } from "../../../test/easy-froca.js";
 import { buildEvent, buildEvents } from "./event_builder.js";
 import { LOCALE_MAPPINGS } from "./index.js";
+import { isValidDuration } from "./utils.js";
 import { LOCALES } from "@triliumnext/commons";
 
 describe("Building events", () => {
@@ -148,7 +149,7 @@ describe("Promoted attributes", () => {
         expect(event).toHaveLength(1);
         expect(event[0]?.promotedAttributes).toMatchObject([
             [ "assignee", "Target note" ]
-        ])
+        ]);
     });
 
     it("supports start time and end time", async () => {
@@ -175,6 +176,121 @@ describe("Promoted attributes", () => {
         expect(events[1]).toMatchObject({ title: "Note 2", start: "2025-05-07T13:36:00", end: "2025-05-08" });
     });
 
+});
+
+
+describe("Recurrence", () => {
+    it("supports valid recurrence without end date", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Recurring Event",
+                "#startDate": "2025-05-05",
+                "#recurrence": "FREQ=DAILY;COUNT=5"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            title: "Recurring Event",
+            start: "2025-05-05",
+        });
+        expect(events[0].rrule).toContain("DTSTART:20250505");
+        expect(events[0].rrule).toContain("FREQ=DAILY;COUNT=5");
+        expect(events[0].end).toBeUndefined();
+    });
+
+    it("supports recurrence with start and end time (duration calculated)", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Timed Recurring Event",
+                "#startDate": "2025-05-05",
+                "#startTime": "13:00",
+                "#endTime": "15:30",
+                "#recurrence": "FREQ=WEEKLY;COUNT=3"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({
+            title: "Timed Recurring Event",
+            start: "2025-05-05T13:00:00",
+            duration: "02:30"
+        });
+        expect(events[0].rrule).toContain("DTSTART:20250505T130000");
+        expect(events[0].end).toBeUndefined();
+    });
+
+    it("removes end date when recurrence is valid", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Recurring With End",
+                "#startDate": "2025-05-05",
+                "#endDate": "2025-05-07",
+                "#recurrence": "FREQ=DAILY;COUNT=2"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events).toHaveLength(1);
+        expect(events[0].rrule).toBeDefined();
+        expect(events[0].end).toBeUndefined();
+    });
+
+    it("writes to console on invalid recurrence rule", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "Invalid Recurrence",
+                "#startDate": "2025-05-05",
+                "#recurrence": "RRULE:FREQ=INVALID"
+            }
+        ]);
+
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        await buildEvents(noteIds);
+        const calledWithInvalid = consoleSpy.mock.calls.some(call =>
+            call[0].includes("has an invalid #recurrence string")
+        );
+        expect(calledWithInvalid).toBe(true);
+        consoleSpy.mockRestore();
+    });
+});
+
+
+describe("isValidDuration", () => {
+    it("accepts valid durations", () => {
+        expect(isValidDuration("00:01:00")).toBe(true);  // minimum: 1 minute
+        expect(isValidDuration("00:15:00")).toBe(true);
+        expect(isValidDuration("00:30:00")).toBe(true);
+        expect(isValidDuration("01:00:00")).toBe(true);
+        expect(isValidDuration("24:00:00")).toBe(true);  // maximum: 24 hours
+    });
+
+    it("rejects durations below 1 minute", () => {
+        expect(isValidDuration("00:00:00")).toBe(false);
+        expect(isValidDuration("00:00:30")).toBe(false);
+        expect(isValidDuration("00:00:59")).toBe(false);
+    });
+
+    it("rejects durations above 24 hours", () => {
+        expect(isValidDuration("25:00:00")).toBe(false);
+        expect(isValidDuration("24:01:00")).toBe(false);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(isValidDuration("00:aa:00")).toBe(false);
+        expect(isValidDuration("abc")).toBe(false);
+        expect(isValidDuration("1:0:0")).toBe(false);
+        expect(isValidDuration("")).toBe(false);
+        expect(isValidDuration(null)).toBe(false);
+        expect(isValidDuration(undefined)).toBe(false);
+    });
+
+    it("rejects out-of-range minute/second values", () => {
+        expect(isValidDuration("00:60:00")).toBe(false);
+        expect(isValidDuration("00:00:60")).toBe(false);
+    });
 });
 
 describe("Building locales", () => {

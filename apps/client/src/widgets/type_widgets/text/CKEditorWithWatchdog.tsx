@@ -1,13 +1,14 @@
-import { CKTextEditor, ClassicEditor, EditorWatchdog, PopupEditor, TemplateDefinition,type WatchdogConfig } from "@triliumnext/ckeditor5";
+import { CKTextEditor, ClassicEditor, EditorWatchdog, PopupEditor, TemplateDefinition, type WatchdogConfig } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { HTMLProps, RefObject, useEffect, useImperativeHandle, useRef, useState } from "preact/compat";
 
 import froca from "../../../services/froca";
 import link from "../../../services/link";
-import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption } from "../../react/hooks";
+import linkEmbedService, { type EmbedMetadata } from "../../../services/link_embed";
+import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { buildConfig, BuildEditorOptions } from "./config";
 
-export type BoxSize = "small" | "medium" | "full";
+export type BoxSize = "small" | "medium" | "full" | "expandable";
 
 export interface CKEditorApi {
     /** returns true if user selected some text, false if there's no selection */
@@ -18,6 +19,8 @@ export interface CKEditorApi {
     addHtmlToEditor(html: string): void;
     addIncludeNote(noteId: string, boxSize?: BoxSize): void;
     addImage(noteId: string): Promise<void>;
+    addLinkEmbed(metadata: EmbedMetadata): void;
+    addLinkMention(metadata: EmbedMetadata): void;
 }
 
 interface CKEditorWithWatchdogProps extends Pick<HTMLProps<HTMLDivElement>, "className" | "tabIndex"> {
@@ -39,6 +42,9 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const watchdogRef = useRef<EditorWatchdog>(null);
     const [ uiLanguage ] = useTriliumOption("locale");
+    // Read purely as a rebuild trigger: the value is consumed by buildToolbarConfig() via options.get() at
+    // editor-creation time, so the editor must be recreated when it changes.
+    const [ multilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar");
     const [ editor, setEditor ] = useState<CKTextEditor>();
     const { parentComponent, ntxId } = useNoteContext();
 
@@ -140,11 +146,55 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                 editor?.execute("insertImage", { source: src });
             });
         },
+        addLinkEmbed(metadata: EmbedMetadata) {
+            const editor = watchdogRef.current?.editor;
+            if (!editor) return;
+
+            editor.model.change((writer) => {
+                editor.model.insertContent(
+                    writer.createElement("linkEmbed", {
+                        url: metadata.url,
+                        embedType: metadata.embedType,
+                        title: metadata.title,
+                        description: metadata.description,
+                        favicon: metadata.favicon,
+                        siteName: metadata.siteName,
+                        image: metadata.image
+                    })
+                );
+            });
+        },
+        addLinkMention(metadata: EmbedMetadata) {
+            const editor = watchdogRef.current?.editor;
+            if (!editor) return;
+
+            editor.model.change((writer) => {
+                editor.model.insertContent(
+                    writer.createElement("linkMention", {
+                        url: metadata.url,
+                        title: metadata.title,
+                        favicon: metadata.favicon
+                    })
+                );
+            });
+        },
     }));
 
     useLegacyImperativeHandlers({
         async loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | null = null) {
             await link.loadReferenceLinkTitle($el, href);
+        },
+        async fetchLinkMetadata(url: string) {
+            return await linkEmbedService.fetchMetadata(url);
+        },
+        detectEmbedType(url: string) {
+            return linkEmbedService.detectEmbedType(url);
+        },
+        renderLinkEmbed(container: HTMLElement, metadata: EmbedMetadata) {
+            linkEmbedService.renderEmbedPreview(container, metadata, true);
+        },
+        renderLinkMention(container: HTMLElement, metadata: EmbedMetadata) {
+            linkEmbedService.renderMentionPreview(container, metadata, true);
         }
     });
 
@@ -155,6 +205,11 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         let isStale = false;
 
         const init = async () => {
+            // Preserve the scroll position across editor recreation: rebuilding the editor briefly
+            // empties the content, which collapses the surrounding scrolling container back to the top.
+            const scrollContainer = container.closest<HTMLElement>(".scrolling-container");
+            const scrollTop = scrollContainer?.scrollTop ?? 0;
+
             // Ensure any previous watchdog is fully destroyed
             if (watchdogRef.current) {
                 try {
@@ -205,7 +260,19 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                 watchdog.on("stateChange", () => onWatchdogStateChange(watchdog));
             }
 
-            await watchdog.create(container);
+            await watchdog.create(container, {});
+
+            if (isStale || !scrollContainer || !scrollTop) return;
+
+            // Restore after the content has been set and laid out, otherwise the container is still
+            // collapsed and the assignment gets clamped to a smaller scroll height.
+            requestAnimationFrame(() => {
+                if (!isStale) {
+                    // `behavior: "instant"` overrides the container's `scroll-behavior: smooth`,
+                    // so the position is restored without an animation.
+                    scrollContainer.scrollTo({ top: scrollTop, behavior: "instant" });
+                }
+            });
         };
 
         init();
@@ -213,7 +280,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         return () => {
             isStale = true;
         };
-    }, [ contentLanguage, templates, uiLanguage ]);
+    }, [ contentLanguage, templates, uiLanguage, isClassicEditor, multilineToolbar ]);
 
 
     // React to notification warning callback.

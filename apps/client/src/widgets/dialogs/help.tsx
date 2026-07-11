@@ -1,10 +1,12 @@
 import Modal from "../react/Modal.jsx";
 import { t } from "../../services/i18n.js";
-import { ComponentChildren } from "preact";
+import { ComponentChildren, Fragment } from "preact";
 import appContext, { CommandNames } from "../../components/app_context.js";
 import RawHtml from "../react/RawHtml.jsx";
 import { useEffect, useState } from "preact/hooks";
 import keyboard_actions from "../../services/keyboard_actions.js";
+import { joinElements } from "../react/react_utils.js";
+import { renderShortcutKbds } from "../react/shortcut_kbd.js";
 import { useTriliumEvent } from "../react/hooks.jsx";
 
 export default function HelpDialog() {
@@ -29,6 +31,7 @@ export default function HelpDialog() {
                         <FixedKeyboardShortcut keys={["Backspace"]} description={t("help.jumpToParentNote")} />
                         <KeyboardShortcut commands="collapseTree" description={t("help.collapseWholeTree")} />
                         <KeyboardShortcut commands="collapseSubtree" description={t("help.collapseSubTree")} />
+                        <KeyboardShortcut commands="toggleArchivedNotes" description={t("help.toggleArchivedNotes")} />
                     </ul>
                 </Card>
 
@@ -138,12 +141,7 @@ function KeyboardShortcut({ commands, description }: { commands: CommandNames | 
 function FixedKeyboardShortcut({ keys, description }: { keys?: string[], description: string }) {
     return (
         <li>
-            {keys && keys.map((key, index) =>
-                <>
-                    <kbd key={index}>{key}</kbd>
-                    {index < keys.length - 1 ? ", " : "" }
-                </>
-            )} - <RawHtml html={description} />
+            {joinElements(keys?.map((key, index) => <Fragment key={index}>{renderShortcutKbds(key)}</Fragment>))} - <RawHtml html={description} />
         </li>
     );
 }

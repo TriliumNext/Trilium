@@ -27,6 +27,7 @@ node_modules
 npm-debug.log
 yarn-error.log
 testem.log
+startup-metrics.log
 /typings
 
 # System Files
@@ -36,6 +37,8 @@ Thumbs.db
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
 test-output
+__screenshots__
+.vitest-attachments
 
 apps/*/data*
 apps/*/out
@@ -46,9 +49,17 @@ upload
 
 /.direnv
 /result
-.svelte-kit
 
 # docs
 site/
 apps/*/coverage
 scripts/translation/.language*.json
+
+# Capacitor regenerates this on every `cap sync` and produces different
+# output on Windows vs macOS, causing constant churn — keep it local.
+apps/mobile/ios/App/CapApp-SPM/Package.swift
+# Ignore local Claude Code settings, but keep shared project skills.
+.claude/*
+!.claude/skills/
+.pnpm-store
+apps/edit-docs/output.zip

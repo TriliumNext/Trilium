@@ -13,12 +13,14 @@
     "prHourlyLimit": 0,
     "prConcurrentLimit": 0,
     "branchConcurrentLimit": 0,
+    "minimumReleaseAge": "3 days",
     "ignorePaths": [
         "**/node_modules/**",
         "apps/edit-docs/demo/**",
         "apps/server/src/assets/doc_notes/**",
         "docs/**",
-        "apps/server/Dockerfile.legacy"
+        "apps/server/Dockerfile.legacy",
+        "apps/mobile/android/**"
     ],
     "html": {
         "enabled": false
@@ -31,7 +33,12 @@
     },
     "packageRules": [
         {
-            "matchPackageNames": "@fsegurai/codemirror-theme-**",
+            "description": "Never auto-update the Android Gradle Plugin; it must track the installed Android Studio, not the latest release",
+            "matchPackageNames": ["com.android.tools.build:gradle"],
+            "enabled": false
+        },
+        {
+            "matchPackageNames": ["@fsegurai/codemirror-theme-**", "@catppuccin/codemirror"],
             "groupName": "codemirror themes"
         },
         {
@@ -47,13 +54,15 @@
             "groupName": "ckeditor monorepo"
         },
         {
+            "matchPackageNames": "@univerjs/**",
+            "groupName": "univer monorepo"
+        },
+        {
             "matchPackageNames": [
-                "@sveltejs/**",
-                "svelte",
-                "svelte-check",
-                "eslint-plugin-svelte"
+                "ai",
+                "@ai-sdk/**"
             ],
-            "groupName": "svelte monorepo"
+            "groupName": "ai sdk"
         }
     ]
 }

@@ -1,0 +1,7 @@
+.options-section-card {
+    .admonition {
+        margin: calc(var(--options-card-padding) * -1) calc(var(--options-card-padding) * -1) 0 calc(var(--options-card-padding) * -1);
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+}

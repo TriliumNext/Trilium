@@ -17,7 +17,7 @@ async function main() {
     build.buildFrontend();
 
     // Copy node modules dependencies
-    build.copyNodeModules(["better-sqlite3", "bindings", "file-uri-to-path", "@electron/remote"]);
+    build.copyNodeModules(["better-sqlite3", "bindings", "file-uri-to-path"]);
 
     generatePackageJson();
 }

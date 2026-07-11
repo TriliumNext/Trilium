@@ -1,7 +1,7 @@
 import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
 import { ComponentChildren, HTMLAttributes } from "preact";
-import { CSSProperties, HTMLProps } from "preact/compat";
-import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { createPortal, CSSProperties, HTMLProps } from "preact/compat";
+import { MutableRef, useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { isMobile } from "../../services/utils";
 import { useTooltip, useUniqueName } from "./hooks";
@@ -34,19 +34,37 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
     titlePosition?: "top" | "right" | "bottom" | "left";
     titleOptions?: Partial<Tooltip.Options>;
     mobileBackdrop?: boolean;
+    /**
+     * Render the dropdown menu into `document.body` instead of nesting it next to the toggle.
+     *
+     * Use this when an ancestor establishes a containment/backdrop root (e.g. `container-type`,
+     * `transform`, `filter`) which would otherwise flatten the menu's `backdrop-filter` blur into a
+     * flat tint. The menu is wrapped in a `<div class={className}>` so any CSS scoped under that
+     * class keeps applying even though the menu no longer lives inside the toggle's wrapper.
+     */
+    portalToBody?: boolean;
 }
 
-export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop }: DropdownProps) {
+export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop, portalToBody }: DropdownProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const dropdownContainerRef = useRef<HTMLUListElement | null>(null);
 
-    const { showTooltip, hideTooltip } = useTooltip(containerRef, {
+    // Memoized so useTooltip's effect (keyed on config identity) doesn't dispose and recreate the
+    // Bootstrap tooltip on every re-render — only when the title (or positioning) actually changes.
+    const tooltipConfig = useMemo<Partial<Tooltip.Options>>(() => ({
         ...titleOptions,
+        // Drive the tooltip from config, not just the `title` attribute: Bootstrap reads the attribute once
+        // on init, so a dynamic title (e.g. the media play-mode button) would otherwise go stale (`title` is
+        // a dependency of this memo, so a change recreates the tooltip, keeping it in sync). Prefer the
+        // `title` prop, then a `titleOptions.title` escape-hatch, then "" (Bootstrap rejects `undefined`;
+        // "" shows no tooltip).
+        title: title ?? titleOptions?.title ?? "",
         placement: titlePosition ?? "bottom",
         fallbackPlacements: [ titlePosition ?? "bottom" ],
         trigger: "manual"
-    });
+    }), [title, titleOptions, titlePosition]);
+    const { showTooltip, hideTooltip } = useTooltip(containerRef, tooltipConfig);
 
     const [ shown, setShown ] = useState(false);
 
@@ -54,6 +72,15 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
         if (!triggerRef.current || !dropdownContainerRef.current) return;
 
         const dropdown = BootstrapDropdown.getOrCreateInstance(triggerRef.current, dropdownOptions);
+
+        // When the menu is portaled to `document.body` it is no longer a sibling of the toggle, so
+        // Bootstrap fails to locate it (it searches the toggle's wrapper). Wire it up by hand —
+        // Bootstrap only ever positions/toggles whatever `_menu` points at, regardless of where it
+        // lives in the DOM, and the popper reference stays the toggle button.
+        if (portalToBody && dropdownContainerRef.current) {
+            (dropdown as unknown as { _menu: HTMLElement })._menu = dropdownContainerRef.current;
+        }
+
         if (dropdownRef) {
             dropdownRef.current = dropdown;
         }
@@ -114,6 +141,23 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
 
     const ariaId = useUniqueName("button");
 
+    const menu = (
+        <ul
+            class={`dropdown-menu tn-dropdown-menu ${isStatic ? "static" : ""} ${dropdownContainerClassName ?? ""} ${!noDropdownListStyle ? "tn-dropdown-list" : ""}`}
+            style={dropdownContainerStyle}
+            aria-labelledby={ariaId}
+            ref={dropdownContainerRef}
+            onClick={(e) => {
+                // Prevent clicks directly inside the dropdown from closing.
+                if (e.target === dropdownContainerRef.current) {
+                    e.stopPropagation();
+                }
+            }}
+        >
+            {shown && children}
+        </ul>
+    );
+
     return (
         <div ref={containerRef} class={`dropdown ${className ?? ""}`} style={{ display: "flex" }} title={title}>
             <button
@@ -134,20 +178,11 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
                 <span className="caret" />
             </button>
 
-            <ul
-                class={`dropdown-menu tn-dropdown-menu ${isStatic ? "static" : ""} ${dropdownContainerClassName ?? ""} ${!noDropdownListStyle ? "tn-dropdown-list" : ""}`}
-                style={dropdownContainerStyle}
-                aria-labelledby={ariaId}
-                ref={dropdownContainerRef}
-                onClick={(e) => {
-                    // Prevent clicks directly inside the dropdown from closing.
-                    if (e.target === dropdownContainerRef.current) {
-                        e.stopPropagation();
-                    }
-                }}
-            >
-                {shown && children}
-            </ul>
+            {portalToBody
+                // Keep the `className` scope on the portaled wrapper so CSS scoped under it (e.g.
+                // `.note-icon-widget .icon-list`) still applies even though the menu now lives in body.
+                ? createPortal(<div class={className ?? ""}>{menu}</div>, document.body)
+                : menu}
         </div>
     );
 }

@@ -3,7 +3,7 @@ import clsx from "clsx";
 import server from "../../services/server";
 import { TargetedMouseEvent, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { Dayjs } from "@triliumnext/commons";
+import { Dayjs, getWeekInfo, WeekSettings } from "@triliumnext/commons";
 import { t } from "../../services/i18n";
 
 interface DateNotesForMonth {
@@ -22,6 +22,7 @@ const DAYS_OF_WEEK = [
 
 interface DateRangeInfo {
     weekNumbers: number[];
+    weekYears: number[];
     dates: Dayjs[];
 }
 
@@ -36,19 +37,27 @@ export interface CalendarArgs {
 
 export default function Calendar(args: CalendarArgs) {
     const [ rawFirstDayOfWeek ] = useTriliumOptionInt("firstDayOfWeek");
+    const [ firstWeekOfYear ] = useTriliumOptionInt("firstWeekOfYear");
+    const [ minDaysInFirstWeek ] = useTriliumOptionInt("minDaysInFirstWeek");
     const firstDayOfWeekISO = (rawFirstDayOfWeek === 0 ? 7 : rawFirstDayOfWeek);
+
+    const weekSettings = {
+        firstDayOfWeek: firstDayOfWeekISO,
+        firstWeekOfYear: firstWeekOfYear ?? 0,
+        minDaysInFirstWeek: minDaysInFirstWeek ?? 4
+    };
 
     const date = args.date;
     const firstDay = date.startOf('month');
     const firstDayISO = firstDay.isoWeekday();
-    const monthInfo = getMonthInformation(date, firstDayISO, firstDayOfWeekISO);
+    const monthInfo = getMonthInformation(date, firstDayISO, weekSettings);
 
     return (
         <>
             <CalendarWeekHeader rawFirstDayOfWeek={rawFirstDayOfWeek} />
             <div className="calendar-body" data-calendar-area="month">
-                {firstDayISO !== firstDayOfWeekISO && <PreviousMonthDays info={monthInfo.prevMonth} {...args} />}
-                <CurrentMonthDays firstDayOfWeekISO={firstDayOfWeekISO} {...args} />
+                {firstDayISO !== firstDayOfWeekISO && <PreviousMonthDays info={monthInfo.prevMonth} weekSettings={weekSettings} {...args} />}
+                <CurrentMonthDays weekSettings={weekSettings} {...args} />
                 <NextMonthDays dates={monthInfo.nextMonth.dates} {...args} />
             </div>
         </>
@@ -67,7 +76,7 @@ function CalendarWeekHeader({ rawFirstDayOfWeek }: { rawFirstDayOfWeek: number }
     )
 }
 
-function PreviousMonthDays({ date, info: { dates, weekNumbers }, ...args }: { date: Dayjs, info: DateRangeInfo } & CalendarArgs) {
+function PreviousMonthDays({ date, info: { dates, weekNumbers, weekYears }, weekSettings, ...args }: { date: Dayjs, info: DateRangeInfo, weekSettings: WeekSettings } & CalendarArgs) {
     const prevMonth = date.subtract(1, 'month').format('YYYY-MM');
     const [ dateNotesForPrevMonth, setDateNotesForPrevMonth ] = useState<DateNotesForMonth>();
 
@@ -77,27 +86,28 @@ function PreviousMonthDays({ date, info: { dates, weekNumbers }, ...args }: { da
 
     return (
         <>
-            <CalendarWeek date={date} weekNumber={weekNumbers[0]} {...args} />
+            <CalendarWeek date={date} weekNumber={weekNumbers[0]} weekYear={weekYears[0]} {...args} />
             {dates.map(date => <CalendarDay key={date.toISOString()} date={date} dateNotesForMonth={dateNotesForPrevMonth} className="calendar-date-prev-month" {...args} />)}
         </>
     )
 }
 
-function CurrentMonthDays({ date, firstDayOfWeekISO, ...args }: { date: Dayjs, firstDayOfWeekISO: number } & CalendarArgs) {
+function CurrentMonthDays({ date, weekSettings, ...args }: { date: Dayjs, weekSettings: WeekSettings } & CalendarArgs) {
     let dateCursor = date;
     const currentMonth = date.month();
     const items: VNode[] = [];
     const curMonthString = date.format('YYYY-MM');
     const [ dateNotesForCurMonth, setDateNotesForCurMonth ] = useState<DateNotesForMonth>();
+    const { firstDayOfWeek, firstWeekOfYear, minDaysInFirstWeek } = weekSettings;
 
     useEffect(() => {
         server.get<DateNotesForMonth>(`special-notes/notes-for-month/${curMonthString}`).then(setDateNotesForCurMonth);
     }, [ date ]);
 
     while (dateCursor.month() === currentMonth) {
-        const weekNumber = getWeekNumber(dateCursor, firstDayOfWeekISO);
-        if (dateCursor.isoWeekday() === firstDayOfWeekISO) {
-            items.push(<CalendarWeek key={`${dateCursor.year()}-W${weekNumber}`} date={dateCursor} weekNumber={weekNumber} {...args}/>)
+        const { weekYear, weekNumber } = getWeekInfo(dateCursor, weekSettings);
+        if (dateCursor.isoWeekday() === firstDayOfWeek) {
+            items.push(<CalendarWeek key={`${weekYear}-W${weekNumber}`} date={dateCursor} weekNumber={weekNumber} weekYear={weekYear} {...args}/>)
         }
 
         items.push(<CalendarDay key={dateCursor.toISOString()} date={dateCursor} dateNotesForMonth={dateNotesForCurMonth} {...args} />)
@@ -141,14 +151,8 @@ function CalendarDay({ date, dateNotesForMonth, className, activeDate, todaysDat
     );
 }
 
-function CalendarWeek({ date, weekNumber, weekNotes, onWeekClicked }: { weekNumber: number, weekNotes: string[] } & Pick<CalendarArgs, "date" | "onWeekClicked">) {
-    const localDate = date.local();
-
-    // Handle case where week is in between years.
-    let year = localDate.year();
-    if (localDate.month() === 11 && weekNumber === 1) year++;
-
-    const weekString = `${year}-W${String(weekNumber).padStart(2, '0')}`;
+function CalendarWeek({ date, weekNumber, weekYear, weekNotes, onWeekClicked }: { weekNumber: number, weekYear: number, weekNotes: string[] } & Pick<CalendarArgs, "date" | "onWeekClicked">) {
+    const weekString = `${weekYear}-W${String(weekNumber).padStart(2, '0')}`;
 
     if (onWeekClicked) {
         return (
@@ -169,33 +173,33 @@ function CalendarWeek({ date, weekNumber, weekNotes, onWeekClicked }: { weekNumb
         >{weekNumber}</span>);
 }
 
-export function getMonthInformation(date: Dayjs, firstDayISO: number, firstDayOfWeekISO: number) {
+export function getMonthInformation(date: Dayjs, firstDayISO: number, weekSettings: WeekSettings) {
     return {
-        prevMonth: getPrevMonthDays(date, firstDayISO, firstDayOfWeekISO),
-        nextMonth: getNextMonthDays(date, firstDayOfWeekISO)
+        prevMonth: getPrevMonthDays(date, firstDayISO, weekSettings),
+        nextMonth: getNextMonthDays(date, weekSettings.firstDayOfWeek)
     }
 }
 
-function getPrevMonthDays(date: Dayjs, firstDayISO: number, firstDayOfWeekISO: number): DateRangeInfo {
+function getPrevMonthDays(date: Dayjs, firstDayISO: number, weekSettings: WeekSettings): DateRangeInfo {
     const prevMonthLastDay = date.subtract(1, 'month').endOf('month');
-    const daysToAdd = (firstDayISO - firstDayOfWeekISO + 7) % 7;
+    const daysToAdd = (firstDayISO - weekSettings.firstDayOfWeek + 7) % 7;
     const dates: Dayjs[] = [];
 
     const firstDay = date.startOf('month');
-    const weekNumber = getWeekNumber(firstDay, firstDayOfWeekISO);
+    const { weekYear, weekNumber } = getWeekInfo(firstDay, weekSettings);
 
     // Get dates from previous month
     for (let i = daysToAdd - 1; i >= 0; i--) {
         dates.push(prevMonthLastDay.subtract(i, 'day'));
     }
 
-    return { weekNumbers: [ weekNumber ], dates };
+    return { weekNumbers: [ weekNumber ], weekYears: [ weekYear ], dates };
 }
 
-function getNextMonthDays(date: Dayjs, firstDayOfWeekISO: number): DateRangeInfo {
+function getNextMonthDays(date: Dayjs, firstDayOfWeek: number): DateRangeInfo {
     const lastDayOfMonth = date.endOf('month');
     const lastDayISO = lastDayOfMonth.isoWeekday();
-    const lastDayOfUserWeek = ((firstDayOfWeekISO + 6 - 1) % 7) + 1;
+    const lastDayOfUserWeek = ((firstDayOfWeek + 6 - 1) % 7) + 1;
     const nextMonthFirstDay = date.add(1, 'month').startOf('month');
     const dates: Dayjs[] = [];
 
@@ -206,16 +210,5 @@ function getNextMonthDays(date: Dayjs, firstDayOfWeekISO: number): DateRangeInfo
             dates.push(nextMonthFirstDay.add(i, 'day'));
         }
     }
-    return { weekNumbers: [], dates };
-}
-
-export function getWeekNumber(date: Dayjs, firstDayOfWeekISO: number): number {
-    const weekStart = getWeekStartDate(date, firstDayOfWeekISO);
-    return weekStart.isoWeek();
-}
-
-function getWeekStartDate(date: Dayjs, firstDayOfWeekISO: number): Dayjs {
-    const currentISO = date.isoWeekday();
-    const diff = (currentISO - firstDayOfWeekISO + 7) % 7;
-    return date.clone().subtract(diff, "day").startOf("day");
+    return { weekNumbers: [], weekYears: [], dates };
 }

@@ -22,8 +22,9 @@
     flex-direction: column;
     padding: var(--ck-spacing-standard);
     box-sizing: border-box;
-    max-width: 80vw;
-    max-height: 80vh;
+	min-width: 400px;
+    max-width: 60vw;
+    max-height: 350px;
     overflow: visible;
     user-select: text;
 }
@@ -63,8 +64,8 @@
     border-radius: var(--ck-border-radius);
     background: var(--ck-color-input-background) !important;
     transition: border-color 120ms ease;
-    overflow: visible !important;
-    clip-path: none !important;
+    overflow: auto;
+    clip-path: none;
 }
 .ck.ck-math-input .ck-mathlive-container:focus-within {
     border-color: var(--ck-color-focus-border);
@@ -159,16 +160,12 @@
 .ck.ck-math-preview {
     width: 100%;
     min-height: 40px;
-    max-height: none !important;
-    height: auto !important;
     padding: var(--ck-spacing-small);
     background: transparent !important;
     border: none !important;
     display: block;
     text-align: left;
-    overflow-x: auto !important;
-    overflow-y: visible !important;
-    flex-shrink: 0;
+    overflow: auto;
 }
 
 /* Center equation when in display mode */
@@ -213,8 +210,7 @@
 .ck.ck-balloon-panel .ck-balloon-panel__content,
 .ck.ck-math-form,
 .ck-math-view,
-.ck.ck-math-input,
-.ck.ck-math-input .ck-mathlive-container {
+.ck.ck-math-input {
     overflow: visible !important;
     clip-path: none !important;
 }

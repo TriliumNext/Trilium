@@ -1,7 +1,7 @@
 /// <reference types='vitest' />
+import { codecovVitePlugin } from '@codecov/vite-plugin';
 import prefresh from '@prefresh/vite';
 import { join } from 'path';
-import webpackStatsPlugin from 'rollup-plugin-webpack-stats';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
@@ -19,20 +19,25 @@ if (isDev) {
     plugins = [
         viteStaticCopy({
             targets: assets.map((asset) => ({
-                src: `src/${asset}/*`,
-                dest: asset
+                src: `src/${asset}/**/*`,
+                dest: asset,
+                rename: { stripBase: 2 }
             }))
         }),
         viteStaticCopy({
-            structured: true,
             targets: [
                 {
-                    src: "../../node_modules/@excalidraw/excalidraw/dist/prod/fonts/*",
+                    src: "../../node_modules/@excalidraw/excalidraw/dist/prod/fonts/**/*",
                     dest: "",
                 }
             ]
         }),
-        webpackStatsPlugin()
+        // Put the Codecov vite plugin after all other plugins
+        codecovVitePlugin({
+            enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+            bundleName: "client",
+            uploadToken: process.env.CODECOV_TOKEN
+        })
     ]
 }
 
@@ -41,11 +46,13 @@ export default defineConfig(() => ({
     cacheDir: '../../.cache/vite',
     base: "",
     plugins,
-    // Use esbuild for JSX transformation (much faster than Babel)
-    esbuild: {
-        jsx: 'automatic',
-        jsxImportSource: 'preact',
-        jsxDev: isDev
+    // Use oxc for JSX transformation (Vite 8+ replaced the deprecated `esbuild` option with `oxc`)
+    oxc: {
+        jsx: {
+            runtime: 'automatic',
+            importSource: 'preact',
+            development: isDev
+        }
     },
     css: {
         transformer: 'lightningcss',
@@ -74,7 +81,11 @@ export default defineConfig(() => ({
         include: [
             "ckeditor5-premium-features",
             "ckeditor5",
-            "mathlive"
+            "mathlive",
+            // Pre-bundle so the first spreadsheet XLSX export (which dynamically imports
+            // exceljs) doesn't trigger an on-demand re-optimization + dev-server reload
+            // that aborts the export.
+            "exceljs"
         ]
     },
     build: {
@@ -86,9 +97,6 @@ export default defineConfig(() => ({
         rollupOptions: {
             input: {
                 index: join(__dirname, "index.html"),
-                login: join(__dirname, "src", "login.ts"),
-                setup: join(__dirname, "src", "setup.ts"),
-                set_password: join(__dirname, "src", "set_password.ts"),
                 runtime: join(__dirname, "src", "runtime.ts"),
                 print: join(__dirname, "src", "print.tsx")
             },
@@ -103,10 +111,7 @@ export default defineConfig(() => ({
                     return "src/[name].js";
                 },
                 chunkFileNames: "src/[name]-[hash].js",
-                assetFileNames: "src/[name]-[hash].[ext]",
-                manualChunks: {
-                    "ckeditor5": [ "@triliumnext/ckeditor5" ]
-                },
+                assetFileNames: "src/[name]-[hash].[ext]"
             },
             onwarn(warning, rollupWarn) {
                 if (warning.code === "MODULE_LEVEL_DIRECTIVE") {
@@ -120,7 +125,19 @@ export default defineConfig(() => ({
         environment: "happy-dom",
         setupFiles: [
             "./src/test/setup.ts"
-        ]
+        ],
+        reporters: [
+            "verbose",
+            ["html", { outputFile: "./test-output/vitest/html/index.html" }],
+            ["junit", { outputFile: "./test-output/vitest/junit.xml", addFileAttribute: true }]
+        ],
+        coverage: {
+            reportsDirectory: "./test-output/vitest/coverage",
+            provider: "v8" as const,
+            reporter: ["text", "html", "lcov"],
+            include: ["src/**/*.{ts,tsx}"],
+            exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"]
+        },
     },
     commonjsOptions: {
         transformMixedEsModules: true,

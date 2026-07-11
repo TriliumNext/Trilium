@@ -12,9 +12,10 @@ import SplitEditor, { PreviewButton, SplitEditorProps } from "./SplitEditor";
 
 interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
     /**
-     * The name of the note attachment (without .svg extension) that will be used for storing the preview.
+     * The title of the note attachment used for storing the preview, extension included. Take it from
+     * `NOTE_TYPE_IMAGE_ATTACHMENTS` so that the `api/images` endpoints can find it again.
      */
-    attachmentName: string;
+    attachmentTitle: string;
     /**
      * Called upon when the SVG preview needs refreshing, such as when the editor has switched to a new note or the content has switched.
      *
@@ -36,10 +37,17 @@ interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
  * - Automatically saves the SVG attachment.
  *
  */
-export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg, ...props }: SvgSplitEditorProps) {
+export default function SvgSplitEditor({ ntxId, note, attachmentTitle, renderSvg, ...props }: SvgSplitEditorProps) {
     const [ svg, setSvg ] = useState<string>();
     const [ error, setError ] = useState<string | null | undefined>();
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // Reset the render state when switching notes so a previous note's render (and the
+    // "showing last valid render" badge) can't briefly carry over to a different note.
+    useEffect(() => {
+        setSvg(undefined);
+        setError(undefined);
+    }, [ note.noteId ]);
 
     // Render the SVG.
     async function onContentChanged(content: string) {
@@ -61,25 +69,25 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
 
         const payload = {
             role: "image",
-            title: `${attachmentName}.svg`,
+            title: attachmentTitle,
             mime: "image/svg+xml",
             content: svg,
             position: 0
         };
 
         server.post(`notes/${note.noteId}/attachments?matchBy=title`, payload);
-    }, [ svg, attachmentName, note.noteId ]);
+    }, [ svg, attachmentTitle, note.noteId ]);
 
     // Save the SVG when entering a note only when it does not have an attachment.
     useEffect(() => {
         if (!svg) return; // Wait until SVG is rendered
 
         note?.getAttachments().then((attachments) => {
-            if (!attachments.find((a) => a.title === `${attachmentName}.svg`)) {
+            if (!attachments.find((a) => a.title === attachmentTitle)) {
                 onSave();
             }
         }).catch(e => console.error("Failed to get attachments for SVGSplitEditor", e));
-    }, [ note, svg, attachmentName, onSave ]);
+    }, [ note, svg, attachmentTitle, onSave ]);
 
     // Import/export
     useTriliumEvent("exportSvg", async({ ntxId: eventNtxId }) => {
@@ -115,8 +123,10 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
             className="svg-editor"
             note={note} ntxId={ntxId}
             error={error}
+            previewStale={!!svg}
             onContentChanged={onContentChanged}
             dataSaved={onSave}
+            placeholder={t("mermaid.placeholder")}
             previewContent={(
                 <RawHtmlBlock
                     className="render-container"
@@ -151,6 +161,7 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
 function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg: string | undefined) {
     const lastPanZoom = useRef<{ pan: SvgPanZoom.Point, zoom: number }>();
     const lastNoteId = useRef<string>();
+    const wasEmpty = useRef<boolean>(false);
     const zoomRef = useRef<SvgPanZoom.Instance>();
     const width = useElementSize(containerRef);
 
@@ -158,9 +169,14 @@ function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg
     useEffect(() => {
         if (zoomRef.current || width?.width === 0) return;
 
-        const shouldPreservePanZoom = (lastNoteId.current === noteId);
+        const shouldPreservePanZoom = (lastNoteId.current === noteId) && !wasEmpty.current;
         const svgEl = containerRef.current?.querySelector("svg");
-        if (!svgEl) return;
+        if (!svgEl) {
+            if (svg?.trim().length === 0) {
+                wasEmpty.current = true;
+            }
+            return;
+        };
 
         const zoomInstance = svgPanZoom(svgEl, {
             zoomEnabled: true,
@@ -186,7 +202,7 @@ function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg
             zoomRef.current = undefined;
             zoomInstance.destroy();
         };
-    }, [ svg, width ]);
+    }, [ containerRef, noteId, svg, width ]);
 
     // React to container changes.
     useEffect(() => {

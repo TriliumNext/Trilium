@@ -57,11 +57,14 @@ function getNtxId(e: ContextMenuEvent | GeoMouseEvent) {
         const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();
         if (!subContexts) return null;
         return subContexts[subContexts.length - 1].ntxId;
-    } else if (e.target instanceof HTMLElement) {
-        return getClosestNtxId(e.target);
+    } else if ("target" in e && e.target instanceof HTMLElement) {
+        const closest = getClosestNtxId(e.target);
+        if (closest) return closest;
     }
-    return null;
-
+    // Fallback: when the event originates outside any note-context DOM
+    // (e.g. mobile sidebar), target the currently active context so downstream
+    // lookups don't fail with a null ntxId.
+    return appContext.tabManager.activeNtxId ?? null;
 }
 
 export default {

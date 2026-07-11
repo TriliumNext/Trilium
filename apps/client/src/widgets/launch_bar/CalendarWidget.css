@@ -35,7 +35,7 @@
 .calendar-dropdown-widget .calendar-header {
     align-items: center;
     display: flex;
-    padding: 0 0.5rem 0.5rem 0.5rem;
+    padding: 0 0.5rem 1rem 0.5rem;
 }
 
 .calendar-dropdown-widget .calendar-header>div {
@@ -65,8 +65,13 @@
     border: 0;
     border-inline-start: unset;
     background-color: var(--menu-background-color);
-    font-weight: bold;
     outline: 0;
+    font-weight: 300;
+    font-size: 1.4em;
+}
+
+.calendar-dropdown-widget .calendar-header .dropdown-toggle {
+    justify-content: center;
 }
 
 .calendar-dropdown-widget .calendar-header .dropdown-toggle::after {
@@ -82,18 +87,20 @@
 .calendar-dropdown-widget .calendar-week span {
     flex-direction: column;
     flex: 0 0 12.5%;
-    font-size: 1rem;
-    font-weight: bold;
     max-width: 12.5%;
     padding-top: 5px;
     padding-bottom: 5px;
     text-align: center;
     text-transform: uppercase;
+    font-size: .85em;
+    font-weight: 500;
 }
 
 .calendar-dropdown-widget .calendar-body {
     display: flex;
     flex-wrap: wrap;
+    min-height: 250px;
+    align-items: center;
 }
 
 .calendar-dropdown-widget .calendar-week-number {

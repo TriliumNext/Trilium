@@ -5,6 +5,7 @@ import setupSearch from "./modules/search.js";
 import setupThemeSelector from "./modules/theme.js";
 import setupMermaid from "./modules/mermaid.js";
 import setupMath from "./modules/math.js";
+import setupSidebars from "./modules/sidebar.js";
 import api from "./modules/api.js";
 import "highlight.js/styles/default.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
@@ -24,6 +25,7 @@ $try(setupToC);
 $try(setupExpanders);
 $try(setupMobileMenu);
 $try(setupSearch);
+$try(setupSidebars);
 
 function setupTextNote() {
     $try(setupMermaid);
@@ -35,7 +37,7 @@ document.addEventListener(
     () => {
         const noteType = determineNoteType();
 
-        if (noteType === "text") {
+        if (noteType === "text" || document.querySelector("#content.ck-content")) {
             setupTextNote();
         }
 
@@ -44,6 +46,14 @@ document.addEventListener(
 
         if (toggleMenuButton && layout) {
             toggleMenuButton.addEventListener("click", () => layout.classList.toggle("showMenu"));
+        }
+
+        // Format <time> elements using the browser's locale.
+        for (const el of document.querySelectorAll<HTMLTimeElement>("time[datetime]")) {
+            const date = new Date(el.dateTime);
+            if (!isNaN(date.getTime())) {
+                el.textContent = date.toLocaleDateString();
+            }
         }
     },
     false

@@ -10,10 +10,11 @@ export default function ClosePaneButton() {
 
     function refresh() {
         const isMainOfSomeContext = appContext.tabManager.noteContexts.some(c => c.mainNtxId === ntxId);
-        setIsEnabled(!!(noteContext && (!!noteContext.mainNtxId || isMainOfSomeContext)));
+        // the pane showing a pinned note can't be closed (unpin the tab first); other panes stay closeable
+        setIsEnabled(!!(noteContext && !noteContext.pinned && (!!noteContext.mainNtxId || isMainOfSomeContext)));
     }
 
-    useTriliumEvents(["noteContextRemoved", "noteContextReorder", "newNoteContextCreated"], refresh);
+    useTriliumEvents(["noteContextRemoved", "noteContextReorder", "newNoteContextCreated", "tabPinStateChanged"], refresh);
     useEffect(refresh, [ntxId]);
 
     return (

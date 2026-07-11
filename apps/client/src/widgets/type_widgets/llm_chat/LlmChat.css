@@ -1,0 +1,14 @@
+.llm-chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+
+    .llm-chat-messages {
+        padding: 1em;
+    }
+
+    .llm-chat-input-form {
+        padding: 0.5em 1em;
+    }
+}

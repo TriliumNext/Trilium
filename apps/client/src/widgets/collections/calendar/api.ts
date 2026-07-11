@@ -1,8 +1,8 @@
-import { AttributeRow, CreateChildrenResponse } from "@triliumnext/commons";
+import { AttributeRow } from "@triliumnext/commons";
 
 import FNote from "../../../entities/fnote";
 import { setAttribute, setLabel } from "../../../services/attributes";
-import server from "../../../services/server";
+import note_create from "../../../services/note_create";
 
 interface NewEventOpts {
     title: string;
@@ -51,11 +51,13 @@ export async function newEvent(parentNote: FNote, { title, startDate, endDate, s
     }
 
     // Create the note.
-    await server.post<CreateChildrenResponse>(`notes/${parentNote.noteId}/children?target=into`, {
+    await note_create.createNote(parentNote.noteId, {
         title,
+        isProtected: parentNote.isProtected,
         content: "",
         type: "text",
-        attributes
+        attributes,
+        activate: false
     }, componentId);
 }
 

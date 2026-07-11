@@ -13,6 +13,7 @@
 
 .table-view-container {
     height: 100%;
+    margin-inline-start: var(--content-margin-inline);
 }
 
 .search-result-widget-content .table-view {
@@ -73,4 +74,10 @@
     inset-inline-start: 0;
     font-size: 1.5em;
     transform: translateY(-50%);
+}
+
+.tabulator .tabulator-editable {
+    textarea {
+        padding: 7px !important;
+    }
 }

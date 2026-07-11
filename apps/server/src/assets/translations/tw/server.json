@@ -8,11 +8,6 @@
     "sort-child-notes": "排序子筆記",
     "creating-and-moving-notes": "新增和移動筆記",
     "create-note-into-inbox": "在收件匣（如果已定義）或日記中新增筆記",
-    "delete-note": "刪除筆記",
-    "move-note-up": "上移筆記",
-    "move-note-down": "下移筆記",
-    "move-note-up-in-hierarchy": "將筆記層級上移",
-    "move-note-down-in-hierarchy": "將筆記層級下移",
     "edit-note-title": "從筆記樹跳轉至筆記內容並編輯標題",
     "edit-branch-prefix": "顯示編輯分支前綴對話方塊",
     "note-clipboard": "筆記剪貼簿",
@@ -20,32 +15,17 @@
     "paste-notes-from-clipboard": "從剪貼簿貼上筆記至目前筆記中",
     "cut-notes-to-clipboard": "剪下所選的筆記至剪貼簿",
     "select-all-notes-in-parent": "選擇目前筆記級別的所有筆記",
-    "add-note-above-to-the-selection": "加入上方筆記至選擇中",
-    "add-note-below-to-selection": "加入下方筆記至選擇中",
-    "duplicate-subtree": "複製子階層",
     "tabs-and-windows": "分頁和視窗",
-    "open-new-tab": "打開新分頁",
-    "close-active-tab": "關閉使用中分頁",
     "reopen-last-tab": "重新打開最後關閉的分頁",
     "activate-next-tab": "切換至右側分頁",
     "activate-previous-tab": "切換至左側分頁",
     "open-new-window": "打開新空白視窗",
     "toggle-tray": "從系統匣顯示 / 隱藏應用程式",
-    "first-tab": "切換至列表中第一個分頁",
-    "second-tab": "切換至列表中第二個分頁",
-    "third-tab": "切換至列表中第三個分頁",
-    "fourth-tab": "切換至列表中第四個分頁",
-    "fifth-tab": "切換至列表中第五個分頁",
-    "sixth-tab": "切換至列表中第六個分頁",
-    "seventh-tab": "切換至列表中第七個分頁",
-    "eight-tab": "切換至列表中第八個分頁",
-    "ninth-tab": "切換至列表中第九個分頁",
-    "last-tab": "切換至列表中最後一個分頁",
     "dialogs": "對話方塊",
     "show-note-source": "顯示筆記來源對話方塊",
     "show-options": "打開選項頁面",
     "show-revisions": "顯示筆記歷史版本對話方塊",
-    "show-recent-changes": "顯示最近更改對話方塊",
+    "show-recent-changes": "顯示最近修改對話方塊",
     "show-sql-console": "打開 SQL 控制台頁面",
     "show-backend-log": "打開後端日誌頁面",
     "text-note-operations": "文字筆記操作",
@@ -55,44 +35,26 @@
     "paste-markdown-into-text": "將剪貼簿中的 Markdown 文字貼上",
     "cut-into-note": "從目前筆記剪下選擇的部分並新增至子筆記",
     "add-include-note-to-text": "打開對話方塊以內嵌筆記",
-    "edit-readonly-note": "編輯唯讀筆記",
     "attributes-labels-and-relations": "屬性（標籤和關聯）",
     "add-new-label": "新增新標籤",
     "create-new-relation": "新增新關聯",
     "ribbon-tabs": "功能區分頁",
-    "toggle-basic-properties": "切換基本屬性",
-    "toggle-file-properties": "切換檔案屬性",
-    "toggle-image-properties": "切換圖像屬性",
-    "toggle-owned-attributes": "切換自有屬性",
-    "toggle-inherited-attributes": "切換繼承屬性",
-    "toggle-promoted-attributes": "切換升級的屬性",
     "toggle-link-map": "切換連結地圖",
-    "toggle-note-info": "切換筆記資訊",
-    "toggle-note-paths": "切換筆記路徑",
-    "toggle-similar-notes": "切換相似筆記",
     "other": "其他",
     "toggle-right-pane": "切換右側面板的顯示，包括目錄和高亮",
-    "print-active-note": "列印目前筆記",
     "open-note-externally": "以預設應用程式打開筆記檔案",
     "render-active-note": "渲染（重新渲染）目前筆記",
     "run-active-note": "執行目前的 JavaScript（前端 / 後端）程式碼筆記",
     "toggle-note-hoisting": "聚焦目前筆記",
     "unhoist": "取消任何聚焦",
-    "reload-frontend-app": "重新載入前端應用",
-    "open-dev-tools": "打開開發者工具",
     "toggle-left-note-tree-panel": "切換左側（筆記樹）面板",
-    "toggle-full-screen": "切換全螢幕",
-    "zoom-out": "縮小",
-    "zoom-in": "放大",
     "note-navigation": "筆記導航",
-    "reset-zoom-level": "重設縮放比例",
     "copy-without-formatting": "以純文字複製所選文字",
     "force-save-revision": "強制新增 / 儲存目前筆記的新版本",
     "show-help": "顯示用戶說明",
     "toggle-book-properties": "切換集合屬性",
     "back-in-note-history": "跳轉至歷史記錄中的上一個筆記",
     "forward-in-note-history": "跳轉至歷史記錄中的下一個筆記",
-    "open-command-palette": "打開命令面板",
     "scroll-to-active-note": "捲動筆記樹至目前筆記",
     "quick-search": "開啟快速搜尋列",
     "create-note-after": "新增筆記於目前筆記之後",
@@ -102,8 +64,9 @@
     "show-cheatsheet": "顯示常用鍵盤快捷鍵",
     "find-in-text": "切換搜尋面板",
     "toggle-classic-editor-toolbar": "切換固定工具列編輯器的格式分頁",
-    "export-as-pdf": "匯出目前筆記為 PDF",
-    "toggle-zen-mode": "啟用 / 禁用禪模式（極簡界面以專注編輯）"
+    "toggle-zen-mode": "啟用 / 禁用禪模式（極簡界面以專注編輯）",
+    "save-named-revision": "儲存目前筆記的命名修訂",
+    "toggle-archived-notes": "在筆記樹中顯示/隱藏已歸檔的筆記"
   },
   "login": {
     "title": "登入",
@@ -122,47 +85,6 @@
     "password": "密碼",
     "password-confirmation": "確認密碼",
     "button": "設定密碼"
-  },
-  "setup": {
-    "heading": "Trilium 筆記設定",
-    "new-document": "我是新用戶，我想為我的筆記建立一個新的 Trilium 文件",
-    "sync-from-desktop": "我已經擁有桌面版本，想設定與它進行同步",
-    "sync-from-server": "我已經擁有伺服器版本，想設定與它進行同步",
-    "next": "下一步",
-    "init-in-progress": "文件正在初始化",
-    "redirecting": "您即將被重新導向至應用程式。",
-    "title": "設定"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "從桌面版同步",
-    "description": "此設定需要從桌面版本啟動：",
-    "step1": "打開您的桌面版 Trilium 筆記。",
-    "step2": "從 Trilium 選單中，點擊「選項」。",
-    "step3": "點擊「同步」類別。",
-    "step4": "將伺服器版網址更改為：{{- host}} 並點擊儲存。",
-    "step5": "點擊「測試同步」以驗證連接是否成功。",
-    "step6": "完成這些步驟後，點擊 {{- link}}。",
-    "step6-here": "這裡"
-  },
-  "setup_sync-from-server": {
-    "heading": "從伺服器同步",
-    "instructions": "請在下方輸入 Trilium 伺服器網址和密碼。這將從伺服器下載整個 Trilium 數據庫檔案並同步。取決於數據庫大小和您的連接速度，這可能需要一段時間。",
-    "server-host": "Trilium 伺服器網址",
-    "server-host-placeholder": "https://<主機名稱>:<端口>",
-    "proxy-server": "代理伺服器（可選）",
-    "proxy-server-placeholder": "https://<主機名稱>:<端口>",
-    "note": "注意：",
-    "proxy-instruction": "如果您將代理設定留空，將使用系統代理（僅適用於桌面版）",
-    "password": "密碼",
-    "password-placeholder": "密碼",
-    "back": "返回",
-    "finish-setup": "完成設定"
-  },
-  "setup_sync-in-progress": {
-    "heading": "正在同步",
-    "successful": "已正確設定同步。初次同步可能需要一些時間。完成後，您將被重新導向至登入頁面。",
-    "outstanding-items": "未完成的同步項目：",
-    "outstanding-items-default": "無"
   },
   "share_404": {
     "title": "未找到",
@@ -198,7 +120,8 @@
     "december": "十二月"
   },
   "special_notes": {
-    "search_prefix": "搜尋："
+    "search_prefix": "搜尋：",
+    "llm_chat_prefix": "對話："
   },
   "test_sync": {
     "not-configured": "尚未設定同步伺服器主機，請先設定同步。",
@@ -260,7 +183,7 @@
     "show-note-source": "顯示筆記原始碼",
     "show-options": "顯示選項",
     "show-revisions": "顯示歷史版本",
-    "show-recent-changes": "顯示最近更改",
+    "show-recent-changes": "顯示最近修改",
     "show-sql-console": "顯示 SQL 控制台",
     "show-backend-log": "顯示後端日誌",
     "show-help": "顯示說明",
@@ -299,7 +222,9 @@
     "find-in-text": "在文字中尋找",
     "toggle-left-pane": "切換左側面板",
     "toggle-full-screen": "切換全螢幕",
-    "command-palette": "命令面板"
+    "command-palette": "命令面板",
+    "save-named-revision": "儲存命名修訂",
+    "toggle-archived-notes": "切換已歸檔筆記的顯示狀態"
   },
   "weekdayNumber": "第 {weekNumber} 週",
   "quarterNumber": "第 {quarterNumber} 季度",
@@ -335,20 +260,18 @@
     "protected-session-title": "受保護的作業階段",
     "sync-status-title": "同步狀態",
     "settings-title": "設定",
-    "llm-chat-title": "與筆記聊天",
     "options-title": "選項",
     "appearance-title": "外觀",
     "shortcuts-title": "快捷鍵",
     "text-notes": "文字筆記",
     "code-notes-title": "程式碼筆記",
-    "images-title": "圖片",
+    "images-title": "媒體",
     "spellcheck-title": "拼寫檢查",
     "password-title": "密碼",
     "multi-factor-authentication-title": "多重身份驗證",
     "etapi-title": "ETAPI",
     "backup-title": "備份",
     "sync-title": "同步",
-    "ai-llm-title": "AI/LLM",
     "other": "其他",
     "advanced-title": "進階",
     "visible-launchers-title": "可見啟動器",
@@ -357,7 +280,11 @@
     "inbox-title": "收件匣",
     "command-palette": "打開命令面板",
     "zen-mode": "禪模式",
-    "tab-switcher-title": "切換分頁"
+    "tab-switcher-title": "切換分頁",
+    "llm-chat-history-title": "AI 對話歷史",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "AI 對話",
+    "custom-dictionary-title": "自訂字典"
   },
   "notes": {
     "new-note": "新增筆記",
@@ -391,7 +318,8 @@
   "migration": {
     "old_version": "您目前的版本不支援直接遷移。請先更新至最新的 v0.60.4 然後再到此版本。",
     "error_message": "遷移至版本 {{version}} 時發生錯誤：{{stack}}",
-    "wrong_db_version": "資料庫版本（{{version}}）比程式預期（{{targetVersion}}）新，這意味著它由一個更新且不相容的 Trilium 版本所創建。升級至最新版的 Trilium 以解決此問題。"
+    "wrong_db_version": "資料庫版本（{{version}}）比程式預期（{{targetVersion}}）新，這意味著它由一個更新且不相容的 Trilium 版本所創建。升級至最新版的 Trilium 以解決此問題。",
+    "invalid_db_version": "資料庫版本號不是有效的數字。這通常表示資料庫中的「dbVersion」選項已損毀。請從備份還原。"
   },
   "modals": {
     "error_title": "錯誤"
@@ -403,7 +331,10 @@
     "last-updated": "最近於 {{- date}} 更新",
     "subpages": "子頁面：",
     "on-this-page": "本頁內容",
-    "expand": "展開"
+    "expand": "展開",
+    "toggle-navigation": "切換導航",
+    "toggle-toc": "切換目錄",
+    "logo-alt": "標誌"
   },
   "hidden_subtree_templates": {
     "text-snippet": "文字片段",
@@ -439,5 +370,21 @@
   },
   "desktop": {
     "instance_already_running": "已經有一個執行中的實例，正在將焦點切換到該實例。"
+  },
+  "search": {
+    "error": {
+      "in-context": "{{- context}} 發生錯誤：{{- message}}",
+      "reserved-keyword": "\"{{- token}}\" 是一個保留關鍵字。若要搜尋字面值，請使用引號：\"{{- token}}\"",
+      "cannot-compare-with": "無法與 \"{{- token}}\" 進行比較。若要搜尋字面值，請使用引號：\"{{- token}}\"",
+      "misplaced-expression": "\"{{- token}}\" 的表達式位置不當或不完整",
+      "fulltext-after-expression": "\"{{- token}}\" 不是有效的表達式。若要搜尋文字，請將其置於屬性篩選條件之前（例如：\"{{- token}} #label\"，而非 \"#label {{- token}}\"）。",
+      "unrecognized-expression": "無法辨識的表達式 \"{{- token}}\""
+    }
+  },
+  "password": {
+    "incorrect": "您輸入的密碼不正確。"
+  },
+  "script": {
+    "wrong-environment": "無法執行筆記「{{- noteTitle}}」（{{- noteId}}）。這是一個 {{- actualEnv}} 腳本，但嘗試在 {{- expectedEnv}} 中執行。"
   }
 }

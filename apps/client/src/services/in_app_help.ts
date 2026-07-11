@@ -1,4 +1,5 @@
 import { NoteType } from "@triliumnext/commons";
+
 import FNote from "../entities/fnote";
 import { ViewTypeOptions } from "../widgets/collections/interface";
 
@@ -18,7 +19,8 @@ export const byNoteType: Record<Exclude<NoteType, "book">, string | null> = {
     search: null,
     text: null,
     webView: null,
-    aiChat: null
+    spreadsheet: null,
+    llmChat: null
 };
 
 export const byBookType: Record<ViewTypeOptions, string | null> = {
@@ -28,17 +30,20 @@ export const byBookType: Record<ViewTypeOptions, string | null> = {
     table: "2FvYrpmOXm29",
     geoMap: "81SGnPGMk7Xc",
     board: "CtBQqbwXDx1w",
-    presentation: null
+    presentation: "zP3PMqaG71Ct",
+    dashboard: "IF7Q6I9x7zuw"
 };
 
 export function getHelpUrlForNote(note: FNote | null | undefined) {
-    if (note && note.type !== "book" && byNoteType[note.type]) {
+    if (note?.isMarkdown()) {
+        return "6RM1Q7ppFVoj";
+    } else if (note && note.type !== "book" && byNoteType[note.type]) {
         return byNoteType[note.type];
     } else if (note?.hasLabel("calendarRoot")) {
         return "l0tKav7yLHGF";
     } else if (note?.hasLabel("textSnippet")) {
         return "pwc194wlRzcH";
     } else if (note && note.type === "book") {
-        return byBookType[note.getAttributeValue("label", "viewType") as ViewTypeOptions ?? ""]
+        return byBookType[note.getAttributeValue("label", "viewType") as ViewTypeOptions ?? ""];
     }
 }

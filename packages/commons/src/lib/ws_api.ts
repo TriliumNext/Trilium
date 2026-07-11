@@ -18,7 +18,7 @@ export interface EntityChange {
 
 export interface EntityRow {
     isDeleted?: boolean;
-    content?: Buffer | string;
+    content?: Uint8Array | string;
 }
 
 export interface EntityChangeRecord {
@@ -37,6 +37,7 @@ type TaskDataDefinitions = {
     importNotes: {
         textImportedAsText?: boolean;
         codeImportedAsCode?: boolean;
+        spreadsheetImportedAsSpreadsheet?: boolean;
         replaceUnderscoresWithSpaces?: boolean;
         shrinkImages?: boolean;
         safeImport?: boolean;
@@ -64,12 +65,23 @@ export type TaskType = keyof TaskDataDefinitions | keyof TaskResultDefinitions;
 export type TaskData<T extends TaskType> = TaskDataDefinitions[T];
 export type TaskResult<T extends TaskType> = TaskResultDefinitions[T];
 
+/**
+ * Identifies which phase of a multi-phase task a progress message belongs to, so the client can label
+ * the bar accordingly (e.g. zip import counts archive entries while "extracting", then notes while
+ * "processing"). Single-phase tasks omit it and the client falls back to a generic message.
+ */
+export type ProgressPhase = "extracting" | "processing";
+
 type TaskDefinition<T extends TaskType> = {
     type: "taskProgressCount",
     taskId: string;
     taskType: T;
     data: TaskData<T>,
-    progressCount: number
+    progressCount: number;
+    /** Total expected units of work, when known up front; lets the client show a progress bar. */
+    totalCount?: number;
+    /** Which phase of a multi-phase task this count belongs to; lets the client pick a phase-specific label. */
+    phase?: ProgressPhase;
 } | {
     type: "taskError",
     taskId: string;
@@ -101,7 +113,13 @@ type AllTaskDefinitions =
     | TaskDefinition<"importAttachments">;
 
 export type WebSocketMessage = AllTaskDefinitions | {
-    type: "ping"
+    type: "ping",
+    /**
+     * Live protected-session state of the backend, present on server→client pings. Lets the client
+     * detect a protected-session expiry whose `reload-frontend` broadcast never arrived (e.g. the
+     * WebSocket was dead at expiry time) and reload itself. Absent on client→server pings.
+     */
+    protectedSessionAvailable?: boolean
 } | {
     type: "frontend-update",
     data: {
@@ -120,6 +138,7 @@ export type WebSocketMessage = AllTaskDefinitions | {
 } | {
     type: "toast",
     message: string;
+    timeout?: number;
 } | {
     type: "api-log-messages",
     noteId: string,
@@ -140,19 +159,4 @@ export type WebSocketMessage = AllTaskDefinitions | {
     lastSyncedPush: number;
 } | {
     type: "consistency-checks-failed"
-} | {
-    type: "llm-stream",
-    chatNoteId: string;
-    done?: boolean;
-    error?: string;
-    thinking?: string;
-    content?: string;
-    toolExecution?: {
-        action?: string;
-        tool?: string;
-        toolCallId?: string;
-        result?: string | Record<string, any>;
-        error?: string;
-        args?: Record<string, unknown>;
-    }
 }

@@ -12,7 +12,7 @@ import { TypeWidgetProps } from "./type_widgets/type_widget";
  * A `NoteType` altered by the note detail widget, taking into consideration whether the note is editable or not and adding special note types such as an empty one,
  * for protected session or attachment information.
  */
-export type ExtendedNoteType = Exclude<NoteType, "launcher" | "text" | "code"> | "empty" | "readOnlyCode" | "readOnlyText" | "editableText" | "editableCode" | "attachmentDetail" | "attachmentList" |  "protectedSession" | "aiChat" | "sqlConsole";
+export type ExtendedNoteType = Exclude<NoteType, "launcher" | "text" | "code" | "llmChat"> | "empty" | "readOnlyCode" | "readOnlyText" | "editableText" | "editableCode" | "attachmentDetail" | "attachmentList" |  "protectedSession" | "sqlConsole" | "markdown" | "iconPack" | "llmChat" | "blobStub";
 
 export type TypeWidget = ((props: TypeWidgetProps) => VNode | JSX.Element | undefined);
 type NoteTypeView = () => (Promise<{ default: TypeWidget } | TypeWidget> | TypeWidget);
@@ -45,6 +45,10 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         view: () => import("./type_widgets/ProtectedSession"),
         className: "protected-session-password-component",
         isFullHeight: true
+    },
+    blobStub: {
+        view: () => import("./type_widgets/BlobStub"),
+        className: "note-detail-blob-stub"
     },
     book: {
         view: () => import("./type_widgets/Book"),
@@ -84,7 +88,7 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         printable: true
     },
     mermaid: {
-        view: () => import("./type_widgets/Mermaid"),
+        view: () => import("./type_widgets/mermaid/Mermaid"),
         className: "note-detail-mermaid",
         printable: true,
         isFullHeight: true
@@ -137,14 +141,33 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         printable: true,
         isFullHeight: true
     },
-    aiChat: {
-        view: () => import("./type_widgets/AiChat"),
-        className: "ai-chat-widget-container",
-        isFullHeight: true
-    },
     sqlConsole: {
         view: () => import("./type_widgets/SqlConsole"),
         className: "sql-console-widget-container",
+        isFullHeight: true
+    },
+    markdown: {
+        view: () => import("./type_widgets/markdown/Markdown"),
+        className: "note-detail-markdown",
+        printable: true,
+        isFullHeight: true
+    },
+    iconPack: {
+        view: () => import("./type_widgets/icon_pack/IconPack"),
+        className: "note-detail-icon-pack",
+        printable: true,
+        isFullHeight: true
+    },
+    spreadsheet: {
+        view: () => import("./type_widgets/spreadsheet/Spreadsheet"),
+        className: "note-detail-spreadsheet",
+        printable: true,
+        isFullHeight: true
+    },
+    llmChat: {
+        view: () => import("./type_widgets/llm_chat/LlmChat"),
+        className: "note-detail-llm-chat",
+        printable: true,
         isFullHeight: true
     }
 };

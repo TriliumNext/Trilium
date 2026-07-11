@@ -4,13 +4,6 @@
     gap: 20px;
 }
 
-#site-header > a {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
 
  /* The switch - the box around the slider */
 .switch {

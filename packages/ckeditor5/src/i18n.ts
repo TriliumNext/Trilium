@@ -25,6 +25,11 @@ const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, LocaleMapping | null> = {
         coreTranslation: () => import("ckeditor5/translations/zh-cn.js"),
         premiumFeaturesTranslation: () => import("ckeditor5-premium-features/translations/zh-cn.js"),
     },
+    cs: {
+        languageCode: "cs",
+        coreTranslation: () => import("ckeditor5/translations/cs.js"),
+        premiumFeaturesTranslation: () => import("ckeditor5-premium-features/translations/cs.js"),
+    },
     de: {
         languageCode: "de",
         coreTranslation: () => import("ckeditor5/translations/de.js"),
@@ -41,10 +46,20 @@ const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, LocaleMapping | null> = {
         premiumFeaturesTranslation: () => import("ckeditor5-premium-features/translations/fr.js"),
     },
     ga: null,
+    id: {
+        languageCode: "id",
+        coreTranslation: () => import("ckeditor5/translations/id.js"),
+        premiumFeaturesTranslation: () => import("ckeditor5-premium-features/translations/id.js"),
+    },
     it: {
         languageCode: "it",
         coreTranslation: () => import("ckeditor5/translations/it.js"),
         premiumFeaturesTranslation: () => import("ckeditor5-premium-features/translations/it.js"),
+    },
+    hi: {
+        languageCode: "hi",
+        coreTranslation: () => import("ckeditor5/translations/hi.js"),
+        premiumFeaturesTranslation: () => import("ckeditor5-premium-features/translations/hi.js"),
     },
     ja: {
         languageCode: "ja",

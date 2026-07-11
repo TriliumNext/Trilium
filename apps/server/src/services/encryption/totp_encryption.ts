@@ -1,8 +1,19 @@
-import optionService from "../options.js";
-import myScryptService from "./my_scrypt.js";
-import { randomSecureToken, toBase64, constantTimeCompare } from "../utils.js";
-import dataEncryptionService from "./data_encryption.js";
+/**
+ * Server-side TOTP (Time-based One-Time Password) encryption service.
+ *
+ * This service handles encryption/decryption of TOTP secrets and remains
+ * server-only because:
+ * - TOTP/2FA is not supported in standalone mode
+ * - Uses synchronous Node.js crypto.scryptSync for performance
+ *
+ * The TOTP secret is encrypted using AES and stored in options.
+ * Verification uses scrypt-based hashing with constant-time comparison.
+ */
 import type { OptionNames } from "@triliumnext/commons";
+import { binary_utils, data_encryption, options as optionService } from "@triliumnext/core";
+import crypto from "crypto";
+
+import { constantTimeCompare, randomSecureToken, toBase64 } from "../utils.js";
 
 const TOTP_OPTIONS: Record<string, OptionNames> = {
     SALT: "totpEncryptionSalt",
@@ -10,8 +21,19 @@ const TOTP_OPTIONS: Record<string, OptionNames> = {
     VERIFICATION_HASH: "totpVerificationHash"
 };
 
+const SCRYPT_OPTIONS = { N: 16384, r: 8, p: 1 };
+
+/**
+ * Gets verification hash for TOTP secret using the password verification salt.
+ * This is server-only and uses sync scrypt.
+ */
+function getTotpVerificationHash(secret: string): Buffer {
+    const salt = optionService.getOption("passwordVerificationSalt");
+    return crypto.scryptSync(secret, salt, 32, SCRYPT_OPTIONS);
+}
+
 function verifyTotpSecret(secret: string): boolean {
-    const givenSecretHash = toBase64(myScryptService.getVerificationHash(secret));
+    const givenSecretHash = toBase64(getTotpVerificationHash(secret));
     const dbSecretHash = optionService.getOptionOrNull(TOTP_OPTIONS.VERIFICATION_HASH);
 
     if (!dbSecretHash) {
@@ -29,10 +51,10 @@ function setTotpSecret(secret: string) {
     const encryptionSalt = randomSecureToken(32);
     optionService.setOption(TOTP_OPTIONS.SALT, encryptionSalt);
 
-    const verificationHash = toBase64(myScryptService.getVerificationHash(secret));
+    const verificationHash = toBase64(getTotpVerificationHash(secret));
     optionService.setOption(TOTP_OPTIONS.VERIFICATION_HASH, verificationHash);
 
-    const encryptedSecret = dataEncryptionService.encrypt(
+    const encryptedSecret = data_encryption.encrypt(
         Buffer.from(encryptionSalt),
         secret
     );
@@ -48,7 +70,7 @@ function getTotpSecret(): string | null {
     }
 
     try {
-        const decryptedSecret = dataEncryptionService.decrypt(
+        const decryptedSecret = data_encryption.decrypt(
             Buffer.from(encryptionSalt),
             encryptedSecret
         );
@@ -57,7 +79,7 @@ function getTotpSecret(): string | null {
             return null;
         }
 
-        return decryptedSecret.toString();
+        return binary_utils.decodeUtf8(decryptedSecret);
     } catch (e) {
         console.error("Failed to decrypt TOTP secret:", e);
         return null;

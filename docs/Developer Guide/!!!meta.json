@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.101.3",
+    "appVersion": "0.103.0",
     "files": [
         {
             "isClone": false,
@@ -1037,7 +1037,7 @@
                                 }
                             ],
                             "format": "markdown",
-                            "dataFileName": "Documentation references in th.md",
+                            "dataFileName": "Documentation references in the application.md",
                             "attachments": []
                         }
                     ]
@@ -1984,7 +1984,7 @@
                                 }
                             ],
                             "format": "markdown",
-                            "dataFileName": "Internationalisation  Translat.md",
+                            "dataFileName": "Internationalisation  Translations.md",
                             "attachments": [],
                             "dirFileName": "Internationalisation  Translations",
                             "children": [
@@ -2469,7 +2469,7 @@
                                                 }
                                             ],
                                             "format": "markdown",
-                                            "dataFileName": "Copy image reference to the cl.md",
+                                            "dataFileName": "Copy image reference to the clipboard.md",
                                             "attachments": []
                                         },
                                         {
@@ -2933,7 +2933,7 @@
                                 }
                             ],
                             "format": "markdown",
-                            "dataFileName": "better-sqlite3 was compiled ag.md",
+                            "dataFileName": "better-sqlite3 was compiled against a different Node.js version.md",
                             "attachments": []
                         },
                         {
@@ -2960,7 +2960,7 @@
                                 }
                             ],
                             "format": "markdown",
-                            "dataFileName": "Error [TransformError] The pac.md",
+                            "dataFileName": "Error [TransformError] The package @esbuildlinux-x64 could not be found, and is needed by esbuild.md",
                             "attachments": []
                         }
                     ]

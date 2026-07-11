@@ -2,39 +2,54 @@ import type { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import Inter from "./../../../fonts/Inter/Inter-VariableFont_opsz,wght.ttf";
 
-const VARIABLE_WHITELIST = new Set([
-    "root-background",
-    "main-background-color",
-    "main-border-color",
-    "main-text-color"
-]);
+interface FontDefinition {
+    name: string;
+    url: string;
+}
+
+const FONTS: FontDefinition[] = [
+    {name: "Inter", url: Inter},
+];
 
 interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabIndex"> {
     iframeRef?: RefObject<HTMLIFrameElement>;
-    /** Note: URLs are relative to /pdfjs/web. */
+    /** Note: URLs are relative to /pdfjs/web, ideally use absolute paths (but without domain name) to avoid issues with some proxies. */
     pdfUrl: string;
     onLoad?(): void;
     /**
      * If set, enables editable mode which includes persistence of user settings, annotations as well as specific features such as sending table of contents data for the sidebar.
      */
     editable?: boolean;
+    /** If set, hides the toolbar. Defaults to `true` (visible). */
+    toolbar?: boolean;
+    /** If set, disables text selection in the rendered PDF. */
+    disableSelection?: boolean;
+    /**
+     * Forces the rendered pages to use at least this device-pixel-ratio when rasterizing to canvas.
+     * On standard-DPI displays (DPR 1) PDF.js renders at 1× and text/headings look coarsely
+     * anti-aliased; raising this supersamples the canvas (mimicking a high-DPI screen) for a
+     * crisper preview. Has no effect when the real DPR already meets or exceeds this value.
+     */
+    minPixelRatio?: number;
 }
 
 /**
  * Reusable component displaying a PDF. The PDF needs to be provided via a URL.
  */
-export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad, editable }: PdfViewerProps) {
+export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad, editable, toolbar = true, disableSelection, minPixelRatio }: PdfViewerProps) {
     const iframeRef = useSyncedRef(externalIframeRef, null);
     const [ locale ] = useTriliumOption("locale");
     const [ newLayout ] = useTriliumOptionBool("newLayout");
-    const injectStyles = useStyleInjection(iframeRef);
+    const injectStyles = useStyleInjection(iframeRef, disableSelection);
 
     return (
         <iframe
             ref={iframeRef}
             class="pdf-preview"
-            src={`pdfjs/web/viewer.html?file=${pdfUrl}&lang=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}`}
+            style={{width: "100%", height: "100%"}}
+            src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}${minPixelRatio ? `&minPixelRatio=${minPixelRatio}` : ""}`}
             onLoad={() => {
                 injectStyles();
                 onLoad?.();
@@ -43,7 +58,7 @@ export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad
     );
 }
 
-function useStyleInjection(iframeRef: RefObject<HTMLIFrameElement>) {
+function useStyleInjection(iframeRef: RefObject<HTMLIFrameElement>, disableSelection?: boolean) {
     const styleRef = useRef<HTMLStyleElement | null>(null);
 
     // First load.
@@ -55,9 +70,19 @@ function useStyleInjection(iframeRef: RefObject<HTMLIFrameElement>) {
         style.id = 'client-root-vars';
         style.textContent = cssVarsToString(getRootCssVariables());
         styleRef.current = style;
-
         doc.head.appendChild(style);
-    }, [ iframeRef ]);
+
+        const fontStyles = doc.createElement("style");
+        fontStyles.textContent = FONTS.map(injectFont).join("\n");
+        doc.head.appendChild(fontStyles);
+
+        if (disableSelection) {
+            const selectionStyles = doc.createElement("style");
+            selectionStyles.textContent = `.textLayer, .textLayer * { user-select: none !important; cursor: default !important; }`;
+            doc.head.appendChild(selectionStyles);
+        }
+
+    }, [ iframeRef, disableSelection ]);
 
     // React to changes.
     useEffect(() => {
@@ -79,7 +104,7 @@ function getRootCssVariables() {
 
     for (let i = 0; i < styles.length; i++) {
         const prop = styles[i];
-        if (prop.startsWith('--') && VARIABLE_WHITELIST.has(prop.substring(2))) {
+        if (prop.startsWith('--')) {
             vars[`--tn-${prop.substring(2)}`] = styles.getPropertyValue(prop).trim();
         }
     }
@@ -91,4 +116,13 @@ function cssVarsToString(vars: Record<string, string>) {
     return `:root {\n${Object.entries(vars)
         .map(([k, v]) => `  ${k}: ${v};`)
         .join('\n')}\n}`;
+}
+
+function injectFont(font: FontDefinition) {
+    return `
+        @font-face {
+            font-family: '${font.name}';
+            src: url('${font.url}');
+        }
+    `;
 }

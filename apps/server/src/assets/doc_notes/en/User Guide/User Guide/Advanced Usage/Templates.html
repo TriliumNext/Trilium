@@ -32,7 +32,7 @@
   all attributes from the template are inherited.</p>
 <p>To create an instance note through the UI:</p>
 <p>
-  <img src="Templates_template-create-.png"
+  <img src="Templates_template-create-instance-note.png"
   alt="show child note templates">
 </p>
 <p>For the template to appear in the menu, the template note must have the
@@ -57,16 +57,37 @@
     will not automatically apply the new template to the grandchild notes.
     Only the structure present at the time of note creation is considered.</p>
 </aside>
+<h2>Regarding note types</h2>
+<p>By default, newly created notes are&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_iPIMuisry3hd">Text</a>&nbsp;notes.
+  If a parent note defines a <code spellcheck="false">child:template</code> pointing
+  to a template of a different type (e.g. a Code note), the behavior depends
+  on how the new note is created:</p>
+<ul>
+  <li>If no note type is explicitly chosen (e.g. the + button in the&nbsp;
+    <a
+    class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_oPVyFC7WL2Lp">Note Tree</a>), the template is applied and the new note takes the type
+      and content of the template.</li>
+  <li>If a note type is explicitly selected (e.g.&nbsp;<a class="reference-link"
+    href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;→ <em>Insert note after</em> / <em>Insert child note</em>):
+    <ul>
+      <li>If the selected type matches the template's type, the template is applied.</li>
+      <li>If the selected type differs, the template is disregarded entirely — the
+        new note is an empty note of the selected type.</li>
+    </ul>
+  </li>
+</ul>
+<p>Selecting a specific template from the creation menu always takes precedence
+  over <code spellcheck="false">child:template</code>.</p>
 <h2>Additional Notes</h2>
 <p>From a visual perspective, templates can define <code spellcheck="false">#iconClass</code> and
   <code
   spellcheck="false">#cssClass</code>attributes, allowing all instance notes (e.g., books)
     to display a specific icon and CSS style.</p>
-<p>Explore the concept further in the <a href="#root/_help_wX4HbRucYSDD">demo notes</a>,
-  including examples like the <a href="#root/_help_iRwzGnHPzonm">Relation Map</a>,
+<p>Explore the concept further in the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/wX4HbRucYSDD/_help_6tZeKvSHEUiB">Demo Notes</a>,
+  including examples like the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_iRwzGnHPzonm">Relation Map</a>,&nbsp;
   <a
-  href="#root/_help_xYjQUYhpbUEW">Task Manager</a>, and <a href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</p>
-<p>Additionally, see <a href="#root/_help_47ZrP6FNuoG8">default note title</a> for
+  class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/5668rwcirq1t/_help_xYjQUYhpbUEW">Task Manager</a>, and&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/5668rwcirq1t/_help_l0tKav7yLHGF">Day Notes</a>.</p>
+<p>Additionally, see&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/_help_47ZrP6FNuoG8">Default Note Title</a>&nbsp;for
   creating title templates. Note templates and title templates can be combined
   by creating a <code spellcheck="false">#titleTemplate</code> for a template
   note.</p>

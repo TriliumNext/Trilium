@@ -1,3 +1,8 @@
+<aside class="admonition important">
+  <p>Starting with v0.104.0, backend scripts are disabled by default to reduce
+    the attack surface. See&nbsp;<a class="reference-link" href="#root/_help_fiHicjpHjIRJ">Security</a>&nbsp;for
+    more information.</p>
+</aside>
 <p>The SQL Console is Trilium's built-in database editor.</p>
 <p>It can be accessed by going to the&nbsp;<a class="reference-link" href="#root/_help_x3i7MxGccDuM">Global menu</a>&nbsp;→
   Advanced → Open SQL Console.</p>
@@ -18,7 +23,6 @@
   <img style="aspect-ratio:1124/571;" src="2_SQL Console_image.png"
   width="1124" height="571">
 </figure>
-
 <h3>Interacting with the table</h3>
 <p>After executing a query, a table with the results will be displayed:</p>
 <ul>
@@ -35,7 +39,10 @@
 <p>SQL queries or commands can be saved into a dedicated note.</p>
 <p>To do so, simply write the query and press the
   <img src="1_SQL Console_image.png">button. Once saved, the note will appear in&nbsp;<a class="reference-link"
-  href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</p>
+  href="#root/_help_l0tKav7yLHGF">Day Notes</a>&nbsp;by default. It is possible
+  to change the default location of saved queries by assigning a <code spellcheck="false">#sqlConsoleHome</code> 
+  <a
+  href="#root/_help_HI6GBBIduIgv">label</a>.</p>
 <p>The note can be locked for editing by pressing the <em>Lock</em> button
   in the note actions section near the title bar (on the&nbsp;<a class="reference-link"
   href="#root/_help_IjZS7iK5EXtb">New Layout</a>, or in the&nbsp;<a class="reference-link"

@@ -18,4 +18,4 @@ export default {
 };
 `;
 
-fs.writeFileSync("apps/server/src/services/build.ts", output);
+fs.writeFileSync("packages/trilium-core/src/services/build.ts", output);

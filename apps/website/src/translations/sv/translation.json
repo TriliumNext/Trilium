@@ -2,6 +2,30 @@
     "get-started": {
         "title": "Kom igång",
         "desktop_title": "Ladda ner skrivbordsprogrammet (v{{version}})",
-        "architecture": "Arkitektur:"
+        "architecture": "Arkitektur:",
+        "older_releases": "Se äldre versioner",
+        "server_title": "Skapa en server för åtkomst på flera enheter"
+    },
+    "hero_section": {
+        "title": "Organisera dina tankar. Skapa din personliga kunskapsbank.",
+        "subtitle": "Trilium är en lösning med öppen källkod som möjliggör anteckningar och organisering av en personlig kunskapsbank. Använd den lokalt på ditt skrivbord, eller synka till en självhostad server för att komma åt dina anteckningar överallt.",
+        "screenshot_alt": "Skärmdump av Trilium Notes skrivbordsapplikation",
+        "get_started": "Kom igång",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub"
+    },
+    "organization_benefits": {
+        "title": "Organisation",
+        "note_structure_title": "Anteckningsstruktur",
+        "note_structure_description": "Anteckningar kan sorteras hierarkiskt. Det behövs inga mappar eftersom varje anteckning kan innehålla underordnade anteckningar. En enskild anteckning kan placeras på flera ställen samtidigt i hierarkin.",
+        "attributes_title": "Hantera etiketter och relationer",
+        "attributes_description": "Använd relationer mellan anteckningar eller lägg till etiketter för enkel kategorisering. Använd framhävda attribut för att ange strukturerad information som sedan kan visas i tabeller och tavlor.",
+        "hoisting_title": "Arbetsyta och fokusområde",
+        "hoisting_description": "Separera enkelt privata- och jobbanteckningar genom att gruppera dem på en arbetsyta, vilket fokuserar anteckningshierarkin att enbart visa en viss grupp av anteckningar."
+    },
+    "productivity_benefits": {
+        "title": "Produktivitet och säkerhet",
+        "revisions_title": "Anteckningshistorik",
+        "revisions_content": "Anteckningar sparas regelbundet i bakgrunden och versioner kan användas för att söka- eller ångra oavsiktliga ändringar. En version kan också skapas manuellt."
     }
 }

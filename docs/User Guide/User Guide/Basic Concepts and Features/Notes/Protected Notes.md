@@ -10,7 +10,7 @@ Trilium is designed to store a wide variety of data, including sensitive informa
 
 By default, notes are unprotected. To protect a note, simply click on the shield icon next to the note's title, as shown here:
 
-![example animation of unlocking protected notes](Protected%20Notes_protecting.gif)
+![example animation of unlocking protected notes](Protected%20Notes_protecting-note.gif)
 
 ## What is Encrypted?
 

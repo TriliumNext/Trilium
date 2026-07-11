@@ -31,8 +31,6 @@
         "sync_content": "Używaj własnych lub chmurowych instancji do łatwiejszej synchronizacji notatek między wieloma urządzeniami, w tym twoim telefonem używając PWA.",
         "protected_notes_title": "Notatki chronione",
         "protected_notes_content": "Chroń wrażliwe informacje szyfrując notatki i blokując dostęp do nich za pomocą hasła sesji.",
-        "jump_to_title": "Szybkie wyszukiwanie i komendy",
-        "jump_to_content": "Szybko i łatwo wyszukuj swoje notatki używając funkcji lub komend, nawet gdy nie pamiętasz dokładnej ich nazwy.",
         "search_title": "Dokładne wyszukiwanie",
         "search_content": "Albo wyszukaj tekst w notatkach, możesz dostosować zakres szukania do konkretnej notatki albo hierarchii pliku.",
         "web_clipper_title": "Web clipper",
@@ -51,19 +49,7 @@
         "mermaid_description": "Twórz diagramy, takie jak schematy blokowe, diagramy klas i sekwencyjne, wykresy Gantta i wiele innych, korzystając z składni Mermaid.",
         "mindmap_title": "Mapy myśli",
         "mindmap_description": "Organizuj wizualnie swoje myśli albo przeprowadź sesję burzy mózgów.",
-        "others_list": "I wiele innych: <0>mapa notatek</0>, <1>mapa powiązań</1>, <2>zapisane wyszukiwania</2>, <3>renderowane notatki</3> i <4>podgląd stron www</4>.",
         "title": "Wiele sposobów przedstawienia Twoich informacji"
-    },
-    "extensibility_benefits": {
-        "title": "Udostępnianie i rozszerzenia",
-        "import_export_title": "Import/Export",
-        "import_export_description": "Łatwa interakcja z innymi aplikacjami przy użyciu formatów Markdown, ENEX i OLM.",
-        "share_title": "Udostępniaj notatki w internecie",
-        "share_description": "Jeśli masz własny serwer, możesz go używać do udostępniania danych notatek z innymi.",
-        "scripting_title": "Zaawansowane skrypty",
-        "scripting_description": "Stwórz swoje własne integracje z Trilium przy użyciu personalizowanych widżetów albo z serwerowych skryptów.",
-        "api_title": "REST API",
-        "api_description": "Twórz integracje Trilium z użyciem REST API."
     },
     "collections": {
         "calendar_title": "Kalendarze",
@@ -161,7 +147,8 @@
         "download_flatpak": ".flatpak",
         "download_zip": "Wersja przenośna - Portable (.zip)",
         "download_nixpkgs": "nixpkgs",
-        "download_aur": "AUR"
+        "download_aur": "AUR",
+        "download_appimage": ".AppImage"
     },
     "download_helper_desktop_macos": {
         "title_x64": "macOS z Intel",
@@ -189,8 +176,7 @@
     "download_helper_server_hosted": {
         "title": "Płatny Serwer - Hosting",
         "description": "Trilium Notes hostowane na PikaPods, płatnym serwisie dla łatwego dostępu i zarządzania. Bezpośrednio nie związanie z Trilium team.",
-        "download_pikapod": "Konfiguruj na PikaPods",
-        "download_triliumcc": "Alternatywnie patrz na trilium.cc"
+        "download_pikapod": "Konfiguruj na PikaPods"
     },
     "header": {
         "get-started": "Start",
@@ -201,7 +187,7 @@
     "resources": {
         "title": "Zasoby",
         "icon_packs": "Paczki ikon",
-        "icon_packs_intro": "Rozszerz wybór dostępnych ikon dla swoich notatek, korzystając z pakietu ikon. Więcej informacji na temat pakietów ikon znajdziesz w <DocumentationLink> dokumentacji </DocumentationLink>.",
+        "icon_packs_intro": "Rozszerz wybór dostępnych ikon dla swoich notatek, korzystając z pakietu ikon. Więcej informacji na temat pakietów ikon znajdziesz w <DocumentationLink> oficjalnej dokumentacji </DocumentationLink>.",
         "download": "Pobieranie",
         "website": "Strona internetowa"
     }

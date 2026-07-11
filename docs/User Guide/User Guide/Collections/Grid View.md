@@ -18,6 +18,10 @@ Depending on the type of note:
 
 The grid view is also used by default in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> of every note, making it easy to navigate to children notes.
 
+### Creating a new table
+
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _Grid View_.
+
 ## Configuration
 
 Unlike most other view types, the grid view is not actually configurable.

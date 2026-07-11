@@ -1,3 +1,31 @@
 body.mobile .note-actions-custom:not(:empty) {
     margin-bottom: calc(var(--bs-dropdown-divider-margin-y) * 2);
 }
+
+body.mobile .note-actions-custom-display-mode {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    & > .dropdown-item {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 0.25em;
+        padding-inline: 0.25em;
+        font-size: 0.85em;
+        border-radius: 0 !important;
+        border: 0 !important;
+    }
+
+    & > .dropdown-item:first-child {
+        border-start-start-radius: var(--bs-border-radius) !important;
+        border-end-start-radius: var(--bs-border-radius) !important;
+    }
+
+    & > .dropdown-item:last-child {
+        border-start-end-radius: var(--bs-border-radius) !important;
+        border-end-end-radius: var(--bs-border-radius) !important;
+    }
+}
+

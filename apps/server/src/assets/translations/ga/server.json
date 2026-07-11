@@ -3,7 +3,6 @@
     "back-in-note-history": "Téigh go dtí an nóta roimhe seo sa stair",
     "forward-in-note-history": "Téigh go dtí an chéad nóta eile sa stair",
     "open-jump-to-note-dialog": "Oscail an dialóg \"Léim go dtí an nóta\"",
-    "open-command-palette": "Oscail pailéad orduithe",
     "scroll-to-active-note": "Scrollaigh crann na nótaí go dtí an nóta gníomhach",
     "quick-search": "Gníomhachtaigh an barra cuardaigh thapa",
     "search-in-subtree": "Cuardaigh nótaí i bhfo-chrann an nóta ghníomhaigh",
@@ -15,11 +14,6 @@
     "create-note-after": "Cruthaigh nóta i ndiaidh nóta gníomhach",
     "create-note-into": "Cruthaigh nóta mar leanbh den nóta gníomhach",
     "create-note-into-inbox": "Cruthaigh nóta sa bhosca isteach (más sainithe) nó nóta lae",
-    "delete-note": "Scrios nóta",
-    "move-note-up": "Bog nóta suas",
-    "move-note-down": "Bog nóta síos",
-    "move-note-up-in-hierarchy": "Bog nóta suas san ordlathas",
-    "move-note-down-in-hierarchy": "Bog nóta síos san ordlathas",
     "edit-note-title": "Léim ón gcrann go dtí sonraí an nóta agus cuir an teideal in eagar",
     "edit-branch-prefix": "Taispeáin an dialóg \"Cuir réimír na brainse in eagar\"",
     "clone-notes-to": "Clónáil nótaí roghnaithe",
@@ -29,27 +23,12 @@
     "paste-notes-from-clipboard": "Greamaigh nótaí ón ghearrthaisce isteach sa nóta gníomhach",
     "cut-notes-to-clipboard": "Gearr nótaí roghnaithe chuig an ghearrthaisce",
     "select-all-notes-in-parent": "Roghnaigh na nótaí go léir ón leibhéal nóta reatha",
-    "add-note-above-to-the-selection": "Cuir nóta thuas leis an rogha",
-    "add-note-below-to-selection": "Cuir nóta leis an rogha thíos",
-    "duplicate-subtree": "Fo-chrann dúblach",
     "tabs-and-windows": "Cluaisíní agus Fuinneoga",
-    "open-new-tab": "Oscail cluaisín nua",
-    "close-active-tab": "Dún an cluaisín gníomhach",
     "reopen-last-tab": "Athoscail an cluaisín deireanach a dúnadh",
     "activate-next-tab": "Gníomhachtaigh an cluaisín ar dheis",
     "activate-previous-tab": "Gníomhachtaigh an cluaisín ar chlé",
     "open-new-window": "Oscail fuinneog nua folamh",
     "toggle-tray": "Taispeáin/folaigh an feidhmchlár ón tráidire córais",
-    "first-tab": "Gníomhachtaigh an chéad chluaisín sa liosta",
-    "second-tab": "Gníomhachtaigh an dara cluaisín sa liosta",
-    "third-tab": "Gníomhachtaigh an tríú cluaisín sa liosta",
-    "fourth-tab": "Gníomhachtaigh an ceathrú cluaisín sa liosta",
-    "fifth-tab": "Gníomhachtaigh an cúigiú cluaisín sa liosta",
-    "sixth-tab": "Gníomhachtaigh an séú cluaisín sa liosta",
-    "seventh-tab": "Gníomhachtaigh an seachtú cluaisín sa liosta",
-    "eight-tab": "Gníomhachtaigh an t-ochtú cluaisín sa liosta",
-    "ninth-tab": "Gníomhachtaigh an naoú cluaisín sa liosta",
-    "last-tab": "Gníomhachtaigh an cluaisín deireanach sa liosta",
     "dialogs": "Dialóga",
     "show-note-source": "Taispeáin an dialóg \"Foinse an Nóta\"",
     "show-options": "Oscail an leathanach \"Roghanna\"",
@@ -66,44 +45,30 @@
     "paste-markdown-into-text": "Greamaigh Markdown ón ghearrthaisce isteach i nóta téacs",
     "cut-into-note": "Gearrann sé an rogha ón nóta reatha agus cruthaíonn sé fo-nóta leis an téacs roghnaithe",
     "add-include-note-to-text": "Osclaíonn an dialóg chun nóta a chur san áireamh",
-    "edit-readonly-note": "Cuir nóta inléite amháin in eagar",
     "attributes-labels-and-relations": "Tréithe (lipéid & caidrimh)",
     "add-new-label": "Cruthaigh lipéad nua",
     "create-new-relation": "Cruthaigh caidreamh nua",
     "ribbon-tabs": "Cluaisíní ribín",
-    "toggle-basic-properties": "Airíonna Bunúsacha a Athrú",
-    "toggle-file-properties": "Airíonna Comhaid a Athrú",
-    "toggle-image-properties": "Airíonna Íomhá a Athrú",
-    "toggle-owned-attributes": "Tréithe faoi Úinéireacht a Athrú",
-    "toggle-inherited-attributes": "Tréithe Oidhreachta a Athrú",
-    "toggle-promoted-attributes": "Tréithe Curtha Chun Cinn a Athrú",
     "toggle-link-map": "Léarscáil Nasc a Athsholáthar",
-    "toggle-note-info": "Eolas Nóta a Athrú",
-    "toggle-note-paths": "Cosáin Nótaí a Athrú",
-    "toggle-similar-notes": "Nótaí Cosúla a Athsholáthar",
     "other": "Eile",
     "toggle-right-pane": "Athraigh taispeáint an phainéil dheis, lena n-áirítear Clár Ábhair agus Buaicphointí",
-    "print-active-note": "Priontáil nóta gníomhach",
     "open-note-externally": "Oscail nóta mar chomhad leis an bhfeidhmchlár réamhshocraithe",
     "render-active-note": "Rindreáil (ath-rindreáil) nóta gníomhach",
     "run-active-note": "Rith nóta cóid JavaScript gníomhach (frontend/backend)",
     "toggle-note-hoisting": "Scoránaigh ardú nóta an nóta ghníomhaigh",
     "unhoist": "Dí-ardaigh ó áit ar bith",
-    "reload-frontend-app": "Athlódáil an tosaigh",
-    "open-dev-tools": "Uirlisí forbróra oscailte",
     "find-in-text": "Painéal cuardaigh a scoránaigh",
     "toggle-left-note-tree-panel": "Scoránaigh an painéal ar chlé (crann nótaí)",
-    "toggle-full-screen": "Scoraigh an scáileán iomlán",
-    "zoom-out": "Zúmáil Amach",
-    "zoom-in": "Zúmáil Isteach",
     "note-navigation": "Nascleanúint nótaí",
-    "reset-zoom-level": "Athshocraigh leibhéal súmála",
     "copy-without-formatting": "Cóipeáil téacs roghnaithe gan fhormáidiú",
     "force-save-revision": "Cruthú/sábháil nóta nua den nóta gníomhach i bhfeidhm",
     "toggle-book-properties": "Airíonna an Bhailiúcháin a Athrú",
     "toggle-classic-editor-toolbar": "Athraigh an cluaisín Formáidithe don eagarthóir leis an mbarra uirlisí socraithe",
-    "export-as-pdf": "Easpórtáil an nóta reatha mar PDF",
-    "toggle-zen-mode": "Cumasaíonn/díchumasaíonn sé an mód zen (comhad úsáideora íosta le haghaidh eagarthóireacht níos dírithe)"
+    "toggle-zen-mode": "Cumasaíonn/díchumasaíonn sé an mód zen (comhad úsáideora íosta le haghaidh eagarthóireacht níos dírithe)",
+    "save-named-revision": "Sábháil athbhreithniú ainmnithe den nóta gníomhach",
+    "toggle-archived-notes": "Taispeáin/folaigh nótaí cartlannaithe sa chrann nótaí",
+    "peek-right-pane": "Féach ar an bpainéal ar dheis mar phainéal sealadach a shnámhann os cionn an ábhair agus a dhúnann nuair a chailleann sé fócas",
+    "show-deleted-notes": "Taispeáin an dialóg \"Nótaí Scriosta\""
   },
   "keyboard_action_names": {
     "back-in-note-history": "Ar ais i Stair na Nótaí",
@@ -200,7 +165,11 @@
     "zoom-in": "Zúmáil Isteach",
     "reset-zoom-level": "Athshocraigh Leibhéal Súmála",
     "copy-without-formatting": "Cóipeáil Gan Formáidiú",
-    "force-save-revision": "Athbhreithniú Sábháilte Fórsála"
+    "force-save-revision": "Athbhreithniú Sábháilte Fórsála",
+    "save-named-revision": "Sábháil Athbhreithniú Ainmnithe",
+    "toggle-archived-notes": "Infheictheacht Nótaí Cartlainne a Athrú",
+    "peek-right-pane": "Féach ar an bPanáil Ar Dheis",
+    "show-deleted-notes": "Taispeáin Nótaí Scriosta"
   },
   "login": {
     "title": "Logáil Isteach",
@@ -210,7 +179,9 @@
     "password": "Pasfhocal",
     "remember-me": "Cuimhnigh orm",
     "button": "Logáil Isteach",
-    "sign_in_with_sso": "Sínigh isteach le {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Sínigh isteach le {{ ssoIssuerName }}",
+    "sso-wrong-account": "Ní hé an cuntas sin an ceann atá nasctha leis an gcás Trilium seo. Sínigh isteach leis an gcuntas nasctha.",
+    "sso-not-enrolled": "Níl síniú isteach aonair socraithe fós. Sínigh isteach le do phasfhocal ar dtús, ansin nasc do chuntas ó na socruithe."
   },
   "set_password": {
     "title": "Socraigh Pasfhocal",
@@ -219,47 +190,6 @@
     "password": "Pasfhocal",
     "password-confirmation": "Deimhniú pasfhocail",
     "button": "Socraigh pasfhocal"
-  },
-  "setup": {
-    "heading": "Socrú Trilium Notes",
-    "new-document": "Is úsáideoir nua mé, agus ba mhaith liom doiciméad Trilium nua a chruthú do mo nótaí",
-    "sync-from-desktop": "Tá cás deisce agam cheana féin, agus ba mhaith liom sioncrónú a shocrú leis",
-    "sync-from-server": "Tá sampla freastalaí agam cheana féin, agus ba mhaith liom sioncrónú a shocrú leis",
-    "next": "Ar Aghaidh",
-    "init-in-progress": "Túsú doiciméad ar siúl",
-    "redirecting": "Atreorófar chuig an bhfeidhmchlár thú go luath.",
-    "title": "Socrú"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sioncrónaigh ón Deasc",
-    "description": "Ní mór an socrú seo a thionscnamh ón deasc:",
-    "step1": "Oscail sampla de Trilium Notes ar do dheasc.",
-    "step2": "Ón Roghchlár Trilium, cliceáil Roghanna.",
-    "step3": "Cliceáil ar an gcatagóir Sioncrónaigh.",
-    "step4": "Athraigh seoladh an fhreastalaí go: {{- host}} agus cliceáil Sábháil.",
-    "step5": "Cliceáil an cnaipe \"Tástáil sioncrónaithe\" chun a fhíorú go bhfuil an nasc rathúil.",
-    "step6": "Nuair a bheidh na céimeanna seo críochnaithe agat, cliceáil {{- link}}.",
-    "step6-here": "anseo"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sioncrónaigh ón bhFreastalaí",
-    "instructions": "Cuir isteach seoladh agus dintiúir freastalaí Trilium thíos le do thoil. Íoslódálfaidh sé seo an doiciméad Trilium iomlán ón bhfreastalaí agus socróidh sé sioncrónú leis. Ag brath ar mhéid an doiciméid agus luas do nasc, d'fhéadfadh sé seo tamall a thógáil.",
-    "server-host": "Seoladh freastalaí Trilium",
-    "server-host-placeholder": "https://<ainm óstach>:<port>",
-    "proxy-server": "Freastalaí seachfhreastalaí (roghnach)",
-    "proxy-server-placeholder": "https://<ainm óstach>:<port>",
-    "note": "Nóta:",
-    "proxy-instruction": "Má fhágann tú an socrú seachfhreastalaí bán, úsáidfear seachfhreastalaí an chórais (baineann sé leis an bhfeidhmchlár deisce amháin)",
-    "password": "Pasfhocal",
-    "password-placeholder": "Pasfhocal",
-    "back": "Ar ais",
-    "finish-setup": "Críochnaigh an socrú"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sioncrónú ar siúl",
-    "successful": "Tá an sioncrónú socraithe i gceart. Tógfaidh sé tamall go mbeidh an sioncrónú tosaigh críochnaithe. Nuair a bheidh sé déanta, atreorófar chuig an leathanach logála isteach thú.",
-    "outstanding-items": "Míreanna sioncrónaithe gan réiteach:",
-    "outstanding-items-default": "N/B"
   },
   "share_404": {
     "title": "Níor aimsíodh",
@@ -297,7 +227,8 @@
   },
   "quarterNumber": "Ráithe {quarterNumber}",
   "special_notes": {
-    "search_prefix": "Cuardaigh:"
+    "search_prefix": "Cuardaigh:",
+    "llm_chat_prefix": "Comhrá:"
   },
   "test_sync": {
     "not-configured": "Níl an freastalaí sioncrónaithe cumraithe. Cumraigh an sioncrónú ar dtús.",
@@ -337,27 +268,44 @@
     "protected-session-title": "Seisiún faoi Chosaint",
     "sync-status-title": "Stádas Sioncrónaithe",
     "settings-title": "Socruithe",
-    "llm-chat-title": "Comhrá le Nótaí",
     "options-title": "Roghanna",
     "appearance-title": "Dealramh",
     "shortcuts-title": "Aicearraí",
     "text-notes": "Nótaí Téacs",
     "code-notes-title": "Nótaí Cód",
-    "images-title": "Íomhánna",
+    "images-title": "Meáin",
     "spellcheck-title": "Seiceáil litrithe",
-    "password-title": "Pasfhocal",
+    "password-title": "Pasfhocal & Údarú",
     "multi-factor-authentication-title": "MFA",
     "etapi-title": "ETAPI",
     "backup-title": "Cúltaca",
     "sync-title": "Sioncrónaigh",
-    "ai-llm-title": "AI/LLM",
     "other": "Eile",
     "advanced-title": "Ardleibhéil",
     "visible-launchers-title": "Lainseálaithe Infheicthe",
     "user-guide": "Treoir Úsáideora",
     "localization": "Teanga & Réigiún",
     "inbox-title": "Bosca isteach",
-    "tab-switcher-title": "Athraitheoir Cluaisíní"
+    "tab-switcher-title": "Athraitheoir Cluaisíní",
+    "llm-chat-history-title": "Stair Comhrá AI",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "Comhrá AI",
+    "custom-dictionary-title": "Foclóir Saincheaptha",
+    "task-states-title": "Stáit na dTascanna",
+    "task-state-none": "Dada",
+    "task-state-doing": "Ag déanamh",
+    "task-state-done": "Déanta",
+    "task-state-maybe": "B’fhéidir",
+    "task-state-cancelled": "Cealaithe",
+    "task-state-attr-state-id": "Aitheantóir (riachtanach)",
+    "task-state-attr-markdown-symbol": "Siombail Markdown",
+    "task-state-attr-is-completed": "Comhaireamh mar chríochnaithe",
+    "task-state-attr-color": "Dath",
+    "task-state-attr-is-hidden": "I bhfolach ón liosta",
+    "security-title": "Slándáil",
+    "desktop-title": "Deasc",
+    "deleted-notes-title": "Nótaí scriosta",
+    "color-scheme-switcher-title": "Athraitheoir Scéim Dathanna"
   },
   "notes": {
     "new-note": "Nóta nua",
@@ -391,7 +339,9 @@
   "migration": {
     "old_version": "Ní thacaítear le haistriú díreach ó do leagan reatha. Uasghrádaigh go dtí an leagan is déanaí v0.60.4 ar dtús agus ansin go dtí an leagan seo amháin.",
     "error_message": "Earráid le linn imirce go leagan {{version}}: {{stack}}",
-    "wrong_db_version": "Tá leagan an bhunachair shonraí ({{version}}) níos nuaí ná mar a bhfuil súil ag an bhfeidhmchlár leis ({{targetVersion}}), rud a chiallaíonn gur cruthaíodh é le leagan níos nuaí agus neamh-chomhoiriúnach de Trilium. Uasghrádaigh go dtí an leagan is déanaí de Trilium chun an fhadhb seo a réiteach."
+    "wrong_db_version": "Tá leagan an bhunachair shonraí ({{version}}) níos nuaí ná mar a bhfuil súil ag an bhfeidhmchlár leis ({{targetVersion}}), rud a chiallaíonn gur cruthaíodh é le leagan níos nuaí agus neamh-chomhoiriúnach de Trilium. Uasghrádaigh go dtí an leagan is déanaí de Trilium chun an fhadhb seo a réiteach.",
+    "invalid_db_version": "Ní uimhir bhailí í an leagan bunachar sonraí. De ghnáth léiríonn sé seo go bhfuil an rogha 'dbVersion' truaillithe sa bhunachar sonraí. Athchóirigh ó chúltaca le do thoil.",
+    "automatic_migrations_disabled": "Tá imirce uathoibríoch DB díchumasaithe tríd an athróg timpeallachta TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}"
   },
   "modals": {
     "error_title": "Earráid"
@@ -403,7 +353,11 @@
     "last-updated": "Nuashonraithe go deireanach ar {{- date}}",
     "subpages": "Fo-leathanaigh:",
     "on-this-page": "Ar an Leathanach seo",
-    "expand": "Leathnaigh"
+    "expand": "Leathnaigh",
+    "toggle-navigation": "Nascleanúint a Athrú",
+    "toggle-toc": "Clár Ábhair a Athsholáthar",
+    "logo-alt": "Lógó",
+    "login": "Logáil Isteach"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Sleachta Téacs",
@@ -431,7 +385,10 @@
     "presentation_slide": "Sleamhnán cur i láthair",
     "presentation_slide_first": "An chéad sleamhnán",
     "presentation_slide_second": "An dara sleamhnán",
-    "background": "Cúlra"
+    "background": "Cúlra",
+    "markdown-snippet": "Sleachta Marcála",
+    "code-snippet": "Sleachta Cód",
+    "dashboard": "Dashboard"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Níl an bunachar sonraí tosaithe, lean na treoracha ar an scáileán le do thoil.",
@@ -439,5 +396,68 @@
   },
   "desktop": {
     "instance_already_running": "Tá sampla ag rith cheana féin, agus tá fócas á chur ar an sampla sin ina ionad."
+  },
+  "script": {
+    "wrong-environment": "Ní féidir an nóta \"{{- noteTitle}}\" ({{- noteId}}) a fhorghníomhú. Is script {{- actualEnv}} é seo, ach rinneadh iarracht é a fhorghníomhú sa {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Earráid i {{- context}}: {{- message}}",
+      "reserved-keyword": "Is eochairfhocal curtha in áirithe é \"{{- token}}\". Chun luach liteartha a chuardach, bain úsáid as comharthaí athfhriotail: \"{{- token}}\"",
+      "cannot-compare-with": "ní féidir comparáid a dhéanamh le \"{{- token}}\". Chun luach liteartha a chuardach, bain úsáid as comharthaí athfhriotail: \"{{- token}}\"",
+      "misplaced-expression": "Slonn mí-áitithe nó neamhiomlán \"{{- token}}\"",
+      "fulltext-after-expression": "Ní abairt bhailí í \"{{- token}}\". Chun téacs a chuardach, cuir é roimh scagairí tréithe (m.sh., \"{{- token}} #label\" in ionad \"#label {{- token}}\").",
+      "unrecognized-expression": "Sloinneadh neamhaitheanta \"{{- token}}\""
+    }
+  },
+  "password": {
+    "incorrect": "Tá an focal faire a chuir tú isteach mícheart."
+  },
+  "security-dialog": {
+    "enable-title": "Cumasaigh {{settingLabel}}",
+    "enable-message": "An bhfuil tú cinnte gur mian leat {{settingLabel}} a chumasú?",
+    "enable-detail": "{{warning}}\n\nNá cumasaigh é seo ach amháin má tá sé beartaithe agat go sainráite an ghné seo a úsáid. Ná cumasaigh é má iarrtar ort é a dhéanamh le script nó le nóta nach bhfuil tú eolach air.\n\nÉilíonn atosú chun go dtiocfaidh an t-athrú seo i bhfeidhm.",
+    "disable-title": "Díchumasaigh {{settingLabel}}",
+    "disable-message": "Díchumasófar {{settingLabel}}.",
+    "disable-detail": "Éilíonn an t-athrú seo atosú chun go dtiocfaidh sé i bhfeidhm.",
+    "cancel": "Cealaigh",
+    "enable": "Cumasaigh",
+    "disable": "Díchumasaigh",
+    "dont-ask-again": "Ná fiafraigh arís go dtí go n-atosófar",
+    "backend-scripting": "Forghníomhú script chúltaca",
+    "backend-scripting-warning": "Tá rochtain iomlán ag scripteanna cúil ar an bhfreastalaí, lena n-áirítear an córas comhad agus an líonra.",
+    "sql-console": "Consól SQL",
+    "sql-console-warning": "Ceadaíonn consól SQL ceisteanna SQL treallacha a fhorghníomhú i gcoinne an bhunachar sonraí.",
+    "lan-access": "rochtain líonra",
+    "lan-access-warning": "Beidh gléasanna eile ar do líonra áitiúil in ann ceangal leis an gcás Trilium seo."
+  },
+  "onenote_import": {
+    "root-title": "Allmhairiú OneNote"
+  },
+  "notion_import": {
+    "root-title": "Iompórtáil Notion",
+    "markdown-export-unsupported": "Breathnaíonn sé seo cosúil le easpórtáil \"Markdown & CSV\" de chuid Notion, nach féidir le Trilium a allmhairiú. Ath-easpórtáil do spás oibre Notion ag baint úsáide as an bhformáid easpórtála \"HTML\" agus allmhairigh é sin ina ionad.",
+    "subpage-folders-disabled": "Cruthaíodh an easpórtáil Notion seo gan an rogha \"Cruthaigh fillteáin do fho-leathanaigh\", mar sin ní féidir ordlathas an leathanaigh a atógáil. Ath-easpórtáil ó Notion le \"Cruthaigh fillteáin do fho-leathanaigh\" cumasaithe agus allmhairigh é sin ina ionad."
+  },
+  "keep_import": {
+    "root-title": "Iompórtáil Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Iompórtáil Anytype",
+    "protobuf-export-unsupported": "Breathnaíonn sé seo cosúil le heaspórtáil \"Protobuf\" de chuid Anytype, nach féidir le Trilium a allmhairiú. Ath-easpórtáil do spás Anytype ag baint úsáide as an bhformáid \"Any-Block\" le \"JSON\" roghnaithe agus allmhairigh é sin ina ionad.",
+    "markdown-export-unsupported": "Breathnaíonn sé seo cosúil le heaspórtáil \"Markdown\" de chuid Anytype, nach féidir le Trilium a allmhairiú. Ath-easpórtáil do spás Anytype ag baint úsáide as an bhformáid \"Any-Block\" le \"JSON\" roghnaithe agus allmhairigh é sin ina ionad."
+  },
+  "obsidian_import": {
+    "root-title": "Allmhairiú Obsidian"
+  },
+  "export": {
+    "zip_filter": "Cartlann ZIP (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "Tá an rogha comhaid imithe in éag nó tá sé neamhbhailí. Roghnaigh an comhad arís le do thoil."
+  },
+  "note_conversion": {
+    "revision_before_markdown": "Roimh an gcomhshó go Markdown",
+    "revision_before_text": "Roimh an gcomhshó go Nóta Téacs"
   }
 }

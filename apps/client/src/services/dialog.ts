@@ -1,9 +1,11 @@
 import { Modal } from "bootstrap";
+
 import appContext from "../components/app_context.js";
 import type { ConfirmDialogOptions, ConfirmDialogResult, ConfirmWithMessageOptions, MessageType } from "../widgets/dialogs/confirm.js";
+import { InfoExtraProps } from "../widgets/dialogs/info.jsx";
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import { focusSavedElement, saveFocusedElement } from "./focus.js";
-import { InfoExtraProps } from "../widgets/dialogs/info.jsx";
+import keyboardActionsService from "./keyboard_actions.js";
 
 export async function openDialog($dialog: JQuery<HTMLElement>, closeActDialog = true, config?: Partial<Modal.Options>) {
     if (closeActDialog) {
@@ -25,7 +27,6 @@ export async function openDialog($dialog: JQuery<HTMLElement>, closeActDialog = 
         }
     });
 
-    const keyboardActionsService = (await import("./keyboard_actions.js")).default;
     keyboardActionsService.updateDisplayedShortcuts($dialog);
 
     return $dialog;

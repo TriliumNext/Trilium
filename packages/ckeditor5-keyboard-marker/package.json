@@ -19,54 +19,26 @@
     "node": ">=18.0.0",
     "npm": ">=5.7.1"
   },
-  "files": [
-    "dist",
-    "ckeditor5-metadata.json"
-  ],
   "devDependencies": {
-    "@ckeditor/ckeditor5-dev-build-tools": "54.3.3",
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
-    "@ckeditor/ckeditor5-package-tools": "5.0.1",
-    "@typescript-eslint/eslint-plugin": "8.55.0",
-    "@typescript-eslint/parser": "8.55.0",
-    "@vitest/browser": "4.0.18",
-    "@vitest/coverage-istanbul": "4.0.18",
-    "ckeditor5": "47.4.0",
-    "eslint": "10.0.0",
+    "@vitest/browser": "4.1.10",
+    "ckeditor5": "48.2.0",
+    "eslint": "10.6.0",
     "eslint-config-ckeditor5": ">=9.1.0",
-    "http-server": "14.1.1",
-    "lint-staged": "16.2.7",
-    "stylelint": "17.3.0",
+    "stylelint": "17.14.0",
     "stylelint-config-ckeditor5": ">=9.1.0",
-    "ts-node": "10.9.2",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "vite-plugin-svgo": "2.0.0",
-    "vitest": "4.0.18",
-    "webdriverio": "9.24.0"
+    "vitest": "4.1.10",
+    "webdriverio": "9.29.1"
   },
   "peerDependencies": {
-    "ckeditor5": "47.4.0"
+    "ckeditor5": "48.2.0"
   },
   "scripts": {
-    "build": "node ./scripts/build-dist.mjs",
-    "ts:build": "tsc -p ./tsconfig.release.json",
-    "ts:clear": "npx rimraf --glob \"src/**/*.@(js|d.ts)\"",
     "lint": "eslint \"**/*.{js,ts}\" --quiet",
-    "start": "ckeditor5-package-tools start",
     "stylelint": "stylelint --quiet --allow-empty-input 'theme/**/*.css'",
     "test": "vitest",
-    "test:debug": "vitest --inspect-brk --no-file-parallelism --browser.headless=false",
-    "prepublishOnly": "npm run ts:build && ckeditor5-package-tools export-package-as-javascript",
-    "postpublish": "npm run ts:clear && ckeditor5-package-tools export-package-as-typescript",
-    "translations:synchronize": "ckeditor5-package-tools translations:synchronize",
-    "translations:validate": "ckeditor5-package-tools translations:synchronize --validate-only"
-  },
-  "lint-staged": {
-    "**/*.{js,ts}": [
-      "eslint --quiet"
-    ],
-    "**/*.css": [
-      "stylelint --quiet --allow-empty-input"
-    ]
+    "test:debug": "vitest --inspect-brk --no-file-parallelism --browser.headless=false"
   }
 }

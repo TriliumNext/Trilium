@@ -61,7 +61,8 @@
 }
 
 #menu li:not(.expanded) > ul {
-    height: 0!important;
+    height: 0;
+    overflow: hidden;
 /*         transition: height 1000ms ease; */
 }
 

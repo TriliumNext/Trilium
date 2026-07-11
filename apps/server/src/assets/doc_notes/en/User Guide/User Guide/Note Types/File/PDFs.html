@@ -8,6 +8,20 @@
   which is a customization of <a href="https://mozilla.github.io/pdf.js/">Mozilla's PDF.js viewer</a> (also
   built-in in the Mozilla Firefox browser). Versions prior to that render
   PDFs using the browser's default PDF viewer.</p>
+<h2>Features</h2>
+<ul>
+  <li>The last page viewed and scroll position is maintained in between restarts
+    or note navigations.</li>
+  <li>Annotations (text, highlights) as well as comments. These are saved automatically.</li>
+  <li>Forms can be filled.</li>
+  <li>Can be printed or downloaded.</li>
+  <li>Can be saved as a <a href="#root/_help_KC1HB96bqqHX">template</a> and the content
+    of the PDF will be copied over to the new note. This is especially useful
+    in combination with annotations or filled forms.</li>
+  <li>Integrates with the sidebar in the&nbsp;<a class="reference-link" href="#root/_help_IjZS7iK5EXtb">New Layout</a>,
+    by displaying the list of pages with thumbnails, table of contents and
+    a listing of the annotations.</li>
+</ul>
 <h2>Storing last position and settings</h2>
 <p>For every PDF, Trilium will remember the following information:</p>
 <ul>
@@ -29,6 +43,17 @@ class="admonition tip">
     annotation buttons on the right side of the PDF toolbar (
     <img src="1_PDFs_image.png"
     width="120" height="32">).</p>
+  <p>Since v0.103.0:</p>
+  <ul>
+    <li>Annotations are disabled if the note is marked as&nbsp;<a class="reference-link"
+      href="#root/_help_CoFPLs3dRlXc">Read-Only Notes</a>.</li>
+    <li>Comments can also be added, which is similar to highlights but also attach
+      a text.</li>
+    <li>The&nbsp;<a class="reference-link" href="#root/_help_RnaPdbciOfeq">Right Sidebar</a>&nbsp;also
+      displays a list of annotations (highlights, comments), but only in the&nbsp;
+      <a
+      class="reference-link" href="#root/_help_IjZS7iK5EXtb">New Layout</a>.</li>
+  </ul>
   <h3>Supported annotations</h3>
   <p>The following annotation methods are supported:</p>
   <ul>
@@ -91,6 +116,13 @@ class="admonition tip">
       <ul>
         <li>A preview of all the pages with a small thumbnail.</li>
         <li>Clicking on a page will automatically navigate to that page.</li>
+      </ul>
+    </li>
+    <li>Annotations
+      <ul>
+        <li>Highlight and comment annotations are listed here.</li>
+        <li>For the old layout, this feature is not directly available, however there
+          is a listing of comments directly in the PDF toolbar.</li>
       </ul>
     </li>
     <li>Attachments

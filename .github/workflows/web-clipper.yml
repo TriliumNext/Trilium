@@ -31,8 +31,8 @@ jobs:
       deployments: write
 
     steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
         with:
@@ -48,7 +48,7 @@ jobs:
           pnpm --filter web-clipper zip:firefox
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !startsWith(github.ref, 'refs/tags/web-clipper-v') }}
         with:
           name: web-clipper-extension
@@ -58,7 +58,7 @@ jobs:
           compression-level: 0
 
       - name: Release web clipper extension
-        uses: softprops/action-gh-release@v2.5.0
+        uses: softprops/action-gh-release@v3.0.1
         if: ${{ startsWith(github.ref, 'refs/tags/web-clipper-v') }}
         with:
           draft: false

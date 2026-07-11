@@ -2,16 +2,15 @@
 > [!IMPORTANT]
 > Starting with Trilium v0.97.0, the geo map has been converted from a standalone [note type](../Note%20Types.md) to a type of view for the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a>. 
 
-<figure class="image image-style-align-center"><img style="aspect-ratio:892/675;" src="9_Geo Map_image.png" width="892" height="675"></figure>
+<figure class="image image-style-align-center"><img style="aspect-ratio:892/675;" src="8_Geo Map_image.png" width="892" height="675"></figure>
 
 This note type displays the children notes on a geographical map, based on an attribute. It is also possible to add new notes at a specific location using the built-in interface.
 
 ## Creating a new geo map
 
-|     |     |     |
-| --- | --- | --- |
-| 1   | <figure class="image"><img style="aspect-ratio:483/413;" src="15_Geo Map_image.png" width="483" height="413"></figure> | Right click on any note on the note tree and select _Insert child note_ → _Geo Map (beta)_. |
-| 2   | <figure class="image image-style-align-center image_resized" style="width:53.44%;"><img style="aspect-ratio:1720/1396;" src="8_Geo Map_image.png" width="1720" height="1396"></figure> | By default the map will be empty and will show the entire world. |
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Geo Map_.
+
+By default the map will be empty and will show the entire world.
 
 ## Repositioning the map
 
@@ -24,12 +23,12 @@ The position on the map and the zoom are saved inside the map note and restored 
 
 ### Adding a new note using the plus button
 
-|     |     |     |
+|  |  |  |
 | --- | --- | --- |
-| 1   | To create a marker, first navigate to the desired point on the map. Then press the ![](10_Geo%20Map_image.png) button in the [Floating buttons](../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md) (top-right) area.       <br>  <br>If the button is not visible, make sure the button section is visible by pressing the chevron button (![](17_Geo%20Map_image.png)) in the top-right of the map. |     |
-| 2   | <img class="image_resized" style="aspect-ratio:1730/416;width:100%;" src="2_Geo Map_image.png" width="1730" height="416"> | Once pressed, the map will enter in the insert mode, as illustrated by the notification.          <br>  <br>Simply click the point on the map where to place the marker, or the Escape key to cancel. |
-| 3   | <img class="image_resized" style="aspect-ratio:1586/404;width:100%;" src="7_Geo Map_image.png" width="1586" height="404"> | Enter the name of the marker/note to be created. |
-| 4   | <img class="image_resized" style="aspect-ratio:1696/608;width:100%;" src="16_Geo Map_image.png" width="1696" height="608"> | Once confirmed, the marker will show up on the map and it will also be displayed as a child note of the map. |
+| 1 | To create a marker, first navigate to the desired point on the map. Then press the ![](9_Geo%20Map_image.png) button in the [Floating buttons](../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md) (top-right) area.        <br>  <br>If the button is not visible, make sure the button section is visible by pressing the chevron button (![](15_Geo%20Map_image.png)) in the top-right of the map. |  |
+| 2 | <img class="image_resized" style="aspect-ratio:1730/416;width:100%;" src="2_Geo Map_image.png" width="1730" height="416"> | Once pressed, the map will enter in the insert mode, as illustrated by the notification.           <br>  <br>Simply click the point on the map where to place the marker, or the Escape key to cancel. |
+| 3 | <img class="image_resized" style="aspect-ratio:1586/404;width:100%;" src="7_Geo Map_image.png" width="1586" height="404"> | Enter the name of the marker/note to be created. |
+| 4 | <img class="image_resized" style="aspect-ratio:1696/608;width:100%;" src="14_Geo Map_image.png" width="1696" height="608"> | Once confirmed, the marker will show up on the map and it will also be displayed as a child note of the map. |
 
 ### Adding a new note using the contextual menu
 
@@ -57,7 +56,7 @@ This works for:
 
 The location of a marker is stored in the `#geolocation` attribute of the child notes:
 
-<img src="18_Geo Map_image.png" width="1288" height="278">
+<img src="16_Geo Map_image.png" width="1288" height="278">
 
 This value can be added manually if needed. The value of the attribute is made up of the latitude and longitude separated by a comma.
 
@@ -107,31 +106,31 @@ The value of the attribute is made up of the latitude and longitude separated by
 
 ### Adding from Google Maps
 
-|     |     |     |
+|  |  |  |
 | --- | --- | --- |
-| 1   | <figure class="image image-style-align-center image_resized" style="width:56.84%;"><img style="aspect-ratio:732/918;" src="12_Geo Map_image.png" width="732" height="918"></figure> | Go to Google Maps on the web and look for a desired location, right click on it and a context menu will show up.          <br>  <br>Simply click on the first item displaying the coordinates and they will be copied to clipboard.          <br>  <br>Then paste the value inside the text box into the `#geolocation` attribute of a child note of the map (don't forget to surround the value with a `"` character). |
-| 2   | <figure class="image image-style-align-center image_resized" style="width:100%;"><img style="aspect-ratio:518/84;" src="4_Geo Map_image.png" width="518" height="84"></figure> | In Trilium, create a child note under the map. |
-| 3   | <figure class="image image-style-align-center image_resized" style="width:100%;"><img style="aspect-ratio:1074/276;" src="11_Geo Map_image.png" width="1074" height="276"></figure> | And then go to Owned Attributes and type `#geolocation="`, then paste from the clipboard as-is and then add the ending `"` character. Press Enter to confirm and the map should now be updated to contain the new note. |
+| 1 | <figure class="image image-style-align-center image_resized" style="width:56.84%;"><img style="aspect-ratio:732/918;" src="11_Geo Map_image.png" width="732" height="918"></figure> | Go to Google Maps on the web and look for a desired location, right click on it and a context menu will show up.           <br>  <br>Simply click on the first item displaying the coordinates and they will be copied to clipboard.           <br>  <br>Then paste the value inside the text box into the `#geolocation` attribute of a child note of the map (don't forget to surround the value with a `"` character). |
+| 2 | <figure class="image image-style-align-center image_resized" style="width:100%;"><img style="aspect-ratio:518/84;" src="4_Geo Map_image.png" width="518" height="84"></figure> | In Trilium, create a child note under the map. |
+| 3 | <figure class="image image-style-align-center image_resized" style="width:100%;"><img style="aspect-ratio:1074/276;" src="10_Geo Map_image.png" width="1074" height="276"></figure> | And then go to Owned Attributes and type `#geolocation="`, then paste from the clipboard as-is and then add the ending `"` character. Press Enter to confirm and the map should now be updated to contain the new note. |
 
 ### Adding from OpenStreetMap
 
 Similarly to the Google Maps approach:
 
-|     |     |     |
+|  |  |  |
 | --- | --- | --- |
-| 1   | <img class="image_resized" style="aspect-ratio:562/454;width:100%;" src="1_Geo Map_image.png" width="562" height="454"> | Go to any location on openstreetmap.org and right click to bring up the context menu. Select the “Show address” item. |
-| 2   | <img class="image_resized" style="aspect-ratio:696/480;width:100%;" src="Geo Map_image.png" width="696" height="480"> | The address will be visible in the top-left of the screen, in the place of the search bar.          <br>  <br>Select the coordinates and copy them into the clipboard. |
-| 3   | <img class="image_resized" style="aspect-ratio:640/276;width:100%;" src="5_Geo Map_image.png" width="640" height="276"> | Simply paste the value inside the text box into the `#geolocation` attribute of a child note of the map and then it should be displayed on the map. |
+| 1 | <img class="image_resized" style="aspect-ratio:562/454;width:100%;" src="1_Geo Map_image.png" width="562" height="454"> | Go to any location on openstreetmap.org and right click to bring up the context menu. Select the “Show address” item. |
+| 2 | <img class="image_resized" style="aspect-ratio:696/480;width:100%;" src="Geo Map_image.png" width="696" height="480"> | The address will be visible in the top-left of the screen, in the place of the search bar.           <br>  <br>Select the coordinates and copy them into the clipboard. |
+| 3 | <img class="image_resized" style="aspect-ratio:640/276;width:100%;" src="5_Geo Map_image.png" width="640" height="276"> | Simply paste the value inside the text box into the `#geolocation` attribute of a child note of the map and then it should be displayed on the map. |
 
 ## Adding GPS tracks (.gpx)
 
 Trilium has basic support for displaying GPS tracks on the geo map.
 
-|     |     |     |
+|  |  |  |
 | --- | --- | --- |
-| 1   | <figure class="image image-style-align-center"><img style="aspect-ratio:226/74;" src="3_Geo Map_image.png" width="226" height="74"></figure> | To add a track, simply drag & drop a .gpx file inside the geo map in the note tree. |
-| 2   | <figure class="image image-style-align-center"><img style="aspect-ratio:322/222;" src="14_Geo Map_image.png" width="322" height="222"></figure> | In order for the file to be recognized as a GPS track, it needs to show up as `application/gpx+xml` in the _File type_ field. |
-| 3   | <figure class="image image-style-align-center"><img style="aspect-ratio:620/530;" src="6_Geo Map_image.png" width="620" height="530"></figure> | When going back to the map, the track should now be visible.          <br>  <br>The start and end points of the track are indicated by the two blue markers. |
+| 1 | <figure class="image image-style-align-center"><img style="aspect-ratio:226/74;" src="3_Geo Map_image.png" width="226" height="74"></figure> | To add a track, simply drag & drop a .gpx file inside the geo map in the note tree. |
+| 2 | <figure class="image image-style-align-center"><img style="aspect-ratio:322/222;" src="13_Geo Map_image.png" width="322" height="222"></figure> | In order for the file to be recognized as a GPS track, it needs to show up as `application/gpx+xml` in the _File type_ field. |
+| 3 | <figure class="image image-style-align-center"><img style="aspect-ratio:620/530;" src="6_Geo Map_image.png" width="620" height="530"></figure> | When going back to the map, the track should now be visible.           <br>  <br>The start and end points of the track are indicated by the two blue markers. |
 
 > [!NOTE]
 > The starting point of the track will be displayed as a marker, with the name of the note underneath. The start marker will also respect the icon and the `color` of the note. The end marker is displayed with a distinct icon.
@@ -152,7 +151,7 @@ To enable read-only mode simply press the _Lock_ icon from the <a class="refere
 
 ### Map Style
 
-The styling of the map can be adjusted in the _Collection Properties_ (above the map, by pressing on the Gear icon) or manually via the `#map:style` attribute.
+The styling of the map can be adjusted in the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> or manually via the `#map:style` attribute.
 
 The geo map comes with two different types of styles:
 
@@ -170,7 +169,7 @@ The geo map comes with two different types of styles:
 
 Starting with v0.102.0 it is possible to use custom tile sets, but only in raster format.
 
-To do so, manually set the `#map:style` [label](../Advanced%20Usage/Attributes/Labels.md) to the URL of the tile set. For example, to use Esri.NatGeoWorldMap, set the value to [`https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}`.](https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}.)
+To do so, manually set the `#map:style` [label](../Advanced%20Usage/Attributes/Labels.md) to the URL of the tile set. For example, to use Esri.NatGeoWorldMap, set the value to [`https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}`.](https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/%7Bz%7D/%7By%7D/%7Bx%7D.)
 
 > [!NOTE]
 > For a list of tile sets, see the [Leaflet Providers preview](https://leaflet-extras.github.io/leaflet-providers/preview/) page. Select a desired tile set and just copy the URL from the _Plain JavaScript_ example.
@@ -179,14 +178,14 @@ Custom vector map support is planned, but not yet implemented.
 
 ### Other options
 
-The following options can be configured either via the Collection properties pane above the map, by clicking on the settings (Gear icon). Alternatively, each of these options also have a corresponding [label](../Advanced%20Usage/Attributes/Labels.md) that can be set manually.
+The following options can be configured either via the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>, by clicking on the settings (Gear icon). Alternatively, each of these options also have a corresponding [label](../Advanced%20Usage/Attributes/Labels.md) that can be set manually.
 
 *   Scale, which illustrates the scale of the map in kilometers and miles in the bottom-left of the map.
 *   The name of the markers is displayed by default underneath the pin on the map. Since v0.102.0, it is possible to hide these labels which increases the performance and decreases clutter when there are many markers on the map.
 
 ## Troubleshooting
 
-<figure class="image image-style-align-right image_resized" style="width:34.06%;"><img style="aspect-ratio:678/499;" src="13_Geo Map_image.png" width="678" height="499"></figure>
+<figure class="image image-style-align-right image_resized" style="width:34.06%;"><img style="aspect-ratio:678/499;" src="12_Geo Map_image.png" width="678" height="499"></figure>
 
 ### Grid-like artifacts on the map
 

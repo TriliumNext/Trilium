@@ -3,23 +3,39 @@ import { extractAndSendToc, setupScrollToHeading, setupActiveHeadingTracking } f
 import { setupPdfPages } from "./pages";
 import { setupPdfAttachments } from "./attachments";
 import { setupPdfLayers } from "./layers";
+import { setupPdfAnnotations, setupAnnotationLiveUpdates, extractFromSavedData } from "./annotations";
 
 async function main() {
     const urlParams = new URLSearchParams(window.location.search);
     const isEditable = urlParams.get("editable") === "1";
+
+    applyMinPixelRatio(urlParams);
+
+    const hideToolbar = urlParams.get("toolbar") === "0";
+    document.body.classList.toggle("read-only-document", !isEditable);
+    document.body.classList.toggle("no-toolbar", hideToolbar);
+
     if (urlParams.get("sidebar") === "0") {
         hideSidebar();
     }
 
     if (isEditable) {
-        interceptPersistence(getCustomAppOptions(urlParams));
+        interceptPersistence();
     }
+
+    configurePdfViewerOptions();
 
     // Wait for the PDF viewer application to be available.
     while (!window.PDFViewerApplication) {
         await new Promise(r => setTimeout(r, 50));
     }
     const app = window.PDFViewerApplication;
+
+    manageParentCommands();
+
+    app.eventBus.on("documentloaded", () => {
+        setupPdfAnnotations();
+    });
 
     if (isEditable) {
         app.eventBus.on("documentloaded", () => {
@@ -31,10 +47,54 @@ async function main() {
             setupPdfPages();
             setupPdfAttachments();
             setupPdfLayers();
+            // Must be after manageSave() so we chain onto its onSetModified
+            setupAnnotationLiveUpdates();
         });
     }
     await app.initializedPromise;
 };
+
+/**
+ * Forces a minimum device-pixel-ratio for canvas rasterization. PDF.js sizes each page's
+ * canvas backing store by `globalThis.devicePixelRatio` (read dynamically at render time via
+ * `OutputScale`), so on a standard-DPI display (DPR 1) pages render at 1× and text/headings
+ * look coarsely anti-aliased. Overriding the getter to a higher minimum supersamples the
+ * canvas — the same crispness a high-DPI screen gets for free — without changing layout size.
+ */
+function applyMinPixelRatio(urlParams: URLSearchParams) {
+    const minPixelRatio = Number(urlParams.get("minPixelRatio"));
+    if (!Number.isFinite(minPixelRatio) || minPixelRatio <= 0) return;
+    if ((window.devicePixelRatio || 1) >= minPixelRatio) return;
+
+    Object.defineProperty(window, "devicePixelRatio", {
+        configurable: true,
+        get: () => minPixelRatio
+    });
+}
+
+function configurePdfViewerOptions() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const locale = urlParams.get("locale");
+
+    const pdfOptionsHandler = (event: CustomEvent) => {
+        if (event.detail?.source === window && window.PDFViewerApplicationOptions) {
+            window.PDFViewerApplicationOptions.set("disablePreferences", true);
+            window.PDFViewerApplicationOptions.set("enableHighlightFloatingButton", true);
+            window.PDFViewerApplicationOptions.set("enableComment", true);
+            if (locale) {
+                window.PDFViewerApplicationOptions.set("localeProperties", { lang: locale });
+            }
+        }
+    };
+
+    const isInIframe = window.parent && window.parent !== window;
+    if (isInIframe) {
+        window.parent.addEventListener("webviewerloaded", pdfOptionsHandler, { once: true });
+        window.addEventListener("pagehide", () => window.parent?.removeEventListener("webviewerloaded", pdfOptionsHandler));
+    } else {
+        document.addEventListener("webviewerloaded", pdfOptionsHandler, { once: true });
+    }
+}
 
 function hideSidebar() {
     window.TRILIUM_HIDE_SIDEBAR = true;
@@ -44,17 +104,8 @@ function hideSidebar() {
         if (spacer instanceof HTMLElement && spacer.classList.contains("toolbarButtonSpacer")) {
             spacer.remove();
         }
-        toggleButtonEl.remove();
+        toggleButtonEl.style.display = "none";
     }
-}
-
-function getCustomAppOptions(urlParams: URLSearchParams) {
-    return {
-        localeProperties: {
-            // Read from URL query
-            lang: urlParams.get("lang") || "en"
-        }
-    };
 }
 
 function manageSave() {
@@ -83,14 +134,25 @@ function manageSave() {
                 ntxId: window.TRILIUM_NTX_ID,
                 noteId: window.TRILIUM_NOTE_ID
             } satisfies PdfDocumentBlobResultMessage, window.location.origin);
+            // Re-extract annotations from the saved data so new
+            // highlights get their overlaidText populated.
+            extractFromSavedData(data);
         }
     });
 
-    app.pdfDocument.annotationStorage.onSetModified = () => {
+    (app.pdfDocument.annotationStorage as any).onSetModified = () => {
         onChange();
     };  // works great for most cases, including forms.
     app.eventBus.on("switchannotationeditorparams", () => {
         onChange();
+    });
+    // Catches deletions of existing annotations, undo/redo, and comment deletion
+    // which don't trigger onSetModified or switchannotationeditorparams.
+    // Only trigger when there are actual unsaved changes, not on selection.
+    app.eventBus.on("editingstateschanged", ({ details }: { details: Record<string, boolean> }) => {
+        if (details.hasSomethingToUndo) {
+            onChange();
+        }
     });
 }
 
@@ -101,6 +163,20 @@ function manageDownload() {
         if (event.data?.type === "trilium-request-download") {
             const app = window.PDFViewerApplication;
             app.eventBus.dispatch("download", { source: window });
+        }
+    });
+}
+
+function manageParentCommands() {
+    window.addEventListener("message", event => {
+        if (event.origin !== window.location.origin) return;
+
+        if (event.data?.type === "trilium-print") {
+            window.print();
+        }
+
+        if (event.data?.type === "trilium-find") {
+            window.PDFViewerApplication?.findBar?.open();
         }
     });
 }

@@ -140,10 +140,22 @@ ul.fancytree-container {
     background-color: inherit;
 }
 
+
 .fancytree-custom-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 1em;
+    height: 1em;
     font-size: 1.2em;
 }
 
+/* Fallback icon */
+:where(.fancytree-custom-icon)::before {
+    content: "?";
+}
+
+/* Protected note icon badge */
 span.fancytree-node.protected > span.fancytree-custom-icon {
     filter: drop-shadow(2px 2px 2px var(--main-text-color));
 }
@@ -185,7 +197,7 @@ span.fancytree-node.fancytree-active-clone:not(.fancytree-active) .fancytree-tit
 
 span.fancytree-active {
     color: var(--active-item-text-color);
-    background-color: var(--active-item-background-color) !important;
+    background-color: var(--active-item-background-color);
     border-color: transparent; /* invisible border */
     border-radius: 5px;
 }
@@ -195,20 +207,15 @@ span.fancytree-active .fancytree-title {
     border: 0;
 }
 
-span.fancytree-selected {
-    border-color: var(--main-border-color) !important;
-    border-radius: 5px;
-}
-
-span.fancytree-selected .fancytree-title {
-    text-decoration: underline;
-    font-style: italic;
+span.fancytree-node.fancytree-selected {
+    background-color: var(--selection-background-color);
+    border-radius: 0;
 }
 
 span.fancytree-selected .fancytree-custom-icon::before {
     font-family: "boxicons";
-    content: "\eb43";
-    border: 1px solid var(--main-border-color);
+    content: "\ef05";
+    border: 1px solid var(--main-text-color);
     border-radius: 3px;
 }
 

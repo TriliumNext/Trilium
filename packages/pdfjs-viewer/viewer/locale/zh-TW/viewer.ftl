@@ -201,6 +201,15 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = 第 { $page } 頁的縮圖
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = 選擇第 { $page } 頁
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = 第 { $page } 頁，共 { $total } 頁
 
 ## Find panel button title and messages
 
@@ -522,6 +531,7 @@ pdfjs-editor-undo-bar-message-freetext = 已移除文字
 pdfjs-editor-undo-bar-message-ink = 已移除繪圖
 pdfjs-editor-undo-bar-message-stamp = 已移除圖片
 pdfjs-editor-undo-bar-message-signature = 已移除簽章
+pdfjs-editor-undo-bar-message-comment = 已移除註解
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple = 已移除 { $count } 筆註解
@@ -616,6 +626,79 @@ pdfjs-editor-edit-comment-dialog-cancel-button = 取消
 
 pdfjs-editor-add-comment-button =
     .title = 新增註解
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-notification-button =
+    .title = 切換側邊欄（包含縮圖、大綱、附件、圖層的文件）
+pdfjs-toggle-views-manager-button1-label = 管理頁面
+pdfjs-views-manager-sidebar =
+    .aria-label = 側邊欄
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = 調整側邊欄大小
+pdfjs-views-manager-view-selector-button =
+    .title = 畫面
+pdfjs-views-manager-view-selector-button-label = 畫面
+pdfjs-views-manager-pages-title = 頁面
+pdfjs-views-manager-outlines-title1 = 文件大綱
+    .title = 文件大綱（點兩下即可展開/摺疊所有項目）
+pdfjs-views-manager-attachments-title = 附件
+pdfjs-views-manager-layers-title1 = 圖層
+    .title = 圖層（點兩下即可將所有圖層重設回預設狀態）
+pdfjs-views-manager-pages-option-label = 頁面
+pdfjs-views-manager-outlines-option-label = 文件大綱
+pdfjs-views-manager-attachments-option-label = 附件
+pdfjs-views-manager-layers-option-label = 圖層
+pdfjs-views-manager-add-file-button =
+    .title = 新增檔案
+pdfjs-views-manager-add-file-button-label = 新增檔案
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label = 已選擇 { $count } 頁
+pdfjs-views-manager-pages-status-none-action-label = 選擇頁面
+pdfjs-views-manager-pages-status-action-button-label = 管理
+pdfjs-views-manager-pages-status-copy-button-label = 複製
+pdfjs-views-manager-pages-status-cut-button-label = 剪下
+pdfjs-views-manager-pages-status-delete-button-label = 刪除
+pdfjs-views-manager-pages-status-export-selected-button-label = 匯出選擇項目…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label = 已剪下 { $count } 頁
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label = 已複製 { $count } 頁
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label = 已刪除 { $count } 頁
+pdfjs-views-manager-pages-status-waiting-ready-label = 正在準備您的檔案…
+pdfjs-views-manager-pages-status-waiting-uploading-label = 正在上傳檔案…
+pdfjs-views-manager-status-warning-cut-label = 無法剪下頁面，請重新整理頁面後再試一次。
+pdfjs-views-manager-status-warning-copy-label = 無法複製頁面，請重新整理頁面後再試一次。
+pdfjs-views-manager-status-warning-delete-label = 無法刪除頁面，請重新整理頁面後再試一次。
+pdfjs-views-manager-status-warning-save-label = 無法儲存頁面，請重新整理頁面後再試一次。
+pdfjs-views-manager-status-undo-button-label = 還原
+pdfjs-views-manager-status-done-button-label = 完成
+pdfjs-views-manager-status-close-button =
+    .title = 關閉
+pdfjs-views-manager-status-close-button-label = 關閉
+pdfjs-views-manager-paste-button-label = 貼上
+pdfjs-views-manager-paste-button-before =
+    .title = 貼到第一頁前
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = 貼到第 { $page } 頁後
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = 新功能
+pdfjs-views-manager-waiting-for-file = 正在上傳檔案…
+pdfjs-toggle-views-manager-button1 =
+    .title = 管理頁面
 
 ## Main menu for adding/removing signatures
 

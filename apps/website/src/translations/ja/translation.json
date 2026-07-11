@@ -12,58 +12,67 @@
         "get_started": "はじめる",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Trilium Notes デスクトップアプリケーションのスクリーンショット"
+        "screenshot_alt": "Trilium Notes デスクトップアプリケーションのスクリーンショット",
+        "tagline_license": "AGPL-3.0 ライセンス",
+        "tagline_no_account": "アカウント不要",
+        "tagline_cross_platform": "オフラインでも利用可能"
     },
     "organization_benefits": {
-        "title": "組織",
+        "title": "自分なりの方法でノートを整理",
         "note_structure_title": "ノートの構造",
         "note_structure_description": "ノートは階層的に整理できます。各ノートにサブノートを作成できるため、フォルダは必要ありません。1つのノートを階層内の複数の場所に追加できます。",
         "attributes_title": "ノートのラベルとリレーション",
-        "attributes_description": "ノート間のリレーションシップを使用したり、ラベルを追加したりすることで、簡単に分類できます。プロモート属性を使用して、表やボードで使用できる構造化された情報を入力できます。",
+        "attributes_description": "ノート間のリレーション（関連付け）を使用したり、ラベルを追加したりすることで、簡単に分類できます。プロモート属性を使用して、表やボードで使用できる構造化された情報を入力できます。",
         "hoisting_title": "ワークスペースとホイスト",
-        "hoisting_description": "ワークスペースの下にグループ化することで、個人用ノートと仕事用ノートを簡単に区別できます。これにより、ノートツリーに特定のノートセットのみが表示されるようになります。"
+        "hoisting_description": "ワークスペースの下にグループ化することで、個人用ノートと仕事用ノートを簡単に区別できます。これにより、ノートツリーに特定のノートセットのみが表示されるようになります。",
+        "screenshot_alt": "Trilium の階層型ノートツリー"
     },
     "productivity_benefits": {
-        "title": "生産性と安全性",
+        "title": "日常的に役立つ強力な機能",
         "revisions_title": "ノートの変更履歴",
         "revisions_content": "ノートは定期的にバックグラウンドで保存され、変更履歴は確認や誤って変更してしまった部分を元に戻すために使用できます。また、変更履歴はいつでも作成することができます。",
         "sync_title": "同期",
         "sync_content": "セルフホスト型またはクラウド インスタンスを使用すると、複数のデバイス間でノートを簡単に同期し、PWA を使用してモバイルからアクセスできます。",
         "protected_notes_title": "保護されたノート",
         "protected_notes_content": "ノートを暗号化し、パスワードで保護されたセッションでロックすることで、機密性の高い個人情報を保護します。",
-        "jump_to_title": "クイック検索とコマンド",
-        "jump_to_content": "あいまい一致によりタイプミスやわずかな違いを考慮しながらタイトルを検索することで、階層全体のノートや UI コマンドにすばやくジャンプできます。",
-        "search_title": "強力な検索",
-        "search_content": "ノート内のテキストを検索し、親ノートや階層の深度でフィルタリングして検索を絞り込むこともできます。",
+        "search_title": "検索とクイックナビゲーション",
+        "search_content": "あいまい一致機能を使ってタイトルから任意のノートやコマンドにジャンプしたり、OCR を使ってノート全体、さらには画像や PDF 内のテキストまで全文検索を実行したりできます。",
         "web_clipper_title": "Web クリッパー",
-        "web_clipper_content": "web クリッパー ブラウザ拡張機能を使用して、web ページ (またはスクリーンショット) を取得し、Trilium に直接配置します。"
+        "web_clipper_content": "web クリッパー ブラウザ拡張機能を使用して、web ページ (またはスクリーンショット) を取得し、Trilium に直接配置します。",
+        "auth_title": "安全なサインイン",
+        "auth_content": "多要素認証（TOTP）でサーバーへのログインを保護できるほか、OpenID Connect を使用してお使いの ID プロバイダー経由でサインインすることもできます。",
+        "templates_title": "テンプレート",
+        "templates_content": "あらかじめ構造、属性、内容が設定された再利用可能なノートテンプレートを定義し、それらを使ってワンクリックで新しいノートを作成できます。",
+        "share_title": "ウェブ上でノートを共有",
+        "share_content": "サーバーをお持ちの場合は、ノートの任意のサブツリーを、アカウントなしで誰でも閲覧できる公開の読み取り専用 Web サイトとして公開できます。",
+        "api_title": "REST API",
+        "api_content": "Trilium に組み込まれた REST API を使用し、HTTP 経由でプログラムからノートの読み取り、作成、更新を行えます。自動化やサードパーティ製ツールとの連携に最適です。"
     },
     "note_types": {
         "text_title": "テキストノート",
-        "text_description": "ノートはビジュアル（WYSIWYG）エディターで編集できます。表、画像、数式、構文ハイライト付きのコードブロックなど、様々な編集機能を備えています。Markdownのような構文やスラッシュコマンドを使って、テキストを素早くフォーマットできます。",
+        "text_description": "ノートはビジュアル（WYSIWYG）エディターで編集できます。表、画像、数式、構文ハイライト付きのコードブロックなど、様々な編集機能を備えています。マークダウンのような構文やスラッシュコマンドを使って、テキストを素早くフォーマットできます。",
         "code_title": "Code ノート",
         "code_description": "ソースコードやスクリプトの大きなサンプルでは、多くのプログラミング言語の構文ハイライト表示とさまざまなカラー テーマを備えた専用のエディターが使用できます。",
         "file_title": "ファイルノート",
         "file_description": "PDF、画像、ビデオなどのマルチメディア ファイルをアプリケーション内にプレビュー表示で埋め込みます。",
         "canvas_title": "キャンバス",
         "canvas_description": "excalidraw.comと同じ技術を使って、無限のキャンバスに図形、画像、テキストを配置できます。図表、スケッチ、ビジュアルプランニングに最適です。",
-        "mermaid_title": "Mermaid ダイアグラム",
-        "mermaid_description": "Mermaid 構文を使用して、フローチャート、クラス図、シーケンス図、ガント チャートなどの図を作成します。",
+        "mermaid_title": "マーメイド図",
+        "mermaid_description": "マーメイド構文を使用して、フローチャート、クラス図、シーケンス図、ガント チャートなどの図を作成します。",
         "mindmap_title": "マインドマップ",
-        "mindmap_description": "考えを視覚的に整理したり、ブレインストーミング セッションを行ったりします。",
-        "others_list": "その他: <0>ノートマップ</0>、<1>リレーションマップ</1>、<2>保存された検索</2>、<3>レンダリングノート</3>、<4>web ビュー</4>。",
-        "title": "情報を表現するための複数の方法"
-    },
-    "extensibility_benefits": {
-        "title": "共有と拡張性",
-        "import_export_title": "インポート / エクスポート",
-        "import_export_description": "Markdown、ENEX、OML 形式を使用して他のアプリケーションと簡単に連携できます。",
-        "share_title": "web 上でノートを共有",
-        "share_description": "サーバーをお持ちの場合は、それを使用してノートの一部を他の人と共有することができます。",
-        "scripting_title": "高度なスクリプト",
-        "scripting_description": "カスタムウィジェットまたはサーバー側のロジックを使用して、Trilium 内で独自の統合機能を構築できます。",
-        "api_title": "REST API",
-        "api_description": "組み込みの REST API を使用して、プログラムで Trilium と対話します。"
+        "mindmap_description": "思考を視覚的に整理したり、アイデアをブレインストーミングしたりできます。",
+        "title": "あらゆるコンテンツに対応するノートタイプ",
+        "subtitle": "すべてが段落にきれいに収まるわけではありません。Trilium は、リッチテキストやコードからスプレッドシート、図表、マインドマップまで、さまざまなノートタイプを提供しているので、それぞれのアイデアに最適な形式で記録し、ツリー全体で自由に組み合わせることができます。",
+        "others_label": "その他にも",
+        "notemap_title": "ノートマップ",
+        "relationmap_title": "リレーションマップ",
+        "savedsearch_title": "保存された検索",
+        "rendernote_title": "レンダリングノート",
+        "webview_title": "Web ビュー",
+        "markdown_title": "マークダウン",
+        "markdown_description": "プレーンテキストがお好みですか？ ノートをマークダウンで直接記述すれば、ポータビリティとバージョン管理のしやすさを維持しつつ、テーブル、コードブロック、リッチな書式をそのまま並べて表示できます。",
+        "spreadsheet_title": "スプレッドシート",
+        "spreadsheet_description": "数式、条件付き書式設定、データ検証、並べ替え、フィルタリング機能を備えた、表形式データ用の高機能スプレッドシート。Excel（.xlsx）ファイルと CSV ファイルのインポートおよびエクスポートに対応しています。"
     },
     "collections": {
         "calendar_title": "カレンダー",
@@ -74,16 +83,19 @@
         "board_description": "新しい項目や列を簡単に作成し、ボード上でドラッグするだけでステータスを変更できるカンバン ボードで、タスクやプロジェクトのステータスを整理できます。",
         "geomap_title": "ジオマップ",
         "geomap_description": "カスタマイズ可能なマーカーを使って、休暇を計画したり、興味のある場所を地図上に直接マークしたりできます。記録されたGPXトラックを表示して、旅程を追跡できます。",
-        "title": "コレクション",
+        "title": "あらゆる視点からノートを確認できます",
         "presentation_title": "プレゼンテーション",
-        "presentation_description": "情報をスライドに整理し、スムーズな遷移で全画面表示できます。スライドはPDFにエクスポートできるので、簡単に共有できます。"
+        "presentation_description": "情報をスライドに整理し、スムーズな遷移で全画面表示できます。スライドはPDFにエクスポートできるので、簡単に共有できます。",
+        "subtitle": "コレクション機能を使えば、ノートのグループを目的別に表示できます。同じノートをカレンダー、表、カンバンボード、インタラクティブな地図など、さまざまな形式で表示し、必要に応じてレイアウトを切り替えることができます。",
+        "dashboard_title": "ダッシュボード",
+        "dashboard_description": "ノートをグリッド上にドラッグ＆ドロップでサイズ変更可能なタイルとして配置できます。ノートは内容を一目で確認できるライブウィジェットとなり、個人のホームページやプロジェクト概要など、あらゆる情報を一箇所に集約するのに最適です。"
     },
     "faq": {
         "title": "よくある質問",
         "mobile_question": "モバイルアプリケーションはありますか？",
         "mobile_answer": "現在、公式モバイルアプリケーションはありません。ただし、サーバーインスタンスをお持ちの場合は、web ブラウザからアクセスでき、PWAとしてインストールすることもできます。Android 向けには、オフラインでも動作する TriliumDroid という非公式アプリケーションがあります（デスクトップクライアントと同様です）。",
         "database_question": "データはどこに保存されますか？",
-        "database_answer": "すべてのノートはアプリケーションフォルダ内の SQLite データベースに保存されます。Trilium がプレーンテキストファイルではなくデータベースを使用する理由は、パフォーマンスと、クローン（ツリー内の複数の場所に同じノートが存在する状態）などの一部の機能の実装がはるかに困難になるからです。アプリケーションフォルダを見つけるには、「About」ウィンドウを開いてください。",
+        "database_answer": "すべてのノートは、アプリケーションフォルダ内の SQLite データベースに保存されます。Trilium がプレーンテキストファイルではなくデータベースを使用する理由は2つあります。1つはパフォーマンスの向上、もう1つはツリー内の複数の場所に同じノートを配置するなどの機能の実装が、データベースを使用しないと非常に困難になるためです。アプリケーションフォルダの場所は、「バージョン情報」ウィンドウで確認できます。",
         "server_question": "Trilium を使用するにはサーバーが必要ですか？",
         "server_answer": "いいえ、サーバーは web ブラウザ経由でアクセスを許可し、複数のデバイスがある場合の同期を管理します。使いはじめるには、デスクトップアプリケーションをダウンロードして使いはじめるだけで十分です。",
         "scaling_question": "アプリケーションは大量のノートに対してどの程度拡張できますか？",
@@ -91,11 +103,18 @@
         "network_share_question": "データベースをネットワークドライブ経由で共有できますか？",
         "network_share_answer": "いいえ、一般的に SQLite データベースをネットワークドライブ経由で共有するのはお勧めできません。場合によっては動作することもありますが、ネットワーク経由のファイルロックが不完全であるため、データベースが破損する可能性がありえます。",
         "security_question": "データはどのように保護されますか？",
-        "security_answer": "デフォルトではノートは暗号化されておらず、データベースから直接読み取ることができます。ノートが暗号化済みとしてマークされると、AES-128-CBC を使用して暗号化されます。"
+        "security_answer": "デフォルトではノートは暗号化されておらず、データベースから直接読み取ることができます。ノートが暗号化済みとしてマークされると、AES-128-CBC を使用して暗号化されます。",
+        "free_question": "Trilium は無料ですか？",
+        "free_answer": "はい、完全に無料です。Trilium は AGPL-3.0 ライセンスに基づくオープンソースであり、有料プラン、アカウント、機能制限などは一切ありません。自由に利用、自己ホスト、そして好きなように改変することも可能です。",
+        "cloud_question": "ホスト型またはクラウド版はありますか？",
+        "cloud_answer": "現時点では公式のサービスではありませんが、将来的には提供したいと考えています。今のところ、Trilium はセルフホスト（自己運用）型です。デスクトップアプリを実行するか、ご自身でサーバーをホストして利用します。サーバーの管理を避けたい場合は、<0>PikaPods</0> などのサードパーティプロバイダーが、Trilium のマネージドホスティングサービスを提供しています。",
+        "collaboration_question": "複数のユーザーが同じノートで共同編集することはできますか？",
+        "collaboration_answer": "Trilium はシングルユーザー向けのアプリケーションとして設計されています。自分のノートをすべてのデバイス間で同期したり、読み取り専用のノートをウェブに公開して他の人に閲覧してもらったりすることは可能ですが、同じノートを複数人でリアルタイムに編集する機能には対応していません。",
+        "more_questions": "まだご質問がありますか？ <0>コミュニティに質問する</0>"
     },
     "final_cta": {
-        "title": "Trilium Notes を使いはじめる準備はできましたか？",
-        "description": "強力な機能と完全なプライバシーを備えた個人の知識ベースを構築します。",
+        "title": "ナレッジベースの構築をはじめましょう",
+        "description": "階層型ノート、強力な検索機能、そしてご自身が管理するサーバーへの同期など、すべてを1つのオープンソースアプリで一元管理できます。",
         "get_started": "はじめる"
     },
     "components": {
@@ -161,7 +180,8 @@
         "download_flatpak": ".flatpak",
         "download_zip": "ポータブル (.zip)",
         "download_nixpkgs": "nixpkgs",
-        "download_aur": "AUR"
+        "download_aur": "AUR",
+        "download_appimage": ".AppImage"
     },
     "download_helper_desktop_macos": {
         "title_x64": "Intel 向け macOS",
@@ -189,14 +209,14 @@
     "download_helper_server_hosted": {
         "title": "有料ホスティング",
         "description": "Trilium Notesは、アクセスと管理を容易にする有料サービス PikaPods でホストされています。Trilium チームとは直接関係ありません。",
-        "download_pikapod": "PikaPods にセットアップする",
-        "download_triliumcc": "または、trilium.cc を参照してください"
+        "download_pikapod": "PikaPods にセットアップする"
     },
     "header": {
         "get-started": "はじめる",
         "documentation": "ドキュメント",
         "support-us": "サポート",
-        "resources": "リソース"
+        "resources": "リソース",
+        "language": "言語"
     },
     "resources": {
         "title": "リソース",
@@ -204,5 +224,64 @@
         "icon_packs_intro": "アイコンパックを使用すると、ノートで使用できるアイコンの選択肢が広がります。アイコンパックの詳細については、<DocumentationLink>公式ドキュメント</DocumentationLink>をご覧ください。",
         "download": "ダウンロード",
         "website": "Webサイト"
+    },
+    "section_nav": {
+        "aria_label": "セクションへ移動",
+        "organization": "整理",
+        "productivity": "機能",
+        "note_types": "ノートタイプ",
+        "import": "インポートとエクスポート",
+        "collections": "コレクション",
+        "scripting": "スクリプト",
+        "ai_integration": "AI",
+        "faq": "FAQ"
+    },
+    "import": {
+        "title": "ノートはロックされず、常に自由に扱えます",
+        "subtitle": "ノートは自由に移動できます。他のアプリから取り込んだり、オープンフォーマットでエクスポートしたり、洗練されたドキュメントに仕上げたりと、思いのままに扱えます。",
+        "pillar_import_title": "インポート",
+        "pillar_import_description": "他のアプリからノート構造をそのまま保持したまま取り込んだり、標準的な マークダウン、HTML、OPML ファイルをインポートしたりできます。",
+        "pillar_export_title": "エクスポート",
+        "pillar_export_description": "いつでも、ノートやツリー全体を汎用性の高いオープンな形式で取り出すことができます:",
+        "pillar_export_markdown": "マークダウン 汎用的なプレーンテキスト",
+        "pillar_export_html": "HTML 自己完結型ページ用",
+        "pillar_export_opml": "OPML アウトライン形式",
+        "pillar_pdf_title": "PDFへの印刷",
+        "pillar_pdf_description": "ノートを、本のような見栄えの良い PDF に変換できます:",
+        "pillar_pdf_single": "単一のノート",
+        "pillar_pdf_subtree": "順序を維持したサブツリー全体",
+        "pillar_pdf_ready": "印刷や共有にすぐ使えます",
+        "sources_label": "直接インポート可能",
+        "onenote_title": "Microsoft OneNote",
+        "notion_title": "Notion",
+        "keep_title": "Google Keep",
+        "evernote_title": "Evernote",
+        "anytype_title": "Anytype",
+        "obsidian_title": "Obsidian"
+    },
+    "ai_integration": {
+        "title": "あなたの条件に合わせた AI",
+        "subtitle": "オプション機能であり、完全にあなたの判断で利用できます。AI 機能はオプトイン方式で、デフォルトでは無効になっています。あなたが有効にして独自のプロバイダーを接続しない限り、ノートが外部に送信されることはありません。",
+        "screenshot_alt": "Trilium AI チャットは、内蔵ツールを使ってあなたに代わってノートを作成します",
+        "chat_title": "ノートとチャットする",
+        "chat_description": "質問したり、アイデアを出し合ったりできる内蔵チャット機能を使えば、自分のノートの内容も活用できます。",
+        "tools_title": "ノートと連携する AI",
+        "tools_description": "アシスタントが、内蔵ツールを通じて、あなたに代わってノートの検索、作成、更新を行わせることができます。",
+        "providers_title": "あなたのプロバイダー、あなたのキー",
+        "providers_description": "OpenAI、Anthropic、Google をご自身の API キーで連携させるか、Trilium を自己ホスト型の OpenAI 互換モデルに指定できます。MCP 経由で外部アシスタントにノートを連携させることもできます。",
+        "learn_more": "詳細はこちら"
+    },
+    "scripting": {
+        "title": "思い描いたことは、すべてスクリプトで実現できます",
+        "subtitle": "Trilium は単なるノートの保存場所ではなく、プログラミングも可能です。アプリ内またはサーバー上で動作する JavaScript コードを記述し、独自のインターフェースを構築し、簡単なコード変更から本格的なカスタムアプリまで、ワークフローを自動化できます。",
+        "screenshot_alt": "スクリプトで作成されたインタラクティブなアナログ時計を表示する Trilium のレンダリングノート",
+        "widgets_title": "カスタムウィジェット",
+        "widgets_description": "フロントエンドの JavaScript を使用して、独自のボタン、パネル、ランチャーウィジェットなどを Trilium のインターフェースに追加できます。",
+        "backend_title": "バックエンドスクリプトとイベント",
+        "backend_description": "スケジュール実行や、ノートの作成・変更といったイベントへの応答として、サーバーサイドスクリプトを実行できます。",
+        "render_title": "レンダリングノート",
+        "render_description": "ここに表示されている時計のように、ノート内で直接レンダリングされるインタラクティブなダッシュボードやミニアプリを作成できます。",
+        "api_title": "スクリプト API",
+        "api_description": "ノート、ブランチ、属性、検索のための型付き API。フロントエンドスクリプトとバックエンドスクリプトの両方で利用可能です。"
     }
 }

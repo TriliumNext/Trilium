@@ -1,0 +1,64 @@
+/*
+ * Collapse/expand arrows for nested list items (CollapsibleListItems plugin).
+ *
+ * The collapsed state is persisted as `data-trilium-collapsed` on the `<li>`, but the hiding is
+ * scoped to `.ck-editor__editable` so read-only and shared note rendering stay fully expanded
+ * (they have no way to toggle the state).
+ */
+
+.ck-content.ck-editor__editable li {
+    position: relative;
+}
+
+/* The arrow, rendered in the gutter left of items that have nested items. Kept clickable even
+ * while transparent; the plugin detects clicks on it by their position outside the <li> box. */
+.ck-content.ck-editor__editable li:has(> ul, > ol)::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: -2.1em;
+    /* Centre the arrow on the first line: half a line-height, minus half the box, so it
+     * tracks the text's vertical centre across font sizes and line-heights instead of a
+     * fixed offset that only looks right near line-height 1.5. */
+    top: calc(0.5lh - 0.2em);
+    width: 0.4em;
+    height: 0.4em;
+    border-inline-end: 2px solid var(--ck-color-base-text, currentColor);
+    border-bottom: 2px solid var(--ck-color-base-text, currentColor);
+    transform: rotate(45deg); /* chevron pointing down: expanded */
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 150ms ease, transform 150ms ease;
+}
+
+/* In RTL the logical inline-end border lands on the bottom-left corner instead of the
+ * bottom-right, so the base rotation would swing the chevron to point left. Rotate the other
+ * way to keep it pointing down while expanded. */
+.ck-content.ck-editor__editable li:has(> ul, > ol):dir(rtl)::before {
+    transform: rotate(-45deg);
+}
+
+/* To-do items show a checkbox instead of a bullet; its `vertical-align: middle` box sits a
+ * little below the text line's centre, so nudge the arrow down to line up with the checkbox
+ * rather than the text. The offset is font-size-proportional, hence em (not lh). */
+.ck-content.ck-editor__editable .todo-list > li:has(> ul, > ol)::before {
+    top: calc(0.5lh - 0.1em);
+}
+
+.ck-content.ck-editor__editable li:hover::before {
+    opacity: 0.4;
+}
+
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"]::before {
+    transform: rotate(-45deg); /* chevron pointing at the text: collapsed */
+    opacity: 0.7;
+}
+
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"]:dir(rtl)::before {
+    /* Mirror of the LTR collapsed arrow: points left, toward the leftward-flowing text. */
+    transform: rotate(45deg);
+}
+
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"] > ul,
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"] > ol {
+    display: none;
+}

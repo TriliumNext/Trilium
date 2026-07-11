@@ -14,11 +14,6 @@
     "create-note-after": "Crear nota después de la nota activa",
     "create-note-into": "Crear nota como subnota de la nota activa",
     "create-note-into-inbox": "Crear una nota en la bandeja de entrada (si está definida) o nota del día",
-    "delete-note": "Eliminar nota",
-    "move-note-up": "Subir nota",
-    "move-note-down": "Bajar nota",
-    "move-note-up-in-hierarchy": "Subir nota en la jerarquía",
-    "move-note-down-in-hierarchy": "Bajar nota en la jerarquía",
     "edit-note-title": "Saltar del árbol al detalle de la nota y editar el título",
     "edit-branch-prefix": "Mostrar cuadro de diálogo Editar prefijo de rama",
     "note-clipboard": "Portapapeles de notas",
@@ -26,27 +21,12 @@
     "paste-notes-from-clipboard": "Pegar las notas del portapapeles en una nota activa",
     "cut-notes-to-clipboard": "Cortar las notas seleccionadas al portapapeles",
     "select-all-notes-in-parent": "Seleccionar todas las notas del nivel de la nota actual",
-    "add-note-above-to-the-selection": "Agregar nota arriba de la selección",
-    "add-note-below-to-selection": "Agregar nota arriba de la selección",
-    "duplicate-subtree": "Duplicar subárbol",
     "tabs-and-windows": "Pestañas y ventanas",
-    "open-new-tab": "Abre una nueva pestaña",
-    "close-active-tab": "Cierra la pestaña activa",
     "reopen-last-tab": "Vuelve a abrir la última pestaña cerrada",
     "activate-next-tab": "Activa la pestaña de la derecha",
     "activate-previous-tab": "Activa la pestaña de la izquierda",
     "open-new-window": "Abrir nueva ventana vacía",
     "toggle-tray": "Muestra/Oculta la aplicación en la bandeja del sistema",
-    "first-tab": "Activa la primera pestaña de la lista",
-    "second-tab": "Activa la segunda pestaña de la lista",
-    "third-tab": "Activa la tercera pestaña de la lista",
-    "fourth-tab": "Activa la cuarta pestaña de la lista",
-    "fifth-tab": "Activa la quinta pestaña de la lista",
-    "sixth-tab": "Activa la sexta pestaña de la lista",
-    "seventh-tab": "Activa la séptima pestaña de la lista",
-    "eight-tab": "Activa la octava pestaña de la lista",
-    "ninth-tab": "Activa la novena pestaña de la lista",
-    "last-tab": "Activa la última pestaña de la lista",
     "dialogs": "Diálogos",
     "show-note-source": "Muestra el cuadro de diálogo Fuente de nota",
     "show-options": "Muestra el cuadro de diálogo Opciones",
@@ -63,47 +43,30 @@
     "paste-markdown-into-text": "Pega Markdown del portapapeles en la nota de texto",
     "cut-into-note": "Corta la selección de la nota actual y crea una subnota con el texto seleccionado",
     "add-include-note-to-text": "Abre el cuadro de diálogo para incluir una nota",
-    "edit-readonly-note": "Editar una nota de sólo lectura",
     "attributes-labels-and-relations": "Atributos (etiquetas y relaciones)",
     "add-new-label": "Crear nueva etiqueta",
     "create-new-relation": "Crear nueva relación",
     "ribbon-tabs": "Pestañas de cinta",
-    "toggle-basic-properties": "Alternar propiedades básicas",
-    "toggle-file-properties": "Alternar propiedades de archivo",
-    "toggle-image-properties": "Alternar propiedades de imagen",
-    "toggle-owned-attributes": "Alternar atributos de propiedad",
-    "toggle-inherited-attributes": "Alternar atributos heredados",
-    "toggle-promoted-attributes": "Alternar atributos destacados",
     "toggle-link-map": "Alternar mapa de enlaces",
-    "toggle-note-info": "Alternar información de nota",
-    "toggle-note-paths": "Alternar rutas de notas",
-    "toggle-similar-notes": "Alternar notas similares",
     "other": "Otro",
     "toggle-right-pane": "Alternar la visualización del panel derecho, que incluye la tabla de contenidos y aspectos destacados",
-    "print-active-note": "Imprimir nota activa",
     "open-note-externally": "Abrir nota como un archivo con la aplicación predeterminada",
     "render-active-note": "Renderizar (volver a renderizar) nota activa",
     "run-active-note": "Ejecutar nota de código JavaScript activa (frontend/backend)",
     "toggle-note-hoisting": "Alterna la elevación de la nota activa",
     "unhoist": "Bajar desde cualquier lugar",
-    "reload-frontend-app": "Recargar frontend de la aplicación",
-    "open-dev-tools": "Abrir herramientas de desarrollo",
     "find-in-text": "Alternar panel de búsqueda",
     "toggle-left-note-tree-panel": "Alternar panel izquierdo (árbol de notas)",
-    "toggle-full-screen": "Alternar pantalla completa",
-    "zoom-out": "Alejar",
-    "zoom-in": "Acercar",
     "note-navigation": "Navegación de notas",
-    "reset-zoom-level": "Restablecer nivel de zoom",
     "copy-without-formatting": "Copiar el texto seleccionado sin formatear",
     "force-save-revision": "Forzar la creación/guardado de una nueva revisión de nota de la nota activa",
     "toggle-book-properties": "Alternar propiedades del libro",
     "toggle-classic-editor-toolbar": "Alternar la pestaña de formato por el editor con barra de herramientas fija",
-    "export-as-pdf": "Exporta la nota actual como un PDF",
     "toggle-zen-mode": "Habilita/Deshabilita el modo Zen (IU mínima para edición sin distracciones)",
-    "open-command-palette": "Abrir paleta de comandos",
     "clone-notes-to": "Clonar notas seleccionadas",
-    "move-notes-to": "Mover notas seleccionadas"
+    "move-notes-to": "Mover notas seleccionadas",
+    "save-named-revision": "Guardar una revisión nombrada de la nota activa",
+    "toggle-archived-notes": "Mostrar/Ocultar notas archivadas en el árbol de notas"
   },
   "login": {
     "title": "Iniciar sesión",
@@ -122,47 +85,6 @@
     "password": "Contraseña",
     "password-confirmation": "Confirmación de contraseña",
     "button": "Establecer contraseña"
-  },
-  "setup": {
-    "heading": "Configuración de Trilium Notes",
-    "new-document": "Soy un usuario nuevo y quiero crear un nuevo documento de Trilium para mis notas",
-    "sync-from-desktop": "Ya tengo una instancia de escritorio y quiero configurar la sincronización con ella",
-    "sync-from-server": "Ya tengo una instancia de servidor y quiero configurar la sincronización con ella",
-    "next": "Siguiente",
-    "init-in-progress": "Inicialización del documento en curso",
-    "redirecting": "En breve será redirigido a la aplicación.",
-    "title": "Configuración"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sincronizar desde el escritorio",
-    "description": "Esta configuración debe iniciarse desde la instancia de escritorio:",
-    "step1": "Abra su instancia de escritorio de Trilium Notes.",
-    "step2": "En el menú Trilium, dé clic en Opciones.",
-    "step3": "Dé clic en la categoría Sincronizar.",
-    "step4": "Cambie la dirección de la instancia del servidor a: {{- host}} y dé clic en Guardar.",
-    "step5": "Dé clic en el botón \"Probar sincronización\" para verificar que la conexión fue exitosa.",
-    "step6": "Una vez que haya completado estos pasos, dé clic en {{- link}}.",
-    "step6-here": "aquí"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sincronización desde el servidor",
-    "instructions": "Por favor, ingrese la dirección y las credenciales del servidor Trilium a continuación. Esto descargará todo el documento de Trilium desde el servidor y configurará la sincronización. Dependiendo del tamaño del documento y de la velocidad de su conexión, esto puede tardar un poco.",
-    "server-host": "Dirección del servidor Trilium",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server": "Servidor proxy (opcional)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Nota:",
-    "proxy-instruction": "Si deja la configuración de proxy en blanco, se utilizará el proxy del sistema (aplica únicamente a la aplicación de escritorio)",
-    "password": "Contraseña",
-    "password-placeholder": "Contraseña",
-    "back": "Atrás",
-    "finish-setup": "Finalizar la configuración"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sincronización en progreso",
-    "successful": "La sincronización se ha configurado correctamente. La sincronización inicial tardará algún tiempo en finalizar. Una vez hecho esto, será redirigido a la página de inicio de sesión.",
-    "outstanding-items": "Elementos de sincronización destacados:",
-    "outstanding-items-default": "N/A"
   },
   "share_404": {
     "title": "No encontrado",
@@ -200,7 +122,8 @@
   },
   "quarterNumber": "Cuarto {quarterNumber}",
   "special_notes": {
-    "search_prefix": "Buscar:"
+    "search_prefix": "Buscar:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "El servidor de sincronización no está configurado. Por favor configure primero la sincronización.",
@@ -237,20 +160,18 @@
     "protected-session-title": "Sesión protegida",
     "sync-status-title": "Sincronizar estado",
     "settings-title": "Ajustes",
-    "llm-chat-title": "Chat con notas",
     "options-title": "Opciones",
     "appearance-title": "Apariencia",
     "shortcuts-title": "Atajos",
     "text-notes": "Notas de texto",
     "code-notes-title": "Notas de código",
-    "images-title": "Imágenes",
+    "images-title": "Medios",
     "spellcheck-title": "Corrección ortográfica",
     "password-title": "Contraseña",
     "multi-factor-authentication-title": "MFA",
     "etapi-title": "ETAPI",
     "backup-title": "Respaldo",
     "sync-title": "Sincronizar",
-    "ai-llm-title": "IA/LLM",
     "other": "Otros",
     "advanced-title": "Avanzado",
     "visible-launchers-title": "Lanzadores visibles",
@@ -260,7 +181,11 @@
     "jump-to-note-title": "Saltar a...",
     "command-palette": "Abrir paleta de comandos",
     "zen-mode": "Modo Zen",
-    "tab-switcher-title": "Conmutador de pestañas"
+    "tab-switcher-title": "Conmutador de pestañas",
+    "llm-chat-history-title": "Historial del chat de IA",
+    "custom-dictionary-title": "Diccionario personalizado",
+    "llm-title": "IA / LLM",
+    "sidebar-chat-title": "Chat de IA"
   },
   "notes": {
     "new-note": "Nueva nota",
@@ -294,7 +219,8 @@
   "migration": {
     "old_version": "La migración directa desde tu versión actual no está soportada. Por favor actualice a v0.60.4 primero y solo después a esta versión.",
     "error_message": "Error durante la migración a la versión {{version}}: {{stack}}",
-    "wrong_db_version": "La versión de la base de datos {{version}} es más nueva de lo que la aplicación espera {{targetVersion}}, lo que significa que fue creada por una versión más reciente e incompatible de Trilium. Actualice a la última versión de Trilium para resolver este problema."
+    "wrong_db_version": "La versión de la base de datos {{version}} es más nueva de lo que la aplicación espera {{targetVersion}}, lo que significa que fue creada por una versión más reciente e incompatible de Trilium. Actualice a la última versión de Trilium para resolver este problema.",
+    "invalid_db_version": "La versión de la base de datos no es un número válido. Esto usualmente indica una opción \"dbVersion\" corrupta en la base de datos. Por favor, restaure de una copia de seguridad."
   },
   "modals": {
     "error_title": "Error"
@@ -306,7 +232,10 @@
     "last-updated": "Última actualización en {{-date}}",
     "subpages": "Subpáginas:",
     "on-this-page": "En esta página",
-    "expand": "Expandir"
+    "expand": "Expandir",
+    "toggle-navigation": "Alternar navegación",
+    "toggle-toc": "Alternar tabla de contenido",
+    "logo-alt": "Logo"
   },
   "keyboard_action_names": {
     "jump-to-note": "Saltar a...",
@@ -403,7 +332,9 @@
     "toggle-ribbon-tab-note-paths": "Mostrar pestaña de la cinta de opciones: Rutas de nota",
     "toggle-ribbon-tab-similar-notes": "Mostrar pestaña de la cinta de opciones: Notas similares",
     "toggle-ribbon-tab-owned-attributes": "Mostrar pestaña de la cinta de opciones: Propiedades asignadas",
-    "toggle-ribbon-tab-promoted-attributes": "Mostrar pestaña de la cinta de opciones: Atributos destacados"
+    "toggle-ribbon-tab-promoted-attributes": "Mostrar pestaña de la cinta de opciones: Atributos destacados",
+    "save-named-revision": "Guardar revisión nombrada",
+    "toggle-archived-notes": "Alternar visibilidad de notas archivadas"
   },
   "hidden_subtree_templates": {
     "board_note_first": "Primera nota",
@@ -439,5 +370,21 @@
   },
   "desktop": {
     "instance_already_running": "Ya hay una instancia en ejecución, enfocando esa instancia en su lugar."
+  },
+  "password": {
+    "incorrect": "La contraseña que ha introducido es incorrecta."
+  },
+  "script": {
+    "wrong-environment": "No se puede ejecutar la nota \"{{- noteTitle}}\" ({{- noteId}}). Este es un script de {{- actualEnv}}, pero la ejecución se intentó en {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Error en {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" es una palabra clave reservada. Para buscar un valor literal, utilice comillas: \"{{- token}}\"",
+      "cannot-compare-with": "no se puede comparar con \"{{- token}}\". Para buscar un valor literal, utilice ccomillas: \"{{- token}}\"",
+      "misplaced-expression": "Expresión errónea o incompleta \"{{- token}}\"",
+      "fulltext-after-expression": "\"{{- token}}\" no es una expresión válida. Para buscar texto, colóquela antes de filtros de atributo (por ejemplo, \"{{- token}} #label\" en lugar de \"#label {{- token}}\").",
+      "unrecognized-expression": "Expresión no reconocida \"{{- token}}\""
+    }
   }
 }

@@ -1,0 +1,57 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch client (Chrome)",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:8080",
+      "webRoot": "${workspaceFolder}/apps/client"
+    },
+    {
+      "name": "Launch server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/server/src/main.ts",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+      "env": {
+        "NODE_ENV": "development",
+        "TRILIUM_ENV": "dev",
+        "TRILIUM_DATA_DIR": "${input:trilium_data_dir}",
+        "TRILIUM_RESOURCE_DIR": "${workspaceFolder}/apps/server/src"
+      },
+      "autoAttachChildProcesses": true,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
+    },
+    {
+      "name": "Launch Vitest with current test file",
+      "type": "node",
+      "request": "launch",
+      "autoAttachChildProcesses": true,
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "${relativeFile}"],
+      "smartStep": true,
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch client (Chrome) and server",
+      "configurations": ["Launch server","Launch client (Chrome)"],
+      "stopAll": true
+    }
+  ],
+  "inputs": [
+    {
+      "id": "trilium_data_dir",
+      "type": "promptString",
+      "description": "Select Trilum Notes data directory",
+      "default": "${workspaceFolder}/apps/server/data"
+    }
+  ]
+}

@@ -1,13 +1,15 @@
-import becca from "../becca/becca.js";
+import type { NoteRow, RecentChangeRow } from "@triliumnext/commons";
+import type { Router } from "express";
+
+import { note_service as noteService, protected_session, TaskContext } from "@triliumnext/core";
+
+import { becca } from "@triliumnext/core";
 import sql from "../services/sql.js";
+import utils from "../services/utils.js";
+
+const protectedSessionService = protected_session.default;
 import eu from "./etapi_utils.js";
 import mappers from "./mappers.js";
-import noteService from "../services/notes.js";
-import TaskContext from "../services/task_context.js";
-import protectedSessionService from "../services/protected_session.js";
-import utils from "../services/utils.js";
-import type { Router } from "express";
-import type { NoteRow, RecentChangeRow } from "@triliumnext/commons";
 
 function register(router: Router) {
     // GET /etapi/notes/history - must be registered before /etapi/notes/:noteId routes
@@ -130,7 +132,7 @@ function register(router: Router) {
     });
 
     // GET /etapi/notes/:noteId/revisions - List all revisions for a note
-    eu.route(router, "get", "/etapi/notes/:noteId/revisions", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId/revisions", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
 
         const revisions = becca.getRevisionsFromQuery(
@@ -146,7 +148,7 @@ function register(router: Router) {
     });
 
     // POST /etapi/notes/:noteId/undelete - Restore a deleted note
-    eu.route(router, "post", "/etapi/notes/:noteId/undelete", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/undelete", (req, res, next) => {
         const { noteId } = req.params;
 
         const noteRow = sql.getRow<NoteRow | null>("SELECT * FROM notes WHERE noteId = ?", [noteId]);
@@ -172,7 +174,7 @@ function register(router: Router) {
     });
 
     // GET /etapi/revisions/:revisionId - Get revision metadata
-    eu.route(router, "get", "/etapi/revisions/:revisionId", (req, res, next) => {
+    eu.route<{ revisionId: string }>(router, "get", "/etapi/revisions/:revisionId", (req, res, next) => {
         const revision = eu.getAndCheckRevision(req.params.revisionId);
 
         if (revision.isProtected) {
@@ -183,7 +185,7 @@ function register(router: Router) {
     });
 
     // GET /etapi/revisions/:revisionId/content - Get revision content
-    eu.route(router, "get", "/etapi/revisions/:revisionId/content", (req, res, next) => {
+    eu.route<{ revisionId: string }>(router, "get", "/etapi/revisions/:revisionId/content", (req, res, next) => {
         const revision = eu.getAndCheckRevision(req.params.revisionId);
 
         if (revision.isProtected) {

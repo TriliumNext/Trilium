@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
     pnpm2nix = {
-      url = "github:FliegendeWurst/pnpm2nix-nzbr";
+      url = "github:TriliumNext/pnpm2nix-nzbr/main";
       inputs = {
         flake-utils.follows = "flake-utils";
         nixpkgs.follows = "nixpkgs";
@@ -30,9 +30,9 @@
         # This patch deduplicates entries in PATH, which results in an equivalent but shorter entry.
         # https://github.com/pnpm/pnpm/issues/6106
         # https://github.com/pnpm/pnpm/issues/8552
-        pnpm = (pkgs.pnpm_10.overrideAttrs (prev: {
+        pnpm = (pkgs.pnpm_11.overrideAttrs (prev: {
           postInstall = prev.postInstall + ''
-            patch $out/libexec/pnpm/dist/pnpm.cjs ${./patches/pnpm-PATH-reduction.patch}
+            patch $out/libexec/pnpm/dist/pnpm.mjs ${./patches/pnpm-PATH-reduction.patch}
           '';
         }));
         inherit (pkgs)
@@ -42,8 +42,7 @@
           makeBinaryWrapper
           makeDesktopItem
           makeShellWrapper
-          moreutils
-          removeReferencesTo
+removeReferencesTo
           stdenv
           wrapGAppsHook3
           xcodebuild
@@ -67,6 +66,31 @@
             filter = fullCleanSourceFilter;
             src = src;
           };
+
+        # Minimal source used for pnpm2nix's dependency-fetching derivation.
+        # Only the files pnpm actually needs to resolve and fetch dependencies
+        # are included, so unrelated source changes don't bust the deps cache.
+        workspaceSourceFilter =
+          name: type:
+          let
+            baseName = baseNameOf (toString name);
+            rootStr = toString ./.;
+            relPath = lib.removePrefix "${rootStr}/" (toString name);
+            inPatches = relPath == "patches" || lib.hasPrefix "patches/" relPath;
+          in
+          (lib.cleanSourceFilter name type)
+          && baseName != "node_modules"
+          && (
+            type == "directory"
+            || baseName == "package.json"
+            || baseName == "pnpm-workspace.yaml"
+            || baseName == "pnpm-lock.yaml"
+            || inPatches
+          );
+        workspaceSource = lib.cleanSourceWith {
+          filter = workspaceSourceFilter;
+          src = ./.;
+        };
         packageJson = builtins.fromJSON (builtins.readFile ./package.json);
         packageJsonDesktop = builtins.fromJSON (builtins.readFile ./apps/desktop/package.json);
 
@@ -86,7 +110,7 @@
             packageJSON = ./package.json;
             pnpmLockYaml = ./pnpm-lock.yaml;
 
-            workspace = fullCleanSource ./.;
+            workspace = workspaceSource;
             pnpmWorkspaceYaml = ./pnpm-workspace.yaml;
 
             inherit nodejs pnpm;
@@ -100,7 +124,7 @@
 
             # remove pnpm version override
             preConfigure = ''
-              cat package.json | grep -v 'packageManager' | sponge package.json
+              node -e "const p = require('./package.json'); delete p.packageManager; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n')"
             '';
 
             postConfigure =
@@ -111,9 +135,8 @@
 
             extraNativeBuildInputs =
               [
-                moreutils # sponge
-                nodejs.python
-                removeReferencesTo                
+nodejs.python
+                removeReferencesTo
               ]
               ++ lib.optionals (app == "desktop" || app == "edit-docs") [
                 copyDesktopItems
@@ -126,7 +149,7 @@
                 which
                 electron
               ]
-              ++ lib.optionals (app == "server") [
+              ++ lib.optionals (app == "server" || app == "build-docs") [
                 makeBinaryWrapper
               ]
               ++ lib.optionals stdenv.hostPlatform.isDarwin [
@@ -134,8 +157,6 @@
                 darwin.cctools
               ];
             dontWrapGApps = true;
-
-            env.ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
 
             preBuild = ''
               ${preBuildCommands}
@@ -151,9 +172,10 @@
               runHook postInstall
             '';
 
-            # This file is a symlink into /build which is not allowed.
+            # Symlinks pointing to /build directory are not allowed in the Nix store.
+            # This removes all dangling symlinks that point to the temporary build directory.
             postFixup = ''
-              rm $out/opt/trilium*/node_modules/better-sqlite3/node_modules/.bin/prebuild-install || true
+              find $out/opt -type l -lname '/build/*' -delete || true
             '';
 
             components = [
@@ -169,13 +191,14 @@
               "packages/highlightjs"
               "packages/turndown-plugin-gfm"
 
+              "apps/build-docs"
               "apps/client"
               "apps/db-compare"
               "apps/desktop"
               "apps/dump-db"
               "apps/edit-docs"
               "apps/server"
-              "apps/server-e2e"
+              "packages/trilium-e2e"
             ];
 
             desktopItems = lib.optionals (app == "desktop") [
@@ -198,11 +221,8 @@
 
         desktop = makeApp {
           app = "desktop";
-          # pnpm throws an error at the end of `pnpm postinstall`, but it doesn't seem to matter:
-          # ENOENT: no such file or directory, lstat
-          # '/build/source/apps/desktop/node_modules/better-sqlite3/build/node_gyp_bins'
           preBuildCommands = ''
-            export npm_config_nodedir=${electron.headers}
+            export ELECTRON_NODEDIR=${electron.headers}
             pnpm postinstall
           '';
           buildTask = "desktop:build";
@@ -259,7 +279,7 @@
         edit-docs = makeApp {
           app = "edit-docs";
           preBuildCommands = ''
-            export npm_config_nodedir=${electron.headers}
+            export ELECTRON_NODEDIR=${electron.headers}
             pnpm postinstall
           '';
           buildTask = "edit-docs:build";
@@ -277,11 +297,46 @@
           '';
         };
 
+        build-docs = makeApp {
+          app = "build-docs";
+          preBuildCommands = ''
+            pushd apps/server
+            pnpm rebuild || true
+            popd
+          '';
+          buildTask = "client:build && pnpm run server:build && pnpm run --filter build-docs build";
+          mainProgram = "trilium-build-docs";
+          installCommands = ''
+            mkdir -p $out/{bin,opt/trilium-build-docs}
+
+            # Copy build-docs dist
+            cp --archive apps/build-docs/dist/* $out/opt/trilium-build-docs
+
+            # Copy server dist (needed for runtime)
+            mkdir -p $out/opt/trilium-build-docs/server
+            cp --archive apps/server/dist/* $out/opt/trilium-build-docs/server/
+
+            # Copy client dist (needed for runtime)
+            mkdir -p $out/opt/trilium-build-docs/client
+            cp --archive apps/client/dist/* $out/opt/trilium-build-docs/client/
+
+            # Copy share-theme (needed for exports)
+            mkdir -p $out/opt/trilium-build-docs/packages/share-theme
+            cp --archive packages/share-theme/dist/* $out/opt/trilium-build-docs/packages/share-theme/
+
+            # Create wrapper script
+            makeWrapper ${lib.getExe nodejs} $out/bin/trilium-build-docs \
+              --add-flags $out/opt/trilium-build-docs/cli.cjs \
+              --set TRILIUM_RESOURCE_DIR $out/opt/trilium-build-docs/server
+          '';
+        };
+
       in
       {
         packages.desktop = desktop;
         packages.server = server;
         packages.edit-docs = edit-docs;
+        packages.build-docs = build-docs;
 
         packages.default = desktop;
 
@@ -289,6 +344,8 @@
           buildInputs = [
             nodejs
             pnpm
+            electron
+            nodejs.python
           ];
         };
       }

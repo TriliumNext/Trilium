@@ -4,4 +4,5 @@
 
 .note-detail.full-height .note-detail-content-widget-content {
     padding: 0;
+    height: 100%;
 }

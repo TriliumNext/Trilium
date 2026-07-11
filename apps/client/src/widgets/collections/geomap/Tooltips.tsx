@@ -1,6 +1,7 @@
 import { type MapGeoJSONFeature, MapMouseEvent, Popup } from "maplibre-gl";
 import { useContext, useEffect } from "preact/hooks";
 
+import { escapeHtml } from "../../../services/utils";
 import { ParentMap } from "./map";
 import { MARKER_LAYER } from "./Markers";
 
@@ -23,7 +24,7 @@ export default function Tooltips() {
 
             tooltip
                 .setLngLat(feature.geometry.coordinates as [ number, number ])
-                .setHTML(`<strong>${feature.properties.name}</strong>`)
+                .setHTML(`<strong>${escapeHtml(feature.properties.name)}</strong>`)
                 .addTo(map);
         }
 

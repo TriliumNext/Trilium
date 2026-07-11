@@ -60,8 +60,8 @@ jobs:
               forge_platform: linux
     runs-on: ${{ matrix.os.image }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
         with:
@@ -69,6 +69,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          npm_config_package_import_method: copy
       - name: Update nightly version
         run: pnpm run chore:ci-update-nightly-version
       - name: Run the build
@@ -87,10 +89,11 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           WINDOWS_SIGN_EXECUTABLE: ${{ vars.WINDOWS_SIGN_EXECUTABLE }}
+          WINDOWS_SIGN_ERROR_LOG: ${{ vars.WINDOWS_SIGN_ERROR_LOG }}
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2.5.0
+        uses: softprops/action-gh-release@v3.0.1
         if: ${{ github.event_name != 'pull_request' }}
         with:
           make_latest: false
@@ -102,11 +105,31 @@ jobs:
           name: Nightly Build
 
       - name: Publish artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ github.event_name == 'pull_request' }}
         with:
           name: TriliumNotes ${{ matrix.os.name }} ${{ matrix.arch }}
           path: apps/desktop/upload
+
+  nightly-mobile:
+    if: ${{ github.repository == vars.REPO_MAIN && github.event_name != 'pull_request' }}
+    name: Build mobile nightly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build mobile APK
+        uses: ./.github/actions/build-mobile
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v3.0.1
+        with:
+          make_latest: false
+          prerelease: true
+          draft: false
+          files: apps/mobile/android/app/build/outputs/apk/debug/*.apk
+          tag_name: nightly
+          name: Mobile Nightly
 
   nightly-server:
     if: ${{ github.repository == vars.REPO_MAIN }}
@@ -122,7 +145,7 @@ jobs:
             runs-on: ubuntu-24.04-arm
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Run the build
         uses: ./.github/actions/build-server
@@ -131,7 +154,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2.5.0
+        uses: softprops/action-gh-release@v3.0.1
         if: ${{ github.event_name != 'pull_request' }}
         with:
           make_latest: false

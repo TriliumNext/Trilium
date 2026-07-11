@@ -3,5 +3,5 @@
 DIR=`dirname "$0"`
 export TRILIUM_SAFE_MODE=1
 
-"$DIR/trilium" --disable-gpu
+exec "$DIR/trilium" --disable-gpu
 

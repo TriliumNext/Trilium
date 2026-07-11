@@ -1,17 +1,20 @@
+import "./branch_prefix.css";
+
 import { useRef, useState } from "preact/hooks";
-import appContext from "../../components/app_context.js";
+
+import { type ContextMenuCommandData, default as appContext } from "../../components/app_context.js";
+import FBranch from "../../entities/fbranch.js";
+import froca from "../../services/froca.js";
 import { t } from "../../services/i18n.js";
 import server from "../../services/server.js";
 import toast from "../../services/toast.js";
-import Modal from "../react/Modal.jsx";
-import froca from "../../services/froca.js";
 import tree from "../../services/tree.js";
 import Button from "../react/Button.jsx";
+import { Card, CardSection } from "../react/Card.js";
 import FormGroup from "../react/FormGroup.js";
 import { useTriliumEvent } from "../react/hooks.jsx";
-import FBranch from "../../entities/fbranch.js";
-import type { ContextMenuCommandData } from "../../components/app_context.js";
-import "./branch_prefix.css";
+import Icon from "../react/Icon.js";
+import Modal from "../react/Modal.jsx";
 
 // Virtual branches (e.g., from search results) start with this prefix
 const VIRTUAL_BRANCH_PREFIX = "virt-";
@@ -84,51 +87,47 @@ export default function BranchPrefixDialog() {
         setShown(false);
     }
 
-    const isSingleBranch = branches.length === 1;
-
     return (
         <Modal
             className="branch-prefix-dialog"
-            title={isSingleBranch ? t("branch_prefix.edit_branch_prefix") : t("branch_prefix.edit_branch_prefix_multiple", { count: branches.length })}
+            title={branches.length === 1 ? t("branch_prefix.edit_branch_prefix") : t("branch_prefix.edit_branch_prefix_multiple", { count: branches.length })}
             size="lg"
-            onShown={() => branchInput.current?.focus()}
+            onShown={() => branchInput.current?.select()}
             onHidden={() => setShown(false)}
             onSubmit={onSubmit}
             helpPageId="TBwsyfadTA18"
-            footer={<Button text={t("branch_prefix.save")} />}
+            footer={<>
+                <Button text={t("branch_prefix.cancel")} onClick={() => setShown(false)} />
+                <Button text={t("branch_prefix.save")} kind="primary" />
+            </>}
             show={shown}
         >
-            <FormGroup label={t("branch_prefix.prefix")} name="prefix">
-                <div class="input-group">
-                    <input class="branch-prefix-input form-control" value={prefix} ref={branchInput}
-                        onChange={(e) => setPrefix((e.target as HTMLInputElement).value)} />
-                    {isSingleBranch && branches[0] && (
-                        <div class="branch-prefix-note-title input-group-text"> - {branches[0].getNoteFromCache()?.title}</div>
-                    )}
-                </div>
+            <FormGroup label={t("branch_prefix.prefix")} name="prefix" description={t("branch_prefix.description")}>
+                <input class="branch-prefix-input form-control" value={prefix} ref={branchInput}
+                    onChange={(e) => setPrefix((e.target as HTMLInputElement).value)} />
             </FormGroup>
-            {!isSingleBranch && (
-                <div className="branch-prefix-notes-list">
-                    <strong>{t("branch_prefix.affected_branches", { count: branches.length })}</strong>
-                    <ul>
+            <Card heading={t("branch_prefix.preview_in_tree")}>
+                <CardSection noPadding>
+                    <ul className="preview-list">
                         {branches.map((branch) => {
                             const note = branch.getNoteFromCache();
                             return note && (
                                 <li key={branch.branchId}>
-                                    {branch.prefix && <span className="branch-prefix-current">{branch.prefix} - </span>}
+                                    <Icon icon={note.getIcon()} />
+                                    {prefix && <span className="branch-prefix-current">{prefix} - </span>}
                                     {note.title}
                                 </li>
                             );
                         })}
                     </ul>
-                </div>
-            )}
+                </CardSection>
+            </Card>
         </Modal>
     );
 }
 
 async function savePrefix(branchId: string, prefix: string) {
-    await server.put(`branches/${branchId}/set-prefix`, { prefix: prefix });
+    await server.put(`branches/${branchId}/set-prefix`, { prefix });
     toast.showMessage(t("branch_prefix.branch_prefix_saved"));
 }
 

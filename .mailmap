@@ -1,2 +1,116 @@
-zadam <adam.zivner@gmail.com>
+# Format: Canonical Name <canonical-email> <commit-email>
+# Merges aliases so `git shortlog`, `git log --use-mailmap`, etc. group commits per person.
+
+# Core maintainers
 zadam <zadam.apps@gmail.com>
+zadam <zadam.apps@gmail.com> <adam.zivner@gmail.com>
+zadam <zadam.apps@gmail.com> <adam.zivner@gemalto.com>
+
+Elian Doran <contact@eliandoran.me>
+Elian Doran <contact@eliandoran.me> <online@eliandoran.me>
+
+Adorian Doran <adorian@esevo.ro>
+Adorian Doran <adorian@esevo.ro> <adoriandoran@gmail.com>
+
+# Contributors with multiple emails / name variants
+Panagiotis Papadopoulos <pano_90@gmx.net> <102623907+pano9000@users.noreply.github.com>
+
+Jon Fuller <jonfuller2012@gmail.com>
+
+SiriusXT <1160925501@qq.com>
+SiriusXT <1160925501@qq.com> <11609255001@qq.com>
+SiriusXT <1160925501@qq.com> <37627919+SiriusXT@users.noreply.github.com>
+
+JYC333 <22962980+JYC333@users.noreply.github.com>
+JYC333 <22962980+JYC333@users.noreply.github.com> <yuchuanjin333@gmail.com>
+
+Nriver <6752679+Nriver@users.noreply.github.com>
+
+Francis C. <normitomf@gmail.com>
+Francis C. <normitomf@gmail.com> <francistw@users.noreply.github.com>
+
+Thomas Frei <7283497+thfrei@users.noreply.github.com>
+
+hasecilu <hasecilu@tuta.io>
+
+meinzzzz <lukas.geiselhart35@gmail.com>
+
+FliegendeWurst <arne.keller@posteo.de>
+FliegendeWurst <arne.keller@posteo.de> <2012gdwu@web.de>
+FliegendeWurst <arne.keller@posteo.de> <2012gdwu+github@posteo.de>
+
+MeIchthys <github.com@meichthys.com>
+MeIchthys <github.com@meichthys.com> <10717998+meichthys@users.noreply.github.com>
+
+Marcel Wiechmann <marcel.wiechmann@gmail.com>
+Marcel Wiechmann <marcel.wiechmann@gmail.com> <github.y3y0w@sl.wiechmann.at>
+
+Tomas Adamek <ad.tomik@seznam.cz>
+Tomas Adamek <ad.tomik@seznam.cz> <50672285+Kureii@users.noreply.github.com>
+
+soulsands <407221377@qq.com>
+
+chesspro13 <chesspro13@gmail.com>
+
+sigaloid <69441971+sigaloid@users.noreply.github.com>
+
+Marek Lewandowski <m.lewandowski@cksource.com>
+Marek Lewandowski <m.lewandowski@cksource.com> <code@mlewandowski.com>
+Marek Lewandowski <m.lewandowski@cksource.com> <mlewand@users.noreply.github.com>
+
+lzinga <lucas.elzinga@outlook.com>
+lzinga <lucas.elzinga@outlook.com> <lzinga@users.noreply.github.com>
+
+Sukant Gujar <sukantgujar@yahoo.com>
+
+Matt Wilkie <maphew@gmail.com>
+Matt Wilkie <maphew@gmail.com> <matt.wilkie@yukon.ca>
+
+Andreas Haan <andreas.mobil1@googlemail.com>
+
+Potjoe-97 <42873357+Potjoe-97@users.noreply.github.com>
+Potjoe-97 <42873357+Potjoe-97@users.noreply.github.com> <giann@LAPTOPT490-GF>
+
+Alex Pietsch <54153428+alexpietsch@users.noreply.github.com>
+
+Laurent Cozic <laurent@cozic.net>
+Laurent Cozic <laurent@cozic.net> <laurent22@users.noreply.github.com>
+
+Zexin Yuan <git@yzx9.xyz>
+Zexin Yuan <git@yzx9.xyz> <yuan.zx@outlook.com>
+
+hulmgulm <hulmgulm@users.noreply.github.com>
+hulmgulm <hulmgulm@users.noreply.github.com> <12165268+hulmgulm@users.noreply.github.com>
+hulmgulm <hulmgulm@users.noreply.github.com> <github@hulmgulm.de>
+
+Jules Bertholet <jules.bertholet@gmail.com>
+
+Charles Dagenais <dagenais.charles@gmail.com>
+
+Giulia Ye <yg97.cs@gmail.com>
+
+baddate <37013819+baddate@users.noreply.github.com>
+
+DerVogel101 <128903814+DerVogel101@users.noreply.github.com>
+DerVogel101 <128903814+DerVogel101@users.noreply.github.com> <jan.irmer@outlook.de>
+
+Marcello Fuschi <marcellofuschi1@gmail.com>
+
+Jiahao Lee <lijiahao34@live.com>
+
+Dmitry Matveyev <dev@greenfork.me>
+Dmitry Matveyev <dev@greenfork.me> <info@greenfork.me>
+
+Grant Zhu <a1065135230@gmail.com>
+
+Sylvain Pasche <sylvain.pasche@gmail.com>
+Sylvain Pasche <sylvain.pasche@gmail.com> <spasche@spasche.net>
+
+mm21 <8033134+mm21@users.noreply.github.com>
+mm21 <8033134+mm21@users.noreply.github.com> <mm21.dev@gmail.com>
+
+BeatLink <git@beatlink.simplelogin.com>
+BeatLink <git@beatlink.simplelogin.com> <github@beatlink.simplelogin.com>
+
+Florian Meißner <161936+Mystler@users.noreply.github.com>
+Florian Meißner <161936+Mystler@users.noreply.github.com> <developer@mystler.eu>

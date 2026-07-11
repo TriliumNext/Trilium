@@ -1,0 +1,8 @@
+.script-runner-widget {
+    padding: 12px;
+    color: var(--muted-text-color);
+}
+
+.execute-description {
+    margin-bottom: 10px;
+}

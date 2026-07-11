@@ -1,14 +1,16 @@
-import becca from "../becca/becca.js";
-import eu from "./etapi_utils.js";
-import mappers from "./mappers.js";
-import attributeService from "../services/attributes.js";
-import v from "./validators.js";
-import type { Router } from "express";
 import type { AttributeRow } from "@triliumnext/commons";
+import type { Router } from "express";
+
+import { attributes as attributeService } from "@triliumnext/core";
+
+import { becca } from "@triliumnext/core";
+import eu from "./etapi_utils.js";
 import type { ValidatorMap } from "./etapi-interface.js";
+import mappers from "./mappers.js";
+import v from "./validators.js";
 
 function register(router: Router) {
-    eu.route(router, "get", "/etapi/attributes/:attributeId", (req, res, next) => {
+    eu.route<{ attributeId: string }>(router, "get", "/etapi/attributes/:attributeId", (req, res, next) => {
         const attribute = eu.getAndCheckAttribute(req.params.attributeId);
 
         res.json(mappers.mapAttributeToPojo(attribute));
@@ -51,7 +53,7 @@ function register(router: Router) {
         position: [v.notNull, v.isInteger]
     };
 
-    eu.route(router, "patch", "/etapi/attributes/:attributeId", (req, res, next) => {
+    eu.route<{ attributeId: string }>(router, "patch", "/etapi/attributes/:attributeId", (req, res, next) => {
         const attribute = eu.getAndCheckAttribute(req.params.attributeId);
 
         if (attribute.type === "label") {
@@ -67,7 +69,7 @@ function register(router: Router) {
         res.json(mappers.mapAttributeToPojo(attribute));
     });
 
-    eu.route(router, "delete", "/etapi/attributes/:attributeId", (req, res, next) => {
+    eu.route<{ attributeId: string }>(router, "delete", "/etapi/attributes/:attributeId", (req, res, next) => {
         const attribute = becca.getAttribute(req.params.attributeId);
 
         if (!attribute) {

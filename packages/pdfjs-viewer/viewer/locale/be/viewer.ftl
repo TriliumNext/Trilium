@@ -201,6 +201,15 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Мініяцюра старонкі { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Выбраць старонку { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Старонка { $page } з { $total }
 
 ## Find panel button title and messages
 
@@ -537,6 +546,7 @@ pdfjs-editor-undo-bar-message-freetext = Тэкст выдалены
 pdfjs-editor-undo-bar-message-ink = Малюнак выдалены
 pdfjs-editor-undo-bar-message-stamp = Відарыс выдалены
 pdfjs-editor-undo-bar-message-signature = Подпіс выдалены
+pdfjs-editor-undo-bar-message-comment = Каментарый выдалены
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -636,6 +646,99 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Скасаваць
 
 pdfjs-editor-add-comment-button =
     .title = Дадаць каментарый
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-notification-button =
+    .title = Паказаць/схаваць бакавую панэль (дакумент мае мініяцюры/змест/далучэнні/пласты)
+pdfjs-toggle-views-manager-button1-label = Кіраванне старонкамі
+pdfjs-views-manager-sidebar =
+    .aria-label = Бакавая панэль
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Змена памеру бакавой панэлі
+pdfjs-views-manager-view-selector-button =
+    .title = Выгляд
+pdfjs-views-manager-view-selector-button-label = Выгляд
+pdfjs-views-manager-pages-title = Старонкі
+pdfjs-views-manager-outlines-title1 = Структура дакумента
+    .title = Структура дакумента (націсніце двойчы, каб разгарнуць/згарнуць усе элементы)
+pdfjs-views-manager-attachments-title = Далучэнні
+pdfjs-views-manager-layers-title1 = Пласты
+    .title = Пласты (націсніце двойчы каб скінуць у прадвызначаны стан)
+pdfjs-views-manager-pages-option-label = Старонкі
+pdfjs-views-manager-outlines-option-label = Структура дакумента
+pdfjs-views-manager-attachments-option-label = Далучэнні
+pdfjs-views-manager-layers-option-label = Пласты
+pdfjs-views-manager-add-file-button =
+    .title = Дадаць файл
+pdfjs-views-manager-add-file-button-label = Дадаць файл
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] Вылучана { $count }
+        [few] Вылучаны { $count }
+       *[many] Вылучана { $count }
+    }
+pdfjs-views-manager-pages-status-none-action-label = Выбраць старонкі
+pdfjs-views-manager-pages-status-action-button-label = Кіраваць
+pdfjs-views-manager-pages-status-copy-button-label = Капіяваць
+pdfjs-views-manager-pages-status-cut-button-label = Выразаць
+pdfjs-views-manager-pages-status-delete-button-label = Выдаліць
+pdfjs-views-manager-pages-status-export-selected-button-label = Экспартаваць выбранае…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] Выразана { $count } старонка
+        [few] Выразана { $count } старонкі
+       *[many] Выразана { $count } старонак
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] Скапіравана { $count } старонка
+        [few] Скапіравана { $count } старонкі
+       *[many] Скапіравана { $count } старонак
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] Выдалена { $count } старонка
+        [few] Выдалена { $count } старонкі
+       *[many] Выдалена { $count } старонак
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Рыхтуецца ваш файл…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Зацягваецца файл…
+pdfjs-views-manager-status-warning-cut-label = Не ўдалося выразаць. Абнавіце старонку і паспрабуйце зноў.
+pdfjs-views-manager-status-warning-copy-label = Не ўдалося скапіяваць. Абнавіце старонку і паспрабуйце зноў.
+pdfjs-views-manager-status-warning-delete-label = Не ўдалося выдаліць. Абнавіце старонку і паспрабуйце зноў.
+pdfjs-views-manager-status-warning-save-label = Не ўдалося захаваць. Абнавіце старонку і паспрабуйце зноў.
+pdfjs-views-manager-status-undo-button-label = Адмяніць
+pdfjs-views-manager-status-done-button-label = Гатова
+pdfjs-views-manager-status-close-button =
+    .title = Закрыць
+pdfjs-views-manager-status-close-button-label = Закрыць
+pdfjs-views-manager-paste-button-label = Уставіць
+pdfjs-views-manager-paste-button-before =
+    .title = Уставіць перад першай старонкай
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Уставіць пасля старонкі { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = НОВАЕ
+pdfjs-views-manager-waiting-for-file = Зацягваецца файл…
+pdfjs-toggle-views-manager-button1 =
+    .title = Кіраванне старонкамі
 
 ## Main menu for adding/removing signatures
 

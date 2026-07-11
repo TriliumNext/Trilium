@@ -1,5 +1,12 @@
 export {};
 
+declare module "htmldiff-js" {
+    const HtmlDiff: {
+        execute(oldHtml: string, newHtml: string): string;
+    };
+    export default HtmlDiff;
+}
+
 // TODO: Use real @types/ but that one generates a lot of errors.
 declare module "draggabilly" {
     type DraggabillyEventData = {};
@@ -45,11 +52,15 @@ declare global {
 
 declare module "preact" {
     namespace JSX {
+        interface ElectronWebViewElement extends JSX.HTMLAttributes<HTMLElement> {
+            src: string;
+            class: string;
+            key?: string | number;
+            partition?: string;
+        }
+
         interface IntrinsicElements {
-            webview: {
-                src: string;
-                class: string;
-            }
+            webview: ElectronWebViewElement;
         }
     }
 }

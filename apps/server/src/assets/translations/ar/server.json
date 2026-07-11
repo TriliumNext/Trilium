@@ -1,7 +1,6 @@
 {
   "keyboard_actions": {
     "open-jump-to-note-dialog": "فتح مربع الحوار \"الانتقال الى الملاحظة\"",
-    "open-command-palette": "فتح لوحة الاوامر",
     "quick-search": "تفعيل شريط البحث السريع",
     "collapse-tree": "طي جميع الملاحظات",
     "collapse-subtree": "طي الفروع التابعة للملاحظة الحالية",
@@ -9,9 +8,6 @@
     "creating-and-moving-notes": "انشاء الملاحظات ونقلها",
     "create-note-after": "انشاء ملاحظة بعد الملاحظة الحالية",
     "create-note-into": "انشاء ملاحظة فرعية تابعة للملاحظة الحالية",
-    "delete-note": "حذف ملاحظة",
-    "move-note-up": "نقل الملاحظة للاعلى",
-    "move-note-down": "نثل الملاحظة للاسفل",
     "clone-notes-to": "استنساخ الملاحظات المحددة",
     "move-notes-to": "نقل الملاحظات للمحددة",
     "note-clipboard": "حافظة الملاحظات",
@@ -25,80 +21,52 @@
     "search-in-subtree": "البحث عن الملاحظات في الشجرة الفرعية للملاحظة النشطة",
     "expand-subtree": "توسيع الشجرة الفرعية للملاحظة الحالية",
     "create-note-into-inbox": "انشاء ملاحظة في صندوق الوارد (اذا كان معرفا) او في ملاحظة اليوم",
-    "move-note-up-in-hierarchy": "نقل الملاحظة للاعلى في التسلسل الهرمي",
-    "move-note-down-in-hierarchy": "نقل الملاحظة للاسفل في التسلسل الهرمي",
     "edit-note-title": "الانتقال من شجرة الملاحظات إلى تفاصيل الملاحظة وتحرير العنوان",
     "edit-branch-prefix": "عرض مربع حوار \"تعديل بادئة الفرع\"",
-    "add-note-above-to-the-selection": "اضافة ملاحظة فوق الملاحظة المحددة",
-    "add-note-below-to-selection": "اضافة ملاحظة اسفل الملاحظة المحددة",
-    "duplicate-subtree": "استنساخ الشجرة الفرعية",
     "tabs-and-windows": "التبويبات والنوافذ",
-    "open-new-tab": "فتح تبويب جديد",
-    "close-active-tab": "غلق التبويب النشط",
     "reopen-last-tab": "اعادة فتح اخر تبويب مغلق",
     "activate-next-tab": "تنشيط التبويب الموجود على اليمين",
     "activate-previous-tab": "تنشيط التبويب الموجود على اليسار",
     "open-new-window": "فتح نافذة جديدة فارغة",
-    "first-tab": "تنشيط التبويب الاول في القائمة",
-    "second-tab": "تنشيط التبويب الثاني في القائمة",
-    "third-tab": "تنشيط التبويب الثالث في الثائمة",
-    "fourth-tab": "تنشيط التبويب الرابع في القائمة",
-    "fifth-tab": "تنشيط التبويب الخامس في القائمة",
-    "sixth-tab": "تنشيط التبويب السادس في القائمة",
-    "seventh-tab": "تنشيط التبويب السابع في القائمة",
-    "eight-tab": "تنشيط التبويب الثامن في القائمة",
-    "ninth-tab": "تنشيط التبويب التاسع في القائمة",
-    "last-tab": "تنشيط التبويب الاخير في القائمة",
     "other": "أخرى",
     "dialogs": "مربعات الحوار",
     "ribbon-tabs": "علامات التبويب في الشريط",
-    "reload-frontend-app": "اعادة تحميل الواجهة",
-    "zoom-out": "تصغير العرض",
-    "zoom-in": "تكبير العرض",
     "note-navigation": "التنقل بين الملاحظات",
     "show-options": "افتح صفحة \"الخيارات\"",
     "text-note-operations": "عمليات الملاحظة النصية",
     "add-new-label": "انشاء تسمية جديدة",
     "create-new-relation": "انشاء علاقة جديدة",
-    "toggle-basic-properties": "اظهار/اخفاء الخصائص الاساسية",
-    "toggle-file-properties": "اظهار/اخفاء خصائص الملف",
-    "toggle-image-properties": "اظهار/اخفاء خصائص الصورة",
-    "toggle-owned-attributes": "اظهار/اخفاء السمات المملوكة",
-    "toggle-inherited-attributes": "اظهار/اخفاء السمات المتوارثه",
-    "toggle-promoted-attributes": "اظخار/اخفاء السمات المروجة",
     "toggle-link-map": "اظهار/اخفاء خريطة الرابط",
-    "toggle-note-info": "اظهار/اخفاء معلومات الملاحظة",
-    "toggle-note-paths": "اظها/اخفاء مسارات الملاحظة",
-    "toggle-similar-notes": "اظهار/اخفاء الملاحظات المشابهة",
-    "print-active-note": "طباعة الملاحظة‍ النشطة",
     "unhoist": "الغاء التركيز من اي مكان",
-    "open-dev-tools": "فتح ادوات المطور",
     "find-in-text": "اظهار/اخفاء لوحة الفتح",
-    "toggle-full-screen": "اظهار/اخفاء وضع ملء الشاشة",
-    "reset-zoom-level": "اعادة ضبط مستوى التكبير",
     "toggle-book-properties": "اظهار/اخفاء خصائص المجموعة",
     "show-note-source": "عرض مربع حوار \"مصدر الملاحظات\"",
     "show-revisions": "عرض مربع حوار \" مراجعات الملاحظة\"",
-    "show-recent-changes": "عرض مربع حوار \" التغيرات الاخيرة\"",
+    "show-recent-changes": "عرض مربع حوار \" التغيرات الأخيرة\"",
     "show-sql-console": "فتح صفحة \" وحدة تحكم SQL\"",
     "show-backend-log": "فتح صفحة \"سجل الخلفية\"",
-    "edit-readonly-note": "تعديل ملاحظة القراءة فقط",
     "attributes-labels-and-relations": "سمات ( تسميات و علاقات)",
     "render-active-note": "عرض ( اعادة عرض) الملاحظة المؤرشفة",
     "show-help": "فتح دليل التعليمات",
-    "copy-without-formatting": "نسخ النص المحدد بدون تنسيق"
-  },
-  "setup_sync-from-server": {
-    "note": "ملاحظة:",
-    "password": "كلمة المرور",
-    "password-placeholder": "كلمة المرور",
-    "back": "رجوع",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "finish-setup": "اكمال التثبيت",
-    "heading": "مزامنة من الخادم",
-    "server-host": "عنوان خادم تريليوم",
-    "proxy-server": "خادم وكيل (اختياري)"
+    "copy-without-formatting": "نسخ النص المحدد بدون تنسيق",
+    "toggle-archived-notes": "إظهار/إخفاء الملاحظات المؤرشفة في شجرة الملاحظات",
+    "toggle-tray": "إظهار/إخفاء التطبيق من شريط النظام (System Tray)",
+    "show-cheatsheet": "عرض نافذة منبثقة (Modal) تحتوي على اختصارات لوحة المفاتيح الشائعة",
+    "add-link-to-text": "فتح نافذة لإضافة رابط إلى النص",
+    "follow-link-under-cursor": "اتباع الرابط الموجود عند موضع المؤشر",
+    "insert-date-and-time-to-text": "إدراج التاريخ والوقت الحالي في النص",
+    "paste-markdown-into-text": "لصق محتوى Markdown من الحافظة داخل ملاحظة نصية",
+    "cut-into-note": "قصّ التحديد من الملاحظة الحالية وإنشاء ملاحظة فرعية بالنص المحدد",
+    "add-include-note-to-text": "فتح نافذة لإدراج ملاحظة",
+    "save-named-revision": "حفظ نسخة مُعنونة من الملاحظة النشطة",
+    "toggle-classic-editor-toolbar": "تبديل تبويب التنسيق لمحرر النص مع شريط أدوات ثابت",
+    "toggle-zen-mode": "تفعيل/تعطيل وضع التركيز (Zen Mode) الذي يوفر واجهة مبسطة للكتابة المركّزة",
+    "toggle-right-pane": "تبديل عرض اللوحة اليمنى، والتي تتضمن جدول المحتويات والإبرازات",
+    "force-save-revision": "فرض إنشاء / حفظ نسخة مراجعة جديدة للملاحظة النشطة",
+    "open-note-externally": "فتح الملاحظة كملف باستخدام التطبيق الافتراضي",
+    "run-active-note": "تشغيل ملاحظة كود JavaScript النشطة (الواجهة الأمامية/الخلفية)",
+    "toggle-note-hoisting": "تبديل تفعيل/إلغاء التركيز (hoisting) على الملاحظة النشطة",
+    "toggle-left-note-tree-panel": "تبديل لوحة اليسار (شجرة الملاحظات)"
   },
   "weekdays": {
     "monday": "الاثنين",
@@ -124,7 +92,8 @@
     "december": "ديسمبر"
   },
   "special_notes": {
-    "search_prefix": "بحث:"
+    "search_prefix": "بحث:",
+    "llm_chat_prefix": "محادثة:"
   },
   "hidden-subtree": {
     "calendar-title": "تقويم",
@@ -133,7 +102,7 @@
     "options-title": "خيارات",
     "appearance-title": "المظهر",
     "shortcuts-title": "أختصارات",
-    "images-title": "صور",
+    "images-title": "وسائط",
     "password-title": "كلمة المرور",
     "backup-title": "نسخة أحتياطية",
     "sync-title": "مزامنة",
@@ -168,16 +137,32 @@
     "code-notes-title": "ملاحظات برمجية",
     "visible-launchers-title": "المشغلات المرئية",
     "user-guide": "دليل المستخدم",
-    "ai-llm-title": "AI/LLM",
     "etapi-title": "ETAPI",
     "sql-console-history-title": "سجل وحدة تحكم SQL",
     "launch-bar-templates-title": "قوالب شريط التشغيل",
     "base-abstract-launcher-title": "المشغل الاساسي المجرد",
-    "llm-chat-title": "الدردشة مع الملاحظات",
     "localization": "اللغة والمنطقة",
     "go-to-previous-note-title": "اذهب الى الملاحظة السابقة",
     "go-to-next-note-title": "اذهب الى الملاحظة التالية",
-    "open-today-journal-note-title": "فتح ملاحظة مجلة اليوم"
+    "open-today-journal-note-title": "فتح ملاحظة مجلة اليوم",
+    "llm-chat-history-title": "سجل محادثة الذكاء الاصطناعي",
+    "custom-dictionary-title": "قاموس مخصص",
+    "command-palette": "فتح لوحة الأوامر",
+    "zen-mode": "وضع التركيز (Zen Mode)",
+    "llm-title": "الذكاء الاصطناعي / نموذج اللغة الكبير (LLM)",
+    "tab-switcher-title": "مبدّل علامات التبويب (Tab Switcher)",
+    "sidebar-chat-title": "محادثة الذكاء الاصطناعي",
+    "task-state-none": "لاشيء",
+    "task-state-doing": "قيد التنفيذ",
+    "task-state-done": "تم",
+    "task-state-maybe": "ربما",
+    "task-state-cancelled": "تم الالغاء",
+    "task-state-attr-color": "لون",
+    "task-state-attr-is-completed": "يُحسب كمكتمل",
+    "task-state-attr-is-hidden": "مخفي من القائمة",
+    "task-states-title": "حالات المهام",
+    "task-state-attr-state-id": "المعرّف (إجباري)",
+    "task-state-attr-markdown-symbol": "رمز Markdown"
   },
   "tray": {
     "bookmarks": "العلامات المرجعية",
@@ -199,14 +184,17 @@
     "site-theme": "المظهر العام للموقع",
     "image_alt": "صورة المقال",
     "on-this-page": "في هذه السفحة",
-    "last-updated": "اخر تحديث {{- date}}"
+    "last-updated": "اخر تحديث {{- date}}",
+    "toggle-navigation": "تبديل شريط التنقل",
+    "toggle-toc": "تبديل جدول المحتويات",
+    "logo-alt": "شعار"
   },
   "hidden_subtree_templates": {
     "description": "الوصف",
     "calendar": "التقويم",
     "table": "جدول",
     "geolocation": "الموقع الجغرافي",
-    "board": "لوحة",
+    "board": "لوحةلوحة كانبان",
     "status": "الحالة",
     "board_status_done": "تمت",
     "start-time": "وقت البدء",
@@ -234,39 +222,29 @@
     "password": "كلمة المرور",
     "button": "تسجيل الدخول",
     "heading": "تسجيل الدخول الى تريليوم",
-    "remember-me": "تذكرني"
+    "remember-me": "تذكرني",
+    "incorrect-totp": "رمز TOTP غير صحيح. يرجى المحاولة مرة أخرى.",
+    "incorrect-password": "كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.",
+    "sign_in_with_sso": "تسجيل الدخول باستخدام {{ssoIssuerName}}"
   },
   "set_password": {
     "password": "كلمة المرور",
     "title": "تعين كلمة المرور",
     "heading": "تعين كلمة المرور",
     "password-confirmation": "تاكيد كلمة المرور",
-    "button": "تعين كلمة المرور"
-  },
-  "setup": {
-    "next": "التالي",
-    "title": "تثبيت",
-    "heading": "تثبيت تريليوم للملاحظات",
-    "init-in-progress": "جار تهيئة المستند"
-  },
-  "setup_sync-from-desktop": {
-    "step6-here": "هنا",
-    "heading": "مزامنة من سطح المكتب",
-    "step3": "انقر على صنف المزامنة."
-  },
-  "setup_sync-in-progress": {
-    "outstanding-items-default": "غير متوفر",
-    "heading": "المزامنة جارية",
-    "outstanding-items": "عناصر المزامنة المعلقة:"
+    "button": "تعين كلمة المرور",
+    "description": "قبل أن تتمكن من البدء باستخدام Trilium من الويب، يجب عليك تعيين كلمة مرور أولاً. بعد ذلك ستستخدم هذه كلمة المرور لتسجيل الدخول."
   },
   "share_page": {
     "parent": "الأصل:",
     "child-notes": "الملاحظات الفرعية:",
-    "no-content": "لاتحتوي هذة الملاحظة على محتوى."
+    "no-content": "لاتحتوي هذة الملاحظة على محتوى.",
+    "clipped-from": "تم اقتباس هذه الملاحظة أصلًا من ‎{{- url}}‎"
   },
   "notes": {
     "duplicate-note-suffix": "(مكرر)",
-    "new-note": "ملاحظة جديدة"
+    "new-note": "ملاحظة جديدة",
+    "duplicate-note-title": "{{- noteTitle }}{{ duplicateNoteSuffix }}"
   },
   "keyboard_action_names": {
     "jump-to-note": "انتقل الى ...",
@@ -360,7 +338,12 @@
     "toggle-ribbon-tab-promoted-attributes": "عرض/ اخفاء تبويب السمات المعززة",
     "toggle-ribbon-tab-note-map": "عرض/اخفاء تبويب خريطة الملاحظات",
     "toggle-ribbon-tab-similar-notes": "عرض/اخفاء شريط الملاحظات المشابهة",
-    "export-active-note-as-pdf": "تصدير الملاحظة النشطة كملفPDF"
+    "export-active-note-as-pdf": "تصدير الملاحظة النشطة كملفPDF",
+    "toggle-archived-notes": "تبديل عرض الملاحظات المؤرشفة",
+    "insert-date-and-time-to-text": "إدراج التاريخ والوقت في النص",
+    "toggle-ribbon-tab-note-info": "تبديل تبويب الشريط: معلومات الملاحظة",
+    "toggle-ribbon-tab-note-paths": "تبديل تبويب الشريط: مسارات الملاحظة",
+    "save-named-revision": "حفظ نسخة مُسمّاة"
   },
   "share_404": {
     "title": "غير موجود",
@@ -370,6 +353,50 @@
   "quarterNumber": "الربع {رقم الربع}",
   "pdf": {
     "export_filter": "مستند PDF (.pdf)",
-    "unable-to-export-title": "تعذر التصدير كملف PDF"
+    "unable-to-export-title": "تعذر التصدير كملف PDF",
+    "unable-to-export-message": "تعذّر تصدير الملاحظة الحالية إلى ملف PDF.",
+    "unable-to-save-message": "تعذّر الكتابة إلى الملف المحدد. حاول مرة أخرى أو اختر وجهة أخرى.",
+    "unable-to-print": "تعذّر طباعة الملاحظة"
+  },
+  "test_sync": {
+    "not-configured": "لم يتم إعداد مضيف مزامنة الخادم. يرجى إعداد المزامنة أولًا.",
+    "successful": "تم الاتصال بخادم المزامنة بنجاح، وبدأت عملية المزامنة."
+  },
+  "backend_log": {
+    "log-does-not-exist": "ملف سجل الخلفية '{{ fileName }}' غير موجود (حتى الآن).",
+    "reading-log-failed": "فشل قراءة ملف سجل الخلفية '{{ fileName }}'."
+  },
+  "content_renderer": {
+    "note-cannot-be-displayed": "لا يمكن عرض هذا النوع من الملاحظات."
+  },
+  "migration": {
+    "old_version": "لا يتم دعم الترقية المباشرة من الإصدار الحالي. يرجى الترقية أولًا إلى أحدث إصدار v0.60.4 ثم الترقية إلى هذا الإصدار.",
+    "error_message": "حدث خطأ أثناء الترحيل إلى الإصدار {{version}}: {{stack}}",
+    "wrong_db_version": "إصدار قاعدة البيانات ({{version}}) أحدث من الإصدار الذي يتوقعه التطبيق ({{targetVersion}})، مما يعني أنه تم إنشاؤه بواسطة إصدار أحدث وغير متوافق من Trilium. يرجى الترقية إلى أحدث إصدار من Trilium لحل هذه المشكلة.",
+    "invalid_db_version": "إصدار قاعدة البيانات ليس رقمًا صالحًا. يشير هذا عادةً إلى تلف في خيار 'dbVersion' داخل قاعدة البيانات. يرجى الاستعادة من نسخة احتياطية.",
+    "automatic_migrations_disabled": "تم تعطيل الترحيل التلقائي لقاعدة البيانات عبر متغير البيئة TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}"
+  },
+  "sql_init": {
+    "db_not_initialized_desktop": "لم تتم تهيئة قاعدة البيانات، يرجى اتباع التعليمات الظاهرة على الشاشة.",
+    "db_not_initialized_server": "لم تتم تهيئة قاعدة البيانات، يرجى زيارة صفحة الإعداد: http://[your-server-host]:{{port}} للاطلاع على تعليمات تهيئة Trilium."
+  },
+  "desktop": {
+    "instance_already_running": "هناك نسخة قيد التشغيل بالفعل، سيتم التركيز على تلك النسخة بدلًا من تشغيل نسخة جديدة."
+  },
+  "script": {
+    "wrong-environment": "لا يمكن تنفيذ الملاحظة \"{{- noteTitle}}\" ({{- noteId}}). هذا سكربت خاص بـ {{- actualEnv}}، لكن تم محاولة تشغيله في بيئة {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "خطأ في {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" هي كلمة محجوزة. للبحث عن قيمة حرفية، استخدم علامات الاقتباس: \"{{- token}}\"",
+      "cannot-compare-with": "لا يمكن المقارنة مع \"{{- token}}\". للبحث عن قيمة حرفية، استخدم علامات الاقتباس: \"{{- token}}\"",
+      "misplaced-expression": "تعبير \"{{- token}}\" غير مكتمل أو في غير موضعه الصحيح",
+      "fulltext-after-expression": "\"{{- token}}\" ليس تعبيرًا صالحًا. للبحث عن نص، ضع النص قبل فلاتر الخصائص (مثل: \"{{- token}} #label\" بدلًا من \"#label {{- token}}\").",
+      "unrecognized-expression": "التعبير \"{{- token}}\" غير معروف"
+    }
+  },
+  "password": {
+    "incorrect": "كلمة المرور التي أدخلتها غير صحيحة."
   }
 }

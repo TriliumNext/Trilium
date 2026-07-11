@@ -37,7 +37,7 @@ export function toMapLibreEvent(e: MapMouseEvent): GeoMouseEvent {
     };
 }
 
-export default function Map({ coordinates, zoom, layerData, viewportChanged, children, onClick, onContextMenu, scale, apiRef, containerRef: _containerRef, onZoom }: MapProps) {
+export default function Map({ coordinates, zoom, layerData, viewportChanged, children, onClick, scale, apiRef, containerRef: _containerRef, onZoom }: MapProps) {
     const [ map, setMap ] = useState<MapLibreGLMap | null>(null);
     const containerRef = useSyncedRef<HTMLDivElement>(_containerRef);
 

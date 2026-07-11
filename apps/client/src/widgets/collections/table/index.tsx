@@ -18,14 +18,14 @@ import useRowTableEditing from "./row_editing";
 import { TableData } from "./rows";
 import Tabulator from "./tabulator";
 
-export default function TableView({ note, noteIds, notePath, viewConfig, saveConfig }: ViewModeProps<TableConfig>) {
+export default function TableView({ note, noteIds, viewConfig, saveConfig }: ViewModeProps<TableConfig>) {
     const tabulatorRef = useRef<VanillaTabulator>(null);
     const parentComponent = useContext(ParentComponent);
 
     const [ attributeDetailWidgetEl, attributeDetailWidget ] = useLegacyWidget(() => new AttributeDetailWidget().contentSized());
     const contextMenuEvents = useContextMenu(note, parentComponent, tabulatorRef);
     const persistenceProps = usePersistence(viewConfig, saveConfig);
-    const rowEditingEvents = useRowTableEditing(tabulatorRef, attributeDetailWidget, notePath);
+    const rowEditingEvents = useRowTableEditing(tabulatorRef, attributeDetailWidget, note);
     const { newAttributePosition, resetNewAttributePosition } = useColTableEditing(tabulatorRef, attributeDetailWidget, note);
     const { columnDefs, rowData, movableRows, hasChildren } = useData(note, noteIds, viewConfig, newAttributePosition, resetNewAttributePosition);
     const dataTreeProps = useMemo<Options>(() => {

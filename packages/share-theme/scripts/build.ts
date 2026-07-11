@@ -3,6 +3,7 @@ import path from "node:path";
 
 import dotenv from "dotenv";
 import * as esbuild from "esbuild";
+import { writeFileSync } from "node:fs";
 
 
 // const fileURL = fileURLToPath(import.meta.url);
@@ -73,8 +74,9 @@ async function runBuild(watch: boolean) {
         const ctx = esbuild.context(opts);
         (await ctx).watch();
     } else {
-        await esbuild.build(opts);
+        const result = await esbuild.build(opts);
         const after = performance.now();
+        writeFileSync("meta.json", JSON.stringify(result.metafile, null, 2));
         console.log(`Build actually took ${(after - before).toFixed(2)}ms`);
     }
 }

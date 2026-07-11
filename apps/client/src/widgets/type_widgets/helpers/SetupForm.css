@@ -19,4 +19,12 @@
     .tn-link {
         margin-top: 1em;
     }
+
+    label {
+        margin-bottom: 8px;
+    }
+
+    .input-group {
+        margin: 0;
+    }
 }

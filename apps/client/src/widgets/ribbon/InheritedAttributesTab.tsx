@@ -1,17 +1,21 @@
+import "./InheritedAttributesTab.css";
+
+import { createPortal } from "preact/compat";
 import { useEffect, useState } from "preact/hooks";
-import { TabContext } from "./ribbon-interface";
+
 import FAttribute from "../../entities/fattribute";
-import { useLegacyWidget, useTriliumEvent } from "../react/hooks";
+import attribute_renderer from "../../services/attribute_renderer";
 import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
-import attribute_renderer from "../../services/attribute_renderer";
+import AttributeDetailWidget from "../attribute_widgets/attribute_detail";
+import { useLegacyWidget, useTriliumEvent } from "../react/hooks";
 import RawHtml from "../react/RawHtml";
 import { joinElements } from "../react/react_utils";
-import AttributeDetailWidget from "../attribute_widgets/attribute_detail";
+import { TabContext } from "./ribbon-interface";
 
 type InheritedAttributesTabArgs = Pick<TabContext, "note" | "componentId"> & {
     emptyListString?: string;
-}
+};
 
 export default function InheritedAttributesTab({ note, componentId, emptyListString }: InheritedAttributesTabArgs) {
     const [ inheritedAttributes, setInheritedAttributes ] = useState<FAttribute[]>();
@@ -23,10 +27,11 @@ export default function InheritedAttributesTab({ note, componentId, emptyListStr
         attrs.sort((a, b) => {
             if (a.noteId === b.noteId) {
                 return a.position - b.position;
-            } else {
-                // inherited attributes should stay grouped: https://github.com/zadam/trilium/issues/3761
-                return a.noteId < b.noteId ? -1 : 1;
             }
+
+            // inherited attributes should stay grouped: https://github.com/zadam/trilium/issues/3761
+            return a.noteId < b.noteId ? -1 : 1;
+
         });
 
         setInheritedAttributes(attrs);
@@ -45,6 +50,7 @@ export default function InheritedAttributesTab({ note, componentId, emptyListStr
                 {inheritedAttributes?.length ? (
                     joinElements(inheritedAttributes.map(attribute => (
                         <InheritedAttribute
+                            key={attribute.attributeId}
                             attribute={attribute}
                             onClick={(e) => {
                                 setTimeout(
@@ -71,15 +77,15 @@ export default function InheritedAttributesTab({ note, componentId, emptyListStr
                 )}
             </div>
 
-            {attributeDetailWidgetEl}
+            {createPortal(attributeDetailWidgetEl, document.body)}
         </div>
-    )
+    );
 }
 function InheritedAttribute({ attribute, onClick }: { attribute: FAttribute, onClick: (e: MouseEvent) => void }) {
     const [ html, setHtml ] = useState<JQuery<HTMLElement> | string>("");
     useEffect(() => {
         attribute_renderer.renderAttribute(attribute, false).then(setHtml);
-    }, []);
+    }, [ attribute ]);
 
     return (
         <RawHtml

@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-      - master  # Also support master branch
+      - stable
     # Only run when docs files change
     paths:
       - 'docs/**'
@@ -42,10 +42,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

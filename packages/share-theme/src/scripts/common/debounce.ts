@@ -1,5 +1,5 @@
 export default function debounce<T extends (...args: unknown[]) => unknown>(executor: T, delay: number) {
-    let timeout: NodeJS.Timeout | null;
+    let timeout: ReturnType<typeof setTimeout> | null;
     return function(...args: Parameters<T>): void {
         const callback = () => {
             timeout = null;

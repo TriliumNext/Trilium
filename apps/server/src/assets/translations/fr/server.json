@@ -7,12 +7,7 @@
     "collapse-subtree": "Réduire le sous-arbre de la note actuelle",
     "sort-child-notes": "Trier les notes enfants",
     "creating-and-moving-notes": "Créer et déplacer des notes",
-    "create-note-into-inbox": "Créer une note dans l'emplacement par défaut (si défini) ou une note journalière",
-    "delete-note": "Supprimer la note",
-    "move-note-up": "Déplacer la note vers le haut",
-    "move-note-down": "Déplacer la note vers le bas",
-    "move-note-up-in-hierarchy": "Déplacer la note vers le haut dans la hiérarchie",
-    "move-note-down-in-hierarchy": "Déplacer la note vers le bas dans la hiérarchie",
+    "create-note-into-inbox": "Créer une note dans l'emplacement par défaut (si défini) ou une note du jour",
     "edit-note-title": "Passer de l'arborescence aux détails d'une note et éditer le titre",
     "edit-branch-prefix": "Afficher la fenêtre Éditer le préfixe de branche",
     "note-clipboard": "Note presse-papiers",
@@ -20,90 +15,59 @@
     "paste-notes-from-clipboard": "Coller les notes depuis le presse-papiers dans la note active",
     "cut-notes-to-clipboard": "Couper les notes sélectionnées dans le presse-papiers",
     "select-all-notes-in-parent": "Sélectionner toutes les notes du niveau de la note active",
-    "add-note-above-to-the-selection": "Ajouter la note au-dessus de la sélection",
-    "add-note-below-to-selection": "Ajouter la note en dessous de la sélection",
-    "duplicate-subtree": "Dupliquer le sous-arbre",
     "tabs-and-windows": "Onglets et fenêtres",
-    "open-new-tab": "Ouvrir un nouvel onglet",
-    "close-active-tab": "Fermer l'onglet actif",
     "reopen-last-tab": "Rouvrir le dernier onglet fermé",
     "activate-next-tab": "Basculer vers l'onglet à droite de l'onglet actif",
     "activate-previous-tab": "Basculer vers l'onglet à gauche de l'onglet actif",
     "open-new-window": "Ouvrir une nouvelle fenêtre vide",
     "toggle-tray": "Afficher/masquer l'application dans la barre des tâches",
-    "first-tab": "Basculer vers le premier onglet dans la liste",
-    "second-tab": "Basculer vers le deuxième onglet dans la liste",
-    "third-tab": "Basculer vers le troisième onglet dans la liste",
-    "fourth-tab": "Basculer vers le quatrième onglet dans la liste",
-    "fifth-tab": "Basculer vers le cinquième onglet dans la liste",
-    "sixth-tab": "Basculer vers le sixième onglet dans la liste",
-    "seventh-tab": "Basculer vers le septième onglet dans la liste",
-    "eight-tab": "Basculer vers le huitième onglet dans la liste",
-    "ninth-tab": "Basculer vers le neuvième onglet dans la liste",
-    "last-tab": "Basculer vers le dernier onglet dans la liste",
     "dialogs": "Boîtes de dialogue",
     "show-note-source": "Affiche la boîte de dialogue Source de la note",
     "show-options": "Afficher les Options",
     "show-revisions": "Afficher la boîte de dialogue Versions de la note",
     "show-recent-changes": "Afficher la boîte de dialogue Modifications récentes",
     "show-sql-console": "Afficher la boîte de dialogue Console SQL",
-    "show-backend-log": "Afficher la boîte de dialogue Journal du backend",
+    "show-backend-log": "Ouvrir la page “Logs du backend”",
     "text-note-operations": "Opérations sur les notes textuelles",
     "add-link-to-text": "Ouvrir la boîte de dialogue pour ajouter un lien dans le texte",
     "follow-link-under-cursor": "Suivre le lien sous le curseur",
     "insert-date-and-time-to-text": "Insérer la date et l'heure dans le texte",
-    "paste-markdown-into-text": "Coller du texte au format Markdown dans la note depuis le presse-papiers",
-    "cut-into-note": "Couper la sélection depuis la note actuelle et créer une sous-note avec le texte sélectionné",
+    "paste-markdown-into-text": "Coller le Markdown depuis le presse-papiers dans la note de texte",
+    "cut-into-note": "Coupe la sélection depuis la note actuelle et crée une note enfant avec le texte sélectionné",
     "add-include-note-to-text": "Ouvrir la boîte de dialogue pour Inclure une note",
-    "edit-readonly-note": "Éditer une note en lecture seule",
     "attributes-labels-and-relations": "Attributs (labels et relations)",
     "add-new-label": "Créer un nouveau label",
     "create-new-relation": "Créer une nouvelle relation",
     "ribbon-tabs": "Onglets du ruban",
-    "toggle-basic-properties": "Afficher/masquer les Propriétés de base de la note",
-    "toggle-file-properties": "Afficher/masquer les Propriétés du fichier",
-    "toggle-image-properties": "Afficher/masquer les Propriétés de l'image",
-    "toggle-owned-attributes": "Afficher/masquer les Attributs propres",
-    "toggle-inherited-attributes": "Afficher/masquer les Attributs hérités",
-    "toggle-promoted-attributes": "Afficher/masquer les Attributs promus",
-    "toggle-link-map": "Afficher/masquer la Carte de la note",
-    "toggle-note-info": "Afficher/masquer les Informations de la note",
-    "toggle-note-paths": "Afficher/masquer les Emplacements de la note",
-    "toggle-similar-notes": "Afficher/masquer les Notes similaires",
+    "toggle-link-map": "Afficher/masquer la carte des liens",
     "other": "Autre",
-    "toggle-right-pane": "Afficher/masquer le volet droit, qui inclut la Table des matières et les Accentuations",
-    "print-active-note": "Imprimer la note active",
+    "toggle-right-pane": "Afficher/masquer le volet droit, qui inclut la Table des matières et les Mises en évidence",
     "open-note-externally": "Ouvrir la note comme fichier avec l'application par défaut",
     "render-active-note": "Rendre (ou re-rendre) la note active",
     "run-active-note": "Exécuter le code JavaScript (frontend/backend) de la note active",
-    "toggle-note-hoisting": "Activer le focus sur la note active",
+    "toggle-note-hoisting": "Afficher/Masquer l’affichage en note principale de la note active",
     "unhoist": "Désactiver tout focus",
-    "reload-frontend-app": "Recharger l'application",
-    "open-dev-tools": "Ouvrir les outils de développement",
-    "toggle-left-note-tree-panel": "Basculer le panneau gauche (arborescence des notes)",
-    "toggle-full-screen": "Basculer en plein écran",
-    "zoom-out": "Dézoomer",
-    "zoom-in": "Zoomer",
+    "toggle-left-note-tree-panel": "Afficher/Masquer le panneau de gauche (arborescence des notes)",
     "note-navigation": "Navigation dans les notes",
-    "reset-zoom-level": "Réinitialiser le niveau de zoom",
     "copy-without-formatting": "Copier le texte sélectionné sans mise en forme",
     "force-save-revision": "Forcer la création / sauvegarde d'une nouvelle version de la note active",
     "show-help": "Affiche le guide de l'utilisateur intégré",
     "toggle-book-properties": "Afficher/masquer les Propriétés du Livre",
     "toggle-classic-editor-toolbar": "Activer/désactiver l'onglet Mise en forme de l'éditeur avec la barre d'outils fixe",
-    "export-as-pdf": "Exporte la note actuelle en PDF",
     "show-cheatsheet": "Affiche une fenêtre modale avec des opérations de clavier courantes",
     "toggle-zen-mode": "Active/désactive le mode zen (interface réduite pour favoriser la concentration)",
     "back-in-note-history": "Naviguer à la note précédente dans l'historique",
     "forward-in-note-history": "Naviguer a la note suivante dans l'historique",
-    "open-command-palette": "Ouvrir la palette de commandes",
     "clone-notes-to": "Cloner les nœuds sélectionnés",
     "move-notes-to": "Déplacer les nœuds sélectionnés",
     "scroll-to-active-note": "Faire défiler l’arborescence des notes jusqu’à la note active",
     "quick-search": "Activer la barre de recherche rapide",
     "create-note-after": "Créer une note après la note active",
-    "create-note-into": "Créer une note enfant de la note active",
-    "find-in-text": "Afficher/Masquer le panneau de recherche"
+    "create-note-into": "Créer une note enfant sous la note active",
+    "find-in-text": "Afficher/Masquer le panneau de recherche",
+    "toggle-archived-notes": "Afficher/masquer les notes archivées dans l'arborescence des notes",
+    "save-named-revision": "Enregistrer une révision nommée de la note active",
+    "peek-right-pane": "Afficher le panneau de droite sous forme de panneau temporaire flottant par-dessus le contenu, qui se ferme lorsqu'il perd le focus"
   },
   "login": {
     "title": "Connexion",
@@ -113,65 +77,26 @@
     "remember-me": "Se souvenir de moi",
     "button": "Connexion",
     "sign_in_with_sso": "Se connecter avec {{ ssoIssuerName }}",
-    "incorrect-totp": "TOTP incorrect. Veuillez réessayer."
+    "incorrect-totp": "TOTP incorrect. Veuillez réessayer.",
+    "sso-wrong-account": "Ce compte n'est pas celui qui est lié à cette instance Trilium. Connectez-vous avec le compte lié.",
+    "sso-not-enrolled": "La connexion unique n'est pas encore configurée. Connectez-vous d'abord avec votre mot de passe, puis associez votre compte dans les paramètres."
   },
   "set_password": {
     "title": "Définir un mot de passe",
     "heading": "Définir un mot de passe",
-    "description": "Avant de pouvoir commencer à utiliser Trilium depuis le web, vous devez d'abord définir un mot de passe. Vous utiliserez ensuite ce mot de passe pour vous connecter.",
+    "description": "Avant d'utiliser Trilium via le web, vous devez définir un mot de passe. Vous l'utiliserez ensuite pour vous connecter.",
     "password": "Mot de passe",
     "password-confirmation": "Confirmation du mot de passe",
     "button": "Définir le mot de passe"
-  },
-  "setup": {
-    "heading": "Configuration de Trilium Notes",
-    "new-document": "Je suis un nouvel utilisateur et je souhaite créer un nouveau document Trilium pour mes notes",
-    "sync-from-desktop": "J'ai déjà l'application de bureau et je souhaite configurer la synchronisation avec celle-ci",
-    "sync-from-server": "J'ai déjà un serveur et je souhaite configurer la synchronisation avec celui-ci",
-    "next": "Suivant",
-    "init-in-progress": "Initialisation du document en cours",
-    "redirecting": "Vous serez bientôt redirigé vers l'application.",
-    "title": "Configuration"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Synchroniser depuis une application de bureau",
-    "description": "Cette procédure doit être réalisée depuis l'application de bureau :",
-    "step1": "Ouvrez l'application Trilium Notes.",
-    "step2": "Dans le menu Trilium, cliquez sur Options.",
-    "step3": "Cliquez sur la catégorie Synchroniser.",
-    "step4": "Remplacez l'adresse de l'instance de serveur par : {{- host}} et cliquez sur Enregistrer.",
-    "step5": "Cliquez sur le bouton 'Tester la synchronisation' pour vérifier que la connexion fonctionne.",
-    "step6": "Une fois que vous avez terminé ces étapes, cliquez sur {{- link}}.",
-    "step6-here": "ici"
-  },
-  "setup_sync-from-server": {
-    "heading": "Synchroniser depuis le serveur",
-    "instructions": "Veuillez saisir l'adresse du serveur Trilium et les informations d'identification ci-dessous. Cela téléchargera l'intégralité du document Trilium à partir du serveur et configurera la synchronisation avec celui-ci. En fonction de la taille du document et de votre vitesse de connexion, cela peut prendre un plusieurs minutes.",
-    "server-host": "Adresse du serveur Trilium",
-    "server-host-placeholder": "https://<nom d'hôte>:<port>",
-    "proxy-server": "Serveur proxy (facultatif)",
-    "proxy-server-placeholder": "https://<nom d'hôte>:<port>",
-    "note": "Note :",
-    "proxy-instruction": "Si vous laissez le paramètre de proxy vide, le proxy du système sera utilisé (s'applique uniquement à l'application de bureau)",
-    "password": "Mot de passe",
-    "password-placeholder": "Mot de passe",
-    "back": "Retour",
-    "finish-setup": "Terminer"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Synchronisation en cours",
-    "successful": "La synchronisation a été correctement configurée. La synchronisation initiale prendra un certain temps. Une fois terminée, vous serez redirigé vers la page de connexion.",
-    "outstanding-items": "Éléments de synchronisation exceptionnels :",
-    "outstanding-items-default": "N/A"
   },
   "share_404": {
     "title": "Page non trouvée",
     "heading": "Page non trouvée"
   },
   "share_page": {
-    "parent": "parent :",
+    "parent": "parent :",
     "clipped-from": "Cette note a été initialement extraite de {{- url}}",
-    "child-notes": "Notes enfants :",
+    "child-notes": "Notes enfants :",
     "no-content": "Cette note n'a aucun contenu."
   },
   "weekdays": {
@@ -198,20 +123,21 @@
     "december": "Décembre"
   },
   "special_notes": {
-    "search_prefix": "Recherche :"
+    "search_prefix": "Recherche :",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
-    "not-configured": "L'hôte du serveur de synchronisation n'est pas configuré. Veuillez d'abord configurer la synchronisation.",
+    "not-configured": "L'adresse du serveur de synchronisation n'est pas configurée. Configurez d'abord la synchronisation.",
     "successful": "L'établissement de liaison du serveur de synchronisation a été réussi, la synchronisation a été démarrée."
   },
   "hidden-subtree": {
-    "root-title": "Notes cachées",
-    "search-history-title": "Historique de recherche",
-    "note-map-title": "Carte de la Note",
+    "root-title": "Notes masquées",
+    "search-history-title": "Historique des recherches",
+    "note-map-title": "Carte des notes",
     "sql-console-history-title": "Historique de la console SQL",
     "shared-notes-title": "Notes partagées",
     "bulk-action-title": "Action groupée",
-    "backend-log-title": "Journal Backend",
+    "backend-log-title": "Logs du backend",
     "user-hidden-title": "Utilisateur masqué",
     "launch-bar-templates-title": "Modèles de barre de raccourcis",
     "base-abstract-launcher-title": "Raccourci Base abstraite",
@@ -230,19 +156,19 @@
     "calendar-title": "Calendrier",
     "recent-changes-title": "Modifications récentes",
     "bookmarks-title": "Signets",
-    "open-today-journal-note-title": "Ouvrir la note du journal du jour",
+    "open-today-journal-note-title": "Ouvrir la note du jour",
     "quick-search-title": "Recherche rapide",
     "protected-session-title": "Session protégée",
     "sync-status-title": "État de la synchronisation",
-    "settings-title": "Réglages",
-    "options-title": "Options",
+    "settings-title": "Paramètres",
+    "options-title": "Paramètres",
     "appearance-title": "Apparence",
     "shortcuts-title": "Raccourcis",
     "text-notes": "Notes de texte",
     "code-notes-title": "Notes de code",
-    "images-title": "Images",
+    "images-title": "Médias",
     "spellcheck-title": "Correcteur orthographique",
-    "password-title": "Mot de passe",
+    "password-title": "Mot de passe et authentification",
     "etapi-title": "ETAPI",
     "backup-title": "Sauvegarde",
     "sync-title": "Synchronisation",
@@ -251,13 +177,29 @@
     "visible-launchers-title": "Raccourcis visibles",
     "user-guide": "Guide de l'utilisateur",
     "jump-to-note-title": "Aller à...",
-    "llm-chat-title": "Discuter avec Notes",
     "multi-factor-authentication-title": "MFA",
-    "ai-llm-title": "AI/LLM",
     "localization": "Langue et région",
     "inbox-title": "Boîte de réception",
     "command-palette": "Ouvrir la palette de commandes",
-    "zen-mode": "Mode Zen"
+    "zen-mode": "Mode Zen",
+    "llm-chat-history-title": "Historique des discussions IA",
+    "llm-title": "AI / LLM",
+    "tab-switcher-title": "Commutateur d'onglets",
+    "sidebar-chat-title": "AI Chat",
+    "custom-dictionary-title": "Dictionnaire personnalisé",
+    "task-states-title": "Statuts des tâches",
+    "task-state-none": "Aucun",
+    "task-state-doing": "En cours",
+    "task-state-done": "Terminé",
+    "task-state-maybe": "À voir",
+    "task-state-cancelled": "Annulé",
+    "task-state-attr-state-id": "Identifiant (obligatoire)",
+    "task-state-attr-markdown-symbol": "Symbole Markdown",
+    "task-state-attr-is-completed": "Compte comme terminé",
+    "task-state-attr-color": "Couleur",
+    "task-state-attr-is-hidden": "Masqué de la liste",
+    "security-title": "Sécurité",
+    "desktop-title": "Bureau"
   },
   "notes": {
     "new-note": "Nouvelle note",
@@ -265,8 +207,8 @@
     "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
   },
   "backend_log": {
-    "log-does-not-exist": "Le fichier journal '{{ fileName }}' n'existe pas (encore).",
-    "reading-log-failed": "La lecture du fichier journal d'administration '{{ fileName }}' a échoué."
+    "log-does-not-exist": "Le fichier de logs du backend '{{ fileName }}' n'existe pas (encore).",
+    "reading-log-failed": "La lecture du fichier de logs du backend '{{ fileName }}' a échoué."
   },
   "content_renderer": {
     "note-cannot-be-displayed": "Ce type de note ne peut pas être affiché."
@@ -283,7 +225,7 @@
     "close": "Quitter Trilium",
     "recents": "Notes récentes",
     "bookmarks": "Signets",
-    "today": "Ouvrir la note du journal du jour",
+    "today": "Ouvrir la note du jour",
     "new-note": "Nouvelle note",
     "show-windows": "Afficher les fenêtres",
     "open_new_window": "Ouvrir une nouvelle fenêtre"
@@ -291,7 +233,9 @@
   "migration": {
     "old_version": "La migration directe à partir de votre version actuelle n'est pas prise en charge. Veuillez d'abord mettre à jour vers la version v0.60.4, puis vers cette nouvelle version.",
     "error_message": "Erreur lors de la migration vers la version {{version}}: {{stack}}",
-    "wrong_db_version": "La version de la base de données ({{version}}) est plus récente que ce que l'application supporte actuellement ({{targetVersion}}), ce qui signifie qu'elle a été créée par une version plus récente et incompatible de Trilium. Mettez à jour vers la dernière version de Trilium pour résoudre ce problème."
+    "wrong_db_version": "La version de la base de données ({{version}}) est plus récente que ce que l'application supporte actuellement ({{targetVersion}}), ce qui signifie qu'elle a été créée par une version plus récente et incompatible de Trilium. Mettez à jour vers la dernière version de Trilium pour résoudre ce problème.",
+    "invalid_db_version": "La version de la base de données n'est pas un nombre valide. Cela indique généralement que l'option « dbVersion » de la base de données est corrompue. Veuillez restaurer la base à partir d'une sauvegarde.",
+    "automatic_migrations_disabled": "Les migrations automatiques de base de données sont désactivées via la variable d'environnement TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}"
   },
   "modals": {
     "error_title": "Erreur"
@@ -323,7 +267,7 @@
     "copy-notes-to-clipboard": "Copier les notes dans le presse-papiers",
     "paste-notes-from-clipboard": "Coller les notes depuis le presse-papiers",
     "cut-notes-to-clipboard": "Couper les notes vers le presse-papier",
-    "select-all-notes-in-parent": "Selectionner toutes les notes dans le parent",
+    "select-all-notes-in-parent": "Sélectionner toutes les notes de la note parent",
     "add-note-above-to-selection": "Ajouter la note au-dessus à la selection",
     "add-note-below-to-selection": "Ajouter la note dessous à la selection",
     "duplicate-subtree": "Dupliquer la sous-arborescence",
@@ -350,7 +294,7 @@
     "show-revisions": "Afficher les révisions",
     "show-recent-changes": "Afficher les changements récents",
     "show-sql-console": "Afficher la console SQL",
-    "show-backend-log": "Afficher le journal du backend",
+    "show-backend-log": "Afficher les logs du backend",
     "show-help": "Afficher l'aide",
     "show-cheatsheet": "Afficher la fiche de triche",
     "add-link-to-text": "Ajouter un lien au texte",
@@ -369,29 +313,32 @@
     "toggle-ribbon-tab-image-properties": "Afficher/masquer les Propriétés de l'image",
     "toggle-ribbon-tab-owned-attributes": "Afficher/masquer les Attributs propres",
     "toggle-ribbon-tab-inherited-attributes": "Afficher/masquer les Attributs hérités",
-    "toggle-right-pane": "Afficher le panneau de droite",
+    "toggle-right-pane": "Afficher/Masquer le panneau de droite",
     "print-active-note": "Imprimer la note active",
     "export-active-note-as-pdf": "Exporter la note active en PDF",
     "open-note-externally": "Ouvrir la note à l'extérieur",
     "render-active-note": "Faire un rendu de la note active",
-    "run-active-note": "Lancer la note active",
+    "run-active-note": "Exécuter la note active",
     "reload-frontend-app": "Recharger l'application Frontend",
     "open-developer-tools": "Ouvrir les outils développeur",
     "find-in-text": "Chercher un texte",
-    "toggle-left-pane": "Afficher le panneau de gauche",
-    "toggle-full-screen": "Passer en mode plein écran",
+    "toggle-left-pane": "Afficher/Masquer le panneau de gauche",
+    "toggle-full-screen": "Plein écran",
     "zoom-out": "Dézoomer",
     "zoom-in": "Zoomer",
     "reset-zoom-level": "Réinitilaliser le zoom",
     "copy-without-formatting": "Copier sans mise en forme",
     "force-save-revision": "Forcer la sauvegarde de la révision",
     "toggle-ribbon-tab-promoted-attributes": "Basculer les attributs promus de l'onglet du ruban",
-    "toggle-ribbon-tab-note-map": "Basculer l'onglet du ruban Note Map",
+    "toggle-ribbon-tab-note-map": "Afficher/masquer l’onglet “Carte des notes” du ruban",
     "toggle-ribbon-tab-note-info": "Basculer l'onglet du ruban Note Info",
     "toggle-ribbon-tab-note-paths": "Basculer les chemins de notes de l'onglet du ruban",
     "toggle-ribbon-tab-similar-notes": "Basculer l'onglet du ruban Notes similaires",
     "toggle-note-hoisting": "Activer la focalisation sur la note",
-    "unhoist-note": "Désactiver la focalisation sur la note"
+    "unhoist-note": "Désactiver la focalisation sur la note",
+    "toggle-archived-notes": "Afficher/Masquer les notes archivées",
+    "save-named-revision": "Enregistrer une révision nommée",
+    "peek-right-pane": "Aperçu du panneau de droite"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Base de données non initialisée, merci de suivre les instructions à l'écran.",
@@ -409,7 +356,11 @@
     "last-updated": "Dernière mise à jour le {{- date}}",
     "subpages": "Sous-pages:",
     "on-this-page": "Sur cette page",
-    "expand": "Développer"
+    "expand": "Développer",
+    "logo-alt": "Logo",
+    "toggle-toc": "Afficher/Masquer la table des matières",
+    "toggle-navigation": "Afficher/Masquer la navigation",
+    "login": "Se connecter"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Extrait de texte",
@@ -425,7 +376,7 @@
     "end-time": "Heure de fin",
     "geolocation": "Géolocalisation",
     "built-in-templates": "Modèles intégrés",
-    "board": "Tableau de bord",
+    "board": "Vue Kanban",
     "status": "État",
     "board_note_first": "Première note",
     "board_note_second": "Deuxième note",
@@ -437,6 +388,68 @@
     "presentation_slide": "Diapositive de présentation",
     "presentation_slide_first": "Première diapositive",
     "presentation_slide_second": "Deuxième diapositive",
-    "background": "Arrière-plan"
+    "background": "Arrière-plan",
+    "markdown-snippet": "Extrait Markdown",
+    "code-snippet": "Extrait de code",
+    "dashboard": "Tableau de bord"
+  },
+  "password": {
+    "incorrect": "Le mot de passe que vous avez saisi est incorrect."
+  },
+  "script": {
+    "wrong-environment": "Impossible d'exécuter la note \"{{- noteTitle}}\" {{- noteId}}. Il s'agit d'un script {{- actualEnv}} mais l'exécution a été tentée dans {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Erreur dans {{- context}} : {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" est un mot-clé réservé. Pour rechercher une valeur littérale, utilisez des guillemets : \"{{- token}}\"",
+      "cannot-compare-with": "ne peut pas être comparé à \"{{- token}}\". Pour rechercher une valeur littérale, utilisez des guillemets : \"{{- token}}\"",
+      "misplaced-expression": "Expression \"{{- token}}\" mal placée ou incomplète",
+      "fulltext-after-expression": "\"{{- token}}\" n'est pas une expression valide. Pour rechercher du texte, placez-le avant les filtres d'attributs (par exemple, \"{{- token}} #label\" au lieu de \"#label {{- token}}\").",
+      "unrecognized-expression": "Expression inconnue \"{{- token}}\""
+    }
+  },
+  "security-dialog": {
+    "enable-title": "Activer {{settingLabel}}",
+    "enable-message": "Êtes-vous sûr de vouloir activer {{settingLabel}} ?",
+    "enable-detail": "{{warning}}\n\nN'activez cette option que si vous avez explicitement l'intention d'utiliser cette fonctionnalité. Ne l'activez pas si elle vous est proposée par un script ou une note qui vous est inconnue.\n\nCe changement nécessite un redémarrage pour prendre effet.",
+    "disable-title": "Désactiver {{settingLabel}}",
+    "disable-message": "{{settingLabel}} sera désactivé.",
+    "disable-detail": "Ce changement nécessite un redémarrage pour prendre effet.",
+    "cancel": "Annuler",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "dont-ask-again": "Ne plus demander jusqu'au prochain redémarrage",
+    "backend-scripting": "Exécution de scripts backend",
+    "backend-scripting-warning": "Les scripts backend ont un accès complet au serveur, y compris au système de fichiers et au réseau.",
+    "sql-console": "Console SQL",
+    "sql-console-warning": "La console SQL permet d'exécuter des requêtes SQL arbitraires sur la base de données.",
+    "lan-access": "accès au réseau",
+    "lan-access-warning": "D'autres appareils de votre réseau local pourront se connecter à cette instance Trilium."
+  },
+  "onenote_import": {
+    "root-title": "Importation OneNote"
+  },
+  "notion_import": {
+    "root-title": "Importation Notion",
+    "markdown-export-unsupported": "Ceci ressemble à un export Notion « Markdown & CSV », que Trilium ne peut pas importer. Veuillez réexporter votre espace de travail Notion au format « HTML » et importer celui-ci à la place.",
+    "subpage-folders-disabled": "Cet export Notion a été créé sans l'option « Create folders for subpages », la hiérarchie des pages ne peut donc pas être reconstituée. Veuillez réexporter depuis Notion avec l'option « Create folders for subpages » activée et importer celui-ci à la place."
+  },
+  "keep_import": {
+    "root-title": "Importation Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Import Anytype",
+    "protobuf-export-unsupported": "Ceci ressemble à un export Anytype « Protobuf », que Trilium ne peut pas importer. Veuillez réexporter votre espace Anytype en utilisant le format « Any-Block » avec « JSON » sélectionné et importer celui-ci à la place.",
+    "markdown-export-unsupported": "Ceci ressemble à un export Anytype « Markdown », que Trilium ne peut pas importer. Veuillez réexporter votre espace Anytype en utilisant le format « Any-Block » avec « JSON » sélectionné et importer celui-ci à la place."
+  },
+  "obsidian_import": {
+    "root-title": "Import Obsidian"
+  },
+  "export": {
+    "zip_filter": "Archive ZIP (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "La sélection de fichier a expiré ou n'est pas valide. Veuillez choisir le fichier à nouveau."
   }
 }

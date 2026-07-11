@@ -3,6 +3,10 @@
 
 The Board view presents sub-notes in columns for a Kanban-like experience. Each column represents a possible value for a status label, which can be adjusted.
 
+## Creating a Kanban board
+
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _Kanban Board_.
+
 ## How it works
 
 When first creating a collection of _Board_ type, a few subnotes will be created, each having a `#status` label set. The board then groups each note by the value of the status attribute.

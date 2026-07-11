@@ -9,21 +9,20 @@
 		"preview": "pnpm build && vite preview"
 	},
 	"dependencies": {
-		"i18next": "25.8.7",
-		"i18next-http-backend": "3.0.2",
-		"preact": "10.28.3",
-		"preact-iso": "2.11.1",
-		"preact-render-to-string": "6.6.5",
-		"react-i18next": "16.5.4"
+		"i18next": "26.3.4",
+		"preact": "10.29.6",
+		"preact-iso": "2.12.0",
+		"preact-render-to-string": "6.7.0",
+		"react-i18next": "17.0.8"
 	},
 	"devDependencies": {
-		"@preact/preset-vite": "2.10.3",
-		"eslint": "10.0.0",
+		"@preact/preset-vite": "2.10.5",
+		"eslint": "10.6.0",
 		"eslint-config-preact": "2.0.0",
-		"typescript": "5.9.3",
-		"user-agent-data-types": "0.4.2",
-		"vite": "7.3.1",
-		"vitest": "4.0.18"
+		"typescript": "6.0.3",
+		"user-agent-data-types": "0.4.3",
+		"vite": "8.1.3",
+		"vitest": "4.1.10"
 	},
 	"eslintConfig": {
 		"extends": "preact"

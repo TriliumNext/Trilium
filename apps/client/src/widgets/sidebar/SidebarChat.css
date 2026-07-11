@@ -1,0 +1,98 @@
+/* Sidebar Chat Widget Styles */
+
+.sidebar-chat-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0; /* Allow shrinking in flex context */
+    overflow: hidden; /* Contain children within available space */
+}
+
+.sidebar-chat-container .llm-chat-input-form {
+    flex-shrink: 0;
+    padding: 8px;
+    font-size: 0.9em;
+    min-height: 40px;
+}
+
+/* Scroll-container essentials (flex/min-height/overflow) come from .chat-message-list. */
+.sidebar-chat-messages {
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Reuse llm-chat-message styles but make them more compact */
+.sidebar-chat-messages .llm-chat-message-wrapper {
+    margin-top: 0;
+    max-width: 100%;
+}
+
+.sidebar-chat-messages .llm-chat-message {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.sidebar-chat-messages .llm-chat-tool-activity {
+    font-size: 0.85rem;
+    padding: 0.375rem 0.75rem;
+    margin-bottom: 0;
+    max-width: 100%;
+}
+
+/* Remove default card-body padding and let child handle scrolling */
+#sidebar-chat .card-body {
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Compact markdown in sidebar */
+.sidebar-chat-messages .llm-chat-markdown {
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.sidebar-chat-messages .llm-chat-markdown p {
+    margin: 0 0 0.5em 0;
+}
+
+.sidebar-chat-messages .llm-chat-markdown pre {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.sidebar-chat-messages .llm-chat-markdown code {
+    font-size: 0.85em;
+}
+
+/* History dropdown row: title/date on the left, delete button pushed to the right. */
+.sidebar-chat-history-item.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.sidebar-chat-history-item-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.sidebar-chat-history-delete {
+    flex-shrink: 0;
+}
+
+.sidebar-chat-history-item-content span,
+.sidebar-chat-history-item-content strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-chat-history-date {
+    font-size: 0.75rem;
+    color: var(--muted-text-color);
+    margin-top: 0.125rem;
+}

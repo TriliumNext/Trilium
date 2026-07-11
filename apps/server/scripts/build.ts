@@ -7,6 +7,12 @@ async function main() {
 
     // Copy assets
     build.copy("src/assets", "assets/");
+    // schema.sql lives in trilium-core but is loaded at server startup. The
+    // bundled main.cjs can't `require.resolve("@triliumnext/core/...")` in
+    // Docker (no workspace symlinks in the image), so we copy the file
+    // alongside the server's own assets and read it via RESOURCE_DIR at
+    // runtime. See main.ts.
+    build.copy("/packages/trilium-core/src/assets/schema.sql", "assets/schema.sql");
     build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 

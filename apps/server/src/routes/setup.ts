@@ -1,21 +1,17 @@
-"use strict";
-
-import sqlInit from "../services/sql_init.js";
-import setupService from "../services/setup.js";
-import { isElectron } from "../services/utils.js";
-import assetPath from "../services/asset_path.js";
-import appPath from "../services/app_path.js";
+import { i18n, setup as setupService } from "@triliumnext/core";
 import type { Request, Response } from "express";
-import { getCurrentLocale } from "../services/i18n.js";
+
+import appPath from "../services/app_path.js";
+import assetPath from "../services/asset_path.js";
+import sqlInit from "../services/sql_init.js";
 
 function setupPage(req: Request, res: Response) {
     if (sqlInit.isDbInitialized()) {
-        if (isElectron) {
-            handleElectronRedirect();
-        } else {
-            res.redirect(".");
-        }
-
+        // For HTTP browsers this navigates to the main app. The desktop
+        // (Electron) flow doesn't depend on the response — its DB_INITIALIZED
+        // subscriber swaps the setup window for the main window directly, so
+        // the renderer issuing this request is about to be destroyed anyway.
+        res.redirect(".");
         return;
     }
 
@@ -29,23 +25,11 @@ function setupPage(req: Request, res: Response) {
     }
 
     res.render("setup", {
-        syncInProgress: syncInProgress,
-        assetPath: assetPath,
-        appPath: appPath,
-        currentLocale: getCurrentLocale()
+        syncInProgress,
+        assetPath,
+        appPath,
+        currentLocale: i18n.getCurrentLocale()
     });
-}
-
-async function handleElectronRedirect() {
-    const windowService = (await import("../services/window.js")).default;
-    const { app } = await import("electron");
-
-    // Wait for the main window to be created before closing the setup window to prevent triggering `window-all-closed`.
-    await windowService.createMainWindow(app);
-    windowService.closeSetupWindow();
-
-    const tray = (await import("../services/tray.js")).default;
-    tray.createTray();
 }
 
 export default {

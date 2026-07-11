@@ -1,0 +1,100 @@
+.options-page-header-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: var(--options-card-max-width);
+    margin: 0 auto;
+}
+
+/* Title row: the page title/icon and the page's primary actions side by side. */
+.options-page-header-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.options-page-header-titles {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+}
+
+/* Circular icon badge, reusing the quick-edit popup's note-icon theme tokens: the glyph (::before)
+   is painted above a circular background (::after). */
+.options-page-header-icon {
+    --badge-size: 40px;
+
+    position: relative;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--badge-size);
+    height: var(--badge-size);
+    font-size: 22px;
+    line-height: 1;
+}
+
+.options-page-header-icon::before {
+    position: relative;
+    z-index: 1;
+    color: var(--note-icon-color);
+}
+
+.options-page-header-icon::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--note-icon-background-color);
+}
+
+.options-page-header-title {
+    margin: 0;
+    font-size: 1.4rem;
+    /* Match the note's own title chrome (input.note-title, which inherits the normal body weight)
+       shown when the page is opened standalone, rather than the browser's bold <h2> default. */
+    font-weight: normal;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.options-page-header-actions {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* A full-width bar that sticks to the top of the scrolling content, so cards scroll cleanly beneath
+   it. The background is painted per context (below) so the sticky bar matches its surroundings. */
+.options-page-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: 1px solid var(--main-border-color);
+    padding-block: 10px;
+}
+
+/* Break out of the option page's inline padding (25px in the new layout) so the bar — and its bottom
+   border — spans the full content width; re-add the inset as padding so the title and actions still
+   line up with the option cards. */
+body.experimental-feature-new-layout .options-page-header {
+    margin-inline: -25px;
+    padding-inline: 25px;
+}
+
+/* In the settings dialog the content area is painted with the modal background. */
+.modal.options-dialog .options-page-header {
+    background: var(--modal-background-color);
+}
+
+/* Standalone (page opened in a tab): the content uses the main background, and this header stands in
+   for the note's own title chrome, which InlineTitle suppresses for options pages. */
+.note-split .options-page-header {
+    background: var(--main-background-color);
+    margin-bottom: 1em;
+}

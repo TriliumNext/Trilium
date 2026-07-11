@@ -109,6 +109,21 @@
     object-fit: contain;
 }
 
+/* The interactive viewer manages its own fit/zoom, so let its image use the full viewport. */
+.attachment-detail-wrapper.full-detail .attachment-content-wrapper.attachment-image-viewer img {
+    max-width: 100%;
+    object-fit: unset;
+}
+
+/* Anchor the sibling-navigation overlay to the viewer, and constrain the viewer to its flex slot so
+   a tall image fits the viewport instead of growing the layout. overflow:hidden also zeroes the flex
+   auto min-height (otherwise the item won't shrink below the image's intrinsic height), matching the
+   note-image wrapper. */
+.attachment-content-wrapper.attachment-image-viewer {
+    position: relative;
+    overflow: hidden;
+}
+
 .attachment-detail-wrapper.scheduled-for-deletion .attachment-content-wrapper img {
     filter: contrast(10%);
 }
@@ -134,6 +149,9 @@
 
 .attachment-detail .attachment-wrapper {
     flex-grow: 1;
+    /* Let this flex item shrink to its slot; without it the default min-height:auto lets tall content
+       (e.g. the full-view image) grow past the viewport, and .note-detail then clips the overflow. */
+    min-height: 0;
 }
 /* #endregion */
 

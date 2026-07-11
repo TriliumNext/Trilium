@@ -21,8 +21,38 @@ export const NOTE_TYPE_ICONS = {
     doc: "bx bxs-file-doc",
     contentWidget: "bx bxs-widget",
     mindMap: "bx bx-sitemap",
-    aiChat: "bx bx-bot"
+    spreadsheet: "bx bx-table",
+    llmChat: "bx bx-message-square-dots"
 };
+
+/**
+ * Note types that can be embedded as an image but are not images themselves, mapped to the title of
+ * the attachment holding their rendered picture. The type widgets write these attachments, the
+ * `api/images/<noteId>` routes serve them in place of the note's own content, the ZIP export writes
+ * them out beside the note and the importer resolves them back, and note orphan-erasure exempts
+ * them. Everything keys off this one table so those five places cannot drift apart.
+ */
+export const NOTE_TYPE_IMAGE_ATTACHMENTS = {
+    canvas: "canvas-export.svg",
+    mermaid: "mermaid-export.svg",
+    mindMap: "mindmap-export.svg",
+    spreadsheet: "spreadsheet-export.png"
+} as const satisfies Partial<Record<NoteType, string>>;
+
+/**
+ * The title of the attachment holding the rendered image of the given note type, or `undefined` if
+ * notes of that type carry their image as content and are served directly.
+ *
+ * Prefer indexing {@link NOTE_TYPE_IMAGE_ATTACHMENTS} directly when the note type is known
+ * statically — it narrows to the exact title instead of `string | undefined`.
+ */
+export function getImageAttachmentTitle(type: NoteType | null | undefined): string | undefined {
+    if (!type) {
+        return undefined;
+    }
+
+    return (NOTE_TYPE_IMAGE_ATTACHMENTS as Partial<Record<NoteType, string>>)[type];
+}
 
 const FILE_MIME_MAPPINGS = {
     "application/pdf": "bx bxs-file-pdf",
@@ -60,6 +90,8 @@ export function getNoteIcon({ noteId, type, mime, iconClass, workspaceIconClass,
         const correspondingMimeType = MIME_TYPES_DICT.find(m => m.mime === mime);
         return correspondingMimeType?.icon ?? NOTE_TYPE_ICONS.code;
     } else if (type === "file") {
+        if (mime.startsWith("video/")) return "bx bx-video";
+        if (mime.startsWith("audio/")) return "bx bx-music";
         return FILE_MIME_MAPPINGS[mime] ?? NOTE_TYPE_ICONS.file;
     } else if (type === "image") {
         return IMAGE_MIME_MAPPINGS[mime] ?? NOTE_TYPE_ICONS.image;

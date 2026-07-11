@@ -44,7 +44,13 @@ declare global {
                 on(event: string, listener: (...args: any[]) => void): void;
                 dispatch(event: string, data?: any): void;
             };
+            findBar?: {
+                open(): void;
+                close(): void;
+                toggle(): void;
+            };
             store: ViewHistory;
         };
+        PDFViewerApplicationOptions?: { set(name: string, value: any): void; }
     }
 }

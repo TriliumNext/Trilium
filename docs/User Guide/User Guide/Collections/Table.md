@@ -25,7 +25,7 @@ There are also a few predefined columns:
 
 ### Creating a new table
 
-Right click the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for the _Table item_.
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _Table_.
 
 ### Adding columns
 
@@ -120,7 +120,7 @@ Next to the title of each element there will be a button to expand or collapse. 
 
 Since nesting is not always desirable, it is possible to limit the nesting to a certain number of levels or even disable it completely. To do so, either:
 
-*   Go to _Collection Properties_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a> and look for the _Max nesting depth_ section.
+*   Go to <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> and look for the _Max nesting depth_ section.
     *   To disable nesting, type 0 and press Enter.
     *   To limit to a certain depth, type in the desired number (e.g. 2 to only display children and sub-children).
     *   To re-enable unlimited nesting, remove the number and press Enter.

@@ -1,11 +1,8 @@
-diff --git a/build/mention.js b/build/mention.js
-deleted file mode 100644
-index 3ef262a2fb7cbb953b35cb7e07a999edce6dc72a..0000000000000000000000000000000000000000
 diff --git a/dist/index.js b/dist/index.js
-index bbe511c5550e1cac8612e998034382b4eea1f1b8..8394fd8bba89f8a7b82d62fe613be6f12703ff53 100644
+index 5c1b7d98d6a47f56a00440a6753368676bc26a7a..46cf87ae341bd2405fb756ba827c61b5b062f6b6 100644
 --- a/dist/index.js
 +++ b/dist/index.js
-@@ -603,6 +603,16 @@ const defaultCommitKeyCodes = [
+@@ -609,6 +609,16 @@ const defaultCommitKeyCodes = [
                  }
                  if (data.keyCode == keyCodes.esc) {
                      this._hideUIAndRemoveMarker();
@@ -22,7 +19,7 @@ index bbe511c5550e1cac8612e998034382b4eea1f1b8..8394fd8bba89f8a7b82d62fe613be6f1
                  }
              }
          }, {
-@@ -1067,12 +1077,11 @@ const defaultCommitKeyCodes = [
+@@ -1075,12 +1085,11 @@ const defaultCommitKeyCodes = [
   */ function createRegExp(marker, minimumCharacters) {
      const numberOfCharacters = minimumCharacters == 0 ? '*' : `{${minimumCharacters},}`;
      const openAfterCharacters = env.features.isRegExpUnicodePropertySupported ? '\\p{Ps}\\p{Pi}"\'' : '\\(\\[{"\'';
@@ -36,7 +33,7 @@ index bbe511c5550e1cac8612e998034382b4eea1f1b8..8394fd8bba89f8a7b82d62fe613be6f1
      // The pattern consists of 3 groups:
      //
      // - 0 (non-capturing): Opening sequence - start of the line, space or an opening punctuation character like "(" or "\"",
-@@ -1081,7 +1090,7 @@ const defaultCommitKeyCodes = [
+@@ -1089,7 +1098,7 @@ const defaultCommitKeyCodes = [
      //
      // The pattern matches up to the caret (end of string switch - $).
      //               (0:      opening sequence       )(1: marker  )(2:                typed mention              )$

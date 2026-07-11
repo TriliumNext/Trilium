@@ -100,4 +100,34 @@ describe("etapi/undelete-note", () => {
 
         expect(response.body.code).toStrictEqual("NOTE_NOT_DELETED");
     });
+
+    it("returns 400 when there is no undeleted parent to restore under", async () => {
+        // Create a parent with a child, then delete the parent so the child is
+        // deleted with no undeletable parent branch.
+        const parentId = `parent${randomInt(10000)}`;
+        await supertest(app)
+            .post("/etapi/create-note")
+            .auth(USER, token, { "type": "basic" })
+            .send({ noteId: parentId, parentNoteId: "root", title: "Parent", type: "text", content: "x" })
+            .expect(201);
+
+        const childResp = await supertest(app)
+            .post("/etapi/create-note")
+            .auth(USER, token, { "type": "basic" })
+            .send({ parentNoteId: parentId, title: "Child", type: "text", content: "x" })
+            .expect(201);
+        const childId = childResp.body.note.noteId;
+
+        await supertest(app)
+            .delete(`/etapi/notes/${parentId}`)
+            .auth(USER, token, { "type": "basic" })
+            .expect(204);
+
+        const response = await supertest(app)
+            .post(`/etapi/notes/${childId}/undelete`)
+            .auth(USER, token, { "type": "basic" })
+            .expect(400);
+
+        expect(response.body.code).toStrictEqual("CANNOT_UNDELETE");
+    });
 });

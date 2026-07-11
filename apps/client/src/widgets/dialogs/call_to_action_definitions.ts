@@ -71,6 +71,18 @@ const CALL_TO_ACTIONS: CallToAction[] = [
         ]
     },
     {
+        id: "scripting_disabled",
+        title: t("call_to_action.scripting_disabled_title"),
+        message: t("call_to_action.scripting_disabled_message"),
+        enabled: () => !options.is("backendScriptingEnabled") && options.is("hasUserBackendScripts"),
+        buttons: [
+            {
+                text: t("call_to_action.scripting_disabled_button"),
+                onClick: () => appContext.tabManager.openInNewTab("_optionsSecurity", "_hidden", true)
+            }
+        ]
+    },
+    {
         id: "next_theme",
         title: t("call_to_action.next_theme_title"),
         message: t("call_to_action.next_theme_message"),

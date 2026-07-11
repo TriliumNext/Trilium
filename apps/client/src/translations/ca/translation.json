@@ -1,10 +1,4 @@
 {
-  "about": {
-    "title": "Sobre Trilium Notes",
-    "homepage": "Pàgina principal:",
-    "app_version": "Versió de l'aplicació:",
-    "db_version": "Versió de la base de dades:"
-  },
   "add_link": {
     "note": "Nota"
   },
@@ -25,8 +19,7 @@
   },
   "delete_notes": {
     "close": "Tanca",
-    "cancel": "Cancel·la",
-    "ok": "OK"
+    "cancel": "Cancel·la"
   },
   "export": {
     "close": "Tanca",
@@ -60,12 +53,6 @@
   "recent_changes": {
     "undelete_link": "recuperar"
   },
-  "revisions": {
-    "restore_button": "Restaura",
-    "delete_button": "Suprimeix",
-    "download_button": "Descarrega",
-    "mime": "MIME: "
-  },
   "sort_child_notes": {
     "title": "títol",
     "ascending": "ascendent",
@@ -93,7 +80,10 @@
     "digits": "dígits",
     "inheritable": "Heretable",
     "delete": "Suprimeix",
-    "color_type": "Color"
+    "color_type": "Color",
+    "textarea": "Text multi linia",
+    "date_time": "Data i hora",
+    "precision_title": "Quants dígits han d'estar disponibles per a coma flotant a la interfície de configuració."
   },
   "rename_label": {
     "to": "Per"

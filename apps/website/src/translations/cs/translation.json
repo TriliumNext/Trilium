@@ -1,13 +1,13 @@
 {
     "get-started": {
-        "title": "Začínáme",
+        "title": "Začít",
         "desktop_title": "Stažení aplikace pro osobní počítače (v{{version}})",
         "architecture": "Architektura:",
         "older_releases": "Starší vydání",
         "server_title": "Nastavte server pro přístup z více zařízení"
     },
     "hero_section": {
-        "get_started": "Start",
+        "get_started": "Začít",
         "github": "GitHub",
         "title": "Uspořádejte si myšlenky. Vytvořte si osobní znalostní bázi.",
         "subtitle": "Trilium je open-source řešení pro pořizování poznámek a organizaci osobní znalostní báze. Používejte jej lokálně na svém počítači nebo jej synchronizujte se svým vlastním serverem, abyste měli své poznámky vždy po ruce, ať jste kdekoli.",
@@ -34,8 +34,6 @@
         "sync_content": "Pomocí vlastní nebo cloudové instance můžete snadno synchronizovat své poznámky mezi více zařízeními a přistupovat k nim ze svého mobilního telefonu pomocí PWA.",
         "protected_notes_title": "Chráněné poznámky",
         "protected_notes_content": "Chraňte citlivé osobní údaje šifrováním poznámek a jejich uzamčením za heslem chráněnou relací.",
-        "jump_to_title": "Rychlé hledání a příkazy",
-        "jump_to_content": "Rychle přejděte k poznámkám nebo příkazům uživatelského rozhraní v celé hierarchii pomocí vyhledávání podle názvu, přičemž fuzzy vyhledávání zohledňuje překlepy nebo drobné rozdíly.",
         "search_title": "Výkonné vyhledávání"
     },
     "note_types": {
@@ -51,19 +49,7 @@
         "mermaid_title": "Mermaid diagramy",
         "mermaid_description": "Vytvářejte diagramy, jako jsou vývojové diagramy, diagramy tříd a sekvencí, Ganttovy diagramy a mnoho dalších, pomocí syntaxe Mermaid.",
         "mindmap_title": "Myšlenková mapa",
-        "mindmap_description": "Zorganizujte si myšlenky vizuálně nebo uspořádejte brainstorming.",
-        "others_list": "a další: <0>mapa poznámek</0>, <1>mapa vztahů</1>, <2>uložená vyhledávání</2>, <3>zobrazení poznámky</3> a <4>webové zobrazení</4>."
-    },
-    "extensibility_benefits": {
-        "title": "Sdílení a rozšiřitelnost",
-        "import_export_title": "Import/export",
-        "import_export_description": "Snadná interakce s jinými aplikacemi pomocí formátů Markdown, ENEX a OML.",
-        "share_title": "Sdílet poznámky na webu",
-        "share_description": "Pokud máte server, můžete jej použít ke sdílení části svých poznámek s ostatními lidmi.",
-        "scripting_title": "Pokročilé skriptování",
-        "scripting_description": "Vytvořte si vlastní integrace v rámci Trilium pomocí přizpůsobených widgetů nebo logiky na straně serveru.",
-        "api_title": "REST API",
-        "api_description": "Komunikujte s Trilium programově pomocí jeho vestavěného REST API."
+        "mindmap_description": "Zorganizujte si myšlenky vizuálně nebo uspořádejte brainstorming."
     },
     "collections": {
         "title": "Kolekce",
@@ -112,7 +98,8 @@
     "header": {
         "get-started": "Začít",
         "documentation": "Dokumentace",
-        "support-us": "Podpořte nás"
+        "support-us": "Podpořte nás",
+        "resources": "Zdroje"
     },
     "footer": {
         "copyright_and_the": " a ",
@@ -134,6 +121,73 @@
         "buy_me_a_coffee": "Buy Me A Coffee"
     },
     "contribute": {
-        "title": "Další způsoby, jak přispět"
+        "title": "Další způsoby, jak přispět",
+        "way_translate": "Přeložte aplikaci do svého rodného jazyka prostřednictvím <Link>Weblate</Link>.",
+        "way_community": "Kontaktujte komunitu na <Discussions>GitHub Discussions</Discussions> nebo na <Matrix>Matrix</Matrix>.",
+        "way_reports": "Nahlaste chyby prostřednictvím <Link>GitHub issues</Link>.",
+        "way_document": "Vylepšujte dokumentaci tím, že nás upozorníte na její nedostatky, nebo přispějte do příruček, FAQ či návodů.",
+        "way_market": "Šířte dobrou věst: Sdílejte Trilium Notes s přáteli, na blogy nebo na sociální sítě."
+    },
+    "404": {
+        "title": "404: Nenalezeno",
+        "description": "Stránka, kterou jste hleděli, nebyla nalezena. Možná byla smazána nebo je URL adresa nesprávná."
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64-bit",
+        "title_arm64": "Windows na ARM",
+        "description_x64": "Kompatibilní s zařízeními Intel nebo AMD s operačním systémem Windows 10 a 11.",
+        "description_arm64": "Kompatibilní s ARM zařízeními (např. s Qualcomm Snapdragon).",
+        "quick_start": "Pro instalaci pomocí Winget:",
+        "download_exe": "Stáhnout instalátor (.exe)",
+        "download_zip": "Přenosná verze (.zip)",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64-bit",
+        "title_arm64": "Linux na ARM",
+        "description_x64": "Pro většinu distribucí Linuxu, kompatibilní s architekturou x86_64.",
+        "description_arm64": "Pro distribuce Linuxu založené na ARM, kompatibilní s architekturou aarch64.",
+        "quick_start": "Vyberte vhodný formát balíčku podle vaší distribuce:",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "Přenosné (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS pro Intel",
+        "title_arm64": "macOS pro Apple Silicon",
+        "description_x64": "Pro Mac s procesorem Intel běžící pod macOS Monterey nebo novějším.",
+        "description_arm64": "Pro Mac s Apple Silicon, jako jsou modely s čipy M1 a M2.",
+        "quick_start": "Pro instalaci pomocí Homebrew:",
+        "download_dmg": "Stáhnout instalátor (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "Přenosná verze (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Vlastní hosting pomocí Docker",
+        "description": "Snadné nasazení na Windows, Linux nebo macOS pomocí Docker kontejneru.",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "Vlastní hosting na Linuxu",
+        "description": "Nasazujte Trilium Notes na vlastním serveru nebo VPS, kompatibilní s většinou distribucí.",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "Modul pro NixOS"
+    },
+    "download_helper_server_hosted": {
+        "title": "Placený hosting",
+        "description": "Trilium Notes hostováno na PikaPods, placené službě pro snadný přístup a správu. Není přímo spojen s týmem Trilium.",
+        "download_pikapod": "Nastaveno na PikaPods"
+    },
+    "resources": {
+        "title": "Zdroje",
+        "icon_packs": "Balíčky ikon",
+        "icon_packs_intro": "Rozšiřte výběr dostupných ikon pro své poznámky použitím balíčku ikon. Více informací o balíčcích ikon naleznete v <DocumentationLink>oficiální dokumentaci</DocumentationLink>.",
+        "download": "Stáhnout",
+        "website": "Webová stránka"
     }
 }

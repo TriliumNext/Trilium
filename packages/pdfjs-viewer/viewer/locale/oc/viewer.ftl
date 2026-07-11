@@ -314,6 +314,9 @@ pdfjs-editor-stamp-add-image-button =
 pdfjs-editor-stamp-add-image-button-label = Apondre imatge
 # This refers to the thickness of the line used for free highlighting (not bound to text)
 pdfjs-editor-free-highlight-thickness-input = Espessor
+pdfjs-editor-signature-add-signature-button =
+    .title = Apondre una signatura novèla
+pdfjs-editor-signature-add-signature-button-label = Apondre una signatura novèla
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Editor de tèxte
@@ -356,6 +359,7 @@ pdfjs-editor-highlight-show-all-button =
 ## New alt-text dialog
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
 
+pdfjs-editor-new-alt-text-not-now-button = Pas ara
 pdfjs-editor-new-alt-text-error-close-button = Tampar
 
 ## Image alt-text settings
@@ -379,3 +383,14 @@ pdfjs-editor-undo-bar-undo-button-label = Anullar
 pdfjs-editor-undo-bar-close-button =
     .title = Tampar
 pdfjs-editor-undo-bar-close-button-label = Tampar
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NÒU

@@ -1,400 +1,70 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ToolRegistry } from './tool_registry.js';
-import type { ToolHandler } from './tool_interfaces.js';
+import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
-// Mock dependencies
-vi.mock('../../log.js', () => ({
-    default: {
-        info: vi.fn(),
-        error: vi.fn(),
-        warn: vi.fn()
-    }
+const transactionalMock = vi.hoisted(() => vi.fn(<T>(cb: () => T) => cb()));
+
+// toToolSet wraps mutating tools in sql.transactional; stub it to just run the
+// callback so we can assert the wrapping happens without a real transaction.
+vi.mock("../../sql.js", () => ({
+    default: { transactional: transactionalMock }
 }));
 
-describe('ToolRegistry', () => {
-    let registry: ToolRegistry;
+import { allToolRegistries } from "./index.js";
+import { defineTools, ToolRegistry } from "./tool_registry.js";
 
-    beforeEach(() => {
-        // Reset singleton instance before each test
-        (ToolRegistry as any).instance = undefined;
-        registry = ToolRegistry.getInstance();
-        
-        // Clear any existing tools
-        (registry as any).tools.clear();
-        
-        vi.clearAllMocks();
+describe("ToolRegistry", () => {
+    const registry = defineTools({
+        read_thing: {
+            description: "read",
+            inputSchema: z.object({ id: z.string() }),
+            execute: ({ id }) => ({ id, read: true })
+        },
+        write_thing: {
+            description: "write",
+            inputSchema: z.object({ id: z.string() }),
+            mutates: true,
+            execute: ({ id }) => ({ id, written: true })
+        }
     });
 
-    afterEach(() => {
-        vi.restoreAllMocks();
+    it("defineTools returns a ToolRegistry", () => {
+        expect(registry).toBeInstanceOf(ToolRegistry);
     });
 
-    describe('singleton pattern', () => {
-        it('should return the same instance', () => {
-            const instance1 = ToolRegistry.getInstance();
-            const instance2 = ToolRegistry.getInstance();
-            
-            expect(instance1).toBe(instance2);
-        });
-
-        it('should create instance only once', () => {
-            const instance1 = ToolRegistry.getInstance();
-            const instance2 = ToolRegistry.getInstance();
-            const instance3 = ToolRegistry.getInstance();
-            
-            expect(instance1).toBe(instance2);
-            expect(instance2).toBe(instance3);
-        });
+    it("allToolRegistries aggregates every tool group as ToolRegistry instances", () => {
+        expect(allToolRegistries.length).toBeGreaterThan(0);
+        expect(allToolRegistries.every((r) => r instanceof ToolRegistry)).toBe(true);
+        // Every registry yields at least one named tool.
+        for (const reg of allToolRegistries) {
+            expect([...reg].length).toBeGreaterThan(0);
+        }
     });
 
-    describe('registerTool', () => {
-        it('should register a valid tool handler', () => {
-            const validHandler: ToolHandler = {
-                definition: {
-                    type: 'function',
-                    function: {
-                        name: 'test_tool',
-                        description: 'A test tool',
-                        parameters: {
-                            type: 'object' as const,
-                            properties: {
-                                input: { type: 'string', description: 'Input parameter' }
-                            },
-                            required: ['input']
-                        }
-                    }
-                },
-                execute: vi.fn().mockResolvedValue('result')
-            };
-
-            registry.registerTool(validHandler);
-            
-            expect(registry.getTool('test_tool')).toBe(validHandler);
-        });
-
-        it('should handle registration of multiple tools', () => {
-            const tool1: ToolHandler = {
-                definition: {
-                    type: 'function',
-                    function: {
-                        name: 'tool1',
-                        description: 'First tool',
-                        parameters: {
-                            type: 'object' as const,
-                            properties: {},
-                            required: []
-                        }
-                    }
-                },
-                execute: vi.fn()
-            };
-
-            const tool2: ToolHandler = {
-                definition: {
-                    type: 'function',
-                    function: {
-                        name: 'tool2', 
-                        description: 'Second tool',
-                        parameters: {
-                            type: 'object' as const,
-                            properties: {},
-                            required: []
-                        }
-                    }
-                },
-                execute: vi.fn()
-            };
-
-            registry.registerTool(tool1);
-            registry.registerTool(tool2);
-            
-            expect(registry.getTool('tool1')).toBe(tool1);
-            expect(registry.getTool('tool2')).toBe(tool2);
-            expect(registry.getAllTools()).toHaveLength(2);
-        });
-
-        it('should handle duplicate tool registration (overwrites)', () => {
-            const handler1: ToolHandler = {
-                definition: {
-                    type: 'function',
-                    function: {
-                        name: 'duplicate_tool',
-                        description: 'First version',
-                        parameters: {
-                            type: 'object' as const,
-                            properties: {},
-                            required: []
-                        }
-                    }
-                },
-                execute: vi.fn()
-            };
-
-            const handler2: ToolHandler = {
-                definition: {
-                    type: 'function',
-                    function: {
-                        name: 'duplicate_tool',
-                        description: 'Second version',
-                        parameters: {
-                            type: 'object' as const,
-                            properties: {},
-                            required: []
-                        }
-                    }
-                },
-                execute: vi.fn()
-            };
-
-            registry.registerTool(handler1);
-            registry.registerTool(handler2);
-            
-            // Should have the second handler (overwrites)
-            expect(registry.getTool('duplicate_tool')).toBe(handler2);
-            expect(registry.getAllTools()).toHaveLength(1);
-        });
+    it("is iterable over [name, definition] pairs", () => {
+        const names = [...registry].map(([name]) => name);
+        expect(names).toEqual(["read_thing", "write_thing"]);
+        const [, def] = [...registry][1];
+        expect(def.mutates).toBe(true);
     });
 
-    describe('getTool', () => {
-        beforeEach(() => {
-            const tools = [
-                {
-                    name: 'tool1',
-                    description: 'First tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                },
-                {
-                    name: 'tool2',
-                    description: 'Second tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                },
-                {
-                    name: 'tool3',
-                    description: 'Third tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                }
-            ];
-
-            tools.forEach(tool => {
-                const handler: ToolHandler = {
-                    definition: {
-                        type: 'function',
-                        function: tool
-                    },
-                    execute: vi.fn()
-                };
-                registry.registerTool(handler);
-            });
-        });
-
-        it('should return registered tool by name', () => {
-            const tool = registry.getTool('tool1');
-            expect(tool).toBeDefined();
-            expect(tool?.definition.function.name).toBe('tool1');
-        });
-
-        it('should return undefined for non-existent tool', () => {
-            const tool = registry.getTool('non_existent');
-            expect(tool).toBeUndefined();
-        });
-
-        it('should handle case-sensitive tool names', () => {
-            const tool = registry.getTool('Tool1'); // Different case
-            expect(tool).toBeUndefined();
-        });
+    it("toToolSet exposes each tool with its description and inputSchema", () => {
+        const set = registry.toToolSet();
+        expect(Object.keys(set)).toEqual(["read_thing", "write_thing"]);
+        expect(set.read_thing.description).toBe("read");
+        expect(set.write_thing.inputSchema).toBeDefined();
     });
 
-    describe('getAllTools', () => {
-        beforeEach(() => {
-            const tools = [
-                {
-                    name: 'tool1',
-                    description: 'First tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                },
-                {
-                    name: 'tool2',
-                    description: 'Second tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                },
-                {
-                    name: 'tool3',
-                    description: 'Third tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                }
-            ];
+    it("toToolSet runs read-only tools directly and wraps mutating tools in a transaction", async () => {
+        transactionalMock.mockClear();
+        const set = registry.toToolSet();
 
-            tools.forEach(tool => {
-                const handler: ToolHandler = {
-                    definition: {
-                        type: 'function',
-                        function: tool
-                    },
-                    execute: vi.fn()
-                };
-                registry.registerTool(handler);
-            });
-        });
+        const readResult = await set.read_thing.execute!({ id: "r1" }, {} as any);
+        expect(readResult).toEqual({ id: "r1", read: true });
+        // Read-only tools are not transaction-wrapped.
+        expect(transactionalMock).not.toHaveBeenCalled();
 
-        it('should return all registered tools', () => {
-            const tools = registry.getAllTools();
-            
-            expect(tools).toHaveLength(3);
-            expect(tools.map(t => t.definition.function.name)).toEqual(['tool1', 'tool2', 'tool3']);
-        });
-
-        it('should return empty array when no tools registered', () => {
-            (registry as any).tools.clear();
-            
-            const tools = registry.getAllTools();
-            expect(tools).toHaveLength(0);
-        });
-    });
-
-    describe('getAllToolDefinitions', () => {
-        beforeEach(() => {
-            const tools = [
-                {
-                    name: 'tool1',
-                    description: 'First tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                },
-                {
-                    name: 'tool2',
-                    description: 'Second tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                },
-                {
-                    name: 'tool3',
-                    description: 'Third tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                }
-            ];
-
-            tools.forEach(tool => {
-                const handler: ToolHandler = {
-                    definition: {
-                        type: 'function',
-                        function: tool
-                    },
-                    execute: vi.fn()
-                };
-                registry.registerTool(handler);
-            });
-        });
-
-        it('should return all tool definitions', () => {
-            const definitions = registry.getAllToolDefinitions();
-            
-            expect(definitions).toHaveLength(3);
-            expect(definitions[0]).toEqual({
-                type: 'function',
-                function: {
-                    name: 'tool1',
-                    description: 'First tool',
-                    parameters: {
-                        type: 'object' as const,
-                        properties: {},
-                        required: []
-                    }
-                }
-            });
-        });
-
-        it('should return empty array when no tools registered', () => {
-            (registry as any).tools.clear();
-            
-            const definitions = registry.getAllToolDefinitions();
-            expect(definitions).toHaveLength(0);
-        });
-    });
-
-    describe('error handling', () => {
-        it('should handle null/undefined tool handler gracefully', () => {
-            // These should not crash the registry
-            expect(() => registry.registerTool(null as any)).not.toThrow();
-            expect(() => registry.registerTool(undefined as any)).not.toThrow();
-            
-            // Registry should still work normally
-            expect(registry.getAllTools()).toHaveLength(0);
-        });
-
-        it('should handle malformed tool handler gracefully', () => {
-            const malformedHandler = {
-                // Missing definition
-                execute: vi.fn()
-            } as any;
-
-            expect(() => registry.registerTool(malformedHandler)).not.toThrow();
-            
-            // Should not be registered
-            expect(registry.getAllTools()).toHaveLength(0);
-        });
-    });
-
-    describe('tool validation', () => {
-        it('should accept tool with proper structure', () => {
-            const validHandler: ToolHandler = {
-                definition: {
-                    type: 'function',
-                    function: {
-                        name: 'calculator',
-                        description: 'Performs calculations',
-                        parameters: {
-                            type: 'object' as const,
-                            properties: {
-                                expression: { 
-                                    type: 'string', 
-                                    description: 'The mathematical expression to evaluate' 
-                                }
-                            },
-                            required: ['expression']
-                        }
-                    }
-                },
-                execute: vi.fn().mockResolvedValue('42')
-            };
-
-            registry.registerTool(validHandler);
-            
-            expect(registry.getTool('calculator')).toBe(validHandler);
-            expect(registry.getAllTools()).toHaveLength(1);
-        });
+        const writeResult = await set.write_thing.execute!({ id: "w1" }, {} as any);
+        expect(writeResult).toEqual({ id: "w1", written: true });
+        expect(transactionalMock).toHaveBeenCalledTimes(1);
     });
 });

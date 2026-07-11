@@ -1,10 +1,27 @@
 import { join, resolve } from "path";
-import { cpSync, exists, existsSync, mkdirSync, readFileSync, rmSync } from "fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "fs";
 import { execSync } from "child_process";
 import { rebuild } from "@electron/rebuild"
-import { getElectronPath, isNixOS } from "./utils.mjs";
+import { isNixOS } from "./utils.mjs";
 
 const workspaceRoot = join(import.meta.dirname, "..");
+
+// On NixOS, re-execute this script inside `nix develop` to get access to Python and other build tools.
+// Skip this if we're already inside a nix shell or a nix build (NIX_BUILD_TOP is set during `nix build`).
+if (isNixOS() && !process.env.IN_NIX_SHELL && !process.env.NIX_BUILD_TOP) {
+    console.log("Detected NixOS, re-running electron-rebuild inside 'nix develop'...");
+    try {
+        execSync("nix develop -c pnpm exec tsx scripts/electron-rebuild.mts", {
+            cwd: workspaceRoot,
+            stdio: "inherit",
+            env: { ...process.env, IN_NIX_SHELL: "1" }
+        });
+        process.exit(0);
+    } catch (e) {
+        console.error("Failed to run electron-rebuild inside 'nix develop'.");
+        process.exit(1);
+    }
+}
 
 function copyNativeDependencies(projectRoot: string) {
     const destPath = join(projectRoot, "node_modules/better-sqlite3");
@@ -35,6 +52,21 @@ async function rebuildNativeDependencies(projectRoot: string) {
     console.log(`Rebuilding ${projectRoot} with ${electronVersion} for ${targetArch}...`);
 
     const resolvedPath = resolve(projectRoot);
+
+    // Inside a Nix build, @electron/rebuild tries to download Electron headers
+    // from the internet which fails in the sandbox. Use node-gyp directly with
+    // the pre-fetched headers provided via ELECTRON_NODEDIR instead.
+    const nodedir = process.env.ELECTRON_NODEDIR;
+    if (process.env.NIX_BUILD_TOP && nodedir) {
+        const betterSqlite3 = join(resolvedPath, "node_modules/better-sqlite3");
+        console.log(`Nix build detected, running node-gyp directly for ${betterSqlite3}...`);
+        execSync(
+            `node-gyp rebuild --release --target=${electronVersion} --arch=${targetArch} --nodedir=${nodedir}`,
+            { cwd: betterSqlite3, stdio: "inherit" }
+        );
+        return;
+    }
+
     await rebuild({
         projectRootPath: resolvedPath,
         buildPath: resolvedPath,
@@ -46,20 +78,8 @@ async function rebuildNativeDependencies(projectRoot: string) {
 
 function determineElectronVersion(projectRoot: string) {
     const packageJson = JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf-8"));
-
-    if (isNixOS()) {
-        console.log("Detected NixOS, reading Electron version from PATH");
-
-        try {
-            return execSync(`${getElectronPath()} --version`, { }).toString("utf-8");
-        } catch (e) {
-            console.error("Got error while trying to read the Electron version from shell. Make sure that an Electron version is in the PATH (e.g. `nix-shell -p electron`)");
-            process.exit(1);
-        }
-    } else {
-        console.log("Using Electron version from package.json");
-        return packageJson.devDependencies.electron;
-    }
+    console.log("Using Electron version from package.json");
+    return packageJson.devDependencies.electron;
 }
 
 for (const projectRoot of [ "apps/desktop", "apps/edit-docs" ]) {

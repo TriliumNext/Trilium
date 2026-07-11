@@ -1,13 +1,27 @@
 {
   "about": {
-    "title": "About Trilium Notes",
-    "homepage": "Homepage:",
-    "app_version": "App version:",
-    "db_version": "DB version:",
-    "sync_version": "Sync version:",
-    "build_date": "Build date:",
-    "build_revision": "Build revision:",
-    "data_directory": "Data directory:"
+    "version_label": "Version:",
+    "version": "{{appVersion}} (database: {{dbVersion}}, sync protocol: {{syncVersion}})",
+    "build_info": "Build: {{buildDate}}, revision: <buildRevision />",
+    "contributors_label": "Contributors:",
+    "contributor_roles": {
+      "lead-dev": "lead developer",
+      "original-dev": "original developer"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran founded TriliumNext in 2024, a community fork created after Zadam stepped back from the project. Zadam later transferred the original repository to the TriliumNext team, merging both projects back into one.",
+      "original-dev": "On 25th December 2017, Zadam released the first beta of Trilium (written with a single \"l\", unlike the flower). Dissatisfied with existing note organizers, he built a powerful self-hosted hierarchical knowledge base that gathered over 22,000 GitHub stars. In 2024, as life got busier, he placed the project into maintenance mode."
+    },
+    "contributor_full_list": "See the entire community",
+    "channel": {
+      "nightly": "Nightly",
+      "standalone": "Standalone"
+    },
+    "data_directory": "Data directory:",
+    "github_tooltip": "Report bugs, suggest features, or contribute on GitHub",
+    "license_tooltip": "View license",
+    "donate": "Donate",
+    "donate_tooltip": "Donate to support this project"
   },
   "toast": {
     "critical-error": {
@@ -41,17 +55,22 @@
     "link_title_mirrors": "link title mirrors the note's current title",
     "link_title_arbitrary": "link title can be changed arbitrarily",
     "link_title": "Link title",
+    "anchor": "Anchor (optional)",
+    "anchor_none": "None (link to note)",
     "button_add_link": "Add link"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",
     "edit_branch_prefix_multiple": "Edit branch prefix for {{count}} branches",
     "help_on_tree_prefix": "Help on Tree prefix",
-    "prefix": "Prefix: ",
+    "prefix": "Prefix",
     "save": "Save",
     "branch_prefix_saved": "Branch prefix has been saved.",
     "branch_prefix_saved_multiple": "Branch prefix has been saved for {{count}} branches.",
-    "affected_branches": "Affected branches ({{count}}):"
+    "affected_branches": "Affected branches ({{count}}):",
+    "preview_in_tree": "Preview in tree",
+    "description": "Prepended to the note title in this branch only. Other branches keep the original title.",
+    "cancel": "Cancel"
   },
   "bulk_actions": {
     "bulk_actions": "Bulk actions",
@@ -88,36 +107,52 @@
     "also_delete_note": "Also delete the note"
   },
   "delete_notes": {
-    "delete_notes_preview": "Delete notes preview",
+    "title": "Delete notes",
     "close": "Close",
+    "clones_label": "Clones",
+    "delete_clones_description_one": "Also delete {{count}} other clone. Can be undone in recent changes.",
+    "delete_clones_description_other": "Also delete {{count}} other clones. Can be undone in recent changes.",
     "delete_all_clones_description": "Delete also all clones (can be undone in recent changes)",
-    "erase_notes_description": "Normal (soft) deletion only marks the notes as deleted and they can be undeleted (in recent changes dialog) within a period of time. Checking this option will erase the notes immediately and it won't be possible to undelete the notes.",
+    "erase_notes_label": "Erase permanently",
+    "erase_notes_description": "Erase notes immediately instead of soft deletion. This cannot be undone and will force application reload.",
     "erase_notes_warning": "Erase notes permanently (can't be undone), including all clones. This will force application reload.",
-    "notes_to_be_deleted": "Following notes will be deleted ({{notesCount}})",
+    "notes_to_be_deleted": "Notes to be deleted ({{notesCount}})",
     "no_note_to_delete": "No note will be deleted (only clones).",
-    "broken_relations_to_be_deleted": "Following relations will be broken and deleted ({{ relationCount}})",
+    "broken_relations_to_be_deleted": "Broken relations ({{relationCount}})",
+    "table_note_with_relation": "Note with relation",
+    "table_relation": "Relation",
+    "table_points_to": "Points to (deleted)",
     "cancel": "Cancel",
-    "ok": "OK",
-    "deleted_relation_text": "Note {{- note}} (to be deleted) is referenced by relation {{- relation}} originating from {{- source}}."
+    "delete": "Delete"
   },
   "export": {
     "export_note_title": "Export note",
     "close": "Close",
-    "export_type_subtree": "This note and all of its descendants",
-    "format_html": "HTML - recommended as it keeps all format",
-    "format_html_zip": "HTML in ZIP archive - this is recommended since this preserves all the formatting.",
-    "format_markdown": "Markdown - this preserves most of the formatting.",
-    "format_opml": "OPML - outliner interchange format for text only. Formatting, images and files are not included.",
-    "opml_version_1": "OPML v1.0 - plain text only",
-    "opml_version_2": "OPML v2.0 - allows also HTML",
-    "export_type_single": "Only this note without its descendants",
+    "what_to_export": "What to export",
+    "export_type_subtree": "This note & all descendants",
+    "export_type_single": "Only this note",
+    "format": "Format",
+    "format_html_name": "HTML",
+    "format_html_description": "Keeps all formatting",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Preserves most formatting",
+    "format_opml_name": "OPML",
+    "format_opml_description": "Outline format with HTML content",
+    "format_share_name": "HTML for web",
+    "format_share_description": "Publishable static site using the shared-notes theme",
+    "recommended": "Recommended",
+    "result_subtree_html": "A ZIP archive where text notes are saved as HTML. Code, images and other files keep their original format.",
+    "result_subtree_markdown": "A ZIP archive where text notes are saved as Markdown. Code, images and other files keep their original format.",
+    "result_share": "A ZIP archive containing a publishable static website that uses the shared-notes theme.",
+    "result_opml": "A single OPML outline file. Note titles and text are included; images, code files and attachments are not.",
+    "result_single_html": "A single HTML file. Images and attachments are embedded into it.",
+    "result_single_markdown": "A single Markdown (.md) file.",
     "export": "Export",
     "choose_export_type": "Choose export type first please",
-    "export_status": "Export status",
-    "export_in_progress": "Export in progress: {{progressCount}}",
+    "preparing_export": "Preparing for export…",
+    "export_in_progress_with_total": "Exported {{progressCount}} notes out of {{totalCount}}",
     "export_finished_successfully": "Export finished successfully.",
-    "format_pdf": "PDF - for printing or sharing purposes.",
-    "share-format": "HTML for web publishing - uses the same theme that is used shared notes, but can be published as a static website."
+    "format_pdf": "PDF - for printing or sharing purposes."
   },
   "help": {
     "title": "Cheatsheet",
@@ -132,6 +167,7 @@
     "jumpToParentNote": "jump to parent note",
     "collapseWholeTree": "collapse whole note tree",
     "collapseSubTree": "collapse sub-tree",
+    "toggleArchivedNotes": "show/hide archived notes",
     "tabShortcuts": "Tab shortcuts",
     "newTabNoteLink": "on note link opens note in a new tab",
     "newTabWithActivationNoteLink": "on note link opens and activates the note in a new tab",
@@ -176,18 +212,23 @@
   },
   "import": {
     "importIntoNote": "Import into note",
+    "importIntoNoteNamed": "Import into {{- title}}",
+    "import_from": "Import from",
+    "cardName": "Files & other formats",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, images and more",
     "chooseImportFile": "Choose import file",
-    "importDescription": "Content of the selected file(s) will be imported as child note(s) into",
     "importZipRecommendation": "When importing a ZIP file, the note hierarchy will reflect the subdirectory structure within the archive.",
     "options": "Options",
-    "safeImportTooltip": "Trilium <code>.zip</code> export files can contain executable scripts which may contain harmful behavior. Safe import will deactivate automatic execution of all imported scripts. Uncheck \"Safe import\" only if the imported archive is supposed to contain executable scripts and you completely trust the contents of the import file.",
+    "safeImportTooltip": "Trilium <code>.zip</code> exports can contain executable scripts. Safe import disables them; uncheck only if the archive is meant to run scripts and you trust its contents.",
     "safeImport": "Safe import",
-    "explodeArchivesTooltip": "If this is checked then Trilium will read <code>.zip</code>, <code>.enex</code> and <code>.opml</code> files and create notes from files insides those archives. If unchecked, then Trilium will attach the archives themselves to the note.",
+    "explodeArchivesTooltip": "Creates notes from the files inside <code>.zip</code>, <code>.enex</code> and <code>.opml</code> archives. When off, the archives are attached as-is.",
     "explodeArchives": "Read contents of <code>.zip</code>, <code>.enex</code> and <code>.opml</code> archives.",
-    "shrinkImagesTooltip": "<p>If you check this option, Trilium will attempt to shrink the imported images by scaling and optimization which may affect the perceived image quality. If unchecked, images will be imported without changes.</p><p>This doesn't apply to <code>.zip</code> imports with metadata since it is assumed these files are already optimized.</p>",
+    "shrinkImagesTooltip": "Scales and optimizes images to save space, which may slightly reduce quality. Doesn't apply to <code>.zip</code> imports with metadata, which are assumed already optimized.",
+    "shrinkImagesProviderTooltip": "Scales and optimizes imported images to save space, which may slightly reduce quality.",
     "shrinkImages": "Shrink images",
     "textImportedAsText": "Import HTML, Markdown and TXT as text notes if it's unclear from metadata",
     "codeImportedAsCode": "Import recognized code files (e.g. <code>.json</code>) as code notes if it's unclear from metadata",
+    "spreadsheetImportedAsSpreadsheet": "Import CSV and Excel files as editable spreadsheets rather than files",
     "replaceUnderscoresWithSpaces": "Replace underscores with spaces in imported note names",
     "import": "Import",
     "failed": "Import failed: {{message}}.",
@@ -197,9 +238,76 @@
       "placeholder": "Enter HTML tags, one per line",
       "reset_button": "Reset to Default List"
     },
-    "import-status": "Import status",
-    "in-progress": "Import in progress: {{progress}}",
+    "starting": "Importing…",
+    "in-progress": "Imported {{progress}} notes",
+    "in-progress-with-total": "Imported {{progress}} notes out of {{total}}",
+    "extracting": "Extracted {{progress}} items out of {{total}}",
+    "processing": "Processed {{progress}} notes out of {{total}}",
     "successful": "Import finished successfully."
+  },
+  "file_upload": {
+    "drop_or_browse_single": "Drag and drop a file here, or click to browse",
+    "drop_or_browse_multiple": "Drag and drop files here, or click to browse",
+    "browse_single": "Tap to choose a file",
+    "browse_multiple": "Tap to choose files",
+    "selected_one": "{{count}} file selected",
+    "selected_other": "{{count}} files selected"
+  },
+  "import_provider": {
+    "choose_provider": "Choose a service above to import from."
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "Connects to your account",
+    "connect_description": "Sign in with your Microsoft account to import your OneNote notebooks.",
+    "connect": "Sign in with Microsoft",
+    "section_heading": "Microsoft OneNote",
+    "checking": "Checking your OneNote connection…",
+    "connecting": "Waiting for sign-in to complete…",
+    "connected_as": "Connected as {{name}}",
+    "disconnect": "Disconnect",
+    "load_failed": "Could not load your OneNote notebooks.",
+    "no_notebooks": "No notebooks were found in this account.",
+    "select_sections": "Select the sections to import",
+    "select_sections_hint": "OneNote doesn't include the original ordering in the import data, so sections and groups are sorted by creation date and may not match how they appear in OneNote.",
+    "import": "Import selected",
+    "attach_source": "Attach original HTML (debug)",
+    "attach_source_hint": "Saves each page's unmodified OneNote HTML as an attachment on the imported note, for comparing against the converted result."
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "From an HTML export",
+    "description_long": "In Notion, export your workspace or a page as HTML with subpages included, then choose the resulting .zip file here.",
+    "choose_file": "Notion export (.zip)",
+    "import": "Import"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "From a Takeout export",
+    "description_long": "In Google Takeout, export your Keep data as a .zip, then choose the resulting file here.",
+    "choose_file": "Google Keep export (.zip)",
+    "import": "Import"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "From a JSON export",
+    "description_long": "In Anytype, export your space using the \"Any-Block\" format with \"JSON\" selected, then choose the resulting .zip file here. Only pages and their text are imported for now.",
+    "choose_file": "Anytype export (.zip)",
+    "import": "Import"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "From a vault",
+    "description_long": "Zip your Obsidian vault folder, then choose the resulting .zip file here.",
+    "choose_file": "Obsidian vault (.zip)",
+    "import": "Import"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "From .enex files",
+    "description_long": "In Evernote, export a notebook (or up to 100 notes at a time) as an ENEX file, then choose one or more .enex files here. Each file is imported as a separate notebook.",
+    "choose_file": "Evernote export (.enex)",
+    "import": "Import"
   },
   "include_note": {
     "dialog_title": "Include note",
@@ -209,6 +317,7 @@
     "box_size_small": "small (~ 10 lines)",
     "box_size_medium": "medium (~ 30 lines)",
     "box_size_full": "full (box shows complete text)",
+    "box_size_expandable": "expandable (collapsed by default)",
     "button_include": "Include note"
   },
   "info": {
@@ -221,11 +330,55 @@
     "search_placeholder": "Search for note by its name or type > for commands...",
     "search_button": "Search in full text"
   },
+  "markdown_editor": {
+    "image_upload_failed": "Cannot upload image \"{{name}}\"."
+  },
   "markdown_import": {
     "dialog_title": "Markdown import",
     "modal_body_text": "Because of browser sandbox it's not possible to directly read clipboard from JavaScript. Please paste the Markdown to import to textarea below and click on Import button",
     "import_button": "Import",
     "import_success": "Markdown content has been imported into the document."
+  },
+  "markdown_slash_commands": {
+    "date": "Insert current date and time",
+    "include": "Include another note",
+    "image": "Upload and insert an image",
+    "link": "Insert a note link",
+    "math": "Insert a math equation block",
+    "footnote": "Insert a footnote",
+    "mermaid": "Insert a Mermaid diagram",
+    "mermaid_template": "Insert a \"{{name}}\" Mermaid diagram",
+    "collapsible": "Insert a collapsible block",
+    "page_break": "Insert a page break (for printing)",
+    "table": "Insert a table",
+    "admonition": "Insert {{type}} admonition",
+    "todo": "Insert a \"{{title}}\" task item",
+    "todo_nonstandard": "Insert a \"{{title}}\" task item (non-standard)",
+    "placeholders": {
+      "math": "equation",
+      "collapsible_summary": "Summary",
+      "collapsible_details": "Details",
+      "table_column": "Column {{number}}"
+    }
+  },
+  "slash_commands": {
+    "bulleted_list_description": "Create a bulleted list",
+    "numbered_list_description": "Create a numbered list",
+    "todo_list_description": "Create a to-do list",
+    "align_left_description": "Align text to the left",
+    "align_center_description": "Align text to the center",
+    "align_right_description": "Align text to the right",
+    "justify_description": "Justify text alignment",
+    "admonition_description": "Inserts a new admonition",
+    "collapsible_description": "Insert a toggleable section that hides/shows content on click.",
+    "footnote_description": "Create a new footnote and reference it here",
+    "datetime_description": "Insert the current date and time",
+    "internal_link_description": "Insert a link to another Trilium note",
+    "math_description": "Insert a math equation",
+    "include_note_description": "Display the content of another note in this note",
+    "page_break_description": "Insert a page break (for printing)",
+    "markdown_import_description": "Import a markdown file into this note",
+    "anchor_description": "Insert an anchor for internal linking"
   },
   "move_to": {
     "dialog_title": "Move notes to ...",
@@ -264,25 +417,37 @@
   },
   "recent_changes": {
     "title": "Recent changes",
+    "deleted_notes_title": "Deleted notes",
+    "title_with_ancestor": "{{- title}} - {{- ancestorTitle}}",
     "erase_notes_button": "Erase deleted notes now",
+    "more_actions": "More actions",
+    "deleted_notes_settings": "Deleted Notes Settings",
     "deleted_notes_message": "Deleted notes have been erased.",
     "no_changes_message": "No changes yet...",
+    "no_deleted_notes_message": "There are no deleted notes to show.",
+    "no_deleted_notes_erasure_hint": "Deleted notes are kept for {{- duration}} before being permanently erased.",
     "undelete_link": "undelete",
-    "confirm_undelete": "Do you want to undelete this note and its sub-notes?"
+    "confirm_undelete": "Do you want to undelete this note and its sub-notes?",
+    "confirm_undelete_to_default_location": "The parent of this note no longer exists, so it can't be restored to its original location. Restore it to the default location for new notes instead?",
+    "undeleted_to_default_location": "Its original location no longer exists, so the note was restored to \"{{- title}}\".",
+    "undelete_failed": "The note could not be restored — it may have been permanently erased."
   },
   "revisions": {
     "note_revisions": "Note Revisions",
+    "back": "Back",
     "delete_all_revisions": "Delete all revisions of this note",
     "delete_all_button": "Delete all revisions",
     "help_title": "Help on Note Revisions",
     "confirm_delete_all": "Do you want to delete all revisions of this note?",
     "no_revisions": "No revisions for this note yet...",
     "restore_button": "Restore",
+    "highlight_changes": "Highlight changes",
     "diff_on": "Show diff",
     "diff_off": "Show content",
     "diff_on_hint": "Click to show note source diff",
     "diff_off_hint": "Click to show note content",
     "diff_not_available": "Diff isn't available.",
+    "diff_identical": "This revision is identical to the current note content.",
     "confirm_restore": "Do you want to restore this revision? This will overwrite the current title and content of the note with this revision.",
     "delete_button": "Delete",
     "confirm_delete": "Do you want to delete this revision?",
@@ -291,11 +456,39 @@
     "revision_deleted": "Note revision has been deleted.",
     "snapshot_interval": "Note Revision Snapshot Interval: {{seconds}}s.",
     "maximum_revisions": "Note Revision Snapshot Limit: {{number}}.",
+    "save_revision_now": "Save a revision now",
+    "save_named_revision": "Save named revision...",
+    "snapshot_header": "Note revision snapshot",
+    "snapshot_interval_value": "Interval: {{seconds}}s",
+    "snapshot_limit_value": "Limit: {{number}}",
     "settings": "Note Revision Settings",
+    "menu_tooltip": "Revision options",
     "download_button": "Download",
     "mime": "MIME: ",
     "file_size": "File size:",
-    "preview_not_available": "Preview isn't available for this note type."
+    "preview_not_available": "Preview isn't available for this note type.",
+    "save_revision": "Save revision",
+    "save_revision_tooltip": "Manually save a snapshot of the current note",
+    "description_placeholder": "Name this revision",
+    "revision_saved": "Note revision has been saved.",
+    "edit_description": "Edit name",
+    "description_updated": "Revision name has been updated.",
+    "source_auto": "Auto-save",
+    "source_manual": "Manual save",
+    "source_etapi": "ETAPI",
+    "source_llm": "LLM",
+    "source_restore": "Restore",
+    "source_unknown": "Snapshot",
+    "date_today": "Today",
+    "date_yesterday": "Yesterday",
+    "date_this_week": "This week",
+    "date_this_month": "This month",
+    "source_description_auto": "Automatically saved by the system at regular intervals",
+    "source_description_manual": "Manually saved by the user",
+    "source_description_etapi": "Created via the External Trilium API",
+    "source_description_llm": "Created by the AI assistant",
+    "source_description_restore": "Saved before restoring a previous revision",
+    "source_description_unknown": "Source not available"
   },
   "sort_child_notes": {
     "sort_children_by": "Sort children by...",
@@ -343,6 +536,7 @@
     "label_type_title": "Type of the label will help Trilium to choose suitable interface to enter the label value.",
     "label_type": "Type",
     "text": "Text",
+    "textarea": "Multi-line Text",
     "number": "Number",
     "boolean": "Boolean",
     "date": "Date",
@@ -368,7 +562,7 @@
     "calendar_root": "marks note which should be used as root for day notes. Only one should be marked as such.",
     "archived": "notes with this label won't be visible by default in search results (also in Jump To, Add Link dialogs etc).",
     "exclude_from_export": "notes (with their sub-tree) won't be included in any note export",
-    "run": "defines on which events script should run. Possible values are:\n<ul>\n<li>frontendStartup - when Trilium frontend starts up (or is refreshed), but not on mobile.</li>\n<li>mobileStartup - when Trilium frontend starts up (or is refreshed), on mobile.</li>\n<li>backendStartup - when Trilium backend starts up</li>\n<li>hourly - run once an hour. You can use additional label <code>runAtHour</code> to specify at which hour.</li>\n<li>daily - run once a day</li>\n</ul>",
+    "run": "defines on which events script should run. Possible values are:\n<ul>\n<li>frontendStartup - when Trilium frontend starts up (or is refreshed), but not on mobile.</li>\n<li>mobileStartup - when Trilium frontend starts up (or is refreshed), on mobile.</li>\n<li>backendStartup - when Trilium backend starts up.</li>\n<li>hourly - run once an hour. You can use additional label <code>runAtHour</code> to specify at which hour.</li>\n<li>daily - run once a day.</li>\n</ul>",
     "run_on_instance": "Define which trilium instance should run this on. Default to all instances.",
     "run_at_hour": "On which hour should this run. Should be used together with <code>#run=hourly</code>. Can be defined multiple times for more runs during the day.",
     "disable_inclusion": "scripts with this label won't be included into parent script execution.",
@@ -385,8 +579,8 @@
     "css_class": "value of this label is then added as CSS class to the node representing given note in the tree. This can be useful for advanced theming. Can be used in template notes.",
     "icon_class": "value of this label is added as a CSS class to the icon on the tree which can help visually distinguish the notes in the tree. Example might be bx bx-home - icons are taken from boxicons. Can be used in template notes.",
     "page_size": "number of items per page in note listing",
-    "custom_request_handler": "see <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Custom request handler</a>",
-    "custom_resource_provider": "see <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Custom request handler</a>",
+    "custom_request_handler": "custom request handler",
+    "custom_resource_provider": "custom resource provider",
     "widget": "marks this note as a custom widget which will be added to the Trilium component tree",
     "workspace": "marks this note as a workspace which allows easy hoisting",
     "workspace_icon_class": "defines box icon CSS class which will be used in tab when hoisted to this note",
@@ -446,6 +640,8 @@
     "and_more": "... and {{count}} more.",
     "print_landscape": "When exporting to PDF, changes the orientation of the page to landscape instead of portrait.",
     "print_page_size": "When exporting to PDF, changes the size of the page. Supported values: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
+    "print_scale": "When exporting to PDF, changes the scale of the rendered content. Values range from 0.1 (10%) to 2 (200%), default is 1 (100%).",
+    "print_margins": "When exporting to PDF, sets page margins. Use <code>default</code>, <code>none</code>, <code>minimum</code>, or custom values as <code>top,right,bottom,left</code> in millimeters.",
     "color_type": "Color"
   },
   "attribute_editor": {
@@ -509,6 +705,11 @@
     "undelete_notes_instruction": "After the deletion, it's possible to undelete them from Recent Changes dialog.",
     "erase_notes_instruction": "To erase notes permanently, you can go after the deletion to the Option -> Other and click the \"Erase deleted notes now\" button."
   },
+  "save_revision": {
+    "save_revision": "Save revision",
+    "revision_name_placeholder": "Revision name (optional)",
+    "help": "A named revision will be saved for each matched note, capturing its current content and title."
+  },
   "delete_revisions": {
     "delete_note_revisions": "Delete note revisions",
     "all_past_note_revisions": "All past note revisions of matched notes will be deleted. Note itself will be fully preserved. In other terms, note's history will be removed."
@@ -521,6 +722,16 @@
     "move_note_new_parent": "move note to the new parent if note has only one parent (i.e. the old branch is removed and new branch into the new parent is created)",
     "clone_note_new_parent": "clone note to the new parent if note has multiple clones/branches (it's not clear which branch should be removed)",
     "nothing_will_happen": "nothing will happen if note cannot be moved to the target note (i.e. this would create a tree cycle)"
+  },
+  "convert_note": {
+    "convert_note": "Convert",
+    "convert_note_to": "Convert note",
+    "choose_conversion": "(choose a conversion)",
+    "conversion_htmlToMarkdown": "Text Notes → Markdown Notes (lossy)",
+    "conversion_markdownToHtml": "Markdown Notes → Text Notes",
+    "help_text": "The conversion is applied only to notes matching the source type; other notes are left untouched. A revision of each converted note is saved beforehand.",
+    "warning": "Some formatting may be lost when converting notes and you may need to fix a few things afterwards. A revision of each converted note will be saved beforehand so you can restore it. Do you want to continue?",
+    "warning_risky": "You are converting between two formats that don't have identical capabilities, so some formatting may be lost and some unsupported elements may be dropped.<br><br>Do you fully assume this risk and want to proceed with the conversion?<br><br>A revision of each converted note will be saved beforehand, so you can revert to the original format."
   },
   "rename_note": {
     "rename_note": "Rename note",
@@ -572,7 +783,7 @@
     "download": "Download",
     "rename_attachment": "Rename attachment",
     "upload_new_revision": "Upload new revision",
-    "copy_link_to_clipboard": "Copy link to clipboard",
+    "copy_link_to_clipboard": "Copy reference to clipboard",
     "convert_attachment_into_note": "Convert attachment into note",
     "delete_attachment": "Delete attachment",
     "upload_success": "New attachment revision has been uploaded.",
@@ -607,6 +818,9 @@
     "october": "October",
     "november": "November",
     "december": "December",
+    "day": "Day",
+    "day_previous": "Previous Day",
+    "day_next": "Next Day",
     "week": "Week",
     "week_previous": "Previous week",
     "week_next": "Next week",
@@ -617,7 +831,9 @@
     "year_previous": "Previous year",
     "year_next": "Next year",
     "list": "List",
-    "today": "Today"
+    "today": "Today",
+    "pin_date": "Pin the current date so the calendar always opens on this interval instead of today",
+    "unpin_date": "Unpin the date so the calendar opens on today's date again"
   },
   "close_pane_button": {
     "close_this_pane": "Close this pane"
@@ -634,6 +850,10 @@
   "show_highlights_list_widget_button": {
     "show_highlights_list": "Show Highlights List"
   },
+  "options": {
+    "title": "Options",
+    "back": "Back to all options"
+  },
   "global_menu": {
     "menu": "Menu",
     "options": "Options",
@@ -647,6 +867,7 @@
     "zoom_in": "Zoom In",
     "configure_launchbar": "Configure Launchbar",
     "show_shared_notes_subtree": "Show Shared Notes Subtree",
+    "show_deleted_notes": "Show Deleted Notes",
     "advanced": "Advanced",
     "open_dev_tools": "Open Dev Tools",
     "open_sql_console": "Open SQL Console",
@@ -685,11 +906,17 @@
     "move_right": "Move right"
   },
   "note_actions": {
+    "word_wrap": "Word wrap",
+    "word_wrap_auto": "Auto",
+    "word_wrap_auto_description": "Follow the global setting",
+    "word_wrap_on": "On",
+    "word_wrap_off": "Off",
     "convert_into_attachment": "Convert into attachment",
     "re_render_note": "Re-render note",
     "search_in_note": "Search in note",
     "note_source": "Note source",
     "note_attachments": "Note attachments",
+    "view_ocr_text": "View OCR text",
     "open_note_externally": "Open note externally",
     "open_note_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
     "open_note_custom": "Open note custom",
@@ -697,13 +924,21 @@
     "import_files": "Import files",
     "export_note": "Export note",
     "delete_note": "Delete note",
-    "print_note": "Print note",
+    "print_note": "Print note...",
+    "print_or_export_to_pdf": "Print/export to PDF...",
     "view_revisions": "Note revisions...",
     "save_revision": "Save revision",
+    "save_named_revision": "Save named revision...",
     "advanced": "Advanced",
     "convert_into_attachment_failed": "Converting note '{{title}}' failed.",
     "convert_into_attachment_successful": "Note '{{title}}' has been converted to attachment.",
     "convert_into_attachment_prompt": "Are you sure you want to convert note '{{title}}' into an attachment of the parent note?",
+    "convert_to_markdown": "Convert to Markdown Note",
+    "convert_to_text": "Convert to Text Note",
+    "convert_format_warning": "Some formatting may be lost during the conversion and you may need to fix a few things afterwards. A revision of the current note will be saved beforehand so you can restore it. Do you want to continue?",
+    "convert_format_warning_risky": "You are converting between two formats that don't have identical capabilities, so some formatting may be lost and some unsupported elements may be dropped.<br><br>Do you fully assume this risk and want to proceed with the conversion?<br><br>A revision of the current note will be saved beforehand, so you can revert to the original format.",
+    "convert_to_markdown_successful": "Note has been converted to Markdown.",
+    "convert_to_text_successful": "Note has been converted to a text note.",
     "print_pdf": "Export as PDF...",
     "export_as_image": "Export as image",
     "export_as_image_png": "PNG (raster)",
@@ -724,11 +959,12 @@
     "update_available": "Update available"
   },
   "note_launcher": {
-    "this_launcher_doesnt_define_target_note": "This launcher doesn't define target note."
+    "this_launcher_doesnt_define_target_note": "This launcher has no target note configured, so there's nothing to open. Set its \"target\" relation to point it at a note."
   },
   "code_buttons": {
     "execute_button_title": "Execute script",
     "trilium_api_docs_button_title": "Open Trilium API docs",
+    "electron_api_docs_button_title": "Open Electron API docs",
     "save_to_note_button_title": "Save to note",
     "opening_api_docs_message": "Opening API docs...",
     "sql_console_saved_message": "SQL Console note has been saved into {{note_path}}"
@@ -750,6 +986,18 @@
     "reset_pan_zoom_title": "Reset pan & zoom to initial coordinates and magnification",
     "zoom_in_title": "Zoom In",
     "zoom_out_title": "Zoom Out"
+  },
+  "image_buttons": {
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "reset_zoom": "Reset zoom"
+  },
+  "image_navigation": {
+    "previous": "Previous image: {{- title}}",
+    "next": "Next image: {{- title}}"
+  },
+  "image_viewer": {
+    "loading_error": "There was an error loading the image."
   },
   "zpetne_odkazy": {
     "backlink_one": "{{count}} Backlink",
@@ -803,8 +1051,14 @@
     "geo-map": "Geo Map",
     "board": "Board",
     "presentation": "Presentation",
+    "dashboard": "Dashboard",
     "include_archived_notes": "Show archived notes",
-    "hide_child_notes": "Hide child notes in tree"
+    "hide_child_notes": "Hide child notes in tree",
+    "open_all_in_tabs": "Open all",
+    "open_all_in_tabs_tooltip": "Open all results in new tabs",
+    "open_all_confirm_one": "This will open {{count}} note in new tabs. Continue?",
+    "open_all_confirm_other": "This will open {{count}} notes in new tabs. Continue?",
+    "open_all_too_many": "Too many notes to open at once ({{count}}). The maximum is {{max}}, try narrowing the results first."
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -840,6 +1094,9 @@
     "no_inherited_attributes": "No inherited attributes.",
     "none": "none"
   },
+  "auto_link_attribute_list": {
+    "title": "System Attributes"
+  },
   "note_info_widget": {
     "note_id": "Note ID",
     "created": "Created",
@@ -849,7 +1106,8 @@
     "note_size": "Note size",
     "note_size_info": "Note size provides rough estimate of storage requirements for this note. It takes into account note's content and content of its note revisions.",
     "calculate": "calculate",
-    "subtree_size": "(subtree size: {{size}} in {{count}} notes)",
+    "subtree_size_one": "(subtree size: {{size}} in {{count}} note)",
+    "subtree_size_other": "(subtree size: {{size}} in {{count}} notes)",
     "title": "Note Info",
     "show_similar_notes": "Show similar notes"
   },
@@ -858,7 +1116,10 @@
     "collapse": "Collapse to normal size",
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
-    "link-distance": "Link distance"
+    "link-distance": "Link distance",
+    "too-many-notes_one": "There is {{count}} note here. Showing it may slow things down.",
+    "too-many-notes_other": "There are {{count}} notes here. Showing them all may slow things down.",
+    "show-anyway": "Show map"
   },
   "note_paths": {
     "title": "Note Paths",
@@ -1012,10 +1273,25 @@
   "book": {
     "no_children_help": "This collection doesn't have any child notes so there's nothing to display.",
     "drag_locked_title": "Locked for editing",
-    "drag_locked_message": "Dragging not allowed since the collection is locked for editing."
+    "drag_locked_message": "Dragging not allowed since the collection is locked for editing.",
+    "archived_notes_hidden_one": "An archived note was copied here but stays hidden until you enable \"Show archived notes\".",
+    "archived_notes_hidden_other": "{{count}} archived notes were copied here but stay hidden until you enable \"Show archived notes\"."
   },
   "editable_code": {
     "placeholder": "Type the content of your code note here..."
+  },
+  "split_editor": {
+    "render_error": "Unable to render the preview",
+    "show_details": "Show details",
+    "last_valid_render": "Showing last valid render"
+  },
+  "icon_pack": {
+    "preview_title": "Icon pack preview",
+    "invalid_manifest": "The icon pack manifest could not be parsed. Check that it is valid JSON.",
+    "no_icons": "This icon pack contains no icons.",
+    "tooltip": "Class: {{- class}}\nGlyph code: {{- code}}\nTerms: {{- terms}}",
+    "count_one": "{{count}} icon",
+    "count_other": "{{count}} icons"
   },
   "editable_text": {
     "placeholder": "Type the content of your note here...",
@@ -1032,9 +1308,39 @@
     "search_placeholder": "search for a note by its name",
     "enter_workspace": "Enter workspace {{title}}"
   },
+  "blob_stub": {
+    "not_synced": "This note's content is too large to sync to this device. You can open it on the sync server instead.",
+    "open_on_server": "Open on server"
+  },
   "file": {
     "file_preview_not_available": "File preview is not available for this file format.",
     "too_big": "The preview only shows the first {{maxNumChars}} characters of the file for performance reasons. Download the file and open it externally to be able to see the entire content."
+  },
+  "media": {
+    "play": "Play (Space)",
+    "pause": "Pause (Space)",
+    "seek": "Seek (Left/Right arrow keys)",
+    "back-10s": "Back 10s (Left arrow key)",
+    "forward-10s": "Forward 10s (Right arrow key)",
+    "previous-video": "Previous video: {{- title}}",
+    "next-video": "Next video: {{- title}}",
+    "previous-audio": "Previous audio: {{- title}}",
+    "next-audio": "Next audio: {{- title}}",
+    "mute": "Mute (M)",
+    "unmute": "Unmute (M)",
+    "playback-speed": "Playback speed",
+    "play-mode-title": "Play mode: {{mode}}",
+    "play-mode-once": "Play once",
+    "play-mode-loop": "Loop",
+    "play-mode-next": "Play next",
+    "rotate": "Rotate",
+    "picture-in-picture": "Picture-in-picture",
+    "exit-picture-in-picture": "Exit picture-in-picture",
+    "fullscreen": "Fullscreen (F)",
+    "exit-fullscreen": "Exit fullscreen",
+    "unsupported-format": "Media preview is not available for this file format:\n{{mime}}",
+    "zoom-to-fit": "Zoom to fill",
+    "zoom-reset": "Reset zoom to fill"
   },
   "protected_session": {
     "enter_password_instruction": "Showing protected note requires entering your password:",
@@ -1044,16 +1350,14 @@
     "protecting-finished-successfully": "Protecting finished successfully.",
     "unprotecting-finished-successfully": "Unprotecting finished successfully.",
     "protecting-in-progress": "Protecting in progress: {{count}}",
-    "unprotecting-in-progress-count": "Unprotecting in progress: {{count}}",
-    "protecting-title": "Protecting status",
-    "unprotecting-title": "Unprotecting status"
+    "unprotecting-in-progress-count": "Unprotecting in progress: {{count}}"
   },
   "relation_map": {
-    "open_in_new_tab": "Open in new tab",
     "remove_note": "Remove note",
     "edit_title": "Edit title",
     "rename_note": "Rename note",
     "enter_new_title": "Enter new note title:",
+    "rename_relation": "Rename relation",
     "remove_relation": "Remove relation",
     "confirm_remove_relation": "Are you sure you want to remove the relation?",
     "specify_new_relation_name": "Specify new relation name (allowed characters: alphanumeric, colon and underscore):",
@@ -1088,20 +1392,25 @@
   },
   "consistency_checks": {
     "title": "Consistency Checks",
-    "find_and_fix_button": "Find and fix consistency issues",
+    "find_and_fix_label": "Find and fix consistency issues",
+    "find_and_fix_description": "Scan for and automatically repair any data consistency issues in the database.",
+    "find_and_fix_button": "Fix issues",
     "finding_and_fixing_message": "Finding and fixing consistency issues...",
     "issues_fixed_message": "Any consistency issue which may have been found is now fixed."
   },
   "database_anonymization": {
     "title": "Database Anonymization",
-    "full_anonymization": "Full Anonymization",
-    "full_anonymization_description": "This action will create a new copy of the database and anonymize it (remove all note content and leave only structure and some non-sensitive metadata) for sharing online for debugging purposes without fear of leaking your personal data.",
-    "save_fully_anonymized_database": "Save fully anonymized database",
-    "light_anonymization": "Light Anonymization",
-    "light_anonymization_description": "This action will create a new copy of the database and do a light anonymization on it — specifically only content of all notes will be removed, but titles and attributes will remain. Additionally, custom JS frontend/backend script notes and custom widgets will remain. This provides more context to debug the issues.",
+    "description": "Create an anonymized copy of your database for sharing with developers when debugging issues, without exposing personal data.",
+    "full_anonymization": "Full anonymization",
+    "full_anonymization_description": "Creates a copy of the database with all note content removed, leaving only structure and non-sensitive metadata. Safe for sharing online when debugging issues.",
+    "save_fully_anonymized_database": "Create copy",
+    "light_anonymization": "Light anonymization",
+    "light_anonymization_description": "Creates a copy with note content removed, but titles, attributes, and custom scripts/widgets remain. Provides more context for debugging.",
     "choose_anonymization": "You can decide yourself if you want to provide a fully or lightly anonymized database. Even fully anonymized DB is very useful, however in some cases lightly anonymized database can speed up the process of bug identification and fixing.",
-    "save_lightly_anonymized_database": "Save lightly anonymized database",
+    "save_lightly_anonymized_database": "Create copy",
     "existing_anonymized_databases": "Existing anonymized databases",
+    "anonymized_databases_location": "Anonymized databases are stored in {{- anonymizedFolder}}.",
+    "download": "Download",
     "creating_fully_anonymized_database": "Creating fully anonymized database...",
     "creating_lightly_anonymized_database": "Creating lightly anonymized database...",
     "error_creating_anonymized_database": "Could not create anonymized database, check backend logs for details",
@@ -1111,26 +1420,36 @@
   },
   "database_integrity_check": {
     "title": "Database Integrity Check",
-    "description": "This will check that the database is not corrupted on the SQLite level. It might take some time, depending on the DB size.",
-    "check_button": "Check database integrity",
+    "check_integrity_label": "Check database integrity",
+    "check_integrity_description": "Verify that the database is not corrupted on the SQLite level.",
+    "check_button": "Check integrity",
     "checking_integrity": "Checking database integrity...",
     "integrity_check_succeeded": "Integrity check succeeded - no problems found.",
     "integrity_check_failed": "Integrity check failed: {{results}}"
   },
   "sync": {
     "title": "Sync",
-    "force_full_sync_button": "Force full sync",
-    "fill_entity_changes_button": "Fill entity changes records",
+    "force_full_sync_label": "Force full sync",
+    "force_full_sync_description": "Trigger a complete synchronization with the sync server, re-uploading all changes.",
+    "force_full_sync_button": "Force sync",
+    "fill_entity_changes_label": "Fill entity changes",
+    "fill_entity_changes_description": "Rebuild entity change records. Use this if sync is missing some changes.",
+    "fill_entity_changes_button": "Fill changes",
     "full_sync_triggered": "Full sync triggered",
     "filling_entity_changes": "Filling entity changes rows...",
     "sync_rows_filled_successfully": "Sync rows filled successfully",
     "finished-successfully": "Sync finished successfully.",
     "failed": "Sync failed: {{message}}"
   },
+  "database": {
+    "title": "Database"
+  },
   "vacuum_database": {
     "title": "Vacuum Database",
+    "vacuum_label": "Vacuum database",
+    "vacuum_description": "Rebuild the database to reduce file size. No data will be changed.",
     "description": "This will rebuild the database which will typically result in a smaller database file. No data will be actually changed.",
-    "button_text": "Vacuum database",
+    "button_text": "Vacuum now",
     "vacuuming_database": "Vacuuming database...",
     "database_vacuumed": "Database has been vacuumed"
   },
@@ -1138,21 +1457,25 @@
     "title": "Experimental Options",
     "disclaimer": "These options are experimental and may cause instability. Use with caution.",
     "new_layout_name": "New Layout",
-    "new_layout_description": "Try out the new layout for a more modern look and improved usability. Subject to heavy change in the upcoming releases."
+    "new_layout_description": "Try out the new layout for a more modern look and improved usability. Subject to heavy change in the upcoming releases.",
+    "llm_name": "AI / LLM Chat",
+    "llm_description": "Enable the AI chat sidebar and LLM chat notes powered by large language models."
   },
   "fonts": {
     "theme_defined": "Theme defined",
     "fonts": "Fonts",
-    "main_font": "Main Font",
+    "custom_fonts": "Use custom fonts",
+    "main_font": "Interface text",
     "font_family": "Font family",
     "size": "Size",
-    "note_tree_font": "Note Tree Font",
-    "note_detail_font": "Note Detail Font",
-    "monospace_font": "Monospace (code) Font",
-    "note_tree_and_detail_font_sizing": "Note that tree and detail font sizing is relative to the main font size setting.",
-    "not_all_fonts_available": "Not all listed fonts may be available on your system.",
-    "apply_font_changes": "To apply font changes, click on",
-    "reload_frontend": "reload frontend",
+    "preview": "Preview",
+    "note_tree_font": "Note tree text",
+    "note_detail_font": "Document text",
+    "monospace_font": "Monospace text",
+    "monospace_font_description": "Used for code notes and code blocks",
+    "size_relative_to_general": "Size is relative to the general font size",
+    "not_all_fonts_available": "Not all listed fonts may be available on your system",
+    "apply_changes": "Reload to apply changes",
     "generic-fonts": "Generic fonts",
     "sans-serif-system-fonts": "Sans-serif system fonts",
     "serif-system-fonts": "Serif system fonts",
@@ -1176,20 +1499,32 @@
     "disabled": "disabled"
   },
   "ribbon": {
-    "widgets": "Ribbon widgets",
-    "promoted_attributes_message": "Promoted Attributes ribbon tab will automatically open if promoted attributes are present on the note",
     "edited_notes_message": "Edited Notes ribbon tab will automatically open on day notes"
   },
   "theme": {
-    "title": "Application Theme",
-    "theme_label": "Theme",
+    "title": "User Interface",
+    "theme_label": "Application theme",
     "override_theme_fonts_label": "Override theme fonts",
-    "auto_theme": "Legacy (Follow system color scheme)",
-    "light_theme": "Legacy (Light)",
-    "dark_theme": "Legacy (Dark)",
-    "triliumnext": "Trilium (Follow system color scheme)",
-    "triliumnext-light": "Trilium (Light)",
-    "triliumnext-dark": "Trilium (Dark)",
+    "auto_theme": "Follow system color scheme",
+    "light_theme": "Light",
+    "dark_theme": "Dark",
+    "triliumnext": "Follow system color scheme",
+    "triliumnext-light": "Light",
+    "triliumnext-dark": "Dark",
+    "modern_themes": "Modern",
+    "legacy_themes": "Legacy",
+    "custom_themes": "Custom",
+    "recommended": "Recommended",
+    "color_scheme": "Color scheme",
+    "color_scheme_system": "System",
+    "color_scheme_light": "Light",
+    "color_scheme_dark": "Dark",
+    "color_scheme_custom_disabled": "Color scheme override is not available for custom themes",
+    "color_scheme_switcher_system": "System mode",
+    "color_scheme_switcher_light": "Light mode",
+    "color_scheme_switcher_dark": "Dark mode",
+    "color_scheme_switcher_hint": "Click to switch the color scheme.",
+    "color_scheme_switcher_unsupported": "The current theme doesn't support changing the color scheme.",
     "layout": "Layout",
     "layout-vertical-title": "Vertical",
     "layout-horizontal-title": "Horizontal",
@@ -1198,154 +1533,11 @@
   },
   "ui-performance": {
     "title": "Performance",
-    "enable-motion": "Enable transitions and animations",
-    "enable-shadows": "Enable shadows",
-    "enable-backdrop-effects": "Enable background effects for menus, popups and panels",
-    "enable-smooth-scroll": "Enable smooth scrolling",
-    "app-restart-required": "(a restart of the application is required for the change to take effect)"
-  },
-  "ai_llm": {
-    "not_started": "Not started",
-    "title": "AI Settings",
-    "processed_notes": "Processed Notes",
-    "total_notes": "Total Notes",
-    "progress": "Progress",
-    "queued_notes": "Queued Notes",
-    "failed_notes": "Failed Notes",
-    "last_processed": "Last Processed",
-    "refresh_stats": "Refresh Statistics",
-    "enable_ai_features": "Enable AI/LLM features",
-    "enable_ai_description": "Enable AI features like note summarization, content generation, and other LLM capabilities",
-    "openai_tab": "OpenAI",
-    "anthropic_tab": "Anthropic",
-    "voyage_tab": "Voyage AI",
-    "ollama_tab": "Ollama",
-    "enable_ai": "Enable AI/LLM features",
-    "enable_ai_desc": "Enable AI features like note summarization, content generation, and other LLM capabilities",
-    "provider_configuration": "AI Provider Configuration",
-    "provider_precedence": "Provider Precedence",
-    "provider_precedence_description": "Comma-separated list of providers in order of precedence (e.g., 'openai,anthropic,ollama')",
-    "temperature": "Temperature",
-    "temperature_description": "Controls randomness in responses (0 = deterministic, 2 = maximum randomness)",
-    "system_prompt": "System Prompt",
-    "system_prompt_description": "Default system prompt used for all AI interactions",
-    "openai_configuration": "OpenAI Configuration",
-    "openai_settings": "OpenAI Settings",
-    "api_key": "API Key",
-    "url": "Base URL",
-    "model": "Model",
-    "openai_api_key_description": "Your OpenAI API key for accessing their AI services",
-    "anthropic_api_key_description": "Your Anthropic API key for accessing Claude models",
-    "default_model": "Default Model",
-    "openai_model_description": "Examples: gpt-4o, gpt-4-turbo, gpt-3.5-turbo",
-    "base_url": "Base URL",
-    "openai_url_description": "Default: https://api.openai.com/v1",
-    "anthropic_settings": "Anthropic Settings",
-    "anthropic_url_description": "Base URL for the Anthropic API (default: https://api.anthropic.com)",
-    "anthropic_model_description": "Anthropic Claude models for chat completion",
-    "voyage_settings": "Voyage AI Settings",
-    "ollama_settings": "Ollama Settings",
-    "ollama_url_description": "URL for the Ollama API (default: http://localhost:11434)",
-    "ollama_model_description": "Ollama model to use for chat completion",
-    "anthropic_configuration": "Anthropic Configuration",
-    "voyage_configuration": "Voyage AI Configuration",
-    "voyage_url_description": "Default: https://api.voyageai.com/v1",
-    "ollama_configuration": "Ollama Configuration",
-    "enable_ollama": "Enable Ollama",
-    "enable_ollama_description": "Enable Ollama for local AI model usage",
-    "ollama_url": "Ollama URL",
-    "ollama_model": "Ollama Model",
-    "refresh_models": "Refresh Models",
-    "refreshing_models": "Refreshing...",
-    "enable_automatic_indexing": "Enable Automatic Indexing",
-    "rebuild_index": "Rebuild Index",
-    "rebuild_index_error": "Error starting index rebuild. Check logs for details.",
-    "note_title": "Note Title",
-    "error": "Error",
-    "last_attempt": "Last Attempt",
-    "actions": "Actions",
-    "retry": "Retry",
-    "partial": "{{ percentage }}% completed",
-    "retry_queued": "Note queued for retry",
-    "retry_failed": "Failed to queue note for retry",
-    "max_notes_per_llm_query": "Max Notes Per Query",
-    "max_notes_per_llm_query_description": "Maximum number of similar notes to include in AI context",
-    "active_providers": "Active Providers",
-    "disabled_providers": "Disabled Providers",
-    "remove_provider": "Remove provider from search",
-    "restore_provider": "Restore provider to search",
-    "similarity_threshold": "Similarity Threshold",
-    "similarity_threshold_description": "Minimum similarity score (0-1) for notes to be included in context for LLM queries",
-    "reprocess_index": "Rebuild Search Index",
-    "reprocessing_index": "Rebuilding...",
-    "reprocess_index_started": "Search index optimization started in the background",
-    "reprocess_index_error": "Error rebuilding search index",
-    "index_rebuild_progress": "Index Rebuild Progress",
-    "index_rebuilding": "Optimizing index ({{percentage}}%)",
-    "index_rebuild_complete": "Index optimization complete",
-    "index_rebuild_status_error": "Error checking index rebuild status",
-    "never": "Never",
-    "processing": "Processing ({{percentage}}%)",
-    "incomplete": "Incomplete ({{percentage}}%)",
-    "complete": "Complete (100%)",
-    "refreshing": "Refreshing...",
-    "auto_refresh_notice": "Auto-refreshes every {{seconds}} seconds",
-    "note_queued_for_retry": "Note queued for retry",
-    "failed_to_retry_note": "Failed to retry note",
-    "all_notes_queued_for_retry": "All failed notes queued for retry",
-    "failed_to_retry_all": "Failed to retry notes",
-    "ai_settings": "AI Settings",
-    "api_key_tooltip": "API key for accessing the service",
-    "empty_key_warning": {
-      "anthropic": "Anthropic API key is empty. Please enter a valid API key.",
-      "openai": "OpenAI API key is empty. Please enter a valid API key.",
-      "voyage": "Voyage API key is empty. Please enter a valid API key.",
-      "ollama": "Ollama API key is empty. Please enter a valid API key."
-    },
-    "agent": {
-      "processing": "Processing...",
-      "thinking": "Thinking...",
-      "loading": "Loading...",
-      "generating": "Generating..."
-    },
-    "name": "AI",
-    "openai": "OpenAI",
-    "use_enhanced_context": "Use enhanced context",
-    "enhanced_context_description": "Provides the AI with more context from the note and its related notes for better responses",
-    "show_thinking": "Show thinking",
-    "show_thinking_description": "Show the AI's chain of thought process",
-    "enter_message": "Enter your message...",
-    "error_contacting_provider": "Error contacting AI provider. Please check your settings and internet connection.",
-    "error_generating_response": "Error generating AI response",
-    "index_all_notes": "Index All Notes",
-    "index_status": "Index Status",
-    "indexed_notes": "Indexed Notes",
-    "indexing_stopped": "Indexing stopped",
-    "indexing_in_progress": "Indexing in progress...",
-    "last_indexed": "Last Indexed",
-    "note_chat": "Note Chat",
-    "sources": "Sources",
-    "start_indexing": "Start Indexing",
-    "use_advanced_context": "Use Advanced Context",
-    "ollama_no_url": "Ollama is not configured. Please enter a valid URL.",
-    "chat": {
-      "root_note_title": "AI Chats",
-      "root_note_content": "This note contains your saved AI chat conversations.",
-      "new_chat_title": "New Chat",
-      "create_new_ai_chat": "Create new AI Chat"
-    },
-    "create_new_ai_chat": "Create new AI Chat",
-    "configuration_warnings": "There are some issues with your AI configuration. Please check your settings.",
-    "experimental_warning": "The LLM feature is currently experimental - you have been warned.",
-    "selected_provider": "Selected Provider",
-    "selected_provider_description": "Choose the AI provider for chat and completion features",
-    "select_model": "Select model...",
-    "select_provider": "Select provider...",
-    "ai_enabled": "AI features enabled",
-    "ai_disabled": "AI features disabled",
-    "no_models_found_online": "No models found. Please check your API key and settings.",
-    "no_models_found_ollama": "No Ollama models found. Please check if Ollama is running.",
-    "error_fetching": "Error fetching models: {{error}}"
+    "enable-motion": "Transitions and animations",
+    "enable-shadows": "Shadows",
+    "enable-backdrop-effects": "Background effects for menus, popups and panels",
+    "enable-smooth-scroll": "Smooth scrolling",
+    "app-restart-required": "Requires app restart"
   },
   "zoom_factor": {
     "title": "Zoom Factor (desktop build only)",
@@ -1354,17 +1546,20 @@
   "code_auto_read_only_size": {
     "title": "Automatic Read-Only Size",
     "description": "Automatic read-only note size is the size after which notes will be displayed in a read-only mode (for performance reasons).",
-    "label": "Automatic read-only size (code notes)",
+    "label": "Automatic read-only size",
     "unit": "characters"
   },
   "code-editor-options": {
-    "title": "Editor"
+    "title": "Editor",
+    "tab_width": "Tab width",
+    "tab_width_unit": "spaces"
   },
   "code_mime_types": {
     "title": "Available MIME types in the dropdown",
     "tooltip_syntax_highlighting": "Syntax highlighting",
     "tooltip_code_block_syntax": "Code blocks in Text notes",
-    "tooltip_code_note_syntax": "Code notes"
+    "tooltip_code_note_syntax": "Code notes",
+    "trilium_log": "Trilium Log"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Vim keybindings",
@@ -1376,66 +1571,121 @@
   },
   "images": {
     "images_section_title": "Images",
-    "download_images_automatically": "Download images automatically for offline use.",
-    "download_images_description": "Pasted HTML can contain references to online images, Trilium will find those references and download the images so that they are available offline.",
-    "enable_image_compression": "Enable image compression",
-    "max_image_dimensions": "Max width / height of an image (image will be resized if it exceeds this setting).",
+    "download_images_automatically": "Download images automatically",
+    "download_images_description": "Download referenced online images from pasted HTML so they are available offline.",
+    "enable_image_compression": "Image compression",
+    "enable_image_compression_description": "Compress and resize images when they are uploaded or pasted.",
+    "max_image_dimensions": "Max image dimensions",
+    "max_image_dimensions_description": "Images exceeding this size will be resized automatically.",
     "max_image_dimensions_unit": "pixels",
-    "jpeg_quality_description": "JPEG quality (10 - worst quality, 100 - best quality, 50 - 85 is recommended)"
+    "jpeg_quality": "JPEG quality",
+    "jpeg_quality_description": "Recommended range is 50–85. Lower values reduce file size, higher values preserve detail.",
+    "ocr_section_title": "Text Extraction (OCR)",
+    "ocr_related_content_languages": "Content languages (used for text extraction)",
+    "ocr_auto_process": "Auto-process new files",
+    "ocr_auto_process_description": "Automatically extract text from newly uploaded or pasted files.",
+    "ocr_min_confidence": "Minimum confidence",
+    "ocr_confidence_description": "Only extract text above this confidence threshold. Lower values include more text but may be less accurate.",
+    "batch_ocr_title": "Process Existing Files",
+    "batch_ocr_description": "Extract text from all existing images, PDFs, and Office documents in your notes. This may take some time depending on the number of files.",
+    "batch_ocr_start": "Start Batch Processing",
+    "batch_ocr_starting": "Starting batch processing...",
+    "batch_ocr_progress": "Processing {{processed}} of {{total}} files...",
+    "batch_ocr_completed": "Batch processing completed! Processed {{processed}} files.",
+    "batch_ocr_completed_with_failures": "Batch processing completed. Processed {{processed}} files, but {{failed}} could not be read (see logs for details).",
+    "batch_ocr_error": "Error during batch processing: {{error}}"
   },
   "attachment_erasure_timeout": {
-    "attachment_erasure_timeout": "Attachment Erasure Timeout",
-    "attachment_auto_deletion_description": "Attachments get automatically deleted (and erased) if they are not referenced by their note anymore after a defined time out.",
-    "erase_attachments_after": "Erase unused attachments after:",
-    "manual_erasing_description": "You can also trigger erasing manually (without considering the timeout defined above):",
-    "erase_unused_attachments_now": "Erase unused attachment notes now",
+    "attachment_erasure_timeout": "Unused Attachments",
+    "description": "Attachments that are no longer referenced by any note are considered unused and can be automatically erased after a period of time.",
+    "erase_attachments_after": "Erase unused attachments after",
+    "erase_attachments_after_description": "Time before unused attachments are permanently erased.",
+    "manual_erasing_description": "Trigger erasing manually, ignoring the timeout above.",
+    "erase_unused_attachments_now": "Erase unused attachments",
+    "erase_now_button": "Erase now",
     "unused_attachments_erased": "Unused attachments have been erased."
   },
   "network_connections": {
-    "network_connections_title": "Network Connections",
-    "check_for_updates": "Check for updates automatically"
+    "network_connections_title": "Network",
+    "check_for_updates": "Check for updates automatically",
+    "check_for_updates_description": "Checks for new versions on GitHub and shows a notification in the global menu when available."
   },
   "note_erasure_timeout": {
-    "note_erasure_timeout_title": "Note Erasure Timeout",
-    "note_erasure_description": "Deleted notes (and attributes, revisions...) are at first only marked as deleted and it is possible to recover them from Recent Notes dialog. After a period of time, deleted notes are \"erased\" which means their content is not recoverable anymore. This setting allows you to configure the length of the period between deleting and erasing the note.",
-    "erase_notes_after": "Erase notes after:",
-    "manual_erasing_description": "You can also trigger erasing manually (without considering the timeout defined above):",
-    "erase_deleted_notes_now": "Erase deleted notes now",
+    "note_erasure_timeout_title": "Deleted Notes",
+    "description": "Deleted notes are first only marked as deleted and can be recovered from Recent Notes. After a period of time, they are permanently erased.",
+    "erase_notes_after": "Erase notes after",
+    "erase_notes_after_description": "Time before deleted notes are permanently erased.",
+    "manual_erasing_description": "Trigger erasing manually, ignoring the timeout above.",
+    "erase_deleted_notes_now": "Erase deleted notes",
+    "erase_now_button": "Erase now",
     "deleted_notes_erased": "Deleted notes have been erased."
+  },
+  "revisions_snapshot": {
+    "title": "Note Revisions"
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "Note Revision Snapshot Interval",
     "note_revisions_snapshot_description": "The Note revision snapshot interval is the time after which a new note revision will be created for the note. See <doc>wiki</doc> for more info.",
-    "snapshot_time_interval_label": "Note revision snapshot time interval:"
+    "note_revisions_snapshot_description_short": "Time after which a new note revision will be created.",
+    "snapshot_time_interval_label": "Snapshot interval"
   },
   "revisions_snapshot_limit": {
     "note_revisions_snapshot_limit_title": "Note Revision Snapshot Limit",
     "note_revisions_snapshot_limit_description": "The note revision snapshot number limit refers to the maximum number of revisions that can be saved for each note. Where -1 means no limit, 0 means delete all revisions. You can set the maximum revisions for a single note through the #versioningLimit label.",
-    "snapshot_number_limit_label": "Note revision snapshot number limit:",
+    "note_revisions_snapshot_limit_description_short": "Max revisions per note. Use -1 for unlimited, 0 to disable.",
+    "snapshot_number_limit_label": "Maximum revisions",
     "snapshot_number_limit_unit": "snapshots",
-    "erase_excess_revision_snapshots": "Erase excess revision snapshots now",
+    "erase_excess_revision_snapshots": "Erase excess revision snapshots",
+    "erase_excess_revision_snapshots_description": "Delete revisions exceeding the limit for all notes.",
+    "erase_now_button": "Erase now",
     "erase_excess_revision_snapshots_prompt": "Excess revision snapshots have been erased."
+  },
+  "search": {
+    "title": "Search",
+    "fuzzy_matching_label": "Typo tolerance in search",
+    "fuzzy_matching_description": "Affects quick search and full search. Finds similar words when exact matches are insufficient.",
+    "autocomplete_fuzzy_label": "Typo tolerance in autocomplete",
+    "autocomplete_fuzzy_description": "Affects jump-to-note and note selectors. Slower but tolerates typos."
   },
   "search_engine": {
     "title": "Search Engine",
-    "custom_search_engine_info": "Custom search engine requires both a name and a URL to be set. If either of these is not set, DuckDuckGo will be used as the default search engine.",
-    "predefined_templates_label": "Predefined search engine templates",
+    "custom_search_engine_info": "Used when searching the web for selected text. If not configured, DuckDuckGo will be used.",
+    "predefined_templates_label": "Presets",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
     "google": "Google",
-    "custom_name_label": "Custom search engine name",
-    "custom_name_placeholder": "Customize search engine name",
-    "custom_url_label": "Custom search engine URL should include {keyword} as a placeholder for the search term.",
-    "custom_url_placeholder": "Customize search engine url",
+    "custom_name_label": "Name",
+    "custom_name_placeholder": "Search engine name",
+    "custom_url_label": "URL",
+    "custom_url_description": "Use {keyword} as a placeholder for the search term.",
+    "custom_url_placeholder": "Search engine URL",
     "save_button": "Save"
+  },
+  "desktop": {
+    "web_placeholder": "These options apply only for desktop builds."
+  },
+  "startup": {
+    "title": "Startup",
+    "launch_on_startup": "Launch on startup",
+    "launch_on_startup_description": "Open Trilium automatically when you log into your computer.",
+    "hide_on_auto_start": "Start minimized to tray",
+    "hide_on_auto_start_description": "When launched automatically at login, start hidden in the system tray instead of opening a window. Requires launch on startup and the tray icon to be enabled."
   },
   "tray": {
     "title": "System Tray",
-    "enable_tray": "Enable tray (Trilium needs to be restarted for this change to take effect)"
+    "enable_tray": "Tray icon",
+    "enable_tray_description": "Changes apply immediately, though on some platforms hiding the tray icon may require restarting Trilium.",
+    "close_to_tray": "Close to tray",
+    "close_to_tray_description": "When you close the window, keep Trilium running in the system tray instead of quitting. Requires the tray icon to be enabled."
+  },
+  "text_editor": {
+    "title": "Editor",
+    "related_task_states": "Custom checkbox states for to-do lists"
   },
   "heading_style": {
-    "title": "Heading Style",
+    "title": "Heading style",
+    "description": "Visual style for headings in text notes.",
     "plain": "Plain",
     "underline": "Underline",
     "markdown": "Markdown-style"
@@ -1462,14 +1712,16 @@
   "text_auto_read_only_size": {
     "title": "Automatic Read-Only Size",
     "description": "Automatic read-only note size is the size after which notes will be displayed in a read-only mode (for performance reasons).",
-    "label": "Automatic read-only size (text notes)",
+    "label": "Automatic read-only size",
     "unit": "characters"
   },
   "custom_date_time_format": {
-    "title": "Custom Date/Time Format",
+    "title": "Date/time format",
     "description": "Customize the format of the date and time inserted via <shortcut /> or the toolbar. See <doc>Day.js docs</doc> for available format tokens.",
-    "format_string": "Format string:",
-    "formatted_time": "Formatted date/time:"
+    "description_short": "Customize the format of the date and time inserted via the toolbar.",
+    "preview": "Preview: {{preview}}",
+    "format_string": "Format string",
+    "formatted_time": "Formatted date/time"
   },
   "i18n": {
     "title": "Localization",
@@ -1484,35 +1736,39 @@
     "sunday": "Sunday",
     "first-week-of-the-year": "First week of the year",
     "first-week-contains-first-day": "First week contains first day of the year",
-    "first-week-contains-first-thursday": "First week contains first Thursday of the year",
+    "first-week-contains-first-thursday": "First week contains first Thursday (ISO 8601)",
     "first-week-has-minimum-days": "First week has minimum days",
     "min-days-in-first-week": "Minimum days in first week",
-    "first-week-info": "First week contains first Thursday of the year is based on <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a> standard.",
-    "first-week-warning": "Changing first week options may cause duplicate with existing Week Notes and the existing Week Notes will not be updated accordingly.",
+    "first-week-warning": "Changing this may cause duplicates with existing Week Notes.",
     "formatting-locale": "Date & number format",
     "formatting-locale-auto": "Based on the application's language"
   },
   "backup": {
+    "title": "Backup",
     "automatic_backup": "Automatic backup",
     "automatic_backup_description": "Trilium can back up the database automatically:",
-    "enable_daily_backup": "Enable daily backup",
-    "enable_weekly_backup": "Enable weekly backup",
-    "enable_monthly_backup": "Enable monthly backup",
+    "automatic_backups_title": "Automatic backups",
+    "automatic_backups_description": "Trilium can back up the database automatically. It's recommended to keep the backup turned on, but this can make application startup slow with large databases and/or slow storage devices.",
+    "enable_daily_backup": "Daily backup",
+    "enable_weekly_backup": "Weekly backup",
+    "enable_monthly_backup": "Monthly backup",
     "backup_recommendation": "It's recommended to keep the backup turned on, but this can make application startup slow with large databases and/or slow storage devices.",
     "backup_now": "Backup now",
     "backup_database_now": "Backup database now",
     "existing_backups": "Existing backups",
+    "backup_location_description": "Backups are stored in {{- backupFolder}}.",
     "date-and-time": "Date & time",
     "path": "Path",
-    "database_backed_up_to": "Database has been backed up to {{backupFilePath}}",
-    "no_backup_yet": "no backup yet"
+    "database_backed_up_to": "Database has been backed up to {{- backupFilePath}}",
+    "no_backup_yet": "no backup yet",
+    "download": "Download"
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI is a REST API used to access Trilium instance programmatically, without UI.",
     "create_token": "Create new ETAPI token",
     "existing_tokens": "Existing tokens",
     "no_tokens_yet": "There are no tokens yet. Click on the button above to create one.",
+    "no_tokens": "There are no tokens yet.",
     "token_name": "Token name",
     "created": "Created",
     "actions": "Actions",
@@ -1532,6 +1788,25 @@
     "options_status": "Options status",
     "options_change_saved": "Options change have been saved."
   },
+  "security": {
+    "backend_scripting_title": "Backend scripting",
+    "backend_scripting_section_description": "Backend scripts have full server access including filesystem, network, and OS commands. They can be triggered via sync, import, or any content that includes executable attributes. Frontend scripts are always enabled as they run in a sandboxed browser context.",
+    "backend_scripting_label": "Backend script execution",
+    "backend_scripting_description": "Allow execution of backend scripts (startup scripts, custom request handlers, event handlers, scheduled scripts, etc.).",
+    "sql_console_title": "SQL console",
+    "sql_console_section_description": "The SQL console allows running raw SQL queries against the database. This can be used to read sensitive data (e.g. sync secrets, API keys) and alter or delete any data. A malicious frontend script could also access the SQL console API programmatically.",
+    "sql_console_label": "SQL console",
+    "sql_console_description": "Allow execution of queries in the SQL console.",
+    "lan_access_title": "Network access",
+    "lan_access_section_description": "By default the desktop app only accepts connections from this computer. Allow access from your local network so other devices can connect to it — for example to sync from another device. Only enable this on networks you trust.",
+    "lan_access_label": "Allow connections from other devices",
+    "lan_access_description": "Bind the server to all network interfaces instead of localhost only.",
+    "how_to_enable": "How to enable",
+    "server_config_hint": "Add the following to your config.ini file:",
+    "server_env_hint": "Or set the following environment variable:",
+    "restart_required": "Restart required for this change to take effect.",
+    "restart_now": "Restart the application now"
+  },
   "password": {
     "heading": "Password",
     "alert_message": "Please take care to remember your new password. Password is used for logging into the web interface and to encrypt protected notes. If you forget your password, then all your protected notes are forever lost.",
@@ -1540,90 +1815,180 @@
     "new_password": "New password",
     "new_password_confirmation": "New password confirmation",
     "change_password": "Change password",
-    "protected_session_timeout": "Protected Session Timeout",
-    "protected_session_timeout_description": "Protected session timeout is a time period after which the protected session is wiped from the browser's memory. This is measured from the last interaction with protected notes. See",
+    "change_password_description": "Update your current password",
+    "change_password_button": "Update password",
+    "reset_password": "Reset password",
+    "reset_password_description": "Permanently lose access to protected notes",
+    "reset_password_button": "Reset now",
+    "cancel": "Cancel",
+    "protected_session_timeout": "Protected Session",
+    "protected_session_timeout_description": "Time of inactivity before the session is cleared from browser memory. See",
     "wiki": "wiki",
     "for_more_info": "for more info.",
-    "protected_session_timeout_label": "Protected session timeout:",
+    "protected_session_timeout_label": "Auto-close session after",
     "reset_confirmation": "By resetting the password you will forever lose access to all your existing protected notes. Do you really want to reset the password?",
     "reset_success_message": "Password has been reset. Please set new password",
     "change_password_heading": "Change Password",
     "set_password_heading": "Set Password",
     "set_password": "Set Password",
     "password_mismatch": "New passwords are not the same.",
-    "password_changed_success": "Password has been changed. Trilium will be reloaded after you press OK."
+    "password_changed_success": "Password changed successfully."
   },
   "multi_factor_authentication": {
-    "title": "Multi-Factor Authentication",
-    "description": "Multi-Factor Authentication (MFA) adds an extra layer of security to your account. Instead of just entering a password to log in, MFA requires you to provide one or more additional pieces of evidence to verify your identity. This way, even if someone gets hold of your password, they still can't access your account without the second piece of information. It's like adding an extra lock to your door, making it much harder for anyone else to break in.<br><br>Please follow the instructions below to enable MFA. If you don't config correctly, login will fall back to password only.",
-    "mfa_enabled": "Enable Multi-Factor Authentication",
-    "mfa_method": "MFA Method",
-    "electron_disabled": "Multi-Factor Authentication is not supported in the desktop build currently.",
-    "totp_title": "Time-based One-Time Password (TOTP)",
-    "totp_description": "TOTP (Time-Based One-Time Password) is a security feature that generates a unique, temporary code which changes every 30 seconds. You use this code, along with your password to log into your account, making it much harder for anyone else to access it.",
-    "totp_secret_title": "Generate TOTP Secret",
-    "totp_secret_generate": "Generate TOTP Secret",
-    "totp_secret_regenerate": "Regenerate TOTP Secret",
-    "no_totp_secret_warning": "To enable TOTP, you need to generate a TOTP secret first.",
-    "totp_secret_description_warning": "After generating a new TOTP secret, you will be required to login again with the new TOTP secret.",
-    "totp_secret_generated": "TOTP Secret Generated",
-    "totp_secret_warning": "Please save the generated secret in a secure location. It will not be shown again.",
-    "totp_secret_regenerate_confirm": "Are you sure you want to regenerate the TOTP secret? This will invalidate previous TOTP secret and all existing recovery codes.",
-    "recovery_keys_title": "Single Sign-on Recovery Keys",
-    "recovery_keys_description": "Single sign-on recovery keys are used to login in the even you cannot access your Authenticator codes.",
+    "authentication_title": "Authentication",
+    "signin_method": "Sign-in with",
+    "signin_local": "Local password (optionally with two-factor authentication)",
+    "signin_oauth": "OpenID Connect provider (e.g. Google)",
+    "signin_local_description": "Sign in with your Trilium password. You can optionally enable two-factor authentication for an extra layer of security.",
+    "totp_setup_label": "Time-based one-time password (TOTP)",
+    "totp_setup_description": "Generate a time-based code from an authenticator app as your second factor. You'll scan a QR code and confirm a code to finish. Recovery codes are issued at the end.",
+    "totp_setup_button": "Set up",
+    "totp_enroll_title": "Confirm your authenticator",
+    "totp_enroll_instructions": "TOTP won't be enabled until you confirm a valid code below, so you can't lock yourself out by mistake.",
+    "totp_enroll_step1_title": "1. Add the account to your authenticator app",
+    "totp_enroll_step2_title": "2. Enter the verification code",
+    "totp_enroll_scan": "Scan this QR code:",
+    "totp_enroll_secret_label": "Can't scan? Enter this code manually",
+    "totp_enroll_code_label": "Verification code",
+    "totp_enroll_code_placeholder": "000000",
+    "totp_enroll_verify": "Verify & continue",
+    "totp_enroll_cancel": "Cancel",
+    "totp_enroll_invalid_code": "That code didn't match. Check that your device's clock is correct and enter the latest code.",
+    "totp_enroll_generate_error": "Couldn't generate a TOTP secret. Please close this dialog and try again.",
+    "totp_enroll_enabled": "Two-factor authentication is now enabled.",
+    "totp_enroll_recovery_title": "Save your recovery codes",
+    "totp_enroll_recovery_instructions": "Save these recovery codes somewhere safe. Each one can be used once to sign in if you lose access to your authenticator app.",
+    "totp_enroll_recovery_copy": "Copy",
+    "totp_enroll_recovery_copied": "Recovery codes copied to clipboard.",
+    "totp_enroll_recovery_download": "Download",
+    "totp_enroll_saved_ack": "I've saved my recovery codes somewhere safe",
+    "totp_enroll_finish": "Finish setup",
+    "totp_enroll_enable_error": "Couldn't enable two-factor authentication. Please try again.",
+    "totp_section_title": "Two-factor authentication",
+    "totp_status_active": "Active",
+    "totp_status_inactive": "Inactive",
+    "totp_remove_label": "Remove two-factor authentication",
+    "totp_remove_description": "Completely remove your two-factor authentication setup. Unlike switching it off above, you'd have to set it up again from scratch to use it.",
+    "totp_remove_button": "Remove",
+    "totp_remove_confirm": "Permanently remove two-factor authentication? This erases your setup, not just switches it off, so you'd have to set it up again from scratch to use it. Until then, you'll sign in with just your password.",
+    "totp_removed": "Two-factor authentication has been removed.",
     "recovery_keys_description_warning": "Recovery keys won't be shown again after leaving the page, keep them somewhere safe and secure.<br>After a recovery key is used it cannot be used again.",
     "recovery_keys_error": "Error generating recovery codes",
     "recovery_keys_no_key_set": "No recovery codes set",
-    "recovery_keys_generate": "Generate Recovery Codes",
-    "recovery_keys_regenerate": "Regenerate Recovery Codes",
-    "recovery_keys_used": "Used: {{date}}",
-    "recovery_keys_unused": "Recovery code {{index}} is unused",
-    "oauth_title": "OAuth/OpenID",
-    "oauth_description": "OpenID is a standardized way to let you log into websites using an account from another service, like Google, to verify your identity. The default issuer is Google, but you can change it to any other OpenID provider. Check <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">here</a> for more information. Follow these <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instructions</a> to setup an OpenID service through Google.",
-    "oauth_description_warning": "To enable OAuth/OpenID, you need to set the OAuth/OpenID base URL, client ID and client secret in the config.ini file and restart the application. If you want to set from environment variables, please set TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID and TRILIUM_OAUTH_CLIENT_SECRET.",
-    "oauth_missing_vars": "Missing settings: {{-variables}}",
-    "oauth_user_account": "User Account: ",
-    "oauth_user_email": "User Email: ",
-    "oauth_user_not_logged_in": "Not logged in!"
+    "recovery_keys_regenerate": "Regenerate recovery codes",
+    "recovery_keys_regenerate_confirm": "Regenerate recovery codes? Your current recovery codes will stop working immediately, and you'll need to save the new ones.",
+    "recovery_keys_regenerated_title": "New recovery codes",
+    "recovery_keys_regenerated_instructions": "Here are your new recovery codes. Save them now: they replace your previous codes and won't be shown again.",
+    "recovery_keys_done": "Done",
+    "recovery_keys_label": "Recovery codes",
+    "recovery_keys_remaining": "{{remaining}} of {{total}} remaining. Can't be shown again, only replaced.",
+    "recovery_keys_dot_available": "Available",
+    "recovery_keys_dot_used": "Used on {{- date}}",
+    "oauth_title": "OpenID Connect",
+    "oauth_status_connected": "Connected",
+    "oauth_status_not_connected": "Not connected",
+    "oauth_status_not_configured": "Not configured",
+    "oauth_description": "OpenID Connect lets you log in using an account from another service, like Google, to verify your identity. The default issuer is Google, but you can change it to any other OpenID Connect provider. Check <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">here</a> for more information. Follow these <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instructions</a> to set up an OpenID Connect service through Google.",
+    "oauth_not_configured_title": "Set up OpenID Connect",
+    "oauth_not_configured_hint": "OpenID Connect needs to be set up through the config.ini or environment variables first.",
+    "oauth_missing_vars": "Left to configure: {{-variables}}",
+    "oauth_how_to_enable": "How to enable",
+    "oauth_server_config_hint": "Add the following to your config.ini file and restart the application:",
+    "oauth_server_env_hint": "Or set the following environment variables:",
+    "oauth_provider": "Provider",
+    "oauth_provider_url": "Issuer URL",
+    "oauth_provider_unknown": "Unknown provider",
+    "oauth_user_account": "Account name",
+    "oauth_user_email": "Email address",
+    "oauth_user_not_logged_in": "Not logged in!",
+    "oauth_not_enrolled_title": "No account connected",
+    "oauth_not_enrolled_hint": "OpenID Connect is configured, but no account is connected yet.",
+    "oauth_not_enrolled_details_label": "What does this mean?",
+    "oauth_not_enrolled_details": "Until an account is connected, OpenID Connect isn't active and you'll keep signing in with your password. Connect your account below to switch it on.",
+    "oauth_connect_label": "Connect account",
+    "oauth_connect_description": "Sign in with your provider once to bind your account. Only this account will be able to sign in afterwards.",
+    "oauth_connect_button": "Connect account",
+    "oauth_disconnect_label": "Disconnect account",
+    "oauth_disconnect_description": "Unbind the connected account. Sign-in will fall back to your password until you connect an account again.",
+    "oauth_disconnect_button": "Disconnect",
+    "oauth_disconnect_confirm": "Are you sure you want to disconnect this account? Sign-in will fall back to your password until you connect an account again.",
+    "oauth_disconnected": "Disconnected {{account}} from {{provider}}.",
+    "oauth_connect_success": "Connected to {{provider}} as {{account}}.",
+    "oauth_connect_success_generic": "Account connected successfully.",
+    "oauth_account_unknown": "your account"
   },
   "shortcuts": {
     "keyboard_shortcuts": "Keyboard Shortcuts",
-    "multiple_shortcuts": "Multiple shortcuts for the same action can be separated by comma.",
-    "electron_documentation": "See <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">Electron documentation</a> for available modifiers and key codes.",
     "type_text_to_filter": "Type text to filter shortcuts...",
-    "action_name": "Action name",
-    "shortcuts": "Shortcuts",
-    "default_shortcuts": "Default shortcuts",
-    "description": "Description",
-    "reload_app": "Reload app to apply changes",
-    "set_all_to_default": "Set all shortcuts to the default",
+    "reload_app": "Reload app",
+    "set_all_to_default": "Reset all",
     "confirm_reset": "Do you really want to reset all keyboard shortcuts to the default?",
-    "no_results": "No shortcuts found matching '{{filter}}'"
+    "no_results": "No shortcuts found matching '{{filter}}'",
+    "modified_from_default": "This shortcut has been changed from its default.",
+    "revert_to_default": "Revert to default ({{shortcuts}})",
+    "no_default_shortcut": "no shortcut",
+    "record_shortcut": "Add a shortcut",
+    "remove_shortcut": "Remove this shortcut",
+    "press_keys": "Press keys…",
+    "recording_toast": "Press a key combination to assign it, or Esc to cancel.",
+    "make_global": "Make this a system-wide (global) shortcut",
+    "make_local": "Make this an in-app shortcut",
+    "global_shortcut": "System-wide (global) shortcut, only active on the desktop app",
+    "conflict_chip": "This combination is also assigned to: {{actions}}",
+    "no_conflicts": "No conflicting shortcuts.",
+    "no_matches": "No shortcuts match the selected filters.",
+    "filter": "Filter shortcuts",
+    "filter_all": "All shortcuts",
+    "filter_conflicts": "Conflicts ({{count}})",
+    "filter_global": "Global shortcuts ({{count}})",
+    "filter_modified": "Changed from default ({{count}})",
+    "conflicts_badge_one": "{{count}} conflict",
+    "conflicts_badge_other": "{{count}} conflicts",
+    "conflicts_badge_tooltip": "Some shortcuts are assigned to more than one action. Click to show only the conflicting shortcuts."
+  },
+  "keyboard_shortcut_keys": {
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "shift": "Shift",
+    "meta": "Meta",
+    "enter": "Enter",
+    "escape": "Esc",
+    "delete": "Delete",
+    "backspace": "Backspace",
+    "space": "Space",
+    "tab": "Tab",
+    "home": "Home",
+    "end": "End",
+    "page_up": "Page Up",
+    "page_down": "Page Down",
+    "insert": "Insert"
   },
   "spellcheck": {
     "title": "Spell Check",
     "description": "These options apply only for desktop builds, browsers will use their own native spell check.",
-    "enable": "Enable spellcheck",
-    "language_code_label": "Language code(s)",
-    "language_code_placeholder": "for example \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "Multiple languages can be separated by comma, e.g. \"en-US, de-DE, cs\". ",
-    "available_language_codes_label": "Available language codes:",
-    "restart-required": "Changes to the spell check options will take effect after application restart."
+    "enable": "Check spelling",
+    "disabled_placeholder": "Spell check is turned off. Enable it to choose languages and manage the custom dictionary.",
+    "language_code_label": "Spell Check Languages",
+    "custom_dictionary_title": "Custom Dictionary",
+    "custom_dictionary_description": "Words added to the dictionary are synced across all your devices.",
+    "custom_dictionary_edit": "Custom words",
+    "custom_dictionary_edit_description": "Edit the list of words that should not be flagged by the spell checker. Changes will be visible after a restart.",
+    "custom_dictionary_open": "Edit dictionary",
+    "related_description": "Configure spell check languages and custom dictionary."
   },
   "sync_2": {
-    "config_title": "Sync Configuration",
-    "server_address": "Server instance address",
-    "timeout": "Sync timeout",
-    "timeout_unit": "milliseconds",
-    "proxy_label": "Sync proxy server (optional)",
-    "note": "Note",
-    "note_description": "If you leave the proxy setting blank, the system proxy will be used (applies to desktop/electron build only).",
-    "special_value_description": "Another special value is <code>noproxy</code> which forces ignoring even the system proxy and respects <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
+    "config_title": "Sync Server",
+    "server_address": "Server address",
+    "server_address_description": "URL of the Trilium server to sync with.",
+    "timeout": "Connection timeout",
+    "timeout_description": "Time to wait before giving up on a slow connection.",
+    "proxy_label": "Proxy server",
+    "proxy_description": "Leave blank to use system proxy (desktop only). Use \"noproxy\" to bypass all proxies.",
     "save": "Save",
     "help": "Help",
-    "test_title": "Sync Test",
-    "test_description": "This will test the connection and handshake to the sync server. If the sync server isn't initialized, this will set it up to sync with the local document.",
-    "test_button": "Test sync",
+    "test_title": "Test Connection",
+    "test_description": "Test the connection to the sync server. If not initialized, this will set up syncing.",
+    "test_button": "Test now",
     "handshake_failed": "Sync server handshake failed, error: {{message}}"
   },
   "api_log": {
@@ -1634,7 +1999,7 @@
     "will_be_deleted_soon": "This attachment will be automatically deleted soon",
     "deletion_reason": ", because the attachment is not linked in the note's content. To prevent deletion, add the attachment link back into the content or convert the attachment into note.",
     "role_and_size": "Role: {{role}}, size: {{size}}, MIME: {{- mimeType}}",
-    "link_copied": "Attachment link copied to clipboard.",
+    "link_copied": "Attachment reference copied to clipboard.",
     "unrecognized_role": "Unrecognized attachment role '{{role}}'."
   },
   "bookmark_switch": {
@@ -1688,7 +2053,8 @@
     "export": "Export",
     "import-into-note": "Import into note",
     "apply-bulk-actions": "Apply bulk actions",
-    "converted-to-attachments": "{{count}} notes have been converted to attachments.",
+    "converted-to-attachments_one": "{{count}} note has been converted to attachments.",
+    "converted-to-attachments_other": "{{count}} notes have been converted to attachments.",
     "convert-to-attachment-confirm": "Are you sure you want to convert the selected notes into attachments of their parent notes? This operation only applies to Image notes, other notes will be skipped.",
     "open-in-popup": "Quick edit"
   },
@@ -1705,6 +2071,7 @@
   "note_types": {
     "text": "Text",
     "code": "Code",
+    "markdown": "Markdown",
     "saved-search": "Saved Search",
     "relation-map": "Relation Map",
     "note-map": "Note Map",
@@ -1723,15 +2090,95 @@
     "geo-map": "Geo Map",
     "beta-feature": "Beta",
     "ai-chat": "AI Chat",
+    "llm-chat": "AI Chat",
     "task-list": "Task List",
     "new-feature": "New",
-    "collections": "Collections"
+    "collections": "Collections",
+    "spreadsheet": "Spreadsheet"
   },
   "protect_note": {
     "toggle-on": "Protect the note",
     "toggle-off": "Unprotect the note",
     "toggle-on-hint": "Note is not protected, click to make it protected",
     "toggle-off-hint": "Note is protected, click to make it unprotected"
+  },
+  "llm_chat": {
+    "placeholder": "Type a message...",
+    "send": "Send",
+    "sending": "Sending...",
+    "empty_state": "Start a conversation by typing a message below.",
+    "searching_web": "Searching the web...",
+    "web_search": "Web search",
+    "web_search_unavailable_gemini": "Not available on Gemini models while note access is on — Google's API does not allow combining both. Disable note access or switch to a different provider to use web search.",
+    "note_tools": "Note access",
+    "sources": "Sources",
+    "sources_summary": "{{count}} sources from {{sites}} sites",
+    "extended_thinking": "Extended thinking",
+    "legacy_models": "Legacy models",
+    "thinking": "Thinking...",
+    "thought_process": "Thought process",
+    "tool_calls": "{{count}} tool call(s)",
+    "input": "Input",
+    "input_streaming": "Input (streaming…)",
+    "edit_index": "Edit {{index}} of {{total}}",
+    "result": "Result",
+    "error": "Error",
+    "tool_error": "failed",
+    "total_tokens": "{{total}} tokens",
+    "tokens_detail": "{{prompt}} prompt + {{completion}} completion",
+    "tokens_used": "{{prompt}} prompt + {{completion}} completion = {{total}} tokens",
+    "tokens_used_with_cost": "{{prompt}} prompt + {{completion}} completion = {{total}} tokens (~${{cost}})",
+    "tokens_used_with_model": "{{model}}: {{prompt}} prompt + {{completion}} completion = {{total}} tokens",
+    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} prompt + {{completion}} completion = {{total}} tokens (~${{cost}})",
+    "tokens": "tokens",
+    "context_used": "{{percentage}}% used",
+    "note_context_enabled": "Click to disable note context: {{title}}",
+    "note_context_disabled": "Click to include current note in context",
+    "no_provider_message": "No AI provider configured. Add one to start chatting.",
+    "add_provider": "Add AI Provider",
+    "stop": "Stop",
+    "retry": "Retry",
+    "scroll_to_bottom": "Scroll to latest",
+    "read_only_notice": "Replying is not available because this AI chat is read-only.",
+    "toc_file": "File: {{name}}",
+    "highlights_title": "Highlights ({{count}})",
+    "highlights_empty": "No highlights yet. Select text in a message and choose \"Highlight\".",
+    "copy": "Copy",
+    "highlight_add": "Highlight",
+    "highlight_remove": "Remove highlight",
+    "highlight_remove_confirm": "Remove this highlight?",
+    "quote_selection": "Quote selection",
+    "quoted_from": "Quoted from",
+    "show_quote_source": "Show quote source",
+    "copy_message": "Copy message",
+    "save_to_subnote": "Save to sub-note",
+    "save_as_note": "Save as note",
+    "save_note_failed": "Failed to create a note from the message.",
+    "regenerate": "Regenerate",
+    "delete_message": "Delete message",
+    "delete_message_confirm": "Delete this message? This operation cannot be undone.",
+    "attach_file": "Attach image, PDF, or text file",
+    "remove_attachment": "Remove attachment",
+    "attachment_upload_failed": "Failed to upload \"{{name}}\".",
+    "attachment_unsupported_type": "\"{{name}}\" isn't a supported attachment type. Use an image (PNG, JPEG, GIF, WebP), a PDF, or a text/source file."
+  },
+  "sidebar_chat": {
+    "title": "AI Chat",
+    "launcher_title": "Open AI Chat",
+    "new_chat": "Start new chat",
+    "more_actions": "More actions",
+    "save_chat": "Save chat to notes",
+    "empty_state": "Start a conversation",
+    "history": "Chat history",
+    "recent_chats": "Recent chats",
+    "no_chats": "No previous chats",
+    "view_all_chats": "View all chats",
+    "rename": "Rename",
+    "rename_title": "Rename chat",
+    "rename_message": "Enter a new name for this chat:",
+    "delete": "Delete",
+    "delete_chat": "Delete chat",
+    "delete_confirm": "Delete this chat? This can't be undone."
   },
   "shared_switch": {
     "shared": "Shared",
@@ -1744,6 +2191,9 @@
     "template": "Template",
     "toggle-on-hint": "Make the note a template",
     "toggle-off-hint": "Remove the note as a template"
+  },
+  "full_content_width_switch": {
+    "title": "Full width"
   },
   "open-help-page": "Open help page",
   "find": {
@@ -1777,6 +2227,8 @@
     "hide-archived-notes": "Hide archived notes",
     "automatically-collapse-notes": "Automatically collapse notes",
     "automatically-collapse-notes-title": "Notes will be collapsed after period of inactivity to declutter the tree.",
+    "follow-active-note": "Follow active note",
+    "follow-active-note-title": "Scrolls the tree and expands parent nodes to show the active note. When disabled, the tree stays in place and only the background highlight is updated.",
     "save-changes": "Save & apply changes",
     "auto-collapsing-notes-after-inactivity": "Auto collapsing notes after inactivity...",
     "saved-search-note-refreshed": "Saved search note refreshed.",
@@ -1796,13 +2248,25 @@
     "subtree-hidden-moved-description-collection": "This collection hides its child notes in the tree.",
     "subtree-hidden-moved-description-other": "Child notes are hidden in the tree for this note."
   },
+  "mobile_note_navigator": {
+    "back": "Go up one level",
+    "loading": "Loading...",
+    "empty": "This note has no children.",
+    "children_count_one": "{{count}} note",
+    "children_count_other": "{{count}} notes",
+    "add_child": "Add child note",
+    "more_actions": "More actions"
+  },
   "title_bar_buttons": {
     "window-on-top": "Keep Window on Top"
   },
   "note_detail": {
+    "content_load_error": "The note's content could not be loaded.",
+    "content_load_retry": "Retry",
+    "content_load_stalled": "Still loading the note's content…",
     "could_not_find_typewidget": "Could not find typeWidget for type '{{type}}'",
     "printing": "Printing in progress...",
-    "printing_pdf": "Exporting to PDF in progress...",
+    "printing_pdf": "Preparing print preview...",
     "print_report_title": "Print report",
     "print_report_error_title": "Failed to print",
     "print_report_stack_trace": "Stack trace",
@@ -1824,10 +2288,8 @@
   },
   "search_result": {
     "no_notes_found": "No notes have been found for given search parameters.",
-    "search_not_executed": "Search has not been executed yet. Click on \"Search\" button above to see the results."
-  },
-  "spacer": {
-    "configure_launchbar": "Configure Launchbar"
+    "search_not_executed": "Search has not been executed yet.",
+    "search_now": "Search now"
   },
   "sql_result": {
     "not_executed": "The query has not been executed yet.",
@@ -1846,6 +2308,9 @@
     "close_other_tabs": "Close other tabs",
     "close_right_tabs": "Close tabs to the right",
     "close_all_tabs": "Close all tabs",
+    "pin_tab": "Pin tab",
+    "unpin_tab": "Unpin tab",
+    "pinned_prefix": "Pinned: ",
     "reopen_last_tab": "Reopen last closed tab",
     "move_tab_to_new_window": "Move this tab to a new window",
     "copy_tab_to_new_window": "Copy this tab to a new window",
@@ -1869,7 +2334,12 @@
   },
   "image": {
     "copied-to-clipboard": "A reference to the image has been copied to clipboard. This can be pasted in any text note.",
-    "cannot-copy": "Could not copy the image reference to clipboard."
+    "cannot-copy": "Could not copy the image reference to clipboard.",
+    "copy-to-clipboard": "Copy image to clipboard",
+    "download": "Download image",
+    "image-copied-to-clipboard": "The image has been copied to clipboard.",
+    "cannot-copy-image": "Could not copy the image to clipboard.",
+    "cannot-download": "Could not download the image."
   },
   "clipboard": {
     "cut": "Note(s) have been cut into clipboard.",
@@ -1879,12 +2349,13 @@
   },
   "entrypoints": {
     "note-revision-created": "Note revision has been created.",
+    "save-named-revision-title": "Save named revision",
+    "save-named-revision-message": "Enter a name for this revision (leave empty for no name):",
     "note-executed": "Note executed.",
     "sql-error": "Error occurred while executing SQL query: {{message}}"
   },
   "branches": {
     "cannot-move-notes-here": "Cannot move notes here.",
-    "delete-status": "Delete status",
     "delete-notes-in-progress": "Delete notes in progress: {{count}}",
     "delete-finished-successfully": "Delete finished successfully.",
     "undeleting-notes-in-progress": "Undeleting notes in progress: {{count}}",
@@ -1916,6 +2387,12 @@
     "move-to-available-launchers": "Move to available launchers",
     "duplicate-launcher": "Duplicate launcher <kbd data-command=\"duplicateSubtree\">"
   },
+  "launcher_button_context_menu": {
+    "remove_from_launch_bar": "Remove from launch bar",
+    "configure_launch_bar": "Configure launch bar",
+    "launch_bar_orientation": "Launch bar orientation",
+    "will_reload_frontend": "(will reload app)"
+  },
   "highlighting": {
     "title": "Code Blocks",
     "description": "Controls the syntax highlighting for code blocks inside text notes, code notes will not be affected.",
@@ -1926,7 +2403,10 @@
     "theme_none": "No syntax highlighting",
     "theme_group_light": "Light themes",
     "theme_group_dark": "Dark themes",
-    "copy_title": "Copy to clipboard"
+    "copy_title": "Copy to clipboard",
+    "click_to_copy": "Click to copy",
+    "tab_width": "Tab width",
+    "tab_width_unit": "spaces"
   },
   "classic_editor_toolbar": {
     "title": "Formatting"
@@ -1937,6 +2417,7 @@
   "editing": {
     "editor_type": {
       "label": "Formatting toolbar",
+      "toolbar_style": "Toolbar style",
       "floating": {
         "title": "Floating",
         "description": "editing tools appear near the cursor;"
@@ -1945,13 +2426,14 @@
         "title": "Fixed",
         "description": "editing tools appear in the \"Formatting\" ribbon tab."
       },
-      "multiline-toolbar": "Display the toolbar on multiple lines if it doesn't fit."
+      "multiline-toolbar": "Display the toolbar on multiple lines if it doesn't fit"
     }
   },
   "electron_context_menu": {
     "add-term-to-dictionary": "Add \"{{term}}\" to dictionary",
     "cut": "Cut",
     "copy": "Copy",
+    "copy-as-markdown": "Copy as Markdown",
     "copy-link": "Copy link",
     "paste": "Paste",
     "paste-as-plain-text": "Paste as plain text",
@@ -1961,6 +2443,10 @@
   "image_context_menu": {
     "copy_reference_to_clipboard": "Copy reference to clipboard",
     "copy_image_to_clipboard": "Copy image to clipboard"
+  },
+  "link": {
+    "failed_to_open": "Failed to open link '{{- href}}': {{- message}}",
+    "copy_url": "Copy URL"
   },
   "link_context_menu": {
     "open_note_in_new_tab": "Open note in a new tab",
@@ -1994,6 +2480,7 @@
     "create-child-note-title": "Create a new child note and add it to the map",
     "create-child-note-text": "Add marker",
     "create-child-note-instruction": "Click on the map to create a new note at that location or press Escape to dismiss.",
+    "create-child-note-toast-title": "New note",
     "unable-to-load-map": "Unable to load map."
   },
   "geo-map-context": {
@@ -2010,8 +2497,18 @@
     "hours": "Hours",
     "days": "Days"
   },
+  "time_interval": {
+    "seconds_one": "{{count}} second",
+    "seconds_other": "{{count}} seconds",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days"
+  },
   "share": {
-    "title": "Share Settings",
+    "title": "Share",
     "redirect_bare_domain": "Redirect bare domain to Share page",
     "redirect_bare_domain_description": "Redirect anonymous users to the Share page instead of showing Login",
     "show_login_link": "Show Login link in Share theme",
@@ -2042,7 +2539,7 @@
   },
   "content_language": {
     "title": "Content languages",
-    "description": "Select one or more languages that should appear in the language selection in the Basic Properties section of a read-only or editable text note. This will allow features such as spell-checking or right-to-left support."
+    "description": "Select one or more languages that should appear in the language selection in the Basic Properties section of a read-only or editable text note. This will allow features such as spell-checking, right-to-left support and text extraction (OCR)."
   },
   "switch_layout_button": {
     "title_vertical": "Move editing pane to the bottom",
@@ -2051,6 +2548,11 @@
   "toggle_read_only_button": {
     "unlock-editing": "Unlock editing",
     "lock-editing": "Lock editing"
+  },
+  "display_mode": {
+    "source": "Source view",
+    "split": "Split view",
+    "preview": "Preview"
   },
   "png_export_button": {
     "button_title": "Export diagram as PNG"
@@ -2062,7 +2564,12 @@
   "code_theme": {
     "title": "Appearance",
     "word_wrapping": "Word wrapping",
-    "color-scheme": "Color scheme"
+    "color-scheme": "Color scheme",
+    "theme_mode": "Theme mode",
+    "match_app_appearance": "Match app appearance",
+    "always_use_one_theme": "Always use one theme",
+    "light_theme": "Light theme",
+    "dark_theme": "Dark theme"
   },
   "cpu_arch_warning": {
     "title": "Please download the ARM64 version",
@@ -2075,12 +2582,12 @@
   },
   "editorfeatures": {
     "title": "Features",
-    "emoji_completion_enabled": "Enable Emoji auto-completion",
-    "emoji_completion_description": "If enabled, emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
-    "note_completion_enabled": "Enable note auto-completion",
-    "note_completion_description": "If enabled, links to notes can be created by typing `@` followed by the title of a note.",
-    "slash_commands_enabled": "Enable slash commands",
-    "slash_commands_description": "If enabled, editing commands such as inserting line breaks or headings can be toggled by typing `/`."
+    "emoji_completion_enabled": "Emoji auto-completion",
+    "emoji_completion_description": "Emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
+    "note_completion_enabled": "Note auto-completion",
+    "note_completion_description": "Links to notes can be created by typing `@` followed by the title of a note.",
+    "slash_commands_enabled": "Slash commands",
+    "slash_commands_description": "Editing commands such as inserting line breaks or headings can be toggled by typing `/`."
   },
   "table_view": {
     "new-row": "New row",
@@ -2134,13 +2641,42 @@
     "edit-column-title": "Click to edit column title",
     "column-already-exists": "This column already exists on the board."
   },
+  "dashboard_view": {
+    "refresh-widget": "Refresh",
+    "remove-widget": "Remove from dashboard",
+    "empty-hint": "Any child note becomes a widget. Drag a note here from tree or create a new one."
+  },
   "presentation_view": {
     "edit-slide": "Edit this slide",
     "start-presentation": "Start presentation",
     "slide-overview": "Toggle an overview of the slides"
   },
   "calendar_view": {
-    "delete_note": "Delete note..."
+    "delete_note": "Delete note...",
+    "time_slots": "Time slots",
+    "slot_duration": "Duration",
+    "slot_label_interval": "Label interval",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours"
+  },
+  "ocr": {
+    "extracted_text": "Extracted Text (OCR)",
+    "extracted_text_title": "Extracted Text (OCR)",
+    "loading_text": "Loading OCR text...",
+    "no_text_available": "No OCR text available",
+    "no_text_explanation": "This note has not been processed for OCR text extraction or no text was found.",
+    "failed_to_load": "Failed to load OCR text",
+    "process_now": "Process OCR",
+    "processing": "Processing...",
+    "processing_started": "OCR processing has been started. Please wait a moment and refresh.",
+    "processing_complete": "OCR processing complete.",
+    "processing_failed": "Failed to start OCR processing",
+    "text_filtered_low_confidence": "OCR detected text with {{confidence}}% confidence, but it was discarded because your minimum threshold is {{threshold}}%.",
+    "image_based_pdf_not_supported": "This PDF appears to be image-based (scanned). Text extraction from image-based PDFs is not yet supported.",
+    "open_media_settings": "Open Settings",
+    "view_extracted_text": "View extracted text (OCR)"
   },
   "command_palette": {
     "tree-action-name": "Tree: {{name}}",
@@ -2155,13 +2691,19 @@
     "search_history_title": "Show Search History",
     "search_history_description": "View previous searches",
     "configure_launch_bar_title": "Configure Launch Bar",
-    "configure_launch_bar_description": "Open the launch bar configuration, to add or remove items."
+    "configure_launch_bar_description": "Open the launch bar configuration, to add or remove items.",
+    "pin_tab_title": "Pin Tab",
+    "pin_tab_description": "Always keep this note open in this tab at the start of the tab bar and prevent it from being accidentally closed",
+    "unpin_tab_title": "Unpin Tab",
+    "unpin_tab_description": "Unpin this tab, allowing it to be closed and moved freely"
   },
   "content_renderer": {
-    "open_externally": "Open externally"
+    "open_externally": "Open externally",
+    "mermaid_diagram_error": "Mermaid diagram failed to render: {{error}}"
   },
   "modal": {
     "close": "Close",
+    "cancel": "Cancel",
     "help_title": "Display more information about this screen"
   },
   "call_to_action": {
@@ -2174,6 +2716,9 @@
     "new_layout_title": "New layout",
     "new_layout_message": "We’ve introduced a modernized layout for Trilium. The ribbon has been removed and seamlessly integrated into the main interface, with a new status bar and expandable sections (such as promoted attributes) taking over key functions.\n\nThe new layout is enabled by default, and can be temporarily disabled via Options → Appearance.",
     "new_layout_button": "More info",
+    "scripting_disabled_title": "Backend scripting has been disabled",
+    "scripting_disabled_message": "Backend scripting is now disabled by default for security. Your notes contain backend scripts (notes with a #run label) that will no longer execute automatically.\n\nIf you rely on these scripts, you can re-enable backend scripting in the security settings.",
+    "scripting_disabled_button": "Open security settings",
     "dismiss": "Dismiss"
   },
   "settings": {
@@ -2183,6 +2728,8 @@
     "related_code_blocks": "Color scheme for code blocks in text notes",
     "related_code_notes": "Color scheme for code notes",
     "ui": "User interface",
+    "ui_layout_style": "Layout style",
+    "ui_layout_orientation": "Launcher bar orientation",
     "ui_old_layout": "Old layout",
     "ui_new_layout": "New layout"
   },
@@ -2190,8 +2737,10 @@
     "percentage": "%"
   },
   "pagination": {
-    "page_title": "Page of {{startIndex}} - {{endIndex}}",
-    "total_notes": "{{count}} notes"
+    "total_notes_one": "{{count}} note",
+    "total_notes_other": "{{count}} notes",
+    "prev_page": "Previous page",
+    "next_page": "Next page"
   },
   "collections": {
     "rendering_error": "Unable to show content due to an error."
@@ -2235,6 +2784,8 @@
     "shared_unshare": "Remove share",
     "clipped_note": "Web clip",
     "clipped_note_description": "This note was originally taken from {{url}}.\n\nClick to navigate to the source webpage.",
+    "doc_url": "Online docs",
+    "doc_url_description": "Click to view this page on the online documentation website.",
     "execute_script": "Run script",
     "execute_script_description": "This note is a script note. Click to execute the script.",
     "execute_sql": "Run SQL",
@@ -2264,7 +2815,20 @@
     "note_paths_one": "{{count}} path",
     "note_paths_other": "{{count}} paths",
     "note_paths_title": "Note paths",
-    "code_note_switcher": "Change language mode"
+    "code_note_switcher": "Change language mode",
+    "tab_width": "Tab Width: {{width}}",
+    "tab_width_title": "Change tab width",
+    "tab_width_spaces_one": "{{count}} space",
+    "tab_width_spaces_other": "{{count}} spaces",
+    "tab_width_spaces_short": "Spaces: {{width}}",
+    "tab_width_tabs": "Tabs: {{width}}",
+    "tab_width_use_default": "Use default ({{width}})",
+    "tab_width_use_default_style": "Use default ({{style}})",
+    "tab_width_display_header": "Display width",
+    "tab_width_reindent_header": "Re-indent content to",
+    "tab_width_style_header": "Indent using",
+    "tab_width_style_spaces": "Spaces",
+    "tab_width_style_tabs": "Tabs"
   },
   "attributes_panel": {
     "title": "Note Attributes"
@@ -2273,7 +2837,42 @@
     "empty_message": "Nothing to show for this note",
     "empty_button": "Hide the panel",
     "toggle": "Toggle right panel",
+    "peek": "Peek right pane",
+    "hide": "Hide right pane",
+    "dock": "Dock panel",
+    "close": "Close panel",
     "custom_widget_go_to_source": "Go to source code"
+  },
+  "print_preview": {
+    "title": "Print preview",
+    "close": "Close",
+    "save": "Save as PDF",
+    "print": "Print",
+    "export_pdf": "Export as PDF",
+    "system_print": "Print using system dialog",
+    "destination": "Destination",
+    "destination_pdf": "Save as PDF",
+    "destination_printers": "Printers",
+    "destination_default": "Default",
+    "orientation": "Orientation",
+    "portrait": "Portrait",
+    "landscape": "Landscape",
+    "page_size": "Page size",
+    "scale": "Scale",
+    "margins": "Margins",
+    "render_error": "Unable to render PDF with the current settings. Please check the margins and scale.",
+    "margins_default": "Default",
+    "margins_none": "None",
+    "margins_minimum": "Minimum",
+    "margins_custom": "Custom",
+    "margin_top": "Top",
+    "margin_right": "Right",
+    "margin_bottom": "Bottom",
+    "margin_left": "Left",
+    "page_ranges": "Pages",
+    "page_ranges_hint": "Leave empty to print all pages.",
+    "page_ranges_invalid": "Invalid format. Use e.g. 1-5, 8, 11-13.",
+    "page_ranges_placeholder": "e.g. 1-5, 8, 11-13"
   },
   "pdf": {
     "attachments_one": "{{count}} attachment",
@@ -2283,7 +2882,9 @@
     "pages_one": "{{count}} page",
     "pages_other": "{{count}} pages",
     "pages_alt": "Page {{pageNumber}}",
-    "pages_loading": "Loading..."
+    "pages_loading": "Loading...",
+    "annotations_one": "{{count}} annotation",
+    "annotations_other": "{{count}} annotations"
   },
   "platform_indicator": {
     "available_on": "Available on {{platform}}"
@@ -2296,9 +2897,16 @@
   "bookmark_buttons": {
     "bookmarks": "Bookmarks"
   },
+  "snippet_badge": {
+    "label": "{{type}} snippet",
+    "type_text": "Text",
+    "type_code": "Code",
+    "tooltip": "A reusable piece of text or code, meant to be inserted into the editor (from the snippet menu in the toolbar, or via a slash command)."
+  },
   "active_content_badges": {
     "type_icon_pack": "Icon pack",
     "type_backend_script": "Backend script",
+    "type_custom_request_handler": "Custom request handler",
     "type_frontend_script": "Frontend script",
     "type_widget": "Widget",
     "type_app_css": "Custom CSS",
@@ -2322,5 +2930,217 @@
   },
   "setup_form": {
     "more_info": "Learn more"
+  },
+  "mermaid": {
+    "placeholder": "Type the content of your Mermaid diagram or use one of the sample diagrams below.",
+    "sample_diagrams": "Sample diagrams:",
+    "slash_command_blank_description": "Insert an empty Mermaid diagram",
+    "slash_command_description": "Insert a \"{{name}}\" Mermaid diagram template",
+    "sample_flowchart": "Flowchart",
+    "sample_class": "Class",
+    "sample_sequence": "Sequence",
+    "sample_entity_relationship": "Entity Relationship",
+    "sample_state": "State",
+    "sample_mindmap": "Mindmap",
+    "sample_architecture": "Architecture",
+    "sample_block": "Block",
+    "sample_c4": "C4",
+    "sample_gantt": "Gantt",
+    "sample_git": "Git",
+    "sample_kanban": "Kanban",
+    "sample_packet": "Packet",
+    "sample_pie": "Pie",
+    "sample_quadrant": "Quadrant",
+    "sample_radar": "Radar",
+    "sample_requirement": "Requirement",
+    "sample_sankey": "Sankey",
+    "sample_timeline": "Timeline",
+    "sample_treemap": "Treemap",
+    "sample_user_journey": "User Journey",
+    "sample_xy": "XY",
+    "sample_venn": "Venn",
+    "sample_ishikawa": "Ishikawa",
+    "sample_treeview": "TreeView",
+    "sample_wardley": "Wardley Map",
+    "sample_cynefin": "Cynefin",
+    "sample_swimlane": "Swimlane",
+    "sample_railroad": "Railroad"
+  },
+  "login": {
+    "heading": "Log in to Trilium Notes",
+    "password": "Password",
+    "totp-token": "One-time password or recovery code",
+    "button": "Log in",
+    "remember-me": "Remember me",
+    "incorrect-password": "Password is incorrect. Please try again.",
+    "incorrect-totp": "One-time password is incorrect. Please try again.",
+    "incorrect-recovery-code": "Recovery code is incorrect, or has already been used.",
+    "too-many-attempts": "Too many login attempts. Please wait a few minutes and try again.",
+    "connection-error": "Couldn't reach the server. Check your connection and try again.",
+    "sign_in_with_sso": "Sign in with {{ssoIssuerName}}",
+    "sso-wrong-account": "That account isn't the one linked to this Trilium instance. Sign in with the linked account.",
+    "sso-not-enrolled": "Single sign-on isn't set up yet. Sign in with your password first, then link your account from the settings."
+  },
+  "set_password": {
+    "heading": "Set password",
+    "description": "Before you can start using Trilium from web, you need to set a password first. You will then use this password to login.",
+    "password": "Password",
+    "password-confirmation": "Password confirmation",
+    "button": "Set password",
+    "password-too-short": "Password must be at least {{length}} characters long.",
+    "passwords-dont-match": "The entered passwords don't match."
+  },
+  "setup": {
+    "heading": "Get started with Trilium",
+    "new-document": "New knowledge base",
+    "new-document-description": "Start with a clean knowledge base and begin right away.",
+    "sync-from-desktop": "Connect a desktop app",
+    "sync-from-desktop-description": "You only have a Trilium desktop app running on another device. This device will sync its data from that desktop app.",
+    "sync-from-server": "Connect to an existing server",
+    "sync-from-server-description": "You have a Trilium server running elsewhere (either self-hosted or in the cloud). This device will sync its data from that server.",
+    "next": "Next",
+    "init-in-progress": "Document initialization in progress",
+    "redirecting": "You will be shortly redirected to the application.",
+    "title": "Setup",
+    "sync-from-server-page-description": "Enter your server details below to connect your existing workspace.",
+    "sync-in-progress-title": "Sync in progress",
+    "sync-in-progress-description": "Your device is now connected and items are being synchronized.",
+    "sync-in-progress-banner": "This may take a while depending on the size of your notes. Please do not switch to another application until the sync is complete.",
+    "button-back": "Back",
+    "button-finish-setup": "Finish setup",
+    "sync-step-connecting": "Connecting to server",
+    "sync-step-syncing": "Syncing data",
+    "sync-step-finalizing": "Setting up options",
+    "create-new-document-options-title": "How would you like to start?",
+    "create-new-document-options-with-demo": "With demo content",
+    "create-new-document-options-with-demo-description": "Explore Trilium with example content.",
+    "create-new-document-options-empty": "Empty",
+    "create-new-document-options-empty-description": "Start with a blank knowledge base. You can import demo notes later.",
+    "create-new-document-title": "Preparing your knowledge base",
+    "create-new-document-description": "This will only take a moment.",
+    "sync-illustration-this-device": "This device",
+    "sync-illustration-desktop-app": "Your desktop app",
+    "sync-illustration-server": "Your server",
+    "sync-from-desktop-step1": "Open your desktop instance of Trilium Notes.",
+    "sync-from-desktop-step2": "From the Trilium Menu, click Options.",
+    "sync-from-desktop-step3": "Click on Sync category in the note tree.",
+    "sync-from-desktop-step4": "Change server instance address to point to one of the addresses on the right and click Save.",
+    "sync-from-desktop-step5": "Click the \"Test sync\" button to verify connection is successful.",
+    "sync-from-desktop-warning": "Make sure both devices are on the same network.",
+    "sync-from-desktop-waiting": "Waiting for connection...",
+    "sync-from-desktop-unreachable-title": "This device can't be reached by other devices",
+    "sync-from-desktop-unreachable-description": "To sync, the other desktop has to connect to this one over the network. For security, this desktop app only accepts connections from this computer, so that other desktop can't reach it yet. Allow network access below — Trilium will restart to apply it.",
+    "sync-from-desktop-allow-access": "Allow network access & restart",
+    "advanced-options": "Advanced options",
+    "sync-failed": "Failed to sync: {{message}}",
+    "server-host": "Trilium server address",
+    "server-host-placeholder": "https://<hostname>:<port>",
+    "server-password": "Password",
+    "proxy-server": "Proxy server (optional)",
+    "proxy-server-placeholder": "https://<hostname>:<port>",
+    "proxy-instruction": "If you leave proxy setting blank, system proxy will be used.",
+    "dismiss-error": "Dismiss error",
+    "wrong-password": "Incorrect password. Please try again.",
+    "language": "Language",
+    "continue": "Continue",
+    "your-ip-addresses": "Addresses for this device"
+  },
+  "mind-map": {
+    "addChild": "Add child",
+    "addParent": "Add parent",
+    "addSibling": "Add sibling",
+    "removeNode": "Remove node",
+    "focus": "Focus Mode",
+    "cancelFocus": "Cancel Focus Mode",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "link": "Link",
+    "linkBidirectional": "Bidirectional Link",
+    "clickTips": "Please click the target node",
+    "summary": "Summary"
+  },
+  "llm": {
+    "disabled_placeholder": "AI features are turned off. Enable them to configure providers and MCP.",
+    "not_available_in_standalone": "AI/LLM features are not available in the standalone version of Trilium, as LLM providers do not allow direct access from a browser.",
+    "feature_not_enabled": "Enable the LLM experimental feature in Settings → Advanced → Experimental features to use AI integrations.",
+    "add_provider": "Add Provider",
+    "add_provider_title": "Add AI Provider",
+    "configured_providers": "Configured Providers",
+    "no_providers_configured": "No providers configured yet.",
+    "provider_name": "Name",
+    "provider_type": "Provider",
+    "actions": "Actions",
+    "delete_provider": "Delete",
+    "delete_provider_confirmation": "Are you sure you want to delete the provider \"{{name}}\"?",
+    "api_key": "API Key",
+    "api_key_placeholder": "Enter your API key",
+    "base_url": "Base URL",
+    "base_url_description": "Optional. Override the default API endpoint — useful for self-hosted models (Ollama, LM Studio, vLLM) or proxies.",
+    "base_url_invalid": "Base URL must be a valid http:// or https:// URL",
+    "cancel": "Cancel",
+    "mcp_title": "MCP (Model Context Protocol)",
+    "mcp_enabled": "MCP server",
+    "mcp_enabled_description": "Expose a Model Context Protocol (MCP) endpoint so that AI coding assistants (e.g. Claude Code, GitHub Copilot) can read and modify your notes. The endpoint is only accessible from localhost.",
+    "mcp_endpoint_title": "Endpoint URL",
+    "mcp_endpoint_description": "Add this URL to your AI assistant's MCP configuration",
+    "tools": {
+      "search_notes": "Search notes",
+      "get_note": "Get note",
+      "get_note_content": "Get note content",
+      "set_note_content": "Rewrite note",
+      "update_note_content": "Rewrite note",
+      "edit_note_content": "Edit note",
+      "append_to_note": "Append to note",
+      "create_note": "Create note",
+      "get_attributes": "Get attributes",
+      "get_attribute": "Get attribute",
+      "set_attribute": "Set attribute",
+      "delete_attribute": "Delete attribute",
+      "get_child_notes": "Get child notes",
+      "get_subtree": "Get subtree",
+      "load_skill": "Load skill",
+      "web_search": "Web search",
+      "note_in_parent": "<Note/> in <Parent/>",
+      "get_attachment": "Get attachment",
+      "get_attachment_content": "Read attachment content",
+      "rename_note": "Rename note",
+      "delete_note": "Delete note",
+      "move_note": "Move note",
+      "clone_note": "Clone note",
+      "search_icons": "Search icons"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "spreadsheet": {
+    "read-only": "This note is read-only.",
+    "export-xlsx": "Export to Excel (.xlsx)",
+    "export-csv": "Export to CSV (.csv)",
+    "export-failed": "Failed to export the spreadsheet to Excel.",
+    "export-csv-failed": "Failed to export the spreadsheet to CSV."
+  },
+  "text-editor": {
+    "checkbox-tooltip": "Right click for more task states.\nPress {{shortcut}} to cycle between states.",
+    "collapsible-body-placeholder": "Type the content here...",
+    "collapsible-button-label": "Collapsible block",
+    "collapsible-handle-tooltip": "Drag to reposition the collapsible block",
+    "collapsible-select-label": "Select collapsible block",
+    "collapsible-title-placeholder": "Summary",
+    "collapsible-toggle-label": "Toggle collapsible block",
+    "collapsible-tooltip": "Click on the arrow or press {{shortcut}} to collapse/expand.",
+    "edit-states-tooltip": "Edit task states",
+    "unknown-task-state": "Undefined custom task state",
+    "task-state-dropped": "Dropped custom task state definition \"{{title}}\" ({{id}}) due to: {{reason}}",
+    "validation-errors": {
+      "undefined-name": "undefined identifier",
+      "invalid-name": "invalid identifier",
+      "duplicate-name": "duplicate identifier",
+      "missing-title": "missing title",
+      "missing-icon": "missing icon",
+      "invalid-symbol": "the markdown symbol should be one character, excepting \"[\", \" \", \"X\", and \"]\"",
+      "duplicate-symbol": "duplicate markdown symbol"
+    }
   }
 }

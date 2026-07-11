@@ -1,33 +1,24 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notlar
 
-![GitHub Sponsorları](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay Destekçileri](https://img.shields.io/liberapay/patrons/ElianDoran) \
-![Docker İndirme
-Sayısı](https://img.shields.io/docker/pulls/triliumnext/trilium) ![GitHub
-İndirmeleri (tüm varlıklar, tüm
-sürümler)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Çeviri
-Durumu](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
+![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
+![GitHub Downloads (all assets, all
+releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![Translation
+status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes, büyük kişisel bilgi tabanları oluşturmaya odaklanmış, ücretsiz ve
@@ -50,10 +41,9 @@ edin(https://docs.triliumnotes.org/)**
 Dokümantasyonumuz birden fazla formatta mevcuttur:
 - **Çevrimiçi Dökümantasyon**: Tüm dökümantasyonu görebilmek için
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)'a uğrayın
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
-- **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
-  this repository
+- Uygulama İçi Yardım: Trilium içinde F1 tuşuna basarak aynı belgelere doğrudan
+  uygulama içerisinden erişebilirsiniz.
+- **Github**: Bu repodaki [Kullanıcı Rehberi] sayfasına yönelin
 
 ### Hızlı linkler
 - [Başlangıç Kılavuzu](https://docs.triliumnotes.org/)
@@ -61,37 +51,39 @@ Dokümantasyonumuz birden fazla formatta mevcuttur:
 - Docker kurulumu
 - [TrilliumNext Güncelleme]
 - Basit Kavramlar ve Özellikler
-- [Patterns of Personal Knowledge
-  Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [Kişisel Bilgi Tabanı
+  Modelleri](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
-## 🎁 Features
+## 🎁 Özellikler
 
-* Notes can be arranged into arbitrarily deep tree. Single note can be placed
-  into multiple places in the tree (see
-  [cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
-* Rich WYSIWYG note editor including e.g. tables, images and
-  [math](https://docs.triliumnotes.org/user-guide/note-types/text) with markdown
-  [autoformat](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
-* Support for editing [notes with source
-  code](https://docs.triliumnotes.org/user-guide/note-types/code), including
-  syntax highlighting
-* Fast and easy [navigation between
-  notes](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
-  full text search and [note
+* Notlar hiyerarşik bir kök düzeninde keyfi olarak düzenlenebilir. Tek bir not
+  bu hiyerarşik kök yapısında birden fazla yere yerleştirilebilir (bkz.
+  [klonlama](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
+* Tablolar, resimler ve [matematiksel
+  formüller](https://docs.triliumnotes.org/user-guide/note-types/text) gibi
+  ögeleri barındıran, markdown [otomatik
+  formatlama](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
+  destekli zengin WYSIWYG not editörü
+* Söz dizimi vurgulama (syntax highlighting) dahil [kaynak kodlu
+  notların](https://docs.triliumnotes.org/user-guide/note-types/code)
+  düzenlenmesi için destek
+* Notlar arasında hızlı ve kolay
+  [gezinme](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
+  tam metin arama ve [not
   hoisting](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
-* Seamless [note
-  versioning](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
-* Note
-  [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
-  can be used for note organization, querying and advanced
-  [scripting](https://docs.triliumnotes.org/user-guide/scripts)
-* UI available in English, German, Spanish, French, Romanian, and Chinese
-  (simplified and traditional)
-* Direct [OpenID and TOTP
-  integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
-  more secure login
-* [Synchronization](https://docs.triliumnotes.org/user-guide/setup/synchronization)
-  with self-hosted sync server
+  (not yükseltme)
+* Sorunsuz [not
+  versiyonlama](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* [Özellikler](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  notları düzenlemek, sorgulamak ve gelişmiş [komut dosyası
+  oluşturma](https://docs.triliumnotes.org/user-guide/scripts) işlemleri için
+  kullanılabilir
+* Arayüz; İngilizce, Almanca, İspanyolca, Fransızca, Rumence ve Çince
+  (basitleştirilmiş ve geleneksel) dillerinde mevcuttur
+* Daha güvenli oturum açma için [OpenID ve TOTP
+  entegrasyonu](https://docs.triliumnotes.org/user-guide/setup/server/mfa)
+* Kendi barındırdığınız senkronizasyon sunucusuyla
+  [senkronizasyon](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
@@ -183,7 +175,7 @@ If your distribution is listed in the table below, use your distribution's
 package.
 
 [![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+status](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 You may also download the binary release for your platform from the [latest
 release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
@@ -207,12 +199,33 @@ access the mobile interface of a server installation (see below).
 See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
 information on mobile app support.
 
+#### TriliumDroid
+
 If you prefer a native Android app, you can use
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
 Report bugs and missing features at [their
 repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
 disable automatic updates on your server installation (see below) when using
 TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+
+#### Pocket Trilium
+
+If you want a full-featured native Android app, check out [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
+instance on your phone, supports full offline use, and allows you to sync with
+your server.
+
+#### Trinote
+
+If you want a native iOS app, you can use
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
+client for your self-hosted Trilium / TriliumNext server. It lets you browse and
+organize your note tree, search for notes on the server, read and edit all note
+types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
+available and editable offline. Here's the
+[repo](https://github.com/StephenArg/Trinote) if you're interested in
+contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
+server if you have any feedback or suggestions you want to discuss.
 
 ### Server
 
@@ -255,6 +268,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Alternatively, if you have Nix installed:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Building the Executable
 Download the repository, install dependencies using `pnpm` and then build the
 desktop app for Windows:
@@ -275,6 +299,34 @@ guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/D
 for details. If you have more questions, feel free to reach out via the links
 described in the "Discuss with us" section above.
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Shoutouts
 
 * [zadam](https://github.com/zadam) for the original concept and implementation
@@ -285,14 +337,12 @@ described in the "Discuss with us" section above.
 * [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
 * [antoniotejada](https://github.com/nriver) for the original syntax highlight
   widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
 * [Tabler Icons](https://tabler.io/icons) for the system tray icons.
 
 Trilium would not be possible without the technologies behind it:
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
+  text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
   support for huge amount of languages.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite

@@ -7,6 +7,10 @@ async function renderAttribute(attribute: FAttribute, renderIsInheritable: boole
     const isInheritable = renderIsInheritable && attribute.isInheritable ? `(inheritable)` : "";
     const $attr = $("<span>");
 
+    if (attribute.isAutoLink) {
+        return $attr;
+    }
+
     if (attribute.type === "label") {
         $attr.append(document.createTextNode(`#${attribute.name}${isInheritable}`));
 
@@ -15,9 +19,6 @@ async function renderAttribute(attribute: FAttribute, renderIsInheritable: boole
             $attr.append(document.createTextNode(formatValue(attribute.value)));
         }
     } else if (attribute.type === "relation") {
-        if (attribute.isAutoLink) {
-            return $attr;
-        }
 
         // when the relation has just been created, then it might not have a value
         if (attribute.value) {

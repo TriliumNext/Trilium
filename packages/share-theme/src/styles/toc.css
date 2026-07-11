@@ -5,7 +5,24 @@
     position: sticky;
     top: 0;
     order: 3;
-/*         padding: 16px 16px 16px 32px; */
+    transition: width 0.3s ease, margin-right 0.3s ease;
+    width: 250px;
+    flex-shrink: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding-top: 20px;
+    z-index: 1;
+    background: var(--background-primary);
+}
+
+.toc-pane-collapsed #toc-pane {
+    width: 0;
+    overflow: hidden;
+}
+
+.toc-pane-collapsed #toc-pane h3,
+.toc-pane-collapsed #toc-pane #toc {
+    display: none;
 }
 
 #toc-pane h3 {
@@ -18,7 +35,7 @@
     margin: 0;
     border-radius: 6px;
     padding: 0 0 0 16px;
-    max-width: 250px;
+    max-width: 100%;
 }
 
 #toc, #toc ul {
@@ -83,12 +100,4 @@
 #content h5 a.toc-anchor,
 #content h6 a.toc-anchor {
     margin-left: 10px;
-}
-
-
-
-@media (max-width: 1200px) {
-    #toc-pane {
-        display: none;
-    }
 }

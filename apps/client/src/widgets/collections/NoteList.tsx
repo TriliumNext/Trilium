@@ -25,6 +25,7 @@ interface NoteListProps {
     viewType: ViewTypeOptions | undefined;
     onReady?: (data: PrintReport) => void;
     onProgressChanged?(progress: number): void;
+    showTextRepresentation?: boolean;
 }
 
 type LazyLoadedComponent = ((props: ViewModeProps<any>) => VNode<any> | undefined);
@@ -51,6 +52,9 @@ const ViewComponents: Record<ViewTypeOptions, { normal: LazyLoadedComponent, pri
     },
     presentation: {
         normal: lazy(() => import("./presentation/index.js"))
+    },
+    dashboard: {
+        normal: lazy(() => import("./dashboard/index.js"))
     }
 };
 
@@ -66,6 +70,15 @@ export default function NoteList(props: Pick<NoteListProps, "displayOnlyCollecti
 }
 
 export function SearchNoteList(props: Omit<NoteListProps, "isEnabled" | "viewType">) {
+    return <EmbeddedNoteList {...props} showTextRepresentation />;
+}
+
+/**
+ * Mounts a collection — a book or an (already-executed) saved search — as a live, prop-driven note
+ * list, picking the view type from the note's `viewType` label. Unlike {@link NoteList} it reads no
+ * note context, so it can be embedded outside the note detail (e.g. dashboard tiles, included notes).
+ */
+export function EmbeddedNoteList(props: Omit<NoteListProps, "isEnabled" | "viewType">) {
     const viewType = useNoteViewType(props.note);
     return <CustomNoteList {...props} isEnabled={true} viewType={viewType} />;
 }
@@ -86,8 +99,11 @@ export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, notePa
 
         const observer = new IntersectionObserver(
             (entries) => {
-                if (!isIntersecting) {
-                    setIsIntersecting(entries[0].isIntersecting);
+                // The first callback fires immediately after observe() and reports false while the
+                // widget is hidden (background tab) or below the viewport, so only latch-and-stop
+                // once the widget actually becomes visible (#7901).
+                if (entries[0].isIntersecting) {
+                    setIsIntersecting(true);
                     observer.disconnect();
                 }
             },
@@ -154,14 +170,22 @@ export function useNoteViewType(note?: FNote | null): ViewTypeOptions | undefine
 export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined, ntxId: string | null | undefined) {
     const [ noteIds, setNoteIds ] = useState<string[]>([]);
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
-    const directChildrenOnly = (viewType === "list" || viewType === "grid" || viewType === "table" || note?.type === "search");
+    const directChildrenOnly = (viewType === "list" || viewType === "grid" || viewType === "table" || viewType === "dashboard" || note?.type === "search");
+    // getNoteIds can do a server round-trip (archive filtering), so concurrent refreshes may resolve
+    // out of order. Track the latest issued refresh so a stale one can't clobber a newer result.
+    const refreshSeqRef = useRef(0);
 
     async function refreshNoteIds() {
-        if (!note) {
-            setNoteIds([]);
-        } else {
-            setNoteIds(await getNoteIds(note));
+        const seq = ++refreshSeqRef.current;
+        const result = note ? await getNoteIds(note) : [];
+        if (seq !== refreshSeqRef.current) {
+            // A newer refresh was issued while we were awaiting; let it win.
+            return;
         }
+        // getNoteIds may hand back froca's live children array, which is mutated in place when notes
+        // are cloned/removed. Setting that same reference would be a no-op for React (Object.is), so
+        // downstream effects never re-run. Copy it, and skip the update only when nothing changed.
+        setNoteIds(prev => sameNoteIds(prev, result) ? prev : [ ...result ]);
     }
 
     async function getNoteIds(note: FNote) {
@@ -179,11 +203,13 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
 
     // Refresh on alterations to the note subtree.
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (note && loadResults.getBranchRows().some(branch =>
-            branch.parentNoteId === note.noteId
-                || noteIds.includes(branch.parentNoteId ?? ""))
+        if (note && (
+            loadResults.getNoteReorderings().includes(note.noteId)
+            || loadResults.getBranchRows().some(branch =>
+                branch.parentNoteId === note.noteId
+                    || noteIds.includes(branch.parentNoteId ?? ""))
             || loadResults.getAttributeRows().some(attr => attr.name === "archived" && attr.noteId && noteIds.includes(attr.noteId))
-        ) {
+        )) {
             refreshNoteIds();
         }
     });
@@ -218,25 +244,48 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
     return noteIds;
 }
 
+/** Order-sensitive equality for note-id lists, used to skip no-op `noteIds` updates. */
+function sameNoteIds(a: string[], b: string[]) {
+    return a.length === b.length && a.every((id, index) => id === b[index]);
+}
+
 export function useViewModeConfig<T extends object>(note: FNote | null | undefined, viewType: ViewModeStorageType | undefined) {
     const [ viewConfig, setViewConfig ] = useState<{
         config: T | undefined;
         storeFn: (data: T) => void;
         note: FNote;
     }>();
+    const storageRef = useRef<{ storage: ViewModeStorage<T>, storeFn: (data: T) => void, note: FNote }>();
 
     useEffect(() => {
         if (!note || !viewType) return;
         setViewConfig(undefined);
         const viewStorage = new ViewModeStorage<T>(note, viewType);
+        const storeFn = (config: T) => {
+            setViewConfig({ note, config, storeFn });
+            viewStorage.store(config);
+        };
+        storageRef.current = { storage: viewStorage, storeFn, note };
         viewStorage.restore().then(config => {
-            const storeFn = (config: T) => {
-                setViewConfig({ note, config, storeFn });
-                viewStorage.store(config);
-            };
             setViewConfig({ note, config, storeFn });
         });
     }, [ note, viewType ]);
+
+    // Reload the config when the underlying attachment changes externally
+    // (e.g. the same view opened in another split, or synced from another instance).
+    // Echoes of our own saves are filtered out by the storage, so views are never handed
+    // a fresh config object for content they already have.
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const current = storageRef.current;
+        if (!current || current.note !== note) return;
+        if (!loadResults.getAttachmentRows().some(att => att.ownerId === current.note.noteId && att.title === current.storage.attachmentName)) {
+            return;
+        }
+        current.storage.restoreIfChanged().then(config => {
+            if (config === undefined) return;
+            setViewConfig({ note: current.note, config, storeFn: current.storeFn });
+        });
+    });
 
     // Only expose config for the current note, avoid leaking notes when switching between them.
     if (viewConfig?.note !== note) return undefined;

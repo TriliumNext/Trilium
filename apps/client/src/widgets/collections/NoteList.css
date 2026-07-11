@@ -4,15 +4,19 @@
 
     overflow: visible;
     contain: none !important;
+    clear: both;
 
     &.full-height {
         overflow: auto;
     }
 }
 
-body.prefers-centered-content .note-list-widget:not(.full-height) {
-    /* Horizontally center the widget in its parent when the "Keep content centered" option is on */
-    margin-inline: auto;
+body.prefers-centered-content {
+    .note-list-widget:not(.full-height),
+    .note-split.type-text .note-list-widget {
+        /* Horizontally center the widget in its parent when the "Keep content centered" option is on */
+        margin-inline: auto;
+    }
 }
 
 .note-list-widget.full-height,
@@ -23,14 +27,3 @@ body.prefers-centered-content .note-list-widget:not(.full-height) {
 .note-list-widget video {
     height: 100%;
 }
-
-/* #region Pagination */
-.note-list-pager {
-    font-size: 1rem;
-
-    span.current-page {
-        text-decoration: underline;
-        font-weight: bold;
-    }
-}
-/* #endregion */

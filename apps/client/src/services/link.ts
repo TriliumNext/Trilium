@@ -4,6 +4,8 @@ import appContext, { type NoteCommandData } from "../components/app_context.js";
 import { openInCurrentNoteContext } from "../components/note_context.js";
 import linkContextMenuService from "../menus/link_context_menu.js";
 import froca from "./froca.js";
+import { t } from "./i18n.js";
+import { showError } from "./toast.js";
 import treeService from "./tree.js";
 import utils from "./utils.js";
 
@@ -58,6 +60,8 @@ export interface ViewScope {
      */
     tocPreviousVisible?: boolean;
     tocCollapsedHeadings?:  Set<string>;
+    /** When set, scrolls to a bookmark anchor within the note after navigation. */
+    bookmark?: string;
 }
 
 interface CreateLinkOptions {
@@ -101,6 +105,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     let linkTitle = options.title;
 
     if (linkTitle === undefined) {
+        /* v8 ignore start -- the implicit `else` of this chain (noteId falsy) is unreachable: an empty noteId already returned at the guard above */
         if (viewMode === "attachments" && viewScope.attachmentId) {
             const attachment = await froca.getAttachment(viewScope.attachmentId);
 
@@ -108,6 +113,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
         } else if (noteId) {
             linkTitle = await treeService.getNoteTitle(noteId, parentNoteId);
         }
+        /* v8 ignore stop */
     }
 
     const note = await froca.getNote(noteId);
@@ -162,6 +168,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
             pathSegments = await treeService.getNotePathTitleComponents(resolvedPath);
         }
 
+        /* v8 ignore next 2 -- defensive guards: pathSegments is always a non-empty array (getNotePathTitleComponents never returns empty, and the root case yields ["⌂"]) */
         if (pathSegments) {
             if (pathSegments.length) {
                 $container.append($("<small>").append(treeService.formatNotePath(pathSegments)));
@@ -186,6 +193,7 @@ export function calculateHash({ notePath, ntxId, hoistedNoteId, viewScope = {} }
             const name = Object.keys(pair)[0];
             const value = (pair as Record<string, string | undefined>)[name];
 
+            /* v8 ignore next -- the `value || ""` fallback is unreachable: every retained param pair has a truthy value (falsy ones were filtered out above) */
             return `${encodeURIComponent(name)}=${encodeURIComponent(value || "")}`;
         })
         .join("&");
@@ -242,7 +250,7 @@ export function parseNavigationStateFromUrl(url: string | undefined) {
                 hoistedNoteId = value;
             } else if (name === "searchString") {
                 searchString = value; // supports triggering search from URL, e.g. #?searchString=blabla
-            } else if (["viewMode", "attachmentId"].includes(name)) {
+            } else if (["viewMode", "attachmentId", "bookmark"].includes(name)) {
                 (viewScope as any)[name] = value;
             } else if (name === "popup") {
                 openInPopup = true;
@@ -321,7 +329,8 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
         } else if (openInNewTab) {
             appContext.tabManager.openTabWithNoteWithHoisting(notePath, {
                 activate: activate ? true : targetIsBlank,
-                viewScope
+                viewScope,
+                placement: "afterCurrent"
             });
         } else if (isLeftClick) {
             openInCurrentNoteContext(evt, notePath, viewScope);
@@ -333,15 +342,26 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
         if (openInNewTab || openInNewWindow || (isLeftClick && (withinEditLink || outsideOfCKEditor))) {
             if (hrefLink.toLowerCase().startsWith("http") || hrefLink.startsWith("api/")) {
                 window.open(hrefLink, "_blank");
-            } else {
+            } else if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(`${protocol}:`))) {
                 // Enable protocols supported by CKEditor 5 to be clickable.
-                if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(`${protocol}:`))) {
-                    if ( utils.isElectron()) {
-                        const electron = utils.dynamicRequire("electron");
-                        electron.shell.openExternal(hrefLink);
+                if (window.electronApi) {
+                    const reportLinkError = (e: unknown) => {
+                        const message = e instanceof Error ? e.message : String(e);
+                        logError(`Failed to open link '${hrefLink}': ${message}`);
+                        showError(t("link.failed_to_open", { href: hrefLink, message }));
+                    };
+
+                    if (hrefLink.toLowerCase().startsWith("file:")) {
+                        // shell.openExternal mishandles Unicode file:// URLs on Windows;
+                        // convert to a filesystem path and use shell.openPath instead.
+                        window.electronApi.shell.openFileUrl(hrefLink).then((err: string) => {
+                            if (err) reportLinkError(new Error(err));
+                        }).catch(reportLinkError);
                     } else {
-                        window.open(hrefLink, "_blank");
+                        window.electronApi.shell.openExternal(hrefLink);
                     }
+                } else {
+                    window.open(hrefLink, "_blank");
                 }
             }
         }
@@ -415,6 +435,13 @@ async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | n
     const title = await getReferenceLinkTitle(href);
     $el.text(title);
 
+    if (viewScope?.bookmark) {
+        $el.append($("<small>").append(
+            $("<span>").addClass("bx bx-bookmark"),
+            document.createTextNode(viewScope.bookmark)
+        ));
+    }
+
     if (note) {
         const icon = await getLinkIcon(noteId, viewScope.viewMode);
 
@@ -440,8 +467,8 @@ async function getReferenceLinkTitle(href: string) {
 
         return attachment ? attachment.title : "[missing attachment]";
     }
-    return note.title;
 
+    return note.title;
 }
 
 function getReferenceLinkTitleSync(href: string) {
@@ -464,10 +491,15 @@ function getReferenceLinkTitleSync(href: string) {
 
         return attachment ? attachment.title : "[missing attachment]";
     }
-    return note.title;
 
+    if (viewScope?.bookmark) {
+        return `${note.title} - ${viewScope.bookmark}`;
+    }
+
+    return note.title;
 }
 
+/* v8 ignore next -- the `print` device branch is evaluated once at module load; under test glob.device is undefined, so the false arm cannot be exercised */
 if (glob.device !== "print") {
     // TODO: Check why the event is not supported.
     //@ts-ignore

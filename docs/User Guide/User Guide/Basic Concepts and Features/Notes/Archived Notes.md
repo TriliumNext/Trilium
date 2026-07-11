@@ -7,4 +7,4 @@ This can be useful for notes which are no longer very useful but still valuable 
 
 You can control whether archived notes are displayed in the note tree with a setting:
 
-![](Archived%20Notes_hide-archiv.png)
+![](Archived%20Notes_hide-archived.png)

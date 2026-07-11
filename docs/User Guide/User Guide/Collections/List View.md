@@ -5,6 +5,10 @@ List view is similar to <a class="reference-link" href="Grid%20View.md">Grid Vi
 
 In the example above, the "Node.js" note on the left panel contains several child notes. The right panel displays the content of these child notes as a single continuous document.
 
+### Creating a new table
+
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _List View_.
+
 ## Interaction
 
 *   Each note can be expanded or collapsed by clicking on the arrow to the left of the title.
@@ -23,7 +27,7 @@ If exported to PDF within the desktop application, there is additional functiona
 
 ## Expanding and collapsing multiple notes at once
 
-Apart from individually expanding or collapsing notes, it's also possible to expand or collapse them all at once. To do so, go to the _Collection Properties_ tab in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a> and look for the corresponding button.
+Apart from individually expanding or collapsing notes, it's also possible to expand or collapse them all at once. To do so, go to the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> and look for the corresponding button.
 
 By default, the _Expand_ button will only expand the direct children (first level) of the collection. Starting with v0.100.0, it's possible to expand multiple levels of notes using the arrow button next to the button.
 

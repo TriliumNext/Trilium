@@ -75,8 +75,6 @@ function setupGlobs() {
         requireCss(`api/notes/download/${appCssNoteId}`, false);
     }
 
-    utils.initHelpButtons($(window));
-
     $("body").on("click", "a.external", function () {
         window.open($(this).attr("href"), "_blank");
 
@@ -84,7 +82,7 @@ function setupGlobs() {
     });
 }
 
-async function requireCss(url: string, prependAssetPath = true) {
+export async function requireCss(url: string, prependAssetPath = true) {
     const cssLinks = Array.from(document.querySelectorAll("link")).map((el) => el.href);
 
     if (!cssLinks.some((l) => l.endsWith(url))) {

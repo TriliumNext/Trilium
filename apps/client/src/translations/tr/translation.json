@@ -1,42 +1,108 @@
 {
   "about": {
-    "homepage": "Anasayfa:",
-    "app_version": "Uygulama versiyonu:",
-    "db_version": "Veritabanı versiyonu:",
-    "title": "Trilium Notes Hakkında",
-    "sync_version": "Eşleştirme versiyonu:",
     "data_directory": "Veri dizini:",
-    "build_date": "Derleme tarihi:",
-    "build_revision": "Derleme revizyonu:"
+    "version_label": "Sürüm:",
+    "version": "{{appVersion}} (veritabanı: {{dbVersion}}, senkronizasyon protokolü: {{syncVersion}})",
+    "build_info": "Derleme: {{buildDate}}, revizyon: <buildRevision />",
+    "contributors_label": "Katkıda bulunanlar:",
+    "contributor_roles": {
+      "lead-dev": "baş geliştirici",
+      "original-dev": "asıl geliştirici"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran, Zadam'ın projeden çekilmesinden sonra oluşturulan bir topluluk fork'u olan TriliumNext'i 2024'te kurdu. Zadam daha sonra orijinal repoyu TriliumNext ekibine devrederek her iki projeyi yeniden birleştirdi.",
+      "original-dev": "25 Aralık 2017'de Zadam, Trilium'un (kapsamlı bir not alma ve kişisel bilgi tabanı uygulaması olup adını İngilizcedeki Trillium [üçyaprak] çiçeğinden aldı ve çiçeğin adının aksine tek bir \"l\" ile yazılır) ilk beta sürümünü yayımladı. Mevcut not düzenleyicilerden memnun kalmadığı için 22 binden fazla GitHub yıldızı toplayan güçlü, kendi sunucusunda barındırılabilen hiyerarşik bir bilgi tabanı oluşturdu. 2024 yılında hayatının yoğunlaşmasıyla birlikte projeyi bakım moduna aldı."
+    },
+    "contributor_full_list": "Tüm topluluğu görüntüle",
+    "github_tooltip": "GitHub üzerinden hata bildir, yeni özellik öner veya katkıda bulun",
+    "license_tooltip": "Lisansı görüntüle",
+    "donate": "Bağış yap",
+    "donate_tooltip": "Bu projeyi desteklemek için bağış yap",
+    "channel": {
+      "nightly": "Her gece",
+      "standalone": "Tek başına"
+    }
   },
   "branch_prefix": {
     "save": "Kaydet",
-    "edit_branch_prefix": "Dalın önekini düzenle",
-    "prefix": "Önek: ",
-    "branch_prefix_saved": "Dal öneki kaydedildi.",
+    "edit_branch_prefix": "Dalın ön ekini düzenle",
+    "prefix": "Önek",
+    "branch_prefix_saved": "Dal ön eki kaydedildi.",
     "edit_branch_prefix_multiple": "{{count}} dal için dal ön ekini düzenle",
     "help_on_tree_prefix": "Ağaç ön eki hakkında yardım",
     "branch_prefix_saved_multiple": "Dal ön eki, {{count}} dal için kaydedildi.",
-    "affected_branches": "Etkilenen dal sayısı ({{count}}):"
+    "affected_branches": "Etkilenen dal sayısı ({{count}}):",
+    "preview_in_tree": "Ağaç yapısında önizleme",
+    "description": "Bu dalda not başlığının başına eklenir. Diğer dallarda orijinal başlık korunur.",
+    "cancel": "İptal"
   },
   "delete_notes": {
     "close": "Kapat",
-    "delete_notes_preview": "Not önizlemesini sil",
-    "delete_all_clones_description": "Tüm klonları da sil (son değişikliklerden geri alınabilir)",
-    "erase_notes_description": "Normal (yazılımsal) silme işlemi, notları yalnızca silinmiş olarak işaretler ve belirli bir süre içinde (son değişiklikler iletişim kutusunda) geri alınabilir. Bu seçeneği işaretlemek, notları hemen siler ve notların geri alınması mümkün olmaz."
+    "delete_all_clones_description": "Tüm kopyaları da sil (son değişiklikler bölümünden geri alınabilir)",
+    "erase_notes_description": "Notları geçici olarak silme yerine hemen kalıcı olarak silin. Bu işlem, geri alınamaz ve uygulamanın yeniden yüklenmesine neden olur.",
+    "erase_notes_warning": "Tüm kopyaları dahil notları kalıcı olarak sil (geri alınamaz). Bu işlemle uygulama yeniden yüklenecektir.",
+    "notes_to_be_deleted": "Silinecek notlar {{notesCount}}",
+    "no_note_to_delete": "Hiçbir not silinmeyecek (sadece kopyalar silinecek).",
+    "broken_relations_to_be_deleted": "Bozulan ilişkiler {{relationCount}}",
+    "cancel": "İptal",
+    "title": "Notları sil",
+    "clones_label": "Kopyalar",
+    "delete_clones_description_one": "Ayrıca {{count}} kopyayı da silin. Bu işlem, son değişiklikler bölümünden geri alınabilir.",
+    "delete_clones_description_other": "Ayrıca {{count}} kopyaları da silin. Bu işlem, son değişiklikler bölümünden geri alınabilir.",
+    "erase_notes_label": "Kalıcı olarak sil",
+    "table_note_with_relation": "İlişkili not",
+    "table_relation": "İlişki",
+    "table_points_to": "(Silinmiş)",
+    "delete": "Sil"
   },
   "export": {
-    "close": "Kapat"
+    "close": "Kapat",
+    "export_note_title": "Notu dışa aktar",
+    "export_type_subtree": "Bu not ve tüm torunları",
+    "export_type_single": "Yalnızca bu not, alt öğeleri olmadan",
+    "export": "Dışa aktar",
+    "choose_export_type": "Lütfen önce dışa aktarma türünü seçin",
+    "export_finished_successfully": "Dışa aktarma başarıyla tamamlandı.",
+    "format_pdf": "PDF - yazdırma veya paylaşım için."
   },
   "import": {
     "chooseImportFile": "İçe aktarım dosyası",
-    "importDescription": "Seçilen dosya(lar)ın içeriği, alt not(lar) olarak şuraya içe aktarılacaktır"
+    "importIntoNote": "Not'a aktar",
+    "importZipRecommendation": "Bir ZIP dosyası içe aktarılırken not sıralaması arşivdeki alt dizin yapısını yansıtacaktır.",
+    "options": "Seçenekler",
+    "safeImportTooltip": "Trilium <code>.zip</code> dışa aktarma dosyaları, zararlı davranışlar içerebilecek çalıştırılabilir komut dosyaları içerebilir. Güvenli içe aktarma, içe aktarılan tüm komut dosyalarının otomatik yürütülmesini devre dışı bırakacaktır. Yalnızca içe aktarılan arşivin çalıştırılabilir komut dosyaları içermesi gerekiyorsa ve içe aktarma dosyasının içeriğine tamamen güveniyorsanız \"Güvenli içe aktarma\" seçeneğinin işaretini kaldırın.",
+    "safeImport": "Güvenli içe aktar",
+    "explodeArchivesTooltip": "Bu seçenek işaretlendiğinde, Trilium <code>.zip</code>, <code>.enex</code> ve <code>.opml</code> dosyalarını okuyacak ve bu arşivlerin içindeki dosyalardan notlar oluşturacaktır. İşaretlenmezse, Trilium arşivleri doğrudan nota ekleyecektir.",
+    "explodeArchives": "<code>.zip</code>, <code>.enex</code> ve <code>.opml</code> arşivlerinin içeriğini okuyun.",
+    "shrinkImagesTooltip": "<p>Bu seçeneği işaretlerseniz, Trilium içe aktarılan resimleri ölçeklendirme ve optimizasyon yoluyla küçültmeye çalışır; bu işlem, resim kalitesini olumsuz etkileyebilir. Seçenek işaretlenmezse, resimler herhangi bir değişiklik yapılmadan içe aktarılır.</p><p>Bu durum, meta veriler içeren <code>.zip</code> dosyalarının içe aktarılması için geçerli değildir; çünkü bu dosyaların zaten optimize edilmiş olduğu varsayılır.</p>",
+    "shrinkImages": "Resimleri küçült",
+    "textImportedAsText": "Meta verilerden net anlaşılmıyorsa HTML, Markdown ve TXT dosyalarını metin notları olarak içe aktarın",
+    "codeImportedAsCode": "Meta verilerden net anlaşılmıyorsa, tanınan kod dosyalarını (örn. <code>.json</code>) kod notları olarak içe aktarın",
+    "spreadsheetImportedAsSpreadsheet": "CSV ve Excel dosyalarını dosya yerine düzenlenebilir e-tablolar olarak içe aktarın",
+    "replaceUnderscoresWithSpaces": "İçe aktarılan not adlarındaki alt çizgileri boşluklarla değiştir",
+    "import": "İçe Aktar",
+    "failed": "İçe aktarma başarısız: {{message}}.",
+    "html_import_tags": {
+      "title": "HTML İçe Aktarma Etiketleri",
+      "description": "Notları içe aktarırken hangi HTML etiketlerinin korunacağını ayarlayın. Bu listede yer almayan etiketler içe aktarma sırasında kaldırılacaktır. Bazı etiketler (örneğin ‘script’) güvenlik nedeniyle her zaman kaldırılır.",
+      "placeholder": "Her satıra bir tane gelecek şekilde HTML etiketlerini girin",
+      "reset_button": "Varsayılan Listeye Sıfırla"
+    },
+    "in-progress": "İçe aktarma işlemi devam ediyor: {{progress}}",
+    "successful": "İçe aktarma başarıyla tamamlandı."
   },
   "info": {
-    "closeButton": "Kapat"
+    "closeButton": "Kapat",
+    "modalTitle": "Bilgilendirme mesajı",
+    "okButton": "Tamam",
+    "copy_to_clipboard": "Panoya kopyala"
   },
   "protected_session_password": {
-    "close_label": "Kapat"
+    "close_label": "Kapat",
+    "modal_title": "Güvenli oturum",
+    "help_title": "Korumalı notlar hakkında yardım",
+    "form_label": "İstenen işlemi gerçekleştirmek için parolanızı girerek güvenli oturumu başlatmalısın:",
+    "start_button": "Güvenli oturumu başlat"
   },
   "toast": {
     "critical-error": {
@@ -46,22 +112,33 @@
     "widget-error": {
       "title": "Bir widget başlatılamadı",
       "message-unknown": "Bilinmeyen bir widget aşağıdaki sebeple başlatılamadı\n\n{{message}}",
-      "message-custom": "ID'si \"{{id}}\" ve başlığı \"{{title}}\" olan nottan alınan özel bileşen şu sebepten başlatılamadı:\n\n{{message}}"
+      "message-custom": "ID'si \"{{id}}\" ve başlığı \"{{title}}\" olan nottan alınan özel widget şu sebepten başlatılamadı:\n\n{{message}}"
     },
     "bundle-error": {
       "title": "Özel bir betik yüklenemedi",
-      "message": "ID'si \"{{id}}\" ve başlığı \"{{title}}\" olan nottan alınan komut dosyası şunun nedeniyle yürütülemedi:\n\n{{message}}"
-    }
+      "message": "Komut şu nedenle yürütülemedi:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Sunucudan widget listesi alınamadı"
+    },
+    "widget-render-error": {
+      "title": "Özel React widget'ı çizilirken sorun yaşandı"
+    },
+    "scripting-error": "Özel betik hatası: {{title}}",
+    "widget-missing-parent": "Özel widget'ın zorunlu '{{property}}' özelliği tanımlanmamıştır.\n\nBu komut dosyasının bir kullanıcı arayüzü öğesi olmadan çalıştırılması gerekiyorsa, bunun yerine '#run=frontendStartup' kullanın.",
+    "open-script-note": "Komut dosyası notunu aç"
   },
   "add_link": {
     "add_link": "Bağlantı ekle",
     "help_on_links": "Bağlantılar konusunda yardım",
     "note": "Not",
-    "search_note": "notu adına göre ara",
-    "link_title_mirrors": "bağlantı adı notun şu anki adıyla aynı",
-    "link_title_arbitrary": "bağlantı adı isteğe bağlı olarak değiştirilebilir",
-    "link_title": "Bağlantı adı",
-    "button_add_link": "Bağlantı ekle"
+    "search_note": "notu isme göre ara",
+    "link_title_mirrors": "bağlantı başlığı, notun güncel başlığını yansıtır",
+    "link_title_arbitrary": "bağlantı başlığı isteğe bağlı olarak değiştirilebilir",
+    "link_title": "Bağlantı başlığı",
+    "button_add_link": "Bağlantı ekle",
+    "anchor": "Bağlantı (isteğe bağlı)",
+    "anchor_none": "Yok (not bağlantısı)"
   },
   "bulk_actions": {
     "bulk_actions": "Toplu eylemler",
@@ -78,23 +155,329 @@
     "other": "Diğer"
   },
   "clone_to": {
-    "clone_notes_to": "Notları klonla...",
-    "help_on_links": "Bağlantılar konusunda yardım",
-    "notes_to_clone": "Klonlanacak notlar",
+    "clone_notes_to": "Notları şuraya kopyala...",
+    "help_on_links": "Bağlantılarla ilgili yardım",
+    "notes_to_clone": "Çoğaltılacak notlar",
     "target_parent_note": "Hedef üst not",
-    "search_for_note_by_its_name": "isme göre not ara",
-    "cloned_note_prefix_title": "Klonlanan not, not ağacında belirtilen önek ile gösterilecektir",
-    "prefix_optional": "önek (opsiyonel)",
-    "clone_to_selected_note": "Seçili nota klonla",
-    "no_path_to_clone_to": "Klonlanacak bir yol yok.",
-    "note_cloned": "\"{{clonedTitle}}\" notu \"{{targetTitle}}\"'a klonlandı"
+    "search_for_note_by_its_name": "adına göre not ara",
+    "cloned_note_prefix_title": "Çoğaltılan not, belirtilen önekle birlikte not ağacında gösterilecektir",
+    "prefix_optional": "ön ek (opsiyonel)",
+    "clone_to_selected_note": "Seçilen nota kopyala",
+    "no_path_to_clone_to": "Çoğaltılacak yol yok.",
+    "note_cloned": "Not: \"{{clonedTitle}}\" ögesi, \"{{targetTitle}}\" öğesine kopyalandı"
   },
   "confirm": {
     "confirmation": "Onay",
     "cancel": "İptal",
-    "ok": "OK",
+    "ok": "Tamam",
     "are_you_sure_remove_note": "\"{{title}}\" notunu ilişki haritasından kaldırmak istediğinize emin misiniz?. ",
     "also_delete_note": "Notu da sil",
     "if_you_dont_check": "Bunu işaretlemezseniz, not yalnızca ilişki haritasından kaldırılacaktır."
+  },
+  "help": {
+    "title": "Özet tablo",
+    "editShortcuts": "Klavye kısayollarını düzenle",
+    "noteNavigation": "Not içinde gezinme",
+    "goUpDown": "Notlar listesinde yukarı/aşağı gitmek",
+    "collapseExpand": "düğümü daralt/genişlet",
+    "notSet": "ayarlanmamış",
+    "goBackForwards": "tarihte geri/ileri git",
+    "showJumpToNoteDialog": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Şuraya Git\" iletişim kutusunu göster</a>",
+    "scrollToActiveNote": "Etkin nota kaydır",
+    "jumpToParentNote": "Üst nota git",
+    "collapseWholeTree": "Tüm not ağacını daralt",
+    "collapseSubTree": "Alt ağacı daralt",
+    "tabShortcuts": "Sekme kısayolları",
+    "newTabNoteLink": "Not bağlantısı notu yeni sekmede açılır",
+    "newTabWithActivationNoteLink": "Not bağlantısına tıklandığında not yeni bir sekmede açılır ve etkinleştirilir",
+    "onlyInDesktop": "Yalnızca masaüstünde (Electron derlemesi)",
+    "openEmptyTab": "boş sekmeyi aç",
+    "closeActiveTab": "etkin sekmeyi kapat",
+    "activateNextTab": "sonraki sekmeyi etkinleştir",
+    "activatePreviousTab": "önceki sekmeyi etkinleştir",
+    "creatingNotes": "Not oluşturma",
+    "createNoteAfter": "etkin nottan sonra yeni not oluşturma",
+    "createNoteInto": "etkin nota yeni bir alt not oluşturun",
+    "editBranchPrefix": "etkin notun kopyasının <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">önekini</a> düzenle",
+    "movingCloningNotes": "Notları taşıma / klonlama",
+    "toggleArchivedNotes": "arşivlenmiş notları göster/gizle",
+    "moveNoteUpDown": "notu not listesinde yukarı/aşağı taşı",
+    "moveNoteUpHierarchy": "notu sıralamada yukarı taşı",
+    "multiSelectNote": "yukarıdaki/aşağıdaki notu çoklu seç",
+    "selectAllNotes": "mevcut seviyedeki tüm notları seç",
+    "selectNote": "notu seç",
+    "copyNotes": "etkin notu (veya mevcut seçimi) panoya kopyala (<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">kopyalama</a> için kullanılır)",
+    "cutNotes": "mevcut notu (veya seçili kısmı) panoya kopyala (notları taşımak için kullanılır)",
+    "pasteNotes": "notu/notları, aktif not için alt not olarak yapıştır (bu, panoya kopyalanmasına veya kesilmesine bağlı olarak taşıma veya çoğaltma işlemidir)",
+    "deleteNotes": "notu / alt ağacı sil",
+    "editingNotes": "Düzenleme notları",
+    "editNoteTitle": "ağaç görünümündeki tuş kombinasyonu, ağaç görünümünden not başlığına geçişi sağlar. Not başlığından Enter tuşuna basmak, odağı metin düzenleyiciye geçirir. <kbd>Ctrl+.</kbd> tuş kombinasyonu ise düzenleyiciden ağaç görünümüne geri dönmeyi sağlar.",
+    "createEditLink": "dış bağlantı oluştur / düzenle",
+    "createInternalLink": "iç bağlantı oluştur",
+    "followLink": "imlecin altındaki bağlantıyı izle",
+    "insertDateTime": "imleç konumuna güncel tarih ve saati ekle",
+    "jumpToTreePane": "ağaç bölmesine geç ve aktif nota kadar kaydır",
+    "markdownAutoformat": "Markdown benzeri otomatik biçimlendirme",
+    "headings": "<code>##</code>, <code>###</code>, <code>####</code> vb. başlıklar için ardından boşluk bırakılır",
+    "bulletList": "<code>*</code> veya <code>-</code> ve ardından madde işareti listesi için boşluk",
+    "troubleshooting": "Sorun Giderme",
+    "reloadFrontend": "Trilium arayüzünü yeniden yükle",
+    "showDevTools": "geliştirici araçlarını göster",
+    "showSQLConsole": "SQL konsolunu göster",
+    "other": "Diğer",
+    "quickSearch": "hızlı arama alanına odaklan",
+    "inPageSearch": "sayfa içi arama",
+    "numberedList": "<code>1.</code> or <code>1)</code> ardından numaralı liste için boşluk",
+    "blockQuote": "Blok alıntı için satıra <code>></code> ile başlayıp ardından boşluk bırakın"
+  },
+  "common": {
+    "cancel": "iptal",
+    "save": "Kaydet"
+  },
+  "move_note": {
+    "clone_note_new_parent": "Notun birden fazla kopyası veya dalı varsa, notu yeni üst nota kopyala (hangi dalın kaldırılması gerektiği belli değil)"
+  },
+  "note_paths": {
+    "clone_button": "Notu yeni bir konuma kopyala..."
+  },
+  "order_by": {
+    "parent_count": "Kopya sayısı"
+  },
+  "tree-context-menu": {
+    "copy-clone": "Kopyala / çoğalt",
+    "clone-to": "Şuraya kopyala..."
+  },
+  "note_tree": {
+    "clone-indicator-tooltip": "Bu notun {{- count}} üst ögesi vardır: {{- parents}}",
+    "clone-indicator-tooltip-single": "Bu not kopyalanmıştır (1 ek üst öge: {{- parent}})"
+  },
+  "llm": {
+    "tools": {
+      "clone_note": "Notu kopyala"
+    }
+  },
+  "text-editor": {
+    "validation-errors": {
+      "missing-icon": "eksik simge"
+    }
+  },
+  "include_note": {
+    "dialog_title": "Not ekle",
+    "label_note": "Not",
+    "placeholder_search": "Notu adına göre ara",
+    "box_size_prompt": "Eklenen notun kutu boyutu:",
+    "box_size_small": "kısa (~ 10 satır)",
+    "box_size_medium": "orta (~ 30 satır)",
+    "box_size_full": "tam (kutuda metnin tamamı gösterilir)",
+    "box_size_expandable": "genişletilebilir (varsayılan olarak daraltılmış)",
+    "button_include": "Not ekle"
+  },
+  "jump_to_note": {
+    "search_placeholder": "Notu adına veya türüne göre ara > komutlar için...",
+    "search_button": "Tüm metinde ara"
+  },
+  "markdown_editor": {
+    "image_upload_failed": "\"{{name}}\" görseli yüklenemiyor."
+  },
+  "markdown_import": {
+    "dialog_title": "Markdown içe aktar",
+    "modal_body_text": "Tarayıcının sanal alanı nedeniyle, JavaScript'ten panoya doğrudan erişilemez. Lütfen içe aktarmak istediğiniz Markdown metnini aşağıdaki metin alanına yapıştırın ve “İçe Aktar” düğmesine tıklayın",
+    "import_button": "İçe Aktar",
+    "import_success": "Markdown içeriği belgeye aktarıldı."
+  },
+  "markdown_slash_commands": {
+    "date": "Geçerli tarih ve saati girin",
+    "include": "Başka bir not ekleyin",
+    "image": "Resim yükle ve ekle",
+    "link": "Not bağlantısı ekle",
+    "math": "Matematik denklem bloğu ekle",
+    "footnote": "Dipnot Ekle",
+    "mermaid": "Denizkızı diyagramı ekleyin",
+    "mermaid_template": "\"{{name}}\" Denizkızı diyagramı ekle",
+    "collapsible": "Katlanabilir bir blok ekle",
+    "admonition": "{{type}} uyarısını ekle",
+    "todo": "“{{title}}” görev öğesini ekle",
+    "todo_nonstandard": "“{{title}}” görev öğesini ekle (standart olmayan)",
+    "placeholders": {
+      "math": "denklem",
+      "collapsible_summary": "Özet",
+      "collapsible_details": "Ayrıntılar"
+    }
+  },
+  "slash_commands": {
+    "bulleted_list_description": "Madde işaretli liste oluştur",
+    "numbered_list_description": "Numaralı liste oluştur",
+    "todo_list_description": "Yapılacaklar listesi oluştur",
+    "align_left_description": "Metni sola hizala",
+    "align_center_description": "Metni merkeze hizala",
+    "align_right_description": "Metni sağa hizala",
+    "justify_description": "Metni iki yana hizala",
+    "admonition_description": "Yeni bir uyarı ekler",
+    "collapsible_description": "Tıklandığında içeriği gizleyen/gösteren, açılıp kapanabilir bir bölüm ekleyin.",
+    "footnote_description": "Yeni bir dipnot oluşturup buraya referans verin",
+    "datetime_description": "Geçerli tarih ve saati girin",
+    "internal_link_description": "Başka Trilium notuna link ekleyin",
+    "math_description": "Matematiksel bir denklem ekle",
+    "include_note_description": "Bu notta başka bir notun içeriğini görüntüle",
+    "page_break_description": "Sayfa sonu ekle (yazdırma için)",
+    "markdown_import_description": "Bu notun içine bir markdown dosyası aktarın",
+    "anchor_description": "Dahili linkleme için bir bağlantı metni ekleyin"
+  },
+  "move_to": {
+    "dialog_title": "Notları ... konumuna taşı.",
+    "notes_to_move": "Taşınacak notlar",
+    "target_parent_note": "Ana notu hedefle",
+    "search_placeholder": "Notu adına göre ara",
+    "move_button": "Seçilen notu taşı",
+    "error_no_path": "Taşınacak bir yol yok.",
+    "move_success_message": "Seçilen notlar taşındı. "
+  },
+  "note_type_chooser": {
+    "change_path_prompt": "Yeni notun oluşturulacağı yeri değiştirin:",
+    "search_placeholder": "İsimle arama yolu (boşsa varsayılan değer)",
+    "modal_title": "Not türünü seçin",
+    "modal_body": "Yeni notun not türünü / şablonunu seçin:",
+    "templates": "Şablonlar",
+    "builtin_templates": "Yerleşik Şablonlar"
+  },
+  "password_not_set": {
+    "title": "Parola Belirlenmedi",
+    "body1": "Korunan notlar kullanıcı parolası ile şifrelenir, ancak henüz bir parola belirlenmemiştir.",
+    "body2": "Notlarınızı korumak için aşağıdaki düğmeyi tıklayarak Seçenekler iletişim kutusunu açın ve parolanızı belirleyin.",
+    "go_to_password_options": "Parola seçeneklerine git"
+  },
+  "prompt": {
+    "title": "Komut",
+    "ok": "Tamam",
+    "defaultTitle": "Komut"
+  },
+  "recent_changes": {
+    "title": "Son değişiklikler",
+    "erase_notes_button": "Silinen notları tamamen kaldır",
+    "deleted_notes_message": "Silinen notlar kaldırıldı.",
+    "no_changes_message": "Henüz değişiklik yok...",
+    "undelete_link": "silinenleri geri al",
+    "confirm_undelete": "Bu notu ve alt notlarını geri yüklemek istiyor musunuz?"
+  },
+  "revisions": {
+    "diff_off_hint": "Not içeriğini görüntülemek için tıklayın",
+    "note_revisions": "Not Revizyonları",
+    "back": "Geri",
+    "delete_all_revisions": "Bu notun tüm revizyonlarını silin",
+    "delete_all_button": "Tüm revizyonları sil",
+    "help_title": "Not revizyonları hakkında yardım",
+    "confirm_delete_all": "Bu notun tüm revizyonlarını silmek istiyor musun?",
+    "no_revisions": "Bu not için henüz revizyon yok...",
+    "restore_button": "Geri Yükle",
+    "highlight_changes": "Değişiklikleri vurgula",
+    "maximum_revisions": "Not Düzenleme Anlık Görüntü Sınırı: {{number}}.",
+    "save_revision_now": "Şimdi bir düzenleme kaydet",
+    "diff_off": "İçeriği göster",
+    "diff_identical": "Bu revizyon, mevcut notun içeriğiyle aynıdır.",
+    "confirm_delete": "Bu revizyonu silmek ister misin?",
+    "revisions_deleted": "Not revizyonları silindi.",
+    "confirm_restore": "Bu revizyonu geri yüklemek ister misiniz? Bu işlem, notun mevcut başlığını ve içeriğini bu revizyonla değiştirecektir.",
+    "diff_on": "Değişiklikleri göster",
+    "diff_on_hint": "Not kaynağındaki değişikliği görmek için tıklayın",
+    "diff_not_available": "Değişiklik kullanılamaz.",
+    "delete_button": "Sil",
+    "revision_restored": "Not sürümü geri yüklendi.",
+    "revision_deleted": "Not revizyonu silindi.",
+    "snapshot_interval": "Not Revizyon Anlık Görüntü Aralığı: {{seconds}}s.",
+    "save_named_revision": "Adlandırılmış revizyonu kaydet...",
+    "snapshot_header": "Not revizyonu anlık görüntüsü",
+    "snapshot_interval_value": "Aralık: {{seconds}}s",
+    "snapshot_limit_value": "Limit: {{number}}",
+    "settings": "Not Revizyon Ayarları",
+    "menu_tooltip": "Revizyon Seçenekleri",
+    "download_button": "İndir",
+    "file_size": "Dosya boyutu:",
+    "preview_not_available": "Bu not türü için önizleme mevcut değil.",
+    "save_revision": "Revizyonu kaydet",
+    "save_revision_tooltip": "Mevcut notun anlık görüntüsünü manuel olarak kaydet",
+    "description_placeholder": "Bu revizyonun adı",
+    "revision_saved": "Not revizyonu kaydedildi.",
+    "edit_description": "İsmi düzenle",
+    "description_updated": "Revizyon ismi güncellendi.",
+    "source_auto": "Otomatik Kayıt",
+    "source_manual": "Manuel Kayıt",
+    "source_etapi": "ETAPI",
+    "source_llm": "LLM",
+    "source_restore": "Geri Yükle",
+    "source_unknown": "Anlık Görüntü",
+    "date_today": "Bugün",
+    "date_yesterday": "Dün",
+    "date_this_week": "Bu hafta",
+    "date_this_month": "Bu ay",
+    "source_description_auto": "Sistem tarafından belirli aralıklarla otomatik olarak kaydedilen",
+    "source_description_manual": "Kullanıcı tarafından manuel olarak kaydedilen",
+    "source_description_etapi": "Harici Trilium API'si (ETAPI) ile oluşturuldu",
+    "source_description_llm": "Yapay zekâ asistanı tarafından oluşturuldu",
+    "source_description_restore": "Önceki bir revizyonu geri yüklemeden önce kaydedildi",
+    "source_description_unknown": "Kaynak mevcut değil"
+  },
+  "sort_child_notes": {
+    "sort_children_by": "Alt notları şuna göre sırala...",
+    "sorting_criteria": "Sıralama kriterleri",
+    "title": "başlık",
+    "date_created": "oluşturulma tarihi",
+    "date_modified": "değiştirilme tarihi",
+    "sorting_direction": "Sıralama yönü",
+    "ascending": "artan",
+    "descending": "azalan",
+    "folders": "Klasöler",
+    "sort_folders_at_top": "klasörleri en üstte sırala",
+    "natural_sort": "Varsayılan Sıralama",
+    "sort_with_respect_to_different_character_sorting": "farklı dillerde veya bölgelerde geçerli olan farklı karakter sıralama ve karşılaştırma kurallarına göre sırala.",
+    "natural_sort_language": "Doğal sıralama dili",
+    "the_language_code_for_natural_sort": "Doğal sıralama için dil kodu, örneğin Çince için \"zh-CN\".",
+    "sort": "Sırala"
+  },
+  "upload_attachments": {
+    "upload_attachments_to_note": "Ekleri nota yükle",
+    "choose_files": "Dosyaları seçin",
+    "files_will_be_uploaded": "Dosyalar {{noteTitle}} notu içerisine ek olarak yüklenecek",
+    "options": "Seçenekler",
+    "shrink_images": "Görselleri küçült",
+    "upload": "Yükle",
+    "tooltip": "Bu seçeneği işaretlerseniz, Trilium yüklenen görüntüleri ölçeklendirme ve optimizasyon yoluyla küçültmeye çalışacaktır; bu da algılanan görüntü kalitesini etkileyebilir. İşaretlenmezse, görüntüler değişiklik yapılmadan yüklenecektir."
+  },
+  "attribute_detail": {
+    "attr_detail_title": "Öznitelik Detay Başlığı",
+    "close_button_title": "Değişiklikleri iptal et ve kapat",
+    "attr_is_owned_by": "Öznitelik sahibi",
+    "attr_name_title": "Öznitelik adı yalnızca alfanümerik karakterler, iki nokta üst üste ve alt çizgiden oluşabilir",
+    "name": "İsim",
+    "value": "Değer",
+    "target_note_title": "İlişki, kaynak not ile hedef not arasında kurulan adlandırılmış bir bağlantıdır.",
+    "target_note": "Hedef not",
+    "promoted_title": "Öne çıkarılan öznitelik, not üzerinde belirgin bir şekilde gösterilir.",
+    "promoted": "Öne Çıkarılan",
+    "promoted_alias_title": "“Öne çıkarılan öznitelikler arayüzünde gösterilecek ad.",
+    "promoted_alias": "Takma ad",
+    "multiplicity_title": "Çokluk, aynı isimde kaç tane öznitelik oluşturulabileceğini belirler. (sadece 1 veya 1 den fazla)",
+    "multiplicity": "Çokluk",
+    "single_value": "Tek değerli",
+    "multi_value": "Çok değerli",
+    "label_type_title": "Etiket türü, Trilium'un etiket değerini girmek için uygun arayüzü seçmesine yardımcı olacaktır.",
+    "label_type": "Tür",
+    "text": "Metin",
+    "textarea": "Çok Satırlı Metin",
+    "number": "Sayı",
+    "time": "Zaman",
+    "date": "Tarih",
+    "date_time": "Tarih & Zaman",
+    "inverse_relation_title": "Bu ilişkinin hangisinin tersi olduğunu belirlemeye yarayan isteğe bağlı ayar. Örnek: Baba - Oğul, birbirlerinin tersi ilişkilerdir.",
+    "inverse_relation": "Ters ilişki",
+    "inheritable_title": "Kalıtsal özellik, bu ağacın altındaki tüm alt ögelere aktarılacaktır.",
+    "inheritable": "Kalıtsal",
+    "save_and_close": "Kaydet & kapat <kbd>Ctrl+Enter</kbd>",
+    "delete": "Sil",
+    "related_notes_title": "Bu etiketle ilişkili diğer notlar",
+    "more_notes": "Diğer notlar",
+    "label": "Etiket ayrıntısı",
+    "label_definition": "Etiket tanımı ayrıntısı",
+    "relation": "İlişki ayrıntısı",
+    "relation_definition": "İlişki tanımı ayrıntısı"
   }
 }

@@ -12,12 +12,25 @@
  * @param whether to execute at the beginning (`false`)
  * @api public
  */
-function debounce<T>(func: (...args: any[]) => T, waitMs: number, immediate: boolean = false) {
+type AnyFunction = (...args: any[]) => any;
+
+/**
+ * The wrapper returned by {@link debounce}: it accepts the same arguments as the
+ * wrapped function and returns its last result (or `undefined` before the first
+ * trailing call), plus `clear`/`flush` controls.
+ */
+export interface DebouncedFunction<F extends AnyFunction> {
+    (...args: Parameters<F>): ReturnType<F> | undefined;
+    clear(): void;
+    flush(): void;
+}
+
+function debounce<F extends AnyFunction>(func: F, waitMs: number, immediate: boolean = false): DebouncedFunction<F> {
     let timeout: any; // TODO: fix once we split client and server.
     let args: unknown[] | null;
     let context: unknown;
     let timestamp: number;
-    let result: T;
+    let result: ReturnType<F>;
     if (null == waitMs) waitMs = 100;
 
     function later() {
@@ -28,6 +41,7 @@ function debounce<T>(func: (...args: any[]) => T, waitMs: number, immediate: boo
         } else {
             timeout = null;
             if (!immediate) {
+                /* v8 ignore next -- `|| []` is a defensive fallback: `args` is always non-null here because `debounced` (re)assigns it before this runs */
                 result = func.apply(context, args || []);
                 context = args = null;
             }
@@ -41,6 +55,7 @@ function debounce<T>(func: (...args: any[]) => T, waitMs: number, immediate: boo
         const callNow = immediate && !timeout;
         if (!timeout) timeout = setTimeout(later, waitMs);
         if (callNow) {
+            /* v8 ignore next -- `|| []` is a defensive fallback: `args` was just assigned `arguments` above and is always truthy here */
             result = func.apply(context, args || []);
             context = args = null;
         }
@@ -57,8 +72,13 @@ function debounce<T>(func: (...args: any[]) => T, waitMs: number, immediate: boo
 
     debounced.flush = function () {
         if (timeout) {
-            result = func.apply(context, args || []);
-            context = args = null;
+            // In immediate mode the leading-edge fire nulls `args` while leaving the
+            // trailing timer live, so only invoke when there is actually a pending
+            // trailing call to flush — otherwise this would re-fire `func` with no args.
+            if (args) {
+                result = func.apply(context, args);
+                context = args = null;
+            }
 
             clearTimeout(timeout);
             timeout = null;

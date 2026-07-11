@@ -1,5 +1,5 @@
-import ActionButton from "../react/ActionButton";
 import { t } from "../../services/i18n";
+import ActionButton from "../react/ActionButton";
 import { useNoteContext } from "../react/hooks";
 
 export default function ToggleSidebarButton() {
@@ -10,10 +10,15 @@ export default function ToggleSidebarButton() {
             { noteContext?.isMainContext() && <ActionButton
                 icon="bx bx-sidebar"
                 text={t("note_tree.toggle-sidebar")}
-                onClick={() => parentComponent?.triggerCommand("setActiveScreen", {
-                    screen: "tree"
-                })}
+                onClick={(e) => {
+                    // Remove focus to prevent tooltip showing on top of the sidebar.
+                    (e.currentTarget as HTMLButtonElement).blur();
+
+                    parentComponent?.triggerCommand("setActiveScreen", {
+                        screen: "tree"
+                    });
+                }}
             />}
         </div>
-    )
+    );
 }

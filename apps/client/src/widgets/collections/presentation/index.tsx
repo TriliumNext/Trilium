@@ -2,8 +2,8 @@ import "./index.css";
 
 import { RefObject } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
-import Reveal from "reveal.js";
-import slideBaseStylesheet from "reveal.js/dist/reveal.css?raw";
+import Reveal, { RevealApi } from "reveal.js";
+import slideBaseStylesheet from "reveal.js/reveal.css?raw";
 
 import { openInCurrentNoteContext } from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
@@ -20,7 +20,7 @@ import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
 export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged }: ViewModeProps<{}>) {
     const [ presentation, setPresentation ] = useState<PresentationModel>();
     const containerRef = useRef<HTMLDivElement>(null);
-    const [ api, setApi ] = useState<Reveal.Api>();
+    const [ api, setApi ] = useState<RevealApi>();
     const stylesheets = usePresentationStylesheets(note, media);
 
     function refresh() {
@@ -98,7 +98,7 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
     return stylesheets;
 }
 
-function ButtonOverlay({ containerRef, api }: { containerRef: RefObject<HTMLDivElement>, api: Reveal.Api | undefined }) {
+function ButtonOverlay({ containerRef, api }: { containerRef: RefObject<HTMLDivElement>, api: RevealApi | undefined }) {
     const [ isOverviewActive, setIsOverviewActive ] = useState(false);
     useEffect(() => {
         if (!api) return;
@@ -144,9 +144,9 @@ function ButtonOverlay({ containerRef, api }: { containerRef: RefObject<HTMLDivE
     );
 }
 
-function Presentation({ presentation, setApi } : { presentation: PresentationModel, setApi: (api: Reveal.Api | undefined) => void }) {
+function Presentation({ presentation, setApi } : { presentation: PresentationModel, setApi: (api: RevealApi | undefined) => void }) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [revealApi, setRevealApi] = useState<Reveal.Api>();
+    const [revealApi, setRevealApi] = useState<RevealApi>();
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -222,7 +222,7 @@ function getNoteIdFromSlide(slide: HTMLElement | undefined) {
     return slide.dataset.noteId;
 }
 
-function rewireLinks(container: HTMLElement, api: Reveal.Api) {
+function rewireLinks(container: HTMLElement, api: RevealApi) {
     const links = container.querySelectorAll<HTMLLinkElement>("a.reference-link");
     for (const link of links) {
         link.addEventListener("click", () => {

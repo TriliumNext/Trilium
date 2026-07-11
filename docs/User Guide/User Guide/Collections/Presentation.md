@@ -3,6 +3,10 @@
 
 The Presentation view allows the creation of slideshows directly from within Trilium.
 
+### Creating a new presentation
+
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _Presentation_.
+
 ## How it works
 
 *   Each slide is a child note of the collection.
@@ -55,7 +59,7 @@ In the following example, the note structure is as follows:
 
 At collection level, it's possible to adjust:
 
-*   The theme of the entire presentation to one of the predefined themes by going to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a> and looking for the _Collection Properties_ tab.
+*   The theme of the entire presentation to one of the predefined themes by going to the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a> and looking for the _Theme_ option.
 *   It's currently not possible to create custom themes, although it is planned.
 *   Note that it is note possible to alter the CSS via <a class="reference-link" href="../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> because the slides are rendered isolated (in a shadow DOM).
 

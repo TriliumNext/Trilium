@@ -1,0 +1,359 @@
+/* Message wrapper and bubble */
+.llm-chat-message-wrapper {
+    position: relative;
+    margin-top: 1rem;
+    padding-bottom: 1.25rem;
+    max-width: 85%;
+    /* Isolate each message: layout, paint and style invalidations stop at the message
+       boundary instead of walking the whole timeline. Deliberately NOT content-visibility:
+       auto — skipped messages sit at placeholder sizes, which silently breaks everything
+       that measures the timeline (ToC scroll-spy offsets, the bottom-spacer/reply-park
+       math in useLlmChat, smooth scrollIntoView landings). Paint containment clips ink at
+       the wrapper edge, so overflowing effects must be inset (see the jump flash below)
+       and wide content needs its own scroll context (see the KaTeX rule). */
+    contain: content;
+}
+
+.llm-chat-message-wrapper:first-child {
+    margin-top: 0;
+}
+
+.llm-chat-message-wrapper-user {
+    margin-left: auto;
+    max-width: 70%;
+    /* Shrink to fit the content (capped by max-width) instead of collapsing to
+       min-content. Without an explicit width, an `auto` cross-axis margin inside
+       a flex column (the sidebar chat) squeezes short messages until single words
+       wrap character-by-character. */
+    width: fit-content;
+}
+
+.llm-chat-message-wrapper-assistant {
+    width: 100%;
+}
+
+/* Show footer only on hover */
+.llm-chat-message-wrapper:hover .llm-chat-footer {
+    opacity: 1;
+}
+
+.llm-chat-message {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    user-select: text;
+}
+
+.llm-chat-message-user {
+    background: var(--accented-background-color);
+}
+
+.llm-chat-message-content {
+    word-wrap: break-word;
+    line-height: 1.5;
+}
+
+.llm-chat-message-image {
+    display: block;
+    margin: 0.5rem 0;
+    max-width: 100%;
+}
+
+.llm-chat-message-image img {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 6px;
+    border: 1px solid var(--main-border-color);
+}
+
+.llm-chat-message-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--main-border-color);
+    background: var(--accented-background-color);
+    color: var(--main-text-color);
+    text-decoration: none;
+    max-width: 100%;
+}
+
+.llm-chat-message-file:hover {
+    background: var(--more-accented-background-color, var(--accented-background-color));
+    text-decoration: none;
+}
+
+.llm-chat-message-file .bx {
+    font-size: 1.5rem;
+    color: var(--muted-text-color);
+    flex-shrink: 0;
+}
+
+.llm-chat-message-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.llm-chat-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1.1em;
+    background: currentColor;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: llm-chat-blink 1s infinite;
+}
+
+@keyframes llm-chat-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.expandable-card.llm-chat-citations-card {
+    max-width: 100%;
+}
+
+/* Citations table (inside an expandable card) */
+.llm-chat-citations-list {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.llm-chat-citations-list td {
+    padding: 0.25rem 0.75rem;
+}
+
+.llm-chat-citations-list tr + tr td {
+    border-top: 1px solid var(--main-border-color);
+}
+
+.llm-chat-citation-title {
+    max-width: 0;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.llm-chat-citation-title a {
+    color: var(--link-color, #007bff);
+    text-decoration: none;
+}
+
+.llm-chat-citation-title a:hover {
+    text-decoration: underline;
+}
+
+.llm-chat-citation-site {
+    white-space: nowrap;
+    color: var(--muted-text-color);
+    font-size: 0.75rem;
+    text-align: right;
+}
+
+/* Error message — rendered as a real "caution" admonition (styled by
+   packages/ckeditor5/src/theme/ck-content.css) so it stays visually identical to
+   admonitions the model itself emits. Only chat-specific tweaks live here. */
+.admonition.llm-chat-error {
+    margin: 0;
+    user-select: text;
+}
+
+.llm-chat-error-actions {
+    margin-top: 0.75rem;
+}
+
+.llm-chat-thinking-card.expandable-card {
+    width: 100%;
+    max-width: 100%;
+    border-style: dashed;
+    margin-right: 0;
+    margin: 0;
+}
+
+.llm-chat-thinking-card .expandable-section-summary {
+    color: var(--muted-text-color);
+}
+
+.llm-chat-thinking-content {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    color: var(--muted-text-color);
+    white-space: pre-wrap;
+}
+
+/* Markdown styles */
+.llm-chat-markdown {
+    line-height: 1.6;
+}
+
+.llm-chat-markdown p {
+    margin: 0 0 0.75em 0;
+}
+
+.llm-chat-markdown p:last-child {
+    margin-bottom: 0;
+}
+
+.llm-chat-markdown h1,
+.llm-chat-markdown h2,
+.llm-chat-markdown h3,
+.llm-chat-markdown h4,
+.llm-chat-markdown h5,
+.llm-chat-markdown h6 {
+    margin: 1em 0 0.5em 0;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.llm-chat-markdown h1:first-child,
+.llm-chat-markdown h2:first-child,
+.llm-chat-markdown h3:first-child {
+    margin-top: 0;
+}
+
+.llm-chat-markdown h1 { font-size: 1.4em; }
+.llm-chat-markdown h2 { font-size: 1.25em; }
+.llm-chat-markdown h3 { font-size: 1.1em; }
+
+.llm-chat-markdown ul,
+.llm-chat-markdown ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.llm-chat-markdown li {
+    margin: 0.25em 0;
+}
+
+.llm-chat-markdown code {
+    background: var(--accented-background-color);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.9em;
+}
+
+.llm-chat-markdown pre {
+    background: var(--accented-background-color);
+    padding: 0.75em 1em;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 0.75em 0;
+}
+
+.llm-chat-markdown pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.85em;
+}
+
+/* KaTeX display math is white-space: nowrap; give it its own scroll context (like `pre`
+   above) so a wide equation stays reachable — the wrapper's paint containment would
+   otherwise clip its tail with no scrollbar. */
+.llm-chat-markdown .katex-display {
+    overflow-x: auto;
+}
+
+.llm-chat-markdown blockquote {
+    margin: 0.75em 0;
+    padding: 0.5em 1em;
+    border-left: 3px solid var(--main-border-color);
+    background: var(--accented-background-color);
+}
+
+.llm-chat-markdown blockquote p {
+    margin: 0;
+}
+
+.llm-chat-markdown a {
+    color: var(--link-color, #007bff);
+    text-decoration: none;
+}
+
+.llm-chat-markdown a:hover {
+    text-decoration: underline;
+}
+
+.llm-chat-markdown hr {
+    border: none;
+    border-top: 1px solid var(--main-border-color);
+    margin: 1em 0;
+}
+
+.llm-chat-markdown strong {
+    font-weight: 600;
+}
+
+.llm-chat-markdown em {
+    font-style: italic;
+}
+
+/* "Show quote source" jump link at the end of a submitted quote. Inherits link color from
+   `.llm-chat-markdown a`; the pointer cursor is kept explicit since the jump is handled by a click
+   listener rather than real navigation. */
+.chat-message-jump {
+    cursor: pointer;
+}
+
+/* Flash the referenced bubble when jumped to. An inset box-shadow pulse (no layout shift)
+   works on both the user bubble and the transparent assistant bubble — and, unlike an outer
+   shadow, isn't clipped by the message wrapper's paint containment. Duration mirrors
+   FLASH_DURATION_MS in chat_message_jump.ts. */
+.llm-chat-message-wrapper.llm-chat-message-jump-target .llm-chat-message {
+    animation: llm-chat-jump-flash 1.2s ease-out;
+}
+
+@keyframes llm-chat-jump-flash {
+    from { box-shadow: inset 0 0 0 2px var(--quick-search-result-highlight-color, #007bff); }
+    to { box-shadow: inset 0 0 0 2px transparent; }
+}
+
+/* Message footer (timestamp + token usage, sits below the bubble) */
+.llm-chat-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.7rem;
+    color: var(--muted-text-color);
+    cursor: default;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.llm-chat-footer-user {
+    justify-content: flex-end;
+}
+
+.llm-chat-footer .bx {
+    font-size: 0.875rem;
+}
+
+.llm-chat-footer-time {
+    cursor: help;
+}
+
+.llm-chat-usage-model {
+    font-weight: 500;
+}
+
+.llm-chat-usage-separator {
+    opacity: 0.5;
+}
+
+.llm-chat-usage-tokens {
+    cursor: help;
+    font-family: var(--monospace-font-family, monospace);
+}
+
+.llm-chat-usage-cost {
+    font-family: var(--monospace-font-family, monospace);
+}

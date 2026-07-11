@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState } from "preact/hooks";
-import { t } from "../services/i18n";
-import FormTextBox from "./react/FormTextBox";
-import { useNoteContext, useNoteProperty, useSpacedUpdate, useTriliumEvent, useTriliumEvents } from "./react/hooks";
-import protected_session_holder from "../services/protected_session_holder";
-import server from "../services/server";
 import "./note_title.css";
-import { isLaunchBarConfig } from "../services/utils";
+
+import clsx from "clsx";
+import { useEffect, useRef, useState } from "preact/hooks";
+
 import appContext from "../components/app_context";
 import branches from "../services/branches";
+import { t } from "../services/i18n";
+import protected_session_holder from "../services/protected_session_holder";
+import server from "../services/server";
 import { isIMEComposing } from "../services/shortcuts";
-import clsx from "clsx";
+import FormTextBox from "./react/FormTextBox";
+import { useNoteContext, useNoteProperty, useSpacedUpdate, useTriliumEvent, useTriliumEvents } from "./react/hooks";
 
 export default function NoteTitleWidget(props: {className?: string}) {
     const { note, noteId, componentId, viewScope, noteContext, parentComponent } = useNoteContext();
@@ -25,7 +26,7 @@ export default function NoteTitleWidget(props: {className?: string}) {
         const isReadOnly = note === null
             || note === undefined
             || (note.isProtected && !protected_session_holder.isProtectedSessionAvailable())
-            || isLaunchBarConfig(note.noteId)
+            || note.isMetadataReadOnly
             || viewScope?.viewMode !== "default";
         setReadOnly(isReadOnly);
     }, [ note, note?.noteId, note?.isProtected, viewScope?.viewMode ]);
@@ -57,11 +58,29 @@ export default function NoteTitleWidget(props: {className?: string}) {
     // Manage focus.
     const textBoxRef = useRef<HTMLInputElement>(null);
     const isNewNote = useRef<boolean>();
+    const pendingSelect = useRef<boolean>(false);
+
+    // Re-apply selection when title changes if we have a pending select.
+    // This handles the case where the server sends back entity changes after we've
+    // already called select(), which causes the controlled input to re-render and lose selection.
+    useEffect(() => {
+        if (pendingSelect.current && textBoxRef.current && document.activeElement === textBoxRef.current) {
+            textBoxRef.current.select();
+            pendingSelect.current = false;
+        }
+    }, [title]);
+
     useTriliumEvents([ "focusOnTitle", "focusAndSelectTitle" ], (e, eventName) => {
         if (noteContext?.isActive() && textBoxRef.current) {
+            // In the new layout, there are two NoteTitleWidget instances. Only handle if visible.
+            if (!textBoxRef.current.checkVisibility({ checkOpacity: true })) {
+                return;
+            }
+
             textBoxRef.current.focus();
             if (eventName === "focusAndSelectTitle") {
                 textBoxRef.current.select();
+                pendingSelect.current = true;
             }
             isNewNote.current = ("isNewNote" in e ? e.isNewNote : false);
         }
@@ -82,16 +101,20 @@ export default function NoteTitleWidget(props: {className?: string}) {
                     spacedUpdate.scheduleUpdate();
                 }}
                 onKeyDown={(e) => {
+                    // User started typing, stop re-applying selection
+                    pendingSelect.current = false;
+
                     // Skip processing if IME is composing to prevent interference
                     // with text input in CJK languages
                     if (isIMEComposing(e)) {
                         return;
                     }
 
-                    // Focus on the note content when pressing enter.
+                    // Pressing Enter moves to the note content. For text notes this inserts a new empty
+                    // paragraph at the top of the document (Notion-like) rather than just focusing.
                     if (e.key === "Enter") {
                         e.preventDefault();
-                        parentComponent.triggerCommand("focusOnDetail", { ntxId: noteContext?.ntxId });
+                        parentComponent.triggerCommand("focusOnDetail", { ntxId: noteContext?.ntxId, insertNewlineAtTop: true });
                         return;
                     }
 
@@ -100,6 +123,7 @@ export default function NoteTitleWidget(props: {className?: string}) {
                     }
                 }}
                 onBlur={() => {
+                    pendingSelect.current = false;
                     spacedUpdate.updateNowIfNecessary();
                     isNewNote.current = false;
                 }}

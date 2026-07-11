@@ -5,11 +5,11 @@ import { useEffect, useState } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
-import { openInAppHelpFromUrl } from "../../services/utils";
+import { isElectron, openInAppHelpFromUrl } from "../../services/utils";
 import { BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import FormToggle from "../react/FormToggle";
-import { useNoteContext, useTriliumEvent } from "../react/hooks";
+import { useNoteContext, useNoteProperty, useTriliumEvent } from "../react/hooks";
 import { BookProperty, ViewProperty } from "../react/NotePropertyMenu";
 
 const NON_DANGEROUS_ACTIVE_CONTENT = [ "appCss", "appTheme" ];
@@ -17,7 +17,7 @@ const DANGEROUS_ATTRIBUTES = BUILTIN_ATTRIBUTES.filter(a => a.isDangerous || NON
 const activeContentLabels = [ "iconPack", "widget", "appCss", "appTheme" ] as const;
 
 interface ActiveContentInfo {
-    type: "iconPack" | "backendScript" | "frontendScript" | "widget" | "appCss" | "renderNote" | "webView" | "appTheme";
+    type: "iconPack" | "backendScript" | "customRequestHandler" | "frontendScript" | "widget" | "appCss" | "renderNote" | "webView" | "appTheme";
     isEnabled: boolean;
     canToggleEnabled: boolean;
 }
@@ -34,6 +34,7 @@ const typeMappings: Record<ActiveContentInfo["type"], {
     icon: string;
     helpPage: string;
     apiDocsPage?: string;
+    electronApiDocsPage?: string;
     isExecutable?: boolean;
     additionalOptions?: BookProperty[];
 }> = {
@@ -65,11 +66,18 @@ const typeMappings: Record<ActiveContentInfo["type"], {
             }
         ]
     },
+    customRequestHandler: {
+        title: t("active_content_badges.type_custom_request_handler"),
+        icon: "bx bx-world",
+        helpPage: "J5Ex1ZrMbyJ6",
+        apiDocsPage: "MEtfsqa5VwNi",
+    },
     frontendScript: {
         title: t("active_content_badges.type_frontend_script"),
         icon: "bx bx-window",
         helpPage: "yIhgI5H7A2Sm",
         apiDocsPage: "Q2z6av6JZVWm",
+        electronApiDocsPage: "GFXVHyblVN3d",
         isExecutable: true,
         additionalOptions: [
             executeOption,
@@ -161,7 +169,7 @@ export function ActiveContentBadges() {
 }
 
 function ActiveContentBadge({ info, note }: { note: FNote, info: ActiveContentInfo }) {
-    const { title, icon, helpPage, apiDocsPage, additionalOptions } = typeMappings[info.type];
+    const { title, icon, helpPage, apiDocsPage, electronApiDocsPage, additionalOptions } = typeMappings[info.type];
     return (
         <BadgeWithDropdown
             className={clsx("active-content-badge", info.canToggleEnabled && !info.isEnabled && "disabled")}
@@ -190,6 +198,11 @@ function ActiveContentBadge({ info, note }: { note: FNote, info: ActiveContentIn
                 icon="bx bx-book-content"
                 onClick={() => openInAppHelpFromUrl(apiDocsPage)}
             >{t("code_buttons.trilium_api_docs_button_title")}</FormListItem>}
+
+            {electronApiDocsPage && isElectron() && <FormListItem
+                icon="bx bx-window-alt"
+                onClick={() => openInAppHelpFromUrl(electronApiDocsPage)}
+            >{t("code_buttons.electron_api_docs_button_title")}</FormListItem>}
         </BadgeWithDropdown>
     );
 }
@@ -213,6 +226,8 @@ function ActiveContentToggle({ note, info }: { note: FNote, info: ActiveContentI
 
 function useActiveContentInfo(note: FNote | null | undefined) {
     const [ info, setInfo ] = useState<ActiveContentInfo | null>(null);
+    const noteType = useNoteProperty(note, "type");
+    const noteMime = useNoteProperty(note, "mime");
 
     function refresh() {
         let type: ActiveContentInfo["type"] | null = null;
@@ -224,26 +239,35 @@ function useActiveContentInfo(note: FNote | null | undefined) {
             return;
         }
 
-        if (note.type === "render") {
+        if (noteType === "render") {
             type = "renderNote";
             isEnabled = note.hasRelation("renderNote");
-        } else if (note.type === "webView") {
+        } else if (noteType === "webView") {
             type = "webView";
             isEnabled = note.hasLabel("webViewSrc");
-        } else if (note.type === "code" && note.mime === "application/javascript;env=backend") {
-            type = "backendScript";
-            for (const backendLabel of [ "run", "customRequestHandler", "customResourceProvider" ]) {
-                isEnabled ||= note.hasLabel(backendLabel);
+        } else if (noteType === "code" && noteMime === "application/javascript;env=backend") {
+            if (note.hasLabelOrDisabled("customRequestHandler")) {
+                // A custom request handler takes precedence over the generic backend script badge:
+                // it's invoked via the /custom/* route with req/res, so the run/execute controls
+                // (which provide no req/res) don't apply.
+                type = "customRequestHandler";
+                isEnabled = note.hasLabel("customRequestHandler");
+                canToggleEnabled = true;
+            } else {
+                type = "backendScript";
+                for (const backendLabel of [ "run", "customRequestHandler", "customResourceProvider" ]) {
+                    isEnabled ||= note.hasLabel(backendLabel);
 
-                if (!canToggleEnabled && note.hasLabelOrDisabled(backendLabel)) {
-                    canToggleEnabled = true;
+                    if (!canToggleEnabled && note.hasLabelOrDisabled(backendLabel)) {
+                        canToggleEnabled = true;
+                    }
                 }
             }
-        } else if (note.type === "code" && note.mime === "application/javascript;env=frontend") {
+        } else if (noteType === "code" && noteMime === "application/javascript;env=frontend") {
             type = "frontendScript";
             isEnabled = note.hasLabel("widget") || note.hasLabel("run");
             canToggleEnabled = note.hasLabelOrDisabled("widget") || note.hasLabelOrDisabled("run");
-        } else if (note.type === "code" && note.hasLabelOrDisabled("appTheme")) {
+        } else if (noteType === "code" && note.hasLabelOrDisabled("appTheme")) {
             isEnabled = note.hasLabel("appTheme");
             canToggleEnabled = true;
         }
@@ -270,7 +294,7 @@ function useActiveContentInfo(note: FNote | null | undefined) {
     }
 
     // Refresh on note change.
-    useEffect(refresh, [ note ]);
+    useEffect(refresh, [ note, noteType, noteMime ]);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         if (loadResults.getAttributeRows().some(attr => attributes.isAffecting(attr, note))) {

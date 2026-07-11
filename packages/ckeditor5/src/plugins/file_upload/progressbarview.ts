@@ -1,12 +1,12 @@
-import cancelIcon from '@ckeditor/ckeditor5-core/theme/icons/cancel.svg?raw';
+import { IconCancel } from '@ckeditor/ckeditor5-icons';
 import { ButtonView, Locale, toUnit, View } from 'ckeditor5';
 
 const toPx = toUnit('%');
 
 export default class ProgressBarView extends View {
     private cancelButton: ButtonView;
-    width!: number;
-    customWidth!: number;
+    declare width: number;
+    declare customWidth: number;
 
 	constructor(locale: Locale) {
 		super(locale);
@@ -54,7 +54,7 @@ export default class ProgressBarView extends View {
 	_createCancelButton(locale: Locale) {
 		const view = new ButtonView(locale);
 		view.set({
-			icon: cancelIcon,
+			icon: IconCancel,
 			tooltip: true,
 			label: 'Cancel',
             //@ts-expect-error Object literal may only specify known properties, and 'attributes' does not exist in type

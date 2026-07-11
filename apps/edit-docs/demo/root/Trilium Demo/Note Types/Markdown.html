@@ -1,0 +1,220 @@
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../../../style.css">
+    <base target="_parent">
+    <title data-trilium-title>Markdown</title>
+  </head>
+  
+  <body>
+    <div class="content">
+       <h1 data-trilium-h1>Markdown</h1>
+
+      <div class="ck-content">
+        <p>A showcase of all Markdown features supported in Trilium's Markdown note
+          type.</p>
+        <h2>1. Basic Formatting (Standard Markdown)</h2>
+        <p><strong>Bold text</strong>, <em>italic text</em>, <del>strikethrough</del>,
+          and <code spellcheck="false">inline code</code>.</p>
+        <blockquote>
+          <p>A simple blockquote demonstrating standard Markdown.</p>
+        </blockquote>
+        <h2>2. GitHub-Flavored Markdown (GFM)</h2>
+        <h3>Tables</h3>
+        <figure class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Supported</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Standard Markdown</td>
+                <td>✅</td>
+                <td>Full support</td>
+              </tr>
+              <tr>
+                <td>GFM Tables</td>
+                <td>✅</td>
+                <td>Like this one</td>
+              </tr>
+              <tr>
+                <td>Math Equations</td>
+                <td>✅</td>
+                <td>Via KaTeX</td>
+              </tr>
+              <tr>
+                <td>Mermaid Diagrams</td>
+                <td>✅</td>
+                <td>Via ```mermaid blocks</td>
+              </tr>
+              <tr>
+                <td>Admonitions</td>
+                <td>✅</td>
+                <td>GitHub-style</td>
+              </tr>
+            </tbody>
+          </table>
+        </figure>
+        <h3>Task Lists</h3>
+        <ul class="todo-list">
+          <li data-list-item-id="e3802c5896ce1fc21f10c0a555ebdb8b2">
+            <label class="todo-list__label">
+              <input type="checkbox" checked="checked" disabled="disabled"><span class="todo-list__label__description">Create a Markdown note in Trilium</span>
+            </label>
+          </li>
+          <li data-list-item-id="eee6caa571cf9b96f208028f69ebeafd0">
+            <label class="todo-list__label">
+              <input type="checkbox" checked="checked" disabled="disabled"><span class="todo-list__label__description">Add syntax highlighting</span>
+            </label>
+          </li>
+          <li data-list-item-id="e47aeaa2b56cd8a43be9c299fd881f74a">
+            <label class="todo-list__label">
+              <input type="checkbox" disabled="disabled"><span class="todo-list__label__description">Convert from a Text note</span>
+            </label>
+          </li>
+          <li data-list-item-id="e2f69fdf5c9c602cb26aac2f3ab7de7e8">
+            <label class="todo-list__label">
+              <input type="checkbox" disabled="disabled"><span class="todo-list__label__description">Export and re-import</span>
+            </label>
+          </li>
+        </ul>
+        <h2>3. Code Blocks with Syntax Highlighting</h2>
+        <blockquote>
+          <p><strong>Note:</strong> The language must be specified for syntax highlighting
+            to apply.</p>
+        </blockquote>
+        <p>Sample with no syntax highlighting:</p><pre><code class="language-text-x-trilium-auto">function greet(name) {
+  return `Hello, ${name}!`;
+}
+console.log(greet("Trilium"));</code></pre>
+        <p>JavaScript with syntax highlighting:</p><pre><code class="language-application-javascript-env-backend">// JavaScript example
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+console.log(greet("Trilium"));</code></pre>
+        <p>Python example:</p><pre><code class="language-text-x-python">def factorial(n):
+    return 1 if n &lt;= 1 else n * factorial(n - 1)
+
+print(factorial(10))</code></pre>
+        <p>SQL example:</p><pre><code class="language-text-x-trilium-auto">SELECT title, dateCreated
+FROM notes
+WHERE type = 'markdown'
+ORDER BY dateCreated DESC;</code></pre>
+        <hr>
+        <h2>4. Block Quotes &amp; Admonitions</h2>
+        <blockquote>
+          <p>A standard Markdown blockquote. It can span multiple lines.</p>
+        </blockquote>
+        <aside class="admonition note">
+          <p>This is a <strong>note</strong> admonition. Useful for neutral side information.</p>
+        </aside>
+        <aside class="admonition tip">
+          <p>This is a <strong>tip</strong> admonition. Great for optional improvements
+            or shortcuts.</p>
+        </aside>
+        <aside class="admonition important">
+          <p>This is an <strong>important</strong> admonition. Use it for information
+            the user should not miss.</p>
+        </aside>
+        <aside class="admonition warning">
+          <p>This is a <strong>warning</strong> admonition. Indicates something that
+            may cause problems.</p>
+        </aside>
+        <aside class="admonition caution">
+          <p>This is a <strong>caution</strong> admonition. Use for destructive or irreversible
+            actions.</p>
+        </aside>
+        <hr>
+        <h2>5. Math Equations</h2>
+        <p>Inline math:&nbsp;<span class="math-tex">\(E = mc^2\)</span>
+        </p>
+        <p>Block math:</p><span class="math-tex">\[\int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}\]</span>
+        <span
+        class="math-tex">\[\Gamma(n) = (n-1)! \quad \forall n \in \mathbb{N}\]</span>
+          <hr>
+          <h2>6. Mermaid Diagrams</h2><pre spellcheck="false"><code class="language-mermaid">graph TD
+    A[Start] --&gt; B{Is it a Markdown note?}
+    B -- Yes --&gt; C[Render preview]
+    B -- No --&gt; D[Use Text note]
+    C --&gt; E[Enjoy split view!]</code></pre><pre spellcheck="false"><code class="language-mermaid">sequenceDiagram
+    participant User
+    participant Trilium
+    User-&gt;&gt;Trilium: Opens Markdown note
+    Trilium-&gt;&gt;User: Shows split view (source + preview)
+    User-&gt;&gt;Trilium: Edits source
+    Trilium-&gt;&gt;User: Syncs scroll &amp; highlights block</code></pre>
+          <h2>7. Internal (Reference) Links — Wikilinks Format</h2>
+          <p>Link to a note by its Note ID using the Wikilinks-like format:</p>
+          <p><a class="reference-link" href="/root">[missing note]</a>
+          </p>
+          <p>Or using HTML syntax for more control:</p>
+          <p><a href="#root">Internal link via HTML</a>
+          </p>
+          <h2>8. Include Note (HTML Syntax)</h2>
+          <p>Included notes using HTML syntax.</p>
+          <section class="include-note" data-note-id="root"
+          data-box-size="expandable">&nbsp;</section>
+          <h2>9. Nested Syntax Highlighting (Code Inside Code Blocks)</h2>
+          <p>Trilium's source pane supports nested syntax highlighting — for example,
+            highlighting HTML inside a Markdown code fence:</p><pre><code class="language-text-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;Trilium&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Hello from HTML inside Markdown!&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+          <h2>10. Lists</h2>
+          <h3>Unordered</h3>
+          <ul>
+            <li data-list-item-id="ef9e712c01065f2662cfd112e80ebe309">Item one
+              <ul>
+                <li data-list-item-id="e1ea5b56e65e7241aaa7853112c76d9cf">Nested item A</li>
+                <li data-list-item-id="e7514237ba2b995243e2e8ce792ed172d">Nested item B
+                  <ul>
+                    <li data-list-item-id="e7b15f0ab3ae967eb34db66bd2821a349">Deeply nested</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li data-list-item-id="eca1aaa51c84f113c53208169127cc1fd">Item two</li>
+            <li data-list-item-id="ea37d2468bec763bef77b3da9be011925">Item three</li>
+          </ul>
+          <h3>Ordered</h3>
+          <ol>
+            <li data-list-item-id="eaa8f31f650dfa9c0573331518fefe1aa">First step</li>
+            <li data-list-item-id="e5c4d719ac0699e2b8c38e70ae044ccd7">Second step
+              <ol>
+                <li data-list-item-id="e016ce384d98b189a1c0215d82b89503e">Sub-step A</li>
+                <li data-list-item-id="e20675a8b0d8c590af516380c8fdc8f04">Sub-step B</li>
+              </ol>
+            </li>
+            <li data-list-item-id="ee5cb3c3883093d236b45d8863af4bc33">Third step</li>
+          </ol>
+          <h2>11. Horizontal Rules &amp; Misc</h2>
+          <p>Horizontal rule:</p>
+          <hr>
+          <p>Superscript: X^2^
+            <br>Subscript: H<del>2</del>O
+            <br>Footnote reference<a href="#footnote-1"><sup>1</sup></a>
+          </p>
+          <section>
+            <h2>Footnotes</h2>
+            <ol>
+              <li data-list-item-id="e2ae6d5e7e73b13f26edd2edff9db0406">This is the footnote content. <a href="#footnote-ref-1">↩</a>
+              </li>
+            </ol>
+          </section>
+      </div>
+    </div>
+  </body>
+
+</html>

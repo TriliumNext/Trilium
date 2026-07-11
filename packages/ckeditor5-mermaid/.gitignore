@@ -8,3 +8,7 @@ sample/ckeditor.dist.js
 # Ignore compiled TypeScript files.
 src/**/*.js
 src/**/*.d.ts
+
+.vitest-attachments
+# Vitest browser-mode writes screenshots under each test dir (e.g. tests/commands/__screenshots__).
+**/__screenshots__/

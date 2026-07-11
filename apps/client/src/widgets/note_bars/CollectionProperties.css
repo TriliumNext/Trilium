@@ -1,5 +1,5 @@
 .collection-properties {
-    padding: 0.55em 12px;
+    padding: 0.55em var(--content-margin-inline);
     display: flex;
     gap: 0.25em;
     align-items: center;

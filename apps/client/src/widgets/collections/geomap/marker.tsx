@@ -15,7 +15,7 @@ export interface MarkerProps {
     draggable?: boolean;
 }
 
-export default function Marker({ coordinates, iconHtml, iconSize, iconAnchor, draggable, onClick, onDragged, onMouseDown, onContextMenu }: MarkerProps) {
+export default function Marker({ coordinates, iconHtml, iconSize, draggable, onClick, onDragged, onMouseDown, onContextMenu }: MarkerProps) {
     const parentMap = useContext(ParentMap);
     const markerRef = useRef<MapLibreMarker>(null);
 
@@ -72,7 +72,8 @@ export default function Marker({ coordinates, iconHtml, iconSize, iconAnchor, dr
                 const lngLat = newMarker.getLngLat();
                 onContextMenu({
                     latlng: { lat: lngLat.lat, lng: lngLat.lng },
-                    originalEvent: e
+                    originalEvent: e,
+                    point: parentMap.project(lngLat)
                 });
             });
         }
@@ -99,6 +100,8 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
 
     useEffect(() => {
         if (!parentMap) return;
+        // Non-null alias: the narrowing above doesn't carry into the nested function.
+        const map = parentMap;
 
         const markers: MapLibreMarker[] = [];
         const sourceId = `gpx-source-${Math.random().toString(36).slice(2)}`;
@@ -119,7 +122,7 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
 
             // Add GeoJSON line for the track.
             if (coordinates.length > 0) {
-                parentMap.addSource(sourceId, {
+                map.addSource(sourceId, {
                     type: "geojson",
                     data: {
                         type: "Feature",
@@ -131,7 +134,7 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
                     }
                 });
 
-                parentMap.addLayer({
+                map.addLayer({
                     id: layerId,
                     type: "line",
                     source: sourceId,
@@ -148,7 +151,7 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
                     startEl.innerHTML = startIconHtml;
                     const startMarker = new MapLibreMarker({ element: startEl, anchor: "bottom" })
                         .setLngLat(coordinates[0])
-                        .addTo(parentMap);
+                        .addTo(map);
                     markers.push(startMarker);
                 }
 
@@ -159,7 +162,7 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
                     endEl.innerHTML = endIconHtml;
                     const endMarker = new MapLibreMarker({ element: endEl, anchor: "bottom" })
                         .setLngLat(coordinates[coordinates.length - 1])
-                        .addTo(parentMap);
+                        .addTo(map);
                     markers.push(endMarker);
                 }
             }
@@ -175,7 +178,7 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
                     wptEl.innerHTML = waypointIconHtml;
                     const wptMarker = new MapLibreMarker({ element: wptEl, anchor: "bottom" })
                         .setLngLat([lon, lat])
-                        .addTo(parentMap);
+                        .addTo(map);
                     markers.push(wptMarker);
                 }
             }

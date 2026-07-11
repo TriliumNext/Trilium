@@ -1,8 +1,9 @@
+import { ScriptParams } from "@triliumnext/commons";
 import { h, VNode } from "preact";
 
+import FNote from "../entities/fnote.js";
 import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import RightPanelWidget from "../widgets/right_panel_widget.js";
-import froca from "./froca.js";
 import type { Entity } from "./frontend_script_api.js";
 import { WidgetDefinitionWithType } from "./frontend_script_api_preact.js";
 import { t } from "./i18n.js";
@@ -27,7 +28,7 @@ type WithNoteId<T> = T & {
 };
 export type Widget = WithNoteId<(LegacyWidget | WidgetDefinitionWithType)>;
 
-async function getAndExecuteBundle(noteId: string, originEntity = null, script = null, params = null) {
+async function getAndExecuteBundle(noteId: string, originEntity: FNote | null = null, script: string | null = null, params: ScriptParams | null = null) {
     const bundle = await server.post<Bundle>(`script/bundle/${noteId}`, {
         script,
         params
@@ -36,17 +37,20 @@ async function getAndExecuteBundle(noteId: string, originEntity = null, script =
     return await executeBundle(bundle, originEntity);
 }
 
-export type ParentName = "left-pane" | "center-pane" | "note-detail-pane" | "right-pane";
+export type ParentName = WidgetDefinitionWithType["parent"];
+
+export async function executeBundleWithoutErrorHandling(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
+    const apiContext = await ScriptContext(bundle.noteId, bundle.allNoteIds, originEntity, $container);
+    return await function () {
+        return eval(`const apiContext = this; (async function() { ${bundle.script}\r\n})()`);
+    }.call(apiContext);
+}
 
 export async function executeBundle(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
-    const apiContext = await ScriptContext(bundle.noteId, bundle.allNoteIds, originEntity, $container);
-
     try {
-        return await function () {
-            return eval(`const apiContext = this; (async function() { ${bundle.script}\r\n})()`);
-        }.call(apiContext);
-    } catch (e: any) {
-        showErrorForScriptNote(bundle.noteId, t("toast.bundle-error.message", { message: e.message }));
+        return await executeBundleWithoutErrorHandling(bundle, originEntity, $container);
+    } catch (e: unknown) {
+        showErrorForScriptNote(bundle.noteId, t("toast.bundle-error.message", { message: getErrorMessage(e) }));
         logError("Widget initialization failed: ", e);
     }
 }

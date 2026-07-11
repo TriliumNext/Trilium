@@ -19,6 +19,53 @@
         "note_structure_title": "Not yapısı",
         "note_structure_description": "Notlar hiyerarşik olarak düzenlenebilir. Her not 'alt notlar' içerebildiği için klasörlere ihtiyaç duyulmaz. Tek bir not, hiyerarşinin birden fazla noktasına eklenebilir.",
         "attributes_description": "Notlar arasında ilişkiler kurun veya kolay kategorizasyon için etiketler ekleyin. Tablolarda ve panolarda kullanılabilen yapılandırılmış bilgileri eklemek için öne çıkan öznitelikleri kullanın.",
-        "hoisting_description": "Kişisel ve iş notlarınızı bir çalışma alanı altında gruplandırarak kolayca ayırın; bu sayede not ağacınız yalnızca belirli bir not kümesini gösterecek şekilde odaklanacaktır."
+        "hoisting_description": "Kişisel ve iş notlarınızı bir çalışma alanı altında gruplandırarak kolayca ayırın; bu sayede not ağacınız yalnızca belirli bir not kümesini gösterecek şekilde odaklanacaktır.",
+        "attributes_title": "Not etiketleri ve ilişkileri",
+        "hoisting_title": "İş alanları ve yükseltme"
+    },
+    "productivity_benefits": {
+        "title": "Üretkenlik ve güvenlik",
+        "revisions_title": "Note düzenlemeleri",
+        "revisions_content": "Notlar arka planda düzenli olarak kaydedilir ve revizyonlar aracılığıyla geçmişe göz atılabilir ya da istenmeyen değişiklikler geri alınabilir. Revizyonlar ayrıca isteğe bağlı olarak da oluşturulabilir.",
+        "sync_title": "Senkronizasyon",
+        "sync_content": "Notlarınızı birden fazla cihaz arasında kolayca senkronize etmek ve cep telefonunuzdan bir PWA kullanarak erişmek için kendi sunucunuzu (self-hosted) veya bir bulut örneğini (cloud instance) kullanın.",
+        "protected_notes_title": "Korumalı notlar",
+        "protected_notes_content": "Hassas kişisel verilerinizi, notları şifreleyerek ve şifre korumalı bir oturumla kilitleyerek güven altına alın.",
+        "search_title": "Gelişmiş arama",
+        "search_content": "Ya da notların içindeki metinleri arayabilir ve üst not veya derinlik filtrelerini kullanarak aramayı daraltabilirsiniz.",
+        "web_clipper_title": "Web clipper",
+        "web_clipper_content": "Web sayfalarını (veya ekran görüntülerini) alın ve Web Clipper tarayıcı uzantısını kullanarak bunları doğrudan Trilium'a ekleyin."
+    },
+    "faq": {
+        "database_answer": "Tüm notlarınız, uygulama klasöründeki bir SQLite veritabanında saklanacaktır. Trilium'un düz metin dosyaları yerine bir veritabanı kullanmasının nedeni, hem performans hem de klonlar (ağaç yapısında aynı notun birden fazla yerde bulunması) gibi bazı özelliklerin uygulanmasının çok daha zor olmasıdır. Uygulama klasörünü bulmak için “Hakkında” penceresine gidin.",
+        "server_question": "Trilium'u kullanmak için bir sunucuya ihtiyacım var mı?",
+        "server_answer": "Hayır; sunucu, web tarayıcısı üzerinden erişime izin verir ve birden fazla cihazınız varsa senkronizasyonu yönetir. Başlamak için masaüstü uygulamasını indirip kullanmanız yeterlidir."
+    },
+    "note_types": {
+        "title": "Bilgilerinizi sunmanın çeşitli yolları",
+        "text_title": "Metin notları",
+        "text_description": "Notlar; tablolar, resimler, matematik ifadeleri ve sözdizimi vurgulamalı kod bloklarını destekleyen görsel (WYSIWYG) bir düzenleyiciyle düzenlenir. Markdown benzeri sözdizimini veya eğik çizgi komutlarını kullanarak metni hızla biçimlendirin.",
+        "code_title": "Kod notları",
+        "code_description": "Geniş kaynak kodu veya komut dosyası örnekleri için birçok programlama dilinde sözdizimi vurgulaması ve çeşitli renk temaları sunan özel bir düzenleyici kullanılır.",
+        "file_title": "Dosya notları",
+        "file_description": "PDF'ler, resimler ve videolar gibi multimedya dosyalarını uygulama içi önizleme özelliği ile ekleyin.",
+        "canvas_title": "Tuval",
+        "canvas_description": "excalidraw.com'un temelini oluşturan teknolojiyi kullanarak şekilleri, resimleri ve metinleri sonsuz bir tuval üzerinde düzenleyin. Diyagramlar, eskizler ve görsel planlama için idealdir.",
+        "mermaid_title": "Denizkızı şemaları",
+        "mermaid_description": "Denizkızı sözdizimini kullanarak akış şemaları, sınıf ve sıra şemaları, Gantt şemaları ve daha pek çok şema oluşturun.",
+        "mindmap_title": "Zihin haritası",
+        "mindmap_description": "Düşüncelerinizi görsel olarak düzenleyin ya da bir beyin fırtınası yapın."
+    },
+    "collections": {
+        "title": "Koleksiyonlar",
+        "calendar_title": "Takvim"
+    },
+    "header": {
+        "documentation": "Dokümantasyon",
+        "support-us": "Destekle"
+    },
+    "resources": {
+        "download": "İndir",
+        "website": "Website"
     }
 }

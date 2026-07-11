@@ -1,7 +1,7 @@
 import utils from "../services/utils.js";
 import type { CommandMappings, CommandNames, EventData, EventNames } from "./app_context.js";
 
-type EventHandler = ((data: any) => void);
+type EventHandler = ((data: any) => unknown);
 
 /**
  * Abstract class for all components in the Trilium's frontend.
@@ -91,10 +91,20 @@ export class TypedComponent<ChildT extends TypedComponent<ChildT>> {
     handleEventInChildren<T extends EventNames>(name: T, data: EventData<T>): Promise<unknown[] | unknown> | null {
         const promises: Promise<unknown>[] = [];
 
-        // Handle React children.
+        // Handle React children. Iterate over a copy: a listener can cause handlers to be
+        // (un)registered while the event is being distributed.
         if (this.listeners?.[name]) {
-            for (const listener of this.listeners[name]) {
-                listener(data);
+            for (const listener of [ ...this.listeners[name] ]) {
+                const ret = listener(data);
+
+                // Collect the promise so that awaiting triggerEvent() waits for async React
+                // listeners too (the contract documented on this class). Failures are logged
+                // rather than propagated, so one broken listener cannot abort the operation
+                // (e.g. a note switch) for everyone else.
+                if (ret instanceof Promise) {
+                    promises.push(ret.catch((e) =>
+                        console.error(`Handling of event '${name}' failed in a React listener with error`, e)));
+                }
             }
         }
 

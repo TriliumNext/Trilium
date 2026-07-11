@@ -201,6 +201,15 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Тасвирчаи саҳифаи { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Интихоби саҳифаи { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Саҳифаи { $page } аз { $total }
 
 ## Find panel button title and messages
 
@@ -534,6 +543,7 @@ pdfjs-editor-undo-bar-message-freetext = Матн тоза карда шуд
 pdfjs-editor-undo-bar-message-ink = Расм тоза карда шуд
 pdfjs-editor-undo-bar-message-stamp = Тасвир тоза карда шуд
 pdfjs-editor-undo-bar-message-signature = Имзо тоза карда шуд
+pdfjs-editor-undo-bar-message-comment = Шарҳ тоза карда шуд
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -632,6 +642,89 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Бекор кардан
 
 pdfjs-editor-add-comment-button =
     .title = Илова кардани шарҳ
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-notification-button =
+    .title = Фаъол кардани навори ҷонибӣ (ҳуҷҷат дорои тасвирчаҳо/сохтор/замимаҳо/қабатҳо мебошад)
+pdfjs-toggle-views-manager-button1-label = Идоракунии саҳифаҳо
+pdfjs-views-manager-sidebar =
+    .aria-label = Навори ҷонибӣ
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Тағйири андозаи навори ҷонибӣ
+pdfjs-views-manager-view-selector-button =
+    .title = Намудҳо
+pdfjs-views-manager-view-selector-button-label = Намудҳо
+pdfjs-views-manager-pages-title = Саҳифаҳо
+pdfjs-views-manager-attachments-title = Замимаҳо
+pdfjs-views-manager-pages-option-label = Саҳифаҳо
+pdfjs-views-manager-outlines-option-label = Сохтори ҳуҷҷат
+pdfjs-views-manager-attachments-option-label = Замимаҳо
+pdfjs-views-manager-layers-option-label = Қабатҳо
+pdfjs-views-manager-add-file-button =
+    .title = Илова кардани файл
+pdfjs-views-manager-add-file-button-label = Илова кардани файл
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } интихоб шуд
+       *[other] { $count } интихоб шуданд
+    }
+pdfjs-views-manager-pages-status-none-action-label = Саҳифаҳоро интихоб намоед
+pdfjs-views-manager-pages-status-action-button-label = Идора кардан
+pdfjs-views-manager-pages-status-copy-button-label = Нусха бардоштан
+pdfjs-views-manager-pages-status-cut-button-label = Буридан
+pdfjs-views-manager-pages-status-delete-button-label = Нест кардан
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] 1 саҳифа бурида шуд
+       *[other] { $count } саҳифа бурида шуданд
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 саҳифа нусха бардошта шуд
+       *[other] { $count } саҳифа нусха бардошта шуданд
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 саҳифа нест карда шуд
+       *[other] { $count } саҳифа нест карда шуданд
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Файли шумо омода мешавад…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Дар ҳоли боркунии файл…
+pdfjs-views-manager-status-warning-cut-label = Бурида нашуд. Саҳифаро навсозӣ кунед ва аз нав кӯшиш намоед.
+pdfjs-views-manager-status-warning-copy-label = Нусха бардошта нашуд. Саҳифаро навсозӣ кунед ва аз нав кӯшиш намоед.
+pdfjs-views-manager-status-warning-delete-label = Нест карда нашуд. Саҳифаро навсозӣ кунед ва аз нав кӯшиш намоед.
+pdfjs-views-manager-status-warning-save-label = Нигоҳ дошта нашуд. Саҳифаро навсозӣ кунед ва аз нав кӯшиш намоед.
+pdfjs-views-manager-status-undo-button-label = Бекор кардан
+pdfjs-views-manager-status-done-button-label = Тайёр
+pdfjs-views-manager-status-close-button =
+    .title = Пӯшидан
+pdfjs-views-manager-status-close-button-label = Пӯшидан
+pdfjs-views-manager-paste-button-label = Гузоштан
+pdfjs-views-manager-paste-button-before =
+    .title = Гузоштан пеш аз саҳифаи аввалин
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Гузоштан пас аз саҳифаи { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = НАВ
+pdfjs-toggle-views-manager-button1 =
+    .title = Идоракунии саҳифаҳо
 
 ## Main menu for adding/removing signatures
 

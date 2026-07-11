@@ -1,3 +1,5 @@
+import "./FilePropertiesTab.css";
+
 import { useContext } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
@@ -43,7 +45,7 @@ export default function FilePropertiesTab({ note, ntxId }: Pick<TabContext, "not
                                     <Button
                                         icon="bx bx-download"
                                         text={t("file_properties.download")}
-                                        primary
+                                        kind="primary"
                                         disabled={!canAccessProtectedNote}
                                         onClick={() => downloadFileNote(note, parentComponent, ntxId)}
                                     />

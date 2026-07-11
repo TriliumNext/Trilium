@@ -34,7 +34,7 @@ export default function ProtectedSession() {
 
             <Button
                 text={t("protected_session.start_session_button")}
-                primary
+                kind="primary"
                 keyboardShortcut="Enter"
             />
         </form>

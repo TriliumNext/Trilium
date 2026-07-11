@@ -1,7 +1,7 @@
-import { getNoteIcon, NoteType } from "@triliumnext/commons";
+import { BlobRow, getNoteIcon, NoteType } from "@triliumnext/commons";
+import { binary_utils } from "@triliumnext/core";
 import escape from "escape-html";
 
-import type { Blob } from "../../../services/blob-interface.js";
 import utils from "../../../services/utils.js";
 import sql from "../../sql.js";
 import AbstractShacaEntity from "./abstract_shaca_entity.js";
@@ -95,7 +95,7 @@ class SNote extends AbstractShacaEntity {
     }
 
     getContent(silentNotFoundError = false) {
-        const row = sql.getRow<Pick<Blob, "content">>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
+        const row = sql.getRow<Pick<BlobRow, "content">>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
 
         if (!row) {
             if (silentNotFoundError) {
@@ -107,7 +107,7 @@ class SNote extends AbstractShacaEntity {
         const content = row.content;
 
         if (this.hasStringContent()) {
-            return content === null ? "" : content.toString("utf-8");
+            return content === null ? "" : binary_utils.decodeUtf8(content);
         }
         return content;
     }
@@ -388,7 +388,7 @@ class SNote extends AbstractShacaEntity {
     getOwnedAttributeValue(type: string, name: string) {
         const attr = this.getOwnedAttribute(type, name);
 
-        return attr ? (attr.value as string) : null; // FIXME
+        return attr ? attr.value : null;
     }
 
     /**
@@ -404,7 +404,7 @@ class SNote extends AbstractShacaEntity {
      * @returns all note's label values, including inherited ones
      */
     getLabelValues(name: string) {
-        return this.getLabels(name).map((l) => l.value) as string[]; // FIXME
+        return this.getLabels(name).map((l) => l.value);
     }
 
     /**

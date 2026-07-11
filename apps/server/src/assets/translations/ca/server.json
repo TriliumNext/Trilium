@@ -4,8 +4,7 @@
     "forward-in-note-history": "Navega a la següent nota a l'historial",
     "dialogs": "Diàlegs",
     "other": "Altres",
-    "open-jump-to-note-dialog": "Obre \"Salta a la nota\"",
-    "open-command-palette": "Obre el panell de comandes"
+    "open-jump-to-note-dialog": "Obre \"Salta a la nota\""
   },
   "login": {
     "title": "Inicia sessió",
@@ -14,24 +13,6 @@
   },
   "set_password": {
     "password": "Contrasenya"
-  },
-  "setup": {
-    "next": "Següent",
-    "title": "Configuració"
-  },
-  "setup_sync-from-desktop": {
-    "step6-here": "aquí"
-  },
-  "setup_sync-from-server": {
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Nota:",
-    "password": "Contrasenya",
-    "password-placeholder": "Contrasenya",
-    "back": "Torna"
-  },
-  "setup_sync-in-progress": {
-    "outstanding-items-default": "N/A"
   },
   "share_page": {
     "parent": "pare:"
@@ -77,7 +58,6 @@
     "etapi-title": "ETAPI",
     "backup-title": "Còpia de seguretat",
     "sync-title": "Sincronització",
-    "ai-llm-title": "AI/LLM",
     "other": "Altres",
     "advanced-title": "Avançat",
     "inbox-title": "Safata d'entrada"

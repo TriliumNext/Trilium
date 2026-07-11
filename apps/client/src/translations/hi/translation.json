@@ -1,22 +1,51 @@
 {
   "about": {
-    "title": "ट्रिलियम नोट्स के बारें में",
-    "build_date": "निर्माण की तारीख:",
-    "app_version": "ऐप वर्ज़न:",
-    "db_version": "DB वर्ज़न:",
-    "build_revision": "बिल्ड रिविज़न:"
+    "data_directory": "डेटा डायरेक्टरी:",
+    "version_label": "संस्करण (Version):",
+    "version": "{{appVersion}} (डेटाबेस: {{dbVersion}}, सिंक प्रोटोकॉल: {{syncVersion}})",
+    "build_info": "बिल्ड: {{buildDate}}, रिवीज़न: <buildRevision />",
+    "contributors_label": "योगदानकर्ता (Contributors):",
+    "contributor_roles": {
+      "lead-dev": "लीड डेवलपर",
+      "original-dev": "मूल डेवलपर"
+    },
+    "role_brief_history": {
+      "lead-dev": "एलियन डोरन ने 2024 में TriliumNext की स्थापना की, जो ज़ेडम (Zadam) के इस प्रोजेक्ट से पीछे हटने के बाद बनाया गया एक कम्युनिटी फ़ोर्क था। ज़ेडम ने बाद में मूल रिपॉजिटरी को TriliumNext टीम को सौंप दिया, जिससे दोनों प्रोजेक्ट वापस मिलकर एक हो गए।",
+      "original-dev": "25 दिसंबर 2017 को, ज़ेडम ने ट्रिलियम (Trilium, फूल की तरह डबल 'l' के बजाय सिंगल 'l' के साथ लिखा गया) का पहला बीटा जारी किया। मौजूदा नोट आर्गेनाइज़र्स से असंतुष्ट होकर, उन्होंने एक शक्तिशाली सेल्फ-होस्टेड पदानुक्रमित (hierarchical) नॉलेज बेस बनाया, जिसने 22,000 से अधिक गिटहब स्टार्स हासिल किए। 2024 में, व्यस्तता बढ़ने के कारण, उन्होंने प्रोजेक्ट को मेंटेनेंस मोड में डाल दिया।"
+    },
+    "contributor_full_list": "पूरी कम्युनिटी देखें",
+    "channel": {
+      "nightly": "नाइटली (Nightly)",
+      "standalone": "स्टैंडअलोन (Standalone)"
+    },
+    "github_tooltip": "बग्स रिपोर्ट करें, फीचर्स का सुझाव दें, या गिटहब पर योगदान करें",
+    "license_tooltip": "लाइसेंस देखें",
+    "donate": "दान करें (Donate)",
+    "donate_tooltip": "इस प्रोजेक्ट को सपोर्ट करने के लिए दान करें"
   },
   "toast": {
     "widget-error": {
-      "title": "एक विजेट को इनिशियलाइज़ करने में विफल रहा"
+      "title": "विजेट शुरू नहीं हो पाया",
+      "message-custom": "नोट ID \"{{id}}\" और टाइटल \"{{title}}\" वाला कस्टम विजेट इस वजह से शुरू नहीं हो पाया:\n\n{{message}}",
+      "message-unknown": "अनजान विजेट इस वजह से शुरू नहीं हो पाया:\n\n{{message}}"
     },
     "bundle-error": {
-      "title": "एक कस्टम स्क्रिप्ट लोड करने में विफल रहा"
+      "title": "कस्टम स्क्रिप्ट लोड नहीं हो पाई",
+      "message": "स्क्रिप्ट इस वजह से रन नहीं हो पाई:\n\n{{message}}"
     },
     "widget-list-error": {
-      "title": "सर्वर से विजेट्स की सूची प्राप्त करने में विफल"
+      "title": "सर्वर से विजेट्स की लिस्ट नहीं मिल पाई"
     },
-    "open-script-note": "स्क्रिप्ट नोट खोलें"
+    "open-script-note": "स्क्रिप्ट नोट खोलें",
+    "critical-error": {
+      "title": "क्रिटिकल एरर",
+      "message": "एक गंभीर एरर आया है जो क्लाइंट एप्लिकेशन को शुरू होने से रोक रहा है:\n\n{{message}}\n\nयह शायद किसी स्क्रिप्ट के अचानक फेल होने की वजह से हुआ है। एप्लिकेशन को सेफ़ मोड में शुरू करके समस्या को ठीक करने की कोशिश करें।"
+    },
+    "widget-render-error": {
+      "title": "कस्टम React विजेट रेंडर नहीं हो पाया"
+    },
+    "widget-missing-parent": "कस्टम विजेट में ज़रूरी '{{property}}' प्रॉपर्टी नहीं मिली।\n\nअगर इस स्क्रिप्ट को बिना UI एलिमेंट के चलाना है, तो इसकी जगह '#run=frontendStartup' इस्तेमाल करें।",
+    "scripting-error": "कस्टम स्क्रिप्ट एरर: {{title}}"
   },
   "update_available": {
     "update_available": "उपलब्ध अद्यतन"
@@ -24,7 +53,10 @@
   "code_buttons": {
     "execute_button_title": "स्क्रिप्ट एक्सीक्यूट करें",
     "trilium_api_docs_button_title": "ट्रिलियम एपीआई डॉक्स खोलें",
-    "save_to_note_button_title": "नोट में सेव करें"
+    "save_to_note_button_title": "नोट में सेव करें",
+    "opening_api_docs_message": "API डॉक्स खुल रहे हैं..।",
+    "sql_console_saved_message": "SQL कंसोल नोट {{note_path}} में सेव कर दिया गया है",
+    "electron_api_docs_button_title": "इलेक्ट्रॉन API डॉक्यूमेंटेशन खोलें"
   },
   "hide_floating_buttons_button": {
     "button_title": "बटन छुपाएं"
@@ -33,18 +65,2852 @@
     "button_title": "बटन दिखाएं"
   },
   "add_link": {
-    "note": "नोट"
+    "note": "नोट",
+    "add_link": "लिंक ऐड करें",
+    "help_on_links": "लिंक्स पर मदद।",
+    "search_note": "नोट को नाम से खोजें",
+    "link_title_mirrors": "लिंक टाइटल नोट के करंट टाइटल के हिसाब से बदलता है",
+    "link_title_arbitrary": "लिंक का टाइटल अपनी मर्ज़ी से बदला जा सकता है",
+    "link_title": "लिंक टाइटल",
+    "button_add_link": "लिंक जोड़ें",
+    "anchor": "एंकर (वैकल्पिक)",
+    "anchor_none": "कोई नहीं (नोट से लिंक)"
   },
   "bulk_actions": {
-    "other": "अन्य"
+    "other": "अन्य",
+    "bulk_actions": "बल्क एक्शन्स",
+    "affected_notes": "प्रभावित नोट्स",
+    "include_descendants": "चुने गए नोट्स के वंशजों को शामिल करें",
+    "available_actions": "उपलब्ध एक्शन्स",
+    "chosen_actions": "चुने गए एक्शन्स",
+    "execute_bulk_actions": "बल्क एक्शन्स एक्ज़ीक्यूट करें",
+    "bulk_actions_executed": "बल्क एक्शन्स सफलतापूर्वक एक्ज़ीक्यूट कर दिए गए हैं।",
+    "none_yet": "अभी तक कोई नहीं... ऊपर दिए गए उपलब्ध एक्शन्स में से किसी एक पर क्लिक करके एक्शन जोड़ें।",
+    "labels": "लेबल्स",
+    "relations": "रिलेशंस",
+    "notes": "नोट्स"
   },
   "clone_to": {
-    "search_for_note_by_its_name": "नोट क नाम से नोट खोजें"
+    "search_for_note_by_its_name": "नोट के नाम से सर्च करें",
+    "clone_notes_to": "नोट्स को यहाँ क्लोन करें…",
+    "help_on_links": "लिंक्स पर मदद",
+    "notes_to_clone": "क्लोन किए जाने वाले नोट्स",
+    "target_parent_note": "पेरेंट नोट टारगेट करें",
+    "cloned_note_prefix_title": "क्लोन किया गया नोट दिए गए प्रीफिक्स के साथ नोट ट्री में दिखाई देगा",
+    "prefix_optional": "प्रीफिक्स (वैकल्पिक)",
+    "clone_to_selected_note": "चुने गए नोट पर क्लोन करें",
+    "no_path_to_clone_to": "क्लोन के लिए कोई पाथ नहीं है।",
+    "note_cloned": "नोट \"{{clonedTitle}}\" को \"{{targetTitle}}\" में क्लोन कर दिया गया है"
   },
   "confirm": {
-    "also_delete_note": "नोट भी डिलीट करें"
+    "also_delete_note": "नोट भी डिलीट करें",
+    "confirmation": "कन्फर्म करें",
+    "cancel": "रद्द करें",
+    "ok": "ठीक है",
+    "are_you_sure_remove_note": "क्या आप वाकई नोट \"{{title}}\" को रिलेशन मैप से हटाना चाहते हैं? ",
+    "if_you_dont_check": "अगर आप इसे चेक नहीं करते हैं, तो नोट केवल रिलेशन मैप से हटाया जाएगा।"
   },
   "delete_notes": {
-    "delete_notes_preview": "नोट्स प्रिव्यू डिलीट करें"
+    "close": "बंद करें",
+    "delete_all_clones_description": "सभी क्लोन भी डिलीट करें (हाल के बदलावों में वापस ला सकते हैं)",
+    "erase_notes_description": "सामान्य (सॉफ्ट) डिलीट करने पर नोट केवल 'डिलीटेड' मार्क होते हैं और उन्हें एक निश्चित समय के भीतर (हाल के बदलावों वाले डायलॉग में) वापस लाया जा सकता है। इस विकल्प को चुनने पर नोट तुरंत पूरी तरह मिटा दिए जाएंगे और उन्हें वापस लाना संभव नहीं होगा।",
+    "erase_notes_warning": "नोट्स को स्थायी रूप से मिटाएं (इसे वापस नहीं लाया जा सकता), जिसमें सभी क्लोन शामिल हैं। इससे एप्लिकेशन दोबारा लोड होगी।",
+    "notes_to_be_deleted": "निम्नलिखित नोट डिलीट कर दिए जाएंगे ({{notesCount}})",
+    "no_note_to_delete": "कोई भी नोट डिलीट नहीं होगा (केवल क्लोन हटाए जाएंगे)।",
+    "broken_relations_to_be_deleted": "निम्नलिखित रिलेशन टूट जाएंगे और डिलीट हो जाएंगे ({{relationCount}})",
+    "cancel": "रद्द करें",
+    "title": "नोट्स डिलीट करें",
+    "clones_label": "क्लोन्स (Clones)",
+    "delete_clones_description_one": "अन्य {{count}} क्लोन को भी डिलीट करें। हाल के बदलावों (recent changes) में अनडू किया जा सकता है।",
+    "delete_clones_description_other": "अन्य {{count}} क्लोन्स को भी डिलीट करें। हाल के बदलावों में अनडू किया जा सकता है।",
+    "erase_notes_label": "स्थायी रूप से मिटाएं",
+    "table_note_with_relation": "रिलेशन के साथ नोट",
+    "table_relation": "रिलेशन (Relation)",
+    "table_points_to": "इंगित करता है (डिलीट किया गया)",
+    "delete": "डिलीट करें"
+  },
+  "branch_prefix": {
+    "edit_branch_prefix": "ब्रांच प्रीफ़िक्स एडिट करें",
+    "edit_branch_prefix_multiple": "{{count}} ब्रांचेस के लिए ब्रांच प्रीफ़िक्स एडिट करें",
+    "help_on_tree_prefix": "ट्री प्रीफ़िक्स पर मदद",
+    "prefix": "प्रीफ़िक्स:",
+    "save": "सेव करें",
+    "branch_prefix_saved": "ब्रांच प्रीफ़िक्स सेव हो चुका है।",
+    "branch_prefix_saved_multiple": "{{count}} ब्रांचेस के लिए ब्रांच प्रीफ़िक्स सेव कर दिया गया है।",
+    "affected_branches": "प्रभावित ब्रांचेस ({{count}}):",
+    "preview_in_tree": "ट्री में प्रीव्यू",
+    "description": "केवल इस ब्रांच में नोट टाइटल के शुरू में जोड़ा गया। अन्य ब्रांच मूल टाइटल ही रखेंगी।",
+    "cancel": "रद्द करें"
+  },
+  "export": {
+    "export_note_title": "नोट एक्सपोर्ट करें",
+    "close": "बंद करें",
+    "export_type_subtree": "यह नोट और इसके सभी वंशज",
+    "export_type_single": "केवल यह नोट, इसके वंशजों के बिना",
+    "export": "एक्सपोर्ट करें",
+    "choose_export_type": "कृपया पहले एक्सपोर्ट का प्रकार चुनें",
+    "export_finished_successfully": "एक्सपोर्ट सफलतापूर्वक पूरा हुआ।",
+    "format_pdf": "PDF - प्रिंट करने या शेयर करने के लिए।"
+  },
+  "help": {
+    "title": "चीटशीट",
+    "editShortcuts": "कीबोर्ड शॉर्टकट्स एडिट करें",
+    "noteNavigation": "नोट नेविगेशन",
+    "goUpDown": "नोट्स की लिस्ट में ऊपर/नीचे जाएं",
+    "collapseExpand": "नोड को समेटें/फैलाएं",
+    "notSet": "सेट नहीं है",
+    "goBackForwards": "इतिहास में पीछे/आगे जाएं",
+    "showJumpToNoteDialog": "शॉर्टकट दिखाएं <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Jump to\" डायलॉग</a>",
+    "scrollToActiveNote": "सक्रिय नोट तक स्क्रॉल करें",
+    "jumpToParentNote": "पेरेंट नोट पर जाएं",
+    "collapseWholeTree": "पूरे नोट ट्री को समेटें",
+    "collapseSubTree": "सब-ट्री को समेटें",
+    "tabShortcuts": "टैब शॉर्टकट्स",
+    "newTabNoteLink": "नोट लिंक पर क्लिक करने से नोट नए टैब में खुलता है",
+    "newTabWithActivationNoteLink": "नोट लिंक पर क्लिक करने से नोट नए टैब में खुलता है और सक्रिय हो जाता है",
+    "onlyInDesktop": "केवल डेस्कटॉप पर (Electron build)",
+    "openEmptyTab": "खाली टैब खोलें",
+    "closeActiveTab": "सक्रिय टैब बंद करें",
+    "activateNextTab": "अगला टैब सक्रिय करें",
+    "activatePreviousTab": "पिछला टैब सक्रिय करें",
+    "creatingNotes": "नोट्स बनाना",
+    "createNoteAfter": "सक्रिय नोट के बाद नया नोट बनाएं",
+    "createNoteInto": "सक्रिय नोट के अंदर नया सब-नोट बनाएं",
+    "editBranchPrefix": "सक्रिय नोट क्लोन का <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">प्रीफ़िक्स</a> एडिट करें",
+    "movingCloningNotes": "नोट्स को हिलाना / क्लोन करना",
+    "moveNoteUpDown": "नोट को नोट लिस्ट में ऊपर/नीचे ले जाएं",
+    "moveNoteUpHierarchy": "नोट को पदानुक्रम में ऊपर ले जाएं",
+    "multiSelectNote": "ऊपर/नीचे वाले नोट को एक साथ चुनें",
+    "selectAllNotes": "मौजूदा लेवल के सभी नोट्स चुनें",
+    "selectNote": "नोट चुनें",
+    "copyNotes": "सक्रिय नोट (या वर्तमान चयन) को क्लिपबोर्ड में कॉपी करें (<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">क्लोनिंग</a> के लिए इस्तेमाल होता है)",
+    "cutNotes": "वर्तमान नोट (या वर्तमान चयन) को क्लिपबोर्ड में कट करें (नोट्स को हिलाने के लिए इस्तेमाल होता है)",
+    "pasteNotes": "नोट्स को सक्रिय नोट में सब-नोट के रूप में पेस्ट करें (यह इस पर निर्भर करता है कि इसे कॉपी किया गया था या कट)",
+    "deleteNotes": "नोट / सब-ट्री डिलीट करें",
+    "editingNotes": "नोट्स एडिट करना",
+    "editNoteTitle": "ट्री पेन में यह ट्री पेन से नोट टाइटल पर स्विच कर देगा। नोट टाइटल से एंटर करने पर फोकस टेक्स्ट एडिटर पर चला जाएगा। <kbd>Ctrl+.</kbd> एडिटर से वापस ट्री पेन पर स्विच कर देगा।",
+    "createEditLink": "बाहरी लिंक बनाएं / एडिट करें",
+    "createInternalLink": "आंतरिक लिंक बनाएं",
+    "followLink": "कर्सर के नीचे वाले लिंक पर जाएं",
+    "insertDateTime": "कर्सर की जगह पर वर्तमान तारीख और समय डालें",
+    "jumpToTreePane": "ट्री पेन पर जाएं और सक्रिय नोट तक स्क्रॉल करें",
+    "markdownAutoformat": "Markdown-जैसा ऑटोफ़ॉर्मेटिंग",
+    "headings": "हेडिंग्स के लिए <code>##</code>, <code>###</code>, <code>####</code> आदि के बाद स्पेस",
+    "bulletList": "बुलेट लिस्ट के लिए <code>*</code> या <code>-</code> के बाद स्पेस",
+    "numberedList": "नंबर वाली लिस्ट के लिए <code>1.</code> या <code>1)</code> के बाद स्पेस",
+    "blockQuote": "ब्लॉक कोट के लिए लाइन की शुरुआत <code>></code> और स्पेस के साथ करें",
+    "troubleshooting": "समस्या निवारण",
+    "reloadFrontend": "ट्रिलियम फ्रंटेंड को फिर से लोड करें",
+    "showDevTools": "डेवलपर टूल्स दिखाएं",
+    "showSQLConsole": "SQL कंसोल दिखाएं",
+    "other": "अन्य",
+    "quickSearch": "क्विक सर्च इनपुट पर फोकस करें",
+    "inPageSearch": "पेज के अंदर सर्च",
+    "toggleArchivedNotes": "आर्काइव्ड नोट्स दिखाएं/छिपाएं"
+  },
+  "import": {
+    "importIntoNote": "नोट में इम्पोर्ट करें",
+    "chooseImportFile": "इम्पोर्ट करने वाली फ़ाइल चुनें",
+    "importZipRecommendation": "ZIP फ़ाइल इम्पोर्ट करते समय, नोट संरचना (hierarchy) आर्काइव के अंदर की सब-डायरेक्टरी संरचना को दर्शाएगी।",
+    "options": "विकल्प",
+    "safeImportTooltip": "ट्रिलियम <code>.zip</code> एक्सपोर्ट फ़ाइलों में एक्ज़ीक्यूटेबल स्क्रिप्ट हो सकती हैं जो हानिकारक हो सकती हैं। 'सेफ़ इम्पोर्ट' सभी इम्पोर्ट किए गए स्क्रिप्ट्स के ऑटोमैटिक चलने को रोक देगा। 'सेफ़ इम्पोर्ट' को केवल तभी अनचेक करें जब आप फ़ाइल के कंटेंट पर पूरी तरह भरोसा करते हों।",
+    "safeImport": "सेफ़ इम्पोर्ट",
+    "explodeArchivesTooltip": "अगर यह चेक किया गया है, तो ट्रिलियम <code>.zip</code>, <code>.enex</code> और <code>.opml</code> फ़ाइलों को पढ़ेगा और उनके अंदर की फ़ाइलों से नोट्स बनाएगा। अगर अनचेक किया गया है, तो ट्रिलियम आर्काइव को ही नोट के साथ अटैच कर देगा।",
+    "explodeArchives": "<code>.zip</code>, <code>.enex</code> और <code>.opml</code> आर्काइव्स का कंटेंट पढ़ें।",
+    "shrinkImagesTooltip": "<p>अगर आप इस विकल्प को चुनते हैं, तो ट्रिलियम इम्पोर्ट की गई तस्वीरों के साइज़ को कम करने की कोशिश करेगा, जिससे क्वालिटी पर असर पड़ सकता है। अगर अनचेक किया गया है, तो तस्वीरें बिना किसी बदलाव के इम्पोर्ट होंगी।</p><p>यह मेटाडेटा वाले <code>.zip</code> इम्पोर्ट्स पर लागू नहीं होता क्योंकि माना जाता है कि वे पहले से ही ऑप्टिमाइज़्ड हैं।</p>",
+    "shrinkImages": "तस्वीरों का साइज़ कम करें",
+    "textImportedAsText": "अगर मेटाडेटा से साफ़ न हो, तो HTML, Markdown और TXT को टेक्स्ट नोट्स के रूप में इम्पोर्ट करें",
+    "codeImportedAsCode": "अगर मेटाडेटा से साफ़ न हो, तो पहचानी गई कोड फ़ाइलों (जैसे <code>.json</code>) को कोड नोट्स के रूप में इम्पोर्ट करें",
+    "replaceUnderscoresWithSpaces": "इम्पोर्ट किए गए नोट्स के नाम में अंडरस्कोर (_) को स्पेस से बदलें",
+    "import": "इम्पोर्ट करें",
+    "failed": "इम्पोर्ट फ़ेल हो गया: {{message}}।",
+    "html_import_tags": {
+      "title": "HTML इम्पोर्ट टैग्स",
+      "description": "कॉन्फ़िगर करें कि नोट्स इम्पोर्ट करते समय कौन से HTML टैग्स सुरक्षित रखे जाने चाहिए। जो टैग्स इस लिस्ट में नहीं हैं, उन्हें हटा दिया जाएगा। सुरक्षा कारणों से कुछ टैग्स (जैसे 'script') हमेशा हटा दिए जाते हैं।",
+      "placeholder": "HTML टैग्स डालें, हर लाइन में एक",
+      "reset_button": "डिफ़ॉल्ट लिस्ट पर रीसेट करें"
+    },
+    "in-progress": "इम्पोर्ट हो रहा है: {{progress}}",
+    "successful": "इम्पोर्ट सफलतापूर्वक पूरा हुआ।",
+    "spreadsheetImportedAsSpreadsheet": "CSV और Excel फ़ाइलों को फ़ाइल के बजाय एडिटेबल स्प्रेडशीट के रूप में इम्पोर्ट करें",
+    "starting": "इम्पोर्ट किया जा रहा है…",
+    "in-progress-with-total": "{{total}} में से {{progress}} इम्पोर्ट किया जा रहा है"
+  },
+  "include_note": {
+    "dialog_title": "नोट शामिल करें",
+    "label_note": "नोट",
+    "placeholder_search": "नोट के नाम से सर्च करें",
+    "box_size_prompt": "शामिल किए गए नोट का बॉक्स साइज़:",
+    "box_size_small": "छोटा (~ 10 लाइनें)",
+    "box_size_medium": "मध्यम (~ 30 लाइनें)",
+    "box_size_full": "पूरी (बॉक्स में पूरा टेक्स्ट दिखेगा)",
+    "button_include": "नोट शामिल करें",
+    "box_size_expandable": "एक्सपेंडेबल (डिफ़ॉल्ट रूप से कोलाप्स्ड)"
+  },
+  "info": {
+    "modalTitle": "सूचना",
+    "closeButton": "बंद करें",
+    "okButton": "ठीक है",
+    "copy_to_clipboard": "क्लिपबोर्ड पर कॉपी करें"
+  },
+  "jump_to_note": {
+    "search_placeholder": "नोट के नाम या टाइप से सर्च करें > कमांड्स के लिए..।",
+    "search_button": "पूरे टेक्स्ट में सर्च करें"
+  },
+  "markdown_import": {
+    "dialog_title": "Markdown इम्पोर्ट",
+    "modal_body_text": "ब्राउज़र सैंडबॉक्स की वजह से JavaScript से सीधे क्लिपबोर्ड को पढ़ना मुमकिन नहीं है। कृपया इम्पोर्ट करने के लिए नीचे दिए बॉक्स में Markdown पेस्ट करें और 'इम्पोर्ट करें' बटन पर क्लिक करें।",
+    "import_button": "इम्पोर्ट करें",
+    "import_success": "Markdown कंटेंट डॉक्यूमेंट में इम्पोर्ट कर लिया गया है।"
+  },
+  "move_to": {
+    "dialog_title": "नोट्स को यहाँ ले जाएं..।",
+    "notes_to_move": "ले जाने वाले नोट्स",
+    "target_parent_note": "टारगेट पेरेंट नोट",
+    "search_placeholder": "नोट के नाम से सर्च करें",
+    "move_button": "चुने गए नोट में ले जाएं",
+    "error_no_path": "ले जाने के लिए कोई पाथ नहीं है।",
+    "move_success_message": "चुने गए नोट्स को यहाँ ले जाया गया है: "
+  },
+  "note_type_chooser": {
+    "change_path_prompt": "बदलें कि नया नोट कहाँ बनाना है:",
+    "search_placeholder": "नाम के द्वारा पाथ सर्च करें (खाली होने पर डिफ़ॉल्ट)",
+    "modal_title": "नोट टाइप चुनें",
+    "modal_body": "नए नोट का टाइप / टेम्पलेट चुनें:",
+    "templates": "टेम्पलेट्स",
+    "builtin_templates": "इन-बिल्ट टेम्पलेट्स"
+  },
+  "password_not_set": {
+    "title": "पासवर्ड सेट नहीं है",
+    "body1": "प्रोटेक्टेड नोट्स यूज़र पासवर्ड का उपयोग करके एनक्रिप्ट किए जाते हैं, लेकिन अभी तक पासवर्ड सेट नहीं किया गया है।",
+    "body2": "नोट्स को प्रोटेक्ट करने के लिए, नीचे दिए गए बटन पर क्लिक करके ऑप्शन डायलॉग खोलें और अपना पासवर्ड सेट करें।",
+    "go_to_password_options": "पासवर्ड विकल्प पर जाएं"
+  },
+  "prompt": {
+    "title": "प्रॉम्प्ट",
+    "ok": "ठीक है",
+    "defaultTitle": "प्रॉम्प्ट"
+  },
+  "protected_session_password": {
+    "modal_title": "प्रोटेक्टेड सेशन",
+    "help_title": "प्रोटेक्टेड नोट्स पर मदद",
+    "close_label": "बंद करें",
+    "form_label": "आगे बढ़ने के लिए आपको पासवर्ड डालकर प्रोटेक्टेड सेशन शुरू करना होगा:",
+    "start_button": "प्रोटेक्टेड सेशन शुरू करें"
+  },
+  "recent_changes": {
+    "title": "हाल के बदलाव",
+    "erase_notes_button": "डिलीट किए गए नोट्स अभी मिटाएं",
+    "deleted_notes_message": "डिलीट किए गए नोट्स मिटा दिए गए हैं।",
+    "no_changes_message": "अभी तक कोई बदलाव नहीं..।",
+    "undelete_link": "वापस लाएं",
+    "confirm_undelete": "क्या आप इस नोट और इसके सब-नोट्स को वापस लाना चाहते हैं?"
+  },
+  "sort_child_notes": {
+    "sort_children_by": "सब-नोट्स को इसके अनुसार सॉर्ट करें..।",
+    "sorting_criteria": "सॉर्टिंग का आधार",
+    "title": "टाइटल",
+    "date_created": "बनाने की तारीख",
+    "date_modified": "बदलाव की तारीख",
+    "sorting_direction": "सॉर्टिंग की दिशा",
+    "ascending": "आरोही (ascending)",
+    "descending": "अवरोही (descending)",
+    "folders": "फ़ोल्डर्स",
+    "sort_folders_at_top": "फ़ोल्डर्स को सबसे ऊपर सॉर्ट करें",
+    "natural_sort": "नेचुरल सॉर्ट (Natural Sort)",
+    "sort_with_respect_to_different_character_sorting": "अलग-अलग भाषाओं या क्षेत्रों के हिसाब से वर्णों को सॉर्ट करने के नियमों के अनुसार सॉर्ट करें।",
+    "natural_sort_language": "नेचुरल सॉर्ट भाषा",
+    "the_language_code_for_natural_sort": "नेचुरल सॉर्ट के लिए भाषा कोड, जैसे 'hi-IN' हिंदी (भारत) के लिए।",
+    "sort": "सॉर्ट करें"
+  },
+  "upload_attachments": {
+    "upload_attachments_to_note": "नोट में अटैचमेंट्स अपलोड करें",
+    "choose_files": "फ़ाइलें चुनें",
+    "files_will_be_uploaded": "फ़ाइलें {{noteTitle}} में अटैचमेंट्स के रूप में अपलोड की जाएंगी",
+    "options": "विकल्प",
+    "shrink_images": "तस्वीरों का साइज़ कम करें",
+    "upload": "अपलोड करें",
+    "tooltip": "अगर आप इस विकल्प को चुनते हैं, तो ट्रिलियम अपलोड की गई तस्वीरों के साइज़ को कम करने की कोशिश करेगा, जिससे क्वालिटी पर असर पड़ सकता है। अगर अनचेक किया गया है, तो तस्वीरें बिना किसी बदलाव के अपलोड होंगी।"
+  },
+  "attribute_detail": {
+    "attr_detail_title": "एट्रिब्यूट विवरण",
+    "close_button_title": "बदलाव रद्द करें और बंद करें",
+    "attr_is_owned_by": "एट्रिब्यूट इसका हिस्सा है:",
+    "attr_name_title": "एट्रिब्यूट का नाम केवल अक्षरों, अंकों, कोलन (:) और अंडरस्कोर (_) से बना हो सकता है",
+    "name": "नाम",
+    "value": "वैल्यू",
+    "target_note_title": "रिलेशन सोर्स नोट और टारगेट नोट के बीच एक नाम दिया गया संबंध है।",
+    "target_note": "Target note",
+    "promoted_title": "प्रमोटेड एट्रिब्यूट नोट पर प्रमुखता से दिखाई देता है।",
+    "promoted": "प्रमोटेड",
+    "promoted_alias_title": "प्रमोटेड एट्रिब्यूट्स UI में दिखाई देने वाला नाम।",
+    "promoted_alias": "एलियास",
+    "multiplicity_title": "मल्टीप्लिसिटी यह तय करती है कि एक ही नाम के कितने एट्रिब्यूट्स बनाए जा सकते हैं - अधिकतम 1 या 1 से ज़्यादा।",
+    "multiplicity": "मल्टीप्लिसिटी",
+    "single_value": "सिंगल वैल्यू",
+    "multi_value": "मल्टी वैल्यू",
+    "label_type_title": "लेबल का टाइप ट्रिलियम को सही इंटरफ़ेस चुनने में मदद करेगा।",
+    "label_type": "टाइप",
+    "text": "टेक्स्ट",
+    "number": "नंबर",
+    "boolean": "बूलियन (Boolean)",
+    "date": "तारीख",
+    "date_time": "तारीख और समय",
+    "time": "समय",
+    "url": "URL",
+    "precision_title": "दशमलव के बाद कितने अंक उपलब्ध होने चाहिए।",
+    "precision": "प्रिसिजन (Precision)",
+    "digits": "अंक",
+    "inverse_relation_title": "यह तय करने के लिए वैकल्पिक सेटिंग कि कौन सा रिलेशन इसके विपरीत है। उदाहरण: पिता - पुत्र एक-दूसरे के विपरीत रिलेशन हैं।",
+    "inverse_relation": "विपरीत रिलेशन",
+    "inheritable_title": "इनहेरिटेबल एट्रिब्यूट इस ट्री के नीचे के सभी वंशजों को विरासत में मिलेगा।",
+    "inheritable": "इनहेरिटेबल",
+    "save_and_close": "सेव करें और बंद करें <kbd>Ctrl+Enter</kbd>",
+    "delete": "डिलीट करें",
+    "related_notes_title": "इस लेबल वाले अन्य नोट्स",
+    "more_notes": "और नोट्स",
+    "label": "लेबल विवरण",
+    "label_definition": "लेबल डेफ़िनेशन विवरण",
+    "relation": "रिलेशन विवरण",
+    "relation_definition": "रिलेशन डेफ़िनेशन विवरण",
+    "disable_versioning": "ऑटो-वर्जनिंग को बंद करता है। बड़े लेकिन कम ज़रूरी नोट्स के लिए उपयोगी - जैसे स्क्रिप्टिंग के लिए इस्तेमाल होने वाली बड़ी JS लाइब्रेरीज़",
+    "calendar_root": "उस नोट को मार्क करता है जिसका उपयोग दिन के नोट्स के लिए रूट के रूप में किया जाना चाहिए। केवल एक को ऐसा मार्क किया जाना चाहिए।",
+    "archived": "इस लेबल वाले नोट्स डिफ़ॉल्ट रूप से सर्च रिज़ल्ट्स (जैसे Jump To, Add Link डायलॉग आदि) में नहीं दिखेंगे।",
+    "exclude_from_export": "नोट (और उसका सब-ट्री) किसी भी नोट एक्सपोर्ट में शामिल नहीं किया जाएगा",
+    "run": "तय करता है कि स्क्रिप्ट किन इवेंट्स पर चलनी चाहिए। संभावित वैल्यूज़ हैं:\n<ul>\n<li>frontendStartup - जब ट्रिलियम फ्रंटेंड शुरू होता है, लेकिन मोबाइल पर नहीं।</li>\n<li>mobileStartup - जब मोबाइल पर ट्रिलियम फ्रंटेंड शुरू होता है।</li>\n<li>backendStartup - जब ट्रिलियम बैकएंड शुरू होता है</li>\n<li>hourly - हर घंटे चलें। आप <code>runAtHour</code> लेबल का उपयोग करके सटीक घंटा तय कर सकते हैं।</li>\n<li>daily - दिन में एक बार चलें</li>\n</ul>",
+    "run_on_instance": "तय करें कि यह किस ट्रिलियम इंस्टेंस पर चलना चाहिए। डिफ़ॉल्ट रूप से सभी पर।",
+    "run_at_hour": "किस घंटे पर चलना चाहिए। <code>#run=hourly</code> के साथ उपयोग किया जाना चाहिए।",
+    "disable_inclusion": "इस लेबल वाले स्क्रिप्‌ट्स को पेरेंट स्क्रिप्ट के साथ नहीं चलाया जाएगा।",
+    "sorted": "सब-नोट्स को वर्णमाला के क्रम में सॉर्ट करके रखता है",
+    "sort_direction": "ASC या DESC",
+    "sort_folders_first": "फ़ोल्डर्स (सब-नोट्स वाले नोट्स) को सबसे ऊपर सॉर्ट किया जाना चाहिए",
+    "top": "नोट को उसके पेरेंट में सबसे ऊपर रखें (केवल सॉर्ट किए गए पेरेंट्स पर लागू होता है)",
+    "hide_promoted_attributes": "इस नोट पर प्रमोटेड एट्रिब्यूट्स छुपाएं",
+    "read_only": "एडिटर केवल पढ़ने के लिए (Read Only) मोड में है। केवल टेक्स्ट और कोड नोट्स के लिए काम करता है।",
+    "auto_read_only_disabled": "बहुत बड़े टेक्स्ट/कोड नोट्स को अपने-आप Read Only मोड में सेट किया जा सकता है। आप इस लेबल को जोड़कर इसे बंद कर सकते हैं।",
+    "app_css": "उन CSS नोट्स को मार्क करता है जो ट्रिलियम एप्लिकेशन में लोड होते हैं और लुक बदलने के लिए इस्तेमाल हो सकते हैं।",
+    "app_theme": "उन CSS नोट्स को मार्क करता है जो पूरी ट्रिलियम थीम्स हैं और विकल्पों में उपलब्ध हैं।",
+    "app_theme_base": "कस्टम थीम के बेस के रूप में \"next\", \"next-light\", या \"next-dark\" सेट करें।",
+    "css_class": "इस लेबल की वैल्यू को ट्री में नोट को दर्शाने वाले नोड में CSS क्लास के रूप में जोड़ा जाता है।",
+    "icon_class": "इस लेबल की वैल्यू को ट्री में आइकन में CSS क्लास के रूप में जोड़ा जाता है (जैसे bx bx-home)।",
+    "page_size": "नोट लिस्टिंग में हर पेज पर आइटम्स की संख्या",
+    "custom_request_handler": "देखें <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Custom request handler</a>",
+    "custom_resource_provider": "देखें <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Custom request handler</a>",
+    "widget": "इस नोट को कस्टम विजेट के रूप में मार्क करता है",
+    "workspace": "इस नोट को वर्कस्पेस के रूप में मार्क करता है",
+    "workspace_icon_class": "वर्कस्पेस के साथ टैब में इस्तेमाल होने वाली CSS क्लास तय करता है",
+    "workspace_tab_background_color": "टैब में इस्तेमाल होने वाला CSS कलर तय करता है",
+    "workspace_calendar_root": "हर वर्कस्पेस के लिए अलग कैलेंडर रूट तय करता है",
+    "workspace_template": "नया नोट बनाते समय यह टेम्पलेट रूप में दिखेगा, लेकिन केवल उस वर्कस्पेस में",
+    "search_home": "नए सर्च नोट्स इस नोट के सब-नोट्स के रूप में बनेंगे",
+    "workspace_search_home": "वर्कस्पेस में होने पर नए सर्च नोट्स इसी नोट के नीचे बनेंगे",
+    "inbox": "नए नोट्स के लिए डिफ़ॉल्ट इनबॉक्स - <code>#inbox</code> लेबल वाले नोट में नए नोट्स बनेंगे।",
+    "workspace_inbox": "वर्कस्पेस में होने पर नए नोट्स के लिए डिफ़ॉल्ट इनबॉक्स",
+    "sql_console_home": "SQL कंसोल नोट्स की डिफ़ॉल्ट लोकेशन",
+    "bookmark_folder": "इस लेबल वाला नोट बुकमार्क्स में फ़ोल्डर की तरह दिखेगा",
+    "share_hidden_from_tree": "यह नोट ट्री से छुपा हुआ है, लेकिन URL से सुलभ है",
+    "share_external_link": "शेयर ट्री में नोट बाहरी वेबसाइट के लिंक की तरह काम करेगा",
+    "share_alias": "एक एलियास तय करें जिससे नोट share/alias पर उपलब्ध होगा",
+    "share_omit_default_css": "डिफ़ॉल्ट शेयर पेज CSS हटा दी जाएगी।",
+    "share_root": "उस नोट को मार्क करता है जो /share रूट पर दिखता है।",
+    "share_description": "HTML मेटा टैग के लिए विवरण तय करें",
+    "share_raw": "नोट बिना HTML रैपर के अपने रॉ फॉर्मेट में दिखेगा",
+    "share_disallow_robot_indexing": "रोबोट इंडेक्सिंग को रोकेगा",
+    "share_credentials": "शेयर किए गए नोट के लिए क्रेडेंशियल्स ज़रूरी करें (format: 'username:password')",
+    "share_index": "सभी शेयर किए गए नोट्स की लिस्ट दिखाएगा",
+    "display_relations": "उन रिलेशंस के नाम जिन्हें दिखाना है",
+    "hide_relations": "उन रिलेशंस के नाम जिन्हें छुपाना है",
+    "title_template": "इस नोट के नीचे बनने वाले नोट्स का डिफ़ॉल्ट टाइटल।",
+    "template": "नया नोट बनाते समय यह उपलब्ध टेम्पलेट्स में दिखेगा",
+    "toc": "<code>#toc</code> या <code>#toc=show</code> से Table of Contents दिखेगा, <code>#toc=hide</code> से छुप जाएगा।",
+    "color": "नोट का रंग तय करता है (जैसे 'red' या #a13d5f)",
+    "keyboard_shortcut": "एक कीबोर्ड शॉर्टकट तय करता है जिससे सीधे इस नोट पर जाया जा सकेगा (जैसे 'ctrl+alt+e')",
+    "keep_current_hoisting": "इस लिंक को खोलने से मौजूदा 'hoisting' नहीं बदलेगी।",
+    "execute_button": "कोड नोट को चलाने वाले बटन का टाइटल",
+    "execute_description": "बटन के साथ दिखने वाला विवरण",
+    "exclude_from_note_map": "इस लेबल वाले नोट्स 'Note Map' से छुपा दिए जाएंगे",
+    "new_notes_on_top": "नए नोट्स पेरेंट के सबसे ऊपर बनेंगे, न कि नीचे।",
+    "hide_highlight_widget": "हाइलाइट लिस्ट विजेट छुपाएं",
+    "run_on_note_creation": "बैकएंड पर नोट बनने पर चलता है",
+    "run_on_child_note_creation": "इस नोट के नीचे नया नोट बनने पर चलता है",
+    "run_on_note_title_change": "नोट टाइटल बदलने पर चलता है",
+    "run_on_note_content_change": "नोट कंटेंट बदलने पर चलता है",
+    "run_on_note_change": "नोट बदलने पर चलता है (कंटेंट बदलाव शामिल नहीं)",
+    "run_on_note_deletion": "नोट डिलीट होने पर चलता है",
+    "run_on_branch_creation": "ब्रांच (लिंक) बनने पर चलता है",
+    "run_on_branch_change": "ब्रांच अपडेट होने पर चलता है",
+    "run_on_branch_deletion": "ब्रांच डिलीट होने पर चलता है",
+    "run_on_attribute_creation": "नया एट्रिब्यूट बनने पर चलता है",
+    "run_on_attribute_change": " एट्रिब्यूट बदलने या डिलीट होने पर चलता है",
+    "relation_template": "बिना पेरेंट-चाइल्ड संबंध के भी एट्रिब्यूट्स विरासत में मिलेंगे।",
+    "inherit": "बिना पेरेंट-चाइल्ड संबंध के भी एट्रिब्यूट्स विरासत में मिलेंगे।",
+    "render_note": "बताता है कि नोट को रेंडर करने के लिए किस कोड नोट का उपयोग करना है",
+    "widget_relation": "इसे रन किया जाएगा और साइडबार में विजेट के रूप में दिखाया जाएगा",
+    "share_css": "शेयर पेज में इस्तेमाल होने वाला CSS नोट",
+    "share_js": "शेयर पेज में इस्तेमाल होने वाला JavaScript नोट",
+    "share_template": "शेयर पेज के लिए टेम्पलेट मोड",
+    "share_favicon": "शेयर पेज के लिए फ़ेविकॉन (Favicon)",
+    "is_owned_by_note": "नोट का हिस्सा है",
+    "other_notes_with_name": "{{attributeType}} नाम \"{{attributeName}}\" वाले अन्य नोट्स",
+    "and_more": "... और {{count}} और।",
+    "print_landscape": "PDF एक्सपोर्ट करते समय पेज को लैंडस्केप मोड में रखें।",
+    "print_page_size": "PDF एक्सपोर्ट करते समय पेज का साइज़ बदलें।",
+    "color_type": "रंग",
+    "textarea": "मल्टी-लाइन टेक्स्ट",
+    "print_scale": "PDF में एक्सपोर्ट करते समय, रेंडर की गई कंटेंट का स्केल बदलता है। वैल्यूज 0.1 (10%) से 2 (200%) तक होती हैं, डिफ़ॉल्ट 1 (100%) है।",
+    "print_margins": "PDF में एक्सपोर्ट करते समय, पेज मार्जिन सेट करता है। मिलीमीटर में <code>default</code>, <code>none</code>, <code>minimum</code>, या कस्टम वैल्यूज जैसे कि <code>top,right,bottom,left</code> का उपयोग करें।"
+  },
+  "attribute_editor": {
+    "help_text_body1": "लेबल जोड़ने के लिए बस टाइप करें, जैसे <code>#rock</code> या वैल्यू के साथ <code>#year = 2020</code>",
+    "help_text_body2": "रिलेशन के लिए टाइप करें <code>~author = @</code>",
+    "help_text_body3": "आप दाईं ओर के <code>+</code> बटन का उपयोग भी कर सकते हैं।",
+    "save_attributes": "एट्रिब्यूट्स सेव करें <enter>",
+    "add_a_new_attribute": "नया एट्रिब्यूट जोड़ें",
+    "add_new_label": "नया लेबल जोड़ें <kbd data-command=\"addNewLabel\"></kbd>",
+    "add_new_relation": "नया रिलेशन जोड़ें <kbd data-command=\"addNewRelation\"></kbd>",
+    "add_new_label_definition": "नई लेबल डेफ़िनेशन जोड़ें",
+    "add_new_relation_definition": "नई रिलेशन डेफ़िनेशन जोड़ें",
+    "placeholder": "लेबल और रिलेशंस यहाँ टाइप करें"
+  },
+  "abstract_bulk_action": {
+    "remove_this_search_action": "इस सर्च एक्शन को हटाएं"
+  },
+  "execute_script": {
+    "execute_script": "स्क्रिप्ट चलाएं",
+    "help_text": "आप मैच होने वाले नोट्स पर साधारण स्क्रिप्ट चला सकते हैं।",
+    "example_1": "उदाहरण के लिए नोट के टाइटल में कुछ जोड़ने के लिए:",
+    "example_2": "सभी एट्रिब्यूट्स डिलीट करने का उदाहरण:"
+  },
+  "add_label": {
+    "add_label": "लेबल जोड़ें",
+    "label_name_placeholder": "लेबल का नाम",
+    "label_name_title": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।",
+    "to_value": "इस वैल्यू पर",
+    "new_value_placeholder": "नई वैल्यू",
+    "help_text": "मैच होने वाले सभी नोट्स पर:",
+    "help_text_item1": "अगर लेबल नहीं है, तो उसे बनाएं",
+    "help_text_item2": "या मौजूदा लेबल की वैल्यू बदलें",
+    "help_text_note": "आप इसे बिना वैल्यू के भी बुला सकते हैं, उस स्थिति में बिना वैल्यू वाला लेबल जोड़ा जाएगा।"
+  },
+  "delete_label": {
+    "delete_label": "लेबल डिलीट करें",
+    "label_name_placeholder": "लेबल का नाम",
+    "label_name_title": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।"
+  },
+  "rename_label": {
+    "rename_label": "लेबल का नाम बदलें",
+    "rename_label_from": "लेबल का नाम इससे बदलें:",
+    "old_name_placeholder": "पुराना नाम",
+    "to": "इसमें:",
+    "new_name_placeholder": "नया नाम",
+    "name_title": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।"
+  },
+  "update_label_value": {
+    "update_label_value": "लेबल वैल्यू अपडेट करें",
+    "label_name_placeholder": "लेबल का नाम",
+    "label_name_title": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।",
+    "to_value": "इस वैल्यू पर",
+    "new_value_placeholder": "नई वैल्यू",
+    "help_text": "मैच होने वाले सभी नोट्स पर, मौजूदा लेबल की वैल्यू बदलें।",
+    "help_text_note": "आप इसे बिना वैल्यू के भी बुला सकते हैं।"
+  },
+  "delete_note": {
+    "delete_note": "नोट डिलीट करें",
+    "delete_matched_notes": "मैच होने वाले नोट्स डिलीट करें",
+    "delete_matched_notes_description": "इससे मैच होने वाले नोट्स डिलीट हो जाएंगे।",
+    "undelete_notes_instruction": "डिलीट करने के बाद, आप उन्हें 'हाल के बदलाव' डायलॉग से वापस ला सकते हैं।",
+    "erase_notes_instruction": "नोट्स को हमेशा के लिए मिटाने के लिए, ऑप्शन -> अन्य पर जाकर 'डिलीट किए गए नोट्स अभी मिटाएं' बटन पर क्लिक करें।"
+  },
+  "delete_revisions": {
+    "delete_note_revisions": "नोट रिविज़न डिलीट करें",
+    "all_past_note_revisions": "मैच होने वाले नोट्स के सभी पुराने रिविज़न डिलीट कर दिए जाएंगे। नोट सुरक्षित रहेगा, बस उसका इतिहास मिट जाएगा।"
+  },
+  "move_note": {
+    "move_note": "नोट ले जाएं",
+    "to": "इसमें:",
+    "target_parent_note": "टारगेट पेरेंट नोट",
+    "on_all_matched_notes": "मैच होने वाले सभी नोट्स पर",
+    "move_note_new_parent": "नोट को नए पेरेंट में ले जाएं अगर उसका केवल एक पेरेंट है (पुरानी ब्रांच हटा दी जाएगी)",
+    "clone_note_new_parent": "नोट को नए पेरेंट में क्लोन करें अगर उसकी कई ब्रांचेस हैं",
+    "nothing_will_happen": "अगर नोट को ले जाना मुमकिन नहीं है तो कुछ नहीं होगा (जैसे tree cycle बनने की स्थिति में)"
+  },
+  "rename_note": {
+    "rename_note": "नोट का नाम बदलें",
+    "rename_note_title_to": "नोट का टाइटल इसमें बदलें:",
+    "new_note_title": "नया नोट टाइटल",
+    "click_help_icon": "सभी विकल्प देखने के लिए दाईं ओर के मदद आइकन पर क्लिक करें",
+    "evaluated_as_js_string": "वैल्यू को JavaScript स्ट्रिंग की तरह परखा जाता है और <code>note</code> वेरिएबल का उपयोग किया जा सकता है। उदाहरण:",
+    "example_note": "<code>Note</code> - सभी मैच होने वाले नोट्स का नाम 'Note' हो जाएगा",
+    "example_new_title": "<code>NEW: ${note.title}</code> - टाइटल के आगे 'NEW: ' जुड़ जाएगा",
+    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - बनाने की तारीख का प्रीफ़िक्स जुड़ जाएगा",
+    "api_docs": "ज़्यादा जानकारी के लिए API डॉक्स देखें।"
+  },
+  "add_relation": {
+    "add_relation": "रिलेशन जोड़ें",
+    "relation_name": "रिलेशन का नाम",
+    "allowed_characters": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।",
+    "to": "इसमें:",
+    "target_note": "टारगेट नोट",
+    "create_relation_on_all_matched_notes": "मैच होने वाले सभी नोट्स पर दिया गया रिलेशन बनाएं।"
+  },
+  "delete_relation": {
+    "delete_relation": "रिलेशन डिलीट करें",
+    "relation_name": "रिलेशन का नाम",
+    "allowed_characters": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।"
+  },
+  "rename_relation": {
+    "rename_relation": "रिलेशन का नाम बदलें",
+    "rename_relation_from": "रिलेशन का नाम इससे बदलें:",
+    "old_name": "पुराना नाम",
+    "to": "इसमें:",
+    "new_name": "नया नाम",
+    "allowed_characters": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।"
+  },
+  "update_relation_target": {
+    "update_relation": "रिलेशन अपडेट करें",
+    "relation_name": "रिलेशन का नाम",
+    "allowed_characters": "अक्षर, नंबर, अंडरस्कोर (_) और कोलन (:) इस्तेमाल किए जा सकते हैं।",
+    "to": "इसमें:",
+    "target_note": "टारगेट नोट",
+    "on_all_matched_notes": "मैच होने वाले सभी नोट्स पर",
+    "change_target_note": "मौजूदा रिलेशन का टारगेट नोट बदलें",
+    "update_relation_target": "रिलेशन टारगेट अपडेट करें"
+  },
+  "attachments_actions": {
+    "open_externally": "बाहर खोलें",
+    "open_externally_title": "फ़ाइल एक बाहरी एप्लिकेशन में खोली जाएगी और उसमें होने वाले बदलावों पर नज़र रखी जाएगी। फिर आप संशोधित वर्ज़न को वापस ट्रिलियम में अपलोड कर पाएंगे।",
+    "open_custom": "कस्टम खोलें",
+    "open_custom_title": "फ़ाइल एक बाहरी एप्लिकेशन में खोली जाएगी और उसमें होने वाले बदलावों पर नज़र रखी जाएगी। फिर आप संशोधित वर्ज़न को वापस ट्रिलियम में अपलोड कर पाएंगे।",
+    "download": "डाउनलोड करें",
+    "rename_attachment": "अटैचमेंट का नाम बदलें",
+    "upload_new_revision": "नया रिविज़न अपलोड करें",
+    "copy_link_to_clipboard": "लिंक क्लिपबोर्ड पर कॉपी करें",
+    "convert_attachment_into_note": "अटैचमेंट को नोट में बदलें",
+    "delete_attachment": "अटैचमेंट डिलीट करें",
+    "upload_success": "अटैचमेंट का नया रिविज़न अपलोड कर दिया गया है।",
+    "upload_failed": "अटैचमेंट का नया रिविज़न अपलोड करने में विफल।",
+    "open_externally_detail_page": "अटैचमेंट को बाहरी तौर पर खोलना केवल डिटेल पेज से ही मुमकिन है, कृपया पहले अटैचमेंट डिटेल पर क्लिक करें।",
+    "open_custom_client_only": "अटैचमेंट को कस्टम तरीके से खोलना केवल डेस्कटॉप क्लाइंट से ही किया जा सकता है।",
+    "delete_confirm": "क्या आप वाकई अटैचमेंट '{{title}}' को डिलीट करना चाहते हैं?",
+    "delete_success": "अटैचमेंट '{{title}}' डिलीट कर दिया गया है।",
+    "convert_confirm": "क्या आप वाकई अटैचमेंट '{{title}}' को एक अलग नोट में बदलना चाहते हैं?",
+    "convert_success": "अटैचमेंट '{{title}}' को नोट में बदल दिया गया है।",
+    "enter_new_name": "कृपया अटैचमेंट का नया नाम डालें"
+  },
+  "calendar": {
+    "mon": "सोम",
+    "tue": "मंगल",
+    "wed": "बुध",
+    "thu": "गुरु",
+    "fri": "शुक्र",
+    "sat": "शनि",
+    "sun": "रवि",
+    "cannot_find_day_note": "दिन का नोट नहीं मिल सका",
+    "cannot_find_week_note": "हफ़्ते का नोट नहीं मिल सका",
+    "january": "जनवरी",
+    "february": "फ़रवरी",
+    "march": "मार्च",
+    "april": "अप्रैल",
+    "may": "मई",
+    "june": "जून",
+    "july": "जुलाई",
+    "august": "अगस्त",
+    "september": "सितंबर",
+    "october": "अक्टूबर",
+    "november": "नवंबर",
+    "december": "दिसंबर",
+    "week": "हफ़्ता",
+    "week_previous": "पिछला हफ़्ता",
+    "week_next": "अगला हफ़्ता",
+    "month": "महीना",
+    "month_previous": "पिछला महीना",
+    "month_next": "अगला महीना",
+    "year": "साल",
+    "year_previous": "पिछला साल",
+    "year_next": "अगला साल",
+    "list": "लिस्ट",
+    "today": "आज"
+  },
+  "close_pane_button": {
+    "close_this_pane": "इस पेन (pane) को बंद करें"
+  },
+  "create_pane_button": {
+    "create_new_split": "नया स्प्लिट बनाएं"
+  },
+  "edit_button": {
+    "edit_this_note": "इस नोट को एडिट करें"
+  },
+  "show_toc_widget_button": {
+    "show_toc": "Table of Contents दिखाएं"
+  },
+  "show_highlights_list_widget_button": {
+    "show_highlights_list": "हाइलाइट्स लिस्ट दिखाएं"
+  },
+  "global_menu": {
+    "menu": "मेन्यू",
+    "options": "विकल्प",
+    "open_new_window": "नई विंडो खोलें",
+    "switch_to_mobile_version": "मोबाइल वर्ज़न पर स्विच करें",
+    "switch_to_desktop_version": "डेस्कटॉप वर्ज़न पर स्विच करें",
+    "zoom": "ज़ूम",
+    "toggle_fullscreen": "फ़ुल स्क्रीन टॉगल करें",
+    "zoom_out": "ज़ूम आउट (छोटा करें)",
+    "reset_zoom_level": "ज़ूम लेवल रीसेट करें",
+    "zoom_in": "ज़ूम इन (बड़ा करें)",
+    "configure_launchbar": "लॉन्च-बार (Launchbar) कॉन्फ़िगर करें",
+    "show_shared_notes_subtree": "शेयर किए गए नोट्स दिखाएं",
+    "advanced": "उन्नत (Advanced)",
+    "open_dev_tools": "Dev Tools खोलें",
+    "open_sql_console": "SQL कंसोल खोलें",
+    "open_sql_console_history": "SQL कंसोल इतिहास खोलें",
+    "open_search_history": "सर्च इतिहास खोलें",
+    "show_backend_log": "बैकएंड लॉग दिखाएं",
+    "reload_hint": "रीलोड करने से पूरी ऐप को रीस्टार्ट किए बिना कुछ विज़ुअल समस्याओं को ठीक करने में मदद मिल सकती है।",
+    "reload_frontend": "फ्रंटेंड रीलोड करें",
+    "show_hidden_subtree": "छुपे हुए सब-ट्री दिखाएं",
+    "show_help": "मदद दिखाएं",
+    "about": "Trilium Notes के बारे में",
+    "logout": "लॉगआउट",
+    "show-cheatsheet": "चीटशीट दिखाएं",
+    "toggle-zen-mode": "जेन (Zen) मोड",
+    "new-version-available": "नया अपडेट उपलब्ध है",
+    "download-update": "वर्ज़न {{latestVersion}} लें",
+    "search_notes": "नोट्स सर्च करें"
+  },
+  "zen_mode": {
+    "button_exit": "जेन मोड से बाहर निकलें"
+  },
+  "sync_status": {
+    "unknown": "<p>अगली सिंक कोशिश शुरू होने के बाद ही सिंक की स्थिति पता चलेगी।</p><p>अभी सिंक करने के लिए क्लिक करें।</p>",
+    "connected_with_changes": "<p>सिंक सर्वर से कनेक्टेड। <br>कुछ बदलाव अभी सिंक होने बाकी हैं।</p><p>सिंक करने के लिए क्लिक करें।</p>",
+    "connected_no_changes": "<p>सिंक सर्वर से कनेक्टेड।<br>सभी बदलाव सिंक किए जा चुके हैं।</p><p>सिंक करने के लिए क्लिक करें।</p>",
+    "disconnected_with_changes": "<p>सिंक सर्वर से कनेक्शन नहीं हो सका।<br>कुछ बदलाव अभी सिंक होने बाकी हैं।</p><p>सिंक करने के लिए क्लिक करें।</p>",
+    "disconnected_no_changes": "<p>सिंक सर्वर से कनेक्शन नहीं हो सका।<br>सभी ज्ञात बदलाव सिंक किए जा चुके हैं।</p><p>सिंक करने के लिए क्लिक करें।</p>",
+    "in_progress": "सर्वर के साथ सिंक हो रहा है।"
+  },
+  "left_pane_toggle": {
+    "show_panel": "पैनल दिखाएं",
+    "hide_panel": "पैनल छुपाएं"
+  },
+  "move_pane_button": {
+    "move_left": "बाईं ओर ले जाएं",
+    "move_right": "दाईं ओर ले जाएं"
+  },
+  "note_actions": {
+    "convert_into_attachment": "अटैचमेंट में बदलें",
+    "re_render_note": "नोट फिर से रेंडर करें",
+    "search_in_note": "नोट में सर्च करें",
+    "note_source": "नोट सोर्स",
+    "note_attachments": "नोट अटैचमेंट्स",
+    "open_note_externally": "बाहर खोलें",
+    "open_note_externally_title": "नोट बाहरी एप्लिकेशन में खोला जाएगा और बदलावों पर नज़र रखी जाएगी। इसके बाद आप संशोधित वर्ज़न को वापस ट्रिलियम में अपलोड कर पाएंगे।",
+    "open_note_custom": "कस्टम खोलें",
+    "open_note_on_server": "सर्वर पर खोलें",
+    "import_files": "फ़ाइलें इम्पोर्ट करें",
+    "export_note": "नोट एक्सपोर्ट करें",
+    "delete_note": "नोट डिलीट करें",
+    "print_note": "नोट प्रिंट करें",
+    "view_revisions": "नोट रिविज़न..।",
+    "save_revision": "रिविज़न सेव करें",
+    "advanced": "एडवांस्ड (Advanced)",
+    "convert_into_attachment_failed": "नोट '{{title}}' को बदलने में विफल।",
+    "convert_into_attachment_successful": "नोट '{{title}}' को अटैचमेंट में बदल दिया गया है।",
+    "convert_into_attachment_prompt": "क्या आप वाकई नोट '{{title}}' को पेरेंट नोट के अटैचमेंट में बदलना चाहते हैं?",
+    "print_pdf": "PDF एक्सपोर्ट करें..।",
+    "export_as_image": "इमेज की तरह एक्सपोर्ट करें",
+    "export_as_image_png": "PNG (रास्टर)",
+    "export_as_image_svg": "SVG (वेक्टर)",
+    "note_map": "नोट मैप",
+    "word_wrap": "वर्ड रैप",
+    "word_wrap_auto": "ऑटो",
+    "word_wrap_auto_description": "ग्लोबल सेटिंग का पालन करें",
+    "word_wrap_on": "ऑन (On)",
+    "word_wrap_off": "ऑफ (Off)",
+    "view_ocr_text": "OCR टेक्स्ट देखें",
+    "print_or_export_to_pdf": "प्रिंट करें/PDF में एक्सपोर्ट करें..।",
+    "save_named_revision": "नाम वाला रिवीजन सेव करें..।"
+  },
+  "onclick_button": {
+    "no_click_handler": "बटन विजेट '{{componentId}}' के लिए कोई क्लिक हैंडलर तय नहीं है"
+  },
+  "protected_session_status": {
+    "active": "प्रोटेक्टेड सेशन सक्रिय है। बाहर निकलने के लिए क्लिक करें।",
+    "inactive": "प्रोटेक्टेड सेशन शुरू करने के लिए क्लिक करें"
+  },
+  "revisions_button": {
+    "note_revisions": "नोट रिविज़न"
+  },
+  "note_launcher": {
+    "this_launcher_doesnt_define_target_note": "यह लॉन्चर टारगेट नोट को परिभाषित नहीं करता।"
+  },
+  "copy_image_reference_button": {
+    "button_title": "इमेज रेफरेंस क्लिपबोर्ड पर कॉपी करें, इसे टेक्स्ट नोट में पेस्ट किया जा सकता है।"
+  },
+  "svg_export_button": {
+    "button_title": "डायग्राम को SVG की तरह एक्सपोर्ट करें"
+  },
+  "relation_map_buttons": {
+    "create_child_note_title": "सब-नोट बनाएं और मैप में जोड़ें",
+    "reset_pan_zoom_title": "पैन और ज़ूम को शुरूआती स्थिति पर रीसेट करें",
+    "zoom_in_title": "ज़ूम इन (बड़ा करें)",
+    "zoom_out_title": "ज़ूम आउट (छोटा करें)"
+  },
+  "zpetne_odkazy": {
+    "backlink_one": "{{count}} बैकलिंक",
+    "backlink_other": "",
+    "relation": "रिलेशन"
+  },
+  "mobile_detail_menu": {
+    "insert_child_note": "सब-नोट डालें",
+    "delete_this_note": "यह नोट डिलीट करें",
+    "note_revisions": "नोट रिविज़न",
+    "error_cannot_get_branch_id": "notePath '{{notePath}}' के लिए branchId नहीं मिला",
+    "error_unrecognized_command": "अनजान कमांड {{command}}",
+    "backlinks": "बैकलिंक्स",
+    "content_language_switcher": "कंटेंट भाषा: {{language}}"
+  },
+  "note_icon": {
+    "change_note_icon": "नोट आइकन बदलें",
+    "search": "खोजें:",
+    "search_placeholder_one": "{{count}} पैक्स में {{number}} आइकन खोजें",
+    "search_placeholder_other": "",
+    "search_placeholder_filtered": "{{name}} में {{number}} आइकन खोजें",
+    "reset-default": "डिफ़ॉल्ट आइकन पर रीसेट करें",
+    "filter": "फ़िल्टर",
+    "filter-none": "सभी आइकन",
+    "filter-default": "डिफ़ॉल्ट आइकन",
+    "icon_tooltip": "{{name}}\nआइकन पैक: {{iconPack}}",
+    "no_results": "कोई आइकन नहीं मिला।"
+  },
+  "basic_properties": {
+    "note_type": "नोट टाइप",
+    "editable": "एडिट करने योग्य",
+    "basic_properties": "बुनियादी गुण",
+    "language": "भाषा",
+    "configure_code_notes": "कोड नोट्स कॉन्फ़िगर करें..।"
+  },
+  "book_properties": {
+    "view_type": "व्यू टाइप",
+    "grid": "ग्रिड (Grid)",
+    "list": "लिस्ट (List)",
+    "collapse_all_notes": "सभी नोट्स समेटें",
+    "expand_tooltip": "इस कलेक्शन के सीधे सब-नोट्स फैलाता है। अन्य विकल्पों के लिए दाईं ओर का तीर दबाएं।",
+    "collapse": "समेटें",
+    "expand": "फैलाएं",
+    "expand_first_level": "सीधे सब-नोट्स फैलाएं",
+    "expand_nth_level": "{{depth}} लेवल तक फैलाएं",
+    "expand_all_levels": "सभी लेवल फैलाएं",
+    "book_properties": "कलेक्शन के गुण",
+    "invalid_view_type": "अमान्य व्यू टाइप '{{type}}'",
+    "calendar": "कैलेंडर",
+    "table": "टेबल",
+    "geo-map": "जियो (Geo) मैप",
+    "board": "बोर्ड",
+    "presentation": "प्रेजेंटेशन",
+    "include_archived_notes": "आर्काइव किए गए नोट्स दिखाएं",
+    "hide_child_notes": "ट्री में सब-नोट्स छुपाएं",
+    "dashboard": "डैशबोर्ड",
+    "open_all_in_tabs": "सभी खोलें",
+    "open_all_in_tabs_tooltip": "नए टैब में सभी परिणाम खोलें",
+    "open_all_confirm_one": "यह नए टैब में {{count}} नोट खोलेगा। जारी रखें?",
+    "open_all_confirm_other": "यह नए टैब में {{count}} नोट्स खोलेगा। जारी रखें?"
+  },
+  "edited_notes": {
+    "no_edited_notes_found": "इस दिन अभी तक कोई एडिट किया गया नोट नहीं है..।",
+    "title": "एडिट किए गए नोट्स",
+    "deleted": "(डिलीट किया गया)"
+  },
+  "file_properties": {
+    "note_id": "नोट ID",
+    "original_file_name": "असली फ़ाइल का नाम",
+    "file_type": "फ़ाइल टाइप",
+    "file_size": "फ़ाइल साइज़",
+    "download": "डाउनलोड करें",
+    "open": "बाहर खोलें",
+    "upload_new_revision": "नया रिविज़न अपलोड करें",
+    "upload_success": "नई फ़ाइल रिविज़न अपलोड कर दी गई है।",
+    "upload_failed": "नई फ़ाइल रिविज़न का अपलोड फ़ेल हो गया।",
+    "title": "फ़ाइल"
+  },
+  "image_properties": {
+    "original_file_name": "असली फ़ाइल का नाम",
+    "file_type": "फ़ाइल टाइप",
+    "file_size": "फ़ाइल साइज़",
+    "download": "डाउनलोड करें",
+    "open": "खोलें",
+    "copy_reference_to_clipboard": "रेफरेंस क्लिपबोर्ड पर कॉपी करें",
+    "upload_new_revision": "नया रिविज़न अपलोड करें",
+    "upload_success": "नई इमेज रिविज़न अपलोड कर दी गई है।",
+    "upload_failed": "नई इमेज रिविज़न का अपलोड फ़ेल हो गया: {{message}}",
+    "title": "इमेज"
+  },
+  "inherited_attribute_list": {
+    "title": "विरासत में मिले एट्रिब्यूट्स",
+    "no_inherited_attributes": "विरासत में मिला कोई एट्रिब्यूट नहीं है।",
+    "none": "कोई नहीं"
+  },
+  "note_info_widget": {
+    "note_id": "नोट ID",
+    "created": "बनाया गया",
+    "modified": "संशोधित",
+    "type": "टाइप",
+    "mime": "MIME टाइप",
+    "note_size": "नोट साइज़",
+    "note_size_info": "नोट साइज़ स्टोरेज की ज़रूरतों का एक अंदाज़ा देता है। इसमें नोट का कंटेंट और उसके रिविज़न शामिल हैं।",
+    "calculate": "हिसाब लगाएं",
+    "subtree_size_one": "(सब-ट्री साइज़: {{count}} नोट्स में {{size}})",
+    "subtree_size_other": "(सबट्री साइज: {{count}} नोट्स में {{size}})",
+    "title": "नोट की जानकारी",
+    "show_similar_notes": "मिलते-जुलते नोट्स दिखाएं"
+  },
+  "note_map": {
+    "open_full": "पूरा फैलाएं",
+    "collapse": "नॉर्मल साइज़ में समेटें",
+    "title": "नोट मैप",
+    "fix-nodes": "नोड्स फिक्स करें",
+    "link-distance": "लिंक की दूरी",
+    "too-many-notes_one": "यहाँ {{count}} नोट है। इसे दिखाने से चीजें धीमी हो सकती हैं।",
+    "too-many-notes_other": "यहाँ {{count}} नोट्स हैं। इन सभी को दिखाने से चीजें धीमी हो सकती हैं।",
+    "show-anyway": "मैप दिखाएं"
+  },
+  "note_paths": {
+    "title": "नोट पाथ",
+    "clone_button": "नोट को नई जगह क्लोन करें..।",
+    "intro_placed": "यह नोट इन पाथ्स पर रखा गया है:",
+    "intro_not_placed": "यह नोट अभी तक ट्री में नहीं रखा गया है।",
+    "outside_hoisted": "यह पाथ 'hoisted' नोट के बाहर है, आपको उसे 'unhoist' करना होगा।",
+    "archived": "आर्काइव किया गया",
+    "search": "खोजें"
+  },
+  "note_properties": {
+    "this_note_was_originally_taken_from": "यह नोट मूल रूप से यहाँ से लिया गया था:",
+    "info": "सूचना"
+  },
+  "owned_attribute_list": {
+    "owned_attributes": "खुद के एट्रिब्यूट्स"
+  },
+  "promoted_attributes": {
+    "promoted_attributes": "प्रमोटेड एट्रिब्यूट्स",
+    "unset-field-placeholder": "सेट नहीं है",
+    "url_placeholder": "http://वेबसाइट..।",
+    "open_external_link": "बाहरी लिंक खोलें",
+    "unknown_label_type": "अनजान लेबल टाइप '{{type}}'",
+    "unknown_attribute_type": "अनजान एट्रिब्यूट टाइप '{{type}}'",
+    "add_new_attribute": "नया एट्रिब्यूट जोड़ें",
+    "remove_this_attribute": "यह एट्रिब्यूट हटाएं",
+    "remove_color": "रंग वाला लेबल हटाएं"
+  },
+  "script_executor": {
+    "query": "क्वेरी (Query)",
+    "script": "स्क्रिप्ट",
+    "execute_query": "क्वेरी चलाएं",
+    "execute_script": "स्क्रिप्ट चलाएं"
+  },
+  "search_definition": {
+    "add_search_option": "सर्च विकल्प जोड़ें:",
+    "search_string": "सर्च स्ट्रिंग",
+    "search_script": "सर्च स्क्रिप्ट",
+    "ancestor": "पूर्वज (Ancestor)",
+    "fast_search": "फ़ास्ट सर्च",
+    "fast_search_description": "फ़ास्ट सर्च नोट कंटेंट के पूरे टेक्स्ट की खोज को बंद कर देता है, जिससे बड़े डेटाबेस में सर्च आसान हो सकता है।",
+    "include_archived": "आर्काइव शामिल करें",
+    "include_archived_notes_description": "आर्काइव किए गए नोट्स डिफ़ॉल्ट रूप से सर्च से बाहर होते हैं, इस विकल्प से वे शामिल हो जाएंगे।",
+    "order_by": "इसके अनुसार क्रम दें",
+    "limit": "सीमा (Limit)",
+    "limit_description": "रिज़ल्ट्स की संख्या सीमित करें",
+    "debug": "डिबग (Debug)",
+    "debug_description": "डिबग करने पर कंसोल में अतिरिक्त जानकारी दिखेगी जो कठिन क्वेरीज़ को सुलझाने में मदद करेगी",
+    "action": "एक्शन",
+    "option": "विकल्प",
+    "search_button": "खोजें",
+    "search_execute": "सर्च करें और एक्शन्स चलाएं",
+    "save_to_note": "नोट में सेव करें",
+    "search_parameters": "सर्च पैरामीटर्स",
+    "unknown_search_option": "अनजान सर्च विकल्प {{searchOptionName}}",
+    "search_note_saved": "सर्च नोट {{- notePathTitle}} में सेव कर दिया गया है",
+    "actions_executed": "एक्शन्स चला दिए गए हैं।",
+    "view_options": "देखने के विकल्प:"
+  },
+  "similar_notes": {
+    "title": "मिलते-जुलते नोट्स",
+    "no_similar_notes_found": "कोई मिलता-जुलता नोट नहीं मिला।"
+  },
+  "abstract_search_option": {
+    "remove_this_search_option": "यह सर्च विकल्प लगाएं",
+    "failed_rendering": "सर्च विकल्प रेंडर करने में विफल: {{dto}}, एरर: {{error}} {{stack}}"
+  },
+  "ancestor": {
+    "label": "पूर्वज (Ancestor)",
+    "placeholder": "नोट के नाम से सर्च करें",
+    "depth_label": "गहराई (Depth)",
+    "depth_doesnt_matter": "कोई फर्क नहीं पड़ता",
+    "depth_eq": "ठीक {{count}} है",
+    "direct_children": "सीधे सब-नोट्स",
+    "depth_gt": "{{count}} से ज़्यादा है",
+    "depth_lt": "{{count}} से कम है"
+  },
+  "debug": {
+    "debug": "डिबग (Debug)",
+    "debug_info": "डिबग करने पर कंसोल में अतिरिक्त जानकारी दिखेगी जो कठिन क्वेरीज़ को सुलझाने में मदद करेगी।",
+    "access_info": "डिबग जानकारी देखने के लिए, क्वेरी चलाएं और ऊपर बाईं ओर \"Show backend log\" पर क्लिक करें।"
+  },
+  "fast_search": {
+    "fast_search": "फ़ास्ट सर्च",
+    "description": "फ़ास्ट सर्च नोट कंटेंट के पूरे टेक्स्ट की खोज को बंद कर देता है, जिससे बड़े डेटाबेस में सर्च आसान हो सकता है।"
+  },
+  "include_archived_notes": {
+    "include_archived_notes": "आर्काइव किए गए नोट्स शामिल करें"
+  },
+  "limit": {
+    "limit": "सीमा (Limit)",
+    "take_first_x_results": "केवल पहले X रिज़ल्ट्स लें।"
+  },
+  "order_by": {
+    "order_by": "इसके अनुसार क्रम दें",
+    "relevancy": "प्रासंगिकता (Default)",
+    "title": "टाइटल",
+    "date_created": "बनाने की तारीख",
+    "date_modified": "अंतिम बदलाव की तारीख",
+    "content_size": "नोट कंटेंट साइज़",
+    "content_and_attachments_size": "नोट कंटेंट साइज़ (अटैचमेंट्स के साथ)",
+    "content_and_attachments_and_revisions_size": "नोट कंटेंट साइज़ (अटैचमेंट्स और रिविज़न के साथ)",
+    "revision_count": "रिविज़न की संख्या",
+    "children_count": "सब-नोट्स की संख्या",
+    "parent_count": "क्लोन की संख्या",
+    "owned_label_count": "लेबल्स की संख्या",
+    "owned_relation_count": "रिलेशंस की संख्या",
+    "target_relation_count": "नोट को टारगेट करने वाले रिलेशंस की संख्या",
+    "random": "रैंडम क्रम",
+    "asc": "आरोही (Default)",
+    "desc": "अवरोही"
+  },
+  "search_script": {
+    "title": "सर्च स्क्रिप्ट:",
+    "placeholder": "नोट के नाम से सर्च करें",
+    "description1": "सर्च स्क्रिप्ट आपको स्क्रिप्ट चलाकर सर्च रिज़ल्ट्स तय करने की सुविधा देती है। जब स्टैण्डर्ड सर्च काफी न हो, तब यह सबसे ज़्यादा लचीलापन देती है।",
+    "description2": "सर्च स्क्रिप्ट का टाइप \"code\" और सब-टाइप \"JavaScript backend\" होना चाहिए। स्क्रिप्ट को noteIds या notes का एक ऐरे (array) लौटाना होगा।",
+    "example_title": "यह उदाहरण देखें:",
+    "example_code": "// 1. स्टैण्डर्ड सर्च का इस्तेमाल करके प्रीफ़िल्टरिंग\nconst candidateNotes = api.searchForNotes(\"#journal\"); \n\n// 2. कस्टम सर्च क्राइटेरिया लागू करना\nconst matchedNotes = candidateNotes\n    .filter(note => note.title.match(/[0-9]{1,2}\\. ?[0-9]{1,2}\\. ?[0-9]{4}/));\n\nreturn matchedNotes;",
+    "note": "ध्यान दें कि सर्च स्क्रिप्ट और सर्च स्ट्रिंग को एक साथ इस्तेमाल नहीं किया जा सकता।"
+  },
+  "search_string": {
+    "title_column": "सर्च स्ट्रिंग:",
+    "placeholder": "कीवर्ड्स, #tag = value..।",
+    "search_syntax": "सर्च सिंटैक्स",
+    "also_see": "यह भी देखें",
+    "complete_help": "सर्च सिंटैक्स पर पूरी मदद",
+    "full_text_search": "पूरे टेक्स्ट में खोजने के लिए बस कोई भी टेक्स्ट लिखें",
+    "label_abc": "abc लेबल वाले नोट्स लौटाता है",
+    "label_year": "2019 वैल्यू वाले year लेबल के नोट्स खोजता है",
+    "label_rock_pop": "उन नोट्स को खोजता है जिनमें rock और pop दोनों लेबल्स हैं",
+    "label_rock_or_pop": "दिए गए लेबल्स में से कम से कम एक होना चाहिए",
+    "label_year_comparison": "नंबरों की तुलना (साथ ही >, >=, < भी)।",
+    "label_date_created": "पिछले महीने बने नोट्स",
+    "error": "सर्च एरर: {{error}}",
+    "search_prefix": "खोजें:"
+  },
+  "attachment_detail": {
+    "open_help_page": "अटैचमेंट्स पर मदद पेज खोलें",
+    "owning_note": "असली नोट: ",
+    "you_can_also_open": ", आप इसे भी खोल सकते हैं ",
+    "list_of_all_attachments": "सभी अटैचमेंट्स की लिस्ट",
+    "attachment_deleted": "यह अटैचमेंट डिलीट कर दिया गया है।"
+  },
+  "attachment_list": {
+    "open_help_page": "अटैचमेंट्स पर मदद पेज खोलें",
+    "owning_note": "असली नोट: ",
+    "upload_attachments": "अटैचमेंट्स अपलोड करें",
+    "no_attachments": "इस नोट में कोई अटैचमेंट नहीं है।"
+  },
+  "book": {
+    "no_children_help": "इस कलेक्शन में कोई सब-नोट नहीं है, इसलिए दिखाने के लिए कुछ नहीं है।",
+    "drag_locked_title": "एडिटिंग के लिए लॉक है",
+    "drag_locked_message": "ड्रैगिंग (dragging) की अनुमति नहीं है क्योंकि यह कलेक्शन एडिटिंग के लिए लॉक है।",
+    "archived_notes_hidden_one": "एक आर्काइव्ड नोट यहाँ कॉपी किया गया था लेकिन तब तक छिपा रहेगा जब तक आप \"आर्काइव्ड नोट्स दिखाएं\" इनेबल नहीं करते।",
+    "archived_notes_hidden_other": "{{count}} आर्काइव्ड नोट्स यहाँ कॉपी किए गए थे लेकिन तब तक छिपे रहेंगे जब तक आप \"आर्काइव्ड नोट्स दिखाएं\" इनेबल नहीं करते।"
+  },
+  "editable_code": {
+    "placeholder": "अपने कोड नोट का कंटेंट यहाँ लिखें..।"
+  },
+  "editable_text": {
+    "placeholder": "अपने नोट का कंटेंट यहाँ लिखें..।",
+    "editor_crashed_title": "टेक्स्ट एडिटर क्रैश हो गया है",
+    "editor_crashed_content": "आपका कंटेंट सफलतापूर्वक रिकवर कर लिया गया है, लेकिन आपके कुछ हालिया बदलाव शायद सेव न हुए हों।",
+    "editor_crashed_details_button": "ज़्यादा जानकारी देखें..।",
+    "editor_crashed_details_intro": "अगर यह एरर बार-बार आता है, तो नीचे दी गई जानकारी GitHub पर डालकर इसकी रिपोर्ट करें।",
+    "editor_crashed_details_title": "तकनीकी जानकारी",
+    "auto-detect-language": "अपने-आप पहचानें",
+    "keeps-crashing": "एडिटिंग विजेट बार-बार क्रैश हो रहा है। कृपया Trilium को रीस्टार्ट करके देखें। अगर समस्या बनी रहती है, तो बग रिपोर्ट (bug report) करें।"
+  },
+  "empty": {
+    "open_note_instruction": "नीचे दिए गए बॉक्स में टाइटल लिखकर नोट खोलें या ट्री में से कोई नोट चुनें।",
+    "search_placeholder": "नोट के नाम से सर्च करें",
+    "enter_workspace": "वर्कस्पेस {{title}} खोलें"
+  },
+  "file": {
+    "file_preview_not_available": "इस फ़ाइल फॉर्मेट के लिए प्रिव्यू उपलब्ध नहीं है।",
+    "too_big": "बेहतर परफॉरमेंस के लिए प्रिव्यू में फ़ाइल के केवल पहले {{maxNumChars}} अक्षर दिखाए जा रहे हैं। पूरी फ़ाइल देखने के लिए उसे डाउनलोड करके बाहर खोलें।"
+  },
+  "protected_session": {
+    "enter_password_instruction": "प्रोटेक्टेड नोट देखने के लिए आपको पासवर्ड डालना होगा:",
+    "start_session_button": "प्रोटेक्टेड सेशन शुरू करें",
+    "started": "प्रोटेक्टेड सेशन शुरू हो गया है।",
+    "wrong_password": "गलत पासवर्ड।",
+    "protecting-finished-successfully": "प्रोटेक्ट करना सफलतापूर्वक पूरा हुआ।",
+    "unprotecting-finished-successfully": "अन-प्रोटेक्ट करना सफलतापूर्वक पूरा हुआ।",
+    "protecting-in-progress": "प्रोटेक्ट हो रहा है: {{count}}",
+    "unprotecting-in-progress-count": "अन-प्रोटेक्ट हो रहा है: {{count}}"
+  },
+  "relation_map": {
+    "remove_note": "नोट हटाएं",
+    "edit_title": "टाइटल एडिट करें",
+    "rename_note": "नोट का नाम बदलें",
+    "enter_new_title": "नया नोट टाइटल लिखें:",
+    "remove_relation": "रिलेशन हटाएं",
+    "confirm_remove_relation": "क्या आप वाकई यह रिलेशन हटाना चाहते हैं?",
+    "specify_new_relation_name": "नया रिलेशन नाम दें (अक्षर, नंबर, कोलन और अंडरस्कोर इस्तेमाल किए जा सकते हैं):",
+    "connection_exists": "इन नोट्स के बीच '{{name}}' नाम का संबंध पहले से मौजूद है।",
+    "start_dragging_relations": "यहाँ से रिलेशंस ड्रैग करना शुरू करें और उन्हें किसी दूसरे नोट पर छोड़ दें।",
+    "note_not_found": "नोट {{noteId}} नहीं मिला!",
+    "cannot_match_transform": "ट्रांसफ़ॉर्म (transform) मैच नहीं हो सका: {{transform}}",
+    "note_already_in_diagram": "नोट \"{{title}}\" पहले से डायग्राम में है।",
+    "enter_title_of_new_note": "नए नोट का टाइटल लिखें",
+    "default_new_note_title": "नया नोट",
+    "click_on_canvas_to_place_new_note": "नया नोट रखने के लिए कैनवस (canvas) पर क्लिक करें",
+    "rename_relation": "रिलेशन का नाम बदलें"
+  },
+  "render": {
+    "setup_title": "इस नोट के अंदर कस्टम HTML या Preact JSX दिखाएं",
+    "setup_create_sample_preact": "Preact के साथ सैंपल नोट बनाएं",
+    "setup_create_sample_html": "HTML के साथ सैंपल नोट बनाएं",
+    "setup_sample_created": "एक सैंपल नोट सब-नोट के रूप में बनाया गया है।",
+    "disabled_description": "यह रेंडर नोट किसी बाहरी स्रोत से आ रहा है। आपको हानिकारक कंटेंट से बचाने के लिए, इसे डिफ़ॉल्ट रूप से बंद रखा गया है। इसे चालू करने से पहले पक्का करें कि आप स्रोत पर भरोसा करते हैं।",
+    "disabled_button_enable": "रेंडर नोट चालू करें"
+  },
+  "web_view_setup": {
+    "title": "Trilium के अंदर ही किसी वेबपेज का लाइव व्यू बनाएं",
+    "url_placeholder": "वेबसाइट का पता डालें या पेस्ट करें, जैसे https://triliumnotes.org",
+    "create_button": "वेब व्यू बनाएं",
+    "invalid_url_title": "अमान्य पता",
+    "invalid_url_message": "एक सही वेब पता डालें, जैसे https://triliumnotes.org।",
+    "disabled_description": "यह वेब व्यू किसी बाहरी स्रोत से इम्पोर्ट किया गया था। फ़िशिंग या हानिकारक कंटेंट से बचाने के लिए, यह अपने-आप लोड नहीं हो रहा है। अगर आप स्रोत पर भरोसा करते हैं, तो इसे चालू कर सकते हैं।",
+    "disabled_button_enable": "वेब व्यू चालू करें"
+  },
+  "backend_log": {
+    "refresh": "रीफ़्रेश"
+  },
+  "consistency_checks": {
+    "title": "कंसिस्टेंसी चेक (Consistency Checks)",
+    "find_and_fix_button": "कंसिस्टेंसी समस्याओं को खोजें और ठीक करें",
+    "finding_and_fixing_message": "कंसिस्टेंसी समस्याएं खोजी और ठीक की जा रही हैं..।",
+    "issues_fixed_message": "जो भी कंसिस्टेंसी समस्याएं मिली थीं, उन्हें अब ठीक कर दिया गया है।",
+    "find_and_fix_label": "संगति (consistency) समस्याओं को खोजें और ठीक करें",
+    "find_and_fix_description": "डेटाबेस में किसी भी डेटा संगति संबंधी समस्याओं को स्कैन करें और स्वचालित रूप से मरम्मत करें।"
+  },
+  "database_anonymization": {
+    "title": "डेटाबेस एनोनिमाइज़ेशन (Database Anonymization)",
+    "full_anonymization": "पूरी तरह एनोनिमाइज़ करें",
+    "full_anonymization_description": "यह एक्शन डेटाबेस की एक नई कॉपी बनाएगा और उसे 'anonymize' कर देगा (सभी नोट कंटेंट हटा देगा और केवल स्ट्रक्चर और कुछ गैर-ज़रूरी मेटाडेटा छोड़ेगा)। इसका इस्तेमाल अपनी निजी जानकारी लीक होने के डर के बिना डिबग करने के लिए ऑनलाइन शेयर करने में किया जा सकता है।",
+    "save_fully_anonymized_database": "पूरी तरह एनोनिमाइज़्ड डेटाबेस सेव करें",
+    "light_anonymization": "हल्का एनोनिमाइज़ेशन (Light Anonymization)",
+    "light_anonymization_description": "यह डेटाबेस की एक नई कॉपी बनाएगा और उसका 'light anonymization' किया जाएगा—खासकर केवल नोट्स का कंटेंट हटाया जाएगा, लेकिन टाइटल और एट्रिब्यूट्स वैसे ही रहेंगे। साथ ही, कस्टम JS स्क्रिप्ट्स और विजेट्स भी रहेंगे। इससे समस्या को सुलझाने के लिए ज़्यादा संदर्भ मिलता है।",
+    "choose_anonymization": "आप खुद तय कर सकते हैं कि आप पूरा या हल्का एनोनिमाइज़्ड डेटाबेस देना चाहते हैं। हालांकि हल्का एनोनिमाइज़्ड डेटाबेस बग पहचानने और उसे ठीक करने में ज़्यादा तेज़ हो सकता है।",
+    "save_lightly_anonymized_database": "हल्का एनोनिमाइज़्ड डेटाबेस सेव करें",
+    "existing_anonymized_databases": "पहले से मौजूद एनोनिमाइज़्ड डेटाबेस",
+    "creating_fully_anonymized_database": "पूरा एनोनिमाइज़्ड डेटाबेस बनाया जा रहा है..।",
+    "creating_lightly_anonymized_database": "हल्का एनोनिमाइज़्ड डेटाबेस बनाया जा रहा है..।",
+    "error_creating_anonymized_database": "एनोनिमाइज़्ड डेटाबेस नहीं बनाया जा सका, जानकारी के लिए बैकएंड लॉग देखें",
+    "successfully_created_fully_anonymized_database": "{{anonymizedFilePath}} में पूरा एनोनिमाइज़्ड डेटाबेस बना दिया गया है",
+    "successfully_created_lightly_anonymized_database": "{{anonymizedFilePath}} में हल्का एनोनिमाइज़्ड डेटाबेस बना दिया गया है",
+    "no_anonymized_database_yet": "अभी तक कोई एनोनिमाइज़्ड डेटाबेस नहीं है।",
+    "description": "व्यक्तिगत डेटा को उजागर किए बिना, समस्याओं को डीबग करते समय डेवलपर्स के साथ साझा करने के लिए अपने डेटाबेस की एक अज्ञात (anonymized) प्रतिलिपि बनाएं।",
+    "anonymized_databases_location": "अनाम (anonymized) डेटाबेस {{- anonymizedFolder}} में स्टोर किए जाते हैं।",
+    "download": "डाउनलोड करें"
+  },
+  "database_integrity_check": {
+    "title": "डेटाबेस इंटीग्रिटी चेक (Database Integrity Check)",
+    "check_button": "डेटाबेस इंटीग्रिटी चेक करें",
+    "checking_integrity": "डेटाबेस इंटीग्रिटी चेक की जा रही है..।",
+    "integrity_check_succeeded": "इंटीग्रिटी चेक सफल रहा - कोई समस्या नहीं मिली।",
+    "integrity_check_failed": "इंटीग्रिटी चेक फ़ेल हो गया: {{results}}",
+    "check_integrity_label": "डेटाबेस अखंडता (integrity) की जांच करें",
+    "check_integrity_description": "सत्यापित करें कि SQLite स्तर पर डेटाबेस दूषित (corrupted) तो नहीं है।"
+  },
+  "sync": {
+    "title": "सिंक (Sync)",
+    "force_full_sync_button": "जबरदस्ती पूरा सिंक (force full sync) करें",
+    "fill_entity_changes_button": "एंटिटी बदलावों के रिकॉर्ड भरें",
+    "full_sync_triggered": "पूरा सिंक शुरू कर दिया गया है",
+    "filling_entity_changes": "बदलावों वाली रोज़ (rows) भरी जा रही हैं..।",
+    "sync_rows_filled_successfully": "सिंक रोज़ सफलतापूर्वक भर दी गई हैं",
+    "finished-successfully": "सिंक सफलतापूर्वक पूरा हुआ।",
+    "failed": "सिंक फ़ेल हो गया: {{message}}",
+    "force_full_sync_label": "जबरन फुल सिंक करें",
+    "force_full_sync_description": "सिंक सर्वर के साथ पूर्ण सिंक्रोनाइजेशन ट्रिगर करें, सभी बदलावों को फिर से अपलोड करें।",
+    "fill_entity_changes_label": "एंटिटी बदलाव भरें",
+    "fill_entity_changes_description": "एंटिटी बदलाव रिकॉर्ड का पुनर्निर्माण करें। यदि सिंक में कुछ बदलाव छूट रहे हैं तो इसका उपयोग करें।"
+  },
+  "vacuum_database": {
+    "title": "वैक्यूम डेटाबेस (Vacuum Database)",
+    "description": "इससे डेटाबेस फिर से बनेगा जिससे अक्सर फ़ाइल का साइज़ कम हो जाता है। कोई भी डेटा बदला नहीं जाएगा।",
+    "button_text": "डेटाबेस वैक्यूम करें",
+    "vacuuming_database": "डेटाबेस वैक्यूम हो रहा है..।",
+    "database_vacuumed": "डेटाबेस वैक्यूम कर दिया गया है",
+    "vacuum_label": "वैक्यूम डेटाबेस (Vacuum database)",
+    "vacuum_description": "फ़ाइल का आकार घटाने के लिए डेटाबेस का पुनर्निर्माण करें। कोई डेटा नहीं बदला जाएगा।"
+  },
+  "experimental_features": {
+    "title": "प्रायोगिक विकल्प (Experimental Options)",
+    "disclaimer": "ये विकल्प अभी टेस्टिंग में (experimental) हैं और इनसे अस्थिरता आ सकती है। सावधानी से इस्तेमाल करें।",
+    "new_layout_name": "नया लेआउट",
+    "new_layout_description": "आधुनिक लुक और बेहतर उपयोग के लिए नया लेआउट आज़माएं। आने वाले वर्ज़न्स में इसमें काफी बदलाव हो सकते हैं।",
+    "llm_name": "AI / LLM चैट",
+    "llm_description": "बड़े भाषा मॉडल (LLMs) द्वारा संचालित एआई चैट साइडबार और एलएलएम चैट नोट्स इनेबल करें।"
+  },
+  "fonts": {
+    "theme_defined": "थीम के अनुसार",
+    "fonts": "फ़ॉन्ट्स (Fonts)",
+    "main_font": "मुख्य फ़ॉन्ट",
+    "font_family": "फ़ॉन्ट फैमिली",
+    "size": "साइज़",
+    "note_tree_font": "नोट ट्री फ़ॉन्ट",
+    "note_detail_font": "नोट डिटेल फ़ॉन्ट",
+    "monospace_font": "मोनोस्पेस (कोड) फ़ॉन्ट",
+    "not_all_fonts_available": "हो सकता है कि लिस्ट में दिए गए सभी फ़ॉन्ट्स आपके सिस्टम पर न हों।",
+    "generic-fonts": "सामान्य फ़ॉन्ट्स",
+    "sans-serif-system-fonts": "Sans-serif सिस्टम फ़ॉन्ट्स",
+    "serif-system-fonts": "Serif सिस्टम फ़ॉन्ट्स",
+    "monospace-system-fonts": "Monospace सिस्टम फ़ॉन्ट्स",
+    "handwriting-system-fonts": "लिखावट (handwriting) वाले सिस्टम फ़ॉन्ट्स",
+    "serif": "Serif",
+    "sans-serif": "Sans Serif",
+    "monospace": "Monospace",
+    "system-default": "सिस्टम डिफ़ॉल्ट",
+    "custom_fonts": "कस्टम फोंट्स का उपयोग करें",
+    "preview": "प्रीव्यू",
+    "monospace_font_description": "कोड नोट्स और कोड ब्लॉक्स के लिए उपयोग किया जाता है",
+    "size_relative_to_general": "आकार सामान्य फ़ॉन्ट आकार के सापेक्ष है",
+    "apply_changes": "बदलाव लागू करने के लिए रीलोड करें"
+  },
+  "max_content_width": {
+    "title": "कंटेंट की चौड़ाई",
+    "default_description": "बड़ी स्क्रीन पर पढ़ने में आसानी के लिए ट्रिलियम डिफ़ॉल्ट रूप से कंटेंट की अधिकतम चौड़ाई को सीमित रखता है।",
+    "max_width_label": "अधिकतम कंटेंट चौड़ाई",
+    "max_width_unit": "पिक्सेल (pixels)",
+    "centerContent": "कंटेंट बीच में (centered) रखें"
+  },
+  "native_title_bar": {
+    "title": "नेटिव टाइटल बार (ऐप रीस्टार्ट ज़रूरी है)",
+    "enabled": "चालू",
+    "disabled": "बंद"
+  },
+  "ribbon": {
+    "edited_notes_message": "दिन वाले नोट्स (day notes) पर 'एडिट किए गए नोट्स' वाला टैब अपने-आप खुल जाएगा"
+  },
+  "theme": {
+    "title": "एप्लिकेशन थीम",
+    "theme_label": "थीम",
+    "override_theme_fonts_label": "थीम के फ़ॉन्ट्स बदलें",
+    "auto_theme": "Legacy (सिस्टम के हिसाब से)",
+    "light_theme": "Legacy (लाइट)",
+    "dark_theme": "Legacy (डार्क)",
+    "triliumnext": "Trilium (सिस्टम के हिसाब से)",
+    "triliumnext-light": "Trilium (लाइट)",
+    "triliumnext-dark": "Trilium (डार्क)",
+    "layout": "लेआउट",
+    "layout-vertical-title": "वर्टिकल (खड़ा)",
+    "layout-horizontal-title": "हॉरिज़ॉन्टल (पड़ा)",
+    "layout-vertical-description": "लॉन्चर बार बाईं ओर है (डिफ़ॉल्ट)",
+    "layout-horizontal-description": "लॉन्चर बार टैब बार के नीचे है, टैब बार अब पूरी चौड़ाई का है।",
+    "modern_themes": "आधुनिक (Modern)",
+    "legacy_themes": "लीगेसी (Legacy)",
+    "custom_themes": "कस्टम (Custom)",
+    "recommended": "अनुशंसित (Recommended)",
+    "color_scheme": "कलर स्कीम",
+    "color_scheme_system": "सिस्टम",
+    "color_scheme_light": "लाइट",
+    "color_scheme_dark": "डार्क",
+    "color_scheme_custom_disabled": "कस्टम थीम्स के लिए कलर स्कीम ओवरराइड उपलब्ध नहीं है"
+  },
+  "ui-performance": {
+    "title": "परफॉरमेंस",
+    "enable-motion": "एनिमेशन और ट्रांज़िशन चालू करें",
+    "enable-shadows": "परछाइयां (shadows) दिखाएं",
+    "enable-backdrop-effects": "मेन्यू, पॉपअप और पैनल के लिए बैकग्राउंड इफ़ेक्ट्स चालू करें",
+    "enable-smooth-scroll": "स्मूथ स्क्रॉलिंग (smooth scrolling) चालू करें",
+    "app-restart-required": "(बदलाव लागू करने के लिए ऐप को रीस्टार्ट करना होगा)"
+  },
+  "zoom_factor": {
+    "title": "ज़ूम फैक्टर (केवल डेस्कटॉप बिल्ड)",
+    "description": "ज़ूम को CTRL+- और CTRL+= शॉर्टकट्स से भी कंट्रोल किया जा सकता है।"
+  },
+  "code_auto_read_only_size": {
+    "title": "ऑटोमैटिक रीड-ओनली साइज़",
+    "description": "ऑटोमैटिक रीड-ओनली नोट साइज़ वो साइज़ है जिसके बाद नोट्स 'रीड-ओनली' मोड में दिखेंगे (परफॉरमेंस के लिए)।",
+    "label": "ऑटोमैटिक रीड-ओनली साइज़ (कोड नोट्स)",
+    "unit": "अक्षर"
+  },
+  "code-editor-options": {
+    "title": "एडिटर",
+    "tab_width": "टैब की चौड़ाई (Tab width)",
+    "tab_width_unit": "स्पेस"
+  },
+  "code_mime_types": {
+    "title": "ड्रॉपडाउन में उपलब्ध MIME टाइप्स",
+    "tooltip_syntax_highlighting": "सिंटैक्स हाइलाइटिंग",
+    "tooltip_code_block_syntax": "टेक्स्ट नोट्स में कोड ब्लॉक्स",
+    "tooltip_code_note_syntax": "कोड नोट्स"
+  },
+  "vim_key_bindings": {
+    "use_vim_keybindings_in_code_notes": "विम (Vim) की-बाइंडिंग्स",
+    "enable_vim_keybindings": "कोड नोट्स में विम की-बाइंडिंग्स चालू करें (ex मोड के बिना)"
+  },
+  "wrap_lines": {
+    "wrap_lines_in_code_notes": "कोड नोट्स में लाइन रैप (wrap) करें",
+    "enable_line_wrap": "लाइन रैप चालू करें (बदलाव के लिए फ्रंटेंड रीलोड करना पड़ सकता है)"
+  },
+  "images": {
+    "images_section_title": "तस्वीरें (Images)",
+    "download_images_automatically": "ऑफलाइन इस्तेमाल के लिए तस्वीरें अपने-आप डाउनलोड करें।",
+    "download_images_description": "पेस्ट किए गए HTML में ऑनलाइन तस्वीरों के लिंक हो सकते हैं, ट्रिलियम उन्हें ढूंढकर डाउनलोड कर लेगा ताकि वे ऑफलाइन भी उपलब्ध रहें।",
+    "enable_image_compression": "इमेज कंप्रेशन चालू करें",
+    "max_image_dimensions": "तस्वीर की अधिकतम चौड़ाई / ऊंचाई (इससे ज़्यादा होने पर तस्वीर का साइज़ बदल दिया जाएगा)।",
+    "max_image_dimensions_unit": "पिक्सेल (pixels)",
+    "jpeg_quality_description": "JPEG क्वालिटी (10 - सबसे खराब, 100 - सबसे अच्छी, 50-85 की सलाह दी जाती है)",
+    "enable_image_compression_description": "इमेज अपलोड या पेस्ट होने पर उन्हें कंप्रेस करें और उनका आकार बदलें।",
+    "max_image_dimensions_description": "इस आकार से अधिक की इमेज का आकार स्वचालित रूप से बदल दिया जाएगा।",
+    "jpeg_quality": "JPEG क्वालिटी",
+    "ocr_section_title": "टेक्स्ट निष्कर्षण (OCR)",
+    "ocr_related_content_languages": "कंटेंट भाषाएँ (टेक्स्ट निष्कर्षण के लिए उपयोग की जाने वाली)",
+    "ocr_auto_process": "नई फ़ाइलों को ऑटो-प्रोसेस करें",
+    "ocr_auto_process_description": "नई अपलोड या पेस्ट की गई फ़ाइलों से स्वचालित रूप से टेक्स्ट निकालें।",
+    "ocr_min_confidence": "न्यूनतम कॉन्फिडेंस",
+    "ocr_confidence_description": "केवल इस कॉन्फिडेंस थ्रेशोल्ड से ऊपर का टेक्स्ट ही निकालें। कम वैल्यूज में अधिक टेक्स्ट शामिल होता है लेकिन यह कम सटीक हो सकता है।",
+    "batch_ocr_title": "मौजूदा फ़ाइलों को प्रोसेस करें",
+    "batch_ocr_description": "अपने नोट्स में सभी मौजूदा इमेजेस, पीडीएफ और ऑफिस डॉक्यूमेंट्स से टेक्स्ट निकालें। फ़ाइलों की संख्या के आधार पर इसमें कुछ समय लग सकता है।",
+    "batch_ocr_start": "बैच प्रोसेसिंग शुरू करें",
+    "batch_ocr_starting": "बैच प्रोसेसिंग शुरू की जा रही है..।",
+    "batch_ocr_progress": "{{total}} फ़ाइलों में से {{processed}} प्रोसेस की जा रही हैं..।",
+    "batch_ocr_completed": "बैच प्रोसेसिंग पूरी हुई! {{processed}} फ़ाइलें प्रोसेस की गईं।",
+    "batch_ocr_error": "बैच प्रोसेसिंग के दौरान त्रुटि: {{error}}"
+  },
+  "attachment_erasure_timeout": {
+    "attachment_erasure_timeout": "अटैचमेंट मिटाने का समय (Erasure Timeout)",
+    "erase_attachments_after": "इतने समय बाद बिना इस्तेमाल वाले अटैचमेंट्स मिटाएं:",
+    "manual_erasing_description": "आप इसे खुद भी मिटा सकते हैं (बिना ऊपर दिए समय का इंतज़ार किए):",
+    "erase_unused_attachments_now": "बिना इस्तेमाल वाले अटैचमेंट नोट्स अभी मिटाएं",
+    "unused_attachments_erased": "बिना इस्तेमाल वाले अटैचमेंट्स मिटा दिए गए हैं।",
+    "description": "जो अटैचमेंट अब किसी नोट द्वारा संदर्भित नहीं हैं, उन्हें अप्रयुक्त माना जाता है और एक निश्चित समय के बाद स्वचालित रूप से मिटाया जा सकता है।",
+    "erase_attachments_after_description": "अप्रयुक्त अटैचमेंट्स को स्थायी रूप से मिटाने से पहले का समय।",
+    "erase_now_button": "अभी मिटाएं"
+  },
+  "network_connections": {
+    "network_connections_title": "नेटवर्क कनेक्शंस",
+    "check_for_updates": "अपडेट्स के लिए अपने-आप चेक करें",
+    "check_for_updates_description": "गिटहब पर नए वर्जन्स की जांच करता है और उपलब्ध होने पर ग्लोबल मेनू में एक नोटिफिकेशन दिखाता है।"
+  },
+  "note_erasure_timeout": {
+    "note_erasure_timeout_title": "नोट मिटाने का समय (Erasure Timeout)",
+    "erase_notes_after": "इतने समय बाद नोट्स मिटाएं:",
+    "manual_erasing_description": "आप नोट्स को खुद भी मिटा सकते हैं (बिना ऊपर दिए समय का इंतज़ार किए):",
+    "erase_deleted_notes_now": "डिलीट किए गए नोट्स अभी मिटाएं",
+    "deleted_notes_erased": "डिलीट किए गए नोट्स मिटा दिए गए हैं।",
+    "description": "डिलीट किए गए नोट्स को पहले केवल डिलीट के रूप में चिह्नित किया जाता है और उन्हें हाल के नोट्स से रिकवर किया जा सकता है। एक निश्चित समय के बाद, उन्हें स्थायी रूप से मिटा दिया जाता है।",
+    "erase_notes_after_description": "डिलीट किए गए नोट्स को स्थायी रूप से मिटाने से पहले का समय।",
+    "erase_now_button": "अभी मिटाएं"
+  },
+  "revisions_snapshot_interval": {
+    "note_revisions_snapshot_interval_title": "नोट रिवीज़न स्नैपशॉट अंतराल (Interval)",
+    "note_revisions_snapshot_description": "नोट रिवीज़न स्नैपशॉट अंतराल वह समय है जिसके बाद नोट का एक नया रिवीज़न बनेगा। ज़्यादा जानकारी के लिए <doc>wiki</doc> देखें।",
+    "snapshot_time_interval_label": "नोट रिवीज़न स्नैपशॉट समय अंतराल:",
+    "note_revisions_snapshot_description_short": "वह समय जिसके बाद एक नया नोट रिवीजन बनाया जाएगा।"
+  },
+  "revisions_snapshot_limit": {
+    "note_revisions_snapshot_limit_title": "नोट रिवीज़न स्नैपशॉट लिमिट",
+    "note_revisions_snapshot_limit_description": "यह लिमिट तय करती है कि हर नोट के लिए ज़्यादा से ज़्यादा कितने रिवीज़न्स सेव किए जा सकते हैं। -1 का मतलब कोई लिमिट नहीं, 0 का मतलब सभी रिवीज़न डिलीट करना। आप #versioningLimit लेबल से भी इसे सेट कर सकते हैं।",
+    "snapshot_number_limit_label": "नोट रिवीज़न स्नैपशॉट संख्या लिमिट:",
+    "snapshot_number_limit_unit": "स्नैपशॉट्स",
+    "erase_excess_revision_snapshots": "फ़ालतु के पुराने रिवीज़न्स अभी मिटाएं",
+    "erase_excess_revision_snapshots_prompt": "फ़ालतु के पुराने रिवीज़न्स मिटा दिए गए हैं।",
+    "note_revisions_snapshot_limit_description_short": "प्रति नोट अधिकतम रिवीजन्स। असीमित के लिए -1, अक्षम करने के लिए 0 का उपयोग करें।",
+    "erase_excess_revision_snapshots_description": "सभी नोट्स के लिए सीमा से अधिक वाले रिवीजन्स डिलीट करें।",
+    "erase_now_button": "अभी मिटाएं"
+  },
+  "search_engine": {
+    "title": "सर्च इंजन",
+    "custom_search_engine_info": "कस्टम सर्च इंजन के लिए नाम और URL दोनों ज़रूरी हैं। अगर कोई भी एक नहीं भरा गया, तो DuckDuckGo का इस्तेमाल होगा।",
+    "predefined_templates_label": "पहले से बने सर्च इंजन टेम्पलेट्स",
+    "bing": "Bing",
+    "baidu": "Baidu",
+    "duckduckgo": "DuckDuckGo",
+    "google": "Google",
+    "custom_name_label": "कस्टम सर्च इंजन का नाम",
+    "custom_name_placeholder": "सर्च इंजन का नाम लिखें",
+    "custom_url_label": "कस्टम सर्च इंजन URL में {keyword} होना चाहिए जो आपके सर्च शब्द की जगह लेगा।",
+    "custom_url_placeholder": "सर्च इंजन URL लिखें",
+    "save_button": "सेव करें",
+    "custom_url_description": "सर्च टर्म के लिए प्लेसहोल्डर के रूप में {keyword} का उपयोग करें।"
+  },
+  "tray": {
+    "title": "सिस्टम ट्रे (System Tray)",
+    "enable_tray": "ट्रे (Tray) चालू करें (इसके लिए ट्रिलियम को रीस्टार्ट करना होगा)",
+    "enable_tray_description": "बदलाव तुरंत लागू होते हैं, हालांकि कुछ प्लेटफॉर्म्स पर ट्रे आइकन को छिपाने के लिए ट्रिलियम को रीस्टार्ट करने की आवश्यकता हो सकती है।",
+    "close_to_tray": "बंद करने पर ट्रे में रखें",
+    "close_to_tray_description": "जब आप विंडो बंद करें, तो ट्रिलियम को बंद करने के बजाय सिस्टम ट्रे में चलता रखें। इसके लिए ट्रे आइकन इनेबल होना आवश्यक है।"
+  },
+  "heading_style": {
+    "title": "हेडिंग स्टाइल",
+    "plain": "प्लेन (Plain)",
+    "underline": "अंडरलाइन (Underline)",
+    "markdown": "मार्कडाउन-स्टाइल",
+    "description": "टेक्स्ट नोट्स में हेडिंग्स के लिए विजुअल स्टाइल।"
+  },
+  "highlights_list": {
+    "title": "हाइलाइट्स लिस्ट",
+    "description": "आप दाएं पैनल में दिखने वाली हाइलाइट्स लिस्ट को अपनी पसंद से बदल सकते हैं:",
+    "bold": "बोल्ड (Bold) टेक्स्ट",
+    "italic": "इटैलिक (Italic) टेक्स्ट",
+    "underline": "अंडरलाइन टेक्स्ट",
+    "color": "रंगीन टेक्स्ट",
+    "bg_color": "बैकग्राउंड रंग वाला टेक्स्ट",
+    "visibility_title": "हाइलाइट्स लिस्ट दिखाना (Visibility)",
+    "visibility_description": "आप हर नोट के लिए #hideHighlightWidget लेबल लगाकर हाइलाइट्स विजेट छुपा सकते हैं।",
+    "shortcut_info": "आप दाएं पैनल (हाइलाइट्स के साथ) को तुरंत खोलने/बंद करने के लिए शॉर्टकट सेट कर सकते हैं (Options -> Shortcuts में 'toggleRightPane' नाम से)।"
+  },
+  "table_of_contents": {
+    "title": "विषय-सूची (Table of Contents)",
+    "description": "जब नोट में तय संख्या से ज़्यादा हेडिंग्स होंगी, तो विषय-सूची अपने-आप दिखने लगेगी। आप इस संख्या को बदल सकते हैं:",
+    "unit": "हेडिंग्स",
+    "disable_info": "आप इसे बंद करने के लिए कोई बहुत बड़ी संख्या भी सेट कर सकते हैं।",
+    "shortcut_info": "आप दाएं पैनल (TOC के साथ) को तुरंत खोलने/बंद करने के लिए शॉर्टकट सेट कर सकते हैं (Options -> Shortcuts में 'toggleRightPane' नाम से)।"
+  },
+  "text_auto_read_only_size": {
+    "title": "ऑटोमैटिक रीड-ओनली साइज़",
+    "description": "ऑटोमैटिक रीड-ओनली नोट साइज़ वो साइज़ है जिसके बाद नोट्स 'रीड-ओनली' मोड में दिखेंगे (परफॉरमेंस के लिए)।",
+    "label": "ऑटोमैटिक रीड-ओनली साइज़ (टेक्स्ट नोट्स)",
+    "unit": "अक्षर"
+  },
+  "custom_date_time_format": {
+    "title": "कस्टम तारीख/समय फॉर्मेट",
+    "description": "शॉर्टकट या टूलबार से डाली जाने वाली तारीख और समय का फॉर्मेट बदलें। टोकन जानकारी के लिए <doc>Day.js docs</doc> देखें।",
+    "format_string": "फॉर्मेट स्ट्रिंग:",
+    "formatted_time": "फॉर्मेट की हुई तारीख/समय:",
+    "description_short": "टूलबार के माध्यम से डाले गए डेट और टाइम के फॉर्मेट को कस्टमाइज़ करें।",
+    "preview": "प्रीव्यू: {{preview}}"
+  },
+  "i18n": {
+    "title": "भाषा और क्षेत्र (Localization)",
+    "language": "भाषा",
+    "first-day-of-the-week": "हफ्ते का पहला दिन",
+    "monday": "सोमवार",
+    "tuesday": "मंगलवार",
+    "wednesday": "बुधवार",
+    "thursday": "गुरुवार",
+    "friday": "शुक्रवार",
+    "saturday": "शनिवार",
+    "sunday": "रविवार",
+    "first-week-of-the-year": "साल का पहला हफ्ता",
+    "first-week-contains-first-day": "पहले हफ्ते में साल का पहला दिन शामिल है",
+    "first-week-contains-first-thursday": "पहले हफ्ते में साल का पहला गुरुवार शामिल है",
+    "first-week-has-minimum-days": "पहले हफ्ते में कम-से-कम इतने दिन हों",
+    "min-days-in-first-week": "पहले हफ्ते में न्यूनतम दिन",
+    "first-week-warning": "पहले हफ्ते की सेटिंग्स बदलने से पुराने 'Week Notes' में गड़बड़ी हो सकती है।",
+    "formatting-locale": "तारीख और नंबर फॉर्मेट",
+    "formatting-locale-auto": "ऐप की भाषा के अनुसार"
+  },
+  "backup": {
+    "automatic_backup": "ऑटोमैटिक बैकअप",
+    "automatic_backup_description": "ट्रिलियम आपके डेटाबेस का बैकअप अपने-आप ले सकता है:",
+    "enable_daily_backup": "रोज़ाना बैकअप लें",
+    "enable_weekly_backup": "हफ्ते में एक बार बैकअप लें",
+    "enable_monthly_backup": "महीने में एक बार बैकअप लें",
+    "backup_recommendation": "बैकअप चालू रखने की सलाह दी जाती है, लेकिन बड़े डेटाबेस होने पर इससे ऐप शुरू होने में थोड़ा समय लग सकता है।",
+    "backup_now": "अभी बैकअप लें",
+    "backup_database_now": "डेटाबेस का बैकअप अभी लें",
+    "existing_backups": "पुराने बैकअप्स",
+    "date-and-time": "तारीख और समय",
+    "path": "रास्ता (Path)",
+    "database_backed_up_to": "डेटाबेस का बैकअप {{backupFilePath}} में ले लिया गया है",
+    "no_backup_yet": "अभी तक कोई बैकअप नहीं है",
+    "title": "बैकअप",
+    "automatic_backups_title": "ऑटोमैटिक बैकअप",
+    "automatic_backups_description": "ट्रिलियम डेटाबेस का बैकअप स्वचालित रूप से ले सकता है। बैकअप को चालू रखने की अनुशंसा की जाती है, लेकिन बड़े डेटाबेस और/या धीमी स्टोरेज डिवाइसेज के साथ यह एप्लिकेशन स्टार्टअप को धीमा कर सकता है।",
+    "backup_location_description": "बैकअप {{- backupFolder}} में स्टोर किए जाते हैं।",
+    "download": "डाउनलोड करें"
+  },
+  "etapi": {
+    "description": "ETAPI एक REST API है जिसका इस्तेमाल बिना UI के प्रोग्राम द्वारा ट्रिलियम को एक्सेस करने के लिए किया जाता है।",
+    "create_token": "नया ETAPI टोकन बनाएं",
+    "existing_tokens": "पुराने टोकन्स",
+    "no_tokens_yet": "अभी कोई टोकन नहीं है। नया बनाने के लिए ऊपर दिए बटन पर क्लिक करें।",
+    "token_name": "टोकन का नाम",
+    "created": "कब बना",
+    "actions": "एक्शन्स",
+    "new_token_title": "नया ETAPI टोकन",
+    "new_token_message": "कृपया टोकन का नाम लिखें",
+    "default_token_name": "नया टोकन",
+    "error_empty_name": "टोकन का नाम खाली नहीं हो सकता",
+    "token_created_title": "ETAPI टोकन बन गया",
+    "token_created_message": "टोकन को कॉपी कर लें। ट्रिलियम इसे सुरक्षित (hashed) रखता है और इसे दोबारा नहीं देखा जा सकेगा।",
+    "rename_token": "टोकन का नाम बदलें",
+    "delete_token": "टोकन को डिलीट या बंद करें",
+    "rename_token_title": "टोकन का नाम बदलें",
+    "rename_token_message": "कृपया टोकन का नया नाम लिखें",
+    "delete_token_confirmation": "क्या आप वाकई ETAPI टोकन \"{{name}}\" को डिलीट करना चाहते हैं?",
+    "no_tokens": "अभी कोई टोकन नहीं हैं।"
+  },
+  "options_widget": {
+    "options_status": "ऑप्शंस स्टेटस",
+    "options_change_saved": "बदलाव सेव कर लिए गए हैं।"
+  },
+  "password": {
+    "heading": "पासवर्ड",
+    "alert_message": "कृपया अपना नया पासवर्ड याद रखें। पासवर्ड का इस्तेमाल लॉग-इन करने और सुरक्षित नोट्स को लॉक करने के लिए होता है। अगर आप इसे भूल गए, तो आपके लॉक किए हुए नोट्स हमेशा के लिए खो जाएंगे।",
+    "reset_link": "इसे रीसेट करने के लिए यहाँ क्लिक करें।",
+    "old_password": "पुराना पासवर्ड",
+    "new_password": "नया पासवर्ड",
+    "new_password_confirmation": "नया पासवर्ड (दोबारा)",
+    "change_password": "पासवर्ड बदलें",
+    "protected_session_timeout": "सुरक्षित सेशन समय-सीमा (Timeout)",
+    "protected_session_timeout_description": "सुरक्षित सेशन समय-सीमा वो समय है जिसके बाद आपके लॉक वाले नोट्स फिर से लॉक हो जाएंगे। यह आखिरी गतिविधि से गिना जाता है। देखें",
+    "wiki": "wiki",
+    "for_more_info": "ज़्यादा जानकारी के लिए।",
+    "protected_session_timeout_label": "सुरक्षित सेशन समय-सीमा:",
+    "reset_confirmation": "पासवर्ड रीसेट करने से आप अपने पुराने लॉक किए हुए नोट्स को कभी एक्सेस नहीं कर पाएंगे। क्या आप वाकई ऐसा करना चाहते हैं?",
+    "reset_success_message": "पासवर्ड रीसेट हो गया। कृपया नया पासवर्ड सेट करें",
+    "change_password_heading": "पासवर्ड बदलें",
+    "set_password_heading": "पासवर्ड सेट करें",
+    "set_password": "पासवर्ड सेट करें",
+    "password_mismatch": "दोनों पासवर्ड एक जैसे नहीं हैं।",
+    "password_changed_success": "पासवर्ड बदल दिया गया है। OK दबाने पर ट्रिलियम फिर से लोड होगा।",
+    "change_password_description": "अपना करंट पासवर्ड अपडेट करें",
+    "change_password_button": "पासवर्ड अपडेट करें",
+    "reset_password": "पासवर्ड रीसेट करें",
+    "reset_password_description": "सुरक्षित (protected) नोट्स तक पहुंच स्थायी रूप से खो दें",
+    "reset_password_button": "अभी रीसेट करें",
+    "cancel": "रद्द करें"
+  },
+  "multi_factor_authentication": {
+    "recovery_keys_description_warning": "रिकवरी कीज़ को कहीं सुरक्षित लिख लें, ये दोबारा नहीं दिखाई जाएंगी। एक बार इस्तेमाल होने के बाद वो की दोबारा काम नहीं करेगी।",
+    "recovery_keys_error": "रिकवरी कोड बनाने में एरर",
+    "recovery_keys_no_key_set": "कोई रिकवरी कोड सेट नहीं है",
+    "recovery_keys_regenerate": "नए रिकवरी कोड बनाएं",
+    "oauth_title": "OAuth/OpenID",
+    "oauth_description": "OpenID एक मानक तरीका है जिससे आप अपनी पहचान साबित करने के लिए गूगल जैसी दूसरी सर्विस के अकाउंट से वेबसाइट पर लॉग-इन कर सकते हैं। डिफ़ॉल्ट रूप से गूगल सेट है, पर आप कोई और प्रोवाइडर भी चुन सकते हैं। ज़्यादा जानकारी के लिए <a href=\"#\">यहाँ</a> क्लिक करें।",
+    "oauth_missing_vars": "ये सेटिंग्स गायब हैं: {{-variables}}",
+    "oauth_user_account": "यूजर अकाउंट:",
+    "oauth_user_email": "यूजर ईमेल:",
+    "oauth_user_not_logged_in": "लॉग-इन नहीं है!",
+    "authentication_title": "ऑथेंटिकेशन",
+    "signin_method": "इसके साथ साइन इन करें",
+    "signin_local": "लोकल पासवर्ड (वैकल्पिक रूप से टू-फैक्टर ऑथेंटिकेशन के साथ)",
+    "signin_oauth": "OpenID Connect प्रोवाइडर (जैसे Google)",
+    "signin_local_description": "अपने ट्रिलियम पासवर्ड से साइन इन करें। अतिरिक्त सुरक्षा के लिए आप वैकल्पिक रूप से टू-फैक्टर ऑथेंटिकेशन इनेबल कर सकते हैं।",
+    "totp_setup_label": "समय-आधारित वन-टाइम पासवर्ड (TOTP)",
+    "totp_setup_description": "अपने दूसरे फैक्टर के रूप में ऑथेंटिकेटर ऐप से समय-आधारित कोड जनरेट करें। सेटअप पूरा करने के लिए आप एक क्यूआर (QR) कोड स्कैन करेंगे और कोड की पुष्टि करेंगे। रिकवरी कोड अंत में जारी किए जाएंगे।",
+    "totp_setup_button": "सेटअप करें",
+    "totp_enroll_title": "अपने ऑथेंटिकेटर की पुष्टि करें",
+    "totp_enroll_instructions": "जब तक आप नीचे एक मान्य कोड की पुष्टि नहीं करते तब तक TOTP इनेबल नहीं होगा, इसलिए आप गलती से खुद को लॉक आउट नहीं कर सकते।",
+    "totp_enroll_step1_title": "1. अपने ऑथेंटिकेटर ऐप में खाता जोड़ें",
+    "totp_enroll_step2_title": "2. वेरिफिकेशन कोड दर्ज करें",
+    "totp_enroll_scan": "यह QR कोड स्कैन करें:",
+    "totp_enroll_secret_label": "स्कैन नहीं कर पा रहे हैं? यह कोड मैन्युअल रूप से दर्ज करें",
+    "totp_enroll_code_label": "वेरिफिकेशन कोड",
+    "totp_enroll_code_placeholder": "000000",
+    "totp_enroll_verify": "सत्यापित करें और जारी रखें",
+    "totp_enroll_cancel": "रद्द करें",
+    "totp_enroll_invalid_code": "वह कोड मेल नहीं खाया। जांचें कि आपके डिवाइस की घड़ी सही है और नवीनतम कोड दर्ज करें।",
+    "totp_enroll_generate_error": "TOTP सीक्रेट जनरेट नहीं किया जा सका। कृपया इस डायलॉग को बंद करें और पुन: प्रयास करें।",
+    "totp_enroll_enabled": "टू-फैक्टर ऑथेंटिकेशन अब इनेबल है।",
+    "totp_enroll_recovery_title": "अपने रिकवरी कोड सुरक्षित रखें",
+    "totp_enroll_recovery_instructions": "इन रिकवरी कोड्स को कहीं सुरक्षित सेव करें। यदि आप अपने ऑथेंटिकेटर ऐप तक पहुंच खो देते हैं तो साइन इन करने के लिए इनमें से प्रत्येक का एक बार उपयोग किया जा सकता है।",
+    "totp_enroll_recovery_copy": "कॉपी करें",
+    "totp_enroll_recovery_copied": "रिकवरी कोड क्लिपबोर्ड पर कॉपी हो गए हैं।",
+    "totp_enroll_recovery_download": "डाउनलोड करें",
+    "totp_enroll_saved_ack": "मैंने अपने रिकवरी कोड किसी सुरक्षित स्थान पर सेव कर लिए हैं",
+    "totp_enroll_finish": "सेटअप पूरा करें",
+    "totp_enroll_enable_error": "टू-फैक्टर ऑथेंटिकेशन इनेबल नहीं किया जा सका। कृपया दोबारा प्रयास करें।",
+    "totp_section_title": "टू-फैक्टर ऑथेंटिकेशन",
+    "totp_status_active": "सक्रिय (Active)",
+    "totp_status_inactive": "निष्क्रिय (Inactive)",
+    "totp_remove_label": "टू-फैक्टर ऑथेंटिकेशन हटाएं",
+    "totp_remove_description": "अपने टू-फैक्टर ऑथेंटिकेशन सेटअप को पूरी तरह से हटा दें। इसे केवल बंद करने के बजाय हटाने से, इसका उपयोग करने के लिए आपको इसे फिर से शुरू से सेटअप करना होगा।",
+    "totp_remove_button": "हटाएं",
+    "totp_remove_confirm": "क्या टू-फैक्टर ऑथेंटिकेशन को स्थायी रूप से हटाना चाहते हैं? यह आपके सेटअप को पूरी तरह से मिटा देगा, न कि केवल बंद करेगा, इसलिए आपको इसका उपयोग करने के लिए इसे फिर से शुरू से सेटअप करना होगा। तब तक, आप केवल अपने पासवर्ड से साइन इन करेंगे।",
+    "totp_removed": "टू-फैक्टर ऑथेंटिकेशन हटा दिया गया है।",
+    "recovery_keys_regenerate_confirm": "रिकवरी कोड दोबारा जनरेट करें? आपके वर्तमान रिकवरी कोड तुरंत काम करना बंद कर देंगे, और आपको नए कोड सेव करने होंगे।",
+    "recovery_keys_regenerated_title": "नए रिकवरी कोड",
+    "recovery_keys_regenerated_instructions": "यहाँ आपके नए रिकवरी कोड दिए गए हैं। इन्हें अभी सेव करें: ये आपके पिछले कोड्स की जगह लेंगे और दोबारा नहीं दिखाए जाएंगे।",
+    "recovery_keys_done": "हो गया",
+    "recovery_keys_label": "रिकवरी कोड",
+    "recovery_keys_remaining": "{{total}} में से {{remaining}} बचे हैं। इन्हें दोबारा नहीं दिखाया जा सकता, केवल बदला जा सकता है।",
+    "recovery_keys_dot_available": "उपलब्ध",
+    "recovery_keys_dot_used": "{{- date}} को उपयोग किया गया",
+    "oauth_status_connected": "कनेक्टेड (Connected)",
+    "oauth_status_not_connected": "कनेक्टेड नहीं है",
+    "oauth_status_not_configured": "कॉन्फ़िगर नहीं है",
+    "oauth_not_configured_title": "OpenID Connect सेटअप करें",
+    "oauth_not_configured_hint": "OpenID Connect को पहले config.ini या पर्यावरण चरों (environment variables) के माध्यम से सेट किया जाना चाहिए।",
+    "oauth_how_to_enable": "कैसे इनेबल करें",
+    "oauth_server_config_hint": "अपनी config.ini फ़ाइल में निम्नलिखित जोड़ें और एप्लिकेशन रीस्टार्ट करें:",
+    "oauth_server_env_hint": "या निम्नलिखित पर्यावरण चर (environment variables) सेट करें:",
+    "oauth_provider": "प्रदाता (Provider)",
+    "oauth_provider_url": "जारीकर्ता (Issuer) URL",
+    "oauth_provider_unknown": "अज्ञात प्रदाता",
+    "oauth_not_enrolled_title": "कोई खाता कनेक्टेड नहीं है",
+    "oauth_not_enrolled_hint": "OpenID Connect कॉन्फ़िगर किया गया है, लेकिन अभी तक कोई खाता कनेक्ट नहीं है।",
+    "oauth_not_enrolled_details_label": "इसका क्या मतलब है?",
+    "oauth_not_enrolled_details": "जब तक कोई खाता कनेक्ट नहीं होता, OpenID Connect सक्रिय नहीं होगा और आप अपने पासवर्ड से साइन इन करते रहेंगे। इसे चालू करने के लिए नीचे अपना खाता कनेक्ट करें।",
+    "oauth_connect_label": "खाता कनेक्ट करें",
+    "oauth_connect_description": "अपने खाते को बाइंड करने के लिए एक बार अपने प्रोवाइडर के साथ साइन इन करें। इसके बाद केवल यही खाता साइन इन कर सकेगा।",
+    "oauth_connect_button": "खाता कनेक्ट करें",
+    "oauth_disconnect_label": "खाता डिस्कनेक्ट करें",
+    "oauth_disconnect_description": "कनेक्टेड खाते को अनबाइंड करें। जब तक आप फिर से खाता कनेक्ट नहीं करते, तब तक साइन-इन आपके पासवर्ड पर वापस चला जाएगा।",
+    "oauth_disconnect_button": "डिस्कनेक्ट करें",
+    "oauth_disconnect_confirm": "क्या आप वाकई इस खाते को डिस्कनेक्ट करना चाहते हैं? जब तक आप फिर से कोई खाता कनेक्ट नहीं करते, तब तक साइन-इन आपके पासवर्ड पर वापस चला जाएगा।",
+    "oauth_disconnected": "{{provider}} से {{account}} को डिस्कनेक्ट कर दिया गया।",
+    "oauth_connect_success": "{{account}} के रूप में {{provider}} से कनेक्ट हो गया।",
+    "oauth_connect_success_generic": "खाता सफलतापूर्वक कनेक्ट हो गया।",
+    "oauth_account_unknown": "आपका खाता"
+  },
+  "shortcuts": {
+    "keyboard_shortcuts": "कीबोर्ड शॉर्टकट्स",
+    "type_text_to_filter": "शॉर्टकट खोजने के लिए यहाँ लिखें..।",
+    "reload_app": "बदलाव लागू करने के लिए ऐप रीलोड करें",
+    "set_all_to_default": "सभी शॉर्टकट्स डिफ़ॉल्ट पर सेट करें",
+    "confirm_reset": "क्या आप वाकई सभी शॉर्टकट्स को डिफ़ॉल्ट पर सेट करना चाहते हैं?",
+    "no_results": "'{{filter}}' से मिलता-जुलता कोई शॉर्टकट नहीं मिला",
+    "modified_from_default": "यह शॉर्टकट इसके डिफ़ॉल्ट से बदल दिया गया है।",
+    "revert_to_default": "डिफ़ॉल्ट पर वापस लाएं ({{shortcuts}})",
+    "no_default_shortcut": "कोई शॉर्टकट नहीं",
+    "record_shortcut": "एक शॉर्टकट जोड़ें",
+    "remove_shortcut": "यह शॉर्टकट हटाएं",
+    "press_keys": "कीज (keys) दबाएं…",
+    "recording_toast": "असाइन करने के लिए एक कुंजी संयोजन (key combination) दबाएं, या रद्द करने के लिए Esc दबाएं।",
+    "make_global": "इसे एक सिस्टम-व्यापी (global) शॉर्टकट बनाएं",
+    "make_local": "इसे एक इन-ऐप शॉर्टकट बनाएं",
+    "global_shortcut": "सिस्टम-व्यापी (global) शॉर्टकट, केवल डेस्कटॉप ऐप पर सक्रिय",
+    "conflict_chip": "यह संयोजन इन्हें भी असाइन किया गया है: {{actions}}",
+    "no_conflicts": "कोई परस्पर विरोधी (conflicting) शॉर्टकट नहीं हैं।",
+    "no_matches": "चुने गए फ़िल्टर से कोई शॉर्टकट मेल नहीं खाता।",
+    "filter": "शॉर्टकट फ़िल्टर करें",
+    "filter_all": "सभी शॉर्टकट",
+    "filter_conflicts": "परस्पर विरोधी ({{count}})",
+    "filter_global": "ग्लोबल शॉर्टकट ({{count}})",
+    "filter_modified": "डिफ़ॉल्ट से बदले गए ({{count}})",
+    "conflicts_badge_one": "{{count}} विरोध (conflict)",
+    "conflicts_badge_other": "{{count}} विरोध (conflicts)",
+    "conflicts_badge_tooltip": "कुछ शॉर्टकट एक से अधिक क्रियाओं को असाइन किए गए हैं। केवल परस्पर विरोधी शॉर्टकट दिखाने के लिए क्लिक करें।"
+  },
+  "spellcheck": {
+    "title": "स्पेल चेक (Spell Check)",
+    "description": "ये विकल्प सिर्फ़ डेस्कटॉप वर्जन के लिए हैं, ब्राउज़र अपना स्पेल चेक इस्तेमाल करेंगे।",
+    "enable": "स्पेल चेक चालू करें",
+    "language_code_label": "भाषा कोड (Language code)",
+    "disabled_placeholder": "स्पेल चेक बंद है। भाषाएँ चुनने और कस्टम डिक्शनरी प्रबंधित करने के लिए इसे इनेबल करें।",
+    "custom_dictionary_title": "कस्टम डिक्शनरी",
+    "custom_dictionary_description": "डिक्शनरी में जोड़े गए शब्द आपके सभी डिवाइसेज पर सिंक हो जाते हैं।",
+    "custom_dictionary_edit": "कस्टम शब्द",
+    "custom_dictionary_edit_description": "उन शब्दों की सूची संपादित करें जिन्हें स्पेल चेकर द्वारा चिह्नित नहीं किया जाना चाहिए। बदलाव रीस्टार्ट के बाद दिखाई देंगे।",
+    "custom_dictionary_open": "डिक्शनरी संपादित करें",
+    "related_description": "स्पेल चेक भाषाएं और कस्टम डिक्शनरी कॉन्फ़िगर करें।"
+  },
+  "sync_2": {
+    "config_title": "सिंक कॉन्फ़िगरेशन",
+    "server_address": "सर्वर एड्रेस (Address)",
+    "timeout": "सिंक समय-सीमा (Timeout)",
+    "proxy_label": "सिंक प्रॉक्सी सर्वर (वैकल्पिक)",
+    "save": "सेव करें",
+    "help": "मदद",
+    "test_title": "सिंक टेस्ट",
+    "test_description": "यह सिंक सर्वर के साथ कनेक्शन चेक करेगा। अगर सर्वर सेट नहीं है, तो यह उसे लोकल डेटा के साथ सिंक करने के लिए सेट कर देगा।",
+    "test_button": "सिंक टेस्ट करें",
+    "handshake_failed": "सिंक सर्वर कनेक्शन फ़ेल हो गया, एरर: {{message}}",
+    "server_address_description": "सिंक करने के लिए ट्रिलियम सर्वर का URL।",
+    "timeout_description": "धीमे कनेक्शन पर हार मानने (timeout होने) से पहले प्रतीक्षा करने का समय।",
+    "proxy_description": "सिस्टम प्रॉक्सी का उपयोग करने के लिए खाली छोड़ दें (केवल डेस्कटॉप)। सभी प्रॉक्सी को बायपास करने के लिए \"noproxy\" का उपयोग करें।"
+  },
+  "api_log": {
+    "close": "बंद करें"
+  },
+  "attachment_detail_2": {
+    "will_be_deleted_in": "यह अटैचमेंट {{time}} में अपने-आप डिलीट हो जाएगा",
+    "will_be_deleted_soon": "यह अटैचमेंट जल्द ही अपने-आप डिलीट हो जाएगा",
+    "deletion_reason": ", क्योंकि इस अटैचमेंट का नोट में कोई लिंक नहीं है। इसे बचाने के लिए लिंक वापस जोड़ें या इसे नोट में बदल दें।",
+    "role_and_size": "रोल: {{role}}, साइज़: {{size}}, MIME: {{- mimeType}}",
+    "link_copied": "अटैचमेंट लिंक कॉपी कर लिया गया है।",
+    "unrecognized_role": "अटैचमेंट रोल '{{role}}' की पहचान नहीं हुई।"
+  },
+  "bookmark_switch": {
+    "bookmark": "बुकमार्क",
+    "bookmark_this_note": "इस नोट को बाएं पैनल में बुकमार्क करें",
+    "remove_bookmark": "बुकमार्क हटाएं"
+  },
+  "editability_select": {
+    "auto": "ऑटो (Auto)",
+    "read_only": "सिर्फ़ पढ़ने के लिए (Read-only)",
+    "always_editable": "हमेशा एडिट करने योग्य",
+    "note_is_editable": "अगर नोट बहुत लंबा नहीं है, तो उसे एडिट किया जा सकता है।",
+    "note_is_read_only": "नोट 'रीड-ओनली' है, पर बटन दबाकर एडिट किया जा सकता है।",
+    "note_is_always_editable": "नोट हमेशा एडिट किया जा सकता है, चाहे वो कितना भी लंबा हो।"
+  },
+  "note-map": {
+    "button-link-map": "लिंक मैप (Link Map)",
+    "button-tree-map": "ट्री मैप (Tree map)"
+  },
+  "tree-context-menu": {
+    "open-in-a-new-tab": "नए टैब में खोलें",
+    "open-in-a-new-split": "नए स्प्लिट (Split) में खोलें",
+    "open-in-a-new-window": "नई विंडो में खोलें",
+    "insert-note-after": "इसके बाद नोट जोड़ें",
+    "insert-child-note": "चाइल्ड नोट जोड़ें",
+    "archive": "आर्काइव (Archive)",
+    "unarchive": "आर्काइव से बाहर निकालें",
+    "delete": "डिलीट",
+    "search-in-subtree": "सब-ट्री (Subtree) में ढूंढें",
+    "hoist-note": "नोट को ऊपर लाएं (Hoist)",
+    "unhoist-note": "ऊपर से हटाएं (Unhoist)",
+    "edit-branch-prefix": "ब्रांच प्रीफ़िक्स बदलें",
+    "advanced": "एडवांस्ड (Advanced)",
+    "expand-subtree": "सब-ट्री को फैलाएं (Expand)",
+    "collapse-subtree": "सब-ट्री को समेटें (Collapse)",
+    "hide-subtree": "सब-ट्री छुपाएं",
+    "show-subtree": "सब-ट्री दिखाएं",
+    "sort-by": "इसके अनुसार क्रम में लगाएं..।",
+    "recent-changes-in-subtree": "सब-ट्री में हाल के बदलाव",
+    "convert-to-attachment": "अटैचमेंट में बदलें",
+    "copy-note-path-to-clipboard": "नोट का पाथ (Path) कॉपी करें",
+    "protect-subtree": "सब-ट्री को सुरक्षित (Protect) करें",
+    "unprotect-subtree": "सुरक्षा हटाएं (Unprotect)",
+    "copy-clone": "कॉपी / क्लोन (Clone)",
+    "clone-to": "इसमें क्लोन करें..।",
+    "cut": "कट (Cut)",
+    "move-to": "इसमें ले जाएं (Move)..।",
+    "paste-into": "इसमें पेस्ट करें",
+    "paste-after": "इसके बाद पेस्ट करें",
+    "duplicate": "डुप्लीकेट (Duplicate)",
+    "export": "एक्सपोर्ट (Export)",
+    "import-into-note": "नोट में इम्पोर्ट (Import) करें",
+    "apply-bulk-actions": "एक साथ कई एक्शन्स लें",
+    "converted-to-attachments_one": "{{count}} नोट्स को अटैचमेंट में बदल दिया गया है।",
+    "converted-to-attachments_other": "{{count}} नोट्स को अटैचमेंट्स में बदल दिया गया है।",
+    "convert-to-attachment-confirm": "क्या आप वाकई चुने हुए नोट्स को अटैचमेंट में बदलना चाहते हैं? यह सिर्फ़ इमेज नोट्स पर काम करेगा।",
+    "open-in-popup": "तुरंत एडिट करें"
+  },
+  "shared_info": {
+    "shared_publicly": "यह नोट सार्वजनिक रूप से {{- link}} पर शेयर किया गया है।",
+    "shared_locally": "यह नोट लोकल नेटवर्क पर {{- link}} पर शेयर किया गया है।",
+    "help_link": "मदद के लिए <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a> देखें।"
+  },
+  "read-only-info": {
+    "read-only-note": "आप सिर्फ़ पढ़ने वाला (Read-only) नोट देख रहे हैं।",
+    "auto-read-only-note": "तेज़ी से लोड करने के लिए यह नोट 'रीड-ओनली' मोड में दिखाया जा रहा है।",
+    "edit-note": "नोट एडिट करें"
+  },
+  "note_types": {
+    "text": "टेक्स्ट",
+    "code": "कोड (Code)",
+    "saved-search": "सेव की गई खोज",
+    "relation-map": "रिलेशन मैप (Relation Map)",
+    "note-map": "नोट मैप (Note Map)",
+    "render-note": "रेंडर नोट (Render Note)",
+    "book": "कलेक्शन (Collection)",
+    "mermaid-diagram": "Mermaid डायग्राम",
+    "canvas": "कैनवास (Canvas)",
+    "web-view": "वेब व्यू (Web View)",
+    "mind-map": "माइंड मैप (Mind Map)",
+    "file": "फ़ाइल",
+    "image": "तस्वीर (Image)",
+    "launcher": "लॉन्चर (Launcher)",
+    "doc": "डॉक्यूमेंट (Doc)",
+    "widget": "विजेट (Widget)",
+    "confirm-change": "नोट खाली न होने पर उसका टाइप बदलना सही नहीं है। क्या आप फिर भी आगे बढ़ना चाहते हैं?",
+    "geo-map": "जियो मैप (Geo Map)",
+    "beta-feature": "बीटा (Beta)",
+    "ai-chat": "AI चैट",
+    "task-list": "काम की लिस्ट (Task List)",
+    "new-feature": "नया",
+    "collections": "कलेक्शन्स",
+    "markdown": "Markdown",
+    "llm-chat": "AI चैट",
+    "spreadsheet": "स्प्रेडशीट (Spreadsheet)"
+  },
+  "protect_note": {
+    "toggle-on": "नोट सुरक्षित (Protect) करें",
+    "toggle-off": "नोट की सुरक्षा हटाएं",
+    "toggle-on-hint": "नोट सुरक्षित नहीं है, सुरक्षित करने के लिए क्लिक करें",
+    "toggle-off-hint": "नोट सुरक्षित है, सुरक्षा हटाने के लिए क्लिक करें"
+  },
+  "shared_switch": {
+    "shared": "शेयर किया गया",
+    "toggle-on-title": "नोट शेयर करें",
+    "toggle-off-title": "नोट को अनशेयर (Unshare) करें",
+    "shared-branch": "यह नोट सिर्फ़ शेयर फ़ोल्डर में है, अनशेयर करने से यह डिलीट हो जाएगा। क्या आप जारी रखना चाहते हैं?",
+    "inherited": "इस नोट को यहाँ से अनशेयर नहीं किया जा सकता क्योंकि यह ऊपर वाले फ़ोल्डर से शेयर हो रहा है।"
+  },
+  "template_switch": {
+    "template": "टेम्पलेट (Template)",
+    "toggle-on-hint": "नोट को टेम्पलेट बनाएं",
+    "toggle-off-hint": "टेम्पलेट हटाएं"
+  },
+  "open-help-page": "मदद का पेज खोलें",
+  "find": {
+    "case_sensitive": "छोटे-बड़े अक्षर का ध्यान रखें (Case sensitive)",
+    "match_words": "पूरा शब्द ही ढूंढें (Match words)",
+    "find_placeholder": "टेक्स्ट में ढूंढें..।",
+    "replace_placeholder": "इससे बदलें..।",
+    "replace": "बदलें",
+    "replace_all": "सभी बदलें"
+  },
+  "highlights_list_2": {
+    "title": "हाइलाइट्स लिस्ट",
+    "title_with_count_one": "{{count}} हाइलाइट",
+    "title_with_count_other": "",
+    "options": "विकल्प",
+    "modal_title": "हाइलाइट्स लिस्ट सेटिंग्स",
+    "menu_configure": "हाइलाइट्स लिस्ट सेट करें..।",
+    "no_highlights": "कोई हाइलाइट नहीं मिली।"
+  },
+  "quick-search": {
+    "placeholder": "तुरंत खोजें (Quick search)",
+    "searching": "खोजा जा रहा है..।",
+    "no-results": "कोई परिणाम नहीं मिला",
+    "more-results": "... और {{number}} परिणाम।",
+    "show-in-full-search": "पूरी खोज (Full search) में दिखाएं"
+  },
+  "note_tree": {
+    "collapse-title": "नोट ट्री (Tree) समेटें",
+    "scroll-active-title": "सक्रिय नोट पर जाएं",
+    "tree-settings-title": "ट्री (Tree) सेटिंग्स",
+    "hide-archived-notes": "आर्काइव किए गए नोट्स छुपाएं",
+    "automatically-collapse-notes": "नोट्स अपने-आप समेटें",
+    "automatically-collapse-notes-title": "सक्रिय न होने पर ट्री को साफ़ रखने के लिए नोट्स अपने-आप समेट (collapse) दिए जाएंगे।",
+    "save-changes": "सेव करें और लागू करें",
+    "auto-collapsing-notes-after-inactivity": "सक्रिय न होने पर नोट्स अपने-आप समेटे जा रहे हैं..।",
+    "saved-search-note-refreshed": "सेव की गई खोज रीफ़्रेश हो गई।",
+    "hoist-this-note-workspace": "इस नोट को मुख्य बनाएं (Hoist)",
+    "refresh-saved-search-results": "सेव की गई खोज के परिणाम रीफ़्रेश करें",
+    "create-child-note": "चाइल्ड नोट बनाएं",
+    "unhoist": "मुख्य नोट से हटाएं (Unhoist)",
+    "toggle-sidebar": "साइडबार दिखाएं/छुपाएं",
+    "dropping-not-allowed": "यहाँ नोट्स डालना (Drop) मना है।",
+    "clone-indicator-tooltip": "इस नोट के {{- count}} पैरेंट नोट्स हैं: {{- parents}}",
+    "clone-indicator-tooltip-single": "यह नोट क्लोन किया गया है (1 और पैरेंट: {{- parent}})",
+    "shared-indicator-tooltip": "यह नोट सार्वजनिक रूप से शेयर किया गया है",
+    "shared-indicator-tooltip-with-url": "यह नोट सार्वजनिक रूप से यहाँ शेयर है: {{- url}}",
+    "subtree-hidden-tooltip_one": "{{count}} चाइल्ड नोट्स ट्री में छुपे हुए हैं",
+    "subtree-hidden-tooltip_other": "",
+    "subtree-hidden-moved-title": "{{title}} में जोड़ा गया",
+    "subtree-hidden-moved-description-collection": "यह कलेक्शन अपने चाइल्ड नोट्स को ट्री में छुपा देता है।",
+    "subtree-hidden-moved-description-other": "इस नोट के लिए चाइल्ड नोट्स ट्री में छुपे हुए हैं।"
+  },
+  "title_bar_buttons": {
+    "window-on-top": "विंडो सबसे ऊपर रखें"
+  },
+  "note_detail": {
+    "could_not_find_typewidget": "टाइप '{{type}}' के लिए typeWidget नहीं मिला",
+    "printing": "प्रिंट हो रहा है..।",
+    "printing_pdf": "PDF बन रहा है..।",
+    "print_report_title": "प्रिंट रिपोर्ट",
+    "print_report_error_title": "प्रिंट फ़ेल हो गया",
+    "print_report_stack_trace": "स्टैक ट्रेस (Stack trace)",
+    "print_report_collection_content_one": "कलेक्शन के {{count}} नोट्स प्रिंट नहीं हो सके क्योंकि वे समर्थित नहीं हैं या लॉक हैं।",
+    "print_report_collection_content_other": "",
+    "print_report_collection_details_button": "विवरण देखें",
+    "print_report_collection_details_ignored_notes": "छोड़े गए (Ignored) नोट्स",
+    "content_load_error": "नोट की कंटेंट लोड नहीं की जा सकी।",
+    "content_load_retry": "पुन: प्रयास करें",
+    "content_load_stalled": "अभी भी नोट की कंटेंट लोड हो रही है…"
+  },
+  "note_title": {
+    "placeholder": "नोट का टाइटल यहाँ लिखें..।",
+    "created_on": "<Value /> को बना",
+    "last_modified": "<Value /> को बदला गया",
+    "note_type_switcher_label": "{{type}} से इसमें बदलें:",
+    "note_type_switcher_others": "अन्य नोट टाइप",
+    "note_type_switcher_templates": "टेम्पलेट (Template)",
+    "note_type_switcher_collection": "कलेक्शन (Collection)",
+    "edited_notes": "आज बदले गए नोट्स",
+    "promoted_attributes": "प्रमोटेड एट्रीब्यूट्स"
+  },
+  "search_result": {
+    "no_notes_found": "दी गई खोज के लिए कोई नोट नहीं मिला।",
+    "search_not_executed": "अभी खोज नहीं की गई है।",
+    "search_now": "अभी खोजें"
+  },
+  "sql_result": {
+    "not_executed": "क्वेरी अभी रन नहीं हुई है।",
+    "no_rows": "इस क्वेरी के लिए कोई डेटा नहीं मिला",
+    "failed": "SQL क्वेरी रन करना फ़ेल हो गया",
+    "statement_result": "स्टेटमेंट रिज़ल्ट",
+    "execute_now": "अभी रन करें"
+  },
+  "sql_table_schemas": {
+    "tables": "टेबल्स (Tables)"
+  },
+  "tab_row": {
+    "close_tab": "टैब बंद करें",
+    "add_new_tab": "नया टैब जोड़ें",
+    "close": "बंद करें",
+    "close_other_tabs": "बाकी टैब बंद करें",
+    "close_right_tabs": "दाईं ओर के टैब बंद करें",
+    "close_all_tabs": "सभी टैब बंद करें",
+    "reopen_last_tab": "आखिरी बंद किया टैब फिर खोलें",
+    "move_tab_to_new_window": "इस टैब को नई विंडो में ले जाएं",
+    "copy_tab_to_new_window": "इस टैब को नई विंडो में कॉपी करें",
+    "new_tab": "नया टैब",
+    "pin_tab": "टैब पिन करें",
+    "unpin_tab": "टैब अनपिन करें",
+    "pinned_prefix": "पिन किया गया: "
+  },
+  "toc": {
+    "table_of_contents": "विषय-सूची (TOC)",
+    "options": "विकल्प",
+    "no_headings": "कोई हेडिंग नहीं मिली।"
+  },
+  "watched_file_update_status": {
+    "file_last_modified": "फ़ाइल <code class=\"file-path\"></code> आखिरी बार <span class=\"file-last-modified\"></span> को बदली गई थी।",
+    "upload_modified_file": "बदली हुई फ़ाइल अपलोड करें",
+    "ignore_this_change": "इस बदलाव को छोड़ें"
+  },
+  "app_context": {
+    "please_wait_for_save": "कृपया सेव होने के लिए कुछ सेकंड रुकें, फिर से कोशिश करें।"
+  },
+  "note_create": {
+    "duplicated": "नोट \"{{title}}\" की कॉपी (Duplicate) बना दी गई है।"
+  },
+  "image": {
+    "copied-to-clipboard": "तस्वीर का लिंक कॉपी हो गया है। इसे किसी भी टेक्स्ट नोट में पेस्ट किया जा सकता है।",
+    "cannot-copy": "तस्वीर का लिंक कॉपी नहीं हो सका।",
+    "copy-to-clipboard": "इमेज क्लिपबोर्ड पर कॉपी करें",
+    "download": "इमेज डाउनलोड करें",
+    "image-copied-to-clipboard": "इमेज को क्लिपबोर्ड पर कॉपी कर दिया गया है।",
+    "cannot-copy-image": "इमेज को क्लिपबोर्ड पर कॉपी नहीं किया जा सका।",
+    "cannot-download": "इमेज डाउनलोड नहीं की जा सकी।"
+  },
+  "clipboard": {
+    "cut": "नोट्स कट (Cut) कर लिए गए हैं।",
+    "copied": "नोट्स कॉपी (Copy) कर लिए गए हैं।",
+    "copy_failed": "अनुमति (Permission) की समस्या की वजह से कॉपी नहीं हो सका।",
+    "copy_success": "कॉपी हो गया।"
+  },
+  "entrypoints": {
+    "note-revision-created": "नोट रिवीज़न बन गया है।",
+    "note-executed": "नोट रन (Execute) हो गया।",
+    "sql-error": "SQL क्वेरी रन करने में एरर: {{message}}",
+    "save-named-revision-title": "नाम वाला रिवीजन सेव करें",
+    "save-named-revision-message": "इस रिवीजन के लिए एक नाम दर्ज करें (बिना नाम के लिए खाली छोड़ दें):"
+  },
+  "branches": {
+    "cannot-move-notes-here": "यहाँ नोट नहीं ला सकते।",
+    "delete-notes-in-progress": "नोट डिलीट हो रहे हैं: {{count}}",
+    "delete-finished-successfully": "सफलता से डिलीट हो गया।",
+    "undeleting-notes-in-progress": "नोट्स वापस लाए जा रहे हैं: {{count}}",
+    "undeleting-notes-finished-successfully": "सफलता से नोट्स वापस आ गए।"
+  },
+  "frontend_script_api": {
+    "async_warning": "आप `api.runOnBackend()` में एक async फ़ंक्शन डाल रहे हैं जो शायद ठीक से काम न करे। कृपया `async` हटा दें या दूसरा संबंधित फ़ंक्शन यूज़ करें।",
+    "sync_warning": "आप `api.runAsyncOnBackendWithManualTransactionHandling()` में साधारण फ़ंक्शन यूज़ कर रहे हैं, इसके बजाय `api.runOnBackend()` का यूज़ करें।"
+  },
+  "ws": {
+    "sync-check-failed": "सिंक चेक फ़ेल हो गया!",
+    "consistency-checks-failed": "कंसिस्टेंसी चेक फ़ेल! जानकारी के लिए लॉग देखें।",
+    "encountered-error": "एरर मिला: \"{{message}}\", कंसोल चेक करें।",
+    "lost-websocket-connection-title": "सर्वर से कनेक्शन टूट गया",
+    "lost-websocket-connection-message": "अपनी प्रॉक्सी (Nginx/Apache) सेटिंग्स चेक करें ताकि WebSocket कनेक्शन ब्लॉक न हों।"
+  },
+  "hoisted_note": {
+    "confirm_unhoisting": "यह नोट मुख्य (Hoisted) नोट के बाहर है। इसे देखने के लिए Unhoist करना होगा। क्या आप आगे बढ़ना चाहते हैं?"
+  },
+  "launcher_context_menu": {
+    "reset_launcher_confirm": "क्या आप वाकई \"{{title}}\" को रीसेट करना चाहते हैं? इससे सारा डेटा और सेटिंग्स मिट जाएंगी।",
+    "add-note-launcher": "नोट लॉन्चर जोड़ें",
+    "add-script-launcher": "स्क्रिप्ट लॉन्चर जोड़ें",
+    "add-custom-widget": "कस्टम विजेट जोड़ें",
+    "add-spacer": "खाली जगह (Spacer) जोड़ें",
+    "delete": "डिलीट <kbd data-command=\"deleteNotes\"></kbd>",
+    "reset": "रीसेट (Reset)",
+    "move-to-visible-launchers": "दिखने वाले लॉन्चर में ले जाएं",
+    "move-to-available-launchers": "उपलब्ध लॉन्चर में ले जाएं",
+    "duplicate-launcher": "डुप्लीकेट लॉन्चर <kbd data-command=\"duplicateSubtree\">"
+  },
+  "highlighting": {
+    "title": "कोड ब्लॉक्स (Code Blocks)",
+    "description": "यह टेक्स्ट नोट्स में कोड ब्लॉक्स के रंग (syntax highlighting) कंट्रोल करता है।",
+    "color-scheme": "कलर स्कीम (Color Scheme)"
+  },
+  "code_block": {
+    "word_wrapping": "लाइन रैपिंग (Word wrap)",
+    "theme_none": "कोई सिंटैक्स हाइलाइटिंग नहीं",
+    "theme_group_light": "हल्के (Light) थीम्स",
+    "theme_group_dark": "गहरे (Dark) थीम्स",
+    "copy_title": "क्लिपबोर्ड पर कॉपी करें",
+    "click_to_copy": "कॉपी करने के लिए क्लिक करें",
+    "tab_width": "टैब चौड़ाई",
+    "tab_width_unit": "स्पेस"
+  },
+  "classic_editor_toolbar": {
+    "title": "फॉर्मेटिंग (Formatting)"
+  },
+  "editor": {
+    "title": "एडिटर (Editor)"
+  },
+  "editing": {
+    "editor_type": {
+      "label": "फॉर्मेटिंग टूलबार",
+      "floating": {
+        "title": "तैरता हुआ (Floating)",
+        "description": "टूल्स कर्सर के पास दिखेंगे;"
+      },
+      "fixed": {
+        "title": "स्थायी (Fixed)",
+        "description": "टूल्स ऊपर 'Formatting' टैब में दिखेंगे।"
+      },
+      "multiline-toolbar": "जगह न होने पर टूलबार को कई लाइन्स में दिखाएं।",
+      "toolbar_style": "टूलबार स्टाइल"
+    }
+  },
+  "electron_context_menu": {
+    "add-term-to-dictionary": "\"{{term}}\" को डिक्शनरी में जोड़ें",
+    "cut": "कट (Cut)",
+    "copy": "कॉपी (Copy)",
+    "copy-as-markdown": "Markdown के रूप में कॉपी करें",
+    "copy-link": "लिंक कॉपी करें",
+    "paste": "पेस्ट (Paste)",
+    "paste-as-plain-text": "प्लेन टेक्स्ट की तरह पेस्ट करें",
+    "search_in_trilium": "ट्रिलियम में \"{{term}}\" खोजें",
+    "search_online": "Search for \"{{term}}\" with {{searchEngine}}"
+  },
+  "image_context_menu": {
+    "copy_reference_to_clipboard": "फोटो लिंक कॉपी करें",
+    "copy_image_to_clipboard": "फोटो कॉपी करें"
+  },
+  "link_context_menu": {
+    "open_note_in_new_tab": "नए टैब में नोट खोलें",
+    "open_note_in_new_split": "नए स्प्लिट में नोट खोलें",
+    "open_note_in_other_split": "दूसरे स्प्लिट में नोट खोलें",
+    "open_note_in_new_window": "नई विंडो में नोट खोलें",
+    "open_note_in_popup": "तुरंत एडिट करें"
+  },
+  "electron_integration": {
+    "desktop-application": "डेस्कटॉप एप्लिकेशन",
+    "native-title-bar": "सिस्टम टाइटल बार (Native)",
+    "native-title-bar-description": "विंडोज़/मैक के लिए इसे बंद रखने से ऐप छोटा दिखता है। लिनक्स पर इसे चालू रखने से सिस्टम में बेहतर घुलमिल जाता है।",
+    "background-effects": "बैकग्राउंड इफेक्ट्स चालू करें",
+    "background-effects-description": "विंडोज़ में एक धुंधला और सुंदर बैकग्राउंड जोड़ता है। इसके लिए 'सिस्टम टाइटल बार' बंद होना ज़रूरी है।",
+    "restart-app-button": "बदलाव देखने के लिए ऐप रीस्टार्ट करें",
+    "zoom-factor": "ज़ूम फैक्टर (Zoom factor)"
+  },
+  "note_autocomplete": {
+    "search-for": "\"{{term}}\" के लिए खोजें",
+    "create-note": "चाइल्ड नोट \"{{term}}\" बनाएं और लिंक करें",
+    "insert-external-link": "\"{{term}}\" का बाहरी लिंक जोड़ें",
+    "clear-text-field": "टेक्स्ट साफ़ करें",
+    "show-recent-notes": "हाल के नोट्स दिखाएं",
+    "full-text-search": "पूरी खोज (Full text search)"
+  },
+  "note_tooltip": {
+    "note-has-been-deleted": "नोट डिलीट कर दिया गया है।",
+    "quick-edit": "तुरंत एडिट करें"
+  },
+  "geo-map": {
+    "create-child-note-title": "नया चाइल्ड नोट बनाकर मैप पर जोड़ें",
+    "create-child-note-text": "मार्कर जोड़ें",
+    "create-child-note-instruction": "नई जगह पर नोट बनाने के लिए मैप पर क्लिक करें, या बंद करने के लिए Escape दबाएं।",
+    "unable-to-load-map": "मैप लोड नहीं हो सका।"
+  },
+  "geo-map-context": {
+    "open-location": "जगह खोलें",
+    "remove-from-map": "मैप से हटाएं",
+    "add-note": "इस जगह पर मार्कर जोड़ें"
+  },
+  "help-button": {
+    "title": "मदद का पेज खोलें"
+  },
+  "duration": {
+    "seconds": "सेकंड",
+    "minutes": "मिनट",
+    "hours": "घंटे",
+    "days": "दिन"
+  },
+  "share": {
+    "title": "शेयर सेटिंग्स",
+    "redirect_bare_domain": "मुख्य डोमेन को शेयर पेज पर भेजें",
+    "redirect_bare_domain_description": "अनजान लोगों को लॉग-इन के बजाय शेयर पेज पर भेजें",
+    "show_login_link": "शेयर थीम में लॉग-इन लिंक दिखाएं",
+    "show_login_link_description": "शेयर पेज के नीचे लॉग-इन लिंक जोड़ें",
+    "check_share_root": "शेयर रूट (Root) का स्टेटस चेक करें",
+    "share_root_found": "शेयर रूट नोट '{{noteTitle}}' तैयार है",
+    "share_root_not_found": "#shareRoot लेबल वाला कोई नोट नहीं मिला",
+    "share_root_not_shared": "'{{noteTitle}}' में #shareRoot लेबल है पर वो शेयर नहीं है"
+  },
+  "time_selector": {
+    "invalid_input": "डाली गई समय वैल्यू सही नंबर नहीं है।",
+    "minimum_input": "समय कम से कम {{minimumSeconds}} सेकंड होना चाहिए।"
+  },
+  "tasks": {
+    "due": {
+      "today": "आज",
+      "tomorrow": "कल",
+      "yesterday": "कल (बीता हुआ)"
+    }
+  },
+  "content_widget": {
+    "unknown_widget": "\"{{id}}\" के लिए अनजान विजेट।"
+  },
+  "note_language": {
+    "not_set": "कोई भाषा सेट नहीं है",
+    "configure-languages": "भाषाएं सेट करें..।",
+    "help-on-languages": "भाषाओं के बारे में मदद..।"
+  },
+  "content_language": {
+    "title": "कंटेंट की भाषाएं",
+    "description": "यहाँ वे भाषाएं चुनें जो आप नोट्स के लिए इस्तेमाल करना चाहते हैं।"
+  },
+  "switch_layout_button": {
+    "title_vertical": "एडिटर पैनल नीचे ले जाएं",
+    "title_horizontal": "एडिटर पैनल बाईं ओर ले जाएं"
+  },
+  "toggle_read_only_button": {
+    "unlock-editing": "एडिटिंग अनलॉक करें",
+    "lock-editing": "एडिटिंग लॉक करें"
+  },
+  "png_export_button": {
+    "button_title": "डायग्राम को PNG में एक्सपोर्ट करें"
+  },
+  "svg": {
+    "export_to_png": "डायग्राम PNG में एक्सपोर्ट नहीं हो सका।",
+    "export_to_svg": "डायग्राम SVG में एक्सपोर्ट नहीं हो सका।"
+  },
+  "code_theme": {
+    "title": "रूप-रंग (Appearance)",
+    "word_wrapping": "लाइन रैपिंग (Word wrap)",
+    "color-scheme": "कलर स्कीम (Color scheme)",
+    "theme_mode": "थीम मोड",
+    "match_app_appearance": "ऐप दिखावट (appearance) से मेल खाएं",
+    "always_use_one_theme": "हमेशा एक थीम का उपयोग करें",
+    "light_theme": "लाइट थीम",
+    "dark_theme": "डार्क थीम"
+  },
+  "cpu_arch_warning": {
+    "title": "कृपया ARM64 वर्जन डाउनलोड करें",
+    "message_macos": "आप Apple Silicon Mac पर Intel वर्जन चला रहे हैं। कृपया बेहतर परफॉरमेंस के लिए सही वर्जन यूज़ करें।",
+    "message_windows": "आप ARM डिवाइस पर Intel वर्जन चला रहे हैं, जिससे परफॉरमेंस और बैटरी पर असर पड़ेगा।",
+    "recommendation": "बेहतरीन अनुभव के लिए कृपया हमारे पेज से ARM64 वर्जन डाउनलोड करें।",
+    "download_link": "सही वर्जन डाउनलोड करें",
+    "continue_anyway": "फिर भी जारी रखें",
+    "dont_show_again": "यह चेतावनी दोबारा न दिखाएं"
+  },
+  "editorfeatures": {
+    "title": "फीचर्स (Features)",
+    "emoji_completion_enabled": "इमोजी ऑटो-कम्प्लीट चालू करें",
+    "emoji_completion_description": "चालू होने पर, `:` के बाद इमोजी का नाम लिखकर उसे नोट में डाल सकते हैं।",
+    "note_completion_enabled": "नोट ऑटो-कम्प्लीट चालू करें",
+    "note_completion_description": "चालू होने पर, `@` के बाद नोट का नाम लिखकर उसे लिंक कर सकते हैं।",
+    "slash_commands_enabled": "स्लैश (Slash) कमांड्स चालू करें",
+    "slash_commands_description": "चालू होने पर, `/` टाइप करके हेडिंग और अन्य सेटिंग्स बदल सकते हैं।"
+  },
+  "table_view": {
+    "new-row": "नई पंक्ति (Row)",
+    "new-column": "नया कॉलम",
+    "sort-column-by": "\"{{title}}\" के अनुसार क्रम में लगाएं",
+    "sort-column-ascending": "चढ़ते क्रम में (A-Z)",
+    "sort-column-descending": "उतरते क्रम में (Z-A)",
+    "sort-column-clear": "क्रम साफ़ करें",
+    "hide-column": "\"{{title}}\" कॉलम छुपाएं",
+    "show-hide-columns": "कॉलम दिखाएं/छुपाएं",
+    "row-insert-above": "ऊपर पंक्ति जोड़ें",
+    "row-insert-below": "नीचे पंक्ति जोड़ें",
+    "row-insert-child": "चाइल्ड नोट जोड़ें",
+    "add-column-to-the-left": "बाईं ओर कॉलम जोड़ें",
+    "add-column-to-the-right": "दाईं ओर कॉलम जोड़ें",
+    "edit-column": "कॉलम एडिट करें",
+    "delete_column_confirmation": "क्या आप वाकई इस कॉलम को डिलीट करना चाहते हैं? इससे सभी नोट्स से यह एट्रीब्यूट हटा दिया जाएगा।",
+    "delete-column": "कॉलम डिलीट करें",
+    "new-column-label": "लेबल (Label)",
+    "new-column-relation": "रिलेशन (Relation)"
+  },
+  "book_properties_config": {
+    "hide-weekends": "छुट्टियां (Weekends) छुपाएं",
+    "display-week-numbers": "हफ्ते का नंबर दिखाएं",
+    "map-style": "मैप स्टाइल",
+    "max-nesting-depth": "अधिकतम गहराई (Max depth):",
+    "raster": "रास्टर (Raster)",
+    "vector_light": "वेक्टर (हल्का)",
+    "vector_dark": "वेक्टर (गहरा)",
+    "show-scale": "स्केल दिखाएं",
+    "show-labels": "मार्कर के नाम दिखाएं"
+  },
+  "table_context_menu": {
+    "delete_row": "पंक्ति डिलीट करें"
+  },
+  "board_view": {
+    "delete-note": "नोट डिलीट करें..।",
+    "remove-from-board": "बोर्ड से हटाएं",
+    "archive-note": "नोट आर्काइव करें",
+    "unarchive-note": "नोट आर्काइव से निकालें",
+    "move-to": "इसमें ले जाएं",
+    "insert-above": "ऊपर जोड़ें",
+    "insert-below": "नीचे जोड़ें",
+    "delete-column": "कॉलम डिलीट करें",
+    "delete-column-confirmation": "क्या आप इस कॉलम को डिलीट करना चाहते हैं? इसके अंदर के नोट्स से यह एट्रीब्यूट भी मिट जाएगा।",
+    "new-item": "नई चीज़",
+    "new-item-placeholder": "नोट का टाइटल लिखें..।",
+    "add-column": "कॉलम जोड़ें",
+    "add-column-placeholder": "कॉलम का नाम लिखें..।",
+    "edit-note-title": "टाइटल बदलने के लिए क्लिक करें",
+    "edit-column-title": "कॉलम का नाम बदलने के लिए क्लिक करें",
+    "column-already-exists": "यह कॉलम बोर्ड पर पहले से है।"
+  },
+  "presentation_view": {
+    "edit-slide": "यह स्लाइड एडिट करें",
+    "start-presentation": "प्रेजेंटेशन शुरू करें",
+    "slide-overview": "सभी स्लाइड्स का ओवरव्यू दिखाएं/छुपाएं"
+  },
+  "calendar_view": {
+    "delete_note": "नोट डिलीट करें..।"
+  },
+  "command_palette": {
+    "tree-action-name": "ट्री: {{name}}",
+    "export_note_title": "नोट एक्सपोर्ट करें",
+    "export_note_description": "इस नोट को एक्सपोर्ट करें",
+    "show_attachments_title": "अटैचमेंट्स दिखाएं",
+    "show_attachments_description": "नोट के अटैचमेंट्स देखें",
+    "search_notes_title": "नोट्स खोजें",
+    "search_notes_description": "एडवांस्ड खोज खोलें",
+    "search_subtree_title": "सब-ट्री (Subtree) में खोजें",
+    "search_subtree_description": "इस सब-ट्री के अंदर खोजें",
+    "search_history_title": "खोज का इतिहास (History) दिखाएं",
+    "search_history_description": "पुरानी खोजें देखें",
+    "configure_launch_bar_title": "लॉन्च बार सेट करें",
+    "configure_launch_bar_description": "लॉन्च बार में चीज़ें जोड़ने या हटाने के लिए सेटिंग्स खोलें।",
+    "pin_tab_title": "टैब पिन करें",
+    "pin_tab_description": "हमेशा इस नोट को टैब बार की शुरुआत में इस टैब में खुला रखें और इसे गलती से बंद होने से रोकें",
+    "unpin_tab_title": "टैब अनपिन करें",
+    "unpin_tab_description": "इस टैब को अनपिन करें, जिससे इसे स्वतंत्र रूप से बंद और स्थानांतरित किया जा सके"
+  },
+  "content_renderer": {
+    "open_externally": "बाहर खोलें",
+    "mermaid_diagram_error": "मरमेड डायग्राम रेंडर करने में विफल: {{error}}"
+  },
+  "modal": {
+    "close": "बंद करें",
+    "help_title": "इस स्क्रीन के बारे में और जानकारी दिखाएं"
+  },
+  "call_to_action": {
+    "next_theme_title": "ट्रिलियम की नई थीम आज़माएं",
+    "next_theme_message": "आप पुरानी थीम यूज़ कर रहे हैं, क्या आप नई थीम आज़माना चाहेंगे?",
+    "next_theme_button": "नई थीम आज़माएं",
+    "background_effects_title": "बैकग्राउंड इफेक्ट्स अब तैयार हैं",
+    "background_effects_message": "विंडोज़ और मैक के लिए बैकग्राउंड इफेक्ट्स अब उपलब्ध हैं। ये ऐप को और भी सुंदर बनाते हैं।",
+    "background_effects_button": "बैकग्राउंड इफेक्ट्स चालू करें",
+    "new_layout_title": "नया लेआउट",
+    "new_layout_message": "हमने ट्रिलियम के लिए एक नया और आधुनिक लेआउट बनाया है। इसे आप 'Appearance' सेटिंग्स से बदल भी सकते हैं।",
+    "new_layout_button": "और जानकारी",
+    "dismiss": "हटाएँ",
+    "scripting_disabled_title": "बैकएंड स्क्रिप्टिंग अक्षम कर दी गई है",
+    "scripting_disabled_message": "सुरक्षा के लिए अब बैकएंड स्क्रिप्टिंग डिफ़ॉल्ट रूप से अक्षम है। आपके नोट्स में बैकएंड स्क्रिप्ट हैं (#run लेबल वाले नोट्स) जो अब स्वचालित रूप से निष्पादित नहीं होंगे।\n\nयदि आप इन स्क्रिप्ट्स पर निर्भर हैं, तो आप सुरक्षा सेटिंग्स में बैकएंड स्क्रिप्टिंग को फिर से इनेबल कर सकते हैं।",
+    "scripting_disabled_button": "सुरक्षा सेटिंग्स खोलें"
+  },
+  "settings": {
+    "related_settings": "संबंधित सेटिंग्स"
+  },
+  "settings_appearance": {
+    "related_code_blocks": "टेक्स्ट नोट्स में कोड ब्लॉक्स के लिए कलर स्कीम",
+    "related_code_notes": "कोड नोट्स के लिए कलर स्कीम",
+    "ui": "यूजर इंटरफ़ेस (UI)",
+    "ui_old_layout": "पुराना लेआउट",
+    "ui_new_layout": "नया लेआउट",
+    "ui_layout_style": "लेआउट स्टाइल",
+    "ui_layout_orientation": "लॉन्च बार ओरिएंटेशन"
+  },
+  "units": {
+    "percentage": "%"
+  },
+  "pagination": {
+    "total_notes_one": "{{count}} नोट्स",
+    "total_notes_other": "{{count}} नोट्स",
+    "prev_page": "पिछला पेज",
+    "next_page": "अगला पेज"
+  },
+  "collections": {
+    "rendering_error": "एरर की वजह से कंटेंट नहीं दिखा सके।"
+  },
+  "note-color": {
+    "clear-color": "नोट का रंग हटाएं",
+    "set-color": "नोट का रंग सेट करें",
+    "set-custom-color": "खुद का रंग चुनें"
+  },
+  "popup-editor": {
+    "maximize": "पूरे एडिटर पर जाएं"
+  },
+  "server": {
+    "unknown_http_error_title": "सर्वर के साथ कनेक्शन में एरर",
+    "unknown_http_error_content": "स्टेट्स कोड: {{statusCode}}\nURL: {{method}} {{url}}\nमैसेज: {{message}}",
+    "traefik_blocks_requests": "अगर आप Traefik प्रॉक्सी यूज़ कर रहे हैं, तो इसके बदलावों की वजह से सर्वर से जुड़ने में समस्या हो सकती है।"
+  },
+  "tab_history_navigation_buttons": {
+    "go-back": "पिछले नोट पर वापस जाएं",
+    "go-forward": "अगले नोट पर जाएं"
+  },
+  "breadcrumb": {
+    "hoisted_badge": "मुख्य (Hoisted)",
+    "hoisted_badge_title": "मुख्य से हटाएं (Unhoist)",
+    "workspace_badge": "वर्कस्पेस",
+    "scroll_to_top_title": "नोट की शुरुआत पर जाएं",
+    "create_new_note": "नया चाइल्ड नोट बनाएं",
+    "empty_hide_archived_notes": "आर्काइव किए गए नोट्स छुपाएं"
+  },
+  "breadcrumb_badges": {
+    "read_only_explicit": "सिर्फ़ पढ़ने वाला (Read-only)",
+    "read_only_explicit_description": "यह नोट खुद से 'रीड-ओनली' सेट किया गया है। एडिट करने के लिए क्लिक करें।",
+    "read_only_auto": "ऑटो-रीड-ओनली",
+    "read_only_auto_description": "तेज़ परफॉरमेंस के लिए यह नोट 'रीड-ओनली' मोड में है। इसे सेटिंग्स से बदल सकते हैं।",
+    "read_only_temporarily_disabled": "अभी एडिट कर सकते हैं",
+    "read_only_temporarily_disabled_description": "आप अभी इसे एडिट कर सकते हैं, पर दूसरे नोट पर जाते ही यह फिर 'रीड-ओनली' हो जाएगा।",
+    "shared_publicly": "सार्वजनिक शेयर",
+    "shared_locally": "लोकल नेटवर्क पर शेयर",
+    "shared_copy_to_clipboard": "लिंक कॉपी करें",
+    "shared_open_in_browser": "ब्राउज़र में खोलें",
+    "shared_unshare": "शेयर हटाएं",
+    "clipped_note": "वेब क्लिप (Web clip)",
+    "clipped_note_description": "यह नोट {{url}} से लिया गया है। वेबसाइट पर जाने के लिए यहाँ क्लिक करें।",
+    "execute_script": "स्क्रिप्ट चलाएं",
+    "execute_script_description": "यह एक स्क्रिप्ट है। इसे चलाने (Run) के लिए यहाँ क्लिक करें।",
+    "execute_sql": "SQL चलाएं",
+    "execute_sql_description": "यह SQL नोट है। क्वेरी चलाने के लिए यहाँ क्लिक करें।",
+    "save_status_saved": "सेव हो गया",
+    "save_status_saving": "सेव हो रहा है..।",
+    "save_status_unsaved": "सेव नहीं हुआ",
+    "save_status_error": "सेव फ़ेल हो गया",
+    "save_status_saving_tooltip": "बदलाव सेव किए जा रहे हैं।",
+    "save_status_unsaved_tooltip": "कुछ बदलाव सेव नहीं हुए हैं। वे अभी थोड़ी देर में अपने-आप सेव हो जाएंगे।",
+    "save_status_error_tooltip": "नोट सेव करने में एरर आया। कृपया कंटेंट कॉपी करके ऐप रीलोड करें।",
+    "doc_url": "ऑनलाइन डॉक्स",
+    "doc_url_description": "इस पेज को ऑनलाइन डॉक्यूमेंटेशन वेबसाइट पर देखने के लिए क्लिक करें।"
+  },
+  "status_bar": {
+    "language_title": "भाषा बदलें",
+    "note_info_title": "नोट की जानकारी देखें (तारीख, साइज़ आदि)",
+    "backlinks_one": "{{count}} बैकलिंक",
+    "backlinks_other": "",
+    "backlinks_title_one": "बैकलिंक देखें",
+    "backlinks_title_other": "",
+    "attachments_one": "{{count}} अटैचमेंट",
+    "attachments_other": "",
+    "attachments_title_one": "अटैचमेंट नए टैब में देखें",
+    "attachments_title_other": "",
+    "attributes_one": "{{count}} एट्रीब्यूट",
+    "attributes_other": "",
+    "attributes_title": "नोट के एट्रीब्यूट्स देखें",
+    "note_paths_one": "{{count}} पाथ",
+    "note_paths_other": "",
+    "note_paths_title": "नोट पाथ",
+    "code_note_switcher": "भाषा मोड (Mode) बदलें",
+    "tab_width": "टैब चौड़ाई: {{width}}",
+    "tab_width_title": "टैब चौड़ाई बदलें",
+    "tab_width_spaces_one": "{{count}} स्पेस",
+    "tab_width_spaces_other": "{{count}} स्पेस",
+    "tab_width_spaces_short": "स्पेस: {{width}}",
+    "tab_width_tabs": "टैब: {{width}}",
+    "tab_width_use_default": "डिफ़ॉल्ट का उपयोग करें ({{width}})",
+    "tab_width_use_default_style": "डिफ़ॉल्ट का उपयोग करें ({{style}})",
+    "tab_width_display_header": "प्रदर्शन चौड़ाई",
+    "tab_width_reindent_header": "कंटेंट को फिर से इंडेंट करें",
+    "tab_width_style_header": "इसका उपयोग करके इंडेंट करें",
+    "tab_width_style_spaces": "स्पेस",
+    "tab_width_style_tabs": "टैब"
+  },
+  "attributes_panel": {
+    "title": "नोट एट्रीब्यूट्स"
+  },
+  "right_pane": {
+    "empty_message": "दिखाने के लिए कुछ नहीं है",
+    "empty_button": "पैनल छुपाएं",
+    "toggle": "दायां पैनल दिखाएं/छुपाएं",
+    "custom_widget_go_to_source": "सोर्स कोड पर जाएं"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} अटैचमेंट",
+    "attachments_other": "",
+    "layers_one": "{{count}} लेयर",
+    "layers_other": "",
+    "pages_one": "{{count}} पेज",
+    "pages_other": "",
+    "pages_alt": "पेज {{pageNumber}}",
+    "pages_loading": "लोड हो रहा है..।",
+    "annotations_one": "{{count}} एनोटेशन",
+    "annotations_other": "{{count}} एनोटेशन"
+  },
+  "platform_indicator": {
+    "available_on": "{{platform}} पर उपलब्ध"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "{{count}} टैब",
+    "title_other": "",
+    "more_options": "और विकल्प"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "बुकमार्क"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "आइकन पैक (Icon pack)",
+    "type_backend_script": "बैकएंड स्क्रिप्ट",
+    "type_frontend_script": "फ्रंटएंड स्क्रिप्ट",
+    "type_widget": "विजेट (Widget)",
+    "type_app_css": "कस्टम CSS",
+    "type_render_note": "रेंडर नोट (Render)",
+    "type_web_view": "वेब व्यू (Web View)",
+    "type_app_theme": "कस्टम थीम",
+    "toggle_tooltip_enable_tooltip": "{{type}} को चालू करने के लिए क्लिक करें।",
+    "toggle_tooltip_disable_tooltip": "{{type}} को बंद करने के लिए क्लिक करें।",
+    "menu_docs": "डॉक्यूमेंटेशन (Docs) खोलें",
+    "menu_execute_now": "स्क्रिप्ट अभी चलाएं",
+    "menu_run": "अपने-आप चलाएं (Auto-run)",
+    "menu_run_disabled": "खुद से (Manually)",
+    "menu_run_backend_startup": "शुरू (Startup) होने पर",
+    "menu_run_hourly": "हर घंटे",
+    "menu_run_daily": "हर दिन",
+    "menu_run_frontend_startup": "डेस्कटॉप शुरू होने पर",
+    "menu_run_mobile_startup": "मोबाइल शुरू होने पर",
+    "menu_change_to_widget": "विजेट में बदलें",
+    "menu_change_to_frontend_script": "फ्रंटएंड स्क्रिप्ट में बदलें",
+    "menu_theme_base": "मुख्य थीम (Base Theme)",
+    "type_custom_request_handler": "कस्टम रिक्वेस्ट हैंडलर"
+  },
+  "setup_form": {
+    "more_info": "और जानें"
+  },
+  "sidebar_chat": {
+    "view_all_chats": "सभी चैट देखें",
+    "title": "AI चैट",
+    "launcher_title": "AI चैट खोलें",
+    "new_chat": "नई चैट शुरू करें",
+    "save_chat": "चैट को नोट्स में सेव करें",
+    "empty_state": "बातचीत शुरू करें",
+    "history": "चैट इतिहास",
+    "recent_chats": "हाल की चैट",
+    "no_chats": "कोई पिछला चैट नहीं"
+  },
+  "import_provider": {
+    "choose_provider": "इम्पोर्ट करने के लिए कोई सर्विस चुनें:"
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "अपने OneNote खाते से नोटबुक, सेक्शन्स और पेज इम्पोर्ट करें।",
+    "connect_description": "अपनी OneNote नोटबुक इम्पोर्ट करने के लिए अपने Microsoft खाते से साइन इन करें।",
+    "connect": "Microsoft के साथ साइन इन करें",
+    "connecting": "साइन-इन पूरा होने की प्रतीक्षा की जा रही है…",
+    "connected_as": "{{name}} के रूप में कनेक्टेड",
+    "disconnect": "डिस्कनेक्ट करें",
+    "load_failed": "आपकी OneNote नोटबुक लोड नहीं की जा सकीं।",
+    "no_notebooks": "इस खाते में कोई नोटबुक नहीं मिली।",
+    "select_sections": "इम्पोर्ट करने के लिए सेक्शन्स चुनें:",
+    "import": "चुने गए को इम्पोर्ट करें",
+    "attach_source": "मूल HTML अटैच करें (डीबग)",
+    "attach_source_hint": "कन्वर्ट किए गए परिणाम से तुलना करने के लिए प्रत्येक पेज के अनमॉडिफाइड OneNote HTML को इम्पोर्टेड नोट पर अटैचमेंट के रूप में सेव करता है।"
+  },
+  "markdown_editor": {
+    "image_upload_failed": "इमेज \"{{name}}\" को अपलोड नहीं किया जा सकता।"
+  },
+  "markdown_slash_commands": {
+    "date": "करंट डेट और टाइम डालें",
+    "include": "दूसरा नोट शामिल करें",
+    "image": "इमेज अपलोड करें और डालें",
+    "link": "नोट लिंक डालें",
+    "math": "मैथ इक्वेशन ब्लॉक डालें",
+    "footnote": "फुटनोट डालें",
+    "mermaid": "मरमेड डायग्राम डालें",
+    "mermaid_template": "\"{{name}}\" मरमेड डायग्राम डालें",
+    "collapsible": "कोलाप्सिबल (सिकुड़ने वाला) ब्लॉक डालें",
+    "admonition": "{{type}} एडमोनिशन डालें",
+    "todo": "\"{{title}}\" टास्क आइटम डालें",
+    "todo_nonstandard": "\"{{title}}\" टास्क आइटम डालें (गैर-मानक)",
+    "placeholders": {
+      "math": "समीकरण (equation)",
+      "collapsible_summary": "सारांश (Summary)",
+      "collapsible_details": "विवरण (Details)"
+    }
+  },
+  "slash_commands": {
+    "bulleted_list_description": "बुलेटेड लिस्ट बनाएं",
+    "numbered_list_description": "नंबर वाली लिस्ट बनाएं",
+    "todo_list_description": "टू-डू लिस्ट बनाएं",
+    "align_left_description": "टेक्स्ट को बाईं ओर संरेखित (align) करें",
+    "align_center_description": "टेक्स्ट को बीच में संरेखित करें",
+    "align_right_description": "टेक्स्ट को दाईं ओर संरेखित करें",
+    "justify_description": "टेक्स्ट अलाइनमेंट जस्टिफाई करें",
+    "admonition_description": "एक नया एडमोनिशन (admonition) डालें",
+    "collapsible_description": "एक टॉगल करने योग्य सेक्शन डालें जो क्लिक करने पर कंटेंट को छुपाता/दिखाता है।",
+    "footnote_description": "एक नया फुटनोट बनाएं और उसका संदर्भ (reference) यहाँ दें",
+    "datetime_description": "करंट डेट और टाइम डालें",
+    "internal_link_description": "दूसरे ट्रिलियम नोट का लिंक डालें",
+    "math_description": "मैथ इक्वेशन डालें",
+    "include_note_description": "इस नोट में दूसरे नोट की कंटेंट दिखाएं",
+    "page_break_description": "पेज ब्रेक डालें (प्रिंट करने के लिए)",
+    "markdown_import_description": "इस नोट में एक मार्कडाउन फ़ाइल इम्पोर्ट करें",
+    "anchor_description": "इंटरनल लिंकिंग के लिए एक एंकर डालें"
+  },
+  "revisions": {
+    "note_revisions": "नोट रिवीजन्स",
+    "back": "पीछे जाएं",
+    "delete_all_revisions": "इस नोट के सभी रिवीजन्स डिलीट करें",
+    "delete_all_button": "सभी रिवीजन्स डिलीट करें",
+    "help_title": "नोट रिवीजन्स पर मदद",
+    "confirm_delete_all": "क्या आप इस नोट के सभी रिवीजन्स डिलीट करना चाहते हैं?",
+    "no_revisions": "इस नोट के लिए अभी कोई रिवीजन्स नहीं हैं..।",
+    "restore_button": "रीस्टोर (Restore)",
+    "highlight_changes": "बदलाव हाइलाइट करें",
+    "diff_on": "डिफ (diff) दिखाएं",
+    "diff_off": "कंटेंट दिखाएं",
+    "diff_on_hint": "नोट सोर्स डिफ देखने के लिए क्लिक करें",
+    "diff_off_hint": "नोट कंटेंट देखने के लिए क्लिक करें",
+    "diff_not_available": "डिफ (diff) उपलब्ध नहीं है।",
+    "diff_identical": "यह रिवीजन करंट नोट कंटेंट के बिल्कुल समान है।",
+    "confirm_restore": "क्या आप इस रिवीजन को रीस्टोर करना चाहते हैं? यह इस रिवीजन के साथ नोट के करंट टाइटल और कंटेंट को बदल देगा।",
+    "delete_button": "डिलीट करें",
+    "confirm_delete": "क्या आप इस रिवीजन को डिलीट करना चाहते हैं?",
+    "revisions_deleted": "नोट रिवीजन्स डिलीट कर दिए गए हैं।",
+    "revision_restored": "नोट रिवीजन रीस्टोर कर दिया गया है।",
+    "revision_deleted": "नोट रिवीजन डिलीट कर दिया गया है।",
+    "snapshot_interval": "नोट रिवीजन स्नैपशॉट इंटरवल: {{seconds}}s।",
+    "maximum_revisions": "नोट रिवीजन स्नैपशॉट लिमिट: {{number}}।",
+    "save_revision_now": "अभी एक रिवीजन सेव करें",
+    "save_named_revision": "नाम वाला रिवीजन सेव करें..।",
+    "snapshot_header": "नोट रिवीजन स्नैपशॉट",
+    "snapshot_interval_value": "अंतराल: {{seconds}}s",
+    "snapshot_limit_value": "सीमा: {{number}}",
+    "settings": "नोट रिवीजन सेटिंग्स",
+    "menu_tooltip": "रिवीजन ऑप्शंस",
+    "download_button": "डाउनलोड करें",
+    "mime": "MIME: ",
+    "file_size": "फ़ाइल का आकार:",
+    "preview_not_available": "इस नोट टाइप के लिए प्रीव्यू उपलब्ध नहीं है।",
+    "save_revision": "रिवीजन सेव करें",
+    "save_revision_tooltip": "करंट नोट का स्नैपशॉट मैन्युअल रूप से सेव करें",
+    "description_placeholder": "इस रिवीजन को नाम दें",
+    "revision_saved": "नोट रिवीजन सेव कर लिया गया है।",
+    "edit_description": "नाम एडिट करें",
+    "description_updated": "रिवीजन का नाम अपडेट कर दिया गया है।",
+    "source_auto": "ऑटो-सेव",
+    "source_manual": "मैन्युअल सेव",
+    "source_etapi": "ETAPI",
+    "source_llm": "LLM",
+    "source_restore": "रीस्टोर (Restore)",
+    "source_unknown": "स्नैपशॉट",
+    "date_today": "आज",
+    "date_yesterday": "कल",
+    "date_this_week": "इस सप्ताह",
+    "date_this_month": "इस महीने",
+    "source_description_auto": "नियमित अंतराल पर सिस्टम द्वारा स्वचालित रूप से सेव किया गया",
+    "source_description_manual": "यूजर द्वारा मैन्युअल रूप से सेव किया गया",
+    "source_description_etapi": "एक्सटर्नल ट्रिलियम एपीआई (ETAPI) के माध्यम से बनाया गया",
+    "source_description_llm": "एआई असिस्टेंट द्वारा बनाया गया",
+    "source_description_restore": "पिछले रिवीजन को रीस्टोर करने से पहले सेव किया गया",
+    "source_description_unknown": "स्रोत (source) उपलब्ध नहीं है"
+  },
+  "options": {
+    "title": "ऑप्शंस",
+    "back": "सभी ऑप्शंस पर वापस जाएं"
+  },
+  "image_buttons": {
+    "zoom_in": "ज़ूम इन",
+    "zoom_out": "ज़ूम आउट",
+    "reset_zoom": "ज़ूम रीसेट करें"
+  },
+  "image_navigation": {
+    "previous": "पिछली इमेज: {{- title}}",
+    "next": "अगली इमेज: {{- title}}"
+  },
+  "image_viewer": {
+    "loading_error": "इमेज लोड करने में त्रुटि हुई थी।"
+  },
+  "auto_link_attribute_list": {
+    "title": "सिस्टम एट्रिब्यूट्स"
+  },
+  "split_editor": {
+    "render_error": "प्रीव्यू रेंडर करने में असमर्थ",
+    "show_details": "विवरण दिखाएं",
+    "last_valid_render": "पिछला वैध रेंडर दिखाया जा रहा है"
+  },
+  "media": {
+    "play": "चलाएं (Space)",
+    "pause": "रोकें (Space)",
+    "seek": "सीक करें (बायाँ/दायाँ एरो कीज)",
+    "back-10s": "10 सेकंड पीछे (बायाँ एरो की)",
+    "previous-video": "पिछला वीडियो: {{- title}}",
+    "next-video": "अगला वीडियो: {{- title}}",
+    "previous-audio": "पिछला ऑडियो: {{- title}}",
+    "next-audio": "अगला ऑडियो: {{- title}}",
+    "mute": "म्यूट करें (M)",
+    "unmute": "अनम्यूट करें (M)",
+    "playback-speed": "प्लेबैक स्पीड",
+    "play-mode-title": "प्ले मोड: {{mode}}",
+    "play-mode-once": "एक बार चलाएं",
+    "play-mode-loop": "लूप (Loop)",
+    "play-mode-next": "अगला चलाएं",
+    "rotate": "घुमाएं (Rotate)",
+    "picture-in-picture": "पिक्चर-इन-पिक्चर",
+    "exit-picture-in-picture": "पिक्चर-इन-पिक्चर से बाहर निकलें",
+    "fullscreen": "फुलस्क्रीन (F)",
+    "exit-fullscreen": "फुलस्क्रीन से बाहर निकलें",
+    "unsupported-format": "इस फ़ाइल फॉर्मेट के लिए मीडिया प्रीव्यू उपलब्ध नहीं है:\n{{mime}}",
+    "zoom-to-fit": "ज़ूम टू फिट",
+    "zoom-reset": "ज़ूम रीसेट करें"
+  },
+  "database": {
+    "title": "डेटाबेस"
+  },
+  "revisions_snapshot": {
+    "title": "नोट रिवीजन्स"
+  },
+  "search": {
+    "title": "खोज (Search)",
+    "fuzzy_matching_label": "सर्च में टाइपो टॉलरेंस (गलती सहनशीलता)",
+    "fuzzy_matching_description": "क्विक सर्च और फुल सर्च को प्रभावित करता है। सटीक मेल अपर्याप्त होने पर समान शब्दों को ढूंढता है।",
+    "autocomplete_fuzzy_label": "ऑटो-कंपलीट में टाइपो टॉलरेंस",
+    "autocomplete_fuzzy_description": "जंप-टू-नोट और नोट सिलेक्टर्स को प्रभावित करता है। धीमा है लेकिन टाइपिंग की गलतियों को सहन करता है।"
+  },
+  "desktop": {
+    "web_placeholder": "ये विकल्प केवल डेस्कटॉप बिल्ड पर लागू होते हैं।"
+  },
+  "startup": {
+    "title": "स्टार्टअप (Startup)",
+    "launch_on_startup": "स्टार्टअप पर लॉन्च करें",
+    "launch_on_startup_description": "जब आप अपने कंप्यूटर में लॉग इन करें तो ट्रिलियम को स्वचालित रूप से खोलें।",
+    "hide_on_auto_start": "सिस्टम ट्रे में मिनिमाइज करके शुरू करें",
+    "hide_on_auto_start_description": "लॉगिन पर ऑटोमैटिक लॉन्च होने पर, विंडो खोलने के बजाय सिस्टम ट्रे में छिपाकर शुरू करें। इसके लिए स्टार्टअप पर लॉन्च और ट्रे आइकन इनेबल होना आवश्यक है।"
+  },
+  "text_editor": {
+    "title": "एडिटर",
+    "related_task_states": "टू-डू लिस्ट के लिए कस्टम चेकबॉक्स स्टेट्स"
+  },
+  "security": {
+    "backend_scripting_title": "बैकएंड स्क्रिप्टिंग",
+    "backend_scripting_section_description": "बैकएंड स्क्रिप्ट्स को सर्वर तक पूर्ण पहुंच प्राप्त है जिसमें फ़ाइल सिस्टम, नेटवर्क और ओएस कमांड शामिल हैं। उन्हें सिंक, इम्पोर्ट, या निष्पादन योग्य एट्रिब्यूट्स वाली किसी भी कंटेंट के माध्यम से ट्रिगर किया जा सकता है। फ्रंटएंड स्क्रिप्ट्स हमेशा इनेबल रहती हैं क्योंकि वे सैंडबॉक्स किए गए ब्राउज़र संदर्भ में चलती हैं।",
+    "backend_scripting_label": "बैकएंड स्क्रिप्ट निष्पादन (execution)",
+    "backend_scripting_description": "बैकएंड स्क्रिप्ट्स (स्टार्टअप स्क्रिप्ट, कस्टम रिक्वेस्ट हैंडलर, इवेंट हैंडलर, शेड्यूल की गई स्क्रिप्ट आदि) के निष्पादन की अनुमति दें।",
+    "sql_console_title": "SQL कंसोल",
+    "sql_console_section_description": "SQL कंसोल डेटाबेस के विरुद्ध रॉ (raw) SQL क्वेरी चलाने की अनुमति देता है। इसका उपयोग संवेदनशील डेटा (जैसे सिंक सीक्रेट्स, एपीआई कीज) को पढ़ने और किसी भी डेटा को बदलने या हटाने के लिए किया जा सकता है। कोई दुर्भावनापूर्ण फ्रंटएंड स्क्रिप्ट भी प्रोग्रामेटिक रूप से SQL कंसोल एपीआई तक पहुंच सकती है।",
+    "sql_console_label": "SQL कंसोल",
+    "sql_console_description": "SQL कंसोल में क्वेरी चलाने की अनुमति दें।",
+    "lan_access_title": "नेटवर्क एक्सेस (Network access)",
+    "lan_access_section_description": "डिफ़ॉल्ट रूप से डेस्कटॉप ऐप केवल इसी कंप्यूटर से कनेक्शन स्वीकार करता है। अपने लोकल नेटवर्क से एक्सेस की अनुमति दें ताकि अन्य डिवाइसेज इससे कनेक्ट हो सकें — उदाहरण के लिए किसी अन्य डिवाइस से सिंक करने के लिए। इसे केवल उन्हीं नेटवर्क पर इनेबल करें जिन पर आप भरोसा करते हैं।",
+    "lan_access_label": "अन्य डिवाइसेज से कनेक्शन की अनुमति दें",
+    "lan_access_description": "केवल लोकलहोस्ट के बजाय सर्वर को सभी नेटवर्क इंटरफेस से बांधें (bind करें)।",
+    "how_to_enable": "कैसे इनेबल करें",
+    "server_config_hint": "अपनी config.ini फ़ाइल में निम्नलिखित जोड़ें:",
+    "server_env_hint": "या निम्नलिखित पर्यावरण चर (environment variable) सेट करें:",
+    "restart_required": "इस बदलाव को लागू करने के लिए रीस्टार्ट आवश्यक है।",
+    "restart_now": "एप्लिकेशन को अभी रीस्टार्ट करें"
+  },
+  "llm_chat": {
+    "placeholder": "एक संदेश टाइप करें..।",
+    "send": "भेजें",
+    "sending": "भेजा जा रहा है..।",
+    "empty_state": "नीचे संदेश टाइप करके बातचीत शुरू करें।",
+    "searching_web": "वेब सर्च किया जा रहा है..।",
+    "web_search": "वेब सर्च",
+    "web_search_unavailable_gemini": "नोट एक्सेस चालू होने पर जेमिनी (Gemini) मॉडल पर उपलब्ध नहीं है — गूगल का एपीआई दोनों को मिलाने की अनुमति नहीं देता है। वेब सर्च का उपयोग करने के लिए नोट एक्सेस बंद करें या किसी अन्य प्रोवाइडर पर स्विच करें।",
+    "note_tools": "नोट एक्सेस",
+    "sources": "स्रोत (Sources)",
+    "sources_summary": "{{sites}} साइटों से {{count}} स्रोत",
+    "extended_thinking": "गहन चिंतन (Extended thinking)",
+    "legacy_models": "लेगेसी मॉडल",
+    "thinking": "सोचा जा रहा है..।",
+    "thought_process": "विचार प्रक्रिया",
+    "tool_calls": "{{count}} टूल कॉल",
+    "input": "इनपुट",
+    "input_streaming": "इनपुट (स्ट्रीमिंग…)",
+    "edit_index": "{{total}} में से {{index}} संपादित करें",
+    "result": "परिणाम",
+    "error": "त्रुटि",
+    "tool_error": "विफल रहा",
+    "total_tokens": "{{total}} टोकन",
+    "tokens_detail": "{{prompt}} प्रॉम्प्ट + {{completion}} कम्प्लीशन",
+    "tokens_used": "{{prompt}} प्रॉम्प्ट + {{completion}} कम्प्लीशन = {{total}} टोकन",
+    "tokens_used_with_cost": "{{prompt}} प्रॉम्प्ट + {{completion}} कम्प्लीशन = {{total}} टोकन (~${{cost}})",
+    "tokens_used_with_model": "{{model}}: {{prompt}} प्रॉम्प्ट + {{completion}} कम्प्लीशन = {{total}} टोकन",
+    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} प्रॉम्प्ट + {{completion}} कम्प्लीशन = {{total}} टोकन (~${{cost}})",
+    "tokens": "टोकन",
+    "context_used": "{{percentage}}% उपयोग किया गया",
+    "note_context_enabled": "नोट संदर्भ (context) अक्षम करने के लिए क्लिक करें: {{title}}",
+    "note_context_disabled": "संदर्भ में वर्तमान नोट शामिल करने के लिए क्लिक करें",
+    "no_provider_message": "कोई एआई प्रोवाइडर कॉन्फ़िगर नहीं है। चैट शुरू करने के लिए एक जोड़ें।",
+    "add_provider": "एआई प्रोवाइडर जोड़ें",
+    "stop": "रोकें",
+    "retry": "पुन: प्रयास करें",
+    "attach_file": "इमेज, PDF या टेक्स्ट फ़ाइल अटैच करें",
+    "remove_attachment": "अटैचमेंट हटाएं",
+    "attachment_upload_failed": "\"{{name}}\" अपलोड करने में विफल।",
+    "attachment_unsupported_type": "\"{{name}}\" एक समर्थित अटैचमेंट प्रकार नहीं है। इमेज (PNG, JPEG, GIF, WebP), PDF, या टेक्स्ट/सोर्स फ़ाइल का उपयोग करें।"
+  },
+  "full_content_width_switch": {
+    "title": "पूर्ण चौड़ाई (Full width)"
+  },
+  "mobile_note_navigator": {
+    "back": "एक लेवल ऊपर जाएं",
+    "loading": "लोड किया जा रहा है..।",
+    "empty": "इस नोट का कोई चाइल्ड नोट नहीं है।",
+    "children_count_one": "{{count}} नोट",
+    "children_count_other": "{{count}} नोट्स",
+    "add_child": "चाइल्ड नोट जोड़ें",
+    "more_actions": "अधिक क्रियाएं"
+  },
+  "launcher_button_context_menu": {
+    "remove_from_launch_bar": "लॉन्च बार से हटाएं"
+  },
+  "link": {
+    "failed_to_open": "लिंक '{{- href}}' खोलने में विफल: {{- message}}",
+    "copy_url": "URL कॉपी करें"
+  },
+  "display_mode": {
+    "source": "सोर्स व्यू",
+    "split": "स्प्लिट व्यू (Split view)",
+    "preview": "प्रीव्यू"
+  },
+  "dashboard_view": {
+    "refresh-widget": "रिफ्रेश करें",
+    "remove-widget": "डैशबोर्ड से हटाएं",
+    "empty-hint": "कोई भी चाइल्ड नोट एक विजेट बन जाता है। ट्री से एक नोट यहाँ ड्रैग करें या एक नया नोट बनाएं।"
+  },
+  "ocr": {
+    "extracted_text": "निकाला गया टेक्स्ट (OCR)",
+    "extracted_text_title": "निकाला गया टेक्स्ट (OCR)",
+    "loading_text": "OCR टेक्स्ट लोड किया जा रहा है..।",
+    "no_text_available": "कोई OCR टेक्स्ट उपलब्ध नहीं है",
+    "no_text_explanation": "इस नोट को OCR टेक्स्ट निकालने के लिए प्रोसेस नहीं किया गया है या कोई टेक्स्ट नहीं मिला था।",
+    "failed_to_load": "OCR टेक्स्ट लोड करने में विफल",
+    "process_now": "OCR प्रोसेस करें",
+    "processing": "प्रोसेस किया जा रहा है..।",
+    "processing_started": "OCR प्रोसेसिंग शुरू हो गई है। कृपया थोड़ी देर प्रतीक्षा करें और रिफ्रेश करें।",
+    "processing_complete": "OCR प्रोसेसिंग पूरी हुई।",
+    "processing_failed": "OCR प्रोसेसिंग शुरू करने में विफल",
+    "text_filtered_low_confidence": "OCR ने {{confidence}}% कॉन्फिडेंस के साथ टेक्स्ट का पता लगाया, लेकिन इसे छोड़ दिया गया क्योंकि आपका न्यूनतम थ्रेशोल्ड {{threshold}}% है।",
+    "image_based_pdf_not_supported": "यह PDF इमेज-आधारित (स्कैन की गई) प्रतीत होती है। इमेज-आधारित पीडीएफ से टेक्स्ट निकालना अभी समर्थित नहीं है।",
+    "open_media_settings": "सेटिंग्स खोलें",
+    "view_extracted_text": "निकाला गया टेक्स्ट देखें (OCR)"
+  },
+  "print_preview": {
+    "title": "प्रिंट प्रीव्यू",
+    "close": "बंद करें",
+    "save": "PDF के रूप में सेव करें",
+    "print": "प्रिंट करें",
+    "export_pdf": "PDF के रूप में एक्सपोर्ट करें",
+    "system_print": "सिस्टम डायलॉग का उपयोग करके प्रिंट करें",
+    "destination": "डेस्टिनेशन",
+    "destination_pdf": "PDF के रूप में सेव करें",
+    "destination_printers": "प्रिंटर्स",
+    "destination_default": "डिफ़ॉल्ट",
+    "orientation": "ओरिएंटेशन",
+    "portrait": "पोर्ट्रेट",
+    "landscape": "लैंडस्केप",
+    "page_size": "पेज साइज",
+    "scale": "स्केल",
+    "margins": "मार्जिन",
+    "render_error": "वर्तमान सेटिंग्स के साथ PDF रेंडर करने में असमर्थ। कृपया मार्जिन और स्केल की जांच करें।",
+    "margins_default": "डिफ़ॉल्ट",
+    "margins_none": "कोई नहीं",
+    "margins_minimum": "न्यूनतम",
+    "margins_custom": "कस्टम",
+    "margin_top": "शीर्ष (Top)",
+    "margin_right": "दायाँ",
+    "margin_bottom": "तल (Bottom)",
+    "margin_left": "बायाँ",
+    "page_ranges": "पेज",
+    "page_ranges_hint": "सभी पेज प्रिंट करने के लिए खाली छोड़ दें।",
+    "page_ranges_invalid": "अमान्य प्रारूप। उदाहरण के लिए 1-5, 8, 11-13 का उपयोग करें।",
+    "page_ranges_placeholder": "जैसे 1-5, 8, 11-13"
+  },
+  "snippet_badge": {
+    "label": "{{type}} स्निपेट",
+    "type_text": "टेक्स्ट",
+    "type_code": "कोड",
+    "tooltip": "टेक्स्ट या कोड का एक पुन: प्रयोज्य हिस्सा, जिसे एडिटर में डाला जाना है (टूलबार में स्निपेट मेनू से, या स्लैश कमांड के माध्यम से)।"
+  },
+  "mermaid": {
+    "placeholder": "अपने मरमेड डायग्राम का कंटेंट टाइप करें या नीचे दिए गए सैंपल डायग्राम्स में से एक का उपयोग करें।",
+    "sample_diagrams": "सैंपल डायग्राम्स:",
+    "slash_command_blank_description": "एक खाली मरमेड डायग्राम डालें",
+    "slash_command_description": "\"{{name}}\" मरमेड डायग्राम टेम्पलेट डालें",
+    "sample_flowchart": "फ्लोचार्ट (Flowchart)",
+    "sample_class": "क्लास (Class)",
+    "sample_sequence": "सीक्वेंस (Sequence)",
+    "sample_entity_relationship": "एंटिटी रिलेशनशिप",
+    "sample_state": "स्टेट (State)",
+    "sample_mindmap": "माइंडमैप",
+    "sample_architecture": "आर्किटेक्चर",
+    "sample_block": "ब्लॉक",
+    "sample_c4": "C4",
+    "sample_gantt": "गैंट (Gantt)",
+    "sample_git": "गिट (Git)",
+    "sample_kanban": "कानबान",
+    "sample_packet": "पैकेट",
+    "sample_pie": "पाई (Pie)",
+    "sample_quadrant": "क्वाड्रेंट",
+    "sample_radar": "रडार",
+    "sample_requirement": "आवश्यकता (Requirement)",
+    "sample_sankey": "सेंकी (Sankey)",
+    "sample_timeline": "टाइमलाइन",
+    "sample_treemap": "ट्रीमैप",
+    "sample_user_journey": "यूज़र जर्नी",
+    "sample_xy": "XY",
+    "sample_venn": "वेन (Venn)",
+    "sample_ishikawa": "इशिकावा",
+    "sample_treeview": "TreeView",
+    "sample_wardley": "वार्डले मैप (Wardley Map)"
+  },
+  "setup": {
+    "heading": "ट्रिलियम के साथ शुरुआत करें",
+    "new-document": "नया नॉलेज बेस",
+    "new-document-description": "एक नए नॉलेज बेस के साथ शुरुआत करें और तुरंत काम शुरू करें।",
+    "sync-from-desktop": "डेस्कटॉप ऐप कनेक्ट करें",
+    "sync-from-desktop-description": "आपका ट्रिलियम डेस्कटॉप ऐप किसी अन्य डिवाइस पर चल रहा है। यह डिवाइस उस डेस्कटॉप ऐप से अपना डेटा सिंक करेगा।",
+    "sync-from-server": "किसी मौजूदा सर्वर से कनेक्ट करें",
+    "sync-from-server-description": "आपका ट्रिलियम सर्वर कहीं और चल रहा है (या तो सेल्फ-होस्टेड या क्लाउड में)। यह डिवाइस उस सर्वर से अपना डेटा सिंक करेगा।",
+    "next": "अगला",
+    "init-in-progress": "दस्तावेज़ इनिशियलाइजेशन प्रगति पर है",
+    "redirecting": "आपको जल्द ही एप्लिकेशन पर रीडायरेक्ट कर दिया जाएगा।",
+    "title": "सेटअप",
+    "sync-from-server-page-description": "अपने मौजूदा वर्कस्पेस को कनेक्ट करने के लिए नीचे अपने सर्वर का विवरण दर्ज करें।",
+    "sync-in-progress-title": "सिंक प्रगति पर है",
+    "sync-in-progress-description": "आपका डिवाइस अब कनेक्ट हो गया है और आइटम्स सिंक किए जा रहे हैं।",
+    "sync-in-progress-banner": "आपके नोट्स के आकार के आधार पर इसमें कुछ समय लग सकता है। सिंक पूरा होने तक कृपया किसी अन्य एप्लिकेशन पर स्विच न करें।",
+    "button-back": "पीछे जाएं",
+    "button-finish-setup": "सेटअप पूरा करें",
+    "sync-step-connecting": "सर्वर से कनेक्ट किया जा रहा है",
+    "sync-step-syncing": "डेटा सिंक किया जा रहा है",
+    "sync-step-finalizing": "विकल्प सेटअप किए जा रहे हैं",
+    "create-new-document-options-title": "आप कैसे शुरुआत करना चाहेंगे?",
+    "create-new-document-options-with-demo": "डेमो कंटेंट के साथ",
+    "create-new-document-options-with-demo-description": "उदाहरण कंटेंट के साथ ट्रिलियम का अन्वेषण करें।",
+    "create-new-document-options-empty": "खाली",
+    "create-new-document-options-empty-description": "एक खाली नॉलेज बेस से शुरुआत करें। आप डेमो नोट्स बाद में इम्पोर्ट कर सकते हैं।",
+    "create-new-document-title": "आपका नॉलेज बेस तैयार किया जा रहा है",
+    "create-new-document-description": "इसमें केवल एक पल लगेगा।",
+    "sync-illustration-this-device": "यह डिवाइस",
+    "sync-illustration-desktop-app": "आपका डेस्कटॉप ऐप",
+    "sync-illustration-server": "आपका सर्वर",
+    "sync-from-desktop-step1": "ट्रिलियम नोट्स का अपना डेस्कटॉप इंस्टेंस खोलें।",
+    "sync-from-desktop-step2": "ट्रिलियम मेनू से, ऑप्शंस पर क्लिक करें।",
+    "sync-from-desktop-step3": "नोट ट्री में सिंक श्रेणी पर क्लिक करें।",
+    "sync-from-desktop-step4": "दाईं ओर दिए गए पतों में से किसी एक की ओर इंगित करने के लिए सर्वर इंस्टेंस पता बदलें और सेव पर क्लिक करें।",
+    "sync-from-desktop-step5": "कनेक्शन सफल होने की पुष्टि करने के लिए \"Test sync\" बटन पर क्लिक करें।",
+    "sync-from-desktop-warning": "सुनिश्चित करें कि दोनों डिवाइस एक ही नेटवर्क पर हों।",
+    "sync-from-desktop-waiting": "कनेक्शन की प्रतीक्षा की जा रही है..।",
+    "sync-from-desktop-unreachable-title": "इस डिवाइस तक अन्य डिवाइसेज द्वारा नहीं पहुंचा जा सकता",
+    "sync-from-desktop-unreachable-description": "सिंक करने के लिए, दूसरे डेस्कटॉप को नेटवर्क पर इस डेस्कटॉप से कनेक्ट होना होगा। सुरक्षा कारणों से, यह डेस्कटॉप ऐप केवल इसी कंप्यूटर से कनेक्शन स्वीकार करता है, इसलिए वह दूसरा डेस्कटॉप अभी तक इस तक नहीं पहुंच सकता है। नीचे नेटवर्क एक्सेस की अनुमति दें — इसे लागू करने के लिए ट्रिलियम रीस्टार्ट होगा।",
+    "sync-from-desktop-allow-access": "नेटवर्क एक्सेस की अनुमति दें और रीस्टार्ट करें",
+    "advanced-options": "उन्नत विकल्प (Advanced options)",
+    "sync-failed": "सिंक विफल रहा: {{message}}",
+    "server-host": "ट्रिलियम सर्वर पता",
+    "server-host-placeholder": "https://<hostname>:<port>",
+    "server-password": "पासवर्ड",
+    "proxy-server": "प्रॉक्सी सर्वर (वैकल्पिक)",
+    "proxy-server-placeholder": "https://<hostname>:<port>",
+    "proxy-instruction": "यदि आप प्रॉक्सी सेटिंग खाली छोड़ देते हैं, तो सिस्टम प्रॉक्सी का उपयोग किया जाएगा।",
+    "dismiss-error": "त्रुटि खारिज करें",
+    "wrong-password": "गलत पासवर्ड। कृपया पुनः प्रयास करें।",
+    "language": "भाषा (Language)",
+    "continue": "जारी रखें",
+    "your-ip-addresses": "इस डिवाइस के पते"
+  },
+  "mind-map": {
+    "addChild": "चाइल्ड जोड़ें",
+    "addParent": "पैरेंट जोड़ें",
+    "addSibling": "सहोदर (sibling) जोड़ें",
+    "removeNode": "नोड हटाएं",
+    "focus": "फोकस मोड",
+    "cancelFocus": "फोकस मोड रद्द करें",
+    "moveUp": "ऊपर ले जाएं",
+    "moveDown": "नीचे ले जाएं",
+    "link": "लिंक (Link)",
+    "linkBidirectional": "द्विदिश लिंक (Bidirectional Link)",
+    "clickTips": "कृपया लक्षित (target) नोड पर क्लिक करें",
+    "summary": "सारांश (Summary)"
+  },
+  "llm": {
+    "disabled_placeholder": "एआई फीचर्स बंद हैं। प्रोवाइडर्स और MCP कॉन्फ़िगर करने के लिए उन्हें इनेबल करें।",
+    "not_available_in_standalone": "ट्रिलियम के स्टैंडअलोन संस्करण में AI/LLM फीचर्स उपलब्ध नहीं हैं, क्योंकि LLM प्रोवाइडर्स ब्राउज़र से सीधे एक्सेस की अनुमति नहीं देते हैं।",
+    "feature_not_enabled": "AI इंटीग्रेशन का उपयोग करने के लिए सेटिंग्स → एडवांस्ड → एक्सपेरिमेंटल फीचर्स में LLM एक्सपेरिमेंटल फीचर को इनेबल करें।",
+    "add_provider": "प्रोवाइडर जोड़ें",
+    "add_provider_title": "AI प्रोवाइडर जोड़ें",
+    "configured_providers": "कॉन्फ़िगर किए गए प्रोवाइडर्स",
+    "no_providers_configured": "अभी तक कोई प्रोवाइडर कॉन्फ़िगर नहीं है।",
+    "provider_name": "नाम",
+    "provider_type": "प्रोवाइडर",
+    "actions": "क्रियाएं",
+    "delete_provider": "डिलीट करें",
+    "delete_provider_confirmation": "क्या आप वाकई प्रोवाइडर \"{{name}}\" को डिलीट करना चाहते हैं?",
+    "api_key": "API की (Key)",
+    "api_key_placeholder": "अपनी API की दर्ज करें",
+    "base_url": "बेस URL",
+    "base_url_description": "वैकल्पिक। डिफ़ॉल्ट एपीआई एंडपॉइंट को ओवरराइड करें — यह खुद से होस्ट किए गए मॉडल (Ollama, LM Studio, vLLM) या प्रॉक्सी के लिए उपयोगी है।",
+    "base_url_invalid": "बेस URL एक वैध http:// या https:// URL होना चाहिए",
+    "cancel": "रद्द करें",
+    "mcp_title": "MCP (Model Context Protocol)",
+    "mcp_enabled": "MCP सर्वर",
+    "mcp_enabled_description": "एक मॉडल कॉन्टेक्स्ट प्रोटोकॉल (MCP) एंडपॉइंट एक्सपोज करें ताकि एआई कोडिंग असिस्टेंट्स (जैसे Claude Code, GitHub Copilot) आपके नोट्स को पढ़ और संशोधित कर सकें। एंडपॉइंट केवल लोकलहोस्ट से ही एक्सेस किया जा सकता है।",
+    "mcp_endpoint_title": "एंडपॉइंट URL",
+    "mcp_endpoint_description": "इस URL को अपने AI असिस्टेंट के MCP कॉन्फ़िगरेशन में जोड़ें",
+    "tools": {
+      "search_notes": "नोट्स खोजें",
+      "get_note": "नोट प्राप्त करें",
+      "get_note_content": "नोट कंटेंट प्राप्त करें",
+      "set_note_content": "नोट फिर से लिखें",
+      "update_note_content": "नोट फिर से लिखें",
+      "edit_note_content": "नोट संपादित करें",
+      "append_to_note": "नोट में जोड़ें (append करें)",
+      "create_note": "नोट बनाएं",
+      "get_attributes": "एट्रिब्यूट्स प्राप्त करें",
+      "get_attribute": "एट्रिब्यूट प्राप्त करें",
+      "set_attribute": "एट्रिब्यूट सेट करें",
+      "delete_attribute": "एट्रिब्यूट डिलीट करें",
+      "get_child_notes": "चाइल्ड नोट्स प्राप्त करें",
+      "get_subtree": "सबट्री प्राप्त करें",
+      "load_skill": "स्किल लोड करें",
+      "web_search": "वेब सर्च",
+      "note_in_parent": "<Parent/> में <Note/>",
+      "get_attachment": "अटैचमेंट प्राप्त करें",
+      "get_attachment_content": "अटैचमेंट कंटेंट पढ़ें",
+      "rename_note": "नोट का नाम बदलें",
+      "delete_note": "नोट डिलीट करें",
+      "move_note": "नोट ले जाएं",
+      "clone_note": "नोट का क्लोन बनाएं",
+      "search_icons": "आइकन्स खोजें"
+    }
+  },
+  "common": {
+    "save": "सेव करें",
+    "cancel": "रद्द करें"
+  },
+  "spreadsheet": {
+    "read-only": "यह नोट रीड-ओनली है।",
+    "export-xlsx": "Excel (.xlsx) में एक्सपोर्ट करें",
+    "export-csv": "CSV (.csv) में एक्सपोर्ट करें",
+    "export-failed": "स्प्रेडशीट को Excel में एक्सपोर्ट करने में विफल।",
+    "export-csv-failed": "स्प्रेडशीट को CSV में एक्सपोर्ट करने में विफल।"
+  },
+  "text-editor": {
+    "checkbox-tooltip": "अधिक टास्क स्टेट्स के लिए राइट क्लिक करें।\nस्टेट्स के बीच साइकिल करने के लिए {{shortcut}} दबाएं।",
+    "collapsible-body-placeholder": "यहाँ कंटेंट टाइप करें..।",
+    "collapsible-button-label": "कोलाप्सिबल ब्लॉक",
+    "collapsible-handle-tooltip": "कोलाप्सिबल ब्लॉक को फिर से स्थानांतरित करने के लिए ड्रैग करें",
+    "collapsible-select-label": "कोलाप्सिबल ब्लॉक चुनें",
+    "collapsible-title-placeholder": "सारांश",
+    "collapsible-toggle-label": "कोलाप्सिबल ब्लॉक टॉगल करें",
+    "collapsible-tooltip": "सिकुड़ने/फैलने के लिए तीर पर क्लिक करें या {{shortcut}} दबाएं।",
+    "edit-states-tooltip": "टास्क स्टेट्स संपादित करें",
+    "unknown-task-state": "अपरिभाषित कस्टम टास्क स्टेट",
+    "task-state-dropped": "कस्टम टास्क स्टेट परिभाषा \"{{title}}\" ({{id}}) को इस कारण से छोड़ दिया गया: {{reason}}",
+    "validation-errors": {
+      "undefined-name": "अपरिभाषित आइडेंटिफायर",
+      "invalid-name": "अमान्य आइडेंटिफायर",
+      "duplicate-name": "डुप्लिकेट आइडेंटिफायर",
+      "missing-title": "लापता टाइटल",
+      "missing-icon": "लापता आइकन",
+      "invalid-symbol": "मार्कडाउन सिंबल एक वर्ण होना चाहिए, \"[\", \" \", \"X\", और \"]\" को छोड़कर",
+      "duplicate-symbol": "डुप्लिकेट मार्कडाउन सिंबल"
+    }
   }
 }

@@ -1,18 +1,17 @@
 import "./PromotedAttributes.css";
 
-import { UpdateAttributeResponse } from "@triliumnext/commons";
+import { DefinitionObject, LabelType, UpdateAttributeResponse } from "@triliumnext/commons";
 import clsx from "clsx";
-import { ComponentChild, HTMLInputTypeAttribute, InputHTMLAttributes, MouseEventHandler, TargetedEvent, TargetedInputEvent } from "preact";
-import { Dispatch, StateUpdater, useEffect, useRef, useState } from "preact/hooks";
+import { ComponentChild, createElement, HTMLInputTypeAttribute, InputHTMLAttributes, MouseEventHandler, TargetedEvent, TargetedInputEvent } from "preact";
+import { Dispatch, StateUpdater, useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
 import FNote from "../entities/fnote";
 import { Attribute } from "../services/attribute_parser";
 import attributes from "../services/attributes";
-import debounce from "../services/debounce";
 import { t } from "../services/i18n";
-import { DefinitionObject, extractAttributeDefinitionTypeAndName, LabelType } from "../services/promoted_attribute_definition_parser";
+import { extractAttributeDefinitionTypeAndName } from "../services/promoted_attribute_definition_parser";
 import server from "../services/server";
 import { randomString } from "../services/utils";
 import ws from "../services/ws";
@@ -37,8 +36,8 @@ interface CellProps {
     setCellToFocus(cell: Cell): void;
 }
 
-type OnChangeEventData = TargetedEvent<HTMLInputElement, Event> | InputEvent | JQuery.TriggeredEvent<HTMLInputElement, undefined, HTMLInputElement, HTMLInputElement>;
-type OnChangeListener = (e: OnChangeEventData) => Promise<void>;
+type OnChangeEventData = TargetedEvent<HTMLInputElement | HTMLTextAreaElement, Event> | InputEvent | JQuery.TriggeredEvent<HTMLInputElement, undefined, HTMLInputElement, HTMLInputElement>;
+type OnChangeListener = (e: OnChangeEventData) => void | Promise<void>;
 
 export default function PromotedAttributes() {
     const { note, componentId, noteContext } = useNoteContext();
@@ -110,7 +109,7 @@ export function usePromotedAttributeData(note: FNote | null | undefined, compone
                 valueAttrs = valueAttrs.slice(0, 1);
             }
 
-            for (const [ i, valueAttr ] of valueAttrs.entries()) {
+            for (const valueAttr of valueAttrs) {
                 const definition = definitionAttr.getDefinition();
 
                 // if not owned, we'll force creation of a new attribute instead of updating the inherited one
@@ -172,8 +171,9 @@ function PromotedAttributeCell(props: CellProps) {
     );
 }
 
-const LABEL_MAPPINGS: Record<LabelType, HTMLInputTypeAttribute> = {
+const LABEL_MAPPINGS: Record<LabelType, HTMLInputTypeAttribute | undefined> = {
     text: "text",
+    textarea: undefined,
     number: "number",
     boolean: "checkbox",
     date: "date",
@@ -183,19 +183,34 @@ const LABEL_MAPPINGS: Record<LabelType, HTMLInputTypeAttribute> = {
     url: "url"
 };
 
-function LabelInput({ inputId, ...props }: CellProps & { inputId: string }) {
-    const { valueName, valueAttr, definition, definitionAttr } = props.cell;
-    const onChangeListener = buildPromotedAttributeLabelChangedListener({...props});
+function LabelInput(props: CellProps & { inputId: string }) {
+    const { inputId, note, cell, componentId, setCells } = props;
+    const { valueName, valueAttr, definition, definitionAttr } = cell;
+    const [ valueDraft, setDraft ] = useState(valueAttr.value);
+    const onChangeListener = useCallback(async (e: OnChangeEventData) => {
+        const inputEl = e.target as HTMLInputElement;
+        let value: string;
+
+        if (inputEl.type === "checkbox") {
+            value = inputEl.checked ? "true" : "false";
+        } else {
+            value = inputEl.value;
+        }
+
+        await updateAttribute(note, cell, componentId, value, setCells);
+    }, [ cell, componentId, note, setCells ]);
     const extraInputProps: InputHTMLAttributes = {};
 
-    useEffect(() => {
-        if (definition.labelType === "text") {
-            const el = document.getElementById(inputId);
-            if (el) {
-                setupTextLabelAutocomplete(el as HTMLInputElement, valueAttr, onChangeListener);
-            }
+    useTextLabelAutocomplete(inputId, valueAttr, definition, (e) => {
+        if (e.currentTarget instanceof HTMLInputElement) {
+            setDraft(e.currentTarget.value);
         }
-    }, [ inputId, valueAttr, onChangeListener ]);
+    });
+
+    // React to model changes.
+    useEffect(() => {
+        setDraft(valueAttr.value);
+    }, [ valueAttr.value ]);
 
     switch (definition.labelType) {
         case "number": {
@@ -212,20 +227,21 @@ function LabelInput({ inputId, ...props }: CellProps & { inputId: string }) {
         }
     }
 
-    const inputNode = <input
-        className="form-control promoted-attribute-input"
-        tabIndex={200 + definitionAttr.position}
-        id={inputId}
-        type={LABEL_MAPPINGS[definition.labelType ?? "text"]}
-        value={valueAttr.value}
-        checked={definition.labelType === "boolean" ? valueAttr.value === "true" : undefined}
-        placeholder={t("promoted_attributes.unset-field-placeholder")}
-        data-attribute-id={valueAttr.attributeId}
-        data-attribute-type={valueAttr.type}
-        data-attribute-name={valueAttr.name}
-        onChange={onChangeListener}
-        {...extraInputProps}
-    />;
+
+    const inputNode = createElement(definition.labelType === "textarea" ? "textarea" : "input", {
+        className: "form-control promoted-attribute-input",
+        tabIndex: 200 + definitionAttr.position,
+        id: inputId,
+        type: LABEL_MAPPINGS[definition.labelType ?? "text"],
+        value: valueDraft,
+        checked: definition.labelType === "boolean" ? valueAttr.value === "true" : undefined,
+        placeholder: t("promoted_attributes.unset-field-placeholder"),
+        "data-attribute-id": valueAttr.attributeId,
+        "data-attribute-type": valueAttr.type,
+        "data-attribute-name": valueAttr.name,
+        onBlur: onChangeListener,
+        ...extraInputProps
+    });
 
     if (definition.labelType === "boolean") {
         return <>
@@ -304,6 +320,7 @@ function RelationInput({ inputId, ...props }: CellProps & { inputId: string }) {
         <NoteAutocomplete
             id={inputId}
             noteId={props.cell.valueAttr.value}
+            opts={{ allowCreatingNotes: true }}
             noteIdChanged={async (value) => {
                 const { note, cell, componentId, setCells } = props;
                 await updateAttribute(note, cell, componentId, value, setCells);
@@ -399,16 +416,27 @@ function InputButton({ icon, className, title, onClick }: {
     );
 }
 
-function setupTextLabelAutocomplete(el: HTMLInputElement, valueAttr: Attribute, onChangeListener: OnChangeListener) {
-    // no need to await for this, can be done asynchronously
-    const $input = $(el);
-    server.get<string[]>(`attribute-values/${encodeURIComponent(valueAttr.name)}`).then((_attributeValues) => {
-        if (_attributeValues.length === 0) {
+function useTextLabelAutocomplete(inputId: string, valueAttr: Attribute, definition: DefinitionObject, onChangeListener: OnChangeListener) {
+    const [ attributeValues, setAttributeValues ] = useState<{ value: string }[] | null>(null);
+
+    // Obtain data.
+    useEffect(() => {
+        if (definition.labelType !== "text") {
             return;
         }
 
-        const attributeValues = _attributeValues.map((attribute) => ({ value: attribute }));
+        server.get<string[]>(`attribute-values/${encodeURIComponent(valueAttr.name)}`).then((_attributesValues) => {
+            setAttributeValues(_attributesValues.map((attribute) => ({ value: attribute })));
+        });
+    }, [ definition.labelType, valueAttr.name ]);
 
+    // Initialize autocomplete.
+    useEffect(() => {
+        if (attributeValues?.length === 0) return;
+        const el = document.getElementById(inputId) as HTMLInputElement | null;
+        if (!el) return;
+
+        const $input = $(el);
         $input.autocomplete(
             {
                 appendTo: document.querySelector("body"),
@@ -424,7 +452,7 @@ function setupTextLabelAutocomplete(el: HTMLInputElement, valueAttr: Attribute, 
                     source (term, cb) {
                         term = term.toLowerCase();
 
-                        const filtered = attributeValues.filter((attr) => attr.value.toLowerCase().includes(term));
+                        const filtered = (attributeValues ?? []).filter((attr) => attr.value.toLowerCase().includes(term));
 
                         cb(filtered);
                     }
@@ -434,27 +462,13 @@ function setupTextLabelAutocomplete(el: HTMLInputElement, valueAttr: Attribute, 
 
         $input.off("autocomplete:selected");
         $input.on("autocomplete:selected", onChangeListener);
-    });
-}
 
-function buildPromotedAttributeLabelChangedListener({ note, cell, componentId, setCells }: CellProps): OnChangeListener {
-    async function onChange(e: OnChangeEventData) {
-        const inputEl = e.target as HTMLInputElement;
-        let value: string;
-
-        if (inputEl.type === "checkbox") {
-            value = inputEl.checked ? "true" : "false";
-        } else {
-            value = inputEl.value;
-        }
-
-        await updateAttribute(note, cell, componentId, value, setCells);
-    }
-
-    return debounce(onChange, 250);
+        return () => $input.autocomplete("destroy");
+    }, [ inputId, attributeValues, onChangeListener ]);
 }
 
 async function updateAttribute(note: FNote, cell: Cell, componentId: string, value: string | undefined, setCells: Dispatch<StateUpdater<Cell[] | undefined>>) {
+    if (value === cell.valueAttr.value) return;
     const { attributeId } = await server.put<UpdateAttributeResponse>(
         `notes/${note.noteId}/attribute`,
         {

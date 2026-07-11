@@ -107,7 +107,7 @@ function DisabledRender({ note }: TypeWidgetProps) {
                 text={t("render.disabled_button_enable")}
                 icon="bx bx-check-shield"
                 onClick={() => attributes.toggleDangerousAttribute(note, "relation", "renderNote", true)}
-                primary
+                kind="primary"
             />
         </SetupForm>
     );

@@ -1,3 +1,4 @@
+import { becca } from "@triliumnext/core";
 import { Application } from "express";
 import { beforeAll, describe, expect, it } from "vitest";
 import supertest from "supertest";
@@ -61,6 +62,29 @@ describe("etapi/note-content", () => {
             .set("Content-Transfer-Encoding", "binary")
             .send(Buffer.from("Hello world"))
             .expect(204);
+    });
+
+    it("refuses to read and write a protected note's content", async () => {
+        const noteId = await createNote(app, token);
+        const note = becca.getNoteOrThrow(noteId);
+        note.isProtected = true;
+        try {
+            const get = await supertest(app)
+                .get(`/etapi/notes/${noteId}/content`)
+                .auth(USER, token, { "type": "basic"})
+                .expect(400);
+            expect(get.body.code).toStrictEqual("NOTE_IS_PROTECTED");
+
+            const put = await supertest(app)
+                .put(`/etapi/notes/${noteId}/content`)
+                .auth(USER, token, { "type": "basic"})
+                .set("Content-Type", "text/plain")
+                .send("data")
+                .expect(400);
+            expect(put.body.code).toStrictEqual("NOTE_IS_PROTECTED");
+        } finally {
+            note.isProtected = false;
+        }
     });
 
     function getContentResponse() {

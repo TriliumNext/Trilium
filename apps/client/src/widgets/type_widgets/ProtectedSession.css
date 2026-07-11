@@ -3,4 +3,8 @@
     margin-inline: 40px;
     flex-direction: column;
     justify-content: center;
+
+    label {
+        margin-bottom: 8px;
+    }
 }

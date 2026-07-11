@@ -39,15 +39,11 @@ The note appears in italics to indicate its temporary display. When switching to
 
 ## Working with collections
 
-By default, some of the <a class="reference-link" href="../../../Collections.md">Collections</a> will automatically hide their child notes, for example the <a class="reference-link" href="../../../Collections/Kanban%20Board.md">Kanban Board</a> or the <a class="reference-link" href="../../../Collections/Table.md">Table</a>.
-
-The reasoning behind this is that collections are generally opaque to the rest of the notes and they can generate a large amount of sub-notes since they intentionally lack structure (in order to allow easy swapping between views).
-
-Some types of collections have the child notes intentionally shown, for example the legacy ones (Grid and List), but also the <a class="reference-link" href="../../../Collections/Presentation.md">Presentation</a> which requires the tree structure in order to organize and edit the slides.
+For large collections, it can be helpful to hide their child notes for performance reasons or de-cluttering the tree.
 
 To toggle this behavior:
 
-*   In the <a class="reference-link" href="../New%20Layout.md">New Layout</a>, press the Options button underneath the title and uncheck _Hide child notes in tree_.
+*   Open the collection and in <a class="reference-link" href="../../../Collections/Collection%20Properties.md">Collection Properties</a>, look for _Hide child notes in tree_.
 *   Right click the collection note in the <a class="reference-link" href="../Note%20Tree.md">Note Tree</a> and select _Advanced_ → _Show subtree_.
 
 ## Working with normal notes

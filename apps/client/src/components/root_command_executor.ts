@@ -1,10 +1,8 @@
 import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
-import noteCreateService from "../services/note_create.js";
 import openService from "../services/open.js";
 import options from "../services/options.js";
 import protectedSessionService from "../services/protected_session.js";
-import toastService from "../services/toast.js";
 import treeService from "../services/tree.js";
 import utils, { openInReusableSplit } from "../services/utils.js";
 import appContext, { type CommandListenerData } from "./app_context.js";
@@ -103,8 +101,7 @@ export default class RootCommandExecutor extends Component {
 
     async showLaunchBarSubtreeCommand() {
         const rootNote = utils.isMobile() ? "_lbMobileRoot" : "_lbRoot";
-        await this.showAndHoistSubtree(rootNote);
-        this.showLeftPaneCommand();
+        appContext.triggerCommand("openInTreePopup", { noteIdOrPath: rootNote, hoistedNoteId: rootNote });
     }
 
     async showShareSubtreeCommand() {
@@ -113,13 +110,6 @@ export default class RootCommandExecutor extends Component {
 
     async showHiddenSubtreeCommand() {
         await this.showAndHoistSubtree("_hidden");
-    }
-
-    async showOptionsCommand({ section }: CommandListenerData<"showOptions">) {
-        await appContext.tabManager.openContextWithNote(section || "_options", {
-            activate: true,
-            hoistedNoteId: "_options"
-        });
     }
 
     async showSQLConsoleHistoryCommand() {
@@ -146,6 +136,16 @@ export default class RootCommandExecutor extends Component {
                 viewScope: {
                     viewMode: "source"
                 }
+            });
+        }
+    }
+
+    showNoteOCRTextCommand() {
+        const noteId = appContext.tabManager.getActiveContextNoteId();
+        if (noteId) {
+            appContext.triggerCommand("showOcrTextDialog", {
+                textUrl: `ocr/notes/${noteId}/text`,
+                processUrl: `ocr/process-note/${noteId}`
             });
         }
     }
@@ -179,11 +179,7 @@ export default class RootCommandExecutor extends Component {
     toggleTrayCommand() {
         if (!utils.isElectron() || options.is("disableTray")) return;
 
-        const { BrowserWindow } = utils.dynamicRequire("@electron/remote");
-        const windows = BrowserWindow.getAllWindows() as Electron.BaseWindow[];
-        const isVisible = windows.every((w) => w.isVisible());
-        const action = isVisible ? "hide" : "show";
-        for (const window of windows) window[action]();
+        window.electronApi?.window.toggleAllWindows();
     }
 
     toggleZenModeCommand() {
@@ -244,38 +240,8 @@ export default class RootCommandExecutor extends Component {
         const tab = mainNoteContexts[index];
 
         if (tab) {
-            appContext.tabManager.activateNoteContext(tab.ntxId);
+            appContext.tabManager.activateTabContext(tab.ntxId);
         }
     }
 
-    async createAiChatCommand() {
-        try {
-            // Create a new AI Chat note at the root level
-            const rootNoteId = "root";
-
-            const result = await noteCreateService.createNote(rootNoteId, {
-                title: "New AI Chat",
-                type: "aiChat",
-                content: JSON.stringify({
-                    messages: [],
-                    title: "New AI Chat"
-                })
-            });
-
-            if (!result.note) {
-                toastService.showError("Failed to create AI Chat note");
-                return;
-            }
-
-            await appContext.tabManager.openTabWithNoteWithHoisting(result.note.noteId, {
-                activate: true
-            });
-
-            toastService.showMessage("Created new AI Chat note");
-        }
-        catch (e) {
-            console.error("Error creating AI Chat note:", e);
-            toastService.showError(`Failed to create AI Chat note: ${(e as Error).message}`);
-        }
-    }
 }

@@ -113,6 +113,12 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         const currentIndex = contexts.findIndex((c) => c.ntxId === ntxId);
         if (currentIndex === -1) return;
 
+        // the pane showing a pinned note can't be closed (unpin the tab first). Bail before the
+        // demote/reorder below, which would otherwise strip the main context of its pinned state.
+        if (contexts[currentIndex].pinned) {
+            return;
+        }
+
         const isRemoveMainContext = contexts[currentIndex].isMainContext();
         if (isRemoveMainContext && currentIndex + 1 < contexts.length) {
             const ntxIds = contexts.map((c) => c.ntxId).filter((c) => !!c) as string[];
@@ -244,7 +250,9 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
             if (widget.hasBeenAlreadyShown || name === "noteSwitchedAndActivated" || appContext.tabManager.getActiveMainContext() === noteSwitchedContext.noteContext.getMainContext()) {
                 widget.hasBeenAlreadyShown = true;
 
-                return [widget.handleEvent("noteSwitched", noteSwitchedContext), this.refreshNotShown(noteSwitchedContext)];
+                // Promise.all (not a bare array) so that awaiting triggerEvent("noteSwitched")
+                // genuinely waits for the tab's widgets to process the switch.
+                return Promise.all([ widget.handleEvent("noteSwitched", noteSwitchedContext), this.refreshNotShown(noteSwitchedContext) ]);
             }
             return Promise.resolve();
 

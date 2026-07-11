@@ -1,6 +1,6 @@
 import "./mobile_editor_toolbar.css";
 
-import { CKTextEditor, ClassicEditor } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, ClassicEditor } from "@triliumnext/ckeditor5";
 import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { isIOS } from "../../../services/utils";
@@ -66,23 +66,37 @@ export default function MobileEditorToolbar({ inPopupEditor }: MobileEditorToolb
 }
 
 function usePositioningOniOS(enabled: boolean, wrapperRef: MutableRef<HTMLDivElement | null>) {
+    // Fallback path for plain mobile Safari (no Capacitor): the WKWebView
+    // isn't resized when the keyboard opens, so visualViewport.height
+    // shrinks while window.innerHeight stays the same. Push the toolbar
+    // up by the difference. Under Capacitor `resize: native` both values
+    // shrink together, so `obscured` is 0 and we leave CSS in charge.
     const adjustPosition = useCallback(() => {
         if (!wrapperRef.current) return;
-        const bottom = window.innerHeight - (window.visualViewport?.height || 0);
-        wrapperRef.current.style.bottom = `${bottom}px`;
-    }, []);
+        const viewport = window.visualViewport;
+        if (!viewport) return;
+
+        const obscured = Math.max(0, Math.round(
+            window.innerHeight - viewport.height - viewport.offsetTop
+        ));
+
+        if (obscured <= 1) {
+            wrapperRef.current.style.removeProperty("bottom");
+        } else {
+            wrapperRef.current.style.bottom = `${obscured}px`;
+        }
+    }, [ wrapperRef ]);
 
     useEffect(() => {
         if (!isIOS() || !enabled) return;
-
+        // Run once in case the keyboard is already up when mounting
+        // (e.g. returning from a dialog).
+        adjustPosition();
         window.visualViewport?.addEventListener("resize", adjustPosition);
-        window.addEventListener("scroll", adjustPosition);
-
         return () => {
             window.visualViewport?.removeEventListener("resize", adjustPosition);
-            window.removeEventListener("scroll", adjustPosition);
         };
-    }, [ enabled ]);
+    }, [ enabled, adjustPosition ]);
 }
 
 /**

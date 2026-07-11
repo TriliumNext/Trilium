@@ -5,46 +5,16 @@
       href="#root/_help_0ESUbbAxVnoK">Note List</a>.&nbsp;</p>
 </aside>
 <figure class="image image-style-align-center">
-  <img style="aspect-ratio:892/675;" src="9_Geo Map_image.png"
+  <img style="aspect-ratio:892/675;" src="8_Geo Map_image.png"
   width="892" height="675">
 </figure>
 <p>This note type displays the children notes on a geographical map, based
   on an attribute. It is also possible to add new notes at a specific location
   using the built-in interface.</p>
 <h2>Creating a new geo map</h2>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>1</td>
-        <td>
-          <figure class="image">
-            <img style="aspect-ratio:483/413;" src="15_Geo Map_image.png"
-            width="483" height="413">
-          </figure>
-        </td>
-        <td>Right click on any note on the note tree and select <em>Insert child note</em> → <em>Geo Map (beta)</em>.</td>
-      </tr>
-      <tr>
-        <td>2</td>
-        <td>
-          <figure class="image image-style-align-center image_resized" style="width:53.44%;">
-            <img style="aspect-ratio:1720/1396;" src="8_Geo Map_image.png"
-            width="1720" height="1396">
-          </figure>
-        </td>
-        <td>By default the map will be empty and will show the entire world.</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
+<p>Right click on an existing note in the&nbsp;<a class="reference-link"
+  href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and select <em>Geo Map</em>.</p>
+<p>By default the map will be empty and will show the entire world.</p>
 <h2>Repositioning the map</h2>
 <ul>
   <li>Click and drag the map in order to move across the map.</li>
@@ -59,9 +29,9 @@
   <table>
     <thead>
       <tr>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
+        <th></th>
+        <th></th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -69,13 +39,13 @@
         <td>1</td>
         <td>To create a marker, first navigate to the desired point on the map. Then
           press the
-          <img src="10_Geo Map_image.png">button in the&nbsp;<a href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>&nbsp;(top-right)
-          area.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <img src="9_Geo Map_image.png">button in the&nbsp;<a href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>&nbsp;(top-right)
+          area.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>If the button is not visible, make sure the button section is visible
           by pressing the chevron button (
-          <img src="17_Geo Map_image.png">) in the top-right of the map.</td>
-        <td>&nbsp;</td>
+          <img src="15_Geo Map_image.png">) in the top-right of the map.</td>
+        <td></td>
       </tr>
       <tr>
         <td>2</td>
@@ -84,7 +54,7 @@
           width="1730" height="416">
         </td>
         <td>Once pressed, the map will enter in the insert mode, as illustrated by
-          the notification.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          the notification.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>Simply click the point on the map where to place the marker, or the Escape
           key to cancel.</td>
@@ -100,7 +70,7 @@
       <tr>
         <td>4</td>
         <td>
-          <img class="image_resized" style="aspect-ratio:1696/608;width:100%;" src="16_Geo Map_image.png"
+          <img class="image_resized" style="aspect-ratio:1696/608;width:100%;" src="14_Geo Map_image.png"
           width="1696" height="608">
         </td>
         <td>Once confirmed, the marker will show up on the map and it will also be
@@ -121,18 +91,15 @@
 <h3>Adding an existing note on note from the note tree</h3>
 <ol>
   <li>Select the desired note in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</li>
-  <li
- >Hold the mouse on the note and drag it to the map to the desired location.</li>
-    <li
-   >The map should be updated with the new marker.</li>
+  <li>Hold the mouse on the note and drag it to the map to the desired location.</li>
+  <li>The map should be updated with the new marker.</li>
 </ol>
 <p>This works for:</p>
 <ul>
   <li>Notes that are not part of the geo map, case in which a <a href="#root/_help_IakOLONlIfGI">clone</a> will
     be created.</li>
   <li>Notes that are a child of the geo map but not yet positioned on the map.</li>
-  <li
- >Notes that are a child of the geo map and also positioned, case in which
+  <li>Notes that are a child of the geo map and also positioned, case in which
     the marker will be relocated to the new position.</li>
 </ul>
 <aside class="admonition note">
@@ -142,10 +109,8 @@
 <h2>How the location of the markers is stored</h2>
 <p>The location of a marker is stored in the <code spellcheck="false">#geolocation</code> attribute
   of the child notes:</p>
-<p>
-  <img src="18_Geo Map_image.png" width="1288"
-  height="278">
-</p>
+<img src="16_Geo Map_image.png"
+width="1288" height="278">
 <p>This value can be added manually if needed. The value of the attribute
   is made up of the latitude and longitude separated by a comma.</p>
 <h2>Repositioning markers</h2>
@@ -166,8 +131,7 @@
   </li>
   <li>Middle-clicking the marker will open the note in a new tab.</li>
   <li>Right-clicking the marker will open a contextual menu (as described below).</li>
-  <li
- >If the map is in read-only mode, clicking on a marker will open a&nbsp;
+  <li>If the map is in read-only mode, clicking on a marker will open a&nbsp;
     <a
     class="reference-link" href="#root/_help_ZjLYv08Rp3qC">Quick edit</a>&nbsp;popup for the corresponding note.</li>
 </ul>
@@ -217,9 +181,9 @@
   <table>
     <thead>
       <tr>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
+        <th></th>
+        <th></th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -227,15 +191,15 @@
         <td>1</td>
         <td>
           <figure class="image image-style-align-center image_resized" style="width:56.84%;">
-            <img style="aspect-ratio:732/918;" src="12_Geo Map_image.png"
+            <img style="aspect-ratio:732/918;" src="11_Geo Map_image.png"
             width="732" height="918">
           </figure>
         </td>
         <td>Go to Google Maps on the web and look for a desired location, right click
-          on it and a context menu will show up.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          on it and a context menu will show up.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>Simply click on the first item displaying the coordinates and they will
-          be copied to clipboard.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          be copied to clipboard.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>Then paste the value inside the text box into the <code spellcheck="false">#geolocation</code> attribute
           of a child note of the map (don't forget to surround the value with a
@@ -256,7 +220,7 @@
         <td>3</td>
         <td>
           <figure class="image image-style-align-center image_resized" style="width:100%;">
-            <img style="aspect-ratio:1074/276;" src="11_Geo Map_image.png"
+            <img style="aspect-ratio:1074/276;" src="10_Geo Map_image.png"
             width="1074" height="276">
           </figure>
         </td>
@@ -274,9 +238,9 @@
   <table>
     <thead>
       <tr>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
+        <th></th>
+        <th></th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -296,7 +260,7 @@
           width="696" height="480">
         </td>
         <td>The address will be visible in the top-left of the screen, in the place
-          of the search bar.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          of the search bar.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>Select the coordinates and copy them into the clipboard.</td>
       </tr>
@@ -319,9 +283,9 @@ class="table">
   <table>
     <thead>
       <tr>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
+        <th></th>
+        <th></th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -340,7 +304,7 @@ class="table">
         <td>2</td>
         <td>
           <figure class="image image-style-align-center">
-            <img style="aspect-ratio:322/222;" src="14_Geo Map_image.png"
+            <img style="aspect-ratio:322/222;" src="13_Geo Map_image.png"
             width="322" height="222">
           </figure>
         </td>
@@ -355,7 +319,7 @@ class="table">
             width="620" height="530">
           </figure>
         </td>
-        <td>When going back to the map, the track should now be visible.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <td>When going back to the map, the track should now be visible.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>The start and end points of the track are indicated by the two blue markers.</td>
       </tr>
@@ -375,27 +339,26 @@ class="table">
     as:</p>
   <ul>
     <li>The add button in the&nbsp;<a class="reference-link" href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>.</li>
-    <li
-   >Dragging markers.</li>
-      <li>Editing from the contextual menu (removing locations or adding new items).</li>
+    <li>Dragging markers.</li>
+    <li>Editing from the contextual menu (removing locations or adding new items).</li>
   </ul>
   <p>To enable read-only mode simply press the <em>Lock</em> icon from the&nbsp;
     <a
     class="reference-link" href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>. To disable it, press the button again.</p>
   <h2>Configuration</h2>
   <h3>Map Style</h3>
-  <p>The styling of the map can be adjusted in the <em>Collection Properties</em> (above
-    the map, by pressing on the Gear icon)&nbsp;or manually via the <code spellcheck="false">#map:style</code> attribute.</p>
+  <p>The styling of the map can be adjusted in the&nbsp;<a class="reference-link"
+    href="#root/_help_CssoWBu8I7jF">Collection Properties</a>&nbsp;or manually via
+    the <code spellcheck="false">#map:style</code> attribute.</p>
   <p>The geo map comes with two different types of styles:</p>
   <ul>
     <li>Raster styles
       <ul>
         <li>For these styles the map is represented as a grid of images at different
           zoom levels. This is the traditional way OpenStreetMap used to work.</li>
-        <li
-       >Zoom is slightly restricted.</li>
-    <li>Currently, the only raster theme is the original OpenStreetMap style.</li>
-    </ul>
+        <li>Zoom is slightly restricted.</li>
+        <li>Currently, the only raster theme is the original OpenStreetMap style.</li>
+      </ul>
     </li>
     <li>Vector styles
       <ul>
@@ -414,8 +377,8 @@ class="table">
     in raster format.</p>
   <p>To do so, manually set the <code spellcheck="false">#map:style</code> 
     <a
-    href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_HI6GBBIduIgv">label</a>to the URL of the tile set. For example, to use Esri.NatGeoWorldMap,
-      set the value to <a href="https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}."><code spellcheck="false">https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}</code>.</a>
+    href="#root/_help_HI6GBBIduIgv">label</a>to the URL of the tile set. For example, to use Esri.NatGeoWorldMap,
+      set the value to <a href="https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/%7Bz%7D/%7By%7D/%7Bx%7D."><code spellcheck="false">https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}</code>.</a>
   </p>
   <aside class="admonition note">
     <p>For a list of tile sets, see the <a href="https://leaflet-extras.github.io/leaflet-providers/preview/">Leaflet Providers preview</a> page.
@@ -423,25 +386,21 @@ class="table">
   </aside>
   <p>Custom vector map support is planned, but not yet implemented.</p>
   <h3>Other options</h3>
-  <p>The following options can be configured either via the Collection properties
-    pane above the map, by clicking on the settings (Gear icon). Alternatively,
-    each of these options also have a corresponding <a href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_HI6GBBIduIgv">label</a> that
-    can be set manually.</p>
+  <p>The following options can be configured either via the&nbsp;<a class="reference-link"
+    href="#root/_help_CssoWBu8I7jF">Collection Properties</a>, by clicking on the
+    settings (Gear icon). Alternatively, each of these options also have a
+    corresponding <a href="#root/_help_HI6GBBIduIgv">label</a> that can be set manually.</p>
   <ul>
-    <li>
-      <p>Scale, which illustrates the scale of the map in kilometers and miles
-        in the bottom-left of the map.</p>
-    </li>
-    <li>
-      <p>The name of the markers is displayed by default underneath the pin on
-        the map. Since v0.102.0, it is possible to hide these labels which increases
-        the performance and decreases clutter when there are many markers on the
-        map.</p>
-    </li>
+    <li>Scale, which illustrates the scale of the map in kilometers and miles
+      in the bottom-left of the map.</li>
+    <li>The name of the markers is displayed by default underneath the pin on
+      the map. Since v0.102.0, it is possible to hide these labels which increases
+      the performance and decreases clutter when there are many markers on the
+      map.</li>
   </ul>
   <h2>Troubleshooting</h2>
   <figure class="image image-style-align-right image_resized" style="width:34.06%;">
-    <img style="aspect-ratio:678/499;" src="13_Geo Map_image.png"
+    <img style="aspect-ratio:678/499;" src="12_Geo Map_image.png"
     width="678" height="499">
   </figure>
   <h3>Grid-like artifacts on the map</h3>

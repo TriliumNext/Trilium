@@ -20,4 +20,4 @@ So far workspace consists of these features:
 | `workspaceCalendarRoot` | Marking a note with this label will define a new per-workspace calendar for <a class="reference-link" href="../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a>. If there's no such note, the global calendar will be used. |
 | `workspaceTemplate` | This note will appear in the selection of available template when creating new note, but only when hoisted into a workspace containing this template |
 | `workspaceSearchHome` | new search notes will be created as children of this note when hoisted to some ancestor of this workspace note |
-| `workspaceInbox` | default inbox location for new notes when hoisted to some ancestor of this workspace note |
+| `workspaceInbox` | Default inbox location for new notes when hoisted to some ancestor of this workspace note. See <a class="reference-link" href="../Notes/Note%20Inbox.md">Note Inbox</a> for more information. |

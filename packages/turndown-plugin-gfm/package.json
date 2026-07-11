@@ -5,7 +5,7 @@
   "author": "Dom Christie",
   "private": true,
   "type": "module",
-  "main": "./src/index.js",
+  "main": "./src/index.ts",
   "gitHead": "05a29b450962bf05a8642bbd39446a1f679a96ba",
   "license": "MIT",
   "repository": {
@@ -21,8 +21,13 @@
     "github-flavored-markdown",
     "gfm"
   ],
+  "scripts": {
+    "test": "vitest run"
+  },
   "devDependencies": {
-    "turndown": "7.2.2",
-    "turndown-attendant": "0.0.3"
+    "happy-dom": "20.10.6",
+    "turndown": "7.2.4",
+    "turnish": "1.12.2",
+    "vitest": "4.1.10"
   }
 }

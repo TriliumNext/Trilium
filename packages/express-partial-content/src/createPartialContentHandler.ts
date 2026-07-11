@@ -3,6 +3,7 @@ import { parseRangeHeader } from "./parseRangeHeader.js";
 import { RangeParserError } from "./RangeParserError.js";
 import type { Logger } from "./Logger.js";
 import type { ContentProvider } from "./ContentProvider.js";
+import type { ParamsDictionary } from "express-serve-static-core";
 import { ContentDoesNotExistError } from "./ContentDoesNotExistError.js";
 import {
   getRangeHeader,
@@ -11,10 +12,11 @@ import {
   setContentDispositionHeader,
   setAcceptRangesHeader,
   setContentLengthHeader,
-  setCacheControlHeaderNoCache
+  setCacheControlHeaderNoCache,
+  setETagHeader
 } from "./utils.js";
-export function createPartialContentHandler(contentProvider: ContentProvider, logger: Logger) {
-  return async function handler(req: Request, res: Response) {
+export function createPartialContentHandler<P extends ParamsDictionary>(contentProvider: ContentProvider<P>, logger: Logger) {
+  return async function handler(req: Request<P>, res: Response) {
     let content;
     try {
       content = await contentProvider(req);
@@ -25,7 +27,7 @@ export function createPartialContentHandler(contentProvider: ContentProvider, lo
       }
       return res.sendStatus(500);
     }
-    let { getStream, mimeType, fileName, totalSize } = content;
+    let { getStream, mimeType, fileName, totalSize, etag } = content;
     const rangeHeader = getRangeHeader(req);
     let range;
     try {
@@ -41,6 +43,11 @@ export function createPartialContentHandler(contentProvider: ContentProvider, lo
     setContentTypeHeader(mimeType, res);
     setContentDispositionHeader(fileName, res);
     setAcceptRangesHeader(res);
+    // A stable validator lets the client revalidate and resume a partial download (e.g. media playback that
+    // re-requests a range after a backgrounded mobile tab drops its connection).
+    if (etag) {
+      setETagHeader(etag, res);
+    }
     // If range is not specified, or the file is empty, return the full stream
     if (range === null) {
       logger.debug("createPartialContentHandler: No range found, returning full content.");

@@ -5,42 +5,97 @@ import "./ReadOnlyText.css";
 import "@triliumnext/ckeditor5";
 
 import clsx from "clsx";
-import { useEffect, useMemo, useRef } from "preact/hooks";
+import { Ref } from "preact";
+import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
 import { getLocaleById } from "../../../services/i18n";
+import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
-import { useNoteBlob, useNoteLabel, useTriliumEvent, useTriliumOptionBool } from "../../react/hooks";
+import { useNoteBlob, useNoteLabel, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { RawHtmlBlock } from "../../react/RawHtml";
-import TouchBar, { TouchBarButton, TouchBarSpacer } from "../../react/TouchBar";
 import { TypeWidgetProps } from "../type_widget";
 import { applyReferenceLinks } from "./read_only_helper";
 import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 
 export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetProps) {
-    const blob = useNoteBlob(note);
-    const contentRef = useRef<HTMLDivElement>(null);
-    const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
+    const blob = useNoteBlob(note, undefined, { reportLoadStateTo: noteContext });
     const { isRtl } = useNoteLanguage(note);
+    const readOnlyContentRef = usePreactRef<HTMLDivElement>(null);
 
-    // Apply necessary transforms.
+    // Scroll to bookmark anchor if navigated with ?bookmark=...
     useEffect(() => {
+        const viewScope = noteContext?.viewScope;
+        if (!viewScope?.bookmark || !readOnlyContentRef.current) return;
+
+        const el = readOnlyContentRef.current.querySelector(`[id="${CSS.escape(viewScope.bookmark)}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        viewScope.bookmark = undefined;
+    }, [blob]);
+
+    return (
+        <>
+            <ReadOnlyTextContent
+                html={blob?.content ?? ""}
+                ntxId={ntxId}
+                dir={isRtl ? "rtl" : "ltr"}
+                contentRef={readOnlyContentRef}
+            />
+        </>
+    );
+}
+
+interface ReadOnlyTextContentProps {
+    /** CKEditor-compatible HTML to render. */
+    html: string;
+    /** Note context id — enables `contentElRefreshed` / `executeWithContentElement` integrations when provided. */
+    ntxId?: string | null;
+    dir?: "ltr" | "rtl";
+    /** Extra classes appended to the content div. */
+    className?: string;
+    /** Optional external ref to the rendered content div (e.g. to drive scroll sync). */
+    contentRef?: Ref<HTMLDivElement>;
+}
+
+/**
+ * Renders arbitrary CKEditor-style HTML with the same pipeline as {@link ReadOnlyText}:
+ * mermaid rewriting, inline mermaid, included-note expansion, KaTeX math, reference-link
+ * titles, code-block syntax highlighting, and image click handling. Transforms re-run
+ * whenever `html` changes.
+ */
+export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: externalContentRef }: ReadOnlyTextContentProps) {
+    const contentRef = useSyncedRef(externalContentRef);
+    const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
+    const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
+
+    useEffect(() => {
+        document.body.style.setProperty("--code-block-tab-width", codeBlockTabWidth || "4");
+    }, [codeBlockTabWidth]);
+
+    // Apply necessary transforms. Runs in a layout effect so the synchronous
+    // DOM mutations (mermaid rewrite + cached-SVG repaint, math, etc.) happen
+    // before the browser paints — prevents a flash of raw `<pre>` content
+    // during live preview re-renders.
+    useLayoutEffect(() => {
         const container = contentRef.current;
         if (!container) return;
 
-        appContext.triggerEvent("contentElRefreshed", { ntxId, contentEl: container });
+        if (ntxId) {
+            appContext.triggerEvent("contentElRefreshed", { ntxId, contentEl: container });
+        }
 
         rewriteMermaidDiagramsInContainer(container);
         applyInlineMermaid(container);
         applyIncludedNotes(container);
+        applyLinkEmbeds(container);
         applyMath(container);
         applyReferenceLinks(container);
         formatCodeBlocks($(container));
         setupImageOpening(container, true);
-    }, [ blob ]);
+    }, [ html, ntxId, contentRef ]);
 
     // React to included note changes.
     useTriliumEvent("refreshIncludedNote", ({ noteId }) => {
@@ -50,33 +105,18 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
 
     // Search integration.
     useTriliumEvent("executeWithContentElement", ({ resolve, ntxId: eventNtxId }) => {
-        if (eventNtxId !== ntxId || !contentRef.current) return;
+        if (!ntxId || eventNtxId !== ntxId || !contentRef.current) return;
         resolve($(contentRef.current));
     });
 
     return (
-        <>
-            <RawHtmlBlock
-                containerRef={contentRef}
-                className={clsx("note-detail-readonly-text-content ck-content use-tn-links selectable-text", codeBlockWordWrap && "word-wrap")}
-                tabindex={100}
-                dir={isRtl ? "rtl" : "ltr"}
-                html={blob?.content}
-            />
-
-            <TouchBar>
-                <TouchBarSpacer size="flexible" />
-                <TouchBarButton
-                    icon="NSLockUnlockedTemplate"
-                    click={() => {
-                        if (noteContext?.viewScope) {
-                            noteContext.viewScope.readOnlyTemporarilyDisabled = true;
-                            appContext.triggerEvent("readOnlyTemporarilyDisabled", { noteContext });
-                        }
-                    }}
-                />
-            </TouchBar>
-        </>
+        <RawHtmlBlock
+            containerRef={contentRef}
+            className={clsx("note-detail-readonly-text-content ck-content use-tn-links selectable-text", codeBlockWordWrap && "word-wrap", className)}
+            tabindex={100}
+            dir={dir}
+            html={html}
+        />
     );
 }
 
@@ -101,6 +141,8 @@ function applyIncludedNotes(container: HTMLDivElement) {
 function applyMath(container: HTMLDivElement) {
     const equations = container.querySelectorAll("span.math-tex");
     for (const equation of equations) {
-        renderMathInElement(equation, { trust: true });
+        // throwOnError: false renders invalid formulas as an inline red error (with the
+        // parse message as a tooltip) instead of throwing and logging to the console.
+        renderMathInElement(equation, { trust: true, throwOnError: false });
     }
 }

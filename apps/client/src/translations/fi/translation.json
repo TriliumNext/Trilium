@@ -1,13 +1,6 @@
 {
   "about": {
-    "title": "Lisätietoja Trilium Notes:ista",
-    "homepage": "Kotisivu:",
-    "app_version": "Sovelluksen versio:",
-    "db_version": "Tietokannan versio:",
-    "build_date": "Koontipäivämäärä:",
-    "data_directory": "Datakansio:",
-    "sync_version": "Synkronoinnin versio:",
-    "build_revision": "Sovelluksen versio:"
+    "data_directory": "Datakansio:"
   },
   "toast": {
     "critical-error": {
@@ -62,24 +55,16 @@
     "also_delete_note": "Poista myös muistio"
   },
   "delete_notes": {
-    "delete_notes_preview": "Poista muistion esikatselu",
     "close": "Sulje",
     "notes_to_be_deleted": "Seuraavat muistiot tullaan poistamaan ({{notesCount}})",
     "no_note_to_delete": "Muistioita ei poisteta (vain kopiot).",
-    "cancel": "Peruuta",
-    "ok": "OK"
+    "cancel": "Peruuta"
   },
   "export": {
     "export_note_title": "Vie muistio",
     "close": "Sulje",
-    "format_html": "HTML - suositeltu, sillä se säilyttää kaikki formatoinnit",
-    "format_markdown": "Markdown - tämä säilyttää suurimman osan formatoinneista.",
-    "opml_version_1": "OPML v1.0 - pelkkä teksti",
-    "opml_version_2": "OPML v2.0 - sallii myös HTML:n",
     "export": "Vie",
     "choose_export_type": "Valitse ensin viennin tyyppi",
-    "export_status": "Viennin tila",
-    "export_in_progress": "Vienti käynnissä: {{progressCount}}",
     "export_finished_successfully": "Vienti valmistui onnistuneesti.",
     "format_pdf": "PDF - tulostukseen ja jakamiseen."
   },
@@ -124,7 +109,6 @@
       "title": "HTML Tuonnin Tunnisteet",
       "placeholder": "Lisää HTML tunnisteet, yksi per rivi"
     },
-    "import-status": "Tuonnin tila",
     "in-progress": "Tuonti vaiheessa: {{progress}}",
     "successful": "Tuonti valmistui onnistuneesti."
   },

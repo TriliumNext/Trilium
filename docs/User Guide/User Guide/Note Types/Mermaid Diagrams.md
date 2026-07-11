@@ -6,6 +6,15 @@
 
 Trilium supports Mermaid, which adds support for various diagrams such as flowchart, sequence diagram, class diagram, state diagram, pie charts, etc., all using a text description of the chart instead of manually drawing the diagram.
 
+This note type is a split view, meaning that both the source code and a preview of the document are displayed side-by-side. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20types%20with%20split%20view.md">Note types with split view</a> for more information.
+
+## Sample diagrams
+
+Starting with v0.103.0, Mermaid diagrams no longer start with a sample flowchart, but instead a pane at the bottom will show all the supported diagrams with sample code for each:
+
+*   Simply click on any of the samples to apply it.
+*   The pane will disappear as soon as something is typed in the code editor or a sample is selected. To make it appear again, simply remove the content of the note.
+
 ## Layouts
 
 Depending on the chart being edited and user preference, there are two layouts supported by the Mermaid note type:

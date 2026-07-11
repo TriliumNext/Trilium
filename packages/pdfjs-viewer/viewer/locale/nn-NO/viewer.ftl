@@ -201,6 +201,15 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniatyrbilde av side { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Vel side { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Side { $page } av { $total }
 
 ## Find panel button title and messages
 
@@ -479,8 +488,8 @@ pdfjs-editor-new-alt-text-error-close-button = Lat att
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-pdfjs-editor-new-alt-text-ai-model-downloading-progress = Lastar ned AI-modell med alternativ tekst ({ $downloadedSize } av { $totalSize } MB)
-    .aria-valuetext = Lastar ned AI-modell med alternativ tekst ({ $downloadedSize } av { $totalSize } MB)
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Lastar ned KI-modell med alternativ tekst ({ $downloadedSize } av { $totalSize } MB)
+    .aria-valuetext = Lastar ned KI-modell med alternativ tekst ({ $downloadedSize } av { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button =
     .aria-label = Alternativ tekst lagt til
@@ -509,7 +518,7 @@ pdfjs-editor-alt-text-settings-create-model-button-label = Opprett alternativ te
 pdfjs-editor-alt-text-settings-create-model-description = Foreslår skildringar for å hjelpe folk som ikkje kan sjå bildet eller når bildet ikkje blir lasta inn.
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = AI-modell for alternativ tekst ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-download-model-label = KI-modell for alternativ tekst ({ $totalSize } MB)
 pdfjs-editor-alt-text-settings-ai-model-description = Køyrer lokalt på eininga di slik at dataa dine blir verande private. Påkravd for automatisk alternativ tekst.
 pdfjs-editor-alt-text-settings-delete-model-button = Slett
 pdfjs-editor-alt-text-settings-download-model-button = Last ned
@@ -534,6 +543,7 @@ pdfjs-editor-undo-bar-message-freetext = Tekst fjerna
 pdfjs-editor-undo-bar-message-ink = Teikning fjerna
 pdfjs-editor-undo-bar-message-stamp = Bilde fjerna
 pdfjs-editor-undo-bar-message-signature = Signatur fjerna
+pdfjs-editor-undo-bar-message-comment = Kommentar fjerna
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -632,6 +642,95 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Avbryt
 
 pdfjs-editor-add-comment-button =
     .title = Legg til kommentar
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-notification-button =
+    .title = Vis/skjul sidestolpe (dokumentet inneheld miniatyrbilde/disposisjon/vedlegg/lag)
+pdfjs-toggle-views-manager-button1-label = Handsam sider
+pdfjs-views-manager-sidebar =
+    .aria-label = Sidestolpe
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Endre storleiken på sidestolpen
+pdfjs-views-manager-view-selector-button =
+    .title = Vis
+pdfjs-views-manager-view-selector-button-label = Visningar
+pdfjs-views-manager-pages-title = Sider
+pdfjs-views-manager-outlines-title1 = Dokumentoversikt
+    .title = Dokumentoversikt (dobbelklikk for å utvide/skjule alle element)
+pdfjs-views-manager-attachments-title = Vedlegg
+pdfjs-views-manager-layers-title1 = Lag
+    .title = Lag (dobbelklikk for å tilbakestille alle lag til standardtilstand)
+pdfjs-views-manager-pages-option-label = Sider
+pdfjs-views-manager-outlines-option-label = Dokumentdisposisjon
+pdfjs-views-manager-attachments-option-label = Vedlegg
+pdfjs-views-manager-layers-option-label = Lag
+pdfjs-views-manager-add-file-button =
+    .title = Legg til fil
+pdfjs-views-manager-add-file-button-label = Legg til fil
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } vald
+       *[other] { $count } valde
+    }
+pdfjs-views-manager-pages-status-none-action-label = Vel sider
+pdfjs-views-manager-pages-status-action-button-label = Handsam
+pdfjs-views-manager-pages-status-copy-button-label = Kopier
+pdfjs-views-manager-pages-status-cut-button-label = Klipp ut
+pdfjs-views-manager-pages-status-delete-button-label = Slett
+pdfjs-views-manager-pages-status-export-selected-button-label = Eksporter valde…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] 1 side klipt ut
+       *[other] { $count } sider klipte ut
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 side kopiert
+       *[other] { $count } sider kopierte
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 side sletta
+       *[other] { $count } sider sletta
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Klargjer fila di…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Lastar opp fila…
+pdfjs-views-manager-status-warning-cut-label = Klarte ikkje å klippe ut. Oppdater sida og prøv på nytt.
+pdfjs-views-manager-status-warning-copy-label = Klarte ikkje å kopiere. Oppdater sida og prøv på nytt.
+pdfjs-views-manager-status-warning-delete-label = Klarte ikkje å slette. Oppdater sida og prøv på nytt.
+pdfjs-views-manager-status-warning-save-label = Klarte ikkje å lagre. Oppdater sida og prøv på nytt.
+pdfjs-views-manager-status-undo-button-label = Angre
+pdfjs-views-manager-status-done-button-label = Ferdig
+pdfjs-views-manager-status-close-button =
+    .title = Lat att
+pdfjs-views-manager-status-close-button-label = Lat att
+pdfjs-views-manager-paste-button-label = Lim inn
+pdfjs-views-manager-paste-button-before =
+    .title = Lim inn før første side
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Lim inn etter side { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NY
+pdfjs-views-manager-waiting-for-file = Lastar opp fila…
+pdfjs-toggle-views-manager-button1 =
+    .title = Handsam sider
 
 ## Main menu for adding/removing signatures
 

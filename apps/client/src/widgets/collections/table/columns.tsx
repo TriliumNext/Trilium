@@ -1,11 +1,12 @@
-import type { CellComponent, ColumnDefinition, EmptyCallback, FormatterParams, ValueBooleanCallback, ValueVoidCallback } from "tabulator-tables";
-import { LabelType } from "../../../services/promoted_attribute_definition_parser.js";
+import { LabelType } from "@triliumnext/commons";
 import { JSX } from "preact";
-import { renderReactWidget } from "../../react/react_utils.jsx";
-import Icon from "../../react/Icon.jsx";
 import { useEffect, useRef, useState } from "preact/hooks";
+import type { CellComponent, ColumnDefinition, EmptyCallback, FormatterParams, RowComponent, ValueBooleanCallback, ValueVoidCallback } from "tabulator-tables";
+
 import froca from "../../../services/froca.js";
+import Icon from "../../react/Icon.jsx";
 import NoteAutocomplete from "../../react/NoteAutocomplete.jsx";
+import { renderReactWidget } from "../../react/react_utils.jsx";
 
 type ColumnType = LabelType | "relation";
 
@@ -19,9 +20,20 @@ const labelTypeMappings: Record<ColumnType, Partial<ColumnDefinition>> = {
     text: {
         editor: "input"
     },
+    textarea: {
+        editor: "textarea",
+        formatter: "textarea",
+        editorParams: {
+            shiftEnterSubmit: true
+        }
+    },
     boolean: {
         formatter: "tickCross",
-        editor: "tickCross"
+        editor: "tickCross",
+        // Values arrive as strings ("true"/"false") from stored labels but as real booleans
+        // once toggled via the editor; the boolean sorter normalizes both, whereas the default
+        // string sorter treats boolean `false` as empty and orders it inconsistently.
+        sorter: "boolean"
     },
     date: {
         editor: "date",
@@ -63,10 +75,6 @@ interface BuildColumnArgs {
     position?: number;
 }
 
-interface RowNumberFormatterParams {
-    movableRows?: boolean;
-}
-
 export function buildColumnDefinitions({ info, movableRows, existingColumnData, rowNumberHint, position }: BuildColumnArgs) {
     let columnDefs: ColumnDefinition[] = [
         {
@@ -77,11 +85,7 @@ export function buildColumnDefinitions({ info, movableRows, existingColumnData, 
             frozen: true,
             rowHandle: movableRows,
             width: calculateIndexColumnWidth(rowNumberHint, movableRows),
-            formatter: wrapFormatter(({ cell, formatterParams }) => <div>
-                {(formatterParams as RowNumberFormatterParams).movableRows && <><span class="bx bx-dots-vertical-rounded"></span>{" "}</>}
-                {cell.getRow().getPosition(true)}
-            </div>),
-            formatterParams: { movableRows } satisfies RowNumberFormatterParams
+            formatter: (cell) => rowNumberFormatter(cell, movableRows)
         },
         {
             field: "noteId",
@@ -173,6 +177,38 @@ function calculateIndexColumnWidth(rowNumberHint: number, movableRows: boolean):
     return columnWidth;
 }
 
+// `watchPosition` is provided by Tabulator but missing from the current type definitions.
+type RowComponentWithPositionWatch = RowComponent & {
+    watchPosition(callback: (position: number) => void): void;
+};
+
+function rowNumberFormatter(cell: CellComponent, movableRows: boolean): HTMLElement {
+    const container = document.createElement("div");
+
+    if (movableRows) {
+        const handle = document.createElement("span");
+        handle.className = "bx bx-dots-vertical-rounded";
+        container.append(handle, " ");
+    }
+
+    const number = document.createElement("span");
+    container.append(number);
+
+    // The row-number column has no field, so Tabulator never re-runs its formatter when the
+    // rows are re-sorted or reordered, leaving stale numbers (see #10347). Watching the row
+    // position keeps the displayed number in sync, mirroring Tabulator's built-in "rownum".
+    const row = cell.getRow() as RowComponentWithPositionWatch;
+    const currentPosition = row.getPosition();
+    if (currentPosition) {
+        number.innerText = String(currentPosition);
+    }
+    row.watchPosition((position) => {
+        number.innerText = String(position);
+    });
+
+    return container;
+}
+
 interface FormatterOpts {
     cell: CellComponent
     formatterParams: FormatterParams;
@@ -200,14 +236,14 @@ function wrapEditor(Component: (opts: EditorOpts) => JSX.Element): ((
     editorParams: {},
 ) => HTMLElement | false) {
     return (cell, _, success, cancel, editorParams) => {
-        const elWithParams = <Component cell={cell} success={success} cancel={cancel} editorParams={editorParams} />
+        const elWithParams = <Component cell={cell} success={success} cancel={cancel} editorParams={editorParams} />;
         return renderReactWidget(null, elWithParams)[0];
     };
 }
 
 function NoteFormatter({ cell }: FormatterOpts) {
     const noteId = cell.getValue();
-    const [ note, setNote ] = useState(noteId ? froca.getNoteFromCache(noteId) : null)
+    const [ note, setNote ] = useState(noteId ? froca.getNoteFromCache(noteId) : null);
 
     useEffect(() => {
         if (!noteId || note?.noteId === noteId) return;
@@ -231,5 +267,5 @@ function RelationEditor({ cell, success }: EditorOpts) {
             hideAllButtons: true
         }}
         noteIdChanged={success}
-    />
+    />;
 }

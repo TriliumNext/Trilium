@@ -2,9 +2,9 @@ import { dayjs } from "@triliumnext/commons";
 import type { Application } from "express";
 import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import cls from "../services/cls.js";
+import { cls } from "@triliumnext/core";
 import { type SQLiteSessionStore } from "./session_parser.js";
 
 let app: Application;
@@ -20,15 +20,16 @@ describe("Login Route test", () => {
         ({ sessionStore, CLEAN_UP_INTERVAL } = (await import("./session_parser.js")));
     });
 
-    it("should return the login page, when using a GET request", async () => {
+    afterAll(() => {
+        vi.useRealTimers();
+    });
 
-        // RegExp for login page specific string in HTML
+    it("redirects GET /login to the SPA root, since login is served client-side", async () => {
         const res = await supertest(app)
             .get("/login")
-            .expect(200);
+            .expect(302);
 
-        expect(res.text).toMatch(/assets\/v[0-9.a-z]+\/src\/login\.js/);
-
+        expect(res.headers.location).toBe(".");
     });
 
     it("returns a 401 status, when login fails with wrong password", async () => {

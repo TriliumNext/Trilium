@@ -1,7 +1,8 @@
 import { useCallback } from "preact/hooks";
 
-import appContext from "../../components/app_context";
+import appContext, { CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
+import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
 import link_context_menu from "../../menus/link_context_menu";
 import { isCtrlKey } from "../../services/utils";
 import { useGlobalShortcut, useNoteLabel } from "../react/hooks";
@@ -13,7 +14,7 @@ export function CustomNoteLauncher(props: {
     getHoistedNoteId?: (launcherNote: FNote) => string | null;
     keyboardShortcut?: string;
 }) {
-    const { launcherNote, getTargetNoteId } = props;
+    const { launcherNote, getTargetNoteId, getHoistedNoteId } = props;
     const { icon, title } = useLauncherIconAndTitle(launcherNote);
 
     const launch = useCallback(async (evt: MouseEvent | KeyboardEvent) => {
@@ -31,11 +32,20 @@ export function CustomNoteLauncher(props: {
             onClick={launch}
             onAuxClick={launch}
             onContextMenu={async evt => {
+                // Must preventDefault synchronously — awaiting getTargetNoteId first would let the
+                // native browser context menu open before showLauncherContextMenu gets a chance to.
                 evt.preventDefault();
                 const targetNoteId = await getTargetNoteId(launcherNote);
-                if (targetNoteId) {
-                    link_context_menu.openContextMenu(targetNoteId, evt);
-                }
+                const hoistedNoteId = getHoistedNoteId?.(launcherNote) ?? null;
+                const linkItems = targetNoteId ? link_context_menu.getItems(evt) : [];
+                await showLauncherContextMenu<CommandNames>(launcherNote, evt, {
+                    extraItems: linkItems,
+                    onCommand: (command) => {
+                        if (command && targetNoteId) {
+                            link_context_menu.handleLinkContextMenuItem(command, evt, targetNoteId, {}, hoistedNoteId);
+                        }
+                    }
+                });
             }}
         />
     );

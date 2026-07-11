@@ -1,5 +1,9 @@
-import { AttributeEditor as CKEditorAttributeEditor, MentionFeed, ModelElement, ModelNode, ModelPosition } from "@triliumnext/ckeditor5";
+import "./AttributeEditor.css";
+
+import type { AttributeEditor as CKEditorAttributeEditor, MentionFeed, ModelElement, ModelNode, ModelPosition } from "@triliumnext/ckeditor5";
 import { AttributeType } from "@triliumnext/commons";
+import type { Tooltip } from "bootstrap";
+import { createPortal } from "preact/compat";
 import { MutableRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "preact/hooks";
 
 import type { CommandData, FilteredCommandNames } from "../../../components/app_context";
@@ -26,9 +30,7 @@ type AttributeCommandNames = FilteredCommandNames<CommandData>;
 
 const HELP_TEXT = `
 <p>${t("attribute_editor.help_text_body1")}</p>
-
 <p>${t("attribute_editor.help_text_body2")}</p>
-
 <p>${t("attribute_editor.help_text_body3")}</p>`;
 
 const mentionSetup: MentionFeed[] = [
@@ -97,6 +99,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
     const [ state, setState ] = useState<"normal" | "showHelpTooltip" | "showAttributeDetail">();
     const [ error, setError ] = useState<unknown>();
     const [ needsSaving, setNeedsSaving ] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const suppressNextOnHide = useRef(false);
 
     const lastSavedContent = useRef<string>();
     const currentValueRef = useRef(currentValue);
@@ -104,13 +108,36 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
     const editorRef = useRef<CKEditorApi>();
     const [ locale ] = useTriliumOption("locale");
 
-    const { showTooltip, hideTooltip } = useTooltip(wrapperRef, {
+    // The CKEditor bundle is heavy and this component mounts in always-visible containers
+    // (e.g. the status bar), so the editor class is loaded on demand to keep CKEditor out
+    // of the startup module graph.
+    const [ editorClass, setEditorClass ] = useState<typeof CKEditorAttributeEditor>();
+    useEffect(() => {
+        let active = true;
+        void import("@triliumnext/ckeditor5").then((ckeditor) => {
+            // Avoid a state update if the editor unmounted before the bundle finished loading.
+            if (active) {
+                setEditorClass(() => ckeditor.AttributeEditor);
+            }
+        });
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    // Stable config so `useTooltip`'s effect doesn't dispose/recreate the tooltip
+    // on every render (it runs on each keystroke). `focus` shows the help when the
+    // editor is focused; `state` below force-hides it when the attribute-detail
+    // popup takes over.
+    const tooltipConfig = useMemo<Partial<Tooltip.Options>>(() => ({
         trigger: "focus",
         html: true,
         title: HELP_TEXT,
         placement: "bottom",
         offset: "0,30"
-    });
+    }), []);
+
+    const { showTooltip, hideTooltip } = useTooltip(wrapperRef, tooltipConfig);
 
     const [ attributeDetailWidgetEl, attributeDetailWidget ] = useLegacyWidget(() => new AttributeDetailWidget());
 
@@ -298,11 +325,11 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                     }
                 }}
             >   <div style="position: relative;">
-                    <CKEditor
+                    {editorClass && <CKEditor
                         apiRef={editorRef}
                         className="attribute-list-editor"
                         tabIndex={200}
-                        editor={CKEditorAttributeEditor}
+                        editor={editorClass}
                         currentValue={currentValue}
                         config={{
                             toolbar: { items: [] },
@@ -336,7 +363,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                                 let matchedAttr: Attribute | null = null;
 
                                 for (const attr of parsedAttrs) {
-                                    if (attr.startIndex && clickIndex > attr.startIndex && attr.endIndex && clickIndex <= attr.endIndex) {
+                                    if (attr.startIndex !== undefined && clickIndex > attr.startIndex &&
+                                        attr.endIndex !== undefined && clickIndex <= attr.endIndex) {
                                         matchedAttr = attr;
                                         break;
                                     }
@@ -364,7 +392,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                         onBlur={() => save()}
                         onInitialized={() => editorRef.current?.focus()}
                         disableNewlines disableSpellcheck
-                    />
+                    />}
 
                     <div className="attribute-editor-buttons">
                         { needsSaving && <ActionButton
@@ -381,6 +409,12 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                             onClick={(e) => {
                                 // Prevent automatic hiding of the context menu due to the button being clicked.
                                 e.stopPropagation();
+                                if (isMenuOpen) {
+                                // If we re-show the menu, ContextMenu.show() will call hide()
+                                // and immediately trigger onHide. Suppress that transient hide.
+                                    suppressNextOnHide.current = true;
+                                }
+                                setIsMenuOpen(true);
 
                                 contextMenu.show<AttributeCommandNames>({
                                     x: e.pageX,
@@ -393,7 +427,14 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                                         { title: t("attribute_editor.add_new_label_definition"), command: "addNewLabelDefinition", uiIcon: "bx bx-empty" },
                                         { title: t("attribute_editor.add_new_relation_definition"), command: "addNewRelationDefinition", uiIcon: "bx bx-empty" }
                                     ],
-                                    selectMenuItemHandler: (item) => handleAddNewAttributeCommand(item.command)
+                                    selectMenuItemHandler: (item) => handleAddNewAttributeCommand(item.command),
+                                    onHide: () => {
+                                        if (suppressNextOnHide.current) {
+                                            suppressNextOnHide.current = false;
+                                            return;
+                                        }
+                                        setIsMenuOpen(false);
+                                    },
                                 });
                             }}
                         />
@@ -407,7 +448,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                 )}
             </div>}
 
-            {attributeDetailWidgetEl}
+            {createPortal(attributeDetailWidgetEl, document.body)}
         </>
     );
 }

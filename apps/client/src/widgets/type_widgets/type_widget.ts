@@ -9,4 +9,6 @@ export interface TypeWidgetProps {
     ntxId: string | null | undefined;
     parentComponent: TypedComponent<any> | undefined;
     noteContext: NoteContext | undefined;
+    /** Whether this is the displayed type widget for its context; false when cached/hidden after the note's type changed. */
+    isVisible?: boolean;
 }

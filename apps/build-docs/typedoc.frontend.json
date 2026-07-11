@@ -4,6 +4,7 @@
   "entryPoints": [
     "src/frontend_script_entrypoint.ts"
   ],
+  "tsconfig": "tsconfig.app.json",
   "plugin": [
     "typedoc-plugin-missing-exports"
   ]

@@ -13,7 +13,7 @@ import { createNewNote } from "./api.js";
 import { type GeoMouseEvent,ParentMap, toMapLibreEvent } from "./map.js";
 import { MARKER_LAYER } from "./Markers.js";
 
-export default function ContextMenus({ note, isReadOnly }: { note: FNote, isReadOnly }) {
+export default function ContextMenus({ note, isReadOnly }: { note: FNote, isReadOnly: boolean }) {
     const map = useContext(ParentMap);
 
     const onContextMenu = useCallback((e: GeoMouseEvent) => {
@@ -27,9 +27,9 @@ export default function ContextMenus({ note, isReadOnly }: { note: FNote, isRead
             openContextMenu(features[0].properties.id, e, !isReadOnly);
         } else {
             // Empty area context menu.
-            openMapContextMenu(note.noteId, e, !isReadOnly);
+            openMapContextMenu(note, e, !isReadOnly);
         }
-    }, [ map, note.noteId, isReadOnly ]);
+    }, [ map, note, isReadOnly ]);
 
     useEffect(() => {
         if (!onContextMenu || !map) return;
@@ -81,7 +81,7 @@ export function openContextMenu(noteId: string, e: GeoMouseEvent, isEditable: bo
     });
 }
 
-export function openMapContextMenu(noteId: string, e: GeoMouseEvent, isEditable: boolean) {
+export function openMapContextMenu(note: FNote, e: GeoMouseEvent, isEditable: boolean) {
     let items: MenuItem<keyof CommandMappings>[] = [
         ...buildGeoLocationItem(e)
     ];
@@ -92,7 +92,7 @@ export function openMapContextMenu(noteId: string, e: GeoMouseEvent, isEditable:
             { kind: "separator" },
             {
                 title: t("geo-map-context.add-note"),
-                handler: () => createNewNote(noteId, e),
+                handler: () => createNewNote(note, e),
                 uiIcon: "bx bx-plus"
             }
         ];

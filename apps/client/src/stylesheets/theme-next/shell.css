@@ -101,10 +101,22 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
 
 /* #endregion */
 
+#horizontal-main-container {
+    /* The default start-start and end-start border radius for the note split.
+     * Updated automatically according to the layout. */
+    --note-split-top-border-radius: var(--center-pane-border-radius);
+    --note-split-bottom-border-radius: var(--center-pane-border-radius);
+}
+
 /* Matches when the left pane is collapsed */
 #horizontal-main-container.left-pane-hidden {
-    --center-pane-border-radius: 0;
+    --note-split-top-border-radius: 0;
     --tab-first-item-horiz-offset: 5px;
+}
+
+/* Matches when a status bar panel is open */
+body.experimental-feature-new-layout #horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
+    --note-split-bottom-border-radius: 0;
 }
 
 /* Add a border to the vertical launch bar if collapsed. */
@@ -329,7 +341,7 @@ body[dir=ltr] #launcher-container {
 
 #launcher-pane .sync-status-disconnected-with-changes {
     --pulse-color: var(--sync-status-error-pulse-color);
-    animation: sync-status-pulse 1s ease-in-out alternate-reverse infinite;
+    animation: sync-status-pulse 1s steps(10, jump-none) alternate-reverse infinite;
 }
 
 #launcher-pane button.global-menu-button {
@@ -344,13 +356,12 @@ body[dir=ltr] #launcher-container {
 }
 
 .tooltip .tooltip-inner {
-    padding: 6px 10px !important;
-    box-shadow:
-        -1px -1px 2px var(--tooltip-shadow-color),
-        2px 2px 8px var(--tooltip-shadow-color) !important;
+    padding: var(--tooltip-padding) !important;
+    box-shadow: var(--tooltip-box-shadow) !important;
     border: unset !important;
-    border-radius: 6px;
-    backdrop-filter: blur(5px);
+    border-radius: var(--tooltip-border-radius);
+    backdrop-filter: var(--tooltip-backdrop-filter);
+    font-size: var(--tooltip-font-size);
     color: var(--tooltip-foreground-color) !important;
 }
 
@@ -372,10 +383,6 @@ body[dir=ltr] #launcher-container {
 .calendar-dropdown-widget .calendar-header [data-calendar-input="month"] {
     --input-background-color: transparent;
     --menu-background-color: transparent;
-
-    text-align: center;
-    font-size: 1.4em;
-    font-weight: 300;
 }
 
 .calendar-dropdown-widget .calendar-header input:not(:focus) {
@@ -425,8 +432,6 @@ body[dir=ltr] #launcher-container {
 }
 
 .calendar-dropdown-widget .calendar-week span {
-    font-size: 0.85em;
-    font-weight: 500;
     color: var(--calendar-weekday-labels-color);
 }
 
@@ -689,9 +694,10 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     padding-inline-start: 12px;
 }
 
-#left-pane span.fancytree-node.fancytree-active {
+#left-pane span.fancytree-node.fancytree-active,
+#left-pane span.fancytree-node.fancytree-active:hover {
     position: relative;
-    background: transparent !important;
+    background: transparent;
     color: var(--custom-color, var(--left-pane-item-selected-color));
 }
 
@@ -703,6 +709,14 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
         opacity: 1;
     }
 }
+
+/*
+ * .fancytree-node pseudo-elements:
+ *
+ *      - ::before: the active tree item decorator.
+ *      - ::after:  the selected tree item background. A pseudo-element is used instead of the
+ *                  element's background color, to allow alpha compositing for the hover state.
+ */
 
 #left-pane span.fancytree-node.fancytree-active::before {
     position: absolute;
@@ -716,6 +730,24 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     border-radius: 6px;
     animation: left-pane-item-select 200ms ease-out;
     z-index: -1;
+}
+
+#left-pane span.fancytree-node.fancytree-selected {
+    --left-pane-item-selected-shadow-size: 4px;
+
+    position: relative;
+    background-color: transparent;
+    border-radius: 0;
+}
+
+#left-pane span.fancytree-node.fancytree-selected::after {
+    display: block;
+    position: absolute;
+    z-index: -2;
+    content: "";
+    inset: 0;
+    background: var(--selection-background-color);
+    animation: left-pane-item-select 100ms ease-out;
 }
 
 #left-pane span.fancytree-node.protected > span.fancytree-custom-icon {
@@ -751,12 +783,14 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
     }
 }
 
-#left-pane .fancytree-expander {
+#left-pane .fancytree-expander,
+.nested-note-list-item .note-expander {
     opacity: 0.65;
     transition: opacity 150ms ease-in;
 }
 
-#left-pane .fancytree-expander:hover {
+#left-pane .fancytree-expander:hover,
+.nested-note-list-item .note-expander:hover {
     opacity: 1;
     transition: opacity 300ms ease-out;
 }
@@ -778,7 +812,8 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
     opacity: 0.5;
 }
 
-#left-pane .tree-item-button {
+#left-pane .tree-item-button,
+#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon {
     margin-inline-end: 6px;
     border: unset;
     border-radius: 50%;
@@ -789,7 +824,8 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
         box-shadow 200ms ease-out;
 }
 
-#left-pane .tree-item-button:hover {
+#left-pane .tree-item-button:hover,
+#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon:hover {
     background: var(--left-pane-item-action-button-hover-background);
     box-shadow: var(--left-pane-item-action-button-hover-shadow);
     transition:
@@ -797,9 +833,40 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
         box-shadow 100ms ease-in;
 }
 
-#left-pane span.fancytree-node.fancytree-active .tree-item-button:hover {
+#left-pane span.fancytree-node.fancytree-active .tree-item-button:hover,
+#left-pane span.fancytree-node.fancytree-active.fancytree-selected .fancytree-custom-icon:hover {
     box-shadow: var(--left-pane-item-selected-action-button-hover-shadow);
 }
+
+/* Selected item bulk action button */
+
+@keyframes bulk-action-button-blink {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: .3;
+    }
+}
+
+#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon {
+    margin: 0;
+}
+
+#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon::before {
+    border: 0;
+    font-size: .65em;
+}
+
+#left-pane span.fancytree-node.fancytree-selected:hover .fancytree-custom-icon:not(:hover)::before {
+    animation: bulk-action-button-blink 500ms linear infinite alternate;
+}
+
+#left-pane span.fancytree-node.fancytree-selected.protected .fancytree-custom-icon::after {
+    /* Protected note indicator */
+    display: none;
+}
+
 
 #context-menu-container {
     /* The context menu of the tree */
@@ -1031,7 +1098,7 @@ body.layout-vertical.electron.platform-darwin .tab-row-container {
     height: var(--tab-height) !important;
 }
 
-.tab-row-widget > * {
+body.layout-vertical .tab-row-widget > * {
     margin-top: calc((var(--tab-bar-height) - var(--tab-height)) / 2);
 }
 
@@ -1238,7 +1305,7 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
 }
 
 body.layout-vertical #rest-pane > .classic-toolbar-widget {
-    border-start-start-radius: var(--center-pane-border-radius);
+    border-start-start-radius: var(--note-split-top-border-radius);
 }
 
 body.layout-vertical #rest-pane > .classic-toolbar-widget {
@@ -1251,16 +1318,30 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
 
 .classic-toolbar-widget:not(.hidden-ext) + #vertical-main-container {
     /* Remove the center panel border radius when the toolbar is visible */
-    --center-pane-border-radius: 0;
+    --note-split-top-border-radius: 0;
 }
 
 /*
  * CENTER PANE
  */
 
+ /* Note split */
+ body.desktop.experimental-feature-new-layout .vertical-layout #center-pane .note-split {
+    border-bottom: 1px solid var(--status-bar-border-color);
+ }
+
  /* The first visible note split */
 .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
-    border-start-start-radius: var(--center-pane-border-radius);
+    border-start-start-radius: var(--note-split-top-border-radius);
+
+    body.desktop.experimental-feature-new-layout & {
+        border-end-start-radius: var(--note-split-bottom-border-radius);
+
+        > .scrolling-container {
+            /* Use clip-path to force rounded bottom corner for the note content */
+            clip-path: inset(0px round 0 0 0 var(--note-split-bottom-border-radius));
+        }
+    }
 }
 
 #center-pane .note-split {
@@ -1709,6 +1790,20 @@ div.floating-buttons-children .close-floating-buttons:has(.close-floating-button
     font-size: var(--floating-button-icon-size);
 }
 
+/* Button groups */
+:root .floating-buttons .btn-group {
+    --button-group-active-button-background-color: var(--low-profile-button-active-background-color);
+    --button-group-active-button-color: var(--low-profile-button-active-color);
+
+    background: transparent;
+    padding: 0;
+
+    button.btn.floating-button.btn {
+        border-radius: 0;
+        box-shadow: unset;
+    }
+}
+
 /*
  * Find and replace bar
  */
@@ -1817,6 +1912,11 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 #right-pane {
     background: var(--right-pane-background-color);
 }
+
+/* New layout: status bar delimiter */
+body.desktop.experimental-feature-new-layout .vertical-layout #right-pane {
+    border-bottom: 1px solid var(--status-bar-border-color);
+ }
 
 #right-pane > * {
     animation: fade-in 200ms ease-in;

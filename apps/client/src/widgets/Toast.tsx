@@ -4,19 +4,18 @@ import clsx from "clsx";
 import { useEffect } from "preact/hooks";
 
 import { removeToastFromStore, ToastOptionsWithRequiredId, toasts } from "../services/toast";
-import Icon from "./react/Icon";
-import { RawHtmlBlock } from "./react/RawHtml";
 import Button from "./react/Button";
+import Icon from "./react/Icon";
 
 export default function ToastContainer() {
     return (
         <div id="toast-container">
             {toasts.value.map(toast => <Toast key={toast.id} {...toast} />)}
         </div>
-    )
+    );
 }
 
-function Toast({ id, title, timeout, progress, message, icon, buttons }: ToastOptionsWithRequiredId) {
+function Toast({ id, title, timeout, progress, message, icon, buttons, dismissible }: ToastOptionsWithRequiredId) {
     // Autohide.
     useEffect(() => {
         if (!timeout || timeout <= 0) return;
@@ -28,7 +27,9 @@ function Toast({ id, title, timeout, progress, message, icon, buttons }: ToastOp
         removeToastFromStore(id);
     }
 
-    const closeButton = (
+    // `dismissible === false` hides the × entirely (the operation runs regardless of the toast, so a close
+    // button there would misleadingly read as "cancel").
+    const closeButton = dismissible === false ? null : (
         <button
             type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"
             onClick={dismissToast}
@@ -38,25 +39,28 @@ function Toast({ id, title, timeout, progress, message, icon, buttons }: ToastOp
 
     return (
         <div
-            class={clsx("toast", !title && "no-title")}
+            class={clsx("toast", !title && "no-title", dismissible === false && "not-dismissible")}
             role="alert" aria-live="assertive" aria-atomic="true"
             id={`toast-${id}`}
         >
             {title ? (
-                <div class="toast-header">
-                    <strong class="me-auto">
-                        {toastIcon}
-                        <span class="toast-title">{title}</span>
-                    </strong>
-                    {closeButton}
-                </div>
+                <>
+                    <div class="toast-header">
+                        <strong class="me-auto">
+                            {toastIcon}
+                            <span class="toast-title">{title}</span>
+                        </strong>
+                        {closeButton}
+                    </div>
+                    <div className="toast-body">{message}</div>
+                </>
             ) : (
-                <div class="toast-icon">{toastIcon}</div>
+                <div class="toast-main-row">
+                    <div class="toast-icon">{toastIcon}</div>
+                    <div className="toast-body">{message}</div>
+                    {closeButton && <div class="toast-close">{closeButton}</div>}
+                </div>
             )}
-
-            <RawHtmlBlock className="toast-body" html={message} />
-
-            {!title && <div class="toast-header">{closeButton}</div>}
 
             {buttons && (
                 <div class="toast-buttons">
@@ -71,5 +75,5 @@ function Toast({ id, title, timeout, progress, message, icon, buttons }: ToastOp
                 style={{ width: `${(progress ?? 0) * 100}%` }}
             />
         </div>
-    )
+    );
 }

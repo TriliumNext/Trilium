@@ -1,5 +1,5 @@
 import { BulkAction } from "@triliumnext/commons";
-import { BoardViewData } from ".";
+
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
@@ -9,6 +9,7 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import note_create from "../../../services/note_create";
 import server from "../../../services/server";
+import { BoardViewData } from ".";
 import { ColumnMap } from "./data";
 
 export default class BoardApi {
@@ -35,13 +36,11 @@ export default class BoardApi {
 
     async createNewItem(column: string, title: string) {
         try {
-            // Get the parent note path
-            const parentNotePath = this.parentNote.noteId;
-
             // Create a new note as a child of the parent note
-            const { note: newNote, branch: newBranch } = await note_create.createNote(parentNotePath, {
+            const { note: newNote, branch: newBranch } = await note_create.createNote(this.parentNote.noteId, {
                 activate: false,
-                title
+                title,
+                isProtected: this.parentNote.isProtected
             });
 
             if (newNote && newBranch) {
@@ -87,7 +86,7 @@ export default class BoardApi {
 
         const action: BulkAction = this.isRelationMode
             ? { name: "deleteRelation", relationName: this.statusAttribute }
-            : { name: "deleteLabel", labelName: this.statusAttribute }
+            : { name: "deleteLabel", labelName: this.statusAttribute };
         await executeBulkActions(noteIds, [ action ]);
         this.viewConfig.columns = (this.viewConfig.columns ?? []).filter(col => col.value !== column);
         this.saveConfig(this.viewConfig);
@@ -99,7 +98,7 @@ export default class BoardApi {
         // Change the value in the notes.
         const action: BulkAction = this.isRelationMode
             ? { name: "updateRelationTarget", relationName: this.statusAttribute, targetNoteId: newValue }
-            : { name: "updateLabelValue", labelName: this.statusAttribute, labelValue: newValue }
+            : { name: "updateLabelValue", labelName: this.statusAttribute, labelValue: newValue };
         await executeBulkActions(noteIds, [ action ]);
 
         // Rename the column in the persisted data.
@@ -137,9 +136,9 @@ export default class BoardApi {
     }
 
     async insertRowAtPosition(
-            column: string,
-            relativeToBranchId: string,
-            direction: "before" | "after") {
+        column: string,
+        relativeToBranchId: string,
+        direction: "before" | "after") {
         const { note, branch } = await note_create.createNote(this.parentNote.noteId, {
             activate: false,
             targetBranchId: relativeToBranchId,
@@ -179,9 +178,8 @@ export default class BoardApi {
         if (!note) return;
         if (this.isRelationMode) {
             return attributes.removeOwnedRelationByName(note, this.statusAttribute);
-        } else {
-            return attributes.removeOwnedLabelByName(note, this.statusAttribute);
         }
+        return attributes.removeOwnedLabelByName(note, this.statusAttribute);
     }
 
     async moveWithinBoard(noteId: string, sourceBranchId: string, sourceIndex: number, targetIndex: number, sourceColumn: string, targetColumn: string) {

@@ -11,8 +11,5 @@
     "206",
     "stream",
     "typescript"
-  ],
-  "dependencies": {
-    "tslib": "2.8.1"
-  }
+  ]
 }

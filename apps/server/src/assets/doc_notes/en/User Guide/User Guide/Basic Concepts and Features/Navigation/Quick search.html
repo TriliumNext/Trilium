@@ -86,28 +86,29 @@
     exact matches</li>
 </ul>
 <h4>Comparison with Regular Search</h4>
-<table>
-  <thead>
-    <tr>
-      <th>Query</th>
-      <th>Behavior</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code spellcheck="false">example</code>
-      </td>
-      <td>Finds all notes containing "example" anywhere in title or content</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">=example</code>
-      </td>
-      <td>Finds only notes where the title equals "example" or content equals "example"
-        exactly</td>
-    </tr>
-  </tbody>
-</table>
-
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Query</th>
+        <th>Behavior</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">example</code>
+        </td>
+        <td>Finds all notes containing "example" anywhere in title or content</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">=example</code>
+        </td>
+        <td>Finds only notes where the title equals "example" or content equals "example"
+          exactly</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <h3>Technical Details</h3>
 <p>When you use the <code spellcheck="false">=</code> operator:</p>
 <ul>

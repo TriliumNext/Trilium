@@ -1,0 +1,5 @@
+# SQLite sidecar files created when a fixture database is opened (e.g. by tests or the
+# db-compare tool). They are transient and regenerated on demand, so never commit them.
+*.db-shm
+*.db-wal
+*.db-journal

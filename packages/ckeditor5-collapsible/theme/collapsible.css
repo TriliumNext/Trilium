@@ -1,0 +1,202 @@
+/*
+ * Shared styles for collapsible blocks (rendered as native HTML <details>/<summary>).
+ * Used in both the editor and the read-only/published view via .ck-content.
+ */
+
+.ck-content details.trilium-collapsible {
+    --collapsible-block-background: var(--card-background-color);
+    --collapsible-block-summary-background: var(--card-background-color);
+    --collapsible-block-summary-delimiter-color: var(--main-background-color);
+    
+    --_border-radius: 8px;
+    --_block-padding: .75rem;
+    --_inline-padding: 1rem;
+    --_margin-between-collapsibles: 3px;
+    --_content-indent: 2rem;
+    --_arrow-gap: 2rem;
+
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    margin: 1em 0;
+    border-radius: var(--_border-radius);
+    background: var(--collapsible-block-background);
+    padding: var(--_block-padding) var(--_inline-padding) var(--_block-padding) var(--_content-indent);
+
+    &:not(& + &):has(+ details.trilium-collapsible) {
+        /* First collapsibile from the series */
+        margin-bottom: var(--_margin-between-collapsibles);
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
+    }
+
+    & + &:has(+ details.trilium-collapsible) {
+        /* Middle collapsibile blocks from the series */
+        margin-bottom: var(--_margin-between-collapsibles);
+        margin-top: 0;
+        border-radius: 0;
+    }
+
+    & + &:not(:has(+ details.trilium-collapsible)) {
+        /* The last collapsibile from the series */
+        margin-top: 0;
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+    }
+
+    > summary {
+        position: relative;
+        left: calc(0px - var(--_content-indent ) / 2);
+        width: calc(100% + var(--_content-indent));
+        cursor: pointer;
+        font-weight: 500;
+        outline: none;
+        
+        &::after {
+            display: block;
+            content: "";
+            z-index: -1;
+            position: absolute;
+            top: calc(0px - (var(--_block-padding) + 1px));
+            left: calc(0px - var(--_content-indent ) / 2);
+            width: calc(100% + var(--_inline-padding) * 2 + 1px);
+            height: calc(100% + var(--_block-padding) * 2 + 1px);
+            background: var(--collapsible-block-summary-background);
+        }
+
+        &:hover::after {
+            background: var(--card-background-hover-color);
+        }
+    }
+
+    &[open] > summary {
+        margin-bottom: calc(var(--_block-padding) * 2);
+        
+        &::after {
+            border-bottom: 2px solid var(--collapsible-block-summary-delimiter-color);            
+        }
+    }
+
+    >*:last-child:not(summary) {
+        margin-bottom: 0;
+    }
+}
+
+/*
+ * Editor-only tweaks: summary acts like a regular editable text block, the
+ * native disclosure marker is hidden, and the custom arrow (a CKEditor UI
+ * element inserted by the editing downcast) is the only collapse affordance.
+ * The data/published view is untouched.
+ */
+
+.ck-editor__editable details.trilium-collapsible {
+
+    .ck-placeholder::before {
+        opacity: 0.5;
+    }
+
+    /* Body-paragraph placeholder ("Content") is registered on the first body
+     * block. Hide it whenever the body has more than one block — the hint is
+     * only useful when the body is a single empty <p>. `:has(> :nth-child(3))`
+     * matches a <details> with summary + 2+ body children; `:not(:last-child)`
+     * would only hide the placeholder on non-last paragraphs, leaving the last
+     * one (e.g. the original empty body after Enter-in-summary) still visible. */
+    &:has(> :nth-child(3)) > p.ck-placeholder::before {
+        display: none;
+    }
+
+    > summary {
+        cursor: text;
+        list-style: none;
+        position: relative;
+        padding-left: var(--_arrow-gap);
+        padding-right: calc(var(--_inline-padding) + 1lh); /* extra space for the handle on the right */
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+
+        /* Block selection handle (mirror of the table widget's drag handle).
+         * Click selects the whole <details>; movement uses Alt+↑/↓ from there.
+         * Sits in the details' top-left padding area, visible on hover. */
+        > .trilium-collapsible-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: var(--_inline-padding);
+            z-index: 1000;
+            width: 1lh;
+            height: 1lh;
+            cursor: default;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+
+            &::before {
+                position: absolute;
+                inset: 0;
+                content: "\ec6c";
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-size: 1em;
+                font-family: boxicons;
+                color: var(--muted-text-color, currentColor);
+            }
+        }
+
+        /* CKEditor's placeholder ::before is positioned absolute left:0 by default —
+         * push it past the arrow so it aligns with where the typed title will appear. */
+        &.ck-placeholder::before {
+            left: var(--_arrow-gap);
+        }
+
+        /* The arrow lands wherever in DOM the conversion mapper ends up putting it,
+         * but we pin it visually to the left edge of the summary with absolute
+         * positioning so the title text always reads left-to-right with the arrow first. */
+        > .trilium-collapsible-arrow {
+            position: absolute;
+            left: 0;
+            top: -0.05em;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.15s ease;
+            width: 1lh;
+            height: 1lh;
+
+            &::before {
+                position: absolute;
+                inset: 0;
+                content: "";
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                align-content: center;
+                font-size: 1.3em;
+                font-family: boxicons;
+            }
+        }
+    }
+
+    &[open] > summary > .trilium-collapsible-arrow {
+        transform: rotate(90deg);
+    }
+
+    &:hover > summary > .trilium-collapsible-handle,
+    &:focus-within > summary > .trilium-collapsible-handle {
+        opacity: 1;
+    }
+}
+
+/*
+ * Drop indicator drawn while the user drags a collapsible by its handle.
+ * Position is set inline (viewport-relative, from getBoundingClientRect),
+ * so it uses position: fixed to align with those coords.
+ */
+.trilium-collapsible-drop-indicator {
+    position: fixed;
+    height: 2px;
+    background: var(--ck-document-outline-item-active-color);
+    border-radius: 1px;
+    pointer-events: none;
+    z-index: 10000;
+}

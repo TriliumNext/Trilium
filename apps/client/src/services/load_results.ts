@@ -125,6 +125,7 @@ export default class LoadResults {
 
             this.componentIdToNoteIds[componentId] = this.componentIdToNoteIds[componentId] || [];
 
+            /* v8 ignore next 3 -- redundant guard: the array is guaranteed by the assignment above (arrays are always truthy) */
             if (this.componentIdToNoteIds[componentId]) {
                 this.componentIdToNoteIds[componentId].push(noteId);
             }

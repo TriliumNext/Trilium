@@ -39,8 +39,6 @@
         "sync_content": "자체 호스팅 또는 클라우드 인스턴스를 이용하여 여러 기기 사이에서 노트를 쉽게 동기화하고 PWA를 통해 모바일 폰에서 접근할 수 있습니다.",
         "protected_notes_title": "보호된 노트",
         "protected_notes_content": "노트를 암호화하고 비밀번호로 보호되는 세션 뒤에 잠궈 민감한 개인 정보를 보호하세요.",
-        "jump_to_title": "빠른 검색 및 명령어",
-        "jump_to_content": "제목을 검색하고 오타나 약간의 차이를 설명하기 위해 퍼지 매칭을 통해 계층 전반에 걸쳐 노트나 UI 명령으로 빠르게 이동하세요.",
         "search_title": "상세 검색",
         "search_content": "또는 노트 내부에서 문자를 검색하거나 부모 노트 또는 단계별로 필터링 하는 등 검색 범위를 조정하세요.",
         "web_clipper_title": "웹 클리퍼",
@@ -49,7 +47,8 @@
     "header": {
         "get-started": "시작하기",
         "documentation": "문서",
-        "support-us": "후원하기"
+        "support-us": "후원하기",
+        "resources": "리소스"
     },
     "support_us": {
         "financial_donations_title": "금전적 기부",
@@ -108,19 +107,7 @@
         "mermaid_title": "Mermaid 다이어그램",
         "mermaid_description": "Mermaid 구문을 사용하여 순서도(Flowchart), 클래스 및 시퀀스 다이어그램, 간트(Gantt) 차트 등의 다이어그램을 만들어 보세요.",
         "mindmap_title": "마인드맵",
-        "mindmap_description": "생각을 시각적으로 정리하거나 브레인스토밍 세션을 진행하세요.",
-        "others_list": "기타: <0>노트 맵</0>, <1>관계 맵</1>, <2>저장된 검색</2>, <3>렌더링 노트</3>, <4>웹 뷰</4>."
-    },
-    "extensibility_benefits": {
-        "title": "공유 및 확장성",
-        "import_export_title": "가져오기/내보내기",
-        "import_export_description": "Markdown, ENEX, OML 형식으로 다른 애플리케이션과 쉽게 상호 작용할 수 있습니다.",
-        "share_title": "웹에서 노트 공유하기",
-        "share_description": "만약 서버를 사용한다면, 다른 사람들과 메모의 일부를 공유할 수 있습니다.",
-        "scripting_title": "고급 Scripting",
-        "scripting_description": "사용자 정의 위젯, 서버 사이드 로직을 사용하여 Trilium 내에서 통합 시스템을 구축해보세요.",
-        "api_title": "REST API",
-        "api_description": "내장되어있는 REST API를 사용하여 Trilium과 프로그래밍 방식으로 상호작용 해보세요."
+        "mindmap_description": "생각을 시각적으로 정리하거나 브레인스토밍 세션을 진행하세요."
     },
     "collections": {
         "title": "컬렉션",
@@ -141,7 +128,7 @@
         "database_question": "어디에 데이터가 저장되나요?",
         "server_question": "Trilium을 사용하기 위해 서버가 필요한가요?",
         "title": "자주 묻는 질문",
-        "database_answer": "모든 노트는 애플리케이션 폴더의 SQLite 데이터베이스에 저장됩니다. Trilium이 텍스트 파일 대신 데이터베이스를 사용하는 이유는 성능과 기능 모두 구현하기 훨씬 어렵기 때문입니다(트리 여러 위치에 같은 노트를 두는 Clone과 같은 기능). 애플리케이션 폴더를 찾으려면 About 창으로 가세요.",
+        "database_answer": "모든 노트는 앱 폴더의 SQLite 데이터베이스에 저장됩니다. Trilium이 텍스트파일 대신 데이터베이스를 사용하는 이유는 성능 향상과 복제(트리의 여러 위치에 같은 노트) 같은 훨씬 더 구현하기 어려운 몇몇 기능들 때문입니다. Trilium Notes에 대해서 창에서 앱 폴더를 찾을 수 있습니다.",
         "server_answer": "아니요, 서버는 웹 브라우저를 통해 접속할 수 있도록 허용하며, 여러 기기를 사용하는 경우 동기화를 관리합니다. 시작하려면 데스크톱 애플리케이션을 다운로드하여 사용하기만 하면 됩니다.",
         "scaling_question": "이 애플리케이션은 얼마나 많은 노트를 처리할 수 있나요?",
         "scaling_answer": "사용량에 따라 다르겠지만, 이 애플리케이션은 최소 10만 개의 노트를 문제없이 처리할 수 있습니다. 다만, Trilium은 (NextCloud와 같은) 파일 저장소라기보다는 지식 기반 애플리케이션에 가깝기 때문에, 대용량 파일(파일당 1GB 이상)을 많이 업로드할 경우 동기화 과정이 실패할 수 있다는 점에 유의하십시오.",
@@ -194,7 +181,13 @@
     "download_helper_server_hosted": {
         "title": "유료 호스팅",
         "description": "Trilium Notes는 간편한 접근 및 관리를 위해 유료 서비스인 PikaPods에서 호스팅할 수 있습니다. Trilium 팀과 직접 제휴되어있지는 않습니다.",
-        "download_pikapod": "PikaPods에서 설치하기",
-        "download_triliumcc": "또는 trilium.cc를 참조하세요"
+        "download_pikapod": "PikaPods에서 설치하기"
+    },
+    "resources": {
+        "title": "리소스",
+        "icon_packs": "아이콘 팩",
+        "icon_packs_intro": "아이콘 팩을 사용하여 노트에 사용할 수 있는 아이콘 종류를 늘려보세요. 아이콘 팩에 대한 자세한 내용은 <DocumentationLink>공식 문서</DocumentationLink>를 참조하세요.",
+        "download": "다운로드",
+        "website": "웹사이트"
     }
 }

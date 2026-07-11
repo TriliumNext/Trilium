@@ -201,6 +201,15 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Kuatiarogue mba’emirĩ { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Eiporavo kuatiarogue { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Kuatiarogue { $page } { $total } mba’e
 
 ## Find panel button title and messages
 
@@ -534,6 +543,7 @@ pdfjs-editor-undo-bar-message-freetext = Moñe’ẽrã mboguepyre
 pdfjs-editor-undo-bar-message-ink = Ta’ãnga mboguepyre
 pdfjs-editor-undo-bar-message-stamp = Ta’ãnga mboguepyre
 pdfjs-editor-undo-bar-message-signature = Teraguapy mboguepyre
+pdfjs-editor-undo-bar-message-comment = Je’epy mboguepyre
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -631,6 +641,95 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Eheja
 
 pdfjs-editor-add-comment-button =
     .title = Je’erei mbojuaju
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-notification-button =
+    .title = Embojopyru tenda ykegua (kuatia oguereko mba’e’i, kuaakaha/moirũha/ñuãha)
+pdfjs-toggle-views-manager-button1-label = Eñangareko kuotiarogue
+pdfjs-views-manager-sidebar =
+    .aria-label = Ta’ãngarupa yke
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Tuichakue mongu’eha tenda yképe
+pdfjs-views-manager-view-selector-button =
+    .title = Hechaha
+pdfjs-views-manager-view-selector-button-label = Hechaha
+pdfjs-views-manager-pages-title = Kuatiarogue
+pdfjs-views-manager-outlines-title1 = Kuatiaite jejapopy
+    .title = Kuatiaite jejapopy (eikutu jo’a emyasãi hag̃ua/emomichĩmbaite mba’eporuita)
+pdfjs-views-manager-attachments-title = Moirũha
+pdfjs-views-manager-layers-title1 = Ñuãhaita
+    .title = Ñuãhaita (eikutu jo’a erupaite jey hag̃ua ñuãhaita oĩ haguepevoi)
+pdfjs-views-manager-pages-option-label = Kuatiarogueita
+pdfjs-views-manager-outlines-option-label = Kuatiaite jejapopy
+pdfjs-views-manager-attachments-option-label = Moirũhaita
+pdfjs-views-manager-layers-option-label = Ñuãhaita
+pdfjs-views-manager-add-file-button =
+    .title = Embojuaju marandurenda
+pdfjs-views-manager-add-file-button-label = Embojuaju marandurenda
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } poravopyre
+       *[other] { $count } poravopyre
+    }
+pdfjs-views-manager-pages-status-none-action-label = Eiporavo kuatiarogue
+pdfjs-views-manager-pages-status-action-button-label = Ñangareko
+pdfjs-views-manager-pages-status-copy-button-label = Monguatia
+pdfjs-views-manager-pages-status-cut-button-label = Kytĩ
+pdfjs-views-manager-pages-status-delete-button-label = Mboguete
+pdfjs-views-manager-pages-status-export-selected-button-label = Eguerahauka poravopyre…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] 1 kuatiarogue kytĩmbyre
+       *[other] { $count } kuatiarogue kytĩmbyre
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 kuatiarogue monguatiapyre
+       *[other] { $count } kuatiarogue monguatiapyre
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 kuatiarogue mboguepyre
+       *[other] { $count } kuatiarogue mboguepyre
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Embosako’ihína ne marandurenda…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Ehupihína marandurenda…
+pdfjs-views-manager-status-warning-cut-label = Ndaikatúi oñekytĩ. Embopyahu kuatiarogue ha eha’ã jey.
+pdfjs-views-manager-status-warning-copy-label = Ndaikatúi oñembokuatia. Embopyahu kuatiarogue ha eha’ã jey.
+pdfjs-views-manager-status-warning-delete-label = Ndaikatúi embogue. Embopyahu kuatiarogue ha eha’ã jey.
+pdfjs-views-manager-status-warning-save-label = Ndaikatúi eñongatu. Embopyahu kuatiarogue ha eha’ã jey.
+pdfjs-views-manager-status-undo-button-label = Mboguevi
+pdfjs-views-manager-status-done-button-label = Oĩma
+pdfjs-views-manager-status-close-button =
+    .title = Mboty
+pdfjs-views-manager-status-close-button-label = Mboty
+pdfjs-views-manager-paste-button-label = Mboja
+pdfjs-views-manager-paste-button-before =
+    .title = Emboja togue peteĩha mboyve
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Emboja kuatiarogue { $page } rire
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = PYAHU
+pdfjs-views-manager-waiting-for-file = Ehupihína marandurenda…
+pdfjs-toggle-views-manager-button1 =
+    .title = Eñangareko kuotiarogue
 
 ## Main menu for adding/removing signatures
 

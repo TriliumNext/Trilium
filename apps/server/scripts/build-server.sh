@@ -43,7 +43,7 @@ rm -rf $BUILD_DIR/node/lib/node_modules/{npm,corepack} \
     $BUILD_DIR/node_modules/electron* \
     $BUILD_DIR/electron*.{js,map}
 
-printf "#!/bin/sh\n./node/bin/node main.cjs\n" > $BUILD_DIR/trilium.sh
+printf "#!/bin/sh\nexec ./node/bin/node main.cjs\n" > $BUILD_DIR/trilium.sh
 chmod 755 $BUILD_DIR/trilium.sh
 
 VERSION=`jq -r ".version" package.json`
@@ -51,7 +51,8 @@ VERSION=`jq -r ".version" package.json`
 ARCHIVE_NAME="TriliumNotes-Server-${VERSION}-linux-${ARCH}"
 echo "Creating Archive $ARCHIVE_NAME..."
 
-mkdir $DIST_DIR
+rm -rf $DIST_DIR
+mkdir -p $DIST_DIR
 cp -r "$BUILD_DIR" "$DIST_DIR/$ARCHIVE_NAME"
 cd $DIST_DIR
 tar cJf "$ARCHIVE_NAME.tar.xz" "$ARCHIVE_NAME"

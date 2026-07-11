@@ -44,7 +44,7 @@ export default class FootnoteUI extends Plugin {
 				editor.editing.view.focus();
 			} );
 
-			dropdownView.class = 'ck-code-block-dropdown';
+			dropdownView.class = 'ck-tn-dropdown';
 			dropdownView.bind( 'isEnabled' ).to( command );
 			dropdownView.on(
 				'change:isOpen',

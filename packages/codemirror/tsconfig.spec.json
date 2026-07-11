@@ -4,7 +4,8 @@
     "outDir": "./out-tsc/vitest",
     "types": [
       "node",
-      "vitest"
+      "vitest",
+      "vite/client"
     ]
   },
   "include": [

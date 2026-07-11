@@ -201,6 +201,15 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = ภาพขนาดย่อของหน้า { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = เลือกหน้า { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = หน้า { $page } จาก { $total }
 
 ## Find panel button title and messages
 
@@ -522,6 +531,7 @@ pdfjs-editor-undo-bar-message-freetext = เอาข้อความออก
 pdfjs-editor-undo-bar-message-ink = เอาภาพวาดออกแล้ว
 pdfjs-editor-undo-bar-message-stamp = เอาภาพออกแล้ว
 pdfjs-editor-undo-bar-message-signature = ลบลายเซ็นแล้ว
+pdfjs-editor-undo-bar-message-comment = เอาความคิดเห็นออกแล้ว
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple = เอาคำอธิบายประกอบ { $count } รายการออกแล้ว
@@ -616,6 +626,79 @@ pdfjs-editor-edit-comment-dialog-cancel-button = ยกเลิก
 
 pdfjs-editor-add-comment-button =
     .title = เพิ่มความคิดเห็น
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-notification-button =
+    .title = เปิด/ปิดแถบข้าง (เอกสารมีภาพย่อ/เค้าร่าง/ไฟล์แนบ/เลเยอร์)
+pdfjs-toggle-views-manager-button1-label = จัดการหน้า
+pdfjs-views-manager-sidebar =
+    .aria-label = แถบข้าง
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = ตัวปรับขนาดแถบข้าง
+pdfjs-views-manager-view-selector-button =
+    .title = มุมมอง
+pdfjs-views-manager-view-selector-button-label = มุมมอง
+pdfjs-views-manager-pages-title = หน้า
+pdfjs-views-manager-outlines-title1 = โครงร่างเอกสาร
+    .title = โครงร่างเอกสาร (คลิกสองครั้งเพื่อขยาย/ยุบรายการทั้งหมด)
+pdfjs-views-manager-attachments-title = ไฟล์แนบ
+pdfjs-views-manager-layers-title1 = เลเยอร์
+    .title = เลเยอร์ (คลิกสองครั้งเพื่อล้างค่าเลเยอร์ทั้งหมดกลับสู่สถานะเริ่มต้น)
+pdfjs-views-manager-pages-option-label = หน้า
+pdfjs-views-manager-outlines-option-label = เค้าร่างเอกสาร
+pdfjs-views-manager-attachments-option-label = ไฟล์แนบ
+pdfjs-views-manager-layers-option-label = เลเยอร์
+pdfjs-views-manager-add-file-button =
+    .title = เพิ่มไฟล์
+pdfjs-views-manager-add-file-button-label = เพิ่มไฟล์
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label = เลือกอยู่ { $count }
+pdfjs-views-manager-pages-status-none-action-label = เลือกหน้า
+pdfjs-views-manager-pages-status-action-button-label = จัดการ
+pdfjs-views-manager-pages-status-copy-button-label = คัดลอก
+pdfjs-views-manager-pages-status-cut-button-label = ตัด
+pdfjs-views-manager-pages-status-delete-button-label = ลบ
+pdfjs-views-manager-pages-status-export-selected-button-label = ส่งออกรายการที่เลือก…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label = ตัด { $count } หน้าแล้ว
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label = คัดลอก { $count } หน้าแล้ว
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label = ลบ { $count } หน้าแล้ว
+pdfjs-views-manager-pages-status-waiting-ready-label = กำลังเตรียมไฟล์ของคุณให้พร้อม…
+pdfjs-views-manager-pages-status-waiting-uploading-label = กำลังอัปโหลดไฟล์…
+pdfjs-views-manager-status-warning-cut-label = ไม่สามารถตัดได้ โปรดรีเฟรชหน้าแล้วลองอีกครั้ง
+pdfjs-views-manager-status-warning-copy-label = ไม่สามารถคัดลอกได้ โปรดรีเฟรชหน้าแล้วลองอีกครั้ง
+pdfjs-views-manager-status-warning-delete-label = ไม่สามารถลบได้ โปรดรีเฟรชหน้าแล้วลองอีกครั้ง
+pdfjs-views-manager-status-warning-save-label = ไม่สามารถบันทึกได้ โปรดรีเฟรชหน้าแล้วลองอีกครั้ง
+pdfjs-views-manager-status-undo-button-label = เลิกทำ
+pdfjs-views-manager-status-done-button-label = เสร็จสิ้น
+pdfjs-views-manager-status-close-button =
+    .title = ปิด
+pdfjs-views-manager-status-close-button-label = ปิด
+pdfjs-views-manager-paste-button-label = วาง
+pdfjs-views-manager-paste-button-before =
+    .title = วางก่อนหน้าแรก
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = วางหลังหน้า { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = ใหม่
+pdfjs-views-manager-waiting-for-file = กำลังอัปโหลดไฟล์…
+pdfjs-toggle-views-manager-button1 =
+    .title = จัดการหน้า
 
 ## Main menu for adding/removing signatures
 

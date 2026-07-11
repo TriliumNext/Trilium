@@ -1,0 +1,55 @@
+/* Extended admonition: an icon + title header, a body and an optional details
+   collapsible. Builds on the base `.admonition`, but swaps its accent border for a
+   neutral hairline and shows the type accent as a clipped leading bar instead. */
+.admonition.extended-admonition {
+    /* The header carries its own icon, so the space reserved for the base
+       `::before` icon is not needed. A neutral hairline border surrounds the card,
+       with the type accent shown only as the leading bar below. */
+    padding-inline-start: 1em;
+    border-color: var(--main-border-color);
+    background: var(--main-background-color);
+}
+
+/* Thick accent bar on the leading edge. It has no radius of its own; the card's
+   rounded corners (with the base `overflow: hidden`) clip it to shape. */
+.admonition.extended-admonition::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 4px;
+    background-color: var(--accent-color);
+}
+
+.extended-admonition .admonition-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-block-end: 0.35em;
+}
+
+.extended-admonition .admonition-header .tn-icon {
+    color: var(--accent-color);
+    font-size: 1.2em;
+}
+
+.extended-admonition .admonition-title {
+    font-weight: 600;
+}
+
+.extended-admonition .admonition-details {
+    margin-block-start: 0.5em;
+}
+
+/* Title-less variant: the icon sits inline at the start of the body instead of in a header. */
+.extended-admonition.no-title .admonition-body {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+}
+
+.extended-admonition.no-title .admonition-body .tn-icon {
+    flex-shrink: 0;
+    color: var(--accent-color);
+    font-size: 1.2em;
+}

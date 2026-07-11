@@ -1,15 +1,23 @@
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { search as searchService, SearchContext, utils } from "@triliumnext/core";
+import type { NextFunction, Request, Response, Router } from "express";
 import safeCompare from "safe-compare";
 
-import type { Request, Response, Router } from "express";
-
+import { getDefaultTemplatePath, renderNoteContent } from "./content_renderer.js";
+import type SAttachment from "./shaca/entities/sattachment.js";
+import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
 import shacaLoader from "./shaca/shaca_loader.js";
-import searchService from "../services/search/services/search.js";
-import SearchContext from "../services/search/search_context.js";
-import type SNote from "./shaca/entities/snote.js";
-import type SAttachment from "./shaca/entities/sattachment.js";
-import { getDefaultTemplatePath, renderNoteContent } from "./content_renderer.js";
-import utils from "../services/utils.js";
+import { isShareDbReady } from "./sql.js";
+
+function assertShareDbReady(_req: Request, res: Response, next: NextFunction) {
+    if (!isShareDbReady()) {
+        res.status(503).send("The application is still initializing. Please try again in a moment.");
+        return;
+    }
+
+    next();
+}
 
 function addNoIndexHeader(note: SNote, res: Response) {
     if (note.isLabelTruthy("shareDisallowRobotIndexing")) {
@@ -32,8 +40,17 @@ function checkAttachmentAccess(attachmentId: string, req: Request, res: Response
 
     const note = checkNoteAccess(attachment.ownerId, req, res);
 
-    // truthy note means the user has access, and we can return the attachment
-    return note ? attachment : false;
+    if (!note) {
+        return false;
+    }
+
+    // Protected notes cannot be shared, and neither can their attachments
+    // (GHSA-xmv9-3v98-7gq8).
+    if (rejectProtected(note, res, `Attachment '${attachmentId}' not found.`)) {
+        return false;
+    }
+
+    return attachment;
 }
 
 function checkNoteAccess(noteId: string, req: Request, res: Response) {
@@ -76,6 +93,35 @@ function checkNoteAccess(noteId: string, req: Request, res: Response) {
     return false;
 }
 
+// Like checkNoteAccess, but additionally refuses protected notes. Used by the
+// routes that stream a note's raw content/images: a protected note still shows
+// up as "[protected]" in the shared tree (handled by content_renderer.ts), but
+// its actual bytes must never be served anonymously (GHSA-xmv9-3v98-7gq8).
+function checkNoteContentAccess(noteId: string, req: Request, res: Response) {
+    const note = checkNoteAccess(noteId, req, res);
+
+    if (!note) {
+        return false;
+    }
+
+    if (rejectProtected(note, res, `Note '${noteId}' not found.`)) {
+        return false;
+    }
+
+    return note;
+}
+
+// Sends a 404 and returns true when the note is protected, so callers can bail.
+function rejectProtected(note: SNote, res: Response, message: string) {
+    if (!note.isProtected) {
+        return false;
+    }
+
+    res.status(404).json({ message });
+
+    return true;
+}
+
 function renderImageAttachment(image: SNote, res: Response, attachmentName: string) {
     let svgString = "<svg/>";
     const attachment = image.getAttachmentByTitle(attachmentName);
@@ -94,17 +140,19 @@ function renderImageAttachment(image: SNote, res: Response, attachmentName: stri
             && possibleSvgContent !== null
             && "svg" in possibleSvgContent
             && typeof possibleSvgContent.svg === "string")
-                ? possibleSvgContent.svg
-                : null;
+            ? possibleSvgContent.svg
+            : null;
 
         if (contentSvg) {
             svgString = contentSvg;
         }
     }
 
-    const svg = svgString;
+    const svg = utils.sanitizeSvg(svgString);
     res.set("Content-Type", "image/svg+xml");
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.set("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
+    res.set("X-Content-Type-Options", "nosniff");
     res.send(svg);
 }
 
@@ -115,6 +163,8 @@ function render404(res: Response) {
 }
 
 function register(router: Router) {
+    // Guard: if the share DB is not yet initialized, return 503 for all /share routes.
+    router.use("/share", assertShareDbReady);
 
     function renderNote(note: SNote, req: Request, res: Response) {
         if (!note) {
@@ -133,6 +183,26 @@ function register(router: Router) {
         addNoIndexHeader(note, res);
 
         if (note.isLabelTruthy("shareRaw") || typeof req.query.raw !== "undefined") {
+            // A protected note is shown as a placeholder by renderNoteContent()
+            // below, but the raw branch streams note.getContent() directly, so it
+            // must refuse protected notes (GHSA-xmv9-3v98-7gq8).
+            if (note.isProtected) {
+                render404(res);
+
+                return;
+            }
+
+            // For SVG content, add a restrictive Content-Security-Policy to prevent
+            // stored XSS via script execution (CWE-79). HTML is intentionally served
+            // unrestricted here: serving raw HTML requires the `#shareRaw` attribute (or an
+            // explicit `?raw`), and `#shareRaw` is flagged dangerous (see builtin_attributes.ts),
+            // so the instance owner is deliberately opting in to serve their own scriptable
+            // content. Restricting it would break legitimate self-contained HTML pages.
+            if (note.mime === "image/svg+xml") {
+                res.setHeader("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
+                res.setHeader("X-Content-Type-Options", "nosniff");
+            }
+
             res.setHeader("Content-Type", note.mime).send(note.getContent());
 
             return;
@@ -185,7 +255,7 @@ function register(router: Router) {
 
         let note: SNote | boolean;
 
-        if (!(note = checkNoteAccess(req.params.noteId, req, res))) {
+        if (!(note = checkNoteContentAccess(req.params.noteId, req, res))) {
             return;
         }
 
@@ -207,21 +277,32 @@ function register(router: Router) {
 
         let image: SNote | boolean;
 
-        if (!(image = checkNoteAccess(req.params.noteId, req, res))) {
+        if (!(image = checkNoteContentAccess(req.params.noteId, req, res))) {
             return;
         }
 
         if (image.type === "image") {
-            // normal image
-            res.set("Content-Type", image.mime);
             addNoIndexHeader(image, res);
-            res.send(image.getContent());
+            if (image.mime === "image/svg+xml") {
+                // SVG images require sanitization to prevent stored XSS
+                const content = image.getContent();
+                const svgContent = typeof content === "string" ? content : new TextDecoder().decode(content ?? new Uint8Array());
+                const sanitized = utils.sanitizeSvg(svgContent);
+                res.set("Content-Type", "image/svg+xml");
+                res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+                res.set("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
+                res.set("X-Content-Type-Options", "nosniff");
+                res.send(sanitized);
+            } else {
+                res.set("Content-Type", image.mime);
+                res.send(image.getContent());
+            }
         } else if (image.type === "canvas") {
-            renderImageAttachment(image, res, "canvas-export.svg");
+            renderImageAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.canvas);
         } else if (image.type === "mermaid") {
-            renderImageAttachment(image, res, "mermaid-export.svg");
+            renderImageAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mermaid);
         } else if (image.type === "mindMap") {
-            renderImageAttachment(image, res, "mindmap-export.svg");
+            renderImageAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap);
         } else {
             res.status(400).json({ message: "Requested note is not a shareable image" });
         }
@@ -238,9 +319,21 @@ function register(router: Router) {
         }
 
         if (attachment.role === "image") {
-            res.set("Content-Type", attachment.mime);
             addNoIndexHeader(attachment.note, res);
-            res.send(attachment.getContent());
+            if (attachment.mime === "image/svg+xml") {
+                // SVG attachments require sanitization to prevent stored XSS
+                const content = attachment.getContent();
+                const svgContent = typeof content === "string" ? content : new TextDecoder().decode(content ?? new Uint8Array());
+                const sanitized = utils.sanitizeSvg(svgContent);
+                res.set("Content-Type", "image/svg+xml");
+                res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+                res.set("Content-Security-Policy", utils.SVG_CONTENT_SECURITY_POLICY);
+                res.set("X-Content-Type-Options", "nosniff");
+                res.send(sanitized);
+            } else {
+                res.set("Content-Type", attachment.mime);
+                res.send(attachment.getContent());
+            }
         } else {
             res.status(400).json({ message: "Requested attachment is not a shareable image" });
         }
@@ -273,7 +366,7 @@ function register(router: Router) {
 
         let note: SNote | boolean;
 
-        if (!(note = checkNoteAccess(req.params.noteId, req, res))) {
+        if (!(note = checkNoteContentAccess(req.params.noteId, req, res))) {
             return;
         }
 
@@ -308,7 +401,7 @@ function register(router: Router) {
             return;
         }
 
-        const searchContext = new SearchContext({ ancestorNoteId: ancestorNoteId });
+        const searchContext = new SearchContext({ ancestorNoteId });
         const searchResults = searchService.findResultsWithQuery(search, searchContext);
         const filteredResults = searchResults.map((sr) => {
             const fullNote = shaca.notes[sr.noteId];

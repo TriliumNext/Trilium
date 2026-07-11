@@ -1,9 +1,8 @@
-import { CreateChildrenResponse } from "@triliumnext/commons";
-
+import FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import { prompt } from "../../../services/dialog";
 import { t } from "../../../services/i18n";
-import server from "../../../services/server";
+import note_create from "../../../services/note_create";
 import type { GeoMouseEvent } from "./map";
 import { LOCATION_ATTRIBUTE } from "./Markers";
 
@@ -14,16 +13,20 @@ export async function moveMarker(noteId: string, latLng: { lat: number; lng: num
     await attributes.setLabel(noteId, LOCATION_ATTRIBUTE, value);
 }
 
-export async function createNewNote(noteId: string, e: GeoMouseEvent) {
+export async function createNewNote(parentNote: FNote, e: GeoMouseEvent) {
     const title = await prompt({ message: t("relation_map.enter_title_of_new_note"), defaultValue: t("relation_map.default_new_note_title") });
 
     if (title?.trim()) {
-        const { note } = await server.post<CreateChildrenResponse>(`notes/${noteId}/children?target=into`, {
+        await note_create.createNote(parentNote.noteId, {
             title,
             content: "",
-            type: "text"
+            type: "text",
+            activate: false,
+            isProtected: parentNote.isProtected,
+            attributes: [
+                { type: "label", name: LOCATION_ATTRIBUTE, value: [e.latlng.lat, e.latlng.lng].join(",") },
+                { type: "label", name: "iconClass", value: CHILD_NOTE_ICON }
+            ]
         });
-        attributes.setLabel(note.noteId, "iconClass", CHILD_NOTE_ICON);
-        moveMarker(note.noteId, e.latlng);
     }
 }

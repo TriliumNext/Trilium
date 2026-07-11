@@ -122,3 +122,13 @@
     background-color: tomato;
     color: #fff
 }
+
+.mind-map-container:fullscreen {
+    .rb {
+        bottom: calc(20px + env(safe-area-inset-bottom));
+    }
+
+    .lt {
+        top: calc(20px + env(safe-area-inset-top));
+    }
+}

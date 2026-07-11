@@ -11,7 +11,8 @@ const watchMode = process.argv.includes("--watch");
 
 const LOCALE_MAPPINGS: Record<string, string> = {
     "es": "es-ES",
-    "ga": "ga-IE"
+    "ga": "ga-IE",
+    "hi": "hi-IN"
 };
 
 async function main() {
@@ -21,6 +22,7 @@ async function main() {
     }
     patchCacheBuster(`${build.outDir}/web/viewer.html`);
     build.copy(`viewer/images`, `web/images`);
+    build.copy(`viewer/wasm`, `web/wasm`);
 
     // Copy the custom files.
     await buildScript("web/custom.mjs");
@@ -38,9 +40,11 @@ async function main() {
     }
     build.writeJson("web/locale/locale.json", localeMappings);
 
-    // Copy pdfjs-dist files.
+    // Copy pdfjs-dist files. Resolve from the package's own node_modules so we
+    // pick up the version declared in this package.json — the hoisted root
+    // node_modules may hold a different version pulled in by another dependency.
     for (const file of [ "pdf.mjs", "pdf.worker.mjs", "pdf.sandbox.mjs" ]) {
-        build.copy(join("/node_modules/pdfjs-dist/build", file), join("build", file));
+        build.copy(join("node_modules/pdfjs-dist/build", file), join("build", file));
     }
 
     if (watchMode) {
@@ -69,15 +73,28 @@ function patchCacheBuster(htmlFilePath: string) {
     const version = packageJson.version;
     console.log(`Versioned URLs: ${version}.`)
     let html = readFileSync(htmlFilePath, "utf-8");
-    html = html.replace(
-        `<link rel="stylesheet" href="custom.css" />`,
-        `<link rel="stylesheet" href="custom.css?v=${version}" />`);
-    html = html.replace(
-        `<script src="custom.mjs" type="module"></script>`,
-        `<script src="custom.mjs?v=${version}" type="module"></script>`
-    );
+    for (const file of [ "viewer.css", "custom.css" ]) {
+        html = html.replace(
+            `<link rel="stylesheet" href="${file}" />`,
+            `<link rel="stylesheet" href="${file}?v=${version}" />`);
+    }
+    for (const file of [ "viewer.mjs", "custom.mjs", "../build/pdf.mjs" ]) {
+        html = html.replace(
+            `<script src="${file}" type="module"></script>`,
+            `<script src="${file}?v=${version}" type="module"></script>`
+        );
+    }
 
     writeFileSync(htmlFilePath, html);
+
+    // Also patch the worker source in viewer.mjs
+    const viewerMjsPath = htmlFilePath.replace("viewer.html", "viewer.mjs");
+    let viewerMjs = readFileSync(viewerMjsPath, "utf-8");
+    viewerMjs = viewerMjs.replace(
+        `value: "../build/pdf.worker.mjs"`,
+        `value: "../build/pdf.worker.mjs?v=${version}"`
+    );
+    writeFileSync(viewerMjsPath, viewerMjs);
 }
 
 function watchForChanges() {

@@ -1,75 +1,76 @@
 <p>Collections are a unique type of note that don't have content, but instead
   display their child notes in various presentation methods.</p>
 <h2>Main collections</h2>
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <figure class="image">
-          <img style="aspect-ratio:1651/810;" src="Collections_collection_ca.webp"
-          width="1651" height="810">
-        </figure>
-      </td>
-      <td><a class="reference-link" href="#root/_help_xWbu3jpNWapp">Calendar</a> 
-        <br>which displays a week, month or year calendar with the notes being shown
-        as events. New events can be added easily by dragging across the calendar.</td>
-    </tr>
-    <tr>
-      <td>
-        <figure class="image">
-          <img style="aspect-ratio:1643/647;" src="Collections_collection_ta.webp"
-          width="1643" height="647">
-        </figure>
-      </td>
-      <td><a class="reference-link" href="#root/_help_2FvYrpmOXm29">Table</a> 
-        <br>displays each note as a row in a table, with&nbsp;<a class="reference-link"
-        href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;being shown as well.
-        This makes it easy to visualize attributes of notes, as well as making
-        them easily editable.</td>
-    </tr>
-    <tr>
-      <td>
-        <figure class="image">
-          <img style="aspect-ratio:1174/850;" src="Collections_collection_bo.webp"
-          width="1174" height="850">
-        </figure>
-      </td>
-      <td><a class="reference-link" href="#root/_help_CtBQqbwXDx1w">Kanban Board</a> 
-        <br>displays notes in columns, grouped by the value of a label. Items and
-        columns can easily be created or dragged around to change their status.</td>
-    </tr>
-    <tr>
-      <td>
-        <figure class="image">
-          <img style="aspect-ratio:844/639;" src="Collections_collection_ge.webp"
-          width="844" height="639">
-        </figure>
-      </td>
-      <td><a class="reference-link" href="#root/_help_81SGnPGMk7Xc">Geo Map</a> 
-        <br>which displays a geographical map in which the notes are represented as
-        markers/pins on the map. New events can be easily added by pointing on
-        the map.</td>
-    </tr>
-    <tr>
-      <td>
-        <figure class="image">
-          <img style="aspect-ratio:1120/763;" src="Collections_collection_pr.webp"
-          width="1120" height="763">
-        </figure>
-      </td>
-      <td><a class="reference-link" href="#root/_help_zP3PMqaG71Ct">Presentation</a> 
-        <br>which shows each note as a slide and can be presented full-screen with
-        smooth transitions or exported to PDF for sharing.</td>
-    </tr>
-  </tbody>
-</table>
-
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <figure class="image">
+            <img style="aspect-ratio:1651/810;" src="Collections_collection_calendar.webp"
+            width="1651" height="810">
+          </figure>
+        </td>
+        <td><a class="reference-link" href="#root/_help_xWbu3jpNWapp">Calendar</a>&nbsp;&nbsp;&nbsp;&nbsp;
+          <br>which displays a week, month or year calendar with the notes being shown
+          as events. New events can be added easily by dragging across the calendar.</td>
+      </tr>
+      <tr>
+        <td>
+          <figure class="image">
+            <img style="aspect-ratio:1643/647;" src="Collections_collection_table.webp"
+            width="1643" height="647">
+          </figure>
+        </td>
+        <td><a class="reference-link" href="#root/_help_2FvYrpmOXm29">Table</a>&nbsp;&nbsp;&nbsp;&nbsp;
+          <br>displays each note as a row in a table, with&nbsp;<a class="reference-link"
+          href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;being shown as well.
+          This makes it easy to visualize attributes of notes, as well as making
+          them easily editable.</td>
+      </tr>
+      <tr>
+        <td>
+          <figure class="image">
+            <img style="aspect-ratio:1174/850;" src="Collections_collection_board.webp"
+            width="1174" height="850">
+          </figure>
+        </td>
+        <td><a class="reference-link" href="#root/_help_CtBQqbwXDx1w">Kanban Board</a>&nbsp;&nbsp;&nbsp;&nbsp;
+          <br>displays notes in columns, grouped by the value of a label. Items and
+          columns can easily be created or dragged around to change their status.</td>
+      </tr>
+      <tr>
+        <td>
+          <figure class="image">
+            <img style="aspect-ratio:844/639;" src="Collections_collection_geomap.webp"
+            width="844" height="639">
+          </figure>
+        </td>
+        <td><a class="reference-link" href="#root/_help_81SGnPGMk7Xc">Geo Map</a>&nbsp;&nbsp;&nbsp;&nbsp;
+          <br>which displays a geographical map in which the notes are represented as
+          markers/pins on the map. New events can be easily added by pointing on
+          the map.</td>
+      </tr>
+      <tr>
+        <td>
+          <figure class="image">
+            <img style="aspect-ratio:1120/763;" src="Collections_collection_presentation.webp"
+            width="1120" height="763">
+          </figure>
+        </td>
+        <td><a class="reference-link" href="#root/_help_zP3PMqaG71Ct">Presentation</a>&nbsp;&nbsp;&nbsp;&nbsp;
+          <br>which shows each note as a slide and can be presented full-screen with
+          smooth transitions or exported to PDF for sharing.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <h2>Classic collections</h2>
 <p>Classic collections are read-only mode and compiles the contents of all
   child notes into one continuous view. This makes it ideal for reading extensive
@@ -84,31 +85,54 @@
     but it displays the notes one under the other with the content being expandable/collapsible,
     but also works recursively.</li>
 </ul>
+<p>Classic collections make use of pagination to support a large number of
+  notes. The size of a page can be customized via <code spellcheck="false">pageSize</code>.</p>
 <h2>Creating a new collection</h2>
 <p>To create a new collections, right click in the&nbsp;<a class="reference-link"
   href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and look for the <em>Collections</em> entry
   and select the desired type.</p>
+<p>By default, collections come with a default configuration and sometimes
+  even sample notes. To create a collection completely from scratch:</p>
+<ol>
+  <li>Create a new note of type <em>Text</em> (or any type).</li>
+  <li>Change the <a href="#root/_help_KSZ04uQ2D1St">note type</a> to <em>Collection</em>.</li>
+  <li>In&nbsp;<a class="reference-link" href="#root/_help_CssoWBu8I7jF">Collection Properties</a>,
+    select the desired view type.</li>
+  <li>Consult the help page of the corresponding view type in order to understand
+    how to configure them.</li>
+</ol>
 <h2>Configuration</h2>
 <p>To change the configuration of a collection or even switch to a different
-  collection (e.g. from Kanban Board to a Calendar), see the dedicated <em>Collections</em> tab
-  in the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>.</p>
+  collection (e.g. from Kanban Board to a Calendar), see the&nbsp;<a class="reference-link"
+  href="#root/_help_CssoWBu8I7jF">Collection Properties</a>&nbsp;bar at the top
+  of the note.</p>
 <h2>Archived notes</h2>
 <p>By default, <a href="#root/_help_MKmLg5x6xkor">archived notes</a> will not be
-  shown in collections. This behavior can be changed by going to <em>Collection Properties</em> in
-  the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>&nbsp;and
-  checking <em>Show archived notes</em>.</p>
+  shown in collections. This behavior can be changed by going to&nbsp;
+  <a
+  class="reference-link" href="#root/_help_CssoWBu8I7jF">Collection Properties</a>&nbsp;and checking <em>Show archived notes</em>.</p>
 <p>Archived notes will be generally indicated by being greyed out as opposed
   to the normal ones.</p>
+<h2>Hiding the child notes from the note tree</h2>
+<p>For collections with a large number of items, it can be helpful to hide
+  the items from the note tree for performance reasons and to reduce clutter.
+  This is especially useful for standalone collections, such as a geomap
+  or a task board.</p>
+<p>To do so, go to&nbsp;<a class="reference-link" href="#root/_help_CssoWBu8I7jF">Collection Properties</a>&nbsp;and
+  select <em>Hide child notes in tree</em>.</p>
 <h2>Advanced use cases</h2>
 <h3>Adding a description to a collection</h3>
 <p>To add a text before the collection, for example to describe it:</p>
 <ol>
   <li>Create a new collection.</li>
-  <li>In the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>,
-    go to <em>Basic Properties</em> and change the note type from <em>Collection</em> to <em>Text</em>.</li>
+  <li>Change the <a href="#root/_help_KSZ04uQ2D1St">note type</a> from <em>Collection</em> to <em>Text</em>.</li>
 </ol>
 <p>Now the text will be displayed above while still maintaining the collection
   view.</p>
+<p>The only downside to this method is that&nbsp;<a class="reference-link"
+  href="#root/_help_CssoWBu8I7jF">Collection Properties</a>&nbsp;will not be shown
+  anymore. In this case, modify the attributes manually or switch back temporarily
+  to the <em>Collection</em> type for configuration purposes.</p>
 <h3>Using saved search</h3>
 <p>Collections, by default, only display the child notes. However, it is
   possible to use the&nbsp;<a class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;functionality
@@ -123,19 +147,6 @@
     of the search results. The reason is that the search might hit a note multiple
     times, causing an exponential rise in the number of results.</p>
 </aside>
-<h3>Creating a collection from scratch</h3>
-<p>By default, collections come with a default configuration and sometimes
-  even sample notes. To create a collection completely from scratch:</p>
-<ol>
-  <li>Create a new note of type <em>Text</em> (or any type).</li>
-  <li>In the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>,
-    go to <em>Basic Properties</em> and select <em>Collection</em> as the note
-    type.</li>
-  <li>Still in the ribbon, go to <em>Collection Properties</em> and select the
-    desired view type.</li>
-  <li>Consult the help page of the corresponding view type in order to understand
-    how to configure them.</li>
-</ol>
 <h2>Under the hood</h2>
 <p>Collections by themselves are simply notes with no content that rely on
   the&nbsp;<a class="reference-link" href="#root/_help_0ESUbbAxVnoK">Note List</a>&nbsp;mechanism

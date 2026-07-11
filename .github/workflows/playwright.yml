@@ -6,15 +6,45 @@ on:
       - main
       - hotfix
     paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - "LICENSE"
+      - ".github/workflows/mobile.yml"
+      - "apps/web-clipper/**"
       - "apps/website/**"
+      - "apps/db-compare/**"
+      - "apps/dump-db/**"
+      - "apps/edit-docs/**"
+      - "apps/build-docs/**"
+      - "apps/icon-pack-builder/**"
+      - "apps/client/src/translations/**"
+      - "apps/server/src/assets/translations/**"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - "LICENSE"
+      - ".github/workflows/mobile.yml"
+      - "apps/web-clipper/**"
+      - "apps/website/**"
+      - "apps/db-compare/**"
+      - "apps/dump-db/**"
+      - "apps/edit-docs/**"
+      - "apps/build-docs/**"
+      - "apps/icon-pack-builder/**"
+      - "apps/client/src/translations/**"
+      - "apps/server/src/assets/translations/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   actions: read
   contents: read
 
 jobs:
-  e2e:
+  e2e-server:
     strategy:
       fail-fast: false
       matrix:
@@ -33,28 +63,27 @@ jobs:
       TRILIUM_DATA_DIR: "${{ github.workspace }}/apps/server/spec/db"
       TRILIUM_INTEGRATION_TEST: memory
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           filter: tree:0
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
+      # The build-server composite already sets up pnpm, Node (with the pnpm
+      # cache) and installs dependencies. Running setup-node a second time at the
+      # job level registered a duplicate pnpm cache post-step that failed the job
+      # during cleanup ("Path Validation Error ... do not exist"), so we rely on
+      # the composite alone for environment setup.
       - name: Build the server
         uses: ./.github/actions/build-server
         with:
           os: linux
           arch: ${{ matrix.arch }}
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Copy test fixture database
+        run: cp packages/trilium-core/src/test/fixtures/document.db apps/server/spec/db/document.db
 
       - name: Unpack and start the server
         run: |
@@ -73,15 +102,66 @@ jobs:
           sleep 10
 
       - name: Server end-to-end tests
-        run: pnpm --filter server-e2e e2e
+        run: pnpm --filter server e2e
 
       - name: Upload test report
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: e2e report ${{ matrix.arch }}
-          path: apps/server-e2e/test-output
+          path: apps/server/test-output
 
       - name: Kill the server
         if: always()
         run: pkill -f trilium || true
+
+  e2e-standalone:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            os: ubuntu-22.04
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    name: Standalone E2E tests on ${{ matrix.name }}
+    env:
+      TRILIUM_DOCKER: 1
+      TRILIUM_PORT: 8082
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          filter: tree:0
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Build standalone
+        run: TRILIUM_INTEGRATION_TEST=memory pnpm --filter standalone build
+
+      - name: Start standalone preview server
+        run: |
+          cd apps/standalone
+          pnpm vite preview --port $TRILIUM_PORT --host 127.0.0.1 &
+          sleep 5
+
+      - name: Standalone end-to-end tests
+        run: pnpm --filter standalone e2e
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: standalone e2e report ${{ matrix.name }}
+          path: apps/standalone/test-output

@@ -26,10 +26,12 @@ async function saveTriliumServerSetup(e) {
         return;
     }
 
+    const triliumServerUrl = ($triliumServerUrl.val() as string).trim().replace(/\/+$/, '');
+
     let resp;
 
     try {
-        resp = await fetch(`${$triliumServerUrl.val()}/api/login/token`, {
+        resp = await fetch(`${triliumServerUrl}/api/login/token`, {
             method: "POST",
             headers: {
                 'Accept': 'application/json',
@@ -60,7 +62,7 @@ async function saveTriliumServerSetup(e) {
         $triliumServerPassword.val('');
 
         browser.storage.sync.set({
-            triliumServerUrl: $triliumServerUrl.val(),
+            triliumServerUrl: triliumServerUrl,
             authToken: json.token
         });
 

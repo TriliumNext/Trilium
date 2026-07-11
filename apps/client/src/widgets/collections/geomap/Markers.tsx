@@ -1,5 +1,5 @@
 import { AddLayerObject, type GeoJSONSource } from "maplibre-gl";
-import { useCallback, useContext, useEffect, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import { useChildNotes } from "../../react/hooks";

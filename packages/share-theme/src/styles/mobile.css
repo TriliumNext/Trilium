@@ -1,82 +1,104 @@
-#mobile-header {
-    display: none;
+#header {
     background: var(--background-secondary);
+    display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 6px 12px;
+    border-bottom: 1px solid var(--background-highlight);
 }
 
-#mobile-header a {
+#header-logo {
     display: flex;
     align-items: center;
     gap: 5px;
+    font-weight: bold;
 }
 
-#mobile-header a img {
+#header-logo img {
     max-width: 32px;
 }
 
-#mobile-header button {
+.header-button {
     color: var(--text-menu);
     background: transparent;
     margin: 0;
-    padding: 0;
+    padding: 4px;
     border: 0;
     outline: 0;
     display: flex;
     align-items: center;
     cursor: pointer;
     border-radius: 6px;
-    transform: rotate(0);
     transition: background-color 200ms ease, transform 200ms ease;
 }
 
+.header-button:hover {
+    background-color: var(--background-highlight);
+}
 
+.header-button-placeholder {
+    width: 32px;
+}
 
 @media (max-width: 48em) {
-    
+
     html,
     body {
-        width: unset;
-        height: unset;
+        height: 100%;
     }
 
     #split-pane {
-        overflow: auto;
+        overflow: hidden;
     }
 
     #right-pane, #main {
         width: 100%;
         padding: 0;
     }
-    
+
     #main {
         padding: 1rem;
     }
-    
-    #mobile-header {
-        display: flex;
-    }
-    
-    #mobile-header button svg {
+
+    #header .header-button svg {
         width: 32px;
         height: 32px;
     }
-    
-    #left-pane {
+
+    #left-pane, #toc-pane {
         position: fixed;
         top: 0;
-        left: 0;
-        width: auto;
-        transform: translateX(-100%);
+        bottom: 0;
+        width: 80%;
+        max-width: 300px;
+        background: var(--background-secondary);
         transition: transform 200ms ease;
         z-index: 2;
+        overflow-y: auto;
     }
-    
-    .menu-open #left-pane {
+
+    #left-pane {
+        left: 0;
+        transform: translateX(-100%);
+    }
+
+    #toc-pane {
+        display: flex;
+        right: 0;
+        transform: translateX(100%);
+        padding: 20px;
+    }
+
+    #toc-pane h3,
+    #toc-pane #toc {
+        display: block;
+    }
+
+    .menu-open #left-pane,
+    .toc-open #toc-pane {
         transform: translateX(0);
     }
-    
+
     body::before {
         content: "";
         display: block;
@@ -90,14 +112,11 @@
         transition: background-color 200ms ease;
         z-index: 1;
     }
-    
-    body.menu-open::before {
+
+    body.menu-open::before,
+    body.toc-open::before {
         background: rgba(0,0,0, 0.6);
+        pointer-events: auto;
     }
-    
-    
-    body.menu-open #show-menu-button {
-        background: var(--background-highlight);
-        transform: rotate(90deg);
-    }
+
 }

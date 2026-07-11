@@ -1,24 +1,23 @@
 import "./EditableText.css";
+import "./LinkEmbed.css";
 
 import { CKTextEditor, EditorWatchdog, TemplateDefinition } from "@triliumnext/ckeditor5";
 import { deferred } from "@triliumnext/commons";
-import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
-import { buildSelectedBackgroundColor } from "../../../components/touch_bar";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl } from "../../../services/link";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
 import toast from "../../../services/toast";
-import utils, { hasTouchBar, isMobile } from "../../../services/utils";
+import utils, { isMobile } from "../../../services/utils";
 import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
-import TouchBar, { TouchBarButton, TouchBarGroup, TouchBarSegmentedControl } from "../../react/TouchBar";
 import { TypeWidgetProps } from "../type_widget";
 import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
+import linkEmbedService from "../../../services/link_embed";
 import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 
 /**
@@ -32,10 +31,10 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     const contentRef = useRef<string>("");
     const watchdogRef = useRef<EditorWatchdog>(null);
     const editorApiRef = useRef<CKEditorApi>(null);
-    const refreshTouchBarRef = useRef<() => void>(null);
     const [ language ] = useNoteLabel(note, "language");
     const [ textNoteEditorType ] = useTriliumOption("textNoteEditorType");
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
+    const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
     const isClassicEditor = isMobile() || textNoteEditorType === "ckeditor-classic";
     const initialized = useRef(deferred<void>());
     const spacedUpdate = useEditorSpacedUpdate({
@@ -60,6 +59,17 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         onContentChange(newContent) {
             contentRef.current = newContent;
             watchdogRef.current?.editor?.setData(newContent);
+
+            // Scroll to bookmark anchor if navigated with ?bookmark=...
+            const viewScope = noteContext?.viewScope;
+            if (viewScope?.bookmark) {
+                requestAnimationFrame(() => {
+                    const el = watchdogRef.current?.editor?.editing.view.getDomRoot()
+                        ?.querySelector(`[id="${CSS.escape(viewScope.bookmark!)}"]`);
+                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    viewScope.bookmark = undefined;
+                });
+            }
         },
         dataSaved(savedData) {
             // Store back the saved data in order to retrieve it in case the CKEditor crashes.
@@ -81,10 +91,14 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         editor.editing.view.focus();
     });
 
-    useTriliumEvent("focusOnDetail", async ({ ntxId: eventNtxId }) => {
+    useTriliumEvent("focusOnDetail", async ({ ntxId: eventNtxId, insertNewlineAtTop }) => {
         if (eventNtxId !== ntxId) return;
-        const editor = await waitForEditor();
-        editor?.editing.view.focus();
+        const editor = await waitForEditor() as CKTextEditor | undefined;
+        if (!editor) return;
+        if (insertNewlineAtTop) {
+            placeCursorInNewTopParagraph(editor);
+        }
+        editor.editing.view.focus();
     });
 
     useLegacyImperativeHandlers({
@@ -121,6 +135,25 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             });
         },
         loadIncludedNote,
+        // Link embed functionality
+        addLinkEmbedToTextCommand() {
+            if (!editorApiRef.current) return;
+            parentComponent?.triggerCommand("showLinkEmbedDialog", {
+                editorApi: editorApiRef.current,
+            });
+        },
+        async fetchLinkMetadata(url: string) {
+            return await linkEmbedService.fetchMetadata(url);
+        },
+        detectEmbedType(url: string) {
+            return linkEmbedService.detectEmbedType(url);
+        },
+        renderLinkEmbed(container, metadata, editable) {
+            linkEmbedService.renderEmbedPreview(container, metadata, editable);
+        },
+        renderLinkMention(container, metadata, editable) {
+            linkEmbedService.renderMentionPreview(container, metadata, editable);
+        },
         // Creating notes in @-completion
         async createNoteForReferenceLink(title: string) {
             const notePath = noteContext?.notePath;
@@ -219,6 +252,176 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
 
     const onWatchdogStateChange = useWatchdogCrashHandling();
 
+    useEffect(() => {
+        document.body.style.setProperty("--code-block-tab-width", codeBlockTabWidth || "4");
+    }, [codeBlockTabWidth]);
+
+    // Mobile-only: when the keyboard opens, scroll the caret into view.
+    //
+    // Under iOS WKWebView the outer scroll view is pinned to zero (see
+    // ViewController.swift) so the toolbar doesn't get dragged off-screen
+    // — which also suppresses iOS's native scroll-focused-element-into-
+    // view behaviour. Without this effect, tapping near the bottom of a
+    // long note leaves the view stuck at the top with the caret behind
+    // the keyboard.
+    //
+    // Find the nearest scrollable ancestor of the caret, clamp its
+    // "visible bottom" to `visualViewport.height` (so the caret lands
+    // above the keyboard, not merely inside the container's rect), and
+    // adjust scrollTop directly.
+    useEffect(() => {
+        if (!isMobile()) return;
+
+        const CARET_BOTTOM_MARGIN_PX = 48;
+
+        const findScrollableAncestor = (start: Node | null | undefined): HTMLElement | null => {
+            let el: Node | null | undefined = start;
+            while (el) {
+                if (el instanceof HTMLElement) {
+                    const overflowY = getComputedStyle(el).overflowY;
+                    if ((overflowY === "auto" || overflowY === "scroll")
+                        && el.scrollHeight > el.clientHeight + 1) {
+                        return el;
+                    }
+                }
+                el = el.parentNode;
+            }
+            return null;
+        };
+
+        const getCaretRect = (): DOMRect | null => {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return null;
+            let rect = sel.getRangeAt(0).getBoundingClientRect();
+            // Collapsed carets at end-of-line return a zero rect; fall
+            // back to the containing element.
+            if (rect.width === 0 && rect.height === 0) {
+                const el = sel.focusNode instanceof Element
+                    ? sel.focusNode
+                    : sel.focusNode?.parentElement;
+                if (el) rect = el.getBoundingClientRect();
+            }
+            return rect;
+        };
+
+        const scrollCaretIntoView = () => {
+            const caretRect = getCaretRect();
+            if (!caretRect) return;
+            const scroller = findScrollableAncestor(window.getSelection()?.focusNode);
+            if (!scroller) return;
+
+            const vv = window.visualViewport;
+            const containerRect = scroller.getBoundingClientRect();
+            const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+            const viewportTop = vv?.offsetTop ?? 0;
+            const visibleBottom = Math.min(containerRect.bottom, viewportBottom);
+            const visibleTop = Math.max(containerRect.top, viewportTop);
+
+            const overshoot = caretRect.bottom - (visibleBottom - CARET_BOTTOM_MARGIN_PX);
+            if (overshoot > 0) {
+                scroller.scrollTop += overshoot;
+                return;
+            }
+            const undershoot = (visibleTop + CARET_BOTTOM_MARGIN_PX) - caretRect.top;
+            if (undershoot > 0) {
+                scroller.scrollTop -= undershoot;
+            }
+        };
+
+        let pending: number | null = null;
+        const schedule = () => {
+            if (pending !== null) return;
+            // Double rAF lets the keyboard animation, WebView resize, and
+            // CKEditor's post-focus layout all settle before we measure.
+            pending = requestAnimationFrame(() => {
+                pending = requestAnimationFrame(() => {
+                    pending = null;
+                    scrollCaretIntoView();
+                });
+            });
+        };
+
+        window.visualViewport?.addEventListener("resize", schedule);
+        document.addEventListener("focusin", schedule);
+        return () => {
+            window.visualViewport?.removeEventListener("resize", schedule);
+            document.removeEventListener("focusin", schedule);
+            if (pending !== null) cancelAnimationFrame(pending);
+        };
+    }, []);
+
+    // Mobile-only: toggle todo-list checkboxes on the first tap and widen the
+    // hit area so finger taps don't have to land precisely on the ~16px box.
+    // Two problems are being solved:
+    //   1. iOS WKWebView doesn't dispatch `change` on the first tap inside a
+    //      contenteditable that isn't focused — users have to tap twice.
+    //   2. The native checkbox is too small to hit reliably with a finger.
+    // We accept any tap whose point lands within ~14px of the checkbox's
+    // bounding box (roughly a 44px touch target, matching Apple HIG), flip
+    // the checkbox, and fire a synthetic change event that CKEditor's
+    // TodoCheckboxChangeObserver picks up.
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || !isMobile()) return;
+
+        const HIT_PAD = 14;
+        let tapped: HTMLInputElement | null = null;
+
+        const findCheckboxFromTap = (e: TouchEvent): HTMLInputElement | null => {
+            const target = e.target as HTMLElement | null;
+            if (!target) return null;
+
+            // Direct hit on the checkbox.
+            const direct = target.closest<HTMLInputElement>(
+                '.todo-list__label input[type="checkbox"]'
+            );
+            if (direct) return direct;
+
+            // Near-miss: tap landed on the label or its surroundings. Accept
+            // if the touch point is within HIT_PAD of the checkbox rect.
+            const label = target.closest(".todo-list__label");
+            if (!label) return null;
+            const checkbox = label.querySelector<HTMLInputElement>(
+                'input[type="checkbox"]'
+            );
+            if (!checkbox) return null;
+
+            const touch = e.touches[0] ?? e.changedTouches[0];
+            if (!touch) return null;
+            const rect = checkbox.getBoundingClientRect();
+            if (
+                touch.clientX >= rect.left - HIT_PAD &&
+                touch.clientX <= rect.right + HIT_PAD &&
+                touch.clientY >= rect.top - HIT_PAD &&
+                touch.clientY <= rect.bottom + HIT_PAD
+            ) {
+                return checkbox;
+            }
+            return null;
+        };
+
+        const onTouchStart = (e: TouchEvent) => {
+            tapped = findCheckboxFromTap(e);
+        };
+
+        const onTouchEnd = (e: TouchEvent) => {
+            if (!tapped) return;
+            const checkbox = tapped;
+            tapped = null;
+            // Suppress the synthesised click so we don't toggle twice.
+            e.preventDefault();
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+
+        container.addEventListener("touchstart", onTouchStart, { passive: true });
+        container.addEventListener("touchend", onTouchEnd, { passive: false });
+        return () => {
+            container.removeEventListener("touchstart", onTouchStart);
+            container.removeEventListener("touchend", onTouchEnd);
+        };
+    }, []);
+
     return (
         <>
             {note && !!templates && <CKEditorWithWatchdog
@@ -242,13 +445,6 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 onWatchdogStateChange={onWatchdogStateChange}
                 onChange={() => spacedUpdate.scheduleUpdate()}
                 onEditorInitialized={(editor) => {
-                    if (hasTouchBar) {
-                        const handler = () => refreshTouchBarRef.current?.();
-                        for (const event of [ "bold", "italic", "underline", "paragraph", "heading" ]) {
-                            editor.commands.get(event)?.on("change", handler);
-                        }
-                    }
-
                     if (containerRef.current) {
                         setupImageOpening(containerRef.current, false);
                     }
@@ -258,12 +454,44 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     // We are not using CKEditor's built-in watch dog content, instead we are using the data we store regularly in the spaced update (see `dataSaved`).
                     editor.setData(contentRef.current);
                     parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });
+
                 }}
             />}
-
-            <EditableTextTouchBar watchdogRef={watchdogRef} refreshTouchBarRef={refreshTouchBarRef} />
         </>
     );
+}
+
+/**
+ * Inserts an empty paragraph at the very top of the document and places the cursor in it, giving the
+ * Notion-like behavior when pressing Enter in the note title. If the first block is already an empty
+ * paragraph, the cursor is placed in it rather than stacking another empty paragraph.
+ */
+function placeCursorInNewTopParagraph(editor: CKTextEditor) {
+    editor.model.change((writer) => {
+        const root = editor.model.document.getRoot();
+        if (!root) return;
+
+        const firstChild = root.getChild(0);
+        if (firstChild?.is("element", "paragraph") && firstChild.isEmpty) {
+            writer.setSelection(firstChild, "in");
+            return;
+        }
+
+        const paragraph = writer.createElement("paragraph");
+        writer.insert(paragraph, root, 0);
+        writer.setSelection(paragraph, "in");
+    });
+
+    // The scrolling container scrolls, not the editor itself, and the inline title may have scrolled
+    // out of view (e.g. the cursor was at the bottom of a long note), so the selection change alone
+    // won't move the viewport. Explicitly reveal the new top paragraph once it has rendered.
+    requestAnimationFrame(() => {
+        // The editor may have been destroyed while waiting for the frame (e.g. the user navigated
+        // away from the note), in which case `editing` is nulled — bail out instead of throwing.
+        if (editor.editing?.view) {
+            editor.editing.view.scrollToTheSelection();
+        }
+    });
 }
 
 function useTemplates() {
@@ -325,7 +553,12 @@ function useWatchdogCrashHandling() {
                 timeout: 20_000
             });
         } else if (currentState === "crashedPermanently") {
-            dialog.info(t("editable_text.keeps-crashing"));
+            toast.showPersistent({
+                id: "editor-crashed-permanently",
+                icon: "bx bx-error-circle",
+                title: t("editable_text.editor_crashed_title"),
+                message: t("editable_text.keeps-crashing")
+            });
             watchdog.editor?.enableReadOnlyMode("crashed-editor");
         }
     }, []);
@@ -346,67 +579,3 @@ function onNotificationWarning(data, evt) {
     evt.stop();
 }
 
-function EditableTextTouchBar({ watchdogRef, refreshTouchBarRef }: { watchdogRef: RefObject<EditorWatchdog | null>, refreshTouchBarRef: RefObject<() => void> }) {
-    const [ headingSelectedIndex, setHeadingSelectedIndex ] = useState<number>();
-
-    function refresh() {
-        let headingSelectedIndex: number | undefined;
-        const editor = watchdogRef.current?.editor;
-        const headingCommand = editor?.commands.get("heading");
-        const paragraphCommand = editor?.commands.get("paragraph");
-        if (paragraphCommand?.value) {
-            headingSelectedIndex = 0;
-        } else if (headingCommand?.value === "heading2") {
-            headingSelectedIndex = 1;
-        } else if (headingCommand?.value === "heading3") {
-            headingSelectedIndex = 2;
-        }
-        setHeadingSelectedIndex(headingSelectedIndex);
-    }
-
-    useEffect(refresh, [ watchdogRef ]);
-    refreshTouchBarRef.current = refresh;
-
-    return (
-        <TouchBar>
-            <TouchBarSegmentedControl
-                segments={[
-                    { label: "P" },
-                    { label: "H2" },
-                    { label: "H3" }
-                ]}
-                onChange={(selectedIndex) => {
-                    const editor = watchdogRef.current?.editor;
-                    switch (selectedIndex) {
-                        case 0:
-                            editor?.execute("paragraph");
-                            break;
-                        case 1:
-                            editor?.execute("heading", { value: "heading2" });
-                            break;
-                        case 2:
-                            editor?.execute("heading", { value: "heading3" });
-                            break;
-                    }
-                }}
-                selectedIndex={headingSelectedIndex}
-                mode="buttons"
-            />
-
-            <TouchBarGroup>
-                <TouchBarCommandButton watchdogRef={watchdogRef} command="bold" icon="NSTouchBarTextBoldTemplate" />
-                <TouchBarCommandButton watchdogRef={watchdogRef} command="italic" icon="NSTouchBarTextItalicTemplate" />
-                <TouchBarCommandButton watchdogRef={watchdogRef} command="underline" icon="NSTouchBarTextUnderlineTemplate" />
-            </TouchBarGroup>
-        </TouchBar>
-    );
-}
-
-function TouchBarCommandButton({ watchdogRef, icon, command }: { watchdogRef: RefObject<EditorWatchdog | null>, icon: string, command: string }) {
-    const editor = watchdogRef.current?.editor;
-    return (<TouchBarButton
-        icon={icon}
-        click={() => editor?.execute(command)}
-        backgroundColor={buildSelectedBackgroundColor(editor?.commands.get(command)?.value as boolean)}
-    />);
-}

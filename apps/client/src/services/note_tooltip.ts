@@ -1,20 +1,21 @@
-import treeService from "./tree.js";
-import linkService from "./link.js";
-import froca from "./froca.js";
-import utils from "./utils.js";
-import attributeRenderer from "./attribute_renderer.js";
-import contentRenderer from "./content_renderer.js";
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
+import attributeRenderer from "./attribute_renderer.js";
+import contentRenderer from "./content_renderer.js";
+import froca from "./froca.js";
 import { t } from "./i18n.js";
+import linkService from "./link.js";
+import { sanitizeNoteContentHtml } from "./sanitize_content.js";
+import treeService from "./tree.js";
+import utils from "./utils.js";
 
 // Track all elements that open tooltips
 let openTooltipElements: JQuery<HTMLElement>[] = [];
 let dismissTimer: ReturnType<typeof setTimeout>;
 
 function setupGlobalTooltip() {
-    $(document).on("mouseenter", "a:not(.no-tooltip-preview)", mouseEnterHandler);
-    $(document).on("mouseenter", "[data-href]:not(.no-tooltip-preview)", mouseEnterHandler);
+    $(document).on("pointerenter", "a:not(.no-tooltip-preview)", mouseEnterHandler);
+    $(document).on("pointerenter", "[data-href]:not(.no-tooltip-preview)", mouseEnterHandler);
 
     // close any note tooltip after click, this fixes the problem that sometimes tooltips remained on the screen
     $(document).on("click", (e) => {
@@ -37,10 +38,12 @@ function dismissAllTooltips() {
 }
 
 function setupElementTooltip($el: JQuery<HTMLElement>) {
-    $el.on("mouseenter", mouseEnterHandler);
+    $el.on("pointerenter", mouseEnterHandler);
 }
 
-async function mouseEnterHandler(this: HTMLElement) {
+export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<T, undefined, T, T>) {
+    if (e.pointerType !== "mouse") return;
+
     const $link = $(this);
 
     if ($link.hasClass("no-tooltip-preview") || $link.hasClass("disabled")) {
@@ -74,10 +77,26 @@ async function mouseEnterHandler(this: HTMLElement) {
     }
 
     let renderPromise;
-    if (url && url.startsWith("#") && !url.startsWith("#root/")) {
+    let note: FNote | null = null;
+    // In-page anchors and footnotes are always bare `#fragment` references; a `?` means this is a
+    // note link carrying view params (e.g. the calendar's `#<noteId>?popup`), which must render a
+    // note tooltip rather than being fed into a jQuery selector (the `?` is an invalid selector).
+    if (url && url.startsWith("#") && !url.startsWith("#root/") && !url.includes("?")) {
         renderPromise = renderFootnoteOrAnchor($link, url);
+    } else if ($link.attr("data-note-deleted") != null) {
+        // The element explicitly targets a soft-deleted note (e.g. an entry in the deleted-notes
+        // dialog): read it via the deleted-content route. `DeletedFNote.load` returns null once the
+        // note is erased, so the tooltip then shows the "note has been deleted" message.
+        // Imported lazily to avoid a static import cycle (DeletedFNote extends FNote, which
+        // transitively imports this module via the context menu).
+        const { default: DeletedFNote } = await import("../entities/deleted_fnote.js");
+        note = await DeletedFNote.load(noteId);
+        renderPromise = renderTooltip(note);
     } else {
-        renderPromise = renderTooltip(await froca.getNote(noteId));
+        // Default route: a live note. A missing note (deleted/erased) renders the "note has been
+        // deleted" placeholder — content previews of deleted notes are opt-in via `data-note-deleted`.
+        note = await froca.getNote(noteId);
+        renderPromise = renderTooltip(note);
     }
 
     const [content] = await Promise.all([
@@ -90,8 +109,9 @@ async function mouseEnterHandler(this: HTMLElement) {
         return;
     }
 
-    const html = `<div class="note-tooltip-content">${content}</div>`;
-    const tooltipClass = "tooltip-" + Math.floor(Math.random() * 999_999_999);
+    const sanitizedContent = sanitizeNoteContentHtml(content);
+    const html = `<div class="note-tooltip-content">${sanitizedContent}</div>`;
+    const tooltipClass = `tooltip-${Math.floor(Math.random() * 999_999_999)}${note ? ` ${note.getColorClass()}` : ""}`;
 
     // we need to check if we're still hovering over the element
     // since the operation to get tooltip content was async, it is possible that
@@ -108,6 +128,8 @@ async function mouseEnterHandler(this: HTMLElement) {
             title: html,
             html: true,
             template: `<div class="tooltip note-tooltip ${tooltipClass}" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>`,
+            // Content is pre-sanitized via DOMPurify so Bootstrap's built-in sanitizer
+            // (which is too aggressive for our rich-text content) can be disabled.
             sanitize: false,
             customClass: linkId
         });
@@ -140,19 +162,22 @@ async function mouseEnterHandler(this: HTMLElement) {
     }
 }
 
-async function renderTooltip(note: FNote | null) {
+export async function renderTooltip(note: FNote | null) {
     if (!note) {
         return `<div>${t("note_tooltip.note-has-been-deleted")}</div>`;
     }
 
+    // Lazy import to avoid a static import cycle (DeletedFNote extends FNote, which transitively
+    // imports this module via the context menu).
+    const { default: DeletedFNote } = await import("../entities/deleted_fnote.js");
+    const isDeleted = note instanceof DeletedFNote;
     const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
     const bestNotePath = note.getBestNotePathString(hoistedNoteId);
 
-    if (!bestNotePath) {
+    // A soft-deleted note has no navigable path; still render it, just without the path-based title link.
+    if (!bestNotePath && !isDeleted) {
         return;
     }
-
-    const noteTitleWithPathAsSuffix = await treeService.getNoteTitleWithPathAsSuffix(bestNotePath);
 
     const { $renderedAttributes } = await attributeRenderer.renderNormalAttributes(note);
 
@@ -162,16 +187,23 @@ async function renderTooltip(note: FNote | null) {
     });
     const isContentEmpty = $renderedContent[0].innerHTML.length === 0;
 
+    const titleClasses = ["note-tooltip-title"];
+    if (isContentEmpty) {
+        titleClasses.push("note-no-content");
+    }
+
     let content = "";
-    if (noteTitleWithPathAsSuffix) {
-        const classes = ["note-tooltip-title"];
-        if (isContentEmpty) {
-            classes.push("note-no-content");
+    if (isDeleted) {
+        // Plain, unlinked title — there is no live note to navigate to.
+        content = `<h5 class="${titleClasses.join(" ")}">${utils.escapeHtml(note.title)}</h5>`;
+    } else if (bestNotePath) {
+        const noteTitleWithPathAsSuffix = await treeService.getNoteTitleWithPathAsSuffix(bestNotePath);
+        if (noteTitleWithPathAsSuffix) {
+            content = `\
+                <h5 class="${titleClasses.join(" ")}">
+                    <a href="#${note.noteId}" data-no-context-menu="true">${noteTitleWithPathAsSuffix.prop("outerHTML")}</a>
+                </h5>`;
         }
-        content = `\
-            <h5 class="${classes.join(" ")}">
-                <a href="#${note.noteId}" data-no-context-menu="true">${noteTitleWithPathAsSuffix.prop("outerHTML")}</a>
-            </h5>`;
     }
 
     content = `${content}<div class="note-tooltip-attributes">${$renderedAttributes[0].outerHTML}</div>`;
@@ -179,11 +211,14 @@ async function renderTooltip(note: FNote | null) {
         content += $renderedContent[0].outerHTML;
     }
 
-    content += `<a class="open-popup-button" title="${t("note_tooltip.quick-edit")}" href="#${note.noteId}?popup"><span class="bx bx-edit" /></a>`;
+    // The quick-edit (popup) button opens the live editor, which doesn't apply to a deleted note.
+    if (!isDeleted) {
+        content += `<a class="open-popup-button" title="${t("note_tooltip.quick-edit")}" href="#${note.noteId}?popup"><span class="bx bx-edit" /></a>`;
+    }
     return content;
 }
 
-function renderFootnoteOrAnchor($link: JQuery<HTMLElement>, url: string) {
+export function renderFootnoteOrAnchor($link: JQuery<HTMLElement>, url: string) {
     // A footnote text reference
     const footnoteRef = url.substring(3);
     let $targetContent: JQuery<HTMLElement>;
@@ -224,7 +259,8 @@ function renderFootnoteOrAnchor($link: JQuery<HTMLElement>, url: string) {
     }
 
     let footnoteContent = $targetContent.html();
-    footnoteContent = `<div class="ck-content">${footnoteContent}</div>`
+    footnoteContent = `<div class="ck-content">${footnoteContent}</div>`;
+    /* v8 ignore next -- footnoteContent is always a non-empty wrapper div here, so the || "" fallback is unreachable */
     return footnoteContent || "";
 }
 

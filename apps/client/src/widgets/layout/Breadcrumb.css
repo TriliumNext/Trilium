@@ -19,6 +19,9 @@
         --link-hover-background: var(--icon-button-hover-background);
 
         color: var(--custom-color, inherit);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
 
         &:hover {
             color: var(--custom-color, inherit);

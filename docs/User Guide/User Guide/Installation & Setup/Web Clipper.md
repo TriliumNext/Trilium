@@ -12,10 +12,10 @@ Trilium Web Clipper officially supports the following web browsers:
 
 ## Obtaining the extension
 
-> [!WARNING]
-> The extension is currently under development. A preview with unsigned extensions is available on [GitHub Actions](https://github.com/TriliumNext/Trilium/actions/runs/21318809414).
-> 
-> We have already submitted the extension to both Chrome and Firefox web stores, but they are pending validation.
+The extension is available from the official browser web stores:
+
+*   **Firefox**: [Trilium Web Clipper on Firefox Add-ons](https://addons.mozilla.org/firefox/addon/trilium-notes-web-clipper/)
+*   **Chrome**: [Trilium Web Clipper on Chrome Web Store](https://chromewebstore.google.com/detail/trilium-web-clipper/ofoiklieachadcaeffficgjaajojpkpi)
 
 ## Functionality
 
@@ -29,7 +29,7 @@ Trilium Web Clipper officially supports the following web browsers:
 
 Trilium will save these clippings as a new child note under a "clipper inbox" note.
 
-By default, that's the [day note](../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md) but you can override that by setting the [label](../Advanced%20Usage/Attributes.md) `clipperInbox`, on any other note.
+By default, that's the <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a> but you can override that by setting the [label](../Advanced%20Usage/Attributes.md) `clipperInbox`, on any other note.
 
 If there's multiple clippings from the same page (and on the same day), then they will be added to the same note.
 

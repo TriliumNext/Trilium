@@ -1,0 +1,19 @@
+services:
+  nginx-proxy-manager:
+    image: "jc21/nginx-proxy-manager:latest"
+    restart: unless-stopped
+    ports:
+      # Public HTTP port
+      - "8090:80"
+      # Admin panel
+      - "8081:81"
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    # Use host network mode so NPM can reach Trilium on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  npm_data:
+  npm_letsencrypt:

@@ -11,10 +11,14 @@ const filesToCheck = [
 ]
 
 function main() {
-    const expectedVersion = process.argv[2];
+    let expectedVersion = process.argv[2];
     if (!expectedVersion) {
         console.error('Expected version argument is missing.');
         process.exit(1);
+    }
+
+    if (expectedVersion.startsWith("v")) {
+        expectedVersion = expectedVersion.substring(1);
     }
 
     for (const fileToCheck of filesToCheck) {

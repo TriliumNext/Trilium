@@ -5,7 +5,7 @@ import { type Theme } from "./themes.js";
 import { type HighlightOptions } from "highlight.js";
 export type { HighlightResult, AutoHighlightResult } from "highlight.js";
 
-export { default as Themes, type Theme } from "./themes.js";
+export { default as Themes, type Theme, type ThemeVariant, getThemeVariant } from "./themes.js";
 
 const registeredMimeTypes = new Set<string>();
 const unsupportedMimeTypes = new Set<string>();
@@ -47,6 +47,22 @@ export function highlight(code: string, options: HighlightOptions) {
     return hljs.highlight(code, options);
 }
 
+export function normalizeThemeCss(themeCss: string): string {
+    const themeSelectorScopedToCodeTag = /\bcode\s+\.hljs-/.test(themeCss);
+    if (themeSelectorScopedToCodeTag) {
+        themeCss = themeCss.replace(/\bcode\.hljs/g, ".hljs");
+        themeCss = themeCss.replace(/\bcode\s+\.hljs-/g, ".hljs .hljs-");
+    }
+
+    // Increase the specificity of the HLJS selector to render properly within CKEditor without the need of patching the library.
+    themeCss = themeCss.replace(
+        /^\.hljs\s*\{/m,
+        ".hljs, .ck-content pre.hljs {",
+    );
+
+    return themeCss;
+}
+
 export async function loadTheme(theme: "none" | Theme) {
     if (theme === "none") {
         if (highlightingThemeEl) {
@@ -61,12 +77,8 @@ export async function loadTheme(theme: "none" | Theme) {
         document.querySelector("head")?.append(highlightingThemeEl);
     }
 
-    let themeCss = (await theme.load()).default as string;
-
-    // Increase the specificity of the HLJS selector to render properly within CKEditor without the need of patching the library.
-    themeCss = themeCss.replace(/^.hljs {/m, ".hljs, .ck-content pre.hljs {");
-
-    highlightingThemeEl.textContent = themeCss;
+    const themeCss = (await theme.load()).default as string;
+    highlightingThemeEl.textContent = normalizeThemeCss(themeCss);
 }
 
 export const { highlightAuto } = hljs;

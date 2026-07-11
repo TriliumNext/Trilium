@@ -58,6 +58,10 @@ body.desktop {
 .empty-tab-search label {
     margin-bottom: 8px;
     color: var(--muted-text-color);
+
+    body.mobile & {
+        display: none;
+    }
 }
 
 .empty-tab-search .note-autocomplete-input {
@@ -66,4 +70,29 @@ body.desktop {
 
 .empty-tab-search .input-clearer-button {
     border-bottom-right-radius: 0;
+}
+
+.empty-tab-search-mobile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-inline: 16px;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    background: var(--input-background-color);
+    cursor: pointer;
+
+    &:active {
+        background: var(--icon-button-hover-background);
+    }
+}
+
+.empty-tab-search-mobile-icon {
+    font-size: 1.2em;
+    color: var(--muted-text-color);
+}
+
+.empty-tab-search-mobile-placeholder {
+    color: var(--muted-text-color);
 }

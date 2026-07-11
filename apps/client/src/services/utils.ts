@@ -1,5 +1,4 @@
 import { dayjs } from "@triliumnext/commons";
-import { snapdom } from "@zumer/snapdom";
 
 import FNote from "../entities/fnote";
 import type { ViewMode, ViewScope } from "./link.js";
@@ -13,22 +12,19 @@ export function reloadFrontendApp(reason?: string) {
         logInfo(`Frontend app reload: ${reason}`);
     }
 
-    if (isElectron()) {
-        dynamicRequire("@electron/remote").BrowserWindow.getFocusedWindow()?.reload();
+    if (window.electronApi) {
+        window.electronApi.window.reloadAllWindows();
     } else {
         window.location.reload();
     }
 }
 
 export function restartDesktopApp() {
-    if (!isElectron()) {
+    if (window.electronApi) {
+        window.electronApi.window.restartApp();
+    } else {
         reloadFrontendApp();
-        return;
     }
-
-    const app = dynamicRequire("@electron/remote").app;
-    app.relaunch();
-    app.exit();
 }
 
 /**
@@ -37,12 +33,16 @@ export function restartDesktopApp() {
  * On any other platform than Electron, nothing happens.
  */
 function reloadTray() {
-    if (!isElectron()) {
-        return;
-    }
+    window.electronApi?.systemIntegration.reloadTray();
+}
 
-    const { ipcRenderer } = dynamicRequire("electron");
-    ipcRenderer.send("reload-tray");
+/**
+ * Re-applies the OS autostart entry after the `launchOnStartup` option changes.
+ *
+ * On any other platform than Electron, nothing happens.
+ */
+function reapplyLaunchOnStartup() {
+    window.electronApi?.systemIntegration.reapplyLaunchOnStartup();
 }
 
 function parseDate(str: string) {
@@ -130,8 +130,10 @@ function now() {
  * Returns `true` if the client is currently running under Electron, or `false` if running in a web browser.
  */
 export function isElectron() {
-    return !!(window && window.process && window.process.type);
+    return "electronApi" in window;
 }
+
+export const isStandalone = window.glob.isStandalone;
 
 /**
  * Returns `true` if the client is running as a PWA, otherwise `false`.
@@ -145,11 +147,32 @@ export function isPWA() {
     );
 }
 
+/**
+ * Returns `true` when running inside the native Capacitor mobile app wrapper.
+ * PWAs and regular browsers return `false`.
+ */
+export function isMobileApp() {
+    return !!window.Capacitor?.isNativePlatform?.();
+}
+
 export function isMac() {
     return navigator.platform.indexOf("Mac") > -1;
 }
 
-export const hasTouchBar = (isMac() && isElectron());
+/**
+ * Returns `true` when the (server-reported) host platform is Linux. Prefer this over a
+ * `!isMac && !isWindows` derivation so future platforms aren't misclassified as Linux.
+ */
+export function isLinux() {
+    return window.glob?.platform === "linux";
+}
+
+/**
+ * Returns `true` when the (server-reported) host platform is Windows.
+ */
+export function isWindows() {
+    return window.glob?.platform === "win32";
+}
 
 export function isCtrlKey(evt: KeyboardEvent | MouseEvent | JQuery.ClickEvent | JQuery.ContextMenuEvent | JQuery.TriggeredEvent | React.PointerEvent<HTMLCanvasElement> | JQueryEventObject) {
     return (!isMac() && evt.ctrlKey) || (isMac() && evt.metaKey);
@@ -290,6 +313,7 @@ export function isHtmlEmpty(html: string) {
     return (
         !html.includes("<img") &&
         !html.includes("<section") &&
+        !html.includes("link-mention") &&
         // the line below will actually attempt to load images so better to check for images first
         $("<div>").html(html).text().trim().length === 0
     );
@@ -342,10 +366,7 @@ function formatHtml(html: string) {
 }
 
 export async function clearBrowserCache() {
-    if (isElectron()) {
-        const win = dynamicRequire("@electron/remote").getCurrentWindow();
-        await win.webContents.session.clearCache();
-    }
+    await window.electronApi?.window.clearCache();
 }
 
 function copySelectionToClipboard() {
@@ -355,21 +376,6 @@ function copySelectionToClipboard() {
     }
 }
 
-type dynamicRequireMappings = {
-    "@electron/remote": typeof import("@electron/remote"),
-    "electron": typeof import("electron"),
-    "child_process": typeof import("child_process")
-};
-
-export function dynamicRequire<T extends keyof dynamicRequireMappings>(moduleName: T): Awaited<dynamicRequireMappings[T]>{
-    if (typeof __non_webpack_require__ !== "undefined") {
-        return __non_webpack_require__(moduleName);
-    }
-    // explicitly pass as string and not as expression to suppress webpack warning
-    // 'Critical dependency: the request of a dependency is an expression'
-    return require(`${moduleName}`);
-
-}
 
 function timeLimit<T>(promise: Promise<T>, limitMs: number, errorMessage?: string) {
     if (!promise || !promise.then) {
@@ -401,36 +407,6 @@ function initHelpDropdown($el: JQuery<HTMLElement>) {
     // stop inside clicks from closing the menu
     const $dropdownMenu = $el.find(".help-dropdown .dropdown-menu");
     $dropdownMenu.on("click", (e) => e.stopPropagation());
-
-    // previous propagation stop will also block help buttons from being opened, so we need to re-init for this element
-    initHelpButtons($dropdownMenu);
-}
-
-const wikiBaseUrl = "https://triliumnext.github.io/Docs/Wiki/";
-
-function openHelp($button: JQuery<HTMLElement>) {
-    if ($button.length === 0) {
-        return;
-    }
-
-    const helpPage = $button.attr("data-help-page");
-
-    if (helpPage) {
-        const url = wikiBaseUrl + helpPage;
-
-        window.open(url, "_blank");
-    }
-}
-
-async function openInAppHelp($button: JQuery<HTMLElement>) {
-    if ($button.length === 0) {
-        return;
-    }
-
-    const inAppHelpPage = $button.attr("data-in-app-help");
-    if (inAppHelpPage) {
-        openInAppHelpFromUrl(inAppHelpPage);
-    }
 }
 
 /**
@@ -453,9 +429,7 @@ export function openInAppHelpFromUrl(inAppHelpPage: string) {
 export async function openInReusableSplit(targetNoteId: string, targetViewMode: ViewMode, openOpts: {
     hoistedNoteId?: string;
 } = {}) {
-    // Dynamic import to avoid import issues in tests.
-    const appContext = (await import("../components/app_context.js")).default;
-    const activeContext = appContext.tabManager.getActiveContext();
+    const activeContext = glob.appContext?.tabManager?.getActiveContext();
     if (!activeContext) {
         return;
     }
@@ -465,7 +439,7 @@ export async function openInReusableSplit(targetNoteId: string, targetViewMode: 
     if (!existingSubcontext) {
         // The target split is not already open, open a new split with it.
         const { ntxId } = subContexts[subContexts.length - 1];
-        appContext.triggerCommand("openNewNoteSplit", {
+        glob.appContext?.triggerCommand("openNewNoteSplit", {
             ntxId,
             notePath: targetNoteId,
             hoistedNoteId: openOpts.hoistedNoteId,
@@ -475,15 +449,6 @@ export async function openInReusableSplit(targetNoteId: string, targetViewMode: 
         // There is already a target split open, make sure it opens on the right note.
         existingSubcontext.setNote(targetNoteId, { viewScope });
     }
-}
-
-function initHelpButtons($el: JQuery<HTMLElement> | JQuery<Window>) {
-    // for some reason, the .on(event, listener, handler) does not work here (e.g. Options -> Sync -> Help button)
-    // so we do it manually
-    $el.on("click", (e) => {
-        openHelp($(e.target).closest("[data-help-page]"));
-        openInAppHelp($(e.target).closest("[data-in-app-help]"));
-    });
 }
 
 function filterAttributeName(name: string) {
@@ -622,17 +587,18 @@ function areObjectsEqual(...args: unknown[]) {
     return true;
 }
 
-function copyHtmlToClipboard(content: string) {
+function copyHtmlToClipboard(html: string, plainText: string = html) {
     function listener(e: ClipboardEvent) {
         if (e.clipboardData) {
-            e.clipboardData.setData("text/html", content);
-            e.clipboardData.setData("text/plain", content);
+            e.clipboardData.setData("text/html", html);
+            e.clipboardData.setData("text/plain", plainText);
         }
         e.preventDefault();
     }
     document.addEventListener("copy", listener);
-    document.execCommand("copy");
+    const ok = document.execCommand("copy");
     document.removeEventListener("copy", listener);
+    return ok;
 }
 
 export function createImageSrcUrl(note: FNote) {
@@ -691,6 +657,7 @@ function prepareElementForSnapdom(source: string | SVGElement | HTMLElement): {
  * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be downloaded.
  */
 async function downloadAsSvg(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
+    const { snapdom } = await import("@zumer/snapdom");
     const { element, cleanup } = prepareElementForSnapdom(svgSource);
 
     try {
@@ -729,6 +696,7 @@ function triggerDownload(fileName: string, dataUrl: string) {
  * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be converted to PNG.
  */
 async function downloadAsPng(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
+    const { snapdom } = await import("@zumer/snapdom");
     const { element, cleanup } = prepareElementForSnapdom(svgSource);
 
     try {
@@ -814,7 +782,7 @@ function compareVersions(v1: string, v2: string): number {
 /**
  * Compares two semantic version strings and returns `true` if the latest version is greater than the current version.
  */
-function isUpdateAvailable(latestVersion: string | null | undefined, currentVersion: string): boolean {
+export function isUpdateAvailable(latestVersion: string | null | undefined, currentVersion: string): boolean {
     if (!latestVersion) {
         return false;
     }
@@ -901,6 +869,10 @@ export function getErrorMessage(e: unknown) {
 
 }
 
+export function replaceHtmlEscapedSlashes(str: string) {
+    return str.replace(/&#x2F;/g, "/");
+}
+
 /**
  * Handles left or right placement of e.g. tooltips in case of right-to-left languages. If the current language is a RTL one, then left and right are swapped. Other directions are unaffected.
  * @param placement a string optionally containing a "left" or "right" value.
@@ -917,9 +889,11 @@ export default {
     reloadFrontendApp,
     restartDesktopApp,
     reloadTray,
+    reapplyLaunchOnStartup,
     parseDate,
     formatDateISO,
     formatDateTime,
+    formatTime,
     formatTimeInterval,
     formatSize,
     localNowDateTime,
@@ -927,6 +901,8 @@ export default {
     isElectron,
     isPWA,
     isMac,
+    isLinux,
+    isWindows,
     isCtrlKey,
     assertArguments,
     escapeHtml,
@@ -941,11 +917,8 @@ export default {
     formatHtml,
     clearBrowserCache,
     copySelectionToClipboard,
-    dynamicRequire,
     timeLimit,
     initHelpDropdown,
-    initHelpButtons,
-    openHelp,
     filterAttributeName,
     isValidAttributeName,
     sleep,
@@ -955,6 +928,7 @@ export default {
     createImageSrcUrl,
     downloadAsSvg,
     downloadAsPng,
+    triggerDownload,
     compareVersions,
     isUpdateAvailable,
     isLaunchBarConfig

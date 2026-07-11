@@ -20,14 +20,7 @@
     "affected_branches": "Уражені гілки ({{count}}):"
   },
   "about": {
-    "app_version": "Версія програми:",
-    "db_version": "Версія БД:",
-    "build_date": "Дата збірки:",
-    "build_revision": "Ревізія збірки:",
-    "data_directory": "Каталог даних:",
-    "homepage": "Домашня сторінка:",
-    "title": "Про Trilium Notes",
-    "sync_version": "Версія синхронізації:"
+    "data_directory": "Каталог даних:"
   },
   "global_menu": {
     "about": "Про Trilium Notes",
@@ -55,7 +48,10 @@
     "show_help": "Показати Довідку",
     "logout": "Вийти",
     "show-cheatsheet": "Показати Шпаргалку",
-    "toggle-zen-mode": "Дзен-режим"
+    "toggle-zen-mode": "Дзен-режим",
+    "new-version-available": "Доступне оновлення",
+    "download-update": "Отримати версію {{latest Version}}",
+    "search_notes": "Пошук нотаток"
   },
   "modal": {
     "help_title": "Показати більше інформації про це вікно",
@@ -127,8 +123,7 @@
     "undeleting-notes-in-progress": "Відновлюємо нотатки: {{count}}",
     "delete-notes-in-progress": "Видаляємо нотатки: {{count}}",
     "delete-finished-successfully": "Нотатки вдало видалено.",
-    "cannot-move-notes-here": "Неможливо перемістити нотатки сюди.",
-    "delete-status": "Видалити статус"
+    "cannot-move-notes-here": "Неможливо перемістити нотатки сюди."
   },
   "launcher_context_menu": {
     "add-spacer": "Додати розділювач",
@@ -183,7 +178,6 @@
     "also_delete_note": "Також видалити нотатку"
   },
   "delete_notes": {
-    "delete_notes_preview": "Видалити попередній перегляд нотаток",
     "close": "Закрити",
     "delete_all_clones_description": "Видалити також усі клони (можна скасувати в останніх змінах)",
     "erase_notes_description": "Звичайне (м’яке) видалення лише позначає нотатки як видалені і їх можна відновити (у діалоговому вікні останніх змін) протягом певного періоду часу. Якщо позначити цю опцію, нотатки будуть видалені негайно і їх неможливо буде відновити.",
@@ -191,28 +185,17 @@
     "notes_to_be_deleted": "Наступні нотатки будуть видалені ({{notesCount}})",
     "no_note_to_delete": "Жодну нотатку не буде видалено (лише клони).",
     "broken_relations_to_be_deleted": "Наступні зв'язки будуть розірвані та видалені ({{ relationCount}})",
-    "cancel": "Скасувати",
-    "ok": "ОК",
-    "deleted_relation_text": "Нотатка {{- note}} (буде видалена) посилається на зв'язок {{- relation}}, що походить з {{- source}}."
+    "cancel": "Скасувати"
   },
   "export": {
     "export_note_title": "Експорт нотатки",
     "close": "Закрити",
     "export_type_subtree": "Ця нотатка та всі її нащадки",
-    "format_html": "HTML – рекомендовано, оскільки зберігає форматування",
-    "format_html_zip": "HTML у ZIP-архіві – рекомендовано, зберігає форматування.",
-    "format_markdown": "Markdown – зберігає більшу частину форматування.",
-    "format_opml": "OPML – формат обміну структурами лише для тексту. Форматування, зображення та файли не включено.",
-    "opml_version_1": "OPML версії 1.0 – лише звичайний текст",
-    "opml_version_2": "OPML v2.0 - також дозволяє HTML",
     "export_type_single": "Тільки ця нотатка без її нащадків",
     "export": "Експорт",
     "choose_export_type": "Спочатку виберіть тип експорту",
-    "export_status": "Статус експорту",
-    "export_in_progress": "Триває експорт: {{progressCount}}",
     "export_finished_successfully": "Експорт успішно завершено.",
-    "format_pdf": "PDF – для друку або спільного використання.",
-    "share-format": "HTML для веб-публікацій – використовує ту саму тему, що й для спільних нотаток, але може бути опублікований як статичний веб-сайт."
+    "format_pdf": "PDF – для друку або спільного використання."
   },
   "help": {
     "title": "Шпаргалка",
@@ -272,7 +255,6 @@
   "import": {
     "importIntoNote": "Імпортувати в нотатку",
     "chooseImportFile": "Вибрати файл імпорту",
-    "importDescription": "Вміст вибраного(их) файлу(ів) буде імпортовано як дочірню(і) нотатку(и) до",
     "options": "Параметри",
     "safeImportTooltip": "Експортовані файли Trilium <code>.zip</code> можуть містити виконувані скрипти, які можуть мати шкідливу поведінку. Безпечний імпорт деактивує автоматичне виконання всіх імпортованих скриптів. Зніміть позначку \"Безпечний імпорт\", лише якщо імпортований архів має містити виконувані скрипти, і ви повністю довіряєте вмісту файлу імпорту.",
     "safeImport": "Безпечний імпорт",
@@ -291,9 +273,9 @@
       "placeholder": "Введіть теги HTML, по одному на рядок",
       "reset_button": "Скинути до Список за замовчуванням"
     },
-    "import-status": "Статус Імпорту",
     "in-progress": "Триває Імпорт: {{progress}}",
-    "successful": "Імпорт успішно завершено."
+    "successful": "Імпорт успішно завершено.",
+    "importZipRecommendation": "Під час імпорту ZIP-файлу ієрархія нотаток відображатиме структуру підкаталогів в архіві."
   },
   "prompt": {
     "title": "Запит(prompt)",
@@ -315,33 +297,6 @@
     "undelete_link": "відновити",
     "confirm_undelete": "Ви хочете відновити цю нотатку та її піднотатки?"
   },
-  "revisions": {
-    "note_revisions": "Версії нотаток",
-    "delete_all_revisions": "Видалити всі версії цієї нотатки",
-    "delete_all_button": "Видалити всі версії",
-    "help_title": "Довідка щодо Версій нотаток",
-    "confirm_delete_all": "Ви хочете видалити всі версії цієї нотатки?",
-    "no_revisions": "Поки що немає версій цієї нотатки...",
-    "restore_button": "Відновити",
-    "confirm_restore": "Ви хочете відновити цю версію? Це замінить поточний заголовок та вміст нотатки цієї версії.",
-    "delete_button": "Видалити",
-    "confirm_delete": "Ви хочете видалити цю версію?",
-    "revisions_deleted": "Версії нотаток видалено.",
-    "revision_restored": "Версію нотатки відновлено.",
-    "revision_deleted": "Версію нотатки видалено.",
-    "snapshot_interval": "Інтервал знімків версій нотатки: {{seconds}}s.",
-    "maximum_revisions": "Ліміт знімків версій нотатки: {{number}}.",
-    "settings": "Налаштування Версії Нотатки",
-    "download_button": "Завантажити",
-    "mime": "МІМЕ: ",
-    "file_size": "Розмір файлу:",
-    "preview_not_available": "Попередній перегляд недоступний для цього типу нотатки.",
-    "diff_on": "Показати різницю",
-    "diff_off": "Показати вміст",
-    "diff_on_hint": "Натисніть, щоб показати різницю в джерелі нотатки",
-    "diff_off_hint": "Натисніть, щоб показати вміст нотатки",
-    "diff_not_available": "Різниця недоступна."
-  },
   "include_note": {
     "dialog_title": "Включити нотатку",
     "label_note": "Нотатка",
@@ -355,7 +310,8 @@
   "info": {
     "modalTitle": "Інформаційне повідомлення",
     "closeButton": "Закрити",
-    "okButton": "ОК"
+    "okButton": "ОК",
+    "copy_to_clipboard": "Копіювати в буфер обміну"
   },
   "jump_to_note": {
     "search_placeholder": "Пошук нотатки за її назвою або типом > для команд...",
@@ -542,33 +498,12 @@
     "color_type": "Колір"
   },
   "multi_factor_authentication": {
-    "mfa_method": "Метод MFA",
-    "title": "Багатофакторна автентифікація",
-    "description": "Багатофакторна автентифікація (MFA) додає додатковий рівень безпеки до вашого облікового запису. Замість того, щоб просто вводити пароль для входу, MFA вимагає від вас надання одного або кількох додаткових доказів для підтвердження вашої особи. Таким чином, навіть якщо хтось отримає ваш пароль, він все одно не зможе отримати доступ до вашого облікового запису без другої інформації. Це як додати додатковий замок на двері, що значно ускладнює проникнення будь-кому іншому.<br><br>Будь ласка, дотримуйтесь інструкцій нижче, щоб увімкнути MFA. Якщо ви неправильно налаштуєте, вхід буде здійснюватися лише за допомогою пароля.",
-    "mfa_enabled": "Увімкнути багатофакторну автентифікацію",
-    "electron_disabled": "Багатофакторна автентифікація наразі не підтримується у збірці для ПК.",
-    "totp_title": "Одноразовий пароль на основі часу (TOTP)",
-    "totp_description": "TOTP (одноразовий пароль на основі часу) – це функція безпеки, яка генерує унікальний тимчасовий код, що змінюється кожні 30 секунд. Ви використовуєте цей код разом із паролем для входу до свого облікового запису, що значно ускладнює доступ до нього для будь-кого іншого.",
-    "totp_secret_title": "Згенерувати секретний код TOTP",
-    "totp_secret_generate": "Згенерувати секретний код TOTP",
-    "totp_secret_regenerate": "Оновити секретний код TOTP",
-    "no_totp_secret_warning": "Щоб увімкнути TOTP, спочатку потрібно згенерувати секретний код TOTP.",
-    "totp_secret_description_warning": "Після створення нового секретного коду TOTP вам потрібно буде знову ввійти в систему, використовуючи новий секретний код TOTP.",
-    "totp_secret_generated": "Згенеровано секретний код TOTP",
-    "totp_secret_warning": "Будь ласка, збережіть згенерований секретний код у безпечному місці. Він більше не відображатиметься.",
-    "totp_secret_regenerate_confirm": "Ви впевнені, що хочете повторно створити секретний код TOTP? Це призведе до анулювання попереднього секретного коду TOTP та всіх існуючих кодів відновлення.",
-    "recovery_keys_title": "Ключі відновлення єдиного входу",
-    "recovery_keys_description": "Ключі відновлення єдиного входу використовуються для входу, навіть якщо ви не маєте доступу до своїх кодів автентифікатора.",
     "recovery_keys_description_warning": "Ключі відновлення більше не відображатимуться після того, як ви залишите сторінку, зберігайте їх у безпечному місці.<br>Після використання ключа відновлення його не можна буде використати повторно.",
     "recovery_keys_error": "Помилка створення кодів відновлення",
     "recovery_keys_no_key_set": "Коди відновлення не встановлено",
-    "recovery_keys_generate": "Згенерувати коди відновлення",
     "recovery_keys_regenerate": "Регенерувати коди відновлення",
-    "recovery_keys_used": "Використано: {{date}}",
-    "recovery_keys_unused": "Код відновлення {{index}} не використовується",
     "oauth_title": "OAuth/OpenID",
     "oauth_description": "OpenID – це стандартизований спосіб входу на веб-сайти за допомогою облікового запису з іншого сервісу, такого як Google, для підтвердження вашої особи. Емітентом за замовчуванням є Google, але ви можете змінити його на будь-якого іншого постачальника OpenID. Перегляньте <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">тут</a> для отримання додаткової інформації. Дотримуйтесь цих <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">інструкцій</a>, щоб налаштувати сервіс OpenID через Google.",
-    "oauth_description_warning": "Щоб увімкнути OAuth/OpenID, потрібно встановити базову URL-адресу OAuth/OpenID, ідентифікатор клієнта та секрет клієнта у файлі config.ini та перезапустити програму. Якщо ви хочете встановити зі змінних середовища, встановіть TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID та TRILIUM_OAUTH_CLIENT_SECRET.",
     "oauth_missing_vars": "Відсутні налаштування: {{-variables}}",
     "oauth_user_account": "Обліковий запис користувача: ",
     "oauth_user_email": "Електронна пошта користувача: ",
@@ -805,7 +740,14 @@
     "convert_into_attachment_failed": "Не вдалося конвертувати нотатку '{{title}}'.",
     "convert_into_attachment_successful": "Нотатку '{{title}}' перетворено на вкладення.",
     "convert_into_attachment_prompt": "Ви впевнені, що хочете перетворити нотатку '{{title}}' на вкладення батьківської нотатки?",
-    "print_pdf": "Експортувати як PDF..."
+    "print_pdf": "Експортувати як PDF...",
+    "open_note_on_server": "Відкрити нотатку на сервері",
+    "view_revisions": "Ревізії нотатки...",
+    "advanced": "Розширені",
+    "export_as_image": "Експортувати як зображення",
+    "export_as_image_png": "PNG (растровий)",
+    "export_as_image_svg": "SVG (векторний)",
+    "note_map": "Карта нотатки"
   },
   "onclick_button": {
     "no_click_handler": "Віджет кнопки '{{componentId}}' не має визначеного обробника кліків"
@@ -858,7 +800,10 @@
     "insert_child_note": "Вставити дочірню нотатку",
     "delete_this_note": "Видалити цю нотатку",
     "error_cannot_get_branch_id": "Не вдається отримати branchId для notePath '{{notePath}}'",
-    "error_unrecognized_command": "Нерозпізнана команда {{command}}"
+    "error_unrecognized_command": "Нерозпізнана команда {{command}}",
+    "note_revisions": "Ревізії нотатки",
+    "backlinks": "Зворотні посилання",
+    "content_language_switcher": "Мова контенту: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Змінити значок нотатки",
@@ -866,7 +811,13 @@
     "reset-default": "Скинути значок до стандартного значення",
     "search_placeholder_one": "Пошук {{number}} значка у {{count}} пакеті",
     "search_placeholder_few": "Пошук {{number}} значків у {{count}} пакетах",
-    "search_placeholder_many": "Пошук {{number}} значків у {{count}} пакетах"
+    "search_placeholder_many": "Пошук {{number}} значків у {{count}} пакетах",
+    "search_placeholder_filtered": "Пошук {{number}} іконок у {{name}}",
+    "filter": "Фільтр",
+    "filter-none": "Всі іконки",
+    "filter-default": "Іконки за замовчуванням",
+    "icon_tooltip": "{{name}}\nПакет іконок: {{iconPack}}",
+    "no_results": "Іконки не знайдено"
   },
   "basic_properties": {
     "note_type": "Тип нотатки",
@@ -888,7 +839,13 @@
     "table": "Таблиця",
     "geo-map": "Географічна карта",
     "board": "Дошка",
-    "include_archived_notes": "Показати архівовані нотатки"
+    "include_archived_notes": "Показати архівовані нотатки",
+    "expand_tooltip": "Розгортає безпосередні дочірні елементи цієї колекції (на один рівень у глибину). Щоб переглянути більше параметрів, натисніть стрілку праворуч.",
+    "expand_first_level": "Розгорнути прямі дочірні елементи",
+    "expand_nth_level": "Розгорнути {{depth}} рівнів",
+    "expand_all_levels": "Розгорнути всі рівні",
+    "presentation": "Презентація",
+    "hide_child_notes": "Приховати дочірні нотатки в дереві"
   },
   "edited_notes": {
     "no_edited_notes_found": "Цього дня ще немає редагованих нотаток...",
@@ -921,7 +878,8 @@
   },
   "inherited_attribute_list": {
     "title": "Успадковані Атрибути",
-    "no_inherited_attributes": "Немає успадкованих атрибутів."
+    "no_inherited_attributes": "Немає успадкованих атрибутів.",
+    "none": "пусто"
   },
   "note_info_widget": {
     "note_id": "ID Нотатки",
@@ -931,8 +889,12 @@
     "note_size": "Розмір нотатки",
     "note_size_info": "Розмір нотатки надає приблизну оцінку вимог до зберігання для цієї нотатки. Він враховує вміст нотатки та вміст її версій.",
     "calculate": "обчислити",
-    "subtree_size": "(розмір піддерева: {{size}} у {{count}} нотатках)",
-    "title": "Інформація про нотатку"
+    "subtree_size_one": "(розмір піддерева: {{size}} у {{count}} нотатках)",
+    "subtree_size_few": "",
+    "subtree_size_many": "",
+    "title": "Інформація про нотатку",
+    "mime": "Тип MIME",
+    "show_similar_notes": "Показати схожі нотатки"
   },
   "note_map": {
     "open_full": "Розгорнути на повний розмір",
@@ -995,7 +957,9 @@
     "search_parameters": "Параметри пошуку",
     "unknown_search_option": "Невідомий параметр пошуку {{searchOptionName}}",
     "actions_executed": "Дії виконано.",
-    "search_note_saved": "Нотатка з пошуку збережена у {{- notePathTitle}}"
+    "search_note_saved": "Нотатка з пошуку збережена у {{- notePathTitle}}",
+    "option": "опції",
+    "view_options": "Опції перегляду:"
   },
   "similar_notes": {
     "title": "Схожі нотатки",
@@ -1089,7 +1053,13 @@
   },
   "editable_text": {
     "placeholder": "Введіть тут вміст вашої нотатки...",
-    "auto-detect-language": "Автовизначено"
+    "auto-detect-language": "Автовизначено",
+    "editor_crashed_title": "Збій текстового редактора",
+    "editor_crashed_content": "Ваш контент успішно відновлено, але деякі з ваших останніх змін могли бути не збережені.",
+    "editor_crashed_details_button": "Переглянути більше деталей...",
+    "editor_crashed_details_intro": "Якщо ви стикаєтеся з цією помилкою кілька разів, подумайте про те, щоб повідомити про неї на GitHub, вставивши наведену нижче інформацію.",
+    "editor_crashed_details_title": "Технічна інформація",
+    "keeps-crashing": "Компонент редагування постійно аварійно завершує роботу. Спробуйте перезапустити Trilium. Якщо проблема не зникає, спробуйте створити звіт про помилку."
   },
   "empty": {
     "open_note_instruction": "Відкрийте нотатку, ввівши її заголовок в поле нижче, або виберіть нотатку в дереві.",
@@ -1108,12 +1078,9 @@
     "protecting-finished-successfully": "Захист успішно завершено.",
     "unprotecting-finished-successfully": "Зняття захисту успішно завершено.",
     "protecting-in-progress": "Триває захист: {{count}}",
-    "unprotecting-in-progress-count": "Триває зняття захисту: {{count}}",
-    "protecting-title": "Статус захисту",
-    "unprotecting-title": "Статус зняття захисту"
+    "unprotecting-in-progress-count": "Триває зняття захисту: {{count}}"
   },
   "relation_map": {
-    "open_in_new_tab": "Відкрити в новій вкладці",
     "remove_note": "Видалити нотатку",
     "edit_title": "Редагувати заголовок",
     "rename_note": "Перейменувати нотатку",
@@ -1129,10 +1096,6 @@
     "enter_title_of_new_note": "Введіть заголовок нової нотатки",
     "default_new_note_title": "нова нотатка",
     "click_on_canvas_to_place_new_note": "Натисніть на полотно, щоб розмістити нову нотатку"
-  },
-  "render": {
-    "note_detail_render_help_1": "Ця довідка відображається, оскільки ця нотатка типу Render HTML не має необхідного зв'язку для належного функціонування.",
-    "note_detail_render_help_2": "Тип нотатки Render HTML використовується для <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">скриптів</a>. Коротше кажучи, у вас є нотатка з HTML-кодом (за бажанням з деяким JavaScript), і ця нотатка її відобразить. Щоб це запрацювало, вам потрібно визначити <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">відношення</a> під назвою \"renderNote\", яке вказує на нотатку HTML для відображення."
   },
   "backend_log": {
     "refresh": "Оновити"
@@ -1162,7 +1125,6 @@
   },
   "database_integrity_check": {
     "title": "Перевірка цілісності Бази даних",
-    "description": "Це перевірить, чи не пошкоджена база даних на рівні SQLite. Це може зайняти деякий час, залежно від розміру бази даних.",
     "check_button": "Перевірка цілісності бази даних",
     "checking_integrity": "Перевірка цілісності бази даних...",
     "integrity_check_succeeded": "Перевірка цілісності пройшла успішно — проблем не виявлено.",
@@ -1194,10 +1156,7 @@
     "note_tree_font": "Шрифт Дерева нотатки",
     "note_detail_font": "Шрифт деталей нотатки",
     "monospace_font": "Monospace (кодовий) шрифт",
-    "note_tree_and_detail_font_sizing": "Зверніть увагу, що розмір шрифту дерева та деталей залежить від основного налаштування розміру шрифту.",
     "not_all_fonts_available": "Не всі перелічені шрифти можуть бути доступні у вашій системі.",
-    "apply_font_changes": "Щоб застосувати зміни шрифту, натисніть на",
-    "reload_frontend": "перезавантажити інтерфейс",
     "generic-fonts": "Загальні шрифти",
     "sans-serif-system-fonts": "Системні шрифти Sans-serif",
     "serif-system-fonts": "Системні шрифти Serif",
@@ -1220,8 +1179,6 @@
     "disabled": "вимкнено"
   },
   "ribbon": {
-    "widgets": "Віджети стрічки",
-    "promoted_attributes_message": "Вкладка стрічки Просунуті атрибути відкриється автоматично, якщо в нотатці присутні просунуті атрибути",
     "edited_notes_message": "Вкладка стрічки Редаговані нотатки автоматично відкриватиметься для денних нотаток"
   },
   "theme": {
@@ -1240,149 +1197,6 @@
     "layout-vertical-description": "Панель запуску знаходиться ліворуч (за замовчуванням)",
     "layout-horizontal-description": "Панель запуску знаходиться під панеллю вкладок, панель вкладок тепер має повну ширину."
   },
-  "ai_llm": {
-    "not_started": "Не розпочато",
-    "title": "Параметри AI",
-    "processed_notes": "Оброблені нотатки",
-    "total_notes": "Всього нотаток",
-    "progress": "Прогрес",
-    "queued_notes": "Черга нотаток",
-    "failed_notes": "Невдалі нотатки",
-    "last_processed": "Остання обробка",
-    "refresh_stats": "Оновити статистику",
-    "enable_ai_features": "Увімкнути функції AI/LLM",
-    "enable_ai_description": "Увімкніть функції AI, такі як підсумовування нотаток, генерація контенту та інші можливості LLM",
-    "openai_tab": "OpenAI",
-    "anthropic_tab": "Anthropic",
-    "voyage_tab": "Voyage AI",
-    "ollama_tab": "Ollama",
-    "enable_ai": "Увімкнути функції AI/LLM",
-    "enable_ai_desc": "Увімкнути функції AI, такі як підсумовування нотаток, генерація контенту та інші можливості LLM",
-    "provider_configuration": "Конфігурація постачальника AI",
-    "provider_precedence": "Пріоритет постачальника",
-    "provider_precedence_description": "Список постачальників, розділених комами, у порядку пріоритету (наприклад, «openai,anthropic,ollama»)",
-    "temperature": "Температура",
-    "temperature_description": "Контролює випадковість відповідей (0 = детермінований, 2 = максимальна випадковість)",
-    "system_prompt": "Системний Запит (Prompt)",
-    "system_prompt_description": "Системний запит (prompt) за замовчуванням використовується для всіх взаємодій з AI",
-    "openai_configuration": "Конфігурація OpenAI",
-    "openai_settings": "Налаштування OpenAI",
-    "api_key": "API Key",
-    "url": "Base URL",
-    "model": "Модель",
-    "openai_api_key_description": "Ваш ключ OpenAI API для доступу до служб AI",
-    "anthropic_api_key_description": "Ваш ключ Anthropic API для доступу до моделей Claude",
-    "default_model": "Модель за замовчуванням",
-    "openai_model_description": "Наприклад: gpt-4o, gpt-4-turbo, gpt-3.5-turbo",
-    "base_url": "Base URL",
-    "openai_url_description": "За замовчуванням: https://api.openai.com/v1",
-    "anthropic_settings": "Налаштування Anthropic",
-    "anthropic_url_description": "Базова URL-адреса для Anthropic API (за замовчуванням: https://api.anthropic.com)",
-    "anthropic_model_description": "Моделі Anthropic Claude для чату",
-    "voyage_settings": "Налаштування Voyage AI",
-    "ollama_settings": "Налаштування Ollama",
-    "ollama_url_description": "URL для Ollama API (default: http://localhost:11434)",
-    "ollama_model_description": "Модель Ollama для чату",
-    "anthropic_configuration": "Конфігурація Anthropic",
-    "voyage_configuration": "Конфігурація Voyage AI",
-    "voyage_url_description": "За замовчуванням: https://api.voyageai.com/v1",
-    "ollama_configuration": "Конфігурація Ollama",
-    "enable_ollama": "Увімкнути Ollama",
-    "enable_ollama_description": "Увімкнути Ollama для локальної моделі AI",
-    "ollama_url": "Ollama URL",
-    "ollama_model": "Модель Ollama",
-    "refresh_models": "Оновити моделі",
-    "refreshing_models": "Оновлення...",
-    "enable_automatic_indexing": "Увімкнути автоматичне індексування",
-    "rebuild_index": "Перебудувати індекс",
-    "rebuild_index_error": "Помилка початку перебудови індексу. Перегляньте logs для інформації.",
-    "note_title": "Заголовок нотатки",
-    "error": "Помилка",
-    "last_attempt": "Остання спроба",
-    "actions": "Дії",
-    "retry": "Повторити спробу",
-    "partial": "{{ percentage }}% completed",
-    "retry_queued": "Нотатка в черзі на повторну спробу",
-    "retry_failed": "Не вдалося додати нотатку до черги для повторної спроби",
-    "max_notes_per_llm_query": "Максимальна кількість нотаток на запит",
-    "max_notes_per_llm_query_description": "Максимальна кількість схожих нотаток для включення в контекст AI",
-    "active_providers": "Активні постачальники",
-    "disabled_providers": "Вимкнути постачальників",
-    "remove_provider": "Видалити постачальника з пошуку",
-    "restore_provider": "Відновити постачальника для пошуку",
-    "similarity_threshold": "Поріг схожості",
-    "similarity_threshold_description": "Мінімальна оцінка схожості (0-1) для нотаток, що включатимуться в контекст для запитів LLM",
-    "reprocess_index": "Перебудувати індекс пошуку",
-    "reprocessing_index": "Відбудова...",
-    "reprocess_index_started": "Оптимізація пошукового індексу розпочата у фоновому режимі",
-    "reprocess_index_error": "Помилка відбудови індексу пошуку",
-    "index_rebuild_progress": "Прогрес відбудови індексу",
-    "index_rebuilding": "Індекс оптимізації ({{percentage}}%)",
-    "index_rebuild_complete": "Оптимізацію індексу завершено",
-    "index_rebuild_status_error": "Помилка перевірки стану перебудови індексу",
-    "never": "Ніколи",
-    "processing": "Обробка ({{percentage}}%)",
-    "incomplete": "Незавершено ({{percentage}}%)",
-    "complete": "Завершено (100%)",
-    "refreshing": "Оновлення...",
-    "auto_refresh_notice": "Автоматичне оновлення кожні {{seconds}} секунд",
-    "note_queued_for_retry": "Нотатка в черзі на повторну спробу",
-    "failed_to_retry_note": "Не вдалося повторити спробу",
-    "all_notes_queued_for_retry": "Усі невдалі нотатки поставлені в чергу на повторну спробу",
-    "failed_to_retry_all": "Не вдалося повторити спробу",
-    "ai_settings": "Налаштування AI",
-    "api_key_tooltip": "Ключ API для доступу до сервісу",
-    "empty_key_warning": {
-      "anthropic": "Ключ API Anthropic порожній. Будь ласка, введіть дійсний ключ API.",
-      "openai": "Ключ API OpenAI порожній. Будь ласка, введіть дійсний ключ API.",
-      "voyage": "Ключ Voyage API подорожі порожній. Будь ласка, введіть дійсний ключ API.",
-      "ollama": "Ключ API Ollama порожній. Будь ласка, введіть дійсний ключ API."
-    },
-    "agent": {
-      "processing": "Обробка...",
-      "thinking": "Думаю...",
-      "loading": "Завантаження...",
-      "generating": "Генерування..."
-    },
-    "name": "AI",
-    "openai": "OpenAI",
-    "use_enhanced_context": "Використовувати покращений контекст",
-    "enhanced_context_description": "Надає AI більше контексту з нотатки та пов'язаних з нею нотаток для кращих відповідей",
-    "show_thinking": "Показати міркування",
-    "show_thinking_description": "Показати ланцюжок міркувань AI",
-    "enter_message": "Введіть ваше повідомлення...",
-    "error_contacting_provider": "Помилка зв’язку з постачальником AI. Перевірте налаштування та підключення до Інтернету.",
-    "error_generating_response": "Помилка створення відповіді AI",
-    "index_all_notes": "Індексація усіх нотаток",
-    "index_status": "Статус індексації",
-    "indexed_notes": "Індексовані нотатки",
-    "indexing_stopped": "Індексацію зупинено",
-    "indexing_in_progress": "Триває індексація...",
-    "last_indexed": "Остання індексація",
-    "note_chat": "Нотатка Чат",
-    "sources": "Джерела",
-    "start_indexing": "Почати індексацію",
-    "use_advanced_context": "Використовувати розширений контекст",
-    "ollama_no_url": "Ollama не налаштовано. Будь ласка, введіть дійсну URL-адресу.",
-    "chat": {
-      "root_note_title": "AI Чати",
-      "root_note_content": "Ця нотатка містить ваші збережені розмови в чаті з AI.",
-      "new_chat_title": "Новий Чат",
-      "create_new_ai_chat": "Створити новий AI Чат"
-    },
-    "create_new_ai_chat": "Створити новий AI Чат",
-    "configuration_warnings": "Виникли деякі проблеми з конфігурацією AI. Перевірте налаштування.",
-    "experimental_warning": "Функція LLM наразі є експериментальною – вас попередили.",
-    "selected_provider": "Вибраний постачальник",
-    "selected_provider_description": "Вибрати постачальника послуг AI для функцій чату та автозаповнення",
-    "select_model": "Виберіть модель...",
-    "select_provider": "Виберіть постачальника...",
-    "ai_enabled": "Функції AI увімкнено",
-    "ai_disabled": "Функції AI вимкнено",
-    "no_models_found_online": "Моделей не знайдено. Будь ласка, перевірте свій ключ API та налаштування.",
-    "no_models_found_ollama": "Моделей Ollama не знайдено. Перевірте, чи працює Ollama.",
-    "error_fetching": "Помилка отримання моделей: {{error}}"
-  },
   "backup": {
     "automatic_backup": "Автоматичне резервне копіювання",
     "automatic_backup_description": "Trilium може автоматично створювати резервні копії бази даних:",
@@ -1399,7 +1213,6 @@
     "no_backup_yet": "резервної копії поки що немає"
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI — це REST API, який використовується для програмного доступу до екземпляра Trilium без інтерфейсу користувача.",
     "create_token": "Створити новий токен ETAPI",
     "existing_tokens": "Існуючі токени",
@@ -1479,7 +1292,6 @@
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Тайм-аут стирання вкладень",
-    "attachment_auto_deletion_description": "Вкладення автоматично видаляються (і стираються), якщо на них більше не посилаються в нотатці після певного часу очікування.",
     "erase_attachments_after": "Стерти невикористані вкладення після:",
     "manual_erasing_description": "Ви також можете запустити стирання вручну (без урахування часу очікування, визначеного вище):",
     "erase_unused_attachments_now": "Стерти невикористані вкладення нотаток зараз",
@@ -1491,7 +1303,6 @@
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "Тайм-аут стирання нотатки",
-    "note_erasure_description": "Видалені нотатки (а також атрибути, версії...) спочатку лише позначаються як видалені, і їх можна відновити з діалогового вікна Останні нотатки. Через певний проміжок часу видалені нотатки стираються, що означає, що їхній вміст більше не можна відновити. Цей параметр дозволяє налаштувати тривалість періоду між видаленням і стиранням нотатки.",
     "erase_notes_after": "Стерти нотатки після:",
     "manual_erasing_description": "Ви також можете запустити стирання вручну (без урахування часу очікування, визначеного вище):",
     "erase_deleted_notes_now": "Стерти видалені нотатки зараз",
@@ -1576,7 +1387,6 @@
     "first-week-contains-first-thursday": "Перший тиждень включає перший четвер року",
     "first-week-has-minimum-days": "Перший тиждень має мінімальну кількість днів",
     "min-days-in-first-week": "Мінімальна кількість днів у першому тижні",
-    "first-week-info": "Перший тиждень, що містить перший четвер року, базується на стандарті <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
     "first-week-warning": "Зміна параметрів першого тижня може призвести до дублювання з існуючими нотатками тижня, і існуючі нотатки тижня не будуть оновлені відповідно.",
     "formatting-locale": "Формат дати & числа"
   },
@@ -1621,9 +1431,6 @@
   "search_result": {
     "no_notes_found": "За заданими параметрами пошуку нотаток не знайдено.",
     "search_not_executed": "Пошук ще не виконано. Натисніть кнопку Пошук вище, щоб переглянути результати."
-  },
-  "spacer": {
-    "configure_launchbar": "Налаштувати Панель запуску"
   },
   "sql_result": {
     "no_rows": "Для цього запиту не знайдено жодного рядка"
@@ -1680,6 +1487,7 @@
     "add-term-to-dictionary": "Додати \"{{term}}\" до словника",
     "cut": "Вирізати",
     "copy": "Копіювати",
+    "copy-as-markdown": "Копіювати як Markdown",
     "copy-link": "Копіювати посилання",
     "paste": "Вставити",
     "paste-as-plain-text": "Вставити як звичайний текст",
@@ -1837,13 +1645,7 @@
   },
   "shortcuts": {
     "keyboard_shortcuts": "Комбінації клавіш",
-    "multiple_shortcuts": "Кілька комбінацій клавіш для однієї й тієї ж дії можна розділяти комами.",
-    "electron_documentation": "Див. <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">документацію Electron</a> для отримання інформації про доступні модифікатори та коди клавіш.",
     "type_text_to_filter": "Введіть текст, щоб відфільтрувати комбінації клавіш...",
-    "action_name": "Назва дії",
-    "shortcuts": "Комбінація клавіш",
-    "default_shortcuts": "Стандартні комбінації клавіш",
-    "description": "Опис",
     "reload_app": "Перезавантажте програму, щоб застосувати зміни",
     "set_all_to_default": "Встановити всі комбінації клавіш за замовчуванням",
     "confirm_reset": "Ви дійсно хочете скинути всі комбінації клавіш до значень за замовчуванням?"
@@ -1852,21 +1654,13 @@
     "title": "Перевірка орфографії",
     "description": "Ці параметри застосовуються лише для збірок для ПК, браузери використовуватимуть власну вбудовану перевірку орфографії.",
     "enable": "Увімкнути перевірку орфографії",
-    "language_code_label": "Код(и) мови",
-    "language_code_placeholder": "наприклад, \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "Кілька мов можна розділяти комами, наприклад, \"en-US, de-DE, cs\". ",
-    "available_language_codes_label": "Доступні коди мови:",
-    "restart-required": "Зміни в параметрах перевірки орфографії набудуть чинності після перезапуску програми."
+    "language_code_label": "Код(и) мови"
   },
   "sync_2": {
     "config_title": "Конфігурація синхронізації",
     "server_address": "Адреса екземпляра сервера",
     "timeout": "Тайм-аут синхронізації",
-    "timeout_unit": "мілісекунди",
     "proxy_label": "Синхронізація проксі-сервера (необов'язково)",
-    "note": "Нотатка",
-    "note_description": "Якщо залишити налаштування проксі-сервера порожнім, буде використано системний проксі-сервер (стосується лише збірки для ПК/електронної версії).",
-    "special_value_description": "Інше спеціальне значення — <code>noproxy</code>, яке змушує ігнорувати навіть системний проксі-сервер та враховує <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
     "save": "Зберегти",
     "help": "Довідка",
     "test_title": "Тест синхронізації",
@@ -1931,7 +1725,9 @@
     "export": "Експорт",
     "import-into-note": "Імпортувати в нотатку",
     "apply-bulk-actions": "Застосувати масові дії",
-    "converted-to-attachments": "({{count}}) нотаток перетворено на вкладення.",
+    "converted-to-attachments_one": "({{count}}) нотаток перетворено на вкладення.",
+    "converted-to-attachments_few": "",
+    "converted-to-attachments_many": "",
     "convert-to-attachment-confirm": "Ви впевнені, що хочете конвертувати вибрані нотатки у вкладення до їхніх батьківських нотаток? Ця операція застосовується лише до нотаток із зображеннями, інші нотатки будуть пропущені.",
     "open-in-popup": "Швидке редагування",
     "archive": "Архівувати",
@@ -1961,7 +1757,6 @@
     "confirm-change": "Не рекомендується змінювати тип нотатки, якщо її вміст не порожній. Ви все одно хочете продовжити?",
     "geo-map": "Географічна карта",
     "beta-feature": "Бета",
-    "ai-chat": "Чат AI",
     "task-list": "Список завдань",
     "new-feature": "Нова",
     "collections": "Колекції",
@@ -2067,8 +1862,9 @@
     "app-restart-required": "(щоб зміни набули чинності, потрібен перезапуск програми)"
   },
   "pagination": {
-    "page_title": "Сторінка {{startIndex}} - {{endIndex}}",
-    "total_notes": "{{count}} нотаток"
+    "total_notes_one": "{{count}} нотаток",
+    "total_notes_few": "",
+    "total_notes_many": ""
   },
   "collections": {
     "rendering_error": "Не вдалося показати вміст через помилку."
@@ -2103,5 +1899,11 @@
     "pages_one": "{{count}} сторінка",
     "pages_few": "{{count}} сторінки",
     "pages_many": "{{count}} сторінок"
+  },
+  "render": {
+    "setup_title": "Відображати власний HTML або Preact JSX у цій нотатці",
+    "setup_create_sample_preact": "Створіть зразок нотатки за допомогою Preact",
+    "setup_create_sample_html": "Створити зразок нотатки за допомогою HTML",
+    "setup_sample_created": "Зразок нотатки було створено як дочірню нотатку."
   }
 }

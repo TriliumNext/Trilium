@@ -201,6 +201,15 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniatyr av sida { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Välj sida { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Sida { $page } av { $total }
 
 ## Find panel button title and messages
 
@@ -534,6 +543,7 @@ pdfjs-editor-undo-bar-message-freetext = Text borttagen
 pdfjs-editor-undo-bar-message-ink = Ritning borttagen
 pdfjs-editor-undo-bar-message-stamp = Bild borttagen
 pdfjs-editor-undo-bar-message-signature = Signatur borttagen
+pdfjs-editor-undo-bar-message-comment = Kommentar borttagen
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -632,6 +642,95 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Avbryt
 
 pdfjs-editor-add-comment-button =
     .title = Lägg till kommentar
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-notification-button =
+    .title = Visa/dölj sidofält (dokument innehåller miniatyrer/översikt/bilagor/lager)
+pdfjs-toggle-views-manager-button1-label = Hantera sidor
+pdfjs-views-manager-sidebar =
+    .aria-label = Sidofält
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Storleksändring av sidofält
+pdfjs-views-manager-view-selector-button =
+    .title = Vyer
+pdfjs-views-manager-view-selector-button-label = Vyer
+pdfjs-views-manager-pages-title = Sidor
+pdfjs-views-manager-outlines-title1 = Dokumentöversikt
+    .title = Dokumentöversikt (dubbelklicka för att expandera/komprimera alla objekt)
+pdfjs-views-manager-attachments-title = Bilagor
+pdfjs-views-manager-layers-title1 = Lager
+    .title = Lager (dubbelklicka för att återställa alla lager till standardläge)
+pdfjs-views-manager-pages-option-label = Sidor
+pdfjs-views-manager-outlines-option-label = Dokumentöversikt
+pdfjs-views-manager-attachments-option-label = Bilagor
+pdfjs-views-manager-layers-option-label = Lager
+pdfjs-views-manager-add-file-button =
+    .title = Lägg till fil
+pdfjs-views-manager-add-file-button-label = Lägg till fil
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } vald
+       *[other] { $count } valda
+    }
+pdfjs-views-manager-pages-status-none-action-label = Välj sidor
+pdfjs-views-manager-pages-status-action-button-label = Hantera
+pdfjs-views-manager-pages-status-copy-button-label = Kopiera
+pdfjs-views-manager-pages-status-cut-button-label = Klipp ut
+pdfjs-views-manager-pages-status-delete-button-label = Ta bort
+pdfjs-views-manager-pages-status-export-selected-button-label = Exportera markerad…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] 1 sida klippt
+       *[other] { $count } sidor klippta
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 sida kopierad
+       *[other] { $count } sidor kopierade
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 sida borttagen
+       *[other] { $count } sidor borttagna
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Förbereder din fil…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Överför fil…
+pdfjs-views-manager-status-warning-cut-label = Det gick inte att klippa. Uppdatera sidan och försök igen.
+pdfjs-views-manager-status-warning-copy-label = Det gick inte att kopiera. Uppdatera sidan och försök igen.
+pdfjs-views-manager-status-warning-delete-label = Det gick inte att ta bort. Uppdatera sidan och försök igen.
+pdfjs-views-manager-status-warning-save-label = Det gick inte att spara. Uppdatera sidan och försök igen.
+pdfjs-views-manager-status-undo-button-label = Ångra
+pdfjs-views-manager-status-done-button-label = Klar
+pdfjs-views-manager-status-close-button =
+    .title = Stäng
+pdfjs-views-manager-status-close-button-label = Stäng
+pdfjs-views-manager-paste-button-label = Klistra in
+pdfjs-views-manager-paste-button-before =
+    .title = Klistra in före den första sidan
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Klistra in efter sida { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NYTT
+pdfjs-views-manager-waiting-for-file = Överför fil…
+pdfjs-toggle-views-manager-button1 =
+    .title = Hantera sidor
 
 ## Main menu for adding/removing signatures
 

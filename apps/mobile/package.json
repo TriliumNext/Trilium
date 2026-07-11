@@ -1,0 +1,26 @@
+{
+  "name": "@triliumnext/mobile",
+  "version": "0.102.2",
+  "description": "Capacitor-based mobile app for TriliumNext, built on the standalone client.",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --filter @triliumnext/standalone build",
+    "sync": "pnpm build && cap sync",
+    "open:android": "cap open android",
+    "run:android": "cap run android",
+    "open:ios": "cap open ios",
+    "run:ios": "cap run ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.4.1",
+    "@capacitor/core": "8.4.1",
+    "@capacitor/ios": "8.4.1",
+    "@capacitor/keyboard": "8.0.5",
+    "@capacitor/splash-screen": "8.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.4.1"
+  }
+}

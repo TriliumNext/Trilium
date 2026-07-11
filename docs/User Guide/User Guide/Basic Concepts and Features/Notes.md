@@ -1,5 +1,5 @@
 # Notes
-Note is a central entity in Trilium. Main attributes of note are title and content.
+Note is a central entity in Trilium. Main attributes of note are [title](Notes/Title.md) and content.
 
 ### Note types
 

@@ -1,43 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock dependencies first
-vi.mock('./log.js', () => ({
-    default: {
-        info: vi.fn(),
-        error: vi.fn(),
-        warn: vi.fn()
-    }
-}));
-
-vi.mock('./sync_mutex.js', () => ({
-    default: {
-        doExclusively: vi.fn().mockImplementation((fn) => fn())
-    }
-}));
+// Replace the log subsystem with silent stubs so the test process doesn't
+// touch the real file-based log writer, and so we can assert against calls.
+const logStub = { info: vi.fn(), error: vi.fn(), warn: vi.fn() };
+vi.mock('@triliumnext/core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@triliumnext/core')>();
+    return {
+        ...actual,
+        getLog: () => logStub
+    };
+});
 
 vi.mock('./sql.js', () => ({
     getManyRows: vi.fn(),
     getValue: vi.fn(),
     getRow: vi.fn()
-}));
-
-vi.mock('../becca/becca.js', () => ({
-    default: {
-        getAttribute: vi.fn(),
-        getBranch: vi.fn(),
-        getNote: vi.fn(),
-        getOption: vi.fn()
-    }
-}));
-
-vi.mock('./protected_session.js', () => ({
-    default: {
-        decryptString: vi.fn((str) => str)
-    }
-}));
-
-vi.mock('./cls.js', () => ({
-    getAndClearEntityChangeIds: vi.fn().mockReturnValue([])
 }));
 
 // Mock the entire ws module instead of trying to set up the server
@@ -53,16 +30,12 @@ vi.mock('ws', () => ({
 
 describe('WebSocket Service', () => {
     let wsService: any;
-    let log: any;
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        
-        // Get mocked log
-        log = (await import('./log.js')).default;
 
         // Import service after mocks are set up
-        wsService = (await import('./ws.js')).default;
+        wsService = (await import('@triliumnext/core')).ws;
     });
 
     afterEach(() => {
@@ -73,21 +46,6 @@ describe('WebSocket Service', () => {
         it('should handle sendMessageToAllClients method exists', () => {
             expect(wsService.sendMessageToAllClients).toBeDefined();
             expect(typeof wsService.sendMessageToAllClients).toBe('function');
-        });
-
-        it('should handle LLM stream messages', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'test-chat-123',
-                content: 'Hello world',
-                done: false
-            };
-
-            // Since WebSocket server is not initialized in test environment,
-            // this should not throw an error
-            expect(() => {
-                wsService.sendMessageToAllClients(message);
-            }).not.toThrow();
         });
 
         it('should handle regular messages', () => {
@@ -157,67 +115,7 @@ describe('WebSocket Service', () => {
         });
     });
 
-    describe('LLM Stream Message Handling', () => {
-        it('should handle streaming with content', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-456',
-                content: 'Streaming content here',
-                done: false
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-
-        it('should handle streaming with thinking', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-789',
-                thinking: 'AI is thinking...',
-                done: false
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-
-        it('should handle streaming with tool execution', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-012',
-                toolExecution: {
-                    action: 'executing',
-                    tool: 'test-tool',
-                    toolCallId: 'tc-123'
-                },
-                done: false
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-
-        it('should handle streaming completion', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-345',
-                done: true
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-
-        it('should handle streaming with error', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-678',
-                error: 'Something went wrong',
-                done: true
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-    });
-
-    describe('Non-LLM Message Types', () => {
+    describe('Other Message Types', () => {
         it('should handle frontend-update messages', () => {
             const message = {
                 type: 'frontend-update' as const,

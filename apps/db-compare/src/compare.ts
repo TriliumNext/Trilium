@@ -1,73 +1,53 @@
-"use strict";
-
+import Database, { type Database as DatabaseType } from "better-sqlite3";
 import * as jsDiff from "diff";
-import * as sqlite from "sqlite";
-import * as sqlite3 from "sqlite3";
-import sql from "./sql.js";
-
-import "colors";
 import path from "path";
+import pc from "picocolors";
+
+import { compareTable, COMPARISONS, type TableComparison } from "./comparator.js";
 
 function printDiff(one: string, two: string) {
     const diff = jsDiff.diffChars(one, two);
 
-    diff.forEach(function(part){
-        // green for additions, red for deletions
-        // grey for common parts
-        const color = part.added ? 'green' :
-            part.removed ? 'red' : 'grey';
-        process.stderr.write(part.value[color]);
+    diff.forEach((part) => {
+        // green for additions, red for deletions, grey for common parts
+        const colorize = part.added ? pc.green :
+            part.removed ? pc.red : pc.gray;
+        process.stderr.write(colorize(part.value));
     });
 
     console.log("");
 }
 
-function checkMissing(table: string, name: string, ids1: string[], ids2: string[]) {
-    const missing = ids1.filter(item => ids2.indexOf(item) < 0);
-
-    if (missing.length > 0) {
-        console.log("Missing IDs from " + name + " table " + table + ": ", missing);
-    }
-}
-
-function handleBuffer(obj: { content: Buffer | string }) {
-    if (obj && Buffer.isBuffer(obj.content)) {
-        obj.content = obj.content.toString();
-    }
-
-    return obj;
-}
-
-function compareRows(table: string, rsLeft: Record<string, any>, rsRight: Record<string, any>, column: string) {
-    const leftIds = Object.keys(rsLeft);
-    const rightIds = Object.keys(rsRight);
-
+function printComparison(result: TableComparison) {
     console.log("");
     console.log("--------------------------------------------------------");
-    console.log(`${table} - ${leftIds.length}/${rightIds.length}`);
+    console.log(`${result.table} - ${result.leftCount}/${result.rightCount}`);
 
-    checkMissing(table, "right", leftIds, rightIds);
-    checkMissing(table, "left", rightIds, leftIds);
+    if (result.missingFromRight.length > 0) {
+        console.log(`Missing IDs from right table ${result.table}: `, result.missingFromRight);
+    }
 
-    const commonIds = leftIds.filter(item => rightIds.includes(item));
+    if (result.missingFromLeft.length > 0) {
+        console.log(`Missing IDs from left table ${result.table}: `, result.missingFromLeft);
+    }
 
-    for (const id of commonIds) {
-        const valueLeft = handleBuffer(rsLeft[id]);
-        const valueRight = handleBuffer(rsRight[id]);
-
-        const left = JSON.stringify(valueLeft, null, 2);
-        const right = JSON.stringify(valueRight, null, 2);
-
-        if (left !== right) {
-            console.log("Table " + table + " row with " + column + "=" + id + " differs:");
-            console.log("Left: ", left);
-            console.log("Right: ", right);
-            printDiff(left, right);
-        }
+    for (const { id, left, right } of result.differingRows) {
+        console.log(`Table ${result.table} row with ${result.column}=${id} differs:`);
+        console.log("Left: ", left);
+        console.log("Right: ", right);
+        printDiff(left, right);
     }
 }
 
-async function main() {
+function openDatabase(filePath: string): DatabaseType {
+    return new Database(filePath, { readonly: true, fileMustExist: true });
+}
+
+function describeError(e: unknown) {
+    return e instanceof Error ? e.message : String(e);
+}
+
+function main() {
     const dbLeftPath = process.argv.at(-2);
     const dbRightPath = process.argv.at(-1);
 
@@ -76,62 +56,41 @@ async function main() {
         process.exit(1);
     }
 
-    let dbLeft: sqlite.Database;
-    let dbRight: sqlite.Database;
+    let dbLeft: DatabaseType;
+    let dbRight: DatabaseType;
 
     try {
-        dbLeft = await sqlite.open({filename: dbLeftPath, driver: sqlite3.Database});
-    } catch (e: any) {
-        console.error(`Could not load first database at ${path.resolve(dbRightPath)} due to: ${e.message}`);
+        dbLeft = openDatabase(dbLeftPath);
+    } catch (e) {
+        console.error(`Could not load first database at ${path.resolve(dbLeftPath)} due to: ${describeError(e)}`);
         process.exit(2);
     }
 
     try {
-        dbRight = await sqlite.open({filename: dbRightPath, driver: sqlite3.Database});
-    } catch (e: any) {
-        console.error(`Could not load second database at ${path.resolve(dbRightPath)} due to: ${e.message}`);
+        dbRight = openDatabase(dbRightPath);
+    } catch (e) {
+        console.error(`Could not load second database at ${path.resolve(dbRightPath)} due to: ${describeError(e)}`);
         process.exit(3);
     }
 
-    async function compare(table: string, column: string, query: string) {
-        const rsLeft = await sql.getIndexed(dbLeft, column, query);
-        const rsRight = await sql.getIndexed(dbRight, column, query);
+    for (const comparison of COMPARISONS) {
+        let result: TableComparison;
 
-        compareRows(table, rsLeft, rsRight, column);
+        try {
+            result = compareTable(dbLeft, dbRight, comparison);
+        } catch (e) {
+            // The two databases may use different schema versions, so a table present in one might
+            // be missing from the other. Skip it rather than aborting the whole comparison.
+            console.error(`Skipping table ${comparison.table}: ${describeError(e)}`);
+            continue;
+        }
+
+        printComparison(result);
     }
-
-    await compare("branches", "branchId",
-        "SELECT branchId, noteId, parentNoteId, notePosition, utcDateModified, isDeleted, prefix FROM branches");
-
-    await compare("notes", "noteId",
-        "SELECT noteId, title, dateCreated, utcDateCreated, isProtected, isDeleted FROM notes WHERE isDeleted = 0");
-
-    await compare("note_contents", "noteId",
-       "SELECT note_contents.noteId, note_contents.content FROM note_contents JOIN notes USING(noteId) WHERE isDeleted = 0");
-
-    await compare("note_revisions", "noteRevisionId",
-        "SELECT noteRevisionId, noteId, title, dateCreated, dateLastEdited, utcDateCreated, utcDateLastEdited, isProtected FROM note_revisions");
-
-    await compare("note_revision_contents", "noteRevisionId",
-        "SELECT noteRevisionId, content FROM note_revision_contents");
-
-    await compare("options", "name",
-            `SELECT name, value, utcDateModified FROM options WHERE isSynced = 1`);
-
-    await compare("attributes", "attributeId",
-        "SELECT attributeId, noteId, type, name, value FROM attributes");
-
-    await compare("etapi_tokens", "etapiTokenId",
-        "SELECT etapiTokenId, name, tokenHash, utcDateCreated, utcDateModified, isDeleted FROM etapi_tokens");
-
-    await compare("entity_changes", "uniqueId",
-        "SELECT entityName || '-' || entityId AS uniqueId, hash, isErased, utcDateChanged FROM entity_changes WHERE isSynced = 1");
 }
 
-(async () => {
-    try {
-        await main();
-    } catch (e) {
-        console.error(e);
-    }
-})();
+try {
+    main();
+} catch (e) {
+    console.error(e);
+}

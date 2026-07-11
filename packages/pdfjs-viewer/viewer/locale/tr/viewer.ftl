@@ -201,6 +201,15 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = { $page }. sayfanın küçük hâli
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = { $page }. sayfayı seç
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Sayfa { $page }/{ $total }
 
 ## Find panel button title and messages
 
@@ -534,6 +543,7 @@ pdfjs-editor-undo-bar-message-freetext = Metin silindi
 pdfjs-editor-undo-bar-message-ink = Çizim silindi
 pdfjs-editor-undo-bar-message-stamp = Görsel silindi
 pdfjs-editor-undo-bar-message-signature = İmza kaldırıldı
+pdfjs-editor-undo-bar-message-comment = Yorum silindi
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -632,6 +642,95 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Vazgeç
 
 pdfjs-editor-add-comment-button =
     .title = Yorum ekle
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-notification-button =
+    .title = Kenar çubuğunu aç/kapat (Belge, küçük resimler/ana hat/ekler/katmanlar içeriyor)
+pdfjs-toggle-views-manager-button1-label = Sayfaları yönet
+pdfjs-views-manager-sidebar =
+    .aria-label = Kenar çubuğu
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Kenar çubuğu boyutlandırıcı
+pdfjs-views-manager-view-selector-button =
+    .title = Görünümler
+pdfjs-views-manager-view-selector-button-label = Görünümler
+pdfjs-views-manager-pages-title = Sayfalar
+pdfjs-views-manager-outlines-title1 = Belge ana hatları
+    .title = Belge ana hatları (Tüm öğeleri genişletmek/daraltmak için çift tıklayın)
+pdfjs-views-manager-attachments-title = Ekler
+pdfjs-views-manager-layers-title1 = Katmanlar
+    .title = Katmanlar (Tüm katmanları varsayılan duruma sıfırlamak için çift tıklayın)
+pdfjs-views-manager-pages-option-label = Sayfalar
+pdfjs-views-manager-outlines-option-label = Belge ana hatları
+pdfjs-views-manager-attachments-option-label = Ekler
+pdfjs-views-manager-layers-option-label = Katmanlar
+pdfjs-views-manager-add-file-button =
+    .title = Dosya ekle
+pdfjs-views-manager-add-file-button-label = Dosya ekle
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } seçili
+       *[other] { $count } seçili
+    }
+pdfjs-views-manager-pages-status-none-action-label = Sayfaları seç
+pdfjs-views-manager-pages-status-action-button-label = Yönet
+pdfjs-views-manager-pages-status-copy-button-label = Kopyala
+pdfjs-views-manager-pages-status-cut-button-label = Kes
+pdfjs-views-manager-pages-status-delete-button-label = Sil
+pdfjs-views-manager-pages-status-export-selected-button-label = Seçilenleri dışa aktar…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] 1 sayfa kesildi
+       *[other] { $count } sayfa kesildi
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 sayfa kopyalandı
+       *[other] { $count } sayfa kopyalandı
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 sayfa silindi
+       *[other] { $count } sayfa silindi
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Dosyanız hazırlanıyor…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Dosya yükleniyor…
+pdfjs-views-manager-status-warning-cut-label = Kesilemedi. Sayfayı tazeleyip yeniden deneyin.
+pdfjs-views-manager-status-warning-copy-label = Kopyalanamadı. Sayfayı tazeleyip yeniden deneyin.
+pdfjs-views-manager-status-warning-delete-label = Silinemedi. Sayfayı tazeleyip yeniden deneyin.
+pdfjs-views-manager-status-warning-save-label = Kaydedilemedi. Sayfayı tazeleyip yeniden deneyin.
+pdfjs-views-manager-status-undo-button-label = Geri al
+pdfjs-views-manager-status-done-button-label = Tamam
+pdfjs-views-manager-status-close-button =
+    .title = Kapat
+pdfjs-views-manager-status-close-button-label = Kapat
+pdfjs-views-manager-paste-button-label = Yapıştır
+pdfjs-views-manager-paste-button-before =
+    .title = İlk sayfadan önce yapıştır
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = { $page }. sayfadan sonra yapıştır
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = YENİ
+pdfjs-views-manager-waiting-for-file = Dosya yükleniyor…
+pdfjs-toggle-views-manager-button1 =
+    .title = Sayfaları yönet
 
 ## Main menu for adding/removing signatures
 
