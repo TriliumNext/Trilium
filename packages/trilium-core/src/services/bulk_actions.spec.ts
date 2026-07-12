@@ -245,6 +245,34 @@ describe("bulk_actions service (real DB)", () => {
         });
     });
 
+    describe("saveRevision", () => {
+        it("saves a named revision capturing the note's current content", () => {
+            const note = createNote("root");
+            expect(note.note.getRevisions().length).toBe(0);
+
+            getContext().init(() =>
+                bulkActionService.executeActions([{ name: "saveRevision", revisionName: "milestone" }], [note.note.noteId])
+            );
+
+            const revisions = note.note.getRevisions();
+            expect(revisions.length).toBe(1);
+            // The revision "name" is stored in its description field.
+            expect(revisions[0].description).toBe("milestone");
+        });
+
+        it("saves an unnamed revision when no name is provided", () => {
+            const note = createNote("root");
+
+            getContext().init(() =>
+                bulkActionService.executeActions([{ name: "saveRevision" }], [note.note.noteId])
+            );
+
+            const revisions = note.note.getRevisions();
+            expect(revisions.length).toBe(1);
+            expect(revisions[0].description).toBe("");
+        });
+    });
+
     describe("deleteRevisions", () => {
         it("erases all revisions of the targeted note", () => {
             const note = createNote("root");
@@ -354,6 +382,70 @@ describe("bulk_actions service (real DB)", () => {
             ).not.toThrow();
 
             expect(target.note.getOwnedLabelValue("valid")).toBe("ok");
+        });
+    });
+
+    describe("convertNote", () => {
+        function createMarkdownNote(): BNote {
+            counter++;
+            return getContext().init(() =>
+                noteService.createNewNote({
+                    parentNoteId: "root",
+                    title: `bulk-convert-md-${counter}`,
+                    content: "# Heading",
+                    type: "code",
+                    mime: "text/x-markdown"
+                }).note
+            );
+        }
+
+        it("converts only notes matching the conversion's source type, skipping the rest", () => {
+            const textNote = createNote("root").note;
+            const markdownNote = createMarkdownNote();
+
+            getContext().init(() =>
+                bulkActionService.executeActions(
+                    [{ name: "convertNote", conversion: "htmlToMarkdown" }],
+                    [textNote.noteId, markdownNote.noteId]
+                )
+            );
+
+            // The text note is converted to a Markdown code note...
+            expect(textNote.type).toBe("code");
+            expect(textNote.mime).toBe("text/x-markdown");
+            // ...while the already-Markdown note is left untouched.
+            expect(markdownNote.type).toBe("code");
+            expect(markdownNote.getContent()).toBe("# Heading");
+        });
+
+        it("converts a Markdown note back to a text note", () => {
+            const markdownNote = createMarkdownNote();
+
+            getContext().init(() =>
+                bulkActionService.executeActions(
+                    [{ name: "convertNote", conversion: "markdownToHtml" }],
+                    [markdownNote.noteId]
+                )
+            );
+
+            expect(markdownNote.type).toBe("text");
+            expect(markdownNote.mime).toBe("text/html");
+            expect(markdownNote.getContent()).toContain("<h2>Heading</h2>");
+        });
+
+        it("does nothing for an unknown or unset conversion", () => {
+            const textNote = createNote("root").note;
+
+            expect(() =>
+                getContext().init(() =>
+                    bulkActionService.executeActions(
+                        [{ name: "convertNote", conversion: "" as never }],
+                        [textNote.noteId]
+                    )
+                )
+            ).not.toThrow();
+
+            expect(textNote.type).toBe("text");
         });
     });
 });

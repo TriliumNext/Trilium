@@ -25,3 +25,8 @@
 .rendered-collection:has(> .note-list-widget.full-height) {
     height: 100%;
 }
+
+.rendered-content .icon-pack-rendered {
+    height: 100%;
+    min-height: 120px;
+}

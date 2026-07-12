@@ -9,16 +9,11 @@ import becca_loader from "../../becca/becca_loader.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
 import * as cls from "../../services/context.js";
-import enexImportService from "../../services/import/enex.js";
-import keepImportService from "../../services/import/keep/importer.js";
-import notionImportService from "../../services/import/notion/importer.js";
-import opmlImportService from "../../services/import/opml.js";
+import importFile from "../../services/import/dispatch.js";
 import singleImportService from "../../services/import/single.js";
-import zipImportService from "../../services/import/zip.js";
 import { getLog } from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils/index.js";
-import { extname } from "../../services/utils/path.js";
 
 async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>) {
     const { parentNoteId } = req.params;
@@ -42,8 +37,6 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
 
     const parentNote = becca.getNoteOrThrow(parentNoteId);
 
-    const extension = extname(file.originalname).toLowerCase();
-
     // running all the event handlers on imported notes (and attributes) is slow
     // and may produce unintended consequences
     cls.disableEntityEvents();
@@ -56,34 +49,12 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
     const taskContext = TaskContext.getInstance(taskId, "importNotes", options);
 
     try {
-        if (format === "notion" && typeof file.buffer !== "string") {
-            // An explicit format always wins over extension sniffing: a Notion export is just a `.zip`,
-            // indistinguishable from a Trilium export without inspecting its contents. The Notion import
-            // dialog tags the upload, so we route it to the Notion importer rather than the generic zip.
-            note = await notionImportService.importNotion(taskContext, file.buffer, parentNote);
-        } else if (format === "keep" && typeof file.buffer !== "string") {
-            // Like Notion, a Google Keep (Takeout) export is just a `.zip` indistinguishable from a Trilium
-            // export by extension alone, so the Keep import dialog tags the upload to route it here.
-            note = await keepImportService.importKeep(taskContext, file.buffer, parentNote);
-        } else if (extension === ".zip" && options.explodeArchives && typeof file.buffer !== "string") {
-            note = await zipImportService.importZip(taskContext, file.buffer, parentNote);
-        } else if (extension === ".opml" && options.explodeArchives) {
-            const importResult = await opmlImportService.importOpml(taskContext, file.buffer, parentNote);
-            if (!Array.isArray(importResult)) {
-                note = importResult;
-            } else {
-                return importResult;
-            }
-        } else if (extension === ".enex" && options.explodeArchives) {
-            const importResult = await enexImportService.importEnex(taskContext, file, parentNote);
-            if (!Array.isArray(importResult)) {
-                note = importResult;
-            } else {
-                return importResult;
-            }
-        } else {
-            note = await singleImportService.importSingleFile(taskContext, file, parentNote);
+        const importResult = await importFile(taskContext, file, parentNote, options, format);
+        if (Array.isArray(importResult)) {
+            // OPML reports a structured failure as a `[httpStatus, message]` tuple — pass it straight through.
+            return importResult;
         }
+        note = importResult;
     } catch (e: unknown) {
         const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
         console.warn(e);

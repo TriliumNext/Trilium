@@ -115,7 +115,7 @@ describe("options service (real DB)", () => {
             expect(readFromDb(name)).toBe("changed");
         });
 
-        it("creates the option (local-only) when it does not yet exist", () => {
+        it("creates an unknown option as local-only when it does not yet exist", () => {
             const name = uniqueName();
 
             getContext().init(() => optionService.setOption(name as any, "created-by-set"));
@@ -123,6 +123,27 @@ describe("options service (real DB)", () => {
             expect(optionService.getOption(name as any)).toBe("created-by-set");
             expect(becca.getOption(name)?.isSynced).toBe(false);
             expect(readFromDb(name)).toBe("created-by-set");
+        });
+
+        it("auto-creates a missing known option using its declared sync flag", () => {
+            // searchEnableFuzzyMatching is declared as a synced option in defaultOptions.
+            // Simulate the option being absent (e.g. a write landing before initStartupOptions)
+            // so setOption falls through to its create branch.
+            const name = "searchEnableFuzzyMatching";
+            getContext().init(() => {
+                getSql().execute("DELETE FROM options WHERE name = ?", [name]);
+                delete becca.options[name];
+            });
+
+            getContext().init(() => optionService.setOption(name as any, "true"));
+
+            // Must be recreated as synced, not silently downgraded to local-only.
+            expect(becca.getOption(name)?.isSynced).toBe(true);
+            const row = getSql().getRowOrNull<{ isSynced: number }>(
+                "SELECT isSynced FROM options WHERE name = ?",
+                [name]
+            );
+            expect(row?.isSynced).toBe(1);
         });
     });
 

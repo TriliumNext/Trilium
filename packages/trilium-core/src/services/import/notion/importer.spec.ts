@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { rewriteLinks } from "./importer.js";
+import { rewriteCollectionIncludes, rewriteLinks } from "./importer.js";
 import type { LinkTarget } from "./model.js";
 
 describe("rewriteLinks", () => {
@@ -45,5 +45,29 @@ describe("rewriteLinks", () => {
         expect(() => rewriteLinks(input, resolveSubpage)).not.toThrow();
         // Malformed encoding can't carry a resolvable id, so the link is left as-is.
         expect(rewriteLinks(input, resolveSubpage)).toBe(input);
+    });
+});
+
+describe("rewriteCollectionIncludes", () => {
+    const dbId = "38ac5eca1b8b808babeaf10c0980fa5b";
+    const resolveDatabase = (notionId: string): LinkTarget | null =>
+        notionId === dbId ? { noteId: "dbNote123", title: "Database title" } : null;
+
+    it("resolves an inline-database placeholder to the imported collection note's id", () => {
+        const input = `<p>Before</p><section class="include-note" data-notion-id="${dbId}" data-box-size="medium">&nbsp;</section><p>After</p>`;
+        const output = rewriteCollectionIncludes(input, resolveDatabase);
+        expect(output).toContain(`data-note-id="dbNote123"`);
+        expect(output).toContain(`data-box-size="medium"`);
+        expect(output).not.toContain("data-notion-id");
+    });
+
+    it("drops a placeholder whose database wasn't imported", () => {
+        const input = `<p>x</p><section class="include-note" data-notion-id="ffffffffffffffffffffffffffffffff">&nbsp;</section>`;
+        expect(rewriteCollectionIncludes(input, resolveDatabase)).toBe(`<p>x</p>`);
+    });
+
+    it("leaves an ordinary include-note (no placeholder id) untouched", () => {
+        const input = `<section class="include-note" data-note-id="abc">&nbsp;</section>`;
+        expect(rewriteCollectionIncludes(input, resolveDatabase)).toBe(input);
     });
 });

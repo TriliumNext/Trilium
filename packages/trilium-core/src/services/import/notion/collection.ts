@@ -13,8 +13,7 @@ import { dayjs } from "@triliumnext/commons";
 import type { HTMLElement } from "node-html-parser";
 
 import type BNote from "../../../becca/entities/bnote.js";
-import { escapeHtml } from "../../utils/index.js";
-import mimeService from "../mime.js";
+import { applyUrlScheme, attachmentReferenceLink, buildPromotedDefinition, saveFileAttachment, toAttributeName } from "../collection_utils.js";
 import type { LinkTarget, NotionProperty, ParsedPage } from "./model.js";
 import { getNotionId, stripNotionId } from "./notion_id.js";
 import { baseName, internalPageId, ownedFolderKey, parentFolderKey, removeExtension, resolveResourcePath } from "./paths.js";
@@ -55,6 +54,7 @@ export function resolveDatabaseContainers(pages: ParsedPage[], csvPaths: string[
             title: stripNotionId(removeExtension(baseName(csvPath))) || "Database",
             path: csvPath,
             content: "",
+            linkedPageIds: [],
             properties: [],
             isDatabase: true
         });
@@ -168,26 +168,6 @@ export function extractProperties(root: HTMLElement): NotionProperty[] {
 }
 
 /**
- * Converts a Notion column name to a Trilium attribute name in camelCase (e.g. `Last edited by` →
- * `lastEditedBy`, `Multi-select` → `multiSelect`, `URL` → `url`). The name is split into alphanumeric words on
- * every other character; the first word is lower-cased and each following word title-cased, so the result is
- * always a valid attribute name (only letters and digits). A name with no alphanumeric content falls back to
- * `unnamed`. The original column name is kept verbatim as the promoted-attribute alias (see
- * {@link buildPromotedDefinition}), so its spacing and casing still show in the UI.
- */
-export function toAttributeName(name: string): string {
-    const words = name.match(/[\p{L}\p{N}]+/gu);
-    if (!words) {
-        return "unnamed";
-    }
-    return words
-        .map((word, index) => index === 0
-            ? word.toLowerCase()
-            : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join("");
-}
-
-/**
  * Normalizes a Notion number cell to a bare numeric string Trilium's `number` input accepts. Notion renders
  * the *formatted* value (e.g. `1,200`, `$12.00`, `12%`), so strip everything but digits, a decimal point and a
  * sign; the cleaned value is used only when it parses as a finite number, otherwise the trimmed original is
@@ -271,10 +251,10 @@ function numericFormulaValue(text: string): string | undefined {
 /** Gives an email/phone href a clickable scheme (`mailto:`/`tel:`); a plain url href is returned as-is. */
 function toUrlValue(type: string, href: string): string {
     if (type === "email") {
-        return href.startsWith("mailto:") ? href : `mailto:${href}`;
+        return applyUrlScheme(href, "mailto:");
     }
     if (type === "phone_number") {
-        return href.startsWith("tel:") ? href : `tel:${href}`;
+        return applyUrlScheme(href, "tel:");
     }
     return href;
 }
@@ -366,7 +346,7 @@ export function applyOwnedProperties(note: BNote, page: ParsedPage, resources: M
     const fileLinks: string[] = [];
     for (const property of page.properties) {
         if (property.kind === "file") {
-            const attachment = saveFileAttachment(note, property.value, page.path, resources);
+            const attachment = saveFileColumn(note, property.value, page.path, resources);
             if (attachment?.attachmentId) {
                 fileLinks.push(`<p>${attachmentReferenceLink(note.noteId, attachment.attachmentId, attachment.title)}</p>`);
             }
@@ -398,25 +378,13 @@ export function applyRelationProperties(note: BNote, page: ParsedPage, resolve: 
  * the same way page content is, so only files bundled in the export attach — an external link (or a missing
  * file) is silently skipped.
  */
-function saveFileAttachment(note: BNote, href: string, pagePath: string, resources: Map<string, Uint8Array>) {
+function saveFileColumn(note: BNote, href: string, pagePath: string, resources: Map<string, Uint8Array>) {
     const resourcePath = resolveResourcePath(pagePath, href);
     const bytes = resources.get(resourcePath);
     if (!bytes) {
         return undefined;
     }
-
-    const title = baseName(resourcePath);
-    return note.saveAttachment({
-        role: "file",
-        mime: mimeService.getMime(title) || "application/octet-stream",
-        title,
-        content: bytes
-    });
-}
-
-/** Builds a Trilium attachment reference-link (the chip CKEditor renders) — the shape rewriteAttachments produces. */
-function attachmentReferenceLink(noteId: string, attachmentId: string, title: string): string {
-    return `<a class="reference-link" href="#root/${noteId}?viewMode=attachments&attachmentId=${attachmentId}">${escapeHtml(title)}</a>`;
+    return saveFileAttachment(note, baseName(resourcePath), bytes);
 }
 
 /**
@@ -469,7 +437,7 @@ export function applyDatabaseSchemas(pages: ParsedPage[], noteByFolder: Map<stri
             position += 10;
             // A definition is always a label, but its name is `relation:<x>` for a relation column, `label:<x>` otherwise.
             const definitionName = `${property.kind === "relation" ? "relation" : "label"}:${toAttributeName(property.name)}`;
-            container.addAttribute("label", definitionName, buildPromotedDefinition(property), true, position);
+            container.addAttribute("label", definitionName, buildPromotedDefinition({ alias: property.name, labelType: property.labelType, multiplicity: property.multiplicity }), true, position);
         }
     }
 }
@@ -506,13 +474,3 @@ function orderColumns(properties: NotionProperty[], csvColumns: string[] | undef
         .map((entry) => entry.property);
 }
 
-/** Builds a promoted-attribute definition value (e.g. `promoted,single,text,alias=Text column`). */
-function buildPromotedDefinition({ name, labelType, multiplicity }: NotionProperty): string {
-    // The alias keeps the original (pretty) column name in the UI while the attribute name stays sanitized.
-    // The definition is a single-line, comma/`=`-delimited string, so neutralize those delimiters and any
-    // control character (e.g. a stray newline) in the alias to avoid corrupting it.
-    const alias = name.replace(/[\x00-\x1f,=]/g, " ").trim();
-    // A relation has no value type; a label carries one (text/date/url/boolean/…).
-    const type = labelType ? `${labelType},` : "";
-    return `promoted,${multiplicity},${type}alias=${alias}`;
-}

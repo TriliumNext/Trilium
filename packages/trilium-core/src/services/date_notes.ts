@@ -77,8 +77,19 @@ function getJournalNoteTitle(
     const pattern = patterns[timeUnit];
     const monthName = t(MONTH_TRANSLATION_IDS[dateObj.month()]);
     const weekDay = t(WEEKDAY_TRANSLATION_IDS[dateObj.day()]);
-    const numberStr = number.toString();
     const ordinalStr = ordinal(dateObj);
+
+    // Each placeholder must be filled from its own time unit, not from the unit of the note
+    // being created (e.g. {monthNumber} in a datePattern is the month, not the day — #9565).
+    // The caller-provided number stays authoritative for the note's own unit, because week
+    // numbers depend on user settings and cross-year handling already resolved by the caller.
+    const quarterNumberStr = (timeUnit === "quarter" ? number : dateObj.quarter()).toString();
+    const monthNumberStr = (timeUnit === "month" ? number : dateObj.month() + 1).toString();
+    const weekNumberStr = (timeUnit === "week"
+        ? number
+        : getWeekInfo(dateObj, getWeekSettings()).weekNumber
+    ).toString();
+    const dateNumberStr = (timeUnit === "day" ? number : dateObj.date()).toString();
 
     // For week notes, use the weekYear if provided (handles cross-year weeks)
     const yearForDisplay = (timeUnit === "week" && weekYear !== undefined)
@@ -91,26 +102,26 @@ function getJournalNoteTitle(
 
         // Month related
         "{isoMonth}": dateObj.format("YYYY-MM"),
-        "{monthNumber}": numberStr,
-        "{monthNumberPadded}": numberStr.padStart(2, "0"),
+        "{monthNumber}": monthNumberStr,
+        "{monthNumberPadded}": monthNumberStr.padStart(2, "0"),
         "{month}": monthName,
         "{shortMonth3}": monthName.slice(0, 3),
         "{shortMonth4}": monthName.slice(0, 4),
 
         // Quarter related
-        "{quarterNumber}": numberStr,
-        "{shortQuarter}": `Q${numberStr}`,
+        "{quarterNumber}": quarterNumberStr,
+        "{shortQuarter}": `Q${quarterNumberStr}`,
 
         // Week related
-        "{weekNumber}": numberStr,
-        "{weekNumberPadded}": numberStr.padStart(2, "0"),
-        "{shortWeek}": `W${numberStr}`,
-        "{shortWeek3}": `W${numberStr.padStart(2, "0")}`,
+        "{weekNumber}": weekNumberStr,
+        "{weekNumberPadded}": weekNumberStr.padStart(2, "0"),
+        "{shortWeek}": `W${weekNumberStr}`,
+        "{shortWeek3}": `W${weekNumberStr.padStart(2, "0")}`,
 
         // Day related
         "{isoDate}": dateObj.format("YYYY-MM-DD"),
-        "{dateNumber}": numberStr,
-        "{dateNumberPadded}": numberStr.padStart(2, "0"),
+        "{dateNumber}": dateNumberStr,
+        "{dateNumberPadded}": dateNumberStr.padStart(2, "0"),
         "{ordinal}": ordinalStr,
         "{weekDay}": weekDay,
         "{weekDay3}": weekDay.substring(0, 3),

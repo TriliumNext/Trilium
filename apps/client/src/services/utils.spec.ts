@@ -437,6 +437,21 @@ describe("DOM / clipboard helpers (default export)", () => {
         delete (document as any).execCommand;
     });
 
+    it("copyHtmlToClipboard writes a distinct plain-text payload when given one", () => {
+        const setData = vi.fn();
+        const execSpy = vi.fn(() => {
+            const evt: any = new Event("copy");
+            evt.clipboardData = { setData };
+            document.dispatchEvent(evt);
+            return true;
+        });
+        (document as any).execCommand = execSpy;
+        utils.copyHtmlToClipboard("<b>x</b>", "x");
+        expect(setData).toHaveBeenCalledWith("text/html", "<b>x</b>");
+        expect(setData).toHaveBeenCalledWith("text/plain", "x");
+        delete (document as any).execCommand;
+    });
+
     it("copyHtmlToClipboard tolerates a copy event without clipboardData", () => {
         const execSpy = vi.fn(() => {
             document.dispatchEvent(new Event("copy"));

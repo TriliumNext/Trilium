@@ -9,11 +9,22 @@
       "original-dev": "orijinal tərtibatçı"
     },
     "role_brief_history": {
-      "lead-dev": "Elian Doran 2024-cü ildə, Zadam layihədən uzaqlaşdıqdan sonra yaradılan icma çəngəli (fork) – TriliumNext-in əsasını qoydu. Sonradan Zadam ilkin repozitoriyanı TriliumNext komandasına təhvil verdi və hər iki layihə yenidən bir ad altında birləşdirildi."
+      "lead-dev": "Elian Doran 2024-cü ildə, Zadam layihədən uzaqlaşdıqdan sonra yaradılan icma çəngəli (fork) – TriliumNext-in əsasını qoydu. Sonradan Zadam ilkin repozitoriyanı TriliumNext komandasına təhvil verdi və hər iki layihə yenidən bir ad altında birləşdirildi.",
+      "original-dev": "2017-ci il dekabrın 25-də Zadam \"Trilium\"un (gül adından fərqli olaraq, tək \"l\" hərfi ilə yazılır) ilk beta versiyasını buraxdı. Mövcud qeyd təşkilatçılarından narazı qaldığı üçün o, GitHub-da 22 000-dən çox ulduz toplayan, öz serverində yerləşdirilə bilən (self-hosted) güclü və iyerarxik bir bilik bazası yaratdı. 2024-cü ildə, həyatı daha da məşğul olduğundan, o, layihəni texniki xidmət (maintenance) rejiminə keçirdi."
     },
     "contributor_full_list": "Bütün icmaya bax",
     "channel": {
       "nightly": "Hər gecə"
+    },
+    "github_tooltip": "Xətaları bildirin, yeni funksiyalar təklif edin və ya GitHub-da töhfə verin",
+    "license_tooltip": "Lisenziyaya baxın",
+    "donate": "Dəstək olun",
+    "donate_tooltip": "Bu layihəyə dəstək olun"
+  },
+  "toast": {
+    "critical-error": {
+      "title": "Kritik xəta",
+      "message": "Tətbiqinin başladılmasına mane olan kritik bir xəta baş verdi:\n\n{{message}}\n\nBu, çox güman ki, hansısa skriptin gözlənilməz şəkildə xəta verməsi səbəbindən baş verib. Tətbiqi təhlükəsiz rejimdə (safe mode) başladaraq problemi həll etməyə çalışın."
     }
   }
 }

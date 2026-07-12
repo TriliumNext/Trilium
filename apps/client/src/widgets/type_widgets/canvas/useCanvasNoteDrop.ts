@@ -1,4 +1,4 @@
-import { restoreElements, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, restoreElements, viewportCoordsToSceneCoords } from "@excalidraw/excalidraw";
 import { ExcalidrawEmbeddableElement } from "@excalidraw/excalidraw/element/types";
 import { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { RefObject } from "preact";
@@ -64,7 +64,9 @@ export default function useCanvasNoteDrop(apiRef: RefObject<ExcalidrawImperative
         })) as ExcalidrawEmbeddableElement[];
 
         const newElements = restoreElements(partialElements, null);
-        api.updateScene({ elements: [...api.getSceneElements(), ...newElements] });
+        // A drop is a user action and must be its own undo step; without IMMEDIATELY it would
+        // only be captured as part of the next action (#7148).
+        api.updateScene({ elements: [...api.getSceneElements(), ...newElements], captureUpdate: CaptureUpdateAction.IMMEDIATELY });
     }, [apiRef, isReadOnly]);
 
     return { onDragOverCapture, onDropCapture };

@@ -88,7 +88,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     const isExportableToXlsx = noteType === "spreadsheet";
     const isContentAvailable = note.isContentAvailable();
     const isPrintable = isContentAvailable && (
-        ["text", "code", "spreadsheet"].includes(noteType) ||
+        ["text", "code", "spreadsheet", "llmChat"].includes(noteType) ||
         (noteType === "book" && ["presentation", "list", "table"].includes(viewType ?? "")) ||
         (noteType === "file" && note.mime === "application/pdf")
     );
@@ -148,9 +148,6 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                 <CommandItem icon="bx bx-import" text={t("note_actions.import_files")}
                     disabled={isInOptionsOrHelp || note.type === "search"}
                     command={() => parentComponent?.triggerCommand("showImportDialog", { noteId: note.noteId })} />
-                <CommandItem icon="bx bx-cloud-download" text={t("note_actions.import_from_service")}
-                    disabled={isInOptionsOrHelp || note.type === "search"}
-                    command={() => parentComponent?.triggerCommand("showImportProviderDialog", { noteId: note.noteId })} />
                 <CommandItem icon="bx bx-export" text={t("note_actions.export_note")}
                     disabled={isInOptionsOrHelp || note.noteId === "_backendLog"}
                     command={() => noteContext?.notePath && parentComponent?.triggerCommand("showExportDialog", {
@@ -190,6 +187,8 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                     <CommandItem command="openNoteExternally" icon="bx bx-file-find" disabled={isSearchOrBook || !isElectron} text={t("note_actions.open_note_externally")} title={t("note_actions.open_note_externally_title")} />
                     <CommandItem command="openNoteCustom" icon="bx bx-customize" disabled={isSearchOrBook || isMac || !isElectron} text={t("note_actions.open_note_custom")} />
                     <CommandItem command="showNoteSource" icon="bx bx-code" disabled={!hasSource} text={t("note_actions.note_source")} />
+                    {(note.type === "text" || note.isMarkdown()) && isContentAvailable && !isInOptionsOrHelp &&
+                        <ConvertNoteFormat note={note} />}
                     <CommandItem command="showNoteOCRText" icon="bx bx-text" disabled={!["image", "file"].includes(noteType)} text={t("note_actions.view_ocr_text")} />
                     {(syncServerHost && isElectron) &&
                         <CommandItem command="openNoteOnServer" icon="bx bx-world" disabled={!syncServerHost} text={t("note_actions.open_note_on_server")} />
@@ -383,6 +382,31 @@ function ConvertToAttachment({ note }: { note: FNote }) {
                 });
             }}
         >{t("note_actions.convert_into_attachment")}</FormListItem>
+    );
+}
+
+function ConvertNoteFormat({ note }: { note: FNote }) {
+    const isMarkdown = note.isMarkdown();
+
+    return (
+        <FormListItem
+            icon="bx bxl-markdown"
+            onClick={async () => {
+                // Text → Markdown is lossy; Markdown → Text is not, so use the milder warning there.
+                const warning = isMarkdown
+                    ? t("note_actions.convert_format_warning")
+                    : t("note_actions.convert_format_warning_risky");
+                if (!(await dialog.confirm(warning))) {
+                    return;
+                }
+
+                await server.post(`notes/${note.noteId}/convert-format`);
+                await ws.waitForMaxKnownEntityChangeId();
+                toast.showMessage(isMarkdown
+                    ? t("note_actions.convert_to_text_successful")
+                    : t("note_actions.convert_to_markdown_successful"));
+            }}
+        >{isMarkdown ? t("note_actions.convert_to_text") : t("note_actions.convert_to_markdown")}</FormListItem>
     );
 }
 

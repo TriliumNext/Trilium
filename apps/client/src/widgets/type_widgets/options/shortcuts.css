@@ -95,6 +95,9 @@
         border: none;
         box-shadow: none;
         padding: 0;
+        /* Override the global monospace `kbd` rule (style.css) so the shortcut glyphs and their
+           labels share the UI font and line up; the global rule uses !important, so this must too. */
+        font-family: inherit !important;
         font-size: 0.9em;
         color: var(--main-text-color);
         display: block !important;

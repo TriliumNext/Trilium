@@ -111,6 +111,21 @@ export const CORE_PLUGINS: typeof Plugin[] = [
 ];
 
 /**
+ * Lightweight formatting plugins for a minimal reply input (e.g. the AI chat) — added on top of an
+ * {@link AttributeEditor} instance via `extraPlugins` to enable markdown **autoformatting** for block
+ * quotes, fenced code blocks, lists and links, without a toolbar. Kept out of {@link CORE_PLUGINS} so
+ * the plain attribute/relation editor stays plain.
+ */
+export const CHAT_INPUT_PLUGINS: typeof Plugin[] = [
+    Autoformat,
+    BlockQuote,
+    CodeBlock,
+    List,
+    Link,
+    AutoLink
+];
+
+/**
  * Dynamically loads plugins that require a premium CKEditor license key.
  * This avoids loading ~6 seconds of premium features code during initial app startup.
  */

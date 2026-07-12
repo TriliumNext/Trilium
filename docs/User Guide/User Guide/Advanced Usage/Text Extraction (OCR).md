@@ -16,8 +16,12 @@ OCR in Trilium supports the following formats:
 ### Images
 
 *   Both [individual image notes](../Note%20Types/File.md) and [attachments in text files](../Note%20Types/Text/Images.md) are supported.
-*   Supported formats: JPEG, PNG, GIF, BMP, TIFF, WebP.
-*   Currently only single-page TIFFs are supported. If you have multi-page TIFFs consider splitting them into individual images.
+*   Supported formats:
+    *   JPEG
+    *   PNG
+    *   GIF (only non-animated)
+    *   BMP
+    *   WebP
 *   Note that this feature works best for computer-rendered text rather than handwriting.
 *   The underlying technology is Tesseract.js.
 

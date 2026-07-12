@@ -135,7 +135,21 @@ describe("ws service (real DB)", () => {
         await handler("client-1", { type: "ping" });
         await handler("client-1", { type: "totally-unknown" });
 
-        expect(sentToClient).toContainEqual({ clientId: "client-1", message: { type: "ping" } });
+        expect(sentToClient).toContainEqual({ clientId: "client-1", message: { type: "ping", protectedSessionAvailable: false } });
+    });
+
+    it("ping replies report the live protected-session state", async () => {
+        const handler = clientHandler;
+        if (!handler) throw new Error("handler not registered");
+
+        protectedSessionService.setDataKey(new Uint8Array([1, 2, 3]));
+        try {
+            await handler("client-2", { type: "ping" });
+        } finally {
+            protectedSessionService.resetDataKey();
+        }
+
+        expect(sentToClient).toContainEqual({ clientId: "client-2", message: { type: "ping", protectedSessionAvailable: true } });
     });
 
     it("sync status helpers broadcast the matching message types with lastSyncedPush", () => {
@@ -161,7 +175,7 @@ describe("ws service (real DB)", () => {
     it("sends a ping frontend-update when there are no pending entity changes", () => {
         const before = sentAll.length;
         cls.init(() => ws.sendTransactionEntityChangesToAllClients());
-        expect(sentAll[sentAll.length - 1]).toEqual({ type: "ping" });
+        expect(sentAll[sentAll.length - 1]).toEqual({ type: "ping", protectedSessionAvailable: false });
         expect(sentAll.length).toBe(before + 1);
     });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { migrateSyncTimeoutFromMilliseconds } from "./options_init.js";
+import { getDefaultOptionSyncedFlag, migrateSyncTimeoutFromMilliseconds } from "./options_init.js";
 
 describe("migrateSyncTimeoutFromMilliseconds", () => {
     it("returns null when no migration is needed (values < 1000 are already in seconds)", () => {
@@ -23,5 +23,23 @@ describe("migrateSyncTimeoutFromMilliseconds", () => {
 
         // Rounds to nearest second
         expect(migrateSyncTimeoutFromMilliseconds(120500)).toEqual({ value: 121, scale: 1 });
+    });
+});
+
+describe("getDefaultOptionSyncedFlag", () => {
+    it("returns true for an option declared as synced", () => {
+        expect(getDefaultOptionSyncedFlag("seenCallToActions")).toBe(true);
+        expect(getDefaultOptionSyncedFlag("imageMaxWidthHeight")).toBe(true);
+    });
+
+    it("returns false for an option declared as local-only", () => {
+        expect(getDefaultOptionSyncedFlag("zoomFactor")).toBe(false);
+        expect(getDefaultOptionSyncedFlag("overrideThemeFonts")).toBe(false);
+    });
+
+    it("returns undefined for an option that is not part of the default definitions", () => {
+        // `theme` is initialized in initNotSyncedOptions, not in the defaultOptions table.
+        expect(getDefaultOptionSyncedFlag("theme")).toBeUndefined();
+        expect(getDefaultOptionSyncedFlag("doesNotExistOption" as never)).toBeUndefined();
     });
 });

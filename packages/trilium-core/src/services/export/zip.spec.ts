@@ -10,8 +10,9 @@ import type { ExportFormat, NoteMetaFile } from "../../meta.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
 import sql_init from "../sql_init.js";
-import { getZipProvider } from "../zip_provider.js";
-import zip from "./zip.js";
+import type { ZipArchive, ZipArchiveEntryOptions, ZipProvider } from "../zip_provider.js";
+import { getZipProvider, initZipProvider } from "../zip_provider.js";
+import zip, { shouldStoreUncompressed } from "./zip.js";
 
 // happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
 const isBrowserRuntime = typeof window !== "undefined";
@@ -190,6 +191,26 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(entries[rootMeta.dataFileName!].toString("utf-8")).toContain("## Heading");
         });
 
+        it("strips CKEditor's data-list-item-id from HTML and Markdown exports", async () => {
+            // A plain list converts to Markdown syntax (turndown drops attributes), but a list
+            // inside a table survives as raw HTML — both must come out without the editor-only id.
+            const content = `<ul><li data-list-item-id="e0123">Bullet</li></ul>`
+                + `<table><tbody><tr><td><ul><li data-list-item-id="e4567">Cell</li></ul></td></tr></tbody></table>`;
+            const { note } = createNote("root", { title: "ListIds", content });
+            const branch = note.getParentBranches()[0];
+
+            for (const format of ["html", "markdown"] as const) {
+                const { entries } = await exportSubtree(branch, format);
+                const dataFileName = parseMeta(entries).files[0].dataFileName ?? "";
+                const exported = entries[dataFileName].toString("utf-8");
+
+                expect(exported).not.toContain("data-list-item-id");
+                // The list content itself still round-trips.
+                expect(exported).toContain("Bullet");
+                expect(exported).toContain("Cell");
+            }
+        });
+
         it("carries owned attributes into the note meta but drops out-of-export relations", async () => {
             // A note living outside the exported subtree: a relation to it is valid
             // to save but must be filtered out of the export meta.
@@ -281,6 +302,119 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(entries[attFileName]).toBeDefined();
         });
 
+        it("round-trips binary attachment content byte-for-byte", async () => {
+            const { note } = createNote("root", { title: "BinaryAttachHost", content: "<p>host</p>" });
+            // Bytes that are not valid UTF-8 (0x00, 0xFF, lone 0x80 continuation byte)
+            // so any accidental string coercion in the export path would corrupt them.
+            const binaryContent = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x80, 0x01, 0xfe]);
+            getContext().init(() =>
+                note.saveAttachment({ role: "image", mime: "image/png", title: "pixel.png", content: binaryContent })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const { entries } = await exportSubtree(branch, "html");
+            const rootMeta = parseMeta(entries).files[0];
+
+            const attMeta = (rootMeta.attachments ?? [])[0];
+            expect(attMeta).toBeDefined();
+            const attFileName = attMeta.dataFileName ?? "";
+            expect(entries[attFileName]).toBeDefined();
+            // The exported bytes must equal the stored bytes exactly.
+            expect(Buffer.compare(entries[attFileName], binaryContent)).toBe(0);
+        });
+
+        it("resolves embedded mermaid/canvas images to their rendered image attachment", async () => {
+            // A mermaid/canvas note is not an image itself: `api/images/<noteId>` serves its
+            // generated `*-export.svg` attachment. An <img> embedding such a note must therefore
+            // resolve to that attachment, not to the note's own data file (the mermaid source or,
+            // in the share export, the note's HTML page).
+            const cases = [
+                { type: "mermaid", mime: "text/mermaid", content: "flowchart TD\n A --> B", attachment: "mermaid-export.svg" },
+                { type: "canvas", mime: "application/json", content: "{}", attachment: "canvas-export.svg" }
+            ] as const;
+
+            for (const { type, mime, content, attachment } of cases) {
+                const hostTitle = `${type}Host`;
+                const { note: host } = createNote("root", { title: hostTitle, content: "" });
+                const { note: diagram } = createNote(host.noteId, { title: "Diagram", type, mime, content });
+
+                getContext().init(() => {
+                    diagram.saveAttachment({ role: "image", mime: "image/svg+xml", title: attachment, content: "<svg/>" });
+                    host.setContent(`<p><img src="api/images/${diagram.noteId}/Diagram"></p>`);
+                });
+
+                const { entries } = await exportSubtree(host.getParentBranches()[0], "html");
+                const rootMeta = parseMeta(entries).files[0];
+                const exported = entries[rootMeta.dataFileName ?? ""].toString("utf-8");
+
+                // The SVG really is in the archive, next to the diagram note's own data file.
+                const svgPath = `${hostTitle}/Diagram_${attachment}`;
+                expect(entries[svgPath], svgPath).toBeDefined();
+
+                expect(exported, type).toContain(`src="${svgPath}"`);
+                // ...and not at the diagram note's data file, which no browser can render as an image.
+                expect(exported, type).not.toMatch(/src="[^"]*Diagram\.(txt|json|html)"/);
+            }
+        });
+
+        it("pipes the archive to the response before appending any content", async () => {
+            // Memory efficiency: the archive must start streaming to the response
+            // before note/attachment content is appended, so blobs drain to the
+            // client as they are added rather than all being buffered in memory.
+            const { note } = createNote("root", { title: "StreamOrder", content: "<p>x</p>" });
+            getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "a.txt", content: "data" })
+            );
+            const branch = note.getParentBranches()[0];
+
+            const events: string[] = [];
+            const original = getZipProvider();
+            const spy: ZipProvider = {
+                detectFilenameEncoding: (b) => original.detectFilenameEncoding(b),
+                readZipFile: (b, fn, enc) => original.readZipFile(b, fn, enc),
+                createFileStream: (p) => original.createFileStream(p),
+                createZipArchive() {
+                    const real = original.createZipArchive();
+                    const wrapper: ZipArchive = {
+                        append(content: string | Uint8Array, options: ZipArchiveEntryOptions) {
+                            events.push(`append:${options.name}`);
+                            real.append(content, options);
+                        },
+                        pipe(dest: unknown) {
+                            events.push("pipe");
+                            real.pipe(dest);
+                        },
+                        finalize() {
+                            events.push("finalize");
+                            return real.finalize();
+                        }
+                    };
+                    return wrapper;
+                }
+            };
+
+            initZipProvider(spy);
+            try {
+                const taskContext = (await import("../task_context.js")).default;
+                const ctx = new taskContext("no-progress-reporting", "export", null);
+                const res = new FakeResponse();
+                const done = collect(res);
+                await zip.exportToZip(ctx, branch, "html", res as unknown as Record<string, unknown>);
+                await done;
+            } finally {
+                initZipProvider(original);
+            }
+
+            // The pipe is the very first archive operation and precedes every append.
+            const pipeIdx = events.indexOf("pipe");
+            const firstAppendIdx = events.findIndex((e) => e.startsWith("append:"));
+            expect(pipeIdx).toBe(0);
+            expect(firstAppendIdx).toBeGreaterThan(pipeIdx);
+            // Content really was appended (note data + attachment), and finalize closes it.
+            expect(events).toContain("append:!!!meta.json");
+            expect(events[events.length - 1]).toBe("finalize");
+        });
+
         it("keeps the extension on very long multi-byte titles within the 255-byte limit", async () => {
             // A title of 3-byte CJK characters long enough that, once the upstream
             // 255-byte sanitize cap fills the base, appending the extension would
@@ -364,5 +498,80 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
                 getContext().init(() => zip.exportToZipFile("missingNoteId123", "html", join(tempDir, "never.zip")))
             ).rejects.toThrow(/not found/);
         });
+    });
+
+    describe("exportBranchToZipFile", () => {
+        let tempDir: string;
+
+        beforeAll(() => {
+            tempDir = mkdtempSync(join(tmpdir(), "trilium-zip-branch-export-"));
+        });
+
+        it("streams a subtree export for the given branch to a file path", async () => {
+            const { note, branch } = createNote("root", { title: "BranchFileExport", content: "<p>branch to file</p>" });
+            const zipPath = join(tempDir, `branch-export-${note.noteId}.zip`);
+            const { branchId } = branch;
+            if (!branchId) {
+                throw new Error("branch was not saved");
+            }
+
+            await getContext().init(() =>
+                zip.exportBranchToZipFile(branchId, "html", zipPath, "no-progress-reporting")
+            );
+
+            const buffer = readFileSync(zipPath);
+            const entries = await readArchive(buffer);
+            const rootMeta = parseMeta(entries).files[0];
+
+            expect(rootMeta.noteId).toBe(note.noteId);
+            const dataFileName = rootMeta.dataFileName ?? "";
+            expect(entries[dataFileName].toString("utf-8")).toContain("branch to file");
+
+            rmSync(zipPath, { force: true });
+        });
+
+        it("throws a ValidationError for a non-existent branch", async () => {
+            await expect(
+                getContext().init(() =>
+                    zip.exportBranchToZipFile("missingBranch123", "html", join(tempDir, "never.zip"), "no-progress-reporting")
+                )
+            ).rejects.toThrow(/not found/);
+        });
+    });
+});
+
+describe("shouldStoreUncompressed", () => {
+    it("stores already-compressed payloads uncompressed", () => {
+        for (const mime of [
+            "image/jpeg", "image/png", "image/gif", "image/webp", "image/avif",
+            "video/mp4", "video/webm", "audio/mpeg", "audio/ogg",
+            "application/pdf", "application/zip", "application/gzip",
+            "application/x-7z-compressed", "font/woff2",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
+            "application/vnd.oasis.opendocument.spreadsheet", // ods
+            "application/epub+zip"
+        ]) {
+            expect(shouldStoreUncompressed(mime), mime).toBe(true);
+        }
+    });
+
+    it("compresses text and other deflate-friendly payloads", () => {
+        for (const mime of [
+            "text/html", "text/plain", "text/markdown", "application/json",
+            "application/xml", "application/javascript",
+            "image/svg+xml", "image/bmp", "image/x-icon", "image/tiff",
+            "audio/wav", "audio/x-wav", "audio/aiff"
+        ]) {
+            expect(shouldStoreUncompressed(mime), mime).toBe(false);
+        }
+    });
+
+    it("normalizes case and ignores parameters, and treats missing mime as compressible", () => {
+        expect(shouldStoreUncompressed("IMAGE/JPEG")).toBe(true);
+        expect(shouldStoreUncompressed("image/png; charset=binary")).toBe(true);
+        expect(shouldStoreUncompressed("  text/html ; charset=utf-8 ")).toBe(false);
+        expect(shouldStoreUncompressed(undefined)).toBe(false);
+        expect(shouldStoreUncompressed(null)).toBe(false);
+        expect(shouldStoreUncompressed("")).toBe(false);
     });
 });

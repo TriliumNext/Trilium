@@ -129,19 +129,30 @@
     "export_note_title": "匯出筆記",
     "close": "關閉",
     "export_type_subtree": "此筆記及其所有子筆記",
-    "format_html_zip": "HTML ZIP 封存 - 建議使用此選項，因為它保留了所有格式。",
-    "format_markdown": "Markdown - 保留大部分格式。",
-    "format_opml": "OPML - 大綱交換格式，僅限文字。不包括格式、圖片和檔案。",
-    "opml_version_1": "OPML v1.0 - 僅限純文字",
-    "opml_version_2": "OPML v2.0 - 還允許 HTML",
-    "export_type_single": "僅此筆記，不包括子筆記",
+    "export_type_single": "僅此筆記",
     "export": "匯出",
     "choose_export_type": "請先選擇匯出類型",
-    "export_in_progress": "正在匯出：{{progressCount}}",
     "export_finished_successfully": "成功匯出。",
-    "format_html": "HTML - 推薦，因為它保留了所有格式",
     "format_pdf": "PDF - 用於列印或與他人分享。",
-    "share-format": "HTML 網頁發佈——使用與共享筆記相同的佈景主題，但可發佈為靜態網站。"
+    "what_to_export": "要匯出的內容",
+    "format": "格式",
+    "format_html_name": "HTML",
+    "format_html_description": "保留全部格式",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "保留大部分格式",
+    "format_opml_name": "OPML",
+    "format_opml_description": "包含 HTML 內容的大綱格式",
+    "format_share_name": "網頁用 HTML",
+    "format_share_description": "使用分享筆記主題建立的可發佈靜態網站",
+    "recommended": "推薦選項",
+    "result_subtree_html": "ZIP 壓縮檔，其中文字筆記以 HTML 格式儲存。程式碼、圖片及其他檔案則保留其原始格式。",
+    "result_subtree_markdown": "ZIP 壓縮檔，其中文字筆記以 Markdown 格式儲存。程式碼、圖片及其他檔案則保留其原始格式。",
+    "result_share": "ZIP 壓縮檔，內含使用分享筆記主題、可發布的靜態網站。",
+    "result_opml": "一個 OPML 大綱檔案。包含標題和正文內容；但不包含圖片、程式碼檔案及附件。",
+    "result_single_html": "一個 HTML 檔案。圖片和附件皆嵌入其中。",
+    "result_single_markdown": "一個 Markdown (.md) 檔案。",
+    "preparing_export": "正在準備匯出……",
+    "export_in_progress_with_total": "已匯出 {{progressCount}}/ {{totalCount}} 則筆記"
   },
   "help": {
     "noteNavigation": "筆記導航",
@@ -202,13 +213,12 @@
   "import": {
     "importIntoNote": "匯入至筆記",
     "chooseImportFile": "選擇檔案匯入",
-    "importDescription": "所選檔案的內容將作為子筆記匯入至",
     "options": "選項",
-    "safeImportTooltip": "Trilium <code>.zip</code> 匯出的檔案可能包含可能有害的可執行腳本。安全匯入將停用所有匯入腳本的自動執行。僅當您完全信任匯入的可執行腳本的內容時，才取消勾選「安全匯入」。",
+    "safeImportTooltip": "Trilium <code>.zip</code> 匯出的檔案可能包含可執行腳本。安全匯入會停用這些腳本；僅當該壓縮檔旨在執行腳本，且您信任其內容時，才應取消勾選此選項。",
     "safeImport": "安全匯入",
-    "explodeArchivesTooltip": "如果勾選此項，則 Trilium 將讀取<code>.zip</code>、<code>.enex</code>和<code>.opml</code>文件，並從這些封存文件內部的檔案新增筆記。如果未勾選，則 Trilium 會將這些封存文件本身附加至筆記中。",
+    "explodeArchivesTooltip": "根據 <code>.zip</code>、<code>.enex</code> 及 <code>.opml</code> 壓縮檔中的檔案建立筆記。若此功能關閉，則壓縮檔將以原始狀態附加。",
     "explodeArchives": "讀取<code>.zip</code>、<code>.enex</code>和<code>.opml</code>封存文件的內容。",
-    "shrinkImagesTooltip": "<p>如果勾選此選項，Trilium 將嘗試透過縮放和最佳化來縮小匯入的圖片，這可能會影響圖片的觀看品質。如果未勾選，圖片將不做修改直接匯入。</p><p>這不適用於帶有詮釋資料的<code>.zip</code>匯入，因為這些文件被認為已最佳化。</p>",
+    "shrinkImagesTooltip": "調整圖片大小並進行最佳化以節省空間，此過程可能會略微降低畫質。此功能不適用於帶有元資料的 <code>.zip</code> 匯入檔案，因這些檔案被視為已進行最佳化。",
     "shrinkImages": "壓縮圖片",
     "textImportedAsText": "如果元數據不明確，將HTML、Markdown和TXT匯入為文字筆記",
     "codeImportedAsCode": "如果詮釋資料不明確，將識別的程式碼檔案（例如<code>.json</code>）匯入為程式碼筆記",
@@ -221,9 +231,19 @@
       "placeholder": "輸入 HTML 標籤，每行一個",
       "reset_button": "重設為預設列表"
     },
-    "in-progress": "正在匯入：{{progress}}",
+    "in-progress": "已匯入 {{progress}} 則筆記",
     "successful": "匯入成功。",
-    "importZipRecommendation": "匯入 ZIP 檔案時，筆記層級將反映壓縮檔內的子目錄結構。"
+    "importZipRecommendation": "匯入 ZIP 檔案時，筆記層級將反映壓縮檔內的子目錄結構。",
+    "importIntoNoteNamed": "匯入至{{- title}}",
+    "import_from": "從…匯入",
+    "cardName": "檔案及其他格式",
+    "cardDescription": "ZIP、ENEX、OPML、Markdown、HTML、圖片等",
+    "shrinkImagesProviderTooltip": "調整圖片大小並進行最佳化以節省空間，此過程可能會略微降低畫質。",
+    "spreadsheetImportedAsSpreadsheet": "將 CSV 和 Excel 檔案匯入為可編輯的試算表，而非單純的檔案",
+    "starting": "正在匯入……",
+    "in-progress-with-total": "已匯入 {{progress}}/{{total}} 則筆記",
+    "extracting": "已提取 {{progress}}/{{total}} 項內容",
+    "processing": "已處理 {{progress}}/{{total}} 則筆記"
   },
   "include_note": {
     "dialog_title": "內嵌筆記",
@@ -293,7 +313,12 @@
     "deleted_notes_message": "已清理刪除的筆記。",
     "no_changes_message": "暫無修改…",
     "undelete_link": "取消刪除",
-    "confirm_undelete": "您確定要還原此筆記及其子筆記嗎？"
+    "confirm_undelete": "您確定要還原此筆記及其子筆記嗎？",
+    "deleted_notes_title": "已刪除的筆記",
+    "more_actions": "更多操作",
+    "deleted_notes_settings": "已刪除的筆記設定",
+    "no_deleted_notes_message": "無已刪除的筆記。",
+    "undelete_failed": "無法還原該筆記——該筆記可能已被永久刪除，或其父級項目已不存在。"
   },
   "sort_child_notes": {
     "sort_children_by": "依…排序子筆記",
@@ -573,7 +598,7 @@
     "download": "下載",
     "rename_attachment": "重新命名附件",
     "upload_new_revision": "上傳新版本",
-    "copy_link_to_clipboard": "複製連結至剪貼簿",
+    "copy_link_to_clipboard": "複製參考資料至剪貼簿",
     "convert_attachment_into_note": "將附件轉換為筆記",
     "delete_attachment": "刪除附件",
     "upload_success": "已上傳新附件版本。",
@@ -618,7 +643,12 @@
     "year_previous": "前一年",
     "year_next": "後一年",
     "list": "列表",
-    "today": "今天"
+    "today": "今天",
+    "day": "日期",
+    "day_previous": "前一日",
+    "day_next": "後一日",
+    "pin_date": "將目前日期釘選，以便日曆總是開啟至該日期區間，而非今日",
+    "unpin_date": "將日期取消釘選，日曆再次開啟時將顯示為今天的日期"
   },
   "close_pane_button": {
     "close_this_pane": "關閉此面板"
@@ -664,7 +694,8 @@
     "toggle-zen-mode": "禪模式",
     "new-version-available": "發現新更新",
     "download-update": "取得版本 {{latestVersion}}",
-    "search_notes": "搜尋筆記"
+    "search_notes": "搜尋筆記",
+    "show_deleted_notes": "顯示已刪除的筆記"
   },
   "sync_status": {
     "unknown": "<p>同步狀態將在下一次同步嘗試開始後顯示。</p><p>點擊以立即觸發同步。</p>",
@@ -694,7 +725,7 @@
     "import_files": "匯入檔案",
     "export_note": "匯出筆記",
     "delete_note": "刪除筆記",
-    "print_note": "列印筆記",
+    "print_note": "列印筆記……",
     "save_revision": "儲存筆記修訂",
     "convert_into_attachment_failed": "筆記 '{{title}}' 轉換失敗。",
     "convert_into_attachment_successful": "筆記 '{{title}}' 已成功轉換為附件。",
@@ -713,7 +744,14 @@
     "word_wrap_auto_description": "遵循全域設定",
     "word_wrap_on": "開啟",
     "word_wrap_off": "關閉",
-    "save_named_revision": "儲存命名修訂…"
+    "save_named_revision": "儲存命名修訂…",
+    "print_or_export_to_pdf": "列印/匯出為 PDF……",
+    "convert_to_markdown": "轉換為 Markdown 筆記",
+    "convert_to_text": "轉換為文字筆記",
+    "convert_format_warning": "轉換過程中可能會遺失部分格式，您可能需要在之後進行一些修正。系統會事先儲存該筆記的修訂版本，以便您能還原。您要繼續嗎？",
+    "convert_format_warning_risky": "您正在將內容在兩種功能不完全相同的格式之間進行轉換，因此部分格式可能會遺失，某些不支援的元素可能會被刪除。<br><br>您是否完全承擔此風險，並希望繼續進行轉換？<br><br>系統會事先儲存當前筆記的修訂版本，以便您能還原至原始格式。",
+    "convert_to_markdown_successful": "筆記已轉換為 Markdown 格式。",
+    "convert_to_text_successful": "筆記已轉換為文字筆記。"
   },
   "onclick_button": {
     "no_click_handler": "按鈕元件'{{componentId}}'沒有定義點擊時的處理方式"
@@ -729,14 +767,15 @@
     "update_available": "有更新可用"
   },
   "note_launcher": {
-    "this_launcher_doesnt_define_target_note": "此啟動器未定義目標筆記。"
+    "this_launcher_doesnt_define_target_note": "此啟動器未設定目標筆記，因此無法開啟任何內容。請將其「目標」關聯設定為指向某個筆記。"
   },
   "code_buttons": {
     "execute_button_title": "執行腳本",
     "trilium_api_docs_button_title": "打開 Trilium API 文件",
     "save_to_note_button_title": "儲存至筆記",
     "opening_api_docs_message": "正在打開 API 文檔…",
-    "sql_console_saved_message": "SQL 控制台已儲存至 {{note_path}}"
+    "sql_console_saved_message": "SQL 控制台已儲存至 {{note_path}}",
+    "electron_api_docs_button_title": "開啟 Electron API 文件"
   },
   "copy_image_reference_button": {
     "button_title": "複製圖片引用至剪貼簿，可貼上至文字筆記中。"
@@ -813,7 +852,8 @@
     "open_all_in_tabs": "全部打開",
     "open_all_in_tabs_tooltip": "在新分頁中開啟所有結果",
     "open_all_confirm_one": "這將在新分頁中開啟 {{count}} 則筆記。要繼續嗎？",
-    "open_all_confirm_other": ""
+    "open_all_confirm_other": "",
+    "dashboard": "控制台"
   },
   "edited_notes": {
     "no_edited_notes_found": "今天還沒有編輯過的筆記...",
@@ -870,7 +910,8 @@
     "fix-nodes": "固定節點",
     "link-distance": "連結距離",
     "too-many-notes_one": "此子樹包含 {{count}} 則筆記，已超過筆記地圖中可顯示的 {{max}} 則上限。",
-    "too-many-notes_other": ""
+    "too-many-notes_other": "",
+    "show-anyway": "顯示地圖"
   },
   "note_paths": {
     "title": "筆記路徑",
@@ -1024,7 +1065,9 @@
   "book": {
     "no_children_help": "此集合沒有任何子筆記，因此沒有內容可顯示。",
     "drag_locked_title": "鎖定編輯",
-    "drag_locked_message": "無法拖曳，因為此集合已被鎖定編輯。"
+    "drag_locked_message": "無法拖曳，因為此集合已被鎖定編輯。",
+    "archived_notes_hidden_one": "{{count}} 則已歸檔的筆記已複製至此，但除非您啟用「顯示已歸檔筆記」功能，否則它將保持隱藏狀態。",
+    "archived_notes_hidden_other": "{{count}} 則已歸檔的筆記已複製至此，但除非您啟用「顯示已歸檔筆記」功能，否則它將保持隱藏狀態。"
   },
   "editable_code": {
     "placeholder": "在這裡輸入您的程式碼筆記內容…"
@@ -1081,7 +1124,7 @@
   },
   "consistency_checks": {
     "title": "檢查一致性",
-    "find_and_fix_button": "尋找並修復一致性問題",
+    "find_and_fix_button": "修復問題",
     "finding_and_fixing_message": "正在尋找並修復一致性問題…",
     "issues_fixed_message": "一致性問題應該已被修復。",
     "find_and_fix_label": "尋找並修復一致性問題",
@@ -1091,11 +1134,11 @@
     "title": "資料庫匿名化",
     "full_anonymization": "完全匿名化",
     "full_anonymization_description": "建立資料庫的副本，並移除所有筆記內容，僅保留結構與非敏感的元資料。在除錯時，此副本可安全地用於線上分享。",
-    "save_fully_anonymized_database": "儲存完全匿名化的資料庫",
+    "save_fully_anonymized_database": "建立副本",
     "light_anonymization": "輕度匿名化",
     "light_anonymization_description": "建立一份已移除筆記內容的副本，但標題、屬性以及自訂腳本/小工具仍會保留。此舉可為除錯提供更多背景資訊。",
     "choose_anonymization": "您可以自行決定是提供完全匿名化還是輕度匿名化的資料庫。即使是完全匿名化的資料庫也非常有用，但在某些情況下，輕度匿名化的資料庫可以加快錯誤識別和修復的過程。",
-    "save_lightly_anonymized_database": "儲存輕度匿名化的資料庫",
+    "save_lightly_anonymized_database": "建立副本",
     "existing_anonymized_databases": "現有的匿名化資料庫",
     "creating_fully_anonymized_database": "正在新增完全匿名化的資料庫…",
     "creating_lightly_anonymized_database": "正在新增輕度匿名化的資料庫…",
@@ -1107,7 +1150,7 @@
   },
   "database_integrity_check": {
     "title": "資料庫完整性檢查",
-    "check_button": "檢查資料庫完整性",
+    "check_button": "檢查完整性",
     "checking_integrity": "正在檢查資料庫完整性…",
     "integrity_check_succeeded": "完整性檢查成功——未發現問題。",
     "integrity_check_failed": "完整性檢查失敗: {{results}}",
@@ -1116,8 +1159,8 @@
   },
   "sync": {
     "title": "同步",
-    "force_full_sync_button": "強制全量同步",
-    "fill_entity_changes_button": "填充實體變更記錄",
+    "force_full_sync_button": "強制同步",
+    "fill_entity_changes_button": "填充變更",
     "full_sync_triggered": "已觸發全量同步",
     "filling_entity_changes": "正在填充實體變更列…",
     "sync_rows_filled_successfully": "同步列填充成功",
@@ -1131,7 +1174,7 @@
   "vacuum_database": {
     "title": "清理資料庫",
     "description": "這會重建資料庫，通常會減少佔用空間，不會刪除數據。",
-    "button_text": "清理資料庫",
+    "button_text": "立即清理",
     "vacuuming_database": "正在清理資料庫…",
     "database_vacuumed": "已清理資料庫",
     "vacuum_label": "清理資料庫",
@@ -1248,7 +1291,7 @@
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "未使用的附件",
     "manual_erasing_description": "手動觸發清理，不考慮超時。",
-    "erase_unused_attachments_now": "立即清理未使用的附件",
+    "erase_unused_attachments_now": "清理未使用的附件",
     "unused_attachments_erased": "已刪除未使用的附件。",
     "erase_attachments_after": "在此時間後刪除未使用的附件",
     "description": "任何不再被任何筆記引用的附件，將被視為未使用，並可在一段時間後自動刪除。",
@@ -1262,7 +1305,7 @@
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "已刪除的筆記",
     "manual_erasing_description": "手動觸發清理，不考慮超時。",
-    "erase_deleted_notes_now": "立即清理已刪除的筆記",
+    "erase_deleted_notes_now": "清理已刪除的筆記",
     "deleted_notes_erased": "已清理已刪除的筆記。",
     "erase_notes_after": "在此時間後刪除筆記",
     "description": "刪除的筆記最初僅標記為已刪除，可從「最近的筆記」中還原。經過一段時間後，這些筆記將會被永久刪除。",
@@ -1272,7 +1315,7 @@
     "note_revisions_snapshot_limit_title": "筆記歷史快照限制",
     "note_revisions_snapshot_limit_description": "筆記歷史快照數限制指的是每個筆記可以儲存的最大歷史記錄數量。其中 -1 表示沒有限制，0 表示刪除所有歷史記錄。您可以透過 #versioningLimit 標籤設定單個筆記的最大歷史記錄數量。",
     "snapshot_number_limit_label": "快照數量限制",
-    "erase_excess_revision_snapshots": "立即刪除多餘的歷史快照",
+    "erase_excess_revision_snapshots": "刪除多餘的歷史快照",
     "erase_excess_revision_snapshots_prompt": "多餘的歷史快照已被刪除。",
     "snapshot_number_limit_unit": "快照",
     "note_revisions_snapshot_limit_description_short": "每則筆記的最大修訂次數。輸入 -1 表示無限制，輸入 0 則停用此功能。",
@@ -1409,12 +1452,14 @@
     "set_password_heading": "設定密碼",
     "set_password": "設定密碼",
     "password_mismatch": "新密碼不一致。",
-    "password_changed_success": "密碼已更改。按 OK 後 Trilium 將重新載入。",
+    "password_changed_success": "已成功更改密碼。",
     "protected_session_timeout_label": "自動結束作業階段時間",
     "change_password_description": "更新您目前的密碼",
     "reset_password": "重設密碼",
     "reset_password_description": "將永久無法存取受保護的筆記",
-    "cancel": "取消"
+    "cancel": "取消",
+    "change_password_button": "更新密碼",
+    "reset_password_button": "立即重設"
   },
   "shortcuts": {
     "keyboard_shortcuts": "快捷鍵",
@@ -1651,9 +1696,6 @@
     "search_not_executed": "尚未執行搜尋。",
     "search_now": "立即搜尋"
   },
-  "spacer": {
-    "configure_launchbar": "設定啟動欄"
-  },
   "sql_result": {
     "no_rows": "此次查詢沒有返回任何數據",
     "not_executed": "查詢尚未執行。",
@@ -1827,12 +1869,83 @@
     "recovery_keys_error": "生成復原碼時出錯",
     "recovery_keys_no_key_set": "尚未設置復原碼",
     "recovery_keys_regenerate": "重新生成復原碼",
-    "oauth_title": "OAuth / OpenID 驗證",
-    "oauth_description": "OpenID 是一種標準化的方式，可讓您使用其他服務（如 Google）的帳號登入網站，以驗證您的身份。預設的提供者是 Google，但您可以將其變更為任何其他 OpenID 提供者。查看<a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">此處</a>以瞭解更多資訊。依照這些 <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">指示</a>以透過 Google 設定 OpenID 服務。",
-    "oauth_missing_vars": "缺少以下設定：{{-variables}}",
-    "oauth_user_account": "用戶帳號： ",
-    "oauth_user_email": "用戶信箱： ",
-    "oauth_user_not_logged_in": "尚未登入！"
+    "oauth_title": "OpenID 驗證",
+    "oauth_description": "OpenID 驗證可讓您使用其他服務（如 Google）的帳號登入，以驗證您的身份。預設的提供者是 Google，但您可以將其變更為任何其他 OpenID 驗證提供者。查看<a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">此處</a>以瞭解更多資訊。依照這些 <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">指示</a>以透過 Google 設定 OpenID 驗證服務。",
+    "oauth_missing_vars": "待設定：{{-variables}}",
+    "oauth_user_account": "帳號名稱",
+    "oauth_user_email": "電子信箱",
+    "oauth_user_not_logged_in": "尚未登入！",
+    "authentication_title": "身份驗證",
+    "signin_method": "登入方式",
+    "signin_local": "本機密碼（可選用雙因素驗證）",
+    "signin_oauth": "OpenID Connect 提供者（例如 Google）",
+    "signin_local_description": "使用您的 Trilium 密碼登入。您可選擇啟用雙因素驗證，以增加一層安全防護。",
+    "totp_setup_label": "基於時間的一次性密碼（TOTP）",
+    "totp_setup_description": "透過驗證器應用程式產生一個基於時間的驗證碼，作為您的第二重驗證因素。您需掃描 QR 碼並確認驗證碼以完成設定。最後系統會發放恢復碼。",
+    "totp_setup_button": "設定",
+    "totp_enroll_title": "確認您的驗證器",
+    "totp_enroll_instructions": "在您於下方確認有效的驗證碼之前，TOTP 功能將不會啟用，因此您不會因誤操作而將自己鎖定在外。",
+    "totp_enroll_step1_title": "1. 將帳號新增至您的驗證器應用程式",
+    "totp_enroll_step2_title": "2. 輸入驗證碼",
+    "totp_enroll_scan": "掃描此 QR 碼：",
+    "totp_enroll_secret_label": "無法掃描？請手動輸入此代碼",
+    "totp_enroll_code_label": "驗證碼",
+    "totp_enroll_code_placeholder": "000000",
+    "totp_enroll_verify": "確認並繼續",
+    "totp_enroll_cancel": "取消",
+    "totp_enroll_invalid_code": "該驗證碼不符。請確認您的裝置時間是否正確，並輸入最新的驗證碼。",
+    "totp_enroll_generate_error": "無法產生 TOTP 密鑰。請關閉此對話方塊並重新嘗試。",
+    "totp_enroll_enabled": "雙因素驗證現已啟用。",
+    "totp_enroll_recovery_title": "保存您的復原碼",
+    "totp_enroll_recovery_instructions": "請將這些復原碼存放在安全的地方。若您無法使用驗證器應用程式，每個復原碼皆可使用一次來登入。",
+    "totp_enroll_recovery_copy": "複製",
+    "totp_enroll_recovery_copied": "復原碼已複製到剪貼簿。",
+    "totp_enroll_recovery_download": "下載",
+    "totp_enroll_saved_ack": "我已將復原碼存放在安全的地方",
+    "totp_enroll_finish": "完成設定",
+    "totp_enroll_enable_error": "無法啟用雙因素驗證。請重新嘗試。",
+    "totp_section_title": "雙因素驗證",
+    "totp_status_active": "已啟用",
+    "totp_status_inactive": "未啟用",
+    "totp_remove_label": "移除雙因素驗證",
+    "totp_remove_description": "徹底移除您的雙因素驗證設定。這與上述的「關閉」不同，若要再次使用此功能，您必須從頭開始重新設定。",
+    "totp_remove_button": "移除",
+    "totp_remove_confirm": "要永久移除雙因素驗證嗎？此操作會清除您的設定，而並非僅是關閉該功能，因此若要再次使用，您必須從頭開始重新設定。在此之前，您將僅能使用密碼登入。",
+    "totp_removed": "雙因素驗證功能已移除。",
+    "recovery_keys_regenerate_confirm": "重新產生復原碼嗎？目前的復原碼將立即失效，您需要儲存新的復原碼。",
+    "recovery_keys_regenerated_title": "新的復原碼",
+    "recovery_keys_regenerated_instructions": "以下是您的新復原碼。請立即儲存：這些將取代您之前的復原碼，且不會再次顯示。",
+    "recovery_keys_done": "完成",
+    "recovery_keys_label": "復原碼",
+    "recovery_keys_remaining": "剩餘 {{remaining}} 件，總計 {{total}} 件。這些碼無法再次顯示，僅能替換。",
+    "recovery_keys_dot_available": "可用",
+    "recovery_keys_dot_used": "已於 {{- date}} 使用",
+    "oauth_status_connected": "已連結",
+    "oauth_status_not_connected": "未連結",
+    "oauth_status_not_configured": "未設定",
+    "oauth_not_configured_title": "設定 OpenID 驗證",
+    "oauth_not_configured_hint": "OpenID 驗證必須先透過 config.ini 或環境變數來設定。",
+    "oauth_how_to_enable": "如何啟用",
+    "oauth_server_config_hint": "請在您的 config.ini 檔案中加入以下內容，並重新啟動應用程式：",
+    "oauth_server_env_hint": "或設定以下環境變數：",
+    "oauth_provider": "提供者",
+    "oauth_provider_url": "發行者網址",
+    "oauth_provider_unknown": "未知提供者",
+    "oauth_not_enrolled_title": "未連結帳戶",
+    "oauth_not_enrolled_hint": "已設定 OpenID 驗證，但尚未連結至任何帳戶。",
+    "oauth_not_enrolled_details_label": "這代表什麼意思？",
+    "oauth_not_enrolled_details": "在連結帳戶之前，OpenID 驗證功能將保持停用狀態，您仍需使用密碼登入。請在下方連結您的帳戶以啟用此功能。",
+    "oauth_connect_label": "連結帳戶",
+    "oauth_connect_description": "請使用您的服務供應商帳號登入一次，以綁定您的帳號。此後，僅此帳號可進行登入。",
+    "oauth_connect_button": "連結帳戶",
+    "oauth_disconnect_label": "解除帳戶連結",
+    "oauth_disconnect_description": "解除已連結帳戶的綁定。在您再次連結帳戶之前，登入將改為使用密碼。",
+    "oauth_disconnect_button": "解除連結",
+    "oauth_disconnect_confirm": "您確定要解除此帳戶的連結嗎？在您再次連結帳戶之前，登入時將改為使用密碼。",
+    "oauth_disconnected": "已將 {{account}} 與 {{provider}} 解除連結。",
+    "oauth_connect_success": "已透過 {{account}} 身分連結至 {{provider}}。",
+    "oauth_connect_success_generic": "帳戶連結成功。",
+    "oauth_account_unknown": "您的帳戶"
   },
   "electron_integration": {
     "desktop-application": "桌面版應用程式",
@@ -2462,7 +2575,9 @@
     "source_description_etapi": "透過外部 Trilium API 建立",
     "source_description_llm": "由 AI 助理所創建",
     "source_description_restore": "在還原至先前版本之前已儲存",
-    "source_description_unknown": "來源不可用"
+    "source_description_unknown": "來源不可用",
+    "back": "返回",
+    "diff_identical": "此修訂內容與目前筆記內容相同。"
   },
   "auto_link_attribute_list": {
     "title": "系統屬性"
@@ -2542,6 +2657,164 @@
     "link": "插入筆記連結",
     "math": "插入數學方程式區塊",
     "footnote": "插入腳註",
-    "mermaid": "插入美人魚圖"
+    "mermaid": "插入美人魚圖",
+    "mermaid_template": "插入 \"{{name}}\" 類型美人魚圖",
+    "collapsible": "插入可折疊區塊",
+    "page_break": "插入分頁符號（用於列印）",
+    "table": "插入表格",
+    "admonition": "插入 {{type}} 提示框",
+    "todo": "插入 \"{{title}}\" 任務項目",
+    "todo_nonstandard": "插入 \"{{title}}\" 任務項目（非標準）",
+    "placeholders": {
+      "math": "方程式",
+      "collapsible_summary": "摘要",
+      "collapsible_details": "內容",
+      "table_column": "第 {{number}} 欄"
+    }
+  },
+  "file_upload": {
+    "drop_or_browse_single": "將檔案拖曳至此處，或點擊瀏覽並選擇",
+    "drop_or_browse_multiple": "將檔案拖曳至此處，或點擊瀏覽並選擇",
+    "browse_single": "點擊以選擇檔案",
+    "browse_multiple": "點擊以選擇多個檔案",
+    "selected_one": "已選擇 {{count}} 個檔案",
+    "selected_other": "已選擇 {{count}} 個檔案"
+  },
+  "import_provider": {
+    "choose_provider": "請從上方選擇要匯入的服務。"
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "連結至您的帳戶",
+    "connect_description": "請使用您的 Microsoft 帳戶登入，以匯入您的 OneNote 筆記本。",
+    "connect": "使用 Microsoft 帳戶登入",
+    "section_heading": "Microsoft OneNote",
+    "checking": "正在檢查 OneNote 連線……",
+    "connecting": "正在等待登入完成……",
+    "connected_as": "已以 {{name}} 身分登入",
+    "disconnect": "中斷連結",
+    "load_failed": "無法載入您的 OneNote 筆記本。",
+    "no_notebooks": "此帳號中未找到任何筆記本。",
+    "select_sections": "選擇要匯入的節",
+    "select_sections_hint": "OneNote 並未將原始順序包含在匯入資料中，因此章節和群組會依照建立日期進行排序，其排序方式可能與在 OneNote 中的顯示順序不符。",
+    "import": "匯入所選內容",
+    "attach_source": "附上原始 HTML（除錯）",
+    "attach_source_hint": "將每頁未經修改的 OneNote HTML 儲存為匯入筆記的附件，以便與轉換後的結果進行比對。"
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "從 HTML 匯出檔案",
+    "description_long": "在 Notion 中，將您的工作區或頁面（包含子頁面）匯出為 HTML 格式，然後在此處選擇生成的 .zip 檔案。",
+    "choose_file": "Notion 匯出文件 (.zip)",
+    "import": "匯入"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "從 Takeout 匯出檔案",
+    "description_long": "在 Google Takeout 中，將您的 Keep 資料匯出為 .zip 檔案，然後在此處選擇生成的檔案。",
+    "choose_file": "Google Keep 匯出文件 (.zip)",
+    "import": "匯入"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "從 JSON 匯出檔",
+    "description_long": "在 Anytype 中，請以「Any-Block」格式（並選取「JSON」）匯出您的空間，然後在此處選擇生成的 .zip 檔案。目前僅會匯入頁面及其文字內容。",
+    "choose_file": "Anytype 匯出文件 (.zip)",
+    "import": "匯入"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "從儲存庫",
+    "description_long": "將您的 Obsidian 儲存庫資料夾壓縮成 .zip 檔，然後在此處選擇生成的 .zip 檔案。",
+    "choose_file": "Obsidian 儲存庫 (.zip)",
+    "import": "匯入"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "從 .enex 檔案",
+    "description_long": "在 Evernote 中，將筆記本（或一次最多 100 則筆記）匯出為 ENEX 檔案，然後在此處選擇一個或多個 .enex 檔案。每個檔案都會被匯入為獨立的筆記本。",
+    "choose_file": "Evernote 匯出文件 (.enex)",
+    "import": "匯入"
+  },
+  "slash_commands": {
+    "bulleted_list_description": "建立項目符號清單",
+    "numbered_list_description": "建立編號清單",
+    "todo_list_description": "建立待辦事項清單",
+    "align_left_description": "將文字向左對齊",
+    "align_center_description": "將文字居中對齊",
+    "align_right_description": "將文字向右對齊",
+    "justify_description": "將文字左右對齊",
+    "admonition_description": "插入一個新的提示框",
+    "collapsible_description": "插入一個可折疊的區塊，點擊後可隱藏或顯示內容。",
+    "footnote_description": "建立一個新的腳註，並在此處引用",
+    "datetime_description": "插入目前日期和時間",
+    "internal_link_description": "插入另一則 Trilium 筆記的連結",
+    "math_description": "插入數學方程式",
+    "include_note_description": "在此筆記中顯示另一則筆記的內容",
+    "page_break_description": "插入分頁符號（用於列印）",
+    "markdown_import_description": "將 Markdown 檔案匯入這則筆記中",
+    "anchor_description": "插入一個錨點以建立內部連結"
+  },
+  "save_revision": {
+    "save_revision": "儲存筆記修訂",
+    "revision_name_placeholder": "修訂名稱（選擇性）",
+    "help": "系統會針對每則符合條件的筆記儲存一個命名版本，並記錄其當前內容與標題。"
+  },
+  "convert_note": {
+    "convert_note": "轉換",
+    "convert_note_to": "轉換筆記",
+    "choose_conversion": "（選擇轉換方式）",
+    "conversion_htmlToMarkdown": "文字筆記 → Markdown 筆記（有損轉換）",
+    "conversion_markdownToHtml": "Markdown 筆記 → 文字筆記",
+    "help_text": "轉換僅套用至符合來源類型的筆記；其餘筆記則維持不變。每則經轉換的筆記，其修訂版本都會事先儲存。",
+    "warning": "轉換筆記時可能會遺失部分格式，您之後可能需要進行一些修正。系統會事先儲存每則轉換後筆記的修訂版本，以便您能還原。您要繼續嗎？",
+    "warning_risky": "您正在將兩種功能不完全相同的格式相互轉換，因此部分格式可能會遺失，某些不支援的元素可能會被刪除。<br><br>您是否完全承擔此風險，並希望繼續進行轉換？<br><br>每則轉換後的筆記都會事先儲存一份修訂版本，因此您可以還原至原始格式。"
+  },
+  "options": {
+    "title": "選項",
+    "back": "返回所有選項"
+  },
+  "image_buttons": {
+    "zoom_in": "放大",
+    "zoom_out": "縮小",
+    "reset_zoom": "重設縮放"
+  },
+  "image_navigation": {
+    "previous": "上一張圖片：{{- title}}",
+    "next": "下一張圖片：{{- title}}"
+  },
+  "image_viewer": {
+    "loading_error": "載入圖片時發生錯誤。"
+  },
+  "security": {
+    "backend_scripting_section_description": "後端腳本擁有完整的伺服器存取權限，包括檔案系統、網路及作業系統指令。它們可透過同步、匯入，或任何包含可執行屬性的內容來觸發。前端腳本由於在沙盒化的瀏覽器環境中執行，因此始終處於啟用狀態。",
+    "backend_scripting_label": "後端腳本執行",
+    "backend_scripting_description": "允許執行後端腳本（啟動腳本、自訂請求處理程式、事件處理程式、排程腳本等）。",
+    "sql_console_title": "SQL 控制台",
+    "sql_console_section_description": "SQL 控制台允許對資料庫執行原始 SQL 查詢。此功能可被用於讀取敏感資料（例如同步密鑰、API 金鑰），並修改或刪除任何資料。惡意的前端腳本亦可透過程式化方式存取 SQL 控制台 API。",
+    "sql_console_label": "SQL 控制台",
+    "sql_console_description": "允許在 SQL 主控台中執行查詢。",
+    "lan_access_title": "網路存取",
+    "lan_access_section_description": "預設情況下，桌面應用程式僅接受來自本機的連線。允許來自您本地網路的存取權限，以便其他裝置能連線至該應用程式——例如從另一台裝置進行同步。請僅在您信任的網路環境中啟用此功能。",
+    "lan_access_label": "允許來自其他裝置的連線",
+    "lan_access_description": "將伺服器綁定至所有網路介面，而非僅限於本機。",
+    "how_to_enable": "如何啟用",
+    "server_config_hint": "在您的 config.ini 檔案中加入以下內容：",
+    "server_env_hint": "或者設定以下環境變數：",
+    "restart_required": "此變更需重新啟動後方能生效。",
+    "restart_now": "立即重新啟動應用程式"
+  },
+  "split_editor": {
+    "render_error": "無法渲染預覽",
+    "show_details": "顯示內容",
+    "last_valid_render": "顯示最後一次有效渲染"
+  },
+  "icon_pack": {
+    "preview_title": "圖示包預覽",
+    "invalid_manifest": "無法解析圖示包的清單檔案。請確認其為有效的 JSON 格式。",
+    "no_icons": "此圖示包中沒有任何圖示。",
+    "tooltip": "類別：{{- class}}\n圖示代碼：{{- code}}\n關鍵詞：{{- terms}}",
+    "count_one": "{{count}} 個圖示",
+    "count_other": "{{count}} 個圖示"
   }
 }

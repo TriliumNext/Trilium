@@ -66,7 +66,6 @@ export default function Canvas({ note, noteContext }: TypeWidgetProps) {
         <div className="canvas-render" onWheel={onWheel}>
             <div className="excalidraw-wrapper" {...noteDrop}>
                 <Excalidraw
-                    excalidrawAPI={api => apiRef.current = api}
                     theme={colorScheme}
                     viewModeEnabled={isReadOnly || options.is("databaseReadonly")}
                     zenModeEnabled={false}

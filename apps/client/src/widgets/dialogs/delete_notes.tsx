@@ -102,8 +102,7 @@ export default function DeleteNotesDialog() {
     return (
         <Modal
             className="delete-notes-dialog"
-            size="xl"
-            scrollable
+            size="lg"
             title={t("delete_notes.title")}
             onShown={() => okButtonRef.current?.focus()}
             onHidden={() => {

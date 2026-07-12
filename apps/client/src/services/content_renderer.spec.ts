@@ -75,6 +75,13 @@ vi.mock("../widgets/type_widgets/WebView", () => ({ default: webViewComponent })
 const embeddedNoteListComponent = vi.fn((_props: any) => null);
 vi.mock("../widgets/collections/NoteList", () => ({ EmbeddedNoteList: embeddedNoteListComponent }));
 
+const iconPackPreviewComponent = vi.fn((_props: any) => null);
+vi.mock("../widgets/type_widgets/icon_pack/IconPackPreview", () => ({ IconPackPreview: iconPackPreviewComponent }));
+
+const chatPreviewComponent = vi.fn((props: any): VNode<any> =>
+    h("span", { class: "mock-chat-marker" }, `messages:${props.messages.length}`));
+vi.mock("../widgets/type_widgets/llm_chat/ChatPreview", () => ({ default: chatPreviewComponent }));
+
 // `addHook` is a no-op here: sanitize_content.ts registers a DOMPurify hook at
 // module load (pulled in transitively), which would otherwise throw against this mock.
 vi.mock("dompurify", () => ({ default: { sanitize: (s: string) => s, addHook: () => {} } }));
@@ -110,6 +117,17 @@ function buildAttachment(row: Partial<ConstructorParameters<typeof FAttachment>[
         ...row
     } as any);
     return att;
+}
+
+/** An AI chat note whose stored conversation is one user message per given text. */
+function buildChatNote(texts: string[]) {
+    const messages = texts.map((content, i) => ({
+        id: `m${i}`,
+        role: "user",
+        content,
+        createdAt: "2026-01-01T00:00:00.000Z"
+    }));
+    return buildNote({ title: "Chat", type: "llmChat", content: JSON.stringify({ version: 1, messages }) });
 }
 
 beforeEach(() => {
@@ -565,6 +583,44 @@ describe("generic FNote fallback / webView", () => {
         expect(noSrc.$renderedContent.find(".note-detail-web-view").length).toBe(0);
         expect(noSrc.$renderedContent.hasClass("no-preview")).toBe(true);
     });
+
+    it("mounts the chat preview for an AI chat note", async () => {
+        const { $renderedContent } = await getRenderedContent(buildChatNote(["Ping?"]));
+
+        expect(chatPreviewComponent).toHaveBeenCalledOnce();
+        const mount = $renderedContent.find("[data-interactive-mount]");
+        expect(mount.length).toBe(1);
+        expect(mount.find(".mock-chat-marker").text()).toBe("messages:1");
+    });
+
+    it("snapshots the chat preview for a tooltip, leaving no live root behind", async () => {
+        const { $renderedContent } = await getRenderedContent(buildChatNote(["Ping?"]), { tooltip: true });
+
+        // Rendered by the same preview component as the note detail...
+        expect(chatPreviewComponent).toHaveBeenCalledOnce();
+        expect($renderedContent.find(".mock-chat-marker").text()).toBe("messages:1");
+        // ...but unmounted afterwards: the markup survives with nothing left to dispose.
+        expect($renderedContent.find("[data-interactive-mount]").length).toBe(0);
+        disposeInteractiveContent($renderedContent);
+        expect($renderedContent.find(".mock-chat-marker").length).toBe(1);
+    });
+
+    it("caps how many messages a tooltip previews, but not the note detail", async () => {
+        const messages = Array.from({ length: 25 }, (_, i) => `msg-${i}`);
+
+        await getRenderedContent(buildChatNote(messages), { tooltip: true });
+        expect(chatPreviewComponent.mock.calls[0][0].messages).toHaveLength(10);
+
+        await getRenderedContent(buildChatNote(messages));
+        expect(chatPreviewComponent.mock.calls[1][0].messages).toHaveLength(25);
+    });
+
+    it("keeps a title-only tooltip for a chat with no messages", async () => {
+        const { $renderedContent } = await getRenderedContent(buildChatNote([]), { tooltip: true });
+
+        expect(chatPreviewComponent).not.toHaveBeenCalled();
+        expect($renderedContent.html()).toBe("");
+    });
 });
 
 describe("interactive content disposal", () => {
@@ -646,7 +702,8 @@ describe("getRenderingType detection", () => {
 
         const iconPack = buildNote({ title: "icons", type: "file", "#iconPack": "" });
         iconPack.mime = "application/json";
-        // iconPack stays a file -> renders as a generic file (not tooltip), so type === file
-        expect((await getRenderedContent(iconPack)).type).toBe("file");
+        iconPack.getBlob = (async () => ({ content: "{}" })) as any;
+        // Tagged as an icon pack -> renders the glyph-grid preview, not raw file/code content.
+        expect((await getRenderedContent(iconPack)).type).toBe("iconPack");
     });
 });

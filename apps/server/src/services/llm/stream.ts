@@ -22,7 +22,7 @@ function calculateCost(usage: LanguageModelUsage, pricing?: ModelPricing): numbe
     if (!pricing) return undefined;
 
     const details = usage.inputTokenDetails;
-    const cacheReadTokens = details?.cacheReadTokens ?? usage.cachedInputTokens ?? 0;
+    const cacheReadTokens = details?.cacheReadTokens ?? 0;
     const cacheWriteTokens = details?.cacheWriteTokens ?? 0;
     // The sole caller only invokes calculateCost once it has type-guarded both
     // inputTokens and outputTokens as numbers, so the `?? 0` fallbacks here are

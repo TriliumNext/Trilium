@@ -12,6 +12,7 @@ describe("StandalonePlatformProvider", () => {
         expect(provider.isElectron).toBe(false);
         expect(provider.isMac).toBe(false);
         expect(provider.isWindows).toBe(false);
+        expect(provider.isLinux).toBe(false);
     });
 
     it("maps known query parameters to TRILIUM_ env vars", () => {

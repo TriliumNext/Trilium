@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getNoteIcon, NOTE_TYPE_ICONS } from "./notes.js";
+import { getImageAttachmentTitle, getNoteIcon, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS } from "./notes.js";
 import { NoteType } from "./rows.js";
 
 function buildArgs(overrides: {
@@ -31,6 +31,30 @@ describe("NOTE_TYPE_ICONS", () => {
         expect(NOTE_TYPE_ICONS.mermaid).toBe("bx bx-selection");
         expect(NOTE_TYPE_ICONS.mindMap).toBe("bx bx-sitemap");
         expect(NOTE_TYPE_ICONS.llmChat).toBe("bx bx-message-square-dots");
+    });
+});
+
+describe("getImageAttachmentTitle", () => {
+    // These titles are a wire contract: the type widgets write attachments under them, the
+    // `api/images` routes look them up by title, and the ZIP export/import pair resolves embeds
+    // through them. Spelled out literally rather than read back off the table, so a typo in
+    // NOTE_TYPE_IMAGE_ATTACHMENTS fails here instead of silently breaking every one of them.
+    it("resolves the note types whose image lives in a generated attachment", () => {
+        expect(getImageAttachmentTitle("canvas")).toBe("canvas-export.svg");
+        expect(getImageAttachmentTitle("mermaid")).toBe("mermaid-export.svg");
+        expect(getImageAttachmentTitle("mindMap")).toBe("mindmap-export.svg");
+        expect(getImageAttachmentTitle("spreadsheet")).toBe("spreadsheet-export.png");
+
+        // Indexing the table directly narrows to the literal, for statically known types.
+        expect(NOTE_TYPE_IMAGE_ATTACHMENTS.mermaid).toBe("mermaid-export.svg");
+    });
+
+    it("returns undefined for note types that carry their image as content, and for no type", () => {
+        // An image note is served straight from its own content, so it has no such attachment.
+        expect(getImageAttachmentTitle("image")).toBeUndefined();
+        expect(getImageAttachmentTitle("text")).toBeUndefined();
+        expect(getImageAttachmentTitle(null)).toBeUndefined();
+        expect(getImageAttachmentTitle(undefined)).toBeUndefined();
     });
 });
 

@@ -18,7 +18,7 @@ export default function VideoPreview({ note, noteContext, isVisible = true }: { 
     const videoRef = useRef<HTMLVideoElement>(null);
     const [playing, setPlaying] = useState(false);
     const [error, setError] = useState(false);
-    const { visible: controlsVisible, onMouseMove, flash: flashControls } = useAutoHideControls(videoRef, playing);
+    const { visible: controlsVisible, flash: flashControls, toggle: toggleControls } = useAutoHideControls(videoRef, playing);
 
     useEffect(() => {
         setError(false);
@@ -41,10 +41,27 @@ export default function VideoPreview({ note, noteContext, isVisible = true }: { 
         }
     }, []);
 
+    // Track the pointer type of the current interaction: `click` doesn't reliably expose pointerType across
+    // browsers, but the preceding pointerdown always does.
+    const lastPointerType = useRef<string>("mouse");
+    const onPointerDown = useCallback((e: PointerEvent) => { lastPointerType.current = e.pointerType; }, []);
+
+    // Reveal-on-move is a mouse/pen affordance; a touch drag shouldn't flash the controls (touch uses tap).
+    const onPointerMove = useCallback((e: PointerEvent) => {
+        if (e.pointerType === "touch") return;
+        flashControls();
+    }, [flashControls]);
+
     const onVideoClick = useCallback((e: MouseEvent) => {
         if ((e.target as HTMLElement).closest(".media-preview-controls")) return;
+        // On touch there's no hover to reveal the auto-hidden controls, so a tap toggles them instead of
+        // playing/pausing (which stays on the play button); otherwise the same tap would do both.
+        if (lastPointerType.current === "touch") {
+            toggleControls();
+            return;
+        }
         togglePlayback();
-    }, [togglePlayback]);
+    }, [togglePlayback, toggleControls]);
 
     const onKeyDown = useKeyboardShortcuts(videoRef, wrapperRef, togglePlayback, flashControls);
     const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, videoRef);
@@ -55,7 +72,7 @@ export default function VideoPreview({ note, noteContext, isVisible = true }: { 
     }
 
     return (
-        <div ref={wrapperRef} className={`video-preview-wrapper ${controlsVisible ? "" : "controls-hidden"}`} tabIndex={0} onClick={onVideoClick} onKeyDown={onKeyDown} onMouseMove={onMouseMove}>
+        <div ref={wrapperRef} className={`video-preview-wrapper ${controlsVisible ? "" : "controls-hidden"}`} tabIndex={0} onClick={onVideoClick} onKeyDown={onKeyDown} onPointerDown={onPointerDown} onPointerMove={onPointerMove}>
             <video
                 ref={videoRef}
                 class="video-preview"
@@ -167,10 +184,21 @@ function useAutoHideControls(videoRef: RefObject<HTMLVideoElement>, playing: boo
         }
     }, [ videoRef]);
 
-    const onMouseMove = useCallback(() => {
+    const reveal = useCallback(() => {
         setVisible(true);
         scheduleHide();
     }, [scheduleHide]);
+
+    // Toggle visibility for touch taps (which have no hover to reveal the controls): hide immediately, or
+    // show and re-arm the auto-hide.
+    const toggle = useCallback(() => {
+        if (visible) {
+            clearTimeout(hideTimerRef.current);
+            setVisible(false);
+        } else {
+            reveal();
+        }
+    }, [visible, reveal]);
 
     // Hide immediately when playback starts, show when paused.
     useEffect(() => {
@@ -183,7 +211,7 @@ function useAutoHideControls(videoRef: RefObject<HTMLVideoElement>, playing: boo
         return () => clearTimeout(hideTimerRef.current);
     }, [playing, scheduleHide]);
 
-    return { visible, onMouseMove, flash: onMouseMove };
+    return { visible, flash: reveal, toggle };
 }
 
 function RotateButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement> }) {

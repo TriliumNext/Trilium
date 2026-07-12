@@ -11,7 +11,7 @@
     },
     "role_brief_history": {
       "lead-dev": "Elian Doran 于 2024 年创立了 TriliumNext，这是在 Zadam 从该项目退出后创建的一个社区分支。Zadam 后来将原始仓库转移给 TriliumNext 团队，将两个项目合并回一个。",
-      "original-dev": "2017年12月25日，Zadam发布了Trilium的第一个测试版（写作时只用一个“l”，不同于那种花）。由于对现有的笔记整理工具不满意，他构建了一个强大的自托管层次化知识库，该项目在GitHub上获得了超过22,000颗星。到了2024年，随着生活变得更加忙碌，他将该项目置于维护模式。"
+      "original-dev": "2017年12月25日，Zadam 发布了 Trilium 的第一个测试版（名字里只有一个\"l\"，不是那个叫\"trillium\"的花）。因为对市面上的笔记管理工具不满意，他自己动手打造了一款功能强大的自托管层级知识库，该项目在GitHub上累计获得超过22,000颗星。到了2024年，随着生活日益繁忙，他将该项目转为维护模式。"
     },
     "contributor_full_list": "查看整个社区",
     "github_tooltip": "在 GitHub 上报告错误、提出功能建议或贡献代码",
@@ -127,20 +127,31 @@
   "export": {
     "export_note_title": "导出笔记",
     "close": "关闭",
-    "export_type_subtree": "此笔记及其所有子笔记",
-    "format_html": "HTML - 推荐，因为它保留所有格式",
-    "format_html_zip": "HTML ZIP 归档 - 建议使用此选项，因为它保留了所有格式。",
-    "format_markdown": "Markdown - 保留大部分格式。",
-    "format_opml": "OPML - 大纲交换格式，仅限文本。不包括格式、图像和文件。",
-    "opml_version_1": "OPML v1.0 - 仅限纯文本",
-    "opml_version_2": "OPML v2.0 - 还允许 HTML",
-    "export_type_single": "仅此笔记，不包括子笔记",
+    "export_type_subtree": "此笔记及所有子笔记",
+    "export_type_single": "仅此笔记",
     "export": "导出",
     "choose_export_type": "请先选择导出类型",
-    "export_in_progress": "导出进行中：{{progressCount}}",
     "export_finished_successfully": "导出成功完成。",
     "format_pdf": "PDF - 用于打印或共享目的。",
-    "share-format": "HTML 网页发布——采用与共享笔记相同的主题，但可发布为静态网站。"
+    "what_to_export": "需导出的内容",
+    "format_html_description": "保留全部格式",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "保留大部分格式",
+    "format_opml_name": "大纲标记语言 OPML",
+    "format_opml_description": "包含HTML内容的大纲格式",
+    "format_share_name": "网页适用 HTML 格式",
+    "format_share_description": "使用共享笔记主题生成可发布静态站点",
+    "recommended": "推荐选项",
+    "result_subtree_html": "压缩包内文本笔记以 HTML 格式存储，代码、图片及其他文件均保留原始格式。",
+    "result_subtree_markdown": "压缩包内文本笔记以 Markdown 格式保存，代码、图片及其他文件均保留原有格式。",
+    "result_share": "包含使用共享笔记主题、可对外发布静态网站的ZIP压缩包。",
+    "result_opml": "单个 OPML 大纲文件，包含笔记标题与正文内容；不含图片、代码文件及附件。",
+    "result_single_html": "单个 HTML 文件，图片与附件均内嵌于该文件中。",
+    "result_single_markdown": "单个Markdown（.md）格式文件。",
+    "preparing_export": "正在准备导出…",
+    "export_in_progress_with_total": "已导出 {{progressCount}} / {{totalCount}} 条笔记",
+    "format": "格式",
+    "format_html_name": "HTML"
   },
   "help": {
     "noteNavigation": "笔记导航",
@@ -201,13 +212,12 @@
   "import": {
     "importIntoNote": "导入到笔记",
     "chooseImportFile": "选择导入文件",
-    "importDescription": "所选文件的内容将作为子笔记导入到",
     "options": "选项",
-    "safeImportTooltip": "Trilium <code>.zip</code> 导出文件可能包含可能有害的可执行脚本。安全导入将停用所有导入脚本的自动执行。仅当导入的归档文件原本就包含可执行脚本，且你完全信任导入的可执行脚本的内容时，才取消选中“安全导入”。",
+    "safeImportTooltip": "Trilium <code>.zip</code> 导出文件可能包含有害的可执行脚本。安全导入会禁用这类脚本。仅当压缩包需要运行脚本且你完全信任其内容时，再取消勾选该选项。",
     "safeImport": "安全导入",
-    "explodeArchivesTooltip": "如果选中此项，则Trilium将读取<code>.zip</code>、<code>.enex</code>和<code>.opml</code>文件，并从这些归档文件内部的文件创建笔记。如果未选中，则Trilium会将这些归档文件本身附加到笔记中。",
+    "explodeArchivesTooltip": "从<code>.zip</code>、<code>.enex</code>和<code>.opml</code>内部的文件创建笔记。关闭此选项时，压缩包将直接作为笔记附件。",
     "explodeArchives": "读取<code>.zip</code>、<code>.enex</code>和<code>.opml</code>归档文件的内容。",
-    "shrinkImagesTooltip": "<p>如果选中此选项，Trilium将尝试通过缩放和优化来缩小导入的图像，这可能会影响图像的感知质量。如果未选中，图像将不做修改地导入。</p><p>这不适用于带有元数据的<code>.zip</code>导入，因为这些文件已被假定为已优化。</p>",
+    "shrinkImagesTooltip": "如果选中此选项，Trilium将尝试通过缩放和优化来缩小导入的图像，这可能会影响图像的感知质量。如果未选中，图像将不做修改地导入。这不适用于带有元数据的 <code>.zip</code> 导入，因为这些文件已被假定为已优化。",
     "shrinkImages": "压缩图像",
     "textImportedAsText": "如果元数据不明确，将 HTML、Markdown 和 TXT 导入为文本笔记",
     "codeImportedAsCode": "如果元数据不明确，将识别的代码文件（例如<code>.json</code>）导入为代码笔记",
@@ -220,12 +230,19 @@
       "placeholder": "输入 HTML 标签，每行一个",
       "reset_button": "重置为默认列表"
     },
-    "in-progress": "导入进行中：{{progress}}",
+    "in-progress": "已导入 {{progress}} 条笔记",
     "successful": "导入成功完成。",
     "importZipRecommendation": "导入 ZIP 文件时，笔记层级将反映压缩文件内的子目录结构。",
     "spreadsheetImportedAsSpreadsheet": "将CSV和Excel文件作为可编辑的电子表格导入，而非普通文件",
     "starting": "正在导入…",
-    "in-progress-with-total": "正在导入{{progress}}/{{total}}"
+    "in-progress-with-total": "已导入 {{progress}} / {{total}} 条笔记",
+    "importIntoNoteNamed": "导入至{{- title}}",
+    "import_from": "从…导入",
+    "cardName": "文件及其他格式",
+    "cardDescription": "ZIP、ENEX、OPML、Markdown、HTML、图片及更多格式",
+    "shrinkImagesProviderTooltip": "缩放并优化导入图片以节省存储空间，画质会轻微下降。",
+    "extracting": "已提取 {{progress}} / {{total}} 项内容",
+    "processing": "已处理 {{progress}} / {{total}} 条笔记"
   },
   "include_note": {
     "dialog_title": "包含笔记",
@@ -295,7 +312,12 @@
     "deleted_notes_message": "已删除的笔记已清理。",
     "no_changes_message": "暂无修改...",
     "undelete_link": "恢复删除",
-    "confirm_undelete": "你确定要恢复此笔记及其子笔记吗？"
+    "confirm_undelete": "你确定要恢复此笔记及其子笔记吗？",
+    "deleted_notes_title": "已删除的笔记",
+    "more_actions": "更多操作",
+    "deleted_notes_settings": "已删除笔记设置",
+    "no_deleted_notes_message": "没有已删除的笔记。",
+    "undelete_failed": "该笔记无法还原——可能已被永久清理，或其父笔记已不可用。"
   },
   "sort_child_notes": {
     "sort_children_by": "按...排序子笔记",
@@ -411,7 +433,7 @@
     "share_index": "含有此标签的笔记将列出所有分享笔记的根",
     "display_relations": "应显示的逗号分隔关系名称。将隐藏所有其他关系。",
     "hide_relations": "应隐藏的逗号分隔关系名称。将显示所有其他关系。",
-    "title_template": "创建为此笔记的子笔记时的默认标题。该值将作为 JavaScript 字符串评估\n                        并因此可以通过注入的 <code>now</code> 和 <code>parentNote</code> 变量丰富动态内容。示例：\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')} 的文学作品</code></li>\n                            <li><code>${now.format('YYYY-MM-DD HH:mm:ss')} 的日志</code></li>\n                        </ul>\n                        \n                        有关详细信息，请参见<a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">含有详细信息的 wiki</a>、<a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> 和 <a href=\"https://day.js.org/docs/en/display/format\">now</a> 的 API 文档以获取详情。",
+    "title_template": "在此笔记下创建的子笔记的默认标题。该值将作为 JavaScript 字符串来解析\n                        并因此可以通过注入的 <code>now</code> 和 <code>parentNote</code> 变量来丰富动态内容。示例：\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')} 的文学作品</code></li>\n                            <li><code>${now.format('YYYY-MM-DD HH:mm:ss')} 的日志</code></li>\n                        </ul>\n                        \n                        详见<a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">Wiki 文档</a>、<a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> 和 <a href=\"https://day.js.org/docs/en/display/format\">now</a> 的 API 文档。",
     "template": "此笔记在创建新笔记时，将出现在可用模板的可选列表中",
     "toc": "<code>#toc</code> 或 <code>#toc=show</code> 将强制显示目录。<code>#toc=hide</code> 将强制隐藏它。如果标签不存在，则遵守全局设置",
     "color": "定义笔记树、链接等中笔记的颜色。使用任何有效的 CSS 颜色值，如 'red' 或 #a13d5f",
@@ -620,7 +642,12 @@
     "today": "今天",
     "week": "周",
     "month": "月",
-    "list": "列表"
+    "list": "列表",
+    "pin_date": "固定当前日期，让日历默认打开该时间区间，而非跳转至当日",
+    "unpin_date": "取消日期固定，日历将恢复默认打开当日日期",
+    "day": "天",
+    "day_previous": "前天",
+    "day_next": "后天"
   },
   "close_pane_button": {
     "close_this_pane": "关闭此面板"
@@ -666,7 +693,8 @@
     "toggle-zen-mode": "禅模式",
     "new-version-available": "新更新可用",
     "download-update": "取得版本 {{latestVersion}}",
-    "search_notes": "搜索笔记"
+    "search_notes": "搜索笔记",
+    "show_deleted_notes": "显示已删除的笔记"
   },
   "zen_mode": {
     "button_exit": "退出禅模式"
@@ -720,7 +748,12 @@
     "word_wrap_off": "关闭",
     "print_or_export_to_pdf": "打印/导出为 PDF…",
     "save_named_revision": "保存已命名的修订...",
-    "import_from_service": "从服务导入…"
+    "convert_to_markdown": "转换为 Markdown 笔记",
+    "convert_to_text": "转换为文本笔记",
+    "convert_format_warning": "转换过程中可能会丢失部分格式，之后可能需要手动调整。转换前会先为当前笔记保存一个修订，方便随时还原。要继续吗？",
+    "convert_format_warning_risky": "你正在两种功能不完全一致的格式之间进行转换，因此部分格式可能会丢失，部分不支持的元素可能会被舍弃。<br><br>你愿意自行承担这一风险，并继续转换吗？<br><br>转换前会先为当前笔记保存一个修订，以便随时还原为原始格式。",
+    "convert_to_markdown_successful": "笔记已转换为 Markdown。",
+    "convert_to_text_successful": "笔记已转换为文本笔记。"
   },
   "onclick_button": {
     "no_click_handler": "按钮组件'{{componentId}}'没有定义点击处理程序"
@@ -736,7 +769,7 @@
     "update_available": "有更新可用"
   },
   "note_launcher": {
-    "this_launcher_doesnt_define_target_note": "此启动器未定义目标笔记。"
+    "this_launcher_doesnt_define_target_note": "此启动器没有配置目标笔记，因此无法打开。请设置它的\"目标\"关系，将其指向某个笔记。"
   },
   "code_buttons": {
     "execute_button_title": "执行脚本",
@@ -1208,7 +1241,12 @@
     "color_scheme_system": "跟随系统",
     "color_scheme_light": "浅色",
     "color_scheme_dark": "深色",
-    "color_scheme_custom_disabled": "配色方案覆盖不适用于自定义主题"
+    "color_scheme_custom_disabled": "配色方案覆盖不适用于自定义主题",
+    "color_scheme_switcher_system": "跟随系统",
+    "color_scheme_switcher_light": "浅色模式",
+    "color_scheme_switcher_dark": "深色模式",
+    "color_scheme_switcher_hint": "点击即可切换配色方案。",
+    "color_scheme_switcher_unsupported": "当前主题不支持更改配色方案。"
   },
   "zoom_factor": {
     "title": "缩放系数（仅桌面客户端有效）",
@@ -1224,7 +1262,8 @@
     "title": "下拉菜单可用的MIME文件类型",
     "tooltip_syntax_highlighting": "语法高亮",
     "tooltip_code_block_syntax": "文本笔记中的代码块",
-    "tooltip_code_note_syntax": "代码笔记"
+    "tooltip_code_note_syntax": "代码笔记",
+    "trilium_log": "Trilium 日志"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Vim 快捷键",
@@ -1439,7 +1478,7 @@
     "set_password_heading": "设置密码",
     "set_password": "设置密码",
     "password_mismatch": "新密码不一致。",
-    "password_changed_success": "密码已更改。按 OK 后 Trilium 将重载。",
+    "password_changed_success": "密码已成功更改。",
     "change_password_description": "更新你当前的密码",
     "reset_password": "重置密码",
     "reset_password_description": "将永久失去对受保护笔记的访问权限",
@@ -1594,7 +1633,7 @@
     "will_be_deleted_soon": "该附件在不久后将被自动删除",
     "deletion_reason": "，因为该附件未链接在笔记的内容中。为防止被删除，请将附件链接重新添加到内容中或将附件转换为笔记。",
     "role_and_size": "角色：{{role}}，大小：{{size}}，文件类型：{{- mimeType}}",
-    "link_copied": "附件链接已复制到剪贴板。",
+    "link_copied": "附件引用已复制到剪贴板。",
     "unrecognized_role": "无法识别的附件角色 '{{role}}'。"
   },
   "bookmark_switch": {
@@ -1787,9 +1826,6 @@
     "search_not_executed": "尚未执行搜索。",
     "search_now": "立即搜索"
   },
-  "spacer": {
-    "configure_launchbar": "配置启动栏"
-  },
   "sql_result": {
     "no_rows": "此查询没有返回任何数据",
     "not_executed": "查询尚未执行。",
@@ -1918,7 +1954,7 @@
         "title": "固定",
         "description": "编辑工具出现在 \"格式\" 功能区标签中。"
       },
-      "multiline-toolbar": "如果工具栏无法完全显示，则分多行显示。",
+      "multiline-toolbar": "如果工具栏无法完全显示，则分多行显示",
       "toolbar_style": "工具栏样式"
     }
   },
@@ -2153,7 +2189,8 @@
   },
   "modal": {
     "close": "关闭",
-    "help_title": "显示关于此画面的更多信息"
+    "help_title": "显示关于此画面的更多信息",
+    "cancel": "取消"
   },
   "call_to_action": {
     "background_effects_title": "背景效果现已推出稳定版本",
@@ -2207,7 +2244,12 @@
     "slide-overview": "切换幻灯片概览"
   },
   "calendar_view": {
-    "delete_note": "删除笔记..."
+    "delete_note": "删除笔记...",
+    "time_slots": "时间段",
+    "slot_duration": "时长",
+    "slot_label_interval": "标签间隔",
+    "minutes_other": "{{count}} 分钟",
+    "hours_other": "{{count}} 小时"
   },
   "read-only-info": {
     "read-only-note": "当前正在查看一个只读笔记。",
@@ -2304,7 +2346,11 @@
     "empty_button": "隐藏面板",
     "toggle": "切换右侧面板",
     "custom_widget_go_to_source": "跳转到源码",
-    "empty_message": "这篇笔记没有展示内容"
+    "empty_message": "这篇笔记没有展示内容",
+    "peek": "查看右侧面板",
+    "hide": "隐藏右侧面板",
+    "dock": "停靠面板",
+    "close": "关闭面板"
   },
   "attributes_panel": {
     "title": "笔记属性"
@@ -2395,7 +2441,8 @@
     "play-mode-title": "播放模式：{{mode}}",
     "play-mode-once": "单次播放",
     "play-mode-loop": "循环播放",
-    "play-mode-next": "播放下一个"
+    "play-mode-next": "播放下一个",
+    "forward-10s": "快进10秒（右方向键）"
   },
   "mermaid": {
     "sample_diagrams": "示例图：",
@@ -2427,7 +2474,10 @@
     "sample_treeview": "树形视图",
     "sample_wardley": "沃德利地图",
     "slash_command_blank_description": "插入一个空白的 Mermaid 图表",
-    "slash_command_description": "插入一个“{{name}}”类型的 Mermaid 图表模板"
+    "slash_command_description": "插入一个“{{name}}”类型的 Mermaid 图表模板",
+    "sample_cynefin": "Cynefin",
+    "sample_swimlane": "泳道图",
+    "sample_railroad": "铁路图"
   },
   "llm_chat": {
     "placeholder": "输入消息…",
@@ -2468,7 +2518,26 @@
     "attach_file": "添加图片、PDF 或文本文件",
     "remove_attachment": "移除附件",
     "attachment_upload_failed": "上传“{{name}}”失败。",
-    "attachment_unsupported_type": "“{{name}}”不是支持的附件类型。请使用图片（PNG、JPEG、GIF、WebP）、PDF 或文本/源代码文件。"
+    "attachment_unsupported_type": "“{{name}}”不是支持的附件类型。请使用图片（PNG、JPEG、GIF、WebP）、PDF 或文本/源代码文件。",
+    "scroll_to_bottom": "滚动到最新消息",
+    "read_only_notice": "此 AI 聊天为只读，无法回复。",
+    "toc_file": "文件：{{name}}",
+    "highlights_title": "高亮 ({{count}})",
+    "highlights_empty": "还没有高亮。在消息中选择文字，然后点击“高亮”。",
+    "copy": "复制",
+    "highlight_add": "高亮",
+    "highlight_remove": "移除高亮",
+    "highlight_remove_confirm": "移除这条高亮吗？",
+    "quote_selection": "引用所选内容",
+    "quoted_from": "引用自",
+    "show_quote_source": "显示引用来源",
+    "copy_message": "复制消息",
+    "save_to_subnote": "保存为子笔记",
+    "save_as_note": "保存为笔记",
+    "save_note_failed": "从消息创建笔记失败。",
+    "regenerate": "重新生成",
+    "delete_message": "删除消息",
+    "delete_message_confirm": "删除这条消息吗？此操作无法撤销。"
   },
   "sidebar_chat": {
     "title": "AI对话",
@@ -2479,7 +2548,14 @@
     "history": "对话历史",
     "recent_chats": "最近对话",
     "no_chats": "无历史对话",
-    "view_all_chats": "查看所有聊天"
+    "view_all_chats": "查看所有聊天",
+    "more_actions": "更多操作",
+    "rename": "重命名",
+    "rename_title": "重命名聊天",
+    "rename_message": "为这个聊天输入一个新名称：",
+    "delete": "删除",
+    "delete_chat": "删除聊天",
+    "delete_confirm": "确定删除这个聊天吗？此操作无法撤销。"
   },
   "ocr": {
     "extracted_text": "提取文本（OCR）",
@@ -2642,7 +2718,10 @@
     "related_task_states": "待办事项列表中自定义复选框的状态"
   },
   "launcher_button_context_menu": {
-    "remove_from_launch_bar": "从启动栏中移除"
+    "remove_from_launch_bar": "从启动栏中移除",
+    "configure_launch_bar": "配置启动栏",
+    "launch_bar_orientation": "启动栏方向",
+    "will_reload_frontend": "（将重新加载应用）"
   },
   "link": {
     "failed_to_open": "无法打开链接“{{- href}}”：{{- message}}",
@@ -2714,8 +2793,11 @@
     "placeholders": {
       "math": "方程",
       "collapsible_summary": "摘要",
-      "collapsible_details": "详细内容"
-    }
+      "collapsible_details": "详细内容",
+      "table_column": "第{{number}}列"
+    },
+    "page_break": "插入分页符（用于打印）",
+    "table": "插入表格"
   },
   "mobile_note_navigator": {
     "back": "返回上一级",
@@ -2859,13 +2941,11 @@
     "tooltip": "一段可重复使用的文本或代码，可插入编辑器中（通过工具栏的片段菜单，或使用斜杠命令）。"
   },
   "import_provider": {
-    "title": "从服务导入",
-    "choose_provider": "选择要导入的服务：",
-    "back": "返回"
+    "choose_provider": "从上方选择要导入的服务。"
   },
   "onenote_import": {
     "name": "Microsoft OneNote",
-    "description": "从你的 OneNote 帐户导入笔记本、分区和页面。",
+    "description": "连接到您的账户",
     "connect_description": "使用你的 Microsoft 帐户登录以导入 OneNote 笔记本。",
     "connect": "使用 Microsoft 登录",
     "connecting": "正在等待登录完成…",
@@ -2873,30 +2953,31 @@
     "disconnect": "断开连接",
     "load_failed": "无法加载你的 OneNote 笔记本。",
     "no_notebooks": "未在此帐户中找到笔记本。",
-    "select_sections": "选择要导入的分区：",
-    "order_hint_title": "分区的大致顺序",
-    "order_hint": "OneNote 的导入数据不包含原始排序信息，所以分区和分区组会按创建日期排序，可能与 OneNote 中的实际排列不完全一致。",
+    "select_sections": "选择要导入的分区",
     "import": "导入所选内容",
     "attach_source": "附加原始 HTML（debug）",
-    "attach_source_hint": "将每个页面未经修改的 OneNote HTML 作为附件保存在导入后的笔记上，便于与转换结果进行对比。"
+    "attach_source_hint": "将每个页面未经修改的 OneNote HTML 作为附件保存在导入后的笔记上，便于与转换结果进行对比。",
+    "section_heading": "微软 OneNote",
+    "checking": "正在校验 OneNote 连接状态…",
+    "select_sections_hint": "OneNote导入数据不会保留原始排序，分区与分组将按创建日期排序，显示顺序可能与OneNote内原有布局不一致。"
   },
   "notion_import": {
     "name": "Notion",
-    "description": "从 Notion 的 HTML 导出文件（.zip）中导入页面。",
+    "description": "从 HTML 格式文件导入页面",
     "description_long": "在 Notion 中，将工作区或页面导出为包含子页面的 HTML 格式，然后在此处选择生成的 .zip 文件。",
     "choose_file": "Notion 导出文件（.zip）",
     "import": "导入"
   },
   "keep_import": {
     "name": "Google Keep",
-    "description": "从 Google Keep 的导出文件（.zip）中导入笔记。",
+    "description": "从 Takeout 文件导入笔记",
     "description_long": "在Google Takeout中，将你的Keep数据导出为.zip文件，然后在此处选择生成的文件。",
     "choose_file": "Google Keep 导出文件（.zip）",
     "import": "导入"
   },
   "evernote_import": {
     "name": "Evernote",
-    "description": "从 Evernote 导出文件（.enex）中导入笔记。",
+    "description": "从 .enex 文件导入笔记",
     "description_long": "在 Evernote 中，将笔记本（或一次最多 100 条笔记）导出为 ENEX 文件，然后在此处选择一个或多个 .enex 文件。每个文件将作为独立的笔记本导入。",
     "choose_file": "Evernote 导出文件（.enex）",
     "import": "导入"
@@ -2927,5 +3008,93 @@
     "launch_on_startup_description": "登录电脑时自动打开 Trilium。",
     "hide_on_auto_start": "启动时最小化到系统托盘",
     "hide_on_auto_start_description": "开机自动启动后，以隐藏于系统托盘的方式启动，而不是打开窗口。需要同时启用开机时自动启动和系统托盘图标。"
+  },
+  "file_upload": {
+    "drop_or_browse_single": "将文件拖拽至此处，或点击浏览选择文件",
+    "drop_or_browse_multiple": "将多个文件拖拽至此，或点击浏览选取文件",
+    "browse_single": "点击选择文件",
+    "browse_multiple": "点击选择多个文件",
+    "selected_other": "已选中 {{count}} 个文件"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "从 JSON 导出文件导入",
+    "description_long": "在Anytype中，选择Any-Block格式并勾选JSON导出你的空间，随后在此选中生成的zip压缩包。目前仅支持导入页面及页面文本内容。",
+    "choose_file": "Anytype导出文件（.zip）",
+    "import": "导入"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "从知识库导入",
+    "description_long": "将Obsidian库文件夹压缩为.zip包，再在此处选择生成的压缩文件。",
+    "choose_file": "Obsidian知识库压缩包（.zip）",
+    "import": "导入"
+  },
+  "save_revision": {
+    "save_revision": "保存修订",
+    "revision_name_placeholder": "修订名称（可选）",
+    "help": "将为每个匹配的笔记保存一个命名修订，记录其当前的内容和标题。"
+  },
+  "convert_note": {
+    "convert_note": "转换",
+    "convert_note_to": "转换笔记",
+    "choose_conversion": "（选择转换方式）",
+    "conversion_htmlToMarkdown": "文本笔记 → Markdown 笔记（有损转换）",
+    "conversion_markdownToHtml": "Markdown 笔记 → 文本笔记",
+    "help_text": "转换仅应用于符合源类型的笔记，其他笔记保持不变。转换前会先为每篇笔记保存一个修订。",
+    "warning": "转换笔记时可能会丢失部分格式，之后可能需要手动调整。转换前会先为每篇笔记保存一个修订，方便随时还原。要继续吗？",
+    "warning_risky": "你正在两种功能不完全一致的格式之间进行转换，因此部分格式可能会丢失，部分不支持的元素可能会被舍弃。<br><br>你愿意自行承担这一风险，并继续转换吗？<br><br>转换前会先为每篇笔记保存一个修订，以便随时还原为原始格式。"
+  },
+  "icon_pack": {
+    "preview_title": "图标包预览",
+    "invalid_manifest": "无法解析图标包清单，请检查是否为有效的 JSON。",
+    "no_icons": "此图标包未包含任何图标。",
+    "tooltip": "类：{{- class}}\n字形码：{{- code}}\n术语：{{- terms}}",
+    "count_other": "{{count}} 个图标"
+  },
+  "blob_stub": {
+    "not_synced": "此笔记的内容过大，无法同步到此设备。你可以改为在同步服务器上打开它。",
+    "open_on_server": "在服务器上打开"
+  },
+  "keyboard_shortcut_keys": {
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "shift": "Shift",
+    "meta": "Meta",
+    "enter": "Enter",
+    "escape": "Esc",
+    "delete": "Delete",
+    "backspace": "Backspace",
+    "space": "Space",
+    "tab": "Tab",
+    "home": "Home",
+    "end": "End",
+    "page_up": "Page Up",
+    "page_down": "Page Down",
+    "insert": "Insert"
+  },
+  "login": {
+    "heading": "登录 Trilium Notes",
+    "password": "密码",
+    "totp-token": "一次性密码或恢复码",
+    "button": "登录",
+    "remember-me": "记住我",
+    "incorrect-password": "密码不正确，请再试一次。",
+    "incorrect-totp": "一次性密码不正确，请再试一次。",
+    "incorrect-recovery-code": "恢复码不正确，或已被使用过。",
+    "too-many-attempts": "登录尝试次数过多，请稍等几分钟再试。",
+    "connection-error": "无法连接到服务器，请检查网络连接后重试。",
+    "sign_in_with_sso": "通过 {{ssoIssuerName}} 登录",
+    "sso-wrong-account": "该账户不是绑定到此 Trilium 实例的账户，请使用已绑定的账户登录。",
+    "sso-not-enrolled": "单点登录尚未设置。请先使用密码登录，然后在设置中绑定你的账户。"
+  },
+  "set_password": {
+    "heading": "设置密码",
+    "description": "在开始使用 Trilium 网页版之前，需要先设置一个密码。之后您可以使用这个密码登录。",
+    "password": "密码",
+    "password-confirmation": "确认密码",
+    "button": "设置密码",
+    "password-too-short": "密码长度不能少于 {{length}} 个字符。",
+    "passwords-dont-match": "两次输入的密码不一致。"
   }
 }

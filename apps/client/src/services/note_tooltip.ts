@@ -83,7 +83,18 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
     // note tooltip rather than being fed into a jQuery selector (the `?` is an invalid selector).
     if (url && url.startsWith("#") && !url.startsWith("#root/") && !url.includes("?")) {
         renderPromise = renderFootnoteOrAnchor($link, url);
+    } else if ($link.attr("data-note-deleted") != null) {
+        // The element explicitly targets a soft-deleted note (e.g. an entry in the deleted-notes
+        // dialog): read it via the deleted-content route. `DeletedFNote.load` returns null once the
+        // note is erased, so the tooltip then shows the "note has been deleted" message.
+        // Imported lazily to avoid a static import cycle (DeletedFNote extends FNote, which
+        // transitively imports this module via the context menu).
+        const { default: DeletedFNote } = await import("../entities/deleted_fnote.js");
+        note = await DeletedFNote.load(noteId);
+        renderPromise = renderTooltip(note);
     } else {
+        // Default route: a live note. A missing note (deleted/erased) renders the "note has been
+        // deleted" placeholder — content previews of deleted notes are opt-in via `data-note-deleted`.
         note = await froca.getNote(noteId);
         renderPromise = renderTooltip(note);
     }
@@ -156,14 +167,17 @@ export async function renderTooltip(note: FNote | null) {
         return `<div>${t("note_tooltip.note-has-been-deleted")}</div>`;
     }
 
+    // Lazy import to avoid a static import cycle (DeletedFNote extends FNote, which transitively
+    // imports this module via the context menu).
+    const { default: DeletedFNote } = await import("../entities/deleted_fnote.js");
+    const isDeleted = note instanceof DeletedFNote;
     const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
     const bestNotePath = note.getBestNotePathString(hoistedNoteId);
 
-    if (!bestNotePath) {
+    // A soft-deleted note has no navigable path; still render it, just without the path-based title link.
+    if (!bestNotePath && !isDeleted) {
         return;
     }
-
-    const noteTitleWithPathAsSuffix = await treeService.getNoteTitleWithPathAsSuffix(bestNotePath);
 
     const { $renderedAttributes } = await attributeRenderer.renderNormalAttributes(note);
 
@@ -173,16 +187,23 @@ export async function renderTooltip(note: FNote | null) {
     });
     const isContentEmpty = $renderedContent[0].innerHTML.length === 0;
 
+    const titleClasses = ["note-tooltip-title"];
+    if (isContentEmpty) {
+        titleClasses.push("note-no-content");
+    }
+
     let content = "";
-    if (noteTitleWithPathAsSuffix) {
-        const classes = ["note-tooltip-title"];
-        if (isContentEmpty) {
-            classes.push("note-no-content");
+    if (isDeleted) {
+        // Plain, unlinked title — there is no live note to navigate to.
+        content = `<h5 class="${titleClasses.join(" ")}">${utils.escapeHtml(note.title)}</h5>`;
+    } else if (bestNotePath) {
+        const noteTitleWithPathAsSuffix = await treeService.getNoteTitleWithPathAsSuffix(bestNotePath);
+        if (noteTitleWithPathAsSuffix) {
+            content = `\
+                <h5 class="${titleClasses.join(" ")}">
+                    <a href="#${note.noteId}" data-no-context-menu="true">${noteTitleWithPathAsSuffix.prop("outerHTML")}</a>
+                </h5>`;
         }
-        content = `\
-            <h5 class="${classes.join(" ")}">
-                <a href="#${note.noteId}" data-no-context-menu="true">${noteTitleWithPathAsSuffix.prop("outerHTML")}</a>
-            </h5>`;
     }
 
     content = `${content}<div class="note-tooltip-attributes">${$renderedAttributes[0].outerHTML}</div>`;
@@ -190,7 +211,10 @@ export async function renderTooltip(note: FNote | null) {
         content += $renderedContent[0].outerHTML;
     }
 
-    content += `<a class="open-popup-button" title="${t("note_tooltip.quick-edit")}" href="#${note.noteId}?popup"><span class="bx bx-edit" /></a>`;
+    // The quick-edit (popup) button opens the live editor, which doesn't apply to a deleted note.
+    if (!isDeleted) {
+        content += `<a class="open-popup-button" title="${t("note_tooltip.quick-edit")}" href="#${note.noteId}?popup"><span class="bx bx-edit" /></a>`;
+    }
     return content;
 }
 

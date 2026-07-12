@@ -130,19 +130,20 @@
     "export_note_title": "Exporter la note",
     "close": "Fermer",
     "export_type_subtree": "Cette note et tous ses descendants",
-    "format_html": "HTML - recommandé car il conserve la mise en forme",
-    "format_html_zip": "HTML dans l'archive ZIP - recommandé car préserve la mise en forme.",
-    "format_markdown": "Markdown - préserve la majeure partie du formatage.",
-    "format_opml": "OPML - format d'échange pour les outlineurs, uniquement pour le texte. La mise en forme, les images et les fichiers ne sont pas inclus.",
-    "opml_version_1": "OPML v1.0 - texte brut uniquement",
-    "opml_version_2": "OPML v2.0 - HTML également autorisé",
-    "export_type_single": "Seulement cette note sans ses descendants",
+    "export_type_single": "Seulement cette note",
     "export": "Exporter",
     "choose_export_type": "Choisissez d'abord le type d'export",
-    "export_in_progress": "Exportation en cours : {{progressCount}}",
     "export_finished_successfully": "L'exportation s'est terminée avec succès.",
     "format_pdf": "PDF - pour l'impression ou le partage de documents.",
-    "share-format": "HTML pour la publication Web : utilise le même thème que celui utilisé pour les notes partagées, mais peut être publié sous forme de site Web statique."
+    "what_to_export": "exporter quoi",
+    "format_html_description": "garder tout le formatage",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "préserver la plupart du formatage",
+    "format_opml_name": "OPML",
+    "format_opml_description": "format extérieur avec contenu HTML",
+    "format_share_name": "HTML pour internet",
+    "format_share_description": "statique pouvant être publié avec le thème des notes partagées",
+    "recommended": "Recommandé"
   },
   "help": {
     "noteNavigation": "Navigation dans les notes",
@@ -203,13 +204,12 @@
   "import": {
     "importIntoNote": "Importer dans la note",
     "chooseImportFile": "Choisissez le fichier à importer",
-    "importDescription": "Le contenu du ou des fichiers sélectionnés sera importé en tant que note(s) enfant dans",
     "options": "Options",
-    "safeImportTooltip": "Les fichiers d'exportation Trilium <code>.zip</code> peuvent contenir des scripts exécutables susceptibles de comporter un comportement nuisible. L'importation sécurisée désactivera l'exécution automatique de tous les scripts importés. Décochez \"Importation sécurisée\" uniquement si l'archive importée est censée contenir des scripts exécutables et que vous faites entièrement confiance au contenu du fichier d'importation.",
+    "safeImportTooltip": "Les exports <code>.zip</code> Trilium peuvent contenir des scripts exécutables. L'import sécurisé les désactive ; ne décochez cette option que si l'archive est censée exécuter des scripts et que vous en faites confiance au contenu.",
     "safeImport": "Importation sécurisée",
-    "explodeArchivesTooltip": "Si cette case est cochée, Trilium lira les fichiers <code>.zip</code>, <code>.enex</code> et <code>.opml</code> et créera des notes à partir des fichiers contenus dans ces archives. Si cette case n'est pas cochée, Trilium joindra les archives elles-mêmes à la note.",
+    "explodeArchivesTooltip": "Crée des notes à partir des fichiers contenus dans les archives <code>.zip</code>, <code>.enex</code> et <code>.opml</code>. Lorsque cette option est désactivée, les archives sont jointes telles quelles.",
     "explodeArchives": "Lire le contenu des archives <code>.zip</code>, <code>.enex</code> et <code>.opml</code>.",
-    "shrinkImagesTooltip": "<p>Si vous cochez cette option, Trilium tentera de réduire la taille des images importées, ce qui peut affecter la qualité perçue des images. Si cette option est décochée, les images seront importées sans modification..</p><p>Cela ne s'applique pas aux importations de fichiers <code>.zip</code> contenant des métadonnées, car il est supposé que ces fichiers sont déjà optimisés..</p>",
+    "shrinkImagesTooltip": "Redimensionne et optimise les images pour gagner de la place, ce qui peut légèrement réduire la qualité. Cela ne s'applique pas aux imports <code>.zip</code> avec métadonnées, supposés déjà optimisés.",
     "shrinkImages": "Réduire la taille des images",
     "textImportedAsText": "Importez HTML, Markdown et TXT sous forme de notes de texte si les métadonnées ne sont pas claires",
     "codeImportedAsCode": "Importez des fichiers de code reconnus (par exemple <code>.json</code>) en tant que notes de code si cela n'est pas clair à partir des métadonnées",
@@ -222,12 +222,19 @@
       "placeholder": "Saisir les balises HTML, une par ligne",
       "reset_button": "Réinitialiser à la liste par défaut"
     },
-    "in-progress": "Importation en cours : {{progress}}",
+    "in-progress": "{{progress}} notes importées",
     "successful": "Importation terminée avec succès.",
     "importZipRecommendation": "Lors de l'importation d'un fichier ZIP, la hiérarchie des notes reflétera la structure des sous-répertoires au sein de l'archive.",
     "spreadsheetImportedAsSpreadsheet": "Importer les fichiers CSV et Excel sous forme de feuilles de calcul modifiables plutôt que de fichiers",
     "starting": "Importation…",
-    "in-progress-with-total": "Importation {{progress}} de {{total}}"
+    "in-progress-with-total": "{{progress}} notes importées sur {{total}}",
+    "importIntoNoteNamed": "Importer dans {{- title}}",
+    "import_from": "Importer à partir de",
+    "cardName": "Fichiers et autres formats",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, images et plus encore",
+    "shrinkImagesProviderTooltip": "Redimensionne et optimise les images importées pour gagner de la place, ce qui peut légèrement réduire la qualité.",
+    "extracting": "{{progress}} éléments extraits sur {{total}}",
+    "processing": "{{progress}} notes traitées sur {{total}}"
   },
   "include_note": {
     "dialog_title": "Inclure une note",
@@ -622,7 +629,9 @@
     "year_previous": "Année précédente",
     "year_next": "Année suivante",
     "list": "Liste",
-    "today": "Aujourd'hui"
+    "today": "Aujourd'hui",
+    "pin_date": "Épinglez la date actuelle pour que le calendrier s'ouvre toujours sur cette plage plutôt que sur aujourd'hui",
+    "unpin_date": "Désépinglez la date pour que le calendrier s'ouvre à nouveau sur la date d'aujourd'hui"
   },
   "close_pane_button": {
     "close_this_pane": "Fermer ce volet"
@@ -721,8 +730,7 @@
     "print_or_export_to_pdf": "Imprimer/exporter en PDF...",
     "save_named_revision": "Enregistrer une révision nommée…",
     "word_wrap_on": "Activé",
-    "word_wrap_off": "Désactivé",
-    "import_from_service": "Importation depuis un service…"
+    "word_wrap_off": "Désactivé"
   },
   "onclick_button": {
     "no_click_handler": "Le widget bouton '{{componentId}}' n'a pas de gestionnaire de clic défini"
@@ -1728,9 +1736,6 @@
     "search_not_executed": "La recherche n'a pas encore été exécutée.",
     "search_now": "Recherche maintenant"
   },
-  "spacer": {
-    "configure_launchbar": "Configurer la Barre de raccourcis"
-  },
   "sql_result": {
     "no_rows": "Aucune ligne n'a été renvoyée pour cette requête",
     "not_executed": "La requête n'a pas encore été exécutée.",
@@ -2400,7 +2405,11 @@
     "toggle": "Afficher/Masquer le panneau de droite",
     "custom_widget_go_to_source": "Aller sur le code source",
     "empty_message": "Rien à afficher pour cette note",
-    "empty_button": "Cacher le panneau"
+    "empty_button": "Cacher le panneau",
+    "peek": "Aperçu du panneau de droite",
+    "hide": "Masquer le panneau de droite",
+    "dock": "Ancrer le panneau",
+    "close": "Fermer le panneau"
   },
   "pdf": {
     "attachments_one": "{{count}} pièce jointe",
@@ -2683,8 +2692,11 @@
     "placeholders": {
       "math": "équation",
       "collapsible_summary": "Résumé",
-      "collapsible_details": "Détails"
-    }
+      "collapsible_details": "Détails",
+      "table_column": "Colonne {{number}}"
+    },
+    "page_break": "Insérer un saut de page (pour l'impression)",
+    "table": "Insérer un tableau"
   },
   "search": {
     "title": "Rechercher",
@@ -2912,9 +2924,7 @@
     "tooltip": "Un élément réutilisable de texte ou de code, conçu pour être inséré dans l'éditeur (depuis le menu des extraits dans la barre d'outils, ou via une commande slash)."
   },
   "import_provider": {
-    "title": "Importer depuis un service",
-    "choose_provider": "Choisisez un service pour importer :",
-    "back": "Retour"
+    "choose_provider": "Choisissez un service ci-dessus pour importer."
   },
   "onenote_import": {
     "connecting": "En attente de la connexion de se compléter…",
@@ -2922,16 +2932,17 @@
     "disconnect": "Déconnecter",
     "load_failed": "N'a pas pu charger vos cahiers OneNote.",
     "no_notebooks": "Pas de cahiers n'ont été trouvé dans ce compte.",
-    "select_sections": "Selectionner les sections à importer :",
+    "select_sections": "Selectionner les sections à importer",
     "name": "OneNote",
-    "description": "Importer des cahiers, sections et pages de votre compte OneNote.",
+    "description": "Connexion à votre compte",
     "connect_description": "Connectez-vous avec votre compte Microsoft pour importer vos cahiers OneNote.",
     "connect": "Connectez-vous avec Microsoft",
-    "order_hint_title": "Ordre approximatif des sections",
     "import": "Importer la sélection",
     "attach_source": "Joindre le code HTML d'origine (débogage)",
     "attach_source_hint": "Enregistre le code HTML OneNote non modifié de chaque page en tant que pièce jointe à la note importée, afin de permettre une comparaison avec le résultat converti.",
-    "order_hint": "OneNote n'inclut pas l'ordre d'origine dans les données importées ; par conséquent, les sections et les groupes sont triés par date de création et peuvent ne pas correspondre à leur disposition dans OneNote."
+    "section_heading": "Microsoft OneNote",
+    "checking": "Vérification de votre connexion OneNote…",
+    "select_sections_hint": "OneNote n'inclut pas l'ordre original dans les données d'importation, donc les sections et groupes sont triés par date de création et peuvent ne pas correspondre à leur affichage dans OneNote."
   },
   "split_editor": {
     "show_details": "Montrer les détails",
@@ -2950,21 +2961,21 @@
   },
   "notion_import": {
     "name": "Notion",
-    "description": "Importer des pages depuis une exportation HTML Notion (.zip).",
+    "description": "À partir d'un export HTML",
     "description_long": "Dans Notion, exportez votre espace de travail ou une page au format HTML en incluant les sous-pages, puis sélectionnez le fichier .zip obtenu ici.",
     "choose_file": "Export Notion (.zip)",
     "import": "Importer"
   },
   "keep_import": {
     "name": "Google Keep",
-    "description": "Importer des notes à partir d'un export Google Keep (.zip).",
+    "description": "À partir d'un export Takeout",
     "description_long": "Dans Google Takeout, exportez vos données Keep au format .zip, puis sélectionnez le fichier obtenu ici.",
     "choose_file": "Export Google Keep (.zip)",
     "import": "Importer"
   },
   "evernote_import": {
     "name": "Evernote",
-    "description": "Importer des notes depuis un export Evernote (.enex).",
+    "description": "À partir de fichiers .enex",
     "description_long": "Dans Evernote, exportez un carnet de notes (ou jusqu'à 100 notes à la fois) sous forme de fichier ENEX, puis sélectionnez un ou plusieurs fichiers .enex ici. Chaque fichier est importé en tant que carnet de notes distinct.",
     "choose_file": "Export Evernote (.enex)",
     "import": "Importer"
@@ -2980,5 +2991,28 @@
     "refresh-widget": "Rafraîchir",
     "remove-widget": "Retirer du tableau de bord",
     "empty-hint": "Toute note enfant devient un widget. Faites glisser une note depuis l'arborescence ou créez-en une nouvelle."
+  },
+  "file_upload": {
+    "drop_or_browse_single": "Glissez-déposez un fichier ici, ou cliquez pour parcourir",
+    "drop_or_browse_multiple": "Glissez-déposez des fichiers ici, ou cliquez pour parcourir",
+    "selected_one": "{{count}} fichier sélectionné",
+    "selected_many": "{{count}} fichiers sélectionnés",
+    "selected_other": "{{count}} fichiers sélectionnés",
+    "browse_single": "Touchez pour choisir un fichier",
+    "browse_multiple": "Touchez pour choisir des fichiers"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "À partir d'un export JSON",
+    "description_long": "Dans Anytype, exportez votre espace en utilisant le format « Any-Block » avec « JSON » sélectionné, puis choisissez le fichier .zip résultant ici. Seules les pages et leur texte sont actuellement importées.",
+    "choose_file": "Export Anytype (.zip)",
+    "import": "Import"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "À partir d'un coffre",
+    "description_long": "Zippez votre dossier de coffre Obsidian, puis sélectionnez le fichier .zip généré ici.",
+    "choose_file": "Coffre Obsidian (.zip)",
+    "import": "Import"
   }
 }

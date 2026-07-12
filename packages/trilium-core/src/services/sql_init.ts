@@ -185,7 +185,9 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
         if (demoFile) {
             const { default: zipImportService } = await import("./import/zip.js");
             const dummyTaskContext = new TaskContext("no-progress-reporting", "importNotes", null);
-            await zipImportService.importZip(dummyTaskContext, demoFile, rootNote);
+            // The demo archive is a whole-database export whose top note IS "root"; restore it onto the
+            // existing root rather than nesting it in a redundant "root" wrapper note.
+            await zipImportService.importZip(dummyTaskContext, demoFile, rootNote, { restoreAsRoot: true });
         }
     }
 
@@ -222,7 +224,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     log.info("Database initialization completed, emitted DB_INITIALIZED event");
 }
 
-async function createDatabaseForSync(options: OptionRow[], syncServerHost = "", syncProxy = "") {
+async function createDatabaseForSync(options: OptionRow[], syncServerHost = "", syncProxy = "", syncMaxBlobContentSize = 0) {
     const log = getLog();
     const sql = getSql();
     log.info("Creating database for sync");
@@ -237,7 +239,7 @@ async function createDatabaseForSync(options: OptionRow[], syncServerHost = "", 
     sql.transactional(() => {
         sql.executeScript(schema);
 
-        initNotSyncedOptions(false, { syncServerHost, syncProxy });
+        initNotSyncedOptions(false, { syncServerHost, syncProxy, syncMaxBlobContentSize });
 
         // document options required for sync to kick off
         for (const opt of options) {

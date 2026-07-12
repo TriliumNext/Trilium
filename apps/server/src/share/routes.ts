@@ -1,3 +1,4 @@
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { search as searchService, SearchContext, utils } from "@triliumnext/core";
 import type { NextFunction, Request, Response, Router } from "express";
 import safeCompare from "safe-compare";
@@ -39,8 +40,17 @@ function checkAttachmentAccess(attachmentId: string, req: Request, res: Response
 
     const note = checkNoteAccess(attachment.ownerId, req, res);
 
-    // truthy note means the user has access, and we can return the attachment
-    return note ? attachment : false;
+    if (!note) {
+        return false;
+    }
+
+    // Protected notes cannot be shared, and neither can their attachments
+    // (GHSA-xmv9-3v98-7gq8).
+    if (rejectProtected(note, res, `Attachment '${attachmentId}' not found.`)) {
+        return false;
+    }
+
+    return attachment;
 }
 
 function checkNoteAccess(noteId: string, req: Request, res: Response) {
@@ -81,6 +91,35 @@ function checkNoteAccess(noteId: string, req: Request, res: Response) {
     }
 
     return false;
+}
+
+// Like checkNoteAccess, but additionally refuses protected notes. Used by the
+// routes that stream a note's raw content/images: a protected note still shows
+// up as "[protected]" in the shared tree (handled by content_renderer.ts), but
+// its actual bytes must never be served anonymously (GHSA-xmv9-3v98-7gq8).
+function checkNoteContentAccess(noteId: string, req: Request, res: Response) {
+    const note = checkNoteAccess(noteId, req, res);
+
+    if (!note) {
+        return false;
+    }
+
+    if (rejectProtected(note, res, `Note '${noteId}' not found.`)) {
+        return false;
+    }
+
+    return note;
+}
+
+// Sends a 404 and returns true when the note is protected, so callers can bail.
+function rejectProtected(note: SNote, res: Response, message: string) {
+    if (!note.isProtected) {
+        return false;
+    }
+
+    res.status(404).json({ message });
+
+    return true;
 }
 
 function renderImageAttachment(image: SNote, res: Response, attachmentName: string) {
@@ -144,6 +183,15 @@ function register(router: Router) {
         addNoIndexHeader(note, res);
 
         if (note.isLabelTruthy("shareRaw") || typeof req.query.raw !== "undefined") {
+            // A protected note is shown as a placeholder by renderNoteContent()
+            // below, but the raw branch streams note.getContent() directly, so it
+            // must refuse protected notes (GHSA-xmv9-3v98-7gq8).
+            if (note.isProtected) {
+                render404(res);
+
+                return;
+            }
+
             // For SVG content, add a restrictive Content-Security-Policy to prevent
             // stored XSS via script execution (CWE-79). HTML is intentionally served
             // unrestricted here: serving raw HTML requires the `#shareRaw` attribute (or an
@@ -207,7 +255,7 @@ function register(router: Router) {
 
         let note: SNote | boolean;
 
-        if (!(note = checkNoteAccess(req.params.noteId, req, res))) {
+        if (!(note = checkNoteContentAccess(req.params.noteId, req, res))) {
             return;
         }
 
@@ -229,7 +277,7 @@ function register(router: Router) {
 
         let image: SNote | boolean;
 
-        if (!(image = checkNoteAccess(req.params.noteId, req, res))) {
+        if (!(image = checkNoteContentAccess(req.params.noteId, req, res))) {
             return;
         }
 
@@ -250,11 +298,11 @@ function register(router: Router) {
                 res.send(image.getContent());
             }
         } else if (image.type === "canvas") {
-            renderImageAttachment(image, res, "canvas-export.svg");
+            renderImageAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.canvas);
         } else if (image.type === "mermaid") {
-            renderImageAttachment(image, res, "mermaid-export.svg");
+            renderImageAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mermaid);
         } else if (image.type === "mindMap") {
-            renderImageAttachment(image, res, "mindmap-export.svg");
+            renderImageAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap);
         } else {
             res.status(400).json({ message: "Requested note is not a shareable image" });
         }
@@ -318,7 +366,7 @@ function register(router: Router) {
 
         let note: SNote | boolean;
 
-        if (!(note = checkNoteAccess(req.params.noteId, req, res))) {
+        if (!(note = checkNoteContentAccess(req.params.noteId, req, res))) {
             return;
         }
 

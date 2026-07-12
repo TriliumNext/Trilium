@@ -51,6 +51,18 @@ describe("loadIncludedNote", () => {
         expect(wrappers.children(".include-note-content").length).toBe(1);
     });
 
+    it("builds an expandable include (toggle) and degrades the note's own includes to reference links", async () => {
+        const $el = $('<div class="include-note-wrapper">');
+
+        await loadIncludedNote("noteY", $el, "expandable");
+
+        // The expandable branch adds a title row with a toggle button.
+        expect($el.children(".include-note-title-row").length).toBe(1);
+        expect($el.find("button.include-note-toggle").length).toBe(1);
+        // The included note is rendered with its own includes reduced to reference links.
+        expect(content_renderer.getRenderedContent).toHaveBeenCalledWith(note, { interactive: true, includesAsReferenceLinks: true });
+    });
+
     it("disposes interactive content of a previous render before replacing it", async () => {
         const $el = $('<div class="include-note-wrapper">');
 

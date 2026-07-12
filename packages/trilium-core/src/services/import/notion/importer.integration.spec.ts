@@ -56,6 +56,138 @@ describe("Notion importer — integration", () => {
         expect(examples?.getChildNotes().map((note) => note.title).sort()).toEqual(["Hello world", "Quick Note"]);
     });
 
+    it("rejects a Notion 'Markdown & CSV' export, guiding the user to re-export as HTML", async () => {
+        // A Markdown export has no `.html` pages — pages are `.md` and databases are `.csv`. This importer
+        // only understands the HTML export, so it must fail loudly rather than building an empty tree or
+        // orphaning every page as a `.md` attachment.
+        await expect(
+            importNotion({
+                "Workout tracker 644acbf2ec344e1eae705a8b33d186b3.md":
+                    "# Workout tracker\n\n[Workout Schedule](workout%20tracker/Workout%20Schedule%20644acbf2ec344e1eae705a8b33d186b3.csv)",
+                "workout tracker/Workout Schedule 644acbf2ec344e1eae705a8b33d186b3.csv": "Name,Day\nSquats,Monday"
+            })
+        ).rejects.toThrow(/re-export.*HTML/i);
+    });
+
+    it("still imports an HTML export that happens to bundle a `.md` attachment", async () => {
+        // A stray `.md` file (a real attachment) inside a valid HTML export must not trip the guard:
+        // the export has `.html` pages, so it's clearly the right format.
+        const importRoot = await importNotion({
+            "Notes 2c6c5eca1b8b80f7b9eaf4f396b755dc.html": pageHtml("Notes", "2c6c5eca1b8b80f7b9eaf4f396b755dc"),
+            "Notes/readme.md": "# bundled attachment"
+        });
+
+        expect(importRoot.getChildNotes().map((note) => note.title)).toEqual(["Notes"]);
+    });
+
+    it("rejects an HTML export made without 'Create folders for subpages' (flat pages still linked as subpages)", async () => {
+        // With the option off, the child sits at the archive root (no `Parent/` folder), yet the parent
+        // still references it via a flat link-to-page block. The folder structure is gone, so the nesting
+        // can't be reconstructed — fail with guidance instead of silently flattening the tree.
+        const parentId = "11111111111111111111111111111111";
+        const childId = "22222222222222222222222222222222";
+        const childFigure = `<figure class="link-to-page"><a href="Child ${childId}.html">Child</a></figure>`;
+        await expect(
+            importNotion({
+                [`Parent ${parentId}.html`]: `<html><head><title>Parent</title></head><body><div id="${parentId}"><div class="page-body">${childFigure}</div></div></body></html>`,
+                [`Child ${childId}.html`]: pageHtml("Child", childId)
+            })
+        ).rejects.toThrow(/Create folders for subpages/i);
+    });
+
+    it("imports a single-page export (no folders) without flagging it as a flattened hierarchy", async () => {
+        // The folders-disabled guard must never catch a legitimate single page, which also has no folders.
+        const importRoot = await importNotion({
+            "Solo 2c6c5eca1b8b80f7b9eaf4f396b755dc.html": pageHtml("Solo", "2c6c5eca1b8b80f7b9eaf4f396b755dc")
+        });
+
+        expect(importRoot.getChildNotes().map((note) => note.title)).toEqual(["Solo"]);
+    });
+
+    it("rejects a folders-disabled export whose database rows were flattened to the root", async () => {
+        // A CSV-only database with the folders option off: the row pages sit at the archive root with titles
+        // matching the CSV's first column, instead of nesting under the database. Detect via that title match.
+        await expect(
+            importNotion({
+                "Tasks 08d361c59a9940c2a9d7237a4e6cd09a.csv": "Name,Status\nFirst task,Done\nSecond task,Todo",
+                "First task 4f195d8c55fb44f4b94a063e643b0297.html": pageHtml("First task", "4f195d8c55fb44f4b94a063e643b0297"),
+                "Second task 388c5eca1b8b80929a78da7c68154bd7.html": pageHtml("Second task", "388c5eca1b8b80929a78da7c68154bd7")
+            })
+        ).rejects.toThrow(/Create folders for subpages/i);
+    });
+
+    it("imports a flat export containing an empty database (no rows) without flagging", async () => {
+        // An empty database (CSV header only) contributes no row titles, so a legitimately flat export that
+        // happens to include one isn't mistaken for a flattened hierarchy.
+        const importRoot = await importNotion({
+            "Empty DB 08d361c59a9940c2a9d7237a4e6cd09a.csv": "Name,Status",
+            "Note A 4f195d8c55fb44f4b94a063e643b0297.html": pageHtml("Note A", "4f195d8c55fb44f4b94a063e643b0297"),
+            "Note B 388c5eca1b8b80929a78da7c68154bd7.html": pageHtml("Note B", "388c5eca1b8b80929a78da7c68154bd7")
+        });
+
+        expect(importRoot.getChildNotes().map((note) => note.title)).toEqual(expect.arrayContaining(["Note A", "Note B"]));
+    });
+
+    it("imports flat top-level pages that only mention each other (no subpage blocks) without flagging", async () => {
+        // Several root-level pages with an inline cross-link — but no `link-to-page` subpage blocks — is a
+        // legitimately flat export (e.g. a whole workspace), not a flattened hierarchy. It must import.
+        const idA = "33333333333333333333333333333333";
+        const idB = "44444444444444444444444444444444";
+        const importRoot = await importNotion({
+            [`Page A ${idA}.html`]: `<html><head><title>Page A</title></head><body><div id="${idA}"><div class="page-body"><p><a href="Page B ${idB}.html">Page B</a></p></div></div></body></html>`,
+            [`Page B ${idB}.html`]: pageHtml("Page B", idB)
+        });
+
+        expect(importRoot.getChildNotes().map((note) => note.title).sort()).toEqual(["Page A", "Page B"]);
+    });
+
+    // Both Notion export shapes of an inline database — a full/workspace export's link to the separately-
+    // exported CSV, and a partial export's rendered table — must resolve to an include-note embedding the
+    // imported collection. Each shares the same CSV + rows; only the in-page `collectionBlock` differs.
+    const expectInlineDatabaseEmbedded = async (collectionBlock: string) => {
+        const pageId = "38ac5eca1b8b8075b965f506658aeb1f";
+        const dbId = "38ac5eca1b8b808babeaf10c0980fa5b";
+        const importRoot = await importNotion({
+            [`Inline database test ${pageId}.html`]:
+                `<html><head><title>Inline database test</title></head><body><div id="${pageId}"><div class="page-body"><p>Before</p>${collectionBlock}<p>After</p></div></div></body></html>`,
+            [`Inline database test/Database title ${dbId}.csv`]: "Name\nFirst\nSecond",
+            [`Inline database test/Database title/First 38ac5eca1b8b8069afb5c9fe40e53c42.html`]: pageHtml("First", "38ac5eca1b8b8069afb5c9fe40e53c42"),
+            [`Inline database test/Database title/Second 38ac5eca1b8b8025bf73d86d81713eb3.html`]: pageHtml("Second", "38ac5eca1b8b8025bf73d86d81713eb3")
+        });
+
+        const page = importRoot.getChildNotes().find((note) => note.title === "Inline database test");
+        const database = page?.getChildNotes().find((note) => note.title === "Database title");
+        // The database imported as a table collection with its rows nested under it.
+        expect(database?.type).toBe("book");
+        expect(database?.getChildNotes().map((note) => note.title).sort()).toEqual(["First", "Second"]);
+        // The page body embeds that collection inline and no longer references the raw CSV or the table.
+        const content = page?.getContent() ?? "";
+        expect(content).toContain(`class="include-note"`);
+        expect(content).toContain(`data-note-id="${database?.noteId}"`);
+        expect(content).toContain(`data-box-size="medium"`);
+        expect(content).not.toContain("data-notion-id");
+        expect(content).not.toContain(".csv");
+        expect(content).not.toContain("collection-content");
+    };
+
+    it("embeds a full-export inline database (CSV link) as an include-note for the imported collection", async () => {
+        const dbId = "38ac5eca1b8b808babeaf10c0980fa5b";
+        await expectInlineDatabaseEmbedded(
+            `<div style="display:contents" dir="ltr"><div id="38ac5eca-1b8b-808b-abea-f10c0980fa5b" class="collection-content"><h4 class="collection-title">Database title</h4>` +
+            `<a href="Inline%20database%20test/Database%20title%20${dbId}.csv"><code>Inline database test/Database title ${dbId}.csv</code></a></div></div>`
+        );
+    });
+
+    it("embeds a partial-export inline database (rendered table) as an include-note for the imported collection", async () => {
+        await expectInlineDatabaseEmbedded(
+            `<div style="display:contents" dir="ltr"><div id="38ac5eca-1b8b-808b-abea-f10c0980fa5b" class="collection-content"><h4 class="collection-title">Database title</h4>` +
+            `<div class="collection-content-wrapper"><table class="collection-content"><thead><tr><th>Name</th></tr></thead><tbody>` +
+            `<tr id="38ac5eca-1b8b-8069-afb5-c9fe40e53c42"><td class="cell-title"><a href="Inline%20database%20test/Database%20title/First%2038ac5eca1b8b8069afb5c9fe40e53c42.html">First</a></td></tr>` +
+            `<tr id="38ac5eca-1b8b-8025-bf73-d86d81713eb3"><td class="cell-title"><a href="Inline%20database%20test/Database%20title/Second%2038ac5eca1b8b8025bf73d86d81713eb3.html">Second</a></td></tr>` +
+            `</tbody></table></div></div></div>`
+        );
+    });
+
     it("groups a CSV-only database's rows under a container note, instead of orphaning them to the root", async () => {
         // A Notion inline/linked database exports as a `.csv` with no sibling `.html`; its rows live in a
         // folder named after the database. Nothing owns that folder, so without a container they'd be flat.

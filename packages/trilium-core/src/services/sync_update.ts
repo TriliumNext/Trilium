@@ -6,7 +6,7 @@ import { getSql } from "./sql/index.js";
 import ws from "./ws.js";
 import { default as eventService } from "./events.js";
 import entity_constructor from "../becca/entity_constructor.js";
-import { decodeBase64 } from "./utils/binary.js";
+import { decodeBase64, decodeBase64Into } from "./utils/binary.js";
 
 interface UpdateContext {
     alreadyErased: number;
@@ -120,7 +120,7 @@ function preProcessContent(remoteEC: EntityChange, remoteEntityRow: EntityRow) {
         // "string notes". The problem is that in general, it's not possible to detect whether a blob content
         // is string note or note (syncs can arrive out of order)
         if (typeof remoteEntityRow.content === "string") {
-            remoteEntityRow.content = decodeBase64(remoteEntityRow.content);
+            remoteEntityRow.content = decodeBlobContent(remoteEntityRow.content);
 
             if (remoteEntityRow.content.byteLength === 0) {
                 // there seems to be a bug which causes empty buffer to be stored as NULL which is then picked up as inconsistency
@@ -129,6 +129,49 @@ function preProcessContent(remoteEC: EntityChange, remoteEntityRow: EntityRow) {
             }
         }
     }
+}
+
+/**
+ * Ceiling of the blob decode pool size. Covers the mobile blob cap (20 MB) with headroom;
+ * blobs beyond this (only possible on uncapped platforms) fall back to a one-off allocation
+ * rather than pinning an oversized pool forever.
+ */
+const BLOB_DECODE_POOL_MAX_BYTES = 32 * 1024 * 1024;
+
+let blobDecodePool: Uint8Array | null = null;
+
+/**
+ * Decodes a pulled blob's base64 content, reusing one grow-only scratch buffer where the
+ * platform supports in-place decode (the browser/WASM build).
+ *
+ * The decoded bytes only need to live until the row is INSERTed a moment later — SQLite copies
+ * them synchronously — but a fresh ArrayBuffer per blob proved fatal on mobile: ArrayBuffer
+ * backing stores live outside the V8 heap, so during an initial sync V8 saw no heap pressure,
+ * ran major GCs too rarely, and ~200 MB of dead decoded blobs routinely sat in the WebView
+ * renderer (hard-capped around ~650 MB) until it was OOM-killed. Reusing the pool removes the
+ * allocation churn at the source. The returned view is only valid until the next call.
+ */
+function decodeBlobContent(base64: string): Uint8Array {
+    // Upper bound of the decoded size: every 4 base64 chars yield at most 3 bytes.
+    const maxBytes = (base64.length * 3) >> 2;
+
+    if (maxBytes > BLOB_DECODE_POOL_MAX_BYTES) {
+        return decodeBase64(base64);
+    }
+
+    if (!blobDecodePool || blobDecodePool.length < maxBytes) {
+        blobDecodePool = new Uint8Array(maxBytes);
+    }
+
+    const written = decodeBase64Into(base64, blobDecodePool);
+    if (written === null) {
+        // No in-place decoder on this platform (native builds) — plain decode. Also keeps
+        // better-sqlite3 receiving the Buffer instances it expects.
+        blobDecodePool = null;
+        return decodeBase64(base64);
+    }
+
+    return blobDecodePool.subarray(0, written);
 }
 
 function updateNoteReordering(remoteEC: EntityChange, remoteEntityRow: EntityRow | undefined, instanceId: string) {

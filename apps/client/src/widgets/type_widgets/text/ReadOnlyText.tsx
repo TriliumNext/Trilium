@@ -14,6 +14,7 @@ import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../
 import { getLocaleById } from "../../../services/i18n";
 import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
+import { trackPendingRender } from "../../../services/pending_renders";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { useNoteBlob, useNoteLabel, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { RawHtmlBlock } from "../../react/RawHtml";
@@ -87,13 +88,20 @@ export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: e
             appContext.triggerEvent("contentElRefreshed", { ntxId, contentEl: container });
         }
 
-        rewriteMermaidDiagramsInContainer(container);
-        applyInlineMermaid(container);
-        applyIncludedNotes(container);
-        applyLinkEmbeds(container);
+        // The passes that lazily load their library (mermaid, highlight.js) — plus included notes,
+        // which render a whole note of their own — finish after this effect returns. On screen they
+        // simply paint when ready; a caller that snapshots the DOM instead (printing) has to wait for
+        // them, so the work is registered rather than dropped on the floor.
+        trackPendingRender(container, Promise.all([
+            rewriteMermaidDiagramsInContainer(container),
+            applyInlineMermaid(container),
+            applyIncludedNotes(container),
+            applyLinkEmbeds(container),
+            applyReferenceLinks(container),
+            formatCodeBlocks($(container))
+        ]));
+
         applyMath(container);
-        applyReferenceLinks(container);
-        formatCodeBlocks($(container));
         setupImageOpening(container, true);
     }, [ html, ntxId, contentRef ]);
 
@@ -130,12 +138,14 @@ function useNoteLanguage(note: FNote) {
 }
 
 function applyIncludedNotes(container: HTMLDivElement) {
+    const loaded: Promise<unknown>[] = [];
     const includedNotes = container.querySelectorAll<HTMLElement>("section.include-note");
     for (const includedNote of includedNotes) {
         const noteId = includedNote.dataset.noteId;
         if (!noteId) continue;
-        loadIncludedNote(noteId, $(includedNote));
+        loaded.push(loadIncludedNote(noteId, $(includedNote)));
     }
+    return Promise.all(loaded);
 }
 
 function applyMath(container: HTMLDivElement) {

@@ -20,7 +20,7 @@ import type { EntityChange } from "../../server_types";
 import LoadResults from "../../services/load_results";
 import { buildNote } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
-import { useNoteIds } from "./NoteList";
+import { CustomNoteList, useNoteIds } from "./NoteList";
 
 let currentNoteIds: string[] = [];
 
@@ -183,5 +183,94 @@ describe("useNoteIds refresh race", () => {
         expect(currentNoteIds).toEqual([ "child-a", "child-b", "child-new" ]);
         // A new reference is what makes React/`useEffect([noteIds])` downstream actually re-run.
         expect(currentNoteIds).not.toBe(afterMount);
+    });
+});
+
+/**
+ * Regression test for #7901: the legacy list/grid views defer rendering until the widget scrolls
+ * into view via an IntersectionObserver. The observer's first callback fires right after
+ * `observe()` and reports `isIntersecting: false` while the widget is hidden (background tab) or
+ * below the viewport. The observer must keep observing through such callbacks — disconnecting on
+ * the first callback regardless of visibility left the cards permanently unrendered.
+ */
+describe("CustomNoteList visibility latch", () => {
+    class MockIntersectionObserver {
+        static instances: MockIntersectionObserver[] = [];
+        observe = vi.fn();
+        disconnect = vi.fn();
+
+        constructor(readonly callback: IntersectionObserverCallback) {
+            MockIntersectionObserver.instances.push(this);
+        }
+
+        fire(isIntersecting: boolean) {
+            this.callback(
+                [{ isIntersecting } as IntersectionObserverEntry],
+                this as unknown as IntersectionObserver
+            );
+        }
+    }
+
+    let container: HTMLElement | undefined;
+
+    let realIntersectionObserver: typeof IntersectionObserver;
+
+    beforeEach(() => {
+        MockIntersectionObserver.instances = [];
+        realIntersectionObserver = window.IntersectionObserver;
+        window.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;
+    });
+
+    afterEach(() => {
+        window.IntersectionObserver = realIntersectionObserver;
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    it("keeps observing after a non-intersecting callback and renders once visible", async () => {
+        const note = buildNote({ title: "Parent", type: "text" });
+        note.getChildNoteIdsWithArchiveFiltering = vi.fn(async () => [ "child-a" ]);
+        note.getAttachmentsByRole = vi.fn(async () => []);
+
+        const parent = new Component();
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <CustomNoteList
+                        note={note}
+                        viewType="grid"
+                        isEnabled={true}
+                        notePath={`root/${note.noteId}`}
+                        ntxId="ntx-1"
+                        media="screen"
+                    />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        // The widget observes only after a 10ms delay (Firefox race workaround).
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 25));
+        });
+
+        const observer = MockIntersectionObserver.instances.find((o) => o.observe.mock.calls.length > 0);
+        if (!observer) throw new Error("expected the note list to observe its widget element");
+
+        // First callback while hidden/below the viewport: must not give up.
+        await act(async () => observer.fire(false));
+        expect(observer.disconnect).not.toHaveBeenCalled();
+        expect(mountPoint.querySelector(".note-list-widget-content")).toBeNull();
+
+        // Scrolled into view: renders and stops observing.
+        await act(async () => observer.fire(true));
+        expect(observer.disconnect).toHaveBeenCalled();
+        expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
     });
 });

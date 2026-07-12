@@ -22,7 +22,7 @@
     "happy-dom": "20.10.6",
     "typescript": "6.0.3",
     "vite-plugin-svgo": "2.0.0",
-    "vitest": "4.1.9"
+    "vitest": "4.1.10"
   },
   "peerDependencies": {
     "bootstrap": "^5.3.0",

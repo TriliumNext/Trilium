@@ -28,13 +28,11 @@
         "title": "Produktivität und Sicherheit",
         "sync_title": "Synchronisation",
         "protected_notes_title": "Geschützte Notizen",
-        "jump_to_title": "Schnellsuche und Kommandos",
         "search_title": "Leistungsstarke Suche",
         "web_clipper_title": "Webschnipsel",
         "revisions_content": "Notizen werden regelmäßig im Hintergrund gespeichert und Revisionen können zur Überprüfung oder zum Rückgängigmachen versehentlicher Änderungen verwendet werden. Revisionen können auch bei Bedarf erstellt werden.",
         "sync_content": "Verwenden Sie eine selbst gehostete oder Cloud-Instanz, um Ihre Notizen ganz einfach auf mehreren Geräten zu synchronisieren und über eine WebApp von Ihrem mobilen Gerät aus darauf zuzugreifen.",
         "protected_notes_content": "Halten Sie vertrauliche Informationen sicher, indem Sie Notizen verschlüsseln und mit einem Passwort schützen.",
-        "jump_to_content": "Springen Sie schnell zu Notizen oder UI-Befehlen in der gesamten Hierarchie, indem Sie nach ihrem Titel suchen. Dank Fuzzy-Matching finden Sie auch Treffer bei Tippfehlern oder leicht abweichenden Schreibweisen.",
         "search_content": "Oder durchsuchen Sie den Inhalt von Notizen und grenzen Sie die Suche ein, indem Sie nach übergeordneten Notizen oder der Hierarchieebene filtern.",
         "web_clipper_content": "Webseiten oder Screenshots direkt in Trilium speichern – mit der Web Clipper Browser-Erweiterung."
     },
@@ -51,19 +49,7 @@
         "file_description": "Betten Sie Multimedia-Dateien wie PDFs, Bilder und Videos mit einer Vorschau innerhalb der Anwendung ein.",
         "canvas_description": "Ordnen Sie Formen, Bilder und Text auf einer unendlichen Leinwand an, indem Sie dieselbe Technologie verwenden, die auch hinter excalidraw.com steckt. Ideal für Diagramme, Skizzen und visuelle Planung.",
         "mermaid_description": "Erstellen Sie Fluss-, Klassen-, Sequenz- sowie Gantt-Diagramme und vieles mehr mit der Mermaid-Syntax.",
-        "mindmap_description": "Strukturieren Sie Ihre Gedanken visuell oder nutzen Sie eine Brainstorming-Sitzung.",
-        "others_list": "und andere: <0>note map</0>, <1>relation map</1>, <2>saved searches</2>, <3>render note</3>, and <4>web views</4>."
-    },
-    "extensibility_benefits": {
-        "import_export_title": "Import/Export",
-        "scripting_title": "Erweitertes Scripting",
-        "api_title": "REST API",
-        "title": "Freigabe & Erweiterung",
-        "import_export_description": "Einfache Interaktion mit anderen Anwendungen mithilfe von Markdown, ENEX und OML Formaten.",
-        "share_title": "Notizen im Web teilen",
-        "share_description": "Wenn Sie über einen Server verfügen, können Sie diesen nutzen, um einen Teil Ihrer Notizen mit anderen zu teilen.",
-        "scripting_description": "Erstellen Sie Ihre eigenen Integrationen innerhalb von Trilium mit benutzerdefinierten Widgets oder serverseitiger Logik.",
-        "api_description": "Nutzen Sie die integrierte REST-API, um flexibel und automatisiert mit Trilium zu interagieren."
+        "mindmap_description": "Strukturieren Sie Ihre Gedanken visuell oder nutzen Sie eine Brainstorming-Sitzung."
     },
     "collections": {
         "calendar_title": "Kalender",
@@ -118,8 +104,7 @@
     "download_helper_server_hosted": {
         "title": "Kostenpflichtiges Hosting",
         "description": "Trilium Notes wird auf PikaPods gehostet, einem kostenpflichtigen Dienst für einfachen Zugriff und Verwaltung. Es besteht keine direkte Verbindung zum Trilium-Team.",
-        "download_pikapod": "Auf PikaPods installieren",
-        "download_triliumcc": "Alternativ siehe trilium.cc"
+        "download_pikapod": "Auf PikaPods installieren"
     },
     "faq": {
         "title": "Häufig gestellte Fragen",

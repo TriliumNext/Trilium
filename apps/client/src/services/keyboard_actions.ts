@@ -1,5 +1,6 @@
 import server from "./server.js";
 import appContext from "../components/app_context.js";
+import { formatShortcut, joinShortcut } from "./keyboard_shortcut_display.js";
 import shortcutService, { ShortcutBinding } from "./shortcuts.js";
 import type Component from "../components/component.js";
 import type { ActionKeyboardShortcut } from "@triliumnext/commons";
@@ -89,7 +90,7 @@ function updateDisplayedShortcuts($container: JQuery<HTMLElement>) {
         const action = await getAction(actionName, true);
 
         if (action) {
-            const keyboardActions = (action.effectiveShortcuts ?? []).join(", ");
+            const keyboardActions = formatShortcutList(action.effectiveShortcuts);
 
             if (keyboardActions || $(el).text() !== "not set") {
                 $(el).text(keyboardActions);
@@ -108,7 +109,7 @@ function updateDisplayedShortcuts($container: JQuery<HTMLElement>) {
 
         if (action) {
             const title = $(el).attr("title");
-            const shortcuts = (action.effectiveShortcuts ?? []).join(", ");
+            const shortcuts = formatShortcutList(action.effectiveShortcuts);
 
             if (title?.includes(shortcuts)) {
                 return;
@@ -128,3 +129,8 @@ export default {
     getActions,
     getActionsForScope
 };
+
+/** Renders a list of stored shortcuts into a localized, comma-separated display string. */
+function formatShortcutList(shortcuts: string[] | undefined) {
+    return (shortcuts ?? []).map((shortcut) => joinShortcut(formatShortcut(shortcut))).join(", ");
+}

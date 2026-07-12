@@ -1,14 +1,3 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notes
 
 ![Urraitheoirí GitHub](https://img.shields.io/github/sponsors/eliandoran)
@@ -25,11 +14,11 @@ aistriúcháin](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https:
 | [Chinese (Traditional Han script)](./README-ZH_TW.md) |
 [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
 [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
-[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
-[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
-| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
-[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
-[Uyghur](./README-ug.md)
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Is feidhmchlár saor in aisce agus foinse oscailte, tras-ardán, ordlathach é
@@ -227,6 +216,8 @@ suiteála freastalaí (féach thíos).
 Féach ar an eagrán https://github.com/TriliumNext/Trilium/issues/4962 le
 haghaidh tuilleadh eolais faoi thacaíocht d’aipeanna soghluaiste.
 
+#### TriliumDroid
+
 Más fearr leat aip dhúchasach Android, is féidir leat
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)
 a úsáid. Tuairiscigh fabhtanna agus gnéithe atá ar iarraidh ag [a
@@ -234,6 +225,26 @@ stór](https://github.com/FliegendeWurst/TriliumDroid). Tabhair faoi deara: Is
 fearr nuashonruithe uathoibríocha a dhíchumasú ar do shuiteáil freastalaí (féach
 thíos) agus TriliumDroid in úsáid agat ós rud é go gcaithfidh an leagan
 sioncrónaithe a bheith mar an gcéanna idir Trilium agus TriliumDroid.
+
+#### Trilium Póca
+
+Más mian leat aip dhúchasach Android lánghnéitheach, féach ar [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). Ritheann sé sampla iomlán de
+Trilium ar do ghuthán, tacaíonn sé le húsáid iomlán as líne, agus ligeann sé
+duit sioncrónú le do fhreastalaí.
+
+#### Trinote
+
+Más mian leat aip dhúchasach iOS, is féidir leat
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249) a úsáid, cliant
+foinse oscailte chun do fhreastalaí Trilium / TriliumNext féinóstáilte. Ligeann
+sé duit do chrann nótaí a bhrabhsáil agus a eagrú, nótaí a chuardach ar an
+bhfreastalaí, gach cineál nótaí (téacs, cód, léarscáil intinne, scarbhileog,
+léarscáil gheo, chanbhás, srl.) a léamh agus a chur in eagar, agus coinníonn sé
+nótaí ar fáil agus in-eagarthóireacht as líne. Seo an
+[stór](https://github.com/StephenArg/Trinote) más spéis leat cur leis agus seo
+an freastalaí [discord](https://discord.com/invite/ghjJG56EUS) má tá aon
+aiseolas nó moltaí agat ar mhaith leat a phlé.
 
 ### Freastalaí
 

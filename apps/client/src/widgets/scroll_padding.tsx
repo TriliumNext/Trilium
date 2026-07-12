@@ -10,7 +10,8 @@ export default function ScrollPadding() {
         && viewScope?.viewMode === "default"
         && note?.isContentAvailable()
         && !note?.isTriliumSqlite()
-        && !note?.isMarkdown();
+        && !note?.isMarkdown()
+        && !note?.isIconPack();
 
     const refreshHeight = () => {
         if (!ref.current) return;

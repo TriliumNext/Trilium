@@ -47,23 +47,66 @@ section.hero-section {
     }
 
     .title-section {
-        flex-basis: 30%;
+        flex-basis: 42%;
         flex-shrink: 0;
+        max-width: 36em;
         color: var(--muted-color);
+
+        @media (prefers-reduced-motion: no-preference) {
+            animation: hero-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
 
         h1 {
             background-image: linear-gradient(150deg, var(--brand-1), var(--brand-3));
             background-clip: text;
             color: transparent;
-            line-height: 1.1;
-            font-weight: 400;
-            font-size: 2em;
-            margin-block: 0.65em;
+            line-height: 1.05;
+            font-weight: 600;
+            font-size: clamp(2.2rem, 3.6vw, 3rem);
+            letter-spacing: -0.02em;
+            margin-block: 0.5em 0.45em;
+            /* Descenders (e.g. the "g" in "knowledge") fall outside the painted
+               box with this tight line-height; pad so the gradient covers them. */
+            padding-bottom: 0.12em;
+        }
+
+        p {
+            font-size: 1.05em;
+            line-height: 1.6;
+        }
+    }
+
+    .hero-tagline {
+        width: 100%;
+        margin-top: 1.5em;
+        font-size: 0.85em;
+        color: var(--muted-color);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4em 0.9em;
+        justify-content: center;
+
+        > *:not(.dot) {
+            white-space: nowrap;
+        }
+
+        .dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--brand-1);
+            flex-shrink: 0;
         }
     }
 
     .screenshot-container {
-        flex-grow: 1;
+        flex: 1 1 0;
+        min-width: 0;
+
+        @media (prefers-reduced-motion: no-preference) {
+            animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+        }
     }
 
     .screenshot {
@@ -101,6 +144,41 @@ section.hero-section {
         a {
             flex-grow: 1;
         }
+
+        /* Kept as inline (not inline-flex): an inline-flex box introduces its own
+           baseline that pushes the whole "GitHub" text row down ~1px relative to
+           the button icon. Inline content lets the count baseline-align normally. */
+        .github-stars {
+            margin-inline-start: 0.5em;
+            padding-inline-start: 0.5em;
+            border-inline-start: 1px solid currentColor;
+            opacity: 0.75;
+
+            /* .bx is fixed at 24px globally; shrink it to match the count text. */
+            .bx {
+                width: 1em;
+                height: 1em;
+                margin-inline-end: 0.25em;
+                vertical-align: -0.125em;
+
+                svg {
+                    width: 100%;
+                    height: 100%;
+                }
+            }
+        }
+    }
+}
+
+@keyframes hero-rise {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -123,14 +201,82 @@ section.hero-section {
 }
 
 @media (min-width: 720px) {
+    section.hero-section {
+        /* Clip the screenshot where it bleeds past the right edge of the viewport */
+        overflow: hidden;
+
+        /* Occupy exactly one viewport below the sticky header. Without this the
+           bleeding screenshot can push the row slightly taller than the screen. */
+        height: calc(100vh - var(--header-height));
+        box-sizing: border-box;
+        display: flex;
+        align-items: stretch;
+    }
+
+    /* Text column on the left (title + tagline stacked, centered as a group between
+       two flexible spacer rows); the empty 1fr column reserves the right side for
+       the screenshot, which is layered over it as a full-height absolute element so
+       it fills the hero without dictating the grid's row heights. */
     section.hero-section > .content-wrapper {
-        flex-direction: row;
-        gap: 3em;
-        padding: 3em;
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 40%) 1fr;
+        grid-template-rows: 1fr auto auto 1fr;
+        /* Fill the hero's height. margin-block:0 overrides the base `margin:auto`,
+           whose vertical auto-margins would otherwise center (and shrink) the
+           wrapper instead of letting height:100% fill the section. */
+        height: 100%;
+        margin-block: 0;
+        /* Slim top padding so the screenshot reaches up near the header instead
+           of leaving an empty band above it. */
+        padding: 0.75em 3em 1.5em;
+    }
+
+    section.hero-section .title-section {
+        grid-column: 1;
+        grid-row: 2;
+        max-width: 30em;
+    }
+
+    /* Tagline sits directly below the download buttons, sharing the text column. */
+    section.hero-section .hero-tagline {
+        grid-column: 1;
+        grid-row: 3;
+        width: auto;
+        margin: 1.75em 0 0;
+        gap: 0.4em 0.7em;
+        justify-content: flex-start;
+    }
+
+    /* Deep screenshot: full-height on the right, anchored to the top and run off
+       the right edge of the viewport for an immersive, "spilling off the page"
+       look. Absolutely positioned so its intrinsic size can't inflate the grid. */
+    section.hero-section .screenshot-container {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        /* Start where grid column 2 begins. The +3em compensates for the left
+           padding and column gap so the image clears the text column at every
+           width (the absolute % is of the padding box, the grid % of the content
+           box). */
+        left: calc(40% + 3em);
+        right: calc(50% - 50vw - 8em);
+        display: flex;
+        align-items: flex-start;
+        overflow: hidden;
+    }
+
+    section.hero-section .screenshot {
+        height: 100%;
+        width: auto;
+        max-width: none;
+        min-width: 62vw;
+        object-fit: cover;
+        object-position: left top;
     }
 
     section.hero-section .download-wrapper {
-        display: inline-flex;
+        display: flex;
     }
 }
 
@@ -138,8 +284,181 @@ section.accented {
     background: linear-gradient(135deg, rgba(228, 123, 25, 0.08), rgba(79, 165, 43, 0.08));
 }
 
+/* Offset anchor jumps so a section lands flush below the sticky header +
+   section nav instead of leaving a gap (the nav itself renders ~46px). */
+section[id] {
+    scroll-margin-top: calc(var(--header-height) + 41px);
+}
+
 .benefits-container .card {
     padding: 1em;
+}
+
+.section-subtitle {
+    max-width: 46em;
+    margin: -0.5em auto 2em;
+    text-align: center;
+    color: var(--muted-color);
+}
+
+section.organization .organization-split {
+    display: flex;
+    flex-direction: column;
+    gap: 2em;
+    align-items: center;
+}
+
+section.organization .organization-screenshot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+section.organization .organization-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+@media (max-width: 719.99px) {
+    section.organization .organization-screenshot img {
+        max-height: 30vh;
+        object-fit: cover;
+        object-position: top;
+    }
+}
+
+.feature-split {
+    display: flex;
+    flex-direction: column;
+    gap: 2em;
+    align-items: center;
+}
+
+.feature-screenshot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.feature-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.section-cta {
+    margin-top: 2.5em;
+    display: flex;
+    justify-content: center;
+
+    .button {
+        padding: 0.75em 2em;
+    }
+}
+
+@media (min-width: 720px) {
+    section.organization .organization-split {
+        flex-direction: row;
+        align-items: center;
+        gap: 3em;
+    }
+
+    section.organization .organization-screenshot {
+        flex: 0 0 32%;
+        max-width: 320px;
+    }
+
+    section.organization .organization-cards {
+        flex: 1;
+    }
+
+    .feature-split {
+        flex-direction: row;
+        align-items: center;
+        gap: 3em;
+    }
+
+    section.scripting .feature-split {
+        flex-direction: row-reverse;
+    }
+
+    .feature-screenshot {
+        flex: 0 0 40%;
+        max-width: 420px;
+    }
+
+    .feature-cards {
+        flex: 1;
+    }
+}
+
+section.import .bx svg {
+    width: 100%;
+    height: 100%;
+}
+
+section.import .format-list {
+    margin: 0.75em 0 0;
+    padding-left: 1.2em;
+    list-style: none;
+}
+
+section.import .format-list li {
+    position: relative;
+    margin: 0.35em 0;
+    padding-left: 0.2em;
+}
+
+section.import .format-list li::before {
+    content: "";
+    position: absolute;
+    left: -0.9em;
+    top: 0.55em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--brand-1);
+}
+
+section.import .import-logos {
+    margin-top: 1.25em;
+}
+
+section.import .import-logos-label {
+    display: block;
+    margin-bottom: 0.6em;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted-color);
+}
+
+section.import .import-logos-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1em;
+}
+
+section.import .import-logo {
+    color: var(--muted-color);
+    opacity: 0.85;
+    transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+section.import .import-logo:hover {
+    color: var(--foreground-color);
+    opacity: 1;
+}
+
+section.import .import-logo .bx {
+    width: 1.6em;
+    height: 1.6em;
 }
 
 section.final-cta {
@@ -176,50 +495,249 @@ section.faq {
     }
 }
 
-.list-with-screenshot {
-    gap: 2em;
+.faq-list {
+    max-width: 46em;
+    margin: 0 auto;
+}
+
+.faq-item {
+    border-bottom: 1px solid color-mix(in srgb, var(--foreground-color) 12%, transparent);
+
+    summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1em;
+        padding: 1em 0.25em;
+        cursor: pointer;
+        font-size: 1.05rem;
+        color: var(--foreground-color);
+        transition: color 0.15s ease;
+        /* Hide the native disclosure marker (Firefox + WebKit) */
+        list-style: none;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+
+        /* CSS-drawn chevron: points right when closed, down when open */
+        &::after {
+            content: "";
+            flex-shrink: 0;
+            width: 0.5em;
+            height: 0.5em;
+            margin-right: 0.35em;
+            border-right: 2px solid var(--muted-color);
+            border-bottom: 2px solid var(--muted-color);
+            transform: rotate(-45deg);
+            transition: transform 0.2s ease;
+        }
+
+        &:hover {
+            color: var(--brand-1);
+        }
+    }
+
+    &[open] summary::after {
+        transform: rotate(45deg);
+    }
+
+    .faq-answer {
+        padding: 0 0.25em 1.25em;
+        color: var(--muted-color);
+
+        @media (prefers-reduced-motion: no-preference) {
+            animation: showcase-fade 0.15s ease;
+        }
+    }
+}
+
+.faq-more {
+    margin-top: 2.5em;
+    text-align: center;
+    color: var(--muted-color);
+}
+
+.tabbed-showcase {
+    display: grid;
+    gap: 1.5em;
+    align-items: start;
 
     @media (min-width: 720px) {
-        display: flex;
+        grid-template-columns: minmax(210px, 1fr) 2.3fr;
+        gap: 2.5em;
+    }
+}
+
+.tabbed-showcase .showcase-tabs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 0.5em;
+    /* Mobile: horizontally scrollable chips */
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
     }
 
-    h3 {
-        color: var(--brand-1);
-    }
-
-    ul {
-        list-style-type: none;
-        margin: 0;
-        padding: 0;
-        gap: 1em;
-        display: grid;
-
-        @media (min-width: 720px) {
-            grid-template-columns: 1fr 1fr 1fr;
-        }
-
-        li {
-            margin: 0;
-
-            .card {
-                border: 1px solid transparent;
-                height: 100%;
-            }
-        }
-    }
-
-    .details {
-        max-height: 35vh;
-        overflow: hidden;
-        display: flex;
+    @media (min-width: 720px) {
         flex-direction: column;
+        overflow: visible;
+    }
 
-        @media (max-width: 719.99px) {
-            margin-top: 1em;
+    li {
+        margin: 0;
+    }
+}
+
+.tabbed-showcase .showcase-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7em;
+    width: auto;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--muted-color);
+    font: inherit;
+    padding: 0.7em 0.9em;
+    text-align: left;
+    transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+
+    @media (min-width: 720px) {
+        width: 100%;
+    }
+
+    .tab-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 2em;
+        height: 2em;
+        border-radius: 9px;
+        color: var(--brand-1);
+        background: color-mix(in srgb, var(--brand-1) 12%, transparent);
+        transition: background-color 0.18s ease, color 0.18s ease;
+    }
+
+    &:hover {
+        color: var(--foreground-color);
+        border-color: color-mix(in srgb, var(--brand-1) 25%, transparent);
+    }
+
+    &.active {
+        color: var(--foreground-color);
+        background: var(--card-background-color);
+        border-color: color-mix(in srgb, var(--brand-1) 35%, transparent);
+        box-shadow: var(--card-box-shadow);
+
+        .tab-icon {
+            color: var(--brand-foreground-color);
+            background: var(--brand-1);
         }
     }
+}
+
+.tabbed-showcase .showcase-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2em;
+    min-width: 0;
+
+    @media (prefers-reduced-motion: no-preference) {
+        animation: showcase-fade 0.15s ease;
+    }
+}
+
+.tabbed-showcase .showcase-image-frame {
+    /* Fixed aspect ratio keeps the frame a constant height across screenshots,
+       so swapping tabs never shifts the layout. Off-ratio images are matted
+       against the card background rather than cropped. */
+    aspect-ratio: 16 / 10;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--card-background-color);
+    box-shadow: var(--card-box-shadow);
+    border: 1px solid color-mix(in srgb, var(--brand-1) 15%, transparent);
 
     img {
+        display: block;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
+    }
+}
+
+.tabbed-showcase .showcase-details {
+    color: var(--muted-color);
+
+    h3 {
+        margin: 0 0 0.4em;
+        color: var(--brand-1);
+        font-weight: 300;
+        font-size: 1.3rem;
+    }
+
+    p {
+        margin: 0 0 0.6em;
+    }
+}
+
+section.note-types .more-note-types {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75em;
+    margin-top: 2em;
+    padding-top: 2em;
+    border-top: 1px solid color-mix(in srgb, var(--foreground-color) 12%, transparent);
+}
+
+section.note-types .more-note-types-label {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted-color);
+}
+
+section.note-types .more-note-types a.button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.4em 0.9em;
+    font-size: 0.9em;
+    box-shadow: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+section.note-types .more-note-types a.button:hover {
+    color: var(--brand-foreground-color);
+    background-color: var(--brand-1);
+}
+
+section.note-types .more-note-types a.button .bx {
+    width: 1.1em;
+    height: 1.1em;
+
+    svg {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+@keyframes showcase-fade {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
     }
 }

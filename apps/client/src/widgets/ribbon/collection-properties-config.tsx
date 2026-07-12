@@ -65,6 +65,29 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                 icon: "bx bx-show",
                 type: "checkbox",
                 bindToLabel: "calendar:showHiddenEvents"
+            },
+            {
+                label: t("calendar_view.time_slots"),
+                icon: "bx bx-time",
+                type: "submenu",
+                // Time slots only apply to the time-grid views (Day / Week).
+                isVisible: isTimeGridCalendarView,
+                children: [
+                    {
+                        label: t("calendar_view.slot_duration"),
+                        type: "option-group",
+                        bindToLabel: "calendar:slotDuration",
+                        options: slotDurationOptions([5, 10, 15, 20, 30, 60])
+                    },
+                    { type: "separator" },
+                    {
+                        label: t("calendar_view.slot_label_interval"),
+                        type: "option-group",
+                        bindToLabel: "calendar:slotLabelInterval",
+                        // Labels want to be coarser than the slots themselves.
+                        options: slotDurationOptions([15, 30, 60])
+                    }
+                ]
             }
         ]
     },
@@ -152,6 +175,26 @@ function buildMapLayer([ id, layer ]: [ string, MapLayer ]): ComboBoxItem {
         value: id,
         label: layer.name
     };
+}
+
+/** Builds FullCalendar duration options (`HH:MM:00`) from a list of whole minutes, with localized labels. */
+function slotDurationOptions(minutes: number[]): ComboBoxItem[] {
+    return minutes.map((total) => ({
+        value: `${pad(Math.floor(total / 60))}:${pad(total % 60)}:00`,
+        label: total % 60 === 0
+            ? t("calendar_view.hours", { count: total / 60 })
+            : t("calendar_view.minutes", { count: total })
+    }));
+}
+
+function pad(n: number) {
+    return String(n).padStart(2, "0");
+}
+
+/** The calendar's slot settings only apply to the time-grid views (Day / Week). */
+function isTimeGridCalendarView(note: FNote) {
+    const view = note.getLabelValue("calendar:view");
+    return view === "timeGridDay" || view === "timeGridWeek";
 }
 
 function ListExpandDepth(context: { note: FNote, parentComponent: Component }) {

@@ -341,7 +341,7 @@ body[dir=ltr] #launcher-container {
 
 #launcher-pane .sync-status-disconnected-with-changes {
     --pulse-color: var(--sync-status-error-pulse-color);
-    animation: sync-status-pulse 1s ease-in-out alternate-reverse infinite;
+    animation: sync-status-pulse 1s steps(10, jump-none) alternate-reverse infinite;
 }
 
 #launcher-pane button.global-menu-button {
@@ -1797,7 +1797,7 @@ div.floating-buttons-children .close-floating-buttons:has(.close-floating-button
 
     background: transparent;
     padding: 0;
-    
+
     button.btn.floating-button.btn {
         border-radius: 0;
         box-shadow: unset;

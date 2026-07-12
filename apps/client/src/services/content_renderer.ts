@@ -8,10 +8,12 @@ import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
+import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import renderText, { postProcessRichContent, renderChildrenList } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
 import openService from "./open.js";
+import { waitForPendingRenders } from "./pending_renders.js";
 import protectedSessionService from "./protected_session.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import renderService from "./render.js";
@@ -28,6 +30,19 @@ export interface RenderOptions {
     noChildrenList?: boolean;
     /** If enabled, it will prevent rendering of included notes. */
     noIncludedNotes?: boolean;
+    /**
+     * Keep expanding include-note sections recursively at every depth. Used for printing/export,
+     * which preserves full nesting. When false (the default for on-screen display), only the first
+     * level of inclusion is rendered and deeper include-note sections are replaced with a reference
+     * link (see {@link includesAsReferenceLinks}).
+     */
+    expandNestedIncludes?: boolean;
+    /**
+     * Internal: render this note's own include-note sections as reference links instead of expanding
+     * them. Set when rendering a note that is itself already an included note in display mode, so that
+     * inclusion stops after the first level.
+     */
+    includesAsReferenceLinks?: boolean;
     /** If enabled, it will include archived notes when rendering children list. */
     includeArchivedNotes?: boolean;
     /** Set of note IDs that have already been seen during rendering to prevent infinite recursion. */
@@ -69,6 +84,8 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         await renderMarkdown(entity, $renderedContent, options);
     } else if (type === "code") {
         await renderCode(entity, $renderedContent);
+    } else if (type === "iconPack" && !options.tooltip && entity instanceof FNote) {
+        await renderIconPack(entity, $renderedContent, options);
     } else if (["image", "canvas", "mindMap", "spreadsheet"].includes(type)) {
         await renderImage(entity, $renderedContent, options);
     } else if (!options.tooltip && ["file", "pdf", "audio", "video"].includes(type)) {
@@ -93,6 +110,8 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         $renderedContent.append($("<div>").append("<div>This note is protected and to access it you need to enter password.</div>").append("<br/>").append($button));
     } else if (type === "webView" && options.interactive && !options.tooltip && entity instanceof FNote && entity.hasLabel("webViewSrc")) {
         await renderWebView(entity, $renderedContent);
+    } else if (type === "llmChat" && entity instanceof FNote) {
+        await renderLlmChat(entity, $renderedContent, options);
     } else if (entity instanceof FNote) {
         $renderedContent.addClass("no-preview");
         $renderedContent.append(
@@ -158,6 +177,33 @@ async function renderMarkdown(note: FNote | FAttachment, $renderedContent: JQuer
     });
     $renderedContent.append($('<div class="ck-content">').html(html));
     await postProcessRichContent(note, $renderedContent, options);
+}
+
+/**
+ * Renders an icon pack as its glyph grid (the same isolated-frame preview used by the editor),
+ * mounted like the PDF viewer. Its own module keeps the editor stack (SplitEditor/CodeMirror) out
+ * of this path. Falls back to the children list for an empty manifest.
+ */
+async function renderIconPack(note: FNote, $renderedContent: JQuery<HTMLElement>, options: RenderOptions) {
+    const blob = await note.getBlob();
+    const content = blob?.content ?? "";
+
+    if (!content.trim()) {
+        if (!options.noChildrenList) {
+            await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
+        }
+        return;
+    }
+
+    const { IconPackPreview } = await import("../widgets/type_widgets/icon_pack/IconPackPreview");
+    const $container = $('<div class="icon-pack-rendered">');
+    const container = $container.get(0);
+    if (container) {
+        render(h(IconPackPreview, { note, content, interactive: false }), container);
+        // Mark the standalone Preact root so disposeInteractiveContent() can unmount the frame/effects.
+        container.setAttribute(INTERACTIVE_MOUNT_ATTR, "");
+    }
+    $renderedContent.append($container);
 }
 
 /**
@@ -364,6 +410,69 @@ async function renderWebView(note: FNote, $renderedContent: JQuery<HTMLElement>)
     $renderedContent.append($container);
 }
 
+/**
+ * How many messages a tooltip previews. A hover shows a ~300px-tall scroll box, so rendering the
+ * whole of a long conversation would parse hundreds of markdown bodies nobody will ever scroll to.
+ */
+const TOOLTIP_MAX_MESSAGES = 10;
+
+/**
+ * Renders a saved AI chat conversation as a read-only preview: the stored messages painted with the
+ * same {@link ChatMessage} components as the live timeline, but with no input bar, context menu, or
+ * read-only notice — just the conversation. Mounted as a disposable Preact root (ChatMessage carries
+ * effects), so the embedding caller must tear it down via {@link disposeInteractiveContent} — the
+ * collection tiles that show these previews already do. Loaded lazily so the chat widget code is only
+ * pulled in when a chat note is previewed.
+ *
+ * A tooltip keeps only the serialized HTML of the content and never disposes it, so it would leak a
+ * root per hover. It gets the same preview, snapshotted: mount it, let its async passes settle, take
+ * the markup, unmount. The tooltip has no use for the interactivity it drops.
+ */
+async function renderLlmChat(note: FNote, $renderedContent: JQuery<HTMLElement>, options: RenderOptions) {
+    const blob = await note.getBlob();
+    const source = blob?.content ?? "";
+
+    let messages: StoredMessage[] = [];
+    if (source.trim()) {
+        try {
+            const parsed = JSON.parse(source);
+            // JSON.parse("null") (or any non-object) must not throw on `.messages`.
+            if (parsed && typeof parsed === "object") {
+                messages = (parsed as LlmChatContent).messages ?? [];
+            }
+        } catch {
+            // Malformed content → empty preview rather than throwing.
+        }
+    }
+    if (messages.length === 0) return;
+
+    const ChatPreview = (await import("../widgets/type_widgets/llm_chat/ChatPreview")).default;
+    const $container = $('<div class="note-detail-llm-chat-preview">');
+    const container = $container.get(0);
+    if (!container) return;
+
+    if (options.tooltip) {
+        messages = messages.slice(0, TOOLTIP_MAX_MESSAGES);
+    }
+
+    await mountInteractiveWidget(h(ChatPreview, { messages }), container);
+
+    if (options.tooltip) {
+        // The chat's markdown renders through the read-only text pipeline, whose passes (mermaid,
+        // math, syntax highlighting) land after the mount — snapshotting before they settle would
+        // freeze half-rendered content into the tooltip. Scoped to this preview, so a hover never
+        // waits on a note rendering in another pane.
+        await waitForPendingRenders(container);
+
+        const html = container.innerHTML;
+        render(null, container);
+        container.removeAttribute(INTERACTIVE_MOUNT_ATTR);
+        container.innerHTML = html;
+    }
+
+    $renderedContent.append($container);
+}
+
 /** Marks a standalone Preact root mounted by {@link mountInteractiveWidget} so it can be unmounted. */
 const INTERACTIVE_MOUNT_ATTR = "data-interactive-mount";
 
@@ -457,13 +566,16 @@ function getRenderingType(entity: FNote | FAttachment) {
     }
 
     const mime = "mime" in entity && entity.mime;
-    const isIconPack = entity instanceof FNote && entity.hasLabel("iconPack");
+    const isIconPack = entity instanceof FNote && entity.isIconPack();
 
-    if (type === "file" && mime === "application/pdf") {
+    if (isIconPack) {
+        // Icon packs (JSON `code`/`file` notes with #iconPack) render as their glyph grid, not as raw JSON.
+        type = "iconPack";
+    } else if (type === "file" && mime === "application/pdf") {
         type = "pdf";
     } else if (type === "code" && entity instanceof FNote && entity.isMarkdown()) {
         type = "markdown";
-    } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime) && !isIconPack) {
+    } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime)) {
         type = "code";
     } else if (type === "file" && mime && mime.startsWith("audio/")) {
         type = "audio";

@@ -12,6 +12,8 @@
 import { getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import { HTMLElement, parse } from "node-html-parser";
 
+import { getNotionId } from "./notion_id.js";
+
 export function convertNotionHtml(html: string): string {
     const root = parse(html);
     convertMath(root);
@@ -21,6 +23,7 @@ export function convertNotionHtml(html: string): string {
     convertToggleHeadings(root);
     dropTableOfContents(root);
     unwrapDisplayContents(root);
+    convertInlineDatabases(root);
     mergeFragmentedLists(root);
     convertColumns(root);
     convertTables(root);
@@ -288,6 +291,28 @@ function unwrapDisplayContents(root: HTMLElement) {
         if (isDisplayContents(div)) {
             div.replaceWith(...div.childNodes);
         }
+    }
+}
+// #endregion
+
+// #region Inline databases (collections)
+/**
+ * Notion renders an inline database as `<div class="collection-content" id="<db-id>">` — holding either a
+ * rendered `<table class="collection-content">` (a partial export) or a bare link to the separately-exported
+ * CSV (a full/workspace export). Either way the database is imported as its own collection note, so replace
+ * the whole block with a Trilium include-note placeholder carrying the database's Notion id. The id is read
+ * from the div's `id` (which the sanitizer later strips), and the importer resolves `data-notion-id` to the
+ * collection note's id once every note exists; the `data-notion-id`/`data-box-size` attributes and the
+ * `section` survive sanitization. A block without a resolvable id is left untouched.
+ */
+function convertInlineDatabases(root: HTMLElement) {
+    for (const block of root.querySelectorAll("div.collection-content")) {
+        const notionId = getNotionId(block.getAttribute("id") ?? "");
+        if (!notionId) {
+            continue;
+        }
+        block.insertAdjacentHTML("beforebegin", `<section class="include-note" data-notion-id="${notionId}" data-box-size="medium">&nbsp;</section>`);
+        block.remove();
     }
 }
 // #endregion

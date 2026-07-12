@@ -1,0 +1,89 @@
+/*
+ * Styles for the isolated icon-pack preview iframe. Imported as a raw string (`?raw`) and combined
+ * with the dynamically generated @font-face in IconPack.tsx, then injected into the frame's <head> —
+ * it is intentionally NOT a side-effect import, so these rules never touch the host document.
+ *
+ * The `.ip-glyph` font family must match PREVIEW_FONT_FAMILY in IconPackPreview.tsx.
+ * The CSS variables used here should be present in the PREVIEW_CSS_VARS array in IconPackPreview.tsx.
+ */
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+    user-select: none;
+    /* Read-only previews (collection tiles) are clipped; interactive mode scrolls (see below). */
+    overflow: hidden;
+}
+
+body {
+    color: var(--main-text-color, #000);
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.interactive {
+    overflow: auto;
+    padding: 20px;
+}
+
+.ip-grid {
+    --icon-size: 24px;
+    --icon-size-ratio: .85;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, var(--icon-size));
+    gap: 8px;
+    justify-content: start;
+}
+
+body.interactive .ip-grid {
+    --icon-size: 48px;
+    --icon-size-ratio: .75;
+}
+
+.ip-cell {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: default;
+    /* Skip layout/paint for off-screen cells so large packs stay responsive. */
+    content-visibility: auto;
+    contain-intrinsic-size: var(--icon-size) var(--icon-size);
+}
+
+/* Hover highlight only in interactive mode (off for read-only content-renderer previews). */
+body.interactive .ip-cell:hover {
+    background: var(--hover-item-background-color, rgba(127, 127, 127, 0.2));
+    color: var(--hover-item-text-color);
+    transform: scale(1.5);
+    transition: transform 200ms ease-in-out,
+                background 150ms ease-in-out;
+}
+
+.ip-glyph {
+    font-family: "tn-icon-pack-preview";
+    font-size: calc(var(--icon-size) * var(--icon-size-ratio));
+    line-height: 1;
+}
+
+.ip-count {
+    display: inline-block;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: sans-serif;
+    background: var(--accented-background-color, gray);
+    font-size: .85rem;
+}
+
+body.interactive .ip-count {
+    position: fixed;
+    right: 16px;
+    bottom: 8px;
+}

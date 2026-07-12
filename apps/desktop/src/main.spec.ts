@@ -31,6 +31,9 @@ function makeDeferred<T>() {
 const h = vi.hoisted(() => ({
     // Captured app.on(...) handlers.
     appOn: new Map<string, Handler>(),
+    // Captured ipcMain.on / ipcMain.handle registrations.
+    ipcOn: new Map<string, Handler>(),
+    ipcHandle: new Map<string, Handler>(),
     // Captured stdout/stderr "error" handlers.
     streamErrorHandlers: [] as Handler[],
     // Captured commandLine.appendSwitch calls.
@@ -94,11 +97,16 @@ vi.mock("electron", () => {
     const globalShortcut = {
         unregisterAll: (...a: unknown[]) => h.unregisterAll(...a)
     };
+    const ipcMain = {
+        on: (channel: string, fn: Handler) => h.ipcOn.set(channel, fn),
+        handle: (channel: string, fn: Handler) => h.ipcHandle.set(channel, fn)
+    };
     return {
         app: appObj,
         BrowserWindow,
         globalShortcut,
-        default: { app: appObj, BrowserWindow, globalShortcut }
+        ipcMain,
+        default: { app: appObj, BrowserWindow, globalShortcut, ipcMain }
     };
 });
 

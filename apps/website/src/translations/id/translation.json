@@ -34,8 +34,6 @@
         "web_clipper_content": "Mengambil halaman web (atau foto halaman web) dan disematkan langsung ke catatan Trilium dengan ekstensi browser penyemat web.",
         "protected_notes_title": "Catatan terlindungi",
         "protected_notes_content": "Lindungi informasi pribadi sensitif dengan mengenkripsi catatan dan menguncinya di balik sesi yang dilindungi kata sandi.",
-        "jump_to_title": "Pencarian cepat dan perintah",
-        "jump_to_content": "Melompat dengan cepat ke catatan atau perintah UI di seluruh hierarki dengan mencari judulnya, dengan pencocokan kabur untuk memperhitungkan kesalahan ketik atau perbedaan kecil.",
         "search_title": "Pencarian mumpuni"
     },
     "note_types": {
@@ -51,8 +49,7 @@
         "mermaid_title": "Diagram mermaid",
         "mermaid_description": "Buat diagram seperti diagram alur (flowchart), diagram kelas & urutan (class & sequence), bagan Gantt, dan banyak lagi, menggunakan sintaks Mermaid.",
         "mindmap_title": "Peta pikiran (Mindmap)",
-        "mindmap_description": "Organisasikan pemikiran Anda secara visual atau lakukan sesi brainstorming.",
-        "others_list": "dan lainnya: <0>peta catatan</0>, <1>peta relasi</1>, <2>pencarian tersimpan</2>, <3>render catatan</3>, dan <4>tampilan web</4>."
+        "mindmap_description": "Organisasikan pemikiran Anda secara visual atau lakukan sesi brainstorming."
     },
     "collections": {
         "table_description": "Tampilkan dan edit informasi catatan dalam struktur tabel, dengan berbagai tipe kolom seperti teks, angka, kotak centang, tanggal & waktu, tautan, dan warna, serta dukungan untuk relasi catatan. Secara opsional, tampilkan catatan dalam hierarki pohon di dalam tabel.",
@@ -81,17 +78,6 @@
         "security_question": "Bagaimana data saya dilindungi?",
         "security_answer": "Secara default, catatan tidak terenkripsi dan dapat dibaca langsung dari basis data. Setelah sebuah catatan ditandai sebagai terenkripsi, catatan tersebut dienkripsi menggunakan AES-128-CBC.",
         "server_answer": "Tidak, server memungkinkan akses melalui browser web dan mengelola sinkronisasi jika Anda memiliki beberapa perangkat. Untuk memulai, cukup download aplikasi desktop dan langsung gunakan."
-    },
-    "extensibility_benefits": {
-        "share_title": "Bagikan catatan di web",
-        "title": "Berbagi & perluasan",
-        "import_export_title": "Impor/ekspor",
-        "import_export_description": "Berinteraksi dengan mudah dengan aplikasi lain menggunakan format Markdown, ENEX, dan OML.",
-        "share_description": "Jika Anda memiliki server, server tersebut dapat digunakan untuk berbagi sebagian catatan Anda dengan orang lain.",
-        "scripting_title": "Pembuatan skrip tingkat lanjut",
-        "scripting_description": "Bangun integrasi Anda sendiri di dalam Trilium dengan widget khusus, atau logika sisi server.",
-        "api_title": "REST API",
-        "api_description": "Berinteraksi dengan Trilium secara terprogram menggunakan API REST bawaannya."
     },
     "final_cta": {
         "title": "Siap memulai dengan Trilium Notes?",
@@ -196,8 +182,7 @@
     "download_helper_server_hosted": {
         "title": "Hosting berbayar",
         "description": "Trilium Notes dihosting di PikaPods, sebuah layanan berbayar untuk akses dan pengelolaan yang mudah. Tidak berafiliasi langsung dengan tim Trilium.",
-        "download_pikapod": "Siapkan di PikaPods",
-        "download_triliumcc": "Atau lihat trilium.cc"
+        "download_pikapod": "Siapkan di PikaPods"
     },
     "resources": {
         "title": "Sumber daya",

@@ -8,6 +8,7 @@ import type FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import { isMobile } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import ActionButton from "../../react/ActionButton";
 import Dropdown from "../../react/Dropdown";
@@ -126,6 +127,10 @@ export function VolumeControl({ mediaRef }: { mediaRef: RefObject<HTMLVideoEleme
         media.muted = !media.muted;
         setMuted(media.muted);
     };
+
+    // Mobile defers volume to the OS/hardware volume buttons, matching native mobile media players (and the
+    // fixed-width slider doesn't fit the narrow controls row anyway).
+    if (isMobile()) return null;
 
     return (
         <div class="media-volume-row">

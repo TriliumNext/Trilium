@@ -509,13 +509,13 @@ describe("getAttachment / getAttachmentsForNote / processAttachmentRows", () => 
 
 describe("getBlob", () => {
     it("fetches and caches the blob promise, and serves a second call from cache", async () => {
-        server.get = vi.fn(async () => ({ blobId: "blob-1", content: "hi", contentLength: 2 })) as typeof server.get;
+        server.getWithSilentNotFound = vi.fn(async () => ({ blobId: "blob-1", content: "hi", contentLength: 2 })) as typeof server.getWithSilentNotFound;
 
         const blob1 = await froca.getBlob("notes", "blob-note");
         const blob2 = await froca.getBlob("notes", "blob-note");
 
-        expect(server.get).toHaveBeenCalledTimes(1);
-        expect(server.get).toHaveBeenCalledWith("notes/blob-note/blob");
+        expect(server.getWithSilentNotFound).toHaveBeenCalledTimes(1);
+        expect(server.getWithSilentNotFound).toHaveBeenCalledWith("notes/blob-note/blob");
         expect(blob1).not.toBeNull();
         expect(blob2).toBe(blob1);
     });
@@ -523,7 +523,7 @@ describe("getBlob", () => {
     it("clears the cached blob promise after the cleanup timeout fires", async () => {
         vi.useFakeTimers();
         try {
-            server.get = vi.fn(async () => ({ blobId: "blob-2", content: "x", contentLength: 1 })) as typeof server.get;
+            server.getWithSilentNotFound = vi.fn(async () => ({ blobId: "blob-2", content: "x", contentLength: 1 })) as typeof server.getWithSilentNotFound;
 
             await froca.getBlob("notes", "blob-cleanup");
             // The .then() that schedules the cleanup setTimeout runs on a microtask.
@@ -536,9 +536,9 @@ describe("getBlob", () => {
     });
 
     it("returns null and logs when the blob request fails", async () => {
-        server.get = vi.fn(async () => {
+        server.getWithSilentNotFound = vi.fn(async () => {
             throw new Error("blob boom");
-        }) as typeof server.get;
+        }) as typeof server.getWithSilentNotFound;
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
         const blob = await froca.getBlob("notes", "blob-fail");

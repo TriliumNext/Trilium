@@ -38,7 +38,7 @@ import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
 // page routes
 import setupRoute from "./setup.js";
 
@@ -93,6 +93,7 @@ function register(app: express.Application) {
         checkCredentials: auth.checkCredentials,
         loginRateLimiter,
         uploadMiddlewareWithErrorHandling,
+        importMiddlewareWithErrorHandling,
         csrfMiddleware
     });
 

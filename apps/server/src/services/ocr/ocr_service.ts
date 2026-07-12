@@ -253,11 +253,13 @@ class OCRService {
         inProgress: boolean;
         total: number;
         processed: number;
+        failed: number;
         startTime?: Date;
     } = {
         inProgress: false,
         total: 0,
-        processed: 0
+        processed: 0,
+        failed: 0
     };
 
     /**
@@ -279,6 +281,7 @@ class OCRService {
                 inProgress: true,
                 total: blobsNeedingOCR.length,
                 processed: 0,
+                failed: 0,
                 startTime: new Date()
             };
 
@@ -299,8 +302,8 @@ class OCRService {
     /**
      * Get batch processing progress
      */
-    getBatchProgress(): { inProgress: boolean; total: number; processed: number; percentage?: number; startTime?: Date } {
-        const result: { inProgress: boolean; total: number; processed: number; percentage?: number; startTime?: Date } = { ...this.batchProcessingState };
+    getBatchProgress(): { inProgress: boolean; total: number; processed: number; failed: number; percentage?: number; startTime?: Date } {
+        const result: { inProgress: boolean; total: number; processed: number; failed: number; percentage?: number; startTime?: Date } = { ...this.batchProcessingState };
         if (result.total > 0) {
             result.percentage = (result.processed / result.total) * 100;
         }
@@ -330,17 +333,20 @@ class OCRService {
 
             try {
                 await this.processOcrEntity(blob);
-            } catch (error) {
-                getLog().error(`Failed to process OCR for ${blob.entityType} ${blob.entityId}: ${error}`);
+            } catch {
+                // Tolerate broken or undecodable files: count the failure and move on.
+                // The failure itself is already logged by processOcrEntity.
+                this.batchProcessingState.failed++;
             }
 
             this.batchProcessingState.processed++;
 
-            // Small delay to prevent overwhelming the system
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Small delay to keep the system responsive; recognition itself already runs
+            // in a worker thread, so this only needs to yield, not throttle.
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
 
-        getLog().info(`Batch OCR processing completed. Processed ${this.batchProcessingState.processed} files.`);
+        getLog().info(`Batch OCR processing completed. Processed ${this.batchProcessingState.processed} files (${this.batchProcessingState.failed} failed).`);
     }
 
     /**

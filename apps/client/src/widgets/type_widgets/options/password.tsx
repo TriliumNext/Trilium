@@ -101,7 +101,7 @@ function ChangePasswordModal({ show, onHidden }: ChangePasswordModalProps) {
             setOldPassword("");
             setNewPassword1("");
             setNewPassword2("");
-            await dialog.info(t("password.password_changed_success"));
+            toast.showMessage(t("password.password_changed_success"));
 
             // password changed so current protected session is invalid and needs to be cleared
             protected_session_holder.resetProtectedSession();

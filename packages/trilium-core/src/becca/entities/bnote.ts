@@ -1519,6 +1519,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
             try {
                 this.title = protectedSessionService.decryptString(this.title) || "";
                 this.__flatTextCache = null;
+                // The pre-built flat text search index still holds this note's encrypted
+                // title, so schedule a refresh — otherwise the note stays unsearchable by
+                // title even after the protected session is unlocked (issue #10406).
+                this.becca.dirtyNoteFlatText(this.noteId);
 
                 this.isDecrypted = true;
             } catch (e: any) {

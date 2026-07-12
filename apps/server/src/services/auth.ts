@@ -21,6 +21,15 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         return next();
     }
 
+    if (!isElectron && !passwordService.isPasswordSet()) {
+        // DB initialized but no password set yet — on the web/server the instance is
+        // unprotected until the user sets one, so let the request through for the client
+        // to fetch its bootstrap and render the set-password screen. Desktop never shows
+        // this screen (it's handled by the internal-electron / session checks below), and
+        // the API stays protected separately via checkApiAuth (which still requires a session).
+        return next();
+    }
+
     const currentTotpStatus = totp.isTotpEnabled();
     const currentSsoStatus = openID.isOpenIDEnabled();
     const lastAuthState = req.session.lastAuthState || { totpEnabled: false, ssoEnabled: false };
@@ -38,14 +47,16 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         if (hasRedirectBareDomain) {
             // Only redirect to the share page when a share root is actually configured.
             // Otherwise (e.g. the owner's session expired before they set one up) fall back
-            // to the login page rather than stranding the user on a 404. See #7869.
+            // to the login screen rather than stranding the user on a 404. See #7869.
             const shareRootNotes = attributes.getNotesWithLabel("shareRoot");
             if (shareRootNotes.length > 0) {
                 res.redirect("share");
                 return;
             }
         }
-        res.redirect("login");
+        // Otherwise serve the SPA, which renders the login screen from the bootstrap
+        // `loggedIn: false` payload. The API stays protected separately via checkApiAuth.
+        return next();
     } else if (currentTotpStatus !== lastAuthState.totpEnabled || currentSsoStatus !== lastAuthState.ssoEnabled) {
         req.session.destroy((err) => {
             if (err) console.error('Error destroying session:', err);
@@ -119,7 +130,9 @@ function checkAppInitialized(_req: Request, _res: Response, next: NextFunction) 
 
 function checkPasswordSet(req: Request, res: Response, next: NextFunction) {
     if (!isElectron && !passwordService.isPasswordSet()) {
-        res.redirect("set-password");
+        // The set-password screen is now served by the SPA at the root, driven by
+        // the bootstrap `passwordSet: false` flag.
+        res.redirect(".");
     } else {
         next();
     }

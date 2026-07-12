@@ -179,10 +179,18 @@ describe("Markdown export", () => {
             > [!IMPORTANT]
             > This is a very important information.
             >${space}
-            > |  |  |
-            > | --- | --- |
-            > | 1 | 2 |
-            > | 3 | 4 |
+            > <table>
+            >     <tbody>
+            >         <tr>
+            >             <td>1</td>
+            >             <td>2</td>
+            >         </tr>
+            >         <tr>
+            >             <td>3</td>
+            >             <td>4</td>
+            >         </tr>
+            >     </tbody>
+            > </table>
 
             > [!CAUTION]
             > This is a caution.
@@ -221,11 +229,19 @@ describe("Markdown export", () => {
         </table>
         `;
 
-        const expected = trimIndentation`\
-            <table><tbody><tr><td>Row 1</td><td><p>Allows displaying the value of one or more attributes in the calendar like this:&nbsp;</p><p><img src="13_Calendar View_image.png" alt=""></p><pre><code class="language-text-x-trilium-auto">#weight="70"
-                        #Mood="Good"
-                        #calendar:displayedAttributes="weight,Mood"</code></pre><p>It can also be used with relations, case in which it will display the title of the target note:</p><pre><code class="language-text-x-trilium-auto">~assignee=@My assignee
-                        #calendar:displayedAttributes="assignee"</code></pre></td></tr></tbody></table>`;
+        // Structural tags are indented for readability; cell contents (including the
+        // <pre> code with its own newlines and indentation) are emitted verbatim.
+        const expected = `<table>
+    <tbody>
+        <tr>
+            <td>Row 1</td>
+            <td><p>Allows displaying the value of one or more attributes in the calendar like this:&nbsp;</p><p><img src="13_Calendar View_image.png" alt=""></p><pre><code class="language-text-x-trilium-auto">#weight="70"
+            #Mood="Good"
+            #calendar:displayedAttributes="weight,Mood"</code></pre><p>It can also be used with relations, case in which it will display the title of the target note:</p><pre><code class="language-text-x-trilium-auto">~assignee=@My assignee
+            #calendar:displayedAttributes="assignee"</code></pre></td>
+        </tr>
+    </tbody>
+</table>`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
@@ -387,7 +403,10 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
-    it("exports unformatted table", () => {
+    // A table with no heading row can't be expressed as a GFM table without
+    // inventing a phantom empty header (which would reimport as a blank row), so
+    // it is kept as raw HTML to round-trip faithfully.
+    it("keeps a table with no heading row as HTML", () => {
         const html = trimIndentation/*html*/`\
             <figure class="table">
                 <table>
@@ -412,11 +431,18 @@ describe("Markdown export", () => {
                 </table>
             </figure>
         `;
-        const expected = trimIndentation`\
-            |  |  |
-            | --- | --- |
-            | Hi | there |
-            | Hi | there |`;
+        const expected = `<table>
+    <tbody>
+        <tr>
+            <td>Hi</td>
+            <td>there</td>
+        </tr>
+        <tr>
+            <td>Hi</td>
+            <td>there</td>
+        </tr>
+    </tbody>
+</table>`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
@@ -494,9 +520,19 @@ describe("Markdown export", () => {
                 </table>
             </figure>
         `;
-        const expected = trimIndentation`\
-            <table><thead><tr><th>Code</th></tr></thead><tbody><tr><td><pre><code class="language-text-x-trilium-auto">this.$widget = $("&lt;div&gt;");</code>
-                                </pre></td></tr></tbody></table>`;
+        const expected = `<table>
+    <thead>
+        <tr>
+            <th>Code</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><pre><code class="language-text-x-trilium-auto">this.$widget = $("&lt;div&gt;");</code>
+                    </pre></td>
+        </tr>
+    </tbody>
+</table>`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 

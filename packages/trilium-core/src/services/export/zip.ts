@@ -1,4 +1,4 @@
-import { NoteType } from "@triliumnext/commons";
+import { getImageAttachmentTitle, NoteType } from "@triliumnext/commons";
 import sanitize from "sanitize-filename";
 
 import packageInfo from "../../../package.json" with { type: "json" };
@@ -18,6 +18,7 @@ import { ValidationError } from "../../errors";
 import { extname } from "../utils/path";
 import { truncateUtf8Bytes } from "../utils/binary";
 import { rewriteMarkdownContentLinks, isMarkdownCodeNote } from "./rewrite_links.js";
+import { stripListItemIds } from "./strip_list_item_ids.js";
 
 // Most filesystems cap a single path component at 255 bytes; keep exported file names within that.
 const MAX_FILENAME_BYTES = 255;
@@ -209,7 +210,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         return meta as NoteMeta;
     }
 
-    function getNoteTargetUrl(targetNoteId: string, sourceMeta: NoteMeta): string | null {
+    function getNoteTargetUrl(targetNoteId: string, sourceMeta: NoteMeta, fileNameOverride?: string): string | null {
         const targetMeta = noteIdToMeta[targetNoteId];
 
         if (!targetMeta || !targetMeta.notePath || !sourceMeta.notePath) {
@@ -241,14 +242,34 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         const meta = noteIdToMeta[targetPath[targetPath.length - 1]];
 
         // link can target note which is only "folder-note" and as such, will not have a file in an export
-        url += encodeURIComponent(meta.dataFileName || meta.dirFileName || "");
+        url += encodeURIComponent(fileNameOverride ?? (meta.dataFileName || meta.dirFileName || ""));
 
         return url;
     }
 
+    /**
+     * Resolves an `api/images/<noteId>` embed to the file that actually holds the image. For a
+     * mermaid or canvas note that is the exported `*-export.svg` attachment sitting next to the
+     * note's data file, not the data file itself — which holds the diagram source, or the note's
+     * own HTML page in a share export, and renders as a broken image.
+     */
+    function getEmbeddedImageUrl(targetNoteId: string, sourceMeta: NoteMeta): string | null {
+        // `targetMeta` is undefined when the embedded note lies outside the exported subtree. It is
+        // typed as always present, so guard it explicitly rather than leaning on `attachmentTitle`
+        // happening to be undefined in that case.
+        const targetMeta = noteIdToMeta[targetNoteId];
+        const attachmentTitle = getImageAttachmentTitle(targetMeta?.type);
+        const attachmentMeta = targetMeta && attachmentTitle
+            ? (targetMeta.attachments || []).find((attMeta) => attMeta.title === attachmentTitle)
+            : undefined;
+
+        // Falls back to the note's own data file when the attachment was never generated.
+        return getNoteTargetUrl(targetNoteId, sourceMeta, attachmentMeta?.dataFileName);
+    }
+
     function rewriteLinks(content: string, noteMeta: NoteMeta): string {
         content = content.replace(/src="[^"]*api\/images\/([a-zA-Z0-9_]+)\/[^"]*"/g, (match, targetNoteId) => {
-            const url = getNoteTargetUrl(targetNoteId, noteMeta);
+            const url = getEmbeddedImageUrl(targetNoteId, noteMeta);
 
             return url ? `src="${url}"` : match;
         });
@@ -301,6 +322,13 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             content = content.toString();
         }
 
+        // Text notes store HTML regardless of the export format, so strip CKEditor's per-list-item
+        // bookkeeping before the provider runs: gone from HTML exports and from the raw-HTML tables
+        // that survive Markdown conversion alike.
+        if (noteMeta?.type === "text" && typeof content === "string") {
+            content = stripListItemIds(content);
+        }
+
         content = provider.prepareContent(title, content, noteMeta, note, branch);
 
         // Rewrite markdown-style links for code notes with markdown MIME.
@@ -313,9 +341,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         return content;
     }
 
-    function saveNote(noteMeta: NoteMeta, filePathPrefix: string) {
-        log.info(`Exporting note '${noteMeta.noteId}'`);
-
+    async function saveNote(noteMeta: NoteMeta, filePathPrefix: string) {
         if (!noteMeta.noteId || noteMeta.title === undefined) {
             throw new Error("Missing note meta.");
         }
@@ -347,8 +373,13 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
             archive.append(content as string | Uint8Array, {
                 name: filePathPrefix + noteMeta.dataFileName,
-                date: dateUtils.parseDateTime(note.utcDateModified)
+                date: dateUtils.parseDateTime(note.utcDateModified),
+                store: shouldStoreUncompressed(noteMeta.mime)
             });
+
+            // Pace the synchronous tree walk against the archive's drain so the
+            // whole export isn't buffered into archiver's queue at once.
+            await archive.waitForCapacity?.();
         }
 
         taskContext.increaseProgressCount();
@@ -359,12 +390,18 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             }
 
             const attachment = note.getAttachmentById(attachmentMeta.attachmentId);
+            // getContent() already returns a string or a Uint8Array; the binary
+            // case can be appended as-is (the zip provider handles the Buffer
+            // conversion), so avoid an extra full copy of the blob here.
             const content = attachment.getContent();
 
-            archive.append(typeof content === "string" ? content : new Uint8Array(content), {
+            archive.append(content, {
                 name: filePathPrefix + attachmentMeta.dataFileName,
-                date: dateUtils.parseDateTime(note.utcDateModified)
+                date: dateUtils.parseDateTime(note.utcDateModified),
+                store: shouldStoreUncompressed(attachmentMeta.mime)
             });
+
+            await archive.waitForCapacity?.();
         }
 
         if (noteMeta.children?.length || 0 > 0) {
@@ -376,7 +413,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             }
 
             for (const childMeta of noteMeta.children || []) {
-                saveNote(childMeta, `${directoryPath}/`);
+                await saveNote(childMeta, `${directoryPath}/`);
             }
         }
     }
@@ -430,14 +467,6 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         }
     }
 
-    const metaFileJson = JSON.stringify(metaFile, null, "\t");
-
-    archive.append(metaFileJson, { name: "!!!meta.json" });
-
-    saveNote(rootMeta, "");
-
-    provider.afterDone(rootMeta);
-
     const note = branch.getNote();
     const zipFileName = `${branch.prefix ? `${branch.prefix} - ` : ""}${note.getTitleOrProtected()}.zip`;
 
@@ -446,12 +475,50 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         res.setHeader("Content-Type", "application/zip");
     }
 
+    // Start streaming to the destination *before* appending content. The archiver
+    // drains each appended blob as it is added, so memory stays bounded instead of
+    // buffering the whole export. Trade-off: a failure while reading content mid-
+    // export can no longer produce a clean HTTP error (bytes are already on the
+    // wire); the validation that can fail cleanly runs in the try/catch above.
     archive.pipe(res);
+
+    const metaFileJson = JSON.stringify(metaFile, null, "\t");
+
+    archive.append(metaFileJson, { name: "!!!meta.json" });
+
+    // The metadata pass above already drove the bare progress count. Reset it and seed the total with the
+    // number of notes about to be written so the content-writing pass renders a clean 0→100% progress bar.
+    taskContext.resetProgressCount();
+    const noteCount = countMetaNodes(rootMeta);
+    taskContext.setTotalCount(noteCount);
+
+    // A single summary line instead of one log entry per note — per-note logging floods the log file and
+    // stdout on large exports (e.g. 20k lines for a 20k-note subtree) for no operational benefit.
+    log.info(`Exporting ${noteCount} notes with format '${format}'`);
+
+    await saveNote(rootMeta, "");
+
+    provider.afterDone(rootMeta);
+
     await archive.finalize();
 
-    taskContext.taskSucceeded(null);
+    // Report success here only for an HTTP response, whose bytes are on the wire once finalize() resolves.
+    // A file (or other) stream isn't durably written until its "finish" event — which the caller awaits via
+    // waitForFinish() — so for those the caller emits taskSucceeded after the flush, not here, to avoid
+    // reporting success before a late write error (e.g. a full disk) leaves a truncated archive.
+    if ("setHeader" in res) {
+        taskContext.taskSucceeded(null);
+    }
 }
 
+/** Counts the notes in a metadata tree — i.e. the number of `saveNote()` calls the content-writing pass will make. */
+function countMetaNodes(meta: NoteMeta): number {
+    let count = 1;
+    for (const child of meta.children || []) {
+        count += countMetaNodes(child);
+    }
+    return count;
+}
 
 async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath: string, zipExportOptions?: AdvancedExportOptions) {
     const { destination, waitForFinish } = getZipProvider().createFileStream(zipFilePath);
@@ -469,7 +536,89 @@ async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath
     getLog().info(`Exported '${noteId}' with format '${format}' to '${zipFilePath}'`);
 }
 
+/**
+ * Streams a subtree (branch) export straight to a file on disk, reporting
+ * progress/success/failure over the WebSocket via `taskId`. Used by the desktop
+ * "native export" flow, which writes directly to a user-chosen path instead of
+ * routing a potentially multi-GB archive through an in-memory HTTP response.
+ */
+async function exportBranchToZipFile(branchId: string, format: ExportFormat, zipFilePath: string, taskId: string) {
+    const branch = becca.getBranch(branchId);
+    if (!branch) {
+        throw new ValidationError(`Branch ${branchId} not found.`);
+    }
+
+    const taskContext = new TaskContext(taskId, "export", null);
+    const { destination, waitForFinish } = getZipProvider().createFileStream(zipFilePath);
+
+    try {
+        await exportToZip(taskContext, branch, format, destination as Record<string, any>, false);
+        await waitForFinish();
+        // exportToZip defers success for non-HTTP destinations: only now, with the file fully flushed to
+        // disk, is the export genuinely complete — so report it here rather than before the final write.
+        taskContext.taskSucceeded(null);
+    } catch (e: unknown) {
+        taskContext.reportError(`Export failed with error: ${e instanceof Error ? e.message : String(e)}`);
+        throw e;
+    }
+
+    getLog().info(`Exported branch '${branchId}' with format '${format}' to '${zipFilePath}'`);
+}
+
 export default {
     exportToZip,
-    exportToZipFile
+    exportToZipFile,
+    exportBranchToZipFile
 };
+
+/**
+ * Whether a payload of the given MIME type is already compressed and should be
+ * stored uncompressed in a ZIP rather than re-deflated. Deflating these wastes
+ * CPU (often the export bottleneck) for negligible — sometimes negative — size
+ * change. Conservative: anything not known-compressed returns false and is
+ * compressed normally, so text/HTML/SVG/JSON/code all still deflate.
+ */
+export function shouldStoreUncompressed(mime: string | undefined | null): boolean {
+    if (!mime) {
+        return false;
+    }
+    const m = mime.toLowerCase().split(";")[0].trim();
+
+    // Codec-compressed media. PCM/AIFF are uncompressed, so let them deflate.
+    if (m.startsWith("video/")) {
+        return true;
+    }
+    if (m.startsWith("audio/")) {
+        return !UNCOMPRESSED_AUDIO.has(m);
+    }
+
+    return ALREADY_COMPRESSED.has(m) || isZipBasedContainer(m);
+}
+
+// Office / e-book / package formats that are ZIP containers under the hood.
+function isZipBasedContainer(mime: string): boolean {
+    return (
+        mime.startsWith("application/vnd.openxmlformats-officedocument.") || // docx/xlsx/pptx
+        mime.startsWith("application/vnd.oasis.opendocument.") ||            // odt/ods/odp
+        mime === "application/epub+zip" ||
+        mime === "application/java-archive" ||
+        mime === "application/vnd.android.package-archive"
+    );
+}
+
+const UNCOMPRESSED_AUDIO = new Set([
+    "audio/wav", "audio/x-wav", "audio/wave", "audio/aiff", "audio/x-aiff"
+]);
+
+const ALREADY_COMPRESSED = new Set([
+    // Raster images (SVG/BMP/ICO/TIFF deliberately excluded — they deflate well)
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "image/avif", "image/heic", "image/heif", "image/jp2", "image/apng",
+    // Archives / compressed streams
+    "application/zip", "application/x-zip-compressed", "application/gzip",
+    "application/x-gzip", "application/x-bzip2", "application/x-xz",
+    "application/x-7z-compressed", "application/x-rar-compressed",
+    "application/x-apple-diskimage",
+    // Already-compressed documents / fonts
+    "application/pdf", "font/woff", "font/woff2"
+]);

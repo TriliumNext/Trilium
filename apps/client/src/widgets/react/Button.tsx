@@ -5,6 +5,7 @@ import { CommandNames } from "../../components/app_context";
 import { isDesktop, isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
 import Icon from "./Icon";
+import { renderShortcutKbds } from "./shortcut_kbd";
 
 const cachedIsMobile = isMobile();
 
@@ -12,7 +13,7 @@ export interface ButtonProps {
     name?: string;
     /** Reference to the button element. Mostly useful for requesting focus. */
     buttonRef?: RefObject<HTMLButtonElement>;
-    text: string;
+    text: string | ComponentChildren;
     className?: string;
     icon?: string;
     keyboardShortcut?: string;
@@ -57,13 +58,7 @@ function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, i
     // Memoize keyboard shortcut rendering
     const shortcutElements = useMemo(() => {
         if (!keyboardShortcut || cachedIsMobile) return null;
-        const splitShortcut = keyboardShortcut.split("+");
-        return splitShortcut.map((key, index) => (
-            <>
-                <kbd key={index}>{key.toUpperCase()}</kbd>
-                {index < splitShortcut.length - 1 ? "+" : ""}
-            </>
-        ));
+        return renderShortcutKbds(keyboardShortcut);
     }, [keyboardShortcut]);
 
     return (

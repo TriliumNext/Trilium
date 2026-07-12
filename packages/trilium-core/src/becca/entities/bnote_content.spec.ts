@@ -428,6 +428,28 @@ describe("BNote content / misc getters", () => {
             expect(note.title).toBe("");
             expect(note.isDecrypted).toBe(true);
         });
+
+        it("refreshes the flat text search index so a decrypted note is searchable by title (issue #10406)", () => {
+            protectedSessionService.setDataKey(PROTECTED_KEY);
+            const note = createNote({ isProtected: true });
+
+            const cipher = protectedSessionService.encrypt("topsecret");
+            note.title = cipher ?? "";
+            note.isDecrypted = false;
+            note.invalidateThisCache();
+
+            // Build the index while the title is still encrypted — it must not contain the plaintext yet.
+            const idxBefore = becca.getFlatTextIndex().noteIdToIdx.get(note.noteId);
+            expect(idxBefore).toBeDefined();
+            expect(becca.getFlatTextIndex().flatTexts[idxBefore ?? -1]).not.toContain("topsecret");
+
+            note.decrypt();
+            expect(note.isDecrypted).toBe(true);
+
+            // decrypt() must schedule an index refresh; after it the plaintext title is indexed.
+            const idxAfter = becca.getFlatTextIndex().noteIdToIdx.get(note.noteId);
+            expect(becca.getFlatTextIndex().flatTexts[idxAfter ?? -1]).toContain("topsecret");
+        });
     });
 
     describe("saveRevision / eraseExcessRevisionSnapshots (lines 1551-1620)", () => {

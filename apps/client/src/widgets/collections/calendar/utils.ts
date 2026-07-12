@@ -81,6 +81,21 @@ export function getCustomisableLabel(note: FNote, defaultLabelName: string, cust
     return note.getLabelValue(defaultLabelName);
 }
 
+// Bounds for a FullCalendar slot duration / label interval, in seconds.
+const MIN_DURATION_SECONDS = 60; // 1 minute
+const MAX_DURATION_SECONDS = 24 * 60 * 60; // 24 hours
+
+export function isValidDuration(str: string | null | undefined): boolean {
+    // The regex already constrains minutes/seconds to 00–59, so only the total needs bounding.
+    const match = str?.match(/^(\d{2}):([0-5]\d):([0-5]\d)$/);
+    if (!match) return false;
+
+    const [, hours, minutes, seconds] = match;
+    const totalSeconds = Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds);
+
+    return totalSeconds >= MIN_DURATION_SECONDS && totalSeconds <= MAX_DURATION_SECONDS;
+}
+
 // Source: https://stackoverflow.com/a/30465299/4898894
 export function getMonthsInDateRange(startDate: string, endDate: string) {
     const start = startDate.split("-");

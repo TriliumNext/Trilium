@@ -118,6 +118,12 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
  * UI toggle is hidden. Exported as a pure function for unit testing.
  */
 export function isAlwaysFullWidthByType(note: FNote) {
+    // Icon packs render a full-pane glyph grid; `code`-type ones are already covered below, this also
+    // catches the `file`-type packs (distributable zips).
+    if (note.isIconPack()) {
+        return true;
+    }
+
     if (["code", "image", "mermaid", "book", "render", "canvas", "webView", "noteMap", "mindMap", "spreadsheet"].includes(note.type)) {
         return true;
     }

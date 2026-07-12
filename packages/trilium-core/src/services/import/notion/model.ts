@@ -26,6 +26,12 @@ export interface ParsedPage {
     path: string;
     /** The page's body HTML, sanitized; empty when the body could not be located. */
     content: string;
+    /**
+     * Notion ids this page references as subpages — from its `link-to-page` blocks and rendered collection
+     * table. These survive a "Create folders for subpages"-disabled export even though the folder structure
+     * that conveys nesting does not, so they let the importer detect that flattened export.
+     */
+    linkedPageIds: string[];
     /** Database properties from the page's Notion properties table, mapped to Trilium labels on import. */
     properties: NotionProperty[];
     /**

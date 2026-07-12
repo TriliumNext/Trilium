@@ -158,6 +158,25 @@ describe("sync_update service (real DB)", () => {
         expect(empty === "" || (empty && Buffer.from(empty as Uint8Array).length === 0)).toBeTruthy();
     });
 
+    it("stores distinct content for sequential blobs of different sizes (decode pool reuse must not cross-contaminate)", () => {
+        // The decode pool reuses one scratch buffer across blobs on platforms with an in-place
+        // decoder. A longer blob followed by a shorter one exercises the case where stale bytes
+        // from the previous decode sit beyond the new content's end in the same buffer.
+        const longContent = "long-blob-content-".repeat(50);
+        const shortContent = "tiny";
+
+        apply([
+            { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_a" }), entity: blobRow("su_blob_pool_a", encodeBase64(longContent)) },
+            { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_b" }), entity: blobRow("su_blob_pool_b", encodeBase64(shortContent)) }
+        ]);
+
+        const a = getSql().getValue<Buffer | Uint8Array>("SELECT content FROM blobs WHERE blobId = ?", ["su_blob_pool_a"]);
+        const b = getSql().getValue<Buffer | Uint8Array>("SELECT content FROM blobs WHERE blobId = ?", ["su_blob_pool_b"]);
+
+        expect(Buffer.from(a ?? []).toString()).toBe(longContent);
+        expect(Buffer.from(b ?? []).toString()).toBe(shortContent);
+    });
+
     it("ignores option changes that have no entity row", () => {
         // entityName 'options' + no row -> early return, no throw.
         expect(() => apply([{ entityChange: buildEC({ entityName: "options", entityId: "su_missing_option" }), entity: undefined }])).not.toThrow();

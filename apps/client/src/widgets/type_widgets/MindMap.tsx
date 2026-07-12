@@ -4,6 +4,7 @@ import "./MindMap.css";
 
 // allow node-menu plugin css to be bundled by webpack
 import nodeMenu from "@mind-elixir/node-menu";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { snapdom } from "@zumer/snapdom";
 import { t } from "i18next";
 import { DARK_THEME, default as VanillaMindElixir, MindElixirData, MindElixirInstance, Operation, THEME as LIGHT_THEME } from "mind-elixir";
@@ -117,7 +118,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
                 attachments: [
                     {
                         role: "image",
-                        title: "mindmap-export.svg",
+                        title: NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap,
                         mime: "image/svg+xml",
                         content: svgContent,
                         position: 0

@@ -381,7 +381,7 @@ class FrocaImpl implements Froca {
 
         if (!this.blobPromises[key]) {
             this.blobPromises[key] = server
-                .get<FBlobRow>(`${entityType}/${entityId}/blob`)
+                .getWithSilentNotFound<FBlobRow>(`${entityType}/${entityId}/blob`)
                 .then((row) => new FBlob(row))
                 .catch((e) => {
                     console.error(`Cannot get blob for ${entityType} '${entityId}'`, e);

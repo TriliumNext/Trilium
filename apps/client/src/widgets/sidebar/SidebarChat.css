@@ -66,10 +66,22 @@
     font-size: 0.85em;
 }
 
+/* History dropdown row: title/date on the left, delete button pushed to the right. */
+.sidebar-chat-history-item.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 .sidebar-chat-history-item-content {
     display: flex;
+    flex: 1;
     flex-direction: column;
     min-width: 0;
+}
+
+.sidebar-chat-history-delete {
+    flex-shrink: 0;
 }
 
 .sidebar-chat-history-item-content span,

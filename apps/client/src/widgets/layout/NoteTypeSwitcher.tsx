@@ -27,7 +27,8 @@ export default function NoteTypeSwitcher({ note }: { note?: FNote | null }) {
         const pinnedNoteTypes: NoteTypeMapping[] = [];
         const restNoteTypes: NoteTypeMapping[] = [];
         for (const noteType of NOTE_TYPES) {
-            if (noteType.reserved || noteType.static || noteType.type === "book") continue;
+            if (noteType.reserved || noteType.type === "book") continue;
+            if (noteType.type === "search") continue;
             if (noteType.type === "llmChat" && !isExperimentalFeatureEnabled("llm")) continue;
             if (SWITCHER_PINNED_NOTE_TYPES.has(noteType.type)) {
                 pinnedNoteTypes.push(noteType);
@@ -40,7 +41,7 @@ export default function NoteTypeSwitcher({ note }: { note?: FNote | null }) {
     const currentNoteTypeData = useMemo(() => NOTE_TYPES.find(t => t.type === currentNoteType), [ currentNoteType ]);
     const { builtinTemplates, collectionTemplates } = useBuiltinTemplates();
 
-    return (currentNoteType && supportedNoteTypes.has(currentNoteType) && !note?.isTriliumSqlite() && !note?.isMarkdown() &&
+    return (currentNoteType && supportedNoteTypes.has(currentNoteType) && !note?.isTriliumSqlite() && !note?.isMarkdown() && !note?.isIconPack() &&
         <div
             className="note-type-switcher"
             onWheel={onWheelHorizontalScroll}

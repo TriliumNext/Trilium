@@ -177,7 +177,6 @@
     border: 1px solid var(--muted-text-color, #ccc);
     border-radius: 4px;
     overflow: hidden;
-    text-decoration: none;
     color: inherit;
     cursor: pointer;
     transition: background-color 0.15s ease;
@@ -186,7 +185,7 @@
 
 .link-embed-card:hover {
     background-color: var(--hover-item-background-color, rgba(0, 0, 0, 0.03));
-    text-decoration: none;
+    text-decoration: none !important;
     color: inherit;
 }
 

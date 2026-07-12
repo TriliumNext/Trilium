@@ -120,6 +120,27 @@ describe("dispatchMessage", () => {
         expect(bundle.getAndExecuteBundle).toHaveBeenCalledWith("cur2", null, "x", []);
     });
 
+    it("reloads when a ping reports the protected session expired on the backend", async () => {
+        const ws = await loadWs();
+        (window as any).glob.isProtectedSessionAvailable = true;
+
+        // flag absent (client->server ping shape) or still true -> no reload
+        await ws.dispatchMessage({ type: "ping" } as WebSocketMessage);
+        await ws.dispatchMessage({ type: "ping", protectedSessionAvailable: true } as WebSocketMessage);
+        expect(utilsCtrl.reloadFrontendApp).not.toHaveBeenCalled();
+
+        await ws.dispatchMessage({ type: "ping", protectedSessionAvailable: false } as WebSocketMessage);
+        expect(utilsCtrl.reloadFrontendApp).toHaveBeenCalledWith(expect.stringContaining("protected session"));
+    });
+
+    it("does not reload on expiry pings when the client never had the protected session", async () => {
+        const ws = await loadWs();
+        (window as any).glob.isProtectedSessionAvailable = false;
+
+        await ws.dispatchMessage({ type: "ping", protectedSessionAvailable: false } as WebSocketMessage);
+        expect(utilsCtrl.reloadFrontendApp).not.toHaveBeenCalled();
+    });
+
     it("ignores unknown message types", async () => {
         const ws = await loadWs();
         await ws.dispatchMessage({ type: "totally-unknown" } as any);

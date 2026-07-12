@@ -23,6 +23,21 @@ const shareAdjustedAssetPath = isDev ? assetPath : `../${assetPath}`;
 const templateCache: Map<string, string> = new Map();
 
 /**
+ * Maximum number of lines a code block may have before server-side syntax highlighting is skipped.
+ * Mirrors the editor's per-block cutoff (HIGHLIGHT_MAX_BLOCK_COUNT in the ckeditor5 syntax
+ * highlighting plugin); beyond it `highlightAuto` is too slow and would block the event loop on
+ * large shared/included code notes (#9717).
+ */
+const HIGHLIGHT_MAX_LINE_COUNT = 500;
+
+/**
+ * Maximum number of characters a code block may have before server-side syntax highlighting is
+ * skipped. The line-count cutoff alone does not protect against a single very long line (e.g.
+ * minified code), so a separate character ceiling guards `highlightAuto`'s size-driven cost.
+ */
+const HIGHLIGHT_MAX_CHAR_COUNT = 50_000;
+
+/**
  * Represents the output of the content renderer.
  */
 export interface Result {
@@ -183,7 +198,8 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         return note.getContent() ?? "";
     }
 
-    const { header, content, isEmpty } = getContent(note);
+    // Static export preserves full include-note nesting; the live share view renders only the first level.
+    const { header, content, isEmpty } = getContent(note, { expandNestedIncludes: renderArgs.isStatic });
     const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
     const opts = {
         note,
@@ -262,7 +278,21 @@ export function readTemplate(path: string) {
     return templateString;
 }
 
-export function getContent(note: SNote | BNote) {
+export interface ShareRenderOptions {
+    /**
+     * Keep expanding include-note sections recursively at every depth. Used for static export, which
+     * preserves full nesting. When false (the default for the on-screen share view), only the first
+     * level of inclusion is rendered and deeper include-note sections are replaced with a reference
+     * link.
+     */
+    expandNestedIncludes?: boolean;
+    /** Internal: render this note's own include-note sections as reference links instead of expanding. */
+    includesAsReferenceLinks?: boolean;
+    /** Internal: note IDs already rendered on the current include path, used as a recursion cycle guard. */
+    seenNoteIds?: Set<string>;
+}
+
+export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}) {
     if (note.isProtected) {
         return {
             header: "",
@@ -278,7 +308,7 @@ export function getContent(note: SNote | BNote) {
     };
 
     if (note.type === "text") {
-        renderText(result, note);
+        renderText(result, note, options);
     } else if (note.type === "code" && note.mime === "text/x-markdown") {
         renderMarkdown(result, note);
     } else if (note.type === "code") {
@@ -318,7 +348,7 @@ function renderIndex(result: Result) {
     result.content += "</ul>";
 }
 
-function renderText(result: Result, note: SNote | BNote) {
+function renderText(result: Result, note: SNote | BNote, options: ShareRenderOptions = {}) {
     if (typeof result.content !== "string") return;
     const parseOpts: Partial<Options> = {
         blockTextElements: {}
@@ -367,15 +397,29 @@ function renderText(result: Result, note: SNote | BNote) {
         }
     }
 
-    // Process include notes.
+    // Process include notes. The share view renders only the first level of inclusion; static export
+    // (expandNestedIncludes) keeps expanding recursively. seenNoteIds tracks the current ancestor
+    // path (cloned per descent below) so the recursive path can break cycles without treating a note
+    // included in two sibling sub-trees as circular.
+    const seenNoteIds = new Set(options.seenNoteIds);
+    seenNoteIds.add(note.noteId);
     for (const includeNoteEl of document.querySelectorAll("section.include-note")) {
         const noteId = includeNoteEl.getAttribute("data-note-id");
         if (!noteId) continue;
 
-        const note = shaca.getNote(noteId);
-        if (!note) continue;
+        const includedNote = shaca.getNote(noteId);
+        if (!includedNote) continue;
 
-        const includedResult = getContent(note);
+        // Deeper-than-first-level includes (and any cycle in the recursive path) degrade to a
+        // reference link that the link-processing passes below resolve to the shared note.
+        if (options.includesAsReferenceLinks || seenNoteIds.has(noteId)) {
+            includeNoteEl.replaceWith(...parse(`<a class="reference-link" href="#root/${escapeHtml(noteId)}">${escapeHtml(includedNote.title)}</a>`, parseOpts).childNodes);
+            continue;
+        }
+
+        const includedResult = getContent(includedNote, options.expandNestedIncludes
+            ? { expandNestedIncludes: true, seenNoteIds: new Set(seenNoteIds) }
+            : { includesAsReferenceLinks: true, seenNoteIds: new Set(seenNoteIds) });
         if (typeof includedResult.content !== "string") continue;
 
         const includedDocument = parse(includedResult.content, parseOpts).childNodes;
@@ -419,7 +463,13 @@ function renderText(result: Result, note: SNote | BNote) {
                 continue;
             }
 
-            const highlightResult = highlightAuto(codeEl.text);
+            // codeEl.text recursively traverses the node's subtree, so read it once.
+            const codeText = codeEl.text;
+            if (!shouldSyntaxHighlight(codeText)) {
+                continue;
+            }
+
+            const highlightResult = highlightAuto(codeText);
             codeEl.innerHTML = highlightResult.value;
             codeEl.classList.add("hljs");
         }
@@ -525,12 +575,39 @@ function renderMarkdown(result: Result, note: SNote | BNote) {
             continue;
         }
 
-        const highlightResult = highlightAuto(codeEl.text);
+        // codeEl.text recursively traverses the node's subtree, so read it once.
+        const codeText = codeEl.text;
+        if (!shouldSyntaxHighlight(codeText)) {
+            continue;
+        }
+
+        const highlightResult = highlightAuto(codeText);
         codeEl.innerHTML = highlightResult.value;
         codeEl.classList.add("hljs");
     }
 
     result.content = document.innerHTML;
+}
+
+/**
+ * Whether a code block is small enough to syntax-highlight server-side. Highlighting (especially
+ * `highlightAuto`, which probes every registered language) scales with content size and would block
+ * the single Node event loop on very large code, so blocks beyond {@link HIGHLIGHT_MAX_LINE_COUNT}
+ * lines or {@link HIGHLIGHT_MAX_CHAR_COUNT} characters are left unhighlighted.
+ */
+export function shouldSyntaxHighlight(code: string) {
+    if (code.length > HIGHLIGHT_MAX_CHAR_COUNT) {
+        return false;
+    }
+
+    let lineCount = 1;
+    let index = -1;
+    while ((index = code.indexOf("\n", index + 1)) !== -1) {
+        if (++lineCount > HIGHLIGHT_MAX_LINE_COUNT) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
@@ -540,9 +617,13 @@ export function renderCode(result: Result) {
     if (typeof result.content !== "string" || !result.content?.trim()) {
         result.isEmpty = true;
     } else {
-        const preEl = new HTMLElement("pre", {});
-        preEl.appendChild(new TextNode(result.content));
-        result.content = preEl.outerHTML;
+        // Escape the raw code so that any `<`/`>` it contains are not later re-parsed as HTML.
+        // When such a code note is included into a shared text note, renderText re-parses the
+        // resulting HTML; with unescaped angle brackets (e.g. generics, comparisons, JSX) a large
+        // code note would explode into a pathological node-html-parser tree and hang the event
+        // loop (#9717). The <code> wrapper additionally lets renderText apply syntax highlighting,
+        // bounded by shouldSyntaxHighlight().
+        result.content = `<pre><code>${escapeHtml(result.content)}</code></pre>`;
     }
 }
 

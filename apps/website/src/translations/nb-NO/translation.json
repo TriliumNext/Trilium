@@ -31,10 +31,8 @@
         "protected_notes_title": "Beskyttede notater",
         "title": "Produktivitet og sikkerhet",
         "sync_content": "Bruk en selv-hostet eller cloud-instans for å enkelt synkronisere notater på tvers av enheter, og ha de tilgjengelige fra din mobiltelefon ved hjelp av progressiv web-app.",
-        "jump_to_content": "Hopp raskt til notater eller grensesnittkommandoer over hele hierarkiet ved å søke etter tittel, med \"fuzzy\" matching for å ta hensyn til skrivefeil eller små differanser.",
         "revisions_content": "Notater lagres periodisk i bakgrunnen og revisjonshistorikk kan brukes for tilbakeblikk eller å omgjøre uønskede endringer. Revisjoner kan også lages manuelt.",
         "protected_notes_content": "Beskytt sensitiv personlig informasjon ved å kryptere notater og låse de med en passordkryptert sesjon.",
-        "jump_to_title": "Hurtigsøk og kommandoer",
         "search_content": "Eller søk etter tekst i notatene og finjuster søket ved å filtrere på foreldrenotat eller dybde.",
         "web_clipper_content": "Hent nettsider (eller screenshots) og legg de direkte i Trilium ved hjelp av web clipper nettleserutvidelse."
     },
@@ -51,19 +49,7 @@
         "file_description": "Integrer multimediafiler som PDFer, bilder og video med forhåndsvisning i programmet.",
         "mermaid_description": "Lag diagrammer som flytskjema, klasse- og sekvensdiagrammer, Ganttdiagrammer og mye mer ved hjelp av Mermaidsyntaks.",
         "mindmap_description": "Organiser dine tanker visuelt eller gjør en brainstorming.",
-        "others_list": "og andre: <0>notatkart</0>, <1>relasjonskart</1>, <2>lagrede søk</2>, <3>rendret notat</3>, og <4>web view</4>.",
         "canvas_description": "Arranger figurer, bilder og tekst på et uendelig lerret som bruker samme teknologi som excalidraw.com. Ideelt for diagrammer, skisser og visuell planlegging."
-    },
-    "extensibility_benefits": {
-        "import_export_title": "Import/eksport",
-        "scripting_title": "Avansert skripting",
-        "api_title": "REST API",
-        "title": "Deling og utvidbarhet",
-        "share_title": "Del notater på nett",
-        "share_description": "Hvis du har en server, kan den brukes til å dele valgfrie notater med andre.",
-        "scripting_description": "Lag dine egne integrasjoner i Trilium med egendefinerte widgets, eller serversidelogikk.",
-        "import_export_description": "Samhandle med andre programmer ved hjelp av Markdown, ENEX og OML.",
-        "api_description": "Ved hjelp av den innebygde REST-APIen kan du programmatisk samhandle med Trilium."
     },
     "collections": {
         "title": "Samlinger",
@@ -166,7 +152,6 @@
     },
     "download_helper_server_hosted": {
         "title": "Betalt hosting",
-        "download_triliumcc": "Alternativt sjekk trilium.cc",
         "description": "Trilium Notes driftet på PikaPods, en betalt tjeneste for enkel tilgang og administrasjon. Ikke direkte tilknyttet Trilium-teamet.",
         "download_pikapod": "Installer på PikaPods"
     },

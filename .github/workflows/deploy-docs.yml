@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-      - master  # Also support master branch
+      - stable
     # Only run when docs files change
     paths:
       - 'docs/**'

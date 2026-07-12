@@ -10,7 +10,8 @@ const viewportCoordsToSceneCoords = vi.fn(() => ({ x: 100, y: 200 }));
 
 vi.mock("@excalidraw/excalidraw", () => ({
     restoreElements: (...args: unknown[]) => restoreElements(...(args as [unknown[]])),
-    viewportCoordsToSceneCoords: () => viewportCoordsToSceneCoords()
+    viewportCoordsToSceneCoords: () => viewportCoordsToSceneCoords(),
+    CaptureUpdateAction: { IMMEDIATELY: "IMMEDIATELY", NEVER: "NEVER", EVENTUALLY: "EVENTUALLY" }
 }));
 
 type Handlers = ReturnType<typeof useCanvasNoteDrop>;
@@ -109,9 +110,11 @@ describe("useCanvasNoteDrop", () => {
             // The second note is offset by STACK_OFFSET (24) from the first on both axes.
             expect(partials[1]).toMatchObject({ x: 124, y: 224, link: "root/bbb" });
 
-            const { elements } = updateScene.mock.calls[0][0];
+            const { elements, captureUpdate } = updateScene.mock.calls[0][0];
             expect(elements).toHaveLength(3); // 1 existing + 2 new
             expect(elements[0]).toEqual({ id: "existing" });
+            // The drop must be its own undo step (#7148).
+            expect(captureUpdate).toBe("IMMEDIATELY");
         });
 
         it("does nothing when read-only", async () => {

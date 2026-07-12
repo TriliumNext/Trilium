@@ -19,6 +19,17 @@ describe("isAlwaysFullWidthByType", () => {
         expect(isAlwaysFullWidthByType(buildNote({ title: "Calendar", type: "search", "#viewType": "calendar" }))).toBe(true);
         expect(isAlwaysFullWidthByType(buildNote({ title: "List", type: "search", "#viewType": "list" }))).toBe(false);
     });
+
+    it("is true for icon packs, including the file-type variant that isn't media/PDF", () => {
+        const filePack = buildNote({ title: "File pack", type: "file", "#iconPack": "fp" });
+        filePack.mime = "application/json";
+        expect(isAlwaysFullWidthByType(filePack)).toBe(true);
+
+        // A plain JSON file (no #iconPack) stays constrained.
+        const plainJson = buildNote({ title: "Config", type: "file" });
+        plainJson.mime = "application/json";
+        expect(isAlwaysFullWidthByType(plainJson)).toBe(false);
+    });
 });
 
 describe("isFullWidthNote", () => {

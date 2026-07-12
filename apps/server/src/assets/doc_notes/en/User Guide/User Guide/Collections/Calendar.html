@@ -87,6 +87,9 @@
 <ul>
   <li>Hide weekends from the week view.</li>
   <li>Display week numbers on the calendar.</li>
+  <li>Set the slot duration (the length of each time row in day/week view).</li>
+  <li>Set the slot label interval (how often time labels appear on the axis
+    in day/week view).</li>
 </ul>
 <h2>Configuring the calendar using attributes</h2>
 <p>The following attributes can be added to the Collection type:</p>
@@ -122,19 +125,32 @@
       <td>
         <p>Which view to display in the calendar:</p>
         <ul>
+          <li><code spellcheck="false">timeGridDay</code> for the <em>day</em> view;</li>
           <li><code spellcheck="false">timeGridWeek</code> for the <em>week</em> view;</li>
-          <li
-         ><code spellcheck="false">dayGridMonth</code> for the <em>month</em> view;</li>
-            <li
-           ><code spellcheck="false">multiMonthYear</code> for the <em>year</em> view;</li>
-              <li
-             ><code spellcheck="false">listMonth</code> for the <em>list</em> view.</li>
+          <li><code spellcheck="false">dayGridMonth</code> for the <em>month</em> view;</li>
+          <li><code spellcheck="false">multiMonthYear</code> for the <em>year</em> view;</li>
+          <li><code spellcheck="false">listMonth</code> for the <em>list</em> view.</li>
         </ul>
         <p>Any other value will be dismissed and the default view (month) will be
           used instead.</p>
         <p>The value of this label is automatically updated when changing the view
           using the UI buttons.</p>
       </td>
+    </tr>
+    <tr>
+      <td><code spellcheck="false">#calendar:slotDuration</code>
+      </td>
+      <td>Sets how long each timeslot is on the calendar. Defaults to <code spellcheck="false">00:15:00</code> (15
+        minutes). Must have the format "HH:MM:SS". For example, to create timeslots
+        for every 10 minutes, you would set <code spellcheck="false">#calendar:slotDuration="00:10:00"</code>.</td>
+    </tr>
+    <tr>
+      <td><code spellcheck="false">#calendar:slotLabelInterval</code>
+      </td>
+      <td>Sets how often the timeslots on the calendar should be labeled. Defaults
+        to <code spellcheck="false">01:00:00</code> (1 hour). Must have the format
+        "HH:MM:SS". For example, to label timeslots every 30 minutes, you would
+        set <code spellcheck="false">#calendar:slotLabelInterval="00:30:00"</code>.</td>
     </tr>
     <tr>
       <td><code spellcheck="false">~child:template</code>
@@ -211,7 +227,7 @@ class="table">
       <tr>
         <td><code spellcheck="false">#calendar:color</code>
         </td>
-        <td><strong>❌️ Removed since v0.100.0. Use</strong>  <code spellcheck="false">**#color**</code>  <strong>instead.</strong>&nbsp;&nbsp;
+        <td><strong>❌️ Removed since v0.100.0. Use</strong>  <code spellcheck="false">**#color**</code>  <strong>instead.</strong>&nbsp;&nbsp;&nbsp;
           <br>
           <br>Similar to <code spellcheck="false">#color</code>, but applies the color
           only for the event in the calendar and not for other places such as the
@@ -235,15 +251,15 @@ class="table">
         <td><code spellcheck="false">#calendar:displayedAttributes</code>
         </td>
         <td>Allows displaying the value of one or more attributes in the calendar
-          like this:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          like this:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>
-          <img src="7_Calendar_image.png">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <img src="7_Calendar_image.png">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
-          <br><code spellcheck="false">#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"</code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <br><code spellcheck="false">#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"</code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>It can also be used with relations, case in which it will display the
-          title of the target note:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          title of the target note:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br><code spellcheck="false">~assignee=@My assignee #calendar:displayedAttributes="assignee"</code>
         </td>
@@ -337,6 +353,130 @@ class="table">
       note ID and title of the note with the erroneous recurrence message. This
       note will not be added to the calendar</p>
   </aside>
+  <h2>Slot Duration &amp; Slot Label Interval</h2>
+  <p>Trilium's calendar view is powered by FullCalendar, which gives you fine-grained
+    control over how the time grid looks and behaves for day and week views.
+    Two labels you can use to configure these views are <code spellcheck="false">#calendar:slotDuration</code> and
+    <code
+    spellcheck="false">#calendar:slotLabelInterval</code>. Understanding what each one does —
+      and how they interact — lets you tailor the calendar to match your workflow,
+      whether you're scheduling in 15-minute increments or planning out your
+      day in broad hourly blocks.</p>
+  <p>These settings can also be adjusted from the <em>Collections</em> tab in
+    the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>.</p>
+  <h3>Slot duration</h3>
+  <p>Controls how tall each time slot is on the calendar — essentially the
+    smallest unit of time the grid is divided into. A shorter duration means
+    more rows and finer granularity; a longer one means fewer, chunkier rows.
+    The default is one row every 15 minutes.</p>
+  <p><strong>Examples:</strong>
+  </p>
+  <figure class="table">
+    <table>
+      <thead>
+        <tr>
+          <th>Value</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code spellcheck="false">#calendar:slotDuration="00:15:00"</code>
+          </td>
+          <td>One row every 15 minutes</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#calendar:slotDuration="00:30:00"</code>
+          </td>
+          <td>One row every 30 minutes</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#calendar:slotDuration="01:00:00"</code>
+          </td>
+          <td>One row every hour</td>
+        </tr>
+      </tbody>
+    </table>
+  </figure>
+  <h3>Label interval</h3>
+  <p>Controls how often a time label appears on the left-hand axis. This is
+    independent of the slot size — you can have very small slots but only label
+    every hour to keep the axis readable. The default is a time label shown
+    every hour.</p>
+  <p><strong>Examples:</strong>
+  </p>
+  <figure class="table">
+    <table>
+      <thead>
+        <tr>
+          <th>Value</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code spellcheck="false">#calendar:slotLabelInterval="00:30:00"</code>
+          </td>
+          <td>Show a time label every 30 minutes</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#calendar:slotLabelInterval="01:00:00"</code>
+          </td>
+          <td>Show a time label every hour</td>
+        </tr>
+      </tbody>
+    </table>
+  </figure>
+  <h3>Useful combinations</h3>
+  <figure class="table">
+    <table>
+      <thead>
+        <tr>
+          <th><code spellcheck="false">#calendar:slotDuration</code>
+          </th>
+          <th><code spellcheck="false">#calendar:slotLabelInterval</code>
+          </th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code spellcheck="false">00:15:00</code>
+          </td>
+          <td><code spellcheck="false">01:00:00</code>
+          </td>
+          <td>Fine grid, clean axis — good for busy schedules</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">00:30:00</code>
+          </td>
+          <td><code spellcheck="false">01:00:00</code>
+          </td>
+          <td>Standard calendar feel</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">01:00:00</code>
+          </td>
+          <td><code spellcheck="false">01:00:00</code>
+          </td>
+          <td>Simple hourly grid — good for day planning</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">00:15:00</code>
+          </td>
+          <td><code spellcheck="false">00:30:00</code>
+          </td>
+          <td>Fine grid, labels every 30 min — balanced detail</td>
+        </tr>
+      </tbody>
+    </table>
+  </figure>
+  <h3>Format</h3>
+  <p>Both values use <code spellcheck="false">HH:mm:ss</code> format. Hours can
+    go up to <code spellcheck="false">24</code> (<code spellcheck="false">24:00:00</code>),
+    while minutes and seconds must be between <code spellcheck="false">00</code> and
+    <code
+    spellcheck="false">59</code>. The minimum meaningful duration is 1 minute (<code spellcheck="false">00:01:00</code>).</p>
   <h2>Use-cases</h2>
   <h3>Using with the Journal / calendar</h3>
   <p>It is possible to integrate the calendar view into the Journal with day

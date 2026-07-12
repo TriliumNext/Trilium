@@ -1,5 +1,13 @@
-import type { FileStream, ZipArchive, ZipEntry, ZipProvider } from "@triliumnext/core/src/services/zip_provider.js";
+import type { FileStream, ZipArchive, ZipEntry, ZipProvider, ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
 import { strToU8, unzip, zipSync } from "fflate";
+
+/** The browser/WASM build has no filesystem, so a `path` source is unsupported here — only raw bytes. */
+function requireBuffer(source: ZipSource): Uint8Array {
+    if (!(source instanceof Uint8Array)) {
+        throw new Error("Path-based zip reading is not supported in the browser; uploads arrive as bytes.");
+    }
+    return source;
+}
 
 type ZipOutput = {
     send?: (body: unknown) => unknown;
@@ -8,11 +16,19 @@ type ZipOutput = {
 };
 
 class BrowserZipArchive implements ZipArchive {
-    readonly #entries: Record<string, Uint8Array> = {};
+    readonly #entries: Record<string, Uint8Array | [Uint8Array, { level: 0 }]> = {};
     #destination: ZipOutput | null = null;
 
-    append(content: string | Uint8Array, options: { name: string }) {
-        this.#entries[options.name] = typeof content === "string" ? strToU8(content) : content;
+    append(content: string | Uint8Array, options: { name: string; store?: boolean }) {
+        const data = typeof content === "string" ? strToU8(content) : content;
+        // fflate honors a per-entry level; level 0 stores the entry uncompressed.
+        this.#entries[options.name] = options.store ? [data, { level: 0 }] : data;
+    }
+
+    waitForCapacity(): Promise<void> {
+        // zipSync builds the whole archive in memory anyway, so there's nothing
+        // to pace against — resolve immediately.
+        return Promise.resolve();
     }
 
     pipe(destination: unknown) {
@@ -24,7 +40,7 @@ class BrowserZipArchive implements ZipArchive {
             throw new Error("ZIP output destination not set.");
         }
 
-        const content = zipSync(this.#entries, { level: 9 });
+        const content = zipSync(this.#entries, { level: 6 });
 
         if (typeof this.#destination.send === "function") {
             this.#destination.send(content);
@@ -46,7 +62,8 @@ class BrowserZipArchive implements ZipArchive {
 }
 
 export default class BrowserZipProvider implements ZipProvider {
-    async detectFilenameEncoding(buffer: Uint8Array): Promise<string> {
+    async detectFilenameEncoding(source: ZipSource): Promise<string> {
+        const buffer = requireBuffer(source);
         // fflate decodes filenames as CP437/Latin-1 (preserving raw bytes).
         // We recover raw bytes and detect the encoding.
         const rawSamples = await this.#collectRawFilenameSamples(buffer);
@@ -65,10 +82,11 @@ export default class BrowserZipProvider implements ZipProvider {
     }
 
     readZipFile(
-        buffer: Uint8Array,
+        source: ZipSource,
         processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
         filenameEncoding?: string
     ): Promise<void> {
+        const buffer = requireBuffer(source);
         return new Promise<void>((res, rej) => {
             unzip(buffer, async (err, files) => {
                 if (err) { rej(err); return; }

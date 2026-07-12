@@ -1,6 +1,3 @@
-<aside class="admonition note">
-  <p>This import mechanism was introduced in Trilium v0.104.0.</p>
-</aside>
 <p>Trilium can import ZIP exports from Notion while preserving structure
   and formatting.</p>
 <h2>Import process</h2>
@@ -10,50 +7,44 @@
     <ul>
       <li>Select the page to export.</li>
       <li>Press the […] button at the top-right of the window and select <em>Export</em>.</li>
-      <li
-     >Ensure the following options are set:
+      <li>Ensure the following options are set:
         <ul>
           <li>Export format: HTML</li>
           <li>Page content: Everything</li>
           <li>Include subpages: On</li>
           <li>Create folders for subpages: On</li>
         </ul>
-  </li>
-  <li>Press the Export button.</li>
-  <li>Wait for the download to finish.</li>
-  </ul>
+      </li>
+      <li>Press the Export button.</li>
+      <li>Wait for the download to finish.</li>
+    </ul>
   </li>
   <li>To export an entire workspace, press your user name badge at top-left
     and select <em>Settings</em>.
     <ul>
       <li>In the left section, look for the <em>Workspace</em> category and select <em>General</em>.</li>
-      <li
-     >In the <em>General</em> settings page, look for the <em>Export</em> section
+      <li>In the <em>General</em> settings page, look for the <em>Export</em> section
         and press the <em>Export</em> button corresponding to <em>Workspace content</em>.</li>
-  <li
- >Ensure the following options are set:
-    <ul>
-      <li>Export format: HTML</li>
-      <li>Page content: Everything</li>
-      <li>Include subpages: On</li>
-      <li>Create folders for subpages: On</li>
+      <li>Ensure the following options are set:
+        <ul>
+          <li>Export format: HTML</li>
+          <li>Page content: Everything</li>
+          <li>Include subpages: On</li>
+          <li>Create folders for subpages: On</li>
+        </ul>
+      </li>
+      <li>Press the Export button.</li>
+      <li>Wait for the download to finish. Depending on the size of your workspace
+        it might take a while. You will get a downloadable copy via email if takes
+        too long.</li>
     </ul>
-    </li>
-    <li>Press the Export button.</li>
-    <li>Wait for the download to finish. Depending on the size of your workspace
-      it might take a while. You will get a downloadable copy via email if takes
-      too long.</li>
-    </ul>
-    </li>
+  </li>
 </ul>
 <p>In Trilium Notes:</p>
 <ol>
   <li>In the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
-    select a note where to place the imported notes.</li>
-  <li>From&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>,
-    select <em>Import from a service…</em>
-  </li>
-  <li>Select <em>Notion</em> as the provider to import from.</li>
+    right click and select <em>Import into note</em>.</li>
+  <li>In the <em>Import from</em> section, select <em>Notion</em>.</li>
   <li>Upload the ZIP obtained in the previous step.</li>
 </ol>
 <h2>Supported features</h2>
@@ -105,108 +96,105 @@
   of the original view the database was exported in. That's because the active
   view is not saved in the export and the table collection is the most compatible
   with Notion.</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th scope="col">Notion type</th>
-        <th scope="col">Trilium</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Text / Select / Status / Place</td>
-        <td>Single-valued <code spellcheck="false">text</code> label</td>
-      </tr>
-      <tr>
-        <td>Number</td>
-        <td>Single-valued <code spellcheck="false">number</code> label for plain numbers.
-          Formatted values (currency, percent, thousands separators) are normalized
-          to a bare number, e.g. <code spellcheck="false">$1,200.50</code> → <code spellcheck="false">1200.50</code>.</td>
-      </tr>
-      <tr>
-        <td>ID</td>
-        <td>Single-valued <code spellcheck="false">number</code> or <code spellcheck="false">text</code> label
-          (depending on whether a prefix is configured)</td>
-      </tr>
-      <tr>
-        <td>Multi-select</td>
-        <td>One text label per option (multi)</td>
-      </tr>
-      <tr>
-        <td>URL / Email / Phone</td>
-        <td><code spellcheck="false">url</code> label (<code spellcheck="false">mailto:</code>,
+<table>
+  <thead>
+    <tr>
+      <th scope="col">Notion type</th>
+      <th scope="col">Trilium</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Text / Select / Status / Place</td>
+      <td>Single-valued <code spellcheck="false">text</code> label</td>
+    </tr>
+    <tr>
+      <td>Number</td>
+      <td>Single-valued <code spellcheck="false">number</code> label for plain numbers.
+        Formatted values (currency, percent, thousands separators) are normalized
+        to a bare number, e.g. <code spellcheck="false">$1,200.50</code> → <code spellcheck="false">1200.50</code>.</td>
+    </tr>
+    <tr>
+      <td>ID</td>
+      <td>Single-valued <code spellcheck="false">number</code> or <code spellcheck="false">text</code> label
+        (depending on whether a prefix is configured)</td>
+    </tr>
+    <tr>
+      <td>Multi-select</td>
+      <td>One text label per option (multi)</td>
+    </tr>
+    <tr>
+      <td>URL / Email / Phone</td>
+      <td><code spellcheck="false">url</code> label (<code spellcheck="false">mailto:</code>,
+        <code
+        spellcheck="false">tel:</code>prefix)</td>
+    </tr>
+    <tr>
+      <td>Date</td>
+      <td>
+        <ul>
+          <li><code spellcheck="false">datetime</code> if at least one has time.</li>
+          <li><code spellcheck="false">date</code> if only dates.</li>
+          <li>Two attributes if any of the dates have an end date.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Checkbox</td>
+      <td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/
+        <code
+        spellcheck="false">false</code>).</td>
+    </tr>
+    <tr>
+      <td>Person</td>
+      <td>One text label per user (multi)</td>
+    </tr>
+    <tr>
+      <td>Created by / Edited by</td>
+      <td>Single-valued <code spellcheck="false">text</code> label</td>
+    </tr>
+    <tr>
+      <td>Created time / Last edited time</td>
+      <td>Assigned to the note's creation and modification date.</td>
+    </tr>
+    <tr>
+      <td>Relation</td>
+      <td>Mapped to <a href="#root/_help_Cq5X6iKQop6R">relations</a>, each link resolved
+        to its target note via the existing cross-page map; targets outside the
+        import are dropped.</td>
+    </tr>
+    <tr>
+      <td>Files &amp; Media</td>
+      <td>The files are preserved as attachments, and a link to them is prepended
+        to the content of the note for visibility.</td>
+    </tr>
+    <tr>
+      <td>Formulas / Rollup</td>
+      <td>
+        <p>A <code spellcheck="false">text</code>, <code spellcheck="false">number</code> or
           <code
-          spellcheck="false">tel:</code>prefix)</td>
-      </tr>
-      <tr>
-        <td>Date</td>
-        <td>
-          <ul>
-            <li><code spellcheck="false">datetime</code> if at least one has time.</li>
-            <li
-           ><code spellcheck="false">date</code> if only dates.</li>
-              <li>Two attributes if any of the dates have an end date.</li>
-          </ul>
-        </td>
-      </tr>
-      <tr>
-        <td>Checkbox</td>
-        <td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/
-          <code
-          spellcheck="false">false</code>).</td>
-      </tr>
-      <tr>
-        <td>Person</td>
-        <td>One text label per user (multi)</td>
-      </tr>
-      <tr>
-        <td>Created by / Edited by</td>
-        <td>Single-valued <code spellcheck="false">text</code> label</td>
-      </tr>
-      <tr>
-        <td>Created time / Last edited time</td>
-        <td>Assigned to the note's creation and modification date.</td>
-      </tr>
-      <tr>
-        <td>Relation</td>
-        <td>Mapped to <a href="#root/_help_Cq5X6iKQop6R">relations</a>, each link resolved
-          to its target note via the existing cross-page map; targets outside the
-          import are dropped.</td>
-      </tr>
-      <tr>
-        <td>Files &amp; Media</td>
-        <td>The files are preserved as attachments, and a link to them is prepended
-          to the content of the note for visibility.</td>
-      </tr>
-      <tr>
-        <td>Formulas / Rollup</td>
-        <td>
-          <p>A <code spellcheck="false">text</code>, <code spellcheck="false">number</code> or
+          spellcheck="false">boolean</code>label depending on the value. Dates are rendered as
             <code
-            spellcheck="false">boolean</code>label depending on the value. Dates are rendered as
-              <code
-              spellcheck="false">text</code>because the export doesn't offer any type information.</p>
-          <p>The Notion export does not preserve the formula/rollup configuration itself,
-            instead it just exports the value.</p>
-        </td>
-      </tr>
-      <tr>
-        <td>Button / Verification / any other type</td>
-        <td>Unsupported, they will be dropped from the import.</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
+            spellcheck="false">text</code>because the export doesn't offer any type information.</p>
+        <p>The Notion export does not preserve the formula/rollup configuration itself,
+          instead it just exports the value.</p>
+      </td>
+    </tr>
+    <tr>
+      <td>Button / Verification / any other type</td>
+      <td>Unsupported, they will be dropped from the import.</td>
+    </tr>
+  </tbody>
+</table>
 <aside class="admonition note">
   <p><strong>Technical information</strong>
   </p>
   <p>Every page property that can be preserved according to the table above
     is saved as a label or relation to the corresponding note (except for creation
-    and modification dates which are saved at note level a).</p>
+    and modification dates which are saved at note level).</p>
   <p>To maintain a similar UX to Notion, every property is also turned into&nbsp;
     <a
-    class="reference-link" href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;at collection level. This also makes the
+    class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;at collection level. This also makes the
       columns visible in the table collection. The promoted attributes are made
       inheritable so that they appear when navigating in the child notes as well.</p>
   <p>The names of the labels are intentionally converted to <code spellcheck="false">camelCase</code> to

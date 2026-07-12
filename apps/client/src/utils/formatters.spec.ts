@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// i18next is not initialised here, so have t() echo the key and the interpolated count. That lets the
+// tests assert exactly which unit was chosen and what count was computed — the real logic — while
+// leaving the plural rendering itself to i18next.
+vi.mock("../services/i18n", () => ({
+    t: (key: string, opts?: { count?: number }) => `${key}|${opts?.count}`
+}));
 
 import options from "../services/options";
-import { formatDateTime, normalizeLocale } from "./formatters";
+import { formatDateTime, formatDuration, normalizeLocale } from "./formatters";
 
 describe("formatters", () => {
     it("tolerates incorrect locale", () => {
@@ -85,5 +92,49 @@ describe("formatters", () => {
         // With both dateStyle and timeStyle "none", every formatting branch is
         // skipped and execution reaches the final guard.
         expect(() => formatDateTime(new Date(), "none", "none")).toThrow("Incorrect state.");
+    });
+
+    describe("formatDuration", () => {
+        it("reports the value in the unit the user picked, for every time scale", () => {
+            expect(formatDuration(30, 1)).toBe("time_interval.seconds|30");
+            expect(formatDuration(300, 60)).toBe("time_interval.minutes|5");
+            expect(formatDuration(43200, 3600)).toBe("time_interval.hours|12");
+            // The shipped default: 604800s at a day scale.
+            expect(formatDuration(604800, 86400)).toBe("time_interval.days|7");
+        });
+
+        it("passes the count through so i18next can pluralize (1 vs many)", () => {
+            expect(formatDuration(86400, 86400)).toBe("time_interval.days|1");
+            expect(formatDuration(172800, 86400)).toBe("time_interval.days|2");
+        });
+
+        it("keeps distinct windows distinguishable, unlike a fuzzy humanizer", () => {
+            // dayjs humanize() renders both of these as "a month", which would misreport when a
+            // note is actually destroyed. They must stay apart.
+            expect(formatDuration(2592000, 86400)).toBe("time_interval.days|30");
+            expect(formatDuration(3888000, 86400)).toBe("time_interval.days|45");
+        });
+
+        it("falls back to days when the scale is missing or unusable", () => {
+            expect(formatDuration(604800, 0)).toBe("time_interval.days|7");
+            expect(formatDuration(604800, -1)).toBe("time_interval.days|7");
+            // useTriliumOptionInt yields NaN for an option that hasn't loaded; the scale still degrades
+            // to days rather than producing a NaN count.
+            expect(formatDuration(604800, NaN)).toBe("time_interval.days|7");
+        });
+
+        it("returns null when the duration itself is unknown, so callers omit the phrase", () => {
+            // Options load asynchronously, so useTriliumOptionInt yields NaN until the fetch resolves.
+            // Returning null keeps "NaN days" (or a gap mid-sentence) out of the UI.
+            expect(formatDuration(NaN, 86400)).toBeNull();
+            expect(formatDuration(undefined as unknown as number, 86400)).toBeNull();
+            expect(formatDuration(Infinity, 86400)).toBeNull();
+            expect(formatDuration(-1, 86400)).toBeNull();
+        });
+
+        it("reports an unrecognized scale in days derived from the raw seconds", () => {
+            // 7 is not one of the offered scales, so the unit cannot be named from it.
+            expect(formatDuration(604800, 7)).toBe("time_interval.days|7");
+        });
     });
 });

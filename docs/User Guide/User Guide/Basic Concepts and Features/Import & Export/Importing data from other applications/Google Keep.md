@@ -1,7 +1,4 @@
 # Google Keep
-> [!NOTE]
-> This import mechanism was introduced in Trilium v0.104.0.
-
 Trilium can import notes from Google Keep, preserving their structure and formatting.
 
 ## Import process
@@ -15,7 +12,6 @@ The first step is to download your Google Keep information:
 3.  In the list of data to export, check _Keep_.
 4.  Scroll all the way down and choose _Next step_.
 5.  In _Choose file type, frequency & destination_ make sure the following options are set:
-    
     1.  _Transfer to_ is set to _Send download link via email_.
     2.  _Frequency_ is set to _Export once_.
     3.  _File type_ is set to _.zip_.
@@ -24,19 +20,18 @@ The first step is to download your Google Keep information:
 
 Then in Trilium Notes:
 
-1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, select a note where to place the imported notes.
-2.  From <a class="reference-link" href="../../UI%20Elements/Note%20buttons.md">Note buttons</a>, select _Import from a service…_
-3.  Select _Google Keep_ as the provider to import from.
-4.  Upload the ZIP obtained in the previous step.
+1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
+2.  In the _Import from_ section, select _Google Keep_.
+3.  Upload the ZIP obtained in the previous step.
 
 ## Supported features
 
 *   Basic formatting (bold, italic, underline)
 *   [Note color](../../Notes/Note%20Icons%20%26%20Colors.md)
 *   Note titles are maintained, if present.
-    
     *   In Google Keep it's common for notes not to have a title, case in which the date and time of the note are used as a title.
 *   To-do lists
+*   <a class="reference-link" href="../../../Note%20Types/Text/Images.md">Images</a> and <a class="reference-link" href="../../Notes/Attachments.md">Attachments</a>.
 *   Creation and modification dates are preserved.
 
 ## Limitations
@@ -44,7 +39,6 @@ Then in Trilium Notes:
 Currently the following information is not imported:
 
 *   Labels are disregarded.
-*   <a class="reference-link" href="../../../Note%20Types/Text/Images.md">Images</a> and <a class="reference-link" href="../../Notes/Attachments.md">Attachments</a> are not imported.
 *   Pinned, archived or trashed state is not preserved, all notes are treated the same.
 
 ## Reporting issues

@@ -8,6 +8,7 @@ import { getCurrentLocale } from "./i18n";
 import attributes from "./attributes";
 import BNote from "../becca/entities/bnote";
 import { getPlatform } from "./platform";
+import sqlInit from "./sql_init";
 
 export default function getSharedBootstrapItems(assetPath: string, dbInitialized: boolean) {
     const sql = getSql();
@@ -22,6 +23,10 @@ export default function getSharedBootstrapItems(assetPath: string, dbInitialized
         layoutOrientation: "vertical" as const,
         headingStyle: "plain" as const,
         componentId: "",
+        // Schema present but not yet initialized means a sync was started and interrupted, so the
+        // setup screen resumes it instead of starting over. A fully initialized DB is never mid-sync.
+        // Kept in the common items so both payload shapes carry the flag uniformly.
+        syncInProgress: !dbInitialized && sqlInit.schemaExists(),
         ...getIconConfig(assetPath)
     };
 

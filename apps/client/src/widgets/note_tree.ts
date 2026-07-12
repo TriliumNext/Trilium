@@ -12,7 +12,6 @@ import type FNote from "../entities/fnote.js";
 import contextMenu from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import branchService from "../services/branches.js";
-import dialogService from "../services/dialog.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import { t } from "../services/i18n.js";
@@ -548,6 +547,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         return false;
                     } else if (node.data.noteId.startsWith("_options")) {
                         return false;
+                    } else if (node.data.noteId === hoistedNoteService.getHoistedNoteId()) {
+                        // The hoisted note is the tree root, so it has no visible siblings to drop before/after.
+                        // Only allow dropping into it to avoid the easy-to-hit "dropping not allowed" strips.
+                        return ["over"];
                     } else if (node.data.noteType === "launcher") {
                         return ["before", "after"];
                     } else if (["_lbAvailableLaunchers", "_lbVisibleLaunchers"].includes(node.data.noteId)) {
@@ -561,7 +564,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         (data.hitMode === "over" && node.data.noteType === "search") ||
                         (["after", "before"].includes(data.hitMode) && (node.data.noteId === hoistedNoteService.getHoistedNoteId() || node.getParent().data.noteType === "search"))
                     ) {
-                        await dialogService.info(t("note_tree.dropping-not-allowed"));
+                        toastService.showError(t("note_tree.dropping-not-allowed"));
 
                         return;
                     }
@@ -1963,3 +1966,31 @@ function buildEnhanceTitle() {
         }
     };
 }
+
+type ScrollIntoViewFn = (this: Fancytree.FancytreeNode, effects?: boolean | object, options?: object) => JQueryPromise<unknown>;
+
+/**
+ * jquery.fancytree's `FancytreeNode.scrollIntoView()` reads `$(this.span).offset().top`, which throws
+ * "Cannot read properties of undefined (reading 'top')" for a node that has no DOM markup — e.g. nodes
+ * recreated by `load(true)` while rendering is suspended by `batchUpdate()` during a large sync update.
+ * Its `isVisible()` guard only checks the ancestors' expanded flags, not the actual markup, and the
+ * exception then aborts the whole tab activation (see #10407). Skip the scroll instead, mirroring the
+ * library's own early return for invisible nodes; the node gets rendered (and styled as active) by the
+ * full `tree.render()` that re-enabling updates triggers anyway.
+ */
+function patchScrollIntoViewCrash() {
+    const { _FancytreeNodeClass } = $.ui.fancytree as Fancytree.FancytreeStatic & {
+        _FancytreeNodeClass: { prototype: Fancytree.FancytreeNode };
+    };
+    const originalScrollIntoView = _FancytreeNodeClass.prototype.scrollIntoView as ScrollIntoViewFn;
+
+    _FancytreeNodeClass.prototype.scrollIntoView = function (this: Fancytree.FancytreeNode, effects?: boolean | object, options?: object) {
+        if (!this.span) {
+            return $.Deferred().resolveWith(this).promise();
+        }
+
+        return originalScrollIntoView.call(this, effects, options);
+    };
+}
+
+patchScrollIntoViewCrash();

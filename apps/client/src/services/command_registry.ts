@@ -3,6 +3,7 @@ import appContext, { type CommandNames } from "../components/app_context.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
 import { t, translationsInitializedPromise } from "./i18n.js";
 import keyboardActions from "./keyboard_actions.js";
+import { formatShortcut, joinShortcut } from "./keyboard_shortcut_display.js";
 import utils from "./utils.js";
 
 export interface CommandDefinition {
@@ -163,7 +164,8 @@ export class CommandRegistry {
                 name,
                 description: action.description,
                 icon: action.iconClass,
-                shortcut: primaryShortcut ? this.formatShortcut(primaryShortcut) : undefined,
+                // Render the primary shortcut in the command-palette style (spaced +, or concatenated on macOS).
+                shortcut: primaryShortcut ? joinShortcut(formatShortcut(primaryShortcut), " + ") : undefined,
                 commandName: action.actionName as CommandNames,
                 source: "keyboard-action",
                 keyboardAction: action
@@ -171,13 +173,6 @@ export class CommandRegistry {
 
             this.register(commandDef);
         }
-    }
-
-    private formatShortcut(shortcut: string): string {
-        // Convert electron accelerator format to display format
-        return shortcut
-            .replace(/CommandOrControl/g, 'Ctrl')
-            .replace(/\+/g, ' + ');
     }
 
     register(command: CommandDefinition) {

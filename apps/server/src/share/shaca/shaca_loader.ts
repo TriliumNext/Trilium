@@ -76,6 +76,14 @@ function load() {
         AND ownerId IN (${noteIdStr})`);
 
     for (const row of rawAttachmentRows) {
+        // Defense-in-depth for GHSA-xmv9-3v98-7gq8: protected notes cannot be
+        // shared, so their attachments must never enter the share cache. The
+        // note was loaded above (attachments are scoped to the same subtree).
+        const [, ownerId] = row;
+        if (shaca.notes[ownerId]?.isProtected) {
+            continue;
+        }
+
         new SAttachment(row);
     }
 

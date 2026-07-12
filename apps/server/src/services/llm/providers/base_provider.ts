@@ -3,12 +3,12 @@
  * tool assembly, model pricing, and title generation.
  */
 
-import type { LlmMessage, LlmMessagePart } from "@triliumnext/commons";
+import { isAnchorState, type LlmMessage, type LlmMessagePart } from "@triliumnext/commons";
 import { decodeUtf8 } from "@triliumnext/core/src/services/utils/binary.js";
 import { type FilePart, generateText, type ImagePart, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type TextPart, type ToolSet } from "ai";
 import { dump } from "js-yaml";
 
-import { becca, getLog } from "@triliumnext/core";
+import { becca, getLog, task_states } from "@triliumnext/core";
 import { getNoteMeta,SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
@@ -162,6 +162,21 @@ export function buildModelList(baseModels: Omit<ModelInfo, "costMultiplier">[]):
     return { models, pricing };
 }
 
+/**
+ * The task-list formatting hint, extended with the workspace's user-defined multi-state checkboxes so
+ * the model recognizes their markers (e.g. `- [/]` = "Doing") in the user's notes and can produce them.
+ * Falls back to just the native open/completed states when no custom states are configured.
+ */
+function buildTaskListHint(): string {
+    const base = "**Task lists** — use `- [ ]` for an open task and `- [x]` for a completed one.";
+    const custom = task_states.getTaskStates().filter(s => !isAnchorState(s.name) && !s.isHidden && s.markdownSymbol);
+    if (custom.length === 0) {
+        return base;
+    }
+    const lines = custom.map(s => `- \`- [${s.markdownSymbol}]\` — ${s.title}${s.isCompleted ? " (completed)" : ""}`);
+    return `${base} This workspace also defines extra task states — recognize these markers in the user's notes, and use them when a task fits:\n${lines.join("\n")}`;
+}
+
 export abstract class BaseProvider implements LlmProvider {
     abstract name: string;
 
@@ -245,13 +260,18 @@ export abstract class BaseProvider implements LlmProvider {
                 + `- \`> [!WARNING]\` — something that may cause problems or surprise\n`
                 + `- \`> [!CAUTION]\` — a destructive or irreversible action\n`
                 + `Syntax: the marker must be on its own line, and every content line must start with \`>\`.\n\n`
+                + `**Blockquotes** — prefix lines with \`>\` (without a \`[!TYPE]\` marker) to quote text.\n\n`
                 + `**Math equations** — KaTeX (LaTeX subset). Use \`$...$\` for inline math and \`$$...$$\` for display (block) math. Example: \`$E = mc^2$\` or:\n`
                 + `$$\n\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}\n$$\n\n`
                 + `**Mermaid diagrams** — use a fenced code block with the \`mermaid\` language tag. Example:\n`
                 + "```mermaid\ngraph LR\n    A --> B\n```\n\n"
                 + `**Code blocks** — use fenced code blocks with a language tag for syntax highlighting (e.g. \`\`\`js, \`\`\`python).\n\n`
+                + `**Tables** — GitHub-style pipe tables: a header row, a \`---\` separator row, then the data rows.\n\n`
+                + `**Collapsible blocks** — use the standard HTML \`<details>\`/\`<summary>\` form; the \`<summary>\` is the always-visible title. Placed back-to-back with nothing between them, consecutive collapsible blocks are grouped into an accordion — handy when presenting several options or alternatives the user can expand one at a time. Example:\n`
+                + `<details><summary>Option A</summary>\nDetails about the first option.\n</details>\n<details><summary>Option B</summary>\nDetails about the second option.\n</details>\n\n`
                 + `**Footnotes** — use \`[^1]\` in text and \`[^1]: explanation\` at the bottom.\n\n`
-                + `**Task lists** — use \`- [ ]\` for unchecked and \`- [x]\` for checked items.`
+                + `**Keyboard keys** — wrap each key in a \`<kbd>\` tag when documenting shortcuts, e.g. \`<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Del</kbd>\`.\n\n`
+                + buildTaskListHint()
         );
 
         // The markdown formatting hints above are pushed unconditionally, so

@@ -1,3 +1,5 @@
+import { once } from "node:events";
+
 import express from "express";
 import multer from "multer";
 import { describe, expect, it, vi } from "vitest";
@@ -213,6 +215,78 @@ describe("trilium-app protocol dispatcher", () => {
         await expect(reader.read()).rejects.toThrow();
     });
 
+    it("applies backpressure: res.write() returns false once the unread queue exceeds the high-water mark", async () => {
+        const app = express();
+        const writeResults: boolean[] = [];
+        app.get("/bp", (_req, res) => {
+            res.setHeader("Content-Type", "application/octet-stream");
+            res.flushHeaders();
+            // Write several 1 MiB chunks synchronously while nothing reads the
+            // body. Without backpressure these would all be buffered and return
+            // true; with it, the queue fills and writes start returning false.
+            for (let i = 0; i < 6; i++) {
+                writeResults.push(res.write(Buffer.alloc(1024 * 1024, i)));
+            }
+            res.end();
+        });
+
+        const response = await dispatch(app, new Request("trilium-app://app/bp"));
+        expect(writeResults).toContain(false);
+
+        // Backpressure is advisory: every chunk is still delivered intact.
+        const body = response.body;
+        if (!body) throw new Error("expected a streaming body");
+        const reader = body.getReader();
+        let total = 0;
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            total += value?.length ?? 0;
+        }
+        expect(total).toBe(6 * 1024 * 1024);
+    });
+
+    it("emits 'drain' to resume a producer that paused on backpressure", async () => {
+        const app = express();
+        const order: string[] = [];
+        let routeFinished: () => void = () => {};
+        const routeDone = new Promise<void>((resolve) => { routeFinished = resolve; });
+
+        app.get("/bp2", async (_req, res) => {
+            res.setHeader("Content-Type", "application/octet-stream");
+            res.flushHeaders();
+            // Fill until backpressure. Capped so an implementation that never
+            // signals backpressure can't loop forever (it would just fail below).
+            let paused = false;
+            for (let i = 0; i < 64 && !paused; i++) {
+                paused = res.write(Buffer.alloc(1024 * 1024, i)) === false;
+            }
+            order.push(paused ? "paused" : "no-backpressure");
+            // Wait to be resumed, but never hang the suite if 'drain' never comes.
+            const outcome = await Promise.race([
+                once(res, "drain").then(() => "drained" as const),
+                new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), 3000))
+            ]);
+            order.push(outcome);
+            res.end();
+            routeFinished();
+        });
+
+        const response = await dispatch(app, new Request("trilium-app://app/bp2"));
+        const body = response.body;
+        if (!body) throw new Error("expected a streaming body");
+        const reader = body.getReader();
+        // Draining the queue frees capacity, which pulls the stream and must emit
+        // 'drain' so the paused producer continues.
+        while (true) {
+            const { done } = await reader.read();
+            if (done) break;
+        }
+        await routeDone;
+
+        expect(order).toEqual(["paused", "drained"]);
+    });
+
     it("returns a 500 Response when dispatch throws inside the protocol handler", async () => {
         electronMock.handle.mockReset();
         setupTriliumAppProtocol(express());
@@ -329,6 +403,31 @@ describe("trilium-app protocol dispatcher", () => {
 
         const response = await dispatch(app as never, new Request("trilium-app://app/bin"));
         expect(new Uint8Array(await response.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3, 4]));
+    });
+
+    // The <audio>/<video> media data source refuses a response with no length, unlike
+    // fetch() which reads to EOF. Express's own Content-Length is stripped as a transport
+    // header (it can mismatch the buffered body), so the buffered path must restore one
+    // matching the exact bytes it emits — otherwise media playback fails over trilium-app://
+    // with MEDIA_ERR_SRC_NOT_SUPPORTED even though the same note plays over HTTP.
+    it("sets an accurate Content-Length on buffered responses (media playback)", async () => {
+        const app = express();
+        app.get("/media", (_req, res) => {
+            res.setHeader("Content-Type", "audio/mpeg");
+            res.send(Buffer.from([0, 1, 2, 3, 4]));
+        });
+
+        const response = await dispatch(app, new Request("trilium-app://app/media"));
+        expect(response.headers.get("content-length")).toBe("5");
+        expect(new Uint8Array(await response.arrayBuffer())).toEqual(new Uint8Array([0, 1, 2, 3, 4]));
+    });
+
+    it("does not set Content-Length on a null-body status response", async () => {
+        const app = express();
+        app.get("/nc", (_req, res) => res.status(204).send());
+
+        const response = await dispatch(app, new Request("trilium-app://app/nc"));
+        expect(response.headers.has("content-length")).toBe(false);
     });
 
     it("ignores a fetch abort that fires after a buffered response already completed", async () => {

@@ -16,6 +16,7 @@ import attributesRoute from "./api/attributes";
 import revisionsApiRoute from "./api/revisions";
 import relationMapApiRoute from "./api/relation-map";
 import recentChangesApiRoute from "./api/recent_changes";
+import deletedNotesApiRoute from "./api/deleted_notes";
 import bulkActionRoute from "./api/bulk_action";
 import searchRoute from "./api/search";
 import specialNotesRoute from "./api/special_notes";
@@ -52,10 +53,11 @@ interface SharedApiRoutesContext {
     loginRateLimiter: any;
     checkCredentials: any;
     uploadMiddlewareWithErrorHandling: any;
+    importMiddlewareWithErrorHandling: any;
     csrfMiddleware: any;
 }
 
-export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
+export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRoute, checkApiAuth, apiResultHandler, checkApiAuthOrElectron, checkAppNotInitialized, checkCredentials, loginRateLimiter, uploadMiddlewareWithErrorHandling, importMiddlewareWithErrorHandling, csrfMiddleware }: SharedApiRoutesContext) {
     apiRoute(GET, '/api/tree', treeApiRoute.getTree);
     apiRoute(PST, '/api/tree/load', treeApiRoute.load);
 
@@ -66,6 +68,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     apiRoute(GET, "/api/options/user-themes", optionsApiRoute.getUserThemes);
 
     apiRoute(PST, "/api/notes/:noteId/convert-to-attachment", notesApiRoute.convertNoteToAttachment);
+    apiRoute(PST, "/api/notes/:noteId/convert-format", notesApiRoute.convertNoteFormat);
     apiRoute(GET, "/api/notes/:noteId", notesApiRoute.getNote);
     apiRoute(GET, "/api/notes/:noteId/blob", notesApiRoute.getNoteBlob);
     apiRoute(GET, "/api/notes/:noteId/metadata", notesApiRoute.getNoteMetadata);
@@ -149,9 +152,9 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     route(GET, "/api/sync/stats", [], syncApiRoute.getStats, apiResultHandler);
 
     //#region Import/export
-    asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
-    route(PST, "/api/notes/:parentNoteId/attachments-import", [checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
-    asyncRoute(GET, "/api/branches/:branchId/export/:type/:format/:version/:taskId", [checkApiAuthOrElectron], exportRoute.exportBranch);
+    asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
+    route(PST, "/api/notes/:parentNoteId/attachments-import", [checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
+    asyncRoute(GET, "/api/branches/:branchId/export/:type/:format/:taskId", [checkApiAuthOrElectron], exportRoute.exportBranch);
     //#endregion
 
     apiRoute(GET, "/api/quick-search/:searchString", searchRoute.quickSearch);
@@ -219,6 +222,9 @@ export function buildSharedApiRoutes({ route, asyncRoute, apiRoute, asyncApiRout
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
     apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
+
+    apiRoute(GET, "/api/deleted-notes/:noteId/metadata", deletedNotesApiRoute.getDeletedNoteMetadata);
+    apiRoute(GET, "/api/deleted-notes/:noteId/blob", deletedNotesApiRoute.getDeletedNoteBlob);
 
     //#region Files
     route(GET, "/api/notes/:noteId/open", [checkApiAuthOrElectron], filesRoute.openFile);

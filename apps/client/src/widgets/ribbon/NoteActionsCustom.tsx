@@ -17,7 +17,8 @@ import ActionButton, { ActionButtonProps } from "../react/ActionButton";
 import { ButtonGroup } from "../react/Button";
 import { FormFileUploadActionButton, FormFileUploadFormListItem, FormFileUploadProps } from "../react/FormFileUpload";
 import { FormListItem } from "../react/FormList";
-import { useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
+import { useEffectiveReadOnly, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
+import { isSplitEditorForcedReadOnly, resolveDisplayMode } from "../type_widgets/helpers/split_editor_mode";
 import { ParentComponent } from "../react/react_utils";
 import { buildUploadNewFileRevisionListener } from "./FilePropertiesTab";
 import { buildUploadNewImageRevisionListener } from "./ImagePropertiesTab";
@@ -206,12 +207,14 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: N
     />;
 }
 
-function DisplayModeSwitcher({ note, isDefaultViewMode }: NoteActionsCustomInnerProps) {
+function DisplayModeSwitcher({ note, noteContext, isDefaultViewMode }: NoteActionsCustomInnerProps) {
     const [ displayMode, setDisplayMode ] = useNoteLabel(note, "displayMode");
-    const isEnabled = (note.isMarkdown() || note.type === "mermaid") && note.isContentAvailable() && isDefaultViewMode;
+    const readOnly = useEffectiveReadOnly(note, noteContext);
+    const isEnabled = (note.isMarkdown() || note.type === "mermaid" || note.isIconPack()) && note.isContentAvailable() && isDefaultViewMode;
     if (!isEnabled) return null;
 
-    const mode = displayMode === "source" || displayMode === "preview" ? displayMode : "split";
+    // Mirror SplitEditor's mode resolution so the active button matches the actual pane.
+    const mode = resolveDisplayMode(displayMode, readOnly || isSplitEditorForcedReadOnly(note));
     const buttons: Array<{ value: "source" | "split" | "preview"; icon: string; text: string }> = [
         { value: "source", icon: "bx bx-code", text: t("display_mode.source") },
         { value: "split", icon: "bx bxs-dock-left", text: t("display_mode.split") },

@@ -10,6 +10,7 @@ import type BNote from "../../becca/entities/bnote.js";
 import type TaskContext from "../task_context.js";
 import { escapeHtml,getContentDisposition } from "../utils/index.js";
 import mdService from "./markdown.js";
+import { stripListItemIds } from "./strip_list_item_ids.js";
 import { ExportFormat } from "../../meta.js";
 import { encodeBase64 } from "../utils/binary.js";
 
@@ -59,6 +60,9 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
     }
 
     if (note.type === "text") {
+        // Drop CKEditor's editor-only per-list-item bookkeeping from both HTML and Markdown output.
+        content = stripListItemIds(content);
+
         if (format === "html") {
             content = inlineAttachments(content);
 

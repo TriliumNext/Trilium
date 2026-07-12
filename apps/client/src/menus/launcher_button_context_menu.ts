@@ -1,10 +1,13 @@
 import type { ToggleInParentResponse } from "@triliumnext/commons";
 
+import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
 import branchService from "../services/branches.js";
 import { t } from "../services/i18n.js";
+import options from "../services/options.js";
 import server from "../services/server.js";
 import toast from "../services/toast.js";
+import { isMobile, reloadFrontendApp } from "../services/utils.js";
 import contextMenu, { type ContextMenuEvent, type MenuItem } from "./context_menu.js";
 
 const VISIBLE_LAUNCHER_PARENTS = ["_lbVisibleLaunchers", "_lbMobileVisibleLaunchers"];
@@ -69,20 +72,25 @@ export async function showLauncherContextMenu<T extends string>(
 ) {
     e.preventDefault();
 
-    const items = [...(options.extraItems ?? [])] as MenuItem<string>[];
+    // Widget-specific items (e.g. "Open in new tab" for note launchers, history entries, "Remove from launch bar").
+    const widgetItems = [...(options.extraItems ?? [])] as MenuItem<string>[];
 
     if (canRemoveFromLaunchBar(launcherNote)) {
-        if (items.length > 0) {
-            items.push({ kind: "separator" });
+        if (widgetItems.length > 0) {
+            widgetItems.push({ kind: "separator" });
         }
-        items.push({
+        widgetItems.push({
             title: t("launcher_button_context_menu.remove_from_launch_bar"),
             command: REMOVE_COMMAND,
             uiIcon: "bx bx-x-circle"
         });
     }
 
-    if (items.length === 0) return;
+    // Every launch-bar context menu starts with the shared launch-bar management segment.
+    const items = buildLaunchBarManagementItems();
+    if (widgetItems.length > 0) {
+        items.push({ kind: "separator" }, ...widgetItems);
+    }
 
     contextMenu.show<string>({
         x: e.pageX ?? 0,
@@ -98,4 +106,71 @@ export async function showLauncherContextMenu<T extends string>(
             options.onCommand?.(command as T | undefined);
         }
     });
+}
+
+/**
+ * Shows a context menu containing only the shared launch-bar management segment. Used by launch-bar chrome
+ * that is not itself a launcher (e.g. the left-pane toggle), which has no launcher-specific items to add.
+ */
+export function showLaunchBarManagementContextMenu(e: ContextMenuEvent) {
+    e.preventDefault();
+
+    contextMenu.show<string>({
+        x: e.pageX ?? 0,
+        y: e.pageY ?? 0,
+        items: buildLaunchBarManagementItems(),
+        // The items are self-contained via their own handlers, so nothing needs to be routed here.
+        selectMenuItemHandler: () => {}
+    });
+}
+
+/**
+ * Builds the shared segment shown at the top of every launch-bar context menu: the "Configure launch bar"
+ * entry and (on desktop) the "Launch bar orientation" submenu. Each item is self-contained via its own
+ * {@link MenuCommandItem.handler}, so it works regardless of the widget-specific `onCommand` router.
+ */
+function buildLaunchBarManagementItems(): MenuItem<string>[] {
+    const items: MenuItem<string>[] = [{
+        title: t("launcher_button_context_menu.configure_launch_bar"),
+        uiIcon: "bx " + (isMobile() ? "bx-mobile" : "bx-sidebar"),
+        handler: () => appContext.triggerCommand("showLaunchBarSubtree")
+    }];
+
+    // The layout orientation only applies to the desktop layout; the mobile layout is always horizontal.
+    if (!isMobile()) {
+        const orientation = options.get("layoutOrientation");
+        items.push({
+            title: t("launcher_button_context_menu.launch_bar_orientation"),
+            uiIcon: "bx bx-layout",
+            items: [
+                buildOrientationItem("vertical", orientation),
+                buildOrientationItem("horizontal", orientation)
+            ]
+        });
+    }
+
+    return items;
+}
+
+function buildOrientationItem(target: "vertical" | "horizontal", currentOrientation: string): MenuItem<string> {
+    const isCurrent = currentOrientation === target;
+    const label = target === "vertical" ? t("theme.layout-vertical-title") : t("theme.layout-horizontal-title");
+    return {
+        // The unchecked item triggers a reload when picked, so hint that after its label.
+        title: isCurrent ? label : `${label} ${t("launcher_button_context_menu.will_reload_frontend")}`,
+        // `bx-empty` reserves the icon slot so unchecked items stay aligned with the checked one.
+        uiIcon: "bx bx-empty",
+        checked: isCurrent,
+        handler: () => setLayoutOrientation(target)
+    };
+}
+
+async function setLayoutOrientation(orientation: "vertical" | "horizontal") {
+    if (options.get("layoutOrientation") === orientation) {
+        return;
+    }
+
+    await options.save("layoutOrientation", orientation);
+    // The layout tree and body classes are computed once at boot, so a reload is required to apply the change.
+    reloadFrontendApp(`layout orientation change: ${orientation}`);
 }

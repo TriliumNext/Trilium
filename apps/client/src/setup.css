@@ -34,7 +34,6 @@ body.setup {
             padding: 2em;
             flex-direction: column;
             gap: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             position: relative;
             height: 100%;
 
@@ -44,6 +43,7 @@ body.setup {
                 height: 650px;
                 top: unset;
                 overflow: hidden;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             }
 
             .setup-options {
@@ -169,13 +169,14 @@ body.setup {
                 position: absolute;
                 top: 0;
                 inset-inline: 0;
-                background: color-mix(in srgb, var(--accent-color) 15%, white);
+                background: color-mix(in srgb, var(--accent-color) 15%, var(--main-background-color));
                 z-index: 1;
                 margin: 0;
                 border-radius: 0;
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
                 padding-top: calc(1em + env(safe-area-inset-top));
                 padding-inline-end: 2.5em;
+                user-select: text;
 
                 @media (min-width: 700px) {
                     border-radius: 16px 16px 0 0;
@@ -282,8 +283,7 @@ body.setup {
 
     .illustration-icon,
     .illustration-logo {
-        margin-top: 3rem;
-        margin-bottom: 1rem;
+        margin: 3rem auto 1rem auto;
 
         body.desktop & {
             margin-top: 1rem;
@@ -336,6 +336,15 @@ body.setup.platform-darwin {
     100% {
         transform: rotate(360deg);
     }
+}
+
+/* Stepped rather than linear: a continuously-animating element forces the browser to render
+   at full display refresh rate (90+ fps on some phones) for as long as the spinner is visible.
+   Setup spinners stay on screen for the entire initial sync — measured at ~40% of a CPU core
+   on mobile — so cap them at ~6 frames/s, which looks the same at icon size. Scoped to setup
+   because other in-app animations may want the smoother framerate. */
+body.setup .bx-spin {
+    animation-timing-function: steps(12);
 }
 
 /* Slide transitions */

@@ -1,15 +1,39 @@
 import type { LlmCitation, LlmMessage, LlmMessagePart, LlmModelInfo, LlmUsage } from "@triliumnext/commons";
 import { RefObject } from "preact";
-import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
 import { randomString } from "../../../services/utils.js";
 import { useTriliumEvent } from "../../react/hooks.js";
-import type { ContentBlock, FileBlock, ImageBlock, LlmChatContent, StoredMessage, TextFileBlock } from "./llm_chat_types.js";
+import { stripQuoteSources } from "./chat_quote.js";
+import { conversationForRegenerate } from "./chat_regenerate.js";
+import { type ContentBlock, type FileBlock, type ImageBlock, type LlmChatContent, type StoredMessage, type TextFileBlock, trimToFirstUserMessage } from "./llm_chat_types.js";
 import { useSmoothStreaming } from "./useSmoothStreaming.js";
 
 /** A user-supplied attachment waiting to be sent with the next message. */
 export type AttachmentBlock = ImageBlock | FileBlock | TextFileBlock;
+
+/** The subset of the reply-input editor API the chat needs to write into it imperatively. */
+export interface InputEditorApi {
+    appendBlockQuote(markdown: string): void;
+}
+
+/** Distance (px) past the content bottom edge within which the timeline counts as "at bottom". */
+const SCROLL_BOTTOM_THRESHOLD = 50;
+/**
+ * On send, the boundary between the user's message and the reply is parked this
+ * fraction of the viewport down from the top — the reply then types out in place,
+ * with the tail of the query still visible above.
+ */
+const REPLY_ANCHOR_TOP_FRACTION = 0.25;
+/** Duration (ms) of the smooth scroll that parks a new reply near the top. */
+const ANCHOR_SCROLL_DURATION_MS = 300;
+
+/** The most recent user message element inside the scroll container, or null. */
+function getLastUserMessageEl(container: HTMLElement): HTMLElement | null {
+    const els = container.querySelectorAll<HTMLElement>('[data-message-role="user"]');
+    return els.length ? els[els.length - 1] : null;
+}
 
 /**
  * Flatten a stored message's content into the wire format the server expects.
@@ -42,6 +66,12 @@ function flattenToApiContent(content: string | ContentBlock[]): string | LlmMess
     return parts;
 }
 
+/** Strip quote attribution lines from wire content, so the message-id anchors never reach the LLM. */
+function stripQuoteSourcesFromApiContent(content: string | LlmMessagePart[]): string | LlmMessagePart[] {
+    if (typeof content === "string") return stripQuoteSources(content);
+    return content.map(part => (part.type === "text" ? { ...part, text: stripQuoteSources(part.text) } : part));
+}
+
 export interface ModelOption extends LlmModelInfo {
     costDescription?: string;
 }
@@ -60,9 +90,11 @@ export interface LlmChatOptions {
 export interface UseLlmChatReturn {
     // State
     messages: StoredMessage[];
-    input: string;
+    /** Whether the reply-input draft has non-whitespace text. The draft itself is kept out of
+     * state (typing must not re-render the chat tree); read it at submit time via
+     * {@link getInput}. */
+    hasInputText: boolean;
     isStreaming: boolean;
-    streamingContent: string;
     streamingBlocks: ContentBlock[];
     streamingThinking: string;
     pendingCitations: LlmCitation[];
@@ -79,10 +111,24 @@ export interface UseLlmChatReturn {
     lastPromptTokens: number;
     messagesEndRef: RefObject<HTMLDivElement>;
     scrollContainerRef: RefObject<HTMLDivElement>;
+    /** Trailing spacer below the last message; sized so the active turn can park near the top. */
+    bottomSpacerRef: RefObject<HTMLDivElement>;
+    /** Whether the timeline is scrolled away from the bottom (drives the jump-to-bottom button). */
+    showScrollToBottom: boolean;
+    /** Jump the timeline to the latest content. */
+    scrollToBottom: () => void;
     /** Whether a provider is configured and available */
     hasProvider: boolean;
     /** Whether we're still checking for providers */
     isCheckingProvider: boolean;
+
+    /** Register the reply-input editor so message-timeline actions (e.g. quoting) can write into it. */
+    registerInputEditor: (api: InputEditorApi | undefined) => void;
+    /** Append a preformatted block (e.g. a Markdown quote) to the reply input and focus it. */
+    appendToInput: (text: string) => void;
+
+    /** Read the current reply-input draft text (kept in a ref, not state — see {@link hasInputText}). */
+    getInput: () => string;
 
     // Setters
     setInput: (value: string) => void;
@@ -110,6 +156,8 @@ export interface UseLlmChatReturn {
     stopStreaming: () => void;
     /** Re-run the last turn after a failed response (drops the trailing error message) */
     retryLast: () => void;
+    /** Regenerate the last reply: re-run from the last user message, dropping the reply that followed */
+    regenerateLastReply: () => void;
 }
 
 export function useLlmChat(
@@ -119,7 +167,16 @@ export function useLlmChat(
     const { defaultEnableNoteTools = false, supportsExtendedThinking = false, contextNoteId: initialContextNoteId, chatNoteId: initialChatNoteId } = options;
 
     const [messages, setMessagesInternal] = useState<StoredMessage[]>([]);
-    const [input, setInput] = useState("");
+    // The reply-input draft lives in a ref so typing never re-renders the chat tree; only the
+    // empty <-> non-empty transition is stateful (it drives the send button), and same-value
+    // setState calls bail out of re-rendering.
+    const inputRef = useRef("");
+    const [hasInputText, setHasInputText] = useState(false);
+    const setInput = useCallback((value: string) => {
+        inputRef.current = value;
+        setHasInputText(value.trim().length > 0);
+    }, []);
+    const getInput = useCallback(() => inputRef.current, []);
     const [isStreaming, setIsStreaming] = useState(false);
     // The canonical "target" content received from the stream so far. The
     // displayed `streamingBlocks` is derived from this with the trailing text
@@ -139,10 +196,21 @@ export function useLlmChat(
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
     const [hasProvider, setHasProvider] = useState<boolean>(true); // Assume true initially
     const [isCheckingProvider, setIsCheckingProvider] = useState<boolean>(true);
+    const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const bottomSpacerRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
-    const isNearBottomRef = useRef(true);
+    const anchorRafRef = useRef<number | null>(null);
+    // A one-shot scroll to run after the next messages render: "anchor" parks a fresh
+    // reply near the top (sending/retrying), "bottom" jumps to the latest content
+    // (loading a chat). The timeline never follows the stream beyond this single action.
+    const pendingScrollRef = useRef<"anchor" | "bottom" | null>(null);
+    // True from the moment the layout effect commits an anchor scroll until that smooth scroll finishes or
+    // the user takes over. `pendingScrollRef` only guards the window before the layout effect consumes the
+    // mode; once consumed it's null, so this covers the ~300ms animation that follows — during which a
+    // content reload must not queue a bottom jump that would yank the just-parked reply to the latest content.
+    const anchorScrollActiveRef = useRef(false);
 
     // Refs to get fresh values in getContent (avoids stale closures)
     const messagesRef = useRef(messages);
@@ -166,6 +234,16 @@ export function useLlmChat(
     const pendingAttachmentsRef = useRef(pendingAttachments);
     pendingAttachmentsRef.current = pendingAttachments;
 
+    // The reply-input editor, registered by ChatInputBar once mounted. Held in a ref so timeline
+    // actions (e.g. quoting a selection) can write into it without a render-order dependency.
+    const inputEditorRef = useRef<InputEditorApi | undefined>();
+    const registerInputEditor = useCallback((api: InputEditorApi | undefined) => {
+        inputEditorRef.current = api;
+    }, []);
+    const appendToInput = useCallback((text: string) => {
+        inputEditorRef.current?.appendBlockQuote(text);
+    }, []);
+
     const addPendingAttachment = useCallback((attachment: AttachmentBlock) => {
         setPendingAttachments(prev => [...prev, attachment]);
     }, []);
@@ -173,11 +251,16 @@ export function useLlmChat(
         setPendingAttachments(prev => prev.filter(a => a.attachmentId !== attachmentId));
     }, []);
 
-    // Wrapper to call onMessagesChange when messages update
+    // Wrapper to call onMessagesChange when messages update. The callback goes through a ref:
+    // both hosts pass inline arrows, and keeping them out of the deps keeps setMessages — and the
+    // whole action-callback chain built on it (runStream, handleSubmit, retryLast, ...) — stable
+    // across renders.
+    const onMessagesChangeRef = useRef(onMessagesChange);
+    onMessagesChangeRef.current = onMessagesChange;
     const setMessages = useCallback((newMessages: StoredMessage[]) => {
         setMessagesInternal(newMessages);
-        onMessagesChange?.(newMessages);
-    }, [onMessagesChange]);
+        onMessagesChangeRef.current?.(newMessages);
+    }, []);
 
     // Fetch available models on mount
     const refreshModels = useCallback(() => {
@@ -217,36 +300,166 @@ export function useLlmChat(
         }
     }, [refreshModels]));
 
-    // Track whether the user is near the bottom of the scroll container
-    useEffect(() => {
+    /** Jump to the latest content (ignores the trailing spacer). */
+    const scrollToBottom = useCallback(() => {
+        messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "instant" });
+    }, []);
+
+    // Size the trailing spacer so the current turn can be parked near the top: reserve
+    // enough room below the user→reply boundary for the boundary to sit at
+    // REPLY_ANCHOR_TOP_FRACTION of the viewport, minus whatever the reply already
+    // provides (so long replies leave little blank). Set imperatively so it settles
+    // synchronously, right before the one-shot anchor scroll — no extra render, no flash.
+    const recomputeBottomSpacer = useCallback(() => {
+        const container = scrollContainerRef.current;
+        const spacer = bottomSpacerRef.current;
+        const endEl = messagesEndRef.current;
+        if (!container || !spacer || !endEl) return;
+
+        const lastUser = getLastUserMessageEl(container);
+        const viewport = container.clientHeight;
+        if (!lastUser || viewport === 0) {
+            spacer.style.height = "0px";
+            return;
+        }
+        // The spacer sits after endEl, so boundary→endEl is independent of its own
+        // height — no feedback loop.
+        const boundary = lastUser.getBoundingClientRect().bottom;
+        const contentEnd = endEl.getBoundingClientRect().top;
+        const replyHeight = Math.max(0, contentEnd - boundary);
+        const roomNeeded = viewport * (1 - REPLY_ANCHOR_TOP_FRACTION);
+        spacer.style.height = `${Math.round(Math.max(0, roomNeeded - replyHeight))}px`;
+    }, []);
+
+    /** Smoothly scroll the container to `targetTop` over ANCHOR_SCROLL_DURATION_MS. */
+    const smoothScrollTo = useCallback((targetTop: number) => {
+        const container = scrollContainerRef.current;
+        if (!container) {
+            anchorScrollActiveRef.current = false;
+            return;
+        }
+        if (anchorRafRef.current != null) {
+            cancelAnimationFrame(anchorRafRef.current);
+            anchorRafRef.current = null;
+        }
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        const to = Math.max(0, Math.min(targetTop, maxScroll));
+        const from = container.scrollTop;
+        const distance = to - from;
+        if (Math.abs(distance) < 1) {
+            container.scrollTop = to;
+            anchorScrollActiveRef.current = false;
+            return;
+        }
+        // Committed to the parked position — hold off reload-driven bottom jumps until the animation ends.
+        anchorScrollActiveRef.current = true;
+        const start = performance.now();
+        let lastSetTop = from;
+        const step = (now: number) => {
+            // Bail out if the user scrolled mid-animation (don't fight them).
+            if (Math.abs(container.scrollTop - lastSetTop) > 2) {
+                anchorRafRef.current = null;
+                anchorScrollActiveRef.current = false;
+                return;
+            }
+            const t = Math.min(1, (now - start) / ANCHOR_SCROLL_DURATION_MS);
+            const eased = t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2; // easeInOutQuad
+            container.scrollTop = from + distance * eased;
+            lastSetTop = container.scrollTop;
+            if (t < 1) {
+                anchorRafRef.current = requestAnimationFrame(step);
+            } else {
+                anchorRafRef.current = null;
+                anchorScrollActiveRef.current = false;
+            }
+        };
+        anchorRafRef.current = requestAnimationFrame(step);
+    }, []);
+
+    /** Park the latest user→reply boundary near the top, once, with a smooth transition. */
+    const anchorReplyToTop = useCallback(() => {
         const container = scrollContainerRef.current;
         if (!container) return;
-
-        const THRESHOLD = 50; // px from bottom
-        const handleScroll = () => {
-            isNearBottomRef.current =
-                container.scrollHeight - container.scrollTop - container.clientHeight <= THRESHOLD;
-        };
-
-        container.addEventListener("scroll", handleScroll, { passive: true });
-        return () => container.removeEventListener("scroll", handleScroll);
-    }, []);
-
-    // Scroll to bottom when content changes, but only if user hasn't scrolled away.
-    // Always use instant scroll — smooth animations race with the scroll listener
-    // during streaming, causing the auto-scroll to "unstick" mid-animation.
-    const scrollToBottom = useCallback(() => {
-        if (isNearBottomRef.current) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+        const lastUser = getLastUserMessageEl(container);
+        if (!lastUser) {
+            scrollToBottom();
+            return;
         }
+        const viewport = container.clientHeight;
+        const containerTop = container.getBoundingClientRect().top;
+        const userRect = lastUser.getBoundingClientRect();
+        const boundaryWithinView = userRect.bottom - containerTop;
+        // Keep at most a REPLY_ANCHOR_TOP_FRACTION-viewport sliver of the query above the
+        // boundary; if the query is shorter, just pin its top (no blank gap above).
+        const offsetAboveBoundary = Math.min(viewport * REPLY_ANCHOR_TOP_FRACTION, userRect.height);
+        smoothScrollTo(container.scrollTop + boundaryWithinView - offsetAboveBoundary);
+    }, [scrollToBottom, smoothScrollTo]);
+
+    // The timeline does not follow the stream — the model can outpace the reader, and
+    // moving text is hard to read. A jump-to-latest button appears whenever the content
+    // end sits below the fold. An IntersectionObserver on the messagesEnd anchor drives
+    // it: it fires only when the anchor crosses the viewport edge — no per-scroll layout
+    // reads — and covers scrolling, resize, streaming growth, and message changes alike.
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        const endEl = messagesEndRef.current;
+        if (!container || !endEl || typeof IntersectionObserver === "undefined") return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                const rootBounds = entry.rootBounds;
+                // Show only when the content end is genuinely below the fold — not when it
+                // has been scrolled above (matches the previous distance-based check).
+                setShowScrollToBottom(rootBounds ? entry.boundingClientRect.top > rootBounds.bottom : false);
+            },
+            { root: container, rootMargin: `0px 0px ${SCROLL_BOTTOM_THRESHOLD}px 0px`, threshold: 0 }
+        );
+        observer.observe(endEl);
+        return () => observer.disconnect();
     }, []);
 
+    // Re-fit the spacer and run any pending one-shot scroll as the message list changes.
+    // A layout effect lets the spacer settle synchronously so the anchor scroll already
+    // has the room it needs (no double-scroll, no flash). The stream itself never moves
+    // the view: `messages` is stable while streaming, so this does not re-run per token.
+    useLayoutEffect(() => {
+        recomputeBottomSpacer();
+        const mode = pendingScrollRef.current;
+        if (mode) {
+            pendingScrollRef.current = null;
+            if (mode === "anchor") {
+                anchorReplyToTop();
+            } else {
+                scrollToBottom();
+            }
+        }
+    }, [messages, recomputeBottomSpacer, anchorReplyToTop, scrollToBottom]);
+
+    // Re-fit the spacer when the container is resized (pane split, window resize, etc.).
+    // The button is handled by the IntersectionObserver, which reacts to resize itself.
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, smoothedTailText, streamingThinking, scrollToBottom]);
+        const container = scrollContainerRef.current;
+        if (!container || typeof ResizeObserver === "undefined") return;
+        const observer = new ResizeObserver(() => recomputeBottomSpacer());
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [recomputeBottomSpacer]);
+
+    // On unmount, stop the anchor animation and abort any active stream so it stops
+    // consuming API tokens and can't push chunks into an unmounted component.
+    useEffect(() => () => {
+        if (anchorRafRef.current != null) cancelAnimationFrame(anchorRafRef.current);
+        abortControllerRef.current?.abort();
+    }, []);
 
     // Load state from content object
     const loadFromContent = useCallback((content: LlmChatContent) => {
+        // Opening an existing chat should land on the most recent message — but never clobber a send/retry
+        // that has queued the reply-anchor positioning, nor one whose anchor scroll is still animating: a
+        // content reload can race both the layout effect that consumes the pending mode and the ~300ms
+        // smooth scroll that follows, and a bottom jump in either window would yank the reply to the latest content.
+        if ((content.messages?.length ?? 0) > 0 && pendingScrollRef.current !== "anchor" && !anchorScrollActiveRef.current) {
+            pendingScrollRef.current = "bottom";
+        }
         setMessagesInternal(content.messages || []);
         if (content.selectedModel) {
             setSelectedModel(content.selectedModel);
@@ -313,9 +526,9 @@ export function useLlmChat(
             return block as ContentBlock & { type: "text" };
         }
 
-        const apiMessages: LlmMessage[] = conversation.map(m => ({
+        const apiMessages: LlmMessage[] = trimToFirstUserMessage(conversation).map(m => ({
             role: m.role,
-            content: flattenToApiContent(m.content)
+            content: stripQuoteSourcesFromApiContent(flattenToApiContent(m.content))
         }));
 
         const selectedModelProvider = availableModels.find(m => m.id === selectedModel)?.provider;
@@ -549,7 +762,7 @@ export function useLlmChat(
     const handleSubmit = useCallback(async (e: Event) => {
         e.preventDefault();
         if (isStreaming) return;
-        const trimmedInput = input.trim();
+        const trimmedInput = inputRef.current.trim();
         const attachments = pendingAttachmentsRef.current;
         if (!trimmedInput && attachments.length === 0) return;
 
@@ -578,14 +791,27 @@ export function useLlmChat(
         };
         setInput("");
         setPendingAttachments([]);
+        pendingScrollRef.current = "anchor";
         await runStream([...messages, userMessage]);
-    }, [input, isStreaming, messages, runStream]);
+    }, [isStreaming, messages, runStream, setInput]);
 
     /** Re-run the last turn after a failed response, dropping the trailing error message. */
     const retryLast = useCallback(async () => {
         if (isStreaming) return;
         if (messages[messages.length - 1]?.type !== "error") return;
+        pendingScrollRef.current = "anchor";
         await runStream(messages.slice(0, -1));
+    }, [isStreaming, messages, runStream]);
+
+    /** Regenerate the last reply: re-run from the last user message, dropping the reply that followed. */
+    const regenerateLastReply = useCallback(async () => {
+        // Re-check against the current state, not the snapshot from when the menu opened: only act while
+        // idle and while the last message is still an assistant reply to regenerate.
+        if (isStreaming || messages[messages.length - 1]?.role !== "assistant") return;
+        const conversation = conversationForRegenerate(messages);
+        if (!conversation) return;
+        pendingScrollRef.current = "anchor";
+        await runStream(conversation);
     }, [isStreaming, messages, runStream]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -618,17 +844,11 @@ export function useLlmChat(
         ];
     }, [targetBlocks, smoothedTailText]);
 
-    const streamingContent = useMemo(() => streamingBlocks
-        .filter((b): b is ContentBlock & { type: "text" } => b.type === "text")
-        .map(b => b.content)
-        .join(""), [streamingBlocks]);
-
     return {
         // State
         messages,
-        input,
+        hasInputText,
         isStreaming,
-        streamingContent,
         streamingBlocks,
         streamingThinking,
         pendingCitations,
@@ -643,8 +863,15 @@ export function useLlmChat(
         lastPromptTokens,
         messagesEndRef,
         scrollContainerRef,
+        bottomSpacerRef,
+        showScrollToBottom,
+        scrollToBottom,
         hasProvider,
         isCheckingProvider,
+
+        registerInputEditor,
+        appendToInput,
+        getInput,
 
         // Setters
         setInput,
@@ -666,6 +893,7 @@ export function useLlmChat(
         clearMessages,
         refreshModels,
         stopStreaming,
-        retryLast
+        retryLast,
+        regenerateLastReply
     };
 }

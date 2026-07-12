@@ -249,6 +249,30 @@ span[style] {
 }
 /* #endregion */
 
+/* #region AI chat */
+body[data-note-type="llmChat"] {
+    font-size: var(--print-font-size);
+}
+
+body[data-note-type="llmChat"] .llm-chat-message-wrapper {
+    contain: none !important;
+}
+
+body[data-note-type="llmChat"] .llm-chat-message-user {
+    background: #f0f0f0;
+    border: 0.5pt solid #ccc;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+body[data-note-type="llmChat"] .llm-chat-footer {
+    /* The timestamp/usage footer is revealed on hover on screen; on paper there is no hover, and a
+       transcript wants its timestamps. */
+    opacity: 1;
+    color: #666;
+}
+/* #endregion */
+
 /* #region Page breaks */
 .page-break {
     page-break-after: always;

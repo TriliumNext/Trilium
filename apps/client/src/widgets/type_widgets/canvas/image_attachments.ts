@@ -1,4 +1,5 @@
 import type { BinaryFileData } from "@excalidraw/excalidraw/types";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 
 import type FNote from "../../../entities/fnote";
 import { parseImageDataUrl } from "../../../services/image_upload";
@@ -17,7 +18,7 @@ export interface ImageAttachmentMetadata {
  */
 export const IMAGE_ROLE = "image";
 /** Fixed title of the SVG export attachment; canvas images are titled with their `fileId` instead. */
-export const CANVAS_EXPORT_TITLE = "canvas-export.svg";
+export const CANVAS_EXPORT_TITLE = NOTE_TYPE_IMAGE_ATTACHMENTS.canvas;
 
 /**
  * Loads the note's image attachments (every `image`-role attachment except the SVG export) and

@@ -34,7 +34,9 @@ export async function loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>,
         $titleRow.append($toggle, $title);
         $wrapper.append($titleRow);
 
-        const { $renderedContent, type } = await content_renderer.getRenderedContent(note, { interactive: true });
+        // The include widget itself is the first level of inclusion, so the included note's own
+        // includes are rendered as reference links rather than expanded (see includesAsReferenceLinks).
+        const { $renderedContent, type } = await content_renderer.getRenderedContent(note, { interactive: true, includesAsReferenceLinks: true });
         const $content = $(`<div class="include-note-content type-${type}" style="display: none;">`).append($renderedContent);
         $wrapper.append($content);
 
@@ -50,7 +52,9 @@ export async function loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>,
         // Standard display
         $wrapper.append($('<h4 class="include-note-title">').append($link));
 
-        const { $renderedContent, type } = await content_renderer.getRenderedContent(note, { interactive: true });
+        // The include widget itself is the first level of inclusion, so the included note's own
+        // includes are rendered as reference links rather than expanded (see includesAsReferenceLinks).
+        const { $renderedContent, type } = await content_renderer.getRenderedContent(note, { interactive: true, includesAsReferenceLinks: true });
         $wrapper.append($(`<div class="include-note-content type-${type}">`).append($renderedContent));
     }
 

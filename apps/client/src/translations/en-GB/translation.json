@@ -182,19 +182,11 @@
     "export_note_title": "Export note",
     "close": "Close",
     "export_type_subtree": "This note and all of its descendants",
-    "format_html": "HTML - recommended as it keeps all format",
-    "format_html_zip": "HTML in ZIP archive - this is recommended since this preserves all the formatting.",
-    "format_markdown": "Markdown - this preserves most of the formatting.",
-    "format_opml": "OPML - outliner interchange format for text only. Formatting, images and files are not included.",
-    "opml_version_1": "OPML v1.0 - plain text only",
-    "opml_version_2": "OPML v2.0 - allows also HTML",
     "export_type_single": "Only this note without its descendants",
     "export": "Export",
     "choose_export_type": "Choose export type first please",
-    "export_in_progress": "Export in progress: {{progressCount}}",
     "export_finished_successfully": "Export finished successfully.",
-    "format_pdf": "PDF - for printing or sharing purposes.",
-    "share-format": "HTML for web publishing - uses the same theme that is used shared notes, but can be published as a static website."
+    "format_pdf": "PDF - for printing or sharing purposes."
   },
   "help": {
     "title": "Cheatsheet",

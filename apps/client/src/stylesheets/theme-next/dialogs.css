@@ -263,7 +263,7 @@ div.tn-tool-dialog {
 }
 
 /* Item title for deleted notes */
-.recent-changes-content ul li.deleted-note .note-title {
+.recent-changes-dialog-view-mode-all-changes  ul li.deleted-note .note-title {
     text-decoration: line-through;
 }
 
@@ -382,7 +382,8 @@ div.tn-tool-dialog {
 
 /* Keyboard shortcut */
 .help-dialog .help-cards kbd,
-.ck-content kbd {
+.ck-content kbd,
+.text-editor-content-tooltip kbd {
     display: inline-block;
     margin: 0 2px 2px !important;
     border: 1px solid var(--help-kbd-shortcut-border);
@@ -415,10 +416,6 @@ div.tn-tool-dialog {
 }
 
 /* DELETE NOTE PREVIEW DIALOG */
-
-.delete-notes-dialog .modal-dialog {
-    --bs-modal-width: fit-content;
-}
 
 .delete-notes-list .note-path {
     padding-inline-start: 8px;

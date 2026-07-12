@@ -36,6 +36,7 @@ vi.mock("./i18n.js", () => ({
 }));
 
 // Imports AFTER vi.mock calls.
+import DeletedFNote from "../entities/deleted_fnote.js";
 import froca from "./froca.js";
 import noteTooltipService, { mouseEnterHandler, renderFootnoteOrAnchor, renderTooltip } from "./note_tooltip.js";
 
@@ -250,6 +251,32 @@ describe("renderTooltip", () => {
         expect(html).not.toContain("note-tooltip-title");
         expect(html.startsWith('<div class="note-tooltip-attributes">')).toBe(true);
     });
+
+    it("renders a deleted note with a plain (escaped, unlinked) title and no quick-edit button", async () => {
+        // A real DeletedFNote so renderTooltip's `instanceof DeletedFNote` branch is taken.
+        const note = new (DeletedFNote as any)({
+            noteId: "d1",
+            title: "Deleted & Gone",
+            isProtected: false,
+            type: "text",
+            mime: "text/html",
+            blobId: "b1"
+        });
+
+        const html = (await renderTooltip(note)) as string;
+
+        expect(html).toContain('class="note-tooltip-title"');
+        // Title is escaped plain text, not a navigable link, and no path suffix is fetched.
+        expect(html).toContain("Deleted &amp; Gone");
+        expect(html).not.toContain('href="#d1"');
+        expect(getNoteTitleWithPathAsSuffix).not.toHaveBeenCalled();
+        // No quick-edit popup affordance for a note that no longer has a live editor.
+        expect(html).not.toContain("open-popup-button");
+        expect(html).not.toContain("?popup");
+        // Attributes and content are still rendered.
+        expect(html).toContain('class="note-tooltip-attributes"');
+        expect(html).toContain("body");
+    });
 });
 
 describe("mouseEnterHandler", () => {
@@ -305,6 +332,36 @@ describe("mouseEnterHandler", () => {
         expect(($.fn as any).tooltip).not.toHaveBeenCalled();
         // existing id is preserved
         expect($link.attr("data-link-id")).toBe("existing");
+    });
+
+    it("routes elements marked data-note-deleted through the deleted-content route, not froca", async () => {
+        vi.useFakeTimers();
+        const loadSpy = vi.spyOn(DeletedFNote, "load").mockResolvedValue(null);
+        froca.getNote = vi.fn(async () => null) as any;
+        const $link = makeLink('<span data-href="#deleted12345?" data-note-deleted>x</span>');
+        parseNavigationStateFromUrl.mockReturnValue({ notePath: "deleted12345", noteId: "deleted12345", viewScope: { viewMode: "default" } });
+
+        const promise = mouseEnterHandler.call($link[0], eventFor($link));
+        await vi.advanceTimersByTimeAsync(600);
+        await promise;
+
+        expect(loadSpy).toHaveBeenCalledWith("deleted12345");
+        expect(froca.getNote).not.toHaveBeenCalled();
+    });
+
+    it("routes ordinary note links through froca, not the deleted-content route", async () => {
+        vi.useFakeTimers();
+        const loadSpy = vi.spyOn(DeletedFNote, "load").mockResolvedValue(null);
+        froca.getNote = vi.fn(async () => null) as any;
+        const $link = makeLink('<a data-href="#root/abc">x</a>');
+        parseNavigationStateFromUrl.mockReturnValue({ notePath: "root/abc", noteId: "abc", viewScope: { viewMode: "default" } });
+
+        const promise = mouseEnterHandler.call($link[0], eventFor($link));
+        await vi.advanceTimersByTimeAsync(600);
+        await promise;
+
+        expect(froca.getNote).toHaveBeenCalledWith("abc");
+        expect(loadSpy).not.toHaveBeenCalled();
     });
 
     it("assigns a fresh random link id and skips the tooltip on the not-hovering branch", async () => {

@@ -137,18 +137,29 @@
     "export_note_title": "Esporta la nota",
     "export": "Esporta",
     "choose_export_type": "Scegli prima il tipo di esportazione, per favore",
-    "export_in_progress": "Esportazione in corso: {{progressCount}}",
     "export_finished_successfully": "Esportazione terminata con successo.",
     "format_pdf": "PDF- allo scopo di stampa o esportazione.",
     "export_type_subtree": "Questa nota e tutti i suoi discendenti",
-    "format_html": "HTML - raccomandato in quanto mantiene tutti i formati",
-    "format_html_zip": "HTML in archivio ZIP - questo è raccomandato in quanto conserva tutta la formattazione.",
-    "format_markdown": "Markdown: preserva la maggior parte della formattazione.",
-    "export_type_single": "Solo questa nota, senza le sottostanti",
-    "format_opml": "OPML - formato per scambio informazioni outline. Formattazione, immagini e files non sono inclusi.",
-    "opml_version_1": "OPML v.1.0 - solo testo semplice",
-    "opml_version_2": "OPML v2.0 - supporta anche HTML",
-    "share-format": "HTML per la pubblicazione sul web - utilizza lo stesso tema utilizzato per le note condivise, ma può essere pubblicato come sito web statico."
+    "export_type_single": "Solo questa nota",
+    "what_to_export": "Cosa esportare",
+    "format": "Formato",
+    "format_html_name": "HTML",
+    "format_html_description": "Mantiene tutta la formattazione",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Mantiene gran parte della formattazione",
+    "format_opml_name": "OPML",
+    "format_opml_description": "Formato di struttura con contenuto HTML",
+    "format_share_name": "HTML per il web",
+    "format_share_description": "Sito statico pubblicabile che utilizza il tema \"shared-notes\"",
+    "recommended": "Consigliato",
+    "result_subtree_html": "Un archivio ZIP in cui le note di testo vengono salvate in formato HTML. Il codice, le immagini e gli altri file mantengono il loro formato originale.",
+    "result_subtree_markdown": "Un archivio ZIP in cui le note di testo vengono salvate in formato Markdown. Il codice, le immagini e gli altri file mantengono il loro formato originale.",
+    "result_share": "Un archivio ZIP contenente un sito web statico pronto per la pubblicazione che utilizza il tema \"shared-notes\".",
+    "result_opml": "Un unico file OPML in formato struttura. Sono inclusi i titoli e il testo delle note; non sono invece incluse immagini, file di codice e allegati.",
+    "result_single_html": "Un unico file HTML. Le immagini e gli allegati sono incorporati al suo interno.",
+    "result_single_markdown": "Un singolo file Markdown (.md).",
+    "preparing_export": "Preparazione per l'esportazione…",
+    "export_in_progress_with_total": "Sono state esportate {{progressCount}} note su {{totalCount}}"
   },
   "password_not_set": {
     "body1": "Le note protette sono crittografate utilizzando una password utente, ma la password non è stata ancora impostata.",
@@ -229,11 +240,11 @@
     "title": "Anonimizzazione dei database",
     "full_anonymization": "Anonimizzazione completa",
     "full_anonymization_description": "Crea una copia del database da cui vengono rimossi tutti i contenuti delle note, lasciando solo la struttura e i metadati non sensibili. È sicuro da condividere online durante la risoluzione dei problemi.",
-    "save_fully_anonymized_database": "Salva database completamente anonimizzato",
+    "save_fully_anonymized_database": "Crea una copia",
     "light_anonymization_description": "Crea una copia in cui il contenuto delle note viene rimosso, mentre i titoli, gli attributi e gli script/widget personalizzati rimangono invariati. Fornisce maggiori informazioni di contesto per il debug.",
     "choose_anonymization": "Puoi decidere da solo se fornire un database completamente o parzialmente anonimizzato. Anche un database completamente anonimizzato è molto utile, sebbene in alcuni casi i database parzialmente anonimizzati possono accelerare il processo di identificazione dei bug e la loro correzione.",
     "no_anonymized_database_yet": "Ancora nessun database anonimizzato.",
-    "save_lightly_anonymized_database": "Salva database leggermente anonimizzato",
+    "save_lightly_anonymized_database": "Crea una copia",
     "successfully_created_fully_anonymized_database": "Database completamente anonimizzato creato in {{anonymizedFilePath}}",
     "successfully_created_lightly_anonymized_database": "Database parzialmente anonimizzato creato in {{anonymizedFilePath}}",
     "existing_anonymized_databases": "Database anonimizzati esistenti",
@@ -499,7 +510,7 @@
     "refresh": "Aggiorna"
   },
   "consistency_checks": {
-    "find_and_fix_button": "Trova e correggi i problemi di coerenza",
+    "find_and_fix_button": "Risolvere i problemi",
     "finding_and_fixing_message": "In cerca e correzione dei problemi di coerenza...",
     "issues_fixed_message": "Qualsiasi problema di coerenza che possa essere stato trovato ora è corretto.",
     "title": "Controlli di coerenza",
@@ -507,7 +518,7 @@
     "find_and_fix_description": "Esegue una scansione e risolve automaticamente eventuali problemi di coerenza dei dati nel database."
   },
   "database_integrity_check": {
-    "check_button": "Controllo dell'integrità del database",
+    "check_button": "Verifica dell'integrità",
     "checking_integrity": "Controllo dell'integrità del database in corso...",
     "title": "Controllo di Integrità del database",
     "integrity_check_failed": "Controllo di integrità fallito: {{results}}",
@@ -517,9 +528,9 @@
   },
   "sync": {
     "title": "Sincronizza",
-    "force_full_sync_button": "Forza una sincronizzazione completa",
+    "force_full_sync_button": "Sincronizzazione forzata",
     "failed": "Sincronizzazione fallita: {{message}}",
-    "fill_entity_changes_button": "Compila i record delle modifiche dell'entità",
+    "fill_entity_changes_button": "Modifiche al riempimento",
     "full_sync_triggered": "Sincronizzazione completa attivata",
     "filling_entity_changes": "Il riempimento delle righe modifica l'entità...",
     "sync_rows_filled_successfully": "Sincronizzazione righe compilate correttamente",
@@ -592,7 +603,9 @@
   "tray": {
     "title": "Vassoio di Sistema",
     "enable_tray": "Icona nella barra delle applicazioni",
-    "enable_tray_description": "Le modifiche hanno effetto immediato, anche se su alcune piattaforme per nascondere l'icona nella barra delle applicazioni potrebbe essere necessario riavviare Trilium."
+    "enable_tray_description": "Le modifiche hanno effetto immediato, anche se su alcune piattaforme per nascondere l'icona nella barra delle applicazioni potrebbe essere necessario riavviare Trilium.",
+    "close_to_tray": "Vicino al tray",
+    "close_to_tray_description": "Quando chiudi la finestra, lascia Trilium in esecuzione nell'area di notifica invece di chiuderlo. È necessario che l'icona nell'area di notifica sia abilitata."
   },
   "heading_style": {
     "title": "Stile dell'intestazione",
@@ -709,11 +722,10 @@
   "import": {
     "importIntoNote": "Importa nella nota",
     "chooseImportFile": "Scegli file di importazione",
-    "importDescription": "Il contenuto dei file selezionati verranno importati come note secondarie in",
     "options": "Opzioni",
-    "safeImportTooltip": "I file di esportazione Trilium <code>.zip</code> possono contenere script eseguibili che potrebbero avere comportamenti dannosi. L'importazione sicura disattiverà l'esecuzione automatica di tutti gli script importati. Deseleziona “Importazione sicura” solo se l'archivio importato dovrebbe contenere script eseguibili e ti fidi completamente del contenuto del file di importazione.",
+    "safeImportTooltip": "I file di esportazione Trilium <code>.zip</code> possono contenere script eseguibili. L'importazione sicura li disabilita; deselezionare questa opzione solo se l'archivio è destinato all'esecuzione di script e si ha fiducia nel suo contenuto.",
     "safeImport": "Importazione sicura",
-    "explodeArchivesTooltip": "Se questa opzione è selezionata, Trilium leggerà i file <code>.zip</code>, <code>.enex</code> e <code>.opml</code> e creerà delle note dai file contenuti in tali archivi. Se l'opzione non è selezionata, Trilium allegherà gli archivi stessi alla nota.",
+    "explodeArchivesTooltip": "Crea note dai file contenuti negli archivi <code>.zip</code>, <code>.enex</code> e <code>.opml</code>. Se questa opzione è disattivata, gli archivi vengono allegati così come sono.",
     "shrinkImages": "Riduci immagini",
     "explodeArchives": "Leggi il contenuto degli archivi <code>.zip</code>, <code>.enex</code> e <code>.opml</code> .",
     "html_import_tags": {
@@ -722,16 +734,25 @@
       "placeholder": "Inserisci i tag HTML, uno per riga",
       "reset_button": "Ripristina elenco predefinito"
     },
-    "in-progress": "Importazione in corso: {{progress}}",
+    "in-progress": "Note {{progress}} importate",
     "successful": "Importazione completata con successo.",
-    "shrinkImagesTooltip": "<p>Se selezioni questa opzione, Trilium tenterà di ridurre le immagini importate tramite ridimensionamento e ottimizzazione, il che potrebbe influire sulla qualità percepita dell’immagine. Se non selezionata, le immagini verranno importate senza modifiche.</p><p>Questo non si applica alle importazioni <code>.zip</code> con metadati, poiché si presume che questi file siano già ottimizzati.</p>",
+    "shrinkImagesTooltip": "Ridimensiona e ottimizza le immagini per risparmiare spazio, il che potrebbe comportare una leggera riduzione della qualità. Non si applica alle importazioni da file <code>.zip</code> con metadati, che si presume siano già ottimizzate.",
     "textImportedAsText": "Importa HTML, Markdown e TXT come note di testo se non è chiaro dai metadati",
     "codeImportedAsCode": "Importa i file di codice riconosciuti (ad esempio <code>.json</code>) come note di codice se non è chiaro dai metadati",
     "replaceUnderscoresWithSpaces": "Sostituisci i trattini bassi con spazi nei nomi delle note importate",
     "import": "Importa",
     "failed": "Importazione fallita: {{message}}.",
     "importZipRecommendation": "Quando si importa un file ZIP, la gerarchia delle note rifletterà la struttura delle sottodirectory all'interno dell'archivio.",
-    "spreadsheetImportedAsSpreadsheet": "Importa i file CSV ed Excel come fogli di calcolo modificabili anziché come file"
+    "spreadsheetImportedAsSpreadsheet": "Importa i file CSV ed Excel come fogli di calcolo modificabili anziché come file",
+    "importIntoNoteNamed": "Importa in {{- title}}",
+    "import_from": "Importa da",
+    "cardName": "File e altri formati",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, immagini e altro ancora",
+    "shrinkImagesProviderTooltip": "Ridimensiona e ottimizza le immagini importate per risparmiare spazio, il che potrebbe comportare una leggera riduzione della qualità.",
+    "starting": "Importazione in corso…",
+    "in-progress-with-total": "Note importate {{progress}} su {{total}}",
+    "extracting": "Sono stati estratti {{progress}} elementi su {{total}}",
+    "processing": "Elaborate {{progress}} note su {{total}}"
   },
   "include_note": {
     "dialog_title": "Includi nota",
@@ -782,7 +803,12 @@
     "deleted_notes_message": "Le note eliminate sono state cancellate.",
     "no_changes_message": "Nessuna modifica ancora...",
     "undelete_link": "ripristinare",
-    "confirm_undelete": "Vuoi ripristinare questa nota e le sue sotto-note?"
+    "confirm_undelete": "Vuoi ripristinare questa nota e le sue sotto-note?",
+    "deleted_notes_title": "Note eliminate",
+    "more_actions": "Altre azioni",
+    "deleted_notes_settings": "Impostazioni delle note eliminate",
+    "no_deleted_notes_message": "Nessuna nota cancellata.",
+    "undelete_failed": "Non è stato possibile ripristinare la nota: potrebbe essere stata cancellata definitivamente oppure il documento a cui era associata non è più disponibile."
   },
   "sort_child_notes": {
     "sort_children_by": "Ordina i bambini per...",
@@ -1034,7 +1060,7 @@
     "download": "Scaricamento",
     "rename_attachment": "Rinomina allegato",
     "upload_new_revision": "Carica nuova revisione",
-    "copy_link_to_clipboard": "Copia il collegamento negli appunti",
+    "copy_link_to_clipboard": "Copia il riferimento negli appunti",
     "convert_attachment_into_note": "Convertire l'allegato in nota",
     "delete_attachment": "Elimina allegato",
     "upload_success": "È stata caricata una nuova revisione dell'allegato.",
@@ -1079,7 +1105,12 @@
     "year_previous": "Anno precedente",
     "year_next": "L'anno prossimo",
     "list": "Lista",
-    "today": "Oggi"
+    "today": "Oggi",
+    "day": "Giorno",
+    "day_previous": "Giorno precedente",
+    "day_next": "Il giorno successivo",
+    "pin_date": "Aggiungi la data corrente ai preferiti in modo che il calendario si apra sempre in questo intervallo anziché oggi",
+    "unpin_date": "Sblocca la data in modo che il calendario si apra nuovamente sulla data di oggi"
   },
   "close_pane_button": {
     "close_this_pane": "Chiudi questo riquadro"
@@ -1122,7 +1153,8 @@
     "toggle-zen-mode": "Modalità Zen",
     "new-version-available": "Nuovo aggiornamento disponibile",
     "download-update": "Ottieni la versione {{latestVersion}}",
-    "search_notes": "Cerca note"
+    "search_notes": "Cerca note",
+    "show_deleted_notes": "Mostra le note eliminate"
   },
   "zen_mode": {
     "button_exit": "Esci dalla modalità Zen"
@@ -1175,7 +1207,13 @@
     "word_wrap_on": "On",
     "word_wrap_off": "Off",
     "save_named_revision": "Salva revisione con nome...",
-    "print_or_export_to_pdf": "Stampa/esporta in PDF..."
+    "print_or_export_to_pdf": "Stampa/esporta in PDF...",
+    "convert_to_markdown": "Converti in Markdown - Nota",
+    "convert_to_text": "Converti in nota di testo",
+    "convert_format_warning": "Durante la conversione potrebbero andare perse alcune impostazioni di formattazione e potrebbe essere necessario correggere alcuni dettagli in seguito. Verrà salvata in anticipo una versione precedente della nota attuale, in modo da poterla ripristinare. Vuoi continuare?",
+    "convert_format_warning_risky": "Stai effettuando una conversione tra due formati che non hanno le stesse funzionalità; pertanto, è possibile che alcune impostazioni di formattazione vadano perse e che alcuni elementi non supportati vengano eliminati.<br><br>Accetti pienamente questo rischio e desideri procedere con la conversione?<br><br>Verrà salvata in anticipo una versione di questa nota, in modo da poter tornare al formato originale.",
+    "convert_to_markdown_successful": "La nota è stata convertita in Markdown.",
+    "convert_to_text_successful": "La nota è stata convertita in una nota di testo."
   },
   "onclick_button": {
     "no_click_handler": "Il widget pulsante '{{componentId}}' non ha un gestore di clic definito"
@@ -1191,7 +1229,7 @@
     "update_available": "Aggiornamento disponibile"
   },
   "note_launcher": {
-    "this_launcher_doesnt_define_target_note": "Questo launcher non definisce la nota di destinazione."
+    "this_launcher_doesnt_define_target_note": "Questo launcher non ha alcuna nota di destinazione configurata, quindi non c'è nulla da aprire. Imposta la sua relazione \"target\" in modo che punti a una nota."
   },
   "code_buttons": {
     "execute_button_title": "Esegui script",
@@ -1485,7 +1523,7 @@
   "vacuum_database": {
     "title": "Pulizia del database",
     "description": "Questa operazione ricostruirà il database, generando in genere un file di dimensioni inferiori. In realtà, nessun dato verrà modificato.",
-    "button_text": "Pulizia del database",
+    "button_text": "Pulisci ora",
     "vacuuming_database": "Aspirazione del database...",
     "database_vacuumed": "Il database è stato svuotato",
     "vacuum_label": "Database Vacuum",
@@ -1554,7 +1592,12 @@
     "color_scheme_system": "Sistema",
     "color_scheme_light": "Chiara",
     "color_scheme_dark": "Scura",
-    "color_scheme_custom_disabled": "La sostituzione della combinazione di colori non è disponibile per i temi personalizzati"
+    "color_scheme_custom_disabled": "La sostituzione della combinazione di colori non è disponibile per i temi personalizzati",
+    "color_scheme_switcher_system": "Modalità di sistema",
+    "color_scheme_switcher_light": "Modalità chiara",
+    "color_scheme_switcher_dark": "Modalità scura",
+    "color_scheme_switcher_hint": "Clicca qui per cambiare la combinazione di colori.",
+    "color_scheme_switcher_unsupported": "Il tema attuale non consente di modificare la combinazione di colori."
   },
   "ui-performance": {
     "title": "Prestazione",
@@ -1583,7 +1626,8 @@
     "title": "Tipi MIME disponibili nel menu a discesa",
     "tooltip_syntax_highlighting": "Evidenziazione della sintassi",
     "tooltip_code_block_syntax": "Blocchi di codice nelle note di testo",
-    "tooltip_code_note_syntax": "Note sul codice"
+    "tooltip_code_note_syntax": "Note sul codice",
+    "trilium_log": "Trilium Log"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Combinazioni di tasti di Vim",
@@ -1616,7 +1660,8 @@
     "batch_ocr_starting": "Avvio dell'elaborazione in batch...",
     "batch_ocr_progress": "Elaborazione di {{processed}} su {{total}} file...",
     "batch_ocr_completed": "Elaborazione in batch completata! Sono stati elaborati {{processed}} file.",
-    "batch_ocr_error": "Errore durante l'elaborazione in batch: {{error}}"
+    "batch_ocr_error": "Errore durante l'elaborazione in batch: {{error}}",
+    "batch_ocr_completed_with_failures": "Elaborazione in batch completata. Sono stati elaborati {{processed}} file, ma {{failed}} non è stato possibile leggerli (vedere i log per i dettagli)."
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Allegati non utilizzati",
@@ -1625,7 +1670,8 @@
     "erase_unused_attachments_now": "Elimina subito gli allegati non utilizzati",
     "unused_attachments_erased": "Gli allegati non utilizzati sono stati cancellati.",
     "description": "Gli allegati a cui non fa più riferimento nessuna nota vengono considerati inutilizzati e possono essere cancellati automaticamente dopo un certo periodo di tempo.",
-    "erase_attachments_after_description": "Tempo che intercorre prima che gli allegati inutilizzati vengano cancellati definitivamente."
+    "erase_attachments_after_description": "Tempo che intercorre prima che gli allegati inutilizzati vengano cancellati definitivamente.",
+    "erase_now_button": "Cancella ora"
   },
   "network_connections": {
     "network_connections_title": "Rete",
@@ -1639,7 +1685,8 @@
     "erase_deleted_notes_now": "Cancella subito le note eliminate",
     "deleted_notes_erased": "Le note eliminate sono state eliminate.",
     "description": "Le note eliminate vengono inizialmente contrassegnate solo come eliminate e possono essere recuperate dalla sezione \"Note recenti\". Dopo un certo periodo di tempo, vengono cancellate definitivamente.",
-    "erase_notes_after_description": "Tempo che intercorre prima che le note eliminate vengano cancellate definitivamente."
+    "erase_notes_after_description": "Tempo che intercorre prima che le note eliminate vengano cancellate definitivamente.",
+    "erase_now_button": "Cancella ora"
   },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_interval_title": "Nota Intervallo di istantanea della revisione",
@@ -1655,7 +1702,8 @@
     "erase_excess_revision_snapshots": "Cancella subito gli snapshot di revisione in eccesso",
     "erase_excess_revision_snapshots_prompt": "Gli snapshot di revisione in eccesso sono stati cancellati.",
     "note_revisions_snapshot_limit_description_short": "Numero massimo di revisioni per nota. Impostare -1 per numero illimitato, 0 per disabilitare.",
-    "erase_excess_revision_snapshots_description": "Elimina le revisioni che superano il limite per tutte le note."
+    "erase_excess_revision_snapshots_description": "Elimina le revisioni che superano il limite per tutte le note.",
+    "erase_now_button": "Cancella ora"
   },
   "text_auto_read_only_size": {
     "title": "Dimensione automatica di sola lettura",
@@ -1694,11 +1742,13 @@
     "set_password_heading": "Imposta password",
     "set_password": "Imposta password",
     "password_mismatch": "Le nuove password non sono tutte uguali.",
-    "password_changed_success": "La password è stata modificata. Trilium verrà ricaricato dopo aver premuto OK.",
+    "password_changed_success": "La password è stata modificata con successo.",
     "change_password_description": "Aggiorna la tua password attuale",
     "reset_password": "Reimposta password",
     "reset_password_description": "Perdere definitivamente l'accesso alle note protette",
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "change_password_button": "Aggiorna password",
+    "reset_password_button": "Reimposta ora"
   },
   "multi_factor_authentication": {
     "recovery_keys_description_warning": "Le chiavi di recupero non verranno più visualizzate dopo aver abbandonato la pagina: conservale in un luogo sicuro e protetto.<br>Una volta utilizzata, una chiave di recupero non potrà più essere utilizzata.",
@@ -1708,9 +1758,32 @@
     "oauth_title": "OAuth/OpenID",
     "oauth_description": "OpenID è un metodo standardizzato che ti consente di accedere ai siti web utilizzando un account di un altro servizio, come Google, per verificare la tua identità. L'emittente predefinito è Google, ma puoi cambiarlo con qualsiasi altro provider OpenID. Per ulteriori informazioni, consulta <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">qui</a>. Segui queste <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">istruzioni</a> per configurare un servizio OpenID tramite Google.",
     "oauth_missing_vars": "Impostazioni mancanti: {{-variables}}",
-    "oauth_user_account": "Account utente: ",
-    "oauth_user_email": "Email utente: ",
-    "oauth_user_not_logged_in": "Non hai effettuato l'accesso!"
+    "oauth_user_account": "Nome dell'account",
+    "oauth_user_email": "Indirizzo e-mail",
+    "oauth_user_not_logged_in": "Non hai effettuato l'accesso!",
+    "authentication_title": "Autenticazione",
+    "signin_method": "Accedi con",
+    "signin_local": "Password locale (facoltativamente con autenticazione a due fattori)",
+    "signin_oauth": "Provider OpenID Connect (ad es. Google)",
+    "signin_local_description": "Accedi con la tua password Trilium. Se lo desideri, puoi attivare l'autenticazione a due fattori per garantire un ulteriore livello di sicurezza.",
+    "totp_setup_label": "Password monouso basata sul tempo (TOTP)",
+    "totp_setup_description": "Genera un codice a tempo dall'app di autenticazione come secondo fattore di autenticazione. Per completare la procedura, dovrai scansionare un codice QR e confermare un codice. Al termine verranno generati i codici di recupero.",
+    "totp_setup_button": "Configurazione",
+    "totp_enroll_title": "Conferma il tuo autenticatore",
+    "totp_enroll_instructions": "Il TOTP non verrà attivato finché non avrai confermato un codice valido qui sotto, in modo da evitare di rimanere bloccato fuori per errore.",
+    "totp_enroll_step1_title": "1. Aggiungi l'account alla tua app di autenticazione",
+    "totp_enroll_step2_title": "2. Inserisci il codice di verifica",
+    "totp_enroll_scan": "Scansiona questo codice QR:",
+    "totp_enroll_secret_label": "Non riesci a scansionare il codice? Inseriscilo manualmente",
+    "totp_enroll_code_label": "Codice di verifica",
+    "totp_enroll_code_placeholder": "000000",
+    "totp_enroll_verify": "Verifica e prosegui",
+    "totp_enroll_cancel": "Annulla",
+    "totp_enroll_invalid_code": "Il codice non corrispondeva. Verifica che l'orologio del tuo dispositivo sia impostato correttamente e inserisci il codice più recente.",
+    "totp_enroll_generate_error": "Impossibile generare un codice segreto TOTP. Chiudi questa finestra di dialogo e riprova.",
+    "totp_enroll_enabled": "L'autenticazione a due fattori è ora abilitata.",
+    "totp_enroll_recovery_title": "Salva i tuoi codici di recupero",
+    "totp_enroll_recovery_instructions": "Conserva questi codici di ripristino in un luogo sicuro. Ciascuno di essi può essere utilizzato una sola volta per effettuare l'accesso nel caso in cui dovessi perdere l'accesso alla tua app di autenticazione."
   },
   "spellcheck": {
     "title": "Controllo ortografico",
@@ -1866,9 +1939,6 @@
     "no_notes_found": "Non sono state trovate note per i parametri di ricerca specificati.",
     "search_not_executed": "La ricerca non è stata ancora eseguita.",
     "search_now": "Cerca ora"
-  },
-  "spacer": {
-    "configure_launchbar": "Configura Launchbar"
   },
   "sql_result": {
     "no_rows": "Nessuna riga è stata restituita per questa query",
@@ -2333,7 +2403,13 @@
     "previous-video": "Video precedente: {{- title}}",
     "next-video": "Prossimo video: {{- title}}",
     "previous-audio": "Audio precedente: {{- title}}",
-    "next-audio": "Audio successivo: {{- title}}"
+    "next-audio": "Audio successivo: {{- title}}",
+    "seek": "Cerca (tasti freccia sinistra/destra)",
+    "forward-10s": "Avanti di 10 secondi (tasto freccia destra)",
+    "play-mode-title": "Modalità: {{mode}}",
+    "play-mode-once": "Riproduci una volta",
+    "play-mode-loop": "Ciclo",
+    "play-mode-next": "Riproduci il prossimo"
   },
   "mermaid": {
     "placeholder": "Digita il contenuto del tuo diagramma Mermaid oppure utilizza uno dei diagrammi di esempio riportati di seguito.",
@@ -2651,8 +2727,11 @@
     "placeholders": {
       "math": "equazione",
       "collapsible_summary": "Sommario",
-      "collapsible_details": "Dettagli"
-    }
+      "collapsible_details": "Dettagli",
+      "table_column": "Colonna {{number}}"
+    },
+    "page_break": "Inserisci un'interruzione di pagina (per la stampa)",
+    "table": "Inserisci una tabella"
   },
   "mobile_note_navigator": {
     "back": "Torna al livello superiore",
@@ -2770,7 +2849,11 @@
     "server_config_hint": "Aggiungi quanto segue al tuo file config.ini:",
     "server_env_hint": "Oppure imposta la seguente variabile d'ambiente:",
     "restart_required": "Per rendere effettiva questa modifica è necessario riavviare il sistema.",
-    "restart_now": "Riavvia subito l'applicazione"
+    "restart_now": "Riavvia subito l'applicazione",
+    "lan_access_title": "Accesso alla rete",
+    "lan_access_section_description": "Per impostazione predefinita, l'app desktop accetta solo connessioni provenienti da questo computer. Consenti l'accesso dalla tua rete locale in modo che altri dispositivi possano connettersi ad essa, ad esempio per eseguire la sincronizzazione da un altro dispositivo. Abilita questa opzione solo sulle reti di cui ti fidi.",
+    "lan_access_label": "Consenti le connessioni da altri dispositivi",
+    "lan_access_description": "Associa il server a tutte le interfacce di rete anziché solo a localhost."
   },
   "snippet_badge": {
     "label": "Snippet {{type}}",
@@ -2803,5 +2886,116 @@
     "refresh-widget": "Aggiorna",
     "remove-widget": "Rimuovi dalla dashboard",
     "empty-hint": "Ogni nota secondaria diventa un widget. Trascina qui una nota dall'albero o creane una nuova."
+  },
+  "file_upload": {
+    "drop_or_browse_single": "Trascina un file qui, oppure clicca per selezionare un file",
+    "drop_or_browse_multiple": "Trascina i file qui oppure clicca per selezionarli",
+    "browse_single": "Tocca per selezionare un file",
+    "browse_multiple": "Tocca per selezionare i file",
+    "selected_one": "E' stato selezionato {{count}} file",
+    "selected_many": "Sono stati selezionati {{count}} files",
+    "selected_other": "Sono stati selezionati {{count}} files"
+  },
+  "import_provider": {
+    "choose_provider": "Scegli uno dei servizi sopra elencati da cui effettuare l'importazione."
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "Collega al tuo account",
+    "connect_description": "Accedi con il tuo account Microsoft per importare i tuoi blocchi appunti di OneNote.",
+    "connect": "Accedi con Microsoft",
+    "section_heading": "Microsoft OneNote",
+    "checking": "Verifica della connessione a OneNote…",
+    "connecting": "In attesa che l'accesso venga completato…",
+    "connected_as": "Connesso come {{name}}",
+    "disconnect": "Disconnetti",
+    "load_failed": "Impossibile caricare i tuoi blocchi appunti di OneNote.",
+    "no_notebooks": "In questo account non sono stati trovati quaderni.",
+    "select_sections": "Seleziona le sezioni da importare",
+    "select_sections_hint": "OneNote non include l'ordine originale nei dati importati, pertanto le sezioni e i gruppi vengono ordinati in base alla data di creazione e potrebbero non corrispondere alla loro disposizione in OneNote.",
+    "import": "Importa selezione",
+    "attach_source": "Allega il codice HTML originale (debug)",
+    "attach_source_hint": "Salva il codice HTML di OneNote non modificato di ciascuna pagina come allegato alla nota importata, per poterlo confrontare con il risultato della conversione."
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "Da un'esportazione in HTML",
+    "description_long": "In Notion, esporta il tuo spazio di lavoro o una pagina in formato HTML, comprese le sottopagine, quindi seleziona qui il file .zip risultante.",
+    "choose_file": "Esportazione da Notion (.zip)",
+    "import": "Importa"
+  },
+  "login": {
+    "password": "Password",
+    "remember-me": "Ricordami",
+    "incorrect-totp": "La password monouso non è corretta. Riprova."
+  },
+  "set_password": {
+    "password": "Password"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "Da un'esportazione Takeout",
+    "description_long": "In Google Takeout, esporta i tuoi dati di Keep in un file .zip, quindi seleziona qui il file risultante.",
+    "choose_file": "Esportazione da Google Keep (.zip)",
+    "import": "Importa"
+  },
+  "anytype_import": {
+    "description": "Da un'esportazione JSON",
+    "description_long": "In Anytype, esporta il tuo spazio utilizzando il formato \"Any-Block\" con l'opzione \"JSON\" selezionata, quindi scegli qui il file .zip risultante. Per ora vengono importate solo le pagine e il loro testo.",
+    "choose_file": "Esportazione in formato Anytype (.zip)",
+    "import": "Importa",
+    "name": "Anytype"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "Da un caveau",
+    "description_long": "Comprimi la cartella \"Obsidian vault\" in un file .zip, quindi seleziona qui il file .zip ottenuto.",
+    "choose_file": "Archivio Obsidian (.zip)",
+    "import": "Importa"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "Da file .enex",
+    "description_long": "In Evernote, esporta un taccuino (o fino a 100 note alla volta) come file ENEX, quindi seleziona qui uno o più file .enex. Ogni file viene importato come taccuino separato.",
+    "choose_file": "Esportazione in formato Evernote (.enex)",
+    "import": "Importa"
+  },
+  "save_revision": {
+    "save_revision": "Salva revisione",
+    "revision_name_placeholder": "Nome della revisione (facoltativo)",
+    "help": "Per ogni nota corrispondente verrà salvata una revisione con nome, che ne registrerà il contenuto e il titolo attuali."
+  },
+  "convert_note": {
+    "convert_note": "Converti",
+    "convert_note_to": "Converti nota",
+    "choose_conversion": "(scegli una conversione)",
+    "conversion_htmlToMarkdown": "Note di testo → Note Markdown (con perdita di dati)",
+    "conversion_markdownToHtml": "Note in Markdown → Note di testo",
+    "help_text": "La conversione viene applicata solo alle note che corrispondono al tipo di origine; le altre note rimangono invariate. Prima della conversione viene salvata una versione di ciascuna nota convertita.",
+    "warning": "Durante la conversione delle note, è possibile che alcune impostazioni di formattazione vadano perse e che sia necessario apportare alcune correzioni in seguito. Verrà salvata in anticipo una versione precedente di ogni nota convertita, in modo da poterla ripristinare. Vuoi continuare?",
+    "warning_risky": "Stai effettuando una conversione tra due formati che non hanno le stesse funzionalità; pertanto, è possibile che alcune impostazioni di formattazione vadano perse e che alcuni elementi non supportati vengano eliminati.<br><br>Accetti pienamente questo rischio e desideri procedere con la conversione?<br><br>Verrà salvata in anticipo una versione di ciascuna nota convertita, in modo da poter ripristinare il formato originale."
+  },
+  "icon_pack": {
+    "preview_title": "Anteprima del pacchetto di icone",
+    "invalid_manifest": "Impossibile analizzare il manifesto del pacchetto di icone. Verificare che si tratti di un file JSON valido.",
+    "no_icons": "Questo pacchetto di icone non contiene icone.",
+    "tooltip": "Classe: {{- class}}\nCodice glifo: {{- code}}\nCondizioni: {{- terms}}",
+    "count_one": "{{count}} icona",
+    "count_many": "{{count}} icone",
+    "count_other": "{{count}} icone"
+  },
+  "blob_stub": {
+    "not_synced": "Il contenuto di questa nota è troppo grande per essere sincronizzato su questo dispositivo. Puoi invece aprirlo sul server di sincronizzazione.",
+    "open_on_server": "Apri sul server"
+  },
+  "desktop": {
+    "web_placeholder": "Queste opzioni si applicano solo alle versioni desktop."
+  },
+  "startup": {
+    "title": "Avvio",
+    "launch_on_startup": "Avvia all'avvio",
+    "launch_on_startup_description": "Avvia automaticamente Trilium all'accesso al computer.",
+    "hide_on_auto_start": "Avvia con la finestra ridotta a icona nella barra delle applicazioni",
+    "hide_on_auto_start_description": "Se avviato automaticamente al momento dell'accesso, il programma si aprirà in modo nascosto nell'area di notifica invece di aprire una finestra. È necessario che l'avvio all'accensione e l'icona nell'area di notifica siano abilitati."
   }
 }

@@ -35,10 +35,14 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
 export async function postProcessRichContent(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
     const seenNoteIds = options.seenNoteIds ?? new Set<string>();
     seenNoteIds.add("noteId" in note ? note.noteId : note.attachmentId);
-    if (!options.noIncludedNotes) {
-        await renderIncludedNotes($renderedContent[0], seenNoteIds);
-    } else {
+    if (options.noIncludedNotes) {
         $renderedContent.find("section.include-note").remove();
+    } else if (options.includesAsReferenceLinks) {
+        // This note is itself an included note in display mode: stop after the first level by
+        // degrading its own includes to reference links instead of expanding them.
+        replaceIncludesWithReferenceLinks($renderedContent[0]);
+    } else {
+        await renderIncludedNotes($renderedContent[0], seenNoteIds, options.expandNestedIncludes ?? false);
     }
 
     if ($renderedContent.find("span.math-tex").length > 0) {
@@ -67,7 +71,7 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     await formatCodeBlocks($renderedContent);
 }
 
-async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<string>) {
+async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<string>, expandNested: boolean) {
     // TODO: Consider duplicating with server's share/content_renderer.ts.
     const includeNoteEls = contentEl.querySelectorAll("section.include-note");
 
@@ -100,10 +104,36 @@ async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<stri
             continue;
         }
 
-        const renderedContent = (await content_renderer.getRenderedContent(note, {
-            seenNoteIds
-        })).$renderedContent;
+        // On display only the first level is expanded: the included note is rendered with its own
+        // includes degraded to reference links. Printing/export keeps expanding recursively.
+        // Clone seenNoteIds per descent so it tracks the current ancestor path only — sibling
+        // branches must not pollute each other (a note included in two sub-trees is not a cycle).
+        const renderedContent = (await content_renderer.getRenderedContent(note, expandNested
+            ? { seenNoteIds: new Set(seenNoteIds), expandNestedIncludes: true }
+            : { seenNoteIds: new Set(seenNoteIds), includesAsReferenceLinks: true }
+        )).$renderedContent;
         includeNoteEl.replaceChildren(...renderedContent);
+    }
+}
+
+/**
+ * Replace each `section.include-note` in the given content with a bare reference link to the
+ * included note, without expanding it. Used on display to stop inclusion after the first level so a
+ * note's transitive include graph is not rendered inline. The link's title, icon and colour are
+ * filled in by the reference-link post-processing pass in `postProcessRichContent` (the same pass
+ * that resolves reference links authored in the note), which also batch-prefetches the note.
+ */
+function replaceIncludesWithReferenceLinks(contentEl: HTMLElement) {
+    for (const includeNoteEl of contentEl.querySelectorAll("section.include-note")) {
+        const noteId = includeNoteEl.getAttribute("data-note-id");
+        // Validate the ID against a note-ID allow-list before interpolating it into the href: it
+        // comes from note HTML, and the reference-link pass later reinterprets that href.
+        if (!noteId || !/^[a-zA-Z0-9_]+$/.test(noteId)) continue;
+
+        const referenceLink = document.createElement("a");
+        referenceLink.className = "reference-link";
+        referenceLink.setAttribute("href", `#root/${noteId}`);
+        includeNoteEl.replaceWith(referenceLink);
     }
 }
 

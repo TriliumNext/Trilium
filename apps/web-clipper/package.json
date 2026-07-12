@@ -13,10 +13,10 @@
     "postinstall": "wxt prepare"
   },
   "keywords": [],
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@11.10.0",
   "devDependencies": {
     "@wxt-dev/auto-icons": "1.1.1",
-    "wxt": "0.20.26"
+    "wxt": "0.20.27"
   },
   "dependencies": {
     "cash-dom": "8.1.5"

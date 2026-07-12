@@ -1,9 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
-import { getContext } from "./context.js";
+import { disableEntityEvents, getContext } from "./context.js";
+import { getLog } from "./log.js";
 import noteService, { prepareTitle, saveLinks } from "./notes.js";
 import optionService from "./options.js";
 import { getSql } from "./sql/index.js";
@@ -123,6 +124,103 @@ describe("notes service (real DB)", () => {
 
             expect(note.mime).toBe("text/special");
             expect(note.getRelationValue("template")).toBe(template.note.noteId);
+        });
+
+        it("inherits the parent's child:template when the new note's type matches the template's", () => {
+            const template = createNote("root", { title: "spec-child-tmpl-match", content: "<p>day template</p>" });
+            const parent = createNote("root", {
+                title: "spec-child-tmpl-parent-match",
+                attributes: [{ type: "relation", name: "child:template", value: template.note.noteId }]
+            });
+
+            const { note } = createNote(parent.note.noteId, { title: "spec-child-tmpl-text", content: "" });
+
+            expect(note.getRelationValue("template")).toBe(template.note.noteId);
+            expect(note.type).toBe("text");
+            expect(note.getContent()).toBe("<p>day template</p>");
+        });
+
+        it("does not inherit the parent's child:template when the new note's type differs (#3015)", () => {
+            const template = createNote("root", { title: "spec-child-tmpl-mismatch", content: "<p>day template</p>" });
+            const parent = createNote("root", {
+                title: "spec-child-tmpl-parent-mismatch",
+                attributes: [
+                    { type: "relation", name: "child:template", value: template.note.noteId },
+                    { type: "label", name: "child:myLabel", value: "v1" }
+                ]
+            });
+
+            const { note } = createNote(parent.note.noteId, { title: "spec-child-tmpl-code", content: "", type: "code" });
+
+            // the explicitly chosen type wins: no template relation, no content/type override
+            expect(note.getRelationValue("template")).toBeNull();
+            expect(note.type).toBe("code");
+            expect(note.mime).toBe("text/plain");
+            expect(note.getContent()).toBe("");
+            // other child: attributes are still inherited
+            expect(note.getLabelValue("myLabel")).toBe("v1");
+        });
+
+        it("applies a mismatched child:template when no type was explicitly chosen (+ button)", () => {
+            const template = createNote("root", {
+                title: "spec-child-tmpl-plus",
+                type: "code",
+                mime: "text/x-python",
+                content: "print('hi')"
+            });
+            const parent = createNote("root", {
+                title: "spec-child-tmpl-parent-plus",
+                attributes: [{ type: "relation", name: "child:template", value: template.note.noteId }]
+            });
+
+            // the + button sends no type at all; the server derives one from the parent,
+            // which must not count as an explicit user choice
+            const { note } = getContext().init(() =>
+                noteService.createNewNoteWithTarget("into", undefined, {
+                    parentNoteId: parent.note.noteId,
+                    title: "spec-child-tmpl-untyped",
+                    content: ""
+                })
+            );
+
+            expect(note.getRelationValue("template")).toBe(template.note.noteId);
+            expect(note.type).toBe("code");
+            expect(note.mime).toBe("text/x-python");
+            expect(note.getContent()).toBe("print('hi')");
+        });
+    });
+
+    describe("createNewNote logging", () => {
+        const isCreatedNoteLog = (call: unknown[]) => typeof call[0] === "string" && call[0].includes("Created new note");
+
+        it("logs a line for an interactive note creation", () => {
+            const info = vi.spyOn(getLog(), "info");
+            try {
+                createNote("root", { title: "spec-log-interactive" });
+                expect(info.mock.calls.some(isCreatedNoteLog)).toBe(true);
+            } finally {
+                info.mockRestore();
+            }
+        });
+
+        it("skips the per-note log line during bulk operations (entity events disabled)", () => {
+            const info = vi.spyOn(getLog(), "info");
+            try {
+                getContext().init(() => {
+                    // Mirrors what the import route does: it disables entity events for the whole bulk run,
+                    // which createNewNote uses to suppress its otherwise-per-note log line.
+                    disableEntityEvents();
+                    noteService.createNewNote({
+                        parentNoteId: "root",
+                        title: "spec-log-bulk",
+                        content: "<p>x</p>",
+                        type: "text"
+                    });
+                });
+                expect(info.mock.calls.some(isCreatedNoteLog)).toBe(false);
+            } finally {
+                info.mockRestore();
+            }
         });
     });
 

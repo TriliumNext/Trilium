@@ -86,6 +86,13 @@ export async function dispatchMessage(message: WebSocketMessage) {
     // Process the message
     if (messageType === "ping") {
         lastPingTs = Date.now();
+
+        // The backend expires the protected session with a one-shot `reload-frontend` broadcast;
+        // if the connection was down at that moment, the client would keep showing decrypted
+        // notes indefinitely. Ping replies carry the live backend state, so recover here.
+        if (msg.protectedSessionAvailable === false && glob.isProtectedSessionAvailable) {
+            utils.reloadFrontendApp("protected session expired on the backend");
+        }
     } else if (messageType === "reload-frontend") {
         utils.reloadFrontendApp("received request from backend to reload frontend");
     } else if (messageType === "frontend-update") {

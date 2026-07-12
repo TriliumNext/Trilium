@@ -1,3 +1,4 @@
+import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_chat_text.js";
 import { extractSpreadsheetText } from "@triliumnext/commons/src/lib/spreadsheet/extract_text.js";
 import striptags from "striptags";
 import { normalizeSearchText } from "../utils/text_utils";
@@ -19,6 +20,8 @@ export default function preprocessContent(rawContent: string | Uint8Array, type:
         content = processCanvasContent(content);
     } else if (type === "spreadsheet" && mime === "application/json") {
         content = extractSpreadsheetText(content);
+    } else if (type === "llmChat" && mime === "application/json") {
+        content = extractLlmChatText(content);
     }
 
     return content.trim();

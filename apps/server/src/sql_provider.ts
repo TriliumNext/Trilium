@@ -23,7 +23,14 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
             ...dbOpts,
             readonly: isReadOnly
         });
-        this.dbConnection.pragma("journal_mode = WAL");
+
+        // The `edit-integration-db` tool (TRILIUM_INTEGRATION_TEST=edit) attaches
+        // directly to the git-tracked fixture DB. Keep it in the rollback journal
+        // mode so it stays a single committable file: WAL is persisted in the DB
+        // header and would spawn -wal/-shm sidecars, making the fixture harder to
+        // track (see docs Testing/Test database.md).
+        const journalMode = process.env.TRILIUM_INTEGRATION_TEST ? "DELETE" : "WAL";
+        this.dbConnection.pragma(`journal_mode = ${journalMode}`);
     }
 
     loadFromMemory() {

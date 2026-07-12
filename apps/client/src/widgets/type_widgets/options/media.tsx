@@ -107,6 +107,7 @@ interface BatchProgress {
     inProgress: boolean;
     total: number;
     processed: number;
+    failed: number;
     percentage?: number;
 }
 
@@ -120,7 +121,11 @@ function BatchProcessing() {
             if (!data.inProgress && pollingRef.current) {
                 clearInterval(pollingRef.current);
                 pollingRef.current = null;
-                toast.showMessage(t("images.batch_ocr_completed", { processed: data.processed }));
+                if (data.failed > 0) {
+                    toast.showError(t("images.batch_ocr_completed_with_failures", { processed: data.processed, failed: data.failed }));
+                } else {
+                    toast.showMessage(t("images.batch_ocr_completed", { processed: data.processed }));
+                }
             }
         });
     }, []);

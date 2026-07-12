@@ -100,16 +100,27 @@ export default class BridgedRequestProvider implements RequestProvider {
         }
 
         if ([200, 201, 204].includes(msg.status)) {
+            // Fast path: main thread sent the already-parsed JSON object via
+            // structured clone. Use it directly — no second JSON.parse, no
+            // intermediate string allocation. Critical for large blob batches
+            // on memory-constrained clients (iOS Capacitor WebView worker).
+            if (msg.data !== undefined) {
+                return msg.data;
+            }
             const text = msg.body || "";
             return text.trim() ? JSON.parse(text) : null;
         }
 
         let errorMessage: string;
-        try {
-            const json = JSON.parse(msg.body || "");
-            errorMessage = json?.message || "";
-        } catch {
-            errorMessage = (msg.body || "").substring(0, 100);
+        if (msg.data && typeof msg.data === "object") {
+            errorMessage = (msg.data as { message?: string }).message ?? "";
+        } else {
+            try {
+                const json = JSON.parse(msg.body || "");
+                errorMessage = json?.message || "";
+            } catch {
+                errorMessage = (msg.body || "").substring(0, 100);
+            }
         }
         throw new Error(`${msg.status} ${opts.method} ${opts.url}: ${errorMessage}`);
     }

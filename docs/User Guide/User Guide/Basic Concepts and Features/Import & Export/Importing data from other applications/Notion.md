@@ -1,7 +1,4 @@
 # Notion
-> [!NOTE]
-> This import mechanism was introduced in Trilium v0.104.0.
-
 Trilium can import ZIP exports from Notion while preserving structure and formatting.
 
 ## Import process
@@ -31,10 +28,9 @@ In Notion, there are two ways to export data:
 
 In Trilium Notes:
 
-1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, select a note where to place the imported notes.
-2.  From <a class="reference-link" href="../../UI%20Elements/Note%20buttons.md">Note buttons</a>, select _Import from a service…_
-3.  Select _Notion_ as the provider to import from.
-4.  Upload the ZIP obtained in the previous step.
+1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
+2.  In the _Import from_ section, select _Notion_.
+3.  Upload the ZIP obtained in the previous step.
 
 ## Supported features
 
@@ -63,7 +59,72 @@ Notion databases are imported into <a class="reference-link" href="../../../Col
 
 The resulting collection will be <a class="reference-link" href="../../../Collections/Table.md">Table</a> regardless of the original view the database was exported in. That's because the active view is not saved in the export and the table collection is the most compatible with Notion.
 
-<table><thead><tr><th scope="col">Notion type</th><th scope="col">Trilium</th></tr></thead><tbody><tr><td>Text / Select / Status / Place</td><td>Single-valued <code spellcheck="false">text</code> label</td></tr><tr><td>Number</td><td>Single-valued <code spellcheck="false">number</code> label for plain numbers. Formatted values (currency, percent, thousands separators) are normalized to a bare number, e.g. <code spellcheck="false">$1,200.50</code> → <code spellcheck="false">1200.50</code>.</td></tr><tr><td>ID</td><td>Single-valued <code spellcheck="false">number</code> or <code spellcheck="false">text</code> label (depending on whether a prefix is configured)</td></tr><tr><td>Multi-select</td><td>One text label per option (multi)</td></tr><tr><td>URL / Email / Phone</td><td><code spellcheck="false">url</code> label (<code spellcheck="false">mailto:</code>, <code spellcheck="false">tel:</code> prefix)</td></tr><tr><td>Date</td><td><ul><li data-list-item-id="eee6673ab2869e699cab68ecf33d7f114"><code spellcheck="false">datetime</code> if at least one has time.</li><li data-list-item-id="e2b9de45b9e0044bdd49f52ccbc9d143b"><code spellcheck="false">date</code> if only dates.</li><li data-list-item-id="ea59885b04bf57523709c778687bc94a5">Two attributes if any of the dates have an end date.</li></ul></td></tr><tr><td>Checkbox</td><td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/<code spellcheck="false">false</code>).</td></tr><tr><td>Person</td><td>One text label per user (multi)</td></tr><tr><td>Created by / Edited by</td><td>Single-valued <code spellcheck="false">text</code> label</td></tr><tr><td>Created time / Last edited time</td><td>Assigned to the note's creation and modification date.</td></tr><tr><td>Relation</td><td>Mapped to <a href="../../../Advanced%20Usage/Attributes/Relations.md">relations</a>, each link resolved to its target note via the existing cross-page map; targets outside the import are dropped.</td></tr><tr><td>Files &amp; Media</td><td>The files are preserved as attachments, and a link to them is prepended to the content of the note for visibility.</td></tr><tr><td>Formulas / Rollup</td><td><p>A <code spellcheck="false">text</code>, <code spellcheck="false">number</code> or <code spellcheck="false">boolean</code> label depending on the value. Dates are rendered as <code spellcheck="false">text</code> because the export doesn't offer any type information.</p><p>The Notion export does not preserve the formula/rollup configuration itself, instead it just exports the value.</p></td></tr><tr><td>Button / Verification / any other type</td><td>Unsupported, they will be dropped from the import.</td></tr></tbody></table>
+<table>
+    <thead>
+        <tr>
+            <th scope="col">Notion type</th>
+            <th scope="col">Trilium</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Text / Select / Status / Place</td>
+            <td>Single-valued <code spellcheck="false">text</code> label</td>
+        </tr>
+        <tr>
+            <td>Number</td>
+            <td>Single-valued <code spellcheck="false">number</code> label for plain numbers. Formatted values (currency, percent, thousands separators) are normalized to a bare number, e.g. <code spellcheck="false">$1,200.50</code> → <code spellcheck="false">1200.50</code>.</td>
+        </tr>
+        <tr>
+            <td>ID</td>
+            <td>Single-valued <code spellcheck="false">number</code> or <code spellcheck="false">text</code> label (depending on whether a prefix is configured)</td>
+        </tr>
+        <tr>
+            <td>Multi-select</td>
+            <td>One text label per option (multi)</td>
+        </tr>
+        <tr>
+            <td>URL / Email / Phone</td>
+            <td><code spellcheck="false">url</code> label (<code spellcheck="false">mailto:</code>, <code spellcheck="false">tel:</code> prefix)</td>
+        </tr>
+        <tr>
+            <td>Date</td>
+            <td><ul><li><code spellcheck="false">datetime</code> if at least one has time.</li><li><code spellcheck="false">date</code> if only dates.</li><li>Two attributes if any of the dates have an end date.</li></ul></td>
+        </tr>
+        <tr>
+            <td>Checkbox</td>
+            <td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/<code spellcheck="false">false</code>).</td>
+        </tr>
+        <tr>
+            <td>Person</td>
+            <td>One text label per user (multi)</td>
+        </tr>
+        <tr>
+            <td>Created by / Edited by</td>
+            <td>Single-valued <code spellcheck="false">text</code> label</td>
+        </tr>
+        <tr>
+            <td>Created time / Last edited time</td>
+            <td>Assigned to the note's creation and modification date.</td>
+        </tr>
+        <tr>
+            <td>Relation</td>
+            <td>Mapped to <a href="../../../Advanced%20Usage/Attributes/Relations.md">relations</a>, each link resolved to its target note via the existing cross-page map; targets outside the import are dropped.</td>
+        </tr>
+        <tr>
+            <td>Files &amp; Media</td>
+            <td>The files are preserved as attachments, and a link to them is prepended to the content of the note for visibility.</td>
+        </tr>
+        <tr>
+            <td>Formulas / Rollup</td>
+            <td><p>A <code spellcheck="false">text</code>, <code spellcheck="false">number</code> or <code spellcheck="false">boolean</code> label depending on the value. Dates are rendered as <code spellcheck="false">text</code> because the export doesn't offer any type information.</p><p>The Notion export does not preserve the formula/rollup configuration itself, instead it just exports the value.</p></td>
+        </tr>
+        <tr>
+            <td>Button / Verification / any other type</td>
+            <td>Unsupported, they will be dropped from the import.</td>
+        </tr>
+    </tbody>
+</table>
 
 > [!NOTE]
 > **Technical information**

@@ -1,4 +1,4 @@
-import { app_info as appInfo, getMessagingProvider, getPlatform, utils } from "@triliumnext/core";
+import { app_info as appInfo, getLog, getMessagingProvider, getPlatform, utils } from "@triliumnext/core";
 import type { Express } from "express";
 import fs from "fs";
 import http from "http";
@@ -7,12 +7,12 @@ import tmp from "tmp";
 
 import buildApp from "./app.js";
 import config from "./services/config.js";
+import { startCpuProfiler, writeCpuProfile } from "./services/cpu_profiler.js";
 import { registerOcrHandlers } from "./services/handlers.js";
 import host from "./services/host.js";
-import { getLog } from "@triliumnext/core";
 import port from "./services/port.js";
-import { getDbSize } from "./services/sql_init.js";
 import { isScriptingEnabled } from "./services/scripting_guard.js";
+import { getDbSize } from "./services/sql_init.js";
 import WebSocketMessagingProvider from "./services/ws_messaging_provider.js";
 
 const MINIMUM_NODE_VERSION = "20.0.0";
@@ -37,13 +37,33 @@ export default async function startTriliumServer(): Promise<Express> {
         getLog().info(error);
     });
 
-    function exit() {
-        console.log("Caught interrupt/termination signal. Exiting.");
-        process.exit(0);
+    // When TRILIUM_PROFILE is set we drive the V8 CPU profiler ourselves rather than relying on Node's
+    // --cpu-prof flag: that flag flushes its file during the normal shutdown path, which the exit() handler
+    // below short-circuits with process.exit(0), so the profile is silently never written.
+    const profilerSession = startCpuProfiler();
+
+    let exiting = false;
+    function exit(reason: string) {
+        if (exiting) {
+            return;
+        }
+        exiting = true;
+        console.log(reason);
+        // Writing the profile needs an async inspector round-trip. On a signal this races the process
+        // teardown and often loses, so the reliable trigger is the Enter keypress wired up below; the
+        // signal path is best-effort.
+        writeCpuProfile(profilerSession, () => process.exit(0));
     }
 
-    process.on("SIGINT", exit);
-    process.on("SIGTERM", exit);
+    process.on("SIGINT", () => exit("Caught interrupt/termination signal. Exiting."));
+    process.on("SIGTERM", () => exit("Caught interrupt/termination signal. Exiting."));
+
+    if (profilerSession) {
+        // Pressing Enter fires during normal event-loop operation, so the async profile flush completes
+        // before we exit — unlike Ctrl+C, which the V8 inspector round-trip can't reliably outrun.
+        process.stdin.resume();
+        process.stdin.on("data", () => exit("Writing CPU profile and exiting (TRILIUM_PROFILE)."));
+    }
 
     if (utils.compareVersions(process.versions.node, MINIMUM_NODE_VERSION) < 0) {
         console.error();

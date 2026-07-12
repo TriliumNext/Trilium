@@ -39,6 +39,18 @@ describe("keyboard_actions service", () => {
         expect(actions.some((a) => "actionName" in a && a.actionName === "jumpToNote")).toBe(true);
     });
 
+    it("zoomIn is bound to the plus key as well as equals, so it works on non-US layouts", () => {
+        const actions = keyboardActions.getDefaultKeyboardActions();
+        const zoomIn = actions.find((a) => "actionName" in a && a.actionName === "zoomIn");
+        const shortcuts = (zoomIn && "defaultShortcuts" in zoomIn && zoomIn.defaultShortcuts) || [];
+
+        // Electron-only action: present with both bindings under Electron, empty otherwise.
+        if (shortcuts.length > 0) {
+            expect(shortcuts.some((s) => s.endsWith("+Plus"))).toBe(true);
+            expect(shortcuts.some((s) => s.endsWith("+="))).toBe(true);
+        }
+    });
+
     it("throws if loaded before translations are available", async () => {
         // keyboard_actions was already evaluated during the bootstrap (binding the
         // real i18next), so re-import a fresh copy that picks up the mocked module.

@@ -57,4 +57,14 @@ export default class NodejsCryptoProvider implements CryptoProvider {
 
         return crypto.timingSafeEqual(bufA, bufB);
     }
+
+    base64Encode(bytes: Uint8Array): string {
+        // View the existing memory (zero-copy) rather than reallocating, then let Node's native
+        // (C++) encoder do the work — orders of magnitude faster than a per-byte JS loop.
+        return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString("base64");
+    }
+
+    base64Decode(base64: string): Uint8Array {
+        return Buffer.from(base64, "base64");
+    }
 }

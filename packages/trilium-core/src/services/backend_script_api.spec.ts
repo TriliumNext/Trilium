@@ -33,6 +33,24 @@ describe("BackendScriptApi.log", () => {
     });
 });
 
+describe("BackendScriptApi.transactional", () => {
+    beforeEach(() => becca.reset());
+
+    it("runs the callback inside a transaction and returns its result", () => {
+        const startNote = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
+        const api = new BackendScriptApi(startNote, { startNote });
+
+        let executed = false;
+        const result = api.transactional(() => {
+            executed = true;
+            return 42;
+        });
+
+        expect(executed).toBe(true);
+        expect(result).toBe(42);
+    });
+});
+
 describe("BackendScriptApi markdown conversion", () => {
     beforeEach(() => becca.reset());
 

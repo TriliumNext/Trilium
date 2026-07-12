@@ -439,6 +439,32 @@ describe("convertNotionHtml — code blocks", () => {
     });
 });
 
+describe("convertNotionHtml — inline databases", () => {
+    const dbId = "38ac5eca1b8b808babeaf10c0980fa5b";
+    const placeholder = `<section class="include-note" data-notion-id="${dbId}" data-box-size="medium">&nbsp;</section>`;
+
+    it("replaces a rendered inline-database table (partial export) with an include-note placeholder", () => {
+        const input =
+            `<div style="display:contents" dir="ltr"><div id="38ac5eca-1b8b-808b-abea-f10c0980fa5b" class="collection-content"><h4 class="collection-title">Database title</h4>` +
+            `<div class="collection-content-wrapper"><table class="collection-content"><thead><tr><th>Name</th></tr></thead><tbody>` +
+            `<tr id="38ac5eca-1b8b-8069-afb5-c9fe40e53c42"><td class="cell-title"><a href="Inline%20database%20test/Database%20title/First%2038ac5eca1b8b8069afb5c9fe40e53c42.html">First</a></td></tr>` +
+            `</tbody></table></div></div></div>`;
+        expect(convertNotionHtml(input)).toBe(placeholder);
+    });
+
+    it("replaces an inline-database CSV link (full/workspace export) with the same placeholder", () => {
+        const input =
+            `<div style="display:contents" dir="ltr"><div id="38ac5eca-1b8b-808b-abea-f10c0980fa5b" class="collection-content"><h4 class="collection-title">Database title</h4>` +
+            `<a href="Inline%20database%20test/Database%20title%20${dbId}.csv"><code>x</code></a></div></div>`;
+        expect(convertNotionHtml(input)).toBe(placeholder);
+    });
+
+    it("leaves a collection-content block without an id untouched", () => {
+        const input = `<div class="collection-content"><h4 class="collection-title">No id</h4></div>`;
+        expect(convertNotionHtml(input)).toBe(input);
+    });
+});
+
 describe("convertNotionHtml — link-to-page blocks", () => {
     it("unwraps a link-to-page figure into a paragraph link (href left for the importer to resolve)", () => {
         const input = `<div style="display:contents" dir="ltr"><figure id="386c5eca" class="link-to-page"><a href="Formatting%20test/Subpage%20386c5eca1b8b802a90d8d891c7e62cd5.html">Subpage</a></figure></div>`;

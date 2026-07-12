@@ -66,7 +66,7 @@ async function requestToSyncServer<T>(method: string, path: string, body?: strin
     )) as T;
 }
 
-async function setupSyncFromSyncServer(syncServerHost: string, syncProxy: string, password: string): Promise<SetupSyncFromServerResponse> {
+async function setupSyncFromSyncServer(syncServerHost: string, syncProxy: string, password: string, syncMaxBlobContentSize = 0): Promise<SetupSyncFromServerResponse> {
     if (sqlInit.isDbInitialized()) {
         return {
             result: "failure",
@@ -98,7 +98,7 @@ async function setupSyncFromSyncServer(syncServerHost: string, syncProxy: string
             };
         }
 
-        await sqlInit.createDatabaseForSync(resp.options, syncServerHost, syncProxy);
+        await sqlInit.createDatabaseForSync(resp.options, syncServerHost, syncProxy, syncMaxBlobContentSize);
 
         triggerSync();
 

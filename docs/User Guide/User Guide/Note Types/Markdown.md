@@ -119,15 +119,33 @@ An image reference to an attachment looks like this:
 ![Name.jpeg](api/attachments/z50RceuHXe9J/image/image)
 ```
 
-### Slash commands
+### Auto-completion
+
+#### Slash commands
 
 Just like <a class="reference-link" href="Text.md">Text</a> notes, Markdown notes support a selection of slash commands:
 
-*   Creating [admonitions](Text/Block%20quotes%20%26%20admonitions.md) (e.g. `/tip`)
-*   Uploading images (`/image`).
 *   Inserting the current date & time (`/date`).
+*   [Including](Text/Include%20Note.md) another note (`/include`).
+*   Uploading and inserting an image (`/image`).
+*   Inserting a note link (`/link`).
+*   Inserting a math equation block (`/math`).
+*   Inserting a [footnote](Text/Footnotes.md) (`/footnote`).
+*   Inserting a [Mermaid](Mermaid%20Diagrams.md) diagram (`/mermaid`), with one variant per sample template (e.g. `/mermaid:flowchart`).
+*   Inserting a collapsible block (`/collapsible`).
+*   Inserting a page break for printing (`/page-break`).
+*   Inserting a table (`/table`).
+*   Creating admonitions (e.g. `/tip`, `/note`, `/important`, `/caution`, `/warning`).
+*   Inserting task items (`/todo:<state>`, e.g. `/todo:done`), one per configured task state.
+*   Inserting code snippets (`/snippet:<name>`) from your Markdown/plain-text snippet notes.
 
-Note that slash commands only work outside of inline 
+Note that slash commands only work outside of code blocks and inline code.
+
+#### Code block language auto-completion
+
+Starting with v0.104.0, typing \`\`\` to insert a code block will automatically open a list of suggested language types which have syntax highlighting.
+
+The list of languages matches the one for <a class="reference-link" href="Code.md">Code</a> notes set in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>, it's not the full list of languages supported by Trilium.
 
 ### Other features
 

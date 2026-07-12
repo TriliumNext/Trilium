@@ -5,6 +5,7 @@ import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
 import { applyInlineMermaid } from "./services/content_renderer_text";
 import froca from "./services/froca";
+import { waitForPendingRenders } from "./services/pending_renders";
 import { isElectron } from "./services/utils";
 import { CustomNoteList, useNoteViewType } from "./widgets/collections/NoteList";
 
@@ -110,8 +111,15 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
                 if (note.type === "text") {
                     await import("@triliumnext/ckeditor5/src/theme/ck-content.css");
                 }
-                const { $renderedContent } = await content_renderer.getRenderedContent(note, { noChildrenList: true });
+                // Printing preserves full include-note nesting (see expandNestedIncludes).
+                const { $renderedContent } = await content_renderer.getRenderedContent(note, { noChildrenList: true, expandNestedIncludes: true });
                 container.replaceChildren(...$renderedContent);
+
+                // Note types rendered as a mounted component (an AI chat) start their transform
+                // passes — mermaid, syntax highlighting, included notes — in a layout effect that
+                // getRenderedContent does not await. Printing snapshots the page, so wait for those
+                // to settle first; otherwise they land after the capture and are missing from the PDF.
+                await waitForPendingRenders(container);
 
                 // Wait for all images to load.
                 const images = Array.from(container.querySelectorAll("img"));

@@ -21,9 +21,10 @@ import { createImageSrcUrl, isElectron, openInAppHelpFromUrl } from "../services
 import { ViewTypeOptions } from "./collections/interface";
 import ActionButton, { ActionButtonProps } from "./react/ActionButton";
 import { ButtonGroup } from "./react/Button";
-import { useIsNoteReadOnly, useNoteLabel, useNoteLabelBoolean, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
+import { useEffectiveReadOnly, useIsNoteReadOnly, useNoteLabel, useNoteLabelBoolean, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
 import NoteLink from "./react/NoteLink";
 import RawHtml from "./react/RawHtml";
+import { isSplitEditorForcedReadOnly, resolveDisplayMode } from "./type_widgets/helpers/split_editor_mode";
 
 export interface FloatingButtonContext {
     parentComponent: Component;
@@ -112,12 +113,14 @@ function ToggleReadOnlyButton({ note, isDefaultViewMode }: FloatingButtonContext
     />;
 }
 
-function DisplayModeSwitcher({ note, isDefaultViewMode }: FloatingButtonContext) {
+function DisplayModeSwitcher({ note, noteContext, isDefaultViewMode }: FloatingButtonContext) {
     const [ displayMode, setDisplayMode ] = useNoteLabel(note, "displayMode");
-    const isEnabled = (note.isMarkdown() || note.type === "mermaid") && note.isContentAvailable() && isDefaultViewMode;
+    const readOnly = useEffectiveReadOnly(note, noteContext);
+    const isEnabled = (note.isMarkdown() || note.type === "mermaid" || note.isIconPack()) && note.isContentAvailable() && isDefaultViewMode;
     if (!isEnabled) return false;
 
-    const mode = displayMode === "source" || displayMode === "preview" ? displayMode : "split";
+    // Mirror SplitEditor's mode resolution so the active button matches the actual pane.
+    const mode = resolveDisplayMode(displayMode, readOnly || isSplitEditorForcedReadOnly(note));
     const buttons: Array<{ value: "source" | "split" | "preview"; icon: string; text: string }> = [
         { value: "source", icon: "bx bx-code", text: t("display_mode.source") },
         { value: "split", icon: "bx bxs-dock-left", text: t("display_mode.split") },

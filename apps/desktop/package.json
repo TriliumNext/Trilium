@@ -21,6 +21,9 @@
     "electron-forge:package": "pnpm build && electron-forge package dist",
     "electron-forge:start": "pnpm build && electron-forge start dist",
     "e2e": "pnpm build && cross-env TRILIUM_INTEGRATION_TEST=memory-no-store TRILIUM_PORT=8082 TRILIUM_DATA_DIR=data-e2e TRILIUM_ELECTRON_DATA_DIR=data-e2e-electron-8082 ELECTRON_IS_DEV=0 playwright test",
+    "generate-setup-banners": "tsx electron-forge/setup-icon/generate/generate.mts",
+    "generate-dmg-background": "tsx electron-forge/dmg-background/generate.mts",
+    "generate-dmg-preview": "tsx electron-forge/dmg-background/preview.mjs",
     "test": "vitest --config vitest.config.mts"
   },
   "dependencies": {
@@ -40,13 +43,16 @@
     "@electron-forge/maker-zip": "7.11.2",
     "@electron-forge/plugin-auto-unpack-natives": "7.11.2",
     "@electron-forge/plugin-fuses": "7.11.2",
-    "@electron/fuses": "2.1.2",
+    "@electron/fuses": "2.1.3",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/core": "workspace:*",
     "@triliumnext/server": "workspace:*",
     "@types/electron-squirrel-startup": "1.0.2",
-    "electron": "42.4.1",
+    "@types/pngjs": "6.0.5",
+    "electron": "42.6.1",
+    "gifenc": "1.0.3",
     "node-mocks-http": "1.17.2",
+    "pngjs": "7.0.0",
     "prebuild-install": "7.1.3"
   }
 }

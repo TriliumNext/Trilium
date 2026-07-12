@@ -12,9 +12,10 @@ import SplitEditor, { PreviewButton, SplitEditorProps } from "./SplitEditor";
 
 interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
     /**
-     * The name of the note attachment (without .svg extension) that will be used for storing the preview.
+     * The title of the note attachment used for storing the preview, extension included. Take it from
+     * `NOTE_TYPE_IMAGE_ATTACHMENTS` so that the `api/images` endpoints can find it again.
      */
-    attachmentName: string;
+    attachmentTitle: string;
     /**
      * Called upon when the SVG preview needs refreshing, such as when the editor has switched to a new note or the content has switched.
      *
@@ -36,7 +37,7 @@ interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
  * - Automatically saves the SVG attachment.
  *
  */
-export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg, ...props }: SvgSplitEditorProps) {
+export default function SvgSplitEditor({ ntxId, note, attachmentTitle, renderSvg, ...props }: SvgSplitEditorProps) {
     const [ svg, setSvg ] = useState<string>();
     const [ error, setError ] = useState<string | null | undefined>();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -68,25 +69,25 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
 
         const payload = {
             role: "image",
-            title: `${attachmentName}.svg`,
+            title: attachmentTitle,
             mime: "image/svg+xml",
             content: svg,
             position: 0
         };
 
         server.post(`notes/${note.noteId}/attachments?matchBy=title`, payload);
-    }, [ svg, attachmentName, note.noteId ]);
+    }, [ svg, attachmentTitle, note.noteId ]);
 
     // Save the SVG when entering a note only when it does not have an attachment.
     useEffect(() => {
         if (!svg) return; // Wait until SVG is rendered
 
         note?.getAttachments().then((attachments) => {
-            if (!attachments.find((a) => a.title === `${attachmentName}.svg`)) {
+            if (!attachments.find((a) => a.title === attachmentTitle)) {
                 onSave();
             }
         }).catch(e => console.error("Failed to get attachments for SVGSplitEditor", e));
-    }, [ note, svg, attachmentName, onSave ]);
+    }, [ note, svg, attachmentTitle, onSave ]);
 
     // Import/export
     useTriliumEvent("exportSvg", async({ ntxId: eventNtxId }) => {

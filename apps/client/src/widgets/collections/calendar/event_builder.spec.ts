@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { buildNote, buildNotes } from "../../../test/easy-froca.js";
 import { buildEvent, buildEvents } from "./event_builder.js";
 import { LOCALE_MAPPINGS } from "./index.js";
+import { isValidDuration } from "./utils.js";
 import { LOCALES } from "@triliumnext/commons";
 
 describe("Building events", () => {
@@ -256,6 +257,41 @@ describe("Recurrence", () => {
     });
 });
 
+
+describe("isValidDuration", () => {
+    it("accepts valid durations", () => {
+        expect(isValidDuration("00:01:00")).toBe(true);  // minimum: 1 minute
+        expect(isValidDuration("00:15:00")).toBe(true);
+        expect(isValidDuration("00:30:00")).toBe(true);
+        expect(isValidDuration("01:00:00")).toBe(true);
+        expect(isValidDuration("24:00:00")).toBe(true);  // maximum: 24 hours
+    });
+
+    it("rejects durations below 1 minute", () => {
+        expect(isValidDuration("00:00:00")).toBe(false);
+        expect(isValidDuration("00:00:30")).toBe(false);
+        expect(isValidDuration("00:00:59")).toBe(false);
+    });
+
+    it("rejects durations above 24 hours", () => {
+        expect(isValidDuration("25:00:00")).toBe(false);
+        expect(isValidDuration("24:01:00")).toBe(false);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(isValidDuration("00:aa:00")).toBe(false);
+        expect(isValidDuration("abc")).toBe(false);
+        expect(isValidDuration("1:0:0")).toBe(false);
+        expect(isValidDuration("")).toBe(false);
+        expect(isValidDuration(null)).toBe(false);
+        expect(isValidDuration(undefined)).toBe(false);
+    });
+
+    it("rejects out-of-range minute/second values", () => {
+        expect(isValidDuration("00:60:00")).toBe(false);
+        expect(isValidDuration("00:00:60")).toBe(false);
+    });
+});
 
 describe("Building locales", () => {
     it("every language has a locale defined", async () => {

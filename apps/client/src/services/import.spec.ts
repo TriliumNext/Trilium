@@ -1,20 +1,28 @@
+import type { WebSocketMessage } from "@triliumnext/commons";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { WebSocketMessage } from "@triliumnext/commons";
+// import.ts registers its task-progress ws.subscribeToMessages handlers at module load, and it is now loaded
+// eagerly (pulled into app_context's graph via main_tree_executors) so its toasts survive a page refresh.
+// That means it evaluates the moment this spec imports app_context — before any in-body override could run —
+// so we mock ws.js here (hoisted above all imports) to CAPTURE handlers as they register. The captured list
+// also holds handlers from other eagerly-loaded services, so tests dispatch to ALL of them and rely on each
+// handler self-filtering by taskType, mirroring protected_session.spec.
+type MessageHandler = (message: WebSocketMessage) => void | Promise<void>;
+const { handlers } = vi.hoisted(() => ({ handlers: [] as MessageHandler[] }));
+
+vi.mock("./ws.js", () => ({
+    default: {
+        subscribeToMessages(cb: MessageHandler) {
+            handlers.push(cb);
+        },
+        waitForMaxKnownEntityChangeId: async () => {}
+    }
+}));
+
 import appContext from "../components/app_context.js";
 import * as i18n from "./i18n.js";
 import server from "./server.js";
 import toastService from "./toast.js";
-import ws from "./ws.js";
-
-// Capture the message handlers that import.ts registers at module load. The
-// global ws mock's subscribeToMessages is a no-op, so we replace it with a
-// capturing variant BEFORE importing the module under test.
-type MessageHandler = (message: WebSocketMessage) => void | Promise<void>;
-const handlers: MessageHandler[] = [];
-ws.subscribeToMessages = ((cb: MessageHandler) => {
-    handlers.push(cb);
-}) as typeof ws.subscribeToMessages;
 
 let importService: typeof import("./import.js").default;
 let uploadFiles: typeof import("./import.js").uploadFiles;
@@ -23,8 +31,9 @@ beforeAll(async () => {
     const mod = await import("./import.js");
     importService = mod.default;
     uploadFiles = mod.uploadFiles;
-    // Two handlers registered at load: importNotes + importAttachments.
-    expect(handlers.length).toBe(2);
+    // import.ts contributes three handlers (importNotes + importAttachments + export); the rest of the eager
+    // graph adds more, so just assert ours were captured.
+    expect(handlers.length).toBeGreaterThanOrEqual(3);
 });
 
 // Toast service spies.
@@ -102,18 +111,23 @@ describe("uploadFiles", () => {
         // the test env, so t() returns the key and never interpolates). We assert
         // the call args/structure rather than a human-readable translated string.
         const tSpy = vi.spyOn(i18n, "t");
+        vi.useFakeTimers();
         try {
             ($ as any).ajax = vi.fn(async (opts: any) => {
                 opts.error({ responseText: "boom" });
                 return {};
             });
             await uploadFiles("notes", "p1", ["a"], { shrinkImages: false });
+            // The error toast is deferred (so a WebSocket taskError can claim the taskId first and
+            // win), so the fallback only fires after IMPORT_ERROR_FALLBACK_DELAY — flush it first.
+            vi.runOnlyPendingTimers();
             expect(toastService.showError).toHaveBeenCalledTimes(1);
             // The xhr.responseText ("boom") must be forwarded into the message
             // interpolation, not dropped or replaced with the whole xhr object.
             expect(tSpy).toHaveBeenCalledWith("import.failed", { message: "boom" });
         } finally {
             tSpy.mockRestore();
+            vi.useRealTimers();
         }
     });
 
@@ -131,11 +145,11 @@ async function dispatch(message: any) {
 }
 
 describe("importNotes ws handler", () => {
-    const handler = () => handlers[0];
+    const handler = () => dispatch;
 
     it("ignores messages without a matching taskType", async () => {
         await handler()({ type: "taskSucceeded" } as any); // no taskType
-        await handler()({ type: "taskSucceeded", taskType: "importAttachments" } as any); // wrong type
+        await handler()({ type: "taskSucceeded", taskType: "unrelatedTask" } as any); // not addressed to any toast handler
         expect(toastService.showError).not.toHaveBeenCalled();
         expect(toastService.showPersistent).not.toHaveBeenCalled();
     });
@@ -144,6 +158,15 @@ describe("importNotes ws handler", () => {
         await handler()({ type: "taskError", taskType: "importNotes", taskId: "t1", message: "nope" } as any);
         expect(toastService.closePersistent).toHaveBeenCalledWith("t1");
         expect(toastService.showError).toHaveBeenCalledWith("nope");
+    });
+
+    it("shows the error only once when the same task reports it twice (the WebSocket + fallback dedup)", async () => {
+        // A fresh taskId — the dedup guard is module-level state that survives clearAllMocks.
+        await handler()({ type: "taskError", taskType: "importNotes", taskId: "dedupT", message: "boom" } as any);
+        await handler()({ type: "taskError", taskType: "importNotes", taskId: "dedupT", message: "boom again" } as any);
+        // The second report for the same taskId is suppressed, so only the first toast shows.
+        expect(toastService.showError).toHaveBeenCalledTimes(1);
+        expect(toastService.showError).toHaveBeenCalledWith("boom");
     });
 
     it("shows a persistent count-only progress toast when no total is reported", async () => {
@@ -158,6 +181,20 @@ describe("importNotes ws handler", () => {
         await handler()({ type: "taskProgressCount", taskType: "importNotes", taskId: "t2", progressCount: 3, totalCount: 12 } as any);
         const toast = (toastService.showPersistent as any).mock.calls[0][0];
         expect(toast.progress).toBe(3 / 12);
+        // The in-progress toast can't be dismissed — the import runs regardless, so a × would read as "cancel".
+        expect(toast.dismissible).toBe(false);
+    });
+
+    it("uses phase-specific messages for the zip extraction and processing phases", async () => {
+        const tSpy = vi.spyOn(i18n, "t").mockImplementation(((key: string) => key) as typeof i18n.t);
+
+        await handler()({ type: "taskProgressCount", taskType: "importNotes", taskId: "t2", progressCount: 3, totalCount: 12, phase: "extracting" } as any);
+        expect((toastService.showPersistent as any).mock.calls.at(-1)[0].message).toBe("import.extracting");
+
+        await handler()({ type: "taskProgressCount", taskType: "importNotes", taskId: "t2", progressCount: 7, totalCount: 9, phase: "processing" } as any);
+        expect((toastService.showPersistent as any).mock.calls.at(-1)[0].message).toBe("import.processing");
+
+        tSpy.mockRestore();
     });
 
     it("shows a generic 'starting' message (no bar) before anything is counted", async () => {
@@ -179,6 +216,8 @@ describe("importNotes ws handler", () => {
         const toast = (toastService.showPersistent as any).mock.calls[0][0];
         expect(toast.timeout).toBe(5000);
         expect(setNote).toHaveBeenCalledWith("imp1");
+        // The terminal toast re-enables dismissal, overriding the progress toast's value via the merge.
+        expect(toast.dismissible).toBe(true);
     });
 
     it("shows a success toast but does not navigate when there is no imported note id", async () => {
@@ -212,11 +251,11 @@ describe("importNotes ws handler", () => {
 });
 
 describe("importAttachments ws handler", () => {
-    const handler = () => handlers[1];
+    const handler = () => dispatch;
 
     it("ignores messages without a matching taskType", async () => {
         await handler()({ type: "taskSucceeded" } as any); // no taskType
-        await handler()({ type: "taskSucceeded", taskType: "importNotes" } as any); // wrong type
+        await handler()({ type: "taskSucceeded", taskType: "unrelatedTask" } as any); // not addressed to any toast handler
         expect(toastService.showError).not.toHaveBeenCalled();
         expect(toastService.showPersistent).not.toHaveBeenCalled();
     });
@@ -287,6 +326,50 @@ describe("importAttachments ws handler", () => {
         expect(toastService.showError).not.toHaveBeenCalled();
         expect(toastService.showPersistent).not.toHaveBeenCalled();
         expect(toastService.closePersistent).not.toHaveBeenCalled();
+    });
+});
+
+describe("export ws handler", () => {
+    const handler = () => dispatch;
+
+    it("ignores messages without a matching taskType", async () => {
+        await handler()({ type: "taskSucceeded" } as any); // no taskType
+        await handler()({ type: "taskSucceeded", taskType: "unrelatedTask" } as any); // not addressed to any toast handler
+        expect(toastService.showPersistent).not.toHaveBeenCalled();
+    });
+
+    it("closes the toast and shows an error on taskError", async () => {
+        await handler()({ type: "taskError", taskType: "export", taskId: "e1", message: "boom" } as any);
+        expect(toastService.closePersistent).toHaveBeenCalledWith("e1");
+        expect(toastService.showError).toHaveBeenCalledWith("boom");
+    });
+
+    it("shows an indeterminate toast (no bar) before a total is known, and a progress bar once it is", async () => {
+        const tSpy = vi.spyOn(i18n, "t").mockImplementation(((key: string) => key) as typeof i18n.t);
+
+        await handler()({ type: "taskProgressCount", taskType: "export", taskId: "e2", progressCount: 4 } as any);
+        let toast = (toastService.showPersistent as any).mock.calls.at(-1)[0];
+        expect(toast.message).toBe("export.preparing_export");
+        expect(toast.progress).toBeUndefined();
+
+        await handler()({ type: "taskProgressCount", taskType: "export", taskId: "e2", progressCount: 4, totalCount: 8 } as any);
+        toast = (toastService.showPersistent as any).mock.calls.at(-1)[0];
+        expect(toast.message).toBe("export.export_in_progress_with_total");
+        expect(toast.progress).toBe(4 / 8);
+        // The in-progress toast can't be dismissed — the export runs regardless of the toast.
+        expect(toast.dismissible).toBe(false);
+
+        tSpy.mockRestore();
+    });
+
+    it("shows a timed success toast that clears the progress bar on taskSucceeded", async () => {
+        await handler()({ type: "taskSucceeded", taskType: "export", taskId: "e3", result: null } as any);
+        const toast = (toastService.showPersistent as any).mock.calls.at(-1)[0];
+        expect(toast.id).toBe("e3");
+        expect(toast.timeout).toBe(5000);
+        expect(toast.progress).toBeUndefined();
+        // The terminal toast re-enables dismissal, overriding the progress toast's value via the merge.
+        expect(toast.dismissible).toBe(true);
     });
 });
 

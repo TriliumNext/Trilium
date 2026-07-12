@@ -4,6 +4,7 @@
 type Labels = {
     color: string;
     iconClass: string;
+    iconPack: string;
     workspace: boolean;
     workspaceTabBackgroundColor: string;
     workspaceIconClass: string;
@@ -54,6 +55,8 @@ type Labels = {
     "calendar:showHiddenEvents": boolean;
     "calendar:view": string;
     "calendar:initialDate": string;
+    "calendar:slotDuration": string;
+    "calendar:slotLabelInterval": string;
     "map:style": string;
     "map:scale": boolean;
     "map:hideLabels": boolean;

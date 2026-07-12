@@ -47,7 +47,10 @@ export default function MoveToDialog() {
             className="move-to-dialog"
             size="lg" maxWidth={1000}
             title={t("move_to.dialog_title")}
-            footer={<Button text={t("move_to.move_button")} keyboardShortcut="Enter" />}
+            footer={<>
+                <Button text={t("modal.cancel")} onClick={() => setShown(false)} />
+                <Button text={t("move_to.move_button")} keyboardShortcut="Enter" />
+            </>}
             onSubmit={onSubmit}
             onShown={() => triggerRecentNotes(autoCompleteRef.current)}
             onHidden={() => setShown(false)}

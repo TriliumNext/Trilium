@@ -1,7 +1,6 @@
 import { t } from "../../services/i18n";
 import options from "../../services/options";
 import BasicPropertiesTab from "./BasicPropertiesTab";
-import CollectionPropertiesTab from "./CollectionPropertiesTab";
 import EditedNotesTab from "./EditedNotesTab";
 import FilePropertiesTab from "./FilePropertiesTab";
 import FormattingToolbar, { showFormattingToolbar } from "./FormattingToolbar";
@@ -49,13 +48,6 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         content: EditedNotesTab,
         show: ({ note }) => note?.hasOwnedLabel("dateNote"),
         activate: () => options.is("editedNotesOpenInRibbon")
-    },
-    {
-        title: t("book_properties.book_properties"),
-        icon: "bx bx-book",
-        content: CollectionPropertiesTab,
-        show: ({ note }) => (note?.type === "book" || note?.type === "search"),
-        toggleCommand: "toggleRibbonTabBookProperties"
     },
     {
         title: t("note_properties.info"),

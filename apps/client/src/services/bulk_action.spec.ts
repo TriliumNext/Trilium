@@ -15,7 +15,9 @@ import RenameRelationBulkAction from "../widgets/bulk_actions/relation/rename_re
 import DeleteRelationBulkAction from "../widgets/bulk_actions/relation/delete_relation";
 import RenameNoteBulkAction from "../widgets/bulk_actions/note/rename_note";
 import MoveNoteBulkAction from "../widgets/bulk_actions/note/move_note";
+import ConvertNoteBulkAction from "../widgets/bulk_actions/note/convert_note";
 import DeleteNoteBulkAction from "../widgets/bulk_actions/note/delete_note";
+import SaveRevisionBulkAction from "../widgets/bulk_actions/note/save_revision";
 import DeleteRevisionsBulkAction from "../widgets/bulk_actions/note/delete_revisions";
 import ExecuteScriptBulkAction from "../widgets/bulk_actions/execute_script";
 import server from "./server.js";
@@ -71,7 +73,9 @@ describe("bulk_action service", () => {
         expect(bulkActionService.ACTION_GROUPS[2].actions).toEqual([
             RenameNoteBulkAction,
             MoveNoteBulkAction,
+            ConvertNoteBulkAction,
             DeleteNoteBulkAction,
+            SaveRevisionBulkAction,
             DeleteRevisionsBulkAction
         ]);
         // The "other" group contains exactly ExecuteScriptBulkAction.

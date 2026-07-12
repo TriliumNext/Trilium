@@ -66,7 +66,9 @@
     "force-save-revision": "アクティブノートの新しいノートリヴィジョンを強制する",
     "toggle-classic-editor-toolbar": "固定ツールバーエディターの書式設定タブ切り替え",
     "save-named-revision": "アクティブなノートの変更履歴を名前を付けて保存",
-    "toggle-archived-notes": "ノートツリーでアーカイブされたノートを表示 / 非表示にする"
+    "toggle-archived-notes": "ノートツリーでアーカイブされたノートを表示 / 非表示にする",
+    "peek-right-pane": "右ペインを、コンテンツの上にフローティング表示し、フォーカスが外れると閉じる一時的なパネルとしてプレビューします",
+    "show-deleted-notes": "\"削除されたノート\" ダイアログを表示"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -165,27 +167,29 @@
     "toggle-ribbon-tab-classic-editor": "リボンタブのクラシックエディターに切り替える",
     "toggle-ribbon-tab-promoted-attributes": "リボンタブ切り替え：プロモート属性",
     "save-named-revision": "変更履歴を名前を付けて保存",
-    "toggle-archived-notes": "アーカイブ済みノートの表示の切り替え"
+    "toggle-archived-notes": "アーカイブ済みノートの表示の切り替え",
+    "peek-right-pane": "右ペインをピーク表示",
+    "show-deleted-notes": "削除されたノートを表示"
   },
   "login": {
     "title": "ログイン",
     "heading": "Trilium ログイン",
     "incorrect-totp": "TOTPが正しくありません。もう一度お試しください。",
-    "incorrect-password": "パスワードが正しくありません。もう一度お試しください。",
+    "incorrect-password": "パスワードが間違っています。もう一度お試しください。",
     "password": "パスワード",
     "button": "ログイン",
-    "remember-me": "ログイン情報を記憶する",
+    "remember-me": "ログイン状態を保持する",
     "sign_in_with_sso": "{{ ssoIssuerName }}でログイン",
-    "sso-wrong-account": "そのアカウントはこの Trilium インスタンスにリンクされているものではありません。リンクされているアカウントでサインインしてください。",
-    "sso-not-enrolled": "シングルサインオンはまだ設定されていません。まずパスワードでサインインし、設定からアカウントをリンクしてください。"
+    "sso-wrong-account": "そのアカウントは、この Trilium インスタンスに連携されていません。連携済みのアカウントでサインインしてください。",
+    "sso-not-enrolled": "シングルサインオンはまだ設定されていません。まずはパスワードでサインインし、その後、設定からアカウントを連携させてください。"
   },
   "set_password": {
     "title": "パスワードの設定",
     "heading": "パスワードの設定",
-    "description": "web から Trilium を始めるには、パスワードを設定する必要があります。設定したパスワードを使ってログインします。",
+    "description": "ウェブから Trilium を利用し始めるには、まずパスワードを設定する必要があります。設定したパスワードは、今後のログインに使用します。",
     "password": "パスワード",
-    "button": "パスワードの設定",
-    "password-confirmation": "パスワードの再入力"
+    "button": "パスワードを設定",
+    "password-confirmation": "パスワードの確認"
   },
   "weekdays": {
     "monday": "月曜日",
@@ -287,7 +291,9 @@
     "task-state-attr-color": "色",
     "task-state-attr-is-hidden": "リストから非表示",
     "security-title": "セキュリティ",
-    "desktop-title": "デスクトップ"
+    "desktop-title": "デスクトップ",
+    "deleted-notes-title": "削除されたノート",
+    "color-scheme-switcher-title": "配色の切り替え"
   },
   "notes": {
     "new-note": "新しいノート",
@@ -429,9 +435,29 @@
     "root-title": "OneNote インポート"
   },
   "notion_import": {
-    "root-title": "Notion インポート"
+    "root-title": "Notion インポート",
+    "markdown-export-unsupported": "これは Notion の \"Markdown & CSV\" エクスポートのようですが、Trilium ではインポートできません。Notion のワークスペースを \"HTML\" 形式で再度エクスポートし、そちらをインポートしてください。",
+    "subpage-folders-disabled": "この Notion エクスポートは \"サブページ用のフォルダーを作成\" オプションを無効にして作成されているため、ページの階層構造を復元できません。Notion から \"サブページ用のフォルダーを作成\" を有効にして再度エクスポートし、そちらをインポートしてください。"
   },
   "keep_import": {
     "root-title": "Google Keep インポート"
+  },
+  "anytype_import": {
+    "root-title": "Anytype インポート",
+    "protobuf-export-unsupported": "これは Anytype の \"Protobuf\" エクスポートのようですが、 Trilium ではインポートできません。Anytype のスペースを、\"Any-Block\" 形式で \"JSON\" を選択して再度エクスポートし、そちらをインポートしてください。",
+    "markdown-export-unsupported": "これは Anytype の \"Markdown\" エクスポートのようですが、 Trilium ではインポートできません。Anytype のスペースを、\"Any-Block\" 形式で \"JSON\" を選択して再度エクスポートし、そちらをインポートしてください。"
+  },
+  "obsidian_import": {
+    "root-title": "Obsidian インポート"
+  },
+  "export": {
+    "zip_filter": "ZIP アーカイブ (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "選択したファイルの有効期限が切れているか、ファイルが無効です。もう一度ファイルを選択してください。"
+  },
+  "note_conversion": {
+    "revision_before_markdown": "マークダウンへの変換前",
+    "revision_before_text": "テキストノートへの変換前"
   }
 }

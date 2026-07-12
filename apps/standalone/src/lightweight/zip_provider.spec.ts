@@ -83,6 +83,41 @@ describe("BrowserZipArchive", () => {
     });
 });
 
+describe("BrowserZipArchive store + backpressure", () => {
+    it("round-trips an entry appended with store: true (uncompressed)", async () => {
+        const archive = provider.createZipArchive();
+        archive.append("already-compressed", { name: "image.jpg", store: true });
+
+        let sent: Uint8Array | undefined;
+        archive.pipe({ send: (body: unknown) => { sent = body as Uint8Array; } });
+        await archive.finalize();
+
+        const unzipped = unzipSync(sent ?? new Uint8Array());
+        expect(new TextDecoder().decode(unzipped["image.jpg"])).toBe("already-compressed");
+    });
+
+    it("waitForCapacity resolves immediately (the browser builds the archive in memory)", async () => {
+        const archive = provider.createZipArchive();
+        await expect(archive.waitForCapacity?.()).resolves.toBeUndefined();
+    });
+});
+
+describe("BrowserZipProvider path sources are unsupported", () => {
+    it("readZipFile throws for a { path } source", () => {
+        // readZipFile isn't async, so the guard throws synchronously before the work promise is created;
+        // real callers await it inside an async function, where the throw surfaces as a rejection anyway.
+        expect(() => provider.readZipFile({ path: "/tmp/x.zip" }, async () => {})).toThrow(
+            "Path-based zip reading is not supported in the browser"
+        );
+    });
+
+    it("detectFilenameEncoding rejects a { path } source", async () => {
+        await expect(provider.detectFilenameEncoding({ path: "/tmp/x.zip" })).rejects.toThrow(
+            "Path-based zip reading is not supported in the browser"
+        );
+    });
+});
+
 describe("BrowserZipProvider.createFileStream", () => {
     it("is unsupported in the browser", () => {
         expect(() => provider.createFileStream("/tmp/x")).toThrow("File stream creation is not supported");

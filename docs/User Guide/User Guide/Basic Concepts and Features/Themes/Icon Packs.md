@@ -1,7 +1,4 @@
 # Icon Packs
-> [!IMPORTANT]
-> This feature is still in preview and is available only in the [nightly release](https://docs.triliumnotes.org/user-guide/advanced-usage/nightly-release).
-
 <figure class="image image-style-align-right image_resized" style="width:45.14%;"><img style="aspect-ratio:854/649;" src="Icon Packs_image.png" width="854" height="649"></figure>
 
 By default, Trilium comes with a set of icons called Boxicons v2. Since v0.102.0, custom icon packs allow a wider selection of icons for notes.

@@ -35,6 +35,7 @@ let mainWindow: BrowserWindow | null;
 let setupWindow: BrowserWindow | null;
 let allWindows: BrowserWindow[] = []; // Used to store all windows, sorted by the order of focus.
 const loadedSpellcheckSessions = new WeakSet<Session>();
+const exportRevealSessions = new WeakSet<Session>();
 
 // Set to `true` once the app is genuinely quitting (via `before-quit`, which fires
 // for every real quit path: Cmd+Q, the tray "Quit" item, the app menu, OS shutdown).
@@ -206,6 +207,7 @@ async function configureWebContents(webContents: WebContents, spellcheckEnabled:
     // which never pass through this function) by web_contents_security.ts.
 
     setupSpellcheckForSession(webContents.session, spellcheckEnabled);
+    setupExportRevealForSession(webContents.session);
 
     // Forward full-screen events to the renderer via IPC.
     const win = electron.BrowserWindow.fromWebContents(webContents);
@@ -260,6 +262,30 @@ function isDevToolsDocked(webContents: WebContents) {
     // fromWebContents() returns null.
     const devToolsWindow = electron.BrowserWindow.fromWebContents(devToolsWebContents);
     return devToolsWindow !== null && devToolsWindow === electron.BrowserWindow.fromWebContents(webContents);
+}
+
+/**
+ * Reveals note exports in the OS file manager once their download finishes, matching the native subtree
+ * export (which reveals via shell.showItemInFolder). Single-note and OPML exports go through Electron's
+ * download manager rather than the native handler, so they're caught here. Scoped to `/export/` URLs so
+ * attachment/revision/file downloads are left alone, and registered once per session.
+ */
+function setupExportRevealForSession(session: Session) {
+    if (exportRevealSessions.has(session)) {
+        return;
+    }
+    exportRevealSessions.add(session);
+
+    session.on("will-download", (_event, item) => {
+        if (!/\/export\//.test(item.getURL())) {
+            return;
+        }
+        item.once("done", (_e, state) => {
+            if (state === "completed") {
+                electron.shell.showItemInFolder(item.getSavePath());
+            }
+        });
+    });
 }
 
 function setupSpellcheckForSession(session: Session, enabled: boolean) {

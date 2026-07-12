@@ -92,6 +92,9 @@ function shouldShow(note: FNote | null | undefined, type: NoteType | undefined, 
     if (note?.noteId?.startsWith("_options")) return false;
     if (note?.isTriliumSqlite()) return false;
     if (note?.isMarkdown()) return false;
+    // Icon packs render their own preview (like markdown) and the `file`-type ones already have no
+    // inline title, so opt the `code`-type ones out too for a consistent collapsed header.
+    if (note?.isIconPack()) return false;
     return type && supportedNoteTypes.has(type);
 }
 

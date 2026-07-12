@@ -602,6 +602,67 @@ describe("shortcuts", () => {
         });
     });
 
+    describe("the plus key (German / European layouts)", () => {
+        // On QWERTZ and most European layouts "+" is its own key (e.code "BracketRight"), not
+        // Shift+"=". Because "+" doubles as the shortcut separator, it used to be impossible to bind.
+        const ctrlPlus = (extra: Partial<KeyboardEvent> = {}) => ({
+            key: "+",
+            code: "BracketRight",
+            ctrlKey: true,
+            altKey: false,
+            shiftKey: false,
+            metaKey: false,
+            ...extra
+        } as KeyboardEvent);
+
+        it("matches the raw '++' encoding (e.g. a stored or hand-typed Ctrl++)", () => {
+            expect(matchesShortcut(ctrlPlus(), "Ctrl++")).toBe(true);
+            expect(matchesShortcut(ctrlPlus({ shiftKey: true }), "Ctrl++")).toBe(false);
+        });
+
+        it("matches the named 'Plus' token", () => {
+            expect(matchesShortcut(ctrlPlus(), "Ctrl+Plus")).toBe(true);
+            expect(matchesShortcut(ctrlPlus({ ctrlKey: false }), "Ctrl+Plus")).toBe(false);
+        });
+
+        it("matches the numpad plus key", () => {
+            const numpadPlus = ctrlPlus({ code: "NumpadAdd" });
+            expect(matchesShortcut(numpadPlus, "Ctrl+Plus")).toBe(true);
+            expect(matchesShortcut(numpadPlus, "Ctrl++")).toBe(true);
+        });
+
+        it("does not confuse the plus key with the equals key", () => {
+            // US layout zoom-in default is Ctrl+= (Shift+= produces "+"); these must stay distinct.
+            const ctrlEquals = ctrlPlus({ key: "=", code: "Equal" });
+            expect(matchesShortcut(ctrlEquals, "Ctrl++")).toBe(false);
+            expect(matchesShortcut(ctrlPlus(), "Ctrl+=")).toBe(false);
+        });
+
+        it("matchesShortcut with multiple modifiers and the plus key", () => {
+            expect(matchesShortcut(ctrlPlus({ shiftKey: true }), "Ctrl+Shift++")).toBe(true);
+            expect(matchesShortcut(ctrlPlus({ shiftKey: true }), "Ctrl+Shift+Plus")).toBe(true);
+        });
+
+        it("keyMatches resolves the 'plus' token to the '+' character", () => {
+            expect(keyMatches({ key: "+", code: "BracketRight" } as KeyboardEvent, "plus")).toBe(true);
+            expect(keyMatches({ key: "=", code: "Equal" } as KeyboardEvent, "plus")).toBe(false);
+        });
+
+        it("canonicalizes the raw and named plus forms to the same combination", () => {
+            expect(canonicalizeShortcut("Ctrl++")).toBe(canonicalizeShortcut("Ctrl+Plus"));
+            expect(canonicalizeShortcut("Ctrl++")).not.toBe(canonicalizeShortcut("Ctrl+="));
+        });
+
+        it("normalizeShortcut keeps a valid Ctrl++ without warning", () => {
+            const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+            expect(shortcuts.normalizeShortcut("Ctrl++")).toBe("ctrl++");
+
+            expect(consoleSpy).not.toHaveBeenCalled();
+            consoleSpy.mockRestore();
+        });
+    });
+
     describe("matchesShortcut empty-key guard", () => {
         it("should warn and return false when the key part is only whitespace", () => {
             const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});

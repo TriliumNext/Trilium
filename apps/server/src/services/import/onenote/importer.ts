@@ -65,8 +65,8 @@ interface FetchedSection {
  * reported over the WebSocket via the "importNotes" TaskContext, so this never throws to the caller:
  * any error is caught and surfaced as a task error toast instead.
  */
-export async function importSelection({ accessToken, parentNoteId, sections, taskId, debug = false }: { accessToken: string; parentNoteId: string; sections: OneNoteSectionSelection[]; taskId: string; debug?: boolean }): Promise<void> {
-    const taskContext = TaskContext.getInstance(taskId, "importNotes", { safeImport: true });
+export async function importSelection({ accessToken, parentNoteId, sections, taskId, debug = false, shrinkImages = false }: { accessToken: string; parentNoteId: string; sections: OneNoteSectionSelection[]; taskId: string; debug?: boolean; shrinkImages?: boolean }): Promise<void> {
+    const taskContext = TaskContext.getInstance(taskId, "importNotes", { safeImport: true, shrinkImages });
 
     try {
         // Phase 1: pull everything over the network first, so note creation can run in a single
@@ -104,7 +104,7 @@ export async function importSelection({ accessToken, parentNoteId, sections, tas
         }
 
         // Phase 2: create the note tree.
-        const rootNoteId = sql.transactional(() => createNotes(parentNoteId, fetched, debug));
+        const rootNoteId = sql.transactional(() => createNotes(parentNoteId, fetched, debug, shrinkImages));
 
         taskContext.taskSucceeded({ parentNoteId, importedNoteId: rootNoteId });
     } catch (e: unknown) {
@@ -113,7 +113,7 @@ export async function importSelection({ accessToken, parentNoteId, sections, tas
     }
 }
 
-function createNotes(parentNoteId: string, sections: FetchedSection[], debug: boolean): string {
+function createNotes(parentNoteId: string, sections: FetchedSection[], debug: boolean, shrinkImages: boolean): string {
     const parentNote = becca.getNoteOrThrow(parentNoteId);
     const isProtected = parentNote.isProtected && protectedSession.isProtectedSessionAvailable();
 
@@ -180,10 +180,10 @@ function createNotes(parentNoteId: string, sections: FetchedSection[], debug: bo
             // second pass below, once every page has a note to point at.
             let content = page.html;
             if (page.resources.length > 0) {
-                content = rewritePageResources(pageNote, content, page.resources);
+                content = rewritePageResources(pageNote, content, page.resources, shrinkImages);
             }
             if (page.inkSvg) {
-                content += renderInkFigure(pageNote, page.inkSvg);
+                content += renderInkFigure(pageNote, page.inkSvg, shrinkImages);
             }
 
             createdPages.push({ note: pageNote, original: page.html, content, page });
@@ -273,8 +273,8 @@ function toUtcDbDate(isoDateTime: string | undefined): string | undefined {
  * Saves a page's rendered ink SVG as an image attachment on the note and returns the `<figure>` markup
  * that embeds it inline. Returns an empty string if the attachment could not be created.
  */
-function renderInkFigure(note: BNote, svg: string): string {
-    const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, binary_utils.encodeUtf8(svg), "OneNote ink.svg", false);
+function renderInkFigure(note: BNote, svg: string, shrinkImages: boolean): string {
+    const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, binary_utils.encodeUtf8(svg), "OneNote ink.svg", shrinkImages);
     if (!attachmentId) {
         return "";
     }
@@ -364,7 +364,7 @@ export async function mapWithConcurrency<T, R>(items: T[], limit: number, worker
  * images become attachment-backed `<img src="api/attachments/…">`, file attachments become Trilium
  * reference links. References whose download failed are left as-is.
  */
-function rewritePageResources(note: BNote, html: string, resources: DownloadedResource[]): string {
+function rewritePageResources(note: BNote, html: string, resources: DownloadedResource[], shrinkImages: boolean): string {
     const byUrl = new Map(resources.map((resource) => [resource.url, resource]));
     const root = parse(html);
 
@@ -374,7 +374,7 @@ function rewritePageResources(note: BNote, html: string, resources: DownloadedRe
             continue;
         }
         const originalName = resource.title.includes(".") ? resource.title : `${resource.title}.${extensionForMime(resource.mime)}`;
-        const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, resource.content, originalName, false);
+        const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, resource.content, originalName, shrinkImages);
         if (attachmentId) {
             img.setAttribute("src", `api/attachments/${attachmentId}/image/${encodeURIComponent(title)}`);
         }

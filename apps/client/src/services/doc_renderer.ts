@@ -9,8 +9,8 @@ import { formatCodeBlocks } from "./syntax_highlight.js";
  * but blocks traversal sequences and URL manipulation characters.
  */
 export function isValidDocName(docName: string): boolean {
-    // Allow alphanumeric characters, spaces, underscores, hyphens, and forward slashes.
-    const validDocNameRegex = /^[a-zA-Z0-9_/\- ()]+$/;
+    // Allow alphanumeric characters, spaces, underscores, hyphens, ampersands, and forward slashes.
+    const validDocNameRegex = /^[a-zA-Z0-9_/\- ()&]+$/;
     return validDocNameRegex.test(docName);
 }
 
@@ -74,6 +74,8 @@ function getUrl(docNameValue: string | null, language: string) {
 
     // Cannot have spaces in the URL due to how JQuery.load works.
     docNameValue = docNameValue.replaceAll(" ", "%20");
+    // Percent-encode ampersands (e.g. in "Import & Export") so they aren't misread when fetching the doc.
+    docNameValue = docNameValue.replaceAll("&", "%26");
     // The user guide is available only in English, so make sure we are requesting correctly since 404s in standalone client are treated differently.
     if (docNameValue.includes("User%20Guide")) language = "en";
     return `${getBasePath()}/doc_notes/${language}/${docNameValue}.html`;

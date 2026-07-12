@@ -300,6 +300,19 @@ describe("BaseProvider system prompt", () => {
         const prompt = provider.callBuildSystemPrompt([], {})!;
         expect(prompt).toContain("Admonitions");
         expect(prompt).toContain("Mermaid diagrams");
+        expect(prompt).toContain("Blockquotes");
+        expect(prompt).toContain("Tables");
+        expect(prompt).toContain("Collapsible blocks");
+        expect(prompt).toContain("Keyboard keys");
+    });
+
+    it("lists the workspace's custom task-state markers so the model can recognize them", () => {
+        // No _taskStates container in the test becca → getTaskStates falls back to the defaults.
+        const prompt = provider.callBuildSystemPrompt([], {})!;
+        expect(prompt).toContain("Task lists");
+        expect(prompt).toContain("`- [/]` — Doing");
+        expect(prompt).toContain("`- [?]` — Maybe");
+        expect(prompt).toContain("`- [-]` — Cancelled");
     });
 });
 

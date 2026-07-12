@@ -1,5 +1,6 @@
 import "./code.css";
 
+import { MIME_TYPE_TRILIUM_LOG } from "@triliumnext/commons";
 import CodeMirror from "@triliumnext/codemirror";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -48,7 +49,7 @@ export default function BackendLog({ ntxId, parentComponent }: TypeWidgetProps) 
                 editorRef={editorRef}
                 ntxId={ntxId} parentComponent={parentComponent}
                 content={content ?? ""}
-                mime="text/plain"
+                mime={MIME_TYPE_TRILIUM_LOG}
                 readOnly
                 preferPerformance
                 {...(noteWrapLines != null && { lineWrapping: noteWrapLines })}

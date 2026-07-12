@@ -9,12 +9,13 @@ import { BaseProvider, buildModelList, buildModelMessage } from "./base_provider
 const CACHE_CONTROL = { anthropic: { cacheControl: { type: "ephemeral" as const } } };
 
 /**
- * Models that support adaptive extended thinking. Opus 4.7 / 4.8 reject the
- * manual `{ type: "enabled", budgetTokens }` form with a 400 and accept adaptive
- * only; Opus 4.6 and Sonnet 4.6 accept both but prefer adaptive. Everything else
- * (older Opus/Sonnet, Haiku 4.5) only supports the manual budget form.
+ * Models that support adaptive extended thinking. Opus 4.7 / 4.8 and Sonnet 5
+ * reject the manual `{ type: "enabled", budgetTokens }` form with a 400 and
+ * accept adaptive only; Opus 4.6 and Sonnet 4.6 accept both but prefer adaptive.
+ * Everything else (older Opus/Sonnet, Haiku 4.5) only supports the manual budget
+ * form.
  */
-const ADAPTIVE_THINKING_MODELS = /^claude-(?:opus-4-[678]|sonnet-4-6)/;
+const ADAPTIVE_THINKING_MODELS = /^claude-(?:opus-4-[678]|sonnet-(?:4-6|5))/;
 
 /**
  * Available Anthropic models with pricing (USD per million tokens).
@@ -35,8 +36,9 @@ const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
         contextWindow: 1000000
     },
     {
-        id: "claude-sonnet-4-6",
-        name: "Claude Sonnet 4.6",
+        id: "claude-sonnet-5",
+        name: "Claude Sonnet 5",
+        // Standard pricing. Introductory $2/$10 per MTok applies through 2026-08-31.
         pricing: { input: 3, output: 15 },
         contextWindow: 1000000,
         isDefault: true
@@ -48,6 +50,13 @@ const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
         contextWindow: 200000
     },
     // ===== Legacy Models =====
+    {
+        id: "claude-sonnet-4-6",
+        name: "Claude Sonnet 4.6",
+        pricing: { input: 3, output: 15 },
+        contextWindow: 1000000,
+        isLegacy: true
+    },
     {
         id: "claude-opus-4-6",
         name: "Claude Opus 4.6",
@@ -94,7 +103,7 @@ const { models: AVAILABLE_MODELS, pricing: MODEL_PRICING } = buildModelList([
 
 export class AnthropicProvider extends BaseProvider {
     name = "anthropic";
-    protected defaultModel = "claude-sonnet-4-6";
+    protected defaultModel = "claude-sonnet-5";
     protected titleModel = "claude-haiku-4-5-20251001";
     protected availableModels = AVAILABLE_MODELS;
     protected modelPricing = MODEL_PRICING;

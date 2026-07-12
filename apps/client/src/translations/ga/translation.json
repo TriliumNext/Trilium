@@ -28,7 +28,8 @@
     "toggle-zen-mode": "Mód Zen",
     "new-version-available": "Nuashonrú Nua ar Fáil",
     "download-update": "Faigh Leagan {{latestVersion}}",
-    "search_notes": "Cuardaigh nótaí"
+    "search_notes": "Cuardaigh nótaí",
+    "show_deleted_notes": "Taispeáin Nótaí Scriosta"
   },
   "about": {
     "data_directory": "Eolaire sonraí:",
@@ -162,20 +163,31 @@
   "export": {
     "export_note_title": "Nóta easpórtála",
     "close": "Dún",
-    "export_type_subtree": "An nóta seo agus a shliocht uile",
-    "format_html": "HTML - molta mar go gcoinníonn sé an fhormáid go léir",
-    "format_html_zip": "HTML i gcartlann ZIP - moltar é seo ós rud é go gcoimeádann sé seo an fhormáidiú go léir.",
-    "format_markdown": "Markdown - caomhnaíonn sé seo an chuid is mó den fhormáidiú.",
-    "format_opml": "OPML - formáid idirmhalartaithe imlíneach le haghaidh téacs amháin. Níl formáidiú, íomhánna agus comhaid san áireamh.",
-    "opml_version_1": "OPML v1.0 - téacs simplí amháin",
-    "opml_version_2": "OPML v2.0 - ceadaíonn HTML freisin",
-    "export_type_single": "An nóta seo amháin gan a shliocht",
+    "export_type_subtree": "An nóta seo & gach sliocht",
+    "export_type_single": "An nóta seo amháin",
     "export": "Easpórtáil",
     "choose_export_type": "Roghnaigh cineál onnmhairithe ar dtús le do thoil",
-    "export_in_progress": "Easpórtáil ar siúl: {{progressCount}}",
     "export_finished_successfully": "Críochnaíodh an easpórtáil go rathúil.",
     "format_pdf": "PDF - le haghaidh priontála nó comhroinnte.",
-    "share-format": "HTML le haghaidh foilsitheoireachta gréasáin - úsáideann sé an téama céanna a úsáidtear le haghaidh nótaí comhroinnte, ach is féidir é a fhoilsiú mar shuíomh gréasáin statach."
+    "what_to_export": "Cad atá le honnmhairiú",
+    "format": "Formáid",
+    "format_html_name": "HTML",
+    "format_html_description": "Coinníonn sé gach formáidiú",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Coinníonn sé an chuid is mó den fhormáidiú",
+    "format_opml_name": "OPML",
+    "format_opml_description": "Formáid imlíne le hábhar HTML",
+    "format_share_name": "HTML don ghréasán",
+    "format_share_description": "Suíomh statach infhoilsithe ag baint úsáide as an téama nótaí comhroinnte",
+    "recommended": "Molta",
+    "result_subtree_html": "Cartlann ZIP ina sábháiltear nótaí téacs mar HTML. Coinníonn cód, íomhánna agus comhaid eile a bhformáid bhunaidh.",
+    "result_subtree_markdown": "Cartlann ZIP ina sábháiltear nótaí téacs mar Markdown. Coinníonn cód, íomhánna agus comhaid eile a bhformáid bhunaidh.",
+    "result_share": "Cartlann ZIP ina bhfuil suíomh gréasáin statach infhoilsithe a úsáideann an téama nótaí comhroinnte.",
+    "result_opml": "Comhad imlíne OPML aonair. Tá teidil nótaí agus téacs san áireamh; níl íomhánna, comhaid chóid agus ceangaltáin san áireamh.",
+    "result_single_html": "Comhad HTML aonair. Tá íomhánna agus ceangaltáin leabaithe ann.",
+    "result_single_markdown": "Comhad Markdown (.md) aonair.",
+    "preparing_export": "Ag ullmhú don onnmhairiú…",
+    "export_in_progress_with_total": "Easpórtáladh {{progressCount}} nótaí as {{totalCount}}"
   },
   "help": {
     "title": "Bileog leideanna",
@@ -236,14 +248,13 @@
   "import": {
     "importIntoNote": "Iompórtáil isteach i nóta",
     "chooseImportFile": "Roghnaigh comhad allmhairithe",
-    "importDescription": "Déanfar ábhar an chomhaid/na gcomhad roghnaithe a allmhairiú mar nóta/nótaí linbh isteach",
     "importZipRecommendation": "Agus comhad ZIP á iompórtáil, léireoidh ordlathas na nótaí struchtúr an fho-eolaire laistigh den chartlann.",
     "options": "Roghanna",
-    "safeImportTooltip": "Is féidir go mbeadh scripteanna inrite a d'fhéadfadh iompar díobhálach a bheith iontu i gcomhaid easpórtála Trilium <code>.zip</code>. Díghníomhachtóidh allmhairiú sábháilte forghníomhú uathoibríoch na scripteanna allmhairithe go léir. Díthiceáil \"Allmhairiú sábháilte\" ach amháin má tá sé i gceist go mbeadh scripteanna inrite sa chartlann allmhairithe agus má tá muinín iomlán agat as ábhar an chomhaid allmhairithe.",
+    "safeImportTooltip": "Is féidir scripteanna inrite a bheith in easpórtálacha Trilium <code>.zip</code>. Díchumasaíonn allmhairiú sábháilte iad; díthiceáil ach amháin má tá an chartlann ceaptha scripteanna a rith agus má tá muinín agat as a bhfuil ann.",
     "safeImport": "Allmhairiú sábháilte",
-    "explodeArchivesTooltip": "Má tá tic sa bhosca seo léifidh Trilium comhaid <code>.zip</code>, <code>.enex</code> agus <code>.opml</code> agus cruthóidh sé nótaí ó chomhaid laistigh de na cartlanna sin. Mura bhfuil an tic sa bhosca seo, ceanglóidh Trilium na cartlanna féin leis an nóta.",
+    "explodeArchivesTooltip": "Cruthaíonn sé nótaí ó na comhaid atá i gcartlanna <code>.zip</code>, <code>.enex</code> agus <code>.opml</code>. Nuair a bhíonn sé múchta, ceanglaítear na cartlanna mar atá.",
     "explodeArchives": "Léigh ábhar na gcartlann <code>.zip</code>, <code>.enex</code> agus <code>.opml</code>.",
-    "shrinkImagesTooltip": "<p>Má roghnaíonn tú an rogha seo, déanfaidh Trilium iarracht na híomhánna allmhairithe a chrapadh trí scálú agus uasmhéadú a d'fhéadfadh difear a dhéanamh don cháilíocht íomhá a bhraitear. Mura roghnaítear é, allmhaireofar íomhánna gan athruithe.</p><p>Ní bhaineann sé seo le hallmhairí <code>.zip</code> le meiteashonraí ós rud é go nglactar leis go bhfuil na comhaid seo uasmhéadaithe cheana féin.</p>",
+    "shrinkImagesTooltip": "Déanann sé íomhánna a scálú agus a bharrfheabhsú chun spás a shábháil, rud a d'fhéadfadh an caighdeán a laghdú beagán. Ní bhaineann sé seo le hallmhairí <code>.zip</code> le meiteashonraí, a nglactar leo go bhfuil siad optamaithe cheana féin.",
     "shrinkImages": "Laghdaigh íomhánna",
     "textImportedAsText": "Iompórtáil HTML, Markdown agus TXT mar nótaí téacs mura bhfuil sé soiléir ó na meiteashonraí",
     "codeImportedAsCode": "Iompórtáil comhaid chód aitheanta (m.sh. <code>.json</code>) mar nótaí cóid mura bhfuil sé soiléir ó na meiteashonraí",
@@ -256,11 +267,18 @@
       "placeholder": "Cuir isteach clibeanna HTML, ceann amháin in aghaidh na líne",
       "reset_button": "Athshocraigh go dtí an Liosta Réamhshocraithe"
     },
-    "in-progress": "Iompórtáil ar siúl: {{progress}}",
+    "in-progress": "Nótaí {{progress}} allmhairithe",
     "successful": "Críochnaíodh an t-allmhairiú go rathúil.",
     "spreadsheetImportedAsSpreadsheet": "Iompórtáil comhaid CSV agus Excel mar scarbhileoga in-eagarthóireachta seachas comhaid",
     "starting": "Ag iompórtáil…",
-    "in-progress-with-total": "Ag allmhairiú {{progress}} de {{total}}"
+    "in-progress-with-total": "Iompórtáladh {{progress}} nótaí as {{total}}",
+    "importIntoNoteNamed": "Iompórtáil isteach i {{- title}}",
+    "import_from": "Iompórtáil ó",
+    "cardName": "Comhaid & formáidí eile",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, íomhánna agus tuilleadh",
+    "shrinkImagesProviderTooltip": "Déanann sé íomhánna allmhairithe a scála agus a bharrfheabhsú chun spás a shábháil, rud a d'fhéadfadh an caighdeán a laghdú beagán.",
+    "extracting": "Baineadh {{progress}} mír as {{total}}",
+    "processing": "Próiseáladh {{progress}} nótaí as {{total}}"
   },
   "include_note": {
     "dialog_title": "Cuir nóta san áireamh",
@@ -330,7 +348,12 @@
     "deleted_notes_message": "Tá nótaí scriosta scriosta.",
     "no_changes_message": "Gan aon athruithe fós...",
     "undelete_link": "díscriosadh",
-    "confirm_undelete": "Ar mhaith leat an nóta seo agus a fho-nótaí a athscriosadh?"
+    "confirm_undelete": "Ar mhaith leat an nóta seo agus a fho-nótaí a athscriosadh?",
+    "deleted_notes_title": "Nótaí scriosta",
+    "more_actions": "Tuilleadh gníomhartha",
+    "deleted_notes_settings": "Socruithe Nótaí Scriosta",
+    "no_deleted_notes_message": "Gan aon nótaí scriosta.",
+    "undelete_failed": "Níorbh fhéidir an nóta a athchóiriú — b’fhéidir gur scriosadh go buan é nó nach bhfuil a thuismitheoir ar fáil a thuilleadh."
   },
   "sort_child_notes": {
     "sort_children_by": "Sórtáil páistí de réir...",
@@ -610,7 +633,7 @@
     "download": "Íoslódáil",
     "rename_attachment": "Athainmnigh an ceangaltán",
     "upload_new_revision": "Uaslódáil athbhreithniú nua",
-    "copy_link_to_clipboard": "Cóipeáil nasc chuig an ghearrthaisce",
+    "copy_link_to_clipboard": "Cóipeáil tagairt chuig an ghearrthaisce",
     "convert_attachment_into_note": "Tiontaigh an ceangaltán ina nóta",
     "delete_attachment": "Scrios an ceangaltán",
     "upload_success": "Tá athbhreithniú nua ar an gceangaltán uaslódáilte.",
@@ -655,7 +678,12 @@
     "year_previous": "An bhliain roimhe sin",
     "year_next": "An bhliain seo chugainn",
     "list": "Liosta",
-    "today": "Inniu"
+    "today": "Inniu",
+    "pin_date": "Prínnigh an dáta reatha ionas go n-osclófar an féilire i gcónaí ar an eatramh seo seachas an lá inniu",
+    "unpin_date": "Díbhínigh an dáta ionas go n-osclófar an féilire ar dháta an lae inniu arís",
+    "day": "Lá",
+    "day_previous": "Lá Roimhe Seo",
+    "day_next": "An Lá Dar Gcionn"
   },
   "close_pane_button": {
     "close_this_pane": "Dún an phainéal seo"
@@ -724,7 +752,12 @@
     "word_wrap_off": "As",
     "save_named_revision": "Sábháil athbhreithniú ainmnithe...",
     "print_or_export_to_pdf": "Priontáil/onnmhairigh go PDF...",
-    "import_from_service": "Iompórtáil ó sheirbhís…"
+    "convert_to_markdown": "Tiontaigh go Nóta Markdown",
+    "convert_to_text": "Tiontaigh go Nóta Téacs",
+    "convert_format_warning": "D’fhéadfadh roinnt formáidithe a bheith caillte le linn an chomhshó agus b’fhéidir go mbeadh ort cúpla rud a shocrú ina dhiaidh sin. Sábhálfar athbhreithniú ar an nóta reatha roimh ré ionas gur féidir leat é a athchóiriú. Ar mhaith leat leanúint ar aghaidh?",
+    "convert_format_warning_risky": "Tá tú ag tiontú idir dhá fhormáid nach bhfuil cumais chomhionanna acu, mar sin d'fhéadfadh roinnt formáidithe a bheith caillte agus d'fhéadfadh roinnt eilimintí nach dtacaítear leo a bheith fágtha ar lár.<br><br>An nglacann tú leis an riosca seo go hiomlán agus an mian leat dul ar aghaidh leis an tiontú?<br><br>Sábhálfar athbhreithniú ar an nóta reatha roimh ré, ionas gur féidir leat filleadh ar an bhformáid bhunaidh.",
+    "convert_to_markdown_successful": "Tá an nóta tiontaithe go Markdown.",
+    "convert_to_text_successful": "Tá an nóta tiontaithe go nóta téacs."
   },
   "onclick_button": {
     "no_click_handler": "Níl aon láimhseálaí cliceáil sainithe ag an ngiuirléid cnaipe '{{componentId}}'"
@@ -740,7 +773,7 @@
     "update_available": "Nuashonrú ar fáil"
   },
   "note_launcher": {
-    "this_launcher_doesnt_define_target_note": "Ní shainíonn an lainseálaí seo nóta sprice."
+    "this_launcher_doesnt_define_target_note": "Níl aon nóta sprice cumraithe ag an lainseálaí seo, mar sin níl aon rud le hoscailt. Socraigh a ghaol \"sprioc\" chun é a dhíriú ar nóta."
   },
   "code_buttons": {
     "execute_button_title": "Rith an script",
@@ -1115,7 +1148,7 @@
   },
   "consistency_checks": {
     "title": "Seiceálacha Comhsheasmhachta",
-    "find_and_fix_button": "Fadhbanna comhsheasmhachta a aimsiú agus a shocrú",
+    "find_and_fix_button": "Deisigh fadhbanna",
     "finding_and_fixing_message": "Fadhbanna comhsheasmhachta a aimsiú agus a shocrú...",
     "issues_fixed_message": "Tá aon fhadhb chomhsheasmhachta a d'fhéadfadh a bheith aimsithe socraithe anois.",
     "find_and_fix_label": "Fadhbanna comhsheasmhachta a aimsiú agus a shocrú",
@@ -1125,11 +1158,11 @@
     "title": "Anaithnidiú Bunachar Sonraí",
     "full_anonymization": "Anaithnidiú iomlán",
     "full_anonymization_description": "Cruthaíonn sé cóip den bhunachar sonraí agus gach ábhar nótaí bainte, rud a fhágann struchtúr agus meiteashonraí neamhíogaire amháin. Sábháilte le roinnt ar líne agus fadhbanna dífhabhtaithe á ndífhabhtú.",
-    "save_fully_anonymized_database": "Sábháil bunachar sonraí lán-anaithnid",
+    "save_fully_anonymized_database": "Cruthaigh cóip",
     "light_anonymization": "Anaithnidiú éadrom",
     "light_anonymization_description": "Cruthaíonn sé cóip agus ábhar na nótaí bainte de, ach fanann teidil, tréithe, agus scripteanna/giuirléidí saincheaptha ann. Soláthraíonn sé níos mó comhthéacs le haghaidh dífhabhtaithe.",
     "choose_anonymization": "Is féidir leat cinneadh a dhéanamh duit féin an mian leat bunachar sonraí atá anaithnid go hiomlán nó beagán gan ainm a sholáthar. Tá fiú bunachar sonraí atá anaithnid go hiomlán an-úsáideach, ach i gcásanna áirithe is féidir le bunachar sonraí atá anaithnid go héadrom an próiseas chun fabhtanna a aithint agus a shocrú a bhrostú.",
-    "save_lightly_anonymized_database": "Sábháil bunachar sonraí atá anaithnidithe go héadrom",
+    "save_lightly_anonymized_database": "Cruthaigh cóip",
     "existing_anonymized_databases": "Bunachair shonraí gan ainm atá ann cheana féin",
     "creating_fully_anonymized_database": "Ag cruthú bunachar sonraí lán-anaithnidithe...",
     "creating_lightly_anonymized_database": "Ag cruthú bunachar sonraí atá beagán anaithnidithe...",
@@ -1143,7 +1176,7 @@
   },
   "database_integrity_check": {
     "title": "Seiceáil Ionracais Bunachar Sonraí",
-    "check_button": "Seiceáil sláine an bhunachair shonraí",
+    "check_button": "Seiceáil sláine",
     "checking_integrity": "Ag seiceáil sláine an bhunachair shonraí...",
     "integrity_check_succeeded": "D’éirigh leis an tseiceáil ionracais - níor aimsíodh aon fhadhbanna.",
     "integrity_check_failed": "Theip ar an tseiceáil ionracais: {{results}}",
@@ -1152,8 +1185,8 @@
   },
   "sync": {
     "title": "Sioncrónaigh",
-    "force_full_sync_button": "Fórsaigh sioncrónú iomlán",
-    "fill_entity_changes_button": "Líon taifid athruithe eintitis",
+    "force_full_sync_button": "Fórsáil sioncrónú",
+    "fill_entity_changes_button": "Athruithe líonta",
     "full_sync_triggered": "Sioncrónú iomlán curtha i ngníomh",
     "filling_entity_changes": "Líonadh sraitheanna athruithe eintiteas...",
     "sync_rows_filled_successfully": "Líontar na sraitheanna sioncrónaithe go rathúil",
@@ -1167,7 +1200,7 @@
   "vacuum_database": {
     "title": "Bunachar Sonraí Folúis",
     "description": "Déanfaidh sé seo an bunachar sonraí a atógáil agus de ghnáth beidh comhad bunachar sonraí níos lú mar thoradh air. Ní athrófar aon sonraí i ndáiríre.",
-    "button_text": "Bunachar sonraí folúis",
+    "button_text": "Folúsghlantóir anois",
     "vacuuming_database": "Bunachar sonraí folúsghlanadh...",
     "database_vacuumed": "Tá an bunachar sonraí folúsghlanaithe",
     "vacuum_label": "Bunachar sonraí folúis",
@@ -1244,7 +1277,12 @@
     "color_scheme_system": "Córas",
     "color_scheme_light": "Solas",
     "color_scheme_dark": "Dorcha",
-    "color_scheme_custom_disabled": "Ní féidir an scéim dathanna a shárú le haghaidh téamaí saincheaptha"
+    "color_scheme_custom_disabled": "Ní féidir an scéim dathanna a shárú le haghaidh téamaí saincheaptha",
+    "color_scheme_switcher_system": "Mód córais",
+    "color_scheme_switcher_light": "Mód solais",
+    "color_scheme_switcher_dark": "Mód dorcha",
+    "color_scheme_switcher_hint": "Cliceáil chun an scéim dathanna a athrú.",
+    "color_scheme_switcher_unsupported": "Ní thacaíonn an téama reatha le hathrú na scéime dathanna."
   },
   "ui-performance": {
     "title": "Feidhmíocht",
@@ -1273,7 +1311,8 @@
     "title": "Cineálacha MIME atá ar fáil sa roghchlár anuas",
     "tooltip_syntax_highlighting": "Aibhsiú comhréire",
     "tooltip_code_block_syntax": "Bloic chóid i nótaí Téacs",
-    "tooltip_code_note_syntax": "Nótaí cóid"
+    "tooltip_code_note_syntax": "Nótaí cóid",
+    "trilium_log": "Log Trilium"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Ceangail eochracha Vim",
@@ -1312,7 +1351,7 @@
     "attachment_erasure_timeout": "Ceangaltáin Neamhúsáidte",
     "erase_attachments_after": "Scrios ceangaltáin neamhúsáidte ina dhiaidh sin",
     "manual_erasing_description": "Spreag scriosadh de láimh, ag neamhaird den am scoir thuas.",
-    "erase_unused_attachments_now": "Scrios ceangaltáin neamhúsáidte anois",
+    "erase_unused_attachments_now": "Scrios ceangaltáin neamhúsáidte",
     "unused_attachments_erased": "Scriosadh ceangaltáin neamhúsáidte.",
     "description": "Meastar nach n-úsáidtear ceangaltáin nach ndéantar tagairt dóibh a thuilleadh in aon nóta agus is féidir iad a scriosadh go huathoibríoch tar éis tréimhse ama.",
     "erase_attachments_after_description": "Am sula scriostar ceangaltáin neamhúsáidte go buan.",
@@ -1327,7 +1366,7 @@
     "note_erasure_timeout_title": "Nótaí Scriosta",
     "erase_notes_after": "Scrios nótaí ina dhiaidh",
     "manual_erasing_description": "Spreag scriosadh de láimh, ag neamhaird den am scoir thuas.",
-    "erase_deleted_notes_now": "Scrios nótaí scriosta anois",
+    "erase_deleted_notes_now": "Scrios nótaí scriosta",
     "deleted_notes_erased": "Tá nótaí scriosta scriosta.",
     "description": "Ní dhéantar nótaí scriosta a mharcáil ach mar scriosta ar dtús agus is féidir iad a aisghabháil ó Nótaí Le Déanaí. Tar éis tamaill, scriostar go buan iad.",
     "erase_notes_after_description": "An t-am sula scriostar nótaí scriosta go buan.",
@@ -1344,7 +1383,7 @@
     "note_revisions_snapshot_limit_description": "Tagraíonn an teorainn ar líon na n-athbhreithnithe nótaí don líon uasta athbhreithnithe is féidir a shábháil do gach nóta. Ciallaíonn -1 gan aon teorainn, ciallaíonn 0 scriosadh na hathbhreithnithe go léir. Is féidir leat an líon uasta athbhreithnithe a shocrú do nóta aonair tríd an lipéad #versioningLimit.",
     "snapshot_number_limit_label": "Uasmhéid athbhreithnithe",
     "snapshot_number_limit_unit": "léargais",
-    "erase_excess_revision_snapshots": "Scrios na léargais athbhreithnithe breise anois",
+    "erase_excess_revision_snapshots": "Scrios na pictiúir athbhreithnithe breise",
     "erase_excess_revision_snapshots_prompt": "Scriosadh na léargais bhreise athbhreithnithe.",
     "note_revisions_snapshot_limit_description_short": "Uasmhéid athbhreithnithe in aghaidh an nóta. Úsáid -1 le haghaidh neamhtheoranta, 0 le díchumasú.",
     "erase_excess_revision_snapshots_description": "Scrios athbhreithnithe a sháraíonn an teorainn do na nótaí uile.",
@@ -1496,7 +1535,7 @@
     "set_password_heading": "Socraigh Pasfhocal",
     "set_password": "Socraigh Pasfhocal",
     "password_mismatch": "Ní hionann pasfhocail nua.",
-    "password_changed_success": "Athraíodh an focal faire. Athlódálfar Trilium tar éis duit brúigh OK.",
+    "password_changed_success": "Athraíodh an focal faire go rathúil.",
     "change_password_description": "Nuashonraigh do phasfhocal reatha",
     "reset_password": "Athshocraigh an focal faire",
     "reset_password_description": "Caill rochtain ar nótaí faoi chosaint go buan",
@@ -1655,7 +1694,7 @@
     "will_be_deleted_soon": "Scriosfar an ceangaltán seo go huathoibríoch go luath",
     "deletion_reason": ", mar nach bhfuil an ceangaltán nasctha in ábhar an nóta. Chun scriosadh a chosc, cuir an nasc ceangaltáin ar ais san ábhar nó tiontaigh an ceangaltán ina nóta.",
     "role_and_size": "Ról: {{role}}, méid: {{size}}, MIME: {{- mimeType}}",
-    "link_copied": "Nasc an cheangail cóipeáilte chuig an ghearrthaisce.",
+    "link_copied": "Tagairt an cheangaltáin cóipeáilte chuig an ghearrthaisce.",
     "unrecognized_role": "Ról ceangail neamhaitheanta '{{role}}'."
   },
   "bookmark_switch": {
@@ -1828,7 +1867,9 @@
     "subtree-hidden-tooltip_other": "{{count}} nótaí linbh atá i bhfolach ón gcrann",
     "subtree-hidden-moved-title": "Curtha le {{title}}",
     "subtree-hidden-moved-description-collection": "Cuireann an bailiúchán seo a nótaí faoi bhun an tsean-nótaí i bhfolach sa chrann.",
-    "subtree-hidden-moved-description-other": "Tá nótaí linbh i bhfolach sa chrann don nóta seo."
+    "subtree-hidden-moved-description-other": "Tá nótaí linbh i bhfolach sa chrann don nóta seo.",
+    "follow-active-note": "Lean nóta gníomhach",
+    "follow-active-note-title": "Scrollaíonn sé an crann agus leathnaíonn sé nóid tuismitheora chun an nóta gníomhach a thaispeáint. Nuair a bhíonn sé díchumasaithe, fanann an crann ina áit agus ní dhéantar ach an aibhsiú cúlra a nuashonrú."
   },
   "title_bar_buttons": {
     "window-on-top": "Coinnigh an Fhuinneog ar a Bharr"
@@ -1866,9 +1907,6 @@
     "no_notes_found": "Ní bhfuarthas aon nótaí do na paraiméadair chuardaigh tugtha.",
     "search_not_executed": "Níl an cuardach curtha i gcrích fós.",
     "search_now": "Cuardaigh anois"
-  },
-  "spacer": {
-    "configure_launchbar": "Cumraigh an Barra Seoladh"
   },
   "sql_result": {
     "not_executed": "Níl an fiosrúchán curtha i gcrích fós.",
@@ -2049,7 +2087,8 @@
     "create-child-note-title": "Cruthaigh nóta nua do pháistí agus cuir leis an léarscáil é",
     "create-child-note-text": "Cuir marcóir leis",
     "create-child-note-instruction": "Cliceáil ar an léarscáil chun nóta nua a chruthú ag an suíomh sin nó brúigh Escape chun é a dhíbhe.",
-    "unable-to-load-map": "Ní féidir an léarscáil a luchtú."
+    "unable-to-load-map": "Ní féidir an léarscáil a luchtú.",
+    "create-child-note-toast-title": "Nóta nua"
   },
   "geo-map-context": {
     "open-location": "Oscail suíomh",
@@ -2200,7 +2239,20 @@
     "slide-overview": "Forbhreathnú ar na sleamhnáin a athrú"
   },
   "calendar_view": {
-    "delete_note": "Scrios nóta..."
+    "delete_note": "Scrios nóta...",
+    "time_slots": "Sliotáin ama",
+    "slot_duration": "Fad",
+    "slot_label_interval": "Eatramh lipéid",
+    "minutes_one": "{{count}} nóiméad",
+    "minutes_two": "{{count}} nóiméad",
+    "minutes_few": "{{count}} nóiméad",
+    "minutes_many": "{{count}} nóiméad",
+    "minutes_other": "{{count}} nóiméad",
+    "hours_one": "{{count}} uair an chloig",
+    "hours_two": "{{count}} uair an chloig",
+    "hours_few": "{{count}} uair an chloig",
+    "hours_many": "{{count}} uair an chloig",
+    "hours_other": "{{count}} uair an chloig"
   },
   "command_palette": {
     "tree-action-name": "Crann: {{name}}",
@@ -2227,7 +2279,8 @@
   },
   "modal": {
     "close": "Dún",
-    "help_title": "Taispeáin tuilleadh eolais faoin scáileán seo"
+    "help_title": "Taispeáin tuilleadh eolais faoin scáileán seo",
+    "cancel": "Cealaigh"
   },
   "call_to_action": {
     "next_theme_title": "Bain triail as an téama nua Trilium",
@@ -2384,7 +2437,11 @@
     "empty_message": "Níl aon rud le taispeáint don nóta seo",
     "empty_button": "Folaigh an painéal",
     "toggle": "Athraigh an painéal ar dheis",
-    "custom_widget_go_to_source": "Téigh go dtí an cód foinse"
+    "custom_widget_go_to_source": "Téigh go dtí an cód foinse",
+    "peek": "Féach ar an bpána ar dheis",
+    "hide": "Folaigh an painéal ar dheis",
+    "dock": "Painéal duga",
+    "close": "Dún an painéal"
   },
   "pdf": {
     "attachments_one": "{{count}} ceangaltán",
@@ -2492,7 +2549,8 @@
     "play-mode-title": "Mód súgartha: {{mode}}",
     "play-mode-once": "Seinn uair amháin",
     "play-mode-loop": "Lúb",
-    "play-mode-next": "Seinn ina dhiaidh sin"
+    "play-mode-next": "Seinn ina dhiaidh sin",
+    "forward-10s": "Ar Aghaidh 10s (Eochair saighead ar dheis)"
   },
   "mermaid": {
     "placeholder": "Clóscríobh ábhar do léaráid Maighdean Mhara nó bain úsáid as ceann de na léaráidí samplacha thíos.",
@@ -2524,7 +2582,10 @@
     "sample_treeview": "Radharc Crann",
     "sample_wardley": "Léarscáil Wardley",
     "slash_command_blank_description": "Cuir léaráid fholamh Maighdean Mhara isteach",
-    "slash_command_description": "Cuir teimpléad léaráid maighdean mara \"{{name}}\" isteach"
+    "slash_command_description": "Cuir teimpléad léaráid maighdean mara \"{{name}}\" isteach",
+    "sample_cynefin": "Cynefin",
+    "sample_swimlane": "Lána snámha",
+    "sample_railroad": "Iarnród"
   },
   "llm_chat": {
     "placeholder": "Clóscríobh teachtaireacht...",
@@ -2565,7 +2626,26 @@
     "attach_file": "Ceangail íomhá, PDF, nó comhad téacs",
     "remove_attachment": "Bain an ceangaltán",
     "attachment_upload_failed": "Theip ar \"{{name}}\" a uaslódáil.",
-    "attachment_unsupported_type": "Ní cineál ceangaltáin a dtacaítear leis é \"{{name}}\". Bain úsáid as íomhá (PNG, JPEG, GIF, WebP), PDF, nó comhad téacs/foinse."
+    "attachment_unsupported_type": "Ní cineál ceangaltáin a dtacaítear leis é \"{{name}}\". Bain úsáid as íomhá (PNG, JPEG, GIF, WebP), PDF, nó comhad téacs/foinse.",
+    "scroll_to_bottom": "Scrollaigh go dtí an ceann is déanaí",
+    "read_only_notice": "Ní féidir freagra a thabhairt mar go bhfuil an comhrá AI seo inléite amháin.",
+    "toc_file": "Comhad: {{name}}",
+    "highlights_title": "Buaicphointí ({{count}})",
+    "highlights_empty": "Gan aon aibhsithe fós. Roghnaigh téacs i dteachtaireacht agus roghnaigh \"Aibhsigh\".",
+    "copy": "Cóipeáil",
+    "highlight_add": "Aibhsigh",
+    "highlight_remove": "Bain an aird",
+    "highlight_remove_confirm": "An bhfuil tú ag iarraidh an aird seo a bhaint?",
+    "quote_selection": "Rogha luachana",
+    "quoted_from": "Luaite ó",
+    "show_quote_source": "Taispeáin foinse an luachana",
+    "copy_message": "Cóipeáil teachtaireacht",
+    "save_to_subnote": "Sábháil chuig fo-nóta",
+    "save_as_note": "Sábháil mar nóta",
+    "save_note_failed": "Theip ar nóta a chruthú ón teachtaireacht.",
+    "regenerate": "Athghiniúint",
+    "delete_message": "Scrios an teachtaireacht",
+    "delete_message_confirm": "Scrios an teachtaireacht seo? Ní féidir an oibríocht seo a chealú."
   },
   "sidebar_chat": {
     "title": "Comhrá AI",
@@ -2576,7 +2656,14 @@
     "history": "Stair chomhrá",
     "recent_chats": "Comhráite le déanaí",
     "no_chats": "Gan aon chomhráite roimhe seo",
-    "view_all_chats": "Féach ar na comhráite go léir"
+    "view_all_chats": "Féach ar na comhráite go léir",
+    "more_actions": "Tuilleadh gníomhartha",
+    "rename": "Athainmnigh",
+    "rename_title": "Athainmnigh an comhrá",
+    "rename_message": "Cuir isteach ainm nua don chomhrá seo:",
+    "delete": "Scrios",
+    "delete_chat": "Scrios an comhrá",
+    "delete_confirm": "Scrios an comhrá seo? Ní féidir é seo a chealú."
   },
   "mind-map": {
     "addChild": "Cuir páiste leis",
@@ -2774,7 +2861,10 @@
     "title": "Athbhreithnithe Nótaí"
   },
   "launcher_button_context_menu": {
-    "remove_from_launch_bar": "Bain den bharra lainseála"
+    "remove_from_launch_bar": "Bain den bharra lainseála",
+    "configure_launch_bar": "Cumraigh an barra lainseála",
+    "launch_bar_orientation": "Treoshuíomh an bharra seolta",
+    "will_reload_frontend": "(athlódáilfear an aip)"
   },
   "display_mode": {
     "source": "Radharc foinse",
@@ -2811,8 +2901,11 @@
     "placeholders": {
       "math": "cothromóid",
       "collapsible_summary": "Achoimre",
-      "collapsible_details": "Sonraí"
-    }
+      "collapsible_details": "Sonraí",
+      "table_column": "Colún {{number}}"
+    },
+    "page_break": "Cuir briseadh leathanaigh isteach (le haghaidh priontála)",
+    "table": "Cuir tábla isteach"
   },
   "mobile_note_navigator": {
     "back": "Téigh suas leibhéal amháin",
@@ -2969,13 +3062,11 @@
     "empty-hint": "Is giuirléid aon nóta linbh. Tarraing nóta anseo ón gcrann nó cruthaigh ceann nua."
   },
   "import_provider": {
-    "title": "Iompórtáil ó sheirbhís",
-    "choose_provider": "Roghnaigh seirbhís le hallmhairiú uaidh:",
-    "back": "Ar ais"
+    "choose_provider": "Roghnaigh seirbhís thuas le hallmhairiú uaithi."
   },
   "onenote_import": {
     "name": "Microsoft OneNote",
-    "description": "Iompórtáil leabhair nótaí, rannóga agus leathanaigh ó do chuntas OneNote.",
+    "description": "Ceanglaíonn le do chuntas",
     "connect_description": "Sínigh isteach le do chuntas Microsoft chun do leabhair nótaí OneNote a allmhairiú.",
     "connect": "Sínigh isteach le Microsoft",
     "connecting": "Ag fanacht go gcríochnófar an síniú isteach…",
@@ -2983,12 +3074,13 @@
     "disconnect": "Dícheangail",
     "load_failed": "Níorbh fhéidir do leabhair nótaí OneNote a luchtú.",
     "no_notebooks": "Ní bhfuarthas aon leabhair nótaí sa chuntas seo.",
-    "select_sections": "Roghnaigh na rannóga le hallmhairiú:",
-    "order_hint_title": "Ord na rannóg garbh",
-    "order_hint": "Ní chuimsíonn OneNote an t-ordú bunaidh sna sonraí allmhairithe, mar sin déantar rannóga agus grúpaí a shórtáil de réir dáta cruthaithe agus b'fhéidir nach n-oireann siad don chaoi a bhfeictear iad in OneNote.",
+    "select_sections": "Roghnaigh na rannóga le hallmhairiú",
     "import": "Iompórtáil roghnaithe",
     "attach_source": "Ceangail HTML bunaidh (dífhabhtú)",
-    "attach_source_hint": "Sábhálann sé HTML OneNote neamhathraithe gach leathanaigh mar cheangaltán ar an nóta allmhairithe, chun comparáid a dhéanamh leis an toradh tiontaithe."
+    "attach_source_hint": "Sábhálann sé HTML OneNote neamhathraithe gach leathanaigh mar cheangaltán ar an nóta allmhairithe, chun comparáid a dhéanamh leis an toradh tiontaithe.",
+    "section_heading": "Microsoft OneNote",
+    "checking": "Ag seiceáil do nasc OneNote…",
+    "select_sections_hint": "Ní chuimsíonn OneNote an t-ordú bunaidh sna sonraí allmhairithe, mar sin déantar rannóga agus grúpaí a shórtáil de réir dáta cruthaithe agus b'fhéidir nach n-oireann siad don chaoi a bhfeictear iad in OneNote."
   },
   "desktop": {
     "web_placeholder": "Ní bhaineann na roghanna seo ach le tógálacha deisce."
@@ -3007,5 +3099,122 @@
     "render_error": "Ní féidir an réamhamharc a rindreáil",
     "show_details": "Taispeáin sonraí",
     "last_valid_render": "Ag taispeáint an rindreála bailí deireanach"
+  },
+  "file_upload": {
+    "drop_or_browse_single": "Tarraing agus scaoil comhad anseo, nó cliceáil chun brabhsáil",
+    "drop_or_browse_multiple": "Tarraing agus scaoil comhaid anseo, nó cliceáil chun brabhsáil",
+    "browse_single": "Tapáil chun comhad a roghnú",
+    "browse_multiple": "Tapáil chun comhaid a roghnú",
+    "selected_one": "{{count}} comhad roghnaithe",
+    "selected_two": "{{count}} comhaid roghnaithe",
+    "selected_few": "{{count}} comhaid roghnaithe",
+    "selected_many": "{{count}} comhaid roghnaithe",
+    "selected_other": "{{count}} comhaid roghnaithe"
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "Ó easpórtáil HTML",
+    "description_long": "In Notion, easpórtáil do spás oibre nó leathanach mar HTML le fo-leathanaigh san áireamh, ansin roghnaigh an comhad .zip a eascraíonn as seo anseo.",
+    "choose_file": "Easpórtáil Notion (.zip)",
+    "import": "Iompórtáil"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "Ó easpórtáil Takeout",
+    "description_long": "In Google Takeout, easpórtáil do shonraí Keep mar chomhad .zip, agus ansin roghnaigh an comhad a eascraíonn as seo anseo.",
+    "choose_file": "Easpórtáil Google Keep (.zip)",
+    "import": "Iompórtáil"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "Ó easpórtáil JSON",
+    "description_long": "In Anytype, easpórtáil do spás ag baint úsáide as an bhformáid \"Any-Block\" le \"JSON\" roghnaithe, ansin roghnaigh an comhad .zip a eascraíonn as anseo. Ní allmhairítear ach leathanaigh agus a dtéacs faoi láthair.",
+    "choose_file": "Easpórtáil Anytype (.zip)",
+    "import": "Iompórtáil"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "Ó chomhaid .enex",
+    "description_long": "In Evernote, easpórtáil leabhar nótaí (nó suas le 100 nóta ag an am céanna) mar chomhad ENEX, ansin roghnaigh comhad .enex amháin nó níos mó anseo. Déantar gach comhad a allmhairiú mar leabhar nótaí ar leith.",
+    "choose_file": "Easpórtáil Evernote (.enex)",
+    "import": "Iompórtáil"
+  },
+  "login": {
+    "password": "Pasfhocal",
+    "remember-me": "Cuimhnigh orm",
+    "sso-not-enrolled": "Níl síniú isteach aonair socraithe fós. Sínigh isteach le do phasfhocal ar dtús, ansin nasc do chuntas ó na socruithe.",
+    "heading": "Logáil isteach i Nótaí Trilium",
+    "totp-token": "Pasfhocal aonuaire nó cód aisghabhála",
+    "button": "Logáil isteach",
+    "incorrect-password": "Tá an focal faire mícheart. Déan iarracht arís.",
+    "incorrect-totp": "Tá an focal faire aonuaire mícheart. Déan iarracht arís.",
+    "incorrect-recovery-code": "Tá an cód aisghabhála mícheart, nó úsáideadh é cheana féin.",
+    "too-many-attempts": "An iomarca iarrachtaí logála isteach. Fan cúpla nóiméad agus déan iarracht arís.",
+    "connection-error": "Níorbh fhéidir teacht ar an bhfreastalaí. Seiceáil do nasc agus déan iarracht eile.",
+    "sign_in_with_sso": "Sínigh isteach le {{ssoIssuerName}}",
+    "sso-wrong-account": "Ní hé an cuntas sin an ceann atá nasctha leis an gcás Trilium seo. Sínigh isteach leis an gcuntas nasctha."
+  },
+  "set_password": {
+    "password": "Pasfhocal",
+    "heading": "Socraigh pasfhocal",
+    "description": "Sula dtosaíonn tú ag úsáid Trilium ón ngréasán, ní mór duit pasfhocal a shocrú ar dtús. Úsáidfidh tú an pasfhocal seo ansin chun logáil isteach.",
+    "password-confirmation": "Deimhniú pasfhocail",
+    "button": "Socraigh pasfhocal",
+    "password-too-short": "Ní mór don phasfhocal a bheith {{length}} carachtar ar a laghad.",
+    "passwords-dont-match": "Ní hionann na pasfhocail a iontráladh."
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "Ó chruinneachán",
+    "description_long": "Zip do fhillteán cruinneacháin Obsidian, ansin roghnaigh an comhad .zip a eascraíonn as anseo.",
+    "choose_file": "Cruinneachán Obsidian (.zip)",
+    "import": "Iompórtáil"
+  },
+  "save_revision": {
+    "save_revision": "Sábháil athbhreithniú",
+    "revision_name_placeholder": "Ainm an athbhreithnithe (roghnach)",
+    "help": "Sábhálfar athbhreithniú ainmnithe do gach nóta a mheaitseálfar, ag gabháil a ábhair agus a theidil reatha."
+  },
+  "convert_note": {
+    "convert_note": "Tiontaigh",
+    "convert_note_to": "Nóta a thiontú",
+    "choose_conversion": "(roghnaigh comhshó)",
+    "conversion_htmlToMarkdown": "Nótaí Téacs → Nótaí Marcála Anuas (caillteanach)",
+    "conversion_markdownToHtml": "Nótaí Marcála Anuas → Nótaí Téacs",
+    "help_text": "Ní chuirtear an tiontú i bhfeidhm ach ar nótaí a mheaitseálann an cineál foinse; fágtar nótaí eile gan athrú. Sábháiltear athbhreithniú ar gach nóta tiontaithe roimh ré.",
+    "warning": "D’fhéadfadh roinnt formáidithe a bheith caillte agus nótaí á gcomhshó agus b’fhéidir go mbeadh ort cúpla rud a shocrú ina dhiaidh sin. Sábhálfar athbhreithniú ar gach nóta comhshóite roimh ré ionas gur féidir leat é a athchóiriú. Ar mhaith leat leanúint ar aghaidh?",
+    "warning_risky": "Tá tú ag tiontú idir dhá fhormáid nach bhfuil cumais chomhionanna acu, mar sin d'fhéadfadh roinnt formáidithe a bheith caillte agus d'fhéadfadh roinnt eilimintí nach dtacaítear leo a bheith fágtha ar lár.<br><br>An nglacann tú leis an riosca seo go hiomlán agus an mian leat dul ar aghaidh leis an tiontú?<br><br>Sábhálfar athbhreithniú ar gach nóta tiontaithe roimh ré, ionas gur féidir leat filleadh ar an bhformáid bhunaidh."
+  },
+  "icon_pack": {
+    "preview_title": "Réamhamharc ar an bpacáiste deilbhíní",
+    "invalid_manifest": "Níorbh fhéidir maniféis an phacáiste deilbhíní a pharsáil. Seiceáil gur JSON bailí é.",
+    "no_icons": "Níl aon deilbhíní sa phacáiste deilbhín seo.",
+    "tooltip": "Aicme: {{- class}}\nCód glífe: {{- code}}\nTéarmaí: {{- terms}}",
+    "count_one": "{{count}} deilbhín",
+    "count_two": "{{count}} deilbhíní",
+    "count_few": "{{count}} deilbhíní",
+    "count_many": "{{count}} deilbhíní",
+    "count_other": "{{count}} deilbhíní"
+  },
+  "blob_stub": {
+    "not_synced": "Tá ábhar an nóta seo rómhór le sioncronú leis an ngléas seo. Is féidir leat é a oscailt ar an bhfreastalaí sioncronaithe ina ionad.",
+    "open_on_server": "Oscail ar an bhfreastalaí"
+  },
+  "keyboard_shortcut_keys": {
+    "ctrl": "Ctrl",
+    "alt": "Alt",
+    "shift": "Shift",
+    "meta": "Meta",
+    "enter": "Enter",
+    "escape": "Esc",
+    "delete": "Scrios",
+    "backspace": "Cúlspás",
+    "space": "Spás",
+    "tab": "Tab",
+    "home": "Baile",
+    "end": "Deireadh",
+    "page_up": "Leathanach Suas",
+    "page_down": "Leathanach Síos",
+    "insert": "Iionsáigh"
   }
 }

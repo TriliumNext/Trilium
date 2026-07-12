@@ -7,15 +7,15 @@ import { useRef, useState } from "preact/hooks";
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import dialogService from "../../services/dialog";
+import toast from "../../services/toast";
 import { ViewTypeOptions } from "../collections/interface";
 import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useNoteProperty, useTriliumEvent } from "../react/hooks";
+import { useNoteLabel, useNoteProperty, useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import { CheckBoxProperty, ViewProperty } from "../react/NotePropertyMenu";
 import { bookPropertiesConfig } from "../ribbon/collection-properties-config";
-import { useViewType, VIEW_TYPE_MAPPINGS } from "../ribbon/CollectionPropertiesTab";
 
 export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     grid: "bx bxs-grid",
@@ -26,6 +26,17 @@ export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     board: "bx bx-columns",
     presentation: "bx bx-rectangle",
     dashboard: "bx bxs-dashboard"
+};
+
+export const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
+    grid: t("book_properties.grid"),
+    list: t("book_properties.list"),
+    calendar: t("book_properties.calendar"),
+    table: t("book_properties.table"),
+    geoMap: t("book_properties.geo-map"),
+    board: t("book_properties.board"),
+    presentation: t("book_properties.presentation"),
+    dashboard: t("book_properties.dashboard")
 };
 
 const MAX_OPEN_TABS = 50;
@@ -70,7 +81,7 @@ function OpenAllButton({ note, isOpening, setIsOpening }: {
         if (count === 0) return;
 
         if (count > MAX_OPEN_TABS) {
-            await dialogService.info(t("book_properties.open_all_too_many", { count, max: MAX_OPEN_TABS }));
+            toast.showError(t("book_properties.open_all_too_many", { count, max: MAX_OPEN_TABS }));
             return;
         }
 
@@ -101,6 +112,13 @@ function OpenAllButton({ note, isOpening, setIsOpening }: {
             disabled={count === 0 || isOpening}
         />
     );
+}
+
+export function useViewType(note: FNote | null | undefined) {
+    const [ viewType, setViewType ] = useNoteLabel(note, "viewType");
+    const defaultViewType = (note?.type === "search" ? "list" : "grid");
+    const viewTypeWithDefault = (viewType ?? defaultViewType) as ViewTypeOptions;
+    return [ viewTypeWithDefault, setViewType ] as const;
 }
 
 function ViewTypeSwitcher({ viewType, setViewType }: { viewType: ViewTypeOptions, setViewType: (newValue: ViewTypeOptions) => void }) {

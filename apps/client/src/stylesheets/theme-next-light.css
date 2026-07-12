@@ -182,6 +182,10 @@
     --center-pane-horiz-layout-background-color-bgfx: #ffffffd6;
 
     --right-pane-heading-color: gray;
+    --right-pane-peek-background: #ffffffea;
+    
+    --peek-pane-backdrop-color: #0000000a;
+    --peek-pane-shadow-color: #0000003a;
 
     --root-background: var(--left-pane-background-color);
 
@@ -321,11 +325,15 @@
     --callendar-coll-event-archived-sripe-color: #0000000a;
     --calendar-coll-today-background-color: #00000006;
 
-    --task-checkbox-without-state-background: #d5d5d5;
+    --task-checkbox-without-state-background: #00000029;
+    --task-checkbox-without-state-hover-background: #0000004a;
     --task-checkbox-with-state-background: gray;
+    --task-checkbox-with-state-hover-background: #000000a2;
     --task-checkbox-done-color: green;
-    --task-checkbox-unknown-state-color: orange;
+    --task-checkbox-done-hover-color: #41b441;
+    --task-checkbox-unknown-state-color: #e95d5d;
     --task-checkbox-glyph-color: white;
+
 }
 
 #left-pane .fancytree-node.tinted,
@@ -381,4 +389,8 @@
 
 [data-trilium-task-state] {
     --task-state-adjusted-color: hsl(var(--task-state-hue), 50%, 50%);
+}
+
+:where(.ck-content .todo-list li[data-trilium-task-state]), .tn-task-checkbox {
+    --task-state-custom-hover-background-color: hsl(var(--task-state-hue), 50%, 60%);
 }

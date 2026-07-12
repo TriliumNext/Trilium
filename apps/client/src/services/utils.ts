@@ -159,6 +159,21 @@ export function isMac() {
     return navigator.platform.indexOf("Mac") > -1;
 }
 
+/**
+ * Returns `true` when the (server-reported) host platform is Linux. Prefer this over a
+ * `!isMac && !isWindows` derivation so future platforms aren't misclassified as Linux.
+ */
+export function isLinux() {
+    return window.glob?.platform === "linux";
+}
+
+/**
+ * Returns `true` when the (server-reported) host platform is Windows.
+ */
+export function isWindows() {
+    return window.glob?.platform === "win32";
+}
+
 export function isCtrlKey(evt: KeyboardEvent | MouseEvent | JQuery.ClickEvent | JQuery.ContextMenuEvent | JQuery.TriggeredEvent | React.PointerEvent<HTMLCanvasElement> | JQueryEventObject) {
     return (!isMac() && evt.ctrlKey) || (isMac() && evt.metaKey);
 }
@@ -572,17 +587,18 @@ function areObjectsEqual(...args: unknown[]) {
     return true;
 }
 
-function copyHtmlToClipboard(content: string) {
+function copyHtmlToClipboard(html: string, plainText: string = html) {
     function listener(e: ClipboardEvent) {
         if (e.clipboardData) {
-            e.clipboardData.setData("text/html", content);
-            e.clipboardData.setData("text/plain", content);
+            e.clipboardData.setData("text/html", html);
+            e.clipboardData.setData("text/plain", plainText);
         }
         e.preventDefault();
     }
     document.addEventListener("copy", listener);
-    document.execCommand("copy");
+    const ok = document.execCommand("copy");
     document.removeEventListener("copy", listener);
+    return ok;
 }
 
 export function createImageSrcUrl(note: FNote) {
@@ -885,6 +901,8 @@ export default {
     isElectron,
     isPWA,
     isMac,
+    isLinux,
+    isWindows,
     isCtrlKey,
     assertArguments,
     escapeHtml,

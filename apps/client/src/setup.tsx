@@ -1,16 +1,15 @@
 import "./setup.css";
 
-import { LOCALES, NetworkAddressesResponse, SetupSyncFromServerResponse } from "@triliumnext/commons";
+import { LOCALES, MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE, NetworkAddressesResponse, SetupSyncFromServerResponse } from "@triliumnext/commons";
 import clsx from "clsx";
-import { ComponentChildren, render } from "preact";
+import { render } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useTranslation } from "react-i18next";
 
 import logo from "./assets/icon-color.svg?url";
 import { getCurrentLanguage, initLocale, t } from "./services/i18n";
 import server from "./services/server";
-import { isElectron, isMobileApp, replaceHtmlEscapedSlashes } from "./services/utils";
-import ActionButton from "./widgets/react/ActionButton";
+import { isElectron, isMobileApp } from "./services/utils";
 import Admonition, { ExtendedAdmonition } from "./widgets/react/Admonition";
 import Button from "./widgets/react/Button";
 import { Card, CardFrame, CardSection } from "./widgets/react/Card";
@@ -18,6 +17,7 @@ import FormGroup from "./widgets/react/FormGroup";
 import { FormListItem } from "./widgets/react/FormList";
 import FormTextBox from "./widgets/react/FormTextBox";
 import Icon from "./widgets/react/Icon";
+import SetupPage from "./widgets/react/SetupPage";
 
 async function main() {
     await initLocale();
@@ -52,10 +52,25 @@ function renderState(state: State, setState: (state: State) => void) {
 }
 
 function App() {
-    const [state, setState] = useState<State>("selectLanguage");
+    // A sync that already created the schema but was interrupted before finishing
+    // resumes straight on the progress screen instead of restarting the wizard.
+    const resuming = window.glob.syncInProgress === true;
+    const [state, setState] = useState<State>(resuming ? "syncFromServerInProgress" : "selectLanguage");
     const [prevState, setPrevState] = useState<State | null>(null);
     const [transitioning, setTransitioning] = useState(false);
     const prevStateRef = useRef<State>(state);
+
+    useEffect(() => {
+        if (!resuming) {
+            return;
+        }
+        // The background sync timer stays gated behind DB initialization, so nothing
+        // restarts the interrupted sync on its own — kick it off like the launch-bar
+        // button does. sync/now is a no-op if a sync is somehow already running.
+        server.post("sync/now").catch(() => {
+            // Ignore — the progress screen keeps polling sync/stats regardless.
+        });
+    }, [resuming]);
 
     function handleSetState(newState: State) {
         setPrevState(prevStateRef.current);
@@ -108,6 +123,7 @@ function SelectLanguage({ setState }: { setState: (state: State) => void }) {
                             key={locale.id}
                             value={locale.id}
                             active={locale.id === currentLocale}
+                            rtl={locale.rtl}
                             onClick={async () => {
                                 await i18n.changeLanguage(locale.id);
                                 setCurrentLocale(locale.id);
@@ -231,11 +247,14 @@ function SyncInProgress({ device }: { device: "server" | "desktop" }) {
     const currentIndex = steps.findIndex((s) => s.key === step);
 
     const syncingDone = currentIndex > steps.findIndex((s) => s.key === "syncing");
+    // Pulled-so-far, clamped: the remote can gain changes mid-sync, briefly pushing the
+    // outstanding count above the frozen total, which would otherwise show a negative bar.
+    const pulled = stats.totalPullCount ? Math.max(0, stats.totalPullCount - stats.outstandingPullCount) : 0;
     let progress = 0;
     if (syncingDone) {
         progress = 100;
     } else if (stats.totalPullCount) {
-        progress = Math.round(((stats.totalPullCount - stats.outstandingPullCount) / stats.totalPullCount) * 100);
+        progress = Math.min(100, Math.round((pulled / stats.totalPullCount) * 100));
     }
 
     return (
@@ -251,7 +270,7 @@ function SyncInProgress({ device }: { device: "server" | "desktop" }) {
                         {s.label}
                         {s.key === "syncing" && (
                             <div class="sync-progress">
-                                <progress value={syncingDone ? 1 : stats.totalPullCount! - stats.outstandingPullCount} max={syncingDone ? 1 : stats.totalPullCount!} />
+                                <progress value={syncingDone ? 1 : pulled} max={syncingDone ? 1 : (stats.totalPullCount ?? 1)} />
                                 <span>{progress}%</span>
                             </div>
                         )}
@@ -339,7 +358,11 @@ function SyncFromServer({ setState }: { setState: (state: State) => void }) {
             const resp = await server.post<SetupSyncFromServerResponse>("setup/sync-from-server", {
                 syncServerHost: syncServerHost.trim().replace(/\/+$/, ""),
                 syncProxy: syncProxy.trim(),
-                password
+                password,
+                // On mobile (Capacitor), don't pull blobs above the default limit — they blow the
+                // WASM/native heap during sync. The server sends stubs instead; other platforms
+                // send 0 (no limit).
+                syncMaxBlobContentSize: isMobileApp() ? MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE : 0
             });
 
             if (resp.result === "success") {
@@ -527,53 +550,6 @@ function SetupOptionCard({ title, description, icon, onClick, disabled }: { titl
                 <p>{description}</p>
             </div>
         </CardFrame>
-    );
-}
-
-function SetupPage({ title, description, className, illustration, children, footer, error, errorId, onBack }: {
-    title: string;
-    description?: string;
-    error?: string | null;
-    errorId?: number;
-    className?: string;
-    illustration?: ComponentChildren;
-    children?: ComponentChildren;
-    footer?: ComponentChildren;
-    onBack?: () => void;
-}) {
-    const [ showError, setShowError ] = useState(!!error);
-    useEffect(() => {
-        if (error) {
-            setShowError(true);
-        }
-    }, [ error, errorId ]);
-
-    return (
-        <div className={clsx("page", className, { "contentless": !children })}>
-            {onBack && (
-                <Button
-                    className="back-button"
-                    icon="bx bx-arrow-back"
-                    text={t("setup.button-back")}
-                    onClick={onBack}
-                    kind="lowProfile"
-                />
-            )}
-            {error && showError && (
-                <Admonition className="page-error" type="caution">
-                    <ActionButton icon="bx bx-x" text={t("setup.dismiss-error")} onClick={() => setShowError(false)}  />
-                    {replaceHtmlEscapedSlashes(error)}
-                </Admonition>
-            )}
-
-            {illustration}
-            <h1>{title}</h1>
-            {description && <p class="page-description">{description}</p>}
-            {children && <main>
-                {children}
-            </main>}
-            {footer && <footer>{footer}</footer>}
-        </div>
     );
 }
 
