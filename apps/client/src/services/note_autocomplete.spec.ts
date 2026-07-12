@@ -607,6 +607,52 @@ describe("initNoteAutocomplete wiring", () => {
         expect(selected).not.toHaveBeenCalled();
     });
 
+    // Issue #5669 round-2: the terminal-selection guard (which stops the stale
+    // create-note Enter right after a selection) must not persist across a fresh
+    // programmatic query. autocomplete.js's setVal does not emit "input", so the
+    // input handler that normally clears the guard never fires for these helpers;
+    // each fresh-query helper must clear it explicitly. Otherwise, after selecting
+    // a note, clicking Recent Notes (or running a full-text search) would leave
+    // Enter swallowed until the user manually edited the field.
+    it("showRecentNotes clears the terminal-selection guard from a prior selection", () => {
+        const $el = makeEl();
+        noteAutocomplete.initNoteAutocomplete($el);
+        $el.data("terminalSelection", true); // post-selection terminal state
+        noteAutocomplete.showRecentNotes($el);
+        expect($el.data("terminalSelection")).toBe(false);
+    });
+
+    it("setText and showAllCommands clear the terminal-selection guard", () => {
+        const $el = makeEl();
+        noteAutocomplete.initNoteAutocomplete($el);
+        $el.data("terminalSelection", true);
+        noteAutocomplete.setText($el, "hello");
+        expect($el.data("terminalSelection")).toBe(false);
+
+        $el.data("terminalSelection", true);
+        noteAutocomplete.showAllCommands($el);
+        expect($el.data("terminalSelection")).toBe(false);
+    });
+
+    it("full-text search (Shift+Enter) clears the terminal-selection guard", () => {
+        const $el = makeEl();
+        noteAutocomplete.initNoteAutocomplete($el);
+        $el.autocomplete("val", "some text");
+        $el.data("terminalSelection", true);
+        $el.trigger($.Event("keydown", { shiftKey: true, key: "Enter" }));
+        expect($el.data("terminalSelection")).toBe(false);
+    });
+
+    it("the terminal-selection guard persists until a fresh query clears it", () => {
+        const $el = makeEl();
+        noteAutocomplete.initNoteAutocomplete($el);
+        $el.data("terminalSelection", true);
+        // A plain Enter must NOT clear the guard (it is what the guard swallows);
+        // only a fresh query or real user input clears it.
+        $el.trigger($.Event("keydown", { key: "Enter" }));
+        expect($el.data("terminalSelection")).toBe(true);
+    });
+
     it("leaves Enter available for form submission after a terminal selection", () => {
         const $el = makeEl();
         noteAutocomplete.initNoteAutocomplete($el);

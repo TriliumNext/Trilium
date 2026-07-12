@@ -163,19 +163,29 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
     cb(results);
 }
 
+// Starting a fresh query programmatically re-enables keyboard selection: clear the
+// terminal-selection guard so Enter is not swallowed after a prior selection (autocomplete.js's
+// setVal does not emit "input", so the input handler that normally clears it never fires here).
+function clearTerminalSelection($el: JQuery<HTMLElement>) {
+    $el.data("terminalSelection", false);
+}
+
 function clearText($el: JQuery<HTMLElement>) {
     searchDelay = 0;
+    clearTerminalSelection($el);
     $el.setSelectedNotePath("");
     $el.autocomplete("val", "").trigger("change");
 }
 
 function setText($el: JQuery<HTMLElement>, text: string) {
+    clearTerminalSelection($el);
     $el.setSelectedNotePath("");
     $el.autocomplete("val", text.trim()).autocomplete("open");
 }
 
 function showRecentNotes($el: JQuery<HTMLElement>) {
     searchDelay = 0;
+    clearTerminalSelection($el);
     $el.setSelectedNotePath("");
     $el.autocomplete("val", "");
     $el.autocomplete("open");
@@ -184,6 +194,7 @@ function showRecentNotes($el: JQuery<HTMLElement>) {
 
 function showAllCommands($el: JQuery<HTMLElement>) {
     searchDelay = 0;
+    clearTerminalSelection($el);
     $el.setSelectedNotePath("");
     $el.autocomplete("val", ">").autocomplete("open");
 }
@@ -193,6 +204,7 @@ function fullTextSearch($el: JQuery<HTMLElement>, options: Options) {
     if (options.fastSearch === false || searchString?.trim().length === 0) {
         return;
     }
+    clearTerminalSelection($el);
     $el.trigger("focus");
     options.fastSearch = false;
     $el.autocomplete("val", "");
@@ -214,10 +226,12 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     // Used to track whether the user is performing character composition with an input method (such as Chinese Pinyin, Japanese, Korean, etc.) and to avoid triggering a search during the composition process.
     let isComposingInput = false;
     // Setting the selected value can re-query and auto-select a stale create-note row before the
-    // dropdown finishes closing.
-    let hasTerminalSelection = false;
+    // dropdown finishes closing. Stored on the element (not a closure) so the module-level
+    // programmatic query helpers (clearText/setText/showRecentNotes/showAllCommands/fullTextSearch)
+    // can clear it when they start a fresh query -- autocomplete.js's setVal does not emit "input".
+    $el.data("terminalSelection", false);
     $el.on("input", () => {
-        hasTerminalSelection = false;
+        $el.data("terminalSelection", false);
     });
     $el.on("compositionstart", () => {
         isComposingInput = true;
@@ -291,7 +305,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     $el.on("keydown", (event) => {
         const isPlainEnter = event.key === "Enter"
             && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey;
-        if (hasTerminalSelection && isPlainEnter) {
+        if ($el.data("terminalSelection") === true && isPlainEnter) {
             // Stop autocomplete from consuming the stale create-note row, but leave the default
             // form submission intact.
             event.stopImmediatePropagation();
@@ -391,7 +405,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             $el.setSelectedExternalLink(suggestion.externalLink);
 
             $el.autocomplete("val", suggestion.externalLink);
-            hasTerminalSelection = true;
+            $el.data("terminalSelection", true);
 
             $el.autocomplete("close");
 
@@ -401,7 +415,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         }
 
         if (suggestion.action === "create-note") {
-            if (hasTerminalSelection) {
+            if ($el.data("terminalSelection") === true) {
                 return;
             }
 
@@ -430,7 +444,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         $el.setSelectedExternalLink(null);
 
         $el.autocomplete("val", suggestion.noteTitle);
-        hasTerminalSelection = true;
+        $el.data("terminalSelection", true);
 
         $el.autocomplete("close");
 
