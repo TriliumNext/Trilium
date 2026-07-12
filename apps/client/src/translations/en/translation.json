@@ -2656,7 +2656,7 @@
     "delete_note": "Delete note...",
     "hidden": "Hidden in current view",
     "show_in_view": "Show in view \"{{view}}\"",
-    "hide_from_view": "Hide from view \"{{view}}\""
+    "hide_from_view": "Hide from view \"{{view}}\"",
     "time_slots": "Time slots",
     "slot_duration": "Duration",
     "slot_label_interval": "Label interval",
