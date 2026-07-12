@@ -35,6 +35,6 @@
     "dotenv": "17.4.2",
     "esbuild": "0.28.1",
     "highlight.js": "11.11.1",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   }
 }
