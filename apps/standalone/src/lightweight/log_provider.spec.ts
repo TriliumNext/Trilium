@@ -236,3 +236,29 @@ describe("StandaloneLogService listing and deletion", () => {
         await expect(internal.deleteLogFile("trilium-2024-05-01.log")).resolves.toBeUndefined();
     });
 });
+
+describe("StandaloneLogService without OPFS", () => {
+    it("falls back to console-only logging instead of throwing", async () => {
+        Object.defineProperty(navigator, "storage", { value: undefined, configurable: true });
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+        const internal = internalsOf(new StandaloneLogService());
+
+        // ensureLogDirectory tolerates the missing API...
+        await expect(internal.ensureLogDirectory()).resolves.toBeUndefined();
+        expect(internal.logDir).toBeNull();
+        expect(warn).toHaveBeenCalledWith(
+            "[LogService] OPFS unavailable, using console-only logging:",
+            expect.anything()
+        );
+
+        // ...openLogFile stays in console-only mode...
+        await expect(internal.openLogFile("trilium-2024-01-15.log")).resolves.toBeUndefined();
+        expect(internal.currentFile).toBeNull();
+
+        // ...and entries land on the console.
+        internal.writeEntry("hello");
+        expect(log).toHaveBeenCalledWith("hello");
+    });
+});
