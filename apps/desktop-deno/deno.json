@@ -2,13 +2,22 @@
     "name": "@triliumnext/desktop-deno",
     "version": "0.103.0",
     "exports": "./main.ts",
+    "nodeModulesDir": "manual",
+    "unstable": ["sloppy-imports"],
     "tasks": {
-        "start": "deno desktop --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts",
-        "dev": "deno desktop --hmr --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts",
-        "smoke": "TRILIUM_SMOKE=1 deno desktop --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts",
-        "package": "deno desktop --output TriliumNotes.AppImage --include ../standalone/dist --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts"
+        "start": "deno desktop --no-check --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts",
+        "dev": "deno desktop --no-check --hmr --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts",
+        "dev-server": "deno run --no-check -A server/dev.ts",
+        "smoke": "TRILIUM_SMOKE=1 deno desktop --no-check --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts",
+        "start-wasm": "TRILIUM_WASM=1 deno desktop --no-check --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts",
+        "smoke-wasm": "TRILIUM_SMOKE=1 TRILIUM_WASM=1 deno desktop --no-check --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts",
+        "package": "deno desktop --no-check --output TriliumNotes.AppImage --include ../standalone/dist --allow-env --allow-read --allow-net --allow-write --allow-run=xdg-open,open,explorer main.ts"
     },
     "imports": {
+        "@triliumnext/core": "../../packages/trilium-core/src/index.ts",
+        "@triliumnext/core/": "../../packages/trilium-core/",
+        "@triliumnext/commons": "../../packages/commons/src/index.ts",
+        "@triliumnext/commons/": "../../packages/commons/",
         "@std/encoding": "jsr:@std/encoding@^1.0.0",
         "@std/http": "jsr:@std/http@^1.0.0"
     },

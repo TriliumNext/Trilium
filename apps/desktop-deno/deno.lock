@@ -67,6 +67,11 @@
     "dependencies": [
       "jsr:@std/encoding@1",
       "jsr:@std/http@1"
-    ]
+    ],
+    "packageJson": {
+      "dependencies": [
+        "npm:i18next@26.3.4"
+      ]
+    }
   }
 }
