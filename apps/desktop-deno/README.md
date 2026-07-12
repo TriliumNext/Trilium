@@ -47,6 +47,12 @@ process collapses into the shell. `server/dev.ts` also runs standalone for
 headless development: `deno task dev-server`, then open
 `http://127.0.0.1:8765` in any browser.
 
+The child binds the runtime's `DENO_SERVE_ADDRESS`, not a port of its own
+choosing: the desktop runtime points the window at that address and
+force-navigates there ~15 s after launch regardless of what has bound it,
+so a child on any other port gets clobbered with "Connection refused" a few
+seconds in.
+
 ### Module resolution (workspace-root `deno.json`)
 
 Deno loads trilium-core's TypeScript sources directly, but two wrinkles

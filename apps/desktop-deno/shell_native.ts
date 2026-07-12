@@ -30,7 +30,15 @@ const dataDir = SMOKE_MODE
     : resolveDataDir();
 
 const appDir = resolveAppDir();
-const port = 20000 + Math.floor(Math.random() * 20000);
+
+// The desktop runtime picks a loopback address, sets DENO_SERVE_ADDRESS, and
+// navigates the implicit startup window there — force-navigating after 15s
+// even if nothing has bound it yet. So the child core server must bind THAT
+// address; binding a different port makes the runtime's forced navigation
+// hit an unbound port ("Connection refused"). Fall back to a fixed port for
+// headless runs where the runtime isn't present.
+const serveAddress = Deno.env.get("DENO_SERVE_ADDRESS") ?? "tcp:127.0.0.1:8765";
+const port = serveAddress.split(":").pop() ?? "8765";
 const serverUrl = `http://127.0.0.1:${port}`;
 
 console.log(`[native] starting core server (data=${dataDir})`);
@@ -98,9 +106,9 @@ function spawnCoreServer(): Deno.ChildProcess {
         cwd: appDir,
         env: {
             PORT: String(port),
-            // Deno.serve prefers DENO_SERVE_ADDRESS over the port option, and
-            // the child would otherwise inherit the desktop runtime's value.
-            DENO_SERVE_ADDRESS: `tcp:127.0.0.1:${port}`,
+            // Bind exactly where the runtime points the window (Deno.serve
+            // honors DENO_SERVE_ADDRESS over the port option).
+            DENO_SERVE_ADDRESS: serveAddress,
             TRILIUM_DATA_DIR: dataDir
         },
         stdout: "inherit",
