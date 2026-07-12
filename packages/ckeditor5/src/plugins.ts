@@ -26,6 +26,7 @@ import { Math, AutoformatMath } from "@triliumnext/ckeditor5-math";
 import CopyAnchorLinkButton from "./plugins/copy_anchor_link.js";
 import CopyLinkUrlButton from "./plugins/copy_link_url.js";
 import ImageActions from "./plugins/image_actions.js";
+import ClipboardImageEmbed from "./plugins/clipboard_image_embed.js";
 
 // import "@triliumnext/ckeditor5-mermaid/index.css";
 // import "@triliumnext/ckeditor5-admonition/index.css";
@@ -81,6 +82,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     CopyAnchorLinkButton,
     CopyLinkUrlButton,
     ImageActions,
+    ClipboardImageEmbed,
 ];
 
 /**
