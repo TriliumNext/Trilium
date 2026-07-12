@@ -45,6 +45,15 @@ async function bootstrap() {
     window.global = globalThis;
 
     try {
+        // A native desktop shell (apps/desktop-deno) serves this bundle with
+        // a real HTTP backend on the same origin and marks the page with
+        // TRILIUM_NATIVE_SERVER: skip the in-page server (worker + service
+        // worker) entirely and let all API calls go to the network.
+        if ((window as { TRILIUM_NATIVE_SERVER?: boolean }).TRILIUM_NATIVE_SERVER) {
+            await loadScripts();
+            return;
+        }
+
         // When running inside a Capacitor WebView, register the native HTTP
         // handler so outbound sync requests bypass CORS and cookie restrictions.
         if ("Capacitor" in window) {
