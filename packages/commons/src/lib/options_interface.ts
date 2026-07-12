@@ -187,6 +187,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteCompletionEnabled: boolean;
     /** Whether keyboard auto-completion for editing commands is triggered when typing `/`. */
     textNoteSlashCommandsEnabled: boolean;
+    /** Whether the first letter of a sentence is automatically capitalized as you type. */
+    textNoteAutoCapitalizeEnabled: boolean;
     backgroundEffects: boolean;
     newLayout: boolean;
 
