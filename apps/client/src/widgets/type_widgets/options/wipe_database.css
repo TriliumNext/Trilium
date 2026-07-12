@@ -1,0 +1,18 @@
+/* Destructive action styling, tinted with the shared danger colour to set the wipe apart from the
+   neighbouring, non-destructive database maintenance buttons. */
+.wipe-database-button.btn,
+.wipe-database-confirm-button.btn {
+    --color: var(--icon-button-danger-color, #d9534f);
+    color: var(--color);
+    border-color: var(--color);
+}
+
+.wipe-database-button.btn:hover:not(:disabled),
+.wipe-database-confirm-button.btn:hover:not(:disabled) {
+    background-color: var(--color);
+    color: white;
+}
+
+.modal.wipe-database-dialog .admonition p {
+    margin-bottom: 0;
+}

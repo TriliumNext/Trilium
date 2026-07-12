@@ -11,6 +11,7 @@ import DatabaseFileList from "./components/DatabaseFileList";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import { OptionsRowWithButton, OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
+import WipeDatabaseOptions from "./wipe_database";
 
 export default function AdvancedSettings() {
     return <>
@@ -19,6 +20,7 @@ export default function AdvancedSettings() {
         <DatabaseAnonymizationOptions />
         <ExperimentalOptions />
         <AdvancedSyncOptions />
+        <WipeDatabaseOptions />
     </>;
 }
 

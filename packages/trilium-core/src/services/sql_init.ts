@@ -224,6 +224,47 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     log.info("Database initialization completed, emitted DB_INITIALIZED event");
 }
 
+/**
+ * Wipes all data from the current document and rebuilds an empty database from scratch.
+ *
+ * Every user table is dropped and the initial database is recreated (schema, root note, default
+ * options and the hidden subtree) via {@link createInitialDatabase}, leaving the application in the
+ * same state as a fresh install — but without the demo content. Becca is reloaded in-process, so the
+ * running server/desktop-main/standalone-worker immediately reflects the empty database; callers on
+ * the client are still expected to reload the page afterwards to reset their own caches.
+ *
+ * This is destructive and irreversible: there is no undo. It works identically on every platform
+ * (server, desktop and standalone/mobile) because it operates purely through the SQL layer.
+ *
+ * On standalone/mobile the whole route runs inside a single transaction (the browser router wraps it
+ * in `transactionalAsync`), so the drop-and-rebuild is atomic. On the multi-request server build the
+ * drop commits before {@link createInitialDatabase} rebuilds the schema, leaving a brief window where
+ * a concurrent request could observe missing tables — an acceptable trade-off for a deliberate,
+ * one-off reset that immediately reloads the whole application.
+ */
+async function wipeDatabase() {
+    const sql = getSql();
+    const log = getLog();
+
+    log.info("Wiping database ...");
+
+    sql.transactional(() => {
+        // Dropping a table also drops its indexes; the schema has no views or standalone triggers,
+        // so dropping every non-internal table clears the whole document. `IF EXISTS` guards against
+        // an already-empty database. Names are quoted to survive any exotic identifiers.
+        const tableNames = sql.getColumn<string>(/*sql*/`SELECT name FROM sqlite_master
+            WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`);
+        for (const tableName of tableNames) {
+            sql.execute(`DROP TABLE IF EXISTS "${tableName}"`);
+        }
+    });
+
+    // Skip the demo content: a wipe is meant to leave an empty document, not reintroduce sample notes.
+    await createInitialDatabase(true);
+
+    log.info("Database has been wiped and reinitialized.");
+}
+
 async function createDatabaseForSync(options: OptionRow[], syncServerHost = "", syncProxy = "", syncMaxBlobContentSize = 0) {
     const log = getLog();
     const sql = getSql();
@@ -250,4 +291,4 @@ async function createDatabaseForSync(options: OptionRow[], syncServerHost = "", 
     log.info("Schema and not synced options generated.");
 }
 
-export default { isDbInitialized, createDatabaseForSync, setDbAsInitialized, schemaExists, getDbSize, initDbConnection, dbReady, initializeDb, createInitialDatabase };
+export default { isDbInitialized, createDatabaseForSync, setDbAsInitialized, schemaExists, getDbSize, initDbConnection, dbReady, initializeDb, createInitialDatabase, wipeDatabase };

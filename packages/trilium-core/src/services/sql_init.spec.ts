@@ -93,4 +93,25 @@ describe("sql_init (real DB)", () => {
             await expect(Promise.resolve(sqlInit.dbReady)).resolves.toBeUndefined();
         });
     });
+
+    // Runs last: it destroys the fixture DB for this file. Vitest's forks pool gives each spec file
+    // its own in-memory copy, so this does not leak into other files.
+    describe("wipeDatabase", () => {
+        it("drops all user data and rebuilds an empty, initialized database", async () => {
+            const userNoteCount = () =>
+                getSql().getValue<number>("SELECT COUNT(*) FROM notes WHERE noteId != 'root' AND noteId NOT LIKE '\\_%' ESCAPE '\\'");
+
+            // The fixture ships with demo content, so there are real user notes to wipe.
+            expect(userNoteCount()).toBeGreaterThan(0);
+
+            await getContext().init(() => sqlInit.wipeDatabase());
+
+            // All non-system user content is gone, but the database is a valid, initialized shell:
+            // the root note remains and the schema/initialized flag are intact.
+            expect(userNoteCount()).toBe(0);
+            expect(getSql().getValue("SELECT noteId FROM notes WHERE noteId = 'root'")).toBe("root");
+            expect(sqlInit.schemaExists()).toBe(true);
+            expect(sqlInit.isDbInitialized()).toBe(true);
+        });
+    });
 });
