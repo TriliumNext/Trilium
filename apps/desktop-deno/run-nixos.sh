@@ -29,17 +29,30 @@ libs=$(nix build --no-link --print-out-paths \
 LD_LIBRARY_PATH=$(echo "$libs" | sed 's|$|/lib|' | paste -sd:)
 export LD_LIBRARY_PATH
 
+# The native shell spawns the core server as a `deno run` child process
+# and needs to know which binary to use.
+export DENO_BIN
+
 case "${1:-start}" in
     start) ;;
     smoke) export TRILIUM_SMOKE=1 ;;
-    *) echo "usage: $0 [start|smoke]" >&2; exit 1 ;;
+    wasm) export TRILIUM_WASM=1 ;;
+    smoke-wasm) export TRILIUM_SMOKE=1 TRILIUM_WASM=1 ;;
+    *) echo "usage: $0 [start|smoke|wasm|smoke-wasm]" >&2; exit 1 ;;
 esac
 
 # The `deno desktop` dev-runner compiles and bundles, but (as of 2.9.2, at
 # least in this environment) exits without actually launching the app — so
 # build first, then run the bundled binary directly. This also makes logs
 # visible, which the detached runner never shows.
-"$DENO_BIN" desktop --allow-env --allow-read --allow-net --allow-write \
-    --allow-run=xdg-open main.ts
+# Flags match the deno.json tasks:
+# --no-check: the trilium-core graph is not type-checkable under Deno's
+#   checker (needs @types/node etc.); the child server runs it anyway.
+# --node-modules-dir=none: the shell binary uses only jsr:@std + node:
+#   builtins, so it must not embed pnpm's node_modules (that balloons the
+#   binary from ~150 KB to >1 GB). npm/core deps live in the child process.
+# --allow-run: unrestricted because the shell spawns $DENO_BIN itself.
+"$DENO_BIN" desktop --no-check --node-modules-dir=none \
+    --allow-env --allow-read --allow-net --allow-write --allow-run main.ts
 
 exec ./desktop-deno/desktop-deno

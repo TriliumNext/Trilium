@@ -47,6 +47,26 @@ process collapses into the shell. `server/dev.ts` also runs standalone for
 headless development: `deno task dev-server`, then open
 `http://127.0.0.1:8765` in any browser.
 
+### Module resolution (workspace-root `deno.json`)
+
+Deno loads trilium-core's TypeScript sources directly, but two wrinkles
+need a **workspace-root** `deno.json` (at the repo root, one per checkout —
+inert to pnpm/Vite/tsc):
+
+- `unstable: ["sloppy-imports"]` lets Deno load core's extensionless and
+  relative `.js`→`.ts` imports. A workspace *member* config cannot set this
+  field, and the CLI flag only covers relative specifiers.
+- core imports a handful of sibling packages by **bare** specifier with a
+  `.js` extension (`@triliumnext/commons/src/lib/…​.js`). sloppy-imports
+  does not remap bare specifiers, and the import map that fixes them must
+  live at the root — a member import map does not govern the imports inside
+  `packages/trilium-core`. The root `deno.json` lists these explicitly.
+
+The desktop shell binary itself has no npm/core deps (only `jsr:@std` +
+`node:` builtins), so its build passes `--node-modules-dir=none`; without
+that flag `deno desktop` embeds all of pnpm's `node_modules` and the binary
+balloons from ~75 KB to >1 GB.
+
 ## Running
 
 Prerequisites: Deno ≥ 2.9, `pnpm install`, and a standalone build

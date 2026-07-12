@@ -92,6 +92,8 @@ function resolveAppDir(): string {
 function spawnCoreServer(): Deno.ChildProcess {
     const denoBin = Deno.env.get("DENO_BIN") ?? "deno";
     const process = new Deno.Command(denoBin, {
+        // Reads deno.json from appDir for sloppy-imports + nodeModulesDir,
+        // which core's .js->.ts specifiers need.
         args: ["run", "--no-check", "-A", `${appDir}/server/dev.ts`],
         cwd: appDir,
         env: {
