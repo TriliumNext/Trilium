@@ -1563,8 +1563,8 @@ importers:
         specifier: 3.4.0
         version: 3.4.0
       pdfjs-dist:
-        specifier: 6.0.227
-        version: 6.0.227
+        specifier: 6.1.200
+        version: 6.1.200
       yauzl:
         specifier: 3.4.0
         version: 3.4.0
@@ -11358,10 +11358,6 @@ packages:
   pbf@5.1.0:
     resolution: {integrity: sha512-Wv0yo0+uZepnoNEKsquhar1F18LogB8oeEikIhUXG16udbiXG7JecHGySwoo6kuMgjmbQYzdrTZlO+/K9t8eZg==}
     hasBin: true
-
-  pdfjs-dist@6.0.227:
-    resolution: {integrity: sha512-/P6M4SXw+70waMVLUM7rdRtvo+dEzqE1t6W/zQNvBETo2MaRa5rrvCcAYdfWGiUzadTgM0lJmRApUrW0d9zgKg==}
-    engines: {node: '>=22.13.0 || >=24'}
 
   pdfjs-dist@6.1.200:
     resolution: {integrity: sha512-o8MolyzirkkLrcdsae/HEOiIcXWI7DS5zGpvqW8xTC2YUsW30rltFw2bDGvw/fskUdEMrQm2br68jzDS5BH2vw==}
@@ -26256,10 +26252,6 @@ snapshots:
   pbf@5.1.0:
     dependencies:
       resolve-protobuf-schema: 2.1.0
-
-  pdfjs-dist@6.0.227:
-    optionalDependencies:
-      '@napi-rs/canvas': 1.0.0
 
   pdfjs-dist@6.1.200:
     optionalDependencies:

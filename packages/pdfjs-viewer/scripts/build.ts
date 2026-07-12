@@ -1,4 +1,5 @@
-import { join } from "path";
+import { createRequire } from "module";
+import { dirname, join, relative } from "path";
 import BuildHelper from "../../../scripts/build-utils";
 import { build as esbuild } from "esbuild";
 import { LOCALES } from "@triliumnext/commons";
@@ -6,6 +7,7 @@ import { watch } from "chokidar";
 import { readFileSync, writeFileSync } from "fs";
 import packageJson from "../package.json" with { type: "json " };
 
+const require = createRequire(import.meta.url);
 const build = new BuildHelper("packages/pdfjs-viewer");
 const watchMode = process.argv.includes("--watch");
 
@@ -40,11 +42,14 @@ async function main() {
     }
     build.writeJson("web/locale/locale.json", localeMappings);
 
-    // Copy pdfjs-dist files. Resolve from the package's own node_modules so we
-    // pick up the version declared in this package.json — the hoisted root
-    // node_modules may hold a different version pulled in by another dependency.
+    // Copy pdfjs-dist files. Resolve through Node so we pick up exactly the
+    // version declared in this package.json, wherever pnpm places it — under
+    // the hoisted nodeLinker it lands in the root node_modules, not the
+    // package's own, so a hardcoded relative path would miss it.
+    const pdfjsBuildDir = join(dirname(require.resolve("pdfjs-dist/package.json")), "build");
+    const pdfjsBuildDirFromRoot = "/" + relative(build.rootDir, pdfjsBuildDir);
     for (const file of [ "pdf.mjs", "pdf.worker.mjs", "pdf.sandbox.mjs" ]) {
-        build.copy(join("node_modules/pdfjs-dist/build", file), join("build", file));
+        build.copy(join(pdfjsBuildDirFromRoot, file), join("build", file));
     }
 
     if (watchMode) {

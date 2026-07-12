@@ -5,7 +5,7 @@ import { delimiter, join } from "path";
 
 export default class BuildHelper {
 
-    private rootDir: string;
+    rootDir: string;
     projectDir: string;
     outDir: string;
 

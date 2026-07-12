@@ -717,11 +717,26 @@
   }
 
   ::-moz-selection{
-    background:transparent;
+    background:rgba(0 0 255 / 0.25);
+    background:color-mix(in srgb, AccentColor, transparent 50%);
+    color:transparent;
   }
 
   ::selection{
-    background:transparent;
+    background:rgba(0 0 255 / 0.25);
+    background:color-mix(in srgb, AccentColor, transparent 50%);
+    color:transparent;
+  }
+
+  &.selectionRendering{
+    ::-moz-selection{
+      background:transparent;
+      color:transparent;
+    }
+    ::selection{
+      background:transparent;
+      color:transparent;
+    }
   }
   br::-moz-selection{
     background:transparent;
@@ -763,6 +778,7 @@
   color-scheme:only light;
 
   --annotation-unfocused-field-background:url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+  --annotation-unfocused-field-filter:url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='pdfjsFillableField' x='0%' y='0%' width='100%' height='100%' color-interpolation-filters='sRGB'><feFlood flood-color='rgb(0,54,255)' flood-opacity='0.13' result='f'/><feComposite in='f' in2='SourceGraphic' operator='over'/></filter></svg>#pdfjsFillableField");
   --input-focus-border-color:Highlight;
   --input-focus-outline:1px solid Canvas;
   --input-unfocused-border-color:transparent;
@@ -885,6 +901,13 @@
       overflow:hidden;
     }
   }
+  .hasOwnCanvas:not(.sandboxModified) :is(input, textarea){
+    display:none;
+  }
+
+  .hasOwnCanvas.sandboxModified canvas.annotationContent{
+    display:none;
+  }
 
   .textLayer.selecting ~ & section{
     pointer-events:none;
@@ -945,10 +968,6 @@
     padding:0;
   }
 
-  .buttonWidgetAnnotation.radioButton input{
-    border-radius:50%;
-  }
-
   .textWidgetAnnotation textarea{
     resize:none;
   }
@@ -996,46 +1015,56 @@
     outline:var(--input-focus-outline);
   }
 
-  .buttonWidgetAnnotation.checkBox input:checked::before,
-  .buttonWidgetAnnotation.checkBox input:checked::after,
-  .buttonWidgetAnnotation.radioButton input:checked::before{
-    background-color:CanvasText;
-    content:"";
-    display:block;
-    position:absolute;
-  }
+  .buttonWidgetAnnotation:is(.checkBox, .radioButton){
+    [data-canvas-name]{
+      filter:var(--annotation-unfocused-field-filter);
+    }
 
-  .buttonWidgetAnnotation.checkBox input:checked::before,
-  .buttonWidgetAnnotation.checkBox input:checked::after{
-    height:80%;
-    left:45%;
-    width:1px;
-  }
+    &:focus-within [data-canvas-name]{
+      filter:none;
+    }
 
-  .buttonWidgetAnnotation.checkBox input:checked::before{
-    transform:rotate(45deg);
-  }
+    [data-canvas-name="checked"]{
+      &:has(~ input:checked){
+        display:block;
+      }
 
-  .buttonWidgetAnnotation.checkBox input:checked::after{
-    transform:rotate(-45deg);
-  }
+      &:has(~ input:not(:checked)){
+        display:none;
+      }
+    }
 
-  .buttonWidgetAnnotation.radioButton input:checked::before{
-    border-radius:50%;
-    height:50%;
-    left:25%;
-    top:25%;
-    width:50%;
+    [data-canvas-name="unchecked"]{
+      &:has(~ input:checked){
+        display:none;
+      }
+
+      &:has(~ input:not(:checked)){
+        display:block;
+      }
+    }
   }
 
   .textWidgetAnnotation input.comb{
+    --comb-width:0px;
+    --comb-letter-spacing:calc(var(--comb-width) - 1ch);
+
     font-family:monospace;
-    padding-left:2px;
-    padding-right:0;
+    letter-spacing:var(--comb-letter-spacing);
+    overflow-x:hidden;
+    padding:0;
+    text-indent:calc(
+      var(--comb-offset, 0) * var(--comb-width) + var(--comb-letter-spacing) / 2
+    );
   }
 
   .textWidgetAnnotation input.comb:focus{
-    width:103%;
+    background-image:repeating-linear-gradient(
+      to right,
+      transparent 0 calc(var(--comb-width) - 1px),
+      var(--input-focus-border-color) calc(var(--comb-width) - 1px)
+        var(--comb-width)
+    );
   }
 
   .buttonWidgetAnnotation:is(.checkBox, .radioButton) input{
@@ -1044,9 +1073,57 @@
             appearance:none;
   }
 
+  .buttonWidgetAnnotation:is(.checkBox, .radioButton):has(
+      [data-canvas-name="checked"]
+    )
+    input:checked,
+  .buttonWidgetAnnotation:is(.checkBox, .radioButton):has(
+      [data-canvas-name="unchecked"]
+    )
+    input:not(:checked){
+    background-image:none;
+  }
+
   .fileAttachmentAnnotation .popupTriggerArea{
     height:100%;
     width:100%;
+  }
+
+  .mediaAnnotation{
+    pointer-events:auto;
+
+    .mediaContent{
+      width:100%;
+    }
+
+    video.mediaContent{
+      height:100%;
+      -o-object-fit:contain;
+         object-fit:contain;
+    }
+
+    audio.mediaContent{
+      position:absolute;
+      bottom:0;
+    }
+
+    .mediaPlayButton{
+      height:100%;
+      width:100%;
+      margin:0;
+      padding:0;
+      border:none;
+      cursor:pointer;
+      background-color:transparent;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='rgba(0,0,0,0.55)'/%3E%3Cpath d='M40 32 L70 50 L40 68 Z' fill='white'/%3E%3C/svg%3E");
+      background-position:center;
+      background-repeat:no-repeat;
+      background-size:calc(48px * var(--total-scale-factor));
+
+      &:hover{
+        background-color:rgba(255 255 255 / 0.1);
+      }
+    }
   }
 
   .popupAnnotation{
@@ -1476,16 +1553,6 @@
 }
 
 .canvasWrapper{
-  .selection{
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    pointer-events:none;
-    background:rgb(0 90 255 / 0.22);
-  }
-
   svg{
     transform:none;
 
@@ -6155,6 +6222,15 @@ button.hasPopupMenu{
         image-rendering:pixelated;
       }
     }
+    .selection{
+      position:absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      background:rgb(0 90 255 / 0.22);
+    }
   }
 }
 
@@ -6477,7 +6553,8 @@ body{
           user-select:none;
 }
 
-.pdfPresentationMode:fullscreen section:not([data-internal-link]){
+.pdfPresentationMode:fullscreen
+  section:not([data-internal-link], .mediaAnnotation){
   pointer-events:none;
 }
 
