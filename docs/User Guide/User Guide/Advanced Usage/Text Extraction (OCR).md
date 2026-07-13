@@ -36,7 +36,7 @@ The PDF extraction supports:
 Note that OCR extraction is limited to 50 pages per PDF, pages containing text information (not as an image) are not subject to this limitation.
 
 > [!NOTE]
-> Text extraction for scanned PDF using OCR was introduced in v0.104.0, so you might have to reprocess your existing documents (either individually or in bulk, see below).
+> Text extraction for scanned PDFs using OCR was introduced in v0.104.0. If a scanned PDF was already processed by an earlier version, reprocess it individually via _Process OCR_; batch processing only handles files that haven't been OCR'd yet.
 
 ### Office documents
 
