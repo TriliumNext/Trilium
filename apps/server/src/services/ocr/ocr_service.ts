@@ -411,12 +411,11 @@ class OCRService {
 
 
     /**
-     * Get blobs that need OCR processing. A NULL text representation means "never
-     * processed". An empty string means "processed, found no text"; that is only
-     * re-selected for PDFs, which gained the scanned-page OCR fallback and so may
-     * yield text now where an earlier run stored nothing. Images and Office files
-     * behave as before, so their empty results are final and left alone — otherwise
-     * every text-less image would be re-OCR'd on every batch run.
+     * Get blobs that need OCR processing (those without a stored text representation).
+     * A NULL text representation means "never processed"; an empty string means
+     * "processed, found no text" and is treated as done, so a blob is never re-OCR'd
+     * on every batch run. Existing scanned PDFs stored before the OCR fallback can be
+     * re-run individually via the manual "Process OCR" action (which forces reprocess).
      */
     getBlobsNeedingOCR(): Array<{ blobId: string; mimeType: string; entityType: 'note' | 'attachment'; entityId: string }> {
         try {
@@ -434,7 +433,7 @@ class OCRService {
                 WHERE (n.type = 'image' OR (n.type = 'file' AND n.mime IN (${placeholders})))
                 AND n.isDeleted = 0
                 AND n.blobId IS NOT NULL
-                AND (b.textRepresentation IS NULL OR (n.mime = 'application/pdf' AND b.textRepresentation = ''))
+                AND b.textRepresentation IS NULL
             `, supportedMimes);
 
             const attachmentBlobs = sql.getRows<{
@@ -448,7 +447,7 @@ class OCRService {
                 WHERE (a.role = 'image' OR (a.role = 'file' AND a.mime IN (${placeholders})))
                 AND a.isDeleted = 0
                 AND a.blobId IS NOT NULL
-                AND (b.textRepresentation IS NULL OR (a.mime = 'application/pdf' AND b.textRepresentation = ''))
+                AND b.textRepresentation IS NULL
             `, supportedMimes);
 
             // Combine results

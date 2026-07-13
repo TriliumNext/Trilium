@@ -752,17 +752,18 @@ describe('OCRService', () => {
                 ]);
             });
 
-            it('re-selects only PDF blobs whose previous OCR produced an empty result', () => {
+            it('selects only never-processed blobs, treating an empty result as terminal', () => {
                 mockSql.getRows.mockReturnValue([]);
 
                 ocrService.getBlobsNeedingOCR();
 
-                // Empty text representations are re-processed only for PDFs (which gained
-                // the scanned-page fallback). Other formats keep the NULL-only semantics,
-                // otherwise every text-less image would be re-OCR'd on every batch run.
+                // A stored empty string means "processed, found no text" and must not be
+                // re-selected, otherwise a blank/text-less blob would be re-OCR'd on every
+                // batch run. Both the note and attachment queries filter on NULL only.
                 expect(mockSql.getRows.mock.calls).toHaveLength(2);
                 for (const [sqlText] of mockSql.getRows.mock.calls) {
-                    expect(sqlText).toContain("application/pdf' AND b.textRepresentation = ''");
+                    expect(sqlText).toContain('textRepresentation IS NULL');
+                    expect(sqlText).not.toContain("textRepresentation = ''");
                 }
             });
 
