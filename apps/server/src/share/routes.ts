@@ -403,12 +403,37 @@ function register(router: Router) {
 
         const searchContext = new SearchContext({ ancestorNoteId });
         const searchResults = searchService.findResultsWithQuery(search, searchContext);
+
+        // Extract content snippets so the share viewer can show what matched.
+        // Snippet extraction reads each note's content and runs token highlighting, so we
+        // cap it to the first SNIPPET_LIMIT results (the share popout only renders 5).
+        // Results beyond the cap are still returned, just without a snippet.
+        const SNIPPET_LIMIT = 20;
+        const snippetTargets = searchResults.slice(0, SNIPPET_LIMIT);
+        const { highlightedTokens } = searchContext;
+        for (const result of snippetTargets) {
+            result.contentSnippet = searchService.extractContentSnippet(
+                result.noteId, highlightedTokens
+            );
+        }
+        // highlightSearchResults wraps matched tokens in <b>...</b> on highlightedContentSnippet.
+        // We pass ignoreInternalAttributes=true to match the share UX (no internal attrs).
+        searchService.highlightSearchResults(snippetTargets, highlightedTokens, true);
+
         const filteredResults = searchResults.map((sr) => {
             const fullNote = shaca.notes[sr.noteId];
             const startIndex = sr.notePathArray.indexOf(ancestorNoteId);
             const localPathArray = sr.notePathArray.slice(startIndex + 1).filter((id) => shaca.notes[id]);
             const pathTitle = localPathArray.map((id) => shaca.notes[id].title).join(" / ");
-            return { id: fullNote.shareId, title: fullNote.title, score: sr.score, path: pathTitle };
+            return {
+                id: fullNote.shareId,
+                title: fullNote.title,
+                score: sr.score,
+                path: pathTitle,
+                // Plain-text fallback and the <b>-highlighted variant from the search service.
+                snippet: sr.contentSnippet,
+                highlightedSnippet: sr.highlightedContentSnippet
+            };
         });
 
         res.json({ results: filteredResults });
