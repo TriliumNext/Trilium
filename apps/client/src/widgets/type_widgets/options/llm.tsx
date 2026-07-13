@@ -10,6 +10,7 @@ import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import NoItems from "../../react/NoItems";
 import OptionsPageHeader from "./components/OptionsPageHeader";
+import OptionsGroup from "./components/OptionsGroup";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import AddProviderModal, { type LlmProviderConfig, PROVIDER_TYPES } from "./llm/AddProviderModal";
@@ -132,7 +133,7 @@ function McpSettings() {
                 onChange={setMcpEnabled}
             />
 
-            {mcpEnabled && (
+            <OptionsGroup visible={mcpEnabled}>
                 <OptionsRow name="mcp-endpoint" label={t("llm.mcp_endpoint_title")} description={t("llm.mcp_endpoint_description")}>
                     <FormTextBox
                         className="selectable-text"
@@ -140,7 +141,7 @@ function McpSettings() {
                         readOnly
                     />
                 </OptionsRow>
-            )}
+            </OptionsGroup>
         </OptionsSection>
     );
 }

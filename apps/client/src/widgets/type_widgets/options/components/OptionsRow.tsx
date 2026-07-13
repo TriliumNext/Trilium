@@ -1,10 +1,14 @@
 import "./OptionsRow.css";
 
+import clsx from "clsx";
 import { cloneElement, ComponentChildren, VNode } from "preact";
+import { useContext } from "preact/hooks";
 
 import Button from "../../../react/Button";
+import { CardSection } from "../../../react/Card";
 import FormToggle from "../../../react/FormToggle";
 import { useUniqueName } from "../../../react/hooks";
+import { OptionsCardContext } from "./OptionsSection";
 
 interface OptionsRowProps {
     name: string;
@@ -20,10 +24,8 @@ export default function OptionsRow({ name, label, description, children, centere
     const id = useUniqueName(name);
     const childWithId = cloneElement(children, { id, name: (children.props as { name?: string }).name ?? name });
 
-    const className = `option-row ${centered ? "centered" : ""} ${stacked ? "stacked" : ""}`;
-
     return (
-        <div className={className}>
+        <OptionsRowShell className={clsx({ centered, stacked })}>
             <div className="option-row-label">
                 {label && <label for={id}>{label}</label>}
                 {description && <small className="option-row-description">{description}</small>}
@@ -31,8 +33,32 @@ export default function OptionsRow({ name, label, description, children, centere
             <div className="option-row-input">
                 {childWithId}
             </div>
-        </div>
+        </OptionsRowShell>
     );
+}
+
+interface OptionsRowShellProps {
+    as?: "section" | "a" | "button";
+    className?: string;
+    children: ComponentChildren;
+    [prop: string]: unknown;
+}
+
+/**
+ * The box a row lives in. Inside an options card the row is a segment of that card in its own right,
+ * seamed off from the rows around it; everywhere else (the import, delete and login dialogs) it stays
+ * a plain row, divided from its neighbours by a hairline.
+ */
+export function OptionsRowShell({ as, className, children, ...rest }: OptionsRowShellProps) {
+    const segmented = useContext(OptionsCardContext);
+    const rowClassName = clsx("option-row", className);
+
+    if (!segmented) {
+        const Tag = as ?? "div";
+        return <Tag className={rowClassName} {...rest}>{children}</Tag>;
+    }
+
+    return <CardSection as={as ?? "section"} className={rowClassName} {...rest}>{children}</CardSection>;
 }
 
 interface OptionsRowLinkProps {
@@ -47,20 +73,21 @@ interface OptionsRowLinkProps {
 
 export function OptionsRowLink({ label, description, href, onClick, noContainedNavigation }: OptionsRowLinkProps) {
     return (
-        <a
+        <OptionsRowShell
+            as="a"
+            className="option-row-link no-tooltip-preview"
             href={href}
-            className="option-row option-row-link no-tooltip-preview"
             onClick={onClick}
             data-no-contained-navigation={noContainedNavigation ? "" : undefined}
         >
             <div className="option-row-label">
-                <label style={{ cursor: "pointer" }}>{label}</label>
+                <label>{label}</label>
                 {description && <small className="option-row-description">{description}</small>}
             </div>
             <div className="option-row-input">
                 <span className="bx bx-chevron-right" />
             </div>
-        </a>
+        </OptionsRowShell>
     );
 }
 
@@ -108,7 +135,7 @@ interface OptionsRowWithButtonProps {
  */
 export function OptionsRowWithButton({ label, description, icon, disabled, onClick, buttonText, buttonClassName }: OptionsRowWithButtonProps) {
     return (
-        <div className="option-row">
+        <OptionsRowShell>
             <div className="option-row-label">
                 <label>{label}</label>
                 {description && <small className="option-row-description">{description}</small>}
@@ -116,6 +143,6 @@ export function OptionsRowWithButton({ label, description, icon, disabled, onCli
             <div className="option-row-input">
                 <Button className={buttonClassName} text={buttonText} icon={icon} disabled={disabled} onClick={onClick} />
             </div>
-        </div>
+        </OptionsRowShell>
     );
 }

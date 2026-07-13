@@ -20,7 +20,8 @@ import Icon from "../../react/Icon";
 import Modal from "../../react/Modal";
 import Slider from "../../react/Slider";
 import OptionsPageHeader from "./components/OptionsPageHeader";
-import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
+import OptionsGroup from "./components/OptionsGroup";
+import OptionsRow, { OptionsRowShell, OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import PlatformIndicator from "./components/PlatformIndicator";
 import RadioWithIllustration from "./components/RadioWithIllustration";
@@ -416,10 +417,14 @@ function Fonts() {
                 onChange={setOverrideThemeFonts}
             />
 
-            <Font label={t("fonts.main_font")} fontFamilyOption="mainFontFamily" fontSizeOption="mainFontSize" disabled={!isEnabled} />
-            <Font label={t("fonts.note_tree_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="treeFontFamily" fontSizeOption="treeFontSize" disabled={!isEnabled} />
-            <Font label={t("fonts.note_detail_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="detailFontFamily" fontSizeOption="detailFontSize" disabled={!isEnabled} />
-            <Font label={t("fonts.monospace_font")} description={t("fonts.monospace_font_description")} fontFamilyOption="monospaceFontFamily" fontSizeOption="monospaceFontSize" disabled={!isEnabled} isMonospace />
+            {/* Kept visible while the toggle is off, so the fonts on offer stay discoverable; the
+                group only marks them as governed by it. */}
+            <OptionsGroup visible>
+                <Font label={t("fonts.main_font")} fontFamilyOption="mainFontFamily" fontSizeOption="mainFontSize" disabled={!isEnabled} />
+                <Font label={t("fonts.note_tree_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="treeFontFamily" fontSizeOption="treeFontSize" disabled={!isEnabled} />
+                <Font label={t("fonts.note_detail_font")} sizeDescription={t("fonts.size_relative_to_general")} fontFamilyOption="detailFontFamily" fontSizeOption="detailFontSize" disabled={!isEnabled} />
+                <Font label={t("fonts.monospace_font")} description={t("fonts.monospace_font_description")} fontFamilyOption="monospaceFontFamily" fontSizeOption="monospaceFontSize" disabled={!isEnabled} isMonospace />
+            </OptionsGroup>
         </OptionsSection>
     );
 }
@@ -468,9 +473,10 @@ function Font({ label, description, sizeDescription, fontFamilyOption, fontSizeO
 
     return (
         <>
-            <button
+            <OptionsRowShell
+                as="button"
                 type="button"
-                className="option-row option-row-link font-option-row"
+                className="option-row-link font-option-row"
                 onClick={() => setShowModal(true)}
                 disabled={disabled}
             >
@@ -482,7 +488,7 @@ function Font({ label, description, sizeDescription, fontFamilyOption, fontSizeO
                     <span style={{ fontFamily: getFontFamily(fontFamily ?? ""), fontSize: `${fontSize}%` }}>{displayLabel}</span>
                     <span className="bx bx-chevron-right" />
                 </div>
-            </button>
+            </OptionsRowShell>
 
             <FontPickerModal
                 show={showModal}

@@ -22,6 +22,7 @@ import Modal from "../../react/Modal";
 import RawHtml from "../../react/RawHtml";
 import MfaStatusBadge, { MfaStatusTone } from "./components/MfaStatusBadge";
 import OptionsPageHeader from "./components/OptionsPageHeader";
+import OptionsBlock from "./components/OptionsBlock";
 import OptionsRow, { OptionsRowWithButton } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import TimeSelector from "./components/TimeSelector";
@@ -331,15 +332,17 @@ function OAuthStatusCard({ status, refreshStatus }: { status?: OAuthStatus, refr
                 </>
             ) : (
                 <>
-                    <ExtendedAdmonition
-                        type="note"
-                        icon="bx bx-info-circle"
-                        title={t("multi_factor_authentication.oauth_not_enrolled_title")}
-                        detailsLabel={t("multi_factor_authentication.oauth_not_enrolled_details_label")}
-                        details={t("multi_factor_authentication.oauth_not_enrolled_details")}
-                    >
-                        {t("multi_factor_authentication.oauth_not_enrolled_hint")}
-                    </ExtendedAdmonition>
+                    <OptionsBlock noPadding>
+                        <ExtendedAdmonition
+                            type="note"
+                            icon="bx bx-info-circle"
+                            title={t("multi_factor_authentication.oauth_not_enrolled_title")}
+                            detailsLabel={t("multi_factor_authentication.oauth_not_enrolled_details_label")}
+                            details={t("multi_factor_authentication.oauth_not_enrolled_details")}
+                        >
+                            {t("multi_factor_authentication.oauth_not_enrolled_hint")}
+                        </ExtendedAdmonition>
+                    </OptionsBlock>
 
                     <OAuthProviderRows status={status} />
 

@@ -18,6 +18,7 @@ import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { getHtml } from "../../react/RawHtml";
 import OptionsPageHeader from "./components/OptionsPageHeader";
+import OptionsBlock from "./components/OptionsBlock";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import RadioWithIllustration from "./components/RadioWithIllustration";
@@ -353,7 +354,9 @@ function CodeBlockStyle() {
                 />
             </OptionsRow>
 
-            <CodeBlockPreview theme={effectiveTheme} wordWrap={codeBlockWordWrap} tabWidth={codeBlockTabWidth} />
+            <OptionsBlock>
+                <CodeBlockPreview theme={effectiveTheme} wordWrap={codeBlockWordWrap} tabWidth={codeBlockTabWidth} />
+            </OptionsBlock>
         </OptionsSection>
     );
 }
@@ -420,19 +423,21 @@ function TableOfContent() {
 
     return (!isNewLayout &&
         <OptionsSection title={t("table_of_contents.title")}>
-            <FormText>{t("table_of_contents.description")}</FormText>
+            <OptionsBlock>
+                <FormText>{t("table_of_contents.description")}</FormText>
 
-            <FormGroup name="min-toc-headings">
-                <FormTextBoxWithUnit
-                    type="number"
-                    min={0} max={999999999999999} step={1}
-                    unit={t("table_of_contents.unit")}
-                    currentValue={minTocHeadings} onChange={setMinTocHeadings}
-                />
-            </FormGroup>
+                <FormGroup name="min-toc-headings">
+                    <FormTextBoxWithUnit
+                        type="number"
+                        min={0} max={999999999999999} step={1}
+                        unit={t("table_of_contents.unit")}
+                        currentValue={minTocHeadings} onChange={setMinTocHeadings}
+                    />
+                </FormGroup>
 
-            <FormText>{t("table_of_contents.disable_info")}</FormText>
-            <FormText>{t("table_of_contents.shortcut_info")}</FormText>
+                <FormText>{t("table_of_contents.disable_info")}</FormText>
+                <FormText>{t("table_of_contents.shortcut_info")}</FormText>
+            </OptionsBlock>
         </OptionsSection>
     );
 }
@@ -440,15 +445,16 @@ function TableOfContent() {
 function HighlightsList() {
     return (
         <OptionsSection title={t("highlights_list.title")}>
-            <HighlightsListOptions />
+            <OptionsBlock>
+                <HighlightsListOptions />
+            </OptionsBlock>
 
             {!isNewLayout && (
-                <>
-                    <hr />
+                <OptionsBlock>
                     <h5>{t("highlights_list.visibility_title")}</h5>
                     <FormText>{t("highlights_list.visibility_description")}</FormText>
                     <FormText>{t("highlights_list.shortcut_info")}</FormText>
-                </>
+                </OptionsBlock>
             )}
         </OptionsSection>
     );

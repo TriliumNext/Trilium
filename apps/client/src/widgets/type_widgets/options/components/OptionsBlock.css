@@ -1,0 +1,5 @@
+/* Prose fills the width of its segment, so the trailing margin a paragraph carries would only pad the
+   segment unevenly at the bottom. */
+.options-block > :last-child {
+    margin-bottom: 0;
+}

@@ -1,7 +1,48 @@
 .options-section-card {
-    .admonition {
-        margin: calc(var(--options-card-padding) * -1) calc(var(--options-card-padding) * -1) 0 calc(var(--options-card-padding) * -1);
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
+    /* Declared here rather than in the theme, because the substitutions below feed the Card
+       primitive's `padding: var(--card-padding-block) var(--card-padding-inline)`. Were this
+       variable to go undefined — as it would under a theme that doesn't ship it — the substitution
+       would be invalid at computed-value time and the whole padding declaration would be dropped. */
+    --options-card-padding: 17px;
+
+    /* The card's segments are settings rows, so they are padded as rows were: tight vertically,
+       and inset horizontally by the card's own padding, which the bleeds elsewhere reach for. */
+    --card-padding-block: 0.75em;
+    --card-padding-inline: var(--options-card-padding);
+
+    /* Themes that don't define a card border leave the segments plain, rather than taking the Card
+       fallback to the general border colour and drawing one where there has never been one. */
+    --card-border-color: transparent;
+
+    /* Anchors the `@container` row stacking in OptionsRow.css. Deliberately set here and not on
+       `.tn-card-section`, which would make every card in the app a container — stacking rows in the
+       narrow import and delete dialogs, and trapping `position: fixed` dropdowns. */
+    container-type: inline-size;
+
+    & > .tn-card-body {
+        /* Content that is not a settings row and was not wrapped in an OptionsBlock still takes its
+           place in the card's stack, rather than being left bare on the page with no box around it.
+           Consecutive pieces of prose each become a segment of their own this way, though, so group
+           them in an OptionsBlock where that matters. */
+        & > :not(.tn-card-section) {
+            padding: var(--card-padding-block) var(--card-padding-inline);
+            border: 1px solid var(--card-border-color);
+            background: var(--card-background-color);
+
+            /* A paragraph standing in as a segment would otherwise push the next one away by its own
+               trailing margin, widening the seam that the card sets. */
+            margin-block: 0;
+        }
+
+        /* The stack is rounded as a whole, whatever its ends happen to be. */
+        & > :first-child {
+            border-start-start-radius: var(--card-border-radius);
+            border-start-end-radius: var(--card-border-radius);
+        }
+
+        & > :last-child {
+            border-end-start-radius: var(--card-border-radius);
+            border-end-end-radius: var(--card-border-radius);
+        }
     }
 }

@@ -1,8 +1,7 @@
 import "./Card.css";
-import { ComponentChildren, createContext } from "preact";
-import { JSX, HTMLAttributes } from "preact";
-import { useContext } from "preact/hooks";
 import clsx from "clsx";
+import { ComponentChildren, createContext, createElement, CSSProperties, HTMLAttributes, JSX } from "preact";
+import { useContext, useMemo } from "preact/hooks";
 
 // #region Card Frame
 
@@ -44,8 +43,12 @@ export function Card(props: {children: ComponentChildren} & CardProps) {
 
 // #region Card Section
 
-export interface CardSectionProps {
+export interface CardSectionProps extends Omit<HTMLAttributes<HTMLElement>, "style"> {
     className?: string;
+    style?: CSSProperties;
+    /** The element to render as. Defaults to `section`; a section that is itself a link or a button
+     *  has to say so, since it cannot nest the interactive element inside itself. */
+    as?: "section" | "a" | "button" | "div";
     subSections?: JSX.Element | JSX.Element[];
     subSectionsVisible?: boolean;
     highlightOnHover?: boolean;
@@ -59,27 +62,56 @@ interface CardSectionContextType {
 
 const CardSectionContext = createContext<CardSectionContextType | undefined>(undefined);
 
-export function CardSection(props: {children: ComponentChildren} & CardSectionProps) {
+/** The nesting level a card section rendered at this point in the tree would take. */
+function useNestingLevel() {
     const parentContext = useContext(CardSectionContext);
-    const nestingLevel = (parentContext && parentContext.nestingLevel + 1) ?? 0;
+    return (parentContext && parentContext.nestingLevel + 1) ?? 0;
+}
+
+export function CardSection({
+    children, className, style, as, subSections, subSectionsVisible,
+    highlightOnHover, onAction, noPadding, onClick, ...rest
+}: CardSectionProps) {
+    const nestingLevel = useNestingLevel();
+    const nesting = useMemo(() => ({ nestingLevel }), [ nestingLevel ]);
+
+    const section = createElement(as ?? "section", {
+        ...rest,
+        className: clsx("tn-card-section", className, {
+            "tn-card-section-nested": nestingLevel > 0,
+            "tn-card-highlight-on-hover": highlightOnHover || onAction,
+            "tn-no-padding": noPadding
+        }),
+        style: {
+            ...style,
+            "--tn-card-section-nesting-level": (nestingLevel) ? nestingLevel : null
+        },
+        onClick: onAction ?? onClick
+    }, children);
 
     return <>
-        <section className={clsx("tn-card-section", props.className, {
-                    "tn-card-section-nested": nestingLevel > 0,
-                    "tn-card-highlight-on-hover": props.highlightOnHover || props.onAction,
-                    "tn-no-padding": props.noPadding
-                 })}
-                 style={{"--tn-card-section-nesting-level": (nestingLevel) ? nestingLevel : null}}
-                 onClick={props.onAction}>
-            {props.children}
-        </section>
+        {section}
 
-        {props.subSectionsVisible && props.subSections &&
-            <CardSectionContext.Provider value={{nestingLevel}}>
-                {props.subSections}
+        {subSectionsVisible && subSections &&
+            <CardSectionContext.Provider value={nesting}>
+                {subSections}
             </CardSectionContext.Provider>
         }
     </>;
+}
+
+/**
+ * Places its children one nesting level deeper without rendering a section of its own, so that the
+ * sections among them nest as siblings of the card body rather than as boxes within a box.
+ *
+ * Unlike `subSections`, this works wherever it is placed — including inside a wrapper component,
+ * which a parent inspecting its own children could never see into.
+ */
+export function CardNesting({ children }: { children: ComponentChildren }) {
+    const nestingLevel = useNestingLevel();
+    const nesting = useMemo(() => ({ nestingLevel }), [ nestingLevel ]);
+
+    return <CardSectionContext.Provider value={nesting}>{children}</CardSectionContext.Provider>;
 }
 
 // #endregion

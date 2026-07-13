@@ -44,18 +44,20 @@
     }
 
     .tn-card-section {
-        &:first-of-type {
+        /* Matched on position rather than element type, because a section that is a link or a button
+           renders as one — so the sections of a card are not all of the same type. */
+        &:first-child {
             border-top-left-radius: var(--card-border-radius);
             border-top-right-radius: var(--card-border-radius);
         }
 
-        &:last-of-type {
+        &:last-child {
             border-bottom-left-radius: var(--card-border-radius);
             border-bottom-right-radius: var(--card-border-radius);
         }
 
         &.tn-card-section-nested {
-            padding-left: calc(var(--card-padding-inline) + var(--card-nested-section-indent) * var(--tn-card-section-nesting-level));
+            padding-inline-start: calc(var(--card-padding-inline) + var(--card-nested-section-indent) * var(--tn-card-section-nesting-level));
             background-color: color-mix(in srgb, var(--card-background-color) calc(100% / (var(--tn-card-section-nesting-level) + 1)) , transparent);
         }
     }

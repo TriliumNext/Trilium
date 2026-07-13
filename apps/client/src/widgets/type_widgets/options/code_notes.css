@@ -1,15 +1,13 @@
 .note-detail-content-widget-content.options {
     /* #region Code Preview */
-    .options-section.code-block-appearance .options-section-card {
+    .options-section.code-block-appearance .code-note-preview {
+        /* The preview is a segment of its own, so it fills one edge to edge rather than bleeding out
+           of the padding of the box that used to hold it. Its corners are rounded as the card's last
+           segment, and the editor inside is clipped to them. */
         overflow: hidden;
 
-        .option-row:nth-last-child(2) {
-            border-bottom: 0;
-        }
-
         .note-detail-readonly-code-content {
-            border-top: solid 1px var(--main-border-color);
-            margin: 0 calc(var(--options-card-padding) * -1) calc(var(--options-card-padding) * -1) calc(var(--options-card-padding) * -1) !important;
+            margin: 0 !important;
         }
     }
     /* #endregion */

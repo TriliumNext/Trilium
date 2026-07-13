@@ -10,6 +10,7 @@ import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../re
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { CodeMimeTypesList } from "./code_mime_types_list";
 import OptionsPageHeader from "./components/OptionsPageHeader";
+import OptionsBlock from "./components/OptionsBlock";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import ThemeModeSelector from "./components/ThemeModeSelector";
@@ -143,7 +144,9 @@ function Appearance({ wordWrapping, indentSize }: AppearanceProps) {
                 </OptionsRow>
             )}
 
-            <CodeNotePreview wordWrapping={wordWrapping} themeName={effectiveTheme} indentSize={indentSize} />
+            <OptionsBlock className="code-note-preview" noPadding>
+                <CodeNotePreview wordWrapping={wordWrapping} themeName={effectiveTheme} indentSize={indentSize} />
+            </OptionsBlock>
         </OptionsSection>
     );
 }

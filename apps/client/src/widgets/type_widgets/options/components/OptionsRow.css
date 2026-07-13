@@ -1,10 +1,19 @@
 .option-row {
-    border-bottom: 1px solid var(--main-border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+}
+
+/* Rows that are not segments of an options card — the import, delete and login dialogs stack them
+   inside a single card section — carry their own padding, and a hairline to divide them. */
+.option-row:not(.tn-card-section) {
+    border-bottom: 1px solid var(--main-border-color);
     padding: 0.75em 0;
+}
+
+.option-row:not(.tn-card-section):last-child {
+    border-bottom: unset;
 }
 
 .option-row-label {
@@ -38,10 +47,6 @@
     color: var(--muted-text-color);
 }
 
-.option-row:last-child {
-    border-bottom: unset;
-}
-
 .option-row.centered {
     justify-content: center;
 }
@@ -70,11 +75,12 @@
     }
 }
 
+/* A row that navigates. As a segment of the card it is the whole hover target already, so it needs
+   no bleed of its own — the highlight fills the segment. */
 .option-row-link {
     text-decoration: none;
     color: inherit;
-    margin-inline: calc(-1 * var(--options-card-padding, 15px));
-    padding-inline: var(--options-card-padding, 15px);
+    cursor: pointer;
     transition: background-color 250ms ease-in-out;
 }
 
@@ -82,18 +88,19 @@
     background: var(--hover-item-background-color);
 }
 
+/* Link rows rendered as buttons have the browser's own button styling to undo; the card supplies the
+   background, border and padding, so only the typography and alignment are left to reset. */
 button.option-row-link {
+    appearance: none;
+    font: inherit;
+    text-align: start;
+}
+
+button.option-row-link:not(.tn-card-section) {
     background: none;
     border: none;
     border-bottom: 1px solid var(--main-border-color);
-    width: calc(100% + 2 * var(--options-card-padding, 15px));
-    text-align: left;
-    font: inherit;
-    cursor: pointer;
-}
-
-button.option-row-link:last-child {
-    border-bottom: none;
+    width: 100%;
 }
 
 button.option-row-link:disabled {

@@ -10,6 +10,7 @@ import FormText from "../../react/FormText";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
 import OptionsPageHeader from "./components/OptionsPageHeader";
+import OptionsBlock from "./components/OptionsBlock";
 import OptionsRow, { OptionsRowWithButton, OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import TimeSelector from "./components/TimeSelector";
@@ -155,9 +156,10 @@ function HtmlImportTags() {
 
     return (
         <OptionsSection title={t("import.html_import_tags.title")}>
-            <FormText>{t("import.html_import_tags.description")}</FormText>
+            <OptionsBlock>
+                <FormText>{t("import.html_import_tags.description")}</FormText>
 
-            <textarea
+                <textarea
                 className="allowed-html-tags"
                 spellcheck={false}
                 placeholder={t("import.html_import_tags.placeholder")}
@@ -177,10 +179,11 @@ function HtmlImportTags() {
                 }}
             />
 
-            <Button
-                text={t("import.html_import_tags.reset_button")}
-                onClick={() => setAllowedHtmlTags(SANITIZER_DEFAULT_ALLOWED_TAGS)}
-            />
+                <Button
+                    text={t("import.html_import_tags.reset_button")}
+                    onClick={() => setAllowedHtmlTags(SANITIZER_DEFAULT_ALLOWED_TAGS)}
+                />
+            </OptionsBlock>
         </OptionsSection>
     );
 }

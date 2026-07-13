@@ -2,6 +2,7 @@ import { useMemo } from "preact/hooks";
 import { getAvailableLocales, t } from "../../../services/i18n";
 import FormSelect from "../../react/FormSelect";
 import OptionsPageHeader from "./components/OptionsPageHeader";
+import OptionsGroup from "./components/OptionsGroup";
 import OptionsRow from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import { useTriliumOption, useTriliumOptionJson } from "../../react/hooks";
@@ -110,14 +111,16 @@ function DateSettings() {
                 />
             </OptionsRow>
 
-            {firstWeekOfYear === "2" && <OptionsRow name="min-days-in-first-week" label={t("i18n.min-days-in-first-week")}>
-                <FormSelect
-                    keyProperty="days"
-                    currentValue={minDaysInFirstWeek} onChange={setMinDaysInFirstWeek}
-                    values={Array.from(
-                        { length: 7 },
-                        (_, i) => ({ days: String(i + 1) }))} />
-            </OptionsRow>}
+            <OptionsGroup visible={firstWeekOfYear === "2"}>
+                <OptionsRow name="min-days-in-first-week" label={t("i18n.min-days-in-first-week")}>
+                    <FormSelect
+                        keyProperty="days"
+                        currentValue={minDaysInFirstWeek} onChange={setMinDaysInFirstWeek}
+                        values={Array.from(
+                            { length: 7 },
+                            (_, i) => ({ days: String(i + 1) }))} />
+                </OptionsRow>
+            </OptionsGroup>
 
             <OptionsRow name="restart" centered>
                 <Button

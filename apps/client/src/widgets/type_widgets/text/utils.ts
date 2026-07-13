@@ -66,7 +66,9 @@ export async function loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>,
 }
 
 export function refreshIncludedNote(container: HTMLDivElement, noteId: string) {
-    const includedNotes = container.querySelectorAll(`section[data-note-id="${noteId}"]`);
+    // Scoped to the include-note class, as every other lookup of these is: an embedded collection
+    // also tags its cards with the note they show, and refreshing one would empty a card instead.
+    const includedNotes = container.querySelectorAll(`section.include-note[data-note-id="${noteId}"]`);
     for (const includedNote of includedNotes) {
         loadIncludedNote(noteId, $(includedNote as HTMLElement));
     }
