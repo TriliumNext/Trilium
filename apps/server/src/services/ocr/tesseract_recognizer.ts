@@ -30,15 +30,28 @@ interface RecognizedData {
 class TesseractRecognizer {
     private worker: Tesseract.Worker | null = null;
     private currentLanguage: string | null = null;
+    // Serializes recognition jobs. The worker is a single shared resource and a
+    // language change tears it down and rebuilds it, so two overlapping calls (e.g.
+    // a manual reprocess arriving mid-batch) could otherwise terminate a worker that
+    // another call is mid-recognition with. Chaining also bounds OCR to one CPU-heavy
+    // job at a time.
+    private queue: Promise<unknown> = Promise.resolve();
 
     /**
      * Recognize text in an encoded image buffer (PNG/JPEG/etc.) for the given
      * Tesseract language code(s), applying the configured confidence filtering.
+     * Calls are queued so only one recognition runs at a time.
      */
-    async recognize(image: Buffer, language: string): Promise<RecognitionResult> {
-        const worker = await this.ensureWorker(language);
-        const { data } = await worker.recognize(image);
-        return this.filterTextByConfidence(data);
+    recognize(image: Buffer, language: string): Promise<RecognitionResult> {
+        const result = this.queue.then(async () => {
+            const worker = await this.ensureWorker(language);
+            const { data } = await worker.recognize(image);
+            return this.filterTextByConfidence(data);
+        });
+        // Keep the chain going regardless of this job's outcome, without swallowing
+        // the result/error the caller receives.
+        this.queue = result.catch(() => {});
+        return result;
     }
 
     /**

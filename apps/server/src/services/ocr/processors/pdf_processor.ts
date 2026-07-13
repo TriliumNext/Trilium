@@ -24,6 +24,13 @@ const MAX_OCR_PAGES = 50;
 const EMBEDDED_TEXT_CONFIDENCE = 0.99;
 
 /**
+ * Embedded images smaller than this on either side are skipped: scanned pages are
+ * full-page raster, whereas tiny images are almost always icons, bullets or rules
+ * that hold no recognizable text and would only waste an OCR pass.
+ */
+const MIN_OCR_IMAGE_DIM = 50;
+
+/**
  * PDF processor. Prefers the PDF's embedded text layer (fast and exact) and
  * falls back to OCR for scanned, image-only pages by extracting each page's
  * embedded images and running them through the shared Tesseract recognizer.
@@ -120,6 +127,9 @@ export class PDFProcessor extends FileProcessor {
             const confidences: number[] = [];
 
             for (const image of images) {
+                if (image.width < MIN_OCR_IMAGE_DIM || image.height < MIN_OCR_IMAGE_DIM) {
+                    continue;
+                }
                 const png = await toPngBuffer(image);
                 const { text, confidence } = await recognizer.recognize(png, language);
                 if (text.length > 0) {
@@ -145,40 +155,44 @@ interface ExtractedImage {
     data: Uint8ClampedArray;
     width: number;
     height: number;
-    channels: 1 | 3 | 4;
+    // Typed as a plain number rather than `1 | 3 | 4`: the value is whatever unpdf
+    // hands us at runtime, so it is validated below rather than trusted here.
+    channels: number;
 }
 
 /**
  * Encode a raw image extracted from a PDF into a PNG buffer that Tesseract can
  * decode. unpdf returns 1- (grayscale), 3- (RGB) or 4-channel (RGBA) pixel data;
- * Jimp bitmaps are always RGBA, so narrower formats are expanded here.
+ * Jimp bitmaps are always RGBA, so narrower formats are expanded here. An
+ * unexpected channel count throws rather than silently producing garbled pixels.
  */
 async function toPngBuffer(image: ExtractedImage): Promise<Buffer> {
     const { data, width, height, channels } = image;
     const pixelCount = width * height;
-    const rgba = Buffer.alloc(pixelCount * 4);
 
-    for (let i = 0; i < pixelCount; i++) {
-        const out = i * 4;
-        if (channels === 1) {
-            const value = data[i];
-            rgba[out] = value;
-            rgba[out + 1] = value;
-            rgba[out + 2] = value;
+    let rgba: Buffer;
+    if (channels === 4) {
+        // Already RGBA — reuse the underlying bytes instead of copying pixel by pixel.
+        rgba = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+    } else if (channels === 3 || channels === 1) {
+        rgba = Buffer.alloc(pixelCount * 4);
+        for (let i = 0; i < pixelCount; i++) {
+            const out = i * 4;
+            if (channels === 1) {
+                const value = data[i];
+                rgba[out] = value;
+                rgba[out + 1] = value;
+                rgba[out + 2] = value;
+            } else {
+                const src = i * 3;
+                rgba[out] = data[src];
+                rgba[out + 1] = data[src + 1];
+                rgba[out + 2] = data[src + 2];
+            }
             rgba[out + 3] = 255;
-        } else if (channels === 3) {
-            const src = i * 3;
-            rgba[out] = data[src];
-            rgba[out + 1] = data[src + 1];
-            rgba[out + 2] = data[src + 2];
-            rgba[out + 3] = 255;
-        } else {
-            const src = i * 4;
-            rgba[out] = data[src];
-            rgba[out + 1] = data[src + 1];
-            rgba[out + 2] = data[src + 2];
-            rgba[out + 3] = data[src + 3];
         }
+    } else {
+        throw new Error(`Unsupported image channel count: ${channels}`);
     }
 
     const jimpImage = Jimp.fromBitmap({ data: rgba, width, height });

@@ -752,18 +752,17 @@ describe('OCRService', () => {
                 ]);
             });
 
-            it('re-selects blobs whose previous OCR produced an empty result', () => {
+            it('re-selects only PDF blobs whose previous OCR produced an empty result', () => {
                 mockSql.getRows.mockReturnValue([]);
 
                 ocrService.getBlobsNeedingOCR();
 
-                // Both the note and attachment queries must match blobs with an empty
-                // text representation (a previous run that extracted nothing), not only
-                // never-processed (NULL) ones — otherwise scanned PDFs processed before
-                // OCR fallback existed would never be picked up by a batch run.
+                // Empty text representations are re-processed only for PDFs (which gained
+                // the scanned-page fallback). Other formats keep the NULL-only semantics,
+                // otherwise every text-less image would be re-OCR'd on every batch run.
                 expect(mockSql.getRows.mock.calls).toHaveLength(2);
                 for (const [sqlText] of mockSql.getRows.mock.calls) {
-                    expect(sqlText).toContain("textRepresentation = ''");
+                    expect(sqlText).toContain("application/pdf' AND b.textRepresentation = ''");
                 }
             });
 

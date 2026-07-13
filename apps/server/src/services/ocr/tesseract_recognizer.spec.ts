@@ -94,6 +94,35 @@ describe('TesseractRecognizer', () => {
         expect(mockTesseract.createWorker).toHaveBeenCalledTimes(2);
     });
 
+    it('serializes overlapping calls so a language switch cannot tear down an in-flight worker', async () => {
+        // Hold the first recognition open so the second call is issued while it runs.
+        let releaseFirst: (value: unknown) => void = () => {};
+        const firstRecognition = new Promise((resolve) => { releaseFirst = resolve; });
+        mockWorker.recognize
+            .mockReturnValueOnce(firstRecognition)
+            .mockResolvedValue({ data: { text: 'second', confidence: 50, words: [] } });
+
+        const p1 = recognizer.recognize(image, 'eng');
+        const p2 = recognizer.recognize(image, 'deu');
+
+        // Let microtasks settle while the first job is still running.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        // The second (different-language) job must not have started: no second worker
+        // was created and the in-flight worker was not terminated mid-recognition.
+        expect(mockTesseract.createWorker).toHaveBeenCalledTimes(1);
+        expect(mockWorker.terminate).not.toHaveBeenCalled();
+
+        releaseFirst({ data: { text: 'first', confidence: 50, words: [] } });
+        const [r1, r2] = await Promise.all([p1, p2]);
+
+        expect(r1.text).toBe('first');
+        expect(r2.text).toBe('second');
+        // Only after the first job finished did the language switch tear down and rebuild.
+        expect(mockWorker.terminate).toHaveBeenCalledTimes(1);
+        expect(mockTesseract.createWorker).toHaveBeenCalledTimes(2);
+    });
+
     it('invokes the recognizing-text logger callback', async () => {
         mockWorker.recognize.mockResolvedValue({
             data: { text: 'a', confidence: 50, words: [] }

@@ -47,8 +47,9 @@ afterEach(() => {
 });
 
 const buffer = Buffer.from('%PDF-1.4 fake');
-// A 1x1 grayscale image, as unpdf's extractImages returns it.
-const scannedImage = { data: new Uint8ClampedArray([128]), width: 1, height: 1, channels: 1, key: 'img_0' };
+// A full-page grayscale scan, as unpdf's extractImages returns it — comfortably
+// above the minimum OCR dimension so it isn't skipped as a decorative image.
+const scannedImage = { data: new Uint8ClampedArray(100 * 100), width: 100, height: 100, channels: 1, key: 'img_0' };
 
 describe('PDFProcessor', () => {
     it('reports the MIME types it can process', () => {
@@ -139,6 +140,49 @@ describe('PDFProcessor', () => {
 
         expect(result.text).toBe('');
         expect(result.confidence).toBe(0);
+        expect(mockLog.error).toHaveBeenCalledWith(expect.stringContaining('PDF OCR failed for page 1'));
+    });
+
+    it('skips embedded images below the minimum OCR dimension', async () => {
+        const processor = new PDFProcessor();
+        mockExtractText.mockResolvedValue({ totalPages: 1, text: [''] });
+        // A 20x20 icon — too small to hold recognizable text.
+        mockExtractImages.mockResolvedValue([
+            { data: new Uint8ClampedArray(20 * 20), width: 20, height: 20, channels: 1, key: 'icon' }
+        ]);
+
+        const result = await processor.extractText(buffer, { language: 'eng' });
+
+        expect(mockFromBitmap).not.toHaveBeenCalled();
+        expect(mockRecognize).not.toHaveBeenCalled();
+        expect(result.text).toBe('');
+    });
+
+    it('OCRs an RGBA page image', async () => {
+        const processor = new PDFProcessor();
+        mockExtractText.mockResolvedValue({ totalPages: 1, text: [''] });
+        mockExtractImages.mockResolvedValue([
+            { data: new Uint8ClampedArray(60 * 60 * 4), width: 60, height: 60, channels: 4, key: 'rgba' }
+        ]);
+        mockRecognize.mockResolvedValue({ text: 'rgba text', confidence: 0.7 });
+
+        const result = await processor.extractText(buffer, { language: 'eng' });
+
+        expect(mockFromBitmap).toHaveBeenCalledOnce();
+        expect(result.text).toBe('rgba text');
+    });
+
+    it('skips a page whose image has an unsupported channel count, logging the failure', async () => {
+        const processor = new PDFProcessor();
+        mockExtractText.mockResolvedValue({ totalPages: 1, text: [''] });
+        mockExtractImages.mockResolvedValue([
+            { data: new Uint8ClampedArray(50 * 50 * 2), width: 50, height: 50, channels: 2, key: 'weird' }
+        ]);
+
+        const result = await processor.extractText(buffer, { language: 'eng' });
+
+        expect(mockRecognize).not.toHaveBeenCalled();
+        expect(result.text).toBe('');
         expect(mockLog.error).toHaveBeenCalledWith(expect.stringContaining('PDF OCR failed for page 1'));
     });
 
