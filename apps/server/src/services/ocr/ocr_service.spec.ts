@@ -752,6 +752,21 @@ describe('OCRService', () => {
                 ]);
             });
 
+            it('re-selects blobs whose previous OCR produced an empty result', () => {
+                mockSql.getRows.mockReturnValue([]);
+
+                ocrService.getBlobsNeedingOCR();
+
+                // Both the note and attachment queries must match blobs with an empty
+                // text representation (a previous run that extracted nothing), not only
+                // never-processed (NULL) ones — otherwise scanned PDFs processed before
+                // OCR fallback existed would never be picked up by a batch run.
+                expect(mockSql.getRows.mock.calls).toHaveLength(2);
+                for (const [sqlText] of mockSql.getRows.mock.calls) {
+                    expect(sqlText).toContain("textRepresentation = ''");
+                }
+            });
+
             it('returns empty array and logs when the query fails', () => {
                 mockSql.getRows.mockImplementation(() => {
                     throw new Error('db down');

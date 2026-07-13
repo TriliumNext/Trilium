@@ -411,7 +411,10 @@ class OCRService {
 
 
     /**
-     * Get blobs that need OCR processing (those without text representation)
+     * Get blobs that need OCR processing: those with no stored text representation
+     * yet. An empty string counts as "not processed" (matching {@link hasStoredOCRResult}),
+     * so blobs a previous run extracted nothing from — e.g. scanned PDFs processed
+     * before OCR fallback existed — are picked up again on the next batch.
      */
     getBlobsNeedingOCR(): Array<{ blobId: string; mimeType: string; entityType: 'note' | 'attachment'; entityId: string }> {
         try {
@@ -429,7 +432,7 @@ class OCRService {
                 WHERE (n.type = 'image' OR (n.type = 'file' AND n.mime IN (${placeholders})))
                 AND n.isDeleted = 0
                 AND n.blobId IS NOT NULL
-                AND b.textRepresentation IS NULL
+                AND (b.textRepresentation IS NULL OR b.textRepresentation = '')
             `, supportedMimes);
 
             const attachmentBlobs = sql.getRows<{
@@ -443,7 +446,7 @@ class OCRService {
                 WHERE (a.role = 'image' OR (a.role = 'file' AND a.mime IN (${placeholders})))
                 AND a.isDeleted = 0
                 AND a.blobId IS NOT NULL
-                AND b.textRepresentation IS NULL
+                AND (b.textRepresentation IS NULL OR b.textRepresentation = '')
             `, supportedMimes);
 
             // Combine results
