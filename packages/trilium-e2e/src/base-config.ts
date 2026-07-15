@@ -38,11 +38,21 @@ export function createBaseConfig({ appDir, localTestDir, projectName, webServer,
     const baseURL = process.env["BASE_URL"] || `http://127.0.0.1:${port}`;
     const sharedTestDir = join(__dirname);
 
+    // Escape hatch for systems where the Playwright-downloaded Chromium cannot run
+    // (e.g. NixOS, where it fails to load shared libraries): point the tests at a
+    // locally installed Chrome/Chromium binary instead. Unset (the default, incl. CI),
+    // Playwright uses its own managed browser.
+    const executablePath = process.env["PLAYWRIGHT_CHROMIUM_EXECUTABLE"];
+    const browserUse = {
+        ...devices["Desktop Chrome"],
+        ...(executablePath ? { launchOptions: { executablePath } } : {})
+    };
+
     const projects: PlaywrightTestConfig["projects"] = [
         {
             name: `${projectName}-shared`,
             testDir: sharedTestDir,
-            use: { ...devices["Desktop Chrome"] },
+            use: browserUse,
         }
     ];
 
@@ -50,7 +60,7 @@ export function createBaseConfig({ appDir, localTestDir, projectName, webServer,
         projects.push({
             name: projectName,
             testDir: join(appDir, localTestDir),
-            use: { ...devices["Desktop Chrome"] },
+            use: browserUse,
         });
     }
 
