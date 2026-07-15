@@ -220,12 +220,15 @@ describe("createLink", () => {
         expect($el.find("a").text()).toBe("Override");
     });
 
-    it("auto-converts image notes to an <img> element", async () => {
+    it("auto-converts image notes to an <img> element with an unversioned src", async () => {
         const note = buildNote({ title: "Pic", type: "image" });
         const $el = await linkService.createLink(`root/${note.noteId}`, { autoConvertToImage: true, title: "Pic" });
         expect($el.is("img")).toBe(true);
         expect($el.attr("alt")).toBe("Pic");
-        expect($el.attr("src")).toContain(`api/images/${note.noteId}/Pic?`);
+        // This markup is persisted into note content (e.g. dropped from the tree into the
+        // editor). A pinned `?v=` would be cached as immutable and go stale when the image
+        // changes; unversioned URLs revalidate via ETag instead.
+        expect($el.attr("src")).toBe(`api/images/${note.noteId}/Pic`);
     });
 
     it("returns a [missing note] span when no note id can be resolved", async () => {
@@ -325,7 +328,7 @@ describe("createLink", () => {
         });
         expect($el.is("img")).toBe(true);
         expect($el.attr("alt")).toBe("");
-        expect($el.attr("src")).toContain(`api/images/${note.noteId}/?`);
+        expect($el.attr("src")).toBe(`api/images/${note.noteId}/`);
     });
 
     it("falls back to an empty breadcrumb when the note path cannot be resolved", async () => {

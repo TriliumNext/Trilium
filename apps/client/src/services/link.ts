@@ -121,8 +121,12 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     if (autoConvertToImage && note?.type && ["image", "canvas", "mermaid"].includes(note.type) && viewMode === "default") {
         const encodedTitle = encodeURIComponent(linkTitle || "");
 
+        // This markup is persisted into note content (e.g. when a note is dragged from the
+        // tree into the editor), so it must stay unversioned: a pinned `?v=` would be cached
+        // as immutable and keep serving the old image after the note's content changes.
+        // Unversioned image URLs are revalidated against the blobId ETag instead.
         return $("<img>")
-            .attr("src", `api/images/${noteId}/${encodedTitle}?v=${encodeURIComponent(note.blobId ?? "")}`)
+            .attr("src", `api/images/${noteId}/${encodedTitle}`)
             .attr("alt", linkTitle || "");
     }
 
