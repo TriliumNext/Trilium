@@ -205,6 +205,28 @@ describe("handlers", () => {
             expect(sortNotesIfNeeded).toHaveBeenCalledWith("bch-parent");
         });
 
+        it("runs runOnBranchChange for a relation inherited from a parent", () => {
+            const target = buildNote({ id: "bchi-tgt", type: "code", mime: "application/javascript;env=backend", content: "" });
+            // The child inherits the relation from its parent because it is marked inheritable.
+            buildNote({ id: "bchi-parent", children: [{ id: "bchi-child" }] });
+            new BAttribute({ noteId: "bchi-parent", attributeId: randomString(12), type: "relation", name: "runOnBranchChange", value: target.noteId, position: 0, isInheritable: true });
+            const branch = new BBranch({ noteId: "bchi-child", parentNoteId: "bchi-parent", branchId: "bchi-parent_bchi-child" });
+
+            eventService.emit(eventService.ENTITY_CHANGED, { entityName: "branches", entity: branch });
+            expect(executeNoteNoException).toHaveBeenCalledWith(target, expect.anything());
+        });
+
+        it("does NOT run runOnBranchChange when the parent's relation is not inheritable", () => {
+            const target = buildNote({ id: "bchn-tgt", type: "code", mime: "application/javascript;env=backend", content: "" });
+            buildNote({ id: "bchn-parent", children: [{ id: "bchn-child" }] });
+            // Not inheritable => the child does not inherit it, so nothing should run.
+            new BAttribute({ noteId: "bchn-parent", attributeId: randomString(12), type: "relation", name: "runOnBranchChange", value: target.noteId, position: 0, isInheritable: false });
+            const branch = new BBranch({ noteId: "bchn-child", parentNoteId: "bchn-parent", branchId: "bchn-parent_bchn-child" });
+
+            eventService.emit(eventService.ENTITY_CHANGED, { entityName: "branches", entity: branch });
+            expect(executeNoteNoException).not.toHaveBeenCalled();
+        });
+
         it("runs runOnBranchDeletion when a branch is deleted", () => {
             const target = buildNote({ id: "bdl-tgt", type: "code", mime: "application/javascript;env=backend", content: "" });
             buildNote({ id: "bdl-child" });

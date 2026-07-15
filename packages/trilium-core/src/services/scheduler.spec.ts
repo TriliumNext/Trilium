@@ -4,6 +4,7 @@ import becca from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import attributeService from "./attributes.js";
 import config from "./config.js";
+import events from "./events.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import options from "./options.js";
 import protected_session from "./protected_session.js";
@@ -147,12 +148,16 @@ describe("scheduler", () => {
         // Non-zero (the source guards on the date being truthy) but far in the past.
         getLastProtectedSessionOperationDate.mockReturnValue(1);
         getOptionInt.mockReturnValue(10); // 10s timeout
+        const emit = vi.spyOn(events, "emit").mockImplementation(() => {});
 
         startScheduler();
         await settleDbReady();
 
         await vi.advanceTimersByTimeAsync(30 * SECOND);
         expect(resetDataKey).toHaveBeenCalled();
+        // The event triggers the becca reload that re-encrypts in-memory titles;
+        // manual logout emits it too, and the two paths must stay symmetric.
+        expect(emit).toHaveBeenCalledWith(events.LEAVE_PROTECTED_SESSION);
         expect(reloadFrontend).toHaveBeenCalledWith(expect.any(String));
     });
 

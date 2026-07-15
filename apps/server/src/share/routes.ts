@@ -1,3 +1,4 @@
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { search as searchService, SearchContext, utils } from "@triliumnext/core";
 import type { NextFunction, Request, Response, Router } from "express";
 import safeCompare from "safe-compare";
@@ -39,8 +40,17 @@ function checkAttachmentAccess(attachmentId: string, req: Request, res: Response
 
     const note = checkNoteAccess(attachment.ownerId, req, res);
 
-    // truthy note means the user has access, and we can return the attachment
-    return note ? attachment : false;
+    if (!note) {
+        return false;
+    }
+
+    // Protected notes cannot be shared, and neither can their attachments
+    // (GHSA-xmv9-3v98-7gq8).
+    if (rejectProtected(note, res, `Attachment '${attachmentId}' not found.`)) {
+        return false;
+    }
+
+    return attachment;
 }
 
 function checkNoteAccess(noteId: string, req: Request, res: Response) {
@@ -58,10 +68,22 @@ function checkNoteAccess(noteId: string, req: Request, res: Response) {
         return false;
     }
 
+    if (!hasCredentialAccess(note, req)) {
+        return false;
+    }
+
+    return note;
+}
+
+// Returns true when the request is allowed to read the given note: either the
+// note (including inherited attributes) carries no shareCredentials, or the
+// request presents matching HTTP Basic credentials. Pure predicate — does not
+// touch the response, so it can also be reused to filter search results.
+function hasCredentialAccess(note: SNote, req: Request) {
     const credentials = note.getCredentials();
 
     if (credentials.length === 0) {
-        return note;
+        return true;
     }
 
     const header = req.header("Authorization");
@@ -74,13 +96,60 @@ function checkNoteAccess(noteId: string, req: Request, res: Response) {
     const buffer = Buffer.from(base64Str, "base64");
     const authString = buffer.toString("utf-8");
 
-    for (const credentialLabel of credentials) {
-        if (safeCompare(authString, credentialLabel.value)) {
-            return note; // success;
+    return credentials.some((credentialLabel) => safeCompare(authString, credentialLabel.value));
+}
+
+// Returns true when the note reached via `notePathArray` is actually visible in
+// the public share tree below `ancestorNoteId`: every hop from the ancestor down
+// to the note must be a non-hidden branch whose child note is not
+// `shareHiddenFromTree`. Mirrors SNote.getVisibleChildBranches() so that search
+// cannot enumerate notes the navigation tree deliberately hides.
+function isVisibleInShareTree(ancestorNoteId: string, notePathArray: string[]) {
+    const startIndex = notePathArray.indexOf(ancestorNoteId);
+
+    if (startIndex < 0) {
+        return false;
+    }
+
+    for (let i = startIndex + 1; i < notePathArray.length; i++) {
+        const childNote = shaca.notes[notePathArray[i]];
+        const branch = shaca.getBranchFromChildAndParent(notePathArray[i], notePathArray[i - 1]);
+
+        if (!childNote || !branch || branch.isHidden || childNote.isLabelTruthy("shareHiddenFromTree")) {
+            return false;
         }
     }
 
-    return false;
+    return true;
+}
+
+// Like checkNoteAccess, but additionally refuses protected notes. Used by the
+// routes that stream a note's raw content/images: a protected note still shows
+// up as "[protected]" in the shared tree (handled by content_renderer.ts), but
+// its actual bytes must never be served anonymously (GHSA-xmv9-3v98-7gq8).
+function checkNoteContentAccess(noteId: string, req: Request, res: Response) {
+    const note = checkNoteAccess(noteId, req, res);
+
+    if (!note) {
+        return false;
+    }
+
+    if (rejectProtected(note, res, `Note '${noteId}' not found.`)) {
+        return false;
+    }
+
+    return note;
+}
+
+// Sends a 404 and returns true when the note is protected, so callers can bail.
+function rejectProtected(note: SNote, res: Response, message: string) {
+    if (!note.isProtected) {
+        return false;
+    }
+
+    res.status(404).json({ message });
+
+    return true;
 }
 
 function renderImageAttachment(image: SNote, res: Response, attachmentName: string) {
@@ -144,6 +213,15 @@ function register(router: Router) {
         addNoIndexHeader(note, res);
 
         if (note.isLabelTruthy("shareRaw") || typeof req.query.raw !== "undefined") {
+            // A protected note is shown as a placeholder by renderNoteContent()
+            // below, but the raw branch streams note.getContent() directly, so it
+            // must refuse protected notes (GHSA-xmv9-3v98-7gq8).
+            if (note.isProtected) {
+                render404(res);
+
+                return;
+            }
+
             // For SVG content, add a restrictive Content-Security-Policy to prevent
             // stored XSS via script execution (CWE-79). HTML is intentionally served
             // unrestricted here: serving raw HTML requires the `#shareRaw` attribute (or an
@@ -207,7 +285,7 @@ function register(router: Router) {
 
         let note: SNote | boolean;
 
-        if (!(note = checkNoteAccess(req.params.noteId, req, res))) {
+        if (!(note = checkNoteContentAccess(req.params.noteId, req, res))) {
             return;
         }
 
@@ -229,7 +307,7 @@ function register(router: Router) {
 
         let image: SNote | boolean;
 
-        if (!(image = checkNoteAccess(req.params.noteId, req, res))) {
+        if (!(image = checkNoteContentAccess(req.params.noteId, req, res))) {
             return;
         }
 
@@ -250,11 +328,11 @@ function register(router: Router) {
                 res.send(image.getContent());
             }
         } else if (image.type === "canvas") {
-            renderImageAttachment(image, res, "canvas-export.svg");
+            renderImageAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.canvas);
         } else if (image.type === "mermaid") {
-            renderImageAttachment(image, res, "mermaid-export.svg");
+            renderImageAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mermaid);
         } else if (image.type === "mindMap") {
-            renderImageAttachment(image, res, "mindmap-export.svg");
+            renderImageAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap);
         } else {
             res.status(400).json({ message: "Requested note is not a shareable image" });
         }
@@ -318,7 +396,7 @@ function register(router: Router) {
 
         let note: SNote | boolean;
 
-        if (!(note = checkNoteAccess(req.params.noteId, req, res))) {
+        if (!(note = checkNoteContentAccess(req.params.noteId, req, res))) {
             return;
         }
 
@@ -355,13 +433,23 @@ function register(router: Router) {
 
         const searchContext = new SearchContext({ ancestorNoteId });
         const searchResults = searchService.findResultsWithQuery(search, searchContext);
-        const filteredResults = searchResults.map((sr) => {
-            const fullNote = shaca.notes[sr.noteId];
-            const startIndex = sr.notePathArray.indexOf(ancestorNoteId);
-            const localPathArray = sr.notePathArray.slice(startIndex + 1).filter((id) => shaca.notes[id]);
-            const pathTitle = localPathArray.map((id) => shaca.notes[id].title).join(" / ");
-            return { id: fullNote.shareId, title: fullNote.title, score: sr.score, path: pathTitle };
-        });
+        const filteredResults = searchResults
+            // Apply the same per-note authorization as the direct content routes:
+            // keep only results the caller may access and that are visible in the tree.
+            .filter((sr) => {
+                const fullNote = shaca.notes[sr.noteId];
+
+                return fullNote
+                    && hasCredentialAccess(fullNote, req)
+                    && isVisibleInShareTree(ancestorNoteId, sr.notePathArray);
+            })
+            .map((sr) => {
+                const fullNote = shaca.notes[sr.noteId];
+                const startIndex = sr.notePathArray.indexOf(ancestorNoteId);
+                const localPathArray = sr.notePathArray.slice(startIndex + 1).filter((id) => shaca.notes[id]);
+                const pathTitle = localPathArray.map((id) => shaca.notes[id].title).join(" / ");
+                return { id: fullNote.shareId, title: fullNote.title, score: sr.score, path: pathTitle };
+            });
 
         res.json({ results: filteredResults });
     });

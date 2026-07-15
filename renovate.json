@@ -33,6 +33,11 @@
     },
     "packageRules": [
         {
+            "description": "Never auto-update the Android Gradle Plugin; it must track the installed Android Studio, not the latest release",
+            "matchPackageNames": ["com.android.tools.build:gradle"],
+            "enabled": false
+        },
+        {
             "matchPackageNames": ["@fsegurai/codemirror-theme-**", "@catppuccin/codemirror"],
             "groupName": "codemirror themes"
         },

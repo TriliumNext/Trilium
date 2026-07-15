@@ -87,6 +87,16 @@ export function getMessageText(content: string | ContentBlock[]): string {
 }
 
 /**
+ * Drop leading messages until the first user turn, so the conversation sent to the LLM starts with a
+ * user message. Some providers (e.g. Anthropic) reject a leading assistant turn, which can happen
+ * after the first user message is deleted. A conversation with no user message is left untouched.
+ */
+export function trimToFirstUserMessage<T extends { role: string }>(messages: T[]): T[] {
+    const firstUser = messages.findIndex(m => m.role === "user");
+    return firstUser <= 0 ? messages : messages.slice(firstUser);
+}
+
+/**
  * Extract tool calls from message content blocks.
  */
 export function getMessageToolCalls(message: StoredMessage): ToolCall[] {
@@ -96,6 +106,29 @@ export function getMessageToolCalls(message: StoredMessage): ToolCall[] {
             .map(b => b.toolCall);
     }
     return [];
+}
+
+/**
+ * A user-created highlight over a stretch of a message's rendered prose.
+ *
+ * The message text never changes once a turn completes, so a highlight is anchored to that
+ * text rather than to the volatile rendered DOM. `start`/`end` are character offsets into the
+ * message's flattened prose (the fast, exact primary locator); `quotedText` plus its
+ * surrounding context is the robust fallback that revalidates — and, if the render pipeline
+ * ever shifts the offsets, relocates — the highlight. See {@link resolveAnchorIndices}.
+ */
+export interface HighlightAnchor {
+    id: string;
+    /** Character offset of the highlight's start in the message's flattened prose. */
+    start: number;
+    /** Character offset of the highlight's end (exclusive) in the message's flattened prose. */
+    end: number;
+    /** The highlighted prose itself — used to validate/relocate the offsets. */
+    quotedText: string;
+    /** A few characters of prose immediately before the highlight, to disambiguate repeats. */
+    prefix?: string;
+    /** A few characters of prose immediately after the highlight, to disambiguate repeats. */
+    suffix?: string;
 }
 
 export interface StoredMessage {
@@ -109,12 +142,22 @@ export interface StoredMessage {
     type?: MessageType;
     /** Token usage for this response */
     usage?: LlmUsage;
+    /** User-created text highlights over this message's rendered prose. */
+    highlights?: HighlightAnchor[];
 }
 
 export interface LlmChatContent {
     version: 1;
     messages: StoredMessage[];
     selectedModel?: string;
+    /**
+     * Provider type owning {@link selectedModel}. Disambiguates providers that
+     * expose the same model ID (e.g. an Anthropic API key and a Claude
+     * subscription both offering "claude-sonnet-5"). Absent in chats saved
+     * before this field existed — the sender falls back to resolving the
+     * provider by model ID in that case.
+     */
+    selectedProvider?: string;
     enableWebSearch?: boolean;
     enableNoteTools?: boolean;
     enableExtendedThinking?: boolean;

@@ -17,13 +17,13 @@ The map indicates the following types of relations:
 *   <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> between notes.
 *   <a class="reference-link" href="Attributes/Relations.md">Relations</a>
 
-![](1_Note%20Map%20\(Link%20map,%20Tree%20m.png)
+![](1_Note%20Map%20\(Link%20map,%20Tree%20map\)_image.png)
 
 ## Tree Map
 
 Shows hierarchical map of notes:
 
-![](Note%20Map%20\(Link%20map,%20Tree%20m.png)
+![](Note%20Map%20\(Link%20map,%20Tree%20map\)_image.png)
 
 ## Dedicated note type
 

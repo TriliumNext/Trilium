@@ -67,9 +67,6 @@ class TestProvider extends BaseProvider {
     }
 
     // Expose protected helpers for direct assertions.
-    public callBuildSystemPrompt(m: LlmMessage[], c: LlmProviderConfig) {
-        return this.buildSystemPrompt(m, c);
-    }
     public callApplyNoteHint(m: LlmMessage[], c: LlmProviderConfig) {
         return this.applyNoteHint(m, c);
     }
@@ -259,47 +256,6 @@ describe("buildModelMessage", () => {
             ]
         });
         expect(msg).toEqual({ role: "assistant", content: [{ type: "text", text: "thinking" }] });
-    });
-});
-
-describe("BaseProvider system prompt", () => {
-    const provider = new TestProvider();
-
-    it("uses config.systemPrompt over the message system prompt and emits the no-note-access notice", () => {
-        const prompt = provider.callBuildSystemPrompt(
-            [{ role: "system", content: "FROM MESSAGE" }],
-            { systemPrompt: "FROM CONFIG" }
-        )!;
-        expect(prompt).toContain("FROM CONFIG");
-        expect(prompt).not.toContain("FROM MESSAGE");
-        expect(prompt).toContain("do not have access to the user's notes");
-    });
-
-    it("falls back to the system message content when no config prompt is set", () => {
-        const prompt = provider.callBuildSystemPrompt([{ role: "system", content: "FROM MESSAGE" }], {})!;
-        expect(prompt).toContain("FROM MESSAGE");
-    });
-
-    it("includes the note-tools guidance when note tools are enabled", () => {
-        const prompt = provider.callBuildSystemPrompt([], { enableNoteTools: true, enableWebSearch: true })!;
-        expect(prompt).toContain("load_skill");
-        expect(prompt).toContain("wiki-link format [[noteId]]");
-        // Parallel tool-call hint appears when any tool capability is on.
-        expect(prompt).toContain("issue the tool calls in parallel");
-        // Web search enabled → no "web search is disabled" notice.
-        expect(prompt).not.toContain("do not have access to web search");
-    });
-
-    it("emits the context-note-only notice when a context note is set but note tools are off", () => {
-        const prompt = provider.callBuildSystemPrompt([], { contextNoteId: "ctx" })!;
-        expect(prompt).toContain("cannot search or access other notes");
-        expect(prompt).toContain("do not have access to web search");
-    });
-
-    it("always appends the markdown formatting hints", () => {
-        const prompt = provider.callBuildSystemPrompt([], {})!;
-        expect(prompt).toContain("Admonitions");
-        expect(prompt).toContain("Mermaid diagrams");
     });
 });
 

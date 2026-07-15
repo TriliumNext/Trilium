@@ -101,6 +101,7 @@
             &.type-image,
             &.type-pdf,
             &.type-canvas,
+            &.type-audio,
             &.type-video,
             &.type-code,
             &.type-mindMap,

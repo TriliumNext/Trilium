@@ -1,7 +1,7 @@
 # Trusted proxy
 If you are running the Trilium server under a [reverse proxy](../2.%20Reverse%20proxy.md), it's important to configure it as a trusted proxy so that the application can correctly identify the real IP address of the clients (for authentication and rate limiting purposes).
 
-To do so, simply modify <a class="reference-link" href="../../../Advanced%20Usage/Configuration%20(config.ini%20or%20e.md">Configuration (config.ini or environment variables)</a> and set:
+To do so, simply modify <a class="reference-link" href="../../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a> and set:
 
 ```
 [Network]

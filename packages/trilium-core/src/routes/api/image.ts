@@ -1,3 +1,4 @@
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import type { Request, Response } from "express";
 import type { File } from "../../services/import/common.js";
 
@@ -32,13 +33,13 @@ function returnImageInt(image: BNote | BRevision | null, res: Response) {
     }
 
     if (image.type === "canvas") {
-        renderSvgAttachment(image, res, "canvas-export.svg");
+        renderSvgAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.canvas);
     } else if (image.type === "mermaid") {
-        renderSvgAttachment(image, res, "mermaid-export.svg");
+        renderSvgAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mermaid);
     } else if (image.type === "mindMap") {
-        renderSvgAttachment(image, res, "mindmap-export.svg");
+        renderSvgAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap);
     } else if (image.type === "spreadsheet") {
-        renderPngAttachment(image, res, "spreadsheet-export.png");
+        renderPngAttachment(image, res, NOTE_TYPE_IMAGE_ATTACHMENTS.spreadsheet);
     } else {
         res.set("Content-Type", image.mime);
         res.set("Cache-Control", "no-cache, no-store, must-revalidate");

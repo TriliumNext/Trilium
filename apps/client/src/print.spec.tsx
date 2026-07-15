@@ -173,7 +173,8 @@ describe("SingleNoteRenderer", () => {
             errorImg.dispatchEvent(new Event("error"));
             expect(onReady).toHaveBeenCalledWith({ type: "single-note" });
         });
-        expect(h.getRenderedContent).toHaveBeenCalledWith(note, { noChildrenList: true });
+        // Printing preserves full include-note nesting via expandNestedIncludes.
+        expect(h.getRenderedContent).toHaveBeenCalledWith(note, { noChildrenList: true, expandNestedIncludes: true, mediaEnvironment: "native" });
     });
 
     it("renders a non-text, non-spreadsheet note via the content renderer", async () => {
@@ -182,7 +183,8 @@ describe("SingleNoteRenderer", () => {
         renderInto(<SingleNoteRenderer note={note} onReady={onReady} onProgressChanged={() => {}} />);
 
         await vi.waitFor(() => expect(onReady).toHaveBeenCalledWith({ type: "single-note" }));
-        expect(h.getRenderedContent).toHaveBeenCalledWith(note, { noChildrenList: true });
+        // Printing preserves full include-note nesting via expandNestedIncludes.
+        expect(h.getRenderedContent).toHaveBeenCalledWith(note, { noChildrenList: true, expandNestedIncludes: true, mediaEnvironment: "native" });
     });
 });
 

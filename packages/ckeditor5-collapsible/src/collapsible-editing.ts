@@ -1,9 +1,58 @@
-import { Plugin, Enter, Delete, enableViewPlaceholder, getEnvKeystrokeText, type ViewDocumentEnterEvent, type ViewDocumentDeleteEvent, type ViewDocumentArrowKeyEvent } from "ckeditor5";
-import { Tooltip } from "bootstrap";
+import { Plugin, Enter, Delete, enableViewPlaceholder, env, type ViewDocumentEnterEvent, type ViewDocumentDeleteEvent, type ViewDocumentArrowKeyEvent } from "ckeditor5";
+import { formatShortcut, joinShortcut } from "@triliumnext/commons";
+import { ContentHintManager, type HintHandle } from "@triliumnext/ckeditor5-utils";
 import BlockDragHandle from "./block-drag-handle.js";
 import CollapsibleCommand from "./collapsible-command.js";
 
 type TranslateFn = (key: string, params?: Record<string, unknown>) => string;
+
+/**
+ * The keyboard shortcut for toggling a collapsible's `open` state. Shared as
+ * a single source of truth between the `Ctrl+Enter` DOM keydown handler in
+ * {@link CollapsibleEditing#onDomKeydown} and the summary hint's rendered
+ * label — a rebinding in one has to be mirrored in the other.
+ */
+const TOGGLE_SHORTCUT = "Ctrl+Enter";
+
+/**
+ * Dwell delay before hover or a stationary caret pops a summary/handle hint.
+ * Long enough that mouse flyovers don't spawn a popup, short enough that
+ * intentional attention still produces one.
+ */
+const HINT_DWELL_MS = 200;
+
+/**
+ * How long a hint stays visible without any new event (push, content refresh,
+ * caret movement) before it fades itself out. Matches the todo-list multistate
+ * plugin's cadence so the two feel consistent.
+ */
+const HINT_AUTO_HIDE_MS = 2000;
+
+/**
+ * Per-summary hint state. Combines a single {@link HintHandle} with the two
+ * independent visibility drivers — hover and caret — so both can coexist
+ * without racing the manager's element-swap logic. `handle.show()` /
+ * `handle.hide()` are called from a single derived predicate
+ * (`hoverActive || caretActive`), never from either driver directly, so the
+ * handle's element identity is stable for as long as the summary lives.
+ */
+interface SummaryHintState {
+    /** Currently-mapped DOM element for this summary. Kept in sync on every render. */
+    dom: HTMLElement;
+    handle: HintHandle;
+    hoverActive: boolean;
+    caretActive: boolean;
+    /**
+     * Bound mouseenter/mouseleave listeners for {@link dom}. Held so we can
+     * `removeEventListener` on the old DOM before re-attaching to a fresh one
+     * after a CKEditor reconvert — without these references the listeners
+     * would linger on the detached node, keeping their `state` closures alive
+     * until GC and silently mutating shared state if the node ever re-attaches.
+     */
+    mouseEnter?: (event: MouseEvent) => void;
+    mouseLeave?: (event: MouseEvent) => void;
+}
+
 
 /**
  * Schema, conversion and key handling for collapsible blocks.
@@ -37,12 +86,33 @@ export default class CollapsibleEditing extends Plugin {
      * opened like a freshly-inserted one).
      */
     private readonly preserveOpenOnNextInsert = new Map<any, boolean>();
-    /** Summary DOM elements that currently have a Bootstrap tooltip attached. */
-    private readonly summaryTooltips = new Set<HTMLElement>();
-    /** The summary tooltip we currently have force-shown because the caret is inside it. */
-    private caretShownTooltip?: HTMLElement;
-    /** Drag-handle DOM elements that currently have a Bootstrap tooltip attached. */
-    private readonly handleTooltips = new Set<HTMLElement>();
+    /**
+     * Shared manager for summary hints (screen-corner popup on each <summary>).
+     * Each summary owns ONE handle in {@link summaryHints}; visibility is
+     * driven by the two booleans on {@link SummaryHintState} (hover, caret)
+     * rather than by stacking two handles against the manager. This matters
+     * because pushing distinct hover + caret handles risks pointing them at
+     * different DOM nodes for the same summary (`getDom` may return a fresh
+     * DOM element after a reconvert while the hover map still holds the old
+     * one), which would make the manager dispose the current tooltip and
+     * create a new one — a visible ~150ms fade-out overlapping a ~150ms
+     * fade-in when caret entry overlaps hover.
+     */
+    private summaryHintManager?: ContentHintManager;
+    /**
+     * Per-summary hint state, keyed by the model element so DOM churn doesn't
+     * lose it. Updated on every view render — new summaries get a state,
+     * detached ones are reaped.
+     */
+    private readonly summaryHints = new Map<any, SummaryHintState>();
+    /**
+     * Shared visibility stack for the drag-handle hints. Drag handles use
+     * default near-element placement (no `text-editor-content-tooltip` class),
+     * so they live in their own manager with plain `tooltipOptions`.
+     */
+    private handleHintManager?: ContentHintManager;
+    /** Hover-driven handle per rendered drag-handle. Disposed when the handle detaches. */
+    private readonly handleHoverHandles = new Map<HTMLElement, HintHandle>();
 
     public init(): void {
         this.editor.commands.add("collapsible", new CollapsibleCommand(this.editor));
@@ -76,8 +146,14 @@ export default class CollapsibleEditing extends Plugin {
         this.registerDomListeners();
         this.registerAutoOpenNewDetails();
         this.registerPostFixers();
-        this.registerSummaryTooltips();
-        this.registerHandleTooltips();
+        // Global user preference: skip all content-hint wiring when off. The
+        // rest of `init()` (schema, key handlers, drag, post-fixers) stays
+        // intact — hints are additive UX, not a load-bearing feature. Missing
+        // config (external CKEditor consumers, tests) → hints on.
+        if (this.editor.config.get("contentHintsEnabled") !== false) {
+            this.registerSummaryHints();
+            this.registerHandleHints();
+        }
     }
 
     public override destroy(): void {
@@ -93,15 +169,19 @@ export default class CollapsibleEditing extends Plugin {
             clearTimeout(this.autoOpenTimer);
             this.autoOpenTimer = undefined;
         }
-        for (const summary of this.summaryTooltips) {
-            Tooltip.getInstance(summary)?.dispose();
+        for (const state of this.summaryHints.values()) {
+            this.detachSummaryHoverListeners(state, state.dom);
+            state.handle.dispose();
         }
-        this.summaryTooltips.clear();
-        this.caretShownTooltip = undefined;
-        for (const handle of this.handleTooltips) {
-            Tooltip.getInstance(handle)?.dispose();
+        this.summaryHints.clear();
+        this.summaryHintManager?.destroy();
+        this.summaryHintManager = undefined;
+        for (const handle of this.handleHoverHandles.values()) {
+            handle.dispose();
         }
-        this.handleTooltips.clear();
+        this.handleHoverHandles.clear();
+        this.handleHintManager?.destroy();
+        this.handleHintManager = undefined;
         this.dragHandle?.cancel();
         this.preserveOpenOnNextInsert.clear();
         super.destroy();
@@ -790,115 +870,219 @@ export default class CollapsibleEditing extends Plugin {
     }
 
     // -----------------------------------------------------------------
-    // Summary tooltip (Bootstrap, screen-corner hint)
+    // Summary hint (screen-corner popup) — driven by ContentHintManager
     // -----------------------------------------------------------------
 
     /**
-     * Attach a Bootstrap tooltip to every <summary> DOM element so hovering or
-     * focusing the title pops up a "click the arrow or press Ctrl+Enter" hint
-     * in the screen corner (the same UX as the todo-list multistate plugin).
+     * Register the summary-hint plumbing:
+     *  - hover-driven show/hide on every rendered <summary>;
+     *  - caret-driven show/hide following the model selection;
+     *  - one handle per summary, `hoverActive || caretActive` drives visibility.
+     *
+     * The single-handle design (instead of pushing separate hover + caret
+     * handles onto the manager stack) avoids the fade-out+fade-in flicker
+     * that occurs when hover has already pushed on one DOM node and caret
+     * pushes on a different DOM node for the same model summary (e.g. after
+     * a CKEditor reconvert). Only one Bootstrap Tooltip is ever created per
+     * summary, and its target element is stable across combined interactions.
      */
-    private registerSummaryTooltips() {
+    private registerSummaryHints() {
         const editor = this.editor;
         const t = this.translate();
-
-        this.listenTo(editor.editing.view, "render", () => {
-            // 1. Reap tooltips whose summaries CKEditor has detached. Doing this
-            //    FIRST (a) frees the references so GC can collect them and
-            //    (b) keeps `summaryTooltips.size` honest for the fast-path below.
-            let cleaned = false;
-            for (const summary of this.summaryTooltips) {
-                if (!summary.isConnected) {
-                    Tooltip.getInstance(summary)?.dispose();
-                    this.summaryTooltips.delete(summary);
-                    if (this.caretShownTooltip === summary) this.caretShownTooltip = undefined;
-                    cleaned = true;
-                }
-            }
-
-            // 2. Collect current summaries from the DOM.
-            const currentSummaries: HTMLElement[] = [];
-            this.forEachDomRoot(root => {
-                for (const s of root.querySelectorAll<HTMLElement>("details.trilium-collapsible > summary")) {
-                    currentSummaries.push(s);
-                }
-            });
-
-            // 3. Fast-path: nothing was reaped AND the count still matches the
-            //    tracked set — no work to do. This covers the typical keystroke
-            //    render where nothing about the summary set has changed.
-            if (!cleaned && currentSummaries.length === this.summaryTooltips.size) return;
-
-            // 4. Wire up tooltips on newly-appeared summaries.
-            for (const summary of currentSummaries) {
-                if (this.summaryTooltips.has(summary)) continue;
-                const title = t("text-editor.collapsible-tooltip", {
-                    shortcut: getEnvKeystrokeText("Ctrl+Enter")
-                });
-                new Tooltip(summary, { title, customClass: "text-editor-content-tooltip" });
-                this.summaryTooltips.add(summary);
-            }
+        const title = t("text-editor.collapsible-tooltip", {
+            shortcut: renderToggleShortcut(t)
         });
-
-        // The caret moving into a <summary> doesn't fire DOM focus (the editable
-        // root keeps focus), so Bootstrap's focus trigger won't notice. Manually
-        // show/hide the tooltip on model-selection changes so the hint also
-        // appears when the user navigates into the title via keyboard or click.
-        this.listenTo(editor.model.document.selection, "change:range", () => {
-            const summaryModel = editor.model.document.selection.getFirstPosition()?.findAncestor("summary");
-            const targetDom = summaryModel ? this.getDom<HTMLElement>(summaryModel) : null;
-
-            // No-op when the target hasn't changed (selection moves on every keystroke
-            // while typing in the summary; re-calling show() retriggers the animation).
-            if (this.caretShownTooltip === targetDom) return;
-
-            if (this.caretShownTooltip) {
-                Tooltip.getInstance(this.caretShownTooltip)?.hide();
-                this.caretShownTooltip = undefined;
-            }
-            if (targetDom) {
-                Tooltip.getInstance(targetDom)?.show();
-                this.caretShownTooltip = targetDom;
-            }
+        const manager = new ContentHintManager({
+            tooltipOptions: {
+                sanitize: false,
+                customClass: "text-editor-content-tooltip"
+            },
+            autoHideAfterMs: HINT_AUTO_HIDE_MS
         });
+        this.summaryHintManager = manager;
+
+        // Re-sync on every render: adopt fresh <summary> DOM nodes, drop
+        // stale ones, and refresh caret ownership so a reconvert-in-flight
+        // doesn't leave a handle pointing at a detached element.
+        this.listenTo(editor.editing.view, "render", () => this.syncSummaryHints(manager, title));
+
+        // The caret moving into a <summary> doesn't fire DOM focus (the
+        // editable root keeps focus), so a hover-only trigger would miss
+        // keyboard-into-summary navigation. Re-sync on selection changes to
+        // update `caretActive` across every tracked summary.
+        this.listenTo(editor.model.document.selection, "change:range", () => this.syncSummaryCaret());
     }
 
     /**
-     * Attach a plain Bootstrap tooltip (default near-element placement, no
-     * screen-corner styling) to each drag handle so hover/focus surfaces the
-     * "Drag to reposition" hint. Tracked in a Set and reaped on view render
-     * the same way summary tooltips are.
+     * Reap dead summaries, adopt new ones (wiring up mouse listeners and a
+     * fresh handle), and re-run caret sync so `caretActive` reflects the
+     * current selection against the current DOM.
      */
-    private registerHandleTooltips() {
+    private syncSummaryHints(manager: ContentHintManager, title: string): void {
+        // Collect the current summaries and their model elements. Do this
+        // BEFORE the reap loop so we can detect summaries whose DOM was
+        // replaced (model still present, DOM changed) and rebind their state
+        // to the new element in place — no dispose+create flicker.
+        const current = new Map<any, HTMLElement>();
+        const mapper = this.editor.editing.mapper;
+        const domConverter = this.editor.editing.view.domConverter;
+        this.forEachDomRoot(root => {
+            for (const dom of root.querySelectorAll<HTMLElement>("details.trilium-collapsible > summary")) {
+                const view = domConverter.mapDomToView(dom);
+                const model = view ? mapper.toModelElement(view as any) : null;
+                if (model) current.set(model, dom);
+            }
+        });
+
+        // Fast-path: `render` fires after every keystroke, so most invocations
+        // find the summary set completely unchanged (same models, same DOM
+        // nodes). Bail before the reap+adopt loops when nothing structural
+        // changed — caret sync is driven by `change:range` and doesn't need
+        // to run again here.
+        let structuralChange = current.size !== this.summaryHints.size;
+        if (!structuralChange) {
+            for (const [model, dom] of current) {
+                const existing = this.summaryHints.get(model);
+                if (!existing || existing.dom !== dom) {
+                    structuralChange = true;
+                    break;
+                }
+            }
+        }
+        if (!structuralChange) return;
+
+        // Drop states whose model is no longer in the rendered tree.
+        for (const [model, state] of this.summaryHints) {
+            if (!current.has(model)) {
+                this.detachSummaryHoverListeners(state, state.dom);
+                state.handle.dispose();
+                this.summaryHints.delete(model);
+            }
+        }
+
+        // For each current summary: adopt (fresh state) or refresh (existing
+        // state, possibly with a new DOM node after a reconvert).
+        for (const [model, dom] of current) {
+            const existing = this.summaryHints.get(model);
+            if (existing) {
+                if (existing.dom !== dom) {
+                    // Model persisted but its DOM was regenerated. Rebind:
+                    // remove the old listeners (their closures would otherwise
+                    // pin the detached DOM), dispose the old handle, then wire
+                    // fresh listeners + handle on the new element.
+                    this.detachSummaryHoverListeners(existing, existing.dom);
+                    existing.handle.dispose();
+                    existing.dom = dom;
+                    existing.handle = manager.createHandle(dom, title);
+                    // Rederive `hoverActive` from the new DOM — the mouse
+                    // may or may not still be over the fresh element, and
+                    // carrying over the boolean would strand a "phantom
+                    // hover" popup when the pointer already left during the
+                    // reconvert.
+                    existing.hoverActive = dom.matches(":hover");
+                    this.attachSummaryHoverListeners(existing);
+                    this.applyVisibility(existing);
+                }
+                continue;
+            }
+            const state: SummaryHintState = {
+                dom,
+                handle: manager.createHandle(dom, title),
+                // Same reasoning as the rebind path: adopt the DOM's actual
+                // hover state so a summary that mounted under an already-
+                // hovering pointer picks up correctly.
+                hoverActive: dom.matches(":hover"),
+                caretActive: false
+            };
+            this.summaryHints.set(model, state);
+            this.attachSummaryHoverListeners(state);
+        }
+
+        this.syncSummaryCaret();
+    }
+
+    /**
+     * Recompute `caretActive` for every tracked summary from the current
+     * model selection. Idempotent: only touches handles whose caret ownership
+     * actually flipped, so a keystroke inside a summary that doesn't cross a
+     * boundary is free.
+     */
+    private syncSummaryCaret(): void {
+        const caretSummary = this.editor.model.document.selection.getFirstPosition()?.findAncestor("summary") ?? null;
+        for (const [model, state] of this.summaryHints) {
+            const shouldBeActive = model === caretSummary;
+            if (state.caretActive === shouldBeActive) continue;
+            state.caretActive = shouldBeActive;
+            this.applyVisibility(state);
+        }
+    }
+
+    /**
+     * Apply the derived predicate `hoverActive || caretActive` to a state's
+     * handle. Hover has a dwell delay; caret is immediate — pushing without
+     * dwell when caret takes ownership matches user intent (keyboard/click
+     * navigation should reveal the hint promptly).
+     */
+    private applyVisibility(state: SummaryHintState): void {
+        if (state.caretActive) {
+            // Caret entering trumps any pending hover dwell — show now.
+            state.handle.show();
+        } else if (state.hoverActive) {
+            state.handle.showAfter(HINT_DWELL_MS);
+        } else {
+            state.handle.hide();
+        }
+    }
+
+    private attachSummaryHoverListeners(state: SummaryHintState): void {
+        state.mouseEnter = () => {
+            state.hoverActive = true;
+            this.applyVisibility(state);
+        };
+        state.mouseLeave = () => {
+            state.hoverActive = false;
+            this.applyVisibility(state);
+        };
+        state.dom.addEventListener("mouseenter", state.mouseEnter);
+        state.dom.addEventListener("mouseleave", state.mouseLeave);
+    }
+
+    private detachSummaryHoverListeners(state: SummaryHintState, previousDom: HTMLElement): void {
+        if (state.mouseEnter) previousDom.removeEventListener("mouseenter", state.mouseEnter);
+        if (state.mouseLeave) previousDom.removeEventListener("mouseleave", state.mouseLeave);
+    }
+
+    /**
+     * Attach a manager-mediated hover hint to each drag handle. Drag handles
+     * use default near-element Bootstrap placement (no screen-corner CSS),
+     * so they live in their own manager with plain `tooltipOptions`.
+     */
+    private registerHandleHints() {
         const editor = this.editor;
         const t = this.translate();
+        const title = t("text-editor.collapsible-handle-tooltip");
+        const manager = new ContentHintManager({
+            autoHideAfterMs: HINT_AUTO_HIDE_MS
+        });
+        this.handleHintManager = manager;
 
         this.listenTo(editor.editing.view, "render", () => {
-            let cleaned = false;
-            for (const handle of this.handleTooltips) {
-                if (!handle.isConnected) {
-                    Tooltip.getInstance(handle)?.dispose();
-                    this.handleTooltips.delete(handle);
-                    cleaned = true;
+            for (const [dragHandle, handle] of this.handleHoverHandles) {
+                if (!dragHandle.isConnected) {
+                    handle.dispose();
+                    this.handleHoverHandles.delete(dragHandle);
                 }
             }
 
-            const current: HTMLElement[] = [];
             this.forEachDomRoot(root => {
-                for (const h of root.querySelectorAll<HTMLElement>(".trilium-collapsible-handle")) {
-                    current.push(h);
+                for (const dragHandle of root.querySelectorAll<HTMLElement>(".trilium-collapsible-handle")) {
+                    if (this.handleHoverHandles.has(dragHandle)) continue;
+                    const handle = manager.createHandle(dragHandle, title);
+                    this.handleHoverHandles.set(dragHandle, handle);
+                    dragHandle.addEventListener("mouseenter", () => handle.showAfter(HINT_DWELL_MS));
+                    dragHandle.addEventListener("mouseleave", () => handle.hide());
                 }
             });
-
-            if (!cleaned && current.length === this.handleTooltips.size) return;
-
-            for (const handle of current) {
-                if (this.handleTooltips.has(handle)) continue;
-                new Tooltip(handle, {
-                    title: t("text-editor.collapsible-handle-tooltip")
-                });
-                this.handleTooltips.add(handle);
-            }
         });
     }
 
@@ -1124,4 +1308,16 @@ export default class CollapsibleEditing extends Plugin {
         writer.setSelection(summary, "end");
         return true;
     }
+}
+
+/**
+ * Render the toggle shortcut as `<kbd>Ctrl</kbd>+<kbd>Enter</kbd>` (or
+ * `<kbd>⌃</kbd><kbd>↩</kbd>` on macOS). Uses the shared `formatShortcut` /
+ * `joinShortcut` from `@triliumnext/commons` so key labels flow through the
+ * same i18n and Mac-glyph rules as the rest of the app.
+ */
+function renderToggleShortcut(translate: TranslateFn): string {
+    const kbdTokens = formatShortcut(TOGGLE_SHORTCUT, translate, env.isMac)
+        .map((token: string) => `<kbd>${token}</kbd>`);
+    return joinShortcut(kbdTokens, env.isMac);
 }

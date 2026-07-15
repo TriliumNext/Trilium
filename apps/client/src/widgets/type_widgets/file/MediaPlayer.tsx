@@ -4,10 +4,12 @@ import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
+import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import { isMobile } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import ActionButton from "../../react/ActionButton";
 import Dropdown from "../../react/Dropdown";
@@ -15,9 +17,27 @@ import { useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import { getParentFromNotePath } from "../../react/sibling_navigation";
 import { noteSiblingProvider, type SiblingNavigationState, useSiblingKeyboard, useSiblingNavigation } from "../../react/SiblingNavigator";
+import type { MediaEnvironment } from "./media_environment";
 import { getAutoAdvanceTarget, MEDIA_PLAY_MODE_ICONS, MEDIA_PLAY_MODE_LABEL, MEDIA_PLAY_MODE_LABEL_KEYS, MEDIA_PLAY_MODES, type MediaPlayMode, playModeFromLabel, playModeToLabel, shouldLoop } from "./media_play_mode";
+import type { MediaSource } from "./media_source";
 
 const NO_KEYS: readonly string[] = [];
+
+/** What {@link AudioPreview} and {@link VideoPreview} are given, whichever environment they render in. */
+export interface MediaPlayerProps {
+    /** What is being played: a file note, or an attachment. {@link source} is its resolved media. */
+    entity: FNote | FAttachment;
+    source: MediaSource;
+    environment: MediaEnvironment;
+    /**
+     * The tab showing the note. Only the note detail has one; it enables sibling navigation, the folder-level
+     * play mode and OS media session ownership, all of which are silently skipped without it.
+     */
+    noteContext?: NoteContext;
+    isVisible?: boolean;
+    /** Start playing as soon as the media is ready — the user just activated a lazy preview. */
+    autoPlay?: boolean;
+}
 
 export function SeekBar({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement> }) {
     const [currentTime, setCurrentTime] = useState(0);
@@ -127,6 +147,10 @@ export function VolumeControl({ mediaRef }: { mediaRef: RefObject<HTMLVideoEleme
         setMuted(media.muted);
     };
 
+    // Mobile defers volume to the OS/hardware volume buttons, matching native mobile media players (and the
+    // fixed-width slider doesn't fit the narrow controls row anyway).
+    if (isMobile()) return null;
+
     return (
         <div class="media-volume-row">
             <ActionButton
@@ -179,7 +203,13 @@ const OWNED_MEDIA_ACTIONS: MediaSessionAction[] = [ "previoustrack", "nexttrack"
  * playing in the background). It releases the session — and, when its tab switches to a different note type so
  * this player is hidden/cached, also stops playing — on that navigation, on a handover, or on unmount.
  */
-export function useMediaSessionController(note: FNote, noteContext: NoteContext | undefined, mimePrefix: string, mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>, isVisible: boolean, playMode: MediaPlayMode) {
+export function useMediaSessionController({ source, entity, noteContext, mimePrefix, mediaRef, isVisible = true, playMode, autoPlay }: MediaPlayerProps & {
+    mimePrefix: string;
+    mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>;
+    playMode: MediaPlayMode;
+}) {
+    // Siblings are a note-tree notion, so an attachment has none (and neither has a note without a tab).
+    const note = "noteId" in entity ? entity : undefined;
     const navigation = useSiblingNavigation(noteSiblingProvider(note, noteContext, { mimePrefix }));
     // Stable identity for this player instance, used to coordinate with the other mounted players.
     const self = useRef<object>({}).current;
@@ -282,18 +312,18 @@ export function useMediaSessionController(note: FNote, noteContext: NoteContext 
         mediaSessionOwner = self;
         // Metadata makes Chromium reliably present the OS controls for video (it does so for audio by
         // default) and shows the note title there.
-        if (typeof MediaMetadata !== "undefined") mediaSession.metadata = new MediaMetadata({ title: note.title });
+        if (typeof MediaMetadata !== "undefined") mediaSession.metadata = new MediaMetadata({ title: source.title });
         // Previous/next track navigate siblings (only when there are any); the live re-check guards against
         // the context having navigated to a different note since these handlers were bound.
-        setHandler("previoustrack", hasMediaNav ? () => { if (isCurrentContextNote(noteContext, note.noteId)) wrappedRef.current?.navigatePrevious(); } : null);
-        setHandler("nexttrack", hasMediaNav ? () => { if (isCurrentContextNote(noteContext, note.noteId)) wrappedRef.current?.navigateNext(); } : null);
+        setHandler("previoustrack", hasMediaNav ? () => { if (isCurrentContextNote(noteContext, source.id)) wrappedRef.current?.navigatePrevious(); } : null);
+        setHandler("nexttrack", hasMediaNav ? () => { if (isCurrentContextNote(noteContext, source.id)) wrappedRef.current?.navigateNext(); } : null);
         // Seek/stop drive this player's element, using the same amounts as its rewind/fast-forward buttons.
         setHandler("seekbackward", (details) => seekBy(mediaRef, -(details.seekOffset || SEEK_BACK_SECONDS)));
         setHandler("seekforward", (details) => seekBy(mediaRef, details.seekOffset || SEEK_FORWARD_SECONDS));
         setHandler("seekto", (details) => { if (details.seekTime != null) seekTo(mediaRef, details.seekTime); });
         setHandler("stop", () => stopMedia(mediaRef));
         return release;
-    }, [ ownsSession, hasMediaNav, noteContext, note.noteId, note.title, mediaRef, self ]);
+    }, [ ownsSession, hasMediaNav, noteContext, source.id, source.title, mediaRef, self ]);
 
     // Keep the OS Media Session's playback and position state in sync while we own it. Android Chrome relies on
     // these to treat the page as actively playing media: it keeps the notification controls present and makes
@@ -350,10 +380,13 @@ export function useMediaSessionController(note: FNote, noteContext: NoteContext 
         };
     }, [ ownsSession, mediaRef, self ]);
 
-    // Auto-play the freshly-opened sibling once it can play (only when reached via navigation).
+    // Play as soon as the media can: either this note was reached by a sibling jump, or the user just
+    // activated a lazy preview (whose player only mounts on that click, so it starts playing right away).
     useEffect(() => {
-        if (autoPlayTargetNoteId !== note.noteId) return;
-        autoPlayTargetNoteId = null;
+        const jumpedTo = autoPlayTargetNoteId === source.id;
+        if (jumpedTo) autoPlayTargetNoteId = null;
+        if (!jumpedTo && !autoPlay) return;
+
         const media = mediaRef.current;
         if (!media) return;
         const play = () => { media.play().catch(() => {}); };
@@ -363,7 +396,7 @@ export function useMediaSessionController(note: FNote, noteContext: NoteContext 
             media.addEventListener("canplay", play, { once: true });
             return () => media.removeEventListener("canplay", play);
         }
-    }, [ note.noteId, mediaRef ]);
+    }, [ source.id, autoPlay, mediaRef ]);
 
     return wrapped;
 }

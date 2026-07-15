@@ -252,20 +252,20 @@ describe("streamToChunks", () => {
         expect(usage.usage.model).toBe("m");
     });
 
-    it("falls back to cachedInputTokens and derives no-cache input when details are absent", async () => {
+    it("treats all input as no-cache when token details are absent", async () => {
         const pricing: ModelPricing = { input: 2, output: 6 };
         const chunks = await collect(fakeResult(
             [],
             Promise.resolve({
                 inputTokens: 1_000_000,
-                outputTokens: 0,
-                cachedInputTokens: 400_000
+                outputTokens: 0
             })
         ), { pricing });
 
-        // noCache = max(0, 1_000_000 - 400_000 - 0) = 600_000
-        // 0.6*2 + 0.4*2*0.1 (read) + 0 (write) + 0 (output)
-        const expected = 0.6 * 2 + 0.4 * 2 * 0.1;
+        // No inputTokenDetails => cacheRead = cacheWrite = 0,
+        // noCache = max(0, 1_000_000 - 0 - 0) = 1_000_000
+        // 1*2 + 0 (read) + 0 (write) + 0 (output)
+        const expected = 1 * 2;
         expect(usageOf(chunks).usage.cost).toBeCloseTo(expected, 6);
     });
 
@@ -281,7 +281,7 @@ describe("streamToChunks", () => {
             })
         ), { pricing });
 
-        // cacheRead = 0 (details.cacheReadTokens ?? cachedInputTokens ?? 0)
+        // cacheRead = 0 (details.cacheReadTokens ?? 0)
         // noCache = max(0, 1_000_000 - 0 - 250_000) = 750_000
         const expected = 0.75 * 3 + 0.25 * 3 * 1.25;
         expect(usageOf(chunks).usage.cost).toBeCloseTo(expected, 6);

@@ -661,7 +661,7 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
     this.sortNotes = (parentNoteId, sortConfig = {}) => treeService.sortNotes(parentNoteId, sortConfig.sortBy || "title", !!sortConfig.reverse, !!sortConfig.foldersFirst);
 
     this.setNoteToParent = treeService.setNoteToParent;
-    this.transactional = sql.transactional;
+    this.transactional = sql.transactional.bind(sql);
     this.randomString = randomString;
     this.escapeHtml = escapeHtml;
     this.unescapeHtml = unescapeHtml;

@@ -31,16 +31,6 @@ import utils, {
     toggleBodyClass
 } from "./utils.js";
 
-// `snapdom` is used by downloadAsSvg / downloadAsPng; stub it so no real rendering happens.
-vi.mock("@zumer/snapdom", () => ({
-    snapdom: vi.fn(async () => ({
-        url: "data:image/svg+xml;base64,AAA",
-        toPng: vi.fn(async () => ({ src: "data:image/png;base64,BBB" }))
-    }))
-}));
-
-import { snapdom } from "@zumer/snapdom";
-
 // `logInfo` / `logError` are normally attached to window/globalThis by ws.ts, which is mocked
 // out by the test setup. Provide no-op globals so the few code paths that log don't crash.
 beforeEach(() => {
@@ -437,6 +427,21 @@ describe("DOM / clipboard helpers (default export)", () => {
         delete (document as any).execCommand;
     });
 
+    it("copyHtmlToClipboard writes a distinct plain-text payload when given one", () => {
+        const setData = vi.fn();
+        const execSpy = vi.fn(() => {
+            const evt: any = new Event("copy");
+            evt.clipboardData = { setData };
+            document.dispatchEvent(evt);
+            return true;
+        });
+        (document as any).execCommand = execSpy;
+        utils.copyHtmlToClipboard("<b>x</b>", "x");
+        expect(setData).toHaveBeenCalledWith("text/html", "<b>x</b>");
+        expect(setData).toHaveBeenCalledWith("text/plain", "x");
+        delete (document as any).execCommand;
+    });
+
     it("copyHtmlToClipboard tolerates a copy event without clipboardData", () => {
         const execSpy = vi.fn(() => {
             document.dispatchEvent(new Event("copy"));
@@ -659,34 +664,67 @@ describe("createImageSrcUrl", () => {
     });
 });
 
-describe("snapdom downloads (default export)", () => {
-    it("downloadAsSvg parses an SVG string with the SVG mime type, renders it and triggers a download", async () => {
-        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-        // happy-dom's image/svg+xml documentElement lacks a writable `.style`, so return a real
-        // HTML element from the parser while still asserting the SVG mime branch was taken.
-        const parseSpy = vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
-            const doc = document.implementation.createHTMLDocument("");
-            return doc;
+describe("SVG downloads (default export)", () => {
+    function captureDownload() {
+        const downloads: { name: string | null, href: string | null }[] = [];
+        vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function(this: HTMLAnchorElement) {
+            downloads.push({ name: this.getAttribute("download"), href: this.getAttribute("href") });
         });
-        await utils.downloadAsSvg("diagram", "  <svg><rect/></svg>");
-        expect(parseSpy).toHaveBeenCalledWith("  <svg><rect/></svg>", "image/svg+xml");
-        expect(snapdom).toHaveBeenCalled();
-        expect(clickSpy).toHaveBeenCalled();
+        return downloads;
+    }
+
+    function captureObjectUrls() {
+        const blobs: Blob[] = [];
+        vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+            blobs.push(blob as Blob);
+            return `blob:mock-${blobs.length}`;
+        });
+        vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+        return blobs;
+    }
+
+    it("downloadSvg downloads the SVG string as a data URL (a blob-URL anchor click after " +
+        "the export's awaits is silently blocked without user activation)", () => {
+        const downloads = captureDownload();
+        utils.downloadSvg("diagram", `<svg><text>a & b</text></svg>`);
+
+        expect(downloads).toHaveLength(1);
+        expect(downloads[0].name).toBe("diagram.svg");
+        const href = downloads[0].href ?? "";
+        expect(href.startsWith("data:image/svg+xml;charset=utf-8,")).toBe(true);
+        expect(decodeURIComponent(href.split(",")[1])).toBe(`<svg><text>a & b</text></svg>`);
     });
 
-    it("downloadAsSvg accepts an existing element without attaching it", async () => {
-        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-        const el = document.createElement("div");
-        await utils.downloadAsSvg("diagram", el);
-        expect(snapdom).toHaveBeenCalled();
-        expect(clickSpy).toHaveBeenCalled();
+    it("downloadSvgAsPng rasterizes at the given scale and downloads a PNG", async () => {
+        const downloads = captureDownload();
+        captureObjectUrls();
+        const drawImage = vi.fn();
+        const canvasSizes: { width: number, height: number }[] = [];
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage } as unknown as RenderingContext);
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockImplementation(function(this: HTMLCanvasElement) {
+            canvasSizes.push({ width: this.width, height: this.height });
+            return "data:image/png;base64,BBB";
+        });
+        vi.stubGlobal("Image", class {
+            src = "";
+            decode = vi.fn(async () => {});
+        });
+
+        try {
+            await utils.downloadSvgAsPng("diagram", `<svg width="100" height="50"></svg>`);
+        } finally {
+            vi.unstubAllGlobals();
+        }
+
+        expect(canvasSizes).toEqual([ { width: 200, height: 100 } ]); // default scale is 2
+        expect(drawImage).toHaveBeenCalled();
+        expect(downloads).toEqual([ { name: "diagram.png", href: "data:image/png;base64,BBB" } ]);
     });
 
-    it("downloadAsPng renders an HTML string to PNG and downloads it", async () => {
-        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-        await utils.downloadAsPng("diagram", "<div>hello</div>");
-        expect(snapdom).toHaveBeenCalled();
-        expect(clickSpy).toHaveBeenCalled();
+    it("downloadSvgAsPng rejects when the SVG has no usable dimensions", async () => {
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        await expect(utils.downloadSvgAsPng("diagram", `<svg xmlns="http://www.w3.org/2000/svg"/>`))
+            .rejects.toThrow("dimensions");
     });
 });
 

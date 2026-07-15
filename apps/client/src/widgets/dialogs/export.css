@@ -1,16 +1,30 @@
-.export-dialog form .form-check {
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
+.modal.export-dialog {
+    .tn-card {
+        margin-bottom: 1rem;
+    }
 
-.export-dialog form .format-choice {
-    padding-inline-start: 40px;
-}
+    .tn-card:last-child {
+        margin-bottom: 0;
+    }
 
-.export-dialog form .opml-versions {
-    padding-inline-start: 60px;
-}
+    /* Two-segment toggle that fills the card width. */
+    .export-type-group {
+        display: flex;
+        width: 100%;
+    }
 
-.export-dialog form .form-check-label {
-    padding: 2px;
+    .export-type-group .btn {
+        flex: 1;
+    }
+
+    /* Format name + "Recommended" badge sitting inline on the tile. */
+    .export-format-heading {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    .export-recommended-badge {
+        --color: var(--link-color, var(--main-text-color));
+    }
 }

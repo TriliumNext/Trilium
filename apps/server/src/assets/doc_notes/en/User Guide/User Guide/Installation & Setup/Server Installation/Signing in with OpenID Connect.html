@@ -25,43 +25,46 @@
   </li>
   <li>
     <p>Set the following information using&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>:</p>
-    <table>
-      <thead>
-        <tr>
-          <th>Configuration</th>
-          <th><code spellcheck="false">config.ini</code> in <code spellcheck="false">[MultiFactorAuthentication]</code> section</th>
-          <th>Environment variable</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Base URL*</td>
-          <td><code spellcheck="false">oauthBaseUrl</code>
-          </td>
-          <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>
-          </td>
-          <td>The URL of your Trilium instance (e.g. <code spellcheck="false">https://example.com</code>).</td>
-        </tr>
-        <tr>
-          <td>Client ID*</td>
-          <td><code spellcheck="false">oauthClientId</code>
-          </td>
-          <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>
-          </td>
-          <td>The client ID from your provider configuration.</td>
-        </tr>
-        <tr>
-          <td>Client Secret*</td>
-          <td><code spellcheck="false">oauthClientSecret</code>
-          </td>
-          <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
-          </td>
-          <td>The client secret from your provider configuration.</td>
-        </tr>
-      </tbody>
-    </table>
-    <p>Asterisk (*) marks a required field</p>
+    <figure
+    class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>Configuration</th>
+            <th><code spellcheck="false">config.ini</code> in <code spellcheck="false">[MultiFactorAuthentication]</code> section</th>
+            <th>Environment variable</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Base URL*</td>
+            <td><code spellcheck="false">oauthBaseUrl</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>
+            </td>
+            <td>The URL of your Trilium instance (e.g. <code spellcheck="false">https://example.com</code>).</td>
+          </tr>
+          <tr>
+            <td>Client ID*</td>
+            <td><code spellcheck="false">oauthClientId</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>
+            </td>
+            <td>The client ID from your provider configuration.</td>
+          </tr>
+          <tr>
+            <td>Client Secret*</td>
+            <td><code spellcheck="false">oauthClientSecret</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
+            </td>
+            <td>The client secret from your provider configuration.</td>
+          </tr>
+        </tbody>
+      </table>
+      </figure>
+      <p>Asterisk (*) marks a required field</p>
   </li>
   <li>
     <p>The default OAuth issuer is Google. To use other services such as Authentik
@@ -70,44 +73,46 @@
       spellcheck="false">oauthIssuerName</code>, and <code spellcheck="false">oauthIssuerIcon</code> in
         the <code spellcheck="false">config.ini</code> file. Alternatively, these
         values can be set using environment variables:</p>
-    <table>
-      <thead>
-        <tr>
-          <th>Configuration</th>
-          <th><code spellcheck="false">config.ini</code> in <code spellcheck="false">[MultiFactorAuthentication]</code> section</th>
-          <th>Environment variable</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Issuer base URL</td>
-          <td><code spellcheck="false">oauthIssuerBaseUrl</code>
-          </td>
-          <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>
-          </td>
-          <td>The URL of your provider (e.g. <code spellcheck="false">https://auth.example.com:9091</code>)</td>
-        </tr>
-        <tr>
-          <td>Issuer name</td>
-          <td><code spellcheck="false">oauthIssuerName</code>
-          </td>
-          <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>
-          </td>
-          <td>The name of your authentication provider, used for reference on the login
-            screen and in settings. Default is “Google”.</td>
-        </tr>
-        <tr>
-          <td>Issuer icon</td>
-          <td><code spellcheck="false">oauthIssuerIcon</code>
-          </td>
-          <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
-          </td>
-          <td>Optionally, the URL to a logo of the provider. By default it will try
-            to obtain the favicon from the website, so it's optional.</td>
-        </tr>
-      </tbody>
-    </table>
+    <figure class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>Configuration</th>
+            <th><code spellcheck="false">config.ini</code> in <code spellcheck="false">[MultiFactorAuthentication]</code> section</th>
+            <th>Environment variable</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Issuer base URL</td>
+            <td><code spellcheck="false">oauthIssuerBaseUrl</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>
+            </td>
+            <td>The URL of your provider (e.g. <code spellcheck="false">https://auth.example.com:9091</code>)</td>
+          </tr>
+          <tr>
+            <td>Issuer name</td>
+            <td><code spellcheck="false">oauthIssuerName</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>
+            </td>
+            <td>The name of your authentication provider, used for reference on the login
+              screen and in settings. Default is “Google”.</td>
+          </tr>
+          <tr>
+            <td>Issuer icon</td>
+            <td><code spellcheck="false">oauthIssuerIcon</code>
+            </td>
+            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
+            </td>
+            <td>Optionally, the URL to a logo of the provider. By default it will try
+              to obtain the favicon from the website, so it's optional.</td>
+          </tr>
+        </tbody>
+      </table>
+    </figure>
     <p>All the fields here are optional, since the default OAuth issuer is Google.</p>
   </li>
   <li>

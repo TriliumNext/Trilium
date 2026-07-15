@@ -56,385 +56,387 @@
     That means that there are multiple labels with the same prefix, consult
     the specific page linked in the description of that label for more information.</p>
 </aside>
-<table>
-  <thead>
-    <tr>
-      <th>Label</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code spellcheck="false">disableVersioning</code>
-      </td>
-      <td>Disables automatic creation of&nbsp;<a class="reference-link" href="#root/_help_vZWERwf8U3nx">Note Revisions</a>&nbsp;for
-        a particular note. Useful for e.g. large, but unimportant notes - e.g.
-        large JS libraries used for scripting.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">versioningLimit</code>
-      </td>
-      <td>Limits the maximum number of&nbsp;<a class="reference-link" href="#root/_help_vZWERwf8U3nx">Note Revisions</a>&nbsp;for
-        a particular note, overriding the global settings.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">calendarRoot</code>
-      </td>
-      <td>Marks the note which should be used as root for&nbsp;<a class="reference-link"
-        href="#root/_help_l0tKav7yLHGF">Day Notes</a>. Only one should be marked as such.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">archived</code>
-      </td>
-      <td>Hides notes from default search results and dialogs. Archived notes can
-        optionally be hidden in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">excludeFromExport</code>
-      </td>
-      <td>Excludes this note and its children when exporting.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">run</code>, <code spellcheck="false">runOnInstance</code>,
-        <code
-        spellcheck="false">runAtHour</code>
-      </td>
-      <td>See&nbsp;<a class="reference-link" href="#root/_help_GPERMystNGTB">Events</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">disableInclusion</code>
-      </td>
-      <td>Scripts with this label won't be included into parent script execution.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">sorted</code>, <code spellcheck="false">sortDirection</code>,
-        <code
-        spellcheck="false">sortFoldersFirst</code>, <code spellcheck="false">sortNatural</code>,
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">disableVersioning</code>
+        </td>
+        <td>Disables automatic creation of&nbsp;<a class="reference-link" href="#root/_help_vZWERwf8U3nx">Note Revisions</a>&nbsp;for
+          a particular note. Useful for e.g. large, but unimportant notes - e.g.
+          large JS libraries used for scripting.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">versioningLimit</code>
+        </td>
+        <td>Limits the maximum number of&nbsp;<a class="reference-link" href="#root/_help_vZWERwf8U3nx">Note Revisions</a>&nbsp;for
+          a particular note, overriding the global settings.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">calendarRoot</code>
+        </td>
+        <td>Marks the note which should be used as root for&nbsp;<a class="reference-link"
+          href="#root/_help_l0tKav7yLHGF">Day Notes</a>. Only one should be marked as such.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">archived</code>
+        </td>
+        <td>Hides notes from default search results and dialogs. Archived notes can
+          optionally be hidden in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">excludeFromExport</code>
+        </td>
+        <td>Excludes this note and its children when exporting.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">run</code>, <code spellcheck="false">runOnInstance</code>,
           <code
-          spellcheck="false">sortLocale</code>, <code spellcheck="false">top</code>, <code spellcheck="false">bottom</code>
-      </td>
-      <td>Manages automatic/permanent sorting. See&nbsp;<a class="reference-link"
-        href="#root/_help_aGlEvb9hyDhS">Sorting Notes</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">hidePromotedAttributes</code>
-      </td>
-      <td>Hide&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;on
-        this note. Generally useful when defining inherited attributes, but the
-        parent note doesn't need them.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">readOnly</code>
-      </td>
-      <td>Marks a note to always be <a href="#root/_help_CoFPLs3dRlXc">read-only</a>, if
-        it's a supported note (text, code, mermaid).</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">autoReadOnlyDisabled</code>
-      </td>
-      <td>Disables automatic <a href="#root/_help_CoFPLs3dRlXc">read-only mode</a> for the
-        given note.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">appCss</code>
-      </td>
-      <td>Marks CSS notes which are loaded into the Trilium application and can
-        thus be used to modify Trilium's looks. See&nbsp;<a class="reference-link"
-        href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>&nbsp;for more info.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">appTheme</code>
-      </td>
-      <td>Marks CSS notes which are full Trilium themes and are thus available in
-        Trilium options. See&nbsp;<a class="reference-link" href="#root/_help_pKK96zzmvBGf">Theme development</a>&nbsp;for
-        more information.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">appThemeBase</code>
-      </td>
-      <td>Set to <code spellcheck="false">next</code>, <code spellcheck="false">next-light</code>,
-        or <code spellcheck="false">next-dark</code> to use the corresponding TriliumNext
-        theme (auto, light or dark) as the base for a custom theme, instead of
-        the legacy one. See&nbsp;<a class="reference-link" href="#root/_help_WFGzWeUK6arS">Customize the Next theme</a>&nbsp;for
-        more information.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">cssClass</code>
-      </td>
-      <td>Value of this label is then added as CSS class to the node representing
-        given note in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.
-        This can be useful for advanced theming. Can be used in template notes.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">iconClass</code>
-      </td>
-      <td>value of this label is added as a CSS class to the icon on the tree which
-        can help visually distinguish the notes in the tree. Example might be bx
-        bx-home - icons are taken from boxicons. Can be used in template notes.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">pageSize</code>
-      </td>
-      <td>Specifies the number of items per page in&nbsp;<a class="reference-link"
-        href="#root/_help_0ESUbbAxVnoK">Note List</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">customRequestHandler</code>
-      </td>
-      <td>See&nbsp;<a class="reference-link" href="#root/_help_J5Ex1ZrMbyJ6">Custom Request Handler</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">customResourceProvider</code>
-      </td>
-      <td>See&nbsp;<a class="reference-link" href="#root/_help_d3fAXQ2diepH">Custom Resource Providers</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">widget</code>
-      </td>
-      <td>Marks this note as a custom widget which will be added to the Trilium
-        component tree. See&nbsp;<a class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>&nbsp;for
-        more information.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">searchHome</code>
-      </td>
-      <td>New search notes will be created as children of this note (see&nbsp;
-        <a
-        class="reference-link" href="#root/_help_m523cpzocqaD">Saved Search</a>).</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">workspace</code> and related attributes</td>
-      <td>See&nbsp;<a class="reference-link" href="#root/_help_9sRHySam5fXb">Workspaces</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">inbox</code>
-      </td>
-      <td>Default inbox location for new notes. See&nbsp;<a class="reference-link"
-        href="#root/_help_S0Fos78ZfcY7">Note Inbox</a>&nbsp;for more information.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">sqlConsoleHome</code>
-      </td>
-      <td>Default location of&nbsp;<a class="reference-link" href="#root/_help_YKWqdJhzi2VY">SQL Console</a>&nbsp;saved
-        queries.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">bookmarked</code>
-      </td>
-      <td>Indicates this note is a <a href="#root/_help_u3YFHC9tQlpm">bookmark</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">bookmarkFolder</code>
-      </td>
-      <td>Note with this label will appear in bookmarks as folder (allowing access
-        to its children). See&nbsp;<a class="reference-link" href="#root/_help_u3YFHC9tQlpm">Bookmarks</a>&nbsp;for
-        more information.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">share*</code>
-      </td>
-      <td>See the attribute reference in&nbsp;<a class="reference-link" href="#root/_help_R9pX4DGra2Vt">Sharing</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">displayRelations</code>, <code spellcheck="false">hideRelations</code>
-      </td>
-      <td>Comma delimited names of relations which should be displayed/hidden in
-        a&nbsp;<a class="reference-link" href="#root/_help_iRwzGnHPzonm">Relation Map</a>&nbsp;(both
-        the note type and the&nbsp;<a class="reference-link" href="#root/_help_BCkXAVs63Ttv">Note Map (Link map, Tree map)</a>&nbsp;general
-        functionality).</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">titleTemplate</code>
-      </td>
-      <td>Default title of notes created as children of this note. This value is
-        evaluated as a JavaScript string and thus can be enriched with dynamic
-        content via the injected <code spellcheck="false">now</code> and <code spellcheck="false">parentNote</code> variables.
-        <br>
-        <br>See&nbsp;<a class="reference-link" href="#root/_help_47ZrP6FNuoG8">Default Note Title</a>&nbsp;for
-        more info.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">template</code>
-      </td>
-      <td>This note will appear in the selection of available template when creating
-        new note. See&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;for
-        more information.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">toc</code>
-      </td>
-      <td>Controls the display of the&nbsp;<a class="reference-link" href="#root/_help_BFvAtE74rbP6">Table of contents</a>&nbsp;for
-        a given note. <code spellcheck="false">#toc</code> or <code spellcheck="false">#toc=show</code> to
-        always display the table of contents, <code spellcheck="false">#toc=false</code> to
-        always hide it.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">color</code>
-      </td>
-      <td>defines color of the note in note tree, links etc. Use any valid CSS color
-        value like 'red' or #a13d5f&nbsp;
-        <br>Note: this color may be automatically adjusted when displayed to ensure
-        sufficient contrast with the background.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">keyboardShortcut</code>
-      </td>
-      <td>Defines a keyboard shortcut which will immediately jump to this note.
-        Example: 'ctrl+alt+e'. Requires frontend reload for the change to take
-        effect.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">keepCurrentHoisting</code>
-      </td>
-      <td>Opening this link won't change hoisting even if the note is not displayable
-        in the current hoisted subtree.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">executeButton</code>
-      </td>
-      <td>Title of the button which will execute the current code note</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">executeDescription</code>
-      </td>
-      <td>Longer description of the current code note displayed together with the
-        execute button</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">excludeFromNoteMap</code>
-      </td>
-      <td>Notes with this label will be hidden from the&nbsp;<a class="reference-link"
-        href="#root/_help_bdUJEHsAPYQR">Note Map</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">newNotesOnTop</code>
-      </td>
-      <td>New notes will be created at the top of the parent note, not on the bottom.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">hideHighlightWidget</code>
-      </td>
-      <td>Hides the&nbsp;<a class="reference-link" href="#root/_help_AxshuNRegLAv">Highlights list</a>&nbsp;widget</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">hideChildrenOverview</code>
-      </td>
-      <td>Hides the&nbsp;<a class="reference-link" href="#root/_help_0ESUbbAxVnoK">Note List</a>&nbsp;for
-        that particular note.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">subtreeHidden</code>
-      </td>
-      <td>Hides all child notes of this note from the tree, displaying a badge with
-        the count of hidden children. Children remain accessible via search or
-        direct links.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">printLandscape</code>
-      </td>
-      <td>When exporting to PDF, changes the orientation of the page to landscape
-        instead of portrait.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">printPageSize</code>
-      </td>
-      <td>When exporting to PDF, changes the size of the page. Supported values:
-        <code
-        spellcheck="false">A0</code>, <code spellcheck="false">A1</code>, <code spellcheck="false">A2</code>,
+          spellcheck="false">runAtHour</code>
+        </td>
+        <td>See&nbsp;<a class="reference-link" href="#root/_help_GPERMystNGTB">Events</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">disableInclusion</code>
+        </td>
+        <td>Scripts with this label won't be included into parent script execution.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">sorted</code>, <code spellcheck="false">sortDirection</code>,
           <code
-          spellcheck="false">A3</code>, <code spellcheck="false">A4</code>, <code spellcheck="false">A5</code>,
+          spellcheck="false">sortFoldersFirst</code>, <code spellcheck="false">sortNatural</code>,
             <code
-            spellcheck="false">A6</code>, <code spellcheck="false">Legal</code>, <code spellcheck="false">Letter</code>,
-              <code
-              spellcheck="false">Tabloid</code>, <code spellcheck="false">Ledger</code>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">printScale</code>, <code spellcheck="false">printMargins</code>
-      </td>
-      <td>Additional printing options, generally configured through the&nbsp;
-        <a
-        class="reference-link" href="#root/_help_NRnIZmSMc5sj">Printing &amp; Exporting as PDF</a>&nbsp;dialog.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">geolocation</code>
-      </td>
-      <td>Indicates the latitude and longitude of a note, to be displayed in a&nbsp;
-        <a
-        class="reference-link" href="#root/_help_81SGnPGMk7Xc">Geo Map</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">map:*</code>
-      </td>
-      <td>Defines specific options for the&nbsp;<a class="reference-link" href="#root/_help_81SGnPGMk7Xc">Geo Map</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">calendar:*</code>
-      </td>
-      <td>Defines specific options for the&nbsp;<a class="reference-link" href="#root/_help_xWbu3jpNWapp">Calendar</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">viewType</code>
-      </td>
-      <td>Sets the view of child notes (e.g. grid or list). See&nbsp;<a class="reference-link"
-        href="#root/_help_0ESUbbAxVnoK">Note List</a>&nbsp;for more information.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">webViewSrc</code>
-      </td>
-      <td>Defines the URL of the&nbsp;<a class="reference-link" href="#root/_help_1vHRoWCEjj0L">Web View</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">tabWidth</code>, <code spellcheck="false">indentWithTabs</code>,
-        <code
-        spellcheck="false">wrapLines</code>
-      </td>
-      <td>Per-note Code editor settings: indentation width, indent with tabs vs.
-        spaces, and word wrapping. See&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">datePattern</code>, <code spellcheck="false">weekPattern</code>,
-        <code
-        spellcheck="false">monthPattern</code>, <code spellcheck="false">quarterPattern</code>,
+            spellcheck="false">sortLocale</code>, <code spellcheck="false">top</code>, <code spellcheck="false">bottom</code>
+        </td>
+        <td>Manages automatic/permanent sorting. See&nbsp;<a class="reference-link"
+          href="#root/_help_aGlEvb9hyDhS">Sorting Notes</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">hidePromotedAttributes</code>
+        </td>
+        <td>Hide&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;on
+          this note. Generally useful when defining inherited attributes, but the
+          parent note doesn't need them.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">readOnly</code>
+        </td>
+        <td>Marks a note to always be <a href="#root/_help_CoFPLs3dRlXc">read-only</a>, if
+          it's a supported note (text, code, mermaid).</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">autoReadOnlyDisabled</code>
+        </td>
+        <td>Disables automatic <a href="#root/_help_CoFPLs3dRlXc">read-only mode</a> for the
+          given note.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">appCss</code>
+        </td>
+        <td>Marks CSS notes which are loaded into the Trilium application and can
+          thus be used to modify Trilium's looks. See&nbsp;<a class="reference-link"
+          href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>&nbsp;for more info.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">appTheme</code>
+        </td>
+        <td>Marks CSS notes which are full Trilium themes and are thus available in
+          Trilium options. See&nbsp;<a class="reference-link" href="#root/_help_pKK96zzmvBGf">Theme development</a>&nbsp;for
+          more information.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">appThemeBase</code>
+        </td>
+        <td>Set to <code spellcheck="false">next</code>, <code spellcheck="false">next-light</code>,
+          or <code spellcheck="false">next-dark</code> to use the corresponding TriliumNext
+          theme (auto, light or dark) as the base for a custom theme, instead of
+          the legacy one. See&nbsp;<a class="reference-link" href="#root/_help_WFGzWeUK6arS">Customize the Next theme</a>&nbsp;for
+          more information.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">cssClass</code>
+        </td>
+        <td>Value of this label is then added as CSS class to the node representing
+          given note in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.
+          This can be useful for advanced theming. Can be used in template notes.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">iconClass</code>
+        </td>
+        <td>value of this label is added as a CSS class to the icon on the tree which
+          can help visually distinguish the notes in the tree. Example might be bx
+          bx-home - icons are taken from boxicons. Can be used in template notes.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">pageSize</code>
+        </td>
+        <td>Specifies the number of items per page in&nbsp;<a class="reference-link"
+          href="#root/_help_0ESUbbAxVnoK">Note List</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">customRequestHandler</code>
+        </td>
+        <td>See&nbsp;<a class="reference-link" href="#root/_help_J5Ex1ZrMbyJ6">Custom Request Handler</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">customResourceProvider</code>
+        </td>
+        <td>See&nbsp;<a class="reference-link" href="#root/_help_d3fAXQ2diepH">Custom Resource Providers</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">widget</code>
+        </td>
+        <td>Marks this note as a custom widget which will be added to the Trilium
+          component tree. See&nbsp;<a class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>&nbsp;for
+          more information.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">searchHome</code>
+        </td>
+        <td>New search notes will be created as children of this note (see&nbsp;
+          <a
+          class="reference-link" href="#root/_help_m523cpzocqaD">Saved Search</a>).</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">workspace</code> and related attributes</td>
+        <td>See&nbsp;<a class="reference-link" href="#root/_help_9sRHySam5fXb">Workspaces</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">inbox</code>
+        </td>
+        <td>Default inbox location for new notes. See&nbsp;<a class="reference-link"
+          href="#root/_help_S0Fos78ZfcY7">Note Inbox</a>&nbsp;for more information.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">sqlConsoleHome</code>
+        </td>
+        <td>Default location of&nbsp;<a class="reference-link" href="#root/_help_YKWqdJhzi2VY">SQL Console</a>&nbsp;saved
+          queries.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">bookmarked</code>
+        </td>
+        <td>Indicates this note is a <a href="#root/_help_u3YFHC9tQlpm">bookmark</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">bookmarkFolder</code>
+        </td>
+        <td>Note with this label will appear in bookmarks as folder (allowing access
+          to its children). See&nbsp;<a class="reference-link" href="#root/_help_u3YFHC9tQlpm">Bookmarks</a>&nbsp;for
+          more information.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">share*</code>
+        </td>
+        <td>See the attribute reference in&nbsp;<a class="reference-link" href="#root/_help_R9pX4DGra2Vt">Sharing</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">displayRelations</code>, <code spellcheck="false">hideRelations</code>
+        </td>
+        <td>Comma delimited names of relations which should be displayed/hidden in
+          a&nbsp;<a class="reference-link" href="#root/_help_iRwzGnHPzonm">Relation Map</a>&nbsp;(both
+          the note type and the&nbsp;<a class="reference-link" href="#root/_help_BCkXAVs63Ttv">Note Map (Link map, Tree map)</a>&nbsp;general
+          functionality).</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">titleTemplate</code>
+        </td>
+        <td>Default title of notes created as children of this note. This value is
+          evaluated as a JavaScript string and thus can be enriched with dynamic
+          content via the injected <code spellcheck="false">now</code> and <code spellcheck="false">parentNote</code> variables.
+          <br>
+          <br>See&nbsp;<a class="reference-link" href="#root/_help_47ZrP6FNuoG8">Default Note Title</a>&nbsp;for
+          more info.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">template</code>
+        </td>
+        <td>This note will appear in the selection of available template when creating
+          new note. See&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;for
+          more information.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">toc</code>
+        </td>
+        <td>Controls the display of the&nbsp;<a class="reference-link" href="#root/_help_BFvAtE74rbP6">Table of contents</a>&nbsp;for
+          a given note. <code spellcheck="false">#toc</code> or <code spellcheck="false">#toc=show</code> to
+          always display the table of contents, <code spellcheck="false">#toc=false</code> to
+          always hide it.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">color</code>
+        </td>
+        <td>defines color of the note in note tree, links etc. Use any valid CSS color
+          value like 'red' or #a13d5f&nbsp;
+          <br>Note: this color may be automatically adjusted when displayed to ensure
+          sufficient contrast with the background.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">keyboardShortcut</code>
+        </td>
+        <td>Defines a keyboard shortcut which will immediately jump to this note.
+          Example: 'ctrl+alt+e'. Requires frontend reload for the change to take
+          effect.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">keepCurrentHoisting</code>
+        </td>
+        <td>Opening this link won't change hoisting even if the note is not displayable
+          in the current hoisted subtree.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">executeButton</code>
+        </td>
+        <td>Title of the button which will execute the current code note</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">executeDescription</code>
+        </td>
+        <td>Longer description of the current code note displayed together with the
+          execute button</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">excludeFromNoteMap</code>
+        </td>
+        <td>Notes with this label will be hidden from the&nbsp;<a class="reference-link"
+          href="#root/_help_bdUJEHsAPYQR">Note Map</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">newNotesOnTop</code>
+        </td>
+        <td>New notes will be created at the top of the parent note, not on the bottom.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">hideHighlightWidget</code>
+        </td>
+        <td>Hides the&nbsp;<a class="reference-link" href="#root/_help_AxshuNRegLAv">Highlights list</a>&nbsp;widget</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">hideChildrenOverview</code>
+        </td>
+        <td>Hides the&nbsp;<a class="reference-link" href="#root/_help_0ESUbbAxVnoK">Note List</a>&nbsp;for
+          that particular note.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">subtreeHidden</code>
+        </td>
+        <td>Hides all child notes of this note from the tree, displaying a badge with
+          the count of hidden children. Children remain accessible via search or
+          direct links.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">printLandscape</code>
+        </td>
+        <td>When exporting to PDF, changes the orientation of the page to landscape
+          instead of portrait.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">printPageSize</code>
+        </td>
+        <td>When exporting to PDF, changes the size of the page. Supported values:
           <code
-          spellcheck="false">yearPattern</code>
-      </td>
-      <td>Customizes the title naming pattern of day / week / month / quarter /
-        year notes. See&nbsp;<a class="reference-link" href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">enableWeekNote</code>, <code spellcheck="false">enableQuarterNote</code>
-      </td>
-      <td>Enables optional week and quarter notes in the calendar hierarchy; set
-        on the calendar root. See&nbsp;<a class="reference-link" href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">fullContentWidth</code>
-      </td>
-      <td>Expands the note to the full editor width, ignoring the configured content
-        width (useful for wide tables). See&nbsp;<a class="reference-link" href="#root/_help_t596jLvPrqkS">Content width</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">iconPack</code>
-      </td>
-      <td>Identifies a custom icon pack by its prefix. See&nbsp;<a class="reference-link"
-        href="#root/_help_g1mlRoU8CsqC">Creating an icon pack</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">clipperInbox</code>
-      </td>
-      <td>Overrides the default location where the Web Clipper saves clippings (defaults
-        to the day note). See&nbsp;<a class="reference-link" href="#root/_help_MtPxeAWVAzMg">Web Clipper</a>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">similarNotesWidgetDisabled</code>
-      </td>
-      <td>Disables the&nbsp;<a class="reference-link" href="#root/_help_xWtq5NUHOwql">Similar Notes</a>&nbsp;ribbon
-        tab (old layout only)</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">docName</code> , <code spellcheck="false">docUrl</code>
-      </td>
-      <td>Used internally for the in-app help.</td>
-    </tr>
-  </tbody>
-</table>
+          spellcheck="false">A0</code>, <code spellcheck="false">A1</code>, <code spellcheck="false">A2</code>,
+            <code
+            spellcheck="false">A3</code>, <code spellcheck="false">A4</code>, <code spellcheck="false">A5</code>,
+              <code
+              spellcheck="false">A6</code>, <code spellcheck="false">Legal</code>, <code spellcheck="false">Letter</code>,
+                <code
+                spellcheck="false">Tabloid</code>, <code spellcheck="false">Ledger</code>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">printScale</code>, <code spellcheck="false">printMargins</code>
+        </td>
+        <td>Additional printing options, generally configured through the&nbsp;
+          <a
+          class="reference-link" href="#root/_help_NRnIZmSMc5sj">Printing &amp; Exporting as PDF</a>&nbsp;dialog.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">geolocation</code>
+        </td>
+        <td>Indicates the latitude and longitude of a note, to be displayed in a&nbsp;
+          <a
+          class="reference-link" href="#root/_help_81SGnPGMk7Xc">Geo Map</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">map:*</code>
+        </td>
+        <td>Defines specific options for the&nbsp;<a class="reference-link" href="#root/_help_81SGnPGMk7Xc">Geo Map</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">calendar:*</code>
+        </td>
+        <td>Defines specific options for the&nbsp;<a class="reference-link" href="#root/_help_xWbu3jpNWapp">Calendar</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">viewType</code>
+        </td>
+        <td>Sets the view of child notes (e.g. grid or list). See&nbsp;<a class="reference-link"
+          href="#root/_help_0ESUbbAxVnoK">Note List</a>&nbsp;for more information.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">webViewSrc</code>
+        </td>
+        <td>Defines the URL of the&nbsp;<a class="reference-link" href="#root/_help_1vHRoWCEjj0L">Web View</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">tabWidth</code>, <code spellcheck="false">indentWithTabs</code>,
+          <code
+          spellcheck="false">wrapLines</code>
+        </td>
+        <td>Per-note Code editor settings: indentation width, indent with tabs vs.
+          spaces, and word wrapping. See&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">datePattern</code>, <code spellcheck="false">weekPattern</code>,
+          <code
+          spellcheck="false">monthPattern</code>, <code spellcheck="false">quarterPattern</code>,
+            <code
+            spellcheck="false">yearPattern</code>
+        </td>
+        <td>Customizes the title naming pattern of day / week / month / quarter /
+          year notes. See&nbsp;<a class="reference-link" href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">enableWeekNote</code>, <code spellcheck="false">enableQuarterNote</code>
+        </td>
+        <td>Enables optional week and quarter notes in the calendar hierarchy; set
+          on the calendar root. See&nbsp;<a class="reference-link" href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">fullContentWidth</code>
+        </td>
+        <td>Expands the note to the full editor width, ignoring the configured content
+          width (useful for wide tables). See&nbsp;<a class="reference-link" href="#root/_help_t596jLvPrqkS">Content width</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">iconPack</code>
+        </td>
+        <td>Identifies a custom icon pack by its prefix. See&nbsp;<a class="reference-link"
+          href="#root/_help_g1mlRoU8CsqC">Creating an icon pack</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">clipperInbox</code>
+        </td>
+        <td>Overrides the default location where the Web Clipper saves clippings (defaults
+          to the day note). See&nbsp;<a class="reference-link" href="#root/_help_MtPxeAWVAzMg">Web Clipper</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">similarNotesWidgetDisabled</code>
+        </td>
+        <td>Disables the&nbsp;<a class="reference-link" href="#root/_help_xWtq5NUHOwql">Similar Notes</a>&nbsp;ribbon
+          tab (old layout only)</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">docName</code> , <code spellcheck="false">docUrl</code>
+        </td>
+        <td>Used internally for the in-app help.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>

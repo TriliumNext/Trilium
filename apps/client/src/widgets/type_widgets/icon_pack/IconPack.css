@@ -1,0 +1,8 @@
+.note-detail-icon-pack .icon-pack-file-source {
+    height: 100%;
+    overflow: auto;
+
+    > .alert {
+        margin: 8px;
+    }
+}

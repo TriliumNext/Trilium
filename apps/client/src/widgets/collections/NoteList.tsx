@@ -99,8 +99,11 @@ export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, notePa
 
         const observer = new IntersectionObserver(
             (entries) => {
-                if (!isIntersecting) {
-                    setIsIntersecting(entries[0].isIntersecting);
+                // The first callback fires immediately after observe() and reports false while the
+                // widget is hidden (background tab) or below the viewport, so only latch-and-stop
+                // once the widget actually becomes visible (#7901).
+                if (entries[0].isIntersecting) {
+                    setIsIntersecting(true);
                     observer.disconnect();
                 }
             },

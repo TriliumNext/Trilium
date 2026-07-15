@@ -4,6 +4,14 @@
     margin-top: 1rem;
     padding-bottom: 1.25rem;
     max-width: 85%;
+    /* Isolate each message: layout, paint and style invalidations stop at the message
+       boundary instead of walking the whole timeline. Deliberately NOT content-visibility:
+       auto — skipped messages sit at placeholder sizes, which silently breaks everything
+       that measures the timeline (ToC scroll-spy offsets, the bottom-spacer/reply-park
+       math in useLlmChat, smooth scrollIntoView landings). Paint containment clips ink at
+       the wrapper edge, so overflowing effects must be inset (see the jump flash below)
+       and wide content needs its own scroll context (see the KaTeX rule). */
+    contain: content;
 }
 
 .llm-chat-message-wrapper:first-child {
@@ -13,6 +21,11 @@
 .llm-chat-message-wrapper-user {
     margin-left: auto;
     max-width: 70%;
+    /* Shrink to fit the content (capped by max-width) instead of collapsing to
+       min-content. Without an explicit width, an `auto` cross-axis margin inside
+       a flex column (the sidebar chat) squeezes short messages until single words
+       wrap character-by-character. */
+    width: fit-content;
 }
 
 .llm-chat-message-wrapper-assistant {
@@ -32,8 +45,6 @@
 
 .llm-chat-message-user {
     background: var(--accented-background-color);
-    max-width: 85%;
-    margin-left: auto;
 }
 
 .llm-chat-message-content {
@@ -240,6 +251,13 @@
     font-size: 0.85em;
 }
 
+/* KaTeX display math is white-space: nowrap; give it its own scroll context (like `pre`
+   above) so a wide equation stays reachable — the wrapper's paint containment would
+   otherwise clip its tail with no scrollbar. */
+.llm-chat-markdown .katex-display {
+    overflow-x: auto;
+}
+
 .llm-chat-markdown blockquote {
     margin: 0.75em 0;
     padding: 0.5em 1em;
@@ -272,6 +290,26 @@
 
 .llm-chat-markdown em {
     font-style: italic;
+}
+
+/* "Show quote source" jump link at the end of a submitted quote. Inherits link color from
+   `.llm-chat-markdown a`; the pointer cursor is kept explicit since the jump is handled by a click
+   listener rather than real navigation. */
+.chat-message-jump {
+    cursor: pointer;
+}
+
+/* Flash the referenced bubble when jumped to. An inset box-shadow pulse (no layout shift)
+   works on both the user bubble and the transparent assistant bubble — and, unlike an outer
+   shadow, isn't clipped by the message wrapper's paint containment. Duration mirrors
+   FLASH_DURATION_MS in chat_message_jump.ts. */
+.llm-chat-message-wrapper.llm-chat-message-jump-target .llm-chat-message {
+    animation: llm-chat-jump-flash 1.2s ease-out;
+}
+
+@keyframes llm-chat-jump-flash {
+    from { box-shadow: inset 0 0 0 2px var(--quick-search-result-highlight-color, #007bff); }
+    to { box-shadow: inset 0 0 0 2px transparent; }
 }
 
 /* Message footer (timestamp + token usage, sits below the bubble) */

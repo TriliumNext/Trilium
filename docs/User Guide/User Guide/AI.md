@@ -1,7 +1,4 @@
 # AI
-> [!WARNING]
-> This feature is currently marked as experimental. While it is functional, we do expect that the user interface might change or we might add or remove some features related to it.
-
 ## History
 
 ### Removal in v0.102.0
@@ -38,7 +35,7 @@ One of the key changes that lead to the reimplementation is that now we are usin
 
 ## LLM Providers
 
-### Cloud providers
+### Cloud providers using API keys
 
 Currently, only three cloud providers are supported:
 
@@ -46,10 +43,33 @@ Currently, only three cloud providers are supported:
 *   OpenAI
 *   Gemini
 
-For all the providers, an API key is needed. Note that this is charged separately from the subscription you might already have (e.g. Claude Pro). If that might be a problem, consider using the MCP server and connecting it to your agent (e.g. Claude Code).
+For all the providers, an API key is needed. Note that this is charged separately from the subscription you might already have (e.g. Claude Pro). If that might be a problem, consider using either a subscription provider (see below) or using it externally via MCP.
 
 > [!NOTE]
 > We don't plan to support all cloud providers, even if the library we are using would theoretically support them. Before opening a PR adding support for a different cloud provider, make sure to discuss it over GitHub discussions.
+
+### Subscription providers
+
+> [!IMPORTANT]
+> Subscription-based providers are still in beta. They are safe to use (they won't use additional funds and respect the terms of use), but you might experience small issues. Consider <a class="reference-link" href="Troubleshooting/Reporting%20issues.md">Reporting issues</a>.
+
+Some cloud providers offer a subscription, which has a fixed monthly fee instead of pay-per-use (unlike the API keys). Trilium v0.104.0 introduces beta support for Anthropic's Claude Pro/Max subscriptions. Other subscription-based providers such as ChatGPT are on the roadmap, but not yet implemented.
+
+To use a subscription:
+
+1.  First, Claude Code needs to be installed on the machine that runs Trilium. So for a <a class="reference-link" href="Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>, Claude needs to be installed locally and for a <a class="reference-link" href="Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a> accessed via a browser, Claude needs to be installed on the server.
+2.  Claude Code must already be authenticated. To do so, run `claude` in a terminal once, type `login` and follow the instructions.
+3.  Go to <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _AI / LLM_ and add the Claude Code provider.
+
+Trilium will identify your Claude Code binary in this order:
+
+*   By looking for a `TRILIUM_CLAUDE_CODE_PATH` environment variable pointing to the Claude binary. This allows overriding the path if needed.
+*   By looking for `claude` in your PATH, generally works in most circumstances.
+
+After your provider is set up, you'll benefit from the same features as an API key (note tools, web search, extended thinking, image/PDF attachments, streaming).
+
+> [!NOTE]
+> Trilium intentionally uses your Claude Code binary in order not to have to package a ~250 MB client with it, but this comes at a cost: there is a small risk for a version incompatibility, if the version installed locally doesn't match the one expected by Trilium. Generally it's best to keep both Claude Code and Trilium updated to the latest version.
 
 ### Self-hosted providers
 
@@ -62,10 +82,7 @@ Model selection for self-hosted providers is not yet supported, but generally th
 
 ## Enabling the AI integration
 
-Because it is an experimental feature, enabling the AI integration is a two-step process:
-
-1.  Go to <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Advanced_ and check _AI / LLM Chat_ in the _Experimental Options_ section.
-2.  Go to <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _AI / LLM_ and configure a new provider.
+To enable the AI integration, simply go to <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _AI / LLM_ and press the toggle in the top-right of the dialog and configure a provider.
 
 ## Creating a new chat
 

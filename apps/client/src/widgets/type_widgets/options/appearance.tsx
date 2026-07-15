@@ -6,6 +6,7 @@ import { createPortal } from "preact/compat";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
 import zoomService from "../../../components/zoom";
+import { ColorScheme, resolveColorScheme, THEME_FAMILY_SCHEMES } from "../../../services/color_scheme";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import { isElectron, isMobile, reloadFrontendApp, restartDesktopApp } from "../../../services/utils";
@@ -34,8 +35,6 @@ interface CustomTheme {
     noteId?: string;
 }
 
-type ColorScheme = "system" | "light" | "dark";
-
 interface ThemeFamily {
     key: string;
     title: string;
@@ -48,13 +47,13 @@ const THEME_FAMILIES: ThemeFamily[] = [
         key: "modern",
         title: t("theme.modern_themes"),
         icon: "bx bx-star",
-        schemes: { system: "next", light: "next-light", dark: "next-dark" }
+        schemes: THEME_FAMILY_SCHEMES.modern
     },
     {
         key: "legacy",
         title: t("theme.legacy_themes"),
         icon: "bx bx-history",
-        schemes: { system: "auto", light: "light", dark: "dark" }
+        schemes: THEME_FAMILY_SCHEMES.legacy
     }
 ];
 
@@ -65,15 +64,9 @@ const COLOR_SCHEMES: { key: ColorScheme; label: string; icon: string }[] = [
 ];
 
 function resolveTheme(themeVal: string | null): { family: ThemeFamily | null; scheme: ColorScheme; isCustom: boolean } {
-    for (const family of THEME_FAMILIES) {
-        for (const [scheme, val] of Object.entries(family.schemes)) {
-            if (val === themeVal) {
-                return { family, scheme: scheme as ColorScheme, isCustom: false };
-            }
-        }
-    }
-    // Custom theme
-    return { family: null, scheme: "system", isCustom: true };
+    const { family: familyKey, scheme, isCustom } = resolveColorScheme(themeVal);
+    const family = THEME_FAMILIES.find(f => f.key === familyKey) ?? null;
+    return { family, scheme, isCustom };
 }
 
 interface FontFamilyEntry {

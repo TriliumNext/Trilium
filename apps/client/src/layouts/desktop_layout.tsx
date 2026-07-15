@@ -68,7 +68,6 @@ export default class DesktopLayout {
         const launcherPane = this.#buildLauncherPane(launcherPaneIsHorizontal);
         const isElectron = utils.isElectron();
         const isMac = window.glob.platform === "darwin";
-        const isWindows = window.glob.platform === "win32";
         const hasNativeTitleBar = window.glob.hasNativeTitleBar;
 
         /**
@@ -76,7 +75,7 @@ export default class DesktopLayout {
          * On macOS we need to force the full-width tab bar on Electron in order to allow the semaphore (window controls) enough space.
          */
         const fullWidthTabBar = launcherPaneIsHorizontal || (isElectron && !hasNativeTitleBar && isMac);
-        const customTitleBarButtons = !hasNativeTitleBar && !isMac && !isWindows;
+        const customTitleBarButtons = !hasNativeTitleBar && utils.isLinux();
         const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
         const rootContainer = new RootContainer(true)

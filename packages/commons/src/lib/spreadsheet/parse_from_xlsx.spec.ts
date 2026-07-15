@@ -5,6 +5,7 @@ import { excelColorToRgb, parseRange, parseXlsxToWorkbook, toArrayBuffer } from 
 import {
     BorderStyle,
     CellValueType,
+    type DataValidationRule,
     HorizontalAlign,
     type ICellData,
     type IStyleData,
@@ -545,6 +546,133 @@ describe("parseXlsxToWorkbook images", () => {
         const sheet = workbook.sheets[workbook.sheetOrder[0]];
         expect(sheet.rowHeader).toEqual({ width: 46, hidden: 0 });
         expect(sheet.columnHeader).toEqual({ height: 20, hidden: 0 });
+    });
+});
+
+describe("parseXlsxToWorkbook data validation", () => {
+    // Reads the SHEET_DATA_VALIDATION_PLUGIN resource for a sheet back into a typed shape.
+    function validationsOf(
+        workbook: { sheetOrder: string[]; resources?: { name: string; data: string }[] },
+        sheetIndex = 0
+    ): DataValidationRule[] | null {
+        const resource = workbook.resources?.find((r) => r.name === "SHEET_DATA_VALIDATION_PLUGIN");
+        if (!resource) return null;
+        const parsed = JSON.parse(resource.data) as Record<string, DataValidationRule[]>;
+        return parsed[workbook.sheetOrder[sheetIndex]] ?? null;
+    }
+
+    it("imports an inline dropdown list, coalescing the cell range and JSON-encoding the options", async () => {
+        // Mirrors the real file: a single sqref rectangle that exceljs expands to individual cells.
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("A1").value = "x";
+        ws.dataValidations.add("D2:E3", {
+            type: "list",
+            allowBlank: true,
+            formulae: ['"0 - Below Expectations ,1 - Meets Expectations,2 - Strong Performance"']
+        });
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rules = validationsOf(workbook);
+        expect(rules).toHaveLength(1);
+        const rule = rules?.[0];
+        expect(rule?.type).toBe("list");
+        // Univer's list validator JSON-parses formula1 (deserializeListOptions); the exporter
+        // JSON.stringifies. The inline options keep their exact text, including the trailing space.
+        expect(rule?.formula1).toBe(
+            JSON.stringify(["0 - Below Expectations ", "1 - Meets Expectations", "2 - Strong Performance"])
+        );
+        // The 2x2 block collapses back into a single rectangle, not four 1x1 ranges.
+        expect(rule?.ranges).toEqual([{ startRow: 1, endRow: 2, startColumn: 3, endColumn: 4 }]);
+        expect(rule?.uid).toBeTruthy();
+    });
+
+    it("carries the operator and both formulae for a numeric (whole between) validation", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("B2").dataValidation = { type: "whole", operator: "between", formulae: [1, 10] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rule = validationsOf(workbook)?.[0];
+        expect(rule?.type).toBe("whole");
+        expect(rule?.operator).toBe("between");
+        expect(rule?.formula1).toBe("1");
+        expect(rule?.formula2).toBe("10");
+        expect(rule?.ranges).toEqual([{ startRow: 1, endRow: 1, startColumn: 1, endColumn: 1 }]);
+    });
+
+    it("emits no validation resource for a sheet without any", async () => {
+        const wb = new ExcelJS.Workbook();
+        wb.addWorksheet("S").getCell("A1").value = "x";
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+        expect(workbook.resources?.some((r) => r.name === "SHEET_DATA_VALIDATION_PLUGIN")).toBeFalsy();
+    });
+
+    it("keeps distinct configs as separate rules on the same sheet", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.dataValidations.add("A1:A2", { type: "list", formulae: ['"a,b"'] });
+        ws.dataValidations.add("C1:C2", { type: "list", formulae: ['"x,y"'] });
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rules = validationsOf(workbook);
+        expect(rules).toHaveLength(2);
+        const formula1s = rules?.map((r) => r.formula1).sort();
+        expect(formula1s).toEqual([JSON.stringify(["a", "b"]), JSON.stringify(["x", "y"])]);
+    });
+
+    it("passes a range-referenced list through as the formula, not a JSON option array", async () => {
+        // A dropdown whose options come from a cell range ($A$1:$A$3) rather than inline text:
+        // there are no literal options to encode, so the reference is carried as formula1 verbatim.
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("C1").dataValidation = { type: "list", formulae: ["$A$1:$A$3"] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rule = validationsOf(workbook)?.[0];
+        expect(rule?.type).toBe("list");
+        expect(rule?.formula1).toBe("$A$1:$A$3");
+    });
+
+    it("carries a single-bound numeric constraint (greaterThan) with just formula1", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("B2").dataValidation = { type: "decimal", operator: "greaterThan", formulae: [5] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rule = validationsOf(workbook)?.[0];
+        expect(rule?.operator).toBe("greaterThan");
+        expect(rule?.formula1).toBe("5");
+        expect(rule?.formula2).toBeUndefined();
+    });
+
+    it("carries a custom-formula validation (a formula, no operator)", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("B2").dataValidation = { type: "custom", formulae: ["=B2>0"] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+
+        const rule = validationsOf(workbook)?.[0];
+        expect(rule?.type).toBe("custom");
+        expect(rule?.formula1).toBe("=B2>0");
+        expect(rule?.operator).toBeUndefined();
+    });
+
+    it("drops a list validation that carries no options", async () => {
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet("S");
+        ws.getCell("A1").value = "x";
+        ws.getCell("B1").dataValidation = { type: "list", formulae: [] };
+        const buffer = await wb.xlsx.writeBuffer();
+        const { workbook } = await parseXlsxToWorkbook(buffer as ArrayBuffer);
+        expect(workbook.resources?.some((r) => r.name === "SHEET_DATA_VALIDATION_PLUGIN")).toBeFalsy();
     });
 });
 

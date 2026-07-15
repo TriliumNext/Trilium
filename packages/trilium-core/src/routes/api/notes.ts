@@ -7,6 +7,7 @@ import { ValidationError } from "../../errors.js";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import { getLog } from "../../services/log.js";
+import noteFormatConversionService from "../../services/note_format_conversion.js";
 import noteService from "../../services/notes.js";
 import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
@@ -200,9 +201,22 @@ function deleteNote(req: Request<{ noteId: string }>) {
 function undeleteNote(req: Request<{ noteId: string }>) {
     const taskContext = TaskContext.getInstance(randomString(10), "undeleteNotes", null);
 
-    noteService.undeleteNote(req.params.noteId, taskContext);
+    // A note whose original parent is gone can only be restored by giving it a new home. The caller
+    // opts into that by naming a fallback parent (the client uses the inbox / default new-note
+    // location, after telling the user the original location no longer exists).
+    const { fallbackParentNoteId } = req.body ?? {};
+
+    if (fallbackParentNoteId !== undefined && typeof fallbackParentNoteId !== "string") {
+        throw new ValidationError("'fallbackParentNoteId' must be a note id.");
+    }
+
+    // Report whether the note was actually restored (and where): it may fail if the note was already
+    // erased, so the client can give feedback instead of navigating to a note that was never brought back.
+    const result = noteService.undeleteNote(req.params.noteId, taskContext, { fallbackParentNoteId });
 
     taskContext.taskSucceeded(null);
+
+    return result;
 }
 
 function sortChildNotes(req: Request<{ noteId: string }>) {
@@ -368,6 +382,13 @@ function convertNoteToAttachment(req: Request<{ noteId: string }>) {
     };
 }
 
+function convertNoteFormat(req: Request<{ noteId: string }>) {
+    const { noteId } = req.params;
+    const note = becca.getNoteOrThrow(noteId);
+
+    return noteFormatConversionService.convertNoteFormat(note);
+}
+
 export default {
     getNote,
     getNoteBlob,
@@ -385,5 +406,6 @@ export default {
     eraseUnusedAttachmentsNow,
     getDeleteNotesPreview,
     forceSaveRevision,
-    convertNoteToAttachment
+    convertNoteToAttachment,
+    convertNoteFormat
 };

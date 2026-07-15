@@ -39,6 +39,9 @@ export interface EditableCodeProps extends TypeWidgetProps, Omit<CodeEditorProps
 export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
     const [ content, setContent ] = useState("");
     const blob = useNoteBlob(note);
+    // Read reactively so switching the language from the dropdown re-highlights live, rather than
+    // only after the note is reloaded (unlike the editable view, read-only has no edits to trigger it).
+    const mime = useNoteProperty(note, "mime");
     const [ noteTabWidth ] = useNoteLabelInt(note, "tabWidth");
     const [ noteUseTabs ] = useNoteLabelOptionalBool(note, "indentWithTabs");
     const [ noteWrapLines ] = useNoteLabelOptionalBool(note, "wrapLines");
@@ -60,7 +63,7 @@ export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent, editorRe
             editorRef={editorRef}
             className="note-detail-readonly-code-content"
             content={content}
-            mime={note.mime}
+            mime={mime ?? "text/plain"}
             readOnly
             {...(noteTabWidth != null && { indentSize: noteTabWidth })}
             {...(noteUseTabs != null && { useTabs: noteUseTabs })}
@@ -228,9 +231,18 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
         editor.focus();
     });
 
-    useTriliumEvent("focusOnDetail", ({ ntxId: eventNtxId }) => {
+    useTriliumEvent("focusOnDetail", ({ ntxId: eventNtxId, insertNewlineAtTop }) => {
         if (eventNtxId !== ntxId) return;
-        codeEditorRef.current?.focus();
+        const editor = codeEditorRef.current;
+        if (!editor) return;
+        if (insertNewlineAtTop) {
+            editor.insertBlankLineAtTop();
+            // The code editor itself is `overflow: hidden`; the surrounding `.scrolling-container`
+            // scrolls (together with the inline title), so CodeMirror's own scrollIntoView can't
+            // reveal the new top line. Scroll that container to the top once the line has rendered.
+            requestAnimationFrame(() => editor.dom.closest(".scrolling-container")?.scrollTo({ top: 0 }));
+        }
+        editor.focus();
     });
 
     return <CodeMirror

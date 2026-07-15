@@ -115,6 +115,34 @@ jobs:
         if: always()
         run: pkill -f trilium || true
 
+  e2e-pdfjs-viewer:
+    runs-on: ubuntu-22.04
+    name: PDF viewer E2E tests
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: PDF viewer end-to-end tests
+        run: pnpm --filter pdfjs-viewer e2e
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pdfjs-viewer e2e report
+          path: packages/pdfjs-viewer/test-output
+
   e2e-standalone:
     strategy:
       fail-fast: false

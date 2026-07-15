@@ -124,6 +124,166 @@ describe("convertNotionHtml — toggles", () => {
     });
 });
 
+describe("convertNotionHtml — toggle headings", () => {
+    // A toggle heading exports as a bare <details> (no ul.toggle wrapper) whose <summary> font-size encodes
+    // the level; Notion nests its body in a `.indented` div and wraps blocks in display:contents.
+    const toggleHeading = (size: string, title: string, body: string) =>
+        `<div style="display:contents" dir="auto"><details open=""><summary style="font-weight:600;font-size:${size};line-height:1.3;margin:0">${title}</summary><div class="indented"><div style="display:contents" dir="auto">${body}</div></div></details></div>`;
+
+    it("flattens a toggle heading into a plain heading, hoisting its body out of the `.indented` wrapper", () => {
+        expect(convertNotionHtml(toggleHeading("1.875em", "Section A", "<p>Content goes here.</p>"))).toBe(
+            `<h2>Section A</h2><p>Content goes here.</p>`
+        );
+    });
+
+    it("maps each Notion toggle-heading size to the matching (shifted) heading level", () => {
+        const input =
+            toggleHeading("1.875em", "L1", "<p>a</p>") +
+            toggleHeading("1.5em", "L2", "<p>b</p>") +
+            toggleHeading("1.25em", "L3", "<p>c</p>") +
+            toggleHeading("1.125em", "L4", "<p>d</p>");
+        expect(convertNotionHtml(input)).toBe(
+            `<h2>L1</h2><p>a</p><h3>L2</h3><p>b</p><h4>L3</h4><p>c</p><h5>L4</h5><p>d</p>`
+        );
+    });
+
+    it("preserves inline formatting in the heading title and handles an empty body", () => {
+        expect(convertNotionHtml(toggleHeading("1.5em", "A <strong>bold</strong> title", ""))).toBe(
+            `<h3>A <strong>bold</strong> title</h3>`
+        );
+    });
+
+    it("leaves a regular list toggle as a collapsible (its summary has no heading font-size)", () => {
+        expect(convertNotionHtml(`<ul class="toggle"><li><details open=""><summary>Plain</summary><div style="display:contents"><p>x</p></div></details></li></ul>`)).toBe(
+            `<details open class="trilium-collapsible"><summary>Plain</summary><p>x</p></details>`
+        );
+    });
+});
+
+describe("convertNotionHtml — table of contents", () => {
+    it("drops Notion's table-of-contents nav, keeping the surrounding content (Trilium generates its own)", () => {
+        const toc = `<nav class="block-color-gray table_of_contents"><div class="table_of_contents-item table_of_contents-indent-0"><a class="table_of_contents-link" href="#389c5eca-1b8b-805d-81d3-c56b2184de54">Heading 1</a></div></nav>`;
+        expect(convertNotionHtml(`${toc}<h2 id="389c5eca-1b8b-805d-81d3-c56b2184de54">Heading 1</h2><p>Body</p>`)).toBe(
+            `<h2 id="389c5eca-1b8b-805d-81d3-c56b2184de54">Heading 1</h2><p>Body</p>`
+        );
+    });
+});
+
+describe("convertNotionHtml — list fragmentation", () => {
+    // Notion exports each list item as its own single-item <ul>/<ol> (wrapped in a display:contents <div>),
+    // and fragments nested lists the same way; consecutive same-kind fragments must merge into one clean list.
+    const dc = (inner: string) => `<div style="display:contents" dir="auto">${inner}</div>`;
+
+    it("merges fragmented bullet items into a single list, including nested sublists", () => {
+        const nested =
+            dc(`<ul class="bulleted-list"><li style="list-style-type:circle">Nested 1</li></ul>`) +
+            dc(`<ul class="bulleted-list"><li style="list-style-type:circle">Nested 2</li></ul>`);
+        const input =
+            dc(`<ul class="bulleted-list"><li style="list-style-type:disc">Item 1</li></ul>`) +
+            dc(`<ul class="bulleted-list"><li style="list-style-type:disc">Item 2${nested}</li></ul>`);
+        expect(convertNotionHtml(input)).toBe(
+            `<ul><li style="list-style-type:disc">Item 1</li><li style="list-style-type:disc">Item 2<ul><li style="list-style-type:circle">Nested 1</li><li style="list-style-type:circle">Nested 2</li></ul></li></ul>`
+        );
+    });
+
+    it("merges fragmented numbered items into a single list, dropping per-fragment start/type", () => {
+        const nested =
+            dc(`<ol type="a" class="numbered-list" start="1"><li>A</li></ol>`) +
+            dc(`<ol type="a" class="numbered-list" start="2"><li>B</li></ol>`);
+        const input =
+            dc(`<ol type="1" class="numbered-list" start="1"><li>One</li></ol>`) +
+            dc(`<ol type="1" class="numbered-list" start="2"><li>Two</li></ol>`) +
+            dc(`<ol type="1" class="numbered-list" start="3"><li>Three${nested}</li></ol>`);
+        expect(convertNotionHtml(input)).toBe(
+            `<ol><li>One</li><li>Two</li><li>Three<ol><li>A</li><li>B</li></ol></li></ol>`
+        );
+    });
+
+    it("does not merge lists separated by other content or of a different type", () => {
+        const input =
+            dc(`<ul class="bulleted-list"><li>A</li></ul>`) +
+            dc(`<p>break</p>`) +
+            dc(`<ul class="bulleted-list"><li>B</li></ul>`) +
+            dc(`<ol class="numbered-list" start="1"><li>C</li></ol>`);
+        expect(convertNotionHtml(input)).toBe(
+            `<ul><li>A</li></ul><p>break</p><ul><li>B</li></ul><ol><li>C</li></ol>`
+        );
+    });
+});
+
+describe("convertNotionHtml — columns", () => {
+    // Notion column layouts are a <div class="column-list"> of <div class="column" style="width:N%"> divs,
+    // each wrapping its content in display:contents. They render as a single-row borderless table.
+    const dc = (inner: string) => `<div style="display:contents" dir="auto">${inner}</div>`;
+    const column = (width: string, text: string) =>
+        dc(`<div style="width:${width}" class="column">${dc(`<p class="">${text}</p>`)}</div>`);
+    const columnList = (...cols: string[]) => dc(`<div id="x" class="column-list">${cols.join("")}</div>`);
+
+    it("renders a two-column layout as a borderless table with per-cell widths", () => {
+        const input = columnList(column("50%", "First column"), column("50%", "Second column"));
+        expect(convertNotionHtml(input)).toBe(
+            `<figure class="table"><table style="border-color:transparent;"><tbody><tr>` +
+            `<td style="border-color:transparent;width:50%;">First column</td>` +
+            `<td style="border-color:transparent;width:50%;">Second column</td>` +
+            `</tr></tbody></table></figure>`
+        );
+    });
+
+    it("rounds an awkward column width to two decimals", () => {
+        const input = columnList(
+            column("33.33333333333333%", "First column"),
+            column("33.33333333333333%", "Second column"),
+            column("33.33333333333333%", "Third column")
+        );
+        expect(convertNotionHtml(input)).toBe(
+            `<figure class="table"><table style="border-color:transparent;"><tbody><tr>` +
+            `<td style="border-color:transparent;width:33.33%;">First column</td>` +
+            `<td style="border-color:transparent;width:33.33%;">Second column</td>` +
+            `<td style="border-color:transparent;width:33.33%;">Third column</td>` +
+            `</tr></tbody></table></figure>`
+        );
+    });
+
+    it("flattens a nested column list into one row, splitting the wrapper's width across the inner columns", () => {
+        // The 50% wrapper column holds a 3-column list (each 100%, i.e. equal) plus an empty trailing
+        // paragraph; the inner columns collapse into the row at 50% ÷ 3 = 16.67% each, the empty <p> dropped.
+        const inner = dc(`<div class="column-list">${column("100%", "1") + column("100%", "2") + column("100%", "3")}</div>`);
+        const wrapper = dc(`<div style="width:50%" class="column">${inner}${dc(`<p class=""></p>`)}</div>`);
+        const input = dc(`<div id="x" class="column-list">${wrapper}${column("50%", "2/2")}</div>`);
+        expect(convertNotionHtml(input)).toBe(
+            `<figure class="table"><table style="border-color:transparent;"><tbody><tr>` +
+            `<td style="border-color:transparent;width:16.67%;">1</td>` +
+            `<td style="border-color:transparent;width:16.67%;">2</td>` +
+            `<td style="border-color:transparent;width:16.67%;">3</td>` +
+            `<td style="border-color:transparent;width:50%;">2/2</td>` +
+            `</tr></tbody></table></figure>`
+        );
+    });
+
+    it("keeps a column with loose content and a nested list as one cell (nested table inside), not losing content", () => {
+        // Left column is a pure wrapper (flattens); the right column has loose content "2/2" plus a nested
+        // list, so it stays a single cell carrying the paragraph and the nested columns as a nested table.
+        const nestedA = dc(`<div class="column-list">${column("100%", "1") + column("100%", "2") + column("100%", "3")}</div>`);
+        const wrapper = dc(`<div style="width:50%" class="column">${nestedA}${dc(`<p class=""></p>`)}</div>`);
+        const nestedB = dc(`<div class="column-list">${column("100%", "the") + column("100%", "quick") + column("100%", "brown")}</div>`);
+        const mixed = dc(`<div style="width:50%" class="column">${dc(`<p class="">2/2</p>`)}${nestedB}</div>`);
+        const input = dc(`<div id="x" class="column-list">${wrapper}${mixed}</div>`);
+        expect(convertNotionHtml(input)).toBe(
+            `<figure class="table"><table style="border-color:transparent;"><tbody><tr>` +
+            `<td style="border-color:transparent;width:16.67%;">1</td>` +
+            `<td style="border-color:transparent;width:16.67%;">2</td>` +
+            `<td style="border-color:transparent;width:16.67%;">3</td>` +
+            `<td style="border-color:transparent;width:50%;"><p class="">2/2</p>` +
+            `<figure class="table"><table style="border-color:transparent;"><tbody><tr>` +
+            `<td style="border-color:transparent;width:33.33%;">the</td>` +
+            `<td style="border-color:transparent;width:33.33%;">quick</td>` +
+            `<td style="border-color:transparent;width:33.33%;">brown</td>` +
+            `</tr></tbody></table></figure></td>` +
+            `</tr></tbody></table></figure>`
+        );
+    });
+});
+
 describe("convertNotionHtml — callouts", () => {
     const callout = (emoji: string, body: string) =>
         `<div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="386c5eca"><div style="font-size:1.5em"><span class="icon">${emoji}</span></div><div style="width:100%"><div style="display:contents" dir="auto">${body}</div></div></figure></div>`;
@@ -276,6 +436,32 @@ describe("convertNotionHtml — code blocks", () => {
   Mermaid --&gt; Diagram</code></pre>`;
         expect(convertNotionHtml(input)).toBe(`<pre><code class="language-mermaid">graph TD
   Mermaid --&gt; Diagram</code></pre>`);
+    });
+});
+
+describe("convertNotionHtml — inline databases", () => {
+    const dbId = "38ac5eca1b8b808babeaf10c0980fa5b";
+    const placeholder = `<section class="include-note" data-notion-id="${dbId}" data-box-size="medium">&nbsp;</section>`;
+
+    it("replaces a rendered inline-database table (partial export) with an include-note placeholder", () => {
+        const input =
+            `<div style="display:contents" dir="ltr"><div id="38ac5eca-1b8b-808b-abea-f10c0980fa5b" class="collection-content"><h4 class="collection-title">Database title</h4>` +
+            `<div class="collection-content-wrapper"><table class="collection-content"><thead><tr><th>Name</th></tr></thead><tbody>` +
+            `<tr id="38ac5eca-1b8b-8069-afb5-c9fe40e53c42"><td class="cell-title"><a href="Inline%20database%20test/Database%20title/First%2038ac5eca1b8b8069afb5c9fe40e53c42.html">First</a></td></tr>` +
+            `</tbody></table></div></div></div>`;
+        expect(convertNotionHtml(input)).toBe(placeholder);
+    });
+
+    it("replaces an inline-database CSV link (full/workspace export) with the same placeholder", () => {
+        const input =
+            `<div style="display:contents" dir="ltr"><div id="38ac5eca-1b8b-808b-abea-f10c0980fa5b" class="collection-content"><h4 class="collection-title">Database title</h4>` +
+            `<a href="Inline%20database%20test/Database%20title%20${dbId}.csv"><code>x</code></a></div></div>`;
+        expect(convertNotionHtml(input)).toBe(placeholder);
+    });
+
+    it("leaves a collection-content block without an id untouched", () => {
+        const input = `<div class="collection-content"><h4 class="collection-title">No id</h4></div>`;
+        expect(convertNotionHtml(input)).toBe(input);
     });
 });
 

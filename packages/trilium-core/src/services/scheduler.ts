@@ -2,6 +2,7 @@ import type BNote from "../becca/entities/bnote.js";
 import attributeService from "../services/attributes.js";
 import config from "./config.js";
 import * as cls from "./context.js";
+import events from "./events.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import { getLog } from "./log.js";
 import options from "./options.js";
@@ -69,7 +70,10 @@ export function startScheduler() {
             7 * 3600 * 1000
         );
 
-        setInterval(() => checkProtectedSessionExpiration(), 30000);
+        setInterval(
+            cls.wrap(() => checkProtectedSessionExpiration()),
+            30000
+        );
     });
 }
 
@@ -78,6 +82,10 @@ function checkProtectedSessionExpiration() {
     const lastProtectedSessionOperationDate = protected_session.getLastProtectedSessionOperationDate();
     if (protected_session.isProtectedSessionAvailable() && lastProtectedSessionOperationDate && Date.now() - lastProtectedSessionOperationDate > protectedSessionTimeout * 1000) {
         protected_session.resetDataKey();
+        // Mirror logoutFromProtectedSession(): without this event, becca — and the flat-text
+        // search index derived from it — would keep the decrypted titles in memory, letting
+        // title-word searches match protected notes after the session ended.
+        events.emit(events.LEAVE_PROTECTED_SESSION);
         getLog().info("Expiring protected session");
         ws.reloadFrontend("leaving protected session");
     }

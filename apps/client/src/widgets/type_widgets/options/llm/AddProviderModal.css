@@ -1,0 +1,26 @@
+.modal.add-provider-modal {
+    .tn-card {
+        margin-bottom: 1rem;
+    }
+
+    .tn-card:last-child {
+        margin-bottom: 0;
+    }
+
+    /* The connection card holds the form fields directly, so drop the FormGroup's
+       trailing margin on the last field to keep the card padding even. */
+    .tn-card-section .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Provider name + its beta badge sitting inline on the card. */
+    .add-provider-card-heading {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    .add-provider-beta-badge {
+        --color: var(--link-color, var(--main-text-color));
+    }
+}

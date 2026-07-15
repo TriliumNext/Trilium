@@ -1,5 +1,5 @@
-import type { ElectronApi, ElectronContextMenuParams, OneNoteLoginResult, RendererStartupMetric } from "@triliumnext/commons";
-import { contextBridge, ipcRenderer, webFrame } from "electron";
+import type { ElectronApi, ElectronContextMenuParams, NativeImportOptions, OneNoteLoginResult, RendererStartupMetric } from "@triliumnext/commons";
+import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
 
 contextBridge.exposeInMainWorld("electronApi", {
     window: {
@@ -201,6 +201,29 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         printFromPreview(opts: Record<string, unknown>) {
             ipcRenderer.send("print-from-preview", opts);
+        }
+    },
+
+    nativeExport: {
+        exportSubtreeToFile(opts: { branchId: string; format: string; title: string; taskId: string }) {
+            return ipcRenderer.invoke("export-subtree-to-file", opts);
+        }
+    },
+
+    nativeImport: {
+        pickFiles() {
+            return ipcRenderer.invoke("import-pick-files");
+        },
+        grantDroppedFiles(files: File[]) {
+            // Resolve each dropped File to its on-disk path here in the preload: getPathForFile returns a
+            // real path only for a genuinely user-supplied file (empty for anything a script built), so the
+            // File is the capability. Only the resolved paths cross to the main process — the path-accepting
+            // channel is never exposed to the renderer, so a script can't smuggle in an arbitrary path.
+            const paths = files.map((file) => webUtils.getPathForFile(file)).filter((path) => !!path);
+            return ipcRenderer.invoke("import-grant-dropped", paths);
+        },
+        importFromToken(opts: { token: string; parentNoteId: string; taskId: string; options: NativeImportOptions; last: boolean; format?: string }) {
+            return ipcRenderer.invoke("import-from-token", opts);
         }
     },
 

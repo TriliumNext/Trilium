@@ -9,14 +9,22 @@ const h = vi.hoisted(() => ({
 
 // In-memory shim for the security.json path only; every other fs path falls
 // through to the real implementation so the server's already-initialised
-// data_dir module is untouched.
+// data_dir module is untouched. Paths ending in `security.json` are treated
+// as fileStore-only (never fall through), so the developer's real
+// `~/…/trilium-data/security.json` on disk can't leak `allowLanAccess: true`
+// (or any other stored value) into a test that expects defaults.
+const isSecurityJsonPath = (p: unknown) => String(p).endsWith("security.json");
 vi.mock("fs", async (importOriginal) => {
     const actual = await importOriginal<typeof import("fs") & { default?: typeof import("fs") }>();
     const real = actual.default ?? actual;
-    const existsSync = (p: fs.PathLike) =>
-        h.fileStore.has(String(p)) ? true : real.existsSync(p);
-    const readFileSync = ((p: fs.PathLike, enc?: unknown) =>
-        h.fileStore.has(String(p)) ? h.fileStore.get(String(p)) : real.readFileSync(p, enc as never)) as typeof real.readFileSync;
+    const existsSync = (p: fs.PathLike) => {
+        if (isSecurityJsonPath(p)) return h.fileStore.has(String(p));
+        return real.existsSync(p);
+    };
+    const readFileSync = ((p: fs.PathLike, enc?: unknown) => {
+        if (isSecurityJsonPath(p)) return h.fileStore.get(String(p));
+        return real.readFileSync(p, enc as never);
+    }) as typeof real.readFileSync;
     const writeFileSync = ((p: fs.PathLike, data: string) => {
         h.fileStore.set(String(p), String(data));
     }) as typeof real.writeFileSync;

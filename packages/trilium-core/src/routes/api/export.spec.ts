@@ -12,8 +12,8 @@ import { CoreApiTester } from "../../test/api_tester";
 let api: CoreApiTester;
 let branchId: string;
 
-function exportPath(type: string, format: string, version = "1.0", taskId = "exportTask") {
-    return `/api/branches/${branchId}/export/${type}/${format}/${version}/${taskId}`;
+function exportPath(type: string, format: string, taskId = "exportTask") {
+    return `/api/branches/${branchId}/export/${type}/${format}/${taskId}`;
 }
 
 /** A real zip always begins with the "PK" local-file-header signature. */
@@ -60,7 +60,7 @@ describe("Export API (core)", () => {
     });
 
     it("exports as real opml", async () => {
-        const res = await api.get(exportPath("subtree", "opml", "2.0"));
+        const res = await api.get(exportPath("subtree", "opml"));
         expect(res.status).toBe(200);
         expect(res.headers["Content-Type"]).toBe("text/x-opml");
         expect(res.body?.toString()).toContain("outline");
@@ -70,5 +70,20 @@ describe("Export API (core)", () => {
         const res = await api.get<string>(exportPath("tree", "bogus"));
         expect(res.status).toBe(500);
         expect(res.headers["Content-Type"]).toBe("text/plain");
+    });
+
+    it("exports an unhandled note type as a .dat file instead of a zero-byte .undefined download", async () => {
+        // Regression: note types mapByNoteType doesn't handle (book, webView, mindMap, …) used to fall
+        // through to res.send(undefined), producing a "<title>.undefined", zero-byte download. They now
+        // fall back to a raw dump with a generic `.dat` extension.
+        const created = await api.post<{ branch: { branchId: string } }>(
+            "/api/notes/root/children?target=into",
+            { body: { title: "My book", type: "book", content: "" } }
+        );
+        expect(created.status).toBe(200);
+
+        const res = await api.get<string>(`/api/branches/${created.body.branch.branchId}/export/single/html/exportTask`);
+        expect(res.status).toBe(200);
+        expect(res.headers["Content-Disposition"]).toContain(".dat");
     });
 });

@@ -84,7 +84,7 @@ describe("Import API (core)", () => {
 
         it("imports a real Trilium .zip produced by a round-trip export", async () => {
             const zip = await api.get<Buffer>(
-                `/api/branches/${branchId}/export/subtree/html/1.0/exportTask`
+                `/api/branches/${branchId}/export/subtree/html/exportTask`
             );
             expect(Buffer.isBuffer(zip.body)).toBe(true);
 

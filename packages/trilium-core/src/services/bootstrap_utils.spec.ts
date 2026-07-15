@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import attributes from "./attributes.js";
 import getSharedBootstrapItems, { getIconConfig } from "./bootstrap_utils.js";
 import * as cls from "./context.js";
 import notes from "./notes.js";
 import options from "./options.js";
+import sqlInit from "./sql_init.js";
 
 const ASSET_PATH = "assets-x";
 
@@ -41,6 +42,21 @@ describe("bootstrap_utils (real DB)", () => {
         expect(items.assetPath).toBe(ASSET_PATH);
         expect(items.iconRegistry).toBeTruthy();
         expect(typeof items.iconPackCss).toBe("string");
+    });
+
+    it("flags syncInProgress for a not-yet-initialized DB only when the schema already exists", () => {
+        const schemaSpy = vi.spyOn(sqlInit, "schemaExists");
+        try {
+            // Schema present but DB not initialized = a sync that was interrupted → resume it.
+            schemaSpy.mockReturnValue(true);
+            expect(getSharedBootstrapItems(ASSET_PATH, false).syncInProgress).toBe(true);
+
+            // No schema yet = a fresh install → start the setup wizard from the top.
+            schemaSpy.mockReturnValue(false);
+            expect(getSharedBootstrapItems(ASSET_PATH, false).syncInProgress).toBe(false);
+        } finally {
+            schemaSpy.mockRestore();
+        }
     });
 
     it("returns the full payload once the DB is initialized, including app CSS note ids", () => {

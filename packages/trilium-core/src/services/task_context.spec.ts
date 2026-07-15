@@ -113,6 +113,28 @@ describe("TaskContext", () => {
         });
     });
 
+    describe("setPhase", () => {
+        it("tags subsequent progress messages with the phase and flushes the next one immediately", () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(1_000);
+
+            const ctx = new TaskContext("phase-1", "importNotes", importData);
+            // The constructor's first message carries no phase.
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.not.objectContaining({ phase: expect.anything() }));
+
+            // setPhase resets the throttle, so the very next increment sends even within the 300ms window.
+            ctx.setPhase("extracting");
+            vi.setSystemTime(1_100);
+            ctx.increaseProgressCount();
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.objectContaining({ phase: "extracting" }));
+
+            ctx.setPhase("processing");
+            vi.setSystemTime(1_200);
+            ctx.increaseProgressCount();
+            expect(sendMessageToAllClients).toHaveBeenLastCalledWith(expect.objectContaining({ phase: "processing" }));
+        });
+    });
+
     describe("reportError", () => {
         it("broadcasts a taskError message with the failure text and task metadata", () => {
             const ctx = new TaskContext("err-1", "importNotes", importData);

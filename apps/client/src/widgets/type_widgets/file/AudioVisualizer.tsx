@@ -11,6 +11,8 @@ import { useAudioAnalyser } from "./useAudioAnalyser";
 /** Cell geometry, in CSS pixels. The grid fits as many of these as the canvas allows. */
 const CELL_SIZE = 8;
 const CELL_GAP = 2;
+/** The compact player's band is short, so it halves the cells to keep a comparable number of rows. */
+const COMPACT_SCALE = 0.5;
 /** Slice of the spectrum spread across the bars — broad (not voice-specific). The very top bins are usually
  *  silent, so the top quarter is dropped to keep the bars lively. */
 const LO_FRACTION = 0;
@@ -27,7 +29,9 @@ const DEFAULT_HIGH_COLOR = "rgb(136, 136, 136)";
  * lights up from the bottom and each cell takes a single colour from a low→high vertical gradient. Runs an rAF
  * loop only while playing (and briefly after, to animate the decay); when not playing every column rests at zero.
  */
-export function AudioVisualizer({ mediaRef, isPlaying }: { mediaRef: RefObject<HTMLAudioElement>; isPlaying: boolean }) {
+export function AudioVisualizer({ mediaRef, isPlaying, compact }: { mediaRef: RefObject<HTMLAudioElement>; isPlaying: boolean; compact?: boolean }) {
+    const cellSize = compact ? CELL_SIZE * COMPACT_SCALE : CELL_SIZE;
+    const cellGap = compact ? CELL_GAP * COMPACT_SCALE : CELL_GAP;
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const getFrequencyData = useAudioAnalyser(mediaRef);
     const [ size, setSize ] = useState({ width: 0, height: 0 });
@@ -84,7 +88,7 @@ export function AudioVisualizer({ mediaRef, isPlaying }: { mediaRef: RefObject<H
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        const grid = computeGrid(width, height, CELL_SIZE, CELL_GAP);
+        const grid = computeGrid(width, height, cellSize, cellGap);
         // Keep the per-column buffers sized to the grid, preserving values across resizes to avoid a jump.
         if (displayRef.current.length !== grid.cols) {
             displayRef.current = resizePreserving(displayRef.current, grid.cols);
@@ -105,11 +109,11 @@ export function AudioVisualizer({ mediaRef, isPlaying }: { mediaRef: RefObject<H
         const targets = spectrum ? computeColumnAmplitudes(spectrum, targetRef.current, LO_FRACTION, HI_FRACTION) : null;
         smoothAmplitudes(displayRef.current, targets, RISE, FALL);
 
-        drawGrid(ctx, width, height, grid, displayRef.current, rowColorsRef.current.colors);
+        drawGrid(ctx, width, height, grid, displayRef.current, rowColorsRef.current.colors, cellSize, cellGap);
 
         // Keep animating while playing, or while bars are still settling toward zero after a pause.
         rafRef.current = isPlayingRef.current || hasMotion(displayRef.current) ? requestAnimationFrame(renderFrame) : 0;
-    }, [ getFrequencyData ]);
+    }, [ getFrequencyData, cellSize, cellGap ]);
 
     // Start the loop when playback starts; it self-terminates once paused and fully decayed.
     useEffect(() => {
@@ -135,20 +139,20 @@ export function AudioVisualizer({ mediaRef, isPlaying }: { mediaRef: RefObject<H
     return <canvas ref={canvasRef} class="audio-visualizer-canvas" aria-hidden="true" />;
 }
 
-function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, grid: VisualizerGrid, amplitudes: Float32Array, rowColors: string[]) {
+function drawGrid(ctx: CanvasRenderingContext2D, width: number, height: number, grid: VisualizerGrid, amplitudes: Float32Array, rowColors: string[], cellSize: number, cellGap: number) {
     ctx.clearRect(0, 0, width, height);
     const { cols, rows, offsetX } = grid;
-    const stride = CELL_SIZE + CELL_GAP;
+    const stride = cellSize + cellGap;
     // Iterate row-by-row so the (per-row) fill colour is set once rather than per cell; each cell's alpha is its
     // intensity, fading the leading cell between off and on.
     for (let r = 0; r < rows; r++) {
         ctx.fillStyle = rowColors[r];
-        const y = height - CELL_SIZE - r * stride;
+        const y = height - cellSize - r * stride;
         for (let c = 0; c < cols; c++) {
             const intensity = cellIntensity(amplitudes[c], rows, r);
             if (intensity <= 0) continue;
             ctx.globalAlpha = intensity;
-            ctx.fillRect(offsetX + c * stride, y, CELL_SIZE, CELL_SIZE);
+            ctx.fillRect(offsetX + c * stride, y, cellSize, cellSize);
         }
     }
     ctx.globalAlpha = 1;

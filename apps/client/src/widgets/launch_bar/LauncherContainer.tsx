@@ -9,6 +9,7 @@ import { useTriliumEvent } from "../react/hooks";
 import { onWheelHorizontalScroll } from "../widget_utils";
 import BookmarkButtons from "./BookmarkButtons";
 import CalendarWidget from "./CalendarWidget";
+import ColorSchemeSwitcher from "./ColorSchemeSwitcher";
 import HistoryNavigationButton from "./HistoryNavigation";
 import { LaunchBarContext } from "./launch_bar_widgets";
 import { CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher } from "./LauncherDefinitions";
@@ -102,6 +103,8 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
             return <TabSwitcher launcherNote={note} />;
         case "sidebarChat":
             return isExperimentalFeatureEnabled("llm") ? <SidebarChatButton launcherNote={note} /> : undefined;
+        case "colorSchemeSwitcher":
+            return <ColorSchemeSwitcher launcherNote={note} />;
         default:
             console.warn(`Unrecognized builtin widget ${builtinWidget} for launcher ${note.noteId} "${note.title}"`);
     }

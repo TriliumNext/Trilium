@@ -3,7 +3,6 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "preact/ho
 import appContext, { CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import date_notes from "../../services/date_notes";
-import dialog from "../../services/dialog";
 import { LauncherWidgetDefinitionWithType } from "../../services/frontend_script_api_preact";
 import { t } from "../../services/i18n";
 import toast from "../../services/toast";
@@ -44,7 +43,7 @@ export function NoteLauncher({ launcherNote, ...restProps }: { launcherNote: FNo
             getTargetNoteId={(launcherNote) => {
                 const targetNoteId = launcherNote.getRelationValue("target");
                 if (!targetNoteId) {
-                    dialog.info(t("note_launcher.this_launcher_doesnt_define_target_note"));
+                    toast.showError(t("note_launcher.this_launcher_doesnt_define_target_note"));
                     return null;
                 }
                 return targetNoteId;

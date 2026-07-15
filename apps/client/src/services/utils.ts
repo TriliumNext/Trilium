@@ -159,6 +159,21 @@ export function isMac() {
     return navigator.platform.indexOf("Mac") > -1;
 }
 
+/**
+ * Returns `true` when the (server-reported) host platform is Linux. Prefer this over a
+ * `!isMac && !isWindows` derivation so future platforms aren't misclassified as Linux.
+ */
+export function isLinux() {
+    return window.glob?.platform === "linux";
+}
+
+/**
+ * Returns `true` when the (server-reported) host platform is Windows.
+ */
+export function isWindows() {
+    return window.glob?.platform === "win32";
+}
+
 export function isCtrlKey(evt: KeyboardEvent | MouseEvent | JQuery.ClickEvent | JQuery.ContextMenuEvent | JQuery.TriggeredEvent | React.PointerEvent<HTMLCanvasElement> | JQueryEventObject) {
     return (!isMac() && evt.ctrlKey) || (isMac() && evt.metaKey);
 }
@@ -572,17 +587,18 @@ function areObjectsEqual(...args: unknown[]) {
     return true;
 }
 
-function copyHtmlToClipboard(content: string) {
+function copyHtmlToClipboard(html: string, plainText: string = html) {
     function listener(e: ClipboardEvent) {
         if (e.clipboardData) {
-            e.clipboardData.setData("text/html", content);
-            e.clipboardData.setData("text/plain", content);
+            e.clipboardData.setData("text/html", html);
+            e.clipboardData.setData("text/plain", plainText);
         }
         e.preventDefault();
     }
     document.addEventListener("copy", listener);
-    document.execCommand("copy");
+    const ok = document.execCommand("copy");
     document.removeEventListener("copy", listener);
+    return ok;
 }
 
 export function createImageSrcUrl(note: FNote) {
@@ -594,65 +610,17 @@ export function createImageSrcUrl(note: FNote) {
 
 
 /**
- * Helper function to prepare an element for snapdom rendering.
- * Handles string parsing and temporary DOM attachment for style computation.
- *
- * @param source - Either an SVG/HTML string to be parsed, or an existing SVG/HTML element.
- * @returns An object containing the prepared element and a cleanup function.
- *          The cleanup function removes temporarily attached elements from the DOM,
- *          or is a no-op if the element was already in the DOM.
- */
-function prepareElementForSnapdom(source: string | SVGElement | HTMLElement): {
-    element: SVGElement | HTMLElement;
-    cleanup: () => void;
-} {
-    if (typeof source === 'string') {
-        const parser = new DOMParser();
-
-        // Detect if content is SVG or HTML
-        const isSvg = source.trim().startsWith('<svg');
-        const mimeType = isSvg ? SVG_MIME : 'text/html';
-
-        const doc = parser.parseFromString(source, mimeType);
-        const element = doc.documentElement;
-
-        // Temporarily attach to DOM for proper style computation
-        element.style.position = 'absolute';
-        element.style.left = '-9999px';
-        element.style.top = '-9999px';
-        document.body.appendChild(element);
-
-        return {
-            element,
-            cleanup: () => document.body.removeChild(element)
-        };
-    }
-
-    return {
-        element: source,
-        cleanup: () => {} // No-op for existing elements
-    };
-}
-
-/**
- * Downloads an SVG using snapdom for proper rendering. Can accept either an SVG string, an SVG element, or an HTML element.
+ * Given a string representation of an SVG, triggers a download of the file on the client device.
  *
  * @param nameWithoutExtension the name of the file. The .svg suffix is automatically added to it.
- * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be downloaded.
+ * @param svgContent the content of the SVG file to download.
  */
-async function downloadAsSvg(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
-    const { snapdom } = await import("@zumer/snapdom");
-    const { element, cleanup } = prepareElementForSnapdom(svgSource);
-
-    try {
-        const result = await snapdom(element, {
-            backgroundColor: "transparent",
-            scale: 2
-        });
-        triggerDownload(`${nameWithoutExtension}.svg`, result.url);
-    } finally {
-        cleanup();
-    }
+function downloadSvg(nameWithoutExtension: string, svgContent: string) {
+    // The download MUST go through a data: URL, not a blob URL: export runs after awaits have
+    // consumed the transient user-activation, and a blob-URL anchor click without activation is
+    // silently blocked (same constraint documented in spreadsheet/export.tsx `download()`).
+    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
+    triggerDownload(`${nameWithoutExtension}.svg`, dataUrl);
 }
 
 /**
@@ -674,32 +642,58 @@ function triggerDownload(fileName: string, dataUrl: string) {
     document.body.removeChild(element);
 }
 /**
- * Downloads an SVG as PNG using snapdom. Can accept either an SVG string, an SVG element, or an HTML element.
+ * Given a string representation of an SVG, rasterizes it to PNG and triggers a download of the
+ * file on the client device.
+ *
+ * The SVG must carry usable dimensions (numeric `width`/`height` attributes or a `viewBox`).
+ * Note that rasterization happens in the browser's SVG-as-image context: document fonts are not
+ * applied (only system fonts resolve) and external resources referenced by the SVG are not
+ * loaded, so any embedded images must use data URLs.
  *
  * @param nameWithoutExtension the name of the file. The .png suffix is automatically added to it.
- * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be converted to PNG.
+ * @param svgContent the content of the SVG file to rasterize.
+ * @param scale the rasterization scale factor (2 doubles the resolution).
  */
-async function downloadAsPng(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
-    const { snapdom } = await import("@zumer/snapdom");
-    const { element, cleanup } = prepareElementForSnapdom(svgSource);
-
-    try {
-        const result = await snapdom(element, {
-            backgroundColor: "transparent",
-            scale: 2
-        });
-        const pngImg = await result.toPng();
-        await triggerDownload(`${nameWithoutExtension}.png`, pngImg.src);
-    } finally {
-        cleanup();
+async function downloadSvgAsPng(nameWithoutExtension: string, svgContent: string, scale = 2) {
+    const size = getSizeFromSvg(svgContent);
+    if (!size) {
+        throw new Error("Could not determine the dimensions of the SVG.");
     }
+
+    // Decode through an <img> element — the browser's own SVG renderer. A blob URL avoids the
+    // encoding overhead and URL length limits of a data: URL for large diagrams.
+    const blob = new Blob([ svgContent ], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const image = new Image();
+    image.src = url;
+    try {
+        await image.decode();
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(size.width * scale);
+    canvas.height = Math.round(size.height * scale);
+    const context = canvas.getContext("2d");
+    if (!context || !canvas.width || !canvas.height) {
+        throw new Error("The SVG has no drawable dimensions.");
+    }
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    triggerDownload(`${nameWithoutExtension}.png`, canvas.toDataURL("image/png"));
 }
 export function getSizeFromSvg(svgContent: string) {
     const svgDocument = (new DOMParser()).parseFromString(svgContent, SVG_MIME);
 
-    // Try to use width & height attributes if available.
+    // Try to use width & height attributes if available. Relative units (e.g. mermaid's
+    // width="100%") carry no absolute size, so fall through to the viewBox for those.
     let width = svgDocument.documentElement?.getAttribute("width");
     let height = svgDocument.documentElement?.getAttribute("height");
+    if (width?.includes("%") || height?.includes("%")) {
+        width = null;
+        height = null;
+    }
 
     // If not, use the viewbox.
     if (!width || !height) {
@@ -712,10 +706,10 @@ export function getSizeFromSvg(svgContent: string) {
     }
 
     if (width && height) {
-        return {
-            width: parseFloat(width),
-            height: parseFloat(height)
-        };
+        const size = { width: parseFloat(width), height: parseFloat(height) };
+        if (Number.isFinite(size.width) && Number.isFinite(size.height)) {
+            return size;
+        }
     }
     console.warn("SVG export error", svgDocument.documentElement);
     return null;
@@ -885,6 +879,8 @@ export default {
     isElectron,
     isPWA,
     isMac,
+    isLinux,
+    isWindows,
     isCtrlKey,
     assertArguments,
     escapeHtml,
@@ -908,8 +904,8 @@ export default {
     areObjectsEqual,
     copyHtmlToClipboard,
     createImageSrcUrl,
-    downloadAsSvg,
-    downloadAsPng,
+    downloadSvg,
+    downloadSvgAsPng,
     triggerDownload,
     compareVersions,
     isUpdateAvailable,

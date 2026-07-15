@@ -6,6 +6,7 @@ import noteService from "../../services/notes.js";
 import protectedSessionService from "../protected_session.js";
 import type TaskContext from "../task_context.js";
 import type { File } from "./common.js";
+import { extractFrontmatter } from "./frontmatter.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
 import importUtils from "./utils.js";
@@ -45,6 +46,12 @@ async function importSingleFile(taskContext: TaskContext<"importNotes">, file: F
 
     if (mime === "text/vnd.mermaid") {
         return importCustomType(taskContext, file, parentNote, "mermaid", mime);
+    }
+
+    // `.triliumsheet` is Trilium's native lossless spreadsheet format (see single-note export): the raw
+    // Univer workbook JSON is re-imported verbatim, unlike `.xlsx`/`.csv` which are parsed into a workbook.
+    if (mime === "text/x-spreadsheet") {
+        return importCustomType(taskContext, file, parentNote, "spreadsheet", mime);
     }
 
     if (taskContext?.data?.codeImportedAsCode && mimeService.getType(taskContext.data, mime) === "code") {
@@ -208,7 +215,9 @@ function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, par
     const title = getNoteTitle(file.originalname, !!taskContext.data?.replaceUnderscoresWithSpaces);
 
     const markdownContent = processStringOrBuffer(file.buffer);
-    let htmlContent = markdownService.renderToHtml(markdownContent, title);
+    // YAML front matter (Obsidian/Jekyll/Hugo/…) is lifted into labels and stripped before rendering.
+    const { body, attributes } = extractFrontmatter(markdownContent);
+    let htmlContent = markdownService.renderToHtml(body, title);
 
     if (taskContext.data?.safeImport) {
         htmlContent = sanitizeHtml(htmlContent);
@@ -222,6 +231,10 @@ function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, par
         mime: "text/html",
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
+
+    for (const attribute of attributes) {
+        note.addLabel(attribute.name, attribute.value);
+    }
 
     taskContext.increaseProgressCount();
 

@@ -1,3 +1,4 @@
+import type { EntityChange } from "@triliumnext/commons";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import consistencyChecksService from "../../services/consistency_checks";
@@ -158,6 +159,201 @@ describe("Sync API (core)", () => {
             expect(res.body.entityChanges).toEqual([]);
             expect(res.body.lastEntityChangeId).toBe(baseId + 2);
             expect(res.body.outstandingPullCount).toBe(0);
+        });
+
+        it("counts outstanding changes by id only (index-only), independent of instanceId", async () => {
+            // The outstanding count is an index-only range count on (isSynced, id) and deliberately does
+            // NOT filter by instanceId. So a change owned by the querying client, sitting beyond the
+            // returned cursor, is now included in the estimate (it is skipped when actually returned, so
+            // the count converges to 0 on the next pull).
+            const sql = getSql();
+            const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
+
+            // a real option so the "other instance" change referencing it is returnable
+            sql.execute("INSERT INTO options (name, value, isSynced, utcDateModified) VALUES ('otst_opt', 'v', 1, '2020-01-01T00:00:00.000Z')");
+            // change A (another instance) → returned, advancing the cursor to maxId + 1
+            sql.execute(
+                `INSERT INTO entity_changes (id, entityName, entityId, hash, isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+                 VALUES (?, 'options', 'otst_opt', 'h', 0, 'otst_A', 'cmp', 'OTHER', 1, '2020-01-01T00:00:00.000Z')`,
+                [maxId + 1]
+            );
+            // change B: the querying client's OWN change, id beyond A → excluded from the returned records
+            // but counted by the index-only outstanding count
+            sql.execute(
+                `INSERT INTO entity_changes (id, entityName, entityId, hash, isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+                 VALUES (?, 'options', 'otst_optB', 'h', 0, 'otst_B', 'cmp', 'CLIENTX', 1, '2020-01-01T00:00:00.000Z')`,
+                [maxId + 2]
+            );
+
+            const res = await api.get<{ entityChanges: unknown[]; lastEntityChangeId: number; outstandingPullCount: number }>(
+                "/api/sync/changed",
+                { query: { instanceId: "CLIENTX", lastEntityChangeId: String(maxId) } }
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.lastEntityChangeId).toBe(maxId + 1); // A returned, cursor advanced past it
+            expect(res.body.outstandingPullCount).toBe(1); // B counted by id, despite being the client's own
+
+            // keep the shared DB clean for other specs
+            sql.execute("DELETE FROM entity_changes WHERE id IN (?, ?)", [maxId + 1, maxId + 2]);
+            sql.execute("DELETE FROM options WHERE name = 'otst_opt'");
+        });
+
+        it("fills the response across multiple 1000-row fetches instead of stopping at the row limit", async () => {
+            // 1100 metadata-only rows estimate to ~0.33 MB — far below the 8 MB byte cap — so a
+            // single pull must now return all of them in one response (two LIMIT-1000 fetches)
+            // rather than capping at 1000 rows per round-trip.
+            const sql = getSql();
+            const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
+            const COUNT = 1100;
+
+            sql.transactional(() => {
+                for (let i = 0; i < COUNT; i++) {
+                    sql.execute("INSERT INTO options (name, value, isSynced, utcDateModified) VALUES (?, 'v', 1, '2020-01-01T00:00:00.000Z')", [`rowcap_opt_${i}`]);
+                    sql.execute(
+                        `INSERT INTO entity_changes (id, entityName, entityId, hash, isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+                         VALUES (?, 'options', ?, 'h', 0, ?, 'cmp', 'OTHER', 1, '2020-01-01T00:00:00.000Z')`,
+                        [maxId + 1 + i, `rowcap_opt_${i}`, `rowcap_chg_${i}`]
+                    );
+                }
+            });
+
+            const res = await api.get<{ entityChanges: unknown[]; lastEntityChangeId: number; outstandingPullCount: number }>(
+                "/api/sync/changed",
+                { query: { instanceId: "CLIENTX", lastEntityChangeId: String(maxId) } }
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.entityChanges.length).toBe(COUNT); // > 1000: the row limit no longer binds
+            expect(res.body.lastEntityChangeId).toBe(maxId + COUNT);
+            expect(res.body.outstandingPullCount).toBe(0);
+
+            sql.transactional(() => {
+                sql.execute("DELETE FROM entity_changes WHERE id BETWEEN ? AND ?", [maxId + 1, maxId + COUNT]);
+                sql.execute("DELETE FROM options WHERE name LIKE 'rowcap_opt_%'");
+            });
+        });
+
+        it("stubs blob content larger than maxBlobContentSize while leaving the hash and other rows intact", () => {
+            const sql = getSql();
+            const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
+
+            // A large blob (100 bytes) plus a small option change, both from another instance.
+            const bigContent = "x".repeat(100);
+            sql.execute(
+                "INSERT INTO blobs (blobId, content, dateModified, utcDateModified) VALUES ('bigblob1', ?, '2020-01-01T00:00:00.000Z', '2020-01-01T00:00:00.000Z')",
+                [bigContent]
+            );
+            sql.execute(
+                `INSERT INTO entity_changes (id, entityName, entityId, hash, isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+                 VALUES (?, 'blobs', 'bigblob1', 'blobhash', 0, 'blobchg', 'cmp', 'OTHER', 1, '2020-01-01T00:00:00.000Z')`,
+                [maxId + 1]
+            );
+            const blobChange = sql.getRow<EntityChange>("SELECT * FROM entity_changes WHERE id = ?", [maxId + 1]);
+
+            // Above the limit → content withheld (empty string), but the entity_change (and its hash)
+            // is untouched, so the client's content-hash checks still pass.
+            const [stubbed] = syncService.getEntityChangeRecords([blobChange], undefined, 50);
+            expect(stubbed.entity?.content).toBe("");
+            expect(stubbed.entityChange.hash).toBe("blobhash");
+
+            // Below the limit → full (base64-encoded) content is served.
+            const [full] = syncService.getEntityChangeRecords([blobChange], undefined, 200);
+            expect(typeof full.entity?.content).toBe("string");
+            expect((full.entity?.content as string).length).toBeGreaterThan(0);
+            expect(full.entity?.content).not.toBe("");
+
+            // No limit at all → also full content (default push/desktop behavior).
+            const [unlimited] = syncService.getEntityChangeRecords([blobChange]);
+            expect(unlimited.entity?.content).not.toBe("");
+
+            sql.execute("DELETE FROM entity_changes WHERE id = ?", [maxId + 1]);
+            sql.execute("DELETE FROM blobs WHERE blobId = 'bigblob1'");
+        });
+
+        it("does not stub a blob at or below maxBlobContentSize", () => {
+            const sql = getSql();
+            const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
+
+            const smallContent = "y".repeat(10);
+            sql.execute(
+                "INSERT INTO blobs (blobId, content, dateModified, utcDateModified) VALUES ('smallblob1', ?, '2020-01-01T00:00:00.000Z', '2020-01-01T00:00:00.000Z')",
+                [smallContent]
+            );
+            sql.execute(
+                `INSERT INTO entity_changes (id, entityName, entityId, hash, isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+                 VALUES (?, 'blobs', 'smallblob1', 'smallhash', 0, 'smallchg', 'cmp', 'OTHER', 1, '2020-01-01T00:00:00.000Z')`,
+                [maxId + 1]
+            );
+            const blobChange = sql.getRow<EntityChange>("SELECT * FROM entity_changes WHERE id = ?", [maxId + 1]);
+
+            // 10 bytes with a 10-byte limit is not "larger than", so it is served in full.
+            const [record] = syncService.getEntityChangeRecords([blobChange], undefined, 10);
+            expect(record.entity?.content).not.toBe("");
+
+            sql.execute("DELETE FROM entity_changes WHERE id = ?", [maxId + 1]);
+            sql.execute("DELETE FROM blobs WHERE blobId = 'smallblob1'");
+        });
+
+        it("passes maxBlobContentSize from the query string through to stubbing", async () => {
+            const sql = getSql();
+            const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
+
+            const bigContent = "z".repeat(100);
+            sql.execute(
+                "INSERT INTO blobs (blobId, content, dateModified, utcDateModified) VALUES ('routeblob1', ?, '2020-01-01T00:00:00.000Z', '2020-01-01T00:00:00.000Z')",
+                [bigContent]
+            );
+            sql.execute(
+                `INSERT INTO entity_changes (id, entityName, entityId, hash, isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+                 VALUES (?, 'blobs', 'routeblob1', 'routehash', 0, 'routechg', 'cmp', 'OTHER', 1, '2020-01-01T00:00:00.000Z')`,
+                [maxId + 1]
+            );
+
+            type Resp = { entityChanges: { entityChange: EntityChange; entity?: { content?: string } }[] };
+
+            const stubbedRes = await api.get<Resp>("/api/sync/changed", {
+                query: { instanceId: "CLIENTX", lastEntityChangeId: String(maxId), maxBlobContentSize: "50" }
+            });
+            const stubbedRec = stubbedRes.body.entityChanges.find((r) => r.entityChange.entityId === "routeblob1");
+            expect(stubbedRec?.entity?.content).toBe("");
+            expect(stubbedRec?.entityChange.hash).toBe("routehash");
+
+            // Invalid / non-positive values disable the limit → full content.
+            for (const bad of ["0", "-1", "abc"]) {
+                const res = await api.get<Resp>("/api/sync/changed", {
+                    query: { instanceId: "CLIENTX", lastEntityChangeId: String(maxId), maxBlobContentSize: bad }
+                });
+                const rec = res.body.entityChanges.find((r) => r.entityChange.entityId === "routeblob1");
+                expect(rec?.entity?.content).not.toBe("");
+            }
+
+            sql.execute("DELETE FROM entity_changes WHERE id = ?", [maxId + 1]);
+            sql.execute("DELETE FROM blobs WHERE blobId = 'routeblob1'");
+        });
+
+        it("getEntityChangeRecords stops accumulating once the response byte cap is reached", () => {
+            const sql = getSql();
+            const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
+            const changes: EntityChange[] = [];
+            for (let i = 0; i < 3; i++) {
+                sql.execute("INSERT INTO options (name, value, isSynced, utcDateModified) VALUES (?, 'v', 1, '2020-01-01T00:00:00.000Z')", [`cap_opt_${i}`]);
+                sql.execute(
+                    `INSERT INTO entity_changes (id, entityName, entityId, hash, isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+                     VALUES (?, 'options', ?, 'h', 0, ?, 'cmp', 'OTHER', 1, '2020-01-01T00:00:00.000Z')`,
+                    [maxId + 1 + i, `cap_opt_${i}`, `cap_chg_${i}`]
+                );
+                changes.push(sql.getRow<EntityChange>("SELECT * FROM entity_changes WHERE id = ?", [maxId + 1 + i]));
+            }
+
+            // Each option record estimates ~300 bytes, so a 400-byte cap stops right after the second
+            // record crosses it (the crossing record is still included).
+            expect(syncService.getEntityChangeRecords(changes, 400)).toHaveLength(2);
+            // With the (large) default cap all three are returned.
+            expect(syncService.getEntityChangeRecords(changes)).toHaveLength(3);
+
+            sql.execute("DELETE FROM entity_changes WHERE id BETWEEN ? AND ?", [maxId + 1, maxId + 3]);
+            for (let i = 0; i < 3; i++) sql.execute("DELETE FROM options WHERE name = ?", [`cap_opt_${i}`]);
         });
     });
 

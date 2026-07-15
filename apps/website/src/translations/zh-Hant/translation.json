@@ -31,8 +31,6 @@
         "sync_content": "使用自託管或雲端實例，輕鬆在多台裝置間同步筆記，並透過 PWA 從手機存取。",
         "protected_notes_title": "受保護的筆記",
         "protected_notes_content": "透過加密筆記並將其鎖定在密碼保護的工作階段中，以保護敏感的個人資訊。",
-        "jump_to_title": "快速搜尋及命令",
-        "jump_to_content": "透過搜尋標題快速跳轉至各層級的筆記或介面指令，並支援模糊匹配以容許拼寫錯誤或細微差異。",
         "search_title": "強大的搜尋功能",
         "search_content": "或在筆記內搜尋文字，並透過篩選父筆記或層級深度來縮小搜尋範圍。",
         "web_clipper_title": "網頁剪取器",
@@ -51,19 +49,7 @@
         "mermaid_description": "使用 Mermaid 語法繪製流程圖、類別圖與序列圖、甘特圖等多種圖表。",
         "mindmap_title": "心智圖",
         "mindmap_description": "以視覺方式整理思緒，或進行腦力激盪。",
-        "others_list": "及其他項目：<0>筆記地圖</0>、<1>關聯地圖</1>、<2>儲存搜尋</2>、<3>渲染筆記</3>，以及<4>網頁檢視</4>。",
         "title": "多種方式呈現您的資訊"
-    },
-    "extensibility_benefits": {
-        "title": "分享及擴展性",
-        "import_export_title": "匯入/匯出",
-        "import_export_description": "輕鬆透過 Markdown、ENEX、OML 格式與其他應用程式互動。",
-        "share_title": "在網頁上分享筆記",
-        "share_description": "若您擁有伺服器，便可藉此與他人共享筆記的子集。",
-        "scripting_title": "進階腳本編寫",
-        "scripting_description": "在 Trilium 中透過自訂小工具或伺服器端邏輯，打造專屬整合方案。",
-        "api_title": "REST API",
-        "api_description": "透過其內建的 REST API 以程式化方式與 Trilium 進行互動。"
     },
     "collections": {
         "calendar_title": "日曆",
@@ -190,8 +176,7 @@
     "download_helper_server_hosted": {
         "title": "付費託管",
         "description": "Trilium Notes 託管於 PikaPods，此為付費服務，提供便捷存取與管理功能。與 Trilium 團隊無直接關聯。",
-        "download_pikapod": "在 PikaPods 上設定",
-        "download_triliumcc": "或參見 trilium.cc"
+        "download_pikapod": "在 PikaPods 上設定"
     },
     "header": {
         "get-started": "開始使用",

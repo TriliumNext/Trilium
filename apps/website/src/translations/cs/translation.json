@@ -34,8 +34,6 @@
         "sync_content": "Pomocí vlastní nebo cloudové instance můžete snadno synchronizovat své poznámky mezi více zařízeními a přistupovat k nim ze svého mobilního telefonu pomocí PWA.",
         "protected_notes_title": "Chráněné poznámky",
         "protected_notes_content": "Chraňte citlivé osobní údaje šifrováním poznámek a jejich uzamčením za heslem chráněnou relací.",
-        "jump_to_title": "Rychlé hledání a příkazy",
-        "jump_to_content": "Rychle přejděte k poznámkám nebo příkazům uživatelského rozhraní v celé hierarchii pomocí vyhledávání podle názvu, přičemž fuzzy vyhledávání zohledňuje překlepy nebo drobné rozdíly.",
         "search_title": "Výkonné vyhledávání"
     },
     "note_types": {
@@ -51,19 +49,7 @@
         "mermaid_title": "Mermaid diagramy",
         "mermaid_description": "Vytvářejte diagramy, jako jsou vývojové diagramy, diagramy tříd a sekvencí, Ganttovy diagramy a mnoho dalších, pomocí syntaxe Mermaid.",
         "mindmap_title": "Myšlenková mapa",
-        "mindmap_description": "Zorganizujte si myšlenky vizuálně nebo uspořádejte brainstorming.",
-        "others_list": "a další: <0>mapa poznámek</0>, <1>mapa vztahů</1>, <2>uložená vyhledávání</2>, <3>zobrazení poznámky</3> a <4>webové zobrazení</4>."
-    },
-    "extensibility_benefits": {
-        "title": "Sdílení a rozšiřitelnost",
-        "import_export_title": "Import/export",
-        "import_export_description": "Snadná interakce s jinými aplikacemi pomocí formátů Markdown, ENEX a OML.",
-        "share_title": "Sdílet poznámky na webu",
-        "share_description": "Pokud máte server, můžete jej použít ke sdílení části svých poznámek s ostatními lidmi.",
-        "scripting_title": "Pokročilé skriptování",
-        "scripting_description": "Vytvořte si vlastní integrace v rámci Trilium pomocí přizpůsobených widgetů nebo logiky na straně serveru.",
-        "api_title": "REST API",
-        "api_description": "Komunikujte s Trilium programově pomocí jeho vestavěného REST API."
+        "mindmap_description": "Zorganizujte si myšlenky vizuálně nebo uspořádejte brainstorming."
     },
     "collections": {
         "title": "Kolekce",
@@ -195,8 +181,7 @@
     "download_helper_server_hosted": {
         "title": "Placený hosting",
         "description": "Trilium Notes hostováno na PikaPods, placené službě pro snadný přístup a správu. Není přímo spojen s týmem Trilium.",
-        "download_pikapod": "Nastaveno na PikaPods",
-        "download_triliumcc": "Případně se podívejte na trilium.cc"
+        "download_pikapod": "Nastaveno na PikaPods"
     },
     "resources": {
         "title": "Zdroje",

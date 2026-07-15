@@ -1,7 +1,7 @@
 import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
 import { ComponentChildren, HTMLAttributes } from "preact";
 import { createPortal, CSSProperties, HTMLProps } from "preact/compat";
-import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { MutableRef, useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { isMobile } from "../../services/utils";
 import { useTooltip, useUniqueName } from "./hooks";
@@ -50,17 +50,21 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const dropdownContainerRef = useRef<HTMLUListElement | null>(null);
 
-    const { showTooltip, hideTooltip } = useTooltip(containerRef, {
+    // Memoized so useTooltip's effect (keyed on config identity) doesn't dispose and recreate the
+    // Bootstrap tooltip on every re-render — only when the title (or positioning) actually changes.
+    const tooltipConfig = useMemo<Partial<Tooltip.Options>>(() => ({
         ...titleOptions,
         // Drive the tooltip from config, not just the `title` attribute: Bootstrap reads the attribute once
-        // on init, so a dynamic title (e.g. the media play-mode button) would otherwise go stale (useTooltip
-        // recreates the tooltip each render, keeping this in sync). Prefer the `title` prop, then a
-        // `titleOptions.title` escape-hatch, then "" (Bootstrap rejects `undefined`; "" shows no tooltip).
+        // on init, so a dynamic title (e.g. the media play-mode button) would otherwise go stale (`title` is
+        // a dependency of this memo, so a change recreates the tooltip, keeping it in sync). Prefer the
+        // `title` prop, then a `titleOptions.title` escape-hatch, then "" (Bootstrap rejects `undefined`;
+        // "" shows no tooltip).
         title: title ?? titleOptions?.title ?? "",
         placement: titlePosition ?? "bottom",
         fallbackPlacements: [ titlePosition ?? "bottom" ],
         trigger: "manual"
-    });
+    }), [title, titleOptions, titlePosition]);
+    const { showTooltip, hideTooltip } = useTooltip(containerRef, tooltipConfig);
 
     const [ shown, setShown ] = useState(false);
 

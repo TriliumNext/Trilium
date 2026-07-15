@@ -127,6 +127,12 @@ export default class NodeRequestProvider implements RequestProvider {
                 request.on("error", (err) => reject(generateError(opts, err)));
 
                 request.on("response", (response) => {
+                    // Once headers arrive, `electron.net` reports a mid-body failure by
+                    // destroying the response stream rather than the request. An "error"
+                    // event with no listener is rethrown by Node and crashes the Electron
+                    // main process, so this listener is load-bearing, not defensive.
+                    response.on("error", (err: unknown) => reject(generateError(opts, String(err))));
+
                     if (opts.cookieJar && response.headers["set-cookie"]) {
                         opts.cookieJar.header = response.headers["set-cookie"];
                     }
@@ -213,6 +219,10 @@ export default class NodeRequestProvider implements RequestProvider {
                 request.on("abort", (err) => reject(generateError(opts, err)));
 
                 request.on("response", (response) => {
+                    // See the equivalent listener in `exec`: without it, a connection
+                    // reset after headers crashes the Electron main process.
+                    response.on("error", (err: unknown) => reject(generateError(opts, String(err))));
+
                     if (![200, 201, 204].includes(response.statusCode)) {
                         reject(generateError(opts, `${response.statusCode} ${response.statusMessage}`));
                     }

@@ -31,8 +31,6 @@
         "sync_content": "Use a self-hosted or cloud instance to easily synchronise your notes across multiple devices, and to access it from your mobile phone using a PWA.",
         "protected_notes_title": "Protected notes",
         "protected_notes_content": "Protect sensitive personal information by encrypting the notes and locking them behind a password-protected session.",
-        "jump_to_title": "Quick search and commands",
-        "jump_to_content": "Jump quickly to notes or UI commands across the hierarchy by searching for their title, with fuzzy matching to account for typos or slight differences.",
         "search_title": "Powerful search",
         "search_content": "Or search for text inside notes and narrow down the search by filtering by the parent note, or by depth.",
         "web_clipper_title": "Web clipper",
@@ -51,19 +49,7 @@
         "canvas_description": "Arrange shapes, images and text across an infinite canvas, using the same technology behind excalidraw.com. Ideal for diagrams, sketches and visual planning.",
         "mermaid_title": "Mermaid diagrams",
         "mermaid_description": "Create diagrams such as flowcharts, class & sequence diagrams, Gantt charts and many more, using the Mermaid syntax.",
-        "mindmap_title": "Mindmap",
-        "others_list": "and others: <0>note map</0>, <1>relation map</1>, <2>saved searches</2>, <3>render note</3>, and <4>web views</4>."
-    },
-    "extensibility_benefits": {
-        "api_description": "Interact with Trilium programmatically using its builtin REST API.",
-        "title": "Sharing & extensibility",
-        "import_export_title": "Import/export",
-        "import_export_description": "Easily interact with other applications using Markdown, ENEX, OML formats.",
-        "share_title": "Share notes on the web",
-        "share_description": "If you have a server, it can be used to share a subset of your notes with other people.",
-        "scripting_title": "Advanced scripting",
-        "scripting_description": "Build your own integrations within Trilium with custom widgets, or server-side logic.",
-        "api_title": "REST API"
+        "mindmap_title": "Mindmap"
     },
     "collections": {
         "calendar_description": "Organise your personal or professional events using a calendar, with support for all-day and multi-day events. See your events at a glance with the week, month and year views. Easy interaction to add or drag events.",

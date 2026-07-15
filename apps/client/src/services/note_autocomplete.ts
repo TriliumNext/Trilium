@@ -282,6 +282,18 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             fullTextSearch($el, options);
         }
     });
+    $el.on("keydown", (event) => {
+        const isPlainEnter = event.key === "Enter"
+            && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey;
+        // autocomplete.js empties its suggestion list only a tick after closing it, and its
+        // Enter handler selects from the closed-but-not-yet-emptied dropdown — so a fast second
+        // Enter after a selection consumes a stale row (#5669). Enter must never select from a
+        // dropdown the user cannot see; the library keeps aria-expanded in sync with open/close.
+        if (isPlainEnter && $el.attr("aria-expanded") !== "true") {
+            // Stop autocomplete from seeing the keypress, but leave form submission intact.
+            event.stopImmediatePropagation();
+        }
+    });
 
     $el.autocomplete(
         {

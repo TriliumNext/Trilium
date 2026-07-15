@@ -16,6 +16,7 @@ describe("Google Keep importer — parseNote", () => {
         expect(note).toEqual({
             title: "Asdf",
             content: "<p>Hi there. </p>",
+            attachments: [],
             utcDateCreated: "2025-11-13 21:39:26.429Z",
             utcDateModified: "2025-11-13 21:39:26.429Z"
         });
@@ -131,7 +132,61 @@ describe("Google Keep importer — parseNote", () => {
     it("leaves timestamps undefined and content empty for a bare note", () => {
         const note = parseNote("empty.json", JSON.stringify({}));
 
-        expect(note).toEqual({ title: "empty", content: "", utcDateCreated: undefined, utcDateModified: undefined });
+        expect(note).toEqual({ title: "empty", content: "", attachments: [], utcDateCreated: undefined, utcDateModified: undefined });
+    });
+
+    it("yields no attachments for a note with an empty (or absent) attachments array", () => {
+        expect(parseNote("n.json", JSON.stringify({ attachments: [] }))?.attachments).toEqual([]);
+        expect(parseNote("n.json", JSON.stringify({}))?.attachments).toEqual([]);
+    });
+
+    it("parses image attachments, deriving the MIME from the file extension", () => {
+        const json = JSON.stringify({
+            title: "With image",
+            textContent: "see below",
+            attachments: [{ filePath: "abc123.png", mimetype: "image/png" }]
+        });
+
+        const note = parseNote("note.json", json);
+
+        expect(note?.attachments).toEqual([{ fileName: "abc123.png", mime: "image/png" }]);
+    });
+
+    it("derives an attachment's MIME from its extension over Keep's declared mimetype", () => {
+        const json = JSON.stringify({
+            attachments: [{ filePath: "recording.3gp", mimetype: "application/octet-stream" }]
+        });
+
+        const note = parseNote("note.json", json);
+
+        // 3gp resolves to video/3gpp by extension, overriding the export's generic octet-stream.
+        expect(note?.attachments).toEqual([{ fileName: "recording.3gp", mime: "video/3gpp" }]);
+    });
+
+    it("falls an attachment's MIME back to Keep's mimetype, then octet-stream, for an unknown extension", () => {
+        const json = JSON.stringify({
+            attachments: [
+                { filePath: "mystery.weird", mimetype: "audio/amr" },
+                { filePath: "nomime.weird" }
+            ]
+        });
+
+        const note = parseNote("note.json", json);
+
+        expect(note?.attachments).toEqual([
+            { fileName: "mystery.weird", mime: "audio/amr" },
+            { fileName: "nomime.weird", mime: "application/octet-stream" }
+        ]);
+    });
+
+    it("uses an attachment's base name, dropping any path, and skips entries with no filePath", () => {
+        const json = JSON.stringify({
+            attachments: [{ filePath: "sub/dir/photo.jpg", mimetype: "image/jpeg" }, { mimetype: "image/png" }]
+        });
+
+        const note = parseNote("note.json", json);
+
+        expect(note?.attachments).toEqual([{ fileName: "photo.jpg", mime: "image/jpeg" }]);
     });
 
     it("skips a malformed JSON entry rather than throwing", () => {

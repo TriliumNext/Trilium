@@ -198,6 +198,87 @@ button.tn-low-profile:hover {
 }
 
 /*
+ * Selectable cards (import/export pickers) — mirror the button-group look: borderless, a recessed
+ * group background, and a raised "selected" chip with a subtle shadow. The base component styling
+ * (SelectableCard.css) uses theme-agnostic tokens so the legacy theme keeps working; these Next-theme
+ * tokens only exist here, so the override lives in the theme. The `:root` prefix matches the
+ * button-group convention above and keeps these rules winning over the component's base rules.
+ */
+:root .selectable-card {
+    border-color: transparent;
+    background: var(--button-group-background-color);
+    color: var(--cmd-button-text-color);
+    transition: background-color 150ms ease-in-out, color 150ms ease-in-out, box-shadow 150ms ease-in-out;
+}
+
+:root .selectable-card:hover {
+    border-color: transparent;
+    background: var(--cmd-button-hover-background-color);
+    color: var(--cmd-button-hover-text-color);
+}
+
+:root .selectable-card.selected {
+    border-color: transparent;
+    background: var(--button-group-active-button-background-color);
+    color: var(--button-group-active-button-color);
+    box-shadow: 1px 1px 1px var(--button-group-active-button-shadow-color);
+}
+
+/*
+ * Overlay buttons
+ */
+
+:where(.tn-overlay-control-group) {
+    display: flex;
+    align-items: stretch;
+    gap: 0px;
+    border-radius: var(--overlay-button-border-radius);
+    border-right: 1px solid var(--overlay-button-shadow-color);
+    border-bottom: 1px solid var(--overlay-button-shadow-color);
+
+    :where(button) {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        border: none;
+        margin: 0;
+        backdrop-filter: var(--overlay-button-backdrop-filter);
+        background-color: var(--overlay-button-background);
+        color: var(--overlay-button-color);
+
+        &:not(:disabled):hover {
+            background-color: var(--opaque-icon-button-hover-background-color);
+            color: var(--opaque-icon-button-hover-color);
+        }
+
+        &.tn-overlay-icon-button {
+            height: var(--overlay-button-height);
+            width: 32px;
+            font-size: var(--overlay-button-icon-size);
+
+            &:active {
+                font-size: calc(var(--overlay-button-icon-size) * .85);
+            }
+        }
+
+        &.tn-overlay-text-button {
+            height: var(--overlay-button-height);
+            min-width: 50px;
+            font-size: var(--overlay-button-text-size);
+        }
+
+        &:first-child {
+            border-radius: var(--overlay-button-border-radius) 0 0 var(--overlay-button-border-radius);
+        }
+
+        &:last-child {
+            border-radius: 0 var(--overlay-button-border-radius) var(--overlay-button-border-radius) 0;
+        }
+
+    }
+}
+
+/*
  * Input boxes
  */
 
@@ -939,7 +1020,7 @@ input[type="range"] {
     scrollbar-width: var(--scrollbar-thickness);
 }
 
-@supports selector(::-webkit-scrollbar) {
+@supports (-webkit-box-reflect: below) {
     /* Prevent the scrollbar-color and scrollbar-width properties to override the custom styles
      * defined using ::-webkit-scrollbar. */
     :root {

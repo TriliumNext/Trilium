@@ -193,6 +193,18 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
     // The app's i18n translate function, so plugins can resolve Trilium translation keys.
     (config as Record<string, unknown>).translate = (key: string, params?: Record<string, unknown>) => t(key, params);
 
+    // Global on/off switch for content-area hints (bottom-corner popups on task
+    // checkboxes, collapsible summaries, drag handles). Plugins consult this via
+    // `editor.config.get("contentHintsEnabled")` and skip registering their hint
+    // managers when it's false.
+    (config as Record<string, unknown>).contentHintsEnabled = options.get("textNoteContentHintsEnabled") === "true";
+
+    // Whether a URL typed or pasted into the note is auto-detected and turned into a link preview.
+    // A getter rather than a boolean: the LinkEmbed plugin calls it each time a URL is detected, so
+    // toggling the option applies to already-open editors instead of only to ones created afterwards.
+    // Only the auto-detection is gated — inserting a preview from the toolbar dialog always works.
+    (config as Record<string, unknown>).autoLinkPreviewsEnabled = () => options.get("textNoteAutoLinkPreviewsEnabled") === "true";
+
     // Image toolbar actions (copy / download), handled by the ImageActions plugin. The copy
     // button is only added where copying the raw image is supported (Electron or a secure
     // context); elsewhere the browser's own context menu still offers a "Copy image" entry.

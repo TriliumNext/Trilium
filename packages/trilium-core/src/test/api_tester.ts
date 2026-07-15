@@ -259,6 +259,7 @@ export class CoreApiTester {
             checkCredentials: noop,
             loginRateLimiter: noop,
             uploadMiddlewareWithErrorHandling: noop,
+            importMiddlewareWithErrorHandling: noop,
             csrfMiddleware: noop
         });
     }

@@ -1,3 +1,5 @@
+import "./llm.css";
+
 import { useCallback, useMemo, useState } from "preact/hooks";
 
 import dialog from "../../../services/dialog";
@@ -8,6 +10,7 @@ import Button from "../../react/Button";
 import FormTextBox from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import MaskedIcon from "../../react/MaskedIcon";
 import NoItems from "../../react/NoItems";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
@@ -162,7 +165,12 @@ function ProviderList({ providers, onDelete }: ProviderListProps) {
                 <OptionsRow
                     key={provider.id}
                     name="llm-provider"
-                    label={provider.name}
+                    label={
+                        <span className="llm-provider-name">
+                            {providerType?.iconUrl && <MaskedIcon url={providerType.iconUrl} />}
+                            {provider.name}
+                        </span>
+                    }
                     description={providerType?.name || provider.provider}
                 >
                     <ActionButton

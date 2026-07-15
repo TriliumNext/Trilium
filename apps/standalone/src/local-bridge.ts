@@ -2,6 +2,39 @@ import LocalServerWorker from "./local-server-worker?worker";
 let localWorker: Worker | null = null;
 const pending = new Map();
 
+const LOCAL_API_PREFIXES = ["/bootstrap", "/api/", "/sync/", "/search/"];
+
+export function isLocalApiRequest(url: URL): boolean {
+    return LOCAL_API_PREFIXES.some(p => url.pathname.startsWith(p));
+}
+
+export async function localFetch(request: Request): Promise<Response> {
+    startLocalServerWorker();
+
+    const id = Math.random().toString(36).slice(2);
+    const headersObj: Record<string, string> = {};
+    for (const [k, v] of request.headers.entries()) headersObj[k] = v;
+
+    const body = (request.method === "GET" || request.method === "HEAD")
+        ? null
+        : await request.arrayBuffer();
+
+    const response = await new Promise<{ status: number; headers: Record<string, string>; body?: ArrayBuffer }>((resolve, reject) => {
+        pending.set(id, { resolve, reject });
+        localWorker!.postMessage({
+            type: "LOCAL_REQUEST",
+            id,
+            request: { url: request.url, method: request.method, headers: headersObj, body }
+        }, body ? [body] : []);
+    });
+
+    const respHeaders = new Headers();
+    if (response.headers) {
+        for (const [k, v] of Object.entries(response.headers)) respHeaders.set(k, v);
+    }
+    return new Response(response.body ?? null, { status: response.status || 200, headers: respHeaders });
+}
+
 /**
  * Handler for outbound HTTP requests from the worker.
  * When registered, the worker's BridgedRequestProvider sends HTTP_REQUEST
@@ -17,7 +50,17 @@ export type NativeHttpHandler = (request: {
 }) => Promise<{
     status: number;
     headers: Record<string, string>;
-    body: string;
+    // Exactly one of these will be set:
+    // - `data` carries an already-parsed JSON response straight through the
+    //   structured-clone postMessage. The worker uses it as-is and skips
+    //   JSON.parse, avoiding the ~2× memory blowup that killed large blobs
+    //   (parsed object + an intermediate ~60MB string was OOM-ing the iOS
+    //   worker). The handler must NOT JSON.stringify the response itself.
+    // - `body` is the raw string body — used for non-JSON responses (e.g.
+    //   base64 binary returned for `responseType: "arraybuffer"`) and for
+    //   error bodies the worker needs to inspect.
+    data?: unknown;
+    body?: string;
 }>;
 
 let nativeHttpHandler: NativeHttpHandler | null = null;

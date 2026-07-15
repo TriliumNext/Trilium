@@ -6,11 +6,13 @@
     "androidScheme": "https",
     "hostname": "localhost"
   },
+  "ios": {
+    "limitsNavigationsToAppBoundDomains": true,
+    "includePlugins": ["@capacitor/keyboard"]
+  },
   "plugins": {
-    "SplashScreen": {
-      "launchAutoHide": true,
-      "launchShowDuration": 2000,
-      "launchFadeOutDuration": 300
+    "Keyboard": {
+      "resize": "native"
     }
   }
 }

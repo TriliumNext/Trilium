@@ -3,15 +3,9 @@ import type { Response } from "express";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type TaskContext from "../task_context.js";
-import { getContentDisposition, stripTags } from "../utils/index.js";
+import { getContentDisposition } from "../utils/index.js";
 
-function exportToOpml(taskContext: TaskContext<"export">, branch: BBranch, version: string, res: Response) {
-    if (!["1.0", "2.0"].includes(version)) {
-        throw new Error(`Unrecognized OPML version ${version}`);
-    }
-
-    const opmlVersion = parseInt(version);
-
+function exportToOpml(taskContext: TaskContext<"export">, branch: BBranch, res: Response) {
     const note = branch.getNote();
 
     function exportNoteInner(branchId: string) {
@@ -30,20 +24,10 @@ function exportToOpml(taskContext: TaskContext<"export">, branch: BBranch, versi
         }
 
         const title = `${branch.prefix ? `${branch.prefix} - ` : ""}${note.title}`;
+        const preparedTitle = escapeXmlAttribute(title);
+        const preparedContent = note.hasStringContent() ? escapeXmlAttribute(note.getContent() as string) : "";
 
-        if (opmlVersion === 1) {
-            const preparedTitle = escapeXmlAttribute(title);
-            const preparedContent = note.hasStringContent() ? prepareText(note.getContent() as string) : "";
-
-            res.write(`<outline title="${preparedTitle}" text="${preparedContent}">\n`);
-        } else if (opmlVersion === 2) {
-            const preparedTitle = escapeXmlAttribute(title);
-            const preparedContent = note.hasStringContent() ? escapeXmlAttribute(note.getContent() as string) : "";
-
-            res.write(`<outline text="${preparedTitle}" _note="${preparedContent}">\n`);
-        } else {
-            throw new Error(`Unrecognized OPML version ${opmlVersion}`);
-        }
+        res.write(`<outline text="${preparedTitle}" _note="${preparedContent}">\n`);
 
         taskContext.increaseProgressCount();
 
@@ -62,7 +46,7 @@ function exportToOpml(taskContext: TaskContext<"export">, branch: BBranch, versi
     res.setHeader("Content-Type", "text/x-opml");
 
     res.write(`<?xml version="1.0" encoding="UTF-8"?>
-<opml version="${version}">
+<opml version="2.0">
 <head>
 <title>Trilium export</title>
 </head>
@@ -77,16 +61,6 @@ function exportToOpml(taskContext: TaskContext<"export">, branch: BBranch, versi
     res.end();
 
     taskContext.taskSucceeded(null);
-}
-
-function prepareText(text: string) {
-    const newLines = text.replace(/(<p[^>]*>|<br\s*\/?>)/g, "\n").replace(/&nbsp;/g, " "); // nbsp isn't in XML standard (only HTML)
-
-    const stripped = stripTags(newLines);
-
-    const escaped = escapeXmlAttribute(stripped);
-
-    return escaped.replace(/\n/g, "&#10;");
 }
 
 function escapeXmlAttribute(text: string) {

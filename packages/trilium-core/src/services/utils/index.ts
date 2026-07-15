@@ -11,6 +11,7 @@ export function isDev() { return getPlatform().getEnv("TRILIUM_ENV") === "dev"; 
 export function isElectron() { return getPlatform().isElectron; }
 export function isMac() { return getPlatform().isMac; }
 export function isWindows() { return getPlatform().isWindows; }
+export function isLinux() { return getPlatform().isLinux; }
 
 // render and book are string note in the sense that they are expected to contain empty string
 const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
@@ -284,6 +285,7 @@ export function removeFileExtension(filePath: string, mime?: string) {
         case ".pdf":
         case ".xlsx":
         case ".csv":
+        case ".triliumsheet":
             return filePath.substring(0, filePath.length - extension.length);
         default:
             return filePath;

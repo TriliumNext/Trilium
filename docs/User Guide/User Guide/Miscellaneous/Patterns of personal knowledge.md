@@ -110,7 +110,7 @@ Naturally I have a lot of (extended) family members, friends, acquaintances etc.
 
 For family specifically it's pretty useful to create [relation map](../Note%20Types/Relation%20Map.md) to visualize relationships:
 
-<figure class="image"><img style="aspect-ratio:941/758;" src="Patterns of personal knowl.png" width="941" height="758"></figure>
+<figure class="image"><img style="aspect-ratio:941/758;" src="Patterns of personal knowledge_relation-map-family.png" width="941" height="758"></figure>
 
 <a class="reference-link" href="#root/lQcnSv5DMSe1">[missing note]</a>
 

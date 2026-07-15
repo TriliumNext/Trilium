@@ -1,0 +1,10 @@
+.llm-provider-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+/* Scale the provider logo down to sit inline with the row label text. */
+.llm-provider-name .masked-icon {
+    --masked-icon-size: 1.2em;
+}

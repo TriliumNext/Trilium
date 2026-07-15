@@ -285,6 +285,9 @@ export function registerRoutes(router: BrowserRouter): void {
         checkCredentials: noopMiddleware,
         loginRateLimiter: noopMiddleware,
         uploadMiddlewareWithErrorHandling: noopMiddleware,
+        // The browser variant has no disk; uploads already arrive as a buffer (see browser_router.ts), so
+        // imports use the same no-op middleware rather than the server's disk-storage one.
+        importMiddlewareWithErrorHandling: noopMiddleware,
         csrfMiddleware: noopMiddleware
     });
     apiRoute('get', '/bootstrap', bootstrapRoute);

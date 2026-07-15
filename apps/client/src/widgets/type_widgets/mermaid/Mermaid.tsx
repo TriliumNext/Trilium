@@ -1,4 +1,5 @@
 import type CodeMirror from "@triliumnext/codemirror";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { useCallback } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
@@ -37,7 +38,7 @@ export default function Mermaid(props: TypeWidgetProps) {
 
     return (
         <SvgSplitEditor
-            attachmentName="mermaid-export"
+            attachmentTitle={NOTE_TYPE_IMAGE_ATTACHMENTS.mermaid}
             renderSvg={renderSvg}
             editorRef={setupEditor}
             noteType="mermaid"

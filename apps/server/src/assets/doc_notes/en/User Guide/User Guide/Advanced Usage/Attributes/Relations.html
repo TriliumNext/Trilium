@@ -58,83 +58,86 @@
 </ul>
 <h2>Predefined relations</h2>
 <p>These relations are supported and used internally by Trilium.</p>
-<table>
-  <thead>
-    <tr>
-      <th>Label</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code spellcheck="false">runOn*</code>
-      </td>
-      <td>See&nbsp;<a class="reference-link" href="#root/_help_GPERMystNGTB">Events</a>
-      </td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">template</code>
-      </td>
-      <td>note's attributes will be inherited even without a parent-child relationship,
-        note's content and subtree will be added to instance notes if empty. See
-        documentation for details.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">inherit</code>
-      </td>
-      <td>note's attributes will be inherited even without a parent-child relationship.
-        See&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;for
-        a similar concept. See&nbsp;<a class="reference-link" href="#root/_help_bwZpz2ajCEwO">Attribute Inheritance</a>&nbsp;in
-        the documentation.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">renderNote</code>
-      </td>
-      <td>notes of type&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>&nbsp;will
-        be rendered using a code note (HTML or script) and it is necessary to point
-        using this relation to which note should be rendered</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">widget</code>
-      </td>
-      <td>Used in the context of custom&nbsp;<a class="reference-link" href="#root/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>,
-        to refer to the widget that will be rendered.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">shareCss</code>
-      </td>
-      <td>CSS note which will be injected into the share page. CSS note must be
-        in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code> and
-        <code
-        spellcheck="false">shareOmitDefaultCss</code>as well.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">shareJs</code>
-      </td>
-      <td>JavaScript note which will be injected into the share page. JS note must
-        be in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">shareHtml</code>
-      </td>
-      <td>HTML note which will be injected into the share page at locations specified
-        by the <code spellcheck="false">shareHtmlLocation</code> label. HTML note
-        must be in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">shareTemplate</code>
-      </td>
-      <td>Embedded JavaScript note that will be used as the template for displaying
-        the shared note. Falls back to the default template. Consider using
-        <code
-        spellcheck="false">shareHiddenFromTree</code>.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">shareFavicon</code>
-      </td>
-      <td>Favicon note to be set in the shared page. Typically you want to set it
-        to share root and make it inheritable. Favicon note must be in the shared
-        sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code>.</td>
-    </tr>
-  </tbody>
-</table>
+<figure
+class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">runOn*</code>
+        </td>
+        <td>See&nbsp;<a class="reference-link" href="#root/_help_GPERMystNGTB">Events</a>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">template</code>
+        </td>
+        <td>note's attributes will be inherited even without a parent-child relationship,
+          note's content and subtree will be added to instance notes if empty. See
+          documentation for details.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">inherit</code>
+        </td>
+        <td>note's attributes will be inherited even without a parent-child relationship.
+          See&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;for
+          a similar concept. See&nbsp;<a class="reference-link" href="#root/_help_bwZpz2ajCEwO">Attribute Inheritance</a>&nbsp;in
+          the documentation.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">renderNote</code>
+        </td>
+        <td>notes of type&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>&nbsp;will
+          be rendered using a code note (HTML or script) and it is necessary to point
+          using this relation to which note should be rendered</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">widget</code>
+        </td>
+        <td>Used in the context of custom&nbsp;<a class="reference-link" href="#root/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>,
+          to refer to the widget that will be rendered.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">shareCss</code>
+        </td>
+        <td>CSS note which will be injected into the share page. CSS note must be
+          in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code> and
+          <code
+          spellcheck="false">shareOmitDefaultCss</code>as well.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">shareJs</code>
+        </td>
+        <td>JavaScript note which will be injected into the share page. JS note must
+          be in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">shareHtml</code>
+        </td>
+        <td>HTML note which will be injected into the share page at locations specified
+          by the <code spellcheck="false">shareHtmlLocation</code> label. HTML note
+          must be in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">shareTemplate</code>
+        </td>
+        <td>Embedded JavaScript note that will be used as the template for displaying
+          the shared note. Falls back to the default template. Consider using
+          <code
+          spellcheck="false">shareHiddenFromTree</code>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">shareFavicon</code>
+        </td>
+        <td>Favicon note to be set in the shared page. Typically you want to set it
+          to share root and make it inheritable. Favicon note must be in the shared
+          sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+  </figure>

@@ -77,7 +77,20 @@ describe("setup service", () => {
             const result = await setupService.setupSyncFromSyncServer("http://srv", "proxy", "pw");
 
             expect(result).toEqual({ result: "success" });
-            expect(createSpy).toHaveBeenCalledWith([{ name: "documentId", value: "d" }], "http://srv", "proxy");
+            // Default (no mobile limit) forwards 0 as the blob size limit.
+            expect(createSpy).toHaveBeenCalledWith([{ name: "documentId", value: "d" }], "http://srv", "proxy", 0);
+        });
+
+        it("forwards a blob size limit to createDatabaseForSync", async () => {
+            vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+            const createSpy = vi.spyOn(sqlInit, "createDatabaseForSync").mockResolvedValue(undefined as never);
+            vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+            vi.spyOn(syncService, "sync").mockResolvedValue({ success: true });
+            execImpl = async () => ({ syncVersion: appInfo.syncVersion, options: [{ name: "documentId", value: "d" }] });
+
+            await setupService.setupSyncFromSyncServer("http://srv", "proxy", "pw", 20971520);
+
+            expect(createSpy).toHaveBeenCalledWith([{ name: "documentId", value: "d" }], "http://srv", "proxy", 20971520);
         });
 
         it("fails on a sync version mismatch", async () => {

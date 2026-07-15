@@ -31,8 +31,6 @@
         "sync_content": "Utilisez une instance auto-hébergée ou cloud pour synchroniser facilement vos notes sur plusieurs appareils, et pour y accéder à partir de votre téléphone mobile en utilisant un PWA.",
         "protected_notes_title": "Notes protégées",
         "protected_notes_content": "Protégez les informations personnelles sensibles en chiffrant les notes et en les verrouillant dans une session protégée par mot de passe.",
-        "jump_to_title": "Recherche rapide et commandes",
-        "jump_to_content": "Accédez rapidement à des notes ou commandes de l’interface dans toute la hiérarchie en recherchant leur titre, avec une correspondance approximative pour gérer les fautes de frappe ou légères variations.",
         "search_title": "Recherche puissante",
         "search_content": "Ou recherchez du texte à l’intérieur des notes et affinez les résultats en filtrant par note parent ou par profondeur.",
         "web_clipper_title": "Web clipper",
@@ -51,7 +49,6 @@
         "mermaid_description": "Créez des diagrammes tels que des organigrammes, des diagrammes de classes et de séquences, des diagrammes de Gantt et bien d'autres, en utilisant la syntaxe Mermaid.",
         "mindmap_title": "Carte mentale",
         "mindmap_description": "Organisez vos pensées visuellement ou faites une séance de brainstorming.",
-        "others_list": "et autres : <0>carte de notes</0>, <1>carte de relations</1>, <2>recherches enregistrées</2>, <3>note de rendu</3> et <4>vues Web</4>.",
         "title": "Plusieurs façons de représenter vos informations"
     },
     "faq": {
@@ -148,19 +145,7 @@
     "download_helper_server_hosted": {
         "title": "Hébergement payant",
         "description": "Notes Trilium hébergées sur PikaPods, un service payant pour un accès et une gestion simplifiés. Non affilié directement à l'équipe Trilium.",
-        "download_pikapod": "Installé sur PikaPods",
-        "download_triliumcc": "Voir également trilium.cc"
-    },
-    "extensibility_benefits": {
-        "title": "Partage et extensibilité",
-        "import_export_title": "Import/export",
-        "import_export_description": "Interagissez facilement avec d'autres applications utilisant les formats Markdown, ENEX, OML.",
-        "share_title": "Partager des notes sur le Web",
-        "share_description": "Si vous disposez d'un serveur, vous pouvez l'utiliser pour partager un sous-ensemble de vos notes avec d'autres personnes.",
-        "scripting_title": "Scripts avancés",
-        "scripting_description": "Créez vos propres intégrations dans Trilium avec des widgets personnalisés ou une logique côté serveur.",
-        "api_title": "REST API",
-        "api_description": "Interagissez avec Trilium par programmation à l'aide de son API REST intégrée."
+        "download_pikapod": "Installé sur PikaPods"
     },
     "collections": {
         "calendar_title": "Calendrier",

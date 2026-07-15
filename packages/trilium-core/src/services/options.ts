@@ -16,6 +16,7 @@ import becca from "../becca/becca.js";
 import BOption from "../becca/entities/boption.js";
 import type { OptionRow } from "@triliumnext/commons";
 import type { FilterOptionsByType, OptionDefinitions, OptionMap, OptionNames } from "@triliumnext/commons";
+import { getDefaultOptionSyncedFlag } from "./options_init.js";
 import { getSql } from "./sql/index.js";
 
 function getOptionOrNull(name: OptionNames): string | null {
@@ -80,7 +81,10 @@ function setOption<T extends OptionNames>(name: T, value: string | OptionDefinit
 
         option.save();
     } else {
-        createOption(name, value, false);
+        // The option row is missing (e.g. a write landing before initStartupOptions has created it).
+        // Honor the option's declared sync flag so a synced option is not permanently created as
+        // local-only, which would otherwise cause an unreconcilable sync content-hash mismatch.
+        createOption(name, value, getDefaultOptionSyncedFlag(name) ?? false);
     }
 
 }

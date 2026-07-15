@@ -1,4 +1,5 @@
 import { becca, becca_easy_mocking } from "@triliumnext/core";
+import { join as pathJoin, sep as pathSep } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { buildNote } = becca_easy_mocking;
@@ -680,7 +681,10 @@ describe("tray", () => {
             const newWindowItem = instance.lastTemplate.find(
                 (i) => (i as { label?: string }).label === "tray.open_new_window"
             ) as Electron.MenuItemConstructorOptions | undefined;
-            expect(newWindowItem?.icon).toContain("/res/assets/images/tray/");
+            // Use `path.join` so the substring matches the platform-native
+            // separator — `getIconPath` joins the mocked "/res" with subdirs,
+            // producing `\res\assets\images\tray\...` on Windows.
+            expect(newWindowItem?.icon).toContain(pathJoin("/res", "assets", "images", "tray") + pathSep);
         });
     });
 });

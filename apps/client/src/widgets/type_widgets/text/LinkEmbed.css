@@ -1,93 +1,6 @@
 /* ==========================================================================
-   Link Embed – paste popup, mention, embed/card, loading
+   Link previews - inline mention, card, video embed
    ========================================================================== */
-
-/* ---------- Loading dots (bouncing) ---------- */
-
-.link-embed-loader {
-    display: inline-flex;
-    gap: 4px;
-    align-items: center;
-    padding: 8px 12px;
-}
-
-.link-embed-loader-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--muted-text-color, #999);
-    animation: link-embed-bounce 1.2s infinite ease-in-out;
-}
-
-.link-embed-loader-dot:nth-child(2) { animation-delay: 0.15s; }
-.link-embed-loader-dot:nth-child(3) { animation-delay: 0.3s; }
-
-@keyframes link-embed-bounce {
-    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-    40% { transform: scale(1); opacity: 1; }
-}
-
-/* ---------- Paste popup ---------- */
-
-.link-paste-popup {
-    background: var(--main-background-color, #fff);
-    border: 1px solid var(--muted-text-color, #ddd);
-    border-radius: 8px;
-    padding: 4px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    display: flex;
-    flex-direction: column;
-    min-width: 150px;
-    opacity: 0;
-    transform: translateY(-4px);
-    transition: opacity 0.12s ease, transform 0.12s ease;
-}
-
-.link-paste-popup-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.link-paste-popup-header {
-    font-size: 0.72em;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--muted-text-color, #999);
-    padding: 4px 10px 2px;
-}
-
-.link-paste-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    border: none;
-    background: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.88em;
-    color: var(--main-text-color, #333);
-    transition: background-color 0.1s;
-    width: 100%;
-    text-align: left;
-}
-
-.link-paste-option:hover,
-.link-paste-option-active {
-    background: var(--hover-item-background-color, rgba(0, 0, 0, 0.06));
-}
-
-.link-paste-option-icon {
-    width: 20px;
-    text-align: center;
-    font-size: 1em;
-    flex-shrink: 0;
-}
-
-.link-paste-option-label {
-    flex: 1;
-}
 
 /* ---------- Inline mention (favicon + title) ---------- */
 
@@ -145,11 +58,17 @@
 /* ---------- Block embed wrapper ---------- */
 
 .link-embed {
-    margin: 8px 0;
+    border-bottom: 3px solid transparent;
 }
-
 .link-embed-preview-wrapper {
     display: block;
+}
+
+.link-embed-preview-wrapper:has(> .link-embed-video) {
+    display: flex;
+    justify-content: center;
+    background: black;
+    border-radius: 8px;
 }
 
 /* ---------- Video embed (YouTube iframe) ---------- */
@@ -170,24 +89,104 @@
     display: block;
 }
 
-/* ---------- Card embed (Notion-style) ---------- */
+/* ---------- Click-to-play facade ----------
+   Shown in place of the player until the user asks for it, so opening a note never contacts
+   YouTube. The thumbnail is the one stored in the note, not a remote one. */
 
-.link-embed-card {
-    display: flex;
-    border: 1px solid var(--muted-text-color, #ccc);
-    border-radius: 4px;
-    overflow: hidden;
-    text-decoration: none;
-    color: inherit;
+.link-embed-video-facade {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    border: none;
+    background: #000;
     cursor: pointer;
-    transition: background-color 0.15s ease;
-    max-height: 120px;
 }
 
-.link-embed-card:hover {
-    background-color: var(--hover-item-background-color, rgba(0, 0, 0, 0.03));
-    text-decoration: none;
+.link-embed-video-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.link-embed-video-play {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 68px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    transition: background-color 0.12s;
+}
+
+/* The play triangle. */
+.link-embed-video-play::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 10px 0 10px 17px;
+    border-color: transparent transparent transparent #fff;
+}
+
+.link-embed-video-facade:hover .link-embed-video-play,
+.link-embed-video-facade:focus-visible .link-embed-video-play {
+    background: #f00;
+}
+
+/* ---------- Card embed (Notion-style) ---------- */
+
+a.link-embed-card {
+    all: unset;
+    display: flex;
+    border-radius: 4px;
+    overflow: hidden;
     color: inherit;
+    cursor: pointer;
+    max-height: 120px;
+
+    background: var(--card-background-color);
+    border-radius: var(--_link-embed-top-border-radius, 8px)
+                   var(--_link-embed-top-border-radius, 8px)
+                   var(--_link-embed-bottom-border-radius, 8px)
+                   var(--_link-embed-bottom-border-radius, 8px);
+}
+
+a.link-embed-card:hover {
+    background: var(--card-background-hover-color) !important;
+    text-decoration: none;
+    box-shadow: none;
+
+    & img {
+        filter: brightness(1.25);
+    }
+}
+
+a.link-embed-card::after {
+    display: none !important;
+}
+
+/* The first card in series */
+section.link-embed:not(section.link-embed + section.link-embed) {
+    --_link-embed-bottom-border-radius: 0;
+}
+
+section.link-embed + section.link-embed {
+    --_link-embed-top-border-radius: 0;
+    --_link-embed-bottom-border-radius: 0;
+}
+
+/* The last card in series */
+section.link-embed:not(:has(+ section.link-embed)) {
+    --_link-embed-top-border-radius: 0;
+    --_link-embed-bottom-border-radius: 8px;
+
 }
 
 .link-embed-card-image-wrapper {
@@ -247,10 +246,29 @@
 }
 
 .link-embed-card-url {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     font-size: 0.78em;
     color: var(--muted-text-color, #999);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 0;
     margin-top: auto;
+
+    /* The favicon keeps its size; only the site name is truncated. */
+    & > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Scaled down from the inline mention's 16px: it sits next to 0.78em text here. */
+    & .link-embed-mention-favicon {
+        width: 14px;
+        height: 14px;
+    }
+
+    & .link-embed-mention-dot {
+        width: 6px;
+        height: 6px;
+    }
 }

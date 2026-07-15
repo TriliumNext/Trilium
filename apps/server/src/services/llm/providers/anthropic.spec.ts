@@ -194,11 +194,11 @@ describe("AnthropicProvider tool handling", () => {
         expect(opts.maxOutputTokens).toBe(14000);
     });
 
-    it("uses adaptive thinking on Opus 4.7+ / Sonnet 4.6, which reject manual budgets", () => {
+    it("uses adaptive thinking on Opus 4.7+ / Sonnet 4.6 / Sonnet 5, which reject manual budgets", () => {
         const provider = new AnthropicProvider("sk-ant-test");
 
-        // Default model (Sonnet 4.6) plus the newest Opus tiers are adaptive-only.
-        for (const model of ["claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-6"]) {
+        // Default model (Sonnet 5) plus the newest Opus tiers and Sonnet 4.6 are adaptive-only.
+        for (const model of ["claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-6", "claude-sonnet-5"]) {
             streamTextMock.mockClear();
             provider.chat([{ role: "user", content: "hi" }], { model, enableExtendedThinking: true });
 

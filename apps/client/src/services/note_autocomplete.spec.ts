@@ -607,6 +607,55 @@ describe("initNoteAutocomplete wiring", () => {
         expect(selected).not.toHaveBeenCalled();
     });
 
+    // Issue #5669: autocomplete.js empties its suggestion list only a tick after closing
+    // it, and its Enter handler selects from the closed-but-not-yet-emptied dropdown, so
+    // a fast second Enter right after a selection would consume a stale suggestion row.
+    // Plain Enter must never reach the library while the dropdown is closed (the library
+    // keeps aria-expanded in sync with its open/close state).
+    it("does not deliver a plain Enter to autocomplete while the dropdown is closed", () => {
+        const $el = makeEl();
+        noteAutocomplete.initNoteAutocomplete($el);
+        // simulates the library's own keydown handler, which is bound after init
+        const autocompleteKeydown = vi.fn((event: JQuery.KeyDownEvent) => event.preventDefault());
+        $el.on("keydown.aa", autocompleteKeydown);
+
+        // aria-expanded not yet set (before the first open), then explicitly closed
+        for (const expanded of [undefined, "false"]) {
+            if (expanded) {
+                $el.attr("aria-expanded", expanded);
+            }
+            const event = $.Event("keydown", { key: "Enter" });
+            $el.trigger(event);
+            // the default action (form submission) must stay intact
+            expect(event.isDefaultPrevented()).toBe(false);
+        }
+        expect(autocompleteKeydown).not.toHaveBeenCalled();
+    });
+
+    it("delivers a plain Enter to autocomplete while the dropdown is open", () => {
+        const $el = makeEl();
+        noteAutocomplete.initNoteAutocomplete($el);
+        const autocompleteKeydown = vi.fn();
+        $el.on("keydown.aa", autocompleteKeydown);
+
+        $el.attr("aria-expanded", "true");
+        $el.trigger($.Event("keydown", { key: "Enter" }));
+
+        expect(autocompleteKeydown).toHaveBeenCalledOnce();
+    });
+
+    it("leaves modified Enter presses alone even when the dropdown is closed", () => {
+        const $el = makeEl();
+        noteAutocomplete.initNoteAutocomplete($el);
+        const autocompleteKeydown = vi.fn();
+        $el.on("keydown.aa", autocompleteKeydown);
+
+        $el.attr("aria-expanded", "false");
+        $el.trigger($.Event("keydown", { key: "Enter", ctrlKey: true }));
+
+        expect(autocompleteKeydown).toHaveBeenCalledOnce();
+    });
+
     it("composition end re-sets the autocomplete value", () => {
         const $el = makeEl();
         noteAutocomplete.initNoteAutocomplete($el);

@@ -100,6 +100,7 @@ describe("buildLaunchBarConfig", () => {
         expect(byId(config.desktopVisibleLaunchers, "_lbSearch").command).toBe("searchNotes");
         expect(byId(config.desktopVisibleLaunchers, "_lbJumpTo").command).toBe("jumpToNote");
         expect(byId(config.desktopVisibleLaunchers, "_lbRecentChanges").command).toBe("showRecentChanges");
+        expect(byId(config.desktopAvailableLaunchers, "_lbDeletedNotes").command).toBe("showDeletedNotes");
         expect(byId(config.desktopVisibleLaunchers, "_lbSettings").command).toBe("showOptions");
         expect(byId(config.desktopAvailableLaunchers, "_commandPalette").command).toBe("commandPalette");
         expect(byId(config.desktopAvailableLaunchers, "_zenMode").command).toBe("toggleZenMode");

@@ -1,9 +1,10 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import i18next from "i18next";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { getContext } from "./context.js";
 import eventService from "./events.js";
 import { getSql } from "./sql/index.js";
-import sqlInit from "./sql_init.js";
+import sqlInit, { applySetupLanguage } from "./sql_init.js";
 
 describe("sql_init (real DB)", () => {
     beforeAll(() => {
@@ -69,6 +70,31 @@ describe("sql_init (real DB)", () => {
             // The `!isDbInitialized()` guard skips both the option write and the event emit.
             expect(dbInitializedEmitted).toBe(false);
             expect(sqlInit.isDbInitialized()).toBe(true);
+        });
+    });
+
+    describe("applySetupLanguage", () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it("switches i18next to the locale chosen during setup", async () => {
+            const changeLanguage = vi.spyOn(i18next, "changeLanguage").mockResolvedValue((() => "") as never);
+
+            await applySetupLanguage("de");
+
+            // Persisting the `locale` option is not enough — the running i18next instance must be switched
+            // before the hidden subtree is built, otherwise the built-in titles are generated in English.
+            expect(changeLanguage).toHaveBeenCalledWith("de");
+        });
+
+        it("leaves the language untouched for an undefined or non-displayable locale", async () => {
+            const changeLanguage = vi.spyOn(i18next, "changeLanguage").mockResolvedValue((() => "") as never);
+
+            await applySetupLanguage(undefined);
+            await applySetupLanguage("zz-not-a-locale");
+
+            expect(changeLanguage).not.toHaveBeenCalled();
         });
     });
 

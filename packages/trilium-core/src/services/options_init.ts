@@ -6,7 +6,7 @@ import dateUtils from "./utils/date.js";
 import keyboardActions from "./keyboard_actions.js";
 import { getLog } from "./log.js";
 import optionService from "./options.js";
-import { isWindows, randomSecureToken } from "./utils/index.js";
+import { isLinux, isWindows, randomSecureToken } from "./utils/index.js";
 
 export function initDocumentOptions() {
     optionService.createOption("documentId", randomSecureToken(16), false);
@@ -19,6 +19,7 @@ export function initDocumentOptions() {
 interface NotSyncedOpts {
     syncServerHost?: string;
     syncProxy?: string;
+    syncMaxBlobContentSize?: number;
 }
 
 /**
@@ -70,6 +71,9 @@ export async function initNotSyncedOptions(initialized: boolean, opts: NotSynced
     optionService.createOption("syncServerTimeout", "120", false); // 120 seconds (2 minutes)
     optionService.createOption("syncProxy", opts.syncProxy || "", false);
     optionService.createOption("syncIncomplete", "false", false);
+    // Per-device blob size limit (bytes) for sync pulls; 0 = disabled. Set to a non-zero value only
+    // on memory-constrained clients (mobile), so this is not synced across the cluster.
+    optionService.createOption("syncMaxBlobContentSize", (opts.syncMaxBlobContentSize ?? 0).toString(), false);
 }
 
 /**
@@ -111,6 +115,7 @@ const defaultOptions: DefaultOption[] = [
         },
         isSynced: false
     },
+    { name: "syncMaxBlobContentSize", value: "0", isSynced: false },
     { name: "revisionSnapshotTimeInterval", value: "600", isSynced: true },
     { name: "revisionSnapshotTimeIntervalTimeScale", value: "60", isSynced: true }, // default to Minutes
     { name: "revisionSnapshotNumberLimit", value: "-1", isSynced: true },
@@ -145,7 +150,9 @@ const defaultOptions: DefaultOption[] = [
     { name: "rightPaneWidth", value: "25", isSynced: false },
     { name: "rightPaneVisible", value: "true", isSynced: false },
     { name: "rightPaneCollapsedItems", value: "[]", isSynced: false },
-    { name: "nativeTitleBarVisible", value: "false", isSynced: false },
+    // On Linux a native title bar integrates better with the rest of the system, so default it on there.
+    // This only applies to fresh installs — existing databases already have the option set and are left untouched.
+    { name: "nativeTitleBarVisible", value: () => isLinux() ? "true" : "false", isSynced: false },
     { name: "eraseEntitiesAfterTimeInSeconds", value: "604800", isSynced: true }, // default is 7 days
     { name: "eraseEntitiesAfterTimeScale", value: "86400", isSynced: true }, // default 86400 seconds = Day
     { name: "hideArchivedNotes_main", value: "false", isSynced: false },
@@ -200,7 +207,7 @@ const defaultOptions: DefaultOption[] = [
         },
         isSynced: false
     },
-    { name: "codeNoteThemeMatchesApp", value: "false", isSynced: false },
+    { name: "codeNoteThemeMatchesApp", value: "true", isSynced: false },
     { name: "codeNoteThemeLight", value: "default:vs-code-light", isSynced: false },
     { name: "codeNoteThemeDark", value: "default:vs-code-dark", isSynced: false },
     { name: "motionEnabled", value: "true", isSynced: false },
@@ -229,7 +236,7 @@ const defaultOptions: DefaultOption[] = [
         },
         isSynced: false
     },
-    { name: "codeBlockThemeMatchesApp", value: "false", isSynced: false },
+    { name: "codeBlockThemeMatchesApp", value: "true", isSynced: false },
     { name: "codeBlockThemeLight", value: "default:stackoverflow-light", isSynced: false },
     { name: "codeBlockThemeDark", value: "default:stackoverflow-dark", isSynced: false },
     { name: "codeBlockWordWrap", value: "false", isSynced: true },
@@ -242,6 +249,8 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteSlashCommandsEnabled", value: "true", isSynced: true },
     { name: "mathFieldEnabled", value: "true", isSynced: true },
+    { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
+    { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
     { name: "includeNoteDefaultBoxSize", value: "medium", isSynced: true },
 
     // HTML import configuration
@@ -321,5 +330,26 @@ function getKeyboardDefaultOptions() {
         value: JSON.stringify(ka.defaultShortcuts),
         isSynced: false
     })) as DefaultOption[];
+}
+
+let syncedFlagByOption: Map<OptionNames, boolean> | null = null;
+
+/**
+ * Resolves the declared `isSynced` flag for one of the well-known default options.
+ *
+ * Returns `undefined` for names that are not part of {@link defaultOptions} (e.g. options created
+ * directly in {@link initNotSyncedOptions}/{@link initDocumentOptions}, keyboard shortcuts, or unknown
+ * names). Used by `setOption` so that auto-creating a missing default does not silently downgrade a
+ * meant-to-be-synced option to local-only, which would otherwise produce an unreconcilable sync hash.
+ *
+ * The lookup is built lazily on first use to avoid evaluating the (cyclic) options module graph at
+ * import time.
+ */
+export function getDefaultOptionSyncedFlag(name: OptionNames): boolean | undefined {
+    if (!syncedFlagByOption) {
+        syncedFlagByOption = new Map(defaultOptions.map((option) => [option.name, option.isSynced]));
+    }
+
+    return syncedFlagByOption.get(name);
 }
 

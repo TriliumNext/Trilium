@@ -1,6 +1,50 @@
+import { t } from "../services/i18n";
 import options from "../services/options";
 
 type DateTimeStyle = "full" | "long" | "medium" | "short" | "none" | undefined;
+
+/** Seconds-per-unit multipliers offered by the settings time-scale dropdowns. */
+const SECONDS_PER_MINUTE = 60;
+const SECONDS_PER_HOUR = 3600;
+const SECONDS_PER_DAY = 86400;
+
+/**
+ * Formats a duration held as a settings pair — a total in `seconds` plus the seconds-per-unit
+ * `timeScale` the user picked (1 / 60 / 3600 / 86400) — into a localized, pluralized phrase such as
+ * "7 days" or "12 hours".
+ *
+ * The value is reported in the unit the user actually chose rather than being re-derived from the
+ * raw seconds, so it always matches what the settings page shows. A fuzzy humanizer would instead
+ * collapse distinct windows (both 30 and 45 days become "a month") — misleading for a setting that
+ * governs when data is destroyed.
+ *
+ * @returns `null` when the duration is unknown. Options load asynchronously, so `useTriliumOptionInt`
+ *          yields `NaN` until the fetch resolves; returning `null` (rather than a string) makes callers
+ *          drop the whole phrase instead of rendering "NaN days" — or an empty gap — inside a sentence.
+ */
+export function formatDuration(seconds: number, timeScale: number): string | null {
+    if (!Number.isFinite(seconds) || seconds < 0) {
+        return null;
+    }
+
+    // A NaN/absent scale fails this comparison and falls back to days.
+    const scale = timeScale > 0 ? timeScale : SECONDS_PER_DAY;
+    const count = Math.round(seconds / scale);
+
+    switch (scale) {
+        case 1:
+            return t("time_interval.seconds", { count });
+        case SECONDS_PER_MINUTE:
+            return t("time_interval.minutes", { count });
+        case SECONDS_PER_HOUR:
+            return t("time_interval.hours", { count });
+        case SECONDS_PER_DAY:
+            return t("time_interval.days", { count });
+        default:
+            // An unrecognized scale can't name a unit, so report the window in days.
+            return t("time_interval.days", { count: Math.round(seconds / SECONDS_PER_DAY) });
+    }
+}
 
 /**
  * Formats the given date and time to a string based on the current locale.

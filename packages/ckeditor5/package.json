@@ -9,14 +9,15 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@vitest/browser": "4.1.9",
-    "vitest": "4.1.9",
-    "webdriverio": "9.29.0"
+    "@vitest/browser": "4.1.10",
+    "vitest": "4.1.10",
+    "webdriverio": "9.29.1"
   },
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/ckeditor5-admonition": "workspace:*",
     "@triliumnext/ckeditor5-collapsible": "workspace:*",
+    "@triliumnext/ckeditor5-utils": "workspace:*",
     "@triliumnext/ckeditor5-footnotes": "workspace:*",
     "@triliumnext/ckeditor5-keyboard-marker": "workspace:*",
     "@triliumnext/ckeditor5-math": "workspace:*",

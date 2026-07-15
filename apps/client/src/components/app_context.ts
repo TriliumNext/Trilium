@@ -20,7 +20,6 @@ import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
 import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
-import { LinkEmbedOpts } from "../widgets/dialogs/link_embed.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
 import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
@@ -93,7 +92,15 @@ export type CommandMappings = {
     "api-log-messages": CommandData;
     focusTree: CommandData;
     focusOnTitle: CommandData;
-    focusOnDetail: CommandData;
+    focusOnDetail: CommandData & {
+        /**
+         * When set, instead of merely focusing the editor, an empty paragraph is inserted at the very
+         * top of the document and the cursor is placed there (Notion-like behavior when pressing Enter
+         * in the title). Only honored by text notes. If the first block is already an empty paragraph,
+         * the cursor is placed in it rather than stacking another empty paragraph.
+         */
+        insertNewlineAtTop?: boolean;
+    };
     searchNotes: CommandData & {
         searchString?: string;
         ancestorNoteId?: string | null;
@@ -135,8 +142,8 @@ export type CommandMappings = {
     showInfoDialog: InfoProps;
     showConfirmDialog: ConfirmWithMessageOptions;
     showRecentChanges: CommandData & { ancestorNoteId: string };
+    showDeletedNotes: CommandData & { ancestorNoteId?: string };
     showImportDialog: CommandData & { noteId: string };
-    showImportProviderDialog: CommandData & { noteId: string };
     openNewNoteSplit: NoteCommandData;
     openInWindow: NoteCommandData;
     openInPopup: CommandData & { noteIdOrPath: string; };
@@ -235,7 +242,6 @@ export type CommandMappings = {
     showProtectedSessionPasswordDialog: CommandData;
     showUploadAttachmentsDialog: CommandData & { noteId: string };
     showIncludeNoteDialog: CommandData & IncludeNoteOpts;
-    showLinkEmbedDialog: CommandData & LinkEmbedOpts;
     showAddLinkDialog: CommandData & AddLinkOpts;
     showPasteMarkdownDialog: CommandData & MarkdownImportOpts;
     closeProtectedSessionPasswordDialog: CommandData;
@@ -346,6 +352,7 @@ export type CommandMappings = {
     toggleRibbonTabNotePaths: CommandData;
     toggleRibbonTabSimilarNotes: CommandData;
     toggleRightPane: CommandData;
+    peekRightPane: CommandData;
     printActiveNote: CommandData;
     exportAsPdf: CommandData;
     showPrintPreview: PrintPreviewData;

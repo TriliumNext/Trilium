@@ -70,6 +70,57 @@
     display: block;
 }
 
+/* ---------- Click-to-play facade ----------
+   Stands in for the player until the visitor clicks, so reading a shared page containing a video
+   sends no request to YouTube. The thumbnail comes from the note, not from a remote server. */
+
+.link-embed-video-facade {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    border: none;
+    background: #000;
+    cursor: pointer;
+}
+
+.link-embed-video-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.link-embed-video-play {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 68px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    transition: background-color 0.12s;
+}
+
+/* The play triangle. */
+.link-embed-video-play::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 10px 0 10px 17px;
+    border-color: transparent transparent transparent #fff;
+}
+
+.link-embed-video-facade:hover .link-embed-video-play,
+.link-embed-video-facade:focus-visible .link-embed-video-play {
+    background: #f00;
+}
+
 /* ---------- Card embed ---------- */
 
 .link-embed-card {
@@ -146,10 +197,29 @@
 }
 
 .link-embed-card-url {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     font-size: 0.78em;
     color: var(--text-menu);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 0;
     margin-top: auto;
+
+    /* The favicon keeps its size; only the site name is truncated. */
+    & > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Scaled down from the inline mention's 16px: it sits next to 0.78em text here. */
+    & .link-embed-mention-favicon {
+        width: 14px;
+        height: 14px;
+    }
+
+    & .link-embed-mention-dot {
+        width: 6px;
+        height: 6px;
+    }
 }

@@ -10,6 +10,7 @@ import type BNote from "../../becca/entities/bnote.js";
 import type TaskContext from "../task_context.js";
 import { escapeHtml,getContentDisposition } from "../utils/index.js";
 import mdService from "./markdown.js";
+import { stripListItemIds } from "./strip_list_item_ids.js";
 import { ExportFormat } from "../../meta.js";
 import { encodeBase64 } from "../utils/binary.js";
 
@@ -59,6 +60,9 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
     }
 
     if (note.type === "text") {
+        // Drop CKEditor's editor-only per-list-item bookkeeping from both HTML and Markdown output.
+        content = stripListItemIds(content);
+
         if (format === "html") {
             content = inlineAttachments(content);
 
@@ -91,10 +95,23 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
         payload = content;
         extension = "mermaid";
         mime = "text/vnd.mermaid";
+    } else if (note.type === "spreadsheet") {
+        // Lossless raw dump of the stored Univer workbook JSON — no conversion (the editor's own
+        // CSV/XLSX buttons cover interchange). `.triliumsheet` round-trips back via single import.
+        payload = content;
+        extension = "triliumsheet";
+        mime = "application/json";
     } else if (note.type === "relationMap" || note.type === "search") {
         payload = content;
         extension = "json";
         mime = "application/json";
+    } else {
+        // Any other note type: dump the raw content with a generic extension, so single-note export
+        // produces a real (if opaque) file rather than a zero-byte `.undefined`. Mirrors the `dat`
+        // fallback the zip export uses for unrecognised MIME types.
+        payload = content;
+        extension = "dat";
+        mime = note.mime || "application/octet-stream";
     }
 
     return { payload, extension, mime };

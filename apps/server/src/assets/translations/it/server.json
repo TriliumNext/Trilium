@@ -297,7 +297,7 @@
     "incorrect-totp": "Il codice TOTP è errato. Riprovare.",
     "incorrect-password": "Le credenziali sono errate. Riprovare.",
     "password": "Password",
-    "remember-me": "Ricorda l'accesso",
+    "remember-me": "Ricordami",
     "button": "Accedi",
     "sign_in_with_sso": "Accedi con {{ ssoIssuerName }}"
   },

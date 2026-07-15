@@ -19,8 +19,6 @@ export interface CKEditorApi {
     addHtmlToEditor(html: string): void;
     addIncludeNote(noteId: string, boxSize?: BoxSize): void;
     addImage(noteId: string): Promise<void>;
-    addLinkEmbed(metadata: EmbedMetadata): void;
-    addLinkMention(metadata: EmbedMetadata): void;
 }
 
 interface CKEditorWithWatchdogProps extends Pick<HTMLProps<HTMLDivElement>, "className" | "tabIndex"> {
@@ -144,38 +142,6 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                 const src = `api/images/${note.noteId}/${encodedTitle}`;
 
                 editor?.execute("insertImage", { source: src });
-            });
-        },
-        addLinkEmbed(metadata: EmbedMetadata) {
-            const editor = watchdogRef.current?.editor;
-            if (!editor) return;
-
-            editor.model.change((writer) => {
-                editor.model.insertContent(
-                    writer.createElement("linkEmbed", {
-                        url: metadata.url,
-                        embedType: metadata.embedType,
-                        title: metadata.title,
-                        description: metadata.description,
-                        favicon: metadata.favicon,
-                        siteName: metadata.siteName,
-                        image: metadata.image
-                    })
-                );
-            });
-        },
-        addLinkMention(metadata: EmbedMetadata) {
-            const editor = watchdogRef.current?.editor;
-            if (!editor) return;
-
-            editor.model.change((writer) => {
-                editor.model.insertContent(
-                    writer.createElement("linkMention", {
-                        url: metadata.url,
-                        title: metadata.title,
-                        favicon: metadata.favicon
-                    })
-                );
             });
         },
     }));

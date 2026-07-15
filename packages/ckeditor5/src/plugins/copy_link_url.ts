@@ -1,5 +1,33 @@
-import { ButtonView, Plugin } from "ckeditor5";
+import { ButtonView, type Editor, type Locale, Plugin } from "ckeditor5";
 import copyIcon from "../icons/copy.svg?raw";
+
+/**
+ * Builds a "Copy URL" toolbar button that copies `getUrl()` to the clipboard via
+ * the host-provided `clipboard.copy` callback (cross-browser fallback + toast).
+ * Shared by the default link toolbar and the link-embed widget toolbar.
+ */
+export function createCopyUrlButton(editor: Editor, locale: Locale, getUrl: () => string | null | undefined): ButtonView {
+    const button = new ButtonView(locale);
+    button.set({
+        label: translate(editor, "link.copy_url"),
+        icon: copyIcon,
+        tooltip: true
+    });
+
+    button.on("execute", () => {
+        const url = getUrl();
+        if (typeof url === "string" && url) {
+            editor.config.get("clipboard")?.copy?.(url);
+        }
+    });
+
+    return button;
+}
+
+function translate(editor: Editor, key: string) {
+    const translateFn = editor.config.get("translate") as ((key: string) => string) | undefined;
+    return translateFn ? translateFn(key) : key;
+}
 
 /**
  * Adds a "Copy URL" button to the link balloon toolbar, placed right after the URL preview.
@@ -11,28 +39,9 @@ export default class CopyLinkUrlButton extends Plugin {
     init() {
         const editor = this.editor;
 
-        editor.ui.componentFactory.add("copyLinkUrl", (locale) => {
-            const button = new ButtonView(locale);
-            button.set({
-                label: this._translate("link.copy_url"),
-                icon: copyIcon,
-                tooltip: true
-            });
-
-            this.listenTo(button, "execute", () => {
-                const href = editor.commands.get("link")?.value;
-                if (typeof href === "string" && href) {
-                    editor.config.get("clipboard")?.copy?.(href);
-                }
-            });
-
-            return button;
-        });
-    }
-
-    private _translate(key: string) {
-        const translate = this.editor.config.get("translate") as ((key: string) => string) | undefined;
-        return translate ? translate(key) : key;
+        editor.ui.componentFactory.add("copyLinkUrl", (locale) =>
+            createCopyUrlButton(editor, locale, () => editor.commands.get("link")?.value as string | null | undefined)
+        );
     }
 
 }

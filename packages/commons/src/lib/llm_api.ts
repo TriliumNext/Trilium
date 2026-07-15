@@ -124,6 +124,8 @@ export interface LlmModelInfo {
     costMultiplier?: number;
     /** Maximum context window size in tokens */
     contextWindow?: number;
+    /** Whether usage is covered by a subscription plan rather than metered per token */
+    isSubscription?: boolean;
 }
 
 /**

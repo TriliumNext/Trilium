@@ -5,7 +5,12 @@ import * as yauzl from "yauzl";
 import { createWriteStream } from "fs";
 import { pipeline } from "stream/promises";
 const version = packageJson.devDependencies["pdfjs-dist"];
-const url = `https://github.com/mozilla/pdf.js/releases/download/v${version}/pdfjs-${version}-dist.zip`;
+// The legacy build is functionally identical to the modern one but bundles core-js polyfills
+// for the newest JS APIs (Map.getOrInsertComputed, Math.sumPrecise, ...). The modern build
+// uses them unguarded and requires browsers only a few months old (Chrome 145+/Safari 26.2+),
+// while the legacy build is supported down to Chrome 125/Safari 18. Keep in sync with the
+// legacy library copied in scripts/build.ts.
+const url = `https://github.com/mozilla/pdf.js/releases/download/v${version}/pdfjs-${version}-legacy-dist.zip`;
 
 const FILES_TO_COPY = [
     "web/images/",

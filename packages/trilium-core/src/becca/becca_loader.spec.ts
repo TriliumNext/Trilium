@@ -150,6 +150,35 @@ describe("becca_loader", () => {
         });
     });
 
+    describe("LEAVE_PROTECTED_SESSION listener", () => {
+        it("reloads becca from disk, purging decrypted titles from memory and the flat-text index", () => {
+            // Simulate the post-unlock state: a protected note whose plaintext title lives
+            // only in becca memory (on disk the title is ciphertext, here it has no row at all).
+            const note = new BNote();
+            note.updateFromRow({
+                noteId: "loaderLeaveProtected",
+                title: "swordfish plaintext",
+                isProtected: true,
+                type: "text",
+                mime: "text/html",
+                blobId: ""
+            });
+            note.init();
+            note.isDecrypted = true;
+
+            // The flat-text search index serves the plaintext title (this is the #10115
+            // leak surface: title-word search matching protected notes without a session).
+            expect(becca.getFlatTextIndex().flatTexts.some((text) => text.includes("swordfish"))).toBe(true);
+
+            getContext().init(() => eventService.emit(eventService.LEAVE_PROTECTED_SESSION));
+
+            // Full reload from disk: the memory-only decrypted state is discarded...
+            expect(becca.getNote("loaderLeaveProtected")).toBeNull();
+            // ...and the rebuilt search index no longer matches the plaintext.
+            expect(becca.getFlatTextIndex().flatTexts.some((text) => text.includes("swordfish"))).toBe(false);
+        });
+    });
+
     describe("load()", () => {
         it("loads etapi tokens into becca", () => {
             const etapiTokenId = "loaderEtapiToken1";

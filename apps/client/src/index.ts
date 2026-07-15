@@ -105,7 +105,10 @@ function appendStylesheet(ref: StylesheetRef, opts?: { base?: boolean; theme?: b
 
 function loadIcons() {
     const styleEl = document.createElement("style");
-    styleEl.innerText = window.glob.iconPackCss;
+    // Must be textContent, not innerText: the innerText setter turns every newline into a real
+    // <br> element (one per CSS line, ~20k with several icon packs). iOS WebKit's focused-element
+    // scan walks all of them on every keyboard focus, freezing the app for seconds.
+    styleEl.textContent = window.glob.iconPackCss;
     document.head.appendChild(styleEl);
 }
 
@@ -134,6 +137,16 @@ function setBodyAttributes() {
 async function loadScripts() {
     if (!glob.dbInitialized) {
         await import("./setup.js");
+        return;
+    }
+
+    if (glob.passwordSet === false) {
+        await import("./set_password.js");
+        return;
+    }
+
+    if (glob.loggedIn === false) {
+        await import("./login.js");
         return;
     }
 

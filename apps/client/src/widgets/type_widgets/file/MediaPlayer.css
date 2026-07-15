@@ -100,3 +100,64 @@
     display: flex;
     flex-direction: column;
 }
+
+/* The compact chrome, worn by audio and video alike everywhere but the note detail: the whole control set
+   collapses to a single play / seek / volume row. A collection tile or an included note has no room for the
+   speed, skip, rotate and play-mode controls. */
+.media-compact {
+    .media-preview-controls {
+        padding: 0.5em;
+    }
+
+    .media-compact-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+
+        .play-button {
+            --icon-button-size: 36px;
+        }
+
+        /* The seek bar (plain for video, waveform for audio) takes whatever the buttons leave. */
+        .media-seekbar-row {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* A range input has an intrinsic minimum width, so without this the seek bar refuses to shrink past it
+           and runs over the volume slider in a narrow player. */
+        .media-trackbar {
+            min-width: 0;
+        }
+
+        /* The volume control holds its width; the seek bar is what gives way. */
+        .media-volume-row {
+            flex-shrink: 0;
+        }
+
+        .waveform-canvas {
+            height: 28px;
+        }
+    }
+}
+
+/* The compact audio player adds a visualizer band above that row, in place of the full player's icon. */
+.audio-preview-wrapper.media-compact {
+    .audio-preview-visualization-wrapper {
+        /* The icon this player drops was the band's only in-flow child (the canvas is absolutely positioned),
+           so without a floor the band collapses to nothing wherever the host is content-sized — a list-view
+           row, as opposed to a fixed-height grid card. It still grows to fill a taller host. */
+        min-height: 8rem;
+    }
+
+    .audio-visualizer-canvas {
+        /* No icon to sit behind, so the grid takes the whole band rather than its bottom half, inset by 12px
+           from the top and sides. The canvas is absolutely positioned, so padding on the wrapper wouldn't move
+           it — and its size has to be stated outright: it is a replaced element, for which `auto` means "use
+           the intrinsic size" rather than "stretch between the offsets". It stays anchored to the bottom
+           (`bottom: 0`), where the bars grow from. */
+        left: 12px;
+        width: calc(100% - 24px);
+        height: calc(100% - 12px);
+    }
+}

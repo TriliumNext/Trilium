@@ -142,8 +142,3 @@ iframe.pdf-view {
     background: #eee;
     border-radius: 2px;
 }
-
-.ck-content .todo-list .todo-list__label > input:before {
-    background-color: var(--background-primary);
-    border-color: var(--text-primary) !important;
-}

@@ -1074,6 +1074,13 @@ export default class FNote {
         return this.type === "code" && (this.mime === "text/markdown" || this.mime === "text/x-markdown" || this.mime === "text/x-gfm");
     }
 
+    isIconPack() {
+        // Icon-pack manifests exist both as JSON `code` notes (created manually per the docs) and as
+        // `file` notes (produced by the icon-pack builder and shipped in distributable zips). Disabled
+        // packs (#disabled:iconPack, e.g. from a safe import) still preview so the user can inspect them.
+        return (this.type === "code" || this.type === "file") && this.mime === "application/json" && this.hasLabelOrDisabled("iconPack");
+    }
+
     isTriliumScript() {
         return this.mime.startsWith("application/javascript");
     }

@@ -1,3 +1,4 @@
+import { installIosInterceptors } from "./ios-interceptors.js";
 import { attachServiceWorkerBridge, registerNativeHttpHandler, startLocalServerWorker } from "./local-bridge.js";
 
 async function waitForServiceWorkerControl(): Promise<void> {
@@ -18,7 +19,6 @@ async function waitForServiceWorkerControl(): Promise<void> {
         );
     }
 
-    // If already controlling, we're good
     if (navigator.serviceWorker.controller) {
         console.log("[Bootstrap] Service worker already controlling");
         return;
@@ -26,29 +26,17 @@ async function waitForServiceWorkerControl(): Promise<void> {
 
     console.log("[Bootstrap] Waiting for service worker to take control...");
 
-    // Register service worker
     await navigator.serviceWorker.register("./sw.js", { scope: "/" });
-
-    // Wait for it to be ready (installed + activated)
     await navigator.serviceWorker.ready;
 
-    // Check if we're now controlling
     if (navigator.serviceWorker.controller) {
         console.log("[Bootstrap] Service worker now controlling");
         return;
     }
 
-    // If not controlling yet, we need to reload the page for SW to take control
-    // This is standard PWA behavior on first install
     console.log("[Bootstrap] Service worker installed but not controlling yet - reloading page");
-
-    // Wait a tiny bit for SW to fully activate
     await new Promise(resolve => setTimeout(resolve, 100));
-
-    // Reload to let SW take control
     window.location.reload();
-
-    // Throw to stop execution (page will reload)
     throw new Error("Reloading for service worker activation");
 }
 
@@ -67,18 +55,20 @@ async function bootstrap() {
         // 1) Start local worker ASAP (so /bootstrap is fast)
         startLocalServerWorker();
 
-        // 2) Bridge SW -> local worker
-        attachServiceWorkerBridge();
-
-        // 3) Wait for service worker to control the page (may reload on first install)
-        await waitForServiceWorkerControl();
+        // iOS Capacitor loads on the capacitor:// scheme, where WebKit rejects
+        // service worker registration. Fall back to in-page request interceptors
+        // that route API calls straight to the local SQLite worker; everywhere
+        // else (Android https, web) the service worker handles this.
+        if (location.protocol === "capacitor:") {
+            installIosInterceptors();
+        } else {
+            attachServiceWorkerBridge();
+            await waitForServiceWorkerControl();
+        }
 
         await loadScripts();
     } catch (err) {
-        // If error is from reload, it will stop here (page reloads)
-        // Otherwise, show error to user
         if (err instanceof Error && err.message.includes("Reloading")) {
-            // Page is reloading, do nothing
             return;
         }
 

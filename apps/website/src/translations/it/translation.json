@@ -31,8 +31,6 @@
         "sync_content": "Utilizza un'istanza self-hosted o cloud per sincronizzare facilmente le tue note su più dispositivi e accedervi dal tuo cellulare utilizzando una PWA.",
         "protected_notes_title": "Note protette",
         "protected_notes_content": "Proteggi le informazioni personali sensibili crittografando le note e bloccandole dietro una sessione protetta da password.",
-        "jump_to_title": "Ricerca rapida e comandi",
-        "jump_to_content": "Passa rapidamente alle note o ai comandi dell'interfaccia utente in tutta la gerarchia cercando il loro titolo, con corrispondenza approssimativa per tenere conto di errori di battitura o lievi differenze.",
         "search_title": "Ricerca avanzata",
         "search_content": "Oppure cerca del testo all'interno delle note e restringi la ricerca filtrando per nota principale o per profondità.",
         "web_clipper_title": "Web clipper",
@@ -51,19 +49,7 @@
         "mermaid_description": "Crea diagrammi come diagrammi di flusso, diagrammi di classe e sequenza, diagrammi di Gantt e molti altri, utilizzando la sintassi Mermaid.",
         "mindmap_title": "Mappe mentali",
         "mindmap_description": "Organizza i tuoi pensieri visivamente o fai una sessione di brainstorming.",
-        "others_list": "e altri: <0>mappa delle note</0>, <1>mappa delle relazioni</1>, <2>ricerche salvate</2>, <3>renderizza nota</3> e <4>visualizzazioni web</4>.",
         "title": "Diversi modi per rappresentare le tue informazioni"
-    },
-    "extensibility_benefits": {
-        "title": "Condivisione ed estensibilità",
-        "import_export_title": "Importazione/esportazione",
-        "import_export_description": "Interagisci facilmente con altre applicazioni utilizzando i formati Markdown, ENEX e OML.",
-        "share_title": "Condividi note sul web",
-        "share_description": "Se disponi di un server, puoi utilizzarlo per condividere una parte delle tue note con altre persone.",
-        "scripting_title": "Scripting avanzato",
-        "scripting_description": "Crea le tue integrazioni all'interno di Trilium con widget personalizzati o logica lato server.",
-        "api_title": "REST API",
-        "api_description": "Interagisci con Trilium a livello di programmazione utilizzando la sua API REST integrata."
     },
     "collections": {
         "calendar_title": "Calendario",
@@ -190,8 +176,7 @@
     "download_helper_server_hosted": {
         "title": "Hosting a pagamento",
         "description": "Trilium Notes è ospitato su PikaPods, un servizio a pagamento che consente un facile accesso e una semplice gestione. Non è direttamente affiliato al team Trilium.",
-        "download_pikapod": "Configurazione su PikaPods",
-        "download_triliumcc": "In alternativa, consultare trilium.cc"
+        "download_pikapod": "Configurazione su PikaPods"
     },
     "header": {
         "get-started": "Inizia",

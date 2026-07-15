@@ -5,6 +5,7 @@ export default class DesktopPlatformProvider implements PlatformProvider {
     readonly isElectron = true;
     readonly isMac = process.platform === "darwin";
     readonly isWindows = process.platform === "win32";
+    readonly isLinux = process.platform === "linux";
 
     crash(message: string): void {
         electron.dialog.showErrorBox(t("modals.error_title"), message);

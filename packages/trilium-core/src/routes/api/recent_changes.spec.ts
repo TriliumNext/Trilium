@@ -87,6 +87,40 @@ describe("Recent changes API (core)", () => {
         expect(deletedEntries.every((change) => change.canBeUndeleted === true)).toBe(true);
     });
 
+    describe("deletedOnly filter", () => {
+        it("returns only deleted notes when deletedOnly=true", async () => {
+            const live = await createTextNote(api, { title: "Live for deletedOnly" });
+            const { noteId: deletedId } = await createTextNote(api, { title: "Deleted for deletedOnly" });
+            const del = await api.delete(`/api/notes/${deletedId}`, {
+                query: { taskId: "recent-changes-deletedOnly", last: "true" }
+            });
+            expect(del.status).toBe(204);
+
+            const res = await api.get<RecentChangeRow[]>("/api/recent-changes/root", {
+                query: { deletedOnly: "true" }
+            });
+
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBeGreaterThan(0);
+            // Every returned change is for a deleted note...
+            expect(res.body.every((change) => !!change.current_isDeleted)).toBe(true);
+            // ...the deleted note is present, and the live one is filtered out.
+            expect(res.body.some((change) => change.noteId === deletedId)).toBe(true);
+            expect(res.body.some((change) => change.noteId === live.noteId)).toBe(false);
+            // Each deleted note appears exactly once (only its deletion point, not creation/revisions).
+            expect(res.body.filter((change) => change.noteId === deletedId)).toHaveLength(1);
+        });
+
+        it("includes live notes when deletedOnly is not set", async () => {
+            const { noteId } = await createTextNote(api, { title: "Live by default" });
+
+            const res = await api.get<RecentChangeRow[]>("/api/recent-changes/root");
+
+            expect(res.status).toBe(200);
+            expect(res.body.some((change) => change.noteId === noteId && !change.current_isDeleted)).toBe(true);
+        });
+    });
+
     it("returns an empty list for a non-existent ancestor", async () => {
         const res = await api.get<RecentChangeRow[]>("/api/recent-changes/missingAncestor123");
 

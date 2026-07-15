@@ -600,4 +600,92 @@ describe("LinkEmbedToolbar", () => {
         // undefined, so `mode?.label ?? value` returns "custom-unknown-mode".
         expect(dropdown.buttonView.label).toBe("custom-unknown-mode");
     });
+
+    // -----------------------------------------------------------------------
+    // The balloon's other items: open-link, copy-URL and unlink
+    // -----------------------------------------------------------------------
+
+    describe("link, copy and unlink buttons", () => {
+        const URL = "https://example.com/page";
+        let copy: ReturnType<typeof vi.fn>;
+
+        beforeEach(async () => {
+            copy = vi.fn();
+            // The copy button reaches the host through these two config entries, which the editor
+            // config type does not declare (the host sets them the same way, via a cast).
+            const hostConfig = {
+                clipboard: { copy },
+                translate: (key: string) => `translated:${key}`
+            } as unknown as Parameters<typeof createTestEditor>[1];
+
+            editor = await createTestEditor([Essentials, Paragraph, LinkEmbed, LinkEmbedToolbar], hostConfig);
+        });
+
+        function selectLinkMention() {
+            setModelData(editor.model, `<paragraph>[<linkMention url="${URL}" title="T"></linkMention>]</paragraph>`);
+        }
+
+        function createButton(name: string) {
+            return editor.ui.componentFactory.create(name) as unknown as ToolbarButton;
+        }
+
+        it("linkEmbedLink is an <a target=_blank> bound to the selected widget's URL", () => {
+            const button = createButton("linkEmbedLink");
+            button.render();
+
+            // Nothing selected: the command exposes no URL, so the button is inert.
+            expect(button.isEnabled).toBe(false);
+            expect(button.label).toBeUndefined();
+            expect(button.href).toBeUndefined();
+
+            selectLinkMention();
+
+            expect(button.isEnabled).toBe(true);
+            expect(button.label).toBe(URL);
+            expect(button.href).toBe(URL);
+
+            // Rendered as a real anchor so a click opens the page in a new tab, reusing
+            // CKEditor's own link-toolbar styling.
+            expect(button.element?.tagName).toBe("A");
+            expect(button.element?.getAttribute("href")).toBe(URL);
+            expect(button.element?.getAttribute("target")).toBe("_blank");
+            expect(button.element?.getAttribute("rel")).toBe("noopener noreferrer");
+            expect(button.element?.classList.contains("ck-link-toolbar__preview")).toBe(true);
+        });
+
+        it("linkEmbedCopyUrl copies the selected widget's URL through the host clipboard", () => {
+            const button = createButton("linkEmbedCopyUrl");
+            expect(button.label).toBe("translated:link.copy_url");
+
+            // With nothing selected there is no URL, so nothing is copied.
+            button.fire("execute");
+            expect(copy).not.toHaveBeenCalled();
+
+            selectLinkMention();
+            button.fire("execute");
+            expect(copy).toHaveBeenCalledWith(URL);
+        });
+
+        it("linkEmbedUnlink is enabled only for a selected widget and unlinks it", () => {
+            const button = createButton("linkEmbedUnlink");
+            expect(button.isEnabled).toBe(false);
+
+            selectLinkMention();
+            expect(button.isEnabled).toBe(true);
+
+            button.fire("execute");
+
+            // The widget is gone, leaving the bare URL as plain text.
+            expect(editor.getData()).toBe(`<p>${URL}</p>`);
+        });
+    });
 });
+
+type ToolbarButton = {
+    isEnabled: boolean;
+    label?: string;
+    href?: string;
+    element?: HTMLElement | null;
+    render(): void;
+    fire(evt: string): void;
+};

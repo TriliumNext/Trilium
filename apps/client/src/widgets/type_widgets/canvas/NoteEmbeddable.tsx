@@ -30,7 +30,7 @@ export default function NoteEmbeddable({ noteId }: { noteId: string }) {
                 return;
             }
 
-            const { $renderedContent } = await content_renderer.getRenderedContent(note, { interactive: true });
+            const { $renderedContent } = await content_renderer.getRenderedContent(note, { interactive: true, mediaEnvironment: "embedded" });
             if (cancelled) {
                 // We were unmounted while rendering; tear down what was just mounted.
                 content_renderer.disposeInteractiveContent($renderedContent);

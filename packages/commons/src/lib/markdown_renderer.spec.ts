@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CustomMarkdownRenderer, demoteHeadings, extractCodeBlocks, renderToHtml } from "./markdown_renderer.js";
-import { DEFAULT_TASK_STATES, DONE_TASK_STATE, NONE_TASK_STATE } from "./task_states.js";
+import { DEFAULT_TASK_STATES, DONE_TASK_STATE, NONE_TASK_STATE, type TaskStateDef } from "./task_states.js";
 
 /** Identity sanitizer so we can assert the raw rendered HTML. */
 const identity = (html: string) => html;
@@ -288,9 +288,10 @@ describe("renderToHtml", () => {
     });
 
     describe("custom task states", () => {
-        it("recognizes a custom [/] marker as a 'doing' task", () => {
+        it("recognizes a custom [/] marker as a 'doing' task and titles the <li> with the state's human name", () => {
             const html = render("- [/] x", "", { taskStates: DEFAULT_TASK_STATES });
             expect(html).toContain('data-trilium-task-state="doing"');
+            expect(html).toContain('title="Doing"');
             expect(html).toContain('<input type="checkbox"disabled="disabled">');
             expect(html).toContain('<span class="todo-list__label__description">x</span>');
             // The `[/]` marker must be stripped from the visible text.
@@ -300,13 +301,62 @@ describe("renderToHtml", () => {
         it("recognizes a custom [?] (maybe) marker", () => {
             const html = render("- [?] m", "", { taskStates: DEFAULT_TASK_STATES });
             expect(html).toContain('data-trilium-task-state="maybe"');
+            expect(html).toContain('title="Maybe"');
             expect(html).toContain('<span class="todo-list__label__description">m</span>');
         });
 
         it("recognizes a custom [-] (cancelled) marker", () => {
             const html = render("- [-] c", "", { taskStates: DEFAULT_TASK_STATES });
             expect(html).toContain('data-trilium-task-state="cancelled"');
+            expect(html).toContain('title="Cancelled"');
             expect(html).toContain('<span class="todo-list__label__description">c</span>');
+        });
+
+        it("emits no title attribute for the anchor states (native unchecked and checked)", () => {
+            // Native `[ ]` and `[x]` never carry `data-trilium-task-state` and must not
+            // carry a `title` either — the checkbox alone explains them.
+            const unchecked = render("- [ ] u", "", { taskStates: DEFAULT_TASK_STATES });
+            expect(unchecked).not.toContain(" title=");
+            const checked = render("- [x] c", "", { taskStates: DEFAULT_TASK_STATES });
+            expect(checked).not.toContain(" title=");
+        });
+
+        it("emits no title attribute for a state name the config doesn't define", () => {
+            // "shipped" is unreachable from the default markdown symbols, but a
+            // caller can still ask for it through an alternative `taskStates` list
+            // that doesn't include it. Ensure the renderer skips the title lookup
+            // rather than emitting `title="undefined"` or crashing.
+            const customStates: TaskStateDef[] = [
+                { id: "_shipped", name: "shipped", title: "Shipped", markdownSymbol: "!", isCompleted: true, icon: "bx bx-rocket" }
+            ];
+            const html = render("- [!] x", "", { taskStates: customStates });
+            expect(html).toContain('title="Shipped"'); // sanity: known state IS titled
+            // But re-rendering the same markdown against a config that doesn't
+            // include `shipped` yields no title:
+            const bareHtml = render(
+                '<ul class="todo-list"><li data-trilium-task-state="shipped">…</li></ul>',
+                "",
+                { taskStates: [] }
+            );
+            expect(bareHtml).not.toContain("title=");
+        });
+
+        it("falls back to state.name when the state's title is empty", () => {
+            const noTitleStates: TaskStateDef[] = [
+                { id: "_bare", name: "bare", title: "", markdownSymbol: "b", isCompleted: false, icon: "bx bx-x" }
+            ];
+            const html = render("- [b] x", "", { taskStates: noTitleStates });
+            expect(html).toContain('data-trilium-task-state="bare"');
+            expect(html).toContain('title="bare"'); // fell back to name
+        });
+
+        it("HTML-escapes the state title (no XSS from a malicious config)", () => {
+            const evilStates: TaskStateDef[] = [
+                { id: "_x", name: "xss", title: '<script>alert(1)</script>', markdownSymbol: "!", isCompleted: false, icon: "bx bx-x" }
+            ];
+            const html = render("- [!] x", "", { taskStates: evilStates });
+            expect(html).not.toContain("<script>");
+            expect(html).toContain('title="&lt;script&gt;alert(1)&lt;/script&gt;"');
         });
 
         it("strips the custom marker across nested tokens for a loose item", () => {
@@ -381,6 +431,56 @@ describe("renderToHtml", () => {
         it("renders a plain blockquote", () => {
             expect(render("> just quote")).toBe("<blockquote><p>just quote</p></blockquote>");
         });
+
+        it("matches the admonition type case-insensitively (Obsidian uses lowercase)", () => {
+            expect(render("> [!note]\n> body")).toBe('<aside class="admonition note"><p>body</p></aside>');
+        });
+
+        describe("Obsidian callouts (obsidian: true)", () => {
+            it("maps extended callout types to the nearest Trilium admonition type", () => {
+                const obsidian = { obsidian: true };
+                expect(render("> [!success]\n> done", "", obsidian))
+                    .toBe('<aside class="admonition tip"><p>done</p></aside>');
+                expect(render("> [!question]\n> q", "", obsidian))
+                    .toBe('<aside class="admonition tip"><p>q</p></aside>');
+                expect(render("> [!danger]\n> bad", "", obsidian))
+                    .toBe('<aside class="admonition caution"><p>bad</p></aside>');
+                expect(render("> [!info]\n> i", "", obsidian))
+                    .toBe('<aside class="admonition note"><p>i</p></aside>');
+                expect(render("> [!example]\n> e", "", obsidian))
+                    .toBe('<aside class="admonition important"><p>e</p></aside>');
+            });
+
+            it("renders an inline custom title as a bold lead paragraph", () => {
+                expect(render("> [!note] Custom Title\n> body", "", { obsidian: true }))
+                    .toBe('<aside class="admonition note"><p><strong>Custom Title</strong></p><p>body</p></aside>');
+            });
+
+            it("supports a title separated from the body by a blank line", () => {
+                expect(render("> [!tip] Heads up\n>\n> body", "", { obsidian: true }))
+                    .toBe('<aside class="admonition tip"><p><strong>Heads up</strong></p><p>body</p></aside>');
+            });
+
+            it("drops the fold marker (+/-) while keeping the title", () => {
+                expect(render("> [!note]- Folded\n> body", "", { obsidian: true }))
+                    .toBe('<aside class="admonition note"><p><strong>Folded</strong></p><p>body</p></aside>');
+                expect(render("> [!note]+\n> body", "", { obsidian: true }))
+                    .toBe('<aside class="admonition note"><p>body</p></aside>');
+            });
+
+            it("keeps an unknown callout type as a plain blockquote", () => {
+                const html = render("> [!frobnicate]\n> body", "", { obsidian: true });
+                expect(html).toContain("<blockquote>");
+                expect(html).not.toContain("admonition");
+            });
+        });
+
+        it("does not treat extended Obsidian callout types as admonitions without the obsidian flag", () => {
+            const html = render("> [!success]\n> x");
+            expect(html).toContain("<blockquote>");
+            expect(html).not.toContain("admonition");
+            expect(html).toContain("[!success]");
+        });
     });
 
     describe("formulas", () => {
@@ -452,6 +552,44 @@ describe("renderToHtml", () => {
         it("renders a transclusion with a custom src format", () => {
             const html = render("![[abc123]]", "", { transclusion: { formatSrc: (id) => `/api/images/${id}` } });
             expect(html).toBe('<p><img src="/api/images/abc123"></p>');
+        });
+    });
+
+    describe("Obsidian syntax (obsidian option)", () => {
+        it("renders ==text== as a background-coloured span only when the obsidian flag is set", () => {
+            expect(render("==hi==", "", { obsidian: true }))
+                .toBe('<p><span style="background-color:hsl(60, 75%, 60%);">hi</span></p>');
+            // Off by default so generic Markdown is untouched.
+            expect(render("==hi==")).toBe("<p>==hi==</p>");
+        });
+
+        it("parses inner markdown inside a highlight", () => {
+            expect(render("==**bold**==", "", { obsidian: true }))
+                .toBe('<p><span style="background-color:hsl(60, 75%, 60%);"><strong>bold</strong></span></p>');
+        });
+
+        it("leaves ==== and spaced == as literal text", () => {
+            expect(render("====", "", { obsidian: true })).toBe("<p>====</p>");
+            expect(render("a == b", "", { obsidian: true })).toBe("<p>a == b</p>");
+        });
+
+        it("does not highlight == inside inline code", () => {
+            expect(render("`==x==`", "", { obsidian: true }))
+                .toBe('<p><code spellcheck="false">==x==</code></p>');
+        });
+
+        it("turns %% comment %% into an HTML comment only when the obsidian flag is set", () => {
+            expect(render("a %%secret%% b", "", { obsidian: true })).toBe("<p>a <!-- secret --> b</p>");
+            // Off by default so generic Markdown is untouched.
+            expect(render("a %%secret%% b")).toBe("<p>a %%secret%% b</p>");
+        });
+
+        it("handles a single-block comment spanning lines", () => {
+            expect(render("%%\nhidden\nnote\n%%", "", { obsidian: true })).toBe("<p><!-- hidden\nnote --></p>");
+        });
+
+        it("neutralises a comment terminator in the body so it cannot break out", () => {
+            expect(render("%%a-->b%%", "", { obsidian: true })).toBe("<p><!-- a-- >b --></p>");
         });
     });
 

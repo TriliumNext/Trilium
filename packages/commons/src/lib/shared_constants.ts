@@ -50,3 +50,17 @@ export const SHELL_OPEN_EXTERNAL_PROTOCOLS = ALLOWED_PROTOCOLS.filter(
 // Shared between the client (<webview partition=...>) and the desktop main
 // process (session.fromPartition() for permission handlers).
 export const WEBVIEW_SESSION_PARTITION = "persist:webview";
+
+// Default per-device blob size limit (bytes) applied on mobile (Capacitor). Blobs whose content
+// exceeds this are not pulled from the sync server — the client stores an empty-content stub and
+// shows an "open on server" placeholder — to bound the peak memory of the WASM/native heap during
+// sync. Other platforms default to 0 (no limit). See `syncMaxBlobContentSize`.
+export const MOBILE_SYNC_MAX_BLOB_CONTENT_SIZE = 20 * 1024 * 1024;
+
+// blobId of genuinely empty content, i.e. hashedBlobId(""). A blob row that carries empty content
+// but a *different* blobId is a sync stub: its real content was withheld by the sync server because
+// it exceeded the client's `syncMaxBlobContentSize`. Because `blobId` is content-derived, this
+// distinguishes a withheld blob from a legitimately empty one with no extra stored state. The value
+// is hard-coded (hashedBlobId needs the platform crypto provider, unavailable at module load in this
+// browser-pure package) and guarded by a unit test asserting it equals hashedBlobId("").
+export const EMPTY_BLOB_ID = "z4PhNX7vuL3xVChQ1m2A";

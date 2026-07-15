@@ -20,9 +20,11 @@ async function setupNewDocument(req: Request) {
 }
 
 function setupSyncFromServer(req: Request): Promise<SetupSyncFromServerResponse> {
-    const { syncServerHost, syncProxy, password } = req.body;
+    const { syncServerHost, syncProxy, password, syncMaxBlobContentSize } = req.body;
 
-    return setupService.setupSyncFromSyncServer(syncServerHost, syncProxy, password);
+    const maxBlobContentSize = Number.isFinite(syncMaxBlobContentSize) && syncMaxBlobContentSize > 0 ? syncMaxBlobContentSize : 0;
+
+    return setupService.setupSyncFromSyncServer(syncServerHost, syncProxy, password, maxBlobContentSize);
 }
 
 function saveSyncSeed(req: Request) {

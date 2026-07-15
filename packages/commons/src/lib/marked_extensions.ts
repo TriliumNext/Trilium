@@ -1,4 +1,4 @@
-import type { TokenizerAndRendererExtension } from "marked";
+import type { Token, TokenizerAndRendererExtension } from "marked";
 
 /**
  * Escapes HTML special characters to prevent XSS attacks.
@@ -96,6 +96,85 @@ export function createTransclusionExtension(options: TransclusionOptions = {}): 
         renderer(token) {
             const noteId = token.href as string;
             return `<img src="${escapeHtml(formatSrc(noteId))}">`;
+        }
+    };
+}
+
+/**
+ * Background colour for imported highlights: CKEditor's default yellow highlight marker
+ * (Obsidian highlights carry no colour of their own). Matches the `<span
+ * style="background-color:…">` markup CKEditor's Font Background Color feature emits, so the
+ * imported highlight round-trips as an editable highlight.
+ */
+const HIGHLIGHT_BACKGROUND = "hsl(60, 75%, 60%)";
+
+/**
+ * Creates an extension for Obsidian-style highlights: `==text==` → a background-coloured
+ * `<span>`.
+ *
+ * Inner markdown is parsed so `==**bold**==` highlights bold text. A non-space is required
+ * just inside each `==` (like emphasis), so `a == b` and `====` stay literal.
+ */
+export function createHighlightExtension(): TokenizerAndRendererExtension {
+    return {
+        name: "highlight",
+        level: "inline",
+
+        start(src: string) {
+            return src.indexOf("==");
+        },
+
+        tokenizer(src) {
+            const match = /^==(?=\S)([\s\S]*?\S)==/.exec(src);
+            if (match) {
+                return {
+                    type: "highlight",
+                    raw: match[0],
+                    text: match[1],
+                    tokens: this.lexer.inlineTokens(match[1])
+                };
+            }
+        },
+
+        renderer(token) {
+            return `<span style="background-color:${HIGHLIGHT_BACKGROUND};">${this.parser.parseInline(token.tokens as Token[])}</span>`;
+        }
+    };
+}
+
+/**
+ * Creates an extension for Obsidian comments: `%% comment %%` → an HTML comment.
+ *
+ * Obsidian comments are hidden from the reader. They're emitted as real HTML comments
+ * (rather than left as literal `%%…%%` text) so the authoring intent survives in the raw
+ * HTML — note that Trilium's sanitizer and the CKEditor editor will subsequently drop
+ * them, which is fine. Both the inline (`%%hidden%%`) and single-block (`%%\n…\n%%`)
+ * forms are matched; any comment terminator in the body is neutralised so it can't break
+ * out of the comment.
+ */
+export function createCommentExtension(): TokenizerAndRendererExtension {
+    return {
+        name: "obsidianComment",
+        level: "inline",
+
+        start(src: string) {
+            return src.indexOf("%%");
+        },
+
+        tokenizer(src) {
+            const match = /^%%([\s\S]*?)%%/.exec(src);
+            if (match) {
+                return {
+                    type: "obsidianComment",
+                    raw: match[0],
+                    text: match[1]
+                };
+            }
+        },
+
+        renderer(token) {
+            const body = (token.text as string).replace(/--!?>/g, "-- >").trim();
+            return `<!-- ${body} -->`;
         }
     };
 }

@@ -4,7 +4,7 @@
 
 ## Tray icon
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:332/71;" src="Tray icon &amp; automatic star.png" width="332" height="71"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:332/71;" src="Tray icon &amp; automatic startup_image.png" width="332" height="71"></figure>
 
 The desktop application has native integration with the system tray on all operating systems.
 

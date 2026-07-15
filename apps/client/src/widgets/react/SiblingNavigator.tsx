@@ -86,27 +86,33 @@ export default function SiblingNavigator({ note, noteContext, viewScope, sibling
     const previousText = navigation ? t(previousTooltipI18nKey, { title: navigation.previousTitle }) : "";
     const nextText = navigation ? t(nextTooltipI18nKey, { title: navigation.nextTitle }) : "";
     // Memoize so the bootstrap tooltip is only recreated when the target's name actually changes.
-    const previousConfig = useMemo(() => ({ title: previousText, placement: "bottom" as const }), [ previousText ]);
-    const nextConfig = useMemo(() => ({ title: nextText, placement: "bottom" as const }), [ nextText ]);
+    const previousConfig = useMemo(() => ({ title: previousText, placement: "top" as const }), [ previousText ]);
+    const nextConfig = useMemo(() => ({ title: nextText, placement: "top" as const }), [ nextText ]);
     useStaticTooltip(previousRef, previousConfig);
     useStaticTooltip(nextRef, nextConfig);
 
     if (!navigation) return null;
 
     return (
-        <div className="sibling-navigator">
+        <div className="sibling-navigator tn-overlay-control-group">
             <button
                 ref={previousRef}
                 type="button"
-                className="icon-action bx bx-chevron-left"
+                className="tn-overlay-icon-button bx bx-chevron-left"
                 aria-label={previousText}
                 onClick={() => navigation.navigatePrevious()}
             />
-            <span className="sibling-navigator-index">{navigation.index}/{navigation.total}</span>
+
+            <button
+                className="sibling-navigator-index tn-overlay-text-button"
+                disabled>
+                {navigation.index}/{navigation.total}
+            </button>
+            
             <button
                 ref={nextRef}
                 type="button"
-                className="icon-action bx bx-chevron-right"
+                className="tn-overlay-icon-button bx bx-chevron-right"
                 aria-label={nextText}
                 onClick={() => navigation.navigateNext()}
             />

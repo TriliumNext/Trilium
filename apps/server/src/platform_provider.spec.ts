@@ -13,6 +13,7 @@ describe("ServerPlatformProvider", () => {
         expect(provider.isElectron).toBe(!!process.versions["electron"]);
         expect(provider.isMac).toBe(process.platform === "darwin");
         expect(provider.isWindows).toBe(process.platform === "win32");
+        expect(provider.isLinux).toBe(process.platform === "linux");
     });
 
     it("reads environment variables via getEnv", () => {

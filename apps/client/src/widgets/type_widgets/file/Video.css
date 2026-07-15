@@ -1,10 +1,16 @@
-.note-detail-file > .video-preview-wrapper {
+/* Not scoped to the note detail: the same player is also mounted into rendered content (collection
+   previews, included notes) by the content renderer. */
+.video-preview-wrapper {
     width: 100%;
     height: 100%;
     position: relative;
     background-color: black;    
 
     .video-preview {
+        /* A <video> is inline-level by default, so it sits on the text baseline and the line box reserves a
+           few pixels of descender space below it — which, at height: 100%, overflows the wrapper and puts a
+           scrollbar on the nearest scrolling ancestor (an include-note box). A block box has no baseline. */
+        display: block;
         background-color: black;
         width: 100%;
         height: 100%;

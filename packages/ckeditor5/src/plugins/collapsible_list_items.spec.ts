@@ -193,11 +193,7 @@ describe("CollapsibleListItems", () => {
             return;
         }
 
-        const rect = parentLi.getBoundingClientRect();
-        const fontSize = parseFloat(getComputedStyle(parentLi).fontSize);
-        // CSS: inset-inline-start: -2.1em; width/height: 0.4em; top: 0.45em → aim at its centre.
-        const x = Math.round(rect.left - 1.9 * fontSize);
-        const y = Math.round(rect.top + 0.65 * fontSize);
+        const { x, y } = arrowCentre(parentLi);
 
         // Click whatever element actually sits at the arrow's coordinates — the real target,
         // not a forced <li> — so a mismatch between where the arrow paints and what the
@@ -206,6 +202,49 @@ describe("CollapsibleListItems", () => {
         hit?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
 
         expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+    });
+
+    it("fills the arrow into a circle while the pointer is on it", async () => {
+        const editorElement = getEditorElement(editor);
+        editorElement.style.marginLeft = "160px";
+        editorElement.style.marginTop = "60px";
+
+        const parentLi = editor.editing.view.getDomRoot()?.querySelector("li");
+        expect(parentLi).toBeTruthy();
+        if (!parentLi) {
+            return;
+        }
+
+        const arrow = arrowCentre(parentLi);
+        const rect = parentLi.getBoundingClientRect();
+
+        mouseMoveAt(arrow.x, arrow.y);
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(true);
+        // The arrow is a boxicons glyph, not a hand-drawn shape.
+        expect(getComputedStyle(parentLi, "::before").fontFamily).toBe("boxicons");
+        // Polled: the circle fades in, so its colour only settles once the transition ends.
+        await expect.poll(() => getComputedStyle(parentLi, "::before").backgroundColor)
+            .toBe("rgba(128, 128, 128, 0.25)");
+
+        // Over the item's own text the pointer is no longer on the arrow.
+        mouseMoveAt(Math.round(rect.left + 5), arrow.y);
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(false);
+        await expect.poll(() => getComputedStyle(parentLi, "::before").backgroundColor)
+            .toBe("rgba(0, 0, 0, 0)");
+
+        // A held button is a drag (selecting text), not a hover.
+        mouseMoveAt(arrow.x, arrow.y, 1);
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(false);
+
+        // Leaving the editable ends the mouse moves, so the arrow is unlit on the way out —
+        // but moving on to another element inside it is left to the mousemove handler.
+        mouseMoveAt(arrow.x, arrow.y);
+        const otherItem = editor.editing.view.getDomRoot()?.querySelectorAll("li")[1];
+        parentLi.dispatchEvent(new MouseEvent("mouseout", { bubbles: true, relatedTarget: otherItem }));
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(true);
+
+        parentLi.dispatchEvent(new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body }));
+        expect(parentLi.classList.contains("trilium-list-arrow-hovered")).toBe(false);
     });
 
     it("toggles a to-do list item when its gutter arrow is clicked", () => {
@@ -223,10 +262,7 @@ describe("CollapsibleListItems", () => {
             return;
         }
 
-        const rect = parentLi.getBoundingClientRect();
-        const fontSize = parseFloat(getComputedStyle(parentLi).fontSize);
-        const x = Math.round(rect.left - 1.9 * fontSize);
-        const y = Math.round(rect.top + 0.65 * fontSize);
+        const { x, y } = arrowCentre(parentLi);
 
         const hit = document.elementFromPoint(x, y);
         hit?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
@@ -450,6 +486,28 @@ function pressCtrlEnter(editor: ClassicEditor): void {
         ctrlKey: true,
         preventDefault: () => {}
     });
+}
+
+/**
+ * On-screen centre of the arrow drawn next to a list item, read back from the stylesheet rather
+ * than restated here: the arrow is a pseudo-element (so it has no rect of its own), but its
+ * resolved box is offset from the item, and `translateY(-50%)` puts its centre exactly at `top`.
+ * Insets differ per list type — to-do items have no marker to clear — so hardcoding one would
+ * make these tests aim at the wrong spot as soon as the CSS moves.
+ */
+function arrowCentre(item: HTMLElement): { x: number; y: number } {
+    const rect = item.getBoundingClientRect();
+    const arrow = getComputedStyle(item, "::before");
+
+    return {
+        x: Math.round(rect.left + parseFloat(arrow.left) + parseFloat(arrow.width) / 2),
+        y: Math.round(rect.top + parseFloat(arrow.top))
+    };
+}
+
+function mouseMoveAt(clientX: number, clientY: number, buttons = 0): void {
+    document.elementFromPoint(clientX, clientY)
+        ?.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX, clientY, buttons }));
 }
 
 function mouseDownAt(item: HTMLElement, offsetX: number): void {

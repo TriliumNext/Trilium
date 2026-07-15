@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head><title>pdfjs-viewer e2e harness</title></head>
+<body style="margin:0">
+<!-- Stub of the Trilium client: hosts the viewer in an iframe and speaks the
+     postMessage protocol of apps/client/src/widgets/type_widgets/file/Pdf.tsx. -->
+<iframe id="viewer" src="web/viewer.html?v=e2e&file=/sample.pdf&locale=en&sidebar=1&editable=1&toolbar=1"
+        style="width:1200px;height:850px;border:none"></iframe>
+<script>
+    window.harness = {
+        /** Number of pdfjs-viewer-document-modified messages received. */
+        modifiedCount: 0,
+        /** Byte arrays received via pdfjs-viewer-blob, in order. */
+        blobs: []
+    };
+
+    const iframe = document.getElementById("viewer");
+    iframe.addEventListener("load", () => {
+        iframe.contentWindow.TRILIUM_NOTE_ID = "note1";
+        iframe.contentWindow.TRILIUM_NTX_ID = "ntx1";
+        iframe.contentWindow.TRILIUM_VIEW_HISTORY_STORE = {};
+    });
+
+    window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (!data || !data.type) return;
+        if (data.type === "pdfjs-viewer-document-modified") {
+            window.harness.modifiedCount++;
+        }
+        if (data.type === "pdfjs-viewer-blob") {
+            window.harness.blobs.push(Array.from(new Uint8Array(data.data)));
+        }
+    });
+
+    /** Asks the viewer for the current document bytes, like the spaced-update save does. */
+    window.requestBlob = () => {
+        iframe.contentWindow.postMessage({ type: "trilium-request-blob" }, window.location.origin);
+    };
+</script>
+</body>
+</html>

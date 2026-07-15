@@ -152,7 +152,22 @@ const config: ForgeConfig = {
         {
             name: "@electron-forge/maker-dmg",
             config: {
-                icon: path.join(APP_ICON_PATH, isNightly ? "icon-dev.icns" : "icon.icns")
+                icon: path.join(APP_ICON_PATH, isNightly ? "icon-dev.icns" : "icon.icns"),
+                // Branded Finder-window background (generated from dmg-background/background.html).
+                // appdmg auto-uses the sibling background@2x.png for Retina.
+                background: path.join(ELECTRON_FORGE_DIR, "dmg-background", isNightly ? "background-dev.png" : "background.png"),
+                iconSize: 128,
+                additionalDMGOptions: {
+                    window: { size: { width: 640, height: 400 } }
+                },
+                // Icon CENTERS in Finder's .DS_Store Iloc coordinate space: top-left origin,
+                // y increasing downward. y=182 centers the icon + its caption pair vertically in
+                // the window (there is no baked banner above them). Verify on a macOS build
+                // (appdmg is darwin-only).
+                contents: (opts: { appPath: string }) => [
+                    { x: 180, y: 182, type: "file", path: opts.appPath },
+                    { x: 460, y: 182, type: "link", path: "/Applications" }
+                ]
             }
         },
         {

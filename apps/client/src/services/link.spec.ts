@@ -674,6 +674,25 @@ describe("module-level click handlers", () => {
         $a.remove();
     });
 
+    it("leaves navigation to content that handles its own clicks (no-link-navigation)", () => {
+        // A media player inside a collection card: the card is itself a link (it wires its own click straight
+        // to goToLink), so pressing play in the player must not also open the note.
+        const $card = $("<div class='block-link' data-href='#root/aaaaaaaaaaaa'></div>");
+        $card.append("<div class='no-link-navigation'><button class='play'></button></div>");
+        $("body").append($card);
+
+        const clickOn = (el: HTMLElement | undefined) =>
+            linkService.goToLink($.Event("click", { which: 1, target: el }) as unknown as JQuery.ClickEvent);
+
+        clickOn($card.find(".play")[0]);
+        expect(openInCurrentNoteContext).not.toHaveBeenCalled();
+
+        // A click on the card outside that content still navigates.
+        clickOn($card[0]);
+        expect(openInCurrentNoteContext).toHaveBeenCalled();
+        $card.remove();
+    });
+
     it("opens the link context menu on contextmenu of an internal link", () => {
         const $a = $("<a href='#root/aaaaaaaaaaaa'>link</a>");
         $("body").append($a);

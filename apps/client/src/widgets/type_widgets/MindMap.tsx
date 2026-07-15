@@ -4,7 +4,7 @@ import "./MindMap.css";
 
 // allow node-menu plugin css to be bundled by webpack
 import nodeMenu from "@mind-elixir/node-menu";
-import { snapdom } from "@zumer/snapdom";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { t } from "i18next";
 import { DARK_THEME, default as VanillaMindElixir, MindElixirData, MindElixirInstance, Operation, THEME as LIGHT_THEME } from "mind-elixir";
 import type { LangPack } from "mind-elixir/i18n";
@@ -12,9 +12,11 @@ import { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { sanitizeNoteContentHtml } from "../../services/sanitize_content";
+import toast from "../../services/toast";
 import utils from "../../services/utils";
 import { useColorScheme, useEditorSpacedUpdate, useEffectiveReadOnly, useSyncedRef, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
 import { refToJQuerySelector } from "../react/react_utils";
+import { renderMindMapPreviewSvg } from "./helpers/mind_map_export";
 import { TypeWidgetProps } from "./type_widget";
 
 const NEW_TOPIC_NAME = "";
@@ -102,24 +104,14 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
         getData: async () => {
             if (!apiRef.current) return;
 
-            const result = await snapdom(apiRef.current.nodes, {
-                backgroundColor: "transparent",
-                scale: 2
-            });
-
-            // a data URL in the format: "data:image/svg+xml;charset=utf-8,<url-encoded-svg>"
-            // We need to extract the content after the comma and decode the URL encoding (%3C to <, %20 to space, etc.)
-            // to get raw SVG content that Trilium's backend can store as an attachment
-            const svgContent = decodeURIComponent(result.url.split(',')[1]);
-
             return {
                 content: apiRef.current.getDataString(),
                 attachments: [
                     {
                         role: "image",
-                        title: "mindmap-export.svg",
+                        title: NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap,
                         mime: "image/svg+xml",
-                        content: svgContent,
+                        content: await renderMindMapPreviewSvg(apiRef.current),
                         position: 0
                     }
                 ]
@@ -152,13 +144,17 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     // Export as PNG or SVG.
     useTriliumEvents([ "exportSvg", "exportPng" ], async ({ ntxId: eventNtxId }, eventName) => {
         if (eventNtxId !== ntxId || !apiRef.current) return;
-        const nodes = apiRef.current.nodes;
-        if (eventName === "exportSvg") {
-            await utils.downloadAsSvg(note.title, nodes);
-        } else {
-            await utils.downloadAsPng(note.title, nodes);
+        try {
+            const svg = await renderMindMapPreviewSvg(apiRef.current);
+            if (eventName === "exportSvg") {
+                utils.downloadSvg(note.title, svg);
+            } else {
+                await utils.downloadSvgAsPng(note.title, svg);
+            }
+        } catch (e) {
+            console.warn(e);
+            toast.showError(t(eventName === "exportSvg" ? "svg.export_to_svg" : "svg.export_to_png"));
         }
-
     });
 
     const onKeyDown = useCallback((e: KeyboardEvent) => {

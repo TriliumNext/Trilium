@@ -1,0 +1,22 @@
+.launcher-button.color-scheme-switcher {
+    &.unsupported {
+        opacity: 0.5;
+        cursor: default;
+    }
+}
+
+.tooltip.color-scheme-switcher-tooltip {
+    .tooltip-inner {
+        text-align: center;
+    }
+
+    .mode {
+        display: block;
+        padding-bottom: 4px;
+        font-weight: 600;
+    }
+
+    .hint {
+        opacity: 0.75;
+    }
+}

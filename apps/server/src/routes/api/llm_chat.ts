@@ -1,10 +1,10 @@
-import type { LlmMessage } from "@triliumnext/commons";
+import type { LlmMessage, LlmStreamChunk } from "@triliumnext/commons";
+import { getLog } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import { generateChatTitle } from "../../services/llm/chat_title.js";
 import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
 import { streamToChunks } from "../../services/llm/stream.js";
-import { getLog } from "@triliumnext/core";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
 interface ChatRequest {
@@ -51,7 +51,6 @@ async function streamChat(req: Request, res: Response) {
         }
 
         const provider = getProviderByType(config.provider || "anthropic");
-        const result = provider.chat(messages, config);
 
         // Get pricing and display name for the model
         const modelId = config.model || provider.getAvailableModels().find(m => m.isDefault)?.id;
@@ -62,7 +61,20 @@ async function streamChat(req: Request, res: Response) {
 
         const pricing = provider.getModelPricing(modelId);
         const modelDisplayName = provider.getAvailableModels().find(m => m.id === modelId)?.name || modelId;
-        for await (const chunk of streamToChunks(result, { model: modelDisplayName, pricing })) {
+
+        let chunks: AsyncIterable<LlmStreamChunk>;
+        if (provider.chatChunks) {
+            // Chunk-native provider (e.g. Claude Agent): it owns its own agentic
+            // loop and produces LlmStreamChunks directly. Abort the underlying
+            // agent turn when the client disconnects mid-stream.
+            const abortController = new AbortController();
+            res.on("close", () => abortController.abort());
+            chunks = provider.chatChunks(messages, config, abortController.signal);
+        } else {
+            chunks = streamToChunks(provider.chat(messages, config), { model: modelDisplayName, pricing });
+        }
+
+        for await (const chunk of chunks) {
             if (chunk.type === "error") {
                 getLog().error(`LLM chat stream error (model ${modelDisplayName}): ${chunk.error}`);
             }

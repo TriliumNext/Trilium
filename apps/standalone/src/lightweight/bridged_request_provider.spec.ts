@@ -165,6 +165,29 @@ describe("BridgedRequestProvider.exec", () => {
         respond({ status: 200, body: JSON.stringify({ ok: true }) });
         await expect(promise).resolves.toEqual({ ok: true });
     });
+
+    it("resolves via the structured-clone data field without re-parsing a body", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.exec<{ ok: boolean }>({ method: "GET", url: "http://x" } as ExecOpts);
+        // Main thread delivers the already-parsed object as `data` (no `body`) — the worker
+        // must use it directly rather than JSON.parse-ing a string.
+        respond({ status: 201, data: { ok: true } });
+        await expect(promise).resolves.toEqual({ ok: true });
+    });
+
+    it("reads the error message from a structured-clone data object on a non-2xx response", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.exec({ method: "GET", url: "http://x" } as ExecOpts);
+        respond({ status: 500, data: { message: "boom via data" } });
+        await expect(promise).rejects.toThrow("500 GET http://x: boom via data");
+    });
+
+    it("falls back to an empty message when the structured-clone error data has no message field", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.exec({ method: "GET", url: "http://x" } as ExecOpts);
+        respond({ status: 500, data: { code: "X" } });
+        await expect(promise).rejects.toThrow("500 GET http://x:");
+    });
 });
 
 describe("BridgedRequestProvider.getImage", () => {

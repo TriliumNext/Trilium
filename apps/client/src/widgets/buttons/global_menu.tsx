@@ -53,6 +53,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
 
             <MenuItem command="openNewWindow" icon="bx bx-window-open" text={t("global_menu.open_new_window")} />
             <MenuItem command="showShareSubtree" icon="bx bx-share-alt" text={t("global_menu.show_shared_notes_subtree")} />
+            <MenuItem command="showDeletedNotes" icon="bx bx-trash-alt" text={t("global_menu.show_deleted_notes")} />
             <FormDropdownDivider />
 
             <ZoomControls parentComponent={parentComponent} />

@@ -547,6 +547,85 @@ wardley-beta
     Water -> Kettle
     Kettle -> Power
 `
+    },
+    {
+        name: t("mermaid.sample_cynefin"),
+        content: `\
+cynefin-beta
+  title Incident Response
+
+  complex
+    "Investigate root cause"
+    "Run chaos experiment"
+
+  complicated
+    "Analyze performance data"
+    "Expert review needed"
+
+  clear
+    "Restart service"
+    "Apply known fix"
+
+  chaotic
+    "Page on-call immediately"
+
+  confusion
+    "Unknown failure mode"
+`
+    },
+    {
+        name: t("mermaid.sample_swimlane"),
+        content: `\
+swimlane-beta LR
+  subgraph Customer
+    request[Request service]
+    receive[Receive update]
+  end
+
+  subgraph Support
+    triage[Triage request]
+    answer[Send answer]
+  end
+
+  subgraph Engineering
+    investigate[Investigate issue]
+    fix[Prepare fix]
+  end
+
+  request --> triage
+  triage -->|Known issue| answer
+  triage -->|Needs code change| investigate
+  investigate --> fix --> answer
+  answer --> receive
+`
+    },
+    {
+        name: t("mermaid.sample_railroad"),
+        content: `\
+railroad-beta
+title Expression Grammar
+
+expression = sequence(
+    nonterminal("term"),
+    zeroOrMore(sequence(
+        choice(terminal("+"), terminal("-")),
+        nonterminal("term")
+    ))
+) ;
+term = sequence(
+    nonterminal("factor"),
+    zeroOrMore(sequence(
+        choice(terminal("*"), terminal("/")),
+        nonterminal("factor")
+    ))
+) ;
+factor = choice(
+    nonterminal("number"),
+    sequence(terminal("("), nonterminal("expression"), terminal(")"))
+) ;
+number = oneOrMore(nonterminal("digit")) ;
+digit = choice(terminal("0"), terminal("1"), terminal("2"), terminal("3"), terminal("4"), terminal("5"), terminal("6"), terminal("7"), terminal("8"), terminal("9")) ;
+`
     }
 ];
 

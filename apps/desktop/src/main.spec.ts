@@ -1,3 +1,4 @@
+import { join as pathJoin } from "node:path";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Handler = (...args: unknown[]) => unknown;
@@ -31,10 +32,14 @@ function makeDeferred<T>() {
 const h = vi.hoisted(() => ({
     // Captured app.on(...) handlers.
     appOn: new Map<string, Handler>(),
+    // Captured ipcMain.on / ipcMain.handle registrations.
+    ipcOn: new Map<string, Handler>(),
+    ipcHandle: new Map<string, Handler>(),
     // Captured stdout/stderr "error" handlers.
     streamErrorHandlers: [] as Handler[],
     // Captured commandLine.appendSwitch calls.
     appendSwitch: vi.fn(),
+    onBeforeSendHeaders: vi.fn(),
     setName: vi.fn(),
     quit: vi.fn(),
     exit: vi.fn(),
@@ -94,11 +99,26 @@ vi.mock("electron", () => {
     const globalShortcut = {
         unregisterAll: (...a: unknown[]) => h.unregisterAll(...a)
     };
+    const ipcMain = {
+        on: (channel: string, fn: Handler) => h.ipcOn.set(channel, fn),
+        handle: (channel: string, fn: Handler) => h.ipcHandle.set(channel, fn)
+    };
+    // onReady() installs the embed-Referer hook, whose default argument reads
+    // `electron.session.defaultSession` (see services/embed_referer.ts).
+    const session = {
+        defaultSession: {
+            webRequest: {
+                onBeforeSendHeaders: (...a: unknown[]) => h.onBeforeSendHeaders(...a)
+            }
+        }
+    };
     return {
         app: appObj,
         BrowserWindow,
         globalShortcut,
-        default: { app: appObj, BrowserWindow, globalShortcut }
+        ipcMain,
+        session,
+        default: { app: appObj, BrowserWindow, globalShortcut, ipcMain, session }
     };
 });
 
@@ -612,7 +632,10 @@ describe("getUserData()", () => {
     it("joins appData with name-port when the env var is unset", async () => {
         delete process.env.TRILIUM_ELECTRON_DATA_DIR;
         const { getUserData } = await importMain();
-        expect(getUserData()).toBe("/appData/Trilium-37740");
+        // Use `path.join` so the assertion matches the platform-native separator
+        // — `getUserData` calls `join(app.getPath("appData"), ...)`, so on Windows
+        // it produces `\appData\Trilium-37740` and on POSIX `/appData/Trilium-37740`.
+        expect(getUserData()).toBe(pathJoin("/appData", "Trilium-37740"));
     });
 });
 

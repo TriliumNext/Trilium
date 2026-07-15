@@ -10,5 +10,5 @@ To activate either one of them, there are three variants:
     *   This will prompt a system dialog confirming the change. Note that scripts could potentially call this confirmation dialog as well, make sure to accept it only if enabling any of these features is required.
     *   The settings page will be available for the server-side as well, but the options need to be manually toggled using the other mechanisms described here.
     *   This works by setting a separate configuration file in the <a class="reference-link" href="../Installation%20%26%20Setup/Data%20directory.md">Data directory</a>.
-*   In [config.ini](../Advanced%20Usage/Configuration%20\(config.ini%20or%20e.md), set the corresponding option under the `Security` group.
+*   In [config.ini](../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md), set the corresponding option under the `Security` group.
 *   Or use environment variables (e.g. `TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true`).

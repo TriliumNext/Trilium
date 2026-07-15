@@ -39,6 +39,7 @@ interface FakeSession {
     availableSpellCheckerLanguages: string[];
     setSpellCheckerLanguages: ReturnType<typeof vi.fn>;
     setSpellCheckerEnabled: ReturnType<typeof vi.fn>;
+    on: ReturnType<typeof vi.fn>;
 }
 
 class FakeWebContents {
@@ -63,7 +64,8 @@ class FakeWebContents {
         clearCache: vi.fn(() => Promise.resolve()),
         availableSpellCheckerLanguages: ["en-US", "de"],
         setSpellCheckerLanguages: vi.fn(),
-        setSpellCheckerEnabled: vi.fn()
+        setSpellCheckerEnabled: vi.fn(),
+        on: vi.fn()
     };
     public navigationHistory = {
         canGoBack: vi.fn(() => true),
@@ -524,7 +526,8 @@ describe("window service", () => {
                 clearCache: vi.fn(() => Promise.resolve()),
                 availableSpellCheckerLanguages: ["en-US"],
                 setSpellCheckerLanguages: vi.fn(),
-                setSpellCheckerEnabled: vi.fn()
+                setSpellCheckerEnabled: vi.fn(),
+                on: vi.fn()
             };
             state.sharedSession = shared;
 

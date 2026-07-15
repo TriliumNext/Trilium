@@ -1,14 +1,3 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # ट्रिलियम नोट्स
 
 ![GitHub प्रायोजक](https://img.shields.io/github/sponsors/eliandoran)
@@ -25,11 +14,11 @@
 | [Chinese (Traditional Han script)](./README-ZH_TW.md) |
 [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
 [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
-[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
-[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
-| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
-[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
-[Uyghur](./README-ug.md)
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 ट्रिलियम नोट्स (Trilium Notes) एक मुफ़्त और ओपन-सोर्स, क्रॉस-प्लेटफ़ॉर्म
@@ -102,12 +91,13 @@
   with self-hosted sync server
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
-* [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
-  (publishing) notes to public internet
+* पब्लिक इंटरनेट पर नोट्स की
+  [शेयरिंग](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (पब्लिशिंग)
 * प्रति-नोट granularity के साथ मजबूत [नोट
   एन्क्रिप्शन](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
-* Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
-  "canvas")
+* डायग्राम्स स्केच करना, [एक्सकैलिड्रॉ](https://excalidraw.com/) पर आधारित (नोट
+  टाइप "कैनवास")
 * [Relation
   maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
   [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
@@ -214,12 +204,33 @@ access the mobile interface of a server installation (see below).
 See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
 information on mobile app support.
 
+#### TriliumDroid
+
 If you prefer a native Android app, you can use
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
 Report bugs and missing features at [their
 repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
 disable automatic updates on your server installation (see below) when using
 TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+
+#### Pocket Trilium
+
+If you want a full-featured native Android app, check out [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
+instance on your phone, supports full offline use, and allows you to sync with
+your server.
+
+#### Trinote
+
+If you want a native iOS app, you can use
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
+client for your self-hosted Trilium / TriliumNext server. It lets you browse and
+organize your note tree, search for notes on the server, read and edit all note
+types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
+available and editable offline. Here's the
+[repo](https://github.com/StephenArg/Trinote) if you're interested in
+contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
+server if you have any feedback or suggestions you want to discuss.
 
 ### Server
 

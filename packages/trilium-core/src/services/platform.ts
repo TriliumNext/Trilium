@@ -8,6 +8,7 @@ export interface PlatformProvider {
     readonly isElectron: boolean;
     readonly isMac: boolean;
     readonly isWindows: boolean;
+    readonly isLinux: boolean;
     /**
      * Lets a platform decide whether an HTTP-server startup error should be
      * swallowed (logged-only) rather than treated as fatal. The desktop uses

@@ -1,10 +1,13 @@
 import "../theme/collapsible_list_items.css";
 
-import { Command, ListEditing, MouseObserver, Plugin, type Editor, type ModelElement, type ModelNode, type ModelWriter, type ViewDocumentMouseDownEvent, type ViewElement } from "ckeditor5";
+import { Command, DomEventObserver, ListEditing, MouseObserver, Plugin, type Editor, type ModelElement, type ModelNode, type ModelWriter, type ViewDocumentDomEventData, type ViewDocumentMouseDownEvent, type ViewDocumentMouseOutEvent, type ViewElement } from "ckeditor5";
 
 export const LIST_COLLAPSED_ATTRIBUTE = "listCollapsed";
 
 const COLLAPSED_DATA_ATTRIBUTE = "data-trilium-collapsed";
+
+/** Marks the item whose arrow the pointer is on, so the stylesheet can give it a filled circle. */
+const ARROW_HOVERED_CLASS = "trilium-list-arrow-hovered";
 
 /**
  * Allows collapsing/expanding nested list items, similar to outliners such as Dynalist or Roam.
@@ -14,6 +17,8 @@ const COLLAPSED_DATA_ATTRIBUTE = "data-trilium-collapsed";
  * CSS scoped to the editing view, so read-only and shared note rendering stay fully expanded.
  */
 export default class CollapsibleListItems extends Plugin {
+
+    private _hoveredArrowItem: ViewElement | null = null;
 
     static get requires() {
         return [ListEditing] as const;
@@ -47,6 +52,7 @@ export default class CollapsibleListItems extends Plugin {
         });
 
         this._enableToggleOnGutterClick();
+        this._enableArrowHoverFeedback();
         this._enableToggleOnKeystroke();
         this._enableAutoExpand();
     }
@@ -71,8 +77,7 @@ export default class CollapsibleListItems extends Plugin {
 
     /**
      * Toggles the collapsed state when the arrow rendered in the gutter next to a list item is
-     * clicked. The arrow is the item's `::before` pseudo-element placed outside its border box,
-     * so a mouse event left of the `<li>` box that still targets the `<li>` is an arrow click.
+     * clicked.
      */
     private _enableToggleOnGutterClick() {
         const editor = this.editor;
@@ -81,21 +86,8 @@ export default class CollapsibleListItems extends Plugin {
         view.addObserver(MouseObserver);
 
         this.listenTo<ViewDocumentMouseDownEvent>(view.document, "mousedown", (evt, data) => {
-            const viewItem = data.target;
-            if (!viewItem || !viewItem.is("element", "li")) {
-                return;
-            }
-
-            const domItem = data.domTarget as HTMLElement;
-            const rect = domItem.getBoundingClientRect();
-            const isRtl = domItem.ownerDocument.defaultView?.getComputedStyle(domItem).direction === "rtl";
-            const isGutterClick = isRtl ? data.domEvent.clientX > rect.right : data.domEvent.clientX < rect.left;
-            if (!isGutterClick) {
-                return;
-            }
-
-            const block = getListBlockFromViewListItem(editor, viewItem);
-            if (!block || !hasNestedItems(block)) {
+            const block = getArrowBlockAtPointer(editor, data);
+            if (!block) {
                 return;
             }
 
@@ -103,6 +95,52 @@ export default class CollapsibleListItems extends Plugin {
             data.preventDefault();
             evt.stop();
             toggleCollapsed(editor, block);
+        });
+    }
+
+    /**
+     * Fills the arrow into a circle while the pointer rests on it. CSS cannot match a hovered
+     * pseudo-element, so the item carries a class instead, set from the same gutter geometry the
+     * click handler uses — pointer feedback and click target can therefore never drift apart.
+     */
+    private _enableArrowHoverFeedback() {
+        const editor = this.editor;
+        const view = editor.editing.view;
+
+        view.addObserver(MouseMoveObserver);
+
+        this.listenTo<ViewDocumentMouseMoveEvent>(view.document, "mousemove", (_evt, data) => {
+            // A held button means a drag (selecting text); leave the view untouched until it ends.
+            const onArrow = data.domEvent.buttons === 0 && !!getArrowBlockAtPointer(editor, data);
+            this._setArrowHovered(onArrow ? data.target : null);
+        });
+
+        // Leaving the editable ends the stream of mouse moves, so the flag is dropped here
+        // instead — otherwise an arrow the pointer left sideways would stay lit.
+        this.listenTo<ViewDocumentMouseOutEvent>(view.document, "mouseout", (_evt, data) => {
+            const domRoot = view.getDomRoot();
+            const movedTo = data.domEvent.relatedTarget;
+            if (!domRoot || !(movedTo instanceof Node) || !domRoot.contains(movedTo)) {
+                this._setArrowHovered(null);
+            }
+        });
+    }
+
+    private _setArrowHovered(viewItem: ViewElement | null) {
+        if (viewItem === this._hoveredArrowItem) {
+            return;
+        }
+
+        const previousItem = this._hoveredArrowItem;
+        this._hoveredArrowItem = viewItem;
+
+        this.editor.editing.view.change((writer) => {
+            if (previousItem) {
+                writer.removeClass(ARROW_HOVERED_CLASS, previousItem);
+            }
+            if (viewItem) {
+                writer.addClass(ARROW_HOVERED_CLASS, viewItem);
+            }
         });
     }
 
@@ -201,6 +239,45 @@ export class ToggleListCollapseCommand extends Command {
         }
     }
 
+}
+
+/** `MouseObserver` covers mousedown/up/over/out, but not the moves the hover feedback needs. */
+class MouseMoveObserver extends DomEventObserver<"mousemove"> {
+
+    public readonly domEventType = ["mousemove"] as const;
+
+    public onDomEvent(domEvent: MouseEvent) {
+        this.fire(domEvent.type, domEvent);
+    }
+
+}
+
+type ViewDocumentMouseMoveEvent = {
+    name: "mousemove";
+    args: [data: ViewDocumentDomEventData<MouseEvent>];
+};
+
+/**
+ * The collapsible list item whose arrow the pointer is on, if any.
+ *
+ * The arrow is the item's `::before` pseudo-element, laid out entirely outside the `<li>`'s
+ * border box, so it is the only thing that can be hit at an x beyond the box while the event
+ * still targets the `<li>` — whichever side the gutter is on (it follows the text direction).
+ */
+function getArrowBlockAtPointer(editor: Editor, data: ViewDocumentDomEventData<MouseEvent>): ModelElement | null {
+    const viewItem = data.target;
+    if (!viewItem || !viewItem.is("element", "li")) {
+        return null;
+    }
+
+    const rect = (data.domTarget as HTMLElement).getBoundingClientRect();
+    const { clientX } = data.domEvent;
+    if (clientX >= rect.left && clientX <= rect.right) {
+        return null;
+    }
+
+    const block = getListBlockFromViewListItem(editor, viewItem);
+    return block && hasNestedItems(block) ? block : null;
 }
 
 function toggleCollapsed(editor: Editor, block: ModelElement): void {

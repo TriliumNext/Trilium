@@ -427,7 +427,7 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObjec
         const sourceNoteId = idToNoteId(connection.source.id);
         const result = await mapApiRef.current.connect(name, sourceNoteId, targetNoteId);
         if (!result) {
-            await dialog.info(t("relation_map.connection_exists", { name }));
+            toast.showError(t("relation_map.connection_exists", { name }));
             jsPlumbApiRef.current?.deleteConnection(connection);
         }
     }, []);

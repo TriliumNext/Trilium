@@ -3,9 +3,8 @@ import "./File.css";
 import { t } from "../../services/i18n";
 import Alert from "../react/Alert";
 import { useNoteBlob } from "../react/hooks";
-import AudioPreview from "./file/Audio";
+import MediaPreview from "./file/MediaPreview";
 import PdfPreview from "./file/Pdf";
-import VideoPreview from "./file/Video";
 import { TypeWidgetProps } from "./type_widget";
 
 const TEXT_MAX_NUM_CHARS = 5000;
@@ -17,10 +16,8 @@ export default function FileTypeWidget({ note, parentComponent, noteContext, isV
         return <TextPreview content={blob.content} />;
     } else if (note.mime === "application/pdf") {
         return noteContext && <PdfPreview blob={blob} note={note} componentId={parentComponent?.componentId} noteContext={noteContext} />;
-    } else if (note.mime.startsWith("video/")) {
-        return <VideoPreview note={note} noteContext={noteContext} isVisible={isVisible} />;
-    } else if (note.mime.startsWith("audio/")) {
-        return <AudioPreview note={note} noteContext={noteContext} isVisible={isVisible} />;
+    } else if (note.mime.startsWith("video/") || note.mime.startsWith("audio/")) {
+        return <MediaPreview entity={note} environment="standalone" noteContext={noteContext} isVisible={isVisible} />;
     }
     return <NoPreview />;
 

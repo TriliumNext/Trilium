@@ -1,7 +1,7 @@
-import { cls, options as optionService } from "@triliumnext/core";
+import { cls, options as optionService, sql_init } from "@triliumnext/core";
 import type { Application } from "express";
 import supertest from "supertest";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { type ApiTestContext, bootLoggedInApp, createTextNote } from "../../spec/support/internal_api.js";
 import port from "../services/port.js";
@@ -36,6 +36,19 @@ describe("Route transport & middleware", () => {
         it("treats ?extraWindow as a non-main window", async () => {
             const res = await supertest(app).get("/bootstrap?extraWindow=1").expect(200);
             expect(res.body.isMainWindow).toBe(false);
+        });
+
+        it("includes platform in the setup (uninitialized DB) payload", async () => {
+            // The setup window relies on `glob.platform` to apply the
+            // platform-darwin drag-region CSS on macOS.
+            const spy = vi.spyOn(sql_init, "isDbInitialized").mockReturnValue(false);
+            try {
+                const res = await supertest(app).get("/bootstrap").expect(200);
+                expect(res.body.dbInitialized).toBe(false);
+                expect(res.body.platform).toBe(process.platform);
+            } finally {
+                spy.mockRestore();
+            }
         });
     });
 

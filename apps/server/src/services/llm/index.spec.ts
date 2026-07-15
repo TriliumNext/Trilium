@@ -30,6 +30,7 @@ function makeProviderMock(tag: string) {
 vi.mock("./providers/anthropic.js", () => ({ AnthropicProvider: makeProviderMock("anthropic") }));
 vi.mock("./providers/openai.js", () => ({ OpenAiProvider: makeProviderMock("openai") }));
 vi.mock("./providers/google.js", () => ({ GoogleProvider: makeProviderMock("google") }));
+vi.mock("./providers/claude_agent.js", () => ({ ClaudeAgentProvider: makeProviderMock("claude-agent") }));
 
 import {
     clearProviderCache,
@@ -76,11 +77,14 @@ describe("llm/index provider registry", () => {
             setProviders([
                 { id: "a", name: "A", provider: "anthropic", apiKey: "ka" },
                 { id: "o", name: "O", provider: "openai", apiKey: "ko" },
-                { id: "g", name: "G", provider: "google", apiKey: "kg" }
+                { id: "g", name: "G", provider: "google", apiKey: "kg" },
+                { id: "c", name: "C", provider: "claude-agent", apiKey: "" }
             ]);
             expect((getProvider("a").constructor as any).lastArgs).toEqual(["ka", undefined]);
             expect((getProvider("o").constructor as any).lastArgs).toEqual(["ko", undefined]);
             expect((getProvider("g").constructor as any).lastArgs).toEqual(["kg", undefined]);
+            // The subscription provider takes no constructor args — auth is Claude Code's.
+            expect((getProvider("c").constructor as any).lastArgs).toEqual([]);
         });
 
         it("throws when no providers are configured (null and empty array)", () => {

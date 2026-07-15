@@ -1,16 +1,17 @@
 /* Previous/next sibling navigation pinned to the top-left corner of the viewport. */
 .sibling-navigator {
+    --overlay-button-icon-size: 20px;
+
     position: absolute;
-    top: 10px;
+    bottom: 10px;
     inset-inline-start: 10px;
     z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+
+    .sibling-navigator-index {
+        min-width: 5em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
 }
 
-.sibling-navigator-index {
-    min-width: 3em;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-}
+

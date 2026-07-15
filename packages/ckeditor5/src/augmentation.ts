@@ -13,6 +13,13 @@ declare global {
         favicon?: string;
         siteName?: string;
         image?: string;
+        /**
+         * True when the host could not read the page (network error, bot challenge, non-HTML
+         * response, or a page with no title of its own) and the fields above hold nothing but a
+         * hostname-derived placeholder. Mirrors `LinkEmbedMetadata.unresolved` in
+         * `@triliumnext/commons`, which is what the host actually returns.
+         */
+        unresolved?: boolean;
     }
 
     interface EditorComponent extends Component {

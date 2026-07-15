@@ -509,6 +509,156 @@ describe("renderSpreadsheetToXlsx", () => {
             expect(wb.getWorksheet("Sheet1")?.getImages().length).toBe(0);
         });
     });
+
+    describe("data validation", () => {
+        function validationWorkbook(rules: unknown[]): string {
+            const sheetId = "s1";
+            return JSON.stringify({
+                version: 1,
+                workbook: {
+                    sheetOrder: [sheetId],
+                    styles: {},
+                    sheets: {
+                        [sheetId]: {
+                            id: sheetId,
+                            name: "Sheet1",
+                            hidden: 0,
+                            mergeData: [],
+                            cellData: { "0": { "0": { v: "x" } } },
+                            rowData: {},
+                            columnData: {}
+                        }
+                    },
+                    resources: [
+                        { name: "SHEET_DATA_VALIDATION_PLUGIN", data: JSON.stringify({ [sheetId]: rules }) }
+                    ]
+                }
+            });
+        }
+
+        it("writes an inline dropdown list as an Excel inline list over its range", async () => {
+            const ws = (await roundTrip(validationWorkbook([
+                {
+                    uid: "dv1",
+                    type: "list",
+                    formula1: JSON.stringify(["Low", "Medium", "High"]),
+                    ranges: [{ startRow: 1, endRow: 2, startColumn: 3, endColumn: 4 }]
+                }
+            ]))).getWorksheet("Sheet1");
+
+            const dv = ws?.getCell("D2").dataValidation;
+            expect(dv?.type).toBe("list");
+            // Excel inline list: the options comma-joined and wrapped in double quotes.
+            expect(dv?.formulae).toEqual(['"Low,Medium,High"']);
+            // The whole 2x2 rectangle carries the rule.
+            expect(ws?.getCell("E3").dataValidation?.type).toBe("list");
+        });
+
+        it("writes a numeric constraint with its operator and both bounds", async () => {
+            const ws = (await roundTrip(validationWorkbook([
+                {
+                    uid: "dv1",
+                    type: "whole",
+                    operator: "between",
+                    formula1: "1",
+                    formula2: "10",
+                    ranges: [{ startRow: 1, endRow: 1, startColumn: 1, endColumn: 1 }]
+                }
+            ]))).getWorksheet("Sheet1");
+
+            const dv = ws?.getCell("B2").dataValidation;
+            expect(dv?.type).toBe("whole");
+            expect(dv?.operator).toBe("between");
+            // exceljs coerces the numeric formula text back to numbers on read.
+            expect(dv?.formulae).toEqual([1, 10]);
+        });
+
+        it("passes a range-referenced list through as a formula, not an inline list", async () => {
+            const ws = (await roundTrip(validationWorkbook([
+                {
+                    uid: "dv1",
+                    type: "list",
+                    formula1: "$A$1:$A$3",
+                    ranges: [{ startRow: 0, endRow: 0, startColumn: 2, endColumn: 2 }]
+                }
+            ]))).getWorksheet("Sheet1");
+
+            const dv = ws?.getCell("C1").dataValidation;
+            expect(dv?.type).toBe("list");
+            expect(dv?.formulae).toEqual(["$A$1:$A$3"]);
+        });
+
+        it("applies a rule with multiple ranges to each range", async () => {
+            const ws = (await roundTrip(validationWorkbook([
+                {
+                    uid: "dv1",
+                    type: "list",
+                    formula1: JSON.stringify(["a", "b"]),
+                    ranges: [
+                        { startRow: 1, endRow: 5, startColumn: 3, endColumn: 3 },
+                        { startRow: 1, endRow: 5, startColumn: 5, endColumn: 5 }
+                    ]
+                }
+            ]))).getWorksheet("Sheet1");
+
+            expect(ws?.getCell("D2").dataValidation?.type).toBe("list");
+            expect(ws?.getCell("F6").dataValidation?.type).toBe("list");
+            // A cell between the two ranges is untouched.
+            expect(ws?.getCell("E3").dataValidation).toBeUndefined();
+        });
+
+        it("writes a custom-formula validation (a formula, no operator)", async () => {
+            const ws = (await roundTrip(validationWorkbook([
+                {
+                    uid: "dv1",
+                    type: "custom",
+                    formula1: "=B2>0",
+                    ranges: [{ startRow: 1, endRow: 1, startColumn: 1, endColumn: 1 }]
+                }
+            ]))).getWorksheet("Sheet1");
+
+            const dv = ws?.getCell("B2").dataValidation;
+            expect(dv?.type).toBe("custom");
+            expect(dv?.formulae).toEqual(["=B2>0"]);
+            expect(dv?.operator).toBeUndefined();
+        });
+
+        it("skips a list validation that has no options", async () => {
+            const ws = (await roundTrip(validationWorkbook([
+                {
+                    uid: "dv1",
+                    type: "list",
+                    ranges: [{ startRow: 0, endRow: 0, startColumn: 0, endColumn: 0 }]
+                },
+                // An option array that parses but is empty — what importing an inline list of only
+                // empty tokens (`",,"`) yields. It must be skipped, not written as an empty list.
+                {
+                    uid: "dv2",
+                    type: "list",
+                    formula1: "[]",
+                    ranges: [{ startRow: 0, endRow: 0, startColumn: 2, endColumn: 2 }]
+                }
+            ]))).getWorksheet("Sheet1");
+            expect(ws?.getCell("A1").dataValidation).toBeUndefined();
+            expect(ws?.getCell("C1").dataValidation).toBeUndefined();
+        });
+
+        it("skips a validation type Excel cannot represent", async () => {
+            const ws = (await roundTrip(validationWorkbook([
+                {
+                    uid: "dv1",
+                    type: "checkbox",
+                    ranges: [{ startRow: 0, endRow: 0, startColumn: 0, endColumn: 0 }]
+                }
+            ]))).getWorksheet("Sheet1");
+            expect(ws?.getCell("A1").dataValidation).toBeUndefined();
+        });
+
+        it("renders without error when there is no validation resource", async () => {
+            const ws = (await roundTrip(singleCellWorkbook({ v: "x" }))).getWorksheet("Sheet1");
+            expect(ws?.getCell("A1").dataValidation).toBeUndefined();
+        });
+    });
 });
 
 describe("uniqueSheetName", () => {

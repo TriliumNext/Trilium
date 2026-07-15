@@ -318,38 +318,44 @@
             height: 100%;
         }
 
-        .rendered-content:has(.file-footer) {
-            padding: 0;
-        }
-
         img {
             max-height: 220px;
             object-fit: contain;
         }
+    }
+}
 
-        .file-footer {
-            display: flex;
-            gap: 8px;
-            justify-content: space-between;
-            padding: 0;
+/* The file footer (Download / Open externally) of a note preview, in every surface that shows one: the
+   grid/list cards and the dashboard tiles. Two flat buttons splitting the card's full width, rather than the
+   default pair of solid Bootstrap pills. */
+.note-list .note-book-card .note-book-content,
+.dashboard-widget-content .note-book-content {
+    .rendered-content:has(.file-footer) {
+        padding: 0;
+    }
 
-            .btn.btn-primary {
-                flex: 1;
-                margin: 0;
-                box-shadow: unset;
-                background: transparent;
-                border: 0;
-                border-radius: 0;
-                padding: 8px;
-                color: var(--main-text-color);
+    .file-footer {
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        padding: 0;
 
-                &:hover {
-                    background: var(--more-accented-background-color);
-                }
+        .btn.btn-primary {
+            flex: 1;
+            margin: 0;
+            box-shadow: unset;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            padding: 8px;
+            color: var(--main-text-color);
 
-                &:active {
-                    transform: none;
-                }
+            &:hover {
+                background: var(--more-accented-background-color);
+            }
+
+            &:active {
+                transform: none;
             }
         }
     }

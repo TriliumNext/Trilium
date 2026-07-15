@@ -1,0 +1,18 @@
+/* Unscoped so the preview renders both in the note detail and in the read-only content renderer
+   (collection tiles, child listings), where the `.note-detail-icon-pack` ancestor is absent. */
+
+.icon-pack-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 1em;
+    overflow: auto;
+}
+
+.icon-pack-frame {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: none;
+}

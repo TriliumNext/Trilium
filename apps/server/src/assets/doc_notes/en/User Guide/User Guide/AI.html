@@ -1,8 +1,3 @@
-<aside class="admonition warning">
-  <p>This feature is currently marked as experimental. While it is functional,
-    we do expect that the user interface might change or we might add or remove
-    some features related to it.</p>
-</aside>
 <h2>History</h2>
 <h3>Removal in v0.102.0</h3>
 <p>Starting with version v0.102.0, AI/LLM integration has been removed from
@@ -45,7 +40,7 @@
     with little guidance, as the AI has been instructed in how to produce them.</p>
 </aside>
 <h2>LLM Providers</h2>
-<h3>Cloud providers</h3>
+<h3>Cloud providers using API keys</h3>
 <p>Currently, only three cloud providers are supported:</p>
 <ul>
   <li><a href="https://platform.claude.com/settings/workspaces/default/keys">Anthropic</a>
@@ -55,12 +50,53 @@
 </ul>
 <p>For all the providers, an API key is needed. Note that this is charged
   separately from the subscription you might already have (e.g. Claude Pro).
-  If that might be a problem, consider using the MCP server and connecting
-  it to your agent (e.g. Claude Code).</p>
+  If that might be a problem, consider using either a subscription provider
+  (see below) or using it externally via MCP.</p>
 <aside class="admonition note">
   <p>We don't plan to support all cloud providers, even if the library we are
     using would theoretically support them. Before opening a PR adding support
     for a different cloud provider, make sure to discuss it over GitHub discussions.</p>
+</aside>
+<h3>Subscription providers</h3>
+<aside class="admonition important">
+  <p>Subscription-based providers are still in beta. They are safe to use (they
+    won't use additional funds and respect the terms of use), but you might
+    experience small issues. Consider&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/BgmBlOIl72jZ/_help_wy8So3yZZlH9">Reporting issues</a>.</p>
+</aside>
+<p>Some cloud providers offer a subscription, which has a fixed monthly fee
+  instead of pay-per-use (unlike the API keys). Trilium v0.104.0 introduces
+  beta support for Anthropic's Claude Pro/Max subscriptions. Other subscription-based
+  providers such as ChatGPT are on the roadmap, but not yet implemented.</p>
+<p>To use a subscription:</p>
+<ol>
+  <li>First, Claude Code needs to be installed on the machine that runs Trilium.
+    So for a&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/_help_poXkQfguuA0U">Desktop Installation</a>,
+    Claude needs to be installed locally and for a&nbsp;<a class="reference-link"
+    href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/_help_WOcw2SLH6tbX">Server Installation</a>&nbsp;accessed
+    via a browser, Claude needs to be installed on the server.</li>
+  <li>Claude Code must already be authenticated. To do so, run <code spellcheck="false">claude</code> in
+    a terminal once, type <code spellcheck="false">login</code> and follow the
+    instructions.</li>
+  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em> and
+    add the Claude Code provider.</li>
+</ol>
+<p>Trilium will identify your Claude Code binary in this order:</p>
+<ul>
+  <li>By looking for a <code spellcheck="false">TRILIUM_CLAUDE_CODE_PATH</code> environment
+    variable pointing to the Claude binary. This allows overriding the path
+    if needed.</li>
+  <li>By looking for <code spellcheck="false">claude</code> in your PATH, generally
+    works in most circumstances.</li>
+</ul>
+<p>After your provider is set up, you'll benefit from the same features as
+  an API key (note tools, web search, extended thinking, image/PDF attachments,
+  streaming).</p>
+<aside class="admonition note">
+  <p>Trilium intentionally uses your Claude Code binary in order not to have
+    to package a ~250 MB client with it, but this comes at a cost: there is
+    a small risk for a version incompatibility, if the version installed locally
+    doesn't match the one expected by Trilium. Generally it's best to keep
+    both Claude Code and Trilium updated to the latest version.</p>
 </aside>
 <h3>Self-hosted providers</h3>
 <p>Since v0.104.0, self-hosted LLM providers are supported indirectly. Simply
@@ -75,14 +111,9 @@
     the response against a cloud provider (Claude Sonnet is recommended).</p>
 </aside>
 <h2>Enabling the AI integration</h2>
-<p>Because it is an experimental feature, enabling the AI integration is
-  a two-step process:</p>
-<ol>
-  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Advanced</em> and
-    check <em>AI / LLM Chat</em> in the <em>Experimental Options</em> section.</li>
-  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em> and
-    configure a new provider.</li>
-</ol>
+<p>To enable the AI integration, simply go to&nbsp;<a class="reference-link"
+  href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em> and press
+  the toggle in the top-right of the dialog and configure a provider.</p>
 <h2>Creating a new chat</h2>
 <p>There are two different chat interfaces:</p>
 <ul>

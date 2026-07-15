@@ -1,6 +1,7 @@
 import { getLog, options as optionService } from "@triliumnext/core";
 
 import { AnthropicProvider } from "./providers/anthropic.js";
+import { ClaudeAgentProvider } from "./providers/claude_agent.js";
 import { GoogleProvider } from "./providers/google.js";
 import { OpenAiProvider } from "./providers/openai.js";
 import type { LlmProvider, ModelInfo } from "./types.js";
@@ -22,7 +23,10 @@ export interface LlmProviderSetup {
 const providerFactories: Record<string, (apiKey: string, baseURL?: string) => LlmProvider> = {
     anthropic: (apiKey, baseURL) => new AnthropicProvider(apiKey, baseURL),
     openai: (apiKey, baseURL) => new OpenAiProvider(apiKey, baseURL),
-    google: (apiKey, baseURL) => new GoogleProvider(apiKey, baseURL)
+    google: (apiKey, baseURL) => new GoogleProvider(apiKey, baseURL),
+    // Claude Pro/Max subscription via the Claude Agent SDK — no API key;
+    // authentication is handled by Claude Code itself (`claude /login`).
+    "claude-agent": () => new ClaudeAgentProvider()
 };
 
 /** Cache of instantiated providers by their config ID */

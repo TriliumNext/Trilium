@@ -421,6 +421,26 @@ describe("saveLinks", () => {
         return attr;
     }
 
+    // `checkImageAttachments` exempts the canvas and spreadsheet rendered images by title, but not
+    // the mermaid and mindMap ones. That looks like an oversight until you notice `saveLinks` bails
+    // out before it for those two types, so their SVGs are never reachable by orphan erasure at all.
+    // Pinned here: if either type ever gains a `saveLinks` branch, it needs an exemption first, and
+    // this test is what will say so.
+    it.each([
+        [ "mermaid", "text/mermaid", "mermaid-export.svg", "flowchart TD\n A --> B" ],
+        [ "mindMap", "application/json", "mindmap-export.svg", `{"nodeData":{}}` ]
+    ] as const)("never schedules the %s rendered image for erasure, though nothing references it", (type, mime, title, content) => {
+        const note = buildNote({ title: "Diagram", type, mime, attachments: [{ title, role: "image", mime: "image/svg+xml" }] });
+        mockAttachmentSaves(note);
+        const [rendered] = note.getAttachments();
+
+        // The content never mentions the attachment — for a text note this would schedule erasure.
+        saveLinks(note, content);
+
+        expect(rendered.save).not.toHaveBeenCalled();
+        expect(rendered.utcDateScheduledForErasureSince).toBeFalsy();
+    });
+
     it("does not delete existing imageLink relations on markdown notes that reference images", () => {
         const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
         const targetNote = buildNote({ title: "Image Note", type: "image" });

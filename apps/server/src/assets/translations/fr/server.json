@@ -66,7 +66,8 @@
     "create-note-into": "Créer une note enfant sous la note active",
     "find-in-text": "Afficher/Masquer le panneau de recherche",
     "toggle-archived-notes": "Afficher/masquer les notes archivées dans l'arborescence des notes",
-    "save-named-revision": "Enregistrer une révision nommée de la note active"
+    "save-named-revision": "Enregistrer une révision nommée de la note active",
+    "peek-right-pane": "Afficher le panneau de droite sous forme de panneau temporaire flottant par-dessus le contenu, qui se ferme lorsqu'il perd le focus"
   },
   "login": {
     "title": "Connexion",
@@ -76,7 +77,9 @@
     "remember-me": "Se souvenir de moi",
     "button": "Connexion",
     "sign_in_with_sso": "Se connecter avec {{ ssoIssuerName }}",
-    "incorrect-totp": "TOTP incorrect. Veuillez réessayer."
+    "incorrect-totp": "TOTP incorrect. Veuillez réessayer.",
+    "sso-wrong-account": "Ce compte n'est pas celui qui est lié à cette instance Trilium. Connectez-vous avec le compte lié.",
+    "sso-not-enrolled": "La connexion unique n'est pas encore configurée. Connectez-vous d'abord avec votre mot de passe, puis associez votre compte dans les paramètres."
   },
   "set_password": {
     "title": "Définir un mot de passe",
@@ -165,7 +168,7 @@
     "code-notes-title": "Notes de code",
     "images-title": "Médias",
     "spellcheck-title": "Correcteur orthographique",
-    "password-title": "Mot de passe",
+    "password-title": "Mot de passe et authentification",
     "etapi-title": "ETAPI",
     "backup-title": "Sauvegarde",
     "sync-title": "Synchronisation",
@@ -195,7 +198,8 @@
     "task-state-attr-is-completed": "Compte comme terminé",
     "task-state-attr-color": "Couleur",
     "task-state-attr-is-hidden": "Masqué de la liste",
-    "security-title": "Sécurité"
+    "security-title": "Sécurité",
+    "desktop-title": "Bureau"
   },
   "notes": {
     "new-note": "Nouvelle note",
@@ -333,7 +337,8 @@
     "toggle-note-hoisting": "Activer la focalisation sur la note",
     "unhoist-note": "Désactiver la focalisation sur la note",
     "toggle-archived-notes": "Afficher/Masquer les notes archivées",
-    "save-named-revision": "Enregistrer une révision nommée"
+    "save-named-revision": "Enregistrer une révision nommée",
+    "peek-right-pane": "Aperçu du panneau de droite"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Base de données non initialisée, merci de suivre les instructions à l'écran.",
@@ -354,7 +359,8 @@
     "expand": "Développer",
     "logo-alt": "Logo",
     "toggle-toc": "Afficher/Masquer la table des matières",
-    "toggle-navigation": "Afficher/Masquer la navigation"
+    "toggle-navigation": "Afficher/Masquer la navigation",
+    "login": "Se connecter"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Extrait de texte",
@@ -384,7 +390,8 @@
     "presentation_slide_second": "Deuxième diapositive",
     "background": "Arrière-plan",
     "markdown-snippet": "Extrait Markdown",
-    "code-snippet": "Extrait de code"
+    "code-snippet": "Extrait de code",
+    "dashboard": "Tableau de bord"
   },
   "password": {
     "incorrect": "Le mot de passe que vous avez saisi est incorrect."
@@ -416,6 +423,33 @@
     "backend-scripting": "Exécution de scripts backend",
     "backend-scripting-warning": "Les scripts backend ont un accès complet au serveur, y compris au système de fichiers et au réseau.",
     "sql-console": "Console SQL",
-    "sql-console-warning": "La console SQL permet d'exécuter des requêtes SQL arbitraires sur la base de données."
+    "sql-console-warning": "La console SQL permet d'exécuter des requêtes SQL arbitraires sur la base de données.",
+    "lan-access": "accès au réseau",
+    "lan-access-warning": "D'autres appareils de votre réseau local pourront se connecter à cette instance Trilium."
+  },
+  "onenote_import": {
+    "root-title": "Importation OneNote"
+  },
+  "notion_import": {
+    "root-title": "Importation Notion",
+    "markdown-export-unsupported": "Ceci ressemble à un export Notion « Markdown & CSV », que Trilium ne peut pas importer. Veuillez réexporter votre espace de travail Notion au format « HTML » et importer celui-ci à la place.",
+    "subpage-folders-disabled": "Cet export Notion a été créé sans l'option « Create folders for subpages », la hiérarchie des pages ne peut donc pas être reconstituée. Veuillez réexporter depuis Notion avec l'option « Create folders for subpages » activée et importer celui-ci à la place."
+  },
+  "keep_import": {
+    "root-title": "Importation Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Import Anytype",
+    "protobuf-export-unsupported": "Ceci ressemble à un export Anytype « Protobuf », que Trilium ne peut pas importer. Veuillez réexporter votre espace Anytype en utilisant le format « Any-Block » avec « JSON » sélectionné et importer celui-ci à la place.",
+    "markdown-export-unsupported": "Ceci ressemble à un export Anytype « Markdown », que Trilium ne peut pas importer. Veuillez réexporter votre espace Anytype en utilisant le format « Any-Block » avec « JSON » sélectionné et importer celui-ci à la place."
+  },
+  "obsidian_import": {
+    "root-title": "Import Obsidian"
+  },
+  "export": {
+    "zip_filter": "Archive ZIP (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "La sélection de fichier a expiré ou n'est pas valide. Veuillez choisir le fichier à nouveau."
   }
 }

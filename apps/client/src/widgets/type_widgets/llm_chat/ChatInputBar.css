@@ -173,17 +173,19 @@
 
 .llm-chat-model-selector .dropdown {
     display: flex;
+}
 
-    small {
-        margin-left: 0.5em;
-        color: var(--muted-text-color);
-    }
+/* Scoped to the dropdown wrapper (not `.llm-chat-model-selector`) so these menu styles
+   survive `portalToBody`, which reparents the menu to <body> under this same class. */
+.llm-chat-model-dropdown small {
+    margin-left: 0.5em;
+    color: var(--muted-text-color);
+}
 
-    /* Position legacy models submenu to open upward */
-    .dropdown-submenu .dropdown-menu {
-        bottom: 0;
-        top: auto;
-    }
+/* Position legacy models submenu to open upward */
+.llm-chat-model-dropdown .dropdown-submenu .dropdown-menu {
+    bottom: 0;
+    top: auto;
 }
 
 .llm-chat-model-select.select-button {

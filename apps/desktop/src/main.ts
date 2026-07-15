@@ -27,6 +27,9 @@ import DesktopPlatformProvider from "./platform_provider";
 import { registerTriliumAppScheme, setupTriliumAppProtocol } from "./protocol";
 import { applyLaunchOnStartup, setupAutoLaunch, wasLaunchedHidden } from "./services/auto_launch";
 import { setupCustomDictionary } from "./services/custom_dictionary";
+import { setupEmbedReferer } from "./services/embed_referer";
+import { setupExportHandlers } from "./services/export";
+import { setupImportHandlers } from "./services/import";
 import { setupOneNoteHandlers } from "./services/onenote";
 import { setupPrintingHandlers } from "./services/printing";
 import { getSecuritySettings, registerSecurityIpcHandlers } from "./services/security_settings";
@@ -128,6 +131,8 @@ export async function main() {
     setupShellHandlers();
     setupOneNoteHandlers();
     setupPrintingHandlers();
+    setupExportHandlers();
+    setupImportHandlers();
     registerSecurityIpcHandlers();
     setupStartupMetricsIpc();
 
@@ -266,6 +271,12 @@ export function getUserData() {
 
 async function onReady() {
     //    app.setAppUserModelId('com.github.zadam.trilium');
+
+    // Supply a valid Referer for embed providers (e.g. YouTube) that reject the
+    // custom `trilium-app://` origin. We use the desktop's local server origin —
+    // the same value the working browser client sends. Registered on the shared
+    // default session before any window is created.
+    setupEmbedReferer(`http://localhost:${port}/`);
 
     // if db is not initialized -> setup process
     // if db is initialized, then we need to wait until the migration process is finished

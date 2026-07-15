@@ -109,6 +109,23 @@ describe("processNoteContent", () => {
         expect(importedNote.getContent().toString()).toBe("<h2>Hello world</h2><p>Plain text goes here.</p>");
     });
 
+    it("imports YAML front matter as labels and strips it from a Markdown note", async () => {
+        const md = "---\nfirst: First value\ntags:\n  - Tag\n  - AnotherTag\n---\nThe body.";
+        const { importedNote } = await testImport("Frontmatter.md", "text/markdown", Buffer.from(md));
+        expect(importedNote.getContent().toString()).toBe("<p>The body.</p>");
+        expect(importedNote.getOwnedLabelValue("first")).toBe("First value");
+        expect(importedNote.getOwnedLabelValues("tags")).toEqual(["Tag", "AnotherTag"]);
+    });
+
+    it("only creates labels from front matter — never relations (no script triggers)", async () => {
+        const md = '---\n"~runOnNoteCreation": evil\ntemplate: x\n---\nBody.';
+        const { importedNote } = await testImport("Safe.md", "text/markdown", Buffer.from(md));
+        // Front matter applies via addLabel, so the only script-execution / template vector (a relation)
+        // can never appear — even a key that looks like one lands as a harmless label.
+        expect(importedNote.getOwnedAttributes().filter((a) => a.type === "relation")).toHaveLength(0);
+        expect(importedNote.getOwnedAttributes().every((a) => a.type === "label")).toBe(true);
+    });
+
     it("supports excalidraw note", async () => {
         const { importedNote } = await testImport("New note.excalidraw", "application/json");
         expect(importedNote.mime).toBe("application/json");
@@ -132,6 +149,21 @@ describe("processNoteContent", () => {
             type: "mermaid",
             title: "New note"
         });
+    });
+
+    it("imports a .triliumsheet file as a spreadsheet note, preserving content verbatim", async () => {
+        // .triliumsheet is Trilium's lossless round-trip format: the raw Univer workbook JSON exported
+        // by single-note export is re-imported byte-for-byte (unlike .xlsx, which is parsed/re-serialized).
+        const workbookJson = JSON.stringify({ workbook: { id: "wb", sheetOrder: ["s1"], sheets: { s1: { cellData: {} } } } });
+
+        const { importedNote } = await testImport("Budget.triliumsheet", "application/json", Buffer.from(workbookJson));
+
+        expect(importedNote).toMatchObject({
+            mime: "text/x-spreadsheet",
+            type: "spreadsheet",
+            title: "Budget"
+        });
+        expect(importedNote.getContent().toString()).toBe(workbookJson);
     });
 
     it("imports .xlsx as a spreadsheet note", async () => {

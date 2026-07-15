@@ -157,18 +157,18 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
             )}
 
             {!isMobile() && loaded && (
-                <div className="image-viewer-controls">
+                <div className="image-viewer-controls tn-overlay-control-group">
                     <button
                         ref={zoomOutRef}
                         type="button"
-                        className="icon-action bx bx-zoom-out"
+                        className="tn-overlay-icon-button bx bx-minus-circle"
                         aria-label={t("image_buttons.zoom_out")}
                         onClick={() => zoomRef.current?.zoomOut(BUTTON_ZOOM_STEP)}
                     />
                     <button
                         ref={zoomLevelRef}
                         type="button"
-                        className="image-viewer-zoom-level"
+                        className="tn-overlay-text-button image-viewer-zoom-level"
                         aria-label={t("image_buttons.reset_zoom")}
                         onClick={() => zoomRef.current?.resetTransform()}
                     >
@@ -177,7 +177,7 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
                     <button
                         ref={zoomInRef}
                         type="button"
-                        className="icon-action bx bx-zoom-in"
+                        className="tn-overlay-icon-button bx bx-plus-circle"
                         aria-label={t("image_buttons.zoom_in")}
                         onClick={() => zoomRef.current?.zoomIn(BUTTON_ZOOM_STEP)}
                     />

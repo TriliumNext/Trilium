@@ -1,0 +1,88 @@
+.file-drop-zone {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 8em;
+    padding: 0.5em 1.5em;
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    background: var(--accented-background-color);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.file-drop-zone:hover,
+.file-drop-zone:focus-within {
+    border-color: var(--main-text-color);
+}
+
+.file-drop-zone.dragging {
+    border-color: var(--main-text-color);
+    background: var(--active-item-background-color);
+}
+
+/* Visually hidden but kept focusable so the zone gets a focus ring via :focus-within. */
+.file-drop-zone-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.file-drop-zone-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5em;
+    color: var(--muted-text-color);
+}
+
+.file-drop-zone-icon {
+    font-size: 2.5em;
+}
+
+.file-drop-zone-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    width: 100%;
+}
+
+.file-drop-zone-count {
+    color: var(--muted-text-color);
+    font-size: 0.9em;
+}
+
+.file-drop-zone-files {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35em;
+    width: 100%;
+    max-height: 12em;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.file-drop-zone-files li {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    min-width: 0;
+}
+
+.file-drop-zone-filename {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

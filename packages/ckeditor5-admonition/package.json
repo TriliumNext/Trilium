@@ -18,16 +18,16 @@
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
-    "@vitest/browser": "4.1.9",
+    "@vitest/browser": "4.1.10",
     "ckeditor5": "48.2.0",
-    "eslint": "10.5.0",
+    "eslint": "10.7.0",
     "eslint-config-ckeditor5": ">=9.1.0",
-    "stylelint": "17.13.0",
+    "stylelint": "17.14.0",
     "stylelint-config-ckeditor5": ">=9.1.0",
     "typescript": "6.0.3",
     "vite-plugin-svgo": "2.0.0",
-    "vitest": "4.1.9",
-    "webdriverio": "9.29.0"
+    "vitest": "4.1.10",
+    "webdriverio": "9.29.1"
   },
   "peerDependencies": {
     "ckeditor5": "48.2.0"

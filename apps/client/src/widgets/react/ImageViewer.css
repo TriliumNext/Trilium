@@ -12,9 +12,6 @@
     inset-inline-end: 10px;
     bottom: 10px;
     z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
 /* Make the library's viewport fill the available space so the image fits and pans within it. */

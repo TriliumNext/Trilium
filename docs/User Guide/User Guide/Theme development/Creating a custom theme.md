@@ -5,15 +5,15 @@ Organization is an important aspect of managing a knowledge base. When developin
 
 As such, the first step is to create a new note to gather all the themes.
 
-![](Creating%20a%20custom%20theme_5_.png)
+![](Creating%20a%20custom%20theme_5_Creating%20a%20custom%20theme_im.png)
 
 ## Step 2. Create the theme
 
 |  |  |
 | --- | --- |
-| ![](Creating%20a%20custom%20theme_3_.png) | Themes are code notes with a special attribute. Start by creating a new code note. |
-| ![](Creating%20a%20custom%20theme_1_.png) | Then change the note type to a CSS code. |
-| ![](Creating%20a%20custom%20theme_Cr.png) | In the _Owned Attributes_ section define the `#appTheme` attribute to point to any desired name. This is the name that will show up in the appearance section in settings. |
+| ![](Creating%20a%20custom%20theme_3_Creating%20a%20custom%20theme_im.png) | Themes are code notes with a special attribute. Start by creating a new code note. |
+| ![](Creating%20a%20custom%20theme_1_Creating%20a%20custom%20theme_im.png) | Then change the note type to a CSS code. |
+| ![](Creating%20a%20custom%20theme_Creating%20a%20custom%20theme_im.png) | In the _Owned Attributes_ section define the `#appTheme` attribute to point to any desired name. This is the name that will show up in the appearance section in settings. |
 
 ## Step 3. Define the theme's CSS
 
@@ -31,11 +31,11 @@ To alter the different variables of the theme:
 
 Refresh the application (Ctrl+Shift+R is a good way to do so) and go to settings. You should see the newly created theme:
 
-![](Creating%20a%20custom%20theme_2_.png)
+![](Creating%20a%20custom%20theme_2_Creating%20a%20custom%20theme_im.png)
 
 Afterwards the application will refresh itself with the new theme:
 
-![](Creating%20a%20custom%20theme_4_.png)
+![](Creating%20a%20custom%20theme_4_Creating%20a%20custom%20theme_im.png)
 
 Do note that the theme will be based off of the legacy theme. To override that and base the theme on the new TriliumNext theme, see: [Theme base (legacy vs. next)](Customize%20the%20Next%20theme.md)
 

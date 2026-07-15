@@ -31,8 +31,6 @@
         "sync_content": "Folosiți o instanță găzduită de dvs. sau în cloud pentru a putea sincroniza rapid notițele între mai multe dispozitive și pentru a putea să le accesați utilizând telefonul mobil (prin PWA).",
         "protected_notes_title": "Notițe protejate",
         "protected_notes_content": "Protejați informațiile personale prin criptarea acestora în spatele unei sesiuni protejate prin parolă.",
-        "jump_to_title": "Căutare și comenzi rapide",
-        "jump_to_content": "Navigați rapid printre notițe sau comenzi căutând după numele acestora, având căutare de tip fuzzy pentru a ignora greșeli de tastare sau diferențe minore.",
         "search_title": "Căutare performantă",
         "search_content": "Căutați în interiorul notițelor și reduceți numărul de rezultate prin filtrarea după notița părinte, sau după adâncime.",
         "web_clipper_title": "Clipper web",
@@ -51,19 +49,7 @@
         "mermaid_description": "Creați diagrame precum flowchart-uri, diagrame de secvență sau de clase, Gantt și multe altele, folosind sintaxa Mermaid.",
         "mindmap_title": "Hartă mentală",
         "mindmap_description": "Organizați-vă gândurile vizual sau organizați o sesiune de brainstorming.",
-        "others_list": "și altele: <0>hartă a notițelor</0>, <1>hartă a relațiilor</1>, <2>căutări salvate</2>, <3>randare a notițelor</3>, și <4>vizualizări web</4>.",
         "title": "Multiple modalități de a reprezenta informația"
-    },
-    "extensibility_benefits": {
-        "title": "Partajare și extensibilitate",
-        "import_export_title": "Import/export",
-        "import_export_description": "Interacționați rapid cu alte aplicații utilizând formatele Markdown, ENEX și OML.",
-        "share_title": "Publicați notițe pe Internet",
-        "share_description": "Dacă aveți o instanță de server, puteți să partajați pe Internet un set de notițe.",
-        "scripting_title": "Script-are avansată",
-        "scripting_description": "Construiți-vă propriile integrări cu Trilium utilizând widget-uri personalizate sau logică la nivel de server.",
-        "api_title": "API REST",
-        "api_description": "Interacționați cu Trilium programatic folosind API-ul REST integrat."
     },
     "collections": {
         "calendar_title": "Calendar",
@@ -188,8 +174,7 @@
     "download_helper_server_hosted": {
         "title": "Găzduire contra cost",
         "description": "Trilium Notes găzduit pe PikaPods, un serviciu plătit pentru acces facil. Nu este direct afiliat cu echipa Trilium.",
-        "download_pikapod": "Folosește PikaPods",
-        "download_triliumcc": "Alternativ, trilium.cc"
+        "download_pikapod": "Folosește PikaPods"
     },
     "social_buttons": {
         "github": "GitHub",

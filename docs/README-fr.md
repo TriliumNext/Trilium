@@ -1,14 +1,3 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notes
 
 ![Sponsors GitHub](https://img.shields.io/github/sponsors/eliandoran)
@@ -25,11 +14,11 @@ traduction](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://ho
 | [Chinese (Traditional Han script)](./README-ZH_TW.md) |
 [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
 [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
-[Greek](./README-el.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) |
-[Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md)
-| [Romanian](./README-ro.md) | [Russian](./README-ru.md) |
-[Spanish](./README-es.md) | [Ukrainian](./README-uk.md) |
-[Uyghur](./README-ug.md)
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes est une application gratuite, open-source et multiplateforme de
@@ -223,6 +212,8 @@ ci-dessous).
 Pour plus d’informations sur le support de l’application mobile, consultez le
 ticket https://github.com/TriliumNext/Trilium/issues/4962.
 
+#### TriliumDroid
+
 Si vous préférez une application Android native, vous pouvez utiliser
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
 Signalez les bugs et les fonctionnalités manquantes sur [leur
@@ -230,6 +221,25 @@ dépôt](https://github.com/FliegendeWurst/TriliumDroid). Remarque : Il est
 préférable de désactiver les mises à jour automatiques sur votre serveur (voir
 ci-dessous) lorsque vous utilisez TriliumDroid, car les versions doivent rester
 synchronisées entre Trilium et TriliumDroid.
+
+#### Pocket Trilium
+
+If you want a full-featured native Android app, check out [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
+instance on your phone, supports full offline use, and allows you to sync with
+your server.
+
+#### Trinote
+
+If you want a native iOS app, you can use
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
+client for your self-hosted Trilium / TriliumNext server. It lets you browse and
+organize your note tree, search for notes on the server, read and edit all note
+types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
+available and editable offline. Here's the
+[repo](https://github.com/StephenArg/Trinote) if you're interested in
+contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
+server if you have any feedback or suggestions you want to discuss.
 
 ### Serveur
 

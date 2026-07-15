@@ -42,22 +42,25 @@ describe("DesktopPlatformProvider", () => {
         requestSingleInstanceLock.mockReturnValue(true);
     });
 
-    it("always reports as Electron and derives isMac / isWindows from process.platform", () => {
+    it("always reports as Electron and derives isMac / isWindows / isLinux from process.platform", () => {
         withPlatform("darwin", () => {
             const p = new DesktopPlatformProvider();
             expect(p.isElectron).toBe(true);
             expect(p.isMac).toBe(true);
             expect(p.isWindows).toBe(false);
+            expect(p.isLinux).toBe(false);
         });
         withPlatform("win32", () => {
             const p = new DesktopPlatformProvider();
             expect(p.isMac).toBe(false);
             expect(p.isWindows).toBe(true);
+            expect(p.isLinux).toBe(false);
         });
         withPlatform("linux", () => {
             const p = new DesktopPlatformProvider();
             expect(p.isMac).toBe(false);
             expect(p.isWindows).toBe(false);
+            expect(p.isLinux).toBe(true);
         });
     });
 

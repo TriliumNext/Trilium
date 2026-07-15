@@ -567,6 +567,12 @@ describe("#isWindows", () => {
     });
 });
 
+describe("#isLinux", () => {
+    it("should export a boolean", () => {
+        expect(utils.isLinux()).toBeTypeOf("boolean");
+    });
+});
+
 describe("#safeExtractMessageAndStackFromError", () => {
     it("should correctly extract the message and stack property if it gets passed an instance of an Error", () => {
         const testMessage = "Test Message";

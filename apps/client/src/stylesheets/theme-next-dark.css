@@ -190,6 +190,10 @@
     --center-pane-horiz-layout-background-color-bgfx: #1e1e1ec7;
 
     --right-pane-heading-color: gray;
+    --right-pane-peek-background: #303030dc;
+    
+    --peek-pane-backdrop-color: #00000032;
+    --peek-pane-shadow-color: #000000a8;
 
     --root-background: var(--left-pane-background-color);
 
@@ -244,6 +248,8 @@
     --floating-button-hide-button-background: #00000029;
     --floating-button-hide-button-color: #ffffff63;
 
+    --overlay-button-shadow-color: #00000048;
+
     --right-pane-background-color: var(--main-background-color);
     --right-pane-background-color-bgfx: #0c0c0c24; /* Only for the vertical layout */
     --right-pane-item-hover-background: #ffffff26;
@@ -265,6 +271,23 @@
 
     --code-block-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 
+    /* Backend log (the `text/x-trilium-log` code note MIME) */
+    --log-timestamp-color: #818181;
+    --log-slow-color: #ffbb7f;
+    --log-http-line-background-color: rgba(255, 255, 255, 0.02);
+    --log-http-verb-color: #d99bf4;
+    --log-http-url-color: #d0b6e4;
+    --log-status-success-color: #74d369;
+    --log-status-redirect-color: #69b8d3;
+    --log-status-client-error-color: #d3c769;
+    --log-status-server-error-color: #d36969;
+    --log-query-verb-color: #f4c79b;
+    --log-query-line-background-color: transparent;
+    --log-sql-color: #f4c8ae;
+    --log-error-color: #FF867F;
+    --log-error-line-background-color: #d44b4b1f;
+    --log-info-color: inherit; /* Placeholder: give it a colour to make info lines stand out. */
+
     --card-background-color: #ffffff12;
     --card-background-hover-color: #ffffff20;
     --card-border-color: transparent;
@@ -285,7 +308,10 @@
     --tooltip-background-color: rgba(67, 67, 67, 0.86);
     --tooltip-foreground-color: #ffffffeb;
     --tooltip-shadow-color: rgba(0, 0, 0, 0.4);
-    
+    --tooltip-kbd-color: white;
+    --tooltip-kbd-background: #ffffff32;
+    --tooltip-kbd-border: #00000060;
+
     --note-tooltip-background-color: #3d3d3d;
     
     --help-background-color: var(--menu-background-color);
@@ -323,10 +349,14 @@
     --calendar-coll-today-background-color: #ffffff08;
 
     --task-checkbox-without-state-background: #ffffff26;
+    --task-checkbox-without-state-hover-background: #ffffff59;
     --task-checkbox-with-state-background: #ffffff3b;
+    --task-checkbox-with-state-hover-background: var(--task-checkbox-without-state-hover-background);
     --task-checkbox-done-color: #408b40;
-    --task-checkbox-unknown-state-color: orange;
+    --task-checkbox-done-hover-color: #41b441;
+    --task-checkbox-unknown-state-color: #e95d5d;
     --task-checkbox-glyph-color: white;
+    
 }
 
 /*
@@ -409,4 +439,8 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 
 [data-trilium-task-state] {
     --task-state-adjusted-color: hsl(var(--task-state-hue), 40%, 50%);
+}
+
+:where(.ck-content .todo-list li[data-trilium-task-state]), .tn-task-checkbox {
+    --task-state-custom-hover-background-color: hsl(var(--task-state-hue), 50%, 60%);
 }

@@ -38,7 +38,7 @@ import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
 // page routes
 import setupRoute from "./setup.js";
 
@@ -93,6 +93,7 @@ function register(app: express.Application) {
         checkCredentials: auth.checkCredentials,
         loginRateLimiter,
         uploadMiddlewareWithErrorHandling,
+        importMiddlewareWithErrorHandling,
         csrfMiddleware
     });
 
@@ -180,7 +181,10 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
 
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);
-    asyncApiRoute(GET, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
+    // POST rather than GET: the URL would otherwise sit in the query string of every access-log
+    // line (Trilium's own, and any reverse proxy in front of it), and a pasted URL can carry a
+    // one-time token or a signed signature. The body is not logged.
+    asyncApiRoute(PST, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
 
     apiRoute(GET, "/api/onenote-import/auth-url", onenoteImportRoute.getAuthUrl);
     // Plain GET (no CSRF/auth headers): this is a top-level browser redirect back from Microsoft.

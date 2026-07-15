@@ -38,6 +38,9 @@
     },
     {
       "path": "../ckeditor5-keyboard-marker"
+    },
+    {
+      "path": "../ckeditor5-utils"
     }
   ]
 }

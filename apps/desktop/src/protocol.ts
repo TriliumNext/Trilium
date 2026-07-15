@@ -218,10 +218,17 @@ export async function dispatch(app: Application, request: Request): Promise<Resp
             // null-body status codes (101 / 204 / 205 / 304). Express is
             // happy to call `res.status(204).send()` so we must filter here.
             const body = NULL_BODY_STATUSES.has(res.statusCode) ? null : toUint8Array(rawPayload);
+            // Express's own Content-Length is stripped (it can mismatch the buffered body), but the
+            // media data source (<audio>/<video>) refuses a response with no length — unlike fetch(),
+            // which reads to EOF. We own the exact bytes here, so restore an accurate Content-Length.
+            const headers = normalizeResponseHeaders(res.getHeaders());
+            if (body) {
+                headers.push(["content-length", String(body.byteLength)]);
+            }
             try {
                 resolve(new Response(body as BodyInit | null, {
                     status: res.statusCode,
-                    headers: normalizeResponseHeaders(res.getHeaders())
+                    headers
                 }));
             } catch (err) {
                 reject(err);
@@ -282,15 +289,33 @@ function installStreamingBridge(
 ): StreamingBridge {
     let streaming = false;
     let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
+    // Set when write() signalled backpressure (returned false). The producer
+    // (e.g. archiver's pipe) then pauses until we emit a 'drain' event.
+    let producerPaused = false;
     const origWrite = res.write.bind(res);
     const origEnd = res.end.bind(res);
+
+    // Bound how much streamed-but-unread data sits in the queue. Without this a
+    // consumer slower than the producer — e.g. Electron writing a multi-GB
+    // export to disk — would let the whole payload pile up in memory.
+    const HIGH_WATER_MARK = 1024 * 1024; // 1 MiB
+
+    function resumeProducerIfReady() {
+        if (producerPaused && controller && controller.desiredSize !== null && controller.desiredSize > 0) {
+            producerPaused = false;
+            res.emit("drain");
+        }
+    }
 
     function commit() {
         if (streaming) return;
         streaming = true;
         const body = new ReadableStream<Uint8Array>({
-            start(c) { controller = c; }
-        });
+            start(c) { controller = c; },
+            // The consumer pulled (queue has capacity again) → release a producer
+            // that paused on backpressure.
+            pull() { resumeProducerIfReady(); }
+        }, new ByteLengthQueuingStrategy({ highWaterMark: HIGH_WATER_MARK }));
         try {
             onCommit(new Response(body, {
                 /* v8 ignore next -- defensive: statusCode is always set before flushHeaders */
@@ -332,6 +357,12 @@ function installStreamingBridge(
         write(chunk: unknown, ...rest: unknown[]): boolean {
             if (streaming) {
                 enqueue(chunk);
+                // Honour backpressure: once the queue is full, tell the producer
+                // to pause until the consumer drains it (pull → 'drain').
+                if (controller && controller.desiredSize !== null && controller.desiredSize <= 0) {
+                    producerPaused = true;
+                    return false;
+                }
                 return true;
             }
             return (origWrite as (...a: unknown[]) => boolean)(chunk, ...rest);

@@ -71,7 +71,8 @@ async function buildSlideModel(note: FNote): Promise<PresentationSlideBaseModel>
 
 async function processContent(note: FNote): Promise<DangerouslySetInnerHTML> {
     const { $renderedContent } = await contentRenderer.getRenderedContent(note, {
-        noChildrenList: true
+        noChildrenList: true,
+        mediaEnvironment: "native"
     });
     return { __html: sanitizeNoteContentHtml($renderedContent.html()) };
 }

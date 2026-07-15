@@ -1,5 +1,5 @@
 import { BootstrapDefinition } from "@triliumnext/commons";
-import { attributes, BNote, getSharedBootstrapItems, icon_packs as iconPackService, options as optionService, sql_init, task_states } from "@triliumnext/core";
+import { attributes, BNote, getSharedBootstrapItems, icon_packs as iconPackService, options as optionService, password as passwordService, sql_init, task_states } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
@@ -8,7 +8,9 @@ import assetPath from "../services/asset_path.js";
 import config from "../services/config.js";
 import { getLog } from "@triliumnext/core";
 import port from "../services/port.js";
+import openID from "../services/open_id.js";
 import { isDev, isElectron, isMac, isWindows11 } from "../services/utils.js";
+import totp from "../services/totp.js";
 import { generateCsrfToken } from "./csrf_protection.js";
 
 type View = "desktop" | "mobile" | "print";
@@ -25,6 +27,9 @@ export function bootstrap(req: Request, res: Response) {
 
     const view = getView(req);
     const isDbInitialized = sql_init.isDbInitialized();
+    // When auth is disabled the user is implicitly authenticated, so the set-password
+    // and login pre-auth screens never apply — fall through to the full payload.
+    const noAuthentication = config.General?.noAuthentication === true;
     const commonItems = {
         ...getSharedBootstrapItems(assetPath, isDbInitialized),
         baseApiUrl: "api/",
@@ -32,6 +37,7 @@ export function bootstrap(req: Request, res: Response) {
         isStandalone: false,
         isElectron,
         isDev,
+        platform: process.platform,
         triliumVersion: packageJson.version,
         device: view,
         TRILIUM_SAFE_MODE: !!process.env.TRILIUM_SAFE_MODE,
@@ -52,6 +58,52 @@ export function bootstrap(req: Request, res: Response) {
             hasBackgroundEffects: isElectron && (isWindows11 || isMac),
             isMainWindow: true,
             appCssNoteIds: []
+        } satisfies BootstrapDefinition);
+        return;
+    }
+
+    if (!isElectron && !noAuthentication && !passwordService.isPasswordSet()) {
+        // Pre-auth window: the DB is initialized but no password has been set yet.
+        // This screen is web/server-only — the desktop app manages its protected-notes
+        // password through the options UI and never gates the app on it — so we exclude
+        // Electron here, which also means the Electron-only title-bar / background-effect
+        // flags are unconditionally false. We serve a minimal payload (no CSRF token /
+        // session data) carrying `passwordSet: false`; theme and icon-pack CSS still come
+        // from commonItems so the screen matches the rest of the app.
+        res.send({
+            ...commonItems,
+            passwordSet: false,
+            hasNativeTitleBar: false,
+            hasBackgroundEffects: false,
+            isMainWindow: true
+        } satisfies BootstrapDefinition);
+        return;
+    }
+
+    if (!isElectron && !noAuthentication && !req.session.loggedIn) {
+        // Pre-auth window: a password is set but the user hasn't logged in. Web/server
+        // only — the desktop app doesn't gate on a web session. Serve a minimal payload
+        // (no CSRF token / session data) carrying `loggedIn: false` plus the login-screen
+        // config, which the client uses to render the login screen. The one-shot SSO error
+        // left by a failed OIDC round-trip is read and cleared here (previously done by the
+        // login page).
+        const ssoError = req.session.ssoError;
+        if (ssoError) {
+            delete req.session.ssoError;
+        }
+        res.send({
+            ...commonItems,
+            loggedIn: false,
+            login: {
+                ssoEnabled: openID.isOpenIDEnabled(),
+                ssoIssuerName: openID.getSSOIssuerName(),
+                ssoIssuerIcon: openID.getSSOIssuerIcon(),
+                totpEnabled: totp.isTotpEnabled(),
+                ssoError
+            },
+            hasNativeTitleBar: false,
+            hasBackgroundEffects: false,
+            isMainWindow: true
         } satisfies BootstrapDefinition);
         return;
     }
@@ -77,9 +129,10 @@ export function bootstrap(req: Request, res: Response) {
     res.send({
         ...commonItems,
         dbInitialized: true,
+        passwordSet: true,
+        loggedIn: true,
         csrfToken,
         oauthJustEnrolled,
-        platform: process.platform,
         hasNativeTitleBar: isElectron && nativeTitleBarVisible,
         hasBackgroundEffects: options.backgroundEffects === "true"
             && isElectron

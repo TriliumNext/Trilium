@@ -5,6 +5,7 @@ import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useSta
 
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
+import { isIMEComposing } from "../../../services/shortcuts";
 import toast from "../../../services/toast";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import FormTextArea from "../../react/FormTextArea";
@@ -269,6 +270,12 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, mode, is
     });
 
     const onKeyDown = (e: TargetedKeyboardEvent<HTMLInputElement | HTMLTextAreaElement> | KeyboardEvent) => {
+        // Skip processing during IME composition so the Enter that commits a
+        // CJK conversion does not also save the title with unconfirmed text.
+        if (isIMEComposing(e)) {
+            return;
+        }
+
         if (e.key === "Enter" || e.key === "Escape") {
             e.preventDefault();
             e.stopPropagation();

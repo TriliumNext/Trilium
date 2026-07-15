@@ -8,27 +8,34 @@
     },
     "organization_benefits": {
         "hoisting_description": "你可以通过将个人笔记和工作笔记分组到不同的工作区中，轻松地将它们分开。每个工作区会聚焦于特定的笔记集合，使你的笔记树仅显示相关内容。",
-        "title": "组织",
+        "title": "按你的方式，组织你的笔记",
         "note_structure_title": "笔记结构",
         "note_structure_description": "笔记可按层级排列。由于每条笔记均可包含子笔记，因此无需使用文件夹。单条笔记可在层级结构中的多个位置添加。",
         "attributes_title": "笔记标签及关系",
-        "attributes_description": "利用笔记间的关系或添加标签进行便捷分类。使用提升属性输入结构化信息，这些信息可用于表格和看板中。",
-        "hoisting_title": "工作区与提升"
+        "attributes_description": "利用笔记之间的关系或添加标签进行便捷分类。使用提升属性输入结构化信息，这些信息可用于表格和看板中。",
+        "hoisting_title": "工作区与提升",
+        "screenshot_alt": "Trilium 中的层级笔记树"
     },
     "productivity_benefits": {
-        "title": "高效且安全",
+        "title": "日常中强大且高效的功能",
         "revisions_title": "笔记历史版本",
         "revisions_content": "笔记会在后台定期保存，且修订版本可用于回顾或撤销误修改。你也可以按需创建修订版本。",
         "sync_title": "同步",
         "sync_content": "使用自建或云端实例，可以轻松地在多设备之间同步笔记，并通过 PWA 从手机上访问它。",
         "protected_notes_title": "被保护的笔记",
         "protected_notes_content": "通过加密笔记并将其锁定在受密码保护的会话中，来保护敏感的个人信息。",
-        "jump_to_title": "快速的搜索和命令",
-        "jump_to_content": "通过搜索标题，可以在层级结构中快速跳转到笔记或 UI 命令；模糊匹配可容忍拼写错误或细微差异。",
-        "search_content": "或者在笔记中搜索文本，并通过筛选父笔记或深度来缩小搜索范围。",
+        "search_content": "支持通过标题模糊匹配快速跳转到任意笔记或命令，也可以全文搜索所有笔记，甚至借助 OCR 搜索图片和 PDF 中的文字。",
         "web_clipper_content": "抓取网页（或截图），并通过网页剪藏浏览器扩展直接保存到 Trilium 中。",
-        "search_title": "强大的搜索功能",
-        "web_clipper_title": "网页抓取器"
+        "search_title": "搜索与快速导航",
+        "web_clipper_title": "网页抓取器",
+        "auth_title": "安全登录",
+        "auth_content": "可以通过基于时间的一次性密码（TOTP）进行双因素认证来保护登录，或者通过 OpenID Connect 直接从你的身份提供商登录。",
+        "templates_title": "模板",
+        "templates_content": "可以定义带预设结构、属性和内容的可复用笔记模板，然后一键生成新笔记。",
+        "share_title": "把笔记分享到网页",
+        "share_content": "如果你有服务器，可以把任意子树笔记发布成一个公开的只读网站，任何人都无需账号就能浏览。",
+        "api_title": "REST API",
+        "api_content": "通过 Trilium 内置的 REST API，可以在 HTTP 上程序化地读取、创建和更新笔记，非常适合自动化和第三方集成。"
     },
     "note_types": {
         "text_title": "文本笔记",
@@ -42,23 +49,21 @@
         "mermaid_title": "Mermaid 图表",
         "mermaid_description": "使用 Mermaid 语法创建各种图表，例如流程图、类图和时序图、甘特图等。",
         "mindmap_title": "思维导图",
-        "mindmap_description": "把你的想法用视觉方式整理出来，或者进行一次头脑风暴。",
-        "others_list": "以及其他内容：<0>笔记映射</0>、<1>关系映射</1>、<2>已保存的搜索</2>、<3>渲染笔记</3> 和 <4>网页视图</4>。",
-        "title": "多种信息呈现方式"
-    },
-    "extensibility_benefits": {
-        "title": "分享与可扩展性",
-        "import_export_title": "导入/导出",
-        "import_export_description": "使用 Markdown、ENEX、OML 格式即可轻松与其他应用程序交互。",
-        "share_title": "在网络上分享笔记",
-        "share_description": "如果你有一台服务器，它可以用来与他人共享你的一部分笔记。",
-        "scripting_title": "高级脚本编写",
-        "scripting_description": "在 Trilium 中通过自定义小部件或服务器端逻辑构建专属集成方案。",
-        "api_title": "REST API",
-        "api_description": "通过其内置的 REST API 以编程方式与 Trilium 进行交互。"
+        "mindmap_description": "用视觉化的方式整理思路，或开展头脑风暴。",
+        "title": "适用于各类内容的笔记类型",
+        "subtitle": "并非所有东西都适合写成段落。Trilium 提供了多种笔记类型，从富文本、代码到电子表格、图表和思维导图，让你能以最适合的形式记录每个想法，并在笔记树中自由混搭使用。",
+        "others_label": "还有更多",
+        "notemap_title": "笔记地图",
+        "relationmap_title": "关系图",
+        "savedsearch_title": "已保存的搜索",
+        "rendernote_title": "渲染笔记",
+        "webview_title": "网页视图",
+        "markdown_title": "Markdown",
+        "markdown_description": "更喜欢纯文本？直接用 Markdown 写笔记，既方便迁移和版本管理，又能通过并排预览看到表格、代码块和丰富的格式。",
+        "spreadsheet_title": "电子表格",
+        "spreadsheet_description": "功能齐全的电子表格，支持公式、条件格式、数据验证、排序和筛选，还可导入导出 Excel (.xlsx) 和 CSV 文件。"
     },
     "download_helper_server_hosted": {
-        "download_triliumcc": "也可以访问 trilium.cc",
         "title": "付费托管",
         "description": "Trilium Notes 托管于 PikaPods，该付费服务提供便捷访问与管理功能。与 Trilium 团队无直接关联。",
         "download_pikapod": "在 PikaPods 上设置"
@@ -83,27 +88,33 @@
         "get_started": "开始使用",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Trilium Notes 桌面应用程序的屏幕截图"
+        "screenshot_alt": "Trilium Notes 桌面应用程序的屏幕截图",
+        "tagline_license": "AGPL-3.0 许可",
+        "tagline_no_account": "无需账号",
+        "tagline_cross_platform": "支持离线"
     },
     "collections": {
-        "title": "集合",
+        "title": "从不同角度看你的笔记",
         "calendar_title": "日历",
-        "calendar_description": "使用日历管理个人或工作活动，支持全天及多日活动。通过周视图、月视图和年视图快速查看所有活动。轻松交互即可添加或拖拽活动。",
+        "calendar_description": "使用日历管理你的个人或工作活动，支持全天及跨天活动。通过周视图、月视图和年视图一目了然地查看活动安排。直接拖拽就能轻松添加或调整活动。",
         "table_title": "表格",
-        "table_description": "以表格结构显示和编辑笔记信息，支持多种列类型，包括文本、数字、复选框、日期与时间、链接和颜色，并支持关系功能。可选地，在表格内以树形层次结构显示笔记。",
+        "table_description": "以表格结构显示和编辑笔记信息，支持文本、数字、复选框、日期时间、链接和颜色等多种列类型，并支持关联关系。还可以选择在表格内以树形层级显示笔记。",
         "board_title": "看板",
-        "board_description": "将任务或项目状态整理成看板，轻松创建新事项和列，只需在看板上拖拽即可简单更改状态。",
+        "board_description": "将任务或项目状态整理到看板中，可以轻松创建新的卡片和列表，直接在看板中拖拽即可更改状态。",
         "geomap_title": "地理地图",
         "geomap_description": "使用可自定义的标记，直接在地理地图上规划你的假期或标记兴趣点。显示记录的 GPX 轨迹以追踪行程路线。",
         "presentation_title": "演示",
-        "presentation_description": "将信息整理成幻灯片，并以全屏模式呈现，配以流畅的过渡效果。幻灯片还可导出为 PDF 格式，便于轻松分享。"
+        "presentation_description": "将信息整理成幻灯片，并以全屏模式展示，配合流畅的过渡效果。幻灯片还可导出为 PDF 格式，方便分享。",
+        "subtitle": "合集为一组笔记提供专属视图。你可以把同一批笔记分别显示为日历、表格、看板、交互式地图等，并根据需要随时切换布局。",
+        "dashboard_title": "仪表板",
+        "dashboard_description": "将笔记排列为可拖拽、可调整大小的网格磁贴。笔记变成实时小部件，让你一眼就能看到内容，非常适合打造个人主页或项目总览，把所有信息集中在一个地方。"
     },
     "faq": {
         "title": "常见问题解答",
         "mobile_question": "是否有移动应用程序？",
         "mobile_answer": "目前尚无官方移动应用程序。但若你拥有服务器实例，可通过网页浏览器访问，甚至将其安装为渐进式网页应用（PWA）。对于安卓用户，存在一款名为 TriliumDroid 的非官方应用程序，该程序支持离线使用（与桌面客户端功能相同）。",
         "database_question": "数据存储在何处？",
-        "database_answer": "所有笔记都将存储在应用程序文件夹中的 SQLite 数据库内。Trilium 采用数据库而非纯文本文件的原因在于：数据库能提升性能，且某些功能（如克隆功能——即在树形结构中多处显示同一笔记）通过文本文件实现难度较大。若需查找应用程序文件夹，请前往“关于”窗口即可。",
+        "database_answer": "你的所有笔记都将存储在应用文件夹内的一个 SQLite 数据库中。Trilium 之所以使用数据库而非纯文本文件，主要有两个原因：一是提升性能，二是如果不用数据库，实现诸如“将同一篇笔记放在笔记树的多个位置”这种功能将极为困难。如果想找到该应用文件夹，只需打开“关于”窗口即可。",
         "server_question": "使用 Trilium 需要服务器吗？",
         "server_answer": "不，服务器支持通过网页浏览器访问，并能在你拥有多台设备时管理同步。若无同步需求，只需下载桌面应用程序即可。",
         "scaling_question": "该应用程序在处理大量笔记时扩展性如何？",
@@ -111,11 +122,18 @@
         "network_share_question": "我能否通过网络硬盘共享我的数据库？",
         "network_share_answer": "不，通常不建议通过网络硬盘共享 SQLite 数据库。虽然有时可能有效，但由于网络环境下文件锁定机制的不完善，数据库存在损坏的风险。",
         "security_question": "我的数据如何得到保护？",
-        "security_answer": "默认情况下，笔记不会加密，可直接从数据库中读取。一旦笔记被标记为加密状态，该笔记将使用 AES-128-CBC 算法进行加密。"
+        "security_answer": "默认情况下，笔记不会加密，可直接从数据库中读取。一旦笔记被标记为加密状态，该笔记将使用 AES-128-CBC 算法进行加密。",
+        "free_question": "Trilium 是免费的吗？",
+        "free_answer": "是的，完全免费。Trilium 基于 AGPL-3.0 许可证免费开源，没有付费等级、强制账户或功能付费墙。你可以自由使用、自托管和随意修改它。",
+        "cloud_question": "有没有托管或云版本？",
+        "cloud_answer": "目前还没有官方版本，不过我们未来希望能提供。现阶段 Trilium 是自托管的：你可以运行桌面应用，或者自己搭建服务器。如果你不想管理服务器，像 <0>PikaPods</0> 这样的第三方提供商提供了 Trilium 的托管服务。",
+        "collaboration_question": "可以多人协作编辑同一篇笔记吗？",
+        "collaboration_answer": "Trilium 是一款单用户应用。你可以在自己的所有设备间同步笔记，也可以将只读笔记发布到网上供他人查看，但不支持多人同时实时编辑同一篇笔记。",
+        "more_questions": "还有疑问？<0>来社区问问</0>"
     },
     "final_cta": {
-        "title": "准备好开始使用 Trilium Notes 了吗？",
-        "description": "借助强大功能和完全隐私保护，构建你的个人知识库。",
+        "title": "开始构建你的知识库",
+        "description": "在一个开源应用中整理一切：层级清晰的笔记、强大的搜索，以及同步到你完全掌控的服务器。",
         "get_started": "开始使用"
     },
     "components": {
@@ -133,7 +151,8 @@
         "get-started": "开始使用",
         "documentation": "文档",
         "support-us": "支持我们",
-        "resources": "资源"
+        "resources": "资源",
+        "language": "语言"
     },
     "footer": {
         "copyright_and_the": " 以及 ",
@@ -205,5 +224,64 @@
         "download": "下载",
         "website": "网站",
         "title": "资源"
+    },
+    "section_nav": {
+        "aria_label": "跳转到分区",
+        "organization": "整理",
+        "productivity": "功能",
+        "note_types": "笔记类型",
+        "import": "导入与导出",
+        "collections": "合集",
+        "scripting": "脚本",
+        "ai_integration": "AI",
+        "faq": "常见问题"
+    },
+    "import": {
+        "title": "你的笔记，永远来去自由",
+        "subtitle": "你的笔记完全由你掌控。随时都可以从其他应用导入，用开放的格式导出，或是将它们转成精致的文档。",
+        "pillar_import_title": "导入",
+        "pillar_import_description": "从其他应用导入笔记时，可以完整保留原有的结构，同时也支持导入标准的 Markdown、HTML 和 OPML 文件。",
+        "pillar_export_title": "导出",
+        "pillar_export_description": "随时以开放、可移植的格式，导出任意笔记或整个笔记树：",
+        "pillar_export_markdown": "Markdown 便于编辑的纯文本",
+        "pillar_export_html": "HTML 打包好的独立页面",
+        "pillar_export_opml": "OPML 用于大纲结构",
+        "pillar_pdf_title": "打印为 PDF",
+        "pillar_pdf_description": "将笔记变成一份精美的、像书一样的 PDF 文档：",
+        "pillar_pdf_single": "单篇笔记",
+        "pillar_pdf_subtree": "完整的子树，保持原有顺序",
+        "pillar_pdf_ready": "随时可以打印或分享",
+        "sources_label": "可直接导入自",
+        "onenote_title": "Microsoft OneNote",
+        "notion_title": "Notion",
+        "keep_title": "Google Keep",
+        "evernote_title": "Evernote",
+        "anytype_title": "Anytype",
+        "obsidian_title": "Obsidian"
+    },
+    "ai_integration": {
+        "title": "AI，按你的方式来",
+        "subtitle": "完全自愿，完全由你掌控。AI 功能需主动开启，默认处于关闭状态：只有在你手动启用并连接自己的提供商后，笔记数据才会被使用。",
+        "screenshot_alt": "Trilium AI 聊天通过内置工具为你创建笔记的截图",
+        "chat_title": "与你的笔记对话",
+        "chat_description": "在内置聊天中提问或头脑风暴，该聊天可以结合你笔记中的内容来回答。",
+        "tools_title": "能操作笔记的 AI",
+        "tools_description": "让助手通过一组内置工具，代你搜索、创建和更新笔记。",
+        "providers_title": "你自己的提供商，你自己的密钥",
+        "providers_description": "用你自己的 API 密钥连接 OpenAI、Anthropic 或 Google，也可以将 Trilium 指向自托管的 OpenAI 兼容模型。还能通过 MCP 将笔记开放给外部 AI 助手使用。",
+        "learn_more": "了解更多"
+    },
+    "scripting": {
+        "title": "凡是你能想到的，都能用脚本实现",
+        "subtitle": "Trilium 不仅仅是存放笔记的地方，它还是可编程的。你可以编写在应用内或服务器上运行的 JavaScript，构建自己的界面，并自动化你的工作流程 —— 从一行代码的微调，到完整的自定义应用。",
+        "screenshot_alt": "一个使用脚本构建的交互式模拟时钟的 Trilium 渲染笔记",
+        "widgets_title": "自定义小部件",
+        "widgets_description": "使用前端 JavaScript 为 Trilium 界面添加自定义按钮、面板和启动栏小部件。",
+        "backend_title": "后端脚本与事件",
+        "backend_description": "按计划自动执行服务端脚本，或者在创建、修改笔记等响应事件发生时触发运行。",
+        "render_title": "渲染笔记",
+        "render_description": "构建交互式仪表板和小型应用，直接在笔记中渲染出来，就像此处展示的时钟一样。",
+        "api_title": "脚本 API",
+        "api_description": "一个用于笔记、分支、属性和搜索的类型化API，可用于前端和后端脚本。"
     }
 }

@@ -36,7 +36,15 @@ export default class BuildHelper {
         rmSync(join(this.outDir, path), { recursive: true });
     }
 
-    async buildBackend(entryPoints: string[]) {
+    /**
+     * @param entryPoints source entry points to bundle into CJS.
+     * @param opts.importMetaUrlShim redirects `import.meta.url` to the bundle's own file so
+     *   bundled ESM deps calling `createRequire(import.meta.url)` work in CJS output (defaults
+     *   to `true`). Must be disabled for scripts that run in Electron's sandboxed renderer (e.g.
+     *   the desktop preload), where the injected `require("node:url")` banner throws.
+     */
+    async buildBackend(entryPoints: string[], opts: { importMetaUrlShim?: boolean } = {}) {
+        const { importMetaUrlShim = true } = opts;
         const result = await esbuild({
             entryPoints: entryPoints.map(e => join(this.projectDir, e)),
             tsconfig: join(this.projectDir, "tsconfig.app.json"),
@@ -79,7 +87,23 @@ export default class BuildHelper {
             },
             define: {
                 "process.env.NODE_ENV": JSON.stringify("production"),
+                // CJS output has no `import.meta`, so esbuild rewrites
+                // `import.meta.url` to `{}` (→ undefined). Bundled ESM deps
+                // (e.g. @anthropic-ai/claude-agent-sdk) call
+                // `createRequire(import.meta.url)` at module top level, which
+                // then throws `ERR_INVALID_ARG_VALUE`. Redirect it to the
+                // bundle's own file so createRequire()/`.resolve()` anchor at
+                // dist/ and can still locate sibling node_modules packages.
+                ...(importMetaUrlShim && { "import.meta.url": "__bundleImportMetaUrl" }),
             },
+            // The banner defines the redirect target above. It uses
+            // `require("node:url")`, which throws in Electron's sandboxed
+            // renderer, so it must be omitted for preload-style bundles.
+            ...(importMetaUrlShim && {
+                banner: {
+                    js: `const __bundleImportMetaUrl = require("node:url").pathToFileURL(__filename).href;`
+                }
+            }),
             minify: true
         });
         writeFileSync(join(this.outDir, "meta.json"), JSON.stringify(result.metafile));

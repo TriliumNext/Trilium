@@ -1,4 +1,4 @@
-import { type AttachmentRow, type AttributeRow, type BranchRow, dayjs, type NoteRow, type NoteType } from "@triliumnext/commons";
+import { type AttachmentRow, type AttributeRow, type BranchRow, dayjs, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType } from "@triliumnext/commons";
 import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 import url from "url";
@@ -61,6 +61,12 @@ export interface NoteParams {
     notePosition?: number;
     dateCreated?: string;
     utcDateCreated?: string;
+    /**
+     * Set internally when the client requested no `type` and it was derived from the parent note instead.
+     * In that case a `child:template` of a different type is still applied (and converts the note), whereas
+     * an explicitly chosen type wins over such a template (#3015).
+     */
+    isTypeDefaulted?: boolean;
     ignoreForbiddenParents?: boolean;
     target?: "into";
     /** Attributes to be set on the note. These are set atomically on note creation, so entity changes are not sent for attributes defined here. */
@@ -100,16 +106,24 @@ function deriveMime(type: string, mime?: string) {
     return noteTypesService.getDefaultMimeForNoteType(type);
 }
 
-function copyChildAttributes(parentNote: BNote, childNote: BNote) {
+function copyChildAttributes(parentNote: BNote, childNote: BNote, isTypeDefaulted = false) {
     for (const attr of parentNote.getAttributes()) {
         if (attr.name.startsWith("child:")) {
             const name = attr.name.substring(6);
-            const hasAlreadyTemplate = childNote.hasRelation("template");
 
-            if (hasAlreadyTemplate && attr.type === "relation" && name === "template") {
-                // if the note already has a template, it means the template was chosen by the user explicitly
-                // in the menu. In that case, we should override the default templates defined in the child: attrs
-                continue;
+            if (attr.type === "relation" && name === "template") {
+                if (childNote.hasRelation("template")) {
+                    // if the note already has a template, it means the template was chosen by the user explicitly
+                    // in the menu. In that case, we should override the default templates defined in the child: attrs
+                    continue;
+                }
+
+                const templateNote = becca.getNote(attr.value);
+                if (!isTypeDefaulted && templateNote && templateNote.type !== childNote.type) {
+                    // the explicitly chosen note type wins over the default template, which would otherwise
+                    // convert the note and fill it with content of a different type (#3015)
+                    continue;
+                }
             }
 
             new BAttribute({
@@ -306,7 +320,7 @@ function createNewNote(params: NoteParams): {
             // no special handling for ~inherit since it doesn't matter if it's assigned with the note creation or later
         }
 
-        copyChildAttributes(parentNote, note);
+        copyChildAttributes(parentNote, note, params.isTypeDefaulted);
 
         eventService.emit(eventService.ENTITY_CREATED, { entityName: "notes", entity: note });
         eventService.emit(eventService.ENTITY_CHANGED, { entityName: "notes", entity: note });
@@ -317,7 +331,11 @@ function createNewNote(params: NoteParams): {
         eventService.emit(eventService.ENTITY_CHANGED, { entityName: "branches", entity: branch });
         eventService.emit(eventService.CHILD_NOTE_CREATED, { childNote: note, parentNote });
 
-        getLog().info(`Created new note '${note.noteId}', branch '${branch.branchId}' of type '${note.type}', mime '${note.mime}'`);
+        if (!isEntityEventsDisabled) {
+            // Skip per-note logging during bulk operations (e.g. import), where it would otherwise
+            // emit one line per created note and flood the log on large imports.
+            getLog().info(`Created new note '${note.noteId}', branch '${branch.branchId}' of type '${note.type}', mime '${note.mime}'`);
+        }
 
         return {
             note,
@@ -326,14 +344,18 @@ function createNewNote(params: NoteParams): {
     });
 }
 
-function createNewNoteWithTarget(target: "into" | "after" | "before", targetBranchId: string | undefined, params: NoteParams) {
-    if (!params.type) {
-        const parentNote = becca.notes[params.parentNoteId];
+function createNewNoteWithTarget(target: "into" | "after" | "before", targetBranchId: string | undefined, rawParams: Omit<NoteParams, "type"> & { type?: NoteType }) {
+    if (!rawParams.type) {
+        const parentNote = becca.notes[rawParams.parentNoteId];
 
         // code note type can be inherited, otherwise "text" is the default
-        params.type = parentNote.type === "code" ? "code" : "text";
-        params.mime = parentNote.type === "code" ? parentNote.mime : "text/html";
+        rawParams.type = parentNote.type === "code" ? "code" : "text";
+        rawParams.mime = parentNote.type === "code" ? parentNote.mime : "text/html";
+        // the type is not an explicit user choice, so a child:template of another type may still convert the note
+        rawParams.isTypeDefaulted = true;
     }
+
+    const params = rawParams as NoteParams;
 
     if (target === "into") {
         return createNewNote(params);
@@ -416,20 +438,6 @@ function protectNote(note: BNote, protect: boolean) {
     }
 }
 
-/**
- * Title of the spreadsheet preview image. Unlike the inline drawing images, this attachment is not
- * referenced from the note content — it is the note's rendered thumbnail, looked up by title by the
- * image endpoint — so it must be exempt from the orphan-erasure scheduling below.
- */
-const SPREADSHEET_PREVIEW_ATTACHMENT_TITLE = "spreadsheet-export.png";
-
-/**
- * Title of the canvas SVG export image. Like the spreadsheet thumbnail, it is the note's rendered
- * preview (looked up by title, not referenced from the scene JSON), so it must be exempt from the
- * orphan-erasure scheduling below.
- */
-const CANVAS_EXPORT_ATTACHMENT_TITLE = "canvas-export.svg";
-
 export function checkImageAttachments(note: BNote, content: string) {
     // Canvas references images by the Excalidraw fileId stored as the attachment *title* in its
     // scene JSON, so orphans are detected by title; every other type references them by attachmentId
@@ -474,14 +482,15 @@ export function checkImageAttachments(note: BNote, content: string) {
             continue;
         }
 
-        // The spreadsheet preview thumbnail is never referenced from the content, so leave it alone
-        // (otherwise it would be scheduled for erasure on every save).
-        if (note.type === "spreadsheet" && attachment.title === SPREADSHEET_PREVIEW_ATTACHMENT_TITLE) {
+        // The spreadsheet preview thumbnail is never referenced from the content — it is the note's
+        // rendered image, looked up by title by the image endpoint — so leave it alone (otherwise it
+        // would be scheduled for erasure on every save).
+        if (note.type === "spreadsheet" && attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.spreadsheet) {
             continue;
         }
 
-        // Likewise for the canvas SVG export preview.
-        if (isCanvas && attachment.title === CANVAS_EXPORT_ATTACHMENT_TITLE) {
+        // Likewise for the canvas SVG export preview, which the scene JSON never references.
+        if (isCanvas && attachment.title === NOTE_TYPE_IMAGE_ATTACHMENTS.canvas) {
             continue;
         }
 
@@ -954,7 +963,31 @@ function saveAttachments(note: BNote, content: string) {
     // we also omit / at the beginning to keep the paths relative
     content = content.replace(/src="[^"]*\/api\/attachments\//g, 'src="api/attachments/');
 
+    content = stripStaleSrcset(content);
+
     return content;
+}
+
+/**
+ * When an image is pasted from the web its `src` is localized to a Trilium
+ * attachment, but the copied HTML often still carries the original `srcset`
+ * (and its companion `sizes`) pointing at external URLs. Browsers prefer
+ * `srcset` over `src`, so once those external URLs disappear the image breaks
+ * even though the local attachment is intact. Drop `srcset`/`sizes` from any
+ * `<img>` already backed by a local attachment so the valid `src` is used.
+ * Images whose `src` is still external keep their `srcset` — there it is the
+ * legitimate (and only) source.
+ */
+function stripStaleSrcset(content: string): string {
+    return content.replace(/<img\b[^>]*>/gi, (imgTag) => {
+        // Match quotes as balanced pairs (and allow optional whitespace around `=`) so a value
+        // containing the opposite quote character doesn't truncate the match and corrupt the tag.
+        if (!/\ssrc\s*=\s*(?:"api\/attachments\/[^"]+"|'api\/attachments\/[^']+')/i.test(imgTag)) {
+            return imgTag;
+        }
+
+        return imgTag.replace(/\s(?:srcset|sizes)\s*=\s*(?:"[^"]*"|'[^']*')/gi, "");
+    });
 }
 
 
@@ -1089,24 +1122,86 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
     }
 }
 
-function undeleteNote(noteId: string, taskContext: TaskContext<"undeleteNotes">) {
-    const noteRow = getSql().getRow<NoteRow>("SELECT * FROM notes WHERE noteId = ?", [noteId]);
+export interface UndeleteNoteOptions {
+    /**
+     * When the note's original parent no longer survives (it is itself deleted, or has been erased),
+     * reattach the note under this note instead — typically the inbox / default new-note location.
+     * Without it, such a note cannot be restored at all.
+     */
+    fallbackParentNoteId?: string;
+}
+
+export interface UndeleteNoteResult {
+    /** Whether the note (and its deleted subtree) was actually restored. */
+    undeleted: boolean;
+    /** True when the original location was gone and the note was reattached under the fallback parent. */
+    restoredToFallbackParent: boolean;
+}
+
+/**
+ * Attempts to restore a soft-deleted note (and the deleted subtree below it, sharing its deleteId).
+ *
+ * Normally the note is reattached to whichever of its original parents is still alive. If none is —
+ * because the parent was itself deleted or already erased — the note is an orphan: it can only be
+ * restored by giving it a new home, via {@link UndeleteNoteOptions.fallbackParentNoteId}.
+ */
+function undeleteNote(
+    noteId: string,
+    taskContext: TaskContext<"undeleteNotes">,
+    opts: UndeleteNoteOptions = {}
+): UndeleteNoteResult {
+    const failed: UndeleteNoteResult = { undeleted: false, restoredToFallbackParent: false };
+
+    // Use getRowOrNull: the note may have been erased (e.g. by the erasure scheduler or another client)
+    // between the caller observing it and this call, in which case its row no longer exists.
+    const noteRow = getSql().getRowOrNull<NoteRow>("SELECT * FROM notes WHERE noteId = ?", [noteId]);
+
+    if (!noteRow) {
+        getLog().info(`Note '${noteId}' no longer exists (has been erased) and thus cannot be undeleted.`);
+        return failed;
+    }
 
     if (!noteRow.isDeleted || !noteRow.deleteId) {
         getLog().error(`Note '${noteId}' is not deleted and thus cannot be undeleted.`);
-        return;
+        return failed;
     }
 
-    const undeletedParentBranchIds = getUndeletedParentBranchIds(noteId, noteRow.deleteId);
+    const deleteId = noteRow.deleteId;
+    const undeletedParentBranchIds = getUndeletedParentBranchIds(noteId, deleteId);
 
-    if (undeletedParentBranchIds.length === 0) {
-        // cannot undelete if there's no undeleted parent
-        return;
+    if (undeletedParentBranchIds.length > 0) {
+        for (const parentBranchId of undeletedParentBranchIds) {
+            undeleteBranch(parentBranchId, deleteId, taskContext);
+        }
+
+        return { undeleted: true, restoredToFallbackParent: false };
     }
 
-    for (const parentBranchId of undeletedParentBranchIds) {
-        undeleteBranch(parentBranchId, noteRow.deleteId, taskContext);
+    // The note is an orphan: none of its original parents survive.
+    if (!opts.fallbackParentNoteId) {
+        return failed;
     }
+
+    const fallbackParent = becca.getNote(opts.fallbackParentNoteId);
+
+    if (!fallbackParent) {
+        getLog().error(`Fallback parent '${opts.fallbackParentNoteId}' for undeleting note '${noteId}' was not found.`);
+        return failed;
+    }
+
+    // A fresh branch gives the orphan a new home. Constructing it also materialises the note's becca
+    // skeleton (see BBranch.childNote), which restoreNoteAndDescendants then fills in from the row.
+    new BBranch({
+        noteId,
+        parentNoteId: fallbackParent.noteId,
+        prefix: null
+    } as BranchRow).save();
+
+    taskContext.increaseProgressCount();
+
+    restoreNoteAndDescendants(noteRow, deleteId, taskContext);
+
+    return { undeleted: true, restoredToFallbackParent: true };
 }
 
 function undeleteBranch(branchId: string, deleteId: string, taskContext: TaskContext<"undeleteNotes">) {
@@ -1128,56 +1223,66 @@ function undeleteBranch(branchId: string, deleteId: string, taskContext: TaskCon
     taskContext.increaseProgressCount();
 
     if (noteRow.isDeleted && noteRow.deleteId === deleteId) {
-        // becca entity was already created as skeleton in "new Branch()" above
-        const noteEntity = becca.getNote(noteRow.noteId);
-        if (!noteEntity) {
-            throw new Error("Unable to find the just restored branch.");
-        }
+        restoreNoteAndDescendants(noteRow, deleteId, taskContext);
+    }
+}
 
-        noteEntity.updateFromRow(noteRow);
-        noteEntity.save();
+/**
+ * Restores a deleted note's row, attributes and attachments, then recurses into the branches of the
+ * subtree deleted alongside it. The note's becca skeleton must already exist — it is created as a
+ * side effect of saving a branch that points at it (see BBranch.childNote).
+ */
+function restoreNoteAndDescendants(noteRow: NoteRow, deleteId: string, taskContext: TaskContext<"undeleteNotes">) {
+    const sql = getSql();
+    const noteEntity = becca.getNote(noteRow.noteId);
 
-        const attributeRows = sql.getRows<AttributeRow>(
-            `
-                SELECT * FROM attributes
-                WHERE isDeleted = 1
-                AND deleteId = ?
-                AND (noteId = ?
-                            OR (type = 'relation' AND value = ?))`,
-            [deleteId, noteRow.noteId, noteRow.noteId]
-        );
+    if (!noteEntity) {
+        throw new Error("Unable to find the just restored note.");
+    }
 
-        for (const attributeRow of attributeRows) {
-            // relation might point to a note which hasn't been undeleted yet and would thus throw up
-            new BAttribute(attributeRow).save({ skipValidation: true });
-        }
+    noteEntity.updateFromRow(noteRow);
+    noteEntity.save();
 
-        const attachmentRows = sql.getRows<AttachmentRow>(
-            `
-            SELECT * FROM attachments
+    const attributeRows = sql.getRows<AttributeRow>(
+        `
+            SELECT * FROM attributes
             WHERE isDeleted = 1
             AND deleteId = ?
-            AND ownerId = ?`,
-            [deleteId, noteRow.noteId]
-        );
+            AND (noteId = ?
+                        OR (type = 'relation' AND value = ?))`,
+        [deleteId, noteRow.noteId, noteRow.noteId]
+    );
 
-        for (const attachmentRow of attachmentRows) {
-            new BAttachment(attachmentRow).save();
-        }
+    for (const attributeRow of attributeRows) {
+        // relation might point to a note which hasn't been undeleted yet and would thus throw up
+        new BAttribute(attributeRow).save({ skipValidation: true });
+    }
 
-        const childBranchIds = sql.getColumn<string>(
-            `
-            SELECT branches.branchId
-            FROM branches
-            WHERE branches.isDeleted = 1
-            AND branches.deleteId = ?
-            AND branches.parentNoteId = ?`,
-            [deleteId, noteRow.noteId]
-        );
+    const attachmentRows = sql.getRows<AttachmentRow>(
+        `
+        SELECT * FROM attachments
+        WHERE isDeleted = 1
+        AND deleteId = ?
+        AND ownerId = ?`,
+        [deleteId, noteRow.noteId]
+    );
 
-        for (const childBranchId of childBranchIds) {
-            undeleteBranch(childBranchId, deleteId, taskContext);
-        }
+    for (const attachmentRow of attachmentRows) {
+        new BAttachment(attachmentRow).save();
+    }
+
+    const childBranchIds = sql.getColumn<string>(
+        `
+        SELECT branches.branchId
+        FROM branches
+        WHERE branches.isDeleted = 1
+        AND branches.deleteId = ?
+        AND branches.parentNoteId = ?`,
+        [deleteId, noteRow.noteId]
+    );
+
+    for (const childBranchId of childBranchIds) {
+        undeleteBranch(childBranchId, deleteId, taskContext);
     }
 }
 

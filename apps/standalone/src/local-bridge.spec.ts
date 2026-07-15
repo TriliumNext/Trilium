@@ -281,3 +281,72 @@ describe("pending request rejection", () => {
         expect(() => worker.onmessage?.({ data: { type: "HTTP_REQUEST", id: "1", request: {} } })).not.toThrow();
     });
 });
+
+describe("localFetch", () => {
+    it("posts a GET LOCAL_REQUEST with no body transfer and builds a Response from the reply", async () => {
+        const bridge = await freshBridge();
+        const promise = bridge.localFetch(new Request("http://x/api/notes"));
+
+        const worker = lastWorker();
+        await vi.waitFor(() => expect(worker.postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "LOCAL_REQUEST", request: expect.objectContaining({ method: "GET", body: null }) }),
+            []
+        ));
+
+        const posted = worker.postMessage.mock.calls.at(-1)?.[0] as { id: string };
+        const body = new TextEncoder().encode("hello").buffer;
+        worker.onmessage?.({ data: { type: "LOCAL_RESPONSE", id: posted.id, response: { status: 201, headers: { "content-type": "text/plain" }, body } } });
+
+        const res = await promise;
+        expect(res.status).toBe(201);
+        expect(res.headers.get("content-type")).toBe("text/plain");
+        expect(await res.text()).toBe("hello");
+    });
+
+    it("transfers the body for non-GET requests and defaults a falsy status to 200", async () => {
+        const bridge = await freshBridge();
+        const promise = bridge.localFetch(new Request("http://x/api/notes", { method: "POST", body: "payload" }));
+
+        const worker = lastWorker();
+        await vi.waitFor(() => expect(worker.postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "LOCAL_REQUEST", request: expect.objectContaining({ method: "POST" }) }),
+            [expect.any(ArrayBuffer)]
+        ));
+
+        const posted = worker.postMessage.mock.calls.at(-1)?.[0] as { id: string };
+        worker.onmessage?.({ data: { type: "LOCAL_RESPONSE", id: posted.id, response: { status: 0, headers: {} } } });
+
+        const res = await promise;
+        expect(res.status).toBe(200);
+    });
+
+    it("builds a Response when the worker reply omits headers", async () => {
+        const bridge = await freshBridge();
+        const promise = bridge.localFetch(new Request("http://x/api/notes"));
+
+        const worker = lastWorker();
+        await vi.waitFor(() => expect(worker.postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "LOCAL_REQUEST" }),
+            []
+        ));
+
+        const posted = worker.postMessage.mock.calls.at(-1)?.[0] as { id: string };
+        // No `headers` field → the header-copy branch is skipped.
+        worker.onmessage?.({ data: { type: "LOCAL_RESPONSE", id: posted.id, response: { status: 200 } } });
+
+        const res = await promise;
+        expect(res.status).toBe(200);
+        expect(res.headers.get("content-type")).toBeNull();
+    });
+});
+
+describe("isLocalApiRequest", () => {
+    it("matches only the local API prefixes", async () => {
+        const bridge = await freshBridge();
+        for (const path of ["/bootstrap", "/api/notes", "/sync/changed", "/search/q"]) {
+            expect(bridge.isLocalApiRequest(new URL(`http://x${path}`))).toBe(true);
+        }
+        expect(bridge.isLocalApiRequest(new URL("http://x/app.js"))).toBe(false);
+        expect(bridge.isLocalApiRequest(new URL("http://x/"))).toBe(false);
+    });
+});

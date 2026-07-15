@@ -1,10 +1,19 @@
+import "./AddProviderModal.css";
+
 import { createPortal } from "preact/compat";
 import { useMemo, useRef, useState } from "preact/hooks";
-import Modal from "../../../react/Modal";
-import FormGroup from "../../../react/FormGroup";
-import FormSelect from "../../../react/FormSelect";
-import FormTextBox from "../../../react/FormTextBox";
+
 import { t } from "../../../../services/i18n";
+import { Badge } from "../../../react/Badge";
+import { Card, CardSection } from "../../../react/Card";
+import FormGroup from "../../../react/FormGroup";
+import FormTextBox from "../../../react/FormTextBox";
+import Modal from "../../../react/Modal";
+import SelectableCard, { SelectableCardGrid } from "../../../react/SelectableCard";
+import anthropicIcon from "./icons/anthropic.svg?url";
+import claudeAgentIcon from "./icons/claude-ai.svg?url";
+import geminiIcon from "./icons/gemini.svg?url";
+import openaiIcon from "./icons/openai.svg?url";
 
 export interface LlmProviderConfig {
     id: string;
@@ -18,12 +27,24 @@ export interface ProviderType {
     id: string;
     name: string;
     defaultBaseUrl: string;
+    /** URL of the provider's logo (an imported `*.svg?url`), rendered monochrome via a CSS mask. */
+    iconUrl: string;
+    /** Short blurb shown under the provider name on its selectable card. */
+    description: string;
+    /** Marks the provider as beta, shown as a badge next to its name. */
+    beta?: boolean;
+    /** When false, the provider needs no API key or base URL (e.g. subscription-based auth). */
+    usesApiKey?: boolean;
 }
 
+// The two Claude-powered providers lead the list so they sit together on the top row,
+// making the subscription-vs-API-key choice easy to spot.
 export const PROVIDER_TYPES: ProviderType[] = [
-    { id: "anthropic", name: "Anthropic", defaultBaseUrl: "https://api.anthropic.com/v1" },
-    { id: "openai", name: "OpenAI", defaultBaseUrl: "https://api.openai.com/v1" },
-    { id: "google", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta" }
+    { id: "anthropic", name: "Anthropic", defaultBaseUrl: "https://api.anthropic.com/v1", iconUrl: anthropicIcon, description: t("llm.provider_desc_anthropic") },
+    // Uses the Claude Agent SDK on the server; auth belongs to Claude Code (`claude /login`).
+    { id: "claude-agent", name: "Claude Code", defaultBaseUrl: "", iconUrl: claudeAgentIcon, description: t("llm.provider_desc_claude_agent"), beta: true, usesApiKey: false },
+    { id: "openai", name: "OpenAI", defaultBaseUrl: "https://api.openai.com/v1", iconUrl: openaiIcon, description: t("llm.provider_desc_openai") },
+    { id: "google", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta", iconUrl: geminiIcon, description: t("llm.provider_desc_google") }
 ];
 
 function isValidBaseUrl(value: string): boolean {
@@ -54,9 +75,10 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
         () => PROVIDER_TYPES.find(p => p.id === selectedProvider),
         [selectedProvider]
     );
+    const usesApiKey = providerType?.usesApiKey !== false;
     const trimmedBaseUrl = baseUrl.trim();
     const baseUrlIsValid = isValidBaseUrl(trimmedBaseUrl);
-    const canSubmit = !!apiKey.trim() && baseUrlIsValid;
+    const canSubmit = usesApiKey ? !!apiKey.trim() && baseUrlIsValid : true;
 
     function handleSubmit() {
         if (!canSubmit) {
@@ -67,8 +89,8 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
             id: `${selectedProvider}_${Date.now()}`,
             name: providerType?.name || selectedProvider,
             provider: selectedProvider,
-            apiKey: apiKey.trim(),
-            ...(trimmedBaseUrl && { baseURL: trimmedBaseUrl })
+            apiKey: usesApiKey ? apiKey.trim() : "",
+            ...(usesApiKey && trimmedBaseUrl && { baseURL: trimmedBaseUrl })
         };
 
         onSave(newProvider);
@@ -96,6 +118,7 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
             title={t("llm.add_provider_title")}
             className="add-provider-modal"
             size="md"
+            maxWidth={600}
             stackable
             footer={
                 <>
@@ -108,42 +131,65 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
                 </>
             }
         >
-            <FormGroup name="provider-type" label={t("llm.provider_type")}>
-                <FormSelect
-                    values={PROVIDER_TYPES}
-                    keyProperty="id"
-                    titleProperty="name"
-                    currentValue={selectedProvider}
-                    onChange={setSelectedProvider}
-                />
-            </FormGroup>
+            <Card heading={t("llm.provider_type")}>
+                <CardSection>
+                    <SelectableCardGrid columns={2}>
+                        {PROVIDER_TYPES.map((provider) => (
+                            <SelectableCard
+                                key={provider.id}
+                                iconUrl={provider.iconUrl}
+                                title={provider.beta
+                                    ? <span className="add-provider-card-heading">{provider.name}<Badge text={t("llm.beta")} className="add-provider-beta-badge" outline /></span>
+                                    : provider.name}
+                                description={provider.description}
+                                selected={selectedProvider === provider.id}
+                                onSelect={() => setSelectedProvider(provider.id)}
+                            />
+                        ))}
+                    </SelectableCardGrid>
+                </CardSection>
+            </Card>
 
-            <FormGroup
-                name="base-url"
-                label={t("llm.base_url")}
-                description={
-                    !baseUrlIsValid
-                        ? <span className="text-danger">{t("llm.base_url_invalid")}</span>
-                        : t("llm.base_url_description")
-                }
-            >
-                <FormTextBox
-                    type="text"
-                    currentValue={baseUrl}
-                    onChange={setBaseUrl}
-                    placeholder={providerType?.defaultBaseUrl}
-                />
-            </FormGroup>
+            <Card heading={t("llm.connection_details")}>
+                <CardSection>
+                    {usesApiKey ? (
+                        <FormGroup name="api-key" label={t("llm.api_key")}>
+                            <FormTextBox
+                                type="password"
+                                currentValue={apiKey}
+                                onChange={setApiKey}
+                                placeholder={t("llm.api_key_placeholder")}
+                                autoFocus
+                            />
+                        </FormGroup>
+                    ) : (
+                        <p>{t("llm.claude_agent_description")}</p>
+                    )}
+                </CardSection>
+            </Card>
 
-            <FormGroup name="api-key" label={t("llm.api_key")}>
-                <FormTextBox
-                    type="password"
-                    currentValue={apiKey}
-                    onChange={setApiKey}
-                    placeholder={t("llm.api_key_placeholder")}
-                    autoFocus
-                />
-            </FormGroup>
+            {usesApiKey && (
+                <Card heading={t("llm.advanced_options")}>
+                    <CardSection>
+                        <FormGroup
+                            name="base-url"
+                            label={t("llm.base_url")}
+                            description={
+                                !baseUrlIsValid
+                                    ? <span className="text-danger">{t("llm.base_url_invalid")}</span>
+                                    : t("llm.base_url_description")
+                            }
+                        >
+                            <FormTextBox
+                                type="text"
+                                currentValue={baseUrl}
+                                onChange={setBaseUrl}
+                                placeholder={providerType?.defaultBaseUrl}
+                            />
+                        </FormGroup>
+                    </CardSection>
+                </Card>
+            )}
         </Modal>,
         document.body
     );

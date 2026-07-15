@@ -757,6 +757,13 @@ table.promoted-attributes-in-tooltip th {
     z-index: 32767 !important;
 }
 
+/* Note tooltips are appended to <body> and are frequently triggered from inside modals
+   (e.g. links or deleted-note entries in a dialog). The base .tooltip z-index sits below
+   Bootstrap's modal, so raise them above it — matching .tooltip-top. */
+.tooltip.note-tooltip {
+    z-index: 32767 !important;
+}
+
 
 /* Tooltip for text editor content, placed at the bottom of the screen to be less intruive when editing */
 .tooltip.text-editor-content-tooltip {
@@ -1334,6 +1341,17 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     height: 10em;
 }
 
+/* The small box has room for the compact audio player's visualizer band (which carries a floor of its own) or
+   for its controls row and the file footer below it — not for all three. Drop the band, and release the floor
+   so the box shrinks to what is left instead of overflowing onto the Download / Open buttons. */
+.include-note[data-box-size="small"] .include-note-content.type-audio .audio-preview-visualization-wrapper {
+    display: none;
+}
+
+.include-note[data-box-size="small"] .include-note-content.type-audio .rendered-media {
+    min-height: 0;
+}
+
 .include-note[data-box-size="medium"] .include-note-content {
     max-height: 20em;
     overflow: auto;
@@ -1593,6 +1611,14 @@ body.desktop li.dropdown-submenu:hover > ul.dropdown-menu {
     overflow: auto;
 }
 
+/* Flipped upward (added by ContextMenu.repositionSubmenu) when the submenu would overflow the bottom of the viewport. */
+.dropdown-submenu > .dropdown-menu.submenu-flip-up {
+    top: auto;
+    bottom: 0;
+    margin-top: 0;
+    margin-bottom: -10px;
+}
+
 body.desktop .dropdown-submenu > .dropdown-menu {
     min-width: max-content;
     max-width: 300px;
@@ -1636,8 +1662,10 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     transform: rotate(-90deg);
 }
 
-::-webkit-scrollbar {
-    width: 12px;
+@supports (-webkit-box-reflect: below) {
+    ::-webkit-scrollbar {
+        width: 12px;
+    }
 }
 
 ::-webkit-scrollbar-thumb {
@@ -2201,6 +2229,7 @@ body.zen #launcher-container,
 body.zen #launcher-pane,
 body.zen #left-pane,
 body.zen #right-pane,
+body.zen .right-pane-peek-button,
 body.zen #mobile-sidebar-wrapper,
 body.zen .tab-row-container,
 body.zen .tab-row-widget,
@@ -2215,8 +2244,14 @@ body.zen .inline-title,
 body.zen .promoted-attributes-widget,
 body.zen .floating-buttons-children > *:not(.bx-edit-alt),
 body.zen .action-button,
+body.zen .tooltip.content-hint, /* content-area hints (task states, collapsible summaries, drag handles) */
 body.zen .note-split:not(.type-book) .note-list-widget {
     display: none !important;
+}
+
+body.experimental-feature-new-layout.zen #vertical-main-container {
+    /* Remove the placeholder for the right pane peek button */
+    --right-pane-peek-button-gutter: 0;
 }
 
 body.zen .split-note-container-widget > .gutter {
@@ -2871,6 +2906,17 @@ iframe.print-iframe {
 }
 
 /*
+ * COLLAPSIBLE LIST ITEMS
+ */
+
+:where(:root) {
+    --text-editor-collapsible-list-arrow-color: var(--muted-text-color);
+    /* Neutral by design: a translucent grey reads on both light and dark backgrounds. */
+    --text-editor-collapsible-list-arrow-hover-background: rgba(128, 128, 128, 0.25);
+    --text-editor-collapsible-list-arrow-hover-color: var(--main-text-color);
+}
+
+/*
  * TASK STATES
  */
 
@@ -2891,6 +2937,34 @@ iframe.print-iframe {
     position: relative;
     width: var(--_checkbox-size);
     height: var(--_checkbox-size);
+}
+
+/* Inline-block slot for using .tn-task-checkbox inside flowing text (e.g. the
+   task-state line in the checkbox tooltip). Without a block-formatting
+   ancestor the inner span is inline and its ::before / ::after collapse to
+   zero size, showing only the glyph. */
+.tn-task-checkbox-inline {
+    display: inline-block;
+    margin-inline-start: 8px;
+    vertical-align: middle;
+    line-height: 0;
+}
+
+.tn-task-checkbox-inline > .tn-task-checkbox {
+    /* Scale the checkbox (and, via `calc(var(--_checkbox-size) * ratio)`,
+       its glyph) to the surrounding text size so it fits the tooltip line
+       instead of forcing the default 18px. */
+    --_checkbox-size: 1.1em;
+    display: block;
+    transform: translateY(-0.05em);
+}
+
+/* Status line block above the checkbox tooltip's body. The 8px bottom margin
+   separates it from the "Right click…" hint when the line is present; when
+   the state is an anchor (unchecked/checked) the line is omitted entirely,
+   so no spacing is added. */
+.tn-task-tooltip-state {
+    margin-bottom: 8px;
 }
 
 /* Prevent variables from bleeding into nested items */
@@ -2953,7 +3027,6 @@ iframe.print-iframe {
 
     &:disabled {
         opacity: 1;
-        cursor: not-allowed;
     }
 }
 

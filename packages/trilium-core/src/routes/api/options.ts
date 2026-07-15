@@ -112,6 +112,8 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "textNoteCompletionEnabled",
     "textNoteSlashCommandsEnabled",
     "mathFieldEnabled",
+    "textNoteContentHintsEnabled",
+    "textNoteAutoLinkPreviewsEnabled",
     "includeNoteDefaultBoxSize",
     "layoutOrientation",
     "backgroundEffects",

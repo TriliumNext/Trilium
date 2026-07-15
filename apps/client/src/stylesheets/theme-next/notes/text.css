@@ -587,6 +587,44 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 }
 
 /*
+ * Multistate checkboxes
+ */
+
+/* Prevent variables from bleeding into nested items */
+.ck-content.ck-editor__editable .todo-list .todo-list {
+    --_task-checkbox-hover-background-color: initial;
+}
+
+/* Checkboxes with a task state */
+.ck-content .todo-list li[data-trilium-task-state]:not([data-trilium-task-state="none"]) {
+    --_task-checkbox-hover-background-color: var(--task-state-custom-hover-background-color, var(--task-checkbox-with-state-hover-background));
+}
+
+/* Checkboxes in the "done" state */
+.ck-content.ck-editor__editable .todo-list li:where(:not([data-trilium-task-state]), [data-trilium-task-state="done"]):has(> .todo-list__label input[type="checkbox"]:checked) {
+    --_task-checkbox-hover-background-color: var(--task-checkbox-done-hover-color);
+}
+
+/* All checkboxes */
+:root .ck-content.ck-editor__editable ul.todo-list li .todo-list__label input[type="checkbox"] {
+    background: transparent;
+
+    &:hover::before {
+        box-shadow: 0 0 0 5px color-mix(in srgb, var(--_task-checkbox-background, var(--task-checkbox-without-state-hover-background)) 25%, transparent);
+        background: var(--_task-checkbox-hover-background-color, var(--task-checkbox-without-state-hover-background));
+    }
+}
+
+/* Unknown task state */
+:root .ck-content.ck-editor__editable ul.todo-list li.tn-unknown-task-state .todo-list__label input[type="checkbox"] {
+    outline: none;
+
+    &:before {
+        outline: 2px solid var(--task-checkbox-unknown-state-color);
+    }
+}
+
+/*
  * EDITOR'S CONTENT
  */
 
@@ -646,9 +684,16 @@ pre button.copy-button.icon-action {
     padding-inline-end: calc(var(--icon-button-size) + (var(--copy-button-margin-size) * 2));
 }
 
-html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
+/* Child combinator: as a descendant one it also hit first-children nested inside a block, stacking a pixel per level. */
+html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     /* Create some space for the top-side shadow */
     margin-top: 1px !important;
+}
+
+/* Round the player, not the card: clipping the card would crop the insert-paragraph buttons. 7px = 8px radius - 1px border. */
+.include-note-content.type-video .video-preview-wrapper {
+    border-radius: 0 0 7px 7px;
+    overflow: hidden;
 }
 
 .ck.ck-editor__editable pre[data-language]::after {

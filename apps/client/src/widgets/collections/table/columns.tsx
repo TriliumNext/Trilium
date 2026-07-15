@@ -1,7 +1,7 @@
 import { LabelType } from "@triliumnext/commons";
 import { JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
-import type { CellComponent, ColumnDefinition, EmptyCallback, FormatterParams, ValueBooleanCallback, ValueVoidCallback } from "tabulator-tables";
+import type { CellComponent, ColumnDefinition, EmptyCallback, FormatterParams, RowComponent, ValueBooleanCallback, ValueVoidCallback } from "tabulator-tables";
 
 import froca from "../../../services/froca.js";
 import Icon from "../../react/Icon.jsx";
@@ -29,7 +29,11 @@ const labelTypeMappings: Record<ColumnType, Partial<ColumnDefinition>> = {
     },
     boolean: {
         formatter: "tickCross",
-        editor: "tickCross"
+        editor: "tickCross",
+        // Values arrive as strings ("true"/"false") from stored labels but as real booleans
+        // once toggled via the editor; the boolean sorter normalizes both, whereas the default
+        // string sorter treats boolean `false` as empty and orders it inconsistently.
+        sorter: "boolean"
     },
     date: {
         editor: "date",
@@ -71,10 +75,6 @@ interface BuildColumnArgs {
     position?: number;
 }
 
-interface RowNumberFormatterParams {
-    movableRows?: boolean;
-}
-
 export function buildColumnDefinitions({ info, movableRows, existingColumnData, rowNumberHint, position }: BuildColumnArgs) {
     let columnDefs: ColumnDefinition[] = [
         {
@@ -85,11 +85,7 @@ export function buildColumnDefinitions({ info, movableRows, existingColumnData, 
             frozen: true,
             rowHandle: movableRows,
             width: calculateIndexColumnWidth(rowNumberHint, movableRows),
-            formatter: wrapFormatter(({ cell, formatterParams }) => <div>
-                {(formatterParams as RowNumberFormatterParams).movableRows && <><span class="bx bx-dots-vertical-rounded" />{" "}</>}
-                {cell.getRow().getPosition(true)}
-            </div>),
-            formatterParams: { movableRows } satisfies RowNumberFormatterParams
+            formatter: (cell) => rowNumberFormatter(cell, movableRows)
         },
         {
             field: "noteId",
@@ -179,6 +175,38 @@ function calculateIndexColumnWidth(rowNumberHint: number, movableRows: boolean):
         columnWidth += 32;
     }
     return columnWidth;
+}
+
+// `watchPosition` is provided by Tabulator but missing from the current type definitions.
+type RowComponentWithPositionWatch = RowComponent & {
+    watchPosition(callback: (position: number) => void): void;
+};
+
+function rowNumberFormatter(cell: CellComponent, movableRows: boolean): HTMLElement {
+    const container = document.createElement("div");
+
+    if (movableRows) {
+        const handle = document.createElement("span");
+        handle.className = "bx bx-dots-vertical-rounded";
+        container.append(handle, " ");
+    }
+
+    const number = document.createElement("span");
+    container.append(number);
+
+    // The row-number column has no field, so Tabulator never re-runs its formatter when the
+    // rows are re-sorted or reordered, leaving stale numbers (see #10347). Watching the row
+    // position keeps the displayed number in sync, mirroring Tabulator's built-in "rownum".
+    const row = cell.getRow() as RowComponentWithPositionWatch;
+    const currentPosition = row.getPosition();
+    if (currentPosition) {
+        number.innerText = String(currentPosition);
+    }
+    row.watchPosition((position) => {
+        number.innerText = String(position);
+    });
+
+    return container;
 }
 
 interface FormatterOpts {

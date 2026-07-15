@@ -12,6 +12,10 @@ import Icon from "../react/Icon";
 
 const cachedIsMobile = utils.isMobile();
 
+// Hoisted so the reference is stable across renders — an inline object would change identity
+// every render and defeat Dropdown's tooltip-config memoization, recreating the tooltip each time.
+const DROPDOWN_TITLE_OPTIONS = { animation: false } as const;
+
 export const LaunchBarContext = createContext<{
     isHorizontalLayout: boolean;
 }>({
@@ -58,7 +62,7 @@ export function LaunchBarDropdownButton({ children, icon, dropdownOptions, launc
             hideToggleArrow
             text={<Icon icon={icon} />}
             titlePosition={titlePosition}
-            titleOptions={{ animation: false }}
+            titleOptions={DROPDOWN_TITLE_OPTIONS}
             dropdownOptions={{
                 ...dropdownOptions,
                 popperConfig: {

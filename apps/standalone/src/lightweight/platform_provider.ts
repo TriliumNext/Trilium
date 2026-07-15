@@ -13,6 +13,7 @@ export default class StandalonePlatformProvider implements PlatformProvider {
     readonly isElectron = false;
     readonly isMac = false;
     readonly isWindows = false;
+    readonly isLinux = false;
 
     private envMap: Record<string, string> = {};
 

@@ -1,3 +1,4 @@
+import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_chat_text.js";
 import normalizeString from "normalize-strings";
 import striptags from "striptags";
 
@@ -470,7 +471,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
     try {
         let content: string | undefined;
 
-        if (["text", "code", "mermaid", "canvas", "mindMap"].includes(note.type)) {
+        if (["text", "code", "mermaid", "canvas", "mindMap", "llmChat"].includes(note.type)) {
             const raw = note.getContent();
             if (raw && typeof raw === "string") {
                 content = raw;
@@ -498,6 +499,12 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
         // Strip HTML tags for text notes
         if (note.type === "text") {
             content = striptags(content);
+        } else if (note.type === "llmChat") {
+            // The note stores the whole conversation as a JSON blob; show the readable prose only.
+            content = extractLlmChatText(content);
+            if (!content) {
+                return "";
+            }
         }
 
         // Normalize whitespace while preserving paragraph breaks

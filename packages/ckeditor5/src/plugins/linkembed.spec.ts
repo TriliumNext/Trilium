@@ -1,10 +1,14 @@
+import type { LinkEmbedMetadata } from "@triliumnext/commons";
 import {
     _getViewData as getViewData,
     _setModelData as setModelData,
     BlockQuote,
     ClassicEditor,
+    ContextualBalloon,
     Essentials,
+    Heading,
     Link,
+    List,
     Paragraph,
     Undo,
     type ViewElement
@@ -13,17 +17,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import { installGlobMock } from "../../test/globals-test-kit.js";
-import LinkEmbed, { CHANGE_LINK_DISPLAY_COMMAND, LINK_EMBED_COMMAND } from "./linkembed.js";
+import LinkEmbedFormView from "./link_embed_form.js";
+import LinkEmbed, { CHANGE_LINK_DISPLAY_COMMAND, LINK_EMBED_COMMAND, REMOVE_LINK_EMBED_COMMAND } from "./linkembed.js";
 
 const META = {
     url: "https://example.com/",
-    embedType: "web",
+    // The host only ever reports "youtube" or "opengraph". It matters here that this is the real
+    // thing: chooseLinkPreviewKind() treats anything other than "opengraph" as embeddable, so a made-up
+    // type would send a URL standing alone in its block down the block-embed path instead of the mention one.
+    embedType: "opengraph",
     title: "Example title",
     description: "Some description",
     favicon: "https://example.com/favicon.ico",
     siteName: "Example",
     image: "https://example.com/image.png"
-};
+} satisfies LinkEmbedMetadata;
 
 describe("LinkEmbed", () => {
     let editor: ClassicEditor;
@@ -51,7 +59,9 @@ describe("LinkEmbed", () => {
             })
         });
 
-        editor = await createTestEditor([Essentials, Paragraph, BlockQuote, Link, Undo, LinkEmbed]);
+        // Heading, List and BlockQuote are loaded so the placement rules (which keep a URL inline
+        // inside a heading, list item, table cell or quote) can be exercised against a real schema.
+        editor = await createTestEditor([Essentials, Paragraph, Heading, List, BlockQuote, Link, Undo, LinkEmbed]);
     });
 
     // -----------------------------------------------------------------------
@@ -65,29 +75,56 @@ describe("LinkEmbed", () => {
         expect(editor.ui.componentFactory.has("linkEmbed")).toBe(true);
     });
 
-    it("binds the button to the insert command and executes it on click", () => {
-        const view = editor.ui.componentFactory.create("linkEmbed") as {
-            isOn: boolean;
+    it("binds the button to the insert command and opens the balloon form on click", () => {
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+
+        const view = editor.ui.componentFactory.create("linkEmbed") as unknown as {
             isEnabled: boolean;
             fire(name: string): void;
         };
         const command = editor.commands.get(LINK_EMBED_COMMAND);
-
         expect(view.isEnabled).toBe(command?.isEnabled);
 
-        const spy = vi.spyOn(editor, "execute");
+        const balloon = editor.plugins.get(ContextualBalloon);
+        expect(balloon.visibleView).toBeNull();
+
+        // The insert flow now happens in the editor's own balloon, not in a Trilium modal.
         view.fire("execute");
-        expect(spy).toHaveBeenCalledWith(LINK_EMBED_COMMAND);
+        expect(balloon.visibleView).toBeInstanceOf(LinkEmbedFormView);
     });
 
     // -----------------------------------------------------------------------
     // InsertLinkEmbedCommand
     // -----------------------------------------------------------------------
 
-    it("triggers addLinkEmbedToText on the component when executed", () => {
-        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
-        editor.execute(LINK_EMBED_COMMAND);
-        expect(triggerCommand).toHaveBeenCalledWith("addLinkEmbedToText");
+    it("inserts a preview for a URL, storing all the metadata whatever the mode", async () => {
+        const url = "https://example.com/article";
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+        // An inline mention keeps the description and image it does not itself show, so switching it
+        // to a card later never has to go back to the network.
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "inline" });
+
+        expect(fetchLinkMetadata).toHaveBeenCalledWith(url);
+        const mention = findElement(editor, "linkMention");
+        expect(mention?.getAttribute("url")).toBe(url);
+        expect(mention?.getAttribute("description")).toBe(META.description);
+        expect(mention?.getAttribute("image")).toBe(META.image);
+        expect(mention?.getAttribute("siteName")).toBe(META.siteName);
+    });
+
+    it("forces the opengraph type for a card, and keeps the detected one for an embed", async () => {
+        const url = "https://youtube.com/watch?v=abc12345678";
+        fetchLinkMetadata.mockResolvedValue({ ...META, url, embedType: "youtube" });
+
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card" });
+        // A card is an embed that declines to play.
+        expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("opengraph");
+
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "embed" });
+        expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("youtube");
     });
 
     it("is enabled in a paragraph and disabled when read-only", () => {
@@ -306,6 +343,16 @@ describe("LinkEmbed", () => {
         expect(command.embedAvailable).toBe(true);
     });
 
+    it("exposes an http(s) URL but withholds a hostile one, so the toolbar cannot arm it", () => {
+        setModelData(editor.model, '[<linkEmbed url="https://e.com/page" embedType="opengraph"></linkEmbed>]');
+        expect(changeCommand(editor).url).toBe("https://e.com/page");
+
+        // `url` comes from the stored data-url, which the sanitizers keep verbatim. Withholding it
+        // leaves the "open link in new tab" and copy buttons disabled rather than armed.
+        setModelData(editor.model, '[<linkEmbed url="javascript:alert(document.cookie)" embedType="opengraph"></linkEmbed>]');
+        expect(changeCommand(editor).url).toBeNull();
+    });
+
     it("reports 'card' for an opengraph linkEmbed and 'embed' otherwise", () => {
         setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="opengraph"></linkEmbed>]');
         expect(changeCommand(editor).value).toBe("card");
@@ -379,6 +426,45 @@ describe("LinkEmbed", () => {
     });
 
     // -----------------------------------------------------------------------
+    // RemoveLinkEmbedCommand (the toolbar's unlink button)
+    // -----------------------------------------------------------------------
+
+    it("unlinks a selected linkMention, leaving the bare URL as plain text", () => {
+        setModelData(editor.model, '<paragraph>[<linkMention url="https://e.com/" title="T"></linkMention>]</paragraph>');
+
+        editor.execute(REMOVE_LINK_EMBED_COMMAND);
+
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        // Mirrors the default link's unlink: the URL survives as plain, non-linked text.
+        expect(editor.getData()).toBe("<p>https://e.com/</p>");
+    });
+
+    it("unlinks a selected block linkEmbed the same way", () => {
+        setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="youtube"></linkEmbed>]');
+
+        editor.execute(REMOVE_LINK_EMBED_COMMAND);
+
+        expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        expect(editor.getData()).toBe("<p>https://e.com/</p>");
+    });
+
+    it("is disabled with no link widget selected, and does nothing if executed anyway", () => {
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = editor.getData();
+
+        const command = editor.commands.get(REMOVE_LINK_EMBED_COMMAND);
+        expect(command?.isEnabled).toBe(false);
+
+        // Command swallows execute() while disabled, so force it enabled to exercise the early return.
+        if (command) {
+            command.isEnabled = true;
+        }
+        command?.execute();
+
+        expect(editor.getData()).toBe(before);
+    });
+
+    // -----------------------------------------------------------------------
     // AutoLinkToMention
     // -----------------------------------------------------------------------
 
@@ -393,6 +479,162 @@ describe("LinkEmbed", () => {
         expect(mention).toBeDefined();
         expect(mention?.getAttribute("url")).toBe(url);
         expect(mention?.getAttribute("title")).toBe(META.title);
+    });
+
+    it("leaves the plain link untouched when the metadata could not be resolved, and says why", async () => {
+        const url = "https://blocked.example.com/article";
+        fetchLinkMetadata.mockResolvedValueOnce({ url, embedType: "opengraph", title: "blocked.example.com", unresolved: true });
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+        addLinkedText(editor, url);
+        await flushFetch();
+
+        expect(fetchLinkMetadata).toHaveBeenCalledWith(url);
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        // The link AutoLink created is still there, as plain linked text.
+        expect(editor.getData()).toContain(`<a href="${url}">${url}</a>`);
+        // The warning says what happened but never names the URL: a console gets screenshotted and
+        // pasted into bug reports, and a pasted link can carry a one-time token.
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining("Link preview dropped"));
+        expect(warn).not.toHaveBeenCalledWith(expect.stringContaining(url));
+
+        warn.mockRestore();
+    });
+
+    it("does not auto-convert when autoLinkPreviewsEnabled is false, but still offers the insert command", async () => {
+        const url = "https://example.com/article";
+        editor = await createTestEditor(
+            [Essentials, Paragraph, BlockQuote, Link, Undo, LinkEmbed],
+            hostConfig({ autoLinkPreviewsEnabled: false })
+        );
+
+        addLinkedText(editor, url);
+        await flushFetch();
+
+        // The URL is not even looked up: the check runs before the metadata request.
+        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+        expect(editor.getData()).toContain(`<a href="${url}">${url}</a>`);
+
+        // Inserting a preview by hand is unaffected by the option: only auto-detection is gated.
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card" });
+        expect(findElement(editor, "linkEmbed")?.getAttribute("url")).toBe(url);
+    });
+
+    it("re-reads a getter on every detected URL, so toggling the option needs no new editor", async () => {
+        let enabled = false;
+        editor = await createTestEditor(
+            [Essentials, Paragraph, BlockQuote, Link, Undo, LinkEmbed],
+            hostConfig({ autoLinkPreviewsEnabled: () => enabled })
+        );
+
+        addLinkedText(editor, "https://example.com/off");
+        await flushFetch();
+        expect(findElement(editor, "linkMention")).toBeUndefined();
+
+        // Flip the option on the same editor instance — the next detected URL converts.
+        enabled = true;
+        addLinkedText(editor, "https://example.com/on");
+        await flushFetch();
+        expect(findElement(editor, "linkMention")).toBeDefined();
+    });
+
+    // -----------------------------------------------------------------------
+    // Placement: what shape an auto-detected URL takes, and why
+    // -----------------------------------------------------------------------
+
+    describe("placement", () => {
+        const PLAIN_URL = "https://example.com/article";
+        const VIDEO_URL = "https://youtube.com/watch?v=abc12345678";
+
+        /** Makes the next fetch report `url` as embeddable, the way a YouTube link comes back. */
+        function embeddable(url: string) {
+            fetchLinkMetadata.mockResolvedValueOnce({ ...META, url, embedType: "youtube" });
+        }
+
+        it("turns a URL left alone on its own line into a card", async () => {
+            autoLinkIn(editor, urlLeftAloneOnItsOwnLine(PLAIN_URL), PLAIN_URL);
+            await flushFetch();
+
+            expect(findElement(editor, "linkMention")).toBeUndefined();
+            const embed = findElement(editor, "linkEmbed");
+            expect(embed?.getAttribute("url")).toBe(PLAIN_URL);
+            // "opengraph" is what the renderer shows as a card rather than a player.
+            expect(embed?.getAttribute("embedType")).toBe("opengraph");
+        });
+
+        it("turns an embeddable URL left alone on its own line into a player", async () => {
+            embeddable(VIDEO_URL);
+
+            autoLinkIn(editor, urlLeftAloneOnItsOwnLine(VIDEO_URL), VIDEO_URL);
+            await flushFetch();
+
+            expect(findElement(editor, "linkMention")).toBeUndefined();
+            expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("youtube");
+        });
+
+        it("keeps the URL inline while the caret is still on its line, embeddable or not", async () => {
+            // The user typed a space, not Enter: they may still be writing that sentence, so the URL
+            // is alone only by accident. Nothing has been *left* alone yet.
+            embeddable(VIDEO_URL);
+            addLinkedText(editor, VIDEO_URL);
+            await flushFetch();
+
+            expect(findElement(editor, "linkEmbed")).toBeUndefined();
+            expect(findElement(editor, "linkMention")?.getAttribute("url")).toBe(VIDEO_URL);
+        });
+
+        it("keeps the URL inline when text sits beside it on the line", async () => {
+            autoLinkIn(editor, `<paragraph>See ${PLAIN_URL}</paragraph><paragraph>[]</paragraph>`, PLAIN_URL);
+            await flushFetch();
+
+            expect(findElement(editor, "linkEmbed")).toBeUndefined();
+            expect(findElement(editor, "linkMention")).toBeDefined();
+        });
+
+        it("keeps the URL inline inside a list item, a quote and a heading", async () => {
+            // A block preview inside these reads as a layout accident, so they stay inline — even
+            // though the URL is alone in its block and the caret has moved on.
+            const blocks = {
+                "list item": `<paragraph listIndent="0" listItemId="a" listType="bulleted">${PLAIN_URL}</paragraph>`,
+                quote: `<blockQuote><paragraph>${PLAIN_URL}</paragraph></blockQuote>`,
+                heading: `<heading2>${PLAIN_URL}</heading2>`
+            };
+
+            for (const block of Object.values(blocks)) {
+                autoLinkIn(editor, `${block}<paragraph>[]</paragraph>`, PLAIN_URL);
+                await flushFetch();
+
+                expect(findElement(editor, "linkEmbed")).toBeUndefined();
+                expect(findElement(editor, "linkMention")).toBeDefined();
+            }
+        });
+
+        it("leaves the caret where the user moved it, even if they typed while the fetch was in flight", async () => {
+            const { resolveFetch } = useDeferredFetch();
+            autoLinkIn(editor, urlLeftAloneOnItsOwnLine(PLAIN_URL), PLAIN_URL);
+
+            // The user carries on typing on the new line while the metadata is still being fetched.
+            editor.model.change((writer) => {
+                const caret = editor.model.document.selection.getFirstPosition();
+                if (!caret) {
+                    throw new Error("Expected a caret position.");
+                }
+                writer.insertText("hello", caret);
+            });
+
+            resolveFetch({ ...META, url: PLAIN_URL });
+            await flushFetch();
+
+            // The card took over the URL's paragraph without dragging the caret back into it: the
+            // typed text is intact and the caret still sits after it.
+            expect(findElement(editor, "linkEmbed")).toBeDefined();
+            expect(editor.getData()).toContain("<p>hello</p>");
+
+            const caretBlock = editor.model.document.selection.getFirstPosition()?.parent;
+            expect(caretBlock?.is("element", "paragraph")).toBe(true);
+        });
     });
 
     it("ignores a labeled link whose text differs from the href", async () => {
@@ -629,12 +871,21 @@ function changeCommand(editor: ClassicEditor): {
     isEnabled: boolean;
     value: string | null;
     embedAvailable: boolean;
+    url: string | null;
 } {
     const command = editor.commands.get(CHANGE_LINK_DISPLAY_COMMAND);
     if (!command) {
         throw new Error("changeLinkDisplay command is not registered.");
     }
-    return command as unknown as { isEnabled: boolean; value: string | null; embedAvailable: boolean };
+    return command as unknown as { isEnabled: boolean; value: string | null; embedAvailable: boolean; url: string | null };
+}
+
+/**
+ * Editor config entries the host supplies but the CKEditor config type does not declare — the host
+ * sets them through the same kind of cast (see the client's `buildConfig`).
+ */
+function hostConfig(entries: Record<string, unknown>): Parameters<typeof createTestEditor>[1] {
+    return entries as Parameters<typeof createTestEditor>[1];
 }
 
 function findElement(editor: ClassicEditor, name: string) {
@@ -652,9 +903,53 @@ function findElement(editor: ClassicEditor, name: string) {
 }
 
 /**
+ * Sets up `modelData` and then, in a separate change, applies `linkHref` to the text node holding
+ * `href` — exactly what AutoLink does. Where `modelData` leaves the caret *is* the gesture under
+ * test: still inside the URL's block (the user typed a space and may keep going), or in the block
+ * after it (the user pressed Enter, which splits the paragraph and carries the caret onward).
+ */
+function autoLinkIn(editor: ClassicEditor, modelData: string, href: string): void {
+    setModelData(editor.model, modelData);
+
+    editor.model.change((writer) => {
+        const root = editor.model.document.getRoot();
+        if (!root) {
+            throw new Error("Expected a document root.");
+        }
+
+        for (const item of writer.createRangeIn(root).getWalker()) {
+            if (!item.item.is("$textProxy")) continue;
+
+            // AutoLink links the URL itself, not the whole text node it happens to share with the
+            // words around it — so link exactly the URL's slice of the node.
+            const index = item.item.data.indexOf(href);
+            if (index < 0) continue;
+
+            const parent = item.item.parent;
+            if (!parent || !parent.is("element") || item.item.startOffset === null) continue;
+
+            const start = item.item.startOffset + index;
+            writer.setAttribute("linkHref", href, writer.createRange(
+                writer.createPositionAt(parent, start),
+                writer.createPositionAt(parent, start + href.length)
+            ));
+            return;
+        }
+
+        throw new Error(`No text node holds ${href}.`);
+    });
+}
+
+/** The model data for a URL left alone on its own line, with the caret carried to the next one. */
+function urlLeftAloneOnItsOwnLine(url: string): string {
+    return `<paragraph>${url}</paragraph><paragraph>[]</paragraph>`;
+}
+
+/**
  * Inserts text into the paragraph and applies a `linkHref` attribute to it via a
  * writer change (null -> url), exactly as CKEditor's AutoLink plugin does when a
  * raw URL is pasted/typed. This drives the `AutoLinkToMention` `change:data` listener.
+ * The caret is left in the block, as it is when the user types a space after the URL.
  */
 function addLinkedText(editor: ClassicEditor, href: string, text = href): void {
     // First insert the plain text in its own batch.
@@ -671,9 +966,12 @@ function addLinkedText(editor: ClassicEditor, href: string, text = href): void {
     });
 }
 
-/** Lets the `fetchLinkMetadata().then(...)` microtask chain resolve. */
+/**
+ * Lets the `fetchLinkMetadata().then(...)` chain resolve and the resulting model change apply.
+ * A task turn is awaited rather than a fixed number of microtasks: the latter is a guess at the
+ * chain's depth that silently under-waits, which makes a conversion test fail and — worse — makes a
+ * test asserting that NO conversion happened pass for the wrong reason.
+ */
 async function flushFetch(): Promise<void> {
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 }

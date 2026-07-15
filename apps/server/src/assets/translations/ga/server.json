@@ -66,7 +66,9 @@
     "toggle-classic-editor-toolbar": "Athraigh an cluaisín Formáidithe don eagarthóir leis an mbarra uirlisí socraithe",
     "toggle-zen-mode": "Cumasaíonn/díchumasaíonn sé an mód zen (comhad úsáideora íosta le haghaidh eagarthóireacht níos dírithe)",
     "save-named-revision": "Sábháil athbhreithniú ainmnithe den nóta gníomhach",
-    "toggle-archived-notes": "Taispeáin/folaigh nótaí cartlannaithe sa chrann nótaí"
+    "toggle-archived-notes": "Taispeáin/folaigh nótaí cartlannaithe sa chrann nótaí",
+    "peek-right-pane": "Féach ar an bpainéal ar dheis mar phainéal sealadach a shnámhann os cionn an ábhair agus a dhúnann nuair a chailleann sé fócas",
+    "show-deleted-notes": "Taispeáin an dialóg \"Nótaí Scriosta\""
   },
   "keyboard_action_names": {
     "back-in-note-history": "Ar ais i Stair na Nótaí",
@@ -165,7 +167,9 @@
     "copy-without-formatting": "Cóipeáil Gan Formáidiú",
     "force-save-revision": "Athbhreithniú Sábháilte Fórsála",
     "save-named-revision": "Sábháil Athbhreithniú Ainmnithe",
-    "toggle-archived-notes": "Infheictheacht Nótaí Cartlainne a Athrú"
+    "toggle-archived-notes": "Infheictheacht Nótaí Cartlainne a Athrú",
+    "peek-right-pane": "Féach ar an bPanáil Ar Dheis",
+    "show-deleted-notes": "Taispeáin Nótaí Scriosta"
   },
   "login": {
     "title": "Logáil Isteach",
@@ -299,7 +303,9 @@
     "task-state-attr-color": "Dath",
     "task-state-attr-is-hidden": "I bhfolach ón liosta",
     "security-title": "Slándáil",
-    "desktop-title": "Deasc"
+    "desktop-title": "Deasc",
+    "deleted-notes-title": "Nótaí scriosta",
+    "color-scheme-switcher-title": "Athraitheoir Scéim Dathanna"
   },
   "notes": {
     "new-note": "Nóta nua",
@@ -350,7 +356,8 @@
     "expand": "Leathnaigh",
     "toggle-navigation": "Nascleanúint a Athrú",
     "toggle-toc": "Clár Ábhair a Athsholáthar",
-    "logo-alt": "Lógó"
+    "logo-alt": "Lógó",
+    "login": "Logáil Isteach"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Sleachta Téacs",
@@ -426,5 +433,31 @@
   },
   "onenote_import": {
     "root-title": "Allmhairiú OneNote"
+  },
+  "notion_import": {
+    "root-title": "Iompórtáil Notion",
+    "markdown-export-unsupported": "Breathnaíonn sé seo cosúil le easpórtáil \"Markdown & CSV\" de chuid Notion, nach féidir le Trilium a allmhairiú. Ath-easpórtáil do spás oibre Notion ag baint úsáide as an bhformáid easpórtála \"HTML\" agus allmhairigh é sin ina ionad.",
+    "subpage-folders-disabled": "Cruthaíodh an easpórtáil Notion seo gan an rogha \"Cruthaigh fillteáin do fho-leathanaigh\", mar sin ní féidir ordlathas an leathanaigh a atógáil. Ath-easpórtáil ó Notion le \"Cruthaigh fillteáin do fho-leathanaigh\" cumasaithe agus allmhairigh é sin ina ionad."
+  },
+  "keep_import": {
+    "root-title": "Iompórtáil Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Iompórtáil Anytype",
+    "protobuf-export-unsupported": "Breathnaíonn sé seo cosúil le heaspórtáil \"Protobuf\" de chuid Anytype, nach féidir le Trilium a allmhairiú. Ath-easpórtáil do spás Anytype ag baint úsáide as an bhformáid \"Any-Block\" le \"JSON\" roghnaithe agus allmhairigh é sin ina ionad.",
+    "markdown-export-unsupported": "Breathnaíonn sé seo cosúil le heaspórtáil \"Markdown\" de chuid Anytype, nach féidir le Trilium a allmhairiú. Ath-easpórtáil do spás Anytype ag baint úsáide as an bhformáid \"Any-Block\" le \"JSON\" roghnaithe agus allmhairigh é sin ina ionad."
+  },
+  "obsidian_import": {
+    "root-title": "Allmhairiú Obsidian"
+  },
+  "export": {
+    "zip_filter": "Cartlann ZIP (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "Tá an rogha comhaid imithe in éag nó tá sé neamhbhailí. Roghnaigh an comhad arís le do thoil."
+  },
+  "note_conversion": {
+    "revision_before_markdown": "Roimh an gcomhshó go Markdown",
+    "revision_before_text": "Roimh an gcomhshó go Nóta Téacs"
   }
 }

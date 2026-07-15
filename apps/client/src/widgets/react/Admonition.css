@@ -40,3 +40,16 @@
 .extended-admonition .admonition-details {
     margin-block-start: 0.5em;
 }
+
+/* Title-less variant: the icon sits inline at the start of the body instead of in a header. */
+.extended-admonition.no-title .admonition-body {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+}
+
+.extended-admonition.no-title .admonition-body .tn-icon {
+    flex-shrink: 0;
+    color: var(--accent-color);
+    font-size: 1.2em;
+}

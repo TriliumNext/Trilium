@@ -64,7 +64,9 @@
     "force-save-revision": "활성 노트의 새 버전을 강제로 생성/저장",
     "toggle-book-properties": "컬렉션 속성 토글",
     "toggle-classic-editor-toolbar": "고정 도구 모음 에디터의 서식 탭을 전환",
-    "toggle-zen-mode": "젠 모드 활성화/비활성화(편집에 집중하기 위한 최소한의 UI)"
+    "toggle-zen-mode": "젠 모드 활성화/비활성화(편집에 집중하기 위한 최소한의 UI)",
+    "toggle-archived-notes": "노트 트리에서 아카이브 된 노트 표시하기/숨기기",
+    "peek-right-pane": "오른쪽 패널을 콘텐츠 위에 임시로 표시되며 포커스를 잃으면 닫히는 오버레이 패널로 미리 봅니다"
   },
   "hidden-subtree": {
     "zen-mode": "젠 모드",

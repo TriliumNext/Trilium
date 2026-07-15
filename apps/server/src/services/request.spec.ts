@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Handler = (e: any) => void;
@@ -9,6 +10,7 @@ interface FakeResponse {
     on(event: string, cb: Handler): FakeResponse;
     emitData(chunk: Buffer): void;
     emitEnd(): void;
+    emitError(err: Error): void;
 }
 
 interface FakeRequest {
@@ -34,25 +36,32 @@ const { state, fakeHttp, fakeHttps, makeResponse, HttpProxyAgent, HttpsProxyAgen
             onEnd: ((req: FakeRequest) => void) | null;
         } = { requests: [], onEnd: null };
 
+        /**
+         * Backed by a real EventEmitter so that `emitError` reproduces Node's
+         * semantics faithfully: an "error" event with no listener is rethrown.
+         */
         function makeResponse(
             statusCode: number,
             statusMessage: string,
             headers: Record<string, any> = {}
         ): FakeResponse {
-            const handlers: Record<string, Handler> = {};
+            const emitter = new EventEmitter();
             return {
                 statusCode,
                 statusMessage,
                 headers,
                 on(event, cb) {
-                    handlers[event] = cb;
+                    emitter.on(event, cb);
                     return this;
                 },
                 emitData(chunk) {
-                    handlers["data"]?.(chunk);
+                    emitter.emit("data", chunk);
                 },
                 emitEnd() {
-                    handlers["end"]?.(undefined);
+                    emitter.emit("end", undefined);
+                },
+                emitError(err) {
+                    emitter.emit("error", err);
                 }
             };
         }
@@ -346,6 +355,28 @@ describe("NodeRequestProvider.exec", () => {
         });
         await expect(provider.exec(baseOpts())).rejects.toThrow(/boom-prepare/);
     });
+
+    it("rejects rather than rethrowing when the response stream fails mid-body", async () => {
+        let delivered: FakeResponse | undefined;
+        state.onEnd = (req) => {
+            const res = makeResponse(200, "OK");
+            delivered = res;
+            req.triggerResponse(res);
+            res.emitData(Buffer.from('{"partial":'));
+        };
+
+        const promise = provider.exec(baseOpts());
+        await vi.waitFor(() => expect(delivered).toBeDefined());
+        const response = delivered;
+        if (!response) throw new Error("the response was never delivered");
+
+        // Electron's `net` reports a mid-body failure (a connection reset, an HTTP/3
+        // stream error) by destroying the response stream, which emits "error" on it.
+        // With no listener, Node rethrows — surfacing in the Electron main process as
+        // "A JavaScript error occurred in the main process".
+        expect(() => response.emitError(new Error("net::ERR_CONNECTION_RESET"))).not.toThrow();
+        await expect(promise).rejects.toThrow(/ERR_CONNECTION_RESET/);
+    });
 });
 
 describe("NodeRequestProvider.getImage", () => {
@@ -432,5 +463,23 @@ describe("NodeRequestProvider.getImage", () => {
         await expect(provider.getImage("http://img.example.com/pic.png")).rejects.toThrow(
             /img-prepare/
         );
+    });
+
+    it("rejects rather than rethrowing when the response stream fails mid-body", async () => {
+        let delivered: FakeResponse | undefined;
+        state.onEnd = (req) => {
+            const res = makeResponse(200, "OK");
+            delivered = res;
+            req.triggerResponse(res);
+            res.emitData(Buffer.from([1, 2]));
+        };
+
+        const promise = provider.getImage("http://img.example.com/pic.png");
+        await vi.waitFor(() => expect(delivered).toBeDefined());
+        const response = delivered;
+        if (!response) throw new Error("the response was never delivered");
+
+        expect(() => response.emitError(new Error("net::ERR_CONNECTION_RESET"))).not.toThrow();
+        await expect(promise).rejects.toThrow(/ERR_CONNECTION_RESET/);
     });
 });

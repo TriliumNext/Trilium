@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "build": "tsx scripts/build.ts",
-    "watch": "tsx scripts/build.ts --watch"
+    "watch": "tsx scripts/build.ts --watch",
+    "test": "vitest",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@triliumnext/commons": "workspace:*"

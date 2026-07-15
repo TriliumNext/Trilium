@@ -39,6 +39,7 @@ export default function TableOfContents() {
             {((noteType === "text" && isReadOnly) || (noteType === "doc")) && <ReadOnlyTextTableOfContents />}
             {noteType === "text" && !isReadOnly && <EditableTextTableOfContents />}
             {noteType === "file" && noteMime === "application/pdf" && <ContextDataTableOfContents />}
+            {noteType === "llmChat" && <ContextDataTableOfContents />}
             {note?.isMarkdown() && <ContextDataTableOfContents />}
         </RightPanelWidget>
     );
@@ -143,18 +144,27 @@ interface CKHeading extends RawHeading {
 }
 
 function EditableTextTableOfContents() {
-    const { note, noteContext } = useActiveNoteContext();
+    const { noteContext } = useActiveNoteContext();
     const textEditor = useTextEditor(noteContext);
     const [ headings, setHeadings ] = useState<CKHeading[]>([]);
 
+    // Subscribe to editor changes once per editor instance — crucially NOT keyed on the
+    // active note. The CKEditor instance is reused across note switches within a tab (the
+    // content is swapped in via `editor.setData()`, which emits `change:data`), so keying
+    // this on the note would tear the listener down and re-attach it on every navigation.
+    // Because re-attaching is deferred behind an async `import()`, the `setData()` for the
+    // freshly-navigated note — and the `change:data` it emits — can fire during that gap
+    // with no listener attached, leaving the sidebar stuck on the previous note's headings
+    // (especially for large notes, whose content lands well after the switch). A stable
+    // per-editor subscription closes that window: the initial extract handles the first
+    // note, and every subsequent note's `setData()` re-extracts through the same listener.
     useEffect(() => {
         if (!textEditor) return;
-        const headings = extractTocFromTextEditor(textEditor);
-        setHeadings(headings);
+        setHeadings(extractTocFromTextEditor(textEditor));
 
-        // React to changes. The helper lives in the CKEditor bundle, which is statically heavy
-        // but guaranteed to be loaded by now (a text editor instance exists), so resolving it
-        // via a dynamic import keeps it out of this component's startup graph.
+        // The helper lives in the CKEditor bundle, which is statically heavy but guaranteed
+        // to be loaded by now (a text editor instance exists), so resolving it via a dynamic
+        // import keeps it out of this component's startup graph.
         let disposed = false;
         let removeListener: (() => void) | undefined;
         void import("@triliumnext/ckeditor5").then(({ attributeChangeAffectsHeading }) => {
@@ -184,7 +194,7 @@ function EditableTextTableOfContents() {
             disposed = true;
             removeListener?.();
         };
-    }, [ textEditor, note ]);
+    }, [ textEditor ]);
 
     const scrollToHeading = useCallback((heading: CKHeading) => {
         if (!textEditor) return;

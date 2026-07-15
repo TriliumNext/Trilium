@@ -1,3 +1,4 @@
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { SHEET_DRAWING_RESOURCE } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
 import { CommandType, FUniver, IDisposable, IWorkbookData, LocaleType } from "@univerjs/presets";
 import { MutableRef, useEffect, useRef } from "preact/hooks";
@@ -188,7 +189,7 @@ export default function usePersistence(note: FNote, noteContext: NoteContext | n
                 const base64 = dataUrl.split(",")[1];
                 attachments.push({
                     role: "image",
-                    title: "spreadsheet-export.png",
+                    title: NOTE_TYPE_IMAGE_ATTACHMENTS.spreadsheet,
                     mime: "image/png",
                     content: base64,
                     position: 0,
@@ -264,17 +265,47 @@ export default function usePersistence(note: FNote, noteContext: NoteContext | n
     // save that fires well after the recalc already settled serializes immediately
     // instead of waiting on onCalculationResultApplied's idle timeout.
     useEffect(() => {
-        const formula = apiRef.current?.getFormula?.();
-        if (!formula) {
-            // The eager-clear optimization is disabled without it; getData() still falls back
-            // to onCalculationResultApplied's timeout, so saves stay correct (just slower).
-            console.warn("Spreadsheet formula service unavailable; recalc-pending flag will not be cleared eagerly.");
-            return;
+        const univerAPI = apiRef.current;
+        if (!univerAPI) return;
+
+        let resultSubscription: { dispose?(): void } | null = null;
+        let lifecycleDisposable: { dispose(): void } | null = null;
+
+        // Univer 0.25+ implements calculationResultApplied by resolving
+        // FormulaCalculationSessionService from the injector, which the formula plugin only
+        // registers once its lifecycle reaches the Starting stage. This effect can run before
+        // createUniver's plugins have started, so subscribing immediately would throw a redi
+        // "dependency not registered" error. Subscribe at the earliest lifecycle change at which
+        // the service exists; also try right away in case the lifecycle already advanced (it can
+        // complete synchronously while the Univer instance is created).
+        const trySubscribe = () => {
+            if (resultSubscription) return true;
+            const formula = univerAPI.getFormula?.();
+            if (!formula) return false;
+            try {
+                resultSubscription = formula.calculationResultApplied(() => {
+                    recalcPending.current = false;
+                });
+                return true;
+            } catch {
+                // Formula services not registered yet; a later lifecycle change will retry.
+                return false;
+            }
+        };
+
+        if (!trySubscribe()) {
+            lifecycleDisposable = univerAPI.addEvent(univerAPI.Event.LifeCycleChanged, () => {
+                if (trySubscribe()) {
+                    lifecycleDisposable?.dispose();
+                    lifecycleDisposable = null;
+                }
+            });
         }
-        const disposable = formula.calculationResultApplied(() => {
-            recalcPending.current = false;
-        });
-        return () => disposable?.dispose?.();
+
+        return () => {
+            resultSubscription?.dispose?.();
+            lifecycleDisposable?.dispose();
+        };
     }, [ apiRef ]);
 }
 

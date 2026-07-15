@@ -32,31 +32,6 @@
     color: var(--dropdown-item-icon-destructive-color) !important;
 }
 
-.google-login-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--main-background-color);
-    color: var(--main-text-color);
-    border: 1px solid var(--main-border-color);
-    border-radius: 4px;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    margin-bottom: 20px;
-    text-decoration: none;
-    transition: background-color 0.3s;
-}
-.google-login-btn:hover {
-    background-color: var(--hover-item-background-color);
-}
-.google-login-btn img {
-    margin-inline-end: 10px;
-    width: 18px;
-    height: 18px;
-}
-
 /*
  * SEARCH PAGE
  */

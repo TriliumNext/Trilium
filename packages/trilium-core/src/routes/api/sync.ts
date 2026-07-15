@@ -1,4 +1,4 @@
-import { type EntityChange, SyncTestResponse } from "@triliumnext/commons";
+import { type EntityChange, type EntityChangeRecord, SyncTestResponse } from "@triliumnext/commons";
 import type { Request } from "express";
 import { t } from "i18next";
 
@@ -9,7 +9,7 @@ import { getLog } from "../../services/log.js";
 import optionService from "../../services/options.js";
 import { getSql } from "../../services/sql/index.js";
 import sqlInit from "../../services/sql_init.js";
-import syncService from "../../services/sync.js";
+import syncService, { estimateEntityChangeRecordSize, MAX_PULL_RESPONSE_BYTES } from "../../services/sync.js";
 import syncOptions from "../../services/sync_options.js";
 import syncUpdateService from "../../services/sync_update.js";
 import * as utils from "../../services/utils/index.js";
@@ -115,9 +115,15 @@ function forceFullSync() {
  *         schema:
  *           type: string
  *         description: Marker to identify this request in server log
+ *       - in: query
+ *         name: maxBlobContentSize
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: If set, blob rows whose content exceeds this many bytes are returned with empty content; the entity_change metadata (including its hash) is unaffected.
  *     responses:
  *       '200':
- *         description: Sync changes, limited to approximately one megabyte.
+ *         description: Sync changes, limited to approximately eight megabytes.
  *         content:
  *           application/json:
  *             schema:
@@ -146,12 +152,30 @@ function getChanged(req: Request) {
         throw new ValidationError("Missing or invalid last entity change ID.");
     }
 
-    let lastEntityChangeId: number | null | undefined = parseInt(req.query.lastEntityChangeId);
+    let lastEntityChangeId = parseInt(req.query.lastEntityChangeId);
     const clientInstanceId = req.query.instanceId;
-    let filteredEntityChanges: EntityChange[] = [];
+
+    // Optional per-client limit: blob rows whose content exceeds this many bytes are served with
+    // empty content (a stub). Only clients that opt in (currently mobile) send it; the entity_change
+    // metadata is unaffected, so content-hash checks still pass. Invalid or non-positive values
+    // disable the limit.
+    const maxBlobContentSizeRaw = typeof req.query.maxBlobContentSize === "string" ? parseInt(req.query.maxBlobContentSize) : NaN;
+    const maxBlobContentSize = Number.isFinite(maxBlobContentSizeRaw) && maxBlobContentSizeRaw > 0 ? maxBlobContentSizeRaw : undefined;
 
     const sql = getSql();
-    do {
+    const entityChangeRecords: EntityChangeRecord[] = [];
+    let estimatedResponseBytes = 0;
+    // Where the next row fetch starts. Advances over every fetched row, unlike
+    // `lastEntityChangeId` (the cursor returned to the client), which only advances over rows the
+    // client can safely skip: records included in the response and batches consisting entirely of
+    // the client's own changes.
+    let fetchCursor = lastEntityChangeId;
+
+    // Accumulate rows across LIMIT-1000 fetches until the response byte estimate crosses the cap
+    // (or the table is exhausted). Metadata-only records are ~300 bytes, so a single 1000-row fetch
+    // fills only ~4% of the byte budget — without this loop the row limit binds long before the
+    // byte cap on metadata-dense ranges, costing many extra round-trips.
+    while (estimatedResponseBytes < MAX_PULL_RESPONSE_BYTES) {
         const entityChanges: EntityChange[] = sql.getRows<EntityChange>(
             `
             SELECT *
@@ -160,40 +184,70 @@ function getChanged(req: Request) {
             AND id > ?
             ORDER BY id
             LIMIT 1000`,
-            [lastEntityChangeId]
+            [fetchCursor]
         );
 
         if (entityChanges.length === 0) {
             break;
         }
 
-        filteredEntityChanges = entityChanges.filter((ec) => ec.instanceId !== clientInstanceId);
+        // rows fetched from entity_changes always carry an id
+        fetchCursor = entityChanges[entityChanges.length - 1].id ?? fetchCursor;
 
-        if (filteredEntityChanges.length === 0) {
-            lastEntityChangeId = entityChanges[entityChanges.length - 1].id;
+        const foreignEntityChanges = entityChanges.filter((ec) => ec.instanceId !== clientInstanceId);
+
+        if (foreignEntityChanges.length === 0) {
+            // the whole batch is the client's own changes — skip the client's cursor past it
+            lastEntityChangeId = fetchCursor;
+            continue;
         }
-    } while (filteredEntityChanges.length === 0);
 
-    const entityChangeRecords = syncService.getEntityChangeRecords(filteredEntityChanges);
+        const records = syncService.getEntityChangeRecords(foreignEntityChanges, MAX_PULL_RESPONSE_BYTES - estimatedResponseBytes, maxBlobContentSize);
+
+        for (const record of records) {
+            estimatedResponseBytes += estimateEntityChangeRecordSize(record);
+        }
+
+        entityChangeRecords.push(...records);
+
+        if (records.length > 0) {
+            // rows fetched from entity_changes always carry an id
+            lastEntityChangeId = records[records.length - 1].entityChange.id ?? lastEntityChangeId;
+        }
+
+        if (records.length < foreignEntityChanges.length) {
+            // the byte budget was reached mid-batch (or trailing records were skipped) — anything
+            // not included must be re-served next request, so stop without advancing further
+            break;
+        }
+    }
 
     if (entityChangeRecords.length > 0) {
-        lastEntityChangeId = entityChangeRecords[entityChangeRecords.length - 1].entityChange.id;
-
         getLog().info(`Returning ${entityChangeRecords.length} entity changes in ${Date.now() - startTime}ms`);
     }
+
+    // `outstandingPullCount` is a progress estimate returned on every pull request. Counting with
+    // only `isSynced` + `id` is an index-only range scan on IDX_entity_changes_isSynced_id; adding
+    // an `instanceId != ?` filter (instanceId is not in the index) forces a table lookup per row,
+    // which made this query the single most expensive part of serving a large initial sync.
+    //
+    // Dropping the instanceId filter can transiently count the client's own pushed changes (which
+    // are then skipped when returned), so the estimate may over-count slightly mid-sync but always
+    // converges to 0 as `lastEntityChangeId` advances. During an initial sync the client has no rows
+    // on the server, so the count is exact.
+    const outstandingPullCount = sql.getValue(
+        `
+            SELECT COUNT(id)
+            FROM entity_changes
+            WHERE isSynced = 1
+            AND id > ?`,
+        [lastEntityChangeId]
+    );
 
     return {
         entityChanges: entityChangeRecords,
         lastEntityChangeId,
-        outstandingPullCount: sql.getValue(
-            `
-            SELECT COUNT(id)
-            FROM entity_changes
-            WHERE isSynced = 1
-            AND instanceId != ?
-            AND id > ?`,
-            [clientInstanceId, lastEntityChangeId]
-        )
+        outstandingPullCount
     };
 }
 

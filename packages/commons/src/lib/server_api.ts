@@ -386,6 +386,38 @@ export interface DefinitionObject {
  */
 export type BootstrapDefinition = {
     dbInitialized: boolean;
+    /**
+     * Whether a sync that has already created the database schema was interrupted
+     * before finishing (schema exists but the `initialized` flag is not yet set).
+     * Only meaningful while `dbInitialized` is `false`; the setup screen uses it to
+     * jump straight back to the sync-in-progress step and resume the sync on restart.
+     */
+    syncInProgress?: boolean;
+    /**
+     * Whether a password has been set yet. `false` only in the pre-auth window
+     * after the database is initialized but before the user has set a password,
+     * which the client uses to render the set-password screen. Omitted (treated
+     * as set) for the regular authenticated payload.
+     */
+    passwordSet?: boolean;
+    /**
+     * Whether the current session is authenticated. `false` only in the pre-auth
+     * window when a password is set but the user hasn't logged in (web/server only),
+     * which the client uses to render the login screen. Omitted (treated as logged
+     * in) for the regular authenticated payload.
+     */
+    loggedIn?: boolean;
+    /** Login-screen configuration, present only alongside `loggedIn: false`. */
+    login?: {
+        /** Whether single sign-on (OpenID) is enabled — shows the SSO button instead of the password form. */
+        ssoEnabled: boolean;
+        ssoIssuerName?: string;
+        ssoIssuerIcon?: string;
+        /** Whether a TOTP second factor is required. */
+        totpEnabled: boolean;
+        /** One-shot SSO error from a failed OIDC round-trip ("wrong_account" / "not_enrolled"). */
+        ssoError?: string | false;
+    };
     baseApiUrl: string;
     assetPath: string;
     theme: string;

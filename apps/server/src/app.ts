@@ -121,8 +121,18 @@ export default async function buildApp() {
     custom.register(app);
     error_handlers.register(app);
 
-    const { sync, consistency_checks, scheduler } = await import("@triliumnext/core");
+    const { sync, consistency_checks, scheduler, sql_init, becca_loader, i18n } = await import("@triliumnext/core");
     sync.startSyncTimer();
+
+    // Server-side i18next always boots on "en" (initTranslations runs before initSql in initializeCore),
+    // so re-sync it with the document's stored locale before the scheduler's dbReady.then(checkHiddenSubtree)
+    // rebuilds the built-in titles — otherwise they are (re-)generated in English on every start. The read
+    // goes through becca, so wait for it; guard on isDbInitialized so we don't await beccaLoaded (which never
+    // resolves pre-setup) on a fresh install. Desktop reaches this via the same www.js → buildApp path.
+    if (sql_init.isDbInitialized()) {
+        await becca_loader.beccaLoaded;
+        await i18n.reconcileLanguageAfterDbInit();
+    }
 
     consistency_checks.startConsistencyChecks();
     scheduler.startScheduler();

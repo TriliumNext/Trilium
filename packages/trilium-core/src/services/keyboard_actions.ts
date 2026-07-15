@@ -449,6 +449,14 @@ function getDefaultKeyboardActions() {
             scope: "window"
         },
         {
+            friendlyName: t("keyboard_action_names.show-deleted-notes"),
+            actionName: "showDeletedNotes",
+            iconClass: "bx bx-trash-alt",
+            defaultShortcuts: [],
+            description: t("keyboard_actions.show-deleted-notes"),
+            scope: "window"
+        },
+        {
             friendlyName: t("keyboard_action_names.show-sql-console"),
             actionName: "showSQLConsole",
             iconClass: "bx bx-data",
@@ -662,9 +670,17 @@ function getDefaultKeyboardActions() {
         {
             actionName: "toggleRightPane",
             friendlyName: t("keyboard_action_names.toggle-right-pane"),
-            iconClass: "bx bx-dock-right",
+            iconClass: "bx bx-sidebar bx-flip-horizontal",
             defaultShortcuts: [],
             description: t("keyboard_actions.toggle-right-pane"),
+            scope: "window"
+        },
+        {
+            actionName: "peekRightPane",
+            friendlyName: t("keyboard_action_names.peek-right-pane"),
+            iconClass: "bx bx-sidebar bx-flip-horizontal",
+            defaultShortcuts: [],
+            description: t("keyboard_actions.peek-right-pane"),
             scope: "window"
         },
         {
@@ -771,7 +787,9 @@ function getDefaultKeyboardActions() {
             actionName: "zoomIn",
             friendlyName: t("keyboard_action_names.zoom-in"),
             iconClass: "bx bx-zoom-in",
-            defaultShortcuts: isElectron() ? ["CommandOrControl+="] : [],
+            // "=" covers US layouts (where "+" is Shift+"="); "Plus" covers QWERTZ/AZERTY and the
+            // numpad, where "+" is a dedicated key that "=" never matches. See keyMap in shortcuts.ts.
+            defaultShortcuts: isElectron() ? ["CommandOrControl+=", "CommandOrControl+Plus"] : [],
             isElectronOnly: true,
             scope: "window"
         },

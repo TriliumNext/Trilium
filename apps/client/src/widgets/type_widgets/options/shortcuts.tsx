@@ -9,6 +9,7 @@ import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import options from "../../../services/options";
 import server from "../../../services/server";
+import { formatShortcut, joinShortcut } from "../../../services/keyboard_shortcut_display";
 import { canonicalizeShortcut, KEYCODES_WITH_NO_MODIFIER } from "../../../services/shortcuts";
 import toast from "../../../services/toast";
 import { arrayEqual, isElectron, isMobile, reloadFrontendApp } from "../../../services/utils";
@@ -413,7 +414,7 @@ function revertShortcut(action: ActionKeyboardShortcut) {
 
 function formatDefaultShortcuts(action: ActionKeyboardShortcut) {
     return action.defaultShortcuts?.length
-        ? action.defaultShortcuts.join(", ")
+        ? action.defaultShortcuts.map((shortcut) => joinShortcut(formatShortcut(shortcut))).join(", ")
         : t("shortcuts.no_default_shortcut");
 }
 
@@ -488,7 +489,7 @@ function ShortcutEditor({ keyboardShortcut: action, conflicts }: { keyboardShort
                                 </TooltipButton>
                             )
                             : global && <TooltipIcon icon="bx bx-globe" className="shortcut-chip-global-indicator" tooltip={t("shortcuts.global_shortcut")} tooltipClass="tooltip-top" />}
-                        <kbd>{stripGlobalPrefix(shortcut)}</kbd>
+                        <kbd>{joinShortcut(formatShortcut(shortcut))}</kbd>
                         <TooltipButton
                             className="shortcut-chip-action shortcut-chip-remove"
                             title={t("shortcuts.remove_shortcut")}
@@ -633,7 +634,10 @@ const MODIFIER_KEYS = new Set([ "Control", "Alt", "Shift", "Meta" ]);
 
 const NAMED_KEYS: Record<string, string> = {
     ArrowUp: "Up", ArrowDown: "Down", ArrowLeft: "Left", ArrowRight: "Right",
-    " ": "Space", Spacebar: "Space"
+    " ": "Space", Spacebar: "Space",
+    // "+" collides with the shortcut separator, so it is stored as the named "Plus" token instead of
+    // a literal "+". On QWERTZ/AZERTY this is a dedicated key; on US layouts it is Shift+"=".
+    "+": "Plus"
 };
 
 /**
