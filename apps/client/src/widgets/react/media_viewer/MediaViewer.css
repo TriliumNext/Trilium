@@ -1,0 +1,73 @@
+/*
+ * Z-index ladder (coordinate with the app before changing):
+ *   1     inline viewer (zIndexInline option)
+ *   1500  fullscreen viewer (zIndex option) — above Bootstrap modals (~1055) so images inside the
+ *         popup editor can go fullscreen
+ *   1501  the Trilium toolbar while fullscreen (it lives inside .media-viewer-root, which is not
+ *         reparented by Viewer.js's full())
+ *   2000  #context-menu-container — the Electron right-click menu must stay above the viewer
+ */
+.media-viewer-root {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    outline: none;
+
+    /* While fullscreen the root is reparented under <body> (escaping pane stacking contexts)
+       and becomes the full-viewport box itself. */
+    &.media-viewer-fulled {
+        position: fixed;
+        inset: 0;
+        z-index: 1500;
+    }
+
+    /* The hidden list Viewer.js reads the gallery from; images carry data-src only. */
+    & .media-viewer-sources {
+        display: none;
+    }
+
+    /* Inline presentation blends with the note background; fullscreen darkens it. */
+    & .viewer-backdrop {
+        background-color: transparent;
+    }
+
+    & .viewer-fixed.viewer-backdrop {
+        background-color: rgba(0, 0, 0, 0.85);
+    }
+
+    /* The thumbnail navbar is a fullscreen-only feature. */
+    & .viewer-container:not(.viewer-fixed) .viewer-navbar {
+        display: none;
+    }
+
+    /* Theme-aware chrome for the parts of Viewer.js we keep. */
+    & .viewer-navbar {
+        background-color: color-mix(in srgb, var(--main-background-color) 40%, transparent);
+    }
+
+    & .viewer-list > li {
+        border-radius: var(--tab-note-icons-border-radius, 4px);
+        opacity: 0.6;
+        transition: opacity 0.15s;
+    }
+
+    & .viewer-list > li:hover {
+        opacity: 1;
+    }
+
+    & .viewer-list > .viewer-active {
+        opacity: 1;
+        outline: 2px solid var(--main-color, #fff);
+    }
+}
+
+/* Crisp pixels when zoomed far beyond the native resolution (parity with the previous viewer). */
+.media-viewer-root.tn-image-large-zoom .viewer-canvas > img {
+    image-rendering: pixelated;
+}
+
+/* A failed image tints the canvas area; the overlay message carries the details. */
+.media-viewer-root.img-loading-error .viewer-canvas {
+    background: color-mix(in srgb, var(--main-background-color) 85%, red);
+}

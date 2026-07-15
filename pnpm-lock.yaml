@@ -362,9 +362,6 @@ importers:
       react-window:
         specifier: 2.2.7
         version: 2.2.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react-zoom-pan-pinch:
-        specifier: 4.0.3
-        version: 4.0.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       reveal.js:
         specifier: 6.0.1
         version: 6.0.1
@@ -377,6 +374,9 @@ importers:
       tabulator-tables:
         specifier: 6.5.2
         version: 6.5.2
+      viewerjs:
+        specifier: 1.11.7
+        version: 1.11.7
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: 5.0.2
@@ -972,9 +972,6 @@ importers:
       react-window:
         specifier: 2.2.7
         version: 2.2.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react-zoom-pan-pinch:
-        specifier: 4.0.3
-        version: 4.0.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       reveal.js:
         specifier: 6.0.1
         version: 6.0.1
@@ -987,6 +984,9 @@ importers:
       tabulator-tables:
         specifier: 6.5.2
         version: 6.5.2
+      viewerjs:
+        specifier: 1.11.7
+        version: 1.11.7
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: 5.0.2
@@ -11885,13 +11885,6 @@ packages:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
 
-  react-zoom-pan-pinch@4.0.3:
-    resolution: {integrity: sha512-N2Hi6L78fFmhRra+ORpFSW7WST5x6kxpOPplIvtB0b7b+U2anpo1z1wLgaWRPS2kUSqcraRG+JgBCIlDJnqqAg==}
-    engines: {node: '>=8', npm: '>=5'}
-    peerDependencies:
-      react: '*'
-      react-dom: '*'
-
   react@16.14.0:
     resolution: {integrity: sha512-0X2CImDkJGApiAlcf0ODKIneSwBPhqJawOa5wCtKbu7ZECrmS26NvtSILynQ66cgkT/RJ4LidJOc3bUESwmU8g==}
     engines: {node: '>=0.10.0'}
@@ -13378,6 +13371,9 @@ packages:
 
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
+
+  viewerjs@1.11.7:
+    resolution: {integrity: sha512-0JuVqOmL5v1jmEAlG5EBDR3XquxY8DWFQbFMprOXgaBB0F7Q/X9xWdEaQc59D8xzwkdUgXEMSSknTpriq95igg==}
 
   vite-node@6.0.0:
     resolution: {integrity: sha512-oj4PVrT+pDh6GYf5wfUXkcZyekYS8kKPfLPXVl8qe324Ec6l4K2DUKNadRbZ3LQl0qGcDz+PyOo7ZAh00Y+JjQ==}
@@ -26902,11 +26898,6 @@ snapshots:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
 
-  react-zoom-pan-pinch@4.0.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
-    dependencies:
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-
   react@16.14.0:
     dependencies:
       loose-envify: 1.4.0
@@ -28653,6 +28644,8 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
+
+  viewerjs@1.11.7: {}
 
   vite-node@6.0.0(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.47.1)(tsx@4.23.0)(yaml@2.9.0):
     dependencies:

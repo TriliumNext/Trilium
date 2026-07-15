@@ -64,10 +64,10 @@
     "preact": "10.29.7",
     "react-i18next": "17.0.9",
     "react-window": "2.2.7",
-    "react-zoom-pan-pinch": "4.0.3",
     "reveal.js": "6.0.1",
     "svg-pan-zoom": "3.6.2",
-    "tabulator-tables": "6.5.2"
+    "tabulator-tables": "6.5.2",
+    "viewerjs": "1.11.7"
   },
   "devDependencies": {
     "@types/aes-js": "3.1.4",

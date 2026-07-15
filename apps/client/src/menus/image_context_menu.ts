@@ -1,11 +1,22 @@
 import { t } from "../services/i18n.js";
+import imageService from "../services/image.js";
 import utils from "../services/utils.js";
 import contextMenu from "./context_menu.js";
-import imageService from "../services/image.js";
 
 const PROP_NAME = "imageContextMenuInstalled";
 
-function setupContextMenu($image: JQuery<HTMLElement>) {
+interface ImageContextMenuHandlers {
+    /**
+     * Resolves the image URL for "copy image". Required when the menu is attached to a container
+     * rather than the `<img>` itself (a container has no `src` of its own — reading it there was
+     * how "copy image" used to silently fail from the image viewer).
+     */
+    getSrc?: () => string | undefined;
+    /** Overrides "copy reference"; defaults to copying the target element's contents. */
+    copyReference?: () => void;
+}
+
+function setupContextMenu($image: JQuery<HTMLElement>, handlers: ImageContextMenuHandlers = {}) {
     if (!utils.isElectron() || $image.prop(PROP_NAME)) {
         return;
     }
@@ -31,9 +42,10 @@ function setupContextMenu($image: JQuery<HTMLElement>) {
             ],
             selectMenuItemHandler: async ({ command }) => {
                 if (command === "copyImageReferenceToClipboard") {
-                    imageService.copyImageReferenceToClipboard($image);
+                    if (handlers.copyReference) handlers.copyReference();
+                    else imageService.copyImageReferenceToClipboard($image);
                 } else if (command === "copyImageToClipboard") {
-                    const src = $image.attr("src");
+                    const src = handlers.getSrc?.() ?? $image.attr("src");
                     if (!src) {
                         console.error("Missing src");
                         return;

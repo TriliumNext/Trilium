@@ -1,0 +1,33 @@
+.media-viewer-toolbar {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - 24px);
+    flex-wrap: wrap;
+    justify-content: center;
+    /* Above the inline viewer canvas (z-index 1) but never blocking drags outside the pills. */
+    z-index: 10;
+    pointer-events: none;
+
+    & .tn-overlay-control-group {
+        pointer-events: auto;
+    }
+
+    & .media-viewer-position {
+        min-width: 3.5em;
+    }
+}
+
+/*
+ * Fullscreen: the root is reparented under <body> and becomes the full-viewport box, so the
+ * toolbar stays absolutely positioned within it — above the viewer container (z-index 1500,
+ * set inline by Viewer.js) and clear of the thumbnail navbar occupying the bottom ~60px.
+ */
+.media-viewer-root.media-viewer-fulled .media-viewer-toolbar {
+    bottom: 70px;
+    z-index: 1501;
+}

@@ -71,11 +71,11 @@
     "qrcode-generator": "2.0.4",
     "react-i18next": "17.0.9",
     "react-window": "2.2.7",
-    "react-zoom-pan-pinch": "4.0.3",
     "reveal.js": "6.0.1",
     "rrule": "2.8.1",
     "svg-pan-zoom": "3.6.2",
-    "tabulator-tables": "6.5.2"
+    "tabulator-tables": "6.5.2",
+    "viewerjs": "1.11.7"
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": "5.0.2",
