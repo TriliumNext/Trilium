@@ -16,6 +16,7 @@ import utils, { isMobile } from "../../../services/utils";
 import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
 import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
+import NoteCommentsManager from "./comments";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
 import linkEmbedService from "../../../services/link_embed";
 import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
@@ -37,6 +38,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
     const isClassicEditor = isMobile() || textNoteEditorType === "ckeditor-classic";
     const initialized = useRef(deferred<void>());
+    const [ commentsManager ] = useState(() => new NoteCommentsManager());
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
@@ -77,6 +79,16 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         }
     });
     const templates = useTemplates();
+
+    // Track the displayed note for comment thread persistence (premium Comments feature). This
+    // effect runs before the new note's content reaches the editor (content loads asynchronously),
+    // so a pending comment save of the previous note is flushed while its threads are still attached.
+    useEffect(() => {
+        if (note) {
+            commentsManager.setNote(note);
+        }
+    }, [note, commentsManager]);
+    useEffect(() => () => commentsManager.flushPendingSave(), [commentsManager]);
 
     useTriliumEvent("scrollToEnd", () => {
         const editor = watchdogRef.current?.editor;
@@ -443,6 +455,10 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     if (containerRef.current) {
                         setupImageOpening(containerRef.current, false);
                     }
+
+                    // Hook up comment thread persistence before any content is set, so comment
+                    // markers found in the content can resolve their threads via the adapter.
+                    commentsManager.attach(editor);
 
                     initialized.current.resolve();
                     // Restore the data, either on the first render or if the editor crashes.

@@ -23,6 +23,7 @@ import { Admonition } from "@triliumnext/ckeditor5-admonition";
 import { Collapsible } from "@triliumnext/ckeditor5-collapsible";
 import { Footnotes } from "@triliumnext/ckeditor5-footnotes";
 import { Math, AutoformatMath } from "@triliumnext/ckeditor5-math";
+import CommentsIntegration from "./plugins/comments_integration.js";
 import CopyAnchorLinkButton from "./plugins/copy_anchor_link.js";
 import CopyLinkUrlButton from "./plugins/copy_link_url.js";
 import ImageActions from "./plugins/image_actions.js";
@@ -130,10 +131,10 @@ export const CHAT_INPUT_PLUGINS: typeof Plugin[] = [
  * This avoids loading ~6 seconds of premium features code during initial app startup.
  */
 export async function loadPremiumPlugins(): Promise<(typeof Plugin)[]> {
-    const { SlashCommand, Template, FormatPainter } = await import('ckeditor5-premium-features');
+    const { SlashCommand, Template, FormatPainter, Comments } = await import('ckeditor5-premium-features');
     // Also load the CSS when premium features are used
     await import('ckeditor5-premium-features/ckeditor5-premium-features.css');
-    return [SlashCommand, Template, FormatPainter];
+    return [SlashCommand, Template, FormatPainter, Comments, CommentsIntegration];
 }
 
 /**

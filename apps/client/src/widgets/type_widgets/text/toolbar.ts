@@ -56,6 +56,7 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
                     items: ["underline", "strikethrough", "|", "superscript", "subscript", "|", "kbd"]
                 },
                 "formatPainter",
+                "comment",
                 "|",
                 "fontColor",
                 "fontBackgroundColor",
@@ -106,6 +107,7 @@ export function buildFloatingToolbar() {
                     items: [ "strikethrough", "|", "superscript", "subscript", "|", "kbd" ]
                 },
                 "formatPainter",
+                "comment",
                 "|",
                 "fontColor",
                 "fontBackgroundColor",

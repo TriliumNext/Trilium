@@ -95,11 +95,14 @@ describe("loadPremiumPlugins", () => {
         }
     });
 
-    it("includes SlashCommand, Template, and FormatPainter", async () => {
-        const { SlashCommand, Template, FormatPainter } = await import("ckeditor5-premium-features");
+    it("includes SlashCommand, Template, FormatPainter, and Comments with its Trilium integration", async () => {
+        const { SlashCommand, Template, FormatPainter, Comments } = await import("ckeditor5-premium-features");
+        const { default: CommentsIntegration } = await import("./plugins/comments_integration.js");
         const plugins = await loadPremiumPlugins();
         expect(plugins).toContain(SlashCommand);
         expect(plugins).toContain(Template);
         expect(plugins).toContain(FormatPainter);
+        expect(plugins).toContain(Comments);
+        expect(plugins).toContain(CommentsIntegration);
     });
 });

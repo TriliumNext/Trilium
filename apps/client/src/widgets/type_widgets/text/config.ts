@@ -178,6 +178,10 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         template: {
             definitions: opts.templates
         },
+        comments: {
+            // Use the default comment input editor (plain text input, no formatting).
+            editorConfig: {}
+        },
         htmlSupport: {
             allow: JSON.parse(options.get("allowedHtmlTags"))
         },

@@ -4,17 +4,19 @@ import { ViewTypeOptions } from "../collections/interface";
 
 const ATTACHMENT_ROLE = "viewConfig";
 
-export type ViewModeStorageType = ViewTypeOptions | "pdfHistory";
+export type ViewModeStorageType = ViewTypeOptions | "pdfHistory" | "comments";
 
 export default class ViewModeStorage<T extends object> {
 
     private note: FNote;
+    private role: string;
     readonly attachmentName: string;
     /** The serialized content last stored or restored, used to tell our own echoes apart from external changes. */
     private lastKnownContent?: string;
 
-    constructor(note: FNote, viewType: ViewModeStorageType) {
+    constructor(note: FNote, viewType: ViewModeStorageType, role: string = ATTACHMENT_ROLE) {
         this.note = note;
+        this.role = role;
         this.attachmentName = `${viewType}.json`;
     }
 
@@ -22,7 +24,7 @@ export default class ViewModeStorage<T extends object> {
         const content = JSON.stringify(data);
         this.lastKnownContent = content;
         const payload = {
-            role: ATTACHMENT_ROLE,
+            role: this.role,
             title: this.attachmentName,
             mime: "application/json",
             content,
@@ -55,7 +57,7 @@ export default class ViewModeStorage<T extends object> {
     }
 
     private async fetchContent() {
-        const existingAttachments = (await this.note.getAttachmentsByRole(ATTACHMENT_ROLE))
+        const existingAttachments = (await this.note.getAttachmentsByRole(this.role))
             .filter(a => a.title === this.attachmentName);
         if (existingAttachments.length === 0) {
             return undefined;
