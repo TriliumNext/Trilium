@@ -75,6 +75,11 @@ html {
     --scrollbar-border-color: #ddd;
     --scrollbar-background-color: #ddd;
     --selection-background-color: #3399FF70;
+
+    /* Text note comment highlights (premium CKEditor Comments feature) */
+    --comment-marker-background: #fef7a9;
+    --comment-marker-active-background: #fdf05d;
+    --comment-accent-color: #f2de02;
     --tooltip-background-color: #f8f8f8;
     --link-color: blue;
 

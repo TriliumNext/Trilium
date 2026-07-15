@@ -267,6 +267,11 @@
 
     --selection-background-color: #3399FF70;
 
+    /* Text note comment highlights (premium CKEditor Comments feature) */
+    --comment-marker-background: #5c5427;
+    --comment-marker-active-background: #7a6f2a;
+    --comment-accent-color: #b3a626;
+
     --mermaid-theme: dark;
 
     --code-block-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);

@@ -94,6 +94,31 @@ body {
 
     --ck-color-link-default: var(--link-color);
 
+    /* -- Overrides the default colors used by the ckeditor5-comments package (premium). -------- */
+
+    /* Highlight of the commented text inside the note content. The fallbacks are CKEditor's own
+       defaults, for third-party themes that do not define the Trilium comment constants. */
+    --ck-color-comment-marker: var(--comment-marker-background, #fef7a9);
+    --ck-color-comment-marker-active: var(--comment-marker-active-background, #fdf05d);
+
+    /* Accent of a comment box (left border) and of the annotations counter dot. */
+    --ck-color-comment-box-border: var(--comment-accent-color, #f2de02);
+    --ck-color-annotation-counter-comment: var(--comment-accent-color, #f2de02);
+
+    /* Comment thread balloon surfaces and text. Note that the comment content font color must be
+       mapped explicitly: its premium-CSS default references --ck-color-base-text at :root, where
+       var() substitution happens, so it captures CKEditor's default (#333) instead of the
+       body-level Trilium override and renders unreadable in dark themes. */
+    --ck-comment-content-font-color: var(--main-text-color);
+    --ck-color-annotation-wrapper-background: var(--main-background-color);
+    --ck-color-annotation-wrapper-drop-shadow: 0 1px 1px 1px var(--main-border-color);
+    --ck-color-comment-background: var(--accented-background-color);
+    --ck-color-comment-input-background: var(--input-background-color);
+    --ck-color-comment-separator: var(--main-border-color);
+    --ck-color-comment-count: var(--muted-text-color);
+    --ck-color-annotation-info: var(--muted-text-color);
+    --ck-color-annotation-icon: var(--muted-text-color);
+
     --ck-color-table-focused-cell-background: var(--more-accented-background-color);
 
     --ck-color-labeled-field-label-background: var(--accented-background-color);
