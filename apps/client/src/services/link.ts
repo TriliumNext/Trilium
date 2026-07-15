@@ -122,7 +122,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
         const encodedTitle = encodeURIComponent(linkTitle || "");
 
         return $("<img>")
-            .attr("src", `api/images/${noteId}/${encodedTitle}?${Math.random()}`)
+            .attr("src", `api/images/${noteId}/${encodedTitle}?v=${encodeURIComponent(note.blobId ?? "")}`)
             .attr("alt", linkTitle || "");
     }
 

@@ -681,8 +681,9 @@ function RevisionContent({ noteContent, revisionItem, fullRevision, showDiff }: 
         case "mermaid":
         case "spreadsheet": {
             const encodedTitle = encodeURIComponent(revisionItem.title);
+            // No cache buster: a revision's content is immutable, the server serves it cacheable.
             return <img
-                src={`api/revisions/${revisionItem.revisionId}/image/${encodedTitle}?${Math.random()}`}
+                src={`api/revisions/${revisionItem.revisionId}/image/${encodedTitle}`}
                 style={IMAGE_STYLE} />;
         }
         default:

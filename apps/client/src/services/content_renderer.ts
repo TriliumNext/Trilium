@@ -20,7 +20,7 @@ import protectedSessionHolder from "./protected_session_holder.js";
 import renderService from "./render.js";
 import server from "./server.js";
 import { applySingleBlockSyntaxHighlight } from "./syntax_highlight.js";
-import { getErrorMessage } from "./utils.js";
+import { createImageSrcUrl, getErrorMessage } from "./utils.js";
 
 let idCounter = 1;
 
@@ -248,9 +248,9 @@ async function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery
     let url;
 
     if (entity instanceof FNote) {
-        url = `api/images/${entity.noteId}/${encodedTitle}?${Math.random()}`;
+        url = createImageSrcUrl(entity);
     } else if (entity instanceof FAttachment) {
-        url = `api/attachments/${entity.attachmentId}/image/${encodedTitle}?${entity.utcDateModified}`;
+        url = `api/attachments/${entity.attachmentId}/image/${encodedTitle}?v=${encodeURIComponent(entity.blobId ?? entity.utcDateModified)}`;
     }
 
     $renderedContent // styles needed for the zoom to work well

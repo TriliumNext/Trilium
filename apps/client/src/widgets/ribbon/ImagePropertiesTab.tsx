@@ -5,7 +5,7 @@ import { t } from "../../services/i18n";
 import { downloadFileNote, openNoteExternally } from "../../services/open";
 import server from "../../services/server";
 import toast from "../../services/toast";
-import { clearBrowserCache, formatSize } from "../../services/utils";
+import { formatSize } from "../../services/utils";
 import Button from "../react/Button";
 import { FormFileUploadButton } from "../react/FormFileUpload";
 import { useNoteBlob, useNoteLabel } from "../react/hooks";
@@ -80,7 +80,7 @@ export function buildUploadNewImageRevisionListener(note: FNote) {
 
         if (result.uploaded) {
             toast.showMessage(t("image_properties.upload_success"));
-            await clearBrowserCache();
+            // No cache wipe needed: the new revision changes the blobId, and with it the image URL.
         } else {
             toast.showError(t("image_properties.upload_failed", { message: result.message }));
         }

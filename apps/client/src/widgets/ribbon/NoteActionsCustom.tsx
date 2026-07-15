@@ -167,7 +167,7 @@ function CopyReferenceToClipboardButton({ note, noteType }: NoteActionsCustomInn
                 onClick={() => {
                     if (!hiddenImageCopyRef.current) return;
                     const imageEl = document.createElement("img");
-                    imageEl.src = createImageSrcUrl(note);
+                    imageEl.src = createImageSrcUrl(note, { versioned: false });
                     hiddenImageCopyRef.current.replaceChildren(imageEl);
                     copyImageReferenceToClipboard($(hiddenImageCopyRef.current));
                     hiddenImageCopyRef.current.removeChild(imageEl);

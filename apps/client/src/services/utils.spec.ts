@@ -658,9 +658,16 @@ describe("areObjectsEqual (default export)", () => {
 });
 
 describe("createImageSrcUrl", () => {
-    it("builds an encoded api/images URL", () => {
-        const url = createImageSrcUrl({ noteId: "abc", title: "My Note/With Slash" } as any);
-        expect(url).toMatch(/^api\/images\/abc\/My%20Note%2FWith%20Slash\?timestamp=\d+$/);
+    type ImageNote = Parameters<typeof createImageSrcUrl>[0];
+
+    it("builds an encoded api/images URL versioned by the content-addressed blobId", () => {
+        const note = { noteId: "abc", title: "My Note/With Slash", blobId: "blob+1" } as ImageNote;
+        expect(createImageSrcUrl(note)).toBe("api/images/abc/My%20Note%2FWith%20Slash?v=blob%2B1");
+    });
+
+    it("omits the version pin for URLs persisted into note content", () => {
+        const note = { noteId: "abc", title: "Pic", blobId: "b1" } as ImageNote;
+        expect(createImageSrcUrl(note, { versioned: false })).toBe("api/images/abc/Pic");
     });
 });
 

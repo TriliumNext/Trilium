@@ -2,8 +2,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import becca from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
+import protectedSessionService from "../../services/protected_session.js";
 import { getSql } from "../../services/sql/index.js";
-import { unwrapStringOrBuffer } from "../../services/utils/binary.js";
+import { encodeUtf8, unwrapStringOrBuffer } from "../../services/utils/binary.js";
 import { note as mockNote } from "../../test/becca_mocking.js";
 import { createTextNote } from "../../test/api_fixtures.js";
 import { CoreApiTester } from "../../test/api_tester.js";
@@ -78,7 +79,7 @@ describe("Image API (core)", () => {
             // A bare real note (no attachment, no JSON svg key) hits the empty default.
             const parentNote = mockNote("note").note;
             const response = new MockResponse();
-            renderSvgAttachment(parentNote, response as never, "attachment");
+            renderSvgAttachment(parentNote, mockRequest(), response as never, "attachment");
             expect(response.headers["Content-Type"]).toBe("image/svg+xml");
             expect(response.body).toBe(`<svg xmlns="http://www.w3.org/2000/svg"></svg>`);
         });
@@ -241,6 +242,23 @@ describe("Image API (core)", () => {
             expect(res.headers["Content-Security-Policy"]).toContain("default-src 'none'");
             expect(unwrapStringOrBuffer(res.body as never)).not.toContain("alert(2)");
         });
+
+        it("caches by the attachment blobId: ETag always, immutable on a version match, 304 on If-None-Match", async () => {
+            const attachmentId = await createAttachment({ mime: "image/png", content: PNG_BYTES });
+            const blobId = cls.init(() => becca.getAttachmentOrThrow(attachmentId).blobId ?? "");
+
+            const plain = await api.get(`/api/attachments/${attachmentId}/image/file.png`);
+            expect(plain.headers["ETag"]).toBe(`"${blobId}"`);
+            expect(plain.headers["Cache-Control"]).toBe("private, no-cache");
+
+            const versioned = await api.get(`/api/attachments/${attachmentId}/image/file.png`, { query: { v: blobId } });
+            expect(versioned.headers["Cache-Control"]).toContain("immutable");
+
+            const conditional = await api.get(`/api/attachments/${attachmentId}/image/file.png`, {
+                headers: { "if-none-match": `"${blobId}"` }
+            });
+            expect(conditional.status).toBe(304);
+        });
     });
 
     describe("updateImage (PUT /api/images/:noteId) — real image service", () => {
@@ -287,7 +305,7 @@ describe("Image API (core)", () => {
     it("sets Content-Security-Policy header on SVG responses", () => {
         const parentNote = mockNote("note").note;
         const response = new MockResponse();
-        renderSvgAttachment(parentNote, response as any, "attachment");
+        renderSvgAttachment(parentNote, mockRequest(), response as any, "attachment");
         expect(response.headers["Content-Security-Policy"]).toBeDefined();
         expect(response.headers["Content-Security-Policy"]).toContain("default-src 'none'");
     });
@@ -295,10 +313,113 @@ describe("Image API (core)", () => {
     it("sets X-Content-Type-Options header on SVG responses", () => {
         const parentNote = mockNote("note").note;
         const response = new MockResponse();
-        renderSvgAttachment(parentNote, response as any, "attachment");
+        renderSvgAttachment(parentNote, mockRequest(), response as any, "attachment");
         expect(response.headers["X-Content-Type-Options"]).toBe("nosniff");
     });
+
+    describe("caching headers & conditional requests", () => {
+        function noteBlobId(noteId: string): string {
+            return cls.init(() => becca.getNoteOrThrow(noteId).blobId ?? "");
+        }
+
+        it("serves a strong ETag (the content-addressed blobId) with private revalidatable caching", async () => {
+            const noteId = await createImageNote({ mime: "image/png", content: PNG_BYTES });
+            const res = await api.get(`/api/images/${noteId}/file.png`);
+            expect(res.status).toBe(200);
+            expect(res.headers["ETag"]).toBe(`"${noteBlobId(noteId)}"`);
+            expect(res.headers["Cache-Control"]).toBe("private, no-cache");
+        });
+
+        it("answers a matching If-None-Match with 304 without reading a body, tolerating weak/list forms", async () => {
+            const noteId = await createImageNote({ mime: "image/png", content: PNG_BYTES });
+            const exact = await api.get(`/api/images/${noteId}/file.png`, {
+                headers: { "if-none-match": `"${noteBlobId(noteId)}"` }
+            });
+            expect(exact.status).toBe(304);
+            expect(exact.body).toBeFalsy();
+
+            const list = await api.get(`/api/images/${noteId}/file.png`, {
+                headers: { "if-none-match": `W/"other", W/"${noteBlobId(noteId)}"` }
+            });
+            expect(list.status).toBe(304);
+
+            const mismatch = await api.get(`/api/images/${noteId}/file.png`, {
+                headers: { "if-none-match": `"outdated"` }
+            });
+            expect(mismatch.status).toBe(200);
+        });
+
+        it("marks the current-version URL (?v=<blobId>) immutable, but keeps stale versions revalidatable", async () => {
+            const noteId = await createImageNote({ mime: "image/png", content: PNG_BYTES });
+            const current = await api.get(`/api/images/${noteId}/file.png`, { query: { v: noteBlobId(noteId) } });
+            expect(current.status).toBe(200);
+            expect(current.headers["Cache-Control"]).toContain("immutable");
+            expect(current.headers["ETag"]).toBe(`"${noteBlobId(noteId)}"`);
+
+            const stale = await api.get(`/api/images/${noteId}/file.png`, { query: { v: "outdated" } });
+            expect(stale.status).toBe(200);
+            expect(stale.headers["Cache-Control"]).toBe("private, no-cache");
+        });
+
+        it("keys a canvas export's ETag to the export attachment while matching ?v against the note", async () => {
+            const noteId = await createImageNote({
+                type: "canvas",
+                mime: "application/json",
+                attachments: [ { title: "canvas-export.svg", content: "<svg id='cached-canvas'></svg>" } ]
+            });
+            const attachmentBlobId = cls.init(() =>
+                becca.getNoteOrThrow(noteId).getAttachmentByTitle("canvas-export.svg")?.blobId ?? "");
+            const res = await api.get<string>(`/api/images/${noteId}/file.svg`, { query: { v: noteBlobId(noteId) } });
+            expect(res.status).toBe(200);
+            expect(res.headers["ETag"]).toBe(`"${attachmentBlobId}"`);
+            expect(res.headers["Cache-Control"]).toContain("immutable");
+            // The sanitization pipeline stays intact on cacheable responses.
+            expect(res.headers["Content-Security-Policy"]).toContain("default-src 'none'");
+        });
+
+        it("serves revision images as immutable (a revision's content never changes)", async () => {
+            const noteId = await createImageNote({ mime: "image/png", content: PNG_BYTES });
+            const revision = await api.post<{ revisionId: string }>(`/api/notes/${noteId}/revision`, {
+                body: { description: "snapshot" }
+            });
+            const res = await api.get(`/api/revisions/${revision.body.revisionId}/image/file.png`);
+            expect(res.status).toBe(200);
+            expect(res.headers["Cache-Control"]).toContain("immutable");
+            expect(res.headers["ETag"]).toBeDefined();
+        });
+
+        it("keeps protected content uncacheable while unlocked and 404s it without a session", async () => {
+            const noteId = await createImageNote({ mime: "image/png", content: PNG_BYTES });
+            protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef"));
+            try {
+                cls.init(() =>
+                    getSql().transactional(() => {
+                        const note = becca.getNoteOrThrow(noteId);
+                        note.isProtected = true;
+                        note.save();
+                        note.setContent(PNG_BYTES, { forceSave: true });
+                    })
+                );
+                // Unlocked: served, but decrypted bytes must never land in a disk cache.
+                const unlocked = await api.get(`/api/images/${noteId}/file.png`);
+                expect(unlocked.status).toBe(200);
+                expect(unlocked.headers["Cache-Control"]).toContain("no-store");
+                expect(unlocked.headers["ETag"]).toBeUndefined();
+            } finally {
+                protectedSessionService.resetDataKey();
+            }
+
+            // Locked: a crisp 404 instead of the historical empty-bodied 200.
+            const locked = await api.get(`/api/images/${noteId}/file.png`);
+            expect(locked.status).toBe(404);
+            expect(locked.headers["ETag"]).toBeUndefined();
+        });
+    });
 });
+
+function mockRequest(): never {
+    return { query: {}, headers: {} } as never;
+}
 
 class MockResponse {
 
