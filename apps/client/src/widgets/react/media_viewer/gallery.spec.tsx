@@ -191,6 +191,32 @@ describe("useImageNoteGallery", () => {
         expect(setNote).toHaveBeenLastCalledWith("root/wparent/w1");
     });
 
+    it("navigates relative to the live note path, not the render-lagged note prop", async () => {
+        buildNote({
+            id: "lparent",
+            title: "Parent",
+            children: [
+                { id: "l1", title: "One", type: "image" },
+                { id: "l2", title: "Two", type: "image" },
+                { id: "l3", title: "Three", type: "image" }
+            ]
+        });
+        const current = froca.notes.l1;
+        const setNote = vi.fn();
+        const noteContext = { notePath: "root/lparent/l1", setNote } as unknown as NoteContext;
+        const latest = renderNoteGalleryHarness(current, noteContext);
+        await vi.waitFor(() => expect(latest.gallery?.items).toHaveLength(3));
+
+        // A key pressed right after a navigation runs against the previous render's gallery:
+        // the note prop still says l1, but the context has already moved on to l2. Navigation
+        // must follow the live context, otherwise the key re-targets the note we're already on.
+        (noteContext as unknown as { notePath: string }).notePath = "root/lparent/l2";
+        latest.gallery?.navigateNext();
+        expect(setNote).toHaveBeenLastCalledWith("root/lparent/l3");
+        latest.gallery?.navigatePrevious();
+        expect(setNote).toHaveBeenLastCalledWith("root/lparent/l1");
+    });
+
     it("stays a single-item gallery without navigation when the note path has no parent", async () => {
         const lone = buildImageNote("lone1", "Lone");
         const { noteContext, setNote } = makeNoteContext("lone1");
@@ -225,5 +251,11 @@ describe("useImageAttachmentGallery", () => {
 
         latest.gallery?.navigateNext();
         expect(setNote).toHaveBeenLastCalledWith("root/aowner", { viewScope: { viewMode: "attachments", attachmentId: "at2" } });
+
+        // Same live-over-lagged rule as note galleries: the context's viewScope moved to at2
+        // even though the rendered prop still says at1, so "next" wraps back to at1.
+        (noteContext as unknown as { viewScope: unknown }).viewScope = { viewMode: "attachments", attachmentId: "at2" };
+        latest.gallery?.navigateNext();
+        expect(setNote).toHaveBeenLastCalledWith("root/aowner", { viewScope: { viewMode: "attachments", attachmentId: "at1" } });
     });
 });

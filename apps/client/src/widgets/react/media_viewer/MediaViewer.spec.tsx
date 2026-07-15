@@ -237,6 +237,24 @@ describe("MediaViewer", () => {
         expect(ViewerMock.last.full).toHaveBeenCalled();
     });
 
+    it("abandons fullscreen when the gallery surface changes (viewer instance is rebuilt)", async () => {
+        const items = [ makeItem("a"), makeItem("b") ];
+        const first = makeGallery(items);
+        const { api, container, rerender, dispatch } = renderViewer(first);
+        dispatch("ready");
+        api.current?.toggleFullscreen();
+        await vi.waitFor(() => expect(document.querySelector("body > .media-viewer-root")).not.toBeNull());
+
+        rerender({ ...makeGallery(items), surfaceKey: "note-gallery:other/parent" });
+        // The stale fullscreen presentation must not survive: root back home, class cleared.
+        await vi.waitFor(() => {
+            const root = container.querySelector(".media-viewer-root");
+            expect(root).not.toBeNull();
+            expect(root?.classList.contains("media-viewer-fulled")).toBe(false);
+        });
+        expect(document.querySelector("body > .media-viewer-root")).toBeNull();
+    });
+
     it("exits fullscreen when the widget stops being visible (note switch, closed popup)", () => {
         const items = [ makeItem("a") ];
         const gallery = makeGallery(items);

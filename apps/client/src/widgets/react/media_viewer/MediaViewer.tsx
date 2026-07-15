@@ -218,7 +218,10 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
 
         return () => {
             revealRef.current?.cancel();
+            // A surface change while fullscreen must not leave the stale presentation behind:
+            // the new Viewer instance starts un-fulled, so the state resets alongside it.
             exitFullscreenPresentation();
+            setFulled(false);
             viewerRef.current = null;
             viewer.destroy();
         };

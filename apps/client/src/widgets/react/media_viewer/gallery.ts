@@ -45,6 +45,9 @@ export function useImageNoteGallery(note: FNote, noteContext: NoteContext | unde
     const parent = getParentFromNotePath(noteContext?.notePath);
     return useMediaGallery({
         currentId: note.noteId,
+        // The note prop lags one render behind rapid navigation; the context's notePath is
+        // updated synchronously by setNote, so it is the authoritative "where are we now".
+        liveCurrentId: () => noteContext?.notePath?.split("/").at(-1) ?? note.noteId,
         surfaceKey: `note-gallery:${parent?.parentPath ?? note.noteId}`,
         seedItems: () => buildNoteGalleryItems([], note),
         loadItems: async () => {
@@ -67,6 +70,9 @@ export function useImageAttachmentGallery(note: FNote | undefined, noteContext: 
     const role = note?.attachments?.find((attachment) => attachment.attachmentId === attachmentId)?.role;
     return useMediaGallery({
         currentId: attachmentId,
+        // Same live-over-lagged rule as note galleries, via the context's synchronously
+        // updated viewScope.
+        liveCurrentId: () => noteContext?.viewScope?.attachmentId ?? attachmentId,
         surfaceKey: `attachment-gallery:${note?.noteId ?? ""}:${role ?? attachmentId ?? ""}`,
         seedItems: () => [],
         loadItems: async () => {
@@ -85,6 +91,12 @@ export function useImageAttachmentGallery(note: FNote | undefined, noteContext: 
 interface MediaGalleryProvider {
     /** Id of the item currently shown; undefined when there is nothing to show. */
     currentId: string | undefined;
+    /**
+     * Resolves the current item id at call time, ahead of the next render. Relative navigation
+     * uses this so that a second navigation issued before the props caught up (rapid keys,
+     * swipes) moves from where the app actually is — not from the previous render's snapshot.
+     */
+    liveCurrentId?(): string | undefined;
     /** See {@link MediaGallery.surfaceKey}; also the load effect's key. */
     surfaceKey: string;
     /** Synchronous best-effort items shown until {@link loadItems} resolves. */
@@ -139,13 +151,24 @@ function useMediaGallery(provider: MediaGalleryProvider): MediaGallery {
         if (item) providerRef.current.navigateTo(item.id);
     };
 
+    // Relative navigation resolves "current" at call time (see liveCurrentId): during rapid
+    // navigation the rendered currentIndex is one step behind the app.
+    const resolveCurrentIndex = () => {
+        const liveId = providerRef.current.liveCurrentId?.();
+        if (liveId) {
+            const liveIndex = items.findIndex((item) => item.id === liveId);
+            if (liveIndex >= 0) return liveIndex;
+        }
+        return currentIndex;
+    };
+
     return {
         items,
         currentIndex,
         surfaceKey,
         navigateToIndex,
-        navigatePrevious: () => navigateToIndex(currentIndex - 1),
-        navigateNext: () => navigateToIndex(currentIndex + 1),
+        navigatePrevious: () => navigateToIndex(resolveCurrentIndex() - 1),
+        navigateNext: () => navigateToIndex(resolveCurrentIndex() + 1),
         navigateFirst: () => navigateToIndex(0),
         navigateLast: () => navigateToIndex(items.length - 1)
     };
