@@ -53,7 +53,7 @@ function returnImageInt(image: BNote | BRevision | null, req: ImageRequest, res:
     } else {
         sendImageContent(req, res, {
             mime: image.mime,
-            isProtected: image.isProtected,
+            isProtected: !!image.isProtected,
             etagBlobId: image.blobId,
             urlVersionBlobId: image.blobId,
             immutableUrl,
@@ -68,7 +68,7 @@ export function renderSvgAttachment(image: BNote | BRevision, req: ImageRequest,
 
     sendImageContent(req, res, {
         mime: "image/svg+xml",
-        isProtected: image.isProtected,
+        isProtected: !!image.isProtected,
         // The bytes come from the export attachment when present; sanitization is deterministic,
         // so the backing blobId stays a valid strong validator for the sanitized output.
         etagBlobId: attachment?.blobId ?? image.blobId,
@@ -93,7 +93,7 @@ export function renderPngAttachment(image: BNote | BRevision, req: ImageRequest,
 
     sendImageContent(req, res, {
         mime: "image/png",
-        isProtected: image.isProtected,
+        isProtected: !!image.isProtected,
         etagBlobId: attachment.blobId,
         urlVersionBlobId: image.blobId,
         getContent: () => attachment.getContent()
@@ -119,7 +119,7 @@ function returnAttachedImage(req: Request<{ attachmentId: string }>, res: Respon
 
     sendImageContent(req, res, {
         mime: attachment.mime,
-        isProtected: attachment.isProtected,
+        isProtected: !!attachment.isProtected,
         etagBlobId: attachment.blobId,
         urlVersionBlobId: attachment.blobId,
         isSvg: attachment.mime === "image/svg+xml",

@@ -1,5 +1,5 @@
 import { render } from "preact";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 // Viewer.js measures real layout, so unit tests capture the constructor contract and drive the
 // wrapper through the CustomEvents Viewer.js dispatches on the source element instead.
@@ -53,12 +53,12 @@ function makeItem(id: string, title = id): MediaViewerItem {
     return { id, title, src: `api/images/${id}/${title}?v=blob-${id}`, kind: "note", mime: "image/png" };
 }
 
-function makeGallery(items: MediaViewerItem[], currentIndex = 0): MediaGallery & { navigateToIndex: ReturnType<typeof vi.fn> } {
+function makeGallery(items: MediaViewerItem[], currentIndex = 0): MediaGallery & { navigateToIndex: Mock<(index: number) => void> } {
     return {
         items,
         currentIndex,
         surfaceKey: "note-gallery:root/parent",
-        navigateToIndex: vi.fn(),
+        navigateToIndex: vi.fn<(index: number) => void>(),
         navigatePrevious: vi.fn(),
         navigateNext: vi.fn(),
         navigateFirst: vi.fn(),
@@ -275,7 +275,7 @@ describe("MediaViewer", () => {
         viewer.initialImageData = { ratio: 0.5 };
 
         api.current?.zoomBy(0.2);
-        expect(viewer.zoom).toHaveBeenCalledWith(0.2, false, null);
+        expect(viewer.zoom).toHaveBeenCalledWith(0.2, false, undefined);
         api.current?.zoomTo(1.5);
         expect(viewer.zoomTo).toHaveBeenCalledWith(1.5);
         api.current?.fitToWindow();

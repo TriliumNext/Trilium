@@ -10,7 +10,8 @@ function makeImage({ decode, complete = false, naturalWidth = 0 }: {
     naturalWidth?: number;
 }): DecodableImage {
     const img = document.createElement("img") as DecodableImage;
-    img.decode = decode;
+    // lib.dom declares decode() as required; widen so the no-decode() runtime can be simulated.
+    (img as { decode: (() => Promise<void>) | undefined }).decode = decode;
     Object.defineProperty(img, "complete", { value: complete });
     Object.defineProperty(img, "naturalWidth", { value: naturalWidth });
     return img;

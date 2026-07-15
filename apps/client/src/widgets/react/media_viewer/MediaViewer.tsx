@@ -25,7 +25,7 @@ const MEDIA_NEXT_KEYS = [ "Space" ];
 /** The surface the toolbar/keyboard drive. All ratios are native-relative: 1 = actual pixel size. */
 export interface MediaViewerApi {
     /** Zooms by a relative amount (Viewer.js semantics: +0.1 → 10% in). Pivot is viewer-relative. */
-    zoomBy(delta: number, pivot?: { x: number; y: number } | null): void;
+    zoomBy(delta: number, pivot?: { x: number; y: number }): void;
     zoomTo(nativeRatio: number): void;
     fitToWindow(): void;
     actualSize(): void;
@@ -50,6 +50,8 @@ type ViewerInternals = Viewer & {
     initialImageData?: { ratio?: number };
     navbar?: HTMLElement;
     options: { navbar: boolean | number };
+    /** Present at runtime; missing from the published typings. */
+    resize(): void;
 };
 
 interface MediaViewerProps {
@@ -259,7 +261,7 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
     // The api only touches refs and stable setters, so one instance serves the whole lifetime —
     // the toolbar, the keyboard hook and the caller's apiRef all share it.
     const api = useMemo<MediaViewerApi>(() => ({
-        zoomBy: (delta, pivot = null) => viewerRef.current?.zoom(delta, false, pivot),
+        zoomBy: (delta, pivot) => viewerRef.current?.zoom(delta, false, pivot),
         zoomTo: (nativeRatio) => viewerRef.current?.zoomTo(nativeRatio),
         fitToWindow: () => {
             const fitRatio = viewerRef.current?.initialImageData?.ratio;
