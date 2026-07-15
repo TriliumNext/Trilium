@@ -119,6 +119,23 @@ body {
     --ck-color-annotation-info: var(--muted-text-color);
     --ck-color-annotation-icon: var(--muted-text-color);
 
+    /* Destructive-action surfaces: the remove-comment confirmation slide-in and the removal
+       flash. The two *-remove-background variables chain off --ck-color-light-red at :root
+       (the same substitution trap as the content font color above), so every link of the
+       chain is mapped explicitly. */
+    --ck-color-light-red: var(--destructive-background-color, #fcc);
+    --ck-color-comment-remove-background: var(--destructive-background-color, #fcc);
+    --ck-color-thread-remove-background: var(--destructive-background-color, #fcc);
+
+    /* Thread header strip: CKEditor tints it with the comment accent; recreate the tint from
+       the theme's own colors instead of the hardcoded pale yellows. */
+    --ck-color-thread-header-background: color-mix(in srgb, var(--comment-accent-color, #f2de02) 8%, var(--main-background-color));
+    --ck-color-thread-header-active-background: color-mix(in srgb, var(--comment-accent-color, #f2de02) 20%, var(--main-background-color));
+
+    /* Unlinked threads (whose commented text was deleted): neutral surfaces. */
+    --ck-color-unlinked-background: var(--accented-background-color);
+    --ck-color-unlinked-active-background: var(--more-accented-background-color);
+
     --ck-color-table-focused-cell-background: var(--more-accented-background-color);
 
     --ck-color-labeled-field-label-background: var(--accented-background-color);

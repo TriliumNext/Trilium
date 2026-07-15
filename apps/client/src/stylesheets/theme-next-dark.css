@@ -272,6 +272,9 @@
     --comment-marker-active-background: #7a6f2a;
     --comment-accent-color: #b3a626;
 
+    /* Background of destructive-action surfaces (e.g. remove-comment confirmation) */
+    --destructive-background-color: #66302b;
+
     --mermaid-theme: dark;
 
     --code-block-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);

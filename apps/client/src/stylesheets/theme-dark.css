@@ -76,6 +76,9 @@
     --comment-marker-background: #5c5427;
     --comment-marker-active-background: #7a6f2a;
     --comment-accent-color: #b3a626;
+
+    /* Background of destructive-action surfaces (e.g. remove-comment confirmation) */
+    --destructive-background-color: #66302b;
     --tooltip-background-color: #333;
     --link-color: lightskyblue;
 

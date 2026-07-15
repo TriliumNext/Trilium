@@ -80,6 +80,9 @@ html {
     --comment-marker-background: #fef7a9;
     --comment-marker-active-background: #fdf05d;
     --comment-accent-color: #f2de02;
+
+    /* Background of destructive-action surfaces (e.g. remove-comment confirmation) */
+    --destructive-background-color: #fcc;
     --tooltip-background-color: #f8f8f8;
     --link-color: blue;
 
