@@ -47,22 +47,31 @@ export default function ColorPicker({ currentValue, onChange, presets = DEFAULT_
             }
         >
             <div className="tn-color-picker-grid">
-                {presets.map((color) => (
-                    <button
-                        key={color}
-                        type="button"
-                        title={color}
-                        className={clsx("tn-color-picker-swatch", { "active": currentValue === color })}
-                        style={{ background: color }}
-                        onClick={() => onChange(color)}
-                    />
-                ))}
+                {presets.map((color) => {
+                    const isActive = (currentValue || "").trim().toLowerCase() === (color || "").trim().toLowerCase();
+                    return (
+                        <button
+                            key={color}
+                            type="button"
+                            title={color}
+                            className={clsx("tn-color-picker-swatch", { "active": isActive })}
+                            style={{ background: color }}
+                            onClick={() => onChange(color)}
+                        />
+                    )
+                })}
             </div>
 
             <label className="tn-color-picker-custom">
                 <input
                     type="color"
-                    value={/^#[0-9a-f]{6}$/i.test(currentValue) ? currentValue : "#000000"}
+                    value={(() => {
+                        const trimmed = (currentValue || "").trim();
+                        if (/^#[0-9a-f]{3}$/i.test(trimmed)) {
+                            return "#" + trimmed[1] + trimmed[1] + trimmed[2] + trimmed[2] + trimmed[3] + trimmed[3];
+                        }
+                        return /^#[0-9a-f]{6}$/i.test(trimmed) ? trimmed.toLowerCase() : "#000000";
+                    })()}
                     onInput={(e) => onChange(e.currentTarget.value)}
                 />
                 <span>Custom…</span>
