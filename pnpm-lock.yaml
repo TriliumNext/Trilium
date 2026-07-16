@@ -81,8 +81,6 @@ overrides:
   basic-ftp@=5.2.0: '>=5.2.1'
   extract-zip>yauzl: 3.4.0
 
-pnpmfileChecksum: sha256-Y+CmGTGmFhNZN6QTL8GJnY/EuBOU2KPY66OgOmzHWqw=
-
 patchedDependencies:
   '@ckeditor/ckeditor5-code-block': 1530be090e4f5235e197fb6208a8e8230e3355d5633fc7cad2b2e892659e9c04
   '@ckeditor/ckeditor5-mention': 70377e48a04e2f45abba79aa35f3d5527ec7aa7ffce44056f9957a49a24a4a60
@@ -202,7 +200,7 @@ importers:
     dependencies:
       '@excalidraw/excalidraw':
         specifier: 0.18.1
-        version: 0.18.1(patch_hash=859531a8ff622291b895d36bcd33e07ced6fcb3bcc90631ccaf776789b03f0c2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 0.18.1(patch_hash=859531a8ff622291b895d36bcd33e07ced6fcb3bcc90631ccaf776789b03f0c2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@fullcalendar/core':
         specifier: 6.1.21
         version: 6.1.21(preact-render-to-string@6.7.0)
@@ -253,31 +251,31 @@ importers:
         version: link:../../packages/splitjs
       '@univerjs/preset-sheets-conditional-formatting':
         specifier: 0.25.1
-        version: 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+        version: 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/preset-sheets-core':
         specifier: 0.25.1
-        version: 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+        version: 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/preset-sheets-data-validation':
         specifier: 0.25.1
-        version: 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+        version: 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/preset-sheets-drawing':
         specifier: 0.25.1
-        version: 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+        version: 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/preset-sheets-filter':
         specifier: 0.25.1
-        version: 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+        version: 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/preset-sheets-find-replace':
         specifier: 0.25.1
-        version: 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+        version: 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/preset-sheets-note':
         specifier: 0.25.1
-        version: 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+        version: 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/preset-sheets-sort':
         specifier: 0.25.1
-        version: 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+        version: 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/presets':
         specifier: 0.25.1
-        version: 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+        version: 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       autocomplete.js:
         specifier: 0.38.1
         version: 0.38.1
@@ -358,13 +356,13 @@ importers:
         version: 2.0.4
       react-i18next:
         specifier: 17.0.9
-        version: 17.0.9(i18next@26.3.6(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+        version: 17.0.9(i18next@26.3.6(typescript@6.0.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@6.0.3)
       react-window:
         specifier: 2.2.7
-        version: 2.2.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 2.2.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-zoom-pan-pinch:
         specifier: 4.0.3
-        version: 4.0.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 4.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reveal.js:
         specifier: 6.0.1
         version: 6.0.1
@@ -827,7 +825,7 @@ importers:
     dependencies:
       '@excalidraw/excalidraw':
         specifier: 0.18.1
-        version: 0.18.1(patch_hash=859531a8ff622291b895d36bcd33e07ced6fcb3bcc90631ccaf776789b03f0c2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 0.18.1(patch_hash=859531a8ff622291b895d36bcd33e07ced6fcb3bcc90631ccaf776789b03f0c2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@fullcalendar/core':
         specifier: 6.1.21
         version: 6.1.21(preact-render-to-string@6.7.0)
@@ -968,13 +966,13 @@ importers:
         version: 10.29.7(preact-render-to-string@6.7.0)
       react-i18next:
         specifier: 17.0.9
-        version: 17.0.9(i18next@26.3.6(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+        version: 17.0.9(i18next@26.3.6(typescript@6.0.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@6.0.3)
       react-window:
         specifier: 2.2.7
-        version: 2.2.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 2.2.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-zoom-pan-pinch:
         specifier: 4.0.3
-        version: 4.0.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 4.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       reveal.js:
         specifier: 6.0.1
         version: 6.0.1
@@ -1060,7 +1058,7 @@ importers:
         version: 6.7.0(preact@10.29.7)
       react-i18next:
         specifier: 17.0.9
-        version: 17.0.9(i18next@26.3.6(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
+        version: 17.0.9(i18next@26.3.6(typescript@6.0.3))(react@19.2.7)(typescript@6.0.3)
     devDependencies:
       '@preact/preset-vite':
         specifier: 2.10.5
@@ -1812,6 +1810,50 @@ packages:
 
   '@antfu/install-pkg@1.1.0':
     resolution: {integrity: sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ==}
+
+  '@anthropic-ai/claude-agent-sdk-darwin-arm64@0.3.207':
+    resolution: {integrity: sha512-08xSo1FDx8h0aLhL5tvcRxa2SMmcUV3aDWeZiEJVTclyiDAs61BgTjAxCg+SZcu1CndjJO8cfO0yM5dhamxz3g==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@anthropic-ai/claude-agent-sdk-darwin-x64@0.3.207':
+    resolution: {integrity: sha512-1o7K4EYqyCixZ/oeOZSh7AzSy6TM86xoOuf4VuORjPSS31hBnoqY0NGZd27+2VDs9LGtsdksmsTqcNGx9xd1hA==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@anthropic-ai/claude-agent-sdk-linux-arm64-musl@0.3.207':
+    resolution: {integrity: sha512-oPj+g2DslhH4Y9nCTs7al4t9wZv78FZwLFQwOCg99BXuz1o0ZOpKmxyvR7J9eBR+GPszeMMS8gYplQTiZC9o2w==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  '@anthropic-ai/claude-agent-sdk-linux-arm64@0.3.207':
+    resolution: {integrity: sha512-X4uezYOifDiNTTmmugfRCdg3nNamrr1LFRY9hg30vWYTShL+bbN+nfC3KaFfSYCl4GTtsEEUbYdOTC2F3bBpcA==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@anthropic-ai/claude-agent-sdk-linux-x64-musl@0.3.207':
+    resolution: {integrity: sha512-uRv+D5oG/7EYr41FAJ9IPo2pZYBe2ZMaA6nSHCeizsgPxCSMtl5bNppmU21+jZJvo4hivObEgkGFERAhdGqygg==}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  '@anthropic-ai/claude-agent-sdk-linux-x64@0.3.207':
+    resolution: {integrity: sha512-Kg6BPH8Ee0ny/oEUWJmvT1jCRBne4jVpRSOMsJcYp1Fav1rMEgpU219oJJs+LWwx4ifuuLtNWedqJNnVw7mnKg==}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@anthropic-ai/claude-agent-sdk-win32-arm64@0.3.207':
+    resolution: {integrity: sha512-9fWpUzfkXlPAg2tf8JpQe7w9avFaomAUbfAwyAmykQgSIf66LwaJjvI5hNqhNqczRKyfsXPn3ei2S5HKlmFP+Q==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@anthropic-ai/claude-agent-sdk-win32-x64@0.3.207':
+    resolution: {integrity: sha512-YPjVT0q6aXEM2MgN4CI6/9fqiTXwETji+4NoPOzCYuqAkhXZqp30Jsk7/NHqYGNNSfURKrsuAoliKB0rsbpbjg==}
+    cpu: [x64]
+    os: [win32]
 
   '@anthropic-ai/claude-agent-sdk@0.3.207':
     resolution: {integrity: sha512-y0PkQRmQBi96MHiN5Xzfq+GaddxCZCqI/cXEQBLYBLXGa4i1nDSlulQqkMBj2RorrrSGQJ6Wdw+uhu6OfHNPzA==}
@@ -11804,10 +11846,10 @@ packages:
     peerDependencies:
       react: ^16.14.0
 
-  react-dom@19.2.7:
-    resolution: {integrity: sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==}
+  react-dom@18.3.1:
+    resolution: {integrity: sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==}
     peerDependencies:
-      react: ^19.2.7
+      react: ^18.3.1
 
   react-i18next@17.0.9:
     resolution: {integrity: sha512-buLzOSqHtXxjf+qgSrLWNTXVZ1jSwO6kUv3uJqSP1roGBPgNnbhFm7OmdVwWcgf2gIbUyP0J333uPyx+Btsi3w==}
@@ -11894,6 +11936,10 @@ packages:
 
   react@16.14.0:
     resolution: {integrity: sha512-0X2CImDkJGApiAlcf0ODKIneSwBPhqJawOa5wCtKbu7ZECrmS26NvtSILynQ66cgkT/RJ4LidJOc3bUESwmU8g==}
+    engines: {node: '>=0.10.0'}
+
+  react@18.3.1:
+    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
     engines: {node: '>=0.10.0'}
 
   react@19.2.7:
@@ -12235,8 +12281,8 @@ packages:
   scheduler@0.19.1:
     resolution: {integrity: sha512-n/zwRWRYSUj0/3g/otKDRPMh6qv2SYMWNq85IEa8iZyAv8od9zDYpGSnpBEjNgcMNq6Scbu5KfIPxNF72R/2EA==}
 
-  scheduler@0.27.0:
-    resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
+  scheduler@0.23.2:
+    resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
 
   schema-utils@4.3.3:
     resolution: {integrity: sha512-eflK8wEtyOE6+hsaRVPxvUKYCpRgzLqDTb8krvAsRIwOGlHoSgYLgBXoubGgLd2fT41/OUYdb48v4k4WWHQurA==}
@@ -13982,11 +14028,44 @@ snapshots:
       package-manager-detector: 1.6.0
       tinyexec: 1.1.2
 
+  '@anthropic-ai/claude-agent-sdk-darwin-arm64@0.3.207':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-darwin-x64@0.3.207':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-linux-arm64-musl@0.3.207':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-linux-arm64@0.3.207':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-linux-x64-musl@0.3.207':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-linux-x64@0.3.207':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-win32-arm64@0.3.207':
+    optional: true
+
+  '@anthropic-ai/claude-agent-sdk-win32-x64@0.3.207':
+    optional: true
+
   '@anthropic-ai/claude-agent-sdk@0.3.207(@anthropic-ai/sdk@0.111.0(zod@4.4.3))(@modelcontextprotocol/sdk@1.29.0(zod@4.4.3))(zod@4.4.3)':
     dependencies:
       '@anthropic-ai/sdk': 0.111.0(zod@4.4.3)
       '@modelcontextprotocol/sdk': 1.29.0(zod@4.4.3)
       zod: 4.4.3
+    optionalDependencies:
+      '@anthropic-ai/claude-agent-sdk-darwin-arm64': 0.3.207
+      '@anthropic-ai/claude-agent-sdk-darwin-x64': 0.3.207
+      '@anthropic-ai/claude-agent-sdk-linux-arm64': 0.3.207
+      '@anthropic-ai/claude-agent-sdk-linux-arm64-musl': 0.3.207
+      '@anthropic-ai/claude-agent-sdk-linux-x64': 0.3.207
+      '@anthropic-ai/claude-agent-sdk-linux-x64-musl': 0.3.207
+      '@anthropic-ai/claude-agent-sdk-win32-arm64': 0.3.207
+      '@anthropic-ai/claude-agent-sdk-win32-x64': 0.3.207
 
   '@anthropic-ai/sdk@0.111.0(zod@4.4.3)':
     dependencies:
@@ -16329,14 +16408,14 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
-  '@excalidraw/excalidraw@0.18.1(patch_hash=859531a8ff622291b895d36bcd33e07ced6fcb3bcc90631ccaf776789b03f0c2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@excalidraw/excalidraw@0.18.1(patch_hash=859531a8ff622291b895d36bcd33e07ced6fcb3bcc90631ccaf776789b03f0c2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@braintree/sanitize-url': 6.0.2
       '@excalidraw/laser-pointer': 1.3.1
       '@excalidraw/mermaid-to-excalidraw': 2.2.2
       '@excalidraw/random-username': 1.1.0
-      '@radix-ui/react-popover': 1.1.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-tabs': 1.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@radix-ui/react-popover': 1.1.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-tabs': 1.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       browser-fs-access: 0.29.1
       canvas-roundrect-polyfill: 0.0.1
       clsx: 1.1.1
@@ -16345,8 +16424,8 @@ snapshots:
       fractional-indexing: 3.2.0
       fuzzy: 0.1.3
       image-blob-reduce: 3.0.1
-      jotai: 2.11.0(react@19.2.7)
-      jotai-scope: 0.7.2(jotai@2.11.0(react@19.2.7))(react@19.2.7)
+      jotai: 2.11.0(react@18.3.1)
+      jotai-scope: 0.7.2(jotai@2.11.0(react@18.3.1))(react@18.3.1)
       lodash.debounce: 4.0.8
       lodash.throttle: 4.1.1
       nanoid: 5.1.11
@@ -16359,11 +16438,11 @@ snapshots:
       png-chunks-extract: 1.0.0
       points-on-curve: 1.0.1
       pwacompat: 2.0.17
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       roughjs: 4.6.6
       sass: 1.51.0
-      tunnel-rat: 0.1.2(react@19.2.7)
+      tunnel-rat: 0.1.2(react@18.3.1)
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -16429,11 +16508,11 @@ snapshots:
       '@floating-ui/core': 1.7.5
       '@floating-ui/utils': 0.2.11
 
-  '@floating-ui/react-dom@2.1.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@floating-ui/react-dom@2.1.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@floating-ui/dom': 1.7.6
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   '@floating-ui/utils@0.2.11': {}
 
@@ -17842,478 +17921,478 @@ snapshots:
 
   '@radix-ui/primitive@1.1.3': {}
 
-  '@radix-ui/react-arrow@1.1.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-arrow@1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-primitive': 2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-arrow@1.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-arrow@1.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-collection@1.0.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@babel/runtime': 7.29.2
-      '@radix-ui/react-compose-refs': 1.0.0(react@19.2.7)
-      '@radix-ui/react-context': 1.0.0(react@19.2.7)
-      '@radix-ui/react-primitive': 1.0.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-slot': 1.0.1(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@radix-ui/react-collection@1.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-context': 1.1.2(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-slot': 1.2.3(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@radix-ui/react-compose-refs@1.0.0(react@19.2.7)':
+  '@radix-ui/react-collection@1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
-      react: 19.2.7
+      '@radix-ui/react-compose-refs': 1.0.0(react@18.3.1)
+      '@radix-ui/react-context': 1.0.0(react@18.3.1)
+      '@radix-ui/react-primitive': 1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-slot': 1.0.1(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-compose-refs@1.1.1(react@19.2.7)':
+  '@radix-ui/react-collection@1.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-context': 1.1.2(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-slot': 1.2.3(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-compose-refs@1.1.2(react@19.2.7)':
-    dependencies:
-      react: 19.2.7
-
-  '@radix-ui/react-context@1.0.0(react@19.2.7)':
+  '@radix-ui/react-compose-refs@1.0.0(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-context@1.1.1(react@19.2.7)':
+  '@radix-ui/react-compose-refs@1.1.1(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-context@1.1.2(react@19.2.7)':
+  '@radix-ui/react-compose-refs@1.1.2(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-dialog@1.1.15(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-context@1.0.0(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.29.2
+      react: 18.3.1
+
+  '@radix-ui/react-context@1.1.1(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+
+  '@radix-ui/react-context@1.1.2(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+
+  '@radix-ui/react-dialog@1.1.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.3
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-context': 1.1.2(react@19.2.7)
-      '@radix-ui/react-dismissable-layer': 1.1.11(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-focus-guards': 1.1.3(react@19.2.7)
-      '@radix-ui/react-focus-scope': 1.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-id': 1.1.1(react@19.2.7)
-      '@radix-ui/react-portal': 1.1.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-presence': 1.1.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-slot': 1.2.3(react@19.2.7)
-      '@radix-ui/react-use-controllable-state': 1.2.2(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-context': 1.1.2(react@18.3.1)
+      '@radix-ui/react-dismissable-layer': 1.1.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-focus-guards': 1.1.3(react@18.3.1)
+      '@radix-ui/react-focus-scope': 1.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-id': 1.1.1(react@18.3.1)
+      '@radix-ui/react-portal': 1.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-presence': 1.1.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-slot': 1.2.3(react@18.3.1)
+      '@radix-ui/react-use-controllable-state': 1.2.2(react@18.3.1)
       aria-hidden: 1.2.6
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-      react-remove-scroll: 2.7.2(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-remove-scroll: 2.7.2(react@18.3.1)
 
-  '@radix-ui/react-direction@1.0.0(react@19.2.7)':
+  '@radix-ui/react-direction@1.0.0(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-direction@1.1.1(react@19.2.7)':
+  '@radix-ui/react-direction@1.1.1(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-dismissable-layer@1.1.11(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-dismissable-layer@1.1.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.3
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-callback-ref': 1.1.1(react@19.2.7)
-      '@radix-ui/react-use-escape-keydown': 1.1.1(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-callback-ref': 1.1.1(react@18.3.1)
+      '@radix-ui/react-use-escape-keydown': 1.1.1(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-dismissable-layer@1.1.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-dismissable-layer@1.1.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.1
-      '@radix-ui/react-compose-refs': 1.1.1(react@19.2.7)
-      '@radix-ui/react-primitive': 2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.2.7)
-      '@radix-ui/react-use-escape-keydown': 1.1.0(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.1(react@18.3.1)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@18.3.1)
+      '@radix-ui/react-use-escape-keydown': 1.1.0(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-dropdown-menu@2.1.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-dropdown-menu@2.1.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.3
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-context': 1.1.2(react@19.2.7)
-      '@radix-ui/react-id': 1.1.1(react@19.2.7)
-      '@radix-ui/react-menu': 2.1.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-controllable-state': 1.2.2(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-context': 1.1.2(react@18.3.1)
+      '@radix-ui/react-id': 1.1.1(react@18.3.1)
+      '@radix-ui/react-menu': 2.1.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-controllable-state': 1.2.2(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-focus-guards@1.1.1(react@19.2.7)':
+  '@radix-ui/react-focus-guards@1.1.1(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-focus-guards@1.1.3(react@19.2.7)':
+  '@radix-ui/react-focus-guards@1.1.3(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-focus-scope@1.1.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-focus-scope@1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-compose-refs': 1.1.1(react@19.2.7)
-      '@radix-ui/react-primitive': 2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.1(react@18.3.1)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-focus-scope@1.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-focus-scope@1.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-callback-ref': 1.1.1(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-callback-ref': 1.1.1(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-hover-card@1.1.15(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-hover-card@1.1.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.3
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-context': 1.1.2(react@19.2.7)
-      '@radix-ui/react-dismissable-layer': 1.1.11(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-popper': 1.2.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-portal': 1.1.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-presence': 1.1.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-controllable-state': 1.2.2(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-context': 1.1.2(react@18.3.1)
+      '@radix-ui/react-dismissable-layer': 1.1.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-popper': 1.2.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-portal': 1.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-presence': 1.1.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-controllable-state': 1.2.2(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-id@1.0.0(react@19.2.7)':
+  '@radix-ui/react-id@1.0.0(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@radix-ui/react-use-layout-effect': 1.0.0(react@19.2.7)
-      react: 19.2.7
+      '@radix-ui/react-use-layout-effect': 1.0.0(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-id@1.1.0(react@19.2.7)':
+  '@radix-ui/react-id@1.1.0(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.2.7)
-      react: 19.2.7
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-id@1.1.1(react@19.2.7)':
+  '@radix-ui/react-id@1.1.1(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-use-layout-effect': 1.1.1(react@19.2.7)
-      react: 19.2.7
+      '@radix-ui/react-use-layout-effect': 1.1.1(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-menu@2.1.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@radix-ui/primitive': 1.1.3
-      '@radix-ui/react-collection': 1.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-context': 1.1.2(react@19.2.7)
-      '@radix-ui/react-direction': 1.1.1(react@19.2.7)
-      '@radix-ui/react-dismissable-layer': 1.1.11(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-focus-guards': 1.1.3(react@19.2.7)
-      '@radix-ui/react-focus-scope': 1.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-id': 1.1.1(react@19.2.7)
-      '@radix-ui/react-popper': 1.2.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-portal': 1.1.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-presence': 1.1.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-roving-focus': 1.1.11(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-slot': 1.2.3(react@19.2.7)
-      '@radix-ui/react-use-callback-ref': 1.1.1(react@19.2.7)
-      aria-hidden: 1.2.6
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-      react-remove-scroll: 2.7.2(react@19.2.7)
-
-  '@radix-ui/react-popover@1.1.15(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-menu@2.1.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.3
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-context': 1.1.2(react@19.2.7)
-      '@radix-ui/react-dismissable-layer': 1.1.11(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-focus-guards': 1.1.3(react@19.2.7)
-      '@radix-ui/react-focus-scope': 1.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-id': 1.1.1(react@19.2.7)
-      '@radix-ui/react-popper': 1.2.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-portal': 1.1.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-presence': 1.1.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-slot': 1.2.3(react@19.2.7)
-      '@radix-ui/react-use-controllable-state': 1.2.2(react@19.2.7)
+      '@radix-ui/react-collection': 1.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-context': 1.1.2(react@18.3.1)
+      '@radix-ui/react-direction': 1.1.1(react@18.3.1)
+      '@radix-ui/react-dismissable-layer': 1.1.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-focus-guards': 1.1.3(react@18.3.1)
+      '@radix-ui/react-focus-scope': 1.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-id': 1.1.1(react@18.3.1)
+      '@radix-ui/react-popper': 1.2.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-portal': 1.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-presence': 1.1.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-roving-focus': 1.1.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-slot': 1.2.3(react@18.3.1)
+      '@radix-ui/react-use-callback-ref': 1.1.1(react@18.3.1)
       aria-hidden: 1.2.6
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-      react-remove-scroll: 2.7.2(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-remove-scroll: 2.7.2(react@18.3.1)
 
-  '@radix-ui/react-popover@1.1.6(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-popover@1.1.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@radix-ui/primitive': 1.1.3
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-context': 1.1.2(react@18.3.1)
+      '@radix-ui/react-dismissable-layer': 1.1.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-focus-guards': 1.1.3(react@18.3.1)
+      '@radix-ui/react-focus-scope': 1.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-id': 1.1.1(react@18.3.1)
+      '@radix-ui/react-popper': 1.2.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-portal': 1.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-presence': 1.1.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-slot': 1.2.3(react@18.3.1)
+      '@radix-ui/react-use-controllable-state': 1.2.2(react@18.3.1)
+      aria-hidden: 1.2.6
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-remove-scroll: 2.7.2(react@18.3.1)
+
+  '@radix-ui/react-popover@1.1.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.1
-      '@radix-ui/react-compose-refs': 1.1.1(react@19.2.7)
-      '@radix-ui/react-context': 1.1.1(react@19.2.7)
-      '@radix-ui/react-dismissable-layer': 1.1.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-focus-guards': 1.1.1(react@19.2.7)
-      '@radix-ui/react-focus-scope': 1.1.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-id': 1.1.0(react@19.2.7)
-      '@radix-ui/react-popper': 1.2.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-portal': 1.1.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-presence': 1.1.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-primitive': 2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-slot': 1.1.2(react@19.2.7)
-      '@radix-ui/react-use-controllable-state': 1.1.0(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.1(react@18.3.1)
+      '@radix-ui/react-context': 1.1.1(react@18.3.1)
+      '@radix-ui/react-dismissable-layer': 1.1.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-focus-guards': 1.1.1(react@18.3.1)
+      '@radix-ui/react-focus-scope': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-id': 1.1.0(react@18.3.1)
+      '@radix-ui/react-popper': 1.2.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-portal': 1.1.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-presence': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-slot': 1.1.2(react@18.3.1)
+      '@radix-ui/react-use-controllable-state': 1.1.0(react@18.3.1)
       aria-hidden: 1.2.6
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-      react-remove-scroll: 2.7.2(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-remove-scroll: 2.7.2(react@18.3.1)
 
-  '@radix-ui/react-popper@1.2.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-popper@1.2.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@floating-ui/react-dom': 2.1.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-arrow': 1.1.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-compose-refs': 1.1.1(react@19.2.7)
-      '@radix-ui/react-context': 1.1.1(react@19.2.7)
-      '@radix-ui/react-primitive': 2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.2.7)
-      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.2.7)
-      '@radix-ui/react-use-rect': 1.1.0(react@19.2.7)
-      '@radix-ui/react-use-size': 1.1.0(react@19.2.7)
+      '@floating-ui/react-dom': 2.1.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-arrow': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-compose-refs': 1.1.1(react@18.3.1)
+      '@radix-ui/react-context': 1.1.1(react@18.3.1)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@18.3.1)
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@18.3.1)
+      '@radix-ui/react-use-rect': 1.1.0(react@18.3.1)
+      '@radix-ui/react-use-size': 1.1.0(react@18.3.1)
       '@radix-ui/rect': 1.1.0
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-popper@1.2.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-popper@1.2.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@floating-ui/react-dom': 2.1.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-arrow': 1.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-context': 1.1.2(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-callback-ref': 1.1.1(react@19.2.7)
-      '@radix-ui/react-use-layout-effect': 1.1.1(react@19.2.7)
-      '@radix-ui/react-use-rect': 1.1.1(react@19.2.7)
-      '@radix-ui/react-use-size': 1.1.1(react@19.2.7)
+      '@floating-ui/react-dom': 2.1.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-arrow': 1.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-context': 1.1.2(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-callback-ref': 1.1.1(react@18.3.1)
+      '@radix-ui/react-use-layout-effect': 1.1.1(react@18.3.1)
+      '@radix-ui/react-use-rect': 1.1.1(react@18.3.1)
+      '@radix-ui/react-use-size': 1.1.1(react@18.3.1)
       '@radix-ui/rect': 1.1.1
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-portal@1.1.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-portal@1.1.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-primitive': 2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-primitive': 2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-portal@1.1.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-portal@1.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-layout-effect': 1.1.1(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-layout-effect': 1.1.1(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-presence@1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@babel/runtime': 7.29.2
-      '@radix-ui/react-compose-refs': 1.0.0(react@19.2.7)
-      '@radix-ui/react-use-layout-effect': 1.0.0(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@radix-ui/react-presence@1.1.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@radix-ui/react-compose-refs': 1.1.1(react@19.2.7)
-      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@radix-ui/react-presence@1.1.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-use-layout-effect': 1.1.1(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-
-  '@radix-ui/react-primitive@1.0.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-presence@1.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@radix-ui/react-slot': 1.0.1(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.0.0(react@18.3.1)
+      '@radix-ui/react-use-layout-effect': 1.0.0(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-primitive@2.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-presence@1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-slot': 1.1.2(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.1(react@18.3.1)
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-primitive@2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-presence@1.1.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-slot': 1.2.3(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-use-layout-effect': 1.1.1(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-primitive@2.1.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-primitive@1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-slot': 1.2.4(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@babel/runtime': 7.29.2
+      '@radix-ui/react-slot': 1.0.1(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-roving-focus@1.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-primitive@2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@radix-ui/react-slot': 1.1.2(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@radix-ui/react-primitive@2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@radix-ui/react-slot': 1.2.3(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@radix-ui/react-primitive@2.1.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@radix-ui/react-slot': 1.2.4(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@radix-ui/react-roving-focus@1.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
       '@radix-ui/primitive': 1.0.0
-      '@radix-ui/react-collection': 1.0.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-compose-refs': 1.0.0(react@19.2.7)
-      '@radix-ui/react-context': 1.0.0(react@19.2.7)
-      '@radix-ui/react-direction': 1.0.0(react@19.2.7)
-      '@radix-ui/react-id': 1.0.0(react@19.2.7)
-      '@radix-ui/react-primitive': 1.0.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-callback-ref': 1.0.0(react@19.2.7)
-      '@radix-ui/react-use-controllable-state': 1.0.0(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-collection': 1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-compose-refs': 1.0.0(react@18.3.1)
+      '@radix-ui/react-context': 1.0.0(react@18.3.1)
+      '@radix-ui/react-direction': 1.0.0(react@18.3.1)
+      '@radix-ui/react-id': 1.0.0(react@18.3.1)
+      '@radix-ui/react-primitive': 1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-callback-ref': 1.0.0(react@18.3.1)
+      '@radix-ui/react-use-controllable-state': 1.0.0(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-roving-focus@1.1.11(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-roving-focus@1.1.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@radix-ui/primitive': 1.1.3
-      '@radix-ui/react-collection': 1.1.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      '@radix-ui/react-context': 1.1.2(react@19.2.7)
-      '@radix-ui/react-direction': 1.1.1(react@19.2.7)
-      '@radix-ui/react-id': 1.1.1(react@19.2.7)
-      '@radix-ui/react-primitive': 2.1.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-callback-ref': 1.1.1(react@19.2.7)
-      '@radix-ui/react-use-controllable-state': 1.2.2(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-collection': 1.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      '@radix-ui/react-context': 1.1.2(react@18.3.1)
+      '@radix-ui/react-direction': 1.1.1(react@18.3.1)
+      '@radix-ui/react-id': 1.1.1(react@18.3.1)
+      '@radix-ui/react-primitive': 2.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-callback-ref': 1.1.1(react@18.3.1)
+      '@radix-ui/react-use-controllable-state': 1.2.2(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-separator@1.1.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-separator@1.1.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-primitive': 2.1.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-primitive': 2.1.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-slot@1.0.1(react@19.2.7)':
+  '@radix-ui/react-slot@1.0.1(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@radix-ui/react-compose-refs': 1.0.0(react@19.2.7)
-      react: 19.2.7
+      '@radix-ui/react-compose-refs': 1.0.0(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-slot@1.1.2(react@19.2.7)':
+  '@radix-ui/react-slot@1.1.2(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-compose-refs': 1.1.1(react@19.2.7)
-      react: 19.2.7
+      '@radix-ui/react-compose-refs': 1.1.1(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-slot@1.2.3(react@19.2.7)':
+  '@radix-ui/react-slot@1.2.3(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      react: 19.2.7
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-slot@1.2.4(react@19.2.7)':
+  '@radix-ui/react-slot@1.2.4(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-compose-refs': 1.1.2(react@19.2.7)
-      react: 19.2.7
+      '@radix-ui/react-compose-refs': 1.1.2(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-tabs@1.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@radix-ui/react-tabs@1.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
       '@radix-ui/primitive': 1.0.0
-      '@radix-ui/react-context': 1.0.0(react@19.2.7)
-      '@radix-ui/react-direction': 1.0.0(react@19.2.7)
-      '@radix-ui/react-id': 1.0.0(react@19.2.7)
-      '@radix-ui/react-presence': 1.0.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-primitive': 1.0.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-roving-focus': 1.0.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-use-controllable-state': 1.0.0(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@radix-ui/react-context': 1.0.0(react@18.3.1)
+      '@radix-ui/react-direction': 1.0.0(react@18.3.1)
+      '@radix-ui/react-id': 1.0.0(react@18.3.1)
+      '@radix-ui/react-presence': 1.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-primitive': 1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-roving-focus': 1.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-use-controllable-state': 1.0.0(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@radix-ui/react-use-callback-ref@1.0.0(react@19.2.7)':
+  '@radix-ui/react-use-callback-ref@1.0.0(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-use-callback-ref@1.1.0(react@19.2.7)':
+  '@radix-ui/react-use-callback-ref@1.1.0(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-use-callback-ref@1.1.1(react@19.2.7)':
+  '@radix-ui/react-use-callback-ref@1.1.1(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-use-controllable-state@1.0.0(react@19.2.7)':
-    dependencies:
-      '@babel/runtime': 7.29.2
-      '@radix-ui/react-use-callback-ref': 1.0.0(react@19.2.7)
-      react: 19.2.7
-
-  '@radix-ui/react-use-controllable-state@1.1.0(react@19.2.7)':
-    dependencies:
-      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.2.7)
-      react: 19.2.7
-
-  '@radix-ui/react-use-controllable-state@1.2.2(react@19.2.7)':
-    dependencies:
-      '@radix-ui/react-use-effect-event': 0.0.2(react@19.2.7)
-      '@radix-ui/react-use-layout-effect': 1.1.1(react@19.2.7)
-      react: 19.2.7
-
-  '@radix-ui/react-use-effect-event@0.0.2(react@19.2.7)':
-    dependencies:
-      '@radix-ui/react-use-layout-effect': 1.1.1(react@19.2.7)
-      react: 19.2.7
-
-  '@radix-ui/react-use-escape-keydown@1.1.0(react@19.2.7)':
-    dependencies:
-      '@radix-ui/react-use-callback-ref': 1.1.0(react@19.2.7)
-      react: 19.2.7
-
-  '@radix-ui/react-use-escape-keydown@1.1.1(react@19.2.7)':
-    dependencies:
-      '@radix-ui/react-use-callback-ref': 1.1.1(react@19.2.7)
-      react: 19.2.7
-
-  '@radix-ui/react-use-layout-effect@1.0.0(react@19.2.7)':
+  '@radix-ui/react-use-controllable-state@1.0.0(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.29.2
-      react: 19.2.7
+      '@radix-ui/react-use-callback-ref': 1.0.0(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-use-layout-effect@1.1.0(react@19.2.7)':
+  '@radix-ui/react-use-controllable-state@1.1.0(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-use-layout-effect@1.1.1(react@19.2.7)':
+  '@radix-ui/react-use-controllable-state@1.2.2(react@18.3.1)':
     dependencies:
-      react: 19.2.7
+      '@radix-ui/react-use-effect-event': 0.0.2(react@18.3.1)
+      '@radix-ui/react-use-layout-effect': 1.1.1(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-use-rect@1.1.0(react@19.2.7)':
+  '@radix-ui/react-use-effect-event@0.0.2(react@18.3.1)':
+    dependencies:
+      '@radix-ui/react-use-layout-effect': 1.1.1(react@18.3.1)
+      react: 18.3.1
+
+  '@radix-ui/react-use-escape-keydown@1.1.0(react@18.3.1)':
+    dependencies:
+      '@radix-ui/react-use-callback-ref': 1.1.0(react@18.3.1)
+      react: 18.3.1
+
+  '@radix-ui/react-use-escape-keydown@1.1.1(react@18.3.1)':
+    dependencies:
+      '@radix-ui/react-use-callback-ref': 1.1.1(react@18.3.1)
+      react: 18.3.1
+
+  '@radix-ui/react-use-layout-effect@1.0.0(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.29.2
+      react: 18.3.1
+
+  '@radix-ui/react-use-layout-effect@1.1.0(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+
+  '@radix-ui/react-use-layout-effect@1.1.1(react@18.3.1)':
+    dependencies:
+      react: 18.3.1
+
+  '@radix-ui/react-use-rect@1.1.0(react@18.3.1)':
     dependencies:
       '@radix-ui/rect': 1.1.0
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-use-rect@1.1.1(react@19.2.7)':
+  '@radix-ui/react-use-rect@1.1.1(react@18.3.1)':
     dependencies:
       '@radix-ui/rect': 1.1.1
-      react: 19.2.7
+      react: 18.3.1
 
-  '@radix-ui/react-use-size@1.1.0(react@19.2.7)':
+  '@radix-ui/react-use-size@1.1.0(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-use-layout-effect': 1.1.0(react@19.2.7)
-      react: 19.2.7
+      '@radix-ui/react-use-layout-effect': 1.1.0(react@18.3.1)
+      react: 18.3.1
 
-  '@radix-ui/react-use-size@1.1.1(react@19.2.7)':
+  '@radix-ui/react-use-size@1.1.1(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-use-layout-effect': 1.1.1(react@19.2.7)
-      react: 19.2.7
+      '@radix-ui/react-use-layout-effect': 1.1.1(react@18.3.1)
+      react: 18.3.1
 
   '@radix-ui/rect@1.1.0': {}
 
@@ -19120,72 +19199,72 @@ snapshots:
 
   '@ungap/structured-clone@1.3.1': {}
 
-  '@univerjs-pro/collaboration-client-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/collaboration-client-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/collaboration': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/collaboration-client': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/protocol': 0.25.1
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs-pro/collaboration-client@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/collaboration-client@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
       '@noble/ciphers': 2.2.0
-      '@univerjs-pro/collaboration': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/protocol': 0.25.1
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/telemetry': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/telemetry': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs-pro/collaboration@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/collaboration@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-outline': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-outline': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/protocol': 0.25.1
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-conditional-formatting': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-filter': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-hyper-link': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-conditional-formatting': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-filter': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-hyper-link': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       uuid: 14.0.0
     transitivePeerDependencies:
       - react
       - rxjs
 
-  '@univerjs-pro/docs-exchange-client@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/docs-exchange-client@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/exchange-client': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/exchange-client': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -19193,17 +19272,17 @@ snapshots:
       - react-dom
       - rxjs
 
-  '@univerjs-pro/docs-print@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/docs-print@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs-pro/print': 0.25.1
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -19211,49 +19290,49 @@ snapshots:
       - react-dom
       - rxjs
 
-  '@univerjs-pro/edit-history-loader@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/edit-history-loader@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/collaboration': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/collaboration-client': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/collaboration-client-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/edit-history-viewer': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-chart': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-chart-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-pivot': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-shape': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-shape-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-sparkline': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-sparkline-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-conditional-formatting': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-conditional-formatting-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-data-validation-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-filter': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-filter-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-hyper-link': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-hyper-link-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-numfmt': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-table': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/edit-history-viewer': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-chart': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-chart-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-pivot': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-shape': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-shape-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-sparkline': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-sparkline-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-conditional-formatting': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-conditional-formatting-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-data-validation-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-filter': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-filter-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-hyper-link': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-hyper-link-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-numfmt': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-table': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
@@ -19261,51 +19340,51 @@ snapshots:
       - react
       - react-dom
 
-  '@univerjs-pro/edit-history-viewer@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/edit-history-viewer@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/collaboration': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/collaboration-client': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/collaboration-client-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-chart': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-pivot': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-shape': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-sparkline': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-chart': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-pivot': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-shape': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-sparkline': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/protocol': 0.25.1
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-conditional-formatting': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-filter': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-table': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-conditional-formatting': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-filter': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-table': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs-pro/engine-chart@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/engine-chart@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs-pro/engine-formula@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/engine-formula@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - react
       - rxjs
@@ -19314,78 +19393,78 @@ snapshots:
 
   '@univerjs-pro/engine-shape@0.25.1': {}
 
-  '@univerjs-pro/exchange-client@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/exchange-client@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/collaboration': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/protocol': 0.25.1
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       fflate: 0.4.8
-      react: 19.2.7
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs-pro/license@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/license@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
       '@noble/ed25519': 3.1.0
       '@noble/hashes': 2.2.0
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
   '@univerjs-pro/print@0.25.1': {}
 
-  '@univerjs-pro/sheets-chart-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-chart-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/engine-chart': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-chart': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs-pro/engine-chart': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-chart': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs-pro/sheets-chart@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-chart@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/engine-chart': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/engine-chart': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs-pro/sheets-exchange-client@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-exchange-client@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/exchange-client': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/exchange-client': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -19393,163 +19472,163 @@ snapshots:
       - react-dom
       - rxjs
 
-  '@univerjs-pro/sheets-outline-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-outline-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/sheets-outline': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs-pro/sheets-outline': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs-pro/sheets-outline@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-outline@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs-pro/sheets-pivot-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-pivot-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
       '@univerjs-pro/engine-pivot': 0.25.1
-      '@univerjs-pro/sheets-pivot': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs-pro/sheets-pivot': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs-pro/sheets-pivot@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-pivot@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
       '@univerjs-pro/engine-pivot': 0.25.1
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-filter': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-filter': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs-pro/sheets-print@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-print@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/collaboration-client': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs-pro/print': 0.25.1
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs-pro/sheets-shape-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-shape-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
       '@univerjs-pro/engine-shape': 0.25.1
-      '@univerjs-pro/sheets-shape': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs-pro/sheets-shape': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs-pro/sheets-shape@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-shape@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
       '@univerjs-pro/engine-shape': 0.25.1
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - react
       - rxjs
 
-  '@univerjs-pro/sheets-sparkline-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-sparkline-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/sheets-sparkline': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-graphics': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs-pro/sheets-sparkline': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-graphics': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs-pro/sheets-sparkline@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/sheets-sparkline@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs-pro/thread-comment-datasource@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs-pro/thread-comment-datasource@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/collaboration-client': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/protocol': 0.25.1
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
@@ -19557,11 +19636,11 @@ snapshots:
       - react
       - react-dom
 
-  '@univerjs/core@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/core@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
       '@univerjs/protocol': 0.25.1
       '@univerjs/themes': 0.25.1
-      '@wendellhu/redi': 1.1.1(react@19.2.7)
+      '@wendellhu/redi': 1.1.1(react@18.3.1)
       async-lock: 1.4.1
       fast-diff: 1.3.0
       kdbush: 4.1.0
@@ -19574,163 +19653,163 @@ snapshots:
     transitivePeerDependencies:
       - react
 
-  '@univerjs/data-validation@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/data-validation@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/design@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@univerjs/design@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@radix-ui/react-dialog': 1.1.15(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-direction': 1.1.1(react@19.2.7)
-      '@radix-ui/react-dropdown-menu': 2.1.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-hover-card': 1.1.15(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-popover': 1.1.15(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-separator': 1.1.8(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@radix-ui/react-slot': 1.2.4(react@19.2.7)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@radix-ui/react-dialog': 1.1.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-direction': 1.1.1(react@18.3.1)
+      '@radix-ui/react-dropdown-menu': 2.1.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-hover-card': 1.1.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-popover': 1.1.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-separator': 1.1.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-slot': 1.2.4(react@18.3.1)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       class-variance-authority: 0.7.1
       clsx: 2.1.1
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-      react-transition-group: 4.4.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      sonner: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-transition-group: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      sonner: 2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tailwind-merge: 2.6.0
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/docs-drawing-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/docs-drawing-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/docs-drawing@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/docs-drawing@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - react
       - rxjs
 
-  '@univerjs/docs-hyper-link-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/docs-hyper-link-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-hyper-link': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-hyper-link': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/docs-hyper-link@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/docs-hyper-link@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - react
       - rxjs
 
-  '@univerjs/docs-thread-comment-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/docs-thread-comment-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/docs-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/docs-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/docs@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/docs@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/drawing-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/drawing-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/drawing@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/drawing@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       ot-json1: 1.0.2
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/engine-formula@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/engine-formula@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
       '@flatten-js/interval-tree': 1.1.3
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       decimal.js: 10.6.0
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/engine-render@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/engine-render@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@floating-ui/utils': 0.2.11
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       cjk-regex: 3.4.0
       franc-min: 6.2.0
       opentype.js: 2.0.0
@@ -19738,351 +19817,351 @@ snapshots:
     transitivePeerDependencies:
       - react
 
-  '@univerjs/find-replace@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/find-replace@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/icons@1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@univerjs/icons@1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  '@univerjs/network@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/network@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/preset-docs-advanced@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-docs-advanced@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/docs-exchange-client': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/docs-print': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/exchange-client': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs-pro/docs-exchange-client': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/docs-print': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/exchange-client': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-docs-collaboration@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-docs-collaboration@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/collaboration': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/collaboration-client': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/collaboration-client-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs-pro/collaboration': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-docs-core@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-docs-core@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-docs-drawing@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-docs-drawing@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/docs-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/docs-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-docs-hyper-link@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-docs-hyper-link@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/docs-hyper-link': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-hyper-link-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/docs-hyper-link': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-hyper-link-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-docs-node-core@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-docs-node-core@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-hyper-link': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/rpc-node': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-hyper-link': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/rpc-node': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/preset-docs-thread-comment@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-docs-thread-comment@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/docs-thread-comment-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/docs-thread-comment-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-advanced@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-advanced@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/engine-chart': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs-pro/engine-chart': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs-pro/engine-shape': 0.25.1
-      '@univerjs-pro/exchange-client': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/license': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-chart': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-chart-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-exchange-client': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-outline': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-outline-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-pivot': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-pivot-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-print': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-shape': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-shape-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-sparkline': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/sheets-sparkline-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-graphics': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs-pro/exchange-client': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/license': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-chart': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-chart-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-exchange-client': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-outline': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-outline-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-pivot': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-pivot-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-print': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-shape': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-shape-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-sparkline': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/sheets-sparkline-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-graphics': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-collaboration@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-collaboration@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs-pro/collaboration': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/collaboration-client': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/collaboration-client-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/edit-history-loader': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/edit-history-viewer': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs-pro/thread-comment-datasource': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-advanced': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs-pro/collaboration': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/collaboration-client-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/edit-history-loader': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/edit-history-viewer': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs-pro/thread-comment-datasource': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-advanced': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-conditional-formatting@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-conditional-formatting@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/sheets-conditional-formatting': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-conditional-formatting-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/sheets-conditional-formatting': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-conditional-formatting-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-core@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-core@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/network': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-numfmt': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-numfmt-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/network': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-numfmt': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-numfmt-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-data-validation@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-data-validation@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-data-validation-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-data-validation-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-drawing@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-drawing@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/docs-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/docs-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-filter@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-filter@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/sheets-filter': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-filter-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/sheets-filter': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-filter-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-find-replace@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-find-replace@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/find-replace': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-find-replace': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/find-replace': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-find-replace': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-hyper-link@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-hyper-link@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/sheets-hyper-link': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-hyper-link-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/sheets-hyper-link': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-hyper-link-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-node-core@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-node-core@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/rpc-node': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-filter': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-hyper-link': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-numfmt': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-sort': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/rpc-node': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-filter': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-hyper-link': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-numfmt': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-sort': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/preset-sheets-note@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-note@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/sheets-note': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-note-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/sheets-note': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-note-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-sort@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-sort@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/sheets-sort': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-sort-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/sheets-sort': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-sort-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-table@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-table@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/sheets-table': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-table-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/sheets-table': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-table-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/preset-sheets-thread-comment@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/preset-sheets-thread-comment@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/sheets-thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-thread-comment-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/sheets-thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-thread-comment-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@univerjs/presets@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/presets@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-docs-advanced': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-docs-collaboration': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-docs-core': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-docs-drawing': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-docs-hyper-link': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-docs-node-core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-docs-thread-comment': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-advanced': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-collaboration': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-conditional-formatting': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-core': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-data-validation': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-drawing': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-filter': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-find-replace': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-hyper-link': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-node-core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-note': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-sort': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-table': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-thread-comment': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-docs-advanced': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-docs-collaboration': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-docs-core': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-docs-drawing': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-docs-hyper-link': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-docs-node-core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-docs-thread-comment': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-advanced': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-collaboration': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-conditional-formatting': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-core': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-data-validation': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-drawing': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-filter': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-find-replace': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-hyper-link': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-node-core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-note': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-sort': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-table': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-thread-comment': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
@@ -20092,150 +20171,150 @@ snapshots:
     dependencies:
       '@grpc/grpc-js': 1.14.3
 
-  '@univerjs/rpc-node@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/rpc-node@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/rpc@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/rpc@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-conditional-formatting-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-conditional-formatting-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-conditional-formatting': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-conditional-formatting': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-conditional-formatting@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-conditional-formatting@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-data-validation-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-data-validation-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-numfmt': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-numfmt': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-data-validation@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-data-validation@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/protocol': 0.25.1
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-drawing-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-drawing-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-drawing@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-drawing@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/drawing': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/drawing': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - react
       - rxjs
 
-  '@univerjs/sheets-filter-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-filter-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-filter': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-filter': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-filter@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-filter@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-find-replace@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-find-replace@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/find-replace': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/find-replace': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
@@ -20243,41 +20322,41 @@ snapshots:
       - react
       - react-dom
 
-  '@univerjs/sheets-formula-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-formula-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-formula@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-formula@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-graphics@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-graphics@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -20285,246 +20364,246 @@ snapshots:
       - react-dom
       - rxjs
 
-  '@univerjs/sheets-hyper-link-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-hyper-link-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-data-validation': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-hyper-link': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-data-validation': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-hyper-link': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-hyper-link@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-hyper-link@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-note-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-note-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-note': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-note': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-note@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-note@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-numfmt-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-numfmt-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-numfmt': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-numfmt': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-numfmt@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-numfmt@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-sort-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-sort-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-sort': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-sort': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-sort@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-sort@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - react
       - rxjs
 
-  '@univerjs/sheets-table-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-table-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-sort': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-table': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-formula-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-sort': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-table': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-table@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-table@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-thread-comment-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-thread-comment-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets-thread-comment@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-thread-comment@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/sheets-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@univerjs/protocol': 0.25.1
-      '@univerjs/sheets': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/telemetry': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/sheets': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/telemetry': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/sheets@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/sheets@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-formula': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-formula': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       '@univerjs/protocol': 0.25.1
-      '@univerjs/rpc': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/rpc': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/telemetry@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/telemetry@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
     transitivePeerDependencies:
       - react
       - rxjs
 
   '@univerjs/themes@0.25.1': {}
 
-  '@univerjs/thread-comment-ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/thread-comment-ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/docs-ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/thread-comment': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/ui': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
-      react: 19.2.7
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/docs-ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/thread-comment': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/ui': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      react: 18.3.1
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
       - react-dom
 
-  '@univerjs/thread-comment@0.25.1(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/thread-comment@0.25.1(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - react
 
-  '@univerjs/ui@0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)':
+  '@univerjs/ui@0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)':
     dependencies:
-      '@univerjs/core': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/design': 0.25.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@univerjs/engine-render': 0.25.1(react@19.2.7)(rxjs@7.8.2)
-      '@univerjs/icons': 1.4.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@wendellhu/redi': 1.1.1(react@19.2.7)
+      '@univerjs/core': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/design': 0.25.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@univerjs/engine-render': 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/icons': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@wendellhu/redi': 1.1.1(react@18.3.1)
       localforage: 1.10.0
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       rxjs: 7.8.2
     transitivePeerDependencies:
       - '@types/react'
@@ -20859,9 +20938,9 @@ snapshots:
 
   '@webext-core/match-patterns@1.0.3': {}
 
-  '@wendellhu/redi@1.1.1(react@19.2.7)':
+  '@wendellhu/redi@1.1.1(react@18.3.1)':
     optionalDependencies:
-      react: 19.2.7
+      react: 18.3.1
 
   '@workflow/serde@4.1.0': {}
 
@@ -24784,14 +24863,14 @@ snapshots:
 
   jose@6.2.3: {}
 
-  jotai-scope@0.7.2(jotai@2.11.0(react@19.2.7))(react@19.2.7):
+  jotai-scope@0.7.2(jotai@2.11.0(react@18.3.1))(react@18.3.1):
     dependencies:
-      jotai: 2.11.0(react@19.2.7)
-      react: 19.2.7
+      jotai: 2.11.0(react@18.3.1)
+      react: 18.3.1
 
-  jotai@2.11.0(react@19.2.7):
+  jotai@2.11.0(react@18.3.1):
     optionalDependencies:
-      react: 19.2.7
+      react: 18.3.1
 
   jpeg-js@0.4.4: {}
 
@@ -26821,12 +26900,24 @@ snapshots:
       react: 16.14.0
       scheduler: 0.19.1
 
-  react-dom@19.2.7(react@19.2.7):
+  react-dom@18.3.1(react@18.3.1):
     dependencies:
-      react: 19.2.7
-      scheduler: 0.27.0
+      loose-envify: 1.4.0
+      react: 18.3.1
+      scheduler: 0.23.2
 
-  react-i18next@17.0.9(i18next@26.3.6(typescript@6.0.3))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3):
+  react-i18next@17.0.9(i18next@26.3.6(typescript@6.0.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@6.0.3):
+    dependencies:
+      '@babel/runtime': 7.29.2
+      html-parse-stringify: 3.0.1
+      i18next: 26.3.6(typescript@6.0.3)
+      react: 18.3.1
+      use-sync-external-store: 1.6.0(react@18.3.1)
+    optionalDependencies:
+      react-dom: 18.3.1(react@18.3.1)
+      typescript: 6.0.3
+
+  react-i18next@17.0.9(i18next@26.3.6(typescript@6.0.3))(react@19.2.7)(typescript@6.0.3):
     dependencies:
       '@babel/runtime': 7.29.2
       html-parse-stringify: 3.0.1
@@ -26834,7 +26925,6 @@ snapshots:
       react: 19.2.7
       use-sync-external-store: 1.6.0(react@19.2.7)
     optionalDependencies:
-      react-dom: 19.2.7(react@19.2.7)
       typescript: 6.0.3
 
   react-interactive@0.8.3(react@16.14.0):
@@ -26846,20 +26936,20 @@ snapshots:
 
   react-is@16.13.1: {}
 
-  react-remove-scroll-bar@2.3.8(react@19.2.7):
+  react-remove-scroll-bar@2.3.8(react@18.3.1):
     dependencies:
-      react: 19.2.7
-      react-style-singleton: 2.2.3(react@19.2.7)
+      react: 18.3.1
+      react-style-singleton: 2.2.3(react@18.3.1)
       tslib: 2.8.1
 
-  react-remove-scroll@2.7.2(react@19.2.7):
+  react-remove-scroll@2.7.2(react@18.3.1):
     dependencies:
-      react: 19.2.7
-      react-remove-scroll-bar: 2.3.8(react@19.2.7)
-      react-style-singleton: 2.2.3(react@19.2.7)
+      react: 18.3.1
+      react-remove-scroll-bar: 2.3.8(react@18.3.1)
+      react-style-singleton: 2.2.3(react@18.3.1)
       tslib: 2.8.1
-      use-callback-ref: 1.3.3(react@19.2.7)
-      use-sidecar: 1.1.3(react@19.2.7)
+      use-callback-ref: 1.3.3(react@18.3.1)
+      use-sidecar: 1.1.3(react@18.3.1)
 
   react-router-dom@4.3.1(react@16.14.0):
     dependencies:
@@ -26882,36 +26972,40 @@ snapshots:
       react: 16.14.0
       warning: 4.0.3
 
-  react-style-singleton@2.2.3(react@19.2.7):
+  react-style-singleton@2.2.3(react@18.3.1):
     dependencies:
       get-nonce: 1.0.1
-      react: 19.2.7
+      react: 18.3.1
       tslib: 2.8.1
 
-  react-transition-group@4.4.5(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  react-transition-group@4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.29.2
       dom-helpers: 5.2.1
       loose-envify: 1.4.0
       prop-types: 15.8.1
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  react-window@2.2.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  react-window@2.2.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
-  react-zoom-pan-pinch@4.0.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  react-zoom-pan-pinch@4.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   react@16.14.0:
     dependencies:
       loose-envify: 1.4.0
       object-assign: 4.1.1
       prop-types: 15.8.1
+
+  react@18.3.1:
+    dependencies:
+      loose-envify: 1.4.0
 
   react@19.2.7: {}
 
@@ -27357,7 +27451,9 @@ snapshots:
       loose-envify: 1.4.0
       object-assign: 4.1.1
 
-  scheduler@0.27.0: {}
+  scheduler@0.23.2:
+    dependencies:
+      loose-envify: 1.4.0
 
   schema-utils@4.3.3:
     dependencies:
@@ -27635,10 +27731,10 @@ snapshots:
     dependencies:
       atomic-sleep: 1.0.0
 
-  sonner@2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  sonner@2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
 
   sort-keys-length@1.0.1:
     dependencies:
@@ -28265,9 +28361,9 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  tunnel-rat@0.1.2(react@19.2.7):
+  tunnel-rat@0.1.2(react@18.3.1):
     dependencies:
-      zustand: 4.5.7(react@19.2.7)
+      zustand: 4.5.7(react@18.3.1)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -28589,16 +28685,20 @@ snapshots:
 
   urlpattern-polyfill@10.1.0: {}
 
-  use-callback-ref@1.3.3(react@19.2.7):
+  use-callback-ref@1.3.3(react@18.3.1):
     dependencies:
-      react: 19.2.7
+      react: 18.3.1
       tslib: 2.8.1
 
-  use-sidecar@1.1.3(react@19.2.7):
+  use-sidecar@1.1.3(react@18.3.1):
     dependencies:
       detect-node-es: 1.1.0
-      react: 19.2.7
+      react: 18.3.1
       tslib: 2.8.1
+
+  use-sync-external-store@1.6.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
 
   use-sync-external-store@1.6.0(react@19.2.7):
     dependencies:
@@ -29346,10 +29446,10 @@ snapshots:
 
   zod@4.4.3: {}
 
-  zustand@4.5.7(react@19.2.7):
+  zustand@4.5.7(react@18.3.1):
     dependencies:
-      use-sync-external-store: 1.6.0(react@19.2.7)
+      use-sync-external-store: 1.6.0(react@18.3.1)
     optionalDependencies:
-      react: 19.2.7
+      react: 18.3.1
 
   zwitch@2.0.4: {}

@@ -94,5 +94,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@11.11.0"
+  "packageManager": "pnpm@11.12.0"
 }
