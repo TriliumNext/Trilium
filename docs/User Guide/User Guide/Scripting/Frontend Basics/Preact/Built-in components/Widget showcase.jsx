@@ -122,7 +122,7 @@ function FormElements() {
                     <FormDatetime currentValue={datetimeValue} onChange={setDatetimeValue} />
                 </FormGroup>
                 <FormGroup name="toggle-button" label="Toggle button">
-                    <FormToggleButton label="Bold" icon="bx-bold" currentValue={toggleButtonOn} onChange={setToggleButtonOn} />
+                    <FormToggleButton label="Bold" icon="bx bx-bold" currentValue={toggleButtonOn} onChange={setToggleButtonOn} />
                 </FormGroup>
                 <FormGroup name="color-picker" label="Color picker">
                     <ColorPicker currentValue={color} onChange={setColor} />
