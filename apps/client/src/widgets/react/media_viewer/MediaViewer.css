@@ -1,10 +1,10 @@
 /*
  * Z-index ladder (coordinate with the app before changing):
- *   1     inline viewer (zIndexInline option)
- *   1500  fullscreen viewer (zIndex option) — above Bootstrap modals (~1055) so images inside the
+ *   auto  inline viewer (lives in the note flow)
+ *   1500  fullscreen viewer root — above Bootstrap modals (~1055) so images inside the
  *         popup editor can go fullscreen
- *   1501  the Trilium toolbar while fullscreen (it lives inside .media-viewer-root, which is not
- *         reparented by Viewer.js's full())
+ *   1501  the Trilium toolbar while fullscreen (see MediaViewerToolbar.css; it lives inside
+ *         .media-viewer-root, which is the fullscreen box itself)
  *   2000  #context-menu-container — the Electron right-click menu must stay above the viewer
  */
 .media-viewer-root {
@@ -14,60 +14,48 @@
     overflow: hidden;
     outline: none;
 
+    /* Inline presentation blends with the note background; fullscreen darkens it (below). */
+    --yarl__color_backdrop: transparent;
+
+    /* Theme-aware chrome for the thumbnail strip (a fullscreen-only feature). */
+    --yarl__thumbnails_container_background_color: color-mix(in srgb, var(--main-background-color) 40%, transparent);
+    --yarl__thumbnails_thumbnail_background: transparent;
+    --yarl__thumbnails_thumbnail_border_color: transparent;
+    --yarl__thumbnails_thumbnail_active_border_color: var(--main-color, #fff);
+    --yarl__thumbnails_thumbnail_border_radius: var(--tab-note-icons-border-radius, 4px);
+
     /* While fullscreen the root is reparented under <body> (escaping pane stacking contexts)
        and becomes the full-viewport box itself. */
     &.media-viewer-fulled {
         position: fixed;
         inset: 0;
         z-index: 1500;
+        --yarl__color_backdrop: rgba(0, 0, 0, 0.85);
     }
 
-    /* The hidden list Viewer.js reads the gallery from; images carry data-src only. */
-    & .media-viewer-sources {
+    /* The strip is toggled from code on fullscreen entry/exit; this is only a safety net so a
+       stray visible-state never shows thumbnails inline. */
+    &:not(.media-viewer-fulled) .yarl__thumbnails_container {
         display: none;
     }
 
-    /* Inline presentation blends with the note background; fullscreen darkens it. */
-    & .viewer-backdrop {
-        background-color: transparent;
-    }
-
-    & .viewer-fixed.viewer-backdrop {
-        background-color: rgba(0, 0, 0, 0.85);
-    }
-
-    /* The thumbnail navbar is a fullscreen-only feature. */
-    & .viewer-container:not(.viewer-fixed) .viewer-navbar {
-        display: none;
-    }
-
-    /* Theme-aware chrome for the parts of Viewer.js we keep. */
-    & .viewer-navbar {
-        background-color: color-mix(in srgb, var(--main-background-color) 40%, transparent);
-    }
-
-    & .viewer-list > li {
-        border-radius: var(--tab-note-icons-border-radius, 4px);
+    & .yarl__thumbnails_thumbnail {
         opacity: 0.6;
         transition: opacity 0.15s;
     }
 
-    & .viewer-list > li:hover {
+    & .yarl__thumbnails_thumbnail:hover,
+    & .yarl__thumbnails_thumbnail_active {
         opacity: 1;
-    }
-
-    & .viewer-list > .viewer-active {
-        opacity: 1;
-        outline: 2px solid var(--main-color, #fff);
     }
 }
 
 /* Crisp pixels when zoomed far beyond the native resolution (parity with the previous viewer). */
-.media-viewer-root.tn-image-large-zoom .viewer-canvas > img {
+.media-viewer-root.tn-image-large-zoom .yarl__slide_image {
     image-rendering: pixelated;
 }
 
-/* A failed image tints the canvas area; the overlay message carries the details. */
-.media-viewer-root.img-loading-error .viewer-canvas {
+/* A failed image tints the viewer area; the overlay message carries the details. */
+.media-viewer-root.img-loading-error .yarl__container {
     background: color-mix(in srgb, var(--main-background-color) 85%, red);
 }

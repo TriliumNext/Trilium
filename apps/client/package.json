@@ -75,7 +75,7 @@
     "rrule": "2.8.1",
     "svg-pan-zoom": "3.6.2",
     "tabulator-tables": "6.5.2",
-    "viewerjs": "1.11.7"
+    "yet-another-react-lightbox": "3.32.1"
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": "5.0.2",

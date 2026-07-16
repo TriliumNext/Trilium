@@ -1,10 +1,14 @@
-import "viewerjs/dist/viewer.css";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
 import "./MediaViewer.css";
 
 import clsx from "clsx";
 import type { Ref } from "preact";
 import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import Viewer from "viewerjs";
+import Lightbox, { type SlideImage, type ZoomRef } from "yet-another-react-lightbox";
+import Inline from "yet-another-react-lightbox/plugins/inline";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
 import type NoteContext from "../../../components/note_context";
 import { t } from "../../../services/i18n";
@@ -13,6 +17,15 @@ import { type SiblingNavigationState, useSiblingKeyboard } from "../SiblingNavig
 import type { MediaGallery } from "./gallery";
 import { awaitImageReveal, type ImageReveal } from "./image_decode";
 import MediaViewerToolbar from "./MediaViewerToolbar";
+import {
+    DEFAULT_ORIENTATION,
+    flipOrientationHorizontal,
+    isDefaultOrientation,
+    type Orientation,
+    type OrientedRender,
+    renderOrientedImage,
+    rotateOrientation
+} from "./orientation";
 import { useMediaViewerKeyboard } from "./viewer_keyboard";
 
 /** Beyond this multiple of the image's native resolution, switch to crisp (non-smoothed) rendering. */
@@ -22,9 +35,22 @@ const CRISP_NATIVE_SCALE = 4;
 const MEDIA_PREVIOUS_KEYS = [ "Backspace" ];
 const MEDIA_NEXT_KEYS = [ "Space" ];
 
+// The Thumbnails plugin mounts only while fullscreen: even hidden, a mounted strip eagerly
+// loads every gallery image (there is no thumbnail endpoint — the strip shows the full images).
+const INLINE_PLUGINS = [ Inline, Zoom ];
+const FULLSCREEN_PLUGINS = [ Inline, Thumbnails, Zoom ];
+const INLINE_PROPS = { style: { width: "100%", height: "100%" } };
+
+/**
+ * Keyboard panning rides on the zoom anchor of `changeZoom` (there is no public pan API): a 0.1%
+ * zoom jiggle whose anchor is sized to shift the offsets by exactly the requested amount. Each
+ * pan gesture oscillates between two fixed levels so the zoom never drifts.
+ */
+const PAN_ZOOM_JIGGLE = 0.999;
+
 /** The surface the toolbar/keyboard drive. All ratios are native-relative: 1 = actual pixel size. */
 export interface MediaViewerApi {
-    /** Zooms by a relative amount (Viewer.js semantics: +0.1 → 10% in). Pivot is viewer-relative. */
+    /** Zooms by a relative amount (+0.1 → 10% in). Pivot is viewer-relative. */
     zoomBy(delta: number, pivot?: { x: number; y: number }): void;
     zoomTo(nativeRatio: number): void;
     fitToWindow(): void;
@@ -40,19 +66,6 @@ export interface MediaViewerApi {
     /** Native-relative zoom percentage of the current image (100 = actual size); 0 before the first view. */
     zoomPercent(): number;
 }
-
-/** The Viewer.js internals the wrapper relies on beyond the published typings. */
-type ViewerInternals = Viewer & {
-    fulled?: boolean;
-    index?: number;
-    image?: HTMLImageElement;
-    imageData?: { ratio?: number; scaleX?: number };
-    initialImageData?: { ratio?: number };
-    navbar?: HTMLElement;
-    options: { navbar: boolean | number };
-    /** Present at runtime; missing from the published typings. */
-    resize(): void;
-};
 
 interface MediaViewerProps {
     gallery: MediaGallery;
@@ -70,12 +83,13 @@ interface MediaViewerProps {
 }
 
 /**
- * Interactive image viewer over a {@link MediaGallery}, powered by Viewer.js in inline mode: the image
- * fits the viewport on load, wheel/pinch zoom toward the cursor, drag pans, double-click toggles fit ↔
- * actual size, swipe moves through the gallery. Fullscreen presentation is the same instance flipped
- * via `full()`/`exit()`, where the thumbnail navbar becomes available (its images are only loaded on
- * the first fullscreen entry). All chrome (toolbar/keyboard/title) is provided by the caller through
- * {@link MediaViewerApi} — the Viewer.js built-ins stay disabled.
+ * Interactive image viewer over a {@link MediaGallery}, powered by yet-another-react-lightbox in
+ * inline mode: the image fits the viewport on load, wheel/pinch zoom toward the cursor, drag pans,
+ * swipe moves through the gallery. Fullscreen presentation reparents the root under `<body>`
+ * (escaping pane stacking contexts) where the thumbnail strip becomes available. Rotate/flip are
+ * bitmap transforms (see {@link renderOrientedImage}), so they need no engine support. All chrome
+ * (toolbar/keyboard) is provided by the caller through {@link MediaViewerApi} — the lightbox's
+ * built-in buttons and keyboard stay disabled.
  */
 export default function MediaViewer({ gallery, noteContext, isVisible = true, onCopyReference, apiRef }: MediaViewerProps) {
     const [ fulled, setFulled ] = useState(false);
@@ -83,19 +97,28 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
     const [ loaded, setLoaded ] = useState(false);
     const [ loadingError, setLoadingError ] = useState(false);
     const [ zoomPercent, setZoomPercent ] = useState(0);
+    const [ oriented, setOriented ] = useState<{ itemId: string; render: OrientedRender } | null>(null);
+
     const rootRef = useRef<HTMLDivElement>(null);
-    const sourcesRef = useRef<HTMLDivElement>(null);
-    const viewerRef = useRef<ViewerInternals | null>(null);
-    const readyRef = useRef(false);
+    const zoomRef = useRef<ZoomRef | null>(null);
     const zoomPercentRef = useRef(0);
-    const lastViewedIndexRef = useRef(-1);
-    const itemsKeyRef = useRef<string | null>(null);
+    const fulledRef = useRef(false);
+    // A pan gesture oscillates between two fixed zoom levels; see moveBy in the api below.
+    const panStateRef = useRef<{ base: number; from: number } | null>(null);
+    const orientationRef = useRef<Orientation>(DEFAULT_ORIENTATION);
+    const orientationItemIdRef = useRef<string | null>(null);
     const revealRef = useRef<ImageReveal | null>(null);
     // Where the root lives in the widget; set while it is temporarily reparented for fullscreen.
     const homeRef = useRef<{ parent: Node; nextSibling: Node | null } | null>(null);
-    // Read the freshest gallery from inside Viewer.js event handlers without re-binding them.
+    // Latest render's closures, readable from identity-stable callbacks/effects without re-binding.
     const galleryRef = useRef(gallery);
     galleryRef.current = gallery;
+    const watchRevealRef = useRef<(image: HTMLImageElement) => void>(() => {});
+    const refreshZoomStateRef = useRef<() => void>(() => {});
+    const nativeFitScaleRef = useRef<() => number>(() => 0);
+    const clearOrientationRef = useRef<() => void>(() => {});
+    const applyOrientationRef = useRef<(next: Orientation) => void>(() => {});
+    const handleViewRef = useRef<(index: number) => void>(() => {});
 
     // Fullscreen must escape the widget's ancestor stacking contexts (panes, sidebars would paint
     // above the fixed viewer), so the whole root moves under <body> and returns home on exit.
@@ -115,145 +138,159 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
         home.parent.insertBefore(root, anchor);
     };
 
-    // Track the reveal of the currently-viewed image (Viewer.js clones the source <img> into its
-    // canvas), preserving the decode quirks: SVG stalls, Chrome-Android EncodingError tolerance.
-    const watchReveal = (img: HTMLImageElement | undefined) => {
+    const currentSlideImage = () =>
+        rootRef.current?.querySelector<HTMLImageElement>(".yarl__slide_current img.yarl__slide_image") ?? null;
+
+    /**
+     * The zoom readout is measured off the DOM rather than derived from the lightbox's fit-relative
+     * zoom level: the rendered rect already includes the zoom transform, so
+     * rect.width / naturalWidth is the native-relative ratio directly.
+     */
+    const refreshZoomState = () => {
+        const image = currentSlideImage();
+        if (!image || !image.naturalWidth) return;
+        const width = image.getBoundingClientRect().width;
+        if (!width) return;
+        const nativeRatio = width / image.naturalWidth;
+        zoomPercentRef.current = Math.round(nativeRatio * 100);
+        setZoomPercent(zoomPercentRef.current);
+        setLargeZoom(nativeRatio > CRISP_NATIVE_SCALE);
+    };
+    refreshZoomStateRef.current = refreshZoomState;
+
+    /** Native-pixel ratio of the current image at fit (lightbox zoom 1); 0 while unknowable. */
+    const nativeFitScale = () => {
+        const image = currentSlideImage();
+        const zoom = zoomRef.current?.zoom ?? 1;
+        if (!image || !image.naturalWidth || zoom <= 0) return 0;
+        const width = image.getBoundingClientRect().width;
+        return width > 0 ? width / image.naturalWidth / zoom : 0;
+    };
+    nativeFitScaleRef.current = nativeFitScale;
+
+    // Track the reveal of the currently-viewed image, preserving the decode quirks: SVG stalls,
+    // Chrome-Android EncodingError tolerance.
+    const watchReveal = (image: HTMLImageElement) => {
         revealRef.current?.cancel();
-        if (!img) return;
         setLoaded(false);
         setLoadingError(false);
-        const reveal = awaitImageReveal(img);
+        const reveal = awaitImageReveal(image);
         revealRef.current = reveal;
         void reveal.promise.then((result) => {
-            if (result === "ok") setLoaded(true);
-            else setLoadingError(true);
+            if (result === "ok") {
+                setLoaded(true);
+                refreshZoomStateRef.current();
+            } else {
+                setLoadingError(true);
+            }
         });
     };
+    watchRevealRef.current = watchReveal;
 
-    // Viewer.js dispatches CustomEvents on the source element; the listeners live for the component's
-    // lifetime and read state through refs, so they never need re-binding.
+    const clearOrientation = () => {
+        orientationRef.current = DEFAULT_ORIENTATION;
+        orientationItemIdRef.current = null;
+        setOriented((previous) => {
+            previous?.render.release();
+            return null;
+        });
+    };
+    clearOrientationRef.current = clearOrientation;
+
+    /** Rotates/flips the current item by re-rendering its bitmap; stale renders are discarded. */
+    const applyOrientation = (next: Orientation) => {
+        const item = galleryRef.current.items[galleryRef.current.currentIndex];
+        if (!item) return;
+        orientationRef.current = next;
+        orientationItemIdRef.current = item.id;
+        if (isDefaultOrientation(next)) {
+            clearOrientation();
+            return;
+        }
+        void renderOrientedImage(item.src, next)
+            .then((render) => {
+                if (orientationRef.current !== next || orientationItemIdRef.current !== item.id) {
+                    render.release();
+                    return;
+                }
+                setOriented((previous) => {
+                    previous?.render.release();
+                    return { itemId: item.id, render };
+                });
+            })
+            .catch(() => {
+                // The bitmap could not be re-rendered (e.g. an undecodable SVG) — keep the current view.
+            });
+    };
+    applyOrientationRef.current = applyOrientation;
+
+    handleViewRef.current = (index: number) => {
+        const currentGallery = galleryRef.current;
+        // Lightbox-internal navigation (swipe, thumbnail click) propagates into app navigation;
+        // the app's own navigation echoes back with a matching index and stops here.
+        if (index >= 0 && index !== currentGallery.currentIndex) {
+            currentGallery.navigateToIndex(index);
+        }
+        const item = currentGallery.items[index];
+        if (orientationItemIdRef.current && orientationItemIdRef.current !== item?.id) {
+            clearOrientation();
+        }
+        const image = currentSlideImage();
+        if (image && image.complete) {
+            watchReveal(image);
+        } else {
+            // The slide's <img> appears or finishes loading after this callback; the capture-phase
+            // load listener below picks it up. Surface the loading state right away.
+            revealRef.current?.cancel();
+            setLoaded(false);
+            setLoadingError(false);
+        }
+    };
+
+    const lightboxCallbacks = useMemo(() => ({
+        view: ({ index }: { index: number }) => handleViewRef.current(index),
+        zoom: () => refreshZoomStateRef.current()
+    }), []);
+
+    // load/error don't bubble but do run ancestor capture listeners — this is how the wrapper
+    // notices the current slide's <img> becoming displayable (initial mount, navigation, and the
+    // oriented-bitmap swap all funnel through here).
     useLayoutEffect(() => {
-        const sources = sourcesRef.current;
-        if (!sources) return;
-
-        const onReady = () => {
-            readyRef.current = true;
-            const currentIndex = galleryRef.current.currentIndex;
-            if (currentIndex >= 0 && currentIndex !== lastViewedIndexRef.current) {
-                lastViewedIndexRef.current = currentIndex;
-                viewerRef.current?.view(currentIndex);
+        const root = rootRef.current;
+        if (!root) return;
+        const onMediaSettled = (event: Event) => {
+            const target = event.target;
+            if (target instanceof HTMLImageElement && target.closest(".yarl__slide_current")) {
+                watchRevealRef.current(target);
             }
         };
-        const onViewed = (event: Event) => {
-            const index = (event as CustomEvent<{ index?: number }>).detail?.index ?? -1;
-            lastViewedIndexRef.current = index;
-            // Swipe/thumbnail navigation happens inside Viewer.js first; propagate it into app
-            // navigation. The app's own navigation echoes back with a matching index and stops here.
-            if (index >= 0 && index !== galleryRef.current.currentIndex) {
-                galleryRef.current.navigateToIndex(index);
-            }
-            const initialRatio = viewerRef.current?.imageData?.ratio;
-            if (typeof initialRatio === "number") {
-                zoomPercentRef.current = Math.round(initialRatio * 100);
-                setZoomPercent(zoomPercentRef.current);
-            }
-            watchReveal(viewerRef.current?.image);
-        };
-        const onZoomed = (event: Event) => {
-            const ratio = (event as CustomEvent<{ ratio?: number }>).detail?.ratio ?? 0;
-            zoomPercentRef.current = Math.round(ratio * 100);
-            setZoomPercent(zoomPercentRef.current);
-            setLargeZoom(ratio > CRISP_NATIVE_SCALE);
-        };
-
-        sources.addEventListener("ready", onReady);
-        sources.addEventListener("viewed", onViewed);
-        sources.addEventListener("zoomed", onZoomed);
+        root.addEventListener("load", onMediaSettled, true);
+        root.addEventListener("error", onMediaSettled, true);
         return () => {
-            sources.removeEventListener("ready", onReady);
-            sources.removeEventListener("viewed", onViewed);
-            sources.removeEventListener("zoomed", onZoomed);
+            root.removeEventListener("load", onMediaSettled, true);
+            root.removeEventListener("error", onMediaSettled, true);
         };
     }, []);
 
-    // One Viewer.js instance per gallery surface; a different surface (other parent/role) rebuilds it.
-    useLayoutEffect(() => {
-        const sources = sourcesRef.current;
-        if (!sources) return;
-
-        readyRef.current = false;
-        const initialIndex = Math.max(galleryRef.current.currentIndex, 0);
-        lastViewedIndexRef.current = initialIndex;
-        itemsKeyRef.current = itemsKey(galleryRef.current);
-        const viewer = new Viewer(sources, {
-            inline: true,
-            backdrop: true,
-            button: false,
-            // Our own toolbar lives outside the Viewer element; the focus enforcer would steal
-            // focus back from it, and all keyboard handling is focus-scoped in the caller.
-            focus: false,
-            keyboard: false,
-            // Enabled on the first fullscreen entry — Viewer.js loads every thumbnail (at full
-            // resolution; there is no thumbnail endpoint) the moment the navbar list is built.
-            navbar: false,
-            title: false,
-            toolbar: false,
-            tooltip: false,
-            loading: true,
-            loop: true,
-            slideOnTouch: true,
-            toggleOnDblclick: true,
-            // No morph animation when switching photos — navigation should feel instant.
-            transition: false,
-            zoomOnTouch: true,
-            zoomOnWheel: true,
-            zoomRatio: 0.25,
-            minZoomRatio: 0.02,
-            maxZoomRatio: 64,
-            initialCoverage: 1,
-            initialViewIndex: initialIndex,
-            url: "data-src",
-            zIndexInline: 1,
-            zIndex: 1500
-        }) as ViewerInternals;
-        viewerRef.current = viewer;
-
-        return () => {
-            revealRef.current?.cancel();
-            // A surface change while fullscreen must not leave the stale presentation behind:
-            // the new Viewer instance starts un-fulled, so the state resets alongside it.
-            exitFullscreenPresentation();
-            setFulled(false);
-            viewerRef.current = null;
-            viewer.destroy();
-        };
+    // Surface change (other parent/role) remounts the keyed Lightbox below; reset everything that
+    // must not leak across surfaces — most importantly a live fullscreen presentation.
+    useLayoutEffect(() => () => {
+        revealRef.current?.cancel();
+        exitFullscreenPresentation();
+        fulledRef.current = false;
+        setFulled(false);
+        clearOrientationRef.current();
+        zoomPercentRef.current = 0;
+        setZoomPercent(0);
+        setLoaded(false);
+        setLoadingError(false);
     }, [ gallery.surfaceKey ]);
 
-    // Same surface, different members/content (revision upload, added/removed sibling): let Viewer.js
-    // reconcile against the re-rendered hidden source list.
-    const currentItemsKey = itemsKey(gallery);
-    useLayoutEffect(() => {
-        if (itemsKeyRef.current !== null && itemsKeyRef.current !== currentItemsKey) {
-            viewerRef.current?.update();
-        }
-        itemsKeyRef.current = currentItemsKey;
-    }, [ currentItemsKey ]);
-
-    // App navigation flows down as a new currentIndex; mirror it into the viewer exactly once.
-    useLayoutEffect(() => {
-        if (!readyRef.current || gallery.currentIndex < 0) return;
-        if (gallery.currentIndex === lastViewedIndexRef.current) return;
-        lastViewedIndexRef.current = gallery.currentIndex;
-        viewerRef.current?.view(gallery.currentIndex);
-    }, [ gallery.currentIndex ]);
-
-    // Split-pane resizes don't fire window resize; Viewer.js only listens for the latter.
+    // Split-pane resizes change the fit size (the lightbox re-layouts itself); refresh the readout.
     useLayoutEffect(() => {
         const root = rootRef.current;
         if (!root || typeof ResizeObserver === "undefined") return;
-        const observer = new ResizeObserver(() => {
-            if (readyRef.current) viewerRef.current?.resize();
-        });
+        const observer = new ResizeObserver(() => refreshZoomStateRef.current());
         observer.observe(root);
         return () => observer.disconnect();
     }, []);
@@ -261,43 +298,82 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
     // The api only touches refs and stable setters, so one instance serves the whole lifetime —
     // the toolbar, the keyboard hook and the caller's apiRef all share it.
     const api = useMemo<MediaViewerApi>(() => ({
-        zoomBy: (delta, pivot) => viewerRef.current?.zoom(delta, false, pivot),
-        zoomTo: (nativeRatio) => viewerRef.current?.zoomTo(nativeRatio),
-        fitToWindow: () => {
-            const fitRatio = viewerRef.current?.initialImageData?.ratio;
-            if (typeof fitRatio === "number") viewerRef.current?.zoomTo(fitRatio);
+        zoomBy: (delta, pivot) => {
+            const zoom = zoomRef.current;
+            if (!zoom) return;
+            panStateRef.current = null;
+            let anchorX: number | undefined;
+            let anchorY: number | undefined;
+            if (pivot && rootRef.current) {
+                // The lightbox expects anchors relative to the container center.
+                const rect = rootRef.current.getBoundingClientRect();
+                anchorX = pivot.x - rect.width / 2;
+                anchorY = pivot.y - rect.height / 2;
+            }
+            zoom.changeZoom(zoom.zoom * (1 + delta), true, anchorX, anchorY);
         },
-        actualSize: () => viewerRef.current?.zoomTo(1),
-        reset: () => viewerRef.current?.reset(),
-        rotate: (degrees) => viewerRef.current?.rotate(degrees),
-        flipHorizontal: () => viewerRef.current?.scaleX(-(viewerRef.current?.imageData?.scaleX ?? 1)),
-        moveBy: (offsetX, offsetY) => viewerRef.current?.move(offsetX, offsetY),
+        zoomTo: (nativeRatio) => {
+            const zoom = zoomRef.current;
+            const fitScale = nativeFitScaleRef.current();
+            panStateRef.current = null;
+            if (zoom && fitScale > 0) zoom.changeZoom(nativeRatio / fitScale, true);
+        },
+        fitToWindow: () => {
+            panStateRef.current = null;
+            zoomRef.current?.changeZoom(1, true);
+        },
+        actualSize: () => {
+            const zoom = zoomRef.current;
+            const fitScale = nativeFitScaleRef.current();
+            panStateRef.current = null;
+            if (zoom && fitScale > 0) zoom.changeZoom(1 / fitScale, true);
+        },
+        reset: () => {
+            clearOrientationRef.current();
+            panStateRef.current = null;
+            zoomRef.current?.changeZoom(1, true);
+        },
+        rotate: (degrees) => applyOrientationRef.current(rotateOrientation(orientationRef.current, degrees)),
+        flipHorizontal: () => applyOrientationRef.current(flipOrientationHorizontal(orientationRef.current)),
+        moveBy: (offsetX, offsetY) => {
+            const zoom = zoomRef.current;
+            if (!zoom || zoom.zoom <= 1.001) {
+                panStateRef.current = null;
+                return;
+            }
+            // A pan is exactly one changeZoom call whose anchor carries the offsets (the anchor
+            // delta is subtracted internally, hence the negated offsets). The zoom oscillates
+            // between two FIXED levels — base and base×0.999 — rather than relative to the
+            // possibly-stale ref value: if the renderer coalesces two pan frames, a relative
+            // jiggle stops cancelling out and the zoom drifts, while fixed levels merely drop
+            // that frame's pan.
+            let pan = panStateRef.current;
+            const externallyZoomed = pan
+                && Math.abs(zoom.zoom / pan.base - 1) > 0.01
+                && Math.abs(zoom.zoom / (pan.base * PAN_ZOOM_JIGGLE) - 1) > 0.01;
+            if (!pan || externallyZoomed) {
+                pan = { base: zoom.zoom, from: zoom.zoom };
+                panStateRef.current = pan;
+            }
+            const target = pan.from === pan.base ? pan.base * PAN_ZOOM_JIGGLE : pan.base;
+            const factor = 1 / pan.from - 1 / target;
+            if (Math.abs(factor) < Number.EPSILON) return;
+            zoom.changeZoom(target, true, -offsetX / factor, -offsetY / factor);
+            pan.from = target;
+        },
         toggleFullscreen: () => {
-            const viewer = viewerRef.current;
-            if (!viewer) return;
-            if (viewer.fulled) {
+            if (fulledRef.current) {
                 exitFullscreenPresentation();
-                viewer.exit();
+                fulledRef.current = false;
                 setFulled(false);
                 return;
             }
-            // The navbar (thumbnail strip) is a fullscreen-only feature; enabling it lazily defers
-            // loading every gallery image until the user actually asks for thumbnails.
-            if (galleryRef.current.items.length > 1 && !viewer.options.navbar) {
-                viewer.options.navbar = true;
-                viewer.navbar?.classList.remove("viewer-hide");
-                viewer.update();
-            }
             enterFullscreenPresentation();
-            viewer.full();
+            fulledRef.current = true;
             setFulled(true);
         },
-        isFullscreen: () => !!viewerRef.current?.fulled,
-        isAtFit: () => {
-            const current = viewerRef.current?.imageData?.ratio;
-            const fit = viewerRef.current?.initialImageData?.ratio;
-            return typeof current === "number" && typeof fit === "number" && Math.abs(current - fit) < 0.001;
-        },
+        isFullscreen: () => fulledRef.current,
+        isAtFit: () => Math.abs((zoomRef.current?.zoom ?? 1) - 1) < 0.001,
         zoomPercent: () => zoomPercentRef.current
     }), []);
     const internalApiRef = useRef<MediaViewerApi | null>(api);
@@ -309,7 +385,7 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
 
     // Type widgets are hidden, not unmounted — never leave a fullscreen overlay behind.
     useLayoutEffect(() => {
-        if (!isVisible && viewerRef.current?.fulled) {
+        if (!isVisible && fulledRef.current) {
             api.toggleFullscreen();
         }
     }, [ isVisible, api ]);
@@ -320,6 +396,18 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
         return () => assignRef(apiRef, null);
     }, [ apiRef, api ]);
 
+    const slides = useMemo<SlideImage[]>(() => gallery.items.map((item) => {
+        if (oriented && oriented.itemId === item.id) {
+            return {
+                src: oriented.render.url,
+                alt: item.title,
+                width: oriented.render.width,
+                height: oriented.render.height
+            };
+        }
+        return { src: item.src, alt: item.title };
+    }), [ gallery.items, oriented ]);
+
     const rootClass = clsx("media-viewer-root", {
         "media-viewer-fulled": fulled,
         "tn-image-large-zoom": largeZoom,
@@ -329,13 +417,30 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
 
     return (
         <div ref={rootRef} tabIndex={0} className={rootClass}>
-            <div ref={sourcesRef} className="media-viewer-sources" aria-hidden="true">
-                {gallery.items.map((item) => (
-                    <div key={item.id} className="media-viewer-source">
-                        <img data-src={item.src} alt={item.title} />
-                    </div>
-                ))}
-            </div>
+            <Lightbox
+                key={gallery.surfaceKey}
+                plugins={fulled && gallery.items.length > 1 ? FULLSCREEN_PLUGINS : INLINE_PLUGINS}
+                slides={slides}
+                index={Math.max(gallery.currentIndex, 0)}
+                on={lightboxCallbacks}
+                inline={INLINE_PROPS}
+                carousel={{ finite: gallery.items.length < 2, preload: 1, padding: 0, imageFit: "contain" }}
+                // No morph animation when switching or zooming photos — navigation should feel instant.
+                animation={{ fade: 0, swipe: 0, zoom: 0 }}
+                zoom={{
+                    ref: zoomRef,
+                    scrollToZoom: true,
+                    maxZoomPixelRatio: 64,
+                    // ~1.25× per wheel notch — snappier than the library default.
+                    wheelZoomDistanceFactor: 400
+                }}
+                thumbnails={{ position: "bottom", showToggle: false }}
+                // All chrome is ours: no toolbar buttons, no prev/next arrows, and the built-in
+                // focus grab would steal focus from the keyboard-scoped root.
+                toolbar={{ buttons: [] }}
+                render={{ buttonPrev: () => null, buttonNext: () => null, buttonZoom: () => null }}
+                controller={{ focus: false, closeOnBackdropClick: false }}
+            />
 
             {loadingError && <ContentErrorMessage message={t("media_viewer.loading_error")} />}
 
@@ -350,11 +455,6 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
             )}
         </div>
     );
-}
-
-/** Identity of the gallery contents: members, order and content versions (the src embeds `?v=`). */
-function itemsKey(gallery: MediaGallery): string {
-    return gallery.items.map((item) => `${item.id}@${item.src}`).join("\n");
 }
 
 /** Adapts the gallery to the sibling-keyboard contract; null (keys inactive) when there is nothing to cycle. */

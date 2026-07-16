@@ -102,7 +102,7 @@ test("image note renders the viewer with the full toolbar", async ({ page, conte
     await app.goto();
     await openGalleryNote(app, page, 0);
 
-    const img = inlineViewer(app).locator(".viewer-canvas img");
+    const img = inlineViewer(app).locator(".yarl__slide_current img");
     await expect(img).toBeVisible();
     await expect(img).toHaveAttribute("src", /api\/images\/[^/]+\/.+\?v=.+/);
 
@@ -127,7 +127,7 @@ test("gallery navigation works from the toolbar and the keyboard, wrapping aroun
 
     // Put focus on the viewer itself so the keyboard checks aren't at the mercy of
     // wherever the button click left it (Space is deliberately ignored on buttons).
-    await inlineViewer(app).locator(".viewer-canvas").click();
+    await inlineViewer(app).locator(".yarl__slide_current").click();
 
     await page.keyboard.press("PageDown");
     await expect(app.currentNoteSplitTitle).toHaveValue(titles[2]);
@@ -158,20 +158,28 @@ test("zoom buttons, reset and 1:1 drive the zoom readout", async ({ page, contex
     await expect.poll(() => zoomPercent(app)).toBe(initial);
 });
 
-test("rotate and flip transform the image and reset clears them", async ({ page, context }) => {
+test("rotate and flip re-render the bitmap and reset clears them", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();
     await openGalleryNote(app, page, 0);
-    const img = inlineViewer(app).locator(".viewer-canvas img");
+    const img = inlineViewer(app).locator(".yarl__slide_current img");
 
+    // Rotation is a bitmap transform: the slide swaps to a locally rendered blob whose
+    // dimensions are the original's swapped (the red fixture is 320x200).
     await toolbar(app).locator('button[aria-label="Rotate right"]').click();
-    await expect(img).toHaveAttribute("style", /rotate\(90deg\)/);
+    await expect(img).toHaveAttribute("src", /^blob:/);
+    await expect
+        .poll(() => img.evaluate((el: HTMLImageElement) => `${el.naturalWidth}x${el.naturalHeight}`))
+        .toBe("200x320");
 
+    // Flipping the rotated view renders yet another bitmap (dimensions stay swapped).
+    const rotatedSrc = await img.getAttribute("src");
     await toolbar(app).locator('button[aria-label="Flip horizontally"]').click();
-    await expect(img).toHaveAttribute("style", /scaleX\(-1\)/);
+    await expect.poll(() => img.getAttribute("src")).not.toBe(rotatedSrc);
+    await expect(img).toHaveAttribute("src", /^blob:/);
 
     await toolbar(app).locator('button[aria-label^="Reset zoom"]').click();
-    await expect(img).not.toHaveAttribute("style", /rotate\(90deg\)/);
+    await expect(img).toHaveAttribute("src", /api\/images\//);
 });
 
 test("fullscreen covers the viewport, shows thumbnails and stays in sync with the app", async ({ page, context }) => {
@@ -185,15 +193,17 @@ test("fullscreen covers the viewport, shows thumbnails and stays in sync with th
     // and the fixed viewer container spans the whole viewport.
     const fulledRoot = page.locator("body > .media-viewer-root.media-viewer-fulled");
     await expect(fulledRoot).toBeVisible();
-    const viewerBox = await page.locator(".viewer-container.viewer-fixed").boundingBox();
+    const viewerBox = await fulledRoot.boundingBox();
     const viewport = page.viewportSize();
     expect(viewerBox?.width).toBe(viewport?.width);
     expect(viewerBox?.height).toBe(viewport?.height);
 
-    // The thumbnail navbar exists only in fullscreen and drives real app navigation.
-    const thumbnails = fulledRoot.locator(".viewer-navbar .viewer-list > li");
+    // The thumbnail strip exists only in fullscreen and drives real app navigation. The strip
+    // is a window centered on the current slide (prev/current/next), so thumbnails are selected
+    // by their image rather than by position.
+    const thumbnails = fulledRoot.locator(".yarl__thumbnails_thumbnail");
     await expect(thumbnails).toHaveCount(3);
-    await thumbnails.nth(2).click();
+    await thumbnails.filter({ has: page.locator(`img[src*="${titles[2]}"]`) }).click();
     await expect(app.currentNoteSplitTitle).toHaveValue(titles[2]);
 
     // At the fitted zoom the horizontal arrows page through the gallery.
@@ -211,7 +221,7 @@ test("images are served with the content-addressed validator and immutable cachi
     await app.goto();
     await openGalleryNote(app, page, 0);
 
-    const src = await inlineViewer(app).locator(".viewer-canvas img").getAttribute("src");
+    const src = await inlineViewer(app).locator(".yarl__slide_current img").getAttribute("src");
     expect(src).toMatch(/\?v=.+/);
 
     // Fetch from inside the page so the standalone service worker handles it too.
