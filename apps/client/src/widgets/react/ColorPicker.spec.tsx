@@ -1,3 +1,4 @@
+import type { ComponentChildren } from "preact";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderInto } from "../../test/render";
@@ -6,7 +7,7 @@ import { renderInto } from "../../test/render";
 // (Bootstrap-driven state that happy-dom can't flip). Stub it to render the trigger + menu content
 // inline so we can exercise ColorPicker's own logic (swatches, native input, clear) directly.
 vi.mock("./Dropdown", () => ({
-    default: ({ text, children }: { text: unknown; children: unknown }) => (
+    default: ({ text, children }: { text: ComponentChildren; children: ComponentChildren }) => (
         <div className="dropdown-stub">
             <div className="dropdown-stub-trigger">{text}</div>
             <div className="dropdown-stub-menu">{children}</div>
