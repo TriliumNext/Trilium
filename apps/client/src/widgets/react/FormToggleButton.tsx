@@ -39,7 +39,7 @@ export default function FormToggleButton({ label, icon, currentValue, onChange, 
             title={title}
             onClick={() => onChange(!currentValue)}
         >
-            {icon && <Icon icon={`bx ${icon}`} />}
+            {icon && <Icon icon={icon} />}
             {label}
         </button>
     );
