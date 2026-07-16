@@ -37,7 +37,7 @@ describe("FormToggleButton", () => {
     });
 
     it("renders an icon before the label when given", () => {
-        const button = renderInto(<FormToggleButton label="A" icon="bx-check" currentValue={false} onChange={vi.fn()} />).querySelector("button");
+        const button = renderInto(<FormToggleButton label="A" icon="bx bx-check" currentValue={false} onChange={vi.fn()} />).querySelector("button");
         expect(button?.querySelector(".bx.bx-check")).not.toBeNull();
     });
 });
