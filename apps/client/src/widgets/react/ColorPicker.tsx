@@ -32,6 +32,19 @@ interface ColorPickerProps {
  * color string (`onChange("")` clears it). Theme-styled via `ColorPicker.css` / `--main-*` variables.
  */
 export default function ColorPicker({ currentValue, onChange, presets = DEFAULT_PRESETS, title, disabled, className }: ColorPickerProps) {
+    const normalizeColorForInput = (color: string): string => {
+        const trimmed = (color || "").trim();
+        if (/^#[0-9a-f]{3}$/i.test(trimmed)) {
+            // Expand 3-digit hex to 6-digit for the native color input.
+            return `#${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}${trimmed[3]}${trimmed[3]}`;
+        }
+        if (/^#[0-9a-f]{6}$/i.test(trimmed)) {
+            return trimmed.toLowerCase();
+        }
+        // Fallback for invalid or unsupported color formats (e.g., "red").
+        return "#000000";
+    };
+
     return (
         <Dropdown
             className={clsx("tn-color-picker", className)}
@@ -65,13 +78,7 @@ export default function ColorPicker({ currentValue, onChange, presets = DEFAULT_
             <label className="tn-color-picker-custom">
                 <input
                     type="color"
-                    value={(() => {
-                        const trimmed = (currentValue || "").trim();
-                        if (/^#[0-9a-f]{3}$/i.test(trimmed)) {
-                            return "#" + trimmed[1] + trimmed[1] + trimmed[2] + trimmed[2] + trimmed[3] + trimmed[3];
-                        }
-                        return /^#[0-9a-f]{6}$/i.test(trimmed) ? trimmed.toLowerCase() : "#000000";
-                    })()}
+                    value={normalizeColorForInput(currentValue)}
                     onInput={(e) => onChange(e.currentTarget.value)}
                 />
                 <span>Custom…</span>
