@@ -76,6 +76,16 @@ interface ButtonProps {
 }
 export declare const Button: FunctionComponent<ButtonProps>;
 
+/**
+ * Generic FullCalendar wrapper. The full FullCalendar `CalendarOptions` surface is loosened here
+ * (any option may be passed through); `calendarRef` receives the underlying calendar instance.
+ */
+interface CalendarProps {
+    calendarRef?: RefObject<unknown>;
+    [option: string]: unknown;
+}
+export declare const Calendar: FunctionComponent<CalendarProps>;
+
 interface CKEditorApi {
     focus(): void;
     setText(text: string): void;
@@ -104,6 +114,25 @@ interface CollapsibleProps {
     className?: string;
 }
 export declare const Collapsible: FunctionComponent<CollapsibleProps>;
+
+interface ExternallyControlledCollapsibleProps {
+    title: string;
+    children?: ComponentChildren;
+    className?: string;
+    expanded: boolean | undefined;
+    setExpanded(expanded: boolean): void;
+}
+export declare const ExternallyControlledCollapsible: FunctionComponent<ExternallyControlledCollapsibleProps>;
+
+interface ColorPickerProps {
+    currentValue: string;
+    onChange(newValue: string): void;
+    presets?: string[];
+    title?: string;
+    disabled?: boolean;
+    className?: string;
+}
+export declare const ColorPicker: FunctionComponent<ColorPickerProps>;
 
 interface DropdownProps {
     id?: string;
@@ -143,6 +172,8 @@ interface FormCheckboxProps {
     containerStyle?: Css;
 }
 export declare const FormCheckbox: FunctionComponent<FormCheckboxProps>;
+
+export declare const FormDatetime: FunctionComponent<Omit<FormTextBoxProps, "type">>;
 
 interface FormDropdownListProps<T> extends Omit<DropdownProps, "children"> {
     values: T[];
@@ -205,6 +236,8 @@ interface FormDropdownSubmenuProps {
 }
 export declare const FormDropdownSubmenu: FunctionComponent<FormDropdownSubmenuProps>;
 
+export declare const FormNumber: FunctionComponent<Omit<FormTextBoxProps, "type">>;
+
 interface FormRadioGroupProps {
     name: string;
     currentValue?: string;
@@ -245,6 +278,8 @@ interface FormTextBoxProps {
 }
 export declare const FormTextBox: FunctionComponent<FormTextBoxProps>;
 
+export declare const FormTime: FunctionComponent<Omit<FormTextBoxProps, "type">>;
+
 interface FormToggleProps {
     currentValue: boolean | null;
     onChange(newValue: boolean): void;
@@ -258,6 +293,19 @@ interface FormToggleProps {
     id?: string;
 }
 export declare const FormToggle: FunctionComponent<FormToggleProps>;
+
+interface FormToggleButtonProps {
+    label: ComponentChildren;
+    icon?: string;
+    currentValue: boolean;
+    onChange(newValue: boolean): void;
+    kind?: "primary" | "secondary";
+    size?: "normal" | "small" | "micro";
+    disabled?: boolean;
+    title?: string;
+    className?: string;
+}
+export declare const FormToggleButton: FunctionComponent<FormToggleButtonProps>;
 
 interface IconProps {
     icon?: string;
@@ -361,6 +409,25 @@ interface SliderProps {
     title?: string;
 }
 export declare const Slider: FunctionComponent<SliderProps>;
+
+/**
+ * Generic Tabulator-based data grid. The full Tabulator `Options` surface is loosened here (any option
+ * may be passed through); `data` is the row array, `columns` the column definitions, `modules` the
+ * Tabulator modules to register, `events` the event handlers and `tabulatorRef` receives the instance.
+ */
+interface TableProps {
+    tabulatorRef?: RefObject<unknown>;
+    className?: string;
+    data?: unknown[];
+    columns?: unknown[];
+    modules?: unknown[];
+    events?: Record<string, unknown>;
+    index?: string;
+    footerElement?: unknown;
+    onReady?: () => void;
+    [option: string]: unknown;
+}
+export declare const Table: FunctionComponent<TableProps>;
 
 interface RightPanelWidgetProps {
     id: string;

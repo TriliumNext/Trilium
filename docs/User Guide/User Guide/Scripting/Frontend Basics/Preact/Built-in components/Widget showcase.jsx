@@ -3,8 +3,10 @@ import {
     Admonition, Collapsible,
     FormCheckbox, FormDropdownList, FormFileUploadButton, FormGroup, FormRadioGroup, FormTextArea,
     FormTextBox, FormToggle, Slider, RawHtml, LoadingSpinner, Icon,
+    FormNumber, FormTime, FormDatetime, FormToggleButton, ColorPicker,
     Dropdown, FormListItem, FormDropdownDivider, FormDropdownSubmenu,
     NoteAutocomplete, NoteLink, Modal,
+    Table,
     CKEditor,
     useEffect, useState
 } from "trilium:preact";
@@ -17,7 +19,7 @@ export default function() {
         const interval = setInterval(() => setTime(new Date().toLocaleString()), 1000);
         return () => clearInterval(interval);
     }, []);
-    
+
     return (
         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: "1em" }}>
             <h1>Widget showcase</h1>
@@ -27,7 +29,7 @@ export default function() {
                 <strong>Admonition</strong><br />
                 {lorem}
             </Admonition>
-            
+
             <Collapsible title="Collapsible" initiallyExpanded>
                 {lorem}
             </Collapsible>
@@ -36,20 +38,21 @@ export default function() {
             <NoteElements />
             <ModalSample />
             <DropdownSample />
-        </div>        
+            <CollectionViews />
+        </div>
     );
 }
 
 function Buttons() {
     const onClick = () => showMessage("A button was pressed");
-    
+
     return (
         <>
             <h2>Buttons</h2>
             <div style={{ display: "flex", gap: "1em", alignItems: "center" }}>
                 <ActionButton icon="bx bx-rocket" text="Action button" onClick={onClick} />
                 <Button icon="bx bx-rocket" text="Simple button" onClick={onClick} />
-                <LinkButton text="Link button" onClick={onClick} />                
+                <LinkButton text="Link button" onClick={onClick} />
             </div>
         </>
     )
@@ -60,7 +63,12 @@ function FormElements() {
     const [ dropdownValue, setDropdownValue ] = useState("key-1");
     const [ radioGroupValue, setRadioGroupValue ] = useState("key-1");
     const [ sliderValue, setSliderValue ] = useState(50);
-    
+    const [ numberValue, setNumberValue ] = useState("3");
+    const [ timeValue, setTimeValue ] = useState("09:00");
+    const [ datetimeValue, setDatetimeValue ] = useState("");
+    const [ toggleButtonOn, setToggleButtonOn ] = useState(false);
+    const [ color, setColor ] = useState("#43a047");
+
     return (
         <>
             <h2>Form elements</h2>
@@ -91,18 +99,33 @@ function FormElements() {
                         ]}
                         currentValue={radioGroupValue} onChange={setRadioGroupValue}
                     />
-                </FormGroup>                
+                </FormGroup>
                 <FormGroup name="text-box" label="Text box">
                     <FormTextBox
                         placeholder="Type something..."
                         currentValue="" onChange={(newValue) => {}}
-                    />                
-                </FormGroup>        
+                    />
+                </FormGroup>
                 <FormGroup name="text-area" label="Text area">
                     <FormTextArea
                         placeholder="Type something bigger..."
                         currentValue="" onChange={(newValue) => {}}
                     />
+                </FormGroup>
+                <FormGroup name="number" label="Number">
+                    <FormNumber min={0} max={10} step={1} currentValue={numberValue} onChange={setNumberValue} />
+                </FormGroup>
+                <FormGroup name="time" label="Time">
+                    <FormTime currentValue={timeValue} onChange={setTimeValue} />
+                </FormGroup>
+                <FormGroup name="datetime" label="Date & time">
+                    <FormDatetime currentValue={datetimeValue} onChange={setDatetimeValue} />
+                </FormGroup>
+                <FormGroup name="toggle-button" label="Toggle button">
+                    <FormToggleButton label="Bold" icon="bx-bold" currentValue={toggleButtonOn} onChange={setToggleButtonOn} />
+                </FormGroup>
+                <FormGroup name="color-picker" label="Color picker">
+                    <ColorPicker currentValue={color} onChange={setColor} />
                 </FormGroup>
                 <FormGroup name="slider" label="Slider">
                     <Slider
@@ -118,8 +141,8 @@ function FormElements() {
                             if (!file) return;
                             showMessage(`Got file "${file.name}" of size ${file.size} B and type ${file.type}.`);
                         }}
-                    /> 
-                </FormGroup>                
+                    />
+                </FormGroup>
                 <FormGroup name="icon" label="Icon">
                     <Icon icon="bx bx-smile" />
                 </FormGroup>
@@ -136,7 +159,7 @@ function FormElements() {
 
 function NoteElements() {
     const [ noteId, setNoteId ] = useState("");
-    
+
     return (
         <div>
             <h2>Note elements</h2>
@@ -158,12 +181,12 @@ function NoteElements() {
 }
 
 function ModalSample() {
-    const [ shown, setShown ] = useState(false);    
-    
+    const [ shown, setShown ] = useState(false);
+
     return (
         <>
             <h2>Modal</h2>
-            <Button text="Open modal" onClick={() => setShown(true)} />            
+            <Button text="Open modal" onClick={() => setShown(true)} />
             <Modal title="Modal title" size="md" show={shown} onHidden={() => setShown(false)}>
                 Modal goes here.
             </Modal>
@@ -184,6 +207,30 @@ function DropdownSample() {
                     <FormListItem>More items</FormListItem>
                 </FormDropdownSubmenu>
             </Dropdown>
+        </>
+    )
+}
+
+function CollectionViews() {
+    return (
+        <>
+            <h2>Collection views</h2>
+            <p>
+                A generic <code>Table</code> (Tabulator) is available. A <code>Calendar</code>
+                {" "}(FullCalendar) component is also exposed, but it requires you to pass a
+                {" "}<code>plugins</code> array to render a view, so it is not demonstrated here.
+            </p>
+            <Table
+                layout="fitColumns"
+                columns={[
+                    { title: "Name", field: "name" },
+                    { title: "Progress", field: "progress" }
+                ]}
+                data={[
+                    { id: 1, name: "First task", progress: "80%" },
+                    { id: 2, name: "Second task", progress: "20%" }
+                ]}
+            />
         </>
     )
 }

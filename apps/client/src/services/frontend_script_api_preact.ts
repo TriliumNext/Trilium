@@ -4,19 +4,25 @@ import * as hooks from "preact/hooks";
 import ActionButton from "../widgets/react/ActionButton";
 import Admonition from "../widgets/react/Admonition";
 import Button from "../widgets/react/Button";
+import Calendar from "../widgets/react/Calendar";
 import CKEditor from "../widgets/react/CKEditor";
-import Collapsible from "../widgets/react/Collapsible";
+import Collapsible, { ExternallyControlledCollapsible } from "../widgets/react/Collapsible";
+import ColorPicker from "../widgets/react/ColorPicker";
 import Dropdown from "../widgets/react/Dropdown";
 import FormCheckbox from "../widgets/react/FormCheckbox";
+import FormDatetime from "../widgets/react/FormDatetime";
 import FormDropdownList from "../widgets/react/FormDropdownList";
 import { FormFileUploadActionButton, FormFileUploadButton } from "../widgets/react/FormFileUpload";
 import FormGroup from "../widgets/react/FormGroup";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../widgets/react/FormList";
+import FormNumber from "../widgets/react/FormNumber";
 import FormRadioGroup from "../widgets/react/FormRadioGroup";
 import FormText from "../widgets/react/FormText";
 import FormTextArea from "../widgets/react/FormTextArea";
 import FormTextBox from "../widgets/react/FormTextBox";
+import FormTime from "../widgets/react/FormTime";
 import FormToggle from "../widgets/react/FormToggle";
+import FormToggleButton from "../widgets/react/FormToggleButton";
 import * as triliumHooks from "../widgets/react/hooks";
 import Icon from "../widgets/react/Icon";
 import LinkButton from "../widgets/react/LinkButton";
@@ -26,6 +32,7 @@ import NoteAutocomplete from "../widgets/react/NoteAutocomplete";
 import NoteLink from "../widgets/react/NoteLink";
 import RawHtml from "../widgets/react/RawHtml";
 import Slider from "../widgets/react/Slider";
+import Table from "../widgets/react/Table";
 import RightPanelWidget from "../widgets/sidebar/RightPanelWidget";
 
 export interface WidgetDefinition {
@@ -72,19 +79,24 @@ export const preactAPI = Object.freeze({
     ActionButton,
     Admonition,
     Button,
+    Calendar,
     CKEditor,
-    Collapsible,
+    Collapsible, ExternallyControlledCollapsible,
+    ColorPicker,
     Dropdown,
     FormCheckbox,
+    FormDatetime,
     FormDropdownList,
     FormFileUploadButton, FormFileUploadActionButton,
     FormGroup,
     FormListItem, FormDropdownDivider, FormDropdownSubmenu,
+    FormNumber,
     FormRadioGroup,
     FormText,
     FormTextArea,
     FormTextBox,
-    FormToggle,
+    FormTime,
+    FormToggle, FormToggleButton,
     Icon,
     LinkButton,
     LoadingSpinner,
@@ -93,6 +105,7 @@ export const preactAPI = Object.freeze({
     NoteLink,
     RawHtml,
     Slider,
+    Table,
 
     // Specialized widgets
     RightPanelWidget,
@@ -110,5 +123,4 @@ export const preactAPI = Object.freeze({
 // so they aren't part of the shared surface and aren't checked.)
 type _PublicPreactExports = keyof typeof import("@triliumnext/commons/src/lib/script_api_preact.js");
 type _MissingPreactMembers = Exclude<_PublicPreactExports, keyof typeof preactAPI>;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _preactDriftGuard: [_MissingPreactMembers] extends [never] ? true : _MissingPreactMembers = true;
