@@ -285,8 +285,9 @@ function RelationMapButtons({ note, isDefaultViewMode, triggerEvent }: FloatingB
 
 function CopyImageReferenceButton({ note, isDefaultViewMode }: FloatingButtonContext) {
     const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
+    // Image notes are excluded: the media viewer's own toolbar carries copy-reference there.
     const isEnabled = (
-        ["mermaid", "canvas", "mindMap", "image"].includes(note?.type ?? "")
+        ["mermaid", "canvas", "mindMap"].includes(note?.type ?? "")
         && note?.isContentAvailable() && isDefaultViewMode
     );
 
