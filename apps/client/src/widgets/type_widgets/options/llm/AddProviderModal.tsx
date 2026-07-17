@@ -13,6 +13,7 @@ import SelectableCard, { SelectableCardGrid } from "../../../react/SelectableCar
 import anthropicIcon from "./icons/anthropic.svg?url";
 import claudeAgentIcon from "./icons/claude-ai.svg?url";
 import geminiIcon from "./icons/gemini.svg?url";
+import githubCopilotIcon from "./icons/github-copilot.svg?url";
 import openaiIcon from "./icons/openai.svg?url";
 
 export interface LlmProviderConfig {
@@ -35,6 +36,8 @@ export interface ProviderType {
     beta?: boolean;
     /** When false, the provider needs no API key or base URL (e.g. subscription-based auth). */
     usesApiKey?: boolean;
+    /** Connection-details blurb shown instead of the API-key field when `usesApiKey` is false. */
+    connectionDescription?: string;
 }
 
 // The two Claude-powered providers lead the list so they sit together on the top row,
@@ -42,9 +45,11 @@ export interface ProviderType {
 export const PROVIDER_TYPES: ProviderType[] = [
     { id: "anthropic", name: "Anthropic", defaultBaseUrl: "https://api.anthropic.com/v1", iconUrl: anthropicIcon, description: t("llm.provider_desc_anthropic") },
     // Uses the Claude Agent SDK on the server; auth belongs to Claude Code (`claude /login`).
-    { id: "claude-agent", name: "Claude Code", defaultBaseUrl: "", iconUrl: claudeAgentIcon, description: t("llm.provider_desc_claude_agent"), beta: true, usesApiKey: false },
+    { id: "claude-agent", name: "Claude Code", defaultBaseUrl: "", iconUrl: claudeAgentIcon, description: t("llm.provider_desc_claude_agent"), beta: true, usesApiKey: false, connectionDescription: t("llm.claude_agent_description") },
     { id: "openai", name: "OpenAI", defaultBaseUrl: "https://api.openai.com/v1", iconUrl: openaiIcon, description: t("llm.provider_desc_openai") },
-    { id: "google", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta", iconUrl: geminiIcon, description: t("llm.provider_desc_google") }
+    { id: "google", name: "Google Gemini", defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta", iconUrl: geminiIcon, description: t("llm.provider_desc_google") },
+    // Uses the GitHub Copilot CLI in ACP mode on the server; auth belongs to the CLI (`copilot login`).
+    { id: "copilot-agent", name: "GitHub Copilot", defaultBaseUrl: "", iconUrl: githubCopilotIcon, description: t("llm.provider_desc_copilot_agent"), beta: true, usesApiKey: false, connectionDescription: t("llm.copilot_agent_description") }
 ];
 
 function isValidBaseUrl(value: string): boolean {
@@ -163,7 +168,7 @@ export default function AddProviderModal({ show, onHidden, onSave }: AddProvider
                             />
                         </FormGroup>
                     ) : (
-                        <p>{t("llm.claude_agent_description")}</p>
+                        <p>{providerType?.connectionDescription}</p>
                     )}
                 </CardSection>
             </Card>
