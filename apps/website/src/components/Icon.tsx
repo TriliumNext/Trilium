@@ -1,9 +1,10 @@
 interface IconProps {
     svg: string;
+    className?: string;
 }
 
-export default function Icon({ svg }: IconProps) {
+export default function Icon({ svg, className }: IconProps) {
     return (
-        <span className="bx" dangerouslySetInnerHTML={{ __html: svg }} />
+        <span className={`bx ${className ?? ""}`} dangerouslySetInnerHTML={{ __html: svg }} />
     )
 }

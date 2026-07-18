@@ -1,4 +1,4 @@
-import { IconRegistry, Locale } from "@triliumnext/commons";
+import { BootstrapDefinition, ElectronApi, ElectronContextMenuParams } from "@triliumnext/commons";
 
 import appContext, { AppContext } from "./components/app_context";
 import type FNote from "./entities/fnote";
@@ -15,10 +15,9 @@ interface ElectronProcess {
     platform: string;
 }
 
-interface CustomGlobals {
+interface CustomGlobals extends BootstrapDefinition {
     isDesktop: typeof utils.isDesktop;
     isMobile: typeof utils.isMobile;
-    device: "mobile" | "desktop" | "print";
     getComponentByEl: typeof appContext.getComponentByEl;
     getHeaders: typeof server.getHeaders;
     getReferenceLinkTitle: (href: string) => Promise<string>;
@@ -32,33 +31,7 @@ interface CustomGlobals {
     SEARCH_HELP_TEXT: string;
     activeDialog: JQuery<HTMLElement> | null;
     componentId: string;
-    csrfToken: string;
-    baseApiUrl: string;
-    isProtectedSessionAvailable: boolean;
-    isDev: boolean;
-    isMainWindow: boolean;
-    maxEntityChangeIdAtLoad: number;
-    maxEntityChangeSyncIdAtLoad: number;
-    assetPath: string;
-    appPath: string;
-    instanceName: string;
-    appCssNoteIds: string[];
-    triliumVersion: string;
-    TRILIUM_SAFE_MODE: boolean;
-    platform?: typeof process.platform;
     linter: typeof lint;
-    hasNativeTitleBar: boolean;
-    hasBackgroundEffects: boolean;
-    isElectron: boolean;
-    isRtl: boolean;
-    iconRegistry: IconRegistry;
-    theme: string;
-    themeBase?: "next" | "next-light" | "next-dark";
-    customThemeCssUrl?: string;
-    iconPackCss: string;
-    headingStyle: "plain" | "underline" | "markdown";
-    layoutOrientation: "vertical" | "horizontal";
-    currentLocale: Locale;
 }
 
 type RequireMethod = (moduleName: string) => any;
@@ -78,7 +51,15 @@ declare global {
         _noteReady?: PrintReport;
 
         EXCALIDRAW_ASSET_PATH?: string;
+
+        Capacitor?: {
+            isNativePlatform?: () => boolean;
+            getPlatform?: () => string;
+        };
+
+        electronApi?: ElectronApi;
     }
+
 
     interface WindowEventMap {
         "note-ready": Event;
@@ -126,7 +107,6 @@ declare global {
     var glob: CustomGlobals;
     //@ts-ignore
     var require: RequireMethod;
-    var __non_webpack_require__: RequireMethod | undefined;
 
     /*
      * Panzoom

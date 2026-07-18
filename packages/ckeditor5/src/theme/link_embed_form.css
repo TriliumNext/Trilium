@@ -1,0 +1,40 @@
+/*
+ * The link-preview balloon form.
+ *
+ * It wears CKEditor's own `.ck-link-form.ck-responsive-form` so the paddings, the field styling and
+ * the narrow-screen behaviour come for free. What differs is the layout: a heading, the URL field,
+ * and then the display-mode dropdown next to the Insert button on a row of their own.
+ */
+.ck.ck-link-embed-form {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.ck.ck-link-embed-form__heading {
+    font-size: var(--ck-font-size-small);
+    font-weight: bold;
+    margin-bottom: var(--ck-spacing-standard);
+}
+
+.ck.ck-link-embed-form__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--ck-spacing-standard);
+    margin-top: 8px;
+
+    /* The responsive form indents its children; the row places them itself. */
+    & > .ck-dropdown {
+        margin-left: 0;
+
+        & > .ck-button {
+            /* Keep the mode names on one line ("Inline", "Card", "Embed"). */
+            white-space: nowrap;
+        }
+    }
+
+    /* Insert sits at the end of the row. */
+    & > .ck-button-action {
+        margin-left: auto;
+    }
+}

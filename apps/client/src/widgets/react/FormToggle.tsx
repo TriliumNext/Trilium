@@ -7,17 +7,22 @@ import { ComponentChildren } from "preact";
 interface FormToggleProps {
     currentValue: boolean | null;
     onChange(newValue: boolean): void;
-    switchOnName: string;
+    /** Label shown when toggle is off. If omitted along with switchOffName, no label is shown. */
+    switchOnName?: string;
     switchOnTooltip?: string;
-    switchOffName: string;
+    /** Label shown when toggle is on. If omitted along with switchOnName, no label is shown. */
+    switchOffName?: string;
     switchOffTooltip?: string;
     helpPage?: string;
     disabled?: boolean;
     afterName?: ComponentChildren;
+    /** ID for the input element, useful for accessibility with external labels */
+    id?: string;
 }
 
-export default function FormToggle({ currentValue, helpPage, switchOnName, switchOnTooltip, switchOffName, switchOffTooltip, onChange, disabled, afterName }: FormToggleProps) {
+export default function FormToggle({ currentValue, helpPage, switchOnName, switchOnTooltip, switchOffName, switchOffTooltip, onChange, disabled, afterName, id }: FormToggleProps) {
     const [ disableTransition, setDisableTransition ] = useState(true);
+    const hasLabel = switchOnName || switchOffName;
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -28,7 +33,7 @@ export default function FormToggle({ currentValue, helpPage, switchOnName, switc
 
     return (
         <div className="switch-widget">
-            <span className="switch-name">{ currentValue ? switchOffName : switchOnName }</span>
+            {hasLabel && <span className="switch-name">{ currentValue ? switchOffName : switchOnName }</span>}
             { afterName }
 
             <label>
@@ -37,6 +42,7 @@ export default function FormToggle({ currentValue, helpPage, switchOnName, switc
                     title={currentValue ? switchOffTooltip : switchOnTooltip }
                 >
                     <input
+                        id={id}
                         className="switch-toggle"
                         type="checkbox"
                         checked={currentValue === true}

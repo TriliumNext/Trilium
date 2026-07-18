@@ -27,7 +27,7 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
 
     // The default note type (always the first item)
     { type: "text", mime: "text/html", title: t("note_types.text"), icon: "bx-note" },
-    { type: "spreadsheet", mime: "application/json", title: t("note_types.spreadsheet"), icon: "bx-table", isBeta: true },
+    { type: "spreadsheet", mime: "application/json", title: t("note_types.spreadsheet"), icon: "bx-table", isBeta: true, isNew: true },
 
     // Text notes group
     { type: "book", mime: "", title: t("note_types.book"), icon: "bx-book" },
@@ -49,6 +49,7 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
 
     // Code notes
     { type: "code", mime: "text/plain", title: t("note_types.code"), icon: "bx-code" },
+    { type: "code", mime: "text/x-markdown", title: t("note_types.markdown"), icon: "bxl-markdown", isNew: true },
 
     // Reserved types (cannot be created by the user)
     { type: "contentWidget", mime: "", title: t("note_types.widget"), reserved: true },
@@ -100,6 +101,7 @@ function getBlankNoteTypes(command?: TreeCommandNames): MenuItem<TreeCommandName
                 title: nt.title,
                 command,
                 type: nt.type,
+                mime: nt.mime,
                 uiIcon: `bx ${nt.icon}`,
                 badges: []
             };
@@ -184,8 +186,15 @@ async function getBuiltInTemplates(title: string | null, command: TreeCommandNam
             templateNoteId: templateNote.noteId
         };
 
+        const badges: MenuItemBadge[] = [];
         if (await isNewTemplate(templateNote.noteId)) {
-            item.badges = [NEW_BADGE];
+            badges.push(NEW_BADGE);
+        }
+        if (templateNote.hasLabel("beta")) {
+            badges.push(BETA_BADGE);
+        }
+        if (badges.length > 0) {
+            item.badges = badges;
         }
 
         items.push(item);

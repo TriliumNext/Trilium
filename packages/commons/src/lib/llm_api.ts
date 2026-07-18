@@ -4,11 +4,60 @@
  */
 
 /**
- * A chat message in the conversation.
+ * Plain-text segment of a multimodal message.
+ */
+export interface LlmTextPart {
+    type: "text";
+    text: string;
+}
+
+/**
+ * Image segment of a multimodal message. The image is referenced by its
+ * Trilium attachment ID — the server loads the bytes from Becca before
+ * forwarding to the provider, so the wire stays small and we don't store
+ * base64 in chat history.
+ */
+export interface LlmImagePart {
+    type: "image";
+    attachmentId: string;
+    /** IANA media type (e.g. "image/png"). */
+    mime: string;
+}
+
+/**
+ * File segment of a multimodal message (e.g. a PDF). Like image parts, the
+ * file is referenced by its Trilium attachment ID and resolved to bytes
+ * server-side. Provider support varies by MIME type — PDFs (`application/pdf`)
+ * are handled natively by Anthropic, OpenAI, and Google.
+ */
+export interface LlmFilePart {
+    type: "file";
+    attachmentId: string;
+    mime: string;
+    filename: string;
+}
+
+/**
+ * Text-file segment of a multimodal message (e.g. a `.md`, `.json`, source
+ * code). Unlike `LlmFilePart`, the server inlines the decoded UTF-8 content
+ * as a plain `TextPart` so it works with every provider regardless of file
+ * upload support — the trade-off is that large files inflate token usage.
+ */
+export interface LlmTextAttachmentPart {
+    type: "text_attachment";
+    attachmentId: string;
+    filename: string;
+}
+
+export type LlmMessagePart = LlmTextPart | LlmImagePart | LlmFilePart | LlmTextAttachmentPart;
+
+/**
+ * A chat message in the conversation. `content` may be a plain string (the
+ * common case) or an ordered array of parts when the message includes images.
  */
 export interface LlmMessage {
     role: "user" | "assistant" | "system";
-    content: string;
+    content: string | LlmMessagePart[];
 }
 
 /**
@@ -75,6 +124,8 @@ export interface LlmModelInfo {
     costMultiplier?: number;
     /** Maximum context window size in tokens */
     contextWindow?: number;
+    /** Whether usage is covered by a subscription plan rather than metered per token */
+    isSubscription?: boolean;
 }
 
 /**
@@ -97,8 +148,10 @@ export interface LlmUsage {
 export type LlmStreamChunk =
     | { type: "text"; content: string }
     | { type: "thinking"; content: string }
-    | { type: "tool_use"; toolName: string; toolInput: Record<string, unknown> }
-    | { type: "tool_result"; toolName: string; result: string; isError?: boolean }
+    | { type: "tool_input_start"; toolCallId: string; toolName: string }
+    | { type: "tool_input_delta"; toolCallId: string; delta: string }
+    | { type: "tool_use"; toolCallId: string; toolName: string; toolInput: Record<string, unknown> }
+    | { type: "tool_result"; toolCallId: string; toolName: string; result: string; isError?: boolean }
     | { type: "citation"; citation: LlmCitation }
     | { type: "usage"; usage: LlmUsage }
     | { type: "error"; error: string }

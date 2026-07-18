@@ -1,13 +1,12 @@
 import "./TableOfContents.css";
 
-import { attributeChangeAffectsHeading, CKTextEditor, ModelElement } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, ModelElement, ModelNode } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
-import math from "../../services/math";
 import { randomString } from "../../services/utils";
-import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useNoteProperty, useTextEditor } from "../react/hooks";
+import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useMathRendering, useNoteProperty, useTextEditor } from "../react/hooks";
 import Icon from "../react/Icon";
 import RawHtml from "../react/RawHtml";
 import RightPanelWidget from "./RightPanelWidget";
@@ -39,12 +38,14 @@ export default function TableOfContents() {
         <RightPanelWidget id="toc" title={t("toc.table_of_contents")} grow>
             {((noteType === "text" && isReadOnly) || (noteType === "doc")) && <ReadOnlyTextTableOfContents />}
             {noteType === "text" && !isReadOnly && <EditableTextTableOfContents />}
-            {noteType === "file" && noteMime === "application/pdf" && <PdfTableOfContents />}
+            {noteType === "file" && noteMime === "application/pdf" && <ContextDataTableOfContents />}
+            {noteType === "llmChat" && <ContextDataTableOfContents />}
+            {note?.isMarkdown() && <ContextDataTableOfContents />}
         </RightPanelWidget>
     );
 }
 
-function PdfTableOfContents() {
+function ContextDataTableOfContents() {
     const data = useGetContextData("toc");
 
     return (
@@ -84,19 +85,7 @@ function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
     const isActive = heading.id === activeHeadingId;
     const contentRef = useRef<HTMLElement>(null);
 
-    // Render math equations after component mounts/updates
-    useEffect(() => {
-        if (!contentRef.current) return;
-        const mathElements = contentRef.current.querySelectorAll(".ck-math-tex");
-
-        for (const mathEl of mathElements ?? []) {
-            try {
-                math.render(mathEl.textContent || "", mathEl as HTMLElement);
-            } catch (e) {
-                console.warn("Failed to render math in TOC:", e);
-            }
-        }
-    }, [heading.text]);
+    useMathRendering(contentRef, [heading.text]);
 
     return (
         <>
@@ -155,35 +144,57 @@ interface CKHeading extends RawHeading {
 }
 
 function EditableTextTableOfContents() {
-    const { note, noteContext } = useActiveNoteContext();
+    const { noteContext } = useActiveNoteContext();
     const textEditor = useTextEditor(noteContext);
     const [ headings, setHeadings ] = useState<CKHeading[]>([]);
 
+    // Subscribe to editor changes once per editor instance — crucially NOT keyed on the
+    // active note. The CKEditor instance is reused across note switches within a tab (the
+    // content is swapped in via `editor.setData()`, which emits `change:data`), so keying
+    // this on the note would tear the listener down and re-attach it on every navigation.
+    // Because re-attaching is deferred behind an async `import()`, the `setData()` for the
+    // freshly-navigated note — and the `change:data` it emits — can fire during that gap
+    // with no listener attached, leaving the sidebar stuck on the previous note's headings
+    // (especially for large notes, whose content lands well after the switch). A stable
+    // per-editor subscription closes that window: the initial extract handles the first
+    // note, and every subsequent note's `setData()` re-extracts through the same listener.
     useEffect(() => {
         if (!textEditor) return;
-        const headings = extractTocFromTextEditor(textEditor);
-        setHeadings(headings);
+        setHeadings(extractTocFromTextEditor(textEditor));
 
-        // React to changes.
-        const changeCallback = () => {
-            const changes = textEditor.model.document.differ.getChanges();
+        // The helper lives in the CKEditor bundle, which is statically heavy but guaranteed
+        // to be loaded by now (a text editor instance exists), so resolving it via a dynamic
+        // import keeps it out of this component's startup graph.
+        let disposed = false;
+        let removeListener: (() => void) | undefined;
+        void import("@triliumnext/ckeditor5").then(({ attributeChangeAffectsHeading }) => {
+            if (disposed) return;
 
-            const affectsHeadings = changes.some( change => {
-                return (
-                    change.type === 'insert' || change.type === 'remove' ||
-                    (change.type === 'attribute' && attributeChangeAffectsHeading(change, textEditor))
-                );
-            });
-            if (affectsHeadings) {
-                requestAnimationFrame(() => {
-                    setHeadings(extractTocFromTextEditor(textEditor));
+            const changeCallback = () => {
+                const changes = textEditor.model.document.differ.getChanges();
+
+                const affectsHeadings = changes.some( change => {
+                    return (
+                        change.type === 'insert' || change.type === 'remove' ||
+                        (change.type === 'attribute' && attributeChangeAffectsHeading(change, textEditor))
+                    );
                 });
-            }
-        };
+                if (affectsHeadings) {
+                    requestAnimationFrame(() => {
+                        setHeadings(extractTocFromTextEditor(textEditor));
+                    });
+                }
+            };
 
-        textEditor.model.document.on("change:data", changeCallback);
-        return () => textEditor.model.document.off("change:data", changeCallback);
-    }, [ textEditor, note ]);
+            textEditor.model.document.on("change:data", changeCallback);
+            removeListener = () => textEditor.model.document.off("change:data", changeCallback);
+        });
+
+        return () => {
+            disposed = true;
+            removeListener?.();
+        };
+    }, [ textEditor ]);
 
     const scrollToHeading = useCallback((heading: CKHeading) => {
         if (!textEditor) return;
@@ -213,20 +224,37 @@ function extractTocFromTextEditor(editor: CKTextEditor) {
 
             const level = Number(item.name.replace( 'heading', '' ));
 
-            // Convert model element to view, then to DOM to get HTML
+            // Convert model element to view, then to DOM to get HTML.
+            // Math UIElements render their KaTeX content asynchronously, so
+            // ck-math-tex spans may be empty at read time. Replace them with
+            // math-tex spans (the data format) using the equation from the model,
+            // so useMathRendering can render them synchronously in the sidebar.
             const viewEl = editor.editing.mapper.toViewElement(item);
             let text = '';
             if (viewEl) {
                 const domEl = editor.editing.view.domConverter.mapViewToDom(viewEl);
                 if (domEl instanceof HTMLElement) {
-                    text = domEl.innerHTML;
+                    const clone = domEl.cloneNode(true) as HTMLElement;
+                    const ckMathSpans = clone.querySelectorAll('.ck-math-tex');
+                    let mathIdx = 0;
+                    for (const child of item.getChildren()) {
+                        if (!child.is('element', 'mathtex-inline')) continue;
+                        if (mathIdx >= ckMathSpans.length) break;
+                        const equation = String(child.getAttribute('equation') ?? '');
+                        const span = document.createElement('span');
+                        span.className = 'math-tex';
+                        span.textContent = `\\(${equation}\\)`;
+                        ckMathSpans[mathIdx].replaceWith(span);
+                        mathIdx++;
+                    }
+                    text = clone.innerHTML;
                 }
             }
 
-            // Fallback to plain text if conversion fails
+            // Fallback to plain text if DOM conversion fails
             if (!text) {
                 text = Array.from( item.getChildren() )
-                    .map( c => c.is( '$text' ) ? c.data : '' )
+                    .map( (c: ModelNode) => c.is( '$text' ) ? c.data : '' )
                     .join( '' );
             }
 
@@ -273,7 +301,7 @@ function extractTocFromStaticHtml(el: HTMLElement | null) {
         headings.push({
             id: randomString(),
             level: parseInt(headingEl.tagName.substring(1), 10),
-            text: headingEl.textContent,
+            text: headingEl.innerHTML,
             element: headingEl
         });
     }

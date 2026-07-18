@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { getDataDirs as getDataDirsType, getPlatformAppDataDir as getPlatformAppDataDirType,getTriliumDataDir as getTriliumDataDirType } from "./data_dir.js";
 
-describe("data_dir.ts unit tests", async () => {
+describe("data_dir.ts unit tests", () => {
     let getTriliumDataDir: typeof getTriliumDataDirType;
     let getPlatformAppDataDir: typeof getPlatformAppDataDirType;
     let getDataDirs: typeof getDataDirsType;
@@ -16,37 +16,45 @@ describe("data_dir.ts unit tests", async () => {
         pathJoinMock: vi.fn()
     };
 
-    // using doMock, to avoid hoisting, so that we can use the mockFn object
-    // to collect all mocked Fns
-    vi.doMock("node:fs", () => {
-        return {
-            default: {
-                existsSync: mockFn.existsSyncMock,
-                mkdirSync: mockFn.mkdirSyncMock,
-                statSync: mockFn.statSyncMock
-            }
-        };
-    });
+    beforeAll(async () => {
+        // Reset the module cache so the dynamic imports below get a fresh instance
+        // of data_dir.ts with the mocked dependencies rather than the cached copy
+        // loaded by spec/setup.ts. This must run inside beforeAll (not at
+        // describe-level) so that spec/setup.ts's beforeAll completes first.
+        vi.resetModules();
 
-    vi.doMock("node:os", () => {
-        return {
-            default: {
-                homedir: mockFn.osHomedirMock,
-                platform: mockFn.osPlatformMock
-            }
-        };
-    });
+        // using doMock, to avoid hoisting, so that we can use the mockFn object
+        // to collect all mocked Fns
+        vi.doMock("node:fs", () => {
+            return {
+                default: {
+                    existsSync: mockFn.existsSyncMock,
+                    mkdirSync: mockFn.mkdirSyncMock,
+                    statSync: mockFn.statSyncMock
+                }
+            };
+        });
 
-    vi.doMock("path", () => {
-        return {
-            join: mockFn.pathJoinMock
-        };
-    });
+        vi.doMock("node:os", () => {
+            return {
+                default: {
+                    homedir: mockFn.osHomedirMock,
+                    platform: mockFn.osPlatformMock
+                }
+            };
+        });
 
-    // import function to test now, after creating the mocks
-    ({ getTriliumDataDir } = await import("./data_dir.js"));
-    ({ getPlatformAppDataDir } = await import("./data_dir.js"));
-    ({ getDataDirs } = await import("./data_dir.js"));
+        vi.doMock("node:path", () => {
+            return {
+                join: mockFn.pathJoinMock
+            };
+        });
+
+        // import function to test now, after creating the mocks
+        ({ getTriliumDataDir } = await import("./data_dir.js"));
+        ({ getPlatformAppDataDir } = await import("./data_dir.js"));
+        ({ getDataDirs } = await import("./data_dir.js"));
+    });
 
     // helper to reset call counts
     const resetAllMocks = () => {
@@ -351,6 +359,88 @@ describe("data_dir.ts unit tests", async () => {
             } else {
                 expect(changeAttemptResult).toBeInstanceOf(TypeError);
             }
+        });
+    });
+
+    describe("createDirIfNotExisting error handling (via getTriliumDataDir case A)", () => {
+        beforeEach(() => {
+            resetAllMocks();
+            process.env.TRILIUM_DATA_DIR = "/home/mock/trilium-data-ERR";
+            vi.spyOn(console, "error").mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            delete process.env.TRILIUM_DATA_DIR;
+            vi.restoreAllMocks();
+        });
+
+        const mkdirThrows = (code: string) => {
+            const err = new Error(code) as NodeJS.ErrnoException;
+            err.code = code;
+            mockFn.mkdirSyncMock.mockImplementation(() => { throw err; });
+            return err;
+        };
+
+        it("EACCES – prints permission diagnostics (parent stat ok) and rethrows", () => {
+            const err = mkdirThrows("EACCES");
+            // statSync of the parent dir succeeds -> owner/permission diagnostics branch.
+            mockFn.statSyncMock.mockImplementation(() => ({ uid: 1000, gid: 1000, mode: 0o755 }));
+            // Provide getuid/getgid (absent on Windows) so the UID:GID branch runs.
+            const proc = process as NodeJS.Process & { getuid?: () => number; getgid?: () => number };
+            const hadGetuid = "getuid" in proc;
+            proc.getuid = () => 1000;
+            proc.getgid = () => 1000;
+
+            try {
+                expect(() => getTriliumDataDir("trilium-data")).toThrow(err);
+                expect(mockFn.statSyncMock).toHaveBeenCalledTimes(1);
+                // Confirm the owner/permissions diagnostics branch actually ran.
+                expect(console.error).toHaveBeenCalledWith("Process running as UID:GID = 1000:1000");
+                expect(console.error).toHaveBeenCalledWith("  Owner UID:GID = 1000:1000");
+                expect(console.error).toHaveBeenCalledWith("  Permissions = 755 (octal)");
+            } finally {
+                if (!hadGetuid) {
+                    delete proc.getuid;
+                    delete proc.getgid;
+                }
+            }
+        });
+
+        it("EACCES – handles an inaccessible parent dir (stat throws) and rethrows", () => {
+            const err = mkdirThrows("EACCES");
+            mockFn.statSyncMock.mockImplementation(() => { throw new Error("no access"); });
+
+            expect(() => getTriliumDataDir("trilium-data")).toThrow(err);
+            // The inaccessible-parent branch (not the owner/permissions one) ran.
+            expect(console.error).toHaveBeenCalledWith(
+                expect.stringContaining("is not accessible")
+            );
+        });
+
+        it("EEXIST but target is not a directory – rethrows", () => {
+            const err = mkdirThrows("EEXIST");
+            mockFn.statSyncMock.mockImplementation(() => ({ isDirectory: () => false }));
+
+            expect(() => getTriliumDataDir("trilium-data")).toThrow(err);
+        });
+
+        it("EEXIST but stat throws – rethrows the original error", () => {
+            const err = mkdirThrows("EEXIST");
+            mockFn.statSyncMock.mockImplementation(() => { throw new Error("cannot stat"); });
+
+            expect(() => getTriliumDataDir("trilium-data")).toThrow(err);
+        });
+
+        it("other error codes – rethrows directly", () => {
+            const err = mkdirThrows("ENOSPC");
+
+            expect(() => getTriliumDataDir("trilium-data")).toThrow(err);
+        });
+
+        it("non-Error throw value – rethrows as-is", () => {
+            mockFn.mkdirSyncMock.mockImplementation(() => { throw "weird"; });
+
+            expect(() => getTriliumDataDir("trilium-data")).toThrow("weird");
         });
     });
 });

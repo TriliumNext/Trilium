@@ -19,8 +19,38 @@ import RightPanelWidget from "./right_panel_widget.js";
 import options from "../services/options.js";
 import OnClickButtonWidget from "./buttons/onclick_button.js";
 import appContext, { type EventData } from "../components/app_context.js";
-import katex from "../services/math.js";
 import type FNote from "../entities/fnote.js";
+import DOMPurify, { type Config as DOMPurifyConfig } from "dompurify";
+
+/**
+ * DOMPurify configuration for ToC headings. Uses DOMPurify's built-in HTML
+ * and MathML profiles for proper namespace handling (required for KaTeX
+ * rendered equations), then restricts to inline-only elements via FORBID_TAGS.
+ */
+const TOC_PURIFY_CONFIG: DOMPurifyConfig = {
+    USE_PROFILES: { html: true, mathMl: true },
+    // Block elements that should never appear in a ToC heading
+    FORBID_TAGS: [
+        "script", "style", "iframe", "object", "embed", "link", "meta",
+        "base", "noscript", "template", "form", "input", "textarea",
+        "button", "select", "option",
+        // Block-level elements — headings should only contain inline content
+        "div", "p", "h1", "h2", "h3", "h4", "h5", "h6",
+        "blockquote", "pre", "section", "article", "aside", "nav",
+        "header", "footer", "main", "figure", "figcaption",
+        "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+        "ul", "ol", "li", "dl", "dt", "dd",
+        "hr", "img", "video", "audio", "picture", "canvas",
+        "svg", "foreignObject"
+    ],
+    FORBID_ATTR: [
+        "onerror", "onload", "onclick", "onmouseover", "onfocus",
+        "onblur", "onsubmit", "onreset", "onchange", "oninput",
+        "onkeydown", "onkeyup", "onkeypress"
+    ],
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false
+};
 
 const TPL = /*html*/`<div class="toc-widget">
     <style>
@@ -243,7 +273,9 @@ export default class TocWidget extends RightPanelWidget {
         let modifiedText = html;
 
         if (matches.length > 0) {
-            // Process all matches asynchronously
+            // KaTeX is heavy, so the math service is only loaded when there are formulas to render.
+            const { default: katex } = await import("../services/math.js");
+
             for (const match of matches) {
                 let latexCode = match[1];
                 let rendered;
@@ -253,20 +285,8 @@ export default class TocWidget extends RightPanelWidget {
                         throwOnError: false
                     });
                 } catch (e) {
-                    if (e instanceof ReferenceError && e.message.includes("katex is not defined")) {
-                        // Load KaTeX if it is not already loaded
-                        try {
-                            rendered = katex.renderToString(latexCode, {
-                                throwOnError: false
-                            });
-                        } catch (renderError) {
-                            console.error("KaTeX rendering error after loading library:", renderError);
-                            rendered = match[0]; // Fall back to original if error persists
-                        }
-                    } else {
-                        console.error("KaTeX rendering error:", e);
-                        rendered = match[0]; // Fall back to original on error
-                    }
+                    console.error("KaTeX rendering error:", e);
+                    rendered = match[0]; // Fall back to original on error
                 }
 
                 // Replace the matched formula in the modified text
@@ -337,7 +357,7 @@ export default class TocWidget extends RightPanelWidget {
             //
 
             const headingText = await this.replaceMathTextWithKatax(m[2]);
-            const $itemContent = $('<div class="item-content">').html(headingText);
+            const $itemContent = $('<div class="item-content">').html(DOMPurify.sanitize(headingText, TOC_PURIFY_CONFIG) as string);
             const $li = $("<li>").append($itemContent)
                 .on("click", () => this.jumpToHeading(headingIndex));
             $ols[$ols.length - 1].append($li);

@@ -5,6 +5,7 @@ enum Command {
     searchNotes,
     createNoteIntoInbox,
     showRecentChanges,
+    showDeletedNotes,
     showOptions,
     commandPalette,
     toggleZenMode
@@ -22,6 +23,11 @@ export interface HiddenSubtreeItem {
     id: string;
     title: string;
     type: LauncherNoteType;
+    /**
+     * The MIME type to use for this item (e.g. `text/x-markdown`). Only relevant for code notes;
+     * if omitted, the default MIME for the type is used.
+     */
+    mime?: string;
     /**
      * The icon to use for this item, in the format "bx-icon-name" (e.g., `bx-file-blank`), *without* the leading `bx `.
      */
@@ -45,7 +51,8 @@ export interface HiddenSubtreeItem {
         | "commandPalette"
         | "toggleZenMode"
         | "mobileTabSwitcher"
-        | "sidebarChat";
+        | "sidebarChat"
+        | "colorSchemeSwitcher";
     command?: keyof typeof Command;
     /**
      * If set to true, then branches will be enforced to be in the correct place.

@@ -54,11 +54,10 @@ Trilium is a personal knowledge base where users have full control over their ow
 
 Vulnerabilities that require a user to inject malicious content into their own notes and then view it themselves are not considered security issues.
 
-#### Electron Architecture (nodeIntegration)
-Trilium's desktop application runs with `nodeIntegration: true` to enable its powerful scripting features. This is an intentional design decision, similar to VS Code extensions having full system access. We mitigate risks by:
-- Sanitizing content at input boundaries
-- Fixing specific XSS vectors as they're discovered
-- Using Electron fuses to prevent external abuse
+#### Electron Architecture
+The desktop application follows the Electron security checklist: `nodeIntegration` is disabled, `contextIsolation` is enabled, and the renderer can only reach the main process through a whitelisted `contextBridge` API (`window.electronApi`). Embedded web content (Web View notes) is isolated in a dedicated session partition with deny-by-default permission handlers, `<webview>` attach requests are vetted in the main process, and window-open/navigation requests are checked against a scheme allowlist. Electron fuses additionally prevent external abuse.
+
+User scripting (see Self-XSS above) still intentionally allows arbitrary JavaScript in the renderer, so reports that reduce to "a user script can call the frontend API" remain out of scope. Renderer-to-main escapes, however, **are in scope**: gaining Node.js access from the renderer, bypassing the preload bridge whitelist, or escaping the webview isolation.
 
 #### Authenticated User Actions
 Actions that require valid authentication and only affect the authenticated user's own data are generally not vulnerabilities.

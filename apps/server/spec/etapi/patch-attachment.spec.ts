@@ -1,8 +1,10 @@
+import { cls } from "@triliumnext/core";
 import { Application } from "express";
 import { beforeAll, describe, expect, it } from "vitest";
 import supertest from "supertest";
 import { createNote, login } from "./utils.js";
 import config from "../../src/services/config.js";
+import sql from "../../src/services/sql.js";
 
 let app: Application;
 let token: string;
@@ -73,6 +75,29 @@ describe("etapi/attachment-content", () => {
             })
             .expect(400);
         expect(response.body.code).toStrictEqual("PROPERTY_VALIDATION_ERROR");
+    });
+
+    it("reports a 500 when creating an attachment without an owner", async () => {
+        const response = await supertest(app)
+            .post("/etapi/attachments")
+            .auth(USER, token, { "type": "basic"})
+            .send({ role: "file", mime: "text/plain", title: "orphan" })
+            .expect(500);
+        expect(response.body.code).toStrictEqual("GENERIC");
+    });
+
+    it("refuses to patch a protected attachment", async () => {
+        cls.init(() => sql.execute("UPDATE attachments SET isProtected = 1 WHERE attachmentId = ?", [createdAttachmentId]));
+        try {
+            const response = await supertest(app)
+                .patch(`/etapi/attachments/${createdAttachmentId}`)
+                .auth(USER, token, { "type": "basic"})
+                .send({ title: "x" })
+                .expect(400);
+            expect(response.body.code).toStrictEqual("ATTACHMENT_IS_PROTECTED");
+        } finally {
+            cls.init(() => sql.execute("UPDATE attachments SET isProtected = 0 WHERE attachmentId = ?", [createdAttachmentId]));
+        }
     });
 
 });

@@ -1,0 +1,13 @@
+.shortcut-hint-button {
+    padding-inline: 8px;
+    gap: 5px;
+    white-space: nowrap;
+
+    /* Keycap style comes from the shared `.tn-shortcut-hints-kbd` rule. */
+
+    .shortcut-hint-button-key {
+        font-size: 0.85em;
+        font-family: monospace;
+        letter-spacing: .5pt;
+    }
+}

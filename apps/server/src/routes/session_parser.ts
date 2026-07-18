@@ -1,9 +1,11 @@
-import sql from "../services/sql.js";
-import session, { Store } from "express-session";
-import sessionSecret from "../services/session_secret.js";
-import config from "../services/config.js";
-import log from "../services/log.js";
 import type express from "express";
+import session, { Store } from "express-session";
+
+import config from "../services/config.js";
+import { getLog } from "@triliumnext/core";
+import sessionSecret from "../services/session_secret.js";
+import sql from "../services/sql.js";
+import sqlInit from "../services/sql_init.js";
 
 /**
  * The amount of time in milliseconds after which expired sessions are cleaned up.
@@ -20,6 +22,10 @@ export const SESSION_COOKIE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 export class SQLiteSessionStore extends Store {
 
     get(sid: string, callback: (err: any, session?: session.SessionData | null) => void): void {
+        if (!sqlInit.isDbInitialized()) {
+            return callback(null, null);
+        }
+
         try {
             const data = sql.getValue<string>(/*sql*/`SELECT data FROM sessions WHERE id = ?`, sid);
             let session = null;
@@ -28,12 +34,16 @@ export class SQLiteSessionStore extends Store {
             }
             return callback(null, session);
         } catch (e: unknown) {
-            log.error(e);
+            getLog().error(e);
             return callback(e);
         }
     }
 
     set(id: string, session: session.SessionData, callback?: (err?: any) => void): void {
+        if (!sqlInit.isDbInitialized()) {
+            return callback?.();
+        }
+
         try {
             const expires = session.cookie?.expires
                 ? new Date(session.cookie.expires).getTime()
@@ -47,22 +57,30 @@ export class SQLiteSessionStore extends Store {
             });
             callback?.();
         } catch (e) {
-            log.error(e);
+            getLog().error(e);
             return callback?.(e);
         }
     }
 
     destroy(sid: string, callback?: (err?: any) => void): void {
+        if (!sqlInit.isDbInitialized()) {
+            return callback?.();
+        }
+
         try {
             sql.execute(/*sql*/`DELETE FROM sessions WHERE id = ?`, sid);
             callback?.();
         } catch (e) {
-            log.error(e);
+            getLog().error(e);
             callback?.(e);
         }
     }
 
     touch(sid: string, session: session.SessionData, callback?: (err?: any) => void): void {
+        if (!sqlInit.isDbInitialized()) {
+            return callback?.();
+        }
+
         // For now it's only for session cookies ("Remember me" unchecked).
         if (session.cookie?.expires) {
             callback?.();
@@ -74,7 +92,7 @@ export class SQLiteSessionStore extends Store {
             sql.execute(/*sql*/`UPDATE sessions SET expires = ? WHERE id = ?`, [expires, sid]);
             callback?.();
         } catch (e) {
-            log.error(e);
+            getLog().error(e);
             callback?.(e);
         }
     }
@@ -90,7 +108,7 @@ export class SQLiteSessionStore extends Store {
             const expires = sql.getValue<number>(/*sql*/`SELECT expires FROM sessions WHERE id = ?`, sid);
             return expires !== undefined ? new Date(expires) : null;
         } catch (e) {
-            log.error(e);
+            getLog().error(e);
             return null;
         }
     }
@@ -107,6 +125,8 @@ const sessionParser: express.RequestHandler = session({
     cookie: {
         path: "/",
         httpOnly: true,
+        secure: config.Network.https,
+        sameSite: "lax",
         maxAge: config.Session.cookieMaxAge * 1000 // needs value in milliseconds
     },
     name: "trilium.sid",
@@ -115,6 +135,8 @@ const sessionParser: express.RequestHandler = session({
 
 export function startSessionCleanup() {
     setInterval(() => {
+        if (!sqlInit.isDbInitialized()) return;
+
         // Clean up expired sessions.
         const now = Date.now();
         const result = sql.execute(/*sql*/`DELETE FROM sessions WHERE expires < ?`, now);

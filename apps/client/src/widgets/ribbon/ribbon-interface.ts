@@ -32,3 +32,10 @@ export interface TabConfiguration {
      */
     stayInDom?: boolean;
 }
+
+export async function shouldShowTab(showConfig: TabConfiguration["show"], context: TitleContext) {
+    if (showConfig === null || showConfig === undefined) return true;
+    if (typeof showConfig === "boolean") return showConfig;
+    if ("then" in showConfig) return await showConfig(context);
+    return showConfig(context);
+}

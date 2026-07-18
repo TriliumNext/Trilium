@@ -5,7 +5,7 @@ The _Quick search_ function does a full-text search (that is, it searches throug
 
 The alternative to the quick search is the <a class="reference-link" href="Search.md">Search</a> function, which opens in a dedicated tab and has support for advanced queries.
 
-For even faster navigation, it's possible to use <a class="reference-link" href="Jump%20to.md">Jump to...</a> which will only search through the note titles instead of the content.
+For even faster navigation, it's possible to use <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to...</a> which will only search through the note titles instead of the content.
 
 ## Layout
 

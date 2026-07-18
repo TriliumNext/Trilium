@@ -13,7 +13,7 @@ import date_notes from "../../../services/date_notes";
 import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import { isMobile } from "../../../services/utils";
+import { escapeHtml, isMobile } from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import Button, { ButtonGroup } from "../../react/Button";
@@ -21,13 +21,12 @@ import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
 import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
-import TouchBar, { TouchBarButton, TouchBarLabel, TouchBarSegmentedControl, TouchBarSpacer } from "../../react/TouchBar";
 import { ViewModeProps } from "../interface";
 import { changeEvent, newEvent } from "./api";
 import Calendar from "./calendar";
 import { openCalendarContextMenu } from "./context_menu";
 import { buildEvents, buildEventsForCalendar } from "./event_builder";
-import { parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
+import { formatDateToLocalISO, isValidDuration, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 
 interface CalendarViewData {
 
@@ -41,6 +40,13 @@ interface CalendarViewData {
 }
 
 const CALENDAR_VIEWS = [
+    {
+        type: "timeGridDay",
+        name: t("calendar.day"),
+        icon: "bx bx-calendar-event",
+        previousText: t("calendar.day_previous"),
+        nextText: t("calendar.day_next")
+    },
     {
         type: "timeGridWeek",
         name: t("calendar.week"),
@@ -73,6 +79,9 @@ const CALENDAR_VIEWS = [
 
 const SUPPORTED_CALENDAR_VIEW_TYPE = CALENDAR_VIEWS.map(v => v.type);
 
+const DEFAULT_SLOT_DURATION = "00:15:00";
+const DEFAULT_SLOT_LABEL_INTERVAL = "01:00:00";
+
 // Here we hard-code the imports in order to ensure that they are embedded by webpack without having to load all the languages.
 export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ default: LocaleInput }>) | null> = {
     de: () => import("@fullcalendar/core/locales/de"),
@@ -80,6 +89,7 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
     fr: () => import("@fullcalendar/core/locales/fr"),
     it: () => import("@fullcalendar/core/locales/it"),
     hi: () => import("@fullcalendar/core/locales/hi"),
+    id: () => import("@fullcalendar/core/locales/id"),
     ga: null,
     cn: () => import("@fullcalendar/core/locales/zh-cn"),
     cs: () => import("@fullcalendar/core/locales/cs"),
@@ -109,6 +119,8 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const [ weekNumbers ] = useNoteLabelBoolean(note, "calendar:weekNumbers");
     const [ calendarView, setCalendarView ] = useNoteLabel(note, "calendar:view");
     const [ initialDate ] = useNoteLabel(note, "calendar:initialDate");
+    const [ slotDuration ] = useNoteLabel(note, "calendar:slotDuration");
+    const [ slotLabelInterval ] = useNoteLabel(note, "calendar:slotLabelInterval");
     const initialView = useRef(calendarView);
     const viewSpacedUpdate = useSpacedUpdate(() => setCalendarView(initialView.current));
     useResizeObserver(containerRef, () => calendarRef.current?.updateSize());
@@ -144,7 +156,12 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
             const event = api.getEventById(noteId);
             const note = froca.getNoteFromCache(noteId);
             if (!event || !note) continue;
-            event.setProp("title", note.title);
+            // Only update the title if it has actually changed.
+            // setProp() triggers FullCalendar's eventChange callback, which would
+            // re-save the event's dates and cause unwanted side effects.
+            if (event.title !== note.title) {
+                event.setProp("title", note.title);
+            }
         }
     });
 
@@ -160,7 +177,9 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 firstDay={firstDayOfWeek ?? 0}
                 weekends={!hideWeekends}
                 weekNumbers={weekNumbers}
-                height="90%"
+                slotDuration={isValidDuration(slotDuration) ? slotDuration : DEFAULT_SLOT_DURATION}
+                slotLabelInterval={isValidDuration(slotLabelInterval) ? slotLabelInterval : DEFAULT_SLOT_LABEL_INTERVAL}
+                height="100%"
                 nowIndicator
                 handleWindowResize={false}
                 initialDate={initialDate || undefined}
@@ -174,7 +193,6 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                     }
                 }}
             />
-            <CalendarTouchBar calendarRef={calendarRef} />
         </div>
     );
 }
@@ -195,11 +213,37 @@ function CalendarCollectionProperties({ note, calendarRef }: {
                 <span className="title">{title}</span>
                 <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} onClick={() => calendarRef.current?.next()} />
                 <Button text={t("calendar.today")} onClick={() => calendarRef.current?.today()} />
+                <PinDateButton note={note} calendarRef={calendarRef} />
                 {isMobileLocal && <MobileCalendarViewSwitcher calendarRef={calendarRef} />}
             </>}
             rightChildren={<>
                 {!isMobileLocal && <DesktopCalendarViewSwitcher calendarRef={calendarRef} />}
             </>}
+        />
+    );
+}
+
+function PinDateButton({ note, calendarRef }: {
+    note: FNote;
+    calendarRef: RefObject<FullCalendar>;
+}) {
+    const [ initialDate, setInitialDate ] = useNoteLabel(note, "calendar:initialDate");
+    const isPinned = !!initialDate;
+
+    return (
+        <ActionButton
+            icon={isPinned ? "bx bxs-pin" : "bx bx-pin"}
+            text={isPinned ? t("calendar.unpin_date") : t("calendar.pin_date")}
+            onClick={() => {
+                if (isPinned) {
+                    setInitialDate(null);
+                } else {
+                    const date = formatDateToLocalISO(calendarRef.current?.view.currentStart);
+                    if (date) {
+                        setInitialDate(date);
+                    }
+                }
+            }}
         />
     );
 }
@@ -299,6 +343,12 @@ function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean, c
     }, [ note, componentId ]);
 
     const onEventChange = useCallback(async (e: EventChangeArg) => {
+        // Only process actual date/time changes, not other property changes (e.g., title via setProp).
+        const datesChanged = e.oldEvent.start?.getTime() !== e.event.start?.getTime()
+            || e.oldEvent.end?.getTime() !== e.event.end?.getTime()
+            || e.oldEvent.allDay !== e.event.allDay;
+        if (!datesChanged) return;
+
         const { startDate, endDate } = parseStartEndDateFromEvent(e.event);
         if (!startDate) return;
 
@@ -333,6 +383,7 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
         if (iconClass) {
             let titleContainer: HTMLElement | null = null;
             switch (e.view.type) {
+                case "timeGridDay":
                 case "timeGridWeek":
                 case "dayGridMonth":
                     titleContainer = e.el.querySelector(".fc-event-title");
@@ -345,7 +396,7 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
             }
 
             if (titleContainer) {
-                const icon = /*html*/`<span class="${iconClass}"></span> `;
+                const icon = /*html*/`<span class="${escapeHtml(iconClass)}"></span> `;
                 titleContainer.insertAdjacentHTML("afterbegin", icon);
             }
         }
@@ -365,6 +416,7 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
 
             let mainContainer;
             switch (e.view.type) {
+                case "timeGridDay":
                 case "timeGridWeek":
                 case "dayGridMonth":
                     mainContainer = e.el.querySelector(".fc-event-main");
@@ -392,40 +444,6 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
         }
     }, []);
     return { eventDidMount };
-}
-
-function CalendarTouchBar({ calendarRef }: { calendarRef: RefObject<FullCalendar> }) {
-    const { title, viewType } = useOnDatesSet(calendarRef);
-
-    return (
-        <TouchBar>
-            <TouchBarSegmentedControl
-                mode="single"
-                segments={CALENDAR_VIEWS.map(({ name }) => ({
-                    label: name,
-                }))}
-                selectedIndex={CALENDAR_VIEWS.findIndex(v => v.type === viewType) ?? 0}
-                onChange={(selectedIndex) => calendarRef.current?.changeView(CALENDAR_VIEWS[selectedIndex].type)}
-            />
-
-            <TouchBarSpacer size="flexible" />
-            <TouchBarLabel label={title ?? ""} />
-            <TouchBarSpacer size="flexible" />
-
-            <TouchBarButton
-                label={t("calendar.today")}
-                click={() => calendarRef.current?.today()}
-            />
-            <TouchBarButton
-                icon="NSImageNameTouchBarGoBackTemplate"
-                click={() => calendarRef.current?.prev()}
-            />
-            <TouchBarButton
-                icon="NSImageNameTouchBarGoForwardTemplate"
-                click={() => calendarRef.current?.next()}
-            />
-        </TouchBar>
-    );
 }
 
 function useOnDatesSet(calendarRef: RefObject<FullCalendar>) {

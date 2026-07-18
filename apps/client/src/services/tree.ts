@@ -95,6 +95,7 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
         return effectivePathSegments;
     } else {
         const noteId = getNoteIdFromUrl(notePath);
+        /* v8 ignore next 3 -- unreachable: notePath is non-empty here (guarded at the top), so getNoteIdFromUrl always returns its last segment */
         if (!noteId) {
             throw new Error(`Unable to find note with ID: ${noteId}.`);
         }
@@ -118,12 +119,7 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
 ws.subscribeToMessages((message) => {
     if (message.type === "openNote") {
         appContext.tabManager.activateOrOpenNote(message.noteId);
-
-        if (utils.isElectron()) {
-            const currentWindow = utils.dynamicRequire("@electron/remote").getCurrentWindow();
-
-            currentWindow.show();
-        }
+        window.electronApi?.window.showWindow();
     }
 });
 
@@ -264,6 +260,7 @@ async function getNoteTitleWithPathAsSuffix(notePath: string) {
 
     const titleComponents = await getNotePathTitleComponents(notePath);
 
+    /* v8 ignore next 3 -- unreachable: getNotePathTitleComponents always returns a non-empty array (it pushes at least one title for any path, including "") */
     if (!titleComponents || titleComponents.length === 0) {
         return "";
     }

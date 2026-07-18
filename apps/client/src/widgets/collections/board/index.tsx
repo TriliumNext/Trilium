@@ -5,6 +5,7 @@ import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useSta
 
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
+import { isIMEComposing } from "../../../services/shortcuts";
 import toast from "../../../services/toast";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import FormTextArea from "../../react/FormTextArea";
@@ -124,8 +125,8 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
             loadResults.getBranchRows().some(branch => noteIds.includes(branch.noteId!)) ||
             // React to changes in note icon or color.
             loadResults.getAttributeRows().some(attr => [ "iconClass", "color" ].includes(attr.name ?? "") && noteIds.includes(attr.noteId ?? "")) ||
-            // React to attachment change
-            loadResults.getAttachmentRows().some(att => att.ownerId === parentNote.noteId && att.title === "board.json") ||
+            // External changes to the board.json attachment arrive via the viewConfig prop
+            // (see useViewModeConfig), which re-triggers the refresh effect.
             // React to changes in "groupBy"
             loadResults.getAttributeRows().some(attr => attr.name === "board:groupBy" && attr.noteId === parentNote.noteId);
 
@@ -269,6 +270,12 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, mode, is
     });
 
     const onKeyDown = (e: TargetedKeyboardEvent<HTMLInputElement | HTMLTextAreaElement> | KeyboardEvent) => {
+        // Skip processing during IME composition so the Enter that commits a
+        // CJK conversion does not also save the title with unconfirmed text.
+        if (isIMEComposing(e)) {
+            return;
+        }
+
         if (e.key === "Enter" || e.key === "Escape") {
             e.preventDefault();
             e.stopPropagation();

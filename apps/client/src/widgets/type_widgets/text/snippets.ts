@@ -1,10 +1,10 @@
-import debounce from "debounce";
+import debounce from "../../../services/debounce.js";
 import froca from "../../../services/froca.js";
 import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
 import type { TemplateDefinition } from "@triliumnext/ckeditor5";
-import appContext from "../../../components/app_context.js";
 import type FNote from "../../../entities/fnote.js";
+import { escapeHtml } from "../../../services/utils.js";
 
 interface TemplateData {
     title: string;
@@ -21,24 +21,36 @@ const debouncedHandleContentUpdate = debounce(handleContentUpdate, 1000);
  * @returns the list of templates.
  */
 export default async function getTemplates() {
-    // Build the definitions and populate the cache.
-    const snippets = await search.searchForNotes("#textSnippet");
-    const definitions: TemplateDefinition[] = [];
-    for (const snippet of snippets) {
-        const { description } = await invalidateCacheFor(snippet);
+    try {
+        // Text snippets carry the legacy `#textSnippet` label; the unified `#snippet` notes also
+        // cover Markdown/Code. Restrict to text notes so only HTML/rich-text snippets reach the
+        // CKEditor list. The type filter is applied client-side rather than in the query: a query
+        // starting with "(" trips the search lexer (the leading paren is dropped, see lex.ts), which
+        // corrupts the parse and matches every note.
+        const snippets = (await search.searchForNotes("#textSnippet OR #snippet"))
+            .filter((snippet) => snippet.type === "text" && !snippet.isArchived && snippet.isContentAvailable());
+        const definitions: TemplateDefinition[] = [];
+        for (const snippet of snippets) {
+            const { description } = await invalidateCacheFor(snippet);
 
-        definitions.push({
-            title: snippet.title,
-            data: () => templateCache.get(snippet.noteId)?.content ?? "",
-            icon: buildIcon(snippet),
-            description
-        });
+            definitions.push({
+                title: snippet.title,
+                data: () => templateCache.get(snippet.noteId)?.content ?? "",
+                icon: buildIcon(snippet),
+                description
+            });
+        }
+        return definitions;
+    } catch (e) {
+        logError("Error while building text snippet templates: ", e);
+        return [];
     }
-    return definitions;
 }
 
 async function invalidateCacheFor(snippet: FNote) {
-    const description = snippet.getLabelValue("textSnippetDescription");
+    // Prefer the unified `snippetDescription`, falling back to the legacy `textSnippetDescription`
+    // so existing text snippets keep showing their description without any migration.
+    const description = snippet.getLabelValue("snippetDescription") ?? snippet.getLabelValue("textSnippetDescription");
     const data: TemplateData = {
         title: snippet.title,
         description: description ?? undefined,
@@ -52,7 +64,7 @@ function buildIcon(snippet: FNote) {
     return /*xml*/`\
 <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
   <foreignObject x="0" y="0" width="20" height="20">
-    <span class="note-icon ${snippet.getIcon()} ${snippet.getColorClass()}" xmlns="http://www.w3.org/1999/xhtml"></span>
+    <span class="note-icon ${escapeHtml(snippet.getIcon())} ${escapeHtml(snippet.getColorClass())}" xmlns="http://www.w3.org/1999/xhtml"></span>
   </foreignObject>
 </svg>`
 }

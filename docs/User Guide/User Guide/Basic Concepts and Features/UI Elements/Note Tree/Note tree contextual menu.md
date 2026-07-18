@@ -1,5 +1,5 @@
 # Note tree contextual menu
-<figure class="image image-style-align-right"><img style="aspect-ratio:269/608;" src="1_Note tree contextual menu_.png" width="269" height="608"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:269/608;" src="1_Note tree contextual menu_image.png" width="269" height="608"></figure>
 
 The _note tree menu_ can be accessed by right-clicking in the <a class="reference-link" href="../Note%20Tree.md">Note Tree</a>.
 
@@ -70,7 +70,7 @@ The contextual menu can operate:
 
 ## Advanced options
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:231/263;" src="Note tree contextual menu_.png" width="231" height="263"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:231/263;" src="Note tree contextual menu_image.png" width="231" height="263"></figure>
 
 The advanced options menu offers some of the less frequently used actions for notes.
 

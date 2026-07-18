@@ -1,0 +1,33 @@
+.delete-notes-dialog .tn-card {
+    margin-bottom: 16px;
+}
+
+.delete-notes-dialog .tn-card:last-child {
+    margin-bottom: 0;
+}
+
+.delete-notes-dialog .preview-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 200px;
+    overflow: auto;
+}
+
+.delete-notes-dialog .preview-list li {
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--main-border-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.delete-notes-dialog .preview-list li:last-child {
+    border-bottom: none;
+}
+
+.delete-notes-dialog .preview-list small {
+    margin-inline-start: 8px;
+    font-size: 0.8em;
+    color: var(--muted-text-color);
+}

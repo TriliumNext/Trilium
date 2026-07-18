@@ -95,6 +95,8 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
             // move the note context rendered widget after the originating widget
             this.$widget.find(`[data-ntx-id="${noteContext.ntxId}"]`).insertAfter(this.$widget.find(`[data-ntx-id="${ntxId}"]`));
+
+            this.refresh();
         }
 
 
@@ -112,6 +114,12 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         const contexts = appContext.tabManager.noteContexts;
         const currentIndex = contexts.findIndex((c) => c.ntxId === ntxId);
         if (currentIndex === -1) return;
+
+        // the pane showing a pinned note can't be closed (unpin the tab first). Bail before the
+        // demote/reorder below, which would otherwise strip the main context of its pinned state.
+        if (contexts[currentIndex].pinned) {
+            return;
+        }
 
         const isRemoveMainContext = contexts[currentIndex].isMainContext();
         if (isRemoveMainContext && currentIndex + 1 < contexts.length) {
@@ -160,6 +168,10 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         // reorder the note context widgets
         this.$widget.find(`[data-ntx-id="${ntxIds[leftIndex]}"]`).insertAfter(this.$widget.find(`[data-ntx-id="${ntxIds[leftIndex + 1]}"]`));
 
+        // the reorder changes which split is last; the activation below may be a no-op (the moved
+        // context can already be active), so it can't be relied on to refresh.
+        this.refresh();
+
         // activate context that now contains the original note
         await appContext.tabManager.activateNoteContext(isMovingLeft ? ntxIds[leftIndex + 1] : ntxIds[leftIndex]);
 
@@ -186,6 +198,9 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         }
 
         splitService.delNoteSplitResizer(ntxIds);
+
+        // closing a non-active split fires no activation, so nothing else would refresh here
+        this.refresh();
     }
 
     contextsReopenedEvent({ ntxId, mainNtxId, afterNtxId }: EventData<"contextsReopened">) {
@@ -198,6 +213,8 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
             this.$widget.find(`[data-ntx-id="${mainNtxId}"]`).insertBefore(this.$widget.find(`[data-ntx-id="${beforeNtxId}"]`));
         }
+
+        this.refresh();
     }
 
     async refresh() {
@@ -207,6 +224,13 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         for (const child of this.children as NoteContextAwareWidget[]) {
             child.$widget.toggleClass("active", !!child.noteContext?.isActive());
         }
+
+        // Mark the rightmost visible split. CSS can't reach a split from outside #center-pane, so
+        // siblings of it (the right pane peek button) need this hook to match its background.
+        // Read the DOM, not `this.children`: splits are reordered in place, the array is not.
+        const $visibleSplits = this.$widget.children(".note-split:not(.hidden-ext)");
+        $visibleSplits.removeClass("last-visible");
+        $visibleSplits.last().addClass("last-visible");
     }
 
     toggleInt(show: boolean) {} // not needed
@@ -244,7 +268,9 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
             if (widget.hasBeenAlreadyShown || name === "noteSwitchedAndActivated" || appContext.tabManager.getActiveMainContext() === noteSwitchedContext.noteContext.getMainContext()) {
                 widget.hasBeenAlreadyShown = true;
 
-                return [widget.handleEvent("noteSwitched", noteSwitchedContext), this.refreshNotShown(noteSwitchedContext)];
+                // Promise.all (not a bare array) so that awaiting triggerEvent("noteSwitched")
+                // genuinely waits for the tab's widgets to process the switch.
+                return Promise.all([ widget.handleEvent("noteSwitched", noteSwitchedContext), this.refreshNotShown(noteSwitchedContext) ]);
             }
             return Promise.resolve();
 

@@ -11,8 +11,8 @@ http://domain.com {
 }
 ```
 
-This is for newer versions where the share functionality is isolated, for older versions it's required to also include `/assets`.<sup><a href="#fn2b8mg20aol8">[1]</a></sup>
+This is for newer versions where the share functionality is isolated, for older versions it's required to also include `/assets`.[<sup>[1]</sup>](#fn2b8mg20aol8)
 
-1.  <sup><strong><a href="#fnref2b8mg20aol8">^</a></strong></sup>
+1.  [**<sup>^</sup>**](#fnref2b8mg20aol8)
     
     [https://github.com/orgs/TriliumNext/discussions/7341#discussioncomment-14679897](https://github.com/orgs/TriliumNext/discussions/7341#discussioncomment-14679897)

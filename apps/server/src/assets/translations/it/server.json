@@ -94,7 +94,9 @@
     "toggle-ribbon-tab-note-map": "Mostra/Nascondi la mappa delle note",
     "toggle-ribbon-tab-note-info": "Mostra/Nascondi le informazioni sulla nota",
     "toggle-ribbon-tab-note-paths": "Mostra/Nascondi i percorsi della nota",
-    "toggle-ribbon-tab-similar-notes": "Mostra/Nascondi le note simili"
+    "toggle-ribbon-tab-similar-notes": "Mostra/Nascondi le note simili",
+    "save-named-revision": "Salva Revisione con Nome",
+    "toggle-archived-notes": "Attiva/disattiva la visualizzazione delle note archiviate"
   },
   "hidden-subtree": {
     "options-title": "Opzioni",
@@ -102,7 +104,7 @@
     "shortcuts-title": "Scorciatoie",
     "text-notes": "Note di testo",
     "code-notes-title": "Note di codice",
-    "images-title": "Immagini",
+    "images-title": "Media",
     "spellcheck-title": "Controllo ortografico",
     "password-title": "Password",
     "multi-factor-authentication-title": "Autenticazione a più fattori",
@@ -151,7 +153,20 @@
     "tab-switcher-title": "Selettore scheda",
     "llm-chat-history-title": "Cronologia chat IA",
     "llm-title": "AI / LLM",
-    "sidebar-chat-title": "Chat con IA"
+    "sidebar-chat-title": "Chat con IA",
+    "custom-dictionary-title": "Dizionario personalizzato",
+    "task-states-title": "Stati delle attività",
+    "task-state-none": "Nessuno",
+    "task-state-doing": "Fare",
+    "task-state-done": "Fatto",
+    "task-state-maybe": "Forse",
+    "task-state-cancelled": "Annullato",
+    "task-state-attr-state-id": "Identificativo (obbligatorio)",
+    "task-state-attr-markdown-symbol": "Simbolo Markdown",
+    "task-state-attr-is-completed": "Si considera completato",
+    "task-state-attr-color": "Colore",
+    "task-state-attr-is-hidden": "Nascosto dall'elenco",
+    "security-title": "Sicurezza"
   },
   "notes": {
     "new-note": "Nuova nota",
@@ -185,7 +200,9 @@
   "migration": {
     "old_version": "La migrazione diretta dalla tua versione attuale non è supportata. Aggiorna prima all'ultima versione v0.60.4 e solo dopo a questa versione.",
     "error_message": "Errore durante la migrazione alla versione {{version}}: {{stack}}",
-    "wrong_db_version": "La versione del database ({{version}}) è più recente di quanto l'applicazione si aspetti ({{targetVersion}}), il che significa che è stato creato da una versione più nuova e incompatibile di Trilium. Aggiorna Trilium all'ultima versione per risolvere questo problema."
+    "wrong_db_version": "La versione del database ({{version}}) è più recente di quanto l'applicazione si aspetti ({{targetVersion}}), il che significa che è stato creato da una versione più nuova e incompatibile di Trilium. Aggiorna Trilium all'ultima versione per risolvere questo problema.",
+    "invalid_db_version": "La versione del database non è un numero valido. Questo di solito indica che l'opzione «dbVersion» nel database è danneggiata. Si prega di ripristinare il sistema da un backup.",
+    "automatic_migrations_disabled": "Le migrazioni automatiche del database vengono disattivate tramite una variabile d'ambiente TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}"
   },
   "modals": {
     "error_title": "Errore"
@@ -197,13 +214,15 @@
     "last-updated": "Ultimo aggiornamento il {{- date}}",
     "subpages": "Sottopagine:",
     "on-this-page": "In questa pagina",
-    "expand": "Espandi"
+    "expand": "Espandi",
+    "toggle-navigation": "Attiva/disattiva la navigazione",
+    "toggle-toc": "Mostra/Nascondi sommario",
+    "logo-alt": "Logo"
   },
   "keyboard_actions": {
     "back-in-note-history": "Naviga alla nota precedente della cronologia",
     "forward-in-note-history": "Naviga alla prossima nota della cronologia",
     "open-jump-to-note-dialog": "Apri la finestra di dialogo \"Salta alla nota\"",
-    "open-command-palette": "Apri il menù dei comandi",
     "scroll-to-active-note": "Scorri l'albero fino alla nota attiva",
     "quick-search": "Attiva la barra di ricerca rapida",
     "search-in-subtree": "Cerca le note nel sotto-albero della nota attiva",
@@ -215,11 +234,6 @@
     "create-note-after": "Crea una nota dopo quella attiva",
     "create-note-into": "Crea una nota come figlia di quella attiva",
     "create-note-into-inbox": "Crea una nota nella casella di posta (se definita) o nella nota del giorno",
-    "delete-note": "Elimina la nota",
-    "move-note-up": "Sposta su la nota",
-    "move-note-down": "Sposta giù la nota",
-    "move-note-up-in-hierarchy": "Sposta su la nota nella gerarchia",
-    "move-note-down-in-hierarchy": "Sposta giù la nota nella gerarchia",
     "edit-note-title": "Salta dall'albero al dettaglio della nota e modifica il titolo",
     "edit-branch-prefix": "Mostra la finestra di dialogo \"Modifica il prefisso del ramo\"",
     "clone-notes-to": "Clona le note selezionate",
@@ -229,27 +243,12 @@
     "paste-notes-from-clipboard": "Incolla le note dagli appunti nella nota attiva",
     "cut-notes-to-clipboard": "Tagliare le note selezionate negli appunti",
     "select-all-notes-in-parent": "Seleziona tutte le note dal livello di nota corrente",
-    "add-note-above-to-the-selection": "Aggiungi una nota sopra alla selezione",
-    "add-note-below-to-selection": "Aggiungi una nota sotto alla selezione",
-    "duplicate-subtree": "Duplica il sotto-albero",
     "tabs-and-windows": "Schede e Finestre",
-    "open-new-tab": "Apri una nuova scheda",
-    "close-active-tab": "Chiudi la scheda attiva",
     "reopen-last-tab": "Riapri l'ultima scheda chiusa",
     "activate-next-tab": "Attiva la scheda sulla destra",
     "activate-previous-tab": "Attiva la scheda a sinistra",
     "open-new-window": "Apri una nuova finestra vuota",
     "toggle-tray": "Mostra/nascondi l'applicazione dal vassoio di sistema",
-    "first-tab": "Attiva la prima scheda nell'elenco",
-    "second-tab": "Attiva la seconda scheda nell'elenco",
-    "third-tab": "Attiva la terza scheda nell'elenco",
-    "fourth-tab": "Attiva la quarta scheda nella lista",
-    "fifth-tab": "Attiva la quinta scheda nell'elenco",
-    "sixth-tab": "Attiva la sesta scheda nell'elenco",
-    "seventh-tab": "Attiva la settima scheda nella lista",
-    "eight-tab": "Attiva l'ottava scheda nell'elenco",
-    "ninth-tab": "Attiva la nona scheda nella lista",
-    "last-tab": "Attiva l'ultima scheda nell'elenco",
     "dialogs": "Finestre di dialogo",
     "show-note-source": "Mostra la finestra di dialogo \"Sorgente della nota\"",
     "show-options": "Apri la pagina \"Opzioni\"",
@@ -266,44 +265,28 @@
     "paste-markdown-into-text": "Incolla il Markdown dagli appunti nella nota di testo",
     "cut-into-note": "Taglia la selezione dalla nota corrente e crea una sotto nota col testo selezionato",
     "add-include-note-to-text": "Apre la finestra di dialogo per includere una nota",
-    "edit-readonly-note": "Modifica una nota in sola lettura",
     "attributes-labels-and-relations": "Attributi (etichette e relazioni)",
     "add-new-label": "Crea una nuova etichetta",
     "create-new-relation": "Crea una nuova relazione",
     "ribbon-tabs": "Barra delle schede",
-    "toggle-basic-properties": "Mostra/Nascondi le proprietà di base",
-    "toggle-file-properties": "Mostra/Nascondi le proprietà del file",
-    "toggle-image-properties": "Mostra/Nascondi le proprietà dell'immagine",
-    "toggle-owned-attributes": "Mostra/Nascondi gli attributi propri",
-    "toggle-inherited-attributes": "Mostra/Nascondi gli attributi ereditati",
-    "toggle-promoted-attributes": "Mostra/Nascondi gli attributi promossi",
     "toggle-link-map": "Mostra/Nascondi la mappa dei collegamenti",
-    "toggle-note-info": "Mostra/Nascondi le informazioni sulla nota",
-    "toggle-note-paths": "Mostra/Nascondi i percorsi della nota",
-    "toggle-similar-notes": "Mostra/Nascondi note simili",
     "other": "Altro",
     "toggle-right-pane": "Attiva/Disattiva la visualizzazione del riquadro destro, che include l'indice e gli elementi evidenziati",
-    "print-active-note": "Stampa nota attiva",
     "open-note-externally": "Apri nota come file con l'applicazione predefinita",
-    "reload-frontend-app": "Ricarica frontend",
-    "open-dev-tools": "Apri strumenti di svilippo",
-    "toggle-full-screen": "Attiva la modalità a schermo intero",
-    "zoom-out": "Rimpicciolisci",
-    "zoom-in": "Ingrandisci",
     "render-active-note": "Elabora (ri-elabora) la nota corrente",
     "run-active-note": "Esegui nota JavaScript corrente (frontend/backend)",
     "toggle-note-hoisting": "Cambia l'ancoraggio della nota corrente",
     "find-in-text": "Mostra/Nascondi pannello di ricerca",
     "note-navigation": "Navigazione note",
-    "reset-zoom-level": "Reimposta il livello di ingrandimento",
     "copy-without-formatting": "Copia il testo selezionato senza formattazione",
     "force-save-revision": "Forza la creazione o il salvataggio di una nuova revisione della nota corrente",
     "toggle-book-properties": "Mostra/Nascondi le proprietà della collezione",
-    "export-as-pdf": "Esporta la nota corrente come PDF",
     "toggle-zen-mode": "Abilita/disabilita la modalità Zen (Interfaccia minimale per una scrittura senza distrazioni)",
     "toggle-left-note-tree-panel": "Mostra/Nascondi il pannello di sinistra (albero delle note)",
     "toggle-classic-editor-toolbar": "Mostra/Nascondi il pannello della formattazione per l'editor con la barra degli strumenti fissa",
-    "unhoist": "Rimuovi qualsiasi ancoraggio"
+    "unhoist": "Rimuovi qualsiasi ancoraggio",
+    "save-named-revision": "Salva una revisione con nome della nota attiva",
+    "toggle-archived-notes": "Mostra/nascondi le note archiviate nell'albero delle note"
   },
   "desktop": {
     "instance_already_running": "C'è già una istanza in esecuzione, verrà mostrata."
@@ -314,7 +297,7 @@
     "incorrect-totp": "Il codice TOTP è errato. Riprovare.",
     "incorrect-password": "Le credenziali sono errate. Riprovare.",
     "password": "Password",
-    "remember-me": "Ricorda l'accesso",
+    "remember-me": "Ricordami",
     "button": "Accedi",
     "sign_in_with_sso": "Accedi con {{ ssoIssuerName }}"
   },
@@ -325,47 +308,6 @@
     "password": "Password",
     "password-confirmation": "Conferma della password",
     "button": "Imposta password"
-  },
-  "setup": {
-    "heading": "Configurazione di Trilium Notes",
-    "new-document": "Sono un nuovo utente, e desidero creare un nuovo documento Trilium per le mie note",
-    "sync-from-desktop": "Ho già una istanza desktop, e desidero configurare la sincronizzazione con quest'ultima",
-    "sync-from-server": "Ho già una istanza server, e desidero configurare la sincronizzazione con quest'ultima",
-    "next": "Avanti",
-    "init-in-progress": "Inizializzazione del documento in corso",
-    "redirecting": "Sarai reindirizzato a breve all'applicazione.",
-    "title": "Configurazione"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sincronizza dal desktop",
-    "description": "Questa configurazione deve essere iniziata dalla istanza desktop:",
-    "step1": "Apri la tua istanza desktop di Trilium Notes.",
-    "step2": "Dal menù di Trilium, seleziona \"Opzioni\".",
-    "step3": "Clicca sulla categoria \"Sincronizzazione\".",
-    "step4": "Imposta \"{{- host}}\" come l'indirizzo dell'istanza server e clicca \"Salva\".",
-    "step5": "Clicca \"Prova sincronizzazione\" per verificare la connessione.",
-    "step6": "Dopo aver completato questi passaggi, clicca {{- link}}.",
-    "step6-here": "qui"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sincronizza dal server",
-    "instructions": "Inserire l'indirizzo e le credenziali del server Trilium. L'intero documento Trilium verrà scaricato dal server, e sarà configurata la sincronizzazione allo stesso. L'operazione potrebbe impiegare un po' di tempo, in base alla velocità della connessione e alla dimensione del documento.",
-    "server-host": "Indirizzo del server Trilium",
-    "server-host-placeholder": "https://<nome host>:<porta>",
-    "proxy-server": "Server proxy (facoltativo)",
-    "proxy-server-placeholder": "https://<nome host>:<porta>",
-    "note": "Note:",
-    "proxy-instruction": "Se il campo del proxy viene lasciato vuoto, il proxy di sistema verrà utilizzato (si applica solo all'applicazione desktop)",
-    "password": "Password",
-    "password-placeholder": "Password",
-    "back": "Indietro",
-    "finish-setup": "Termina configurazione"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sincronizzazione in corso",
-    "successful": "La sincronizzazione è stata configurata correttamente. Ci potrebbe volere un po' di tempo prima che la sincronizzazione iniziale termini. Appena sarà terminata, sarai ri-indirizzato alla pagina di accesso.",
-    "outstanding-items": "Elementi eccezionali in sincronizzazione:",
-    "outstanding-items-default": "N/A"
   },
   "share_404": {
     "title": "Pagina non trovata",
@@ -436,10 +378,45 @@
     "presentation_slide": "Diapositiva di presentazione",
     "presentation_slide_first": "Prima diapositiva",
     "presentation_slide_second": "Seconda diapositiva",
-    "background": "Contesto"
+    "background": "Contesto",
+    "markdown-snippet": "Snippet Markdown",
+    "code-snippet": "Codice Snippet",
+    "dashboard": "Pannello di controllo"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Database non inizializzato, seguire le istruzioni a schermo.",
     "db_not_initialized_server": "Database non inizializzato, visitare la pagina di configurazione - http://[host-del-tuo-server]:{{port}} per ricevere istruzioni su come inizializzare Trilium."
+  },
+  "script": {
+    "wrong-environment": "Impossibile eseguire la nota \"{{- noteTitle}}\" ({{- noteId}}). Si tratta di uno script {{- actualEnv}}, ma si è tentato di eseguirlo nell'ambiente {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Errore in {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" è una parola chiave riservata. Per cercare un valore letterale, usa le virgolette: \"{{- token}}\"",
+      "cannot-compare-with": "non è paragonabile a \"{{- token}}\". Per cercare un valore letterale, usa le virgolette: \"{{- token}}\"",
+      "misplaced-expression": "Espressione \"{{- token}}\" errata o incompleta",
+      "fulltext-after-expression": "\"{{- token}}\" non è un'espressione valida. Per cercare del testo, inseriscilo prima dei filtri degli attributi (ad esempio, \"{{- token}} #label\" invece di \"#label {{- token}}\").",
+      "unrecognized-expression": "Espressione non riconosciuta \"{{- token}}\""
+    }
+  },
+  "password": {
+    "incorrect": "La password inserita non è corretta."
+  },
+  "security-dialog": {
+    "enable-title": "Abilita {{settingLabel}}",
+    "enable-message": "Sei sicuro di voler abilitare {{settingLabel}}?",
+    "enable-detail": "{{warning}}\n\nAbilita questa opzione solo se intendi utilizzare esplicitamente questa funzione. Non abilitarla se richiesto da uno script o da una nota che non conosci.\n\nPer rendere effettiva questa modifica è necessario riavviare il sistema.",
+    "disable-title": "Disattiva {{settingLabel}}",
+    "disable-message": "{{settingLabel}} verrà disattivata.",
+    "disable-detail": "Perché questa modifica abbia effetto, è necessario riavviare il sistema.",
+    "cancel": "Annulla",
+    "enable": "Abilita",
+    "disable": "Disattiva",
+    "dont-ask-again": "Non chiedere di nuovo finché non si riavvia",
+    "backend-scripting": "Esecuzione di script sul backend",
+    "backend-scripting-warning": "Gli script di backend dispongono di pieno accesso al server, compreso il file system e la rete.",
+    "sql-console": "Console SQL",
+    "sql-console-warning": "La console SQL consente di eseguire query SQL arbitrarie sul database."
   }
 }

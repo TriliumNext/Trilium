@@ -3,7 +3,6 @@
     "back-in-note-history": "Navigate to previous note in history",
     "forward-in-note-history": "Navigate to next note in history",
     "open-jump-to-note-dialog": "Open \"Jump to note\" dialog",
-    "open-command-palette": "Open command palette",
     "scroll-to-active-note": "Scroll note tree to active note",
     "quick-search": "Activate quick search bar",
     "search-in-subtree": "Search for notes in the active note's subtree",
@@ -11,15 +10,11 @@
     "collapse-tree": "Collapses the complete note tree",
     "collapse-subtree": "Collapses subtree of current note",
     "sort-child-notes": "Sort child notes",
+    "toggle-archived-notes": "Show/hide archived notes in the note tree",
     "creating-and-moving-notes": "Creating and moving notes",
     "create-note-after": "Create note after active note",
     "create-note-into": "Create note as child of active note",
     "create-note-into-inbox": "Create a note in the inbox (if defined) or day note",
-    "delete-note": "Delete note",
-    "move-note-up": "Move note up",
-    "move-note-down": "Move note down",
-    "move-note-up-in-hierarchy": "Move note up in hierarchy",
-    "move-note-down-in-hierarchy": "Move note down in hierarchy",
     "edit-note-title": "Jump from tree to the note detail and edit title",
     "edit-branch-prefix": "Show \"Edit branch prefix\" dialog",
     "clone-notes-to": "Clone selected notes",
@@ -29,36 +24,23 @@
     "paste-notes-from-clipboard": "Paste notes from the clipboard into active note",
     "cut-notes-to-clipboard": "Cut selected notes to the clipboard",
     "select-all-notes-in-parent": "Select all notes from the current note level",
-    "add-note-above-to-the-selection": "Add note above to the selection",
-    "add-note-below-to-selection": "Add note below to the selection",
-    "duplicate-subtree": "Duplicate subtree",
     "tabs-and-windows": "Tabs & Windows",
-    "open-new-tab": "Open new tab",
-    "close-active-tab": "Close active tab",
     "reopen-last-tab": "Reopen the last closed tab",
     "activate-next-tab": "Activate tab on the right",
     "activate-previous-tab": "Activate tab on the left",
     "open-new-window": "Open new empty window",
     "toggle-tray": "Show/hide the application from the system tray",
-    "first-tab": "Activate the first tab in the list",
-    "second-tab": "Activate the second tab in the list",
-    "third-tab": "Activate the third tab in the list",
-    "fourth-tab": "Activate the fourth tab in the list",
-    "fifth-tab": "Activate the fifth tab in the list",
-    "sixth-tab": "Activate the sixth tab in the list",
-    "seventh-tab": "Activate the seventh tab in the list",
-    "eight-tab": "Activate the eighth tab in the list",
-    "ninth-tab": "Activate the ninth tab in the list",
-    "last-tab": "Activate the last tab in the list",
     "dialogs": "Dialogs",
     "show-note-source": "Show \"Note Source\" dialog",
     "show-options": "Open \"Options\" page",
     "show-revisions": "Show \"Note Revisions\" dialog",
     "show-recent-changes": "Show \"Recent Changes\" dialog",
+    "show-deleted-notes": "Show \"Deleted Notes\" dialog",
     "show-sql-console": "Open \"SQL Console\" page",
     "show-backend-log": "Open \"Backend Log\" page",
     "show-help": "Open the built-in User Guide",
     "show-cheatsheet": "Show a modal with common keyboard operations",
+    "show-shortcut-hints": "Show keyboard shortcuts for the focused widget",
     "text-note-operations": "Text note operations",
     "add-link-to-text": "Open dialog to add link to the text",
     "follow-link-under-cursor": "Follow link within which the caret is placed",
@@ -66,43 +48,27 @@
     "paste-markdown-into-text": "Pastes Markdown from clipboard into text note",
     "cut-into-note": "Cuts the selection from the current note and creates subnote with the selected text",
     "add-include-note-to-text": "Opens the dialog to include a note",
-    "edit-readonly-note": "Edit a read-only note",
     "attributes-labels-and-relations": "Attributes (labels & relations)",
     "add-new-label": "Create new label",
     "create-new-relation": "Create new relation",
     "ribbon-tabs": "Ribbon tabs",
-    "toggle-basic-properties": "Toggle Basic Properties",
-    "toggle-file-properties": "Toggle File Properties",
-    "toggle-image-properties": "Toggle Image Properties",
-    "toggle-owned-attributes": "Toggle Owned Attributes",
-    "toggle-inherited-attributes": "Toggle Inherited Attributes",
-    "toggle-promoted-attributes": "Toggle Promoted Attributes",
     "toggle-link-map": "Toggle Link Map",
-    "toggle-note-info": "Toggle Note Info",
-    "toggle-note-paths": "Toggle Note Paths",
-    "toggle-similar-notes": "Toggle Similar Notes",
     "other": "Other",
     "toggle-right-pane": "Toggle the display of the right pane, which includes Table of Contents and Highlights",
-    "print-active-note": "Print active note",
+    "peek-right-pane": "Peek the right pane as a temporary panel that floats over the content and closes when it loses focus",
     "open-note-externally": "Open note as a file with default application",
     "render-active-note": "Render (re-render) active note",
     "run-active-note": "Run active JavaScript (frontend/backend) code note",
     "toggle-note-hoisting": "Toggle note hoisting of active note",
     "unhoist": "Unhoist from anywhere",
-    "reload-frontend-app": "Reload frontend",
-    "open-dev-tools": "Open developer tools",
     "find-in-text": "Toggle search panel",
     "toggle-left-note-tree-panel": "Toggle left (note tree) panel",
-    "toggle-full-screen": "Toggle full screen",
-    "zoom-out": "Zoom Out",
-    "zoom-in": "Zoom In",
     "note-navigation": "Note navigation",
-    "reset-zoom-level": "Reset zoom level",
     "copy-without-formatting": "Copy selected text without formatting",
     "force-save-revision": "Force creating / saving new note revision of the active note",
+    "save-named-revision": "Save a named revision of the active note",
     "toggle-book-properties": "Toggle Collection Properties",
     "toggle-classic-editor-toolbar": "Toggle the Formatting tab for the editor with fixed toolbar",
-    "export-as-pdf": "Export the current note as a PDF",
     "toggle-zen-mode": "Enables/disables the zen mode (minimal UI for more focused editing)"
   },
   "keyboard_action_names": {
@@ -117,6 +83,7 @@
     "collapse-tree": "Collapse Tree",
     "collapse-subtree": "Collapse Subtree",
     "sort-child-notes": "Sort Child Notes",
+    "toggle-archived-notes": "Toggle Archived Notes Visibility",
     "create-note-after": "Create Note After",
     "create-note-into": "Create Note Into",
     "create-note-into-inbox": "Create Note Into Inbox",
@@ -158,10 +125,12 @@
     "show-options": "Show Options",
     "show-revisions": "Show Revisions",
     "show-recent-changes": "Show Recent Changes",
+    "show-deleted-notes": "Show Deleted Notes",
     "show-sql-console": "Show SQL Console",
     "show-backend-log": "Show Backend Log",
     "show-help": "Show Help",
     "show-cheatsheet": "Show Cheatsheet",
+    "show-shortcut-hints": "Show Shortcut Hints",
     "add-link-to-text": "Add Link to Text",
     "follow-link-under-cursor": "Follow Link Under Cursor",
     "insert-date-and-time-to-text": "Insert Date and Time to Text",
@@ -184,6 +153,7 @@
     "toggle-ribbon-tab-note-paths": "Toggle Ribbon Tab Note Paths",
     "toggle-ribbon-tab-similar-notes": "Toggle Ribbon Tab Similar Notes",
     "toggle-right-pane": "Toggle Right Pane",
+    "peek-right-pane": "Peek Right Pane",
     "print-active-note": "Print Active Note",
     "export-active-note-as-pdf": "Export Active Note as PDF",
     "open-note-externally": "Open Note Externally",
@@ -200,7 +170,8 @@
     "zoom-in": "Zoom In",
     "reset-zoom-level": "Reset Zoom Level",
     "copy-without-formatting": "Copy Without Formatting",
-    "force-save-revision": "Force Save Revision"
+    "force-save-revision": "Force Save Revision",
+    "save-named-revision": "Save Named Revision"
   },
   "login": {
     "title": "Login",
@@ -210,7 +181,12 @@
     "password": "Password",
     "remember-me": "Remember me",
     "button": "Login",
-    "sign_in_with_sso": "Sign in with {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Sign in with {{ ssoIssuerName }}",
+    "sso-wrong-account": "That account isn't the one linked to this Trilium instance. Sign in with the linked account.",
+    "sso-not-enrolled": "Single sign-on isn't set up yet. Sign in with your password first, then link your account from the settings."
+  },
+  "password": {
+    "incorrect": "The password you entered is incorrect."
   },
   "set_password": {
     "title": "Set Password",
@@ -219,47 +195,6 @@
     "password": "Password",
     "password-confirmation": "Password confirmation",
     "button": "Set password"
-  },
-  "setup": {
-    "heading": "Trilium Notes setup",
-    "new-document": "I'm a new user, and I want to create a new Trilium document for my notes",
-    "sync-from-desktop": "I have a desktop instance already, and I want to set up sync with it",
-    "sync-from-server": "I have a server instance already, and I want to set up sync with it",
-    "next": "Next",
-    "init-in-progress": "Document initialization in progress",
-    "redirecting": "You will be shortly redirected to the application.",
-    "title": "Setup"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "Sync from Desktop",
-    "description": "This setup needs to be initiated from the desktop instance:",
-    "step1": "Open your desktop instance of Trilium Notes.",
-    "step2": "From the Trilium Menu, click Options.",
-    "step3": "Click on Sync category.",
-    "step4": "Change server instance address to: {{- host}} and click Save.",
-    "step5": "Click \"Test sync\" button to verify connection is successful.",
-    "step6": "Once you've completed these steps, click {{- link}}.",
-    "step6-here": "here"
-  },
-  "setup_sync-from-server": {
-    "heading": "Sync from Server",
-    "instructions": "Please enter Trilium server address and credentials below. This will download the whole Trilium document from server and setup sync to it. Depending on the document size and your connection speed, this may take a while.",
-    "server-host": "Trilium server address",
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server": "Proxy server (optional)",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Note:",
-    "proxy-instruction": "If you leave proxy setting blank, system proxy will be used (applies to the desktop application only)",
-    "password": "Password",
-    "password-placeholder": "Password",
-    "back": "Back",
-    "finish-setup": "Finish setup"
-  },
-  "setup_sync-in-progress": {
-    "heading": "Sync in progress",
-    "successful": "Sync has been correctly set up. It will take some time for the initial sync to finish. Once it's done, you'll be redirected to the login page.",
-    "outstanding-items": "Outstanding sync items:",
-    "outstanding-items-default": "N/A"
   },
   "share_404": {
     "title": "Not found",
@@ -312,7 +247,19 @@
     "llm-chat-history-title": "AI Chat History",
     "shared-notes-title": "Shared Notes",
     "bulk-action-title": "Bulk Action",
+    "task-states-title": "Task States",
+    "task-state-none": "None",
+    "task-state-doing": "Doing",
+    "task-state-done": "Done",
+    "task-state-maybe": "Maybe",
+    "task-state-cancelled": "Cancelled",
+    "task-state-attr-state-id": "Identifier (required)",
+    "task-state-attr-markdown-symbol": "Markdown symbol",
+    "task-state-attr-is-completed": "Counts as completed",
+    "task-state-attr-color": "Color",
+    "task-state-attr-is-hidden": "Hidden from list",
     "backend-log-title": "Backend Log",
+    "custom-dictionary-title": "Custom Dictionary",
     "user-hidden-title": "User Hidden",
     "launch-bar-templates-title": "Launch Bar Templates",
     "base-abstract-launcher-title": "Base Abstract Launcher",
@@ -331,6 +278,7 @@
     "jump-to-note-title": "Jump to...",
     "calendar-title": "Calendar",
     "recent-changes-title": "Recent Changes",
+    "deleted-notes-title": "Deleted notes",
     "bookmarks-title": "Bookmarks",
     "command-palette": "Open Command Palette",
     "zen-mode": "Zen Mode",
@@ -338,6 +286,7 @@
     "quick-search-title": "Quick Search",
     "protected-session-title": "Protected Session",
     "sync-status-title": "Sync Status",
+    "color-scheme-switcher-title": "Color Scheme Switcher",
     "settings-title": "Settings",
     "options-title": "Options",
     "appearance-title": "Appearance",
@@ -346,7 +295,9 @@
     "code-notes-title": "Code Notes",
     "images-title": "Media",
     "spellcheck-title": "Spellcheck",
-    "password-title": "Password",
+    "desktop-title": "Desktop",
+    "security-title": "Security",
+    "password-title": "Password & Auth",
     "multi-factor-authentication-title": "MFA",
     "etapi-title": "ETAPI",
     "backup-title": "Backup",
@@ -366,12 +317,41 @@
     "duplicate-note-suffix": "(dup)",
     "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
   },
+  "note_conversion": {
+    "revision_before_markdown": "Before conversion to Markdown",
+    "revision_before_text": "Before conversion to Text Note"
+  },
   "backend_log": {
     "log-does-not-exist": "The backend log file '{{ fileName }}' does not exist (yet).",
     "reading-log-failed": "Reading the backend log file '{{ fileName }}' failed."
   },
   "content_renderer": {
     "note-cannot-be-displayed": "This note type cannot be displayed."
+  },
+  "onenote_import": {
+    "root-title": "OneNote import"
+  },
+  "notion_import": {
+    "root-title": "Notion import",
+    "markdown-export-unsupported": "This looks like a Notion \"Markdown & CSV\" export, which Trilium cannot import. Please re-export your Notion workspace using the \"HTML\" export format and import that instead.",
+    "subpage-folders-disabled": "This Notion export was created without the \"Create folders for subpages\" option, so the page hierarchy cannot be reconstructed. Please re-export from Notion with \"Create folders for subpages\" enabled and import that instead."
+  },
+  "keep_import": {
+    "root-title": "Google Keep import"
+  },
+  "anytype_import": {
+    "root-title": "Anytype import",
+    "protobuf-export-unsupported": "This looks like an Anytype \"Protobuf\" export, which Trilium cannot import. Please re-export your Anytype space using the \"Any-Block\" format with \"JSON\" selected and import that instead.",
+    "markdown-export-unsupported": "This looks like an Anytype \"Markdown\" export, which Trilium cannot import. Please re-export your Anytype space using the \"Any-Block\" format with \"JSON\" selected and import that instead."
+  },
+  "obsidian_import": {
+    "root-title": "Obsidian import"
+  },
+  "export": {
+    "zip_filter": "ZIP archive (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "The file selection has expired or is invalid. Please choose the file again."
   },
   "pdf": {
     "export_filter": "PDF Document (*.pdf)",
@@ -393,7 +373,9 @@
   "migration": {
     "old_version": "Direct migration from your current version is not supported. Please upgrade to the latest v0.60.4 first and only then to this version.",
     "error_message": "Error during migration to version {{version}}: {{stack}}",
-    "wrong_db_version": "The version of the database ({{version}}) is newer than what the application expects ({{targetVersion}}), which means that it was created by a newer and incompatible version of Trilium. Upgrade to the latest version of Trilium to resolve this issue."
+    "automatic_migrations_disabled": "Automatic DB migrations are disabled via environment variable TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}",
+    "wrong_db_version": "The version of the database ({{version}}) is newer than what the application expects ({{targetVersion}}), which means that it was created by a newer and incompatible version of Trilium. Upgrade to the latest version of Trilium to resolve this issue.",
+    "invalid_db_version": "The database version is not a valid number. This usually indicates a corrupted 'dbVersion' option in the database. Please restore from a backup."
   },
   "modals": {
     "error_title": "Error"
@@ -405,10 +387,16 @@
     "last-updated": "Last updated on {{- date}}",
     "subpages": "Subpages:",
     "on-this-page": "On This Page",
-    "expand": "Expand"
+    "expand": "Expand",
+    "toggle-navigation": "Toggle Navigation",
+    "toggle-toc": "Toggle Table of Contents",
+    "logo-alt": "Logo",
+    "login": "Login"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",
+    "markdown-snippet": "Markdown Snippet",
+    "code-snippet": "Code Snippet",
     "description": "Description",
     "list-view": "List View",
     "grid-view": "Grid View",
@@ -433,7 +421,8 @@
     "presentation_slide": "Presentation slide",
     "presentation_slide_first": "First slide",
     "presentation_slide_second": "Second slide",
-    "background": "Background"
+    "background": "Background",
+    "dashboard": "Dashboard"
   },
   "sql_init": {
     "db_not_initialized_desktop": "DB not initialized, please follow on-screen instructions.",
@@ -441,5 +430,36 @@
   },
   "desktop": {
     "instance_already_running": "There's already an instance running, focusing that instance instead."
+  },
+  "script": {
+    "wrong-environment": "Cannot execute note \"{{- noteTitle}}\" ({{- noteId}}). This is a {{- actualEnv}} script, but execution was attempted in the {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Error in {{- context}}: {{- message}}",
+      "reserved-keyword": "\"{{- token}}\" is a reserved keyword. To search for a literal value, use quotes: \"{{- token}}\"",
+      "cannot-compare-with": "cannot compare with \"{{- token}}\". To search for a literal value, use quotes: \"{{- token}}\"",
+      "misplaced-expression": "Misplaced or incomplete expression \"{{- token}}\"",
+      "fulltext-after-expression": "\"{{- token}}\" is not a valid expression. To search for text, place it before attribute filters (e.g., \"{{- token}} #label\" instead of \"#label {{- token}}\").",
+      "unrecognized-expression": "Unrecognized expression \"{{- token}}\""
+    }
+  },
+  "security-dialog": {
+    "enable-title": "Enable {{settingLabel}}",
+    "enable-message": "Are you sure you want to enable {{settingLabel}}?",
+    "enable-detail": "{{warning}}\n\nOnly enable this if you explicitly intend to use this feature. Do not enable it if prompted by a script or an unfamiliar note.\n\nThis change requires a restart to take effect.",
+    "disable-title": "Disable {{settingLabel}}",
+    "disable-message": "{{settingLabel}} will be disabled.",
+    "disable-detail": "This change requires a restart to take effect.",
+    "cancel": "Cancel",
+    "enable": "Enable",
+    "disable": "Disable",
+    "dont-ask-again": "Don't ask again until restart",
+    "backend-scripting": "Backend script execution",
+    "backend-scripting-warning": "Backend scripts have full access to the server, including the file system and network.",
+    "sql-console": "SQL console",
+    "sql-console-warning": "The SQL console allows executing arbitrary SQL queries against the database.",
+    "lan-access": "network access",
+    "lan-access-warning": "Other devices on your local network will be able to connect to this Trilium instance."
   }
 }

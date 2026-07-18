@@ -3,7 +3,6 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "preact/ho
 import appContext, { CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import date_notes from "../../services/date_notes";
-import dialog from "../../services/dialog";
 import { LauncherWidgetDefinitionWithType } from "../../services/frontend_script_api_preact";
 import { t } from "../../services/i18n";
 import toast from "../../services/toast";
@@ -14,7 +13,7 @@ import QuickSearchWidget from "../quick_search";
 import { useGlobalShortcut, useLegacyWidget, useNoteLabel, useNoteRelationTarget } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteLauncher } from "./GenericButtons";
-import { LaunchBarActionButton, LaunchBarContext, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
+import { LaunchBarActionButton, LaunchBarContext, launcherContextMenuHandler, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
 export function CommandButton({ launcherNote }: LauncherNoteProps) {
     const { icon, title } = useLauncherIconAndTitle(launcherNote);
@@ -22,6 +21,7 @@ export function CommandButton({ launcherNote }: LauncherNoteProps) {
 
     return command && (
         <LaunchBarActionButton
+            launcherNote={launcherNote}
             icon={icon}
             text={title}
             triggerCommand={command as CommandNames}
@@ -43,7 +43,7 @@ export function NoteLauncher({ launcherNote, ...restProps }: { launcherNote: FNo
             getTargetNoteId={(launcherNote) => {
                 const targetNoteId = launcherNote.getRelationValue("target");
                 if (!targetNoteId) {
-                    dialog.info(t("note_launcher.this_launcher_doesnt_define_target_note"));
+                    toast.showError(t("note_launcher.this_launcher_doesnt_define_target_note"));
                     return null;
                 }
                 return targetNoteId;
@@ -74,6 +74,7 @@ export function ScriptLauncher({ launcherNote }: LauncherNoteProps) {
 
     return (
         <LaunchBarActionButton
+            launcherNote={launcherNote}
             icon={icon}
             text={title}
             onClick={launch}
@@ -93,7 +94,7 @@ export function TodayLauncher({ launcherNote }: LauncherNoteProps) {
     );
 }
 
-export function QuickSearchLauncherWidget() {
+export function QuickSearchLauncherWidget({ launcherNote }: LauncherNoteProps) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
     const widget = useMemo(() => new QuickSearchWidget(), []);
     const parentComponent = useContext(ParentComponent) as BasicWidget | null;
@@ -101,7 +102,7 @@ export function QuickSearchLauncherWidget() {
     parentComponent?.contentSized();
 
     return (
-        <div>
+        <div onContextMenu={launcherContextMenuHandler(launcherNote)}>
             {isEnabled && <LegacyWidgetRenderer widget={widget} />}
         </div>
     );
@@ -136,7 +137,7 @@ export function CustomWidget({ launcherNote }: LauncherNoteProps) {
     }, [ widgetNote ]);
 
     return (
-        <div>
+        <div onContextMenu={launcherContextMenuHandler(launcherNote)}>
             {widget && (
                 ("type" in widget && widget.type === "preact-launcher-widget")
                     ? <ReactWidgetRenderer widget={widget as LauncherWidgetDefinitionWithType} />

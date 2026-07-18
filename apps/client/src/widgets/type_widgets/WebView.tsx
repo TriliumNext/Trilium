@@ -1,5 +1,6 @@
 import "./WebView.css";
 
+import { WEBVIEW_SESSION_PARTITION } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
@@ -36,7 +37,7 @@ export default function WebView({ note, ntxId }: TypeWidgetProps) {
 }
 
 function DesktopWebView({ src, ntxId }: { src: string, ntxId: string | null | undefined }) {
-    const webviewRef = useRef<HTMLWebViewElement>(null);
+    const webviewRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         const webview = webviewRef.current;
@@ -54,10 +55,15 @@ function DesktopWebView({ src, ntxId }: { src: string, ntxId: string | null | un
         };
     }, [ ntxId ]);
 
+    // The dedicated partition keeps remote guest pages out of the renderer's
+    // default session: separate cookie jar/storage, and no access to the
+    // trilium-app:// protocol (per-session registry), so embedded sites can
+    // neither ride the app's session cookie nor reach its origin.
     return <webview
         ref={webviewRef}
         src={src}
         key={src}
+        partition={WEBVIEW_SESSION_PARTITION}
         class="note-detail-web-view-content"
     />;
 }

@@ -1,4 +1,5 @@
-import { getThemeStyle } from "./services/theme";
+import { createFontStylesheetLink } from "./services/font";
+import { buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, initThemeChangeNotifier, StylesheetRef } from "./services/theme";
 
 async function bootstrap() {
     showSplash();
@@ -8,6 +9,7 @@ async function bootstrap() {
         loadBootstrapCss()
     ]);
     loadStylesheets();
+    initThemeChangeNotifier();
     loadIcons();
     setBodyAttributes();
     await loadScripts();
@@ -38,9 +40,36 @@ async function setupGlob() {
     window.global = globalThis; /* fixes https://github.com/webpack/webpack/issues/10035 */
     window.glob = {
         ...json,
-        activeDialog: null
+        activeDialog: null,
+        device: json.device || getDevice()
     };
     window.glob.getThemeStyle = getThemeStyle;
+}
+
+function getDevice() {
+    // Respect user's manual override via URL.
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("print")) {
+        return "print";
+    } else if (urlParams.has("desktop")) {
+        return "desktop";
+    } else if (urlParams.has("mobile")) {
+        return "mobile";
+    }
+
+    const deviceCookie = document.cookie.split("; ").find(row => row.startsWith("trilium-device="))?.split("=")[1];
+    if (deviceCookie === "desktop" || deviceCookie === "mobile") return deviceCookie;
+    return isMobile() ? "mobile" : "desktop";
+}
+
+// https://stackoverflow.com/a/73731646/944162
+function isMobile() {
+    const mQ = matchMedia?.("(pointer:coarse)");
+    if (mQ?.media === "(pointer:coarse)") return !!mQ.matches;
+
+    if ("orientation" in window) return true;
+    const userAgentsRegEx = /\b(Android|iPhone|iPad|iPod|Windows Phone|BlackBerry|webOS|IEMobile)\b/i;
+    return userAgentsRegEx.test(navigator.userAgent);
 }
 
 async function loadBootstrapCss() {
@@ -52,76 +81,40 @@ async function loadBootstrapCss() {
     }
 }
 
-type StylesheetRef = {
-    href: string;
-    media?: string;
-};
-
-function getConfiguredThemeStylesheets(stylesheetsPath: string, theme: string, customThemeCssUrl?: string) {
-    if (theme === "auto") {
-        return [{ href: `${stylesheetsPath}/theme-dark.css`, media: "(prefers-color-scheme: dark)" }];
-    }
-
-    if (theme === "dark") {
-        return [{ href: `${stylesheetsPath}/theme-dark.css` }];
-    }
-
-    if (theme === "next") {
-        return [
-            { href: `${stylesheetsPath}/theme-next-light.css` },
-            { href: `${stylesheetsPath}/theme-next-dark.css`, media: "(prefers-color-scheme: dark)" }
-        ];
-    }
-
-    if (theme === "next-light") {
-        return [{ href: `${stylesheetsPath}/theme-next-light.css` }];
-    }
-
-    if (theme === "next-dark") {
-        return [{ href: `${stylesheetsPath}/theme-next-dark.css` }];
-    }
-
-    if (theme !== "light" && customThemeCssUrl) {
-        return [{ href: customThemeCssUrl }];
-    }
-
-    return [];
-}
-
 function loadStylesheets() {
     const { device, assetPath, theme, themeBase, customThemeCssUrl } = window.glob;
+    if (device === "print") {
+        return;
+    }
+
     const stylesheetsPath = `${assetPath}/stylesheets`;
-
-    const cssToLoad: StylesheetRef[] = [];
-    if (device !== "print") {
-        cssToLoad.push({ href: `${stylesheetsPath}/ckeditor-theme.css` });
-        cssToLoad.push({ href: `api/fonts` });
-        cssToLoad.push({ href: `${stylesheetsPath}/theme-light.css` });
-        cssToLoad.push(...getConfiguredThemeStylesheets(stylesheetsPath, theme, customThemeCssUrl));
-        if (themeBase) {
-            cssToLoad.push(...getConfiguredThemeStylesheets(stylesheetsPath, themeBase));
-        }
-        cssToLoad.push({ href: `${stylesheetsPath}/style.css` });
+    appendStylesheet({ href: `${stylesheetsPath}/ckeditor-theme.css` });
+    // Marked so it can be swapped when font options change without reloading.
+    document.head.appendChild(createFontStylesheetLink());
+    // The light theme is always loaded as the baseline and acts as the anchor for live theme swapping.
+    appendStylesheet({ href: `${stylesheetsPath}/theme-light.css` }, { base: true });
+    for (const ref of buildThemeStylesheetRefs(theme, customThemeCssUrl, themeBase)) {
+        appendStylesheet(ref, { theme: true });
     }
+    appendStylesheet({ href: `${stylesheetsPath}/style.css` });
+}
 
-    for (const { href, media } of cssToLoad) {
-        const linkEl = document.createElement("link");
-        linkEl.href = href;
-        linkEl.rel = "stylesheet";
-        if (media) {
-            linkEl.media = media;
-        }
-        document.head.appendChild(linkEl);
-    }
+function appendStylesheet(ref: StylesheetRef, opts?: { base?: boolean; theme?: boolean }) {
+    document.head.appendChild(createStylesheetLink(ref, opts));
 }
 
 function loadIcons() {
     const styleEl = document.createElement("style");
-    styleEl.innerText = window.glob.iconPackCss;
+    // Must be textContent, not innerText: the innerText setter turns every newline into a real
+    // <br> element (one per CSS line, ~20k with several icon packs). iOS WebKit's focused-element
+    // scan walks all of them on every keyboard focus, freezing the app for seconds.
+    styleEl.textContent = window.glob.iconPackCss;
     document.head.appendChild(styleEl);
 }
 
 function setBodyAttributes() {
+    if (!glob.dbInitialized) return;
+
     const { device, headingStyle, layoutOrientation, platform, isElectron, hasNativeTitleBar, hasBackgroundEffects, currentLocale } = window.glob;
     const classesToSet = [
         device,
@@ -142,6 +135,21 @@ function setBodyAttributes() {
 }
 
 async function loadScripts() {
+    if (!glob.dbInitialized) {
+        await import("./setup.js");
+        return;
+    }
+
+    if (glob.passwordSet === false) {
+        await import("./set_password.js");
+        return;
+    }
+
+    if (glob.loggedIn === false) {
+        await import("./login.js");
+        return;
+    }
+
     switch (glob.device) {
         case "mobile":
             await import("./mobile.js");

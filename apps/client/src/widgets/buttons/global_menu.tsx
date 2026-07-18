@@ -6,9 +6,9 @@ import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
 import Component from "../../components/component";
-import { ExperimentalFeature, ExperimentalFeatureId, experimentalFeatures, isExperimentalFeatureEnabled, toggleExperimentalFeature } from "../../services/experimental_features";
+import { ExperimentalFeature, ExperimentalFeatureId, getAvailableExperimentalFeatures, isExperimentalFeatureEnabled, toggleExperimentalFeature } from "../../services/experimental_features";
 import { t } from "../../services/i18n";
-import utils, { dynamicRequire, isElectron, isMobile, reloadFrontendApp } from "../../services/utils";
+import utils, { isElectron, isMobile, isStandalone, reloadFrontendApp } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "../react/FormList";
 import { useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../react/hooks";
@@ -53,6 +53,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
 
             <MenuItem command="openNewWindow" icon="bx bx-window-open" text={t("global_menu.open_new_window")} />
             <MenuItem command="showShareSubtree" icon="bx bx-share-alt" text={t("global_menu.show_shared_notes_subtree")} />
+            <MenuItem command="showDeletedNotes" icon="bx bx-trash-alt" text={t("global_menu.show_deleted_notes")} />
             <FormDropdownDivider />
 
             <ZoomControls parentComponent={parentComponent} />
@@ -112,7 +113,7 @@ function DevelopmentOptions({ dropStart }: { dropStart: boolean }) {
     return <>
         <FormListHeader text="Development Options" />
         <FormDropdownSubmenu icon="bx bx-test-tube" title="Experimental features" dropStart={dropStart}>
-            {experimentalFeatures.map((feature) => (
+            {getAvailableExperimentalFeatures().map((feature) => (
                 <ExperimentalFeatureToggle key={feature.id} experimentalFeature={feature as ExperimentalFeature} />
             ))}
         </FormDropdownSubmenu>
@@ -231,18 +232,18 @@ function ZoomControls({ parentComponent }: { parentComponent?: Component | null 
 }
 
 function ToggleWindowOnTop() {
-    const focusedWindow = isElectron() ? dynamicRequire("@electron/remote").BrowserWindow.getFocusedWindow() : null;
-    const [ isAlwaysOnTop, setIsAlwaysOnTop ] = useState(focusedWindow?.isAlwaysOnTop());
+    const api = window.electronApi?.window;
+    const [ isOnTop, setIsOnTop ] = useState(() => api?.isAlwaysOnTop() ?? false);
 
-    return (isElectron() &&
+    return (api &&
         <MenuItem
             icon="bx bx-pin"
             text={t("title_bar_buttons.window-on-top")}
-            active={isAlwaysOnTop}
+            active={isOnTop}
             command={() => {
-                const newState = !isAlwaysOnTop;
-                focusedWindow?.setAlwaysOnTop(newState);
-                setIsAlwaysOnTop(newState);
+                const newState = !isOnTop;
+                api.setAlwaysOnTop(newState);
+                setIsOnTop(newState);
             }}
         />
     );
@@ -251,7 +252,7 @@ function ToggleWindowOnTop() {
 function useTriliumUpdateStatus() {
     const [ latestVersion, setLatestVersion ] = useState<string>();
     const [ checkForUpdates ] = useTriliumOptionBool("checkForUpdates");
-    const isUpdateAvailable = utils.isUpdateAvailable(latestVersion, glob.triliumVersion);
+    const isUpdateAvailable = utils.isUpdateAvailable(latestVersion, window.glob.triliumVersion);
 
     async function updateVersionStatus() {
         const RELEASES_API_URL = "https://api.github.com/repos/TriliumNext/Trilium/releases/latest";
@@ -269,7 +270,7 @@ function useTriliumUpdateStatus() {
     }
 
     useEffect(() => {
-        if (!checkForUpdates) {
+        if (!checkForUpdates || !isStandalone) {
             setLatestVersion(undefined);
             return;
         }

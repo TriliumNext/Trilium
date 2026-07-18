@@ -80,6 +80,7 @@ export default class SyntaxHighlighting extends Plugin {
             let dirtyCodeBlocks = new Set<ModelElement>();
 
             function lookForCodeBlocks(node: ModelElement | ModelNode) {
+                /* v8 ignore next 3 -- defensive: every caller (line 108 and the recursion below) is guarded by childCount > 0, so only elements (which always have getChildren) reach here */
                 if (!("getChildren" in node)) {
                     return;
                 }
@@ -113,6 +114,7 @@ export default class SyntaxHighlighting extends Plugin {
                     // it already has children, like when pasting one or more
                     // full codeblocks, undoing a delete, changing the language,
                     // etc (the postfixer won't get later changes for those).
+                    /* v8 ignore next -- defensive: an "insert" differ change always has a nodeAfter, so codeBlock is never falsy here */
                     if (codeBlock) {
                         log("dirtying inserted codeBlock " + JSON.stringify(codeBlock.toJSON()));
                         dirtyCodeBlocks.add(codeBlock as ModelElement);
@@ -151,10 +153,12 @@ export default class SyntaxHighlighting extends Plugin {
      */
     highlightCodeBlock(codeBlock: ModelElement, writer: ModelWriter) {
         log("highlighting codeblock " + JSON.stringify(codeBlock.toJSON()));
+        /* v8 ignore start -- defensive: dirtied code blocks are always attached to the document, so root.document and its model are always present */
         const model = codeBlock.root.document?.model;
         if (!model) {
             return;
         }
+        /* v8 ignore stop */
 
         // Can't invoke addMarker with an already existing marker name,
         // clear all highlight markers first. Marker names follow the
@@ -207,6 +211,7 @@ export default class SyntaxHighlighting extends Plugin {
         let text = "";
         for (let i = 0; i < codeBlock.childCount; ++i) {
             let child = codeBlock.getChild(i);
+            /* v8 ignore next 3 -- defensive: the loop is bounded by childCount, so getChild never returns null */
             if (!child) {
                 continue;
             }
@@ -218,9 +223,11 @@ export default class SyntaxHighlighting extends Plugin {
             } else if (child.is("element") && child.name == "softBreak") {
                 dbg("softBreak");
                 text += "\n";
+            /* v8 ignore start -- defensive: a codeBlock child is only ever $text or softBreak, so this unknown-child arc never fires */
             } else {
                 warn("Unkown child " + JSON.stringify(child.toJSON()));
             }
+            /* v8 ignore stop */
         }
 
         let highlightRes;
@@ -252,6 +259,7 @@ export default class SyntaxHighlighting extends Plugin {
                 if (iChild < codeBlock.childCount) {
                     dbg("Fetching child " + iChild);
                     child = codeBlock.getChild(iChild);
+                    /* v8 ignore next 3 -- defensive: guarded by iChild < childCount, so getChild never returns null */
                     if (!child) {
                         continue;
                     }
@@ -264,9 +272,11 @@ export default class SyntaxHighlighting extends Plugin {
                         dbg("softBreak");
                         iChildText = 0;
                         childText = "\n";
+                    /* v8 ignore start -- defensive: a codeBlock child is only ever $text or softBreak, so this unknown-child arc never fires */
                     } else {
                         warn("child unknown!!!");
                     }
+                    /* v8 ignore stop */
                 } else {
                     // Don't bail if beyond the last children, since there's
                     // still html text, it must be a closing span tag that
@@ -354,6 +364,7 @@ const tag = "SyntaxHighlightWidget";
 const debugLevels = ["error", "warn", "info", "log", "debug"];
 const debugLevel = debugLevels.indexOf("warn");
 
+/* v8 ignore start -- dead debug scaffolding: debugLevel is a hardcoded "warn", so these level gates and the disabled-logger noops never vary at runtime */
 let warn = function (...args: unknown[]) {};
 if (debugLevel >= debugLevels.indexOf("warn")) {
     warn = console.warn.bind(console, tag + ": ");
@@ -368,6 +379,7 @@ let dbg = function (...args: unknown[]) {};
 if (debugLevel >= debugLevels.indexOf("debug")) {
     dbg = console.debug.bind(console, tag + ": ");
 }
+/* v8 ignore stop */
 
 function assert(e: boolean, msg?: string) {
     console.assert(e, tag + ": " + msg);

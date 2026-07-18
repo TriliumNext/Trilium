@@ -1,0 +1,7 @@
+.llm-chat-read-only-notice {
+    margin: 0;
+    padding: 0.75em 1em;
+    text-align: center;
+    color: var(--muted-text-color);
+    font-size: 0.9em;
+}

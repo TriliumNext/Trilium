@@ -3,6 +3,13 @@
  */
 export const MIME_TYPE_AUTO = "text-x-trilium-auto";
 
+/**
+ * The MIME type of the Trilium backend log (and code notes that want the same log highlighting).
+ * Highlighted only in CodeMirror via the {@link https://github.com/TriliumNext/Notes Trilium Log Highlighter}
+ * extension; it has no highlight.js equivalent, so shared/read-only Markdown rendering shows it plain.
+ */
+export const MIME_TYPE_TRILIUM_LOG = "text/x-trilium-log";
+
 export interface MimeTypeDefinition {
     default?: boolean;
     title: string;
@@ -98,9 +105,10 @@ const MIME_TYPES_DICT_RAW = [
     { title: "IDL", mime: "text/x-idl" },
     { title: "Java Server Pages", mime: "application/x-jsp", mdLanguageCode: "java", icon: "bx bxl-java" },
     { title: "Java", mime: "text/x-java", mdLanguageCode: "java", default: true, icon: "bx bxl-java" },
+    { title: "JavaScript", mime: "text/javascript", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
+    { title: "JavaScript (Trilium backend)", mime: "application/javascript;env=backend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
+    { title: "JavaScript (Trilium frontend)", mime: "application/javascript;env=frontend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
     { title: "Jinja2", mime: "text/jinja2" },
-    { title: "JS backend", mime: "application/javascript;env=backend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
-    { title: "JS frontend", mime: "application/javascript;env=frontend", mdLanguageCode: "javascript", default: true, icon: "bx bxl-javascript" },
     { title: "JSON-LD", mime: "application/ld+json", mdLanguageCode: "json", icon: "bx bxs-file-json" },
     { title: "JSON", mime: "application/json", mdLanguageCode: "json", default: true, icon: "bx bxs-file-json" },
     { title: "JSX", mime: "text/jsx", mdLanguageCode: "jsx", default: true },
@@ -123,8 +131,9 @@ const MIME_TYPES_DICT_RAW = [
     { title: "msgenny", mime: "text/x-msgenny" },
     { title: "MUMPS", mime: "text/x-mumps" },
     { title: "MySQL", mime: "text/x-mysql", mdLanguageCode: "sql", icon: "bx bx-data" },
-    { title: "Nix", mime: "text/x-nix", mdLanguageCode: "nix" },
     { title: "Nginx", mime: "text/x-nginx-conf", mdLanguageCode: "nginx" },
+    { title: "Nim", mime: "text/x-nim", mdLanguageCode: "nim" },
+    { title: "Nix", mime: "text/x-nix", mdLanguageCode: "nix" },
     { title: "NSIS", mime: "text/x-nsis", mdLanguageCode: "nsis" },
     { title: "NTriples", mime: "application/n-triples" },
     { title: "Objective-C", mime: "text/x-objectivec", mdLanguageCode: "objectivec" },
@@ -182,6 +191,7 @@ const MIME_TYPES_DICT_RAW = [
     { title: "Tiki wiki", mime: "text/tiki" },
     { title: "TOML", mime: "text/x-toml", mdLanguageCode: "ini", icon: "bx bx-bracket" },
     { title: "Tornado", mime: "text/x-tornado" },
+    { title: "Trilium Log", mime: "text/x-trilium-log", icon: "bx bx-list-ul" },
     { title: "troff", mime: "text/troff" },
     { title: "TTCN_CFG", mime: "text/x-ttcn-cfg" },
     { title: "TTCN", mime: "text/x-ttcn" },
@@ -213,7 +223,7 @@ export type SupportedMimeTypes = typeof MIME_TYPES_DICT_RAW[number]["mime"] | Me
 /**
  * Given a Markdown language tag (e.g. `css`), it returns a corresponding {@link MimeTypeDefinition} if found.
  *
- * If there are multiple {@link MimeTypeDefinition}s for the language tag, then only the first one is retrieved. For example for `javascript`, the "JS frontend" mime type is returned.
+ * If there are multiple {@link MimeTypeDefinition}s for the language tag, then only the first one is retrieved. For example for `javascript`, the plain "JavaScript" (`text/javascript`) mime type is returned rather than the Trilium frontend/backend script variants.
  *
  * @param mdLanguageCode a language tag.
  * @returns the corresponding {@link MimeTypeDefinition} if found, or `undefined` otherwise.

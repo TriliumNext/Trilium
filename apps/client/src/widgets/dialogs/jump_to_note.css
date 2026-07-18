@@ -1,0 +1,100 @@
+.jump-to-note-dialog .modal-dialog {
+    max-width: 900px;
+    width: 90%;
+
+    body.mobile & {
+        height: 100vh;
+    }
+}
+
+.jump-to-note-dialog .modal-header {
+    align-items: center;
+}
+
+.jump-to-note-dialog .modal-body {
+    padding: 0;
+    min-height: 200px;
+}
+
+.jump-to-note-results .aa-dropdown-menu {
+    max-height: calc(80vh - 200px);
+    width: 100%;
+    max-width: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    box-shadow: none;
+}
+
+.jump-to-note-results {
+    width: 100%;
+}
+
+.jump-to-note-results .aa-suggestions {
+    padding: 0;
+    width: 100%;
+}
+
+/* Command palette styling */
+.jump-to-note-dialog .command-suggestion {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9em;
+}
+
+.jump-to-note-dialog .aa-suggestion .command-suggestion,
+.jump-to-note-dialog .aa-suggestion .command-suggestion div {
+    padding: 0;
+}
+
+.jump-to-note-dialog .aa-cursor .command-suggestion,
+.jump-to-note-dialog .aa-suggestion:hover .command-suggestion {
+    background-color: transparent;
+}
+
+.jump-to-note-dialog .show-in-full-search,
+.jump-to-note-results .show-in-full-search {
+    border-top: 1px solid var(--main-border-color);
+    padding-top: 12px;
+    margin-top: 12px;
+}
+
+.jump-to-note-results .aa-suggestion .search-notes-action {
+    border-top: 1px solid var(--main-border-color);
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.jump-to-note-results .aa-suggestion:has(.search-notes-action)::after {
+    display: none;
+}
+
+.jump-to-note-dialog .command-icon {
+    color: var(--muted-text-color);
+    font-size: 1.125rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.jump-to-note-dialog .command-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.jump-to-note-dialog .command-name {
+    font-weight: bold;
+}
+
+.jump-to-note-dialog .command-description {
+    font-size: 0.8em;
+    line-height: 1.3;
+    opacity: 0.75;
+}
+
+.jump-to-note-dialog kbd.command-shortcut {
+    background-color: transparent;
+    color: inherit;
+    opacity: 0.75;
+    font-family: inherit !important;
+}

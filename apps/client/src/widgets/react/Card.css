@@ -35,6 +35,14 @@
     flex-direction: column;
     gap: var(--card-section-gap);
 
+    .tn-card-section.tn-no-padding {
+        padding: 0;
+
+        & .table {
+            margin-bottom: 0;
+        }
+    }
+
     .tn-card-section {
         &:first-of-type {
             border-top-left-radius: var(--card-border-radius);

@@ -17,13 +17,6 @@ As an alternative to [hosting your own Trilium instance](1.%20Installing%20the%2
 
 PikaPods generally updates their Trilium instances to the latest version within a two-week interval after a new version is released.
 
-### trilium.cc
-
-[Trilium.cc](https://trilium.cc/) is a cloud service dedicated to hosting a Trilium instance.
-
-> [!WARNING]
-> Trilium.cc usually runs several versions behind Trilium releases.
-
 ## Matching your version with the cloud instance
 
 Please note that once you set up <a class="reference-link" href="../Synchronization.md">Synchronization</a> between a cloud instance and [desktop](../Desktop%20Installation.md) clients, it's important that the version of the desktop application and the server match up.

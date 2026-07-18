@@ -1,6 +1,14 @@
 FROM node:22.21.0-bullseye-slim AS builder
 RUN corepack enable
 
+# Install build tools required to compile native addons (e.g. better-sqlite3) on ARM
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install native dependencies since we might be building cross-platform.
 WORKDIR /usr/src/app/build
 COPY ./docker/package.json ./docker/pnpm-workspace.yaml /usr/src/app/

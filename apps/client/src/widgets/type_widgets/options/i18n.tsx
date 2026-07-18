@@ -1,26 +1,35 @@
 import { useMemo } from "preact/hooks";
 import { getAvailableLocales, t } from "../../../services/i18n";
 import FormSelect from "../../react/FormSelect";
+import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import { useTriliumOption, useTriliumOptionJson } from "../../react/hooks";
 import type { Locale } from "@triliumnext/commons";
-import { restartDesktopApp } from "../../../services/utils";
-import FormRadioGroup from "../../react/FormRadioGroup";
+import { isElectron, restartDesktopApp } from "../../../services/utils";
 import FormText from "../../react/FormText";
-import RawHtml from "../../react/RawHtml";
-import Admonition from "../../react/Admonition";
 import Button from "../../react/Button";
 import CheckboxList from "./components/CheckboxList";
+import RelatedSettings from "./components/RelatedSettings";
 import { LocaleSelector } from "./components/LocaleSelector";
 
 export default function InternationalizationOptions() {
     return (
         <>
+            <OptionsPageHeader />
             <LocalizationOptions />
             <ContentLanguages />
+            {isElectron() && (
+                <RelatedSettings items={[
+                    {
+                        title: t("spellcheck.title"),
+                        description: t("spellcheck.related_description"),
+                        targetPage: "_optionsSpellcheck"
+                    }
+                ]} />
+            )}
         </>
-    )
+    );
 }
 
 function LocalizationOptions() {
@@ -86,10 +95,13 @@ function DateSettings() {
                 />
             </OptionsRow>
 
-            <OptionsRow name="first-week-of-year" label={t("i18n.first-week-of-the-year")}>
-                <FormRadioGroup
+            <OptionsRow name="first-week-of-year" label={t("i18n.first-week-of-the-year")} description={t("i18n.first-week-warning")}>
+                <FormSelect
                     name="first-week-of-year"
-                    currentValue={firstWeekOfYear} onChange={setFirstWeekOfYear}
+                    currentValue={firstWeekOfYear}
+                    onChange={setFirstWeekOfYear}
+                    keyProperty="value"
+                    titleProperty="label"
                     values={[
                         { value: "0", label: t("i18n.first-week-contains-first-day") },
                         { value: "1", label: t("i18n.first-week-contains-first-thursday") },
@@ -106,14 +118,6 @@ function DateSettings() {
                         { length: 7 },
                         (_, i) => ({ days: String(i + 1) }))} />
             </OptionsRow>}
-
-            <FormText>
-                <RawHtml html={t("i18n.first-week-info")} />
-            </FormText>
-
-            <Admonition type="warning">
-                {t("i18n.first-week-warning")}
-            </Admonition>
 
             <OptionsRow name="restart" centered>
                 <Button

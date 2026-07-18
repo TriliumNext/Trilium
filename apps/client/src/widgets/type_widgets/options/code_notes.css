@@ -1,16 +1,16 @@
-/* #region CodeMimeTypesList */
-.options-mime-types {
-    list-style-type: none;
-    column-width: 250px;
-    padding-inline-start: 0;
-}
+.note-detail-content-widget-content.options {
+    /* #region Code Preview */
+    .options-section.code-block-appearance .options-section-card {
+        overflow: hidden;
 
-.options-mime-types > section {
-    margin-bottom: 1em;
-    break-inside: avoid-column;
-}
+        .option-row:nth-last-child(2) {
+            border-bottom: 0;
+        }
 
-.options-mime-types ul {
-    padding-inline-start: 0;
+        .note-detail-readonly-code-content {
+            border-top: solid 1px var(--main-border-color);
+            margin: 0 calc(var(--options-card-padding) * -1) calc(var(--options-card-padding) * -1) calc(var(--options-card-padding) * -1) !important;
+        }
+    }
+    /* #endregion */
 }
-/* #endregion */

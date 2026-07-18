@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-export SYSTEM "http://xml.evernote.com/pub/evernote-export4.dtd">
+<en-export export-date="20260101T000000Z" application="Evernote" version="11">
+  <note>
+    <title>Dup</title>
+    <created>20200101T000000Z</created>
+    <content><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note><div>First note named Dup.</div></en-note>]]></content>
+  </note>
+  <note>
+    <title>Dup</title>
+    <created>20200102T000000Z</created>
+    <content><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note><div>Second note named Dup.</div></en-note>]]></content>
+  </note>
+  <note>
+    <title>Target</title>
+    <created>20200103T000000Z</created>
+    <content><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note><div>The uniquely-named target.</div></en-note>]]></content>
+  </note>
+  <note>
+    <title>Linker</title>
+    <created>20200104T000000Z</created>
+    <content><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd"><en-note><div><a type="inline-richlink" href="evernote://view-note/dddddddd-dddd-dddd-dddd-dddddddddddd">Dup</a></div><div><a type="inline-richlink" href="evernote://view-note/11111111-1111-1111-1111-111111111111">Target</a></div></en-note>]]></content>
+  </note>
+</en-export>

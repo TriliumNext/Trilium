@@ -1,11 +1,11 @@
 import type { ComponentChildren, CSSProperties, RefObject } from "preact";
-import { memo } from "preact/compat";
 import { useMemo } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
 import { isDesktop, isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
 import Icon from "./Icon";
+import { renderShortcutKbds } from "./shortcut_kbd";
 
 const cachedIsMobile = isMobile();
 
@@ -13,7 +13,7 @@ export interface ButtonProps {
     name?: string;
     /** Reference to the button element. Mostly useful for requesting focus. */
     buttonRef?: RefObject<HTMLButtonElement>;
-    text: string;
+    text: string | ComponentChildren;
     className?: string;
     icon?: string;
     keyboardShortcut?: string;
@@ -27,7 +27,7 @@ export interface ButtonProps {
     title?: string;
 }
 
-const Button = memo(({ name, buttonRef, className, text, onClick, keyboardShortcut, icon, kind, disabled, size, style, triggerCommand, ...restProps }: ButtonProps) => {
+function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, icon, kind, disabled, size, style, triggerCommand, ...restProps }: ButtonProps) {
     // Memoize classes array to prevent recreation
     const classes = useMemo(() => {
         const classList: string[] = ["btn"];
@@ -58,13 +58,7 @@ const Button = memo(({ name, buttonRef, className, text, onClick, keyboardShortc
     // Memoize keyboard shortcut rendering
     const shortcutElements = useMemo(() => {
         if (!keyboardShortcut || cachedIsMobile) return null;
-        const splitShortcut = keyboardShortcut.split("+");
-        return splitShortcut.map((key, index) => (
-            <>
-                <kbd key={index}>{key.toUpperCase()}</kbd>
-                {index < splitShortcut.length - 1 ? "+" : ""}
-            </>
-        ));
+        return renderShortcutKbds(keyboardShortcut);
     }, [keyboardShortcut]);
 
     return (
@@ -83,11 +77,11 @@ const Button = memo(({ name, buttonRef, className, text, onClick, keyboardShortc
             {text} {shortcutElements}
         </button>
     );
-});
+}
 
-export function ButtonGroup({ children }: { children: ComponentChildren }) {
+export function ButtonGroup({ size, className, children }: { size?: "sm" | "lg"; className?: string; children: ComponentChildren }) {
     return (
-        <div className="btn-group" role="group">
+        <div className={`btn-group ${size ? `btn-group-${size}` : ""} ${className ?? ""}`} role="group">
             {children}
         </div>
     );

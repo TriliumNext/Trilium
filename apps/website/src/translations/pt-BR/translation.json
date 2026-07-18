@@ -31,8 +31,6 @@
         "sync_content": "Use uma instância auto-hospedada ou na nuvem para sincronizar facilmente suas notas entre vários dispositivos e acessá-las no celular usando um PWA.",
         "protected_notes_title": "Notas protegidas",
         "protected_notes_content": "Proteja informações pessoais sensíveis criptografando as notas e bloqueando-as com uma sessão protegida por senha.",
-        "jump_to_title": "Busca rápida e comandos",
-        "jump_to_content": "Vá rapidamente para notas ou comandos da interface em toda a hierarquia pesquisando pelo título, com correspondência aproximada para lidar com erros de digitação ou pequenas diferenças.",
         "search_title": "Busca poderosa",
         "search_content": "Ou pesquise texto dentro das notas e refine a busca filtrando pela nota pai ou pela profundidade.",
         "web_clipper_title": "Web Clipper",
@@ -46,24 +44,12 @@
         "code_description": "Amostras grandes de código-fonte ou scripts usam um editor dedicado, com realce de sintaxe para muitas linguagens de programação e diversos temas de cores.",
         "file_title": "Notas de arquivo",
         "file_description": "Incorpore arquivos multimídia como PDFs, imagens e vídeos, com uma visualização dentro do aplicativo.",
-        "canvas_title": "Canvas",
+        "canvas_title": "Tela",
         "canvas_description": "Organize formas, imagens e texto em um canvas infinito, usando a mesma tecnologia por trás do excalidraw.com. Ideal para diagramas, esboços e planejamento visual.",
         "mermaid_title": "Diagramas Mermaid",
         "mermaid_description": "Crie diagramas como fluxogramas, diagramas de classe e de sequência, gráficos de Gantt e muitos outros, usando a sintaxe Mermaid.",
         "mindmap_title": "Mapa mental",
-        "mindmap_description": "Organize seus pensamentos de forma visual ou faça uma sessão de brainstorming.",
-        "others_list": "e outros: <0>mapa de notas</0>, <1>mapa de relações</1>, <2>buscas salvas</2>, <3>renderizar nota</3>, e <4>visualizações web</4>."
-    },
-    "extensibility_benefits": {
-        "title": "Compartilhamento e extensibilidade",
-        "import_export_title": "Importar/exportar",
-        "import_export_description": "Interaja facilmente com outros aplicativos usando os formatos Markdown, ENEX e OML.",
-        "share_title": "Compartilhe notas na web",
-        "share_description": "Se você tiver um servidor, ele pode ser usado para compartilhar um subconjunto das suas notas com outras pessoas.",
-        "scripting_title": "Scripts avançados",
-        "scripting_description": "Crie suas próprias integrações no Trilium com widgets personalizados ou lógica do lado do servidor.",
-        "api_title": "REST API",
-        "api_description": "Interaja com o Trilium programaticamente usando sua API REST integrada."
+        "mindmap_description": "Organize seus pensamentos de forma visual ou faça uma sessão de brainstorming."
     },
     "collections": {
         "title": "Coleções",
@@ -112,7 +98,8 @@
     "header": {
         "get-started": "Primeiros passos",
         "documentation": "Documentação",
-        "support-us": "Apoie-nos"
+        "support-us": "Apoie-nos",
+        "resources": "Recursos"
     },
     "footer": {
         "copyright_and_the": " e a ",
@@ -166,7 +153,8 @@
         "download_flatpak": ".flatpak",
         "download_zip": "Portátil (.zip)",
         "download_nixpkgs": "nixpkgs",
-        "download_aur": "AUR"
+        "download_aur": "AUR",
+        "download_appimage": ".AppImage"
     },
     "download_helper_desktop_macos": {
         "title_x64": "macOS para Intel",
@@ -194,7 +182,13 @@
     "download_helper_server_hosted": {
         "title": "Hospedagem paga",
         "description": "Trilium Notes hospedado no PikaPods, um serviço pago para facilitar o acesso e o gerenciamento. Não é diretamente afiliado à equipe do Trilium.",
-        "download_pikapod": "Configurar no PikaPods",
-        "download_triliumcc": "Ou veja trilium.cc"
+        "download_pikapod": "Configurar no PikaPods"
+    },
+    "resources": {
+        "title": "Recursos",
+        "download": "Baixar",
+        "website": "Site",
+        "icon_packs": "Pacote de ícones",
+        "icon_packs_intro": "Amplie a seleção de ícones disponíveis para suas anotações usando um pacote de ícones. Para obter mais informações sobre pacotes de ícones, consulte a <DocumentationLink>documentação oficial</DocumentationLink>."
     }
 }

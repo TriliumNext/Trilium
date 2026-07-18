@@ -1,17 +1,23 @@
-import log from "../log.js";
-import { getLlmProviderSetups } from "./provider_config.js";
+import { getLog } from "@triliumnext/core";
+
 import { AnthropicProvider } from "./providers/anthropic.js";
+import { ClaudeAgentProvider } from "./providers/claude_agent.js";
 import { GoogleProvider } from "./providers/google.js";
 import { OllamaProvider } from "./providers/ollama.js";
+import { getLlmProviderSetups } from "./provider_config.js";
 import { OpenAiProvider } from "./providers/openai.js";
 import type { LlmProvider, ModelInfo } from "./types.js";
 
 /** Factory functions for creating provider instances */
-const providerFactories: Record<string, (apiKey: string, baseUrl?: string) => LlmProvider> = {
-    anthropic: (apiKey) => new AnthropicProvider(apiKey),
-    openai: (apiKey) => new OpenAiProvider(apiKey),
-    google: (apiKey) => new GoogleProvider(apiKey),
-    ollama: (_apiKey, baseUrl) => new OllamaProvider(baseUrl)
+const providerFactories: Record<string, (apiKey: string, baseURL?: string) => LlmProvider> = {
+    anthropic: (apiKey, baseURL) => new AnthropicProvider(apiKey, baseURL),
+    openai: (apiKey, baseURL) => new OpenAiProvider(apiKey, baseURL),
+    google: (apiKey, baseURL) => new GoogleProvider(apiKey, baseURL),
+    // Claude Pro/Max subscription via the Claude Agent SDK — no API key;
+    // authentication is handled by Claude Code itself (`claude /login`).
+    "claude-agent": () => new ClaudeAgentProvider(),
+    // Local models via Ollama's OpenAI-compatible API — no API key needed.
+    ollama: (_apiKey, baseURL) => new OllamaProvider(baseURL)
 };
 
 /** Cache of instantiated providers by their config ID */
@@ -48,7 +54,7 @@ export function getProvider(providerId?: string): LlmProvider {
         throw new Error(`Unknown LLM provider type: ${config.provider}. Available: ${Object.keys(providerFactories).join(", ")}`);
     }
 
-    const provider = factory(config.apiKey, config.baseUrl);
+    const provider = factory(config.apiKey, config.baseURL);
     cachedProviders[config.id] = provider;
     return provider;
 }
@@ -91,18 +97,14 @@ export async function getAllModels(): Promise<ModelInfo[]> {
 
         try {
             const provider = getProvider(config.id);
-
-            // Ollama needs to fetch models from the running instance
-            if (provider instanceof OllamaProvider) {
-                await provider.loadModels();
-            }
-
+            // Providers with a dynamic model list (Ollama) fetch it at runtime
+            await provider.loadModels?.();
             const models = provider.getAvailableModels();
             for (const model of models) {
                 allModels.push({ ...model, provider: config.provider });
             }
         } catch (e) {
-            log.error(`Failed to get models from provider ${config.provider}: ${e}`);
+            getLog().error(`Failed to get models from provider ${config.provider}: ${e}`);
         }
     }
 

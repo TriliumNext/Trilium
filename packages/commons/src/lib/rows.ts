@@ -16,10 +16,13 @@ export interface AttachmentRow {
     isDeleted?: boolean;
     deleteId?: string;
     contentLength?: number;
-    content?: Buffer | string;
+    content?: Uint8Array | string;
     /** If set to `"base64"`, the `content` string will be decoded from base64 to binary before storage. */
     encoding?: "base64";
 }
+
+export const REVISION_SOURCES = ["auto", "manual", "etapi", "llm", "restore"] as const;
+export type RevisionSource = (typeof REVISION_SOURCES)[number];
 
 export interface RevisionRow {
     revisionId?: string;
@@ -28,6 +31,8 @@ export interface RevisionRow {
     mime: string;
     isProtected?: boolean;
     title: string;
+    description?: string;
+    source?: RevisionSource;
     blobId?: string;
     dateLastEdited?: string;
     dateCreated?: string;
@@ -70,7 +75,7 @@ export interface EtapiTokenRow {
 
 export interface BlobRow {
     blobId: string;
-    content: string | Buffer;
+    content: string | Uint8Array;
     contentLength: number;
     textRepresentation?: string | null;
     dateModified: string;
@@ -141,6 +146,6 @@ export interface NoteRow {
     dateModified?: string;
     utcDateCreated?: string;
     utcDateModified?: string;
-    content?: string | Buffer;
+    content?: string | Uint8Array;
 }
 

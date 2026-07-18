@@ -1,0 +1,18 @@
+.canvas-note-embeddable {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    padding: 10px;
+    background-color: var(--main-background-color);
+    color: var(--main-text-color);
+}
+
+/* Excalidraw uses the same `.dropdown-menu` class for its own (conditionally rendered) menus, so its
+   styles assume the element is absent when closed and never apply a hidden state. An embedded note's
+   Bootstrap dropdowns (e.g. a geo map's view switcher) are always in the DOM and hide via Bootstrap's
+   `.dropdown-menu { display: none }` when they lack `.show` — but inside `.excalidraw` that collision
+   leaves a closed menu displayed, and its backdrop-filter shows as a blurry band over the embed.
+   Restore the hidden state, scoped to embedded note content so Excalidraw's own dropdowns are untouched. */
+.canvas-note-embeddable .dropdown-menu:not(.show) {
+    display: none;
+}

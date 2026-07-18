@@ -6,8 +6,7 @@ class="image">
   <img style="aspect-ratio:1144/660;" src="Sharing_image.png"
   width="1144" height="660">
   </figure>
-  
-<h2>Features, interaction and limitations</h2>
+  <h2>Features, interaction and limitations</h2>
   <ul>
     <li>Searching by note title.</li>
     <li>Automatic dark/light mode based on the user's browser settings.</li>
@@ -218,8 +217,8 @@ class="image">
       read-only connection to the&nbsp;<a class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>.
       Depending on your threat model, it might make more sense to use&nbsp;
       <a
-      class="reference-link" href="#root/_help_ycBFjKrrwE9p">Exporting HTML for web publishing</a>&nbsp;and use battle-tested web servers
-        such as Nginx or Apache to serve static content.</li>
+      class="reference-link" href="#root/_help_ycBFjKrrwE9p">Exporting static HTML for web publishing</a>&nbsp;and use battle-tested
+        web servers such as Nginx or Apache to serve static content.</li>
   </ul>
   <h3>Password protection</h3>
   <p>To protect shared notes with a username and password, you can use the
@@ -281,12 +280,16 @@ class="image">
   </ul>
   <p>If no location is specified, the HTML will be injected at <code spellcheck="false">content:end</code> by
     default.</p>
-  <p>Example:</p><pre><code class="language-application-javascript-env-backend">const currentNote = await fetchNote();
+  <p>Example:</p><pre><code class="language-text-javascript">const currentNote = await fetchNote();
 const parentNote = await fetchNote(currentNote.parentNoteIds[0]);
 
 for (const attr of parentNote.attributes) {
     console.log(attr.type, attr.name, attr.value);
 }</code></pre>
+  <h3>Custom share templates</h3>
+  <p>To completely redesign the share, it is possible to create or use an existing
+    <a
+    href="#root/_help_Ad7Ku5gOHrDU">custom share template</a>.</p>
   <h3>Creating human-readable URL aliases</h3>
   <p>Shared notes typically have URLs like <code spellcheck="false">http://domain.tld/share/knvU8aJy4dJ7</code>,
     where the last part is the note's ID. You can make these URLs more user-friendly
@@ -331,173 +334,200 @@ for (const attr of parentNote.attributes) {
   <p>To do so, create a shared text note and apply the <code spellcheck="false">shareIndex</code> label.
     When viewed, the list of shared roots will be displayed at the bottom of
     the note.</p>
-  <h2>Attribute reference</h2>
-  <table class="ck-table-resized">
-    <colgroup>
-      <col style="width:18.38%;">
-        <col style="width:81.62%;">
-    </colgroup>
-    <thead>
-      <tr>
-        <th>Attribute</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>#shareHiddenFromTree</code>
-        </td>
-        <td>this note is hidden from left navigation tree, but still accessible with
-          its URL</td>
-      </tr>
-      <tr>
-        <td><code>#shareExternalLink</code>
-        </td>
-        <td>note will act as a link to an external website in the share tree</td>
-      </tr>
-      <tr>
-        <td><code>#shareAlias</code>
-        </td>
-        <td>define an alias using which the note will be available under <code>https://your_trilium_host/share/[your_alias]</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>#shareOmitDefaultCss</code>
-        </td>
-        <td>default share page CSS will be omitted. Use when you make extensive styling
-          changes.</td>
-      </tr>
-      <tr>
-        <td><code>#shareRoot</code>
-        </td>
-        <td>marks note which is served on /share root.</td>
-      </tr>
-      <tr>
-        <td><code>#shareDescription</code>
-        </td>
-        <td>define text to be added to the HTML meta tag for description</td>
-      </tr>
-      <tr>
-        <td><code>#shareRaw</code>
-        </td>
-        <td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;
-          <a
-          class="reference-link" href="#root/_help_Qjt68inQ2bRj">Serving directly the content of a note</a>&nbsp;for an alternative method
-            without setting an attribute.</td>
-      </tr>
-      <tr>
-        <td><code>#shareDisallowRobotIndexing</code>
-        </td>
-        <td>
-          <p>Indicates to web crawlers that the page should not be indexed of this
-            note by:</p>
-          <ul>
-            <li>Setting the <code>X-Robots-Tag: noindex</code> HTTP header.</li>
-            <li>Setting the <code>noindex, follow</code> meta tag.</li>
-          </ul>
-        </td>
-      </tr>
-      <tr>
-        <td><code>#shareCredentials</code>
-        </td>
-        <td>require credentials to access this shared note. Value is expected to be
-          in format <code>username:password</code>. Don't forget to make this inheritable
-          to apply to child-notes/images.</td>
-      </tr>
-      <tr>
-        <td><code>#shareIndex</code>
-        </td>
-        <td>Note with this label will list all roots of shared notes.</td>
-      </tr>
-      <tr>
-        <td><code>#shareHtmlLocation</code>
-        </td>
-        <td>defines where custom HTML injected via <code>~shareHtml</code> relation
-          should be placed. Applied to the HTML snippet note itself. Format: <code>location:position</code> where
-          location is <code>head</code>, <code>body</code>, or <code>content</code> and
-          position is <code>start</code> or <code>end</code>. Defaults to <code>content:end</code>.</td>
-      </tr>
-    </tbody>
-  </table>
-  
-<h3>Customizing logo</h3>
-  <p>It's possible to adjust the logo which is displayed on the top-left of
-    the left pane.</p>
-  <table>
-    <thead>
-      <tr>
-        <th>Attribute</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code spellcheck="false">~shareLogo</code>
-        </td>
-        <td>Relation set to an image to use as logo. The image must be part of the
-          share tree (it can be hidden if needed).</td>
-      </tr>
-      <tr>
-        <td><code spellcheck="false">#shareLogoWidth</code>
-        </td>
-        <td>The width (in pixels, without unit) to set for the logo. Default is
-          <code
-          spellcheck="false">53</code>.</td>
-      </tr>
-      <tr>
-        <td><code spellcheck="false">#shareLogoHeight</code>
-        </td>
-        <td>The height (in pixels, without unit) to set for the logo. Default is
-          <code
-          spellcheck="false">40</code>.</td>
-      </tr>
-      <tr>
-        <td><code spellcheck="false">#shareRootLink</code>
-        </td>
-        <td>URL to navigate to when the logo is pressed.</td>
-      </tr>
-    </tbody>
-  </table>
-  
-<h3>Customizing OpenGraph</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Attribute</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code spellcheck="false">#shareOpenGraphColor</code>
-        </td>
-        <td>This adjusts the <code spellcheck="false">theme-color</code> meta-property.</td>
-      </tr>
-      <tr>
-        <td><code spellcheck="false">#shareOpenGraphURL</code>
-        </td>
-        <td>This adjusts the <code spellcheck="false">og:url</code> and <code spellcheck="false">twitter:url</code> meta-properties.</td>
-      </tr>
-      <tr>
-        <td><code spellcheck="false">#shareOpenGraphDomain</code>
-        </td>
-        <td>Adjusts the <code spellcheck="false">twitter:domain</code> meta-property.</td>
-      </tr>
-      <tr>
-        <td><code spellcheck="false">#shareOpenGraphImage</code> 
-          <br><code spellcheck="false">~shareOpenGraphImage</code>
-        </td>
-        <td>Can be either a label, case in which the value is passed on as-is, or
-          it can be a relation to an image&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>.
-          This controls the <code spellcheck="false">og:image</code> meta-property.</td>
-      </tr>
-    </tbody>
-  </table>
-  
-<h2>Credits</h2>
-  <p>Since v0.95.0, a new theme was introduced (and enabled by default) which
-    greatly improves the visual aspect of the Share feature, as well as its
-    functionality (such as mobile support, dark/light mode, collapsible tree,
-    etc.). This theme is an adaptation of the <a href="https://github.com/zerebos/trilium.rocks">Trilium Rocks!</a> by
-    <a
-    href="https://github.com/zerebos">zerebos</a>.</p>
+  <h3>Linking to an external website</h3>
+  <p>Sometimes it's useful to include a link to an external website alongside
+    your shared notes — for example in the shared navigation or in an index.
+    To do so, add the <code spellcheck="false">#shareExternalLink</code> label
+    to a note, with the target URL as its value (e.g. <code spellcheck="false">#shareExternalLink="https://example.com"</code>).</p>
+  <p>Any link pointing to this note will then redirect to the external website
+    and open in a new browser tab, instead of opening the note's own shared
+    page. This applies to:</p>
+  <ul>
+    <li>the listing produced by the <code spellcheck="false">#shareIndex</code> label;</li>
+    <li>the "Subpages" list shown under a parent note;</li>
+    <li>inline links to this note from within other shared notes.</li>
+  </ul>
+  <p>The URL must be absolute and include the scheme (e.g. <code spellcheck="false">https://</code>).</p>
+  <aside
+  class="admonition note">
+    <p>The note still exists in the share tree and its own page remains reachable
+      by its direct URL — the label only changes how links to it behave.</p>
+    </aside>
+    <h2>Attribute reference</h2>
+    <table class="ck-table-resized">
+      <colgroup>
+        <col style="width:18.38%;">
+          <col style="width:81.62%;">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code spellcheck="false">#shareHiddenFromTree</code>
+          </td>
+          <td>this note is hidden from left navigation tree, but still accessible with
+            its URL</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareExternalLink</code>
+          </td>
+          <td>when a link points to this note (from the share index, a subpage list,
+            or an inline link in another shared note), it redirects to the given external
+            URL in a new tab instead of the note's shared page. Value is the absolute
+            URL, e.g. <code spellcheck="false">https://example.com</code>.</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareAlias</code>
+          </td>
+          <td>define an alias using which the note will be available under <code spellcheck="false">https://your_trilium_host/share/[your_alias]</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareOmitDefaultCss</code>
+          </td>
+          <td>default share page CSS will be omitted. Use when you make extensive styling
+            changes.</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareRoot</code>
+          </td>
+          <td>marks note which is served on /share root.</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareDescription</code>
+          </td>
+          <td>define text to be added to the HTML meta tag for description</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareRaw</code>
+          </td>
+          <td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;
+            <a
+            class="reference-link" href="#root/_help_Qjt68inQ2bRj">Serving directly the content of a note</a>&nbsp;for an alternative method
+              without setting an attribute.</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareDisallowRobotIndexing</code>
+          </td>
+          <td>
+            <p>Indicates to web crawlers that the page should not be indexed of this
+              note by:</p>
+            <ul>
+              <li>Setting the <code spellcheck="false">X-Robots-Tag: noindex</code> HTTP header.</li>
+              <li>Setting the <code spellcheck="false">noindex, follow</code> meta tag.</li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareCredentials</code>
+          </td>
+          <td>require credentials to access this shared note. Value is expected to be
+            in format <code spellcheck="false">username:password</code>. Don't forget
+            to make this inheritable to apply to child-notes/images.</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareIndex</code>
+          </td>
+          <td>Note with this label will list all roots of shared notes.</td>
+        </tr>
+        <tr>
+          <td><code spellcheck="false">#shareHtmlLocation</code>
+          </td>
+          <td>defines where custom HTML injected via <code spellcheck="false">~shareHtml</code> relation
+            should be placed. Applied to the HTML snippet note itself. Format:
+            <code
+            spellcheck="false">location:position</code>where location is <code spellcheck="false">head</code>,
+              <code
+              spellcheck="false">body</code>, or <code spellcheck="false">content</code> and position is
+                <code
+                spellcheck="false">start</code>or <code spellcheck="false">end</code>. Defaults to <code spellcheck="false">content:end</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>Customizing logo</h3>
+    <p>It's possible to adjust the logo which is displayed on the top-left of
+      the left pane.</p>
+    <figure class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>Attribute</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code spellcheck="false">~shareLogo</code>
+            </td>
+            <td>Relation set to an image to use as logo. The image must be part of the
+              share tree (it can be hidden if needed).</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareLogoWidth</code>
+            </td>
+            <td>The width (in pixels, without unit) to set for the logo. Default is
+              <code
+              spellcheck="false">53</code>.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareLogoHeight</code>
+            </td>
+            <td>The height (in pixels, without unit) to set for the logo. Default is
+              <code
+              spellcheck="false">40</code>.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareRootLink</code>
+            </td>
+            <td>URL to navigate to when the logo is pressed.</td>
+          </tr>
+        </tbody>
+      </table>
+    </figure>
+    <h3>Customizing OpenGraph</h3>
+    <figure class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>Attribute</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code spellcheck="false">#shareOpenGraphColor</code>
+            </td>
+            <td>This adjusts the <code spellcheck="false">theme-color</code> meta-property.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareOpenGraphURL</code>
+            </td>
+            <td>This adjusts the <code spellcheck="false">og:url</code> and <code spellcheck="false">twitter:url</code> meta-properties.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareOpenGraphDomain</code>
+            </td>
+            <td>Adjusts the <code spellcheck="false">twitter:domain</code> meta-property.</td>
+          </tr>
+          <tr>
+            <td><code spellcheck="false">#shareOpenGraphImage</code>&nbsp;
+              <br><code spellcheck="false">~shareOpenGraphImage</code>
+            </td>
+            <td>Can be either a label, case in which the value is passed on as-is, or
+              it can be a relation to an image&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>.
+              This controls the <code spellcheck="false">og:image</code> meta-property.</td>
+          </tr>
+        </tbody>
+      </table>
+    </figure>
+    <h2>Credits</h2>
+    <p>Since v0.95.0, a new theme was introduced (and enabled by default) which
+      greatly improves the visual aspect of the Share feature, as well as its
+      functionality (such as mobile support, dark/light mode, collapsible tree,
+      etc.). This theme is an adaptation of the <a href="https://github.com/zerebos/trilium.rocks">Trilium Rocks!</a> by
+      <a
+      href="https://github.com/zerebos">zerebos</a>.</p>

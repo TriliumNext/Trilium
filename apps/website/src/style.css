@@ -14,6 +14,7 @@
     --brand-2: #4fa52b;
     --brand-3: #e33f3b;
     --brand-foreground-color: white;
+    --header-height: 80px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -124,18 +125,26 @@ img {
         display: flex;
         flex-direction: column;
         flex-grow: 1;
+    }
+}
 
-        .more-info-container {
-            margin-top: 0.5em;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
+/* Heading-level doc link: the heading itself is the link, with an arrow
+   affordance instead of a repeated "Learn more..." text link. Used by linked
+   cards and the tabbed showcase. */
+.card-heading-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    color: inherit;
+    text-decoration: none;
 
-            .more-info {
-                font-size: 0.9em;
-            }
-        }
+    .card-arrow {
+        transition: transform 0.15s ease;
+    }
+
+    &:hover .card-arrow,
+    &:focus-visible .card-arrow {
+        transform: translateX(4px);
     }
 }
 

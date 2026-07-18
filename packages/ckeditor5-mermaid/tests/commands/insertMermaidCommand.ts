@@ -75,6 +75,18 @@ describe( 'InsertMermaidCommand', () => {
 	} );
 
 	describe( 'execute()', () => {
+		it( 'should add mermaid with the provided source', () => {
+			setModelData( model,
+				'<paragraph>[foo]</paragraph>'
+			);
+
+			command.execute( { source: 'graph LR; X --> Y' } );
+
+			expect( getModelData( model, { withoutSelection: true } ) ).to.equal(
+				'<mermaid displayMode="split" source="graph LR; X --> Y"></mermaid>'
+			);
+		} );
+
 		it( 'should add sample mermaid', () => {
 			setModelData( model,
 				'<paragraph>[foo]</paragraph>'

@@ -1,3 +1,5 @@
+import "./FilePropertiesTab.css";
+
 import { useContext } from "preact/hooks";
 
 import FNote from "../../entities/fnote";

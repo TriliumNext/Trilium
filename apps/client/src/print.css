@@ -1,19 +1,18 @@
-@import "boxicons/css/boxicons.min.css";
+@import "./stylesheets/boxicons-compat.css";
 
 :root {
     --print-font-size: 11pt;
-    --ck-content-color-image-caption-background: transparent !important;
 }
+
 
 html,
 body {
+    --print-font-family: var(--detail-font-family, sans-serif);
+
     width: 100%;
     height: 100%;
     color: black;
-}
-
-@page {
-    margin: 2cm;
+    font-family: var(--print-font-family);
 }
 
 .note-list-widget.full-height,
@@ -26,6 +25,12 @@ body {
 }
 
 body[data-note-type="text"] .ck-content {
+    --ck-content-font-family: var(--print-font-family);
+    --ck-content-font-size: var(--print-font-size);
+    --ck-content-font-color: black;
+    --ck-content-line-height: 1.5;
+    --ck-content-color-image-caption-background: transparent;
+
     font-size: var(--print-font-size);
     text-align: justify;
 }
@@ -48,28 +53,77 @@ body[data-note-type="text"] .ck-content {
     print-color-adjust: exact;
 }
 
+/* Checkboxes */
 @supports selector(.todo-list__label__description:has(*)) and (height: 1lh) {
+    /* Registering these as <length> resolves the `lh` unit to an absolute
+       length at the .todo-list__label__description element. The pseudo-elements
+       then inherit that frozen value, so changing the glyph's font-size on
+       ::after no longer feeds back into the box dimensions. */
+    @property --box-size {
+        syntax: "<length>";
+        inherits: true;
+        initial-value: 0px;
+    }
+    @property --box-vert-offset {
+        syntax: "<length>";
+        inherits: true;
+        initial-value: 0px;
+    }
+
+    /* Prevent variables from bleeding into nested items */
+    .ck-content .todo-list .todo-list {
+        --task-state-glyph: initial;
+        --task-state-glyph-font-family: initial;
+        --task-state-color: initial;
+    }
+
+    :where(.ck-content .todo-list li:where(:not([data-trilium-task-state]), [data-trilium-task-state="done"]):has(> .todo-list__label input[type="checkbox"]:checked)) {
+        --task-state-glyph: "";
+        --task-state-glyph-font-family: boxicons;
+    }
+
     .ck-content .todo-list__label__description {
         /* The percentage of the line height that the check box occupies */
         --box-ratio: 0.75;
         /* The size of the gap between the check box and the caption */
         --box-text-gap: 0.25em;
 
+        /* The percentage of the box size that the glyph occupies. */
+        --glyph-ratio: .70;
+
         --box-size: calc(1lh * var(--box-ratio));
         --box-vert-offset: calc((1lh - var(--box-size)) / 2);
 
         display: inline-block;
         padding-inline-start: calc(var(--box-size) + var(--box-text-gap));
-        /* Source: https://pictogrammers.com/library/mdi/icon/checkbox-blank-outline/ */
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3e%3cpath d='M19%2c3H5C3.89%2c3 3%2c3.89 3%2c5V19A2%2c2 0 0%2c0 5%2c21H19A2%2c2 0 0%2c0 21%2c19V5C21%2c3.89 20.1%2c3 19%2c3M19%2c5V19H5V5H19Z' /%3e%3c/svg%3e");
-        background-position: 0 var(--box-vert-offset);
-        background-size: var(--box-size);
-        background-repeat: no-repeat;
+        position: relative;
     }
 
-    .ck-content .todo-list__label:has(input[type="checkbox"]:checked) .todo-list__label__description {
-        /* Source: https://pictogrammers.com/library/mdi/icon/checkbox-outline/ */
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3e%3cpath d='M19%2c3H5A2%2c2 0 0%2c0 3%2c5V19A2%2c2 0 0%2c0 5%2c21H19A2%2c2 0 0%2c0 21%2c19V5A2%2c2 0 0%2c0 19%2c3M19%2c5V19H5V5H19M10%2c17L6%2c13L7.41%2c11.58L10%2c14.17L16.59%2c7.58L18%2c9' /%3e%3c/svg%3e");
+    .ck-content .todo-list__label__description::before,
+    .ck-content .todo-list__label__description::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: var(--box-vert-offset);
+        width: var(--box-size);
+        height: var(--box-size);
+    }
+
+    .ck-content .todo-list__label__description::before {
+        --_border-tickness: 1pt;
+        outline: var(--_border-tickness) solid black;
+        outline-offset: calc(0pt - var(--_border-tickness));
+        border-radius: 2pt;
+    }
+
+    .ck-content .todo-list__label__description::after {
+        content: var(--task-state-glyph);
+        line-height: var(--box-size);
+        vertical-align: middle;
+        text-align: center;
+        font-family: var(--task-state-glyph-font-family);
+        font-size: calc(var(--box-size) * var(--glyph-ratio));
+        color: var(--task-state-color);
     }
 
     .ck-content .todo-list__label input[type="checkbox"] {
@@ -86,10 +140,27 @@ body[data-note-type="text"] .ck-content {
 li.footnote-item {
     position: relative;
     width: fit-content;
+    /* The flex layout that top-aligns the number lives in style.css, which is not
+       loaded in print mode (see index.ts), so the rules are replicated here. */
+    display: flex;
+    list-style: none;
+    counter-increment: footnote-counter;
+}
+
+li.footnote-item::before {
+    content: counter(footnote-counter) ". ";
+    margin-right: 0.25em;
 }
 
 .ck-content .footnote-back-link {
     margin-right: 0.25em;
+}
+
+.ck-content .footnote-section {
+    margin-top: 1em;
+    border-top: 1px solid #ccc;
+    padding-top: 1em;
+    counter-reset: footnote-counter;
 }
 
 .ck-content .footnote-content {
@@ -131,6 +202,15 @@ h6 {
     vertical-align: middle;
 }
 
+/* CKEditor's content stylesheet sets `figure.table { width: fit-content }` under
+   @media print to stop tables from being stretched to the page. On screen, Bootstrap's
+   `.table { width: 100% }` keeps tables full-width, but Bootstrap is not loaded in print,
+   so a fit-content table gets centered by CKEditor's `.table { margin: .9em auto }`.
+   Restore the full-width screen behavior while leaving the height guard intact. */
+.ck-content figure.table:not(.layout-table):not([style]) {
+    width: 100% !important;
+}
+
 pre {
     box-shadow: unset !important;
     border: 0.75pt solid gray !important;
@@ -141,6 +221,55 @@ th,
 span[style] {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+}
+/* #endregion */
+
+/* #region Spreadsheet */
+.spreadsheet-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--print-font-size);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+.spreadsheet-table td {
+    padding: 2pt 4pt;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Gridlines: only when the sheet enables them, and only on unfilled cells (a background
+   fill covers the grid), mirroring the share renderer. Kept as a hairline border rather
+   than a box-shadow because print engines routinely drop shadows. At 0.5pt it is narrower
+   than every real cell border (>= 1px from the workbook data), so under border-collapse
+   the custom border always wins the conflict and is never clobbered. */
+.spreadsheet-table.show-gridlines td:not(.has-fill) {
+    border: 0.5pt solid var(--spreadsheet-gridline-color, #ccc);
+}
+/* #endregion */
+
+/* #region AI chat */
+body[data-note-type="llmChat"] {
+    font-size: var(--print-font-size);
+}
+
+body[data-note-type="llmChat"] .llm-chat-message-wrapper {
+    contain: none !important;
+}
+
+body[data-note-type="llmChat"] .llm-chat-message-user {
+    background: #f0f0f0;
+    border: 0.5pt solid #ccc;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+body[data-note-type="llmChat"] .llm-chat-footer {
+    /* The timestamp/usage footer is revealed on hover on screen; on paper there is no hover, and a
+       transcript wants its timestamps. */
+    opacity: 1;
+    color: #666;
 }
 /* #endregion */
 

@@ -1,40 +1,178 @@
+/* The shortcuts page feeds its controls into its OptionsPageHeader: the conflicts badge and reset
+   buttons on the title row, the filter/search box on the full-width row beneath. The sticky bar,
+   background and bottom border come from the header itself. */
+.shortcut-header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    justify-content: flex-end;
+    /* Keep the reset buttons clear of the dialog's window buttons (top-right). */
+    margin-inline-end: 3em;
+
+    /* Prominent danger badge flagging that conflicts exist; click to filter to them. Pushed to the
+       leading edge of the row, away from the buttons. */
+    .shortcut-conflicts-badge {
+        flex: 0 0 auto;
+        margin-inline-end: auto;
+        --color: var(--icon-button-danger-color, #d9534f);
+    }
+
+    /* While the conflicts filter is active, fill the outline badge solid. */
+    .shortcut-conflicts-badge.active {
+        background-color: var(--color);
+        color: white;
+    }
+}
+
+.shortcut-header-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+
+    /* The search box grows so the filter button sits at the trailing edge. */
+    > :first-child {
+        flex: 1;
+    }
+
+    .dropdown {
+        flex: 0 0 auto;
+    }
+
+    /* Highlight the filter button while a filter is applied. */
+    .icon-action.active {
+        color: var(--link-color);
+    }
+}
+
 .shortcuts-options-section {
-    > header {
-        position: sticky;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: var(--main-background-color);
-        padding-block: 0.5em;
-        border-bottom: 1px solid var(--main-border-color);
+    .shortcut-modified-indicator {
+        display: inline-block;
+        width: 0.5em;
+        height: 0.5em;
+        margin-right: 0.5em;
+        border-radius: 50%;
+        background-color: var(--link-color);
+        vertical-align: middle;
     }
 
-    > footer {
-        position: sticky;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: var(--main-background-color);
-        padding-block: 0.5em;
-        border-top: 1px solid var(--main-border-color);
+    .shortcut-editor {
         display: flex;
-        justify-content: space-between;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.4em;
     }
 
-    table {
-        width: 100%;
+    /* Reserve the revert button's slot (matching its .icon-action width) so the add button to its
+       right never shifts as a row's modified state toggles, while only mounting the button when
+       there's something to revert. */
+    .shortcut-revert-slot {
+        flex: 0 0 auto;
+        display: flex;
+        justify-content: center;
+        width: 37px;
+    }
 
-        th {
-            width: 25%;
+    .shortcut-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25em;
+        padding: 0.1em 0.2em 0.1em 0.5em;
+        background: var(--input-background-color);
+        border-radius: 6px;
+    }
+
+    .shortcut-chip.conflict {
+        box-shadow: inset 0 0 0 1px var(--icon-button-danger-color, #d9534f);
+    }
+
+    .shortcut-chip-conflict {
+        color: var(--icon-button-danger-color, #d9534f);
+    }
+
+    .shortcut-chip kbd {
+        background: none;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        /* Override the global monospace `kbd` rule (style.css) so the shortcut glyphs and their
+           labels share the UI font and line up; the global rule uses !important, so this must too. */
+        font-family: inherit !important;
+        font-size: 0.9em;
+        color: var(--main-text-color);
+        display: block !important;
+    }
+
+    .shortcut-chip-action,
+    .shortcut-chip-global-indicator {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.1em;
+        color: var(--muted-text-color);
+    }
+
+    .shortcut-chip-action {
+        border: none;
+        background: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .shortcut-chip-action:hover {
+        color: var(--main-text-color);
+        background: var(--hover-item-background-color);
+    }
+
+    .shortcut-chip-global {
+        transition: opacity 0.2s, color 0.2s;
+
+        &.active {
+            color: var(--link-color);
+            opacity: 1;
+        }
+    }
+
+    /* The recorder stays a fixed-size .icon-action button; recording is shown as an active highlight
+       (no size change) so toggling it never reflows the row. */
+    .shortcut-recorder.recording {
+        color: var(--link-color);
+        border-color: var(--link-color);
+    }
+
+    /* Desktop: keep idle rows uncluttered by revealing the add button only on row hover (or while
+       it is focused / recording). Fade rather than display:none so the row never reflows. Mobile has
+       no hover, so the button stays visible there (see the body.mobile block below). */
+    body.desktop & {
+        .shortcut-recorder {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
         }
 
-        .separator {
-            background-color: var(--accented-background-color);
-            font-weight: bold;
+        .option-row:hover .shortcut-recorder,
+        .shortcut-recorder:focus,
+        .shortcut-recorder.recording {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    }
 
-            &:first-of-type {
-                padding-top: 1em;
-            }
+    /* On mobile, stack each row so the shortcut editor sits underneath the action label.
+       OptionsRow keeps these rows inline because they contain .icon-action buttons. */
+    body.mobile & {
+        .option-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .option-row-input {
+            width: 100%;
+        }
+
+        .shortcut-editor {
+            justify-content: flex-start;
         }
     }
 }

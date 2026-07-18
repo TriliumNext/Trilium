@@ -8,7 +8,7 @@
 
 import type { ToolSet } from "ai";
 
-import optionService from "../options.js";
+import { options as optionService } from "@triliumnext/core";
 import { getSearchEngineSetups, type LlmProviderSetup } from "./provider_config.js";
 import { addSearxngSearchTool, addTavilySearchTool } from "./web_search_tools.js";
 
@@ -27,8 +27,8 @@ function addSearchToolForSetup(tools: ToolSet, setup: LlmProviderSetup, timeoutM
             addTavilySearchTool(tools, setup.apiKey, timeoutMs);
             return true;
         case "searxng":
-            if (!setup.baseUrl) return false;
-            addSearxngSearchTool(tools, setup.baseUrl, timeoutMs);
+            if (!setup.baseURL) return false;
+            addSearxngSearchTool(tools, setup.baseURL, timeoutMs);
             return true;
         default:
             return false;

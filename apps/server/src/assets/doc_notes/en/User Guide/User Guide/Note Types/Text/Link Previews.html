@@ -1,0 +1,127 @@
+<p>Link previews turn a pasted URL into a rich, metadata-aware widget that
+  can be displayed in three visual modes:</p>
+<h2>Display modes</h2>
+<p>A link preview can be displayed in one of three modes:</p>
+<ul>
+  <li><strong>Inline</strong> — a link showing the site's favicon and page title
+    (quite similar to&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>).
+    Use this when you want the link to flow with the surrounding paragraph.</li>
+  <li><strong>Card</strong> — a block-level preview with thumbnail, title, description,
+    and site name. Use this when the link is the focus of a paragraph.</li>
+  <li><strong>Embed</strong> — a block-level interactive embed.
+    <ul>
+      <li>Currently supported for YouTube videos, which render interactively (via
+        an <code spellcheck="false">iframe</code>).</li>
+      <li>To prevent unwanted remote requests, the video is shown only after clicking
+        on it first.</li>
+    </ul>
+  </li>
+</ul>
+<table class="ck-table-resized">
+  <colgroup>
+    <col style="width:21.85%;">
+      <col style="width:38.84%;">
+        <col style="width:39.31%;">
+  </colgroup>
+  <tbody>
+    <tr>
+      <td>
+        <figure class="image image_resized" style="width:100%;">
+          <img style="aspect-ratio:251/42;" src="Link Previews_image.png"
+          width="251" height="42">
+          <figcaption><em>Inline</em> link preview</figcaption>
+        </figure>
+      </td>
+      <td>
+        <figure class="image image_resized" style="width:100%;">
+          <img style="aspect-ratio:1217/196;" src="2_Link Previews_image.png"
+          width="1217" height="196">
+          <figcaption><em>Card</em> link preview</figcaption>
+        </figure>
+      </td>
+      <td>
+        <figure class="image image_resized" style="width:100%;">
+          <img style="aspect-ratio:994/563;" src="1_Link Previews_image.png"
+          width="994" height="563">
+          <figcaption><em>Embed</em> link preview</figcaption>
+        </figure>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h2>Inserting a link preview</h2>
+<p>There are two ways to create one:</p>
+<h3>1. By pasting a URL</h3>
+<p>A link preview is automatically created:</p>
+<ul>
+  <li>By pasting the URL and pressing <kbd>Space</kbd>. This will create an <em>inline</em> link
+    preview.</li>
+  <li>When at the start of a new paragraph, pressing <kbd>Enter</kbd> will create
+    a <em>card</em> or an <em>embed</em> for YouTube URLs.</li>
+</ul>
+<p>To undo an automatic link preview, press <kbd>Ctrl</kbd>+<kbd>Z</kbd> immediately
+  afterwards which keeps it as a plain link instead. Alternatively, once
+  a link preview was created, click on the link and select <em>Plain link</em> from
+  the link preview toolbar.</p>
+<p>This automatic conversion can be disabled by going to&nbsp;<a class="reference-link"
+  href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Text Notes</em> and unchecking <em>Autogenerate link previews</em> from
+  the <em>Features</em> section.</p>
+<p>If the link is not accessible to the Trilium server (or the network request
+  fails for any other reason), it will not be converted to a link preview.</p>
+<aside
+class="admonition note">
+  <p>A URL is only auto-converted when the pasted text <em>is</em> the URL. Links
+    with a display name (e.g. <a href="https://triliumnotes.org">Trilium Notes website</a>)
+    are left as plain links.</p>
+  </aside>
+  <h3>2. By using the "Link preview" toolbar button</h3>
+  <p>Click <strong>Link preview</strong> in the formatting toolbar to open the <em>Link preview</em> popup.
+    Paste the URL and choose the type of preview.</p>
+  <h2>Altering an existing link preview</h2>
+  <p>Click on an inserted link preview to select it, and a small toolbar will
+    appear with the following options:</p>
+  <ul>
+    <li>The normal link operations (opening in a new tab, copying the link, unlinking).</li>
+    <li>A button to edit the title of the link preview. This is especially useful
+      if the title is hidden behind a login screen.</li>
+    <li>A way to switch between the link preview modes (Inline, Card or Embed)
+      as well as to convert it to a normal link instead.
+      <ul>
+        <li>The Embed option is only enabled when the URL points to a supported service
+          (YouTube today).</li>
+      </ul>
+    </li>
+  </ul>
+  <h2>Where the preview data comes from</h2>
+  <p>When you insert a link preview, Trilium fetches metadata once and stores
+    it inside the note's HTML:</p>
+  <ul>
+    <li><strong>YouTube URLs</strong> — title, channel name, and thumbnail are
+      fetched via YouTube's public oEmbed endpoint.</li>
+    <li><strong>All other URLs</strong> — Trilium fetches the page and reads OpenGraph
+      tags (<code spellcheck="false">og:title</code>, <code spellcheck="false">og:description</code>,
+      <code
+      spellcheck="false">og:image</code>, <code spellcheck="false">og:site_name</code>), falling
+        back to the page's <code spellcheck="false">&lt;title&gt;</code> and
+        <code
+        spellcheck="false">&lt;meta name="description"&gt;</code>. The site's favicon is downloaded
+          and inlined.</li>
+  </ul>
+  <p>Because the data is stored in the note itself, link previews continue
+    to render correctly when you reopen the note, share/publish it, or export
+    to HTML — without any further network requests.</p>
+  <p>The metadata is captured <strong>at insertion time</strong> and is not automatically
+    refreshed. If the linked page later changes its title or thumbnail, you'll
+    need to re-insert the link to pick up the new values. To refresh a link,
+    simply create it again.</p>
+  <p>When accessing a&nbsp;<a class="reference-link" href="#root/_help_WOcw2SLH6tbX">Server Installation</a>,
+    the data is fetched from the remote URL by the server and not the client.</p>
+  <h2>Known limitations</h2>
+  <ul>
+    <li>The Embed display mode currently only supports YouTube. Other video and
+      media platforms fall back to a Card preview.</li>
+    <li>Pages that block automated fetches may produce a minimal preview (hostname
+      only).</li>
+    <li>Link previews require the Trilium server to reach the target URL, so they
+      won't generate previews for pages on networks the server can't see.</li>
+  </ul>

@@ -3,7 +3,9 @@
     href="#root/_help_6tZeKvSHEUiB">Demo Notes</a>.</p>
 </aside>
 <p>Create a&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
-  of type JS frontend and <strong>give it a</strong>  <code spellcheck="false">#widget</code>  <strong>label</strong>.</p><pre><code class="language-text-x-trilium-auto">/*
+  of type JavaScript (Trilium frontend) and <strong>give it a</strong> 
+  <code
+  spellcheck="false">#widget</code> <strong>label</strong>.</p><pre><code class="language-text-x-trilium-auto">/*
  * This defines a custom widget which displays number of words and characters in a current text note.
  * To be activated for a given note, add label 'wordCount' to the note, you can also make it inheritable and thus activate it for the whole subtree.
  * 
@@ -80,6 +82,9 @@ class WordCountWidget extends api.NoteContextAwareWidget {
 module.exports = new WordCountWidget();</code></pre>
 <p>After you make changes it is necessary to <a href="#root/_help_s8alTXmpFR61">restart Trilium</a> so
   that the layout can be rebuilt.</p>
+<p>The widget only activates on text notes that have the <code spellcheck="false">#wordCount</code> label.
+  This label can be a <a href="#root/_help_hrZ1D00cLbal">reference link</a> to enable
+  the widget for an entire subtree.</p>
 <p>At the bottom of the note you can see the resulting widget:</p>
 <figure
 class="image">

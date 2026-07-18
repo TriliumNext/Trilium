@@ -16,6 +16,9 @@
       "path": "../../packages/commons"
     },
     {
+      "path": "../../packages/trilium-core"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {

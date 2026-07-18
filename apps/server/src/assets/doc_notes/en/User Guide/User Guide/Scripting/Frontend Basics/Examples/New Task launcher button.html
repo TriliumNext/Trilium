@@ -2,17 +2,17 @@
   href="#root/_help_xYjQUYhpbUEW">Task Manager</a>&nbsp;showcase (which comes by
   default with Trilium) by adding a button in the&nbsp;<a class="reference-link"
   href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>&nbsp; (
-  <img src="New Task launcher button_i.png">) to create a new task automatically and open it.</p>
+  <img src="New Task launcher button_image.png">) to create a new task automatically and open it.</p>
 <h2>Creating the note</h2>
 <ol>
   <li>First, create a new&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
-    type with the <em>JS frontend</em> language.</li>
+    type with the <em>JavaScript (Trilium frontend)</em> language.</li>
   <li>Define the <code spellcheck="false">#run=frontendStartup</code> label in&nbsp;
     <a
     class="reference-link" href="#root/_help_zEY4DaJG4YT5">Attributes</a>.</li>
 </ol>
 <h2>Content of the script</h2>
-<p>Copy-paste the following script:</p><pre><code class="language-application-javascript-env-backend">api.addButtonToToolbar({
+<p>Copy-paste the following script:</p><pre><code class="language-text-javascript">api.addButtonToToolbar({
 	title: "New task",
     icon: "task",
     shortcut: "alt+n",

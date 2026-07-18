@@ -1,7 +1,8 @@
-import becca from "../becca/becca.js";
-import { fromBase64, randomSecureToken, constantTimeCompare } from "./utils.js";
-import BEtapiToken from "../becca/entities/betapi_token.js";
+import { BEtapiToken } from "@triliumnext/core";
 import crypto from "crypto";
+
+import { becca } from "@triliumnext/core";
+import { fromBase64, randomSecureToken, constantTimeCompare } from "./utils.js";
 
 function getTokens() {
     return becca.getEtapiTokens();

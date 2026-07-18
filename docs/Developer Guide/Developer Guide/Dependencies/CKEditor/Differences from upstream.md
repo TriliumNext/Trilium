@@ -6,7 +6,7 @@
 | Affected file | Affected method | Changed in | Reason for change |
 | --- | --- | --- | --- |
 | `packages/ckeditor5-mention/src/mentionui.ts` | `createRegExp()` | `6db05043be24bacf9bd51ea46408232b01a1b232` (added back) | Allows triggering the autocomplete for labels and attributes in the attribute editor. |
-| `init()` | `55a63a1934efb9a520fcc2d69f3ce55ac22aca39` | Allows dismissing @-mention permanently after pressing ESC, otherwise it would automatically show up as soon as a space was entered. |     |
+| `init()` | `55a63a1934efb9a520fcc2d69f3ce55ac22aca39` | Allows dismissing @-mention permanently after pressing ESC, otherwise it would automatically show up as soon as a space was entered. |  |
 
 ## Checking the old repo
 

@@ -19,18 +19,24 @@
  * ╚════════════════════════════════════════════════════════════════════════════╝
  */
 
-import ini from "ini";
+import { utils } from "@triliumnext/core";
 import fs from "fs";
-import dataDir from "./data_dir.js";
+import ini from "ini";
 import path from "path";
+
+import dataDir from "./data_dir.js";
 import resourceDir from "./resource_dir.js";
-import { envToBoolean, stringToInt } from "./utils.js";
 
 /**
- * Path to the sample configuration file that serves as a template for new installations.
- * This file contains all available configuration options with documentation.
+ * Path to the sample configuration file copied into the data directory on first
+ * run. Desktop builds get a trimmed template: web-deployment options (host, port,
+ * CORS, reverse proxy, sessions, OAuth) don't apply because the renderer talks to
+ * the bundled server in-process, and network/scripting are managed through the UI.
+ * `process.versions.electron` is used (not the core `isElectron()`) because this
+ * runs at module load, before the platform is initialized.
  */
-const configSampleFilePath = path.resolve(resourceDir.RESOURCE_DIR, "config-sample.ini");
+const configSampleFileName = process.versions.electron ? "config-sample-desktop.ini" : "config-sample.ini";
+const configSampleFilePath = path.resolve(resourceDir.RESOURCE_DIR, configSampleFileName);
 
 /**
  * Initialize config.ini file if it doesn't exist.
@@ -136,7 +142,20 @@ export interface TriliumConfig {
          * log files created by Trilium older than the specified amount of time will be deleted.
          */
         retentionDays: number;
-    }
+    };
+    /** Security and code execution configuration */
+    Security: {
+        /** Whether backend script execution is enabled (default: false for server, true for desktop) */
+        backendScriptingEnabled: boolean;
+        /** Whether the SQL console is accessible (default: false) */
+        sqlConsoleEnabled: boolean;
+        /**
+         * Desktop only: whether the TCP listener binds all interfaces (LAN-reachable)
+         * instead of loopback. Managed via the desktop `security.json` override, not
+         * config.ini. Consumed by host.ts; has no effect on server builds.
+         */
+        allowLanAccess: boolean;
+    };
 }
 
 /**
@@ -253,7 +272,7 @@ function getIniSection(sectionName: string): IniConfigSection | undefined {
  */
 function transformBoolean(value: unknown): boolean {
     // First try the standard envToBoolean function which handles "true"/"false" strings
-    const result = envToBoolean(String(value));
+    const result = utils.envToBoolean(String(value));
     if (result !== undefined) return result;
 
     // Handle numeric boolean values (both string and number types)
@@ -314,6 +333,8 @@ const configMapping = {
     },
     Network: {
         host: {
+            // Web/server only — desktop ignores this and resolves its bind
+            // address from the `allowLanAccess` security override (see host.ts).
             standardEnvVar: 'TRILIUM_NETWORK_HOST',
             iniGetter: () => getIniSection("Network")?.host,
             defaultValue: '0.0.0.0'
@@ -393,7 +414,11 @@ const configMapping = {
             // alternative format
             aliasEnvVars: ['TRILIUM_SYNC_SERVER_TIMEOUT'],
             iniGetter: () => getIniSection("Sync")?.syncServerTimeout,
-            defaultValue: '120000'
+            // Empty string signals "no override" so sync_options falls back to
+            // the user's `syncServerTimeout` DB option. Setting a literal
+            // default here would always take precedence and silently shadow
+            // the value the user configured in the settings UI.
+            defaultValue: ''
         },
         syncProxy: {
             standardEnvVar: 'TRILIUM_SYNC_SYNCPROXY',
@@ -456,7 +481,30 @@ const configMapping = {
             aliasEnvVars: ['TRILIUM_LOGGING_RETENTION_DAYS'],
             iniGetter: () => getIniSection("Logging")?.retentionDays,
             defaultValue: LOGGING_DEFAULT_RETENTION_DAYS,
-            transformer: (value: unknown) => stringToInt(String(value)) ?? LOGGING_DEFAULT_RETENTION_DAYS
+            transformer: (value: unknown) => utils.stringToInt(String(value)) ?? LOGGING_DEFAULT_RETENTION_DAYS
+        }
+    },
+    Security: {
+        backendScriptingEnabled: {
+            standardEnvVar: 'TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED',
+            iniGetter: () => getIniSection("Security")?.backendScriptingEnabled,
+            defaultValue: false,
+            transformer: transformBoolean
+        },
+        sqlConsoleEnabled: {
+            standardEnvVar: 'TRILIUM_SECURITY_SQL_CONSOLE_ENABLED',
+            aliasEnvVars: ['TRILIUM_SECURITY_SQLCONSOLEENABLED'],
+            iniGetter: () => getIniSection("Security")?.sqlConsoleEnabled,
+            defaultValue: false,
+            transformer: transformBoolean
+        },
+        allowLanAccess: {
+            // Desktop-only: normally written to security.json and applied by the
+            // Electron main process at startup; host.ts reads it instead of the
+            // [Network] host. Kept off the documented config surface on purpose.
+            iniGetter: () => getIniSection("Security")?.allowLanAccess,
+            defaultValue: false,
+            transformer: transformBoolean
         }
     }
 };
@@ -511,8 +559,14 @@ const config: TriliumConfig = {
     },
     Logging: {
         retentionDays: getConfigValue(configMapping.Logging.retentionDays)
+    },
+    Security: {
+        backendScriptingEnabled: getConfigValue(configMapping.Security.backendScriptingEnabled),
+        sqlConsoleEnabled: getConfigValue(configMapping.Security.sqlConsoleEnabled),
+        allowLanAccess: getConfigValue(configMapping.Security.allowLanAccess)
     }
 };
+
 
 /**
  * =====================================================================

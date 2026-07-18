@@ -1,0 +1,116 @@
+# Minimal Authelia config for testing Trilium's OpenID Connect (OIDC) login.
+#
+# DEV ONLY — every secret in here is throwaway. Do not reuse for anything real.
+#
+# This config deliberately reproduces https://github.com/TriliumNext/Trilium/issues/6387:
+# a spec-compliant provider only returns `name`/`email` from the UserInfo endpoint, NOT in
+# the ID token. To test the Authelia-side workaround instead, uncomment the `claims_policies`
+# block at the bottom and the `claims_policy:` line on the client.
+
+theme: 'light'
+
+server:
+  address: 'tcp://0.0.0.0:9091'
+  # Authelia 4.39 requires https for authelia_url, so the portal is served over TLS with a
+  # self-signed cert for auth.example.com (see config/certs, regenerate via the README).
+  tls:
+    certificate: '/config/certs/public.crt'
+    key: '/config/certs/private.key'
+
+log:
+  level: 'info'
+
+# Required since 4.38; throwaway dev secret.
+identity_validation:
+  reset_password:
+    jwt_secret: 'insecure_dev_jwt_secret_change_me_0123456789'
+
+# Single test user. Password is "authelia" (the well-known Authelia example argon2id hash).
+authentication_backend:
+  file:
+    path: '/config/users_database.yml'
+
+access_control:
+  default_policy: 'one_factor'
+
+session:
+  secret: 'fb4KB+NJHQ948f5Ell9S9H23HIQE06OgdsFeD9EPqb0xX7xWOZN0aB63hVRGVAxS'
+  cookies:
+    # The portal lives on a subdomain of this registrable domain. Authelia rejects a bare
+    # `localhost` cookie domain (no dot), which is why we use auth.example.com + a hosts entry.
+    - domain: 'example.com'
+      authelia_url: 'https://auth.example.com:9091'
+
+storage:
+  encryption_key: 'w2uKzhx4Gt/aKYycoWGgQck+E/Onp8wCHqFYPTQL/xPSp6ZCSplsW8OEtWek5E50'
+  local:
+    path: '/data/db.sqlite3'
+
+notifier:
+  filesystem:
+    # Authelia writes registration / reset emails here instead of sending them.
+    filename: '/data/notification.txt'
+
+identity_providers:
+  oidc:
+    hmac_secret: 'PrK2/+SmOG79R1WvgUUgm6RSkHEgs6wIk2jE30B/kdxhBFVyz4bzai7USyzseBkH'
+    jwks:
+      - key_id: 'main'
+        algorithm: 'RS256'
+        use: 'sig'
+        key: |
+          -----BEGIN PRIVATE KEY-----
+          MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCucabx4DHA0nEg
+          FxLyXf+uWnUGmK8c0/2b969K2d+onVuNWbtzMMKksUYUdLJEUMzbyW6DX0WC3d7E
+          y5BMEZoo9xKrgW5k2w/PNA8oGyVsSlQbiQCIePJNGxhChTyXGS5/Ck0FqSOz5ZbP
+          Ver5i+Mfl/Hoa5cyg6eSQqIrOxnl2Z7UyGzDFJ36UhlM5AFB4nm53JhhGq5TRlb/
+          U+MmvgDqhep7KRNJwQ0azqvOAK1Gmp6M96hVY5EFQv24RUQ6X5OPTmag5ofFRCwm
+          ATE1OiNi/XSjE7sQe/rm2Uq9ha/fCnFnj98WsNMT1ZA993rUBYm/YJ4p+Jsp5oPv
+          RP2tP8s1AgMBAAECggEAGEWeh7mc2po9XMxxGbGMDZevAEm21dFGUJEEPis2BElO
+          z4pce2DduFolKNv64OgINQ2gN53GN3kFEcdMLtVlKI2GNsBV2qkjWD6DXF54lMp7
+          zPABV7vSZPmf5MOSpGh/0HPftymrWtDXbMZk4S9+XOtAoMj1mvT4GDD2zQKWbiVg
+          F/i1hhy3KytMMPmeu/9QBxsufsnHFu4Ztbs//usxwjZKySdFFf0sZVX3uSREnfLR
+          Qsi5zEirxy5W/Siu5zWg73d5UFrT6KQttFrBRUkFSc0IVFavqgX5e7jrZTgGHS/m
+          US3YEMOIHT1pU1p2XL9WiJ7RcdiZVU8YpTfPUam9KQKBgQDsVGiSlTs0riIQSv8J
+          WBoFDb0XKPFcKPoqA2gEEi1NCmzbzKDUP0uE9Zxr7aAJg4vJChxn+bQJtwuO/2S3
+          pb8TeSFGw5G86DGqvLQyCrxZOmqiPw/sJ8TSj23fiZa0G1oVDmpJpmyWGFySxxHm
+          C9aSDuw7EY73Bu8g+v0e+ke/aQKBgQC89p0cIxN+4DAUynQZEoYt5mfnol8vNQ01
+          cjLHrtOgShNttr/Te2TEkT41F82J4O44XSyp7FhOzb8aO8KrbEM7/1cxShCg2gYY
+          Fzhxa0rFJTBJDmGzpK5iXzoW4rtPlme2ScWSG9aVoeijfmmdQSKAdcbuDqJ40/YE
+          6yE+/Jr/7QKBgHJuSJg5ZAqVCm9jMOxgWXD6/wUY0Q1z1fXD4nieKIs2MhGXmoRL
+          BZEisBPeYnBY3rWAjNKXqOJPXGxoI2d8/PE75K30Ajw7HdlzN7lHU33M+FcJO/d4
+          JihiRKxJXcxltg+eBD8XM1rV/vUfKP5/2uysBxxu2w+nruAER83ZGCaJAoGARmtF
+          G2I69rJHWMglwd40YNCXciwBes8zb/Jx2BZfyUExwlYzYHWAlPxniVOohjRrsleO
+          uHhaZGuqRvV0U3vSBn7emIC4d6koUjv9Dc9lGtkECIWyhUbescw5EqRGF5++YKFX
+          Xl6/dh3TW3JVm4PVfrflfXu4snyTFzwktJtgi/UCgYBWq0FsohJb1QlxV86HpvG7
+          cJZsuosFUD68iUIxDIFqSKyXIZ606kzCJrzwCGsAsqUgQ2x2W5Njx/tLLRhDG6XY
+          griRZhVXctF56SH6SeVK6XIpei9hdrEyyYXXIyD3wC7i8uu3Fcp0++xsExiy9exA
+          b3m+Gr4ZMDXg5/5HnEZTNw==
+          -----END PRIVATE KEY-----
+    clients:
+      - client_id: 'trilium'
+        client_name: 'Trilium'
+        # DEV ONLY plaintext secret; matches TRILIUM_OAUTH_CLIENT_SECRET below.
+        client_secret: '$plaintext$insecure_secret'
+        public: false
+        authorization_policy: 'one_factor'
+        require_pkce: false
+        redirect_uris:
+          # Loopback host lets Authelia accept an http (non-TLS) redirect URI.
+          - 'http://localhost:8080/callback'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'email'
+        # Trilium sends credentials via HTTP Basic for non-Google issuers
+        # (see resolveClientAuthMethod() in apps/server/src/services/open_id.ts).
+        token_endpoint_auth_method: 'client_secret_basic'
+
+        # --- WORKAROUND (issue #6387) ---------------------------------------
+        # Uncomment the next line AND the claims_policies block below to force
+        # name/email into the ID token, sidestepping the missing-claims bug.
+        # claims_policy: 'trilium'
+
+    # claims_policies:
+    #   trilium:
+    #     id_token: ['email', 'name']

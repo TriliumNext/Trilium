@@ -26,11 +26,13 @@ apps/
 │   └── src/**/*.spec.ts       # Server tests
 ├── client/
 │   └── src/**/*.spec.ts       # Client tests
-└── server-e2e/
-│   └── tests/**/*.spec.ts     # E2E tests
+├── server/
+│   └── e2e/**/*.spec.ts       # Server-specific E2E tests
 └── desktop/
-    └── e2e
-        └── tests/**/*.spec.ts # E2E tests
+    └── e2e/**/*.spec.ts       # Desktop E2E tests
+packages/
+└── trilium-e2e/
+    └── src/**/*.spec.ts       # Shared E2E tests
 ```
 
 ## Running tests
@@ -49,7 +51,14 @@ Using `vitest`, there are some unit and integration tests done for both the clie
 
 These tests can be found by looking for the corresponding `.spec.ts` in the same directory as the source file.
 
-<table><tbody><tr><td><p>To run the server-side tests:</p><pre><code class="language-text-x-trilium-auto">npm run server:test</code></pre><p>To view the code coverage for the server:</p><pre><code class="language-text-x-trilium-auto">npm run server:coverage</code></pre><p>Afterwards, a friendly HTML report can be found in <code>/coverage/index.html</code>.</p></td><td><p>To run the client-side tests:</p><pre><code class="language-text-x-trilium-auto">npm run client:test</code></pre><p>To view the code coverage for the client:</p><pre><code class="language-text-x-trilium-auto">npm run client:coverage</code></pre><p>Afterwards, a friendly HTML report can be found in <code>/src/public/app/coverage/index.html</code>.</p></td></tr></tbody></table>
+<table>
+    <tbody>
+        <tr>
+            <td><p>To run the server-side tests:</p><pre><code class="language-text-x-trilium-auto">npm run server:test</code></pre><p>To view the code coverage for the server:</p><pre><code class="language-text-x-trilium-auto">npm run server:coverage</code></pre><p>Afterwards, a friendly HTML report can be found in <code>/coverage/index.html</code>.</p></td>
+            <td><p>To run the client-side tests:</p><pre><code class="language-text-x-trilium-auto">npm run client:test</code></pre><p>To view the code coverage for the client:</p><pre><code class="language-text-x-trilium-auto">npm run client:coverage</code></pre><p>Afterwards, a friendly HTML report can be found in <code>/src/public/app/coverage/index.html</code>.</p></td>
+        </tr>
+    </tbody>
+</table>
 
 To run both client and server-side tests:
 

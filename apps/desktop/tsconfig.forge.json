@@ -9,15 +9,28 @@
       "node",
       "express"
     ],
-    "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo"
+    "tsBuildInfoFile": "dist/tsconfig.forge.tsbuildinfo"
   },
   "include": [
     "**/*.ts",
-    "../server/src/*.d.ts"
+    "electron-forge/**/*.mts",
+    "../server/src/*.d.ts",
+    "package.json"
   ],
   "exclude": [
     "eslint.config.js",
     "eslint.config.cjs",
-    "eslint.config.mjs"
+    "eslint.config.mjs",
+    "scripts/**",
+    "spec/**",
+    "dist/**"
+  ],
+  "references": [
+    {
+      "path": "../server/tsconfig.app.json"
+    },
+    {
+      "path": "../../packages/commons/tsconfig.lib.json"
+    }
   ]
 }

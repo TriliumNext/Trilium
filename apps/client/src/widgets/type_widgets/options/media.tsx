@@ -3,17 +3,19 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
+import { isElectron } from "../../../services/utils";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
-import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import Slider from "../../react/Slider";
-import OptionsRow from "./components/OptionsRow";
+import OptionsPageHeader from "./components/OptionsPageHeader";
+import OptionsRow, { OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import RelatedSettings from "./components/RelatedSettings";
 
 export default function MediaSettings() {
     return (
         <>
+            <OptionsPageHeader />
             <ImageSettings />
             <OcrSettings />
         </>
@@ -28,21 +30,21 @@ function ImageSettings() {
 
     return (
         <OptionsSection title={t("images.images_section_title")}>
-            <OptionsRow name="download-images-automatically" label={t("images.download_images_automatically")} description={t("images.download_images_description")}>
-                <FormToggle
-                    switchOnName="" switchOffName=""
-                    currentValue={downloadImagesAutomatically}
-                    onChange={setDownloadImagesAutomatically}
-                />
-            </OptionsRow>
+            <OptionsRowWithToggle
+                name="download-images-automatically"
+                label={t("images.download_images_automatically")}
+                description={t("images.download_images_description")}
+                currentValue={downloadImagesAutomatically}
+                onChange={setDownloadImagesAutomatically}
+            />
 
-            <OptionsRow name="image-compression-enabled" label={t("images.enable_image_compression")} description={t("images.enable_image_compression_description")}>
-                <FormToggle
-                    switchOnName="" switchOffName=""
-                    currentValue={compressImages}
-                    onChange={setCompressImages}
-                />
-            </OptionsRow>
+            <OptionsRowWithToggle
+                name="image-compression-enabled"
+                label={t("images.enable_image_compression")}
+                description={t("images.enable_image_compression_description")}
+                currentValue={compressImages}
+                onChange={setCompressImages}
+            />
 
             <OptionsRow name="image-max-width-height" label={t("images.max_image_dimensions")} description={t("images.max_image_dimensions_description")}>
                 <FormTextBoxWithUnit
@@ -70,14 +72,14 @@ function OcrSettings() {
 
     return (
         <>
-            <OptionsSection title={t("images.ocr_section_title")}>
-                <OptionsRow name="ocr-auto-process" label={t("images.ocr_auto_process")} description={t("images.ocr_auto_process_description")}>
-                    <FormToggle
-                        switchOnName="" switchOffName=""
-                        currentValue={ocrAutoProcess}
-                        onChange={setOcrAutoProcess}
-                    />
-                </OptionsRow>
+            <OptionsSection title={t("images.ocr_section_title")} helpUrl="TiQbQDgP8L5t">
+                <OptionsRowWithToggle
+                    name="ocr-auto-process"
+                    label={t("images.ocr_auto_process")}
+                    description={t("images.ocr_auto_process_description")}
+                    currentValue={ocrAutoProcess}
+                    onChange={setOcrAutoProcess}
+                />
 
                 <OptionsRow name="ocr-min-confidence" label={`${t("images.ocr_min_confidence")} (${Math.round(parseFloat(ocrMinConfidence ?? "0.75") * 100)}%)`} description={t("images.ocr_confidence_description")}>
                     <Slider
@@ -93,7 +95,8 @@ function OcrSettings() {
             <RelatedSettings items={[
                 {
                     title: t("images.ocr_related_content_languages"),
-                    targetPage: "_optionsLocalization"
+                    targetPage: "_optionsLocalization",
+                    enabled: isElectron(), // This setting is only relevant for desktop, as web browsers use their own native OCR which doesn't support language selection.
                 }
             ]} />
         </>
@@ -104,6 +107,7 @@ interface BatchProgress {
     inProgress: boolean;
     total: number;
     processed: number;
+    failed: number;
     percentage?: number;
 }
 
@@ -117,7 +121,11 @@ function BatchProcessing() {
             if (!data.inProgress && pollingRef.current) {
                 clearInterval(pollingRef.current);
                 pollingRef.current = null;
-                toast.showMessage(t("images.batch_ocr_completed", { processed: data.processed }));
+                if (data.failed > 0) {
+                    toast.showError(t("images.batch_ocr_completed_with_failures", { processed: data.processed, failed: data.failed }));
+                } else {
+                    toast.showMessage(t("images.batch_ocr_completed", { processed: data.processed }));
+                }
             }
         });
     }, []);

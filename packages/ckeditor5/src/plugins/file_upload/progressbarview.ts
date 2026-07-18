@@ -5,8 +5,8 @@ const toPx = toUnit('%');
 
 export default class ProgressBarView extends View {
     private cancelButton: ButtonView;
-    width!: number;
-    customWidth!: number;
+    declare width: number;
+    declare customWidth: number;
 
 	constructor(locale: Locale) {
 		super(locale);

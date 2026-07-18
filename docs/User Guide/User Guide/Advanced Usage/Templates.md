@@ -21,7 +21,7 @@ An instance note is a note related to a template note. This relationship means t
 
 To create an instance note through the UI:
 
-![show child note templates](Templates_template-create-.png)
+![show child note templates](Templates_template-create-instance-note.png)
 
 For the template to appear in the menu, the template note must have the `#template` label. Do not confuse this with the `~template` relation, which links the instance note to the template note. If you use [workspaces](../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md), you can also mark templates with `#workspaceTemplate` to display them only in the workspace.
 
@@ -33,10 +33,21 @@ To specify a template for child notes, you can use a `~child:template` relation 
 > Changing the template hierarchy after the parent note is created will not retroactively apply to newly created child notes.  
 > For example, if you initially use `~child:template` and later switch to `~child:child:template`, it will not automatically apply the new template to the grandchild notes. Only the structure present at the time of note creation is considered.
 
+## Regarding note types
+
+By default, newly created notes are <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes. If a parent note defines a `child:template` pointing to a template of a different type (e.g. a Code note), the behavior depends on how the new note is created:
+
+*   If no note type is explicitly chosen (e.g. the + button in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>), the template is applied and the new note takes the type and content of the template.
+*   If a note type is explicitly selected (e.g. <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> → _Insert note after_ / _Insert child note_):
+    *   If the selected type matches the template's type, the template is applied.
+    *   If the selected type differs, the template is disregarded entirely — the new note is an empty note of the selected type.
+
+Selecting a specific template from the creation menu always takes precedence over `child:template`.
+
 ## Additional Notes
 
 From a visual perspective, templates can define `#iconClass` and `#cssClass` attributes, allowing all instance notes (e.g., books) to display a specific icon and CSS style.
 
-Explore the concept further in the [demo notes](Database.md), including examples like the [Relation Map](../Note%20Types/Relation%20Map.md), [Task Manager](Advanced%20Showcases/Task%20Manager.md), and [Day Notes](Advanced%20Showcases/Day%20Notes.md).
+Explore the concept further in the <a class="reference-link" href="Database/Demo%20Notes.md">Demo Notes</a>, including examples like the <a class="reference-link" href="../Note%20Types/Relation%20Map.md">Relation Map</a>, <a class="reference-link" href="Advanced%20Showcases/Task%20Manager.md">Task Manager</a>, and <a class="reference-link" href="Advanced%20Showcases/Day%20Notes.md">Day Notes</a>.
 
-Additionally, see [default note title](Default%20Note%20Title.md) for creating title templates. Note templates and title templates can be combined by creating a `#titleTemplate` for a template note.
+Additionally, see <a class="reference-link" href="Default%20Note%20Title.md">Default Note Title</a> for creating title templates. Note templates and title templates can be combined by creating a `#titleTemplate` for a template note.

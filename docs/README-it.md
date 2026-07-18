@@ -1,32 +1,24 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notes
 
-![Sponsor GitHub](https://img.shields.io/github/sponsors/eliandoran)
-![Sostenitori LiberaPay](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Pull Docker](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![Download GitHub (tutte le risorse, tutte le
-versioni)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Stato della
-traduzione](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
+![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
+![GitHub Downloads (all assets, all
+releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![Translation
+status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Trilium Notes è un'applicazione per appunti ad organizzazione gerarchica,
@@ -191,7 +183,7 @@ Se la tua distribuzione è elencata nella tabella sottostante, utilizza il
 pacchetto della tua distribuzione.
 
 [![Stato del
-Packaging](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+Packaging](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 È anche possibile scaricare la versione binaria per la propria piattaforma dalla
 [pagina delle ultime
@@ -218,6 +210,8 @@ server (vedere sotto).
 Per ulteriori informazioni sul supporto delle app mobili, consultare il numero
 https://github.com/TriliumNext/Trilium/issues/4962.
 
+#### TriliumDroid
+
 Se preferisci un'app Android nativa, puoi utilizzare
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
 Segnala bug e funzionalità mancanti al [loro
@@ -225,6 +219,25 @@ repository](https://github.com/FliegendeWurst/TriliumDroid). Nota: quando
 utilizzi TriliumDroid, è consigliabile disabilitare gli aggiornamenti automatici
 sull'installazione del server (vedi sotto), poiché la versione di
 sincronizzazione deve corrispondere tra Trilium e TriliumDroid.
+
+#### Pocket Trilium
+
+If you want a full-featured native Android app, check out [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
+instance on your phone, supports full offline use, and allows you to sync with
+your server.
+
+#### Trinote
+
+If you want a native iOS app, you can use
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
+client for your self-hosted Trilium / TriliumNext server. It lets you browse and
+organize your note tree, search for notes on the server, read and edit all note
+types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
+available and editable offline. Here's the
+[repo](https://github.com/StephenArg/Trinote) if you're interested in
+contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
+server if you have any feedback or suggestions you want to discuss.
 
 ### Server
 
@@ -268,6 +281,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+In alternativa, se hai installato Nix:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Compilare l'eseguibile
 Scarica la repository, installa le dipendenze eseguendo `pnpm` e compila
 l'applicazione desktop per Windows:
@@ -288,6 +312,34 @@ documentazione](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%
 per i dettagli. Se hai altre domande, sentiti libero di contattarci tramite i
 collegamenti presenti nella precedente sezione "Discuti con noi".
 
+## 💖 Sponsors
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Riconoscimenti
 
 * [zadam](https://github.com/zadam) per l'idea originale e l'implementazione
@@ -300,16 +352,13 @@ collegamenti presenti nella precedente sezione "Discuti con noi".
   canvas.
 * [antoniotejada](https://github.com/nriver) per lo strumento originale di
   colorazione della sintassi.
-* [Dosu](https://dosu.dev/) per averci fornito le risposte automatiche alle
-  questioni e alle discussioni su GitHub.
 * [Tabler Icons](https://tabler.io/icons) per le icone della barra delle
   applicazioni.
 
 Trilium non sarebbe possibile senza le tecnologie che lo supportano:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - l'editor visivo dietro
-  le note di testo. Siamo grati per averci offerto una serie di funzionalità
-  premium.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - l'editor visivo alla
+  base delle note di testo.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - editor di codice con
   supporto per un'ampia gamma di linguaggi.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - la lavagna infinita

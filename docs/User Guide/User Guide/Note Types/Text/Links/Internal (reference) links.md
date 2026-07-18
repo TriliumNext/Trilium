@@ -7,7 +7,7 @@ You can open an internal link by clicking it. You can also see a read-only previ
 
 Internal links can be created at the current position in a text note by:
 
-1.  Pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> or the <img src="Internal (reference) links.png" width="20" height="17"> button underneath the <img src="1_Internal (reference) links.png" width="34" height="16"> menu in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>.
+1.  Pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> or the <img src="Internal (reference) links_image.png" width="20" height="17"> button underneath the <img src="1_Internal (reference) links_image.png" width="34" height="16"> menu in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>.
 2.  Searching for the title of the desired note to link. It's also possible to create new notes from this dialog by typing a non-existing note title and selecting _Create and link child note_.
 
 There are two link types which you can select when creating the link to the note:

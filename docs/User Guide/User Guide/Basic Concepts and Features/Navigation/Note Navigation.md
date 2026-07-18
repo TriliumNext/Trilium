@@ -13,4 +13,4 @@ This works identically to browser backwards / forwards, it's actually using buil
 
 This is useful to quickly find and view arbitrary notes - click on `Jump to` button on the top or press <kbd>Ctrl</kbd> + <kbd>J</kbd> . Then type part of the note name and autocomplete will help you pick the desired note.
 
-See <a class="reference-link" href="Jump%20to.md">Jump to Note</a> for more information.
+See <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to Note</a> for more information.

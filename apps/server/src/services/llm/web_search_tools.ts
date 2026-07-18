@@ -7,7 +7,7 @@ import { tool } from "ai";
 import type { ToolSet } from "ai";
 import { z } from "zod";
 
-import log from "../log.js";
+import { getLog } from "@triliumnext/core";
 
 const MAX_RESULTS = 5;
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -44,9 +44,12 @@ export function addTavilySearchTool(tools: ToolSet, apiKey: string, timeoutMs: n
             try {
                 const response = await fetch("https://api.tavily.com/search", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        // Tavily requires Bearer authentication; the api_key body field is deprecated
+                        "Authorization": `Bearer ${apiKey}`
+                    },
                     body: JSON.stringify({
-                        api_key: apiKey,
                         query,
                         max_results: MAX_RESULTS,
                         include_answer: true
@@ -56,7 +59,7 @@ export function addTavilySearchTool(tools: ToolSet, apiKey: string, timeoutMs: n
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    log.error(`Tavily search failed: ${response.status} ${errorText}`);
+                    getLog().error(`Tavily search failed: ${response.status} ${errorText}`);
                     return { error: `Search failed: ${response.status}` };
                 }
 
@@ -71,7 +74,7 @@ export function addTavilySearchTool(tools: ToolSet, apiKey: string, timeoutMs: n
                     }))
                 };
             } catch (e) {
-                log.error(`Tavily search error: ${e}`);
+                getLog().error(`Tavily search error: ${e}`);
                 return { error: `Search failed: ${e instanceof Error ? e.message : String(e)}` };
             }
         }
@@ -108,7 +111,7 @@ export function addSearxngSearchTool(tools: ToolSet, instanceUrl: string, timeou
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    log.error(`SearXNG search failed: ${response.status} ${errorText}`);
+                    getLog().error(`SearXNG search failed: ${response.status} ${errorText}`);
                     return { error: `Search failed: ${response.status}` };
                 }
 
@@ -122,7 +125,7 @@ export function addSearxngSearchTool(tools: ToolSet, instanceUrl: string, timeou
                     }))
                 };
             } catch (e) {
-                log.error(`SearXNG search error: ${e}`);
+                getLog().error(`SearXNG search error: ${e}`);
                 return { error: `Search failed: ${e instanceof Error ? e.message : String(e)}` };
             }
         }

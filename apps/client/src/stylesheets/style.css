@@ -58,12 +58,14 @@ body#trilium-app.backdrop-effects-disabled *::after {
 
 .table {
     --bs-table-bg: transparent !important;
+    --bs-table-border-color: var(--main-border-color);
+    --bs-table-striped-bg: color-mix(in srgb, var(--main-text-color) 5%, transparent);
+    --bs-table-striped-color: var(--main-text-color);
 }
 
 :root {
     --submenu-opening-delay: 300ms;
     --launcher-pane-size: 53px;
-    --mobile-bottom-offset: calc(env(safe-area-inset-bottom) * 0.75);
     --bs-body-color: var(--main-text-color);
 }
 
@@ -89,6 +91,11 @@ body {
     --native-titlebar-darwin-y-offset: 12;
     --launcher-pane-height: 53px;
     --tab-bar-height: 40px;
+    --mobile-bottom-offset: env(safe-area-inset-bottom);
+}
+
+body.ios {
+    --mobile-bottom-offset: calc(env(safe-area-inset-bottom) * 0.25);
 }
 
 body.desktop .mobile-only,
@@ -103,7 +110,7 @@ body.mobile.context-menu-shown * {
 }
 
 body.mobile #root-widget {
-    padding-top: env(safe-area-inset-top);
+    padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
 }
 
 body.mobile #root-widget.virtual-keyboard-opened #mobile-bottom-bar {
@@ -116,14 +123,35 @@ body.mobile #root-widget.virtual-keyboard-opened #mobile-bottom-bar {
 }
 
 body.desktop #root-widget.horizontal-layout {
-    padding-top: env(safe-area-inset-top);
+    padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
     background-color: var(--launcher-pane-background-color);
 }
 
-body.desktop #root-widget.vertical-layout #launcher-pane,
-body.desktop #root-widget.vertical-layout #left-pane,
-body.desktop #root-widget.vertical-layout #rest-pane {
-    padding-top: env(safe-area-inset-top);
+body.desktop {
+    #root-widget.vertical-layout {
+        #launcher-pane,
+        #left-pane,
+        #rest-pane {
+            padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    }
+
+    &.experimental-feature-new-layout #root-widget.horizontal-layout {
+        >.status-bar {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    }
+
+    &:not(.experimental-feature-new-layout) #root-widget.horizontal-layout {
+        #horizontal-main-container {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    }
+
+    .modal .modal-dialog {
+        margin-top: calc(var(--safe-area-inset-top, env(safe-area-inset-top)) + var(--bs-modal-margin));
+    }
 }
 
 a {
@@ -543,11 +571,6 @@ body.mobile .dropdown .dropdown-submenu {
     font-family: var(--monospace-font-family) !important;
 }
 
-body .cm-editor .cm-gutters {
-    background-color: inherit !important;
-    border-inline-end: none;
-}
-
 body .cm-editor .cm-placeholder {
     color: #999 !important;
 }
@@ -737,6 +760,26 @@ table.promoted-attributes-in-tooltip th {
     z-index: 32767 !important;
 }
 
+/* Note tooltips are appended to <body> and are frequently triggered from inside modals
+   (e.g. links or deleted-note entries in a dialog). The base .tooltip z-index sits below
+   Bootstrap's modal, so raise them above it — matching .tooltip-top. */
+.tooltip.note-tooltip {
+    z-index: 32767 !important;
+}
+
+
+/* Tooltip for text editor content, placed at the bottom of the screen to be less intruive when editing */
+.tooltip.text-editor-content-tooltip {
+    position: fixed !important;
+    inset: auto auto 1rem 1rem !important;
+    transform: none !important;
+    margin: 0 !important;
+}
+
+.tooltip.text-editor-content-tooltip .tooltip-arrow {
+    display: none;
+}
+
 .pre-wrap-text {
     white-space: pre-wrap;
 }
@@ -835,6 +878,7 @@ table.promoted-attributes-in-tooltip th {
     text-align: start;
     color: var(--main-text-color) !important;
     max-width: 500px;
+    white-space: pre-line;
     box-shadow: 10px 10px 93px -25px #aaaaaa;
 }
 
@@ -960,13 +1004,17 @@ table.promoted-attributes-in-tooltip th {
     background-color: var(--active-item-background-color);
 }
 
-.help-button {
+.help-button,
+.custom-title-bar-button {
     float: inline-end;
     background: none;
     font-weight: 900;
-    color: orange;
     border: 0;
     cursor: pointer;
+}
+
+.help-button {
+    color: orange;
 }
 
 .multiplicity {
@@ -1147,9 +1195,88 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
     padding: 0.5rem 1rem 0.5rem 1rem !important; /* make modal header padding slightly smaller */
 }
 
-.modal-header .help-button {
+.modal-header .help-button,
+.modal-header .custom-title-bar-button {
     padding: 6px;
     margin: 0 12px;
+}
+
+.modal-content-with-sidebar {
+    flex-direction: row !important;
+}
+
+.modal-content-with-sidebar > .modal-sidebar {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--main-border-color);
+    flex-shrink: 0;
+    min-height: 0;
+}
+
+.modal-content-with-sidebar .modal-sidebar-header {
+    padding: 0.75rem 1rem;
+    flex-shrink: 0;
+    text-align: center;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.modal-content-with-sidebar .modal-sidebar-header h5 {
+    margin: 0;
+    font-size: 1em;
+}
+
+.modal-content-with-sidebar > .modal-main > .modal-header > .modal-title {
+    visibility: hidden;
+    flex-grow: 1;
+    width: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+.modal-content-with-sidebar > .modal-main > .modal-header {
+    flex-wrap: nowrap;
+}
+
+.modal-content-with-sidebar > .modal-main {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.modal-content-with-sidebar > .modal-main > .modal-body {
+    overflow: auto;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+body.mobile .modal-content-with-sidebar {
+    flex-direction: column !important;
+}
+
+body.mobile .modal-content-with-sidebar > .modal-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--main-border-color);
+    height: 30vh;
+    flex-shrink: 0;
+    overflow: hidden;
+    order: 1;
+}
+
+body.mobile .modal-content-with-sidebar > .modal-main {
+    order: 0;
+}
+
+body.mobile .modal-content-with-sidebar .modal-sidebar-header {
+    display: none;
+}
+
+body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-title {
+    visibility: visible;
+    width: auto;
 }
 
 .ck-mentions .ck-button {
@@ -1181,10 +1308,6 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
     line-height: 1.5;
 }
 
-.ck-content .todo-list .todo-list__label > input:before {
-    border: 1px solid var(--muted-text-color) !important;
-}
-
 .ck-link-actions .ck-tooltip {
     /* force hide the tooltip since it shows misleading "open link in new tab */
     display: none !important;
@@ -1192,14 +1315,19 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
 
 .include-note {
     margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 10px;
-    background-color: var(--accented-background-color);
+    border-radius: 8px;
+    border: 1px solid var(--card-border-color, var(--main-border-color));
+    background-color: var(--card-background-color, var(--accented-background-color));
     display: flex; /* see https://github.com/zadam/trilium/issues/1590 */
+    transition: background-color 200ms ease-out;
 }
 
-.include-note.ck-placeholder::before {
-    /* remove placeholder in otherwise empty note */
+/* CKEditor counts only non-UIElements as content (see `hasContent` in the
+   engine), so a widget rendered entirely from UIElements — an include note, a
+   Mermaid diagram, etc. — looks "empty" to it. When such a widget is the first
+   block, it can wrongly become the editor's placeholder host, overlaying the
+   placeholder text on top of the widget. Suppress it for any widget. */
+.ck-widget.ck-placeholder::before {
     content: "" !important;
 }
 
@@ -1209,8 +1337,22 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
     overflow: auto;
 }
 
-.include-note[data-box-size="small"] .include-note-content.type-pdf {
-    height: 10em; /* PDF is rendered in iframe and must be sized absolutely */
+/* PDFs and web views render in an (absolutely positioned) iframe, so they need an explicit
+   height per box size instead of an intrinsic, content-driven one. */
+.include-note[data-box-size="small"] .include-note-content.type-pdf,
+.include-note[data-box-size="small"] .include-note-content.type-webView {
+    height: 10em;
+}
+
+/* The small box has room for the compact audio player's visualizer band (which carries a floor of its own) or
+   for its controls row and the file footer below it — not for all three. Drop the band, and release the floor
+   so the box shrinks to what is left instead of overflowing onto the Download / Open buttons. */
+.include-note[data-box-size="small"] .include-note-content.type-audio .audio-preview-visualization-wrapper {
+    display: none;
+}
+
+.include-note[data-box-size="small"] .include-note-content.type-audio .rendered-media {
+    min-height: 0;
 }
 
 .include-note[data-box-size="medium"] .include-note-content {
@@ -1218,16 +1360,151 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
     overflow: auto;
 }
 
-.include-note[data-box-size="medium"] .include-note-content.type-pdf .rendered-content {
-    height: 20em; /* PDF is rendered in iframe and must be sized absolutely */
+.include-note[data-box-size="medium"] .include-note-content.type-pdf .rendered-content,
+.include-note[data-box-size="medium"] .include-note-content.type-webView .rendered-content {
+    height: 20em;
 }
 
-.include-note[data-box-size="full"] .include-note-content.type-pdf .rendered-content {
-    height: 50em; /* PDF is rendered in iframe and it's not possible to put full height so at least a large height */
+.include-note[data-box-size="full"] .include-note-content.type-pdf .rendered-content,
+.include-note[data-box-size="full"] .include-note-content.type-webView .rendered-content {
+    height: 50em; /* an iframe can't take a percentage full height, so fall back to a large fixed one */
+}
+
+.include-note[data-box-size="expandable"] .include-note-content.type-webView .rendered-content {
+    height: 20em;
+}
+
+/* Full-height collection views (table, board, calendar, geo map, presentation) render their own
+   scroll region with no intrinsic height, so — like PDFs and web views — they need an explicit
+   height per box size. The inner widget fills it via its existing height:100% chain. List/grid
+   collections are content-driven and keep the generic max-height above. */
+.include-note[data-box-size="small"] .include-note-content.type-book:has(.note-list-widget.full-height),
+.include-note[data-box-size="small"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+    height: 10em;
+}
+
+.include-note[data-box-size="medium"] .include-note-content.type-book:has(.note-list-widget.full-height),
+.include-note[data-box-size="medium"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+    height: 20em;
+}
+
+.include-note[data-box-size="full"] .include-note-content.type-book:has(.note-list-widget.full-height),
+.include-note[data-box-size="full"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+    height: 50em; /* a full-height view can't take a percentage full height, so fall back to a large fixed one */
+}
+
+.include-note[data-box-size="expandable"] .include-note-content.type-book:has(.note-list-widget.full-height),
+.include-note[data-box-size="expandable"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+    height: 20em;
 }
 
 .include-note-wrapper {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* Header: the standalone title (non-expandable) and the title row (expandable)
+   both act as the card header, mirroring the grid/list note-book-card header. */
+.include-note-wrapper > .include-note-title,
+.include-note-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: .5rem 1rem;
+    font-size: 1em;
+    font-weight: 500;
+    border-bottom: 1px solid var(--card-border-color, var(--main-border-color));
+}
+
+/* createLink wraps the icon and anchor in a single <span>; lay it out as a flex
+   row so the (larger) note icon lines up vertically with the title text instead
+   of sitting on the text baseline. */
+.include-note-title > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.include-note-title .bx {
+    flex-shrink: 0;
+    font-size: 1.2em;
+    color: var(--note-list-view-icon-color, var(--muted-text-color));
+}
+
+/* Neutralize the default link color and pill hover so the title reads as a
+   plain card header (matching .note-book-title in the grid/list view). */
+.include-note-title a {
+    --link-hover-background: transparent;
+    --link-hover-color: currentColor;
+    color: inherit;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+/* Expandable include note styles */
+.include-note-title-row {
+    cursor: pointer;
+}
+
+/* The title inside the expandable row defers its header styling to the row. */
+.include-note-title-row .include-note-title {
+    margin: 0;
+    padding: 0;
+    border-bottom: none;
+    font-weight: inherit;
+    font-size: inherit;
+    min-width: 0;
+    flex-grow: 1;
+}
+
+.include-note-toggle {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    font-size: 1.2em;
+    color: var(--muted-text-color);
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.include-note-toggle:hover {
+    color: var(--main-link-color);
+}
+
+.include-note-toggle.expanded {
+    transform: rotate(90deg);
+}
+
+.include-note-content {
+    padding: .75rem 1rem;
+}
+
+.include-note-content > .rendered-content > *:last-child {
+    margin-bottom: 0;
+}
+
+/* Media that renders edge-to-edge (iframes, images, video, full-height collection views) shouldn't
+   be inset. List/grid collections keep their padding (they are content-driven, not full-height). */
+.include-note-content.type-pdf,
+.include-note-content.type-image,
+.include-note-content.type-video,
+.include-note-content.type-canvas,
+.include-note-content.type-webView,
+.include-note-content.type-book:has(.note-list-widget.full-height),
+.include-note-content.type-search:has(.note-list-widget.full-height) {
+    padding: 0;
+}
+
+.include-note[data-box-size="expandable"] .include-note-content {
+    padding-top: 0;
 }
 
 .alert {
@@ -1337,6 +1614,14 @@ body.desktop li.dropdown-submenu:hover > ul.dropdown-menu {
     overflow: auto;
 }
 
+/* Flipped upward (added by ContextMenu.repositionSubmenu) when the submenu would overflow the bottom of the viewport. */
+.dropdown-submenu > .dropdown-menu.submenu-flip-up {
+    top: auto;
+    bottom: 0;
+    margin-top: 0;
+    margin-bottom: -10px;
+}
+
 body.desktop .dropdown-submenu > .dropdown-menu {
     min-width: max-content;
     max-width: 300px;
@@ -1380,8 +1665,10 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     transform: rotate(-90deg);
 }
 
-::-webkit-scrollbar {
-    width: 12px;
+@supports (-webkit-box-reflect: below) {
+    ::-webkit-scrollbar {
+        width: 12px;
+    }
 }
 
 ::-webkit-scrollbar-thumb {
@@ -1583,16 +1870,21 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         visibility: visible;
     }
 
-    #mobile-sidebar-wrapper {
+    #mobile-rest-container > #mobile-sidebar-wrapper {
         position: absolute;
         top: 0;
         inset-inline-start: 0;
         height: 100dvh;
         width: 85vw;
-        padding-top: env(safe-area-inset-top);
+        padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+        transform: translateX(-100%);
         transition: transform 250ms ease-in-out;
         background: var(--main-background-color);
         z-index: 2000;
+    }
+
+    body[dir="rtl"] #mobile-rest-container > #mobile-sidebar-wrapper {
+        transform: translateX(100%);
     }
 
     #detail-container {
@@ -1629,6 +1921,26 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         display: flex;
     }
 
+    body.mobile .modal-dialog.modal-dialog-full-page-on-mobile {
+        width: 100%;
+        height: 100%;
+        max-height: unset;
+        max-width: unset;
+
+        .modal-header {
+            margin-top: env(safe-area-inset-top);
+        }
+
+        .modal-content {
+            border-radius: 0;
+            border: 0;
+
+            .modal-body {
+                overflow: scroll;
+            }
+        }
+    }
+
     body.mobile .modal-content {
         overflow-y: auto;
         border-radius: var(--bs-modal-border-radius) var(--bs-modal-border-radius) 0 0;
@@ -1643,7 +1955,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         display: inline !important;
     }
 
-    body.mobile .options-section table {
+    body.mobile .options-section-card table {
         word-break: break-all;
     }
 
@@ -1823,12 +2135,12 @@ button.close:hover {
     margin-bottom: 15px;
 }
 
-.options-section h5 {
+.options-section-card h5 {
     margin-top: 10px;
     margin-bottom: 10px;
 }
 
-.options-section input[type="number"] {
+.options-section-card input[type="number"] {
     /* overriding settings from .form-control */
     width: 10em !important;
     flex-grow: 0 !important;
@@ -1852,103 +2164,6 @@ textarea {
     margin-inline-start: 10px;
     vertical-align: middle;
     font-size: 1em;
-}
-
-.jump-to-note-dialog .modal-dialog {
-    max-width: 900px;
-    width: 90%;
-}
-
-.jump-to-note-dialog .modal-header {
-    align-items: center;
-}
-
-.jump-to-note-dialog .modal-body {
-    padding: 0;
-    min-height: 200px;
-}
-
-.jump-to-note-results .aa-dropdown-menu {
-    max-height: calc(80vh - 200px);
-    width: 100%;
-    max-width: none;
-    overflow-y: auto;
-    overflow-x: hidden;
-    text-overflow: ellipsis;
-    box-shadow: none;
-}
-
-.jump-to-note-results {
-    width: 100%;
-}
-
-.jump-to-note-results .aa-suggestions {
-    padding: 0;
-    width: 100%;
-}
-
-/* Command palette styling */
-.jump-to-note-dialog .command-suggestion {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.9em;
-}
-
-.jump-to-note-dialog .aa-suggestion .command-suggestion,
-.jump-to-note-dialog .aa-suggestion .command-suggestion div {
-    padding: 0;
-}
-
-.jump-to-note-dialog .aa-cursor .command-suggestion,
-.jump-to-note-dialog .aa-suggestion:hover .command-suggestion {
-    background-color: transparent;
-}
-
-.jump-to-note-dialog .show-in-full-search,
-.jump-to-note-results .show-in-full-search {
-    border-top: 1px solid var(--main-border-color);
-    padding-top: 12px;
-    margin-top: 12px;
-}
-
-.jump-to-note-results .aa-suggestion .search-notes-action {
-    border-top: 1px solid var(--main-border-color);
-    margin-top: 8px;
-    padding-top: 8px;
-}
-
-.jump-to-note-results .aa-suggestion:has(.search-notes-action)::after {
-    display: none;
-}
-
-.jump-to-note-dialog .command-icon {
-    color: var(--muted-text-color);
-    font-size: 1.125rem;
-    flex-shrink: 0;
-    margin-top: 0.125rem;
-}
-
-.jump-to-note-dialog .command-content {
-    flex-grow: 1;
-    min-width: 0;
-}
-
-.jump-to-note-dialog .command-name {
-    font-weight: bold;
-}
-
-.jump-to-note-dialog .command-description {
-    font-size: 0.8em;
-    line-height: 1.3;
-    opacity: 0.75;
-}
-
-.jump-to-note-dialog kbd.command-shortcut {
-    background-color: transparent;
-    color: inherit;
-    opacity: 0.75;
-    font-family: inherit !important;
 }
 
 .empty-table-placeholder {
@@ -2017,6 +2232,7 @@ body.zen #launcher-container,
 body.zen #launcher-pane,
 body.zen #left-pane,
 body.zen #right-pane,
+body.zen .right-pane-peek-button,
 body.zen #mobile-sidebar-wrapper,
 body.zen .tab-row-container,
 body.zen .tab-row-widget,
@@ -2031,8 +2247,14 @@ body.zen .inline-title,
 body.zen .promoted-attributes-widget,
 body.zen .floating-buttons-children > *:not(.bx-edit-alt),
 body.zen .action-button,
+body.zen .tooltip.content-hint, /* content-area hints (task states, collapsible summaries, drag handles) */
 body.zen .note-split:not(.type-book) .note-list-widget {
     display: none !important;
+}
+
+body.experimental-feature-new-layout.zen #vertical-main-container {
+    /* Remove the placeholder for the right pane peek button */
+    --right-pane-peek-button-gutter: 0;
 }
 
 body.zen .split-note-container-widget > .gutter {
@@ -2471,6 +2693,23 @@ footer.webview-footer button {
     transition: opacity 200ms ease;
 }
 
+/*
+ * Empty to-do item caret fix.
+ *
+ * CKEditor's default to-do list theme spaces the checkbox from the text using a
+ * negative `margin-right: -15px` on the checkbox, which leaves the (still empty)
+ * description as a zero-width inline box. Some engines (notably Electron/Chromium,
+ * see upstream https://github.com/ckeditor/ckeditor5/issues/9141) cannot place the
+ * caret inside such an empty inline box, so it collapses onto the checkbox with
+ * no leading margin. Giving the empty description a real inline-block box lets the
+ * caret land at the normal text offset. The filler <br> is only present while the
+ * item is empty, so this reverts automatically as soon as the user types.
+ */
+.ck-editor__editable.ck-content ul.todo-list li span.todo-list__label__description:has(> br[data-cke-filler="true"]) {
+    display: inline-block;
+    min-width: 1px;
+}
+
 .ck-content ul.todo-list li:has(> span.todo-list__label input[type="checkbox"]:checked) > span.todo-list__label span.todo-list__label__description {
     text-decoration: line-through;
     opacity: 0.6;
@@ -2594,7 +2833,7 @@ iframe.print-iframe {
 
 /* Scrolling container */
 
-.scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
+.note-split:not(.type-text.view-mode-normal) > .scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
     display: flex;
     flex-direction: column;
 }
@@ -2663,4 +2902,138 @@ iframe.print-iframe {
     font-size: 0.9em;
     line-height: 1.4;
     white-space: pre-wrap;
+}
+
+.ck-content pre code {
+    tab-size: var(--code-block-tab-width, 4);
+}
+
+/*
+ * COLLAPSIBLE LIST ITEMS
+ */
+
+:where(:root) {
+    --text-editor-collapsible-list-arrow-color: var(--muted-text-color);
+    /* Neutral by design: a translucent grey reads on both light and dark backgrounds. */
+    --text-editor-collapsible-list-arrow-hover-background: rgba(128, 128, 128, 0.25);
+    --text-editor-collapsible-list-arrow-hover-color: var(--main-text-color);
+}
+
+/*
+ * TASK STATES
+ */
+
+:where(:root) {
+    --task-checkbox-without-state-background: #d5d5d5;
+    --task-checkbox-with-state-background: orange;
+    --task-checkbox-done-color: green;
+    --task-checkbox-unknown-state-color: orange;
+    --task-checkbox-glyph-color: white;
+
+    --task-checkbox-border-radius: 4px;
+    --task-checkbox-glyph-ratio: .8;
+}
+
+:root .tn-task-checkbox {
+    --_checkbox-size: 18px;
+
+    position: relative;
+    width: var(--_checkbox-size);
+    height: var(--_checkbox-size);
+}
+
+/* Inline-block slot for using .tn-task-checkbox inside flowing text (e.g. the
+   task-state line in the checkbox tooltip). Without a block-formatting
+   ancestor the inner span is inline and its ::before / ::after collapse to
+   zero size, showing only the glyph. */
+.tn-task-checkbox-inline {
+    display: inline-block;
+    margin-inline-start: 8px;
+    vertical-align: middle;
+    line-height: 0;
+}
+
+.tn-task-checkbox-inline > .tn-task-checkbox {
+    /* Scale the checkbox (and, via `calc(var(--_checkbox-size) * ratio)`,
+       its glyph) to the surrounding text size so it fits the tooltip line
+       instead of forcing the default 18px. */
+    --_checkbox-size: 1.1em;
+    display: block;
+    transform: translateY(-0.05em);
+}
+
+/* Status line block above the checkbox tooltip's body. The 8px bottom margin
+   separates it from the "Right click…" hint when the line is present; when
+   the state is an anchor (unchecked/checked) the line is omitted entirely,
+   so no spacing is added. */
+.tn-task-tooltip-state {
+    margin-bottom: 8px;
+}
+
+/* Prevent variables from bleeding into nested items */
+.ck-content .todo-list .todo-list {
+    --task-state-glyph: initial;
+    --task-state-glyph-font-family: initial;
+    --task-state-color: initial;
+    --task-state-adjusted-color: initial;
+    --task-state-hue: initial;
+    --_task-checkbox-background: initial;
+}
+
+/* All tasks with a state */
+:where(.ck-content .todo-list li[data-trilium-task-state]:not([data-trilium-task-state="none"])),
+.tn-task-checkbox:not([data-trilium-task-state="none"]) {
+    --_task-checkbox-background: var(--task-state-adjusted-color, var(--task-state-color, var(--task-checkbox-with-state-background)));
+}
+
+/* Default checked state */
+:where(.ck-content .todo-list li:where(:not([data-trilium-task-state]), [data-trilium-task-state="done"]):has(> .todo-list__label input[type="checkbox"]:checked)),
+.tn-task-checkbox[data-trilium-task-state="done"] {
+    --task-state-glyph: "";
+    --task-state-glyph-font-family: boxicons;
+    --task-state-hue: var(--task-checkbox-done-hue);
+    --_task-checkbox-background: var(--task-checkbox-done-color);
+}
+
+:root .ck-content.ck-content ul.todo-list li .todo-list__label input[type="checkbox"] {
+    --_checkbox-size: var(--ck-content-todo-list-checkmark-size);
+}
+
+/* Checkbox */
+:root .ck-content.ck-content ul.todo-list li .todo-list__label input[type="checkbox"],
+.tn-task-checkbox {
+    /* Checkbox body */
+    &::before {
+        all: unset;
+
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: var(--task-checkbox-border-radius);
+        background: var(--_task-checkbox-background, var(--task-checkbox-without-state-background));
+    }
+
+    /* Checkbox tick */
+    &::after {
+        all: unset;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        inset: 0;
+        content: var(--task-state-glyph);
+        font-family: var(--task-state-glyph-font-family, inherit);
+        font-size: calc(var(--_checkbox-size) * var(--task-checkbox-glyph-ratio));
+        color: var(--task-checkbox-glyph-color);
+        text-box-trim: trim-both;
+    }
+
+    &:disabled {
+        opacity: 1;
+    }
+}
+
+/* Unknown state: orange outline */
+.tn-unknown-task-state .todo-list__label input[type="checkbox"] {
+    outline: 3px solid var(--task-checkbox-unknown-state-color);
 }

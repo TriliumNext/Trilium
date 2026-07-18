@@ -215,7 +215,7 @@ function SimilarNotesModal({ note, modalShown, setModalShown }: { note: FNote | 
 
 function CodeNoteSwitcherModal({ note, modalShown, setModalShown }: { note: FNote | null | undefined } & WithModal) {
     const currentNoteMime = useNoteProperty(note, "mime");
-    const mimeTypes = useMimeTypes();
+    const { enabledMimeTypes } = useMimeTypes();
 
     return (
         <Modal
@@ -228,7 +228,7 @@ function CodeNoteSwitcherModal({ note, modalShown, setModalShown }: { note: FNot
             <div className="dropdown-menu static show">
                 {note && <NoteTypeCodeNoteList
                     currentMimeType={currentNoteMime}
-                    mimeTypes={mimeTypes}
+                    mimeTypes={enabledMimeTypes}
                     changeNoteType={(type, mime) => {
                         server.put(`notes/${note.noteId}/type`, { type, mime });
                         setModalShown(false);

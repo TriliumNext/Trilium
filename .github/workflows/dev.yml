@@ -3,10 +3,12 @@ on:
   push:
     branches:
       - main
+      - standalone
       - "release/*"
   pull_request:
     branches:
       - main
+      - standalone
       - "release/*"
 
 concurrency:
@@ -28,11 +30,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: "pnpm"
@@ -42,7 +44,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Run the client-side tests
-        run: pnpm run --filter=client test
+        run: pnpm run --filter=client test --coverage
 
       - name: Upload client test report
         uses: actions/upload-artifact@v7
@@ -53,7 +55,7 @@ jobs:
           retention-days: 30
 
       - name: Run the server-side tests
-        run: pnpm run --filter=server test
+        run: pnpm run --filter=server test --coverage
 
       - name: Upload server test report
         uses: actions/upload-artifact@v7
@@ -63,13 +65,159 @@ jobs:
           path: apps/server/test-output/vitest/html/
           retention-days: 30
 
+      - name: Upload client coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: always()
+        with:
+          files: apps/client/test-output/vitest/coverage/lcov.info
+          flags: client
+          fail_ci_if_error: false
+
+      - name: Upload client test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/client/test-output/vitest/junit.xml
+          flags: client
+          fail_ci_if_error: false
+
+      - name: Upload server coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: always()
+        with:
+          files: apps/server/test-output/vitest/coverage/lcov.info
+          flags: server
+          fail_ci_if_error: false
+
+      - name: Upload server test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/server/test-output/vitest/junit.xml
+          flags: server
+          fail_ci_if_error: false
+
+      - name: Run the standalone tests
+        # Runs the same trilium-core spec set as the server suite, but in
+        # happy-dom + sql.js WASM via BrowserSqlProvider (see
+        # apps/standalone/src/test_setup.ts). Catches differences
+        # between the Node-side and browser-side runtimes.
+        run: pnpm run --filter=standalone test --coverage
+
+      - name: Upload standalone coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: always()
+        with:
+          files: apps/standalone/test-output/vitest/coverage/lcov.info
+          flags: standalone
+          fail_ci_if_error: false
+
+      - name: Upload standalone test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/standalone/test-output/vitest/junit.xml
+          flags: standalone
+          fail_ci_if_error: false
+
       - name: Run CKEditor e2e tests
         run: |
+          export CHROMEDRIVER_PATH=$(which chromedriver || find /usr/local/share -name chromedriver -type f 2>/dev/null | head -1)
+          echo "Using chromedriver at: $CHROMEDRIVER_PATH"
           pnpm run --filter=ckeditor5-mermaid test
           pnpm run --filter=ckeditor5-math test
 
+      - name: Run the CKEditor 5 aggregate tests
+        run: |
+          export CHROMEDRIVER_PATH=$(which chromedriver || find /usr/local/share -name chromedriver -type f 2>/dev/null | head -1)
+          echo "Using chromedriver at: $CHROMEDRIVER_PATH"
+          pnpm run --filter=ckeditor5 test --coverage
+
+      - name: Upload ckeditor5 coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: always()
+        with:
+          files: packages/ckeditor5/test-output/vitest/coverage/lcov.info
+          flags: ckeditor5
+          fail_ci_if_error: false
+
+      - name: Upload ckeditor5 test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/ckeditor5/test-output/vitest/junit.xml
+          flags: ckeditor5
+          fail_ci_if_error: false
+
+      - name: Run the CKEditor 5 utils tests
+        run: |
+          export CHROMEDRIVER_PATH=$(which chromedriver || find /usr/local/share -name chromedriver -type f 2>/dev/null | head -1)
+          echo "Using chromedriver at: $CHROMEDRIVER_PATH"
+          pnpm run --filter=ckeditor5-utils test --coverage
+
+      - name: Upload ckeditor5-utils coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: always()
+        with:
+          files: packages/ckeditor5-utils/test-output/vitest/coverage/lcov.info
+          flags: ckeditor5-utils
+          fail_ci_if_error: false
+
+      - name: Upload ckeditor5-utils test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/ckeditor5-utils/test-output/vitest/junit.xml
+          flags: ckeditor5-utils
+          fail_ci_if_error: false
+
+      - name: Run the desktop tests
+        run: pnpm run --filter=desktop test --coverage
+
+      - name: Upload desktop coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: always()
+        with:
+          files: apps/desktop/test-output/vitest/coverage/lcov.info
+          flags: desktop
+          fail_ci_if_error: false
+
+      - name: Upload desktop test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/desktop/test-output/vitest/junit.xml
+          flags: desktop
+          fail_ci_if_error: false
+
+      - name: Run the commons tests
+        run: pnpm run --filter=commons test --coverage
+
+      - name: Upload commons coverage to Codecov
+        uses: codecov/codecov-action@v7
+        if: always()
+        with:
+          files: packages/commons/test-output/vitest/coverage/lcov.info
+          flags: commons
+          fail_ci_if_error: false
+
+      - name: Upload commons test results to Codecov
+        uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/commons/test-output/vitest/junit.xml
+          flags: commons
+          fail_ci_if_error: false
+
       - name: Run the rest of the tests
-        run: pnpm run --filter=\!client --filter=\!server --filter=\!ckeditor5-mermaid --filter=\!ckeditor5-math test
+        run: pnpm run --filter=\!client --filter=\!standalone --filter=\!server --filter=\!desktop --filter=\!commons --filter=\!ckeditor5-mermaid --filter=\!ckeditor5-math --filter=\!ckeditor5 --filter=\!ckeditor5-utils test
 
   build_docker:
     name: Build Docker image
@@ -77,20 +225,21 @@ jobs:
     needs:
       - test_dev
     steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - name: Set up node & dependencies
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Update build info
         run: pnpm run chore:update-build-info
       - name: Trigger client build
         run: pnpm client:build
-      - name: Send client bundle stats to RelativeCI
-        if: false
-        uses: relative-ci/agent-action@v3
-        with:
-          webpackStatsFile: ./apps/client/dist/webpack-stats.json
-          key: ${{ secrets.RELATIVE_CI_CLIENT_KEY }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Trigger server build
         run: pnpm run server:build
       - uses: docker/setup-buildx-action@v4
@@ -111,9 +260,14 @@ jobs:
           - dockerfile: Dockerfile
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
+      - name: Set up node & dependencies
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

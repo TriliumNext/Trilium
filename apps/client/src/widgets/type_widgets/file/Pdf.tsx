@@ -4,8 +4,10 @@ import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
 import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
+import open from "../../../services/open";
+import options from "../../../services/options";
 import { useViewModeConfig } from "../../collections/NoteList";
-import { useBlobEditorSpacedUpdate, useTriliumEvent } from "../../react/hooks";
+import { useBlobEditorSpacedUpdate, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
 import PdfViewer from "./PdfViewer";
 
 export default function PdfPreview({ note, blob, componentId, noteContext }: {
@@ -15,6 +17,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
     componentId: string | undefined;
 }) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const historyConfig = useViewModeConfig<HistoryData>(note, "pdfHistory");
 
     const spacedUpdate = useBlobEditorSpacedUpdate({
@@ -56,7 +59,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
     useEffect(() => {
         function handleMessage(event: PdfMessageEvent) {
             if (event.data?.type === "pdfjs-viewer-document-modified") {
-                if (event.data.noteId === note.noteId && event.data.ntxId === noteContext.ntxId) {
+                if (!isReadOnly && event.data.noteId === note.noteId && event.data.ntxId === noteContext.ntxId) {
                     spacedUpdate.resetUpdateTimer();
                     spacedUpdate.scheduleUpdate();
                 }
@@ -65,6 +68,14 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             if (event.data.type === "pdfjs-viewer-save-view-history" && event.data?.data) {
                 if (event.data.noteId === note.noteId && event.data.ntxId === noteContext.ntxId) {
                     historyConfig?.storeFn(JSON.parse(event.data.data));
+                }
+            }
+
+            if (event.data?.type === "pdfjs-viewer-save-signatures" && event.data?.data) {
+                // The signature library is global (not per-note), but scope the write to this
+                // viewer instance so multiple open PDFs don't each re-save the same payload.
+                if (event.data.noteId === note.noteId && event.data.ntxId === noteContext.ntxId) {
+                    options.save("pdfSignatures", event.data.data);
                 }
             }
 
@@ -153,6 +164,19 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                 });
             }
 
+            if (event.data.type === "pdfjs-viewer-annotations") {
+                noteContext.setContextData("pdfAnnotations", {
+                    annotations: event.data.annotations,
+                    scrollToAnnotation: (annotationId: string, pageNumber: number) => {
+                        iframeRef.current?.contentWindow?.postMessage({
+                            type: "trilium-scroll-to-annotation",
+                            annotationId,
+                            pageNumber
+                        }, window.location.origin);
+                    }
+                });
+            }
+
             if (event.data.type === "pdfjs-viewer-layers") {
                 noteContext.setContextData("pdfLayers", {
                     layers: event.data.layers,
@@ -171,13 +195,32 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
         return () => {
             window.removeEventListener("message", handleMessage);
         };
-    }, [ note, historyConfig, componentId, blob, noteContext ]);
+    }, [ note, historyConfig, componentId, blob, noteContext, isReadOnly, spacedUpdate ]);
 
-    useTriliumEvent("customDownload", ({ ntxId }) => {
+    useTriliumEvent("customDownload", async ({ ntxId }) => {
         if (ntxId !== noteContext.ntxId) return;
+
+        // Flush any pending in-viewer edits (e.g. annotations) to the server before
+        // downloading, so the file reflects the latest state and not just the last
+        // debounced auto-save. No-op for read-only PDFs, which have nothing to save.
+        await spacedUpdate.updateNowIfNecessary();
+
+        const url = `${open.getUrlForDownload(`api/notes/${note.noteId}/download`)}?${Date.now()}`;
+        open.download(url);
+    });
+
+    useTriliumEvent("printActiveNote", () => {
+        if (!noteContext.isActive()) return;
         iframeRef.current?.contentWindow?.postMessage({
-            type: "trilium-request-download"
-        });
+            type: "trilium-print"
+        }, window.location.origin);
+    });
+
+    useTriliumEvent("findInText", () => {
+        if (!noteContext.isActive()) return;
+        iframeRef.current?.contentWindow?.postMessage({
+            type: "trilium-find"
+        }, window.location.origin);
     });
 
     return (historyConfig &&
@@ -189,6 +232,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                 const win = iframeRef.current?.contentWindow;
                 if (win) {
                     win.TRILIUM_VIEW_HISTORY_STORE = historyConfig.config;
+                    win.TRILIUM_SIGNATURES = options.getJson("pdfSignatures") ?? {};
                     win.TRILIUM_NOTE_ID = note.noteId;
                     win.TRILIUM_NTX_ID = noteContext.ntxId;
                 }
@@ -199,7 +243,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                     });
                 }
             }}
-            editable
+            editable={!isReadOnly}
         />
     );
 }

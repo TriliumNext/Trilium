@@ -9,7 +9,11 @@
 
 @font-face {
     font-family: "Inter";
-    src: url(../../fonts/Inter/Inter-VariableFont_opsz,wght.ttf);
+    src: url(../../fonts/Inter/Inter-VariableFont_opsz,wght.woff2) format("woff2-variations"),
+         url(../../fonts/Inter/Inter-VariableFont_opsz,wght.ttf) format("truetype-variations");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
 }
 
 /*
@@ -62,6 +66,14 @@
     --floating-button-icon-size: 20px;
     --floating-button-show-hide-button-size: 26px;
 
+    --overlay-button-height: 28px;
+    --overlay-button-border-radius: 6px;
+    --overlay-button-background: var(--opaque-icon-button-background);
+    --overlay-button-backdrop-filter: var(--opaque-icon-button-backdrop-filter);
+    --overlay-button-color: var(--opaque-icon-button-color);
+    --overlay-button-icon-size: 16px;
+    --overlay-button-text-size: 14px;
+
     --menu-padding-size: 8px;
     --menu-item-icon-vert-offset: -2px;
     --menu-submenu-mobile-background-color: rgba(255, 255, 255, 0.15);
@@ -80,6 +92,8 @@
 
     --icon-button-size: 32px;
     --icon-button-icon-ratio: 0.65;
+
+    --opaque-icon-button-backdrop-filter: blur(32px) saturate(1000%);
 
     --modal-control-button-size: 22px;
 
@@ -100,6 +114,17 @@
 
     /* The minimum perceptual lightness for the custom color in the dark theme (%): */
     --tree-item-dark-theme-min-color-lightness: 65;
+
+    /* Tooltips */
+    --tooltip-border-radius: 6px;
+    --tooltip-padding: 2px 8px 4px 8px;
+    --tooltip-box-shadow: 
+        -1px -1px 2px var(--tooltip-shadow-color),
+        2px 2px 8px var(--tooltip-shadow-color);
+    --tooltip-backdrop-filter: blur(5px);
+    --tooltip-font-size: 0.9rem;
+
+    --note-tooltip-box-shadow: 10px 10px 93px -25px var(--tool-dialog-shadow-color);
 }
 
 body {
@@ -573,10 +598,77 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
 }
 
 /*
+ * TOOLTIPS
+ */
+
+.tooltip:not(.note-tooltip) .tooltip-inner p {
+    padding: 0;
+    margin: 0;
+}
+
+/* Keyboard shortcut. Note tooltips are excluded: their body is rendered note content, so
+   any <kbd> in there is styled as content (see `.ck-content kbd` in dialogs.css). */
+.tooltip:not(.note-tooltip) .tooltip-inner kbd {
+    display: inline-block;
+    margin: 0 2px 2px;
+    border: 1px solid var(--tooltip-kbd-border);
+    border-radius: 5px;
+    padding: 2px 8px;
+    background: var(--tooltip-kbd-background);
+    box-shadow:
+        0 2px 0 var(--tooltip-kbd-border),
+        inset 0 -1px 0 var(--tooltip-kbd-border);
+    color: var(--tooltip-kbd-color);
+    font-family: var(--main-font-family);
+    font-size: 0.75em;
+    font-weight: normal;
+    line-height: 1.4;
+    letter-spacing: 0.5pt;
+    vertical-align: 1px;
+    white-space: nowrap;
+}
+
+/*
  * NOTE TOOLTIPS
  */
 
- .tooltip .tooltip-inner:has(.note-tooltip-content) {
+.tooltip.note-tooltip {
+    --tooltip-background-color: var(--note-tooltip-background-color);
+    --tooltip-foreground-color: var(--main-text-color);
+    --tooltip-box-shadow: var(--note-tooltip-box-shadow);
+    
+    > .tooltip-inner {
+        outline: 1px solid var(--main-border-color);
+        border-radius: 12px;
+        min-height: 120px;
+    }
+    
+    .rendered-content {
+        font-size: .8em;
+    }
+
+    .open-popup-button {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        inset-inline-end: 20px;
+        inset-block-end: 20px;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+
+        backdrop-filter: var(--opaque-icon-button-backdrop-filter);
+        background-color: var(--opaque-icon-button-background);
+        color: var(--opaque-icon-button-color);
+
+        &:hover {
+            background-color: var(--opaque-icon-button-hover-background-color);
+            color: var(--opaque-icon-button-hover-color);
+        }
+    }
+}
+
+.tooltip .tooltip-inner:has(.note-tooltip-content) {
     border-radius: 8px;
 }
 

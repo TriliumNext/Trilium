@@ -1,5 +1,5 @@
 # Bulk Actions
-<figure class="image"><img style="aspect-ratio:1425/654;" src="Bulk Actions_image.png" width="1425" height="654"></figure>
+<figure class="image"><img style="aspect-ratio:1425/644;" src="Bulk Actions_image.png" width="1425" height="644"></figure>
 
 The _Bulk Actions_ dialog makes it easy to apply changes to multiple notes at once, ranging from simple actions such as adding or removing a label to being executing custom scripts.
 
@@ -63,6 +63,13 @@ These actions operate the <a class="reference-link" href="Attributes/Relations.
 *   **Move note**
     *   For each note, it will be moved to the specified parent note.
     *   As an alternative for less complex situations, the notes can be moved directly from within the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> via cut → paste or via the contextual menu.
+*   **Convert note**
+    *   This allows a note to be converted from one type to another:
+        *   **Text Notes → Markdown Notes** — each <a class="reference-link" href="../Note%20Types/Text.md">Text</a> note is converted to a <a class="reference-link" href="../Note%20Types/Markdown.md">Markdown</a> note. Since Markdown does not support all the formatting capabilities of Text Notes, some formatting may be lost and some unsupported elements may even be dropped.
+        *   **Markdown Notes → Text Notes** — each <a class="reference-link" href="../Note%20Types/Markdown.md">Markdown</a> note is converted to a <a class="reference-link" href="../Note%20Types/Text.md">Text</a> Note.
+    *   For each converted note, a revision is saved automatically, allowing you to restore the original or recover any missing elements from it.
+*   **Save revision**
+    *   Automatically creates a revision of each note. Optionally, a name can be assigned to this revision. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md">Note Revisions</a>.
 *   **Delete note**
     *   For each note, it will be deleted.
     *   As an alternative for less complex situations, the notes can be removed directly from within the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> by selecting them and pressing <kbd>Delete</kbd>.

@@ -1,0 +1,15 @@
+.file-table {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.file-table th, .file-table td {
+    padding: 5px;
+    overflow-wrap: anywhere;
+}
+
+.file-buttons {
+    padding: 10px;
+    display: flex;
+    justify-content: space-evenly;
+}

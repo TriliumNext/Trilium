@@ -101,10 +101,22 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
 
 /* #endregion */
 
+#horizontal-main-container {
+    /* The default start-start and end-start border radius for the note split.
+     * Updated automatically according to the layout. */
+    --note-split-top-border-radius: var(--center-pane-border-radius);
+    --note-split-bottom-border-radius: var(--center-pane-border-radius);
+}
+
 /* Matches when the left pane is collapsed */
 #horizontal-main-container.left-pane-hidden {
-    --center-pane-border-radius: 0;
+    --note-split-top-border-radius: 0;
     --tab-first-item-horiz-offset: 5px;
+}
+
+/* Matches when a status bar panel is open */
+body.experimental-feature-new-layout #horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
+    --note-split-bottom-border-radius: 0;
 }
 
 /* Add a border to the vertical launch bar if collapsed. */
@@ -329,7 +341,7 @@ body[dir=ltr] #launcher-container {
 
 #launcher-pane .sync-status-disconnected-with-changes {
     --pulse-color: var(--sync-status-error-pulse-color);
-    animation: sync-status-pulse 1s ease-in-out alternate-reverse infinite;
+    animation: sync-status-pulse 1s steps(10, jump-none) alternate-reverse infinite;
 }
 
 #launcher-pane button.global-menu-button {
@@ -344,13 +356,12 @@ body[dir=ltr] #launcher-container {
 }
 
 .tooltip .tooltip-inner {
-    padding: 6px 10px !important;
-    box-shadow:
-        -1px -1px 2px var(--tooltip-shadow-color),
-        2px 2px 8px var(--tooltip-shadow-color) !important;
+    padding: var(--tooltip-padding) !important;
+    box-shadow: var(--tooltip-box-shadow) !important;
     border: unset !important;
-    border-radius: 6px;
-    backdrop-filter: blur(5px);
+    border-radius: var(--tooltip-border-radius);
+    backdrop-filter: var(--tooltip-backdrop-filter);
+    font-size: var(--tooltip-font-size);
     color: var(--tooltip-foreground-color) !important;
 }
 
@@ -661,30 +672,34 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
 
 /*
  * TREE PANE
+ *
+ * The tree popup editor's sidebar (`.tree-popup-sidebar`) hosts the same NoteTreeWidget outside
+ * `#left-pane`, so every rule in this section matches both via `:is()` — which also keeps the
+ * original id-level specificity for the popup, so these still override the base tree.css rules.
  */
 
-#left-pane div.tree {
+:is(#left-pane, .tree-popup-sidebar) div.tree {
     padding: 3px 6px 40px 6px;
     animation: fade-in 200ms ease-in;
 }
 
-#left-pane span.fancytree-node {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node {
     border: unset;
     border-radius: 6px;
     cursor: default;
 }
 
-#left-pane .ui-fancytree ul {
+:is(#left-pane, .tree-popup-sidebar) .ui-fancytree ul {
     padding-inline-start: 10px;
 }
 
 /* The root element of the tree */
-#left-pane .fancytree-container > li:first-child > span {
+:is(#left-pane, .tree-popup-sidebar) .fancytree-container > li:first-child > span {
     padding-inline-start: 12px;
 }
 
-#left-pane span.fancytree-node.fancytree-active,
-#left-pane span.fancytree-node.fancytree-active:hover {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active,
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active:hover {
     position: relative;
     background: transparent;
     color: var(--custom-color, var(--left-pane-item-selected-color));
@@ -707,7 +722,7 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
  *                  element's background color, to allow alpha compositing for the hover state.
  */
 
-#left-pane span.fancytree-node.fancytree-active::before {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active::before {
     position: absolute;
     content: "";
     top: var(--left-pane-item-selected-shadow-size);
@@ -721,7 +736,7 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     z-index: -1;
 }
 
-#left-pane span.fancytree-node.fancytree-selected {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected {
     --left-pane-item-selected-shadow-size: 4px;
 
     position: relative;
@@ -729,7 +744,7 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     border-radius: 0;
 }
 
-#left-pane span.fancytree-node.fancytree-selected::after {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected::after {
     display: block;
     position: absolute;
     z-index: -2;
@@ -739,12 +754,12 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     animation: left-pane-item-select 100ms ease-out;
 }
 
-#left-pane span.fancytree-node.protected > span.fancytree-custom-icon {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected > span.fancytree-custom-icon {
     position: relative;
     filter: unset !important;
 }
 
-#left-pane span.fancytree-node.protected > span.fancytree-custom-icon:after {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected > span.fancytree-custom-icon:after {
     position: absolute;
     bottom: 0;
     inset-inline-end: 0;
@@ -756,7 +771,7 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     border-radius: 50%;
 }
 
-body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-icon:after {
+body[dir=rtl] :is(#left-pane, .tree-popup-sidebar) span.fancytree-node.protected > span.fancytree-custom-icon:after {
     transform: translateX(-25%);
 }
 
@@ -772,37 +787,37 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
     }
 }
 
-#left-pane .fancytree-expander,
+:is(#left-pane, .tree-popup-sidebar) .fancytree-expander,
 .nested-note-list-item .note-expander {
     opacity: 0.65;
     transition: opacity 150ms ease-in;
 }
 
-#left-pane .fancytree-expander:hover,
+:is(#left-pane, .tree-popup-sidebar) .fancytree-expander:hover,
 .nested-note-list-item .note-expander:hover {
     opacity: 1;
     transition: opacity 300ms ease-out;
 }
 
-#left-pane .fancytree-custom-icon {
+:is(#left-pane, .tree-popup-sidebar) .fancytree-custom-icon {
     margin-top: 0; /* Use this to align the icon with the tree view item's caption */
     color: var(--custom-color, var(--left-pane-icon-color));
 }
 
-#left-pane span.fancytree-active .fancytree-title {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-active .fancytree-title {
     font-weight: normal;
 }
 
-#left-pane span.fancytree-node:hover {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node:hover {
     background: var(--left-pane-item-hover-background);
 }
 
-#left-pane .note-indicator-icon.shared-indicator {
+:is(#left-pane, .tree-popup-sidebar) .note-indicator-icon.shared-indicator {
     opacity: 0.5;
 }
 
-#left-pane .tree-item-button,
-#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon {
+:is(#left-pane, .tree-popup-sidebar) .tree-item-button,
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon {
     margin-inline-end: 6px;
     border: unset;
     border-radius: 50%;
@@ -813,8 +828,8 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
         box-shadow 200ms ease-out;
 }
 
-#left-pane .tree-item-button:hover,
-#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon:hover {
+:is(#left-pane, .tree-popup-sidebar) .tree-item-button:hover,
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon:hover {
     background: var(--left-pane-item-action-button-hover-background);
     box-shadow: var(--left-pane-item-action-button-hover-shadow);
     transition:
@@ -822,8 +837,8 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
         box-shadow 100ms ease-in;
 }
 
-#left-pane span.fancytree-node.fancytree-active .tree-item-button:hover,
-#left-pane span.fancytree-node.fancytree-active.fancytree-selected .fancytree-custom-icon:hover {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active .tree-item-button:hover,
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-active.fancytree-selected .fancytree-custom-icon:hover {
     box-shadow: var(--left-pane-item-selected-action-button-hover-shadow);
 }
 
@@ -838,20 +853,20 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
     }
 }
 
-#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon {
     margin: 0;
 }
 
-#left-pane span.fancytree-node.fancytree-selected .fancytree-custom-icon::before {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected .fancytree-custom-icon::before {
     border: 0;
     font-size: .65em;
 }
 
-#left-pane span.fancytree-node.fancytree-selected:hover .fancytree-custom-icon:not(:hover)::before {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected:hover .fancytree-custom-icon:not(:hover)::before {
     animation: bulk-action-button-blink 500ms linear infinite alternate;
 }
 
-#left-pane span.fancytree-node.fancytree-selected.protected .fancytree-custom-icon::after {
+:is(#left-pane, .tree-popup-sidebar) span.fancytree-node.fancytree-selected.protected .fancytree-custom-icon::after {
     /* Protected note indicator */
     display: none;
 }
@@ -867,7 +882,7 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
  */
 
 /* Toolbar container (collapsed state) */
-#left-pane .tree-actions {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions {
     max-width: var(--tree-actions-toolbar-collapsed-width);
     inset-inline-end: var(--tree-actions-toolbar-horizontal-margin);
     bottom: var(--tree-actions-toolbar-vertical-margin);
@@ -883,7 +898,7 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
 }
 
 /* Toolbar container (expanded state) */
-#left-pane .tree-actions:hover {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions:hover {
     max-width: 200px;
     border-color: var(--dropdown-border-color);
     background: var(--menu-background-color);
@@ -892,7 +907,7 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
 }
 
 /* Toolbar button (toolbar collapsed)*/
-#left-pane .tree-actions button {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions button {
     border: unset;
     color: var(--menu-item-icon-color);
     opacity: 0;
@@ -900,18 +915,18 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
 }
 
 /* Toolbar button on hover */
-#left-pane .tree-actions button:hover {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions button:hover {
     background: var(--hover-item-background-color);
 }
 
 /* Toolbar button (toolbar expanded) */
-#left-pane .tree-actions:hover button {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions:hover button {
     opacity: 1;
     transition: opacity 250ms ease-in;
 }
 
 /* The floating expand button (toolbar collapsed) */
-#left-pane .tree-actions::after {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions::after {
     display: flex;
     content: "\eab4";
     position: absolute;
@@ -934,7 +949,7 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
 }
 
 /* The floating expand button (toolbar expanded) */
-#left-pane .tree-actions:hover::after {
+:is(#left-pane, .tree-popup-sidebar) .tree-actions:hover::after {
     background: transparent;
     color: var(--menu-item-icon-color);
     opacity: var(--menu-item-disabled-opacity);
@@ -945,7 +960,7 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
  * Tree settings popup
  */
 
-#left-pane .tree-settings-popup {
+:is(#left-pane, .tree-popup-sidebar) .tree-settings-popup {
     box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
     border: 1px solid var(--dropdown-border-color);
     padding: 25px;
@@ -954,7 +969,7 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
     color: var(--menu-text-color);
 }
 
-#left-pane .tree-settings-popup h4 {
+:is(#left-pane, .tree-popup-sidebar) .tree-settings-popup h4 {
     margin-bottom: 0.75em;
     font-size: 1.5em;
     line-height: 1;
@@ -1294,7 +1309,7 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
 }
 
 body.layout-vertical #rest-pane > .classic-toolbar-widget {
-    border-start-start-radius: var(--center-pane-border-radius);
+    border-start-start-radius: var(--note-split-top-border-radius);
 }
 
 body.layout-vertical #rest-pane > .classic-toolbar-widget {
@@ -1307,16 +1322,30 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
 
 .classic-toolbar-widget:not(.hidden-ext) + #vertical-main-container {
     /* Remove the center panel border radius when the toolbar is visible */
-    --center-pane-border-radius: 0;
+    --note-split-top-border-radius: 0;
 }
 
 /*
  * CENTER PANE
  */
 
+ /* Note split */
+ body.desktop.experimental-feature-new-layout .vertical-layout #center-pane .note-split {
+    border-bottom: 1px solid var(--status-bar-border-color);
+ }
+
  /* The first visible note split */
 .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
-    border-start-start-radius: var(--center-pane-border-radius);
+    border-start-start-radius: var(--note-split-top-border-radius);
+
+    body.desktop.experimental-feature-new-layout & {
+        border-end-start-radius: var(--note-split-bottom-border-radius);
+
+        > .scrolling-container {
+            /* Use clip-path to force rounded bottom corner for the note content */
+            clip-path: inset(0px round 0 0 0 var(--note-split-bottom-border-radius));
+        }
+    }
 }
 
 #center-pane .note-split {
@@ -1765,6 +1794,20 @@ div.floating-buttons-children .close-floating-buttons:has(.close-floating-button
     font-size: var(--floating-button-icon-size);
 }
 
+/* Button groups */
+:root .floating-buttons .btn-group {
+    --button-group-active-button-background-color: var(--low-profile-button-active-background-color);
+    --button-group-active-button-color: var(--low-profile-button-active-color);
+
+    background: transparent;
+    padding: 0;
+
+    button.btn.floating-button.btn {
+        border-radius: 0;
+        box-shadow: unset;
+    }
+}
+
 /*
  * Find and replace bar
  */
@@ -1873,6 +1916,11 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 #right-pane {
     background: var(--right-pane-background-color);
 }
+
+/* New layout: status bar delimiter */
+body.desktop.experimental-feature-new-layout .vertical-layout #right-pane {
+    border-bottom: 1px solid var(--status-bar-border-color);
+ }
 
 #right-pane > * {
     animation: fade-in 200ms ease-in;

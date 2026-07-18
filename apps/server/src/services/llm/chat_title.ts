@@ -1,8 +1,7 @@
-import becca from "../../becca/becca.js";
-import { getProvider } from "./index.js";
-import { OllamaProvider } from "./providers/ollama.js";
-import log from "../log.js";
+import { becca, getLog } from "@triliumnext/core";
 import { t } from "i18next";
+
+import { getProvider } from "./index.js";
 
 /** Default title prefixes that indicate the note hasn't been manually renamed. */
 function hasDefaultTitle(title: string): boolean {
@@ -29,16 +28,12 @@ export async function generateChatTitle(chatNoteId: string, firstMessage: string
     }
 
     const provider = getProvider();
-
-    // Ensure Ollama models are loaded so titleModel is set
-    if (provider instanceof OllamaProvider) {
-        await provider.loadModels();
-    }
-
+    // Providers with a dynamic model list (Ollama) need it loaded for the title model
+    await provider.loadModels?.();
     const title = await provider.generateTitle(firstMessage);
     if (title) {
         note.title = title;
         note.save();
-        log.info(`Auto-renamed chat note ${chatNoteId} to "${title}"`);
+        getLog().info(`Auto-renamed chat note ${chatNoteId} to "${title}"`);
     }
 }

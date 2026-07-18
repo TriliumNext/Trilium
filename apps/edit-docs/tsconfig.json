@@ -13,6 +13,9 @@
       "path": "../client"
     },
     {
+      "path": "../../packages/commons"
+    },
+    {
       "path": "./tsconfig.app.json"
     }
   ]

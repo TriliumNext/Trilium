@@ -11,7 +11,7 @@ Trilium offers various startup scripts to customize your experience:
 
 *   `trilium-no-cert-check`: Starts Trilium without validating [TLS certificates](Server%20Installation/HTTPS%20\(TLS\).md), useful if connecting to a server with a self-signed certificate.
     *   Alternatively, set the `NODE_TLS_REJECT_UNAUTHORIZED=0` environment variable before starting Trilium.
-*   `trilium-portable`: Launches Trilium in portable mode, where the [data directory](Data%20directory.md) is created within the application's directory, making it easy to move the entire setup.
+*   `trilium-portable`: Launches Trilium in portable mode, where the [data directory](Data%20directory.md) is created within the application's directory, making it easy to move the entire setup. Electron's internal data (caches, dictionaries, etc.) is also stored within the data directory, so no files are written to the system's roaming profile.
 *   `trilium-safe-mode`: Boots Trilium in "safe mode," disabling any startup scripts that might cause the application to crash.
 
 ## Synchronization

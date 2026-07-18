@@ -1,5 +1,5 @@
 import { Application } from "express";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, it } from "vitest";
 import supertest from "supertest";
 import { createNote, login } from "./utils.js";
 import config from "../../src/services/config.js";
@@ -24,6 +24,14 @@ describe("etapi/post-revision", () => {
             .post(`/etapi/notes/${createdNoteId}/revision`)
             .auth(USER, token, { "type": "basic"})
             .send("Changed content")
+            .expect(204);
+    });
+
+    it("posts a note revision with a custom description", async () => {
+        await supertest(app)
+            .post(`/etapi/notes/${createdNoteId}/revision`)
+            .auth(USER, token, { "type": "basic"})
+            .send({ description: "manual snapshot" })
             .expect(204);
     });
 });

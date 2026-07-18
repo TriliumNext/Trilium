@@ -7,12 +7,15 @@
  */
 
 import { createOpenAI, type OpenAIProvider as OpenAISDKProvider } from "@ai-sdk/openai";
+import { getLog } from "@triliumnext/core";
 
-import log from "../../log.js";
 import { BaseProvider } from "./base_provider.js";
 import type { ModelInfo, ModelPricing } from "../types.js";
 
 const DEFAULT_BASE_URL = "http://localhost:11434";
+
+/** How long a fetched model list stays fresh before it is re-fetched. */
+const MODEL_LIST_TTL_MS = 60_000;
 
 /** Ollama models are local and free. */
 const FREE_PRICING: ModelPricing = { input: 0, output: 0 };
@@ -37,6 +40,26 @@ interface OllamaTagsResponse {
             quantization_level?: string;
         };
     }>;
+}
+
+/**
+ * Validate a user-supplied base URL: must parse as an http(s) URL.
+ * Falls back to the default local instance URL otherwise.
+ */
+function sanitizeBaseUrl(baseUrl: string | undefined): string {
+    if (!baseUrl) {
+        return DEFAULT_BASE_URL;
+    }
+    try {
+        const parsed = new URL(baseUrl);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+            throw new Error(`unsupported protocol ${parsed.protocol}`);
+        }
+        return baseUrl.replace(/\/+$/, "");
+    } catch (e) {
+        getLog().error(`Ollama: invalid base URL "${baseUrl}" (${e}), falling back to ${DEFAULT_BASE_URL}`);
+        return DEFAULT_BASE_URL;
+    }
 }
 
 /**
@@ -82,11 +105,12 @@ export class OllamaProvider extends BaseProvider {
 
     private openai: OpenAISDKProvider;
     private baseUrl: string;
-    private modelsLoaded = false;
+    /** Timestamp of the last successful non-empty model fetch (0 = never). */
+    private modelsLoadedAt = 0;
 
     constructor(baseUrl?: string) {
         super();
-        this.baseUrl = baseUrl || DEFAULT_BASE_URL;
+        this.baseUrl = sanitizeBaseUrl(baseUrl);
 
         // Ollama exposes an OpenAI-compatible endpoint at /v1
         this.openai = createOpenAI({
@@ -102,26 +126,23 @@ export class OllamaProvider extends BaseProvider {
         return this.openai.chat(modelId);
     }
 
-    override getAvailableModels(): ModelInfo[] {
-        return this.availableModels;
-    }
-
     /**
-     * Fetch available models from the Ollama instance.
-     * Called by the route handler before returning models to the client.
+     * Fetch available models from the Ollama instance. The list is cached for
+     * a short TTL so pulling a new model in Ollama shows up without a server
+     * restart; an empty list is never cached so first-use setups can recover.
      */
     async loadModels(): Promise<ModelInfo[]> {
-        if (this.modelsLoaded) {
+        if (this.availableModels.length > 0 && Date.now() - this.modelsLoadedAt < MODEL_LIST_TTL_MS) {
             return this.availableModels;
         }
-        
+
         try {
             const res = await fetch(`${this.baseUrl}/api/tags`, {
                 signal: AbortSignal.timeout(5000)
             });
             if (!res.ok) {
-                log.error(`Ollama: failed to fetch models (${res.status})`);
-                return [];
+                getLog().error(`Ollama: failed to fetch models (${res.status})`);
+                return this.availableModels;
             }
 
             const data = (await res.json()) as OllamaTagsResponse;
@@ -147,13 +168,13 @@ export class OllamaProvider extends BaseProvider {
                     /small|mini|tiny|phi|gemma.*2b/i.test(m.name)
                 );
                 this.titleModel = smallModel?.name || this.defaultModel;
+                this.modelsLoadedAt = Date.now();
             }
 
-            this.modelsLoaded = true;
             return this.availableModels;
         } catch (e) {
-            log.error(`Ollama: failed to connect to ${this.baseUrl}: ${e}`);
-            return [];
+            getLog().error(`Ollama: failed to connect to ${this.baseUrl}: ${e}`);
+            return this.availableModels;
         }
     }
 }

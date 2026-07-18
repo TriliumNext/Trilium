@@ -1,12 +1,10 @@
 
 import { defineConfig } from 'vite';
-import dts from 'vite-plugin-dts';
-import * as path from 'path';
 
 export default defineConfig(() => ({
     root: __dirname,
     cacheDir: '../../node_modules/.vite/packages/highlightjs',
-    plugins: [dts({ entryRoot: 'src', tsconfigPath: path.join(__dirname, 'tsconfig.lib.json') }),],
+    plugins: [],
     build: {
         outDir: './dist',
         emptyOutDir: true,
@@ -37,6 +35,9 @@ export default defineConfig(() => ({
         'coverage': {
             'reportsDirectory': './test-output/vitest/coverage',
             'provider': 'v8' as const,
+            'include': ["src/**/*.{ts,tsx}"],
+            'exclude': ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"],
+            'reporter': ["text", "lcov"],
         }
     },
 }));

@@ -2,18 +2,19 @@ import "./code.css";
 
 import { default as VanillaCodeMirror, getThemeById } from "@triliumnext/codemirror";
 import { NoteType } from "@triliumnext/commons";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { Ref } from "preact";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import appContext, { CommandListenerData } from "../../../components/app_context";
+import { CommandListenerData } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import utils from "../../../services/utils";
-import { useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useColorScheme, useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { refToJQuerySelector } from "../../react/react_utils";
-import TouchBar, { TouchBarButton } from "../../react/TouchBar";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { TypeWidgetProps } from "../type_widget";
 import CodeMirror, { CodeMirrorProps } from "./CodeMirror";
+import { useSnippetSlashCommands } from "./snippets";
 
 interface CodeEditorProps {
     /** By default, the code editor will try to match the color of the scrolling container to match the one from the theme for a full-screen experience. If the editor is embedded, it makes sense not to have this behaviour. */
@@ -31,11 +32,19 @@ export interface EditableCodeProps extends TypeWidgetProps, Omit<CodeEditorProps
     /** Invoked after the content of the note has been uploaded to the server, using a spaced update. */
     dataSaved?: () => void;
     placeholder?: string;
+    /** Optional external ref to the underlying CodeMirror `EditorView`. Populated once the editor has initialized. */
+    editorRef?: Ref<VanillaCodeMirror>;
 }
 
-export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent }: TypeWidgetProps) {
+export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
     const [ content, setContent ] = useState("");
     const blob = useNoteBlob(note);
+    // Read reactively so switching the language from the dropdown re-highlights live, rather than
+    // only after the note is reloaded (unlike the editable view, read-only has no edits to trigger it).
+    const mime = useNoteProperty(note, "mime");
+    const [ noteTabWidth ] = useNoteLabelInt(note, "tabWidth");
+    const [ noteUseTabs ] = useNoteLabelOptionalBool(note, "indentWithTabs");
+    const [ noteWrapLines ] = useNoteLabelOptionalBool(note, "wrapLines");
 
     useEffect(() => {
         if (!blob) return;
@@ -51,10 +60,14 @@ export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent }: TypeWi
     return (
         <CodeEditor
             ntxId={ntxId} parentComponent={parentComponent}
+            editorRef={editorRef}
             className="note-detail-readonly-code-content"
             content={content}
-            mime={note.mime}
+            mime={mime ?? "text/plain"}
             readOnly
+            {...(noteTabWidth != null && { indentSize: noteTabWidth })}
+            {...(noteUseTabs != null && { useTabs: noteUseTabs })}
+            {...(noteWrapLines != null && { lineWrapping: noteWrapLines })}
         />
     );
 }
@@ -75,10 +88,21 @@ function formatViewSource(note: FNote, content: string) {
     return content;
 }
 
-export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentComponent, updateInterval, noteType = "code", onContentChanged, dataSaved, placeholder, ...editorProps }: EditableCodeProps) {
+export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentComponent, updateInterval, noteType = "code", onContentChanged, dataSaved, placeholder, editorRef: externalEditorRef, ...editorProps }: EditableCodeProps) {
     const editorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useRef<HTMLPreElement>(null);
+    const [ editorView, setEditorView ] = useState<VanillaCodeMirror | null>(null);
+    const combinedEditorRef = useCallback((view: VanillaCodeMirror | null) => {
+        editorRef.current = view;
+        setEditorView(view);
+        if (typeof externalEditorRef === "function") externalEditorRef(view);
+        else if (externalEditorRef) externalEditorRef.current = view;
+    }, [externalEditorRef]);
     const [ vimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
+    const [ noteTabWidth ] = useNoteLabelInt(note, "tabWidth");
+    const [ noteUseTabs ] = useNoteLabelOptionalBool(note, "indentWithTabs");
+    const [ noteWrapLines ] = useNoteLabelOptionalBool(note, "wrapLines");
+    const [ customRequestHandler ] = useNoteLabel(note, "customRequestHandler");
     const mime = useNoteProperty(note, "mime");
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -109,34 +133,42 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
 
     useKeyboardShortcuts("code-detail", containerRef, parentComponent, ntxId);
 
-    return (
-        <>
-            <CodeEditor
-                ntxId={ntxId} parentComponent={parentComponent}
-                editorRef={editorRef} containerRef={containerRef}
-                mime={mime ?? "text/plain"}
-                className="note-detail-code-editor"
-                placeholder={placeholder ?? t("editable_code.placeholder")}
-                vimKeybindings={vimKeymapEnabled}
-                tabIndex={300}
-                onContentChanged={() => {
-                    if (debounceUpdate) {
-                        spacedUpdate.resetUpdateTimer();
-                    }
-                    spacedUpdate.scheduleUpdate();
-                    if (editorRef.current && onContentChanged) {
-                        onContentChanged(editorRef.current.getText());
-                    }
-                }}
-                {...editorProps}
-            />
+    // Code snippets (#snippet notes with a matching MIME) as `/snippet:<name>` slash commands.
+    // Disabled for Markdown notes, whose editor provides its own combined slash-command menu. On
+    // script notes the snippet source co-exists with the TypeScript language service's source via
+    // the editor's shared completion-source registry.
+    useSnippetSlashCommands(
+        editorView,
+        (candidate) => candidate.type === "code" && (candidate.mime === note.mime || candidate.mime === "text/plain"),
+        note.mime,
+        !note.isMarkdown(),
+        note.noteId
+    );
 
-            <TouchBar>
-                {(note?.mime.startsWith("application/javascript") || note?.mime === "text/x-sqlite;schema=trilium") && (
-                    <TouchBarButton icon="NSImageNameTouchBarPlayTemplate" click={() => appContext.triggerCommand("runActiveNote")} />
-                )}
-            </TouchBar>
-        </>
+    return (
+        <CodeEditor
+            ntxId={ntxId} parentComponent={parentComponent}
+            editorRef={combinedEditorRef} containerRef={containerRef}
+            mime={mime ?? "text/plain"}
+            customRequestHandler={customRequestHandler != null}
+            className="note-detail-code-editor"
+            placeholder={placeholder ?? t("editable_code.placeholder")}
+            vimKeybindings={vimKeymapEnabled}
+            tabIndex={300}
+            onContentChanged={() => {
+                if (debounceUpdate) {
+                    spacedUpdate.resetUpdateTimer();
+                }
+                spacedUpdate.scheduleUpdate();
+                if (editorRef.current && onContentChanged) {
+                    onContentChanged(editorRef.current.getText());
+                }
+            }}
+            {...editorProps}
+            {...(noteTabWidth != null && { indentSize: noteTabWidth })}
+            {...(noteUseTabs != null && { useTabs: noteUseTabs })}
+            {...(noteWrapLines != null && { lineWrapping: noteWrapLines })}
+        />
     );
 }
 
@@ -146,6 +178,16 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
     const initialized = useRef($.Deferred());
     const [ codeLineWrapEnabled ] = useTriliumOptionBool("codeLineWrapEnabled");
     const [ codeNoteTheme ] = useTriliumOption("codeNoteTheme");
+    const [ codeNoteTabWidth ] = useTriliumOption("codeNoteTabWidth");
+    const [ codeNoteIndentWithTabs ] = useTriliumOptionBool("codeNoteIndentWithTabs");
+    const [ matchesApp ] = useTriliumOptionBool("codeNoteThemeMatchesApp");
+    const [ lightTheme ] = useTriliumOption("codeNoteThemeLight");
+    const [ darkTheme ] = useTriliumOption("codeNoteThemeDark");
+    const colorScheme = useColorScheme();
+
+    const effectiveTheme = matchesApp
+        ? (colorScheme === "dark" ? darkTheme : lightTheme)
+        : codeNoteTheme;
 
     // React to background color.
     const [ backgroundColor, setBackgroundColor ] = useState<string>();
@@ -156,8 +198,8 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
 
     // React to theme changes.
     useEffect(() => {
-        if (codeEditorRef.current && codeNoteTheme.startsWith(DEFAULT_PREFIX)) {
-            const theme = getThemeById(codeNoteTheme.substring(DEFAULT_PREFIX.length));
+        if (codeEditorRef.current && effectiveTheme.startsWith(DEFAULT_PREFIX)) {
+            const theme = getThemeById(effectiveTheme.substring(DEFAULT_PREFIX.length));
             if (theme) {
                 codeEditorRef.current.setTheme(theme).then(() => {
                     const editor = containerRef.current?.querySelector(".cm-editor");
@@ -167,7 +209,7 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
                 });
             }
         }
-    }, [ codeEditorRef, codeNoteTheme ]);
+    }, [ codeEditorRef, effectiveTheme ]);
 
     useTriliumEvent("executeWithCodeEditor", async ({ resolve, ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId) return;
@@ -189,9 +231,18 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
         editor.focus();
     });
 
-    useTriliumEvent("focusOnDetail", ({ ntxId: eventNtxId }) => {
+    useTriliumEvent("focusOnDetail", ({ ntxId: eventNtxId, insertNewlineAtTop }) => {
         if (eventNtxId !== ntxId) return;
-        codeEditorRef.current?.focus();
+        const editor = codeEditorRef.current;
+        if (!editor) return;
+        if (insertNewlineAtTop) {
+            editor.insertBlankLineAtTop();
+            // The code editor itself is `overflow: hidden`; the surrounding `.scrolling-container`
+            // scrolls (together with the inline title), so CodeMirror's own scrollIntoView can't
+            // reveal the new top line. Scroll that container to the top once the line has rendered.
+            requestAnimationFrame(() => editor.dom.closest(".scrolling-container")?.scrollTo({ top: 0 }));
+        }
+        editor.focus();
     });
 
     return <CodeMirror
@@ -200,12 +251,16 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
         editorRef={codeEditorRef}
         containerRef={containerRef}
         lineWrapping={lineWrapping ?? codeLineWrapEnabled}
+        indentSize={editorProps.indentSize ?? (parseInt(codeNoteTabWidth) || 4)}
+        useTabs={editorProps.useTabs ?? codeNoteIndentWithTabs}
         onInitialized={() => {
-            if (externalContainerRef && containerRef.current) {
-                externalContainerRef.current = containerRef.current;
+            if (containerRef.current) {
+                if (typeof externalContainerRef === "function") externalContainerRef(containerRef.current);
+                else if (externalContainerRef) externalContainerRef.current = containerRef.current;
             }
-            if (externalEditorRef && codeEditorRef.current) {
-                externalEditorRef.current = codeEditorRef.current;
+            if (codeEditorRef.current) {
+                if (typeof externalEditorRef === "function") externalEditorRef(codeEditorRef.current);
+                else if (externalEditorRef) externalEditorRef.current = codeEditorRef.current;
             }
             initialized.current.resolve();
             onInitialized?.();

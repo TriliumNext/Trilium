@@ -31,8 +31,6 @@
         "sync_content": "Gebruik een zelfgehoste of cloudinstantie om je notities eenvoudig te synchroniseren tussen meerdere apparaten, en om er via een PWA toegang toe te krijgen op je mobiele telefoon.",
         "protected_notes_title": "Beveiligde notities",
         "protected_notes_content": "Bescherm gevoelige persoonlijke informatie door notities te versleutelen en te beschermen achter een met wachtwoord beveiligde sessie.",
-        "jump_to_title": "Snel zoeken en commando's",
-        "jump_to_content": "Spring snel naar notities of gebruikersinterfacecommando's binnen de hiërarchie door te zoeken naar de titel, met benaderingslogica om tikfouten en kleine verschillen te omzeilen.",
         "search_title": "Krachtige zoekfunctie",
         "search_content": "Of zoek naar tekst binnen notities en verfijn de zoekopdracht door in de bovenliggende notitie te filteren of zoekdiepte aan te geven.",
         "web_clipper_title": "Web clipper",
@@ -42,6 +40,17 @@
         "title": "Meerdere manieren om je informatie te tonen",
         "text_title": "Tekstnotities",
         "text_description": "De notities worden bewerkt met een visuele (WYSIWYG) editor, met ondersteuning voor tabellen, plaatjes, wiskundige tekens, codeblokken met syntax-highlighting. Lijn tekst uit met Markdown-achtige syntax of met slash-commando's.",
-        "code_title": "Codenotities"
+        "code_title": "Codenotities",
+        "code_description": "Grote broncode fragmenten of scripts gebruiken een eigen editor, met syntax markering voor veel programmeertalen en verschillende kleurenthema's.",
+        "file_title": "Bestandsnotities",
+        "file_description": "Voeg multimediabestanden in zoals PDF bestanden, afbeeldingen en filmopnames, met voorvertoning in de toepassing.",
+        "canvas_title": "Canvas",
+        "canvas_description": "Organiseer vormen, afbeeldingen en tekst op een oneindig canvas, met dezelfde technologie als excalidraw.com. Ideaal voor diagrammen, schetsen en visuele planning.",
+        "mermaid_title": "Mermaid diagrammen",
+        "mermaid_description": "Creëer diagrammen zoals flowcharts, class & sequence diagrammen, Gantt diagrammen en nog veel meer, met de Mermaid syntax.",
+        "mindmap_title": "Mindmap"
+    },
+    "collections": {
+        "title": "Verzamelingen"
     }
 }

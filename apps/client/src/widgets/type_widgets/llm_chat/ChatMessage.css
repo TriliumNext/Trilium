@@ -4,6 +4,14 @@
     margin-top: 1rem;
     padding-bottom: 1.25rem;
     max-width: 85%;
+    /* Isolate each message: layout, paint and style invalidations stop at the message
+       boundary instead of walking the whole timeline. Deliberately NOT content-visibility:
+       auto — skipped messages sit at placeholder sizes, which silently breaks everything
+       that measures the timeline (ToC scroll-spy offsets, the bottom-spacer/reply-park
+       math in useLlmChat, smooth scrollIntoView landings). Paint containment clips ink at
+       the wrapper edge, so overflowing effects must be inset (see the jump flash below)
+       and wide content needs its own scroll context (see the KaTeX rule). */
+    contain: content;
 }
 
 .llm-chat-message-wrapper:first-child {
@@ -13,6 +21,11 @@
 .llm-chat-message-wrapper-user {
     margin-left: auto;
     max-width: 70%;
+    /* Shrink to fit the content (capped by max-width) instead of collapsing to
+       min-content. Without an explicit width, an `auto` cross-axis margin inside
+       a flex column (the sidebar chat) squeezes short messages until single words
+       wrap character-by-character. */
+    width: fit-content;
 }
 
 .llm-chat-message-wrapper-assistant {
@@ -34,26 +47,53 @@
     background: var(--accented-background-color);
 }
 
-.llm-chat-message-assistant {
-    background: var(--main-background-color);
-    border: 1px solid var(--main-border-color);
-}
-
-.llm-chat-message-role {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    font-size: 0.8rem;
-    color: var(--muted-text-color);
-}
-
 .llm-chat-message-content {
     word-wrap: break-word;
     line-height: 1.5;
 }
 
-/* Preserve whitespace only for user messages (plain text) */
-.llm-chat-message-user .llm-chat-message-content {
-    white-space: pre-wrap;
+.llm-chat-message-image {
+    display: block;
+    margin: 0.5rem 0;
+    max-width: 100%;
+}
+
+.llm-chat-message-image img {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 6px;
+    border: 1px solid var(--main-border-color);
+}
+
+.llm-chat-message-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--main-border-color);
+    background: var(--accented-background-color);
+    color: var(--main-text-color);
+    text-decoration: none;
+    max-width: 100%;
+}
+
+.llm-chat-message-file:hover {
+    background: var(--more-accented-background-color, var(--accented-background-color));
+    text-decoration: none;
+}
+
+.llm-chat-message-file .bx {
+    font-size: 1.5rem;
+    color: var(--muted-text-color);
+    flex-shrink: 0;
+}
+
+.llm-chat-message-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .llm-chat-cursor {
@@ -114,26 +154,16 @@
     text-align: right;
 }
 
-/* Error */
-.llm-chat-error {
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-    border-radius: 8px;
-    background: var(--danger-background-color, #fee);
-    border: 1px solid var(--danger-border-color, #fcc);
-    color: var(--danger-text-color, #c00);
+/* Error message — rendered as a real "caution" admonition (styled by
+   packages/ckeditor5/src/theme/ck-content.css) so it stays visually identical to
+   admonitions the model itself emits. Only chat-specific tweaks live here. */
+.admonition.llm-chat-error {
+    margin: 0;
     user-select: text;
 }
 
-/* Error message (persisted in conversation) */
-.llm-chat-message-error {
-    background: var(--danger-background-color, #fee);
-    border: 1px solid var(--danger-border-color, #fcc);
-    color: var(--danger-text-color, #c00);
-}
-
-.llm-chat-message-error .llm-chat-message-role {
-    color: var(--danger-text-color, #c00);
+.llm-chat-error-actions {
+    margin-top: 0.75rem;
 }
 
 .llm-chat-thinking-card.expandable-card {
@@ -221,6 +251,13 @@
     font-size: 0.85em;
 }
 
+/* KaTeX display math is white-space: nowrap; give it its own scroll context (like `pre`
+   above) so a wide equation stays reachable — the wrapper's paint containment would
+   otherwise clip its tail with no scrollbar. */
+.llm-chat-markdown .katex-display {
+    overflow-x: auto;
+}
+
 .llm-chat-markdown blockquote {
     margin: 0.75em 0;
     padding: 0.5em 1em;
@@ -247,30 +284,32 @@
     margin: 1em 0;
 }
 
-.llm-chat-markdown table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 0.75em 0;
-}
-
-.llm-chat-markdown th,
-.llm-chat-markdown td {
-    border: 1px solid var(--main-border-color);
-    padding: 0.5em 0.75em;
-    text-align: left;
-}
-
-.llm-chat-markdown th {
-    background: var(--accented-background-color);
-    font-weight: 600;
-}
-
 .llm-chat-markdown strong {
     font-weight: 600;
 }
 
 .llm-chat-markdown em {
     font-style: italic;
+}
+
+/* "Show quote source" jump link at the end of a submitted quote. Inherits link color from
+   `.llm-chat-markdown a`; the pointer cursor is kept explicit since the jump is handled by a click
+   listener rather than real navigation. */
+.chat-message-jump {
+    cursor: pointer;
+}
+
+/* Flash the referenced bubble when jumped to. An inset box-shadow pulse (no layout shift)
+   works on both the user bubble and the transparent assistant bubble — and, unlike an outer
+   shadow, isn't clipped by the message wrapper's paint containment. Duration mirrors
+   FLASH_DURATION_MS in chat_message_jump.ts. */
+.llm-chat-message-wrapper.llm-chat-message-jump-target .llm-chat-message {
+    animation: llm-chat-jump-flash 1.2s ease-out;
+}
+
+@keyframes llm-chat-jump-flash {
+    from { box-shadow: inset 0 0 0 2px var(--quick-search-result-highlight-color, #007bff); }
+    to { box-shadow: inset 0 0 0 2px transparent; }
 }
 
 /* Message footer (timestamp + token usage, sits below the bubble) */

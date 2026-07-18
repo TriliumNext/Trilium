@@ -97,10 +97,9 @@ async function protectNote(noteId: string, protect: boolean, includingSubtree: b
     await server.put(`notes/${noteId}/protect/${protect ? 1 : 0}?subtree=${includingSubtree ? 1 : 0}`);
 }
 
-function makeToast(message: Message, title: string, text: string): ToastOptionsWithRequiredId {
+function makeToast(message: Message, text: string): ToastOptionsWithRequiredId {
     return {
         id: message.taskId,
-        title,
         message: text,
         icon: message.data.protect ? "check-shield" : "shield"
     };
@@ -112,7 +111,6 @@ ws.subscribeToMessages(async (message) => {
     }
 
     const isProtecting = message.data?.protect;
-    const title = isProtecting ? t("protected_session.protecting-title") : t("protected_session.unprotecting-title");
 
     if (message.type === "taskError") {
         toastService.closePersistent(message.taskId);
@@ -120,10 +118,10 @@ ws.subscribeToMessages(async (message) => {
     } else if (message.type === "taskProgressCount") {
         const count = message.progressCount;
         const text = isProtecting ? t("protected_session.protecting-in-progress", { count }) : t("protected_session.unprotecting-in-progress-count", { count });
-        toastService.showPersistent(makeToast(message, title, text));
+        toastService.showPersistent(makeToast(message, text));
     } else if (message.type === "taskSucceeded") {
         const text = isProtecting ? t("protected_session.protecting-finished-successfully") : t("protected_session.unprotecting-finished-successfully");
-        const toast = makeToast(message, title, text);
+        const toast = makeToast(message, text);
         toast.timeout = 3000;
 
         toastService.showPersistent(toast);

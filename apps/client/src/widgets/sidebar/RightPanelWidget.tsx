@@ -15,9 +15,16 @@ interface RightPanelWidgetProps {
     containerRef?: RefObject<HTMLDivElement>;
     contextMenuItems?: MenuItem<unknown>[];
     grow?: boolean;
+    /**
+     * Keep the body in the DOM when collapsed (hidden via CSS) instead of unmounting it. Use for a
+     * stateful widget whose content shouldn't be rebuilt on every collapse — e.g. the sidebar chat,
+     * whose live conversation, draft input, and DOM-attached listeners would otherwise be torn down
+     * and (because its hooks live in the always-mounted parent) not re-wired on expand.
+     */
+    keepMounted?: boolean;
 }
 
-export default function RightPanelWidget({ id, title, buttons, children, containerRef: externalContainerRef, contextMenuItems, grow }: RightPanelWidgetProps) {
+export default function RightPanelWidget({ id, title, buttons, children, containerRef: externalContainerRef, contextMenuItems, grow, keepMounted }: RightPanelWidgetProps) {
     const [ rightPaneCollapsedItems, setRightPaneCollapsedItems ] = useTriliumOptionJson<string[]>("rightPaneCollapsedItems");
     const [ expanded, setExpanded ] = useState(!rightPaneCollapsedItems.includes(id));
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
@@ -30,6 +37,7 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
     return (
         <div
             ref={containerRef}
+            id={id}
             class={clsx("card widget", {
                 collapsed: !expanded,
                 grow
@@ -72,7 +80,10 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
             </div>
 
             <div id={parentComponent?.componentId} class="body-wrapper">
-                {expanded && <div class="card-body">
+                {/* keepMounted widgets stay in the DOM when collapsed and hide via an inline display:none
+                    (which beats any stylesheet `.card-body` display rule, unlike the `hidden` attribute), so
+                    their state and DOM-attached listeners survive a collapse; others unmount as before. */}
+                {(expanded || keepMounted) && <div class="card-body" style={!expanded ? { display: "none" } : undefined}>
                     {children}
                 </div>}
             </div>

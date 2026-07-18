@@ -19,3 +19,8 @@ demo/**/*.txt eol=lf
 demo/**/*.js eol=lf
 demo/**/*.css eol=lf
 *.sh eol=lf
+
+# Always diff TypeScript sources as text so a stray control byte (e.g. a NUL in
+# a string literal) doesn't make Git/GitHub treat the whole file as binary.
+*.ts diff
+*.tsx diff

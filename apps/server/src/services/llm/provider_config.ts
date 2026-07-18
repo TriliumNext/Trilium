@@ -7,8 +7,7 @@
  * (e.g. search engine tools) can read the configuration without import cycles.
  */
 
-import log from "../log.js";
-import optionService from "../options.js";
+import { getLog, options as optionService } from "@triliumnext/core";
 
 /**
  * Configuration for a single provider instance.
@@ -19,8 +18,8 @@ export interface LlmProviderSetup {
     name: string;
     provider: string;
     apiKey: string;
-    /** Base URL for self-hosted providers (e.g. Ollama, SearXNG). */
-    baseUrl?: string;
+    /** Optional override for the SDK's default API endpoint (e.g. Ollama, SearXNG). */
+    baseURL?: string;
     /**
      * What this entry provides: "llm" for chat model providers, "search" for
      * web search engines. Entries without a type are LLM providers — older
@@ -38,7 +37,7 @@ export function getConfiguredProviderSetups(): LlmProviderSetup[] {
         }
         return JSON.parse(providersJson) as LlmProviderSetup[];
     } catch (e) {
-        log.error(`Failed to parse llmProviders option: ${e}`);
+        getLog().error(`Failed to parse llmProviders option: ${e}`);
         return [];
     }
 }
