@@ -251,6 +251,10 @@ export class CopilotAgentProvider implements LlmProvider {
                 if (sessionId) {
                     client?.notify("session/cancel", { sessionId });
                 }
+                // Wake the drain loop below: an agent slow to honour the cancel
+                // (or ignoring it) would otherwise keep this generator — and its
+                // subprocess — suspended until PROMPT_TIMEOUT_MS elapses.
+                wakeup?.();
             };
             signal?.addEventListener("abort", onAbort, { once: true });
 
@@ -272,7 +276,9 @@ export class CopilotAgentProvider implements LlmProvider {
 
                 let finished = false;
                 void done.then(() => { finished = true; wakeup?.(); });
-                while (!finished || chunkQueue.length > 0) {
+                // On abort, drain what already arrived and stop — nobody is
+                // reading past this point, and `finally` disposes the client.
+                while ((!finished && !signal?.aborted) || chunkQueue.length > 0) {
                     if (chunkQueue.length === 0) {
                         await new Promise<void>(resolve => { wakeup = resolve; });
                         wakeup = undefined;
@@ -298,7 +304,11 @@ export class CopilotAgentProvider implements LlmProvider {
                 signal?.removeEventListener("abort", onAbort);
             }
 
-            if (config.chatNoteId && sessionId) {
+            // An aborted turn stops draining before the agent settles, so the
+            // session's real history is unknown — recording a hash here would
+            // let a later turn resume a session that diverged from the
+            // transcript. Forgetting it just reseeds a fresh one.
+            if (config.chatNoteId && sessionId && !signal?.aborted) {
                 rememberSession(config.chatNoteId, {
                     sessionId,
                     transcriptHash: hashTranscript([
@@ -570,10 +580,14 @@ function flattenToolContent(content: unknown, rawOutput: unknown): string {
     if (Array.isArray(content)) {
         const texts = content
             .map(item => {
-                if (item && typeof item === "object" && "content" in item) {
-                    return extractText((item as { content?: AcpContentBlock }).content);
+                if (!item || typeof item !== "object") {
+                    return "";
                 }
-                return "";
+                // ACP wraps each block ({ type: "content", content: … }); some
+                // agents pass the MCP result's blocks straight through instead.
+                return "content" in item
+                    ? extractText((item as { content?: AcpContentBlock }).content)
+                    : extractText(item);
             })
             .filter(Boolean);
         if (texts.length > 0) {

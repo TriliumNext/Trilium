@@ -143,13 +143,25 @@ describe("AcpClient", () => {
         await expect(client.request("initialize", {})).rejects.toThrow(/disposed/);
     });
 
-    it("ignores non-JSON lines on stdout", async () => {
+    it("ignores lines that are not JSON objects", async () => {
         const onNotification = vi.fn();
         AcpClient.start("/bin/copilot", { cwd: "/tmp", onNotification });
 
-        proc.stdout.write("Welcome to Copilot!\n");
+        proc.stdout.write("Welcome to Copilot!\n"); // not JSON at all
+        proc.stdout.write("null\n"); // valid JSON, but no properties to read
+        proc.stdout.write("42\n");
         proc.send({ jsonrpc: "2.0", method: "ping", params: {} });
         await vi.waitFor(() => expect(onNotification).toHaveBeenCalledWith("ping", {}));
         expect(onNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it("survives an EPIPE on the subprocess's stdin", () => {
+        AcpClient.start("/bin/copilot", { cwd: "/tmp" });
+
+        // Node emits this when something writes to a subprocess that already
+        // exited (a late session/cancel, or an agent-request reply resumed
+        // after dispose()). An "error" event with no listener is re-thrown by
+        // EventEmitter, which would take the server down.
+        expect(() => proc.stdin.emit("error", new Error("write EPIPE"))).not.toThrow();
     });
 });

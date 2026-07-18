@@ -65,8 +65,16 @@ async function startEndpoint(): Promise<string> {
     listener = server;
 
     await new Promise<void>((resolve, reject) => {
-        server.once("error", reject);
-        server.listen(0, "127.0.0.1", () => resolve());
+        const onStartupError = (err: Error) => reject(err);
+        server.once("error", onStartupError);
+        server.listen(0, "127.0.0.1", () => {
+            // Past startup, rejecting a settled promise would drop the error
+            // silently — log it instead (and keep a listener attached, since an
+            // unhandled "error" event would crash the server).
+            server.removeListener("error", onStartupError);
+            server.on("error", err => getLog().error(`Copilot MCP endpoint server error: ${err}`));
+            resolve();
+        });
     });
 
     const address = server.address();
@@ -113,9 +121,22 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     }
 }
 
+/**
+ * Cap on the buffered request body. Only the agent subprocess we spawn should
+ * ever reach this endpoint, but the public /mcp route is bounded by Express's
+ * body parser and this raw listener bypasses it — keep the two comparable so a
+ * local process that learned the secret path can't exhaust the heap.
+ */
+const MAX_BODY_BYTES = 4 * 1024 * 1024;
+
 async function readJsonBody(req: http.IncomingMessage): Promise<unknown> {
     const chunks: Buffer[] = [];
+    let totalBytes = 0;
     for await (const chunk of req) {
+        totalBytes += (chunk as Buffer).length;
+        if (totalBytes > MAX_BODY_BYTES) {
+            throw new Error(`The MCP request body exceeds the ${MAX_BODY_BYTES}-byte limit.`);
+        }
         chunks.push(chunk as Buffer);
     }
     const text = Buffer.concat(chunks).toString("utf8");

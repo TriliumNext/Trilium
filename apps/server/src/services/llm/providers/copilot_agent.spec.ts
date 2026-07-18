@@ -234,6 +234,53 @@ describe("CopilotAgentProvider.chatChunks", () => {
         expect(FakeAcpClient.current?.notifications).toContainEqual({ method: "session/cancel", params: { sessionId: "sess-1" } });
     });
 
+    it("ends the turn on abort even when the agent never answers the cancel", async () => {
+        const controller = new AbortController();
+        FakeAcpClient.promptScript = client => {
+            client.update({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "partial" } });
+            setTimeout(() => controller.abort(), 0);
+            // Never settles: only the abort can end this turn.
+            return new Promise<{ stopReason?: string }>(() => {});
+        };
+
+        const provider = new CopilotAgentProvider();
+        const chunks = await collect(provider.chatChunks([userMessage("hi")], { chatNoteId: "chat-abort" }, controller.signal));
+
+        expect(chunks).toEqual([{ type: "text", content: "partial" }, { type: "done" }]);
+        expect(FakeAcpClient.current?.notifications).toContainEqual({ method: "session/cancel", params: { sessionId: "sess-1" } });
+        expect(FakeAcpClient.current?.disposed).toBe(true);
+
+        // The aborted session's real history is unknown, so the next turn must
+        // reseed rather than resume it — even though the transcript lines up.
+        FakeAcpClient.promptScript = async () => ({ stopReason: "end_turn" });
+        await collect(provider.chatChunks(
+            [userMessage("hi"), { role: "assistant", content: "partial" }, userMessage("more")],
+            { chatNoteId: "chat-abort" }
+        ));
+        expect(FakeAcpClient.current?.requests.some(r => r.method === "session/load")).toBe(false);
+    });
+
+    it("flattens both wrapped and direct tool-result content blocks", async () => {
+        FakeAcpClient.promptScript = async client => {
+            client.update({ sessionUpdate: "tool_call", toolCallId: "t1", title: "search_notes" });
+            client.update({
+                sessionUpdate: "tool_call_update",
+                toolCallId: "t1",
+                status: "completed",
+                content: [
+                    { type: "content", content: { type: "text", text: "wrapped" } },
+                    { type: "text", text: "direct" }
+                ]
+            });
+            return { stopReason: "end_turn" };
+        };
+
+        const provider = new CopilotAgentProvider();
+        const chunks = await collect(provider.chatChunks([userMessage("hi")], {}));
+
+        expect(chunks).toContainEqual(expect.objectContaining({ type: "tool_result", result: "wrapped\ndirect" }));
+    });
+
     it("prepends the note-metadata hint to a fresh session's prompt", async () => {
         const provider = new CopilotAgentProvider();
         await collect(provider.chatChunks([userMessage("hi")], { contextNoteId: "note123" }));

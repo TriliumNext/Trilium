@@ -73,6 +73,13 @@ export class AcpClient {
             }
         });
 
+        // Writing to a subprocess that already exited (a late session/cancel, or
+        // an agent-request reply resumed after dispose()) emits EPIPE on stdin.
+        // An unhandled stream "error" event would take the server down, and
+        // failAll() has already rejected everything in flight — there is nothing
+        // left to report.
+        proc.stdin.on("error", () => {});
+
         proc.on("error", err => this.failAll(new Error(`Failed to start the ACP agent: ${err.message}`)));
         proc.on("exit", (code, sig) => {
             // A deliberate dispose() kills the subprocess — that exit is expected
@@ -118,7 +125,15 @@ export class AcpClient {
                     reject(err);
                 }
             });
-            this.send({ jsonrpc: "2.0", id, method, params });
+            try {
+                this.send({ jsonrpc: "2.0", id, method, params });
+            } catch (err) {
+                // A synchronous write failure would otherwise leave the timer
+                // armed and the id stranded in `pending` until it elapses.
+                clearTimeout(timer);
+                this.pending.delete(id);
+                reject(err instanceof Error ? err : new Error(String(err)));
+            }
         });
         if (response.error) {
             throw new AcpError(response.error.code, response.error.message, response.error.data);
@@ -151,7 +166,13 @@ export class AcpClient {
         }
         let message: JsonRpcMessage;
         try {
-            message = JSON.parse(line) as JsonRpcMessage;
+            const parsed: unknown = JSON.parse(line);
+            if (!parsed || typeof parsed !== "object") {
+                // Valid JSON, but not a protocol message (a bare `null` would
+                // otherwise blow up on the property reads below).
+                return;
+            }
+            message = parsed as JsonRpcMessage;
         } catch {
             // Not part of the protocol stream (e.g. a stray banner) — ignore.
             return;
