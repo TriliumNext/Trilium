@@ -31,6 +31,7 @@ vi.mock("./providers/anthropic.js", () => ({ AnthropicProvider: makeProviderMock
 vi.mock("./providers/openai.js", () => ({ OpenAiProvider: makeProviderMock("openai") }));
 vi.mock("./providers/google.js", () => ({ GoogleProvider: makeProviderMock("google") }));
 vi.mock("./providers/claude_agent.js", () => ({ ClaudeAgentProvider: makeProviderMock("claude-agent") }));
+vi.mock("./providers/copilot_agent.js", () => ({ CopilotAgentProvider: makeProviderMock("copilot-agent") }));
 
 import {
     clearProviderCache,
@@ -78,13 +79,16 @@ describe("llm/index provider registry", () => {
                 { id: "a", name: "A", provider: "anthropic", apiKey: "ka" },
                 { id: "o", name: "O", provider: "openai", apiKey: "ko" },
                 { id: "g", name: "G", provider: "google", apiKey: "kg" },
-                { id: "c", name: "C", provider: "claude-agent", apiKey: "" }
+                { id: "c", name: "C", provider: "claude-agent", apiKey: "" },
+                { id: "gh", name: "GH", provider: "copilot-agent", apiKey: "" }
             ]);
             expect((getProvider("a").constructor as any).lastArgs).toEqual(["ka", undefined]);
             expect((getProvider("o").constructor as any).lastArgs).toEqual(["ko", undefined]);
             expect((getProvider("g").constructor as any).lastArgs).toEqual(["kg", undefined]);
-            // The subscription provider takes no constructor args — auth is Claude Code's.
+            // The subscription providers take no constructor args — auth belongs
+            // to Claude Code and the Copilot CLI respectively.
             expect((getProvider("c").constructor as any).lastArgs).toEqual([]);
+            expect((getProvider("gh").constructor as any).lastArgs).toEqual([]);
         });
 
         it("throws when no providers are configured (null and empty array)", () => {

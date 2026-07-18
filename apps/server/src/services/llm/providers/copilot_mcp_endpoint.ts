@@ -58,9 +58,12 @@ let listener: http.Server | undefined;
 
 async function startEndpoint(): Promise<string> {
     const secretPath = `/mcp-${randomBytes(16).toString("hex")}`;
+    // Filled in once the listener is bound. A request can only arrive after
+    // that, so handleRequest always observes the real address.
+    let boundHost = "";
 
     const server = http.createServer((req, res) => {
-        void handleRequest(req, res, secretPath);
+        void handleRequest(req, res, secretPath, boundHost);
     });
     listener = server;
 
@@ -83,12 +86,18 @@ async function startEndpoint(): Promise<string> {
         throw new Error("Failed to determine the MCP endpoint's bound address.");
     }
 
-    const url = `http://127.0.0.1:${address.port}${secretPath}`;
-    getLog().info(`Copilot Agent provider: note-tools MCP endpoint listening on 127.0.0.1:${address.port} (loopback only)`);
+    boundHost = `127.0.0.1:${address.port}`;
+    const url = `http://${boundHost}${secretPath}`;
+    getLog().info(`Copilot Agent provider: note-tools MCP endpoint listening on ${boundHost} (loopback only)`);
     return url;
 }
 
-async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse, secretPath: string): Promise<void> {
+async function handleRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    secretPath: string,
+    boundHost: string
+): Promise<void> {
     try {
         if (req.url !== secretPath) {
             res.writeHead(404).end();
@@ -100,9 +109,11 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined,
             enableDnsRebindingProtection: true,
-            // The agent connects via the URL we hand it, so the Host header is
-            // always the bound loopback address.
-            allowedHosts: [req.headers.host ?? ""].filter(h => /^127\.0\.0\.1:\d+$/.test(h))
+            // Pinned to the address we bound and handed to the agent. Deriving
+            // this from req.headers.host would be self-referential: a rebound
+            // Host filters down to an empty list, and the SDK skips the check
+            // entirely when the list is empty — so it could never reject.
+            allowedHosts: [boundHost]
         });
 
         res.on("close", () => {

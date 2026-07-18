@@ -637,6 +637,9 @@ function buildPromptBlocks(content: string | LlmMessagePart[], prefix: string): 
 
 /** Wrap the Trilium system prompt for delivery inside the first user prompt. */
 function wrapSystemInstructions(systemPrompt: string): string | null {
+    // buildSystemPrompt appends the Markdown hints unconditionally, so the only
+    // caller can never pass an empty string — this is unreachable defence.
+    /* v8 ignore next 3 -- composeSystemPrompt never yields an empty prompt */
     if (!systemPrompt) {
         return null;
     }
