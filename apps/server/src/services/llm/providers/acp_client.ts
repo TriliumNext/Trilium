@@ -51,6 +51,13 @@ export interface AcpClientOptions {
      * When no handler is set, requests are answered with "method not found".
      */
     onAgentRequest?: (method: string, params: unknown) => Promise<unknown> | unknown;
+    /**
+     * Called once when the subprocess dies on its own (crash, kill, agent
+     * exit) — never for a deliberate {@link AcpClient.dispose}. A pooled
+     * client uses this to evict itself so the next turn starts a fresh agent
+     * instead of handing out a corpse.
+     */
+    onExit?: (error: Error) => void;
 }
 
 export class AcpClient {
@@ -80,12 +87,12 @@ export class AcpClient {
         // left to report.
         proc.stdin.on("error", () => {});
 
-        proc.on("error", err => this.failAll(new Error(`Failed to start the ACP agent: ${err.message}`)));
+        proc.on("error", err => this.die(new Error(`Failed to start the ACP agent: ${err.message}`)));
         proc.on("exit", (code, sig) => {
             // A deliberate dispose() kills the subprocess — that exit is expected
             // and must not surface as an error for in-flight (cancelled) requests.
             if (!this.disposed) {
-                this.failAll(new Error(`The ACP agent exited unexpectedly (${sig ?? `code ${code}`}).`));
+                this.die(new Error(`The ACP agent exited unexpectedly (${sig ?? `code ${code}`}).`));
             }
         });
     }
@@ -204,6 +211,23 @@ export class AcpClient {
         } catch (err) {
             const text = err instanceof Error ? err.message : String(err);
             this.send({ jsonrpc: "2.0", id, error: { code: -32603, message: text } });
+        }
+    }
+
+    /** Whether the subprocess is still usable (not disposed, not exited). */
+    get alive(): boolean {
+        return !this.disposed && this.exitError === undefined;
+    }
+
+    /**
+     * The subprocess died on its own. Fails everything in flight, then tells
+     * the owner exactly once so a pooled client can evict itself.
+     */
+    private die(error: Error): void {
+        const alreadyDead = this.exitError !== undefined;
+        this.failAll(error);
+        if (!alreadyDead) {
+            this.options.onExit?.(error);
         }
     }
 

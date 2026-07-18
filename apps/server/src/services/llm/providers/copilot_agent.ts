@@ -28,9 +28,18 @@ import path from "path";
 
 import dataDirs from "../../data_dir.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
-import { AcpClient, AcpError } from "./acp_client.js";
+import { AcpError } from "./acp_client.js";
 import { resolveAttachmentPart } from "./attachment_content.js";
 import { needsShell, resolveCopilotBinaryPath } from "./copilot_binary.js";
+import {
+    acquireClient,
+    addSessionListener,
+    type ClientLease,
+    INIT_TIMEOUT_MS,
+    releaseClient,
+    removeSessionListener,
+    setAgentRequestHandler
+} from "./copilot_client_pool.js";
 import { getCopilotMcpEndpointUrl } from "./copilot_mcp_endpoint.js";
 import { buildNoteHint } from "./note_hint.js";
 import { buildSystemPrompt } from "./system_prompt.js";
@@ -58,29 +67,6 @@ const AVAILABLE_MODELS: ModelInfo[] = [
 /** Free-tier model used for the cheap title turn. */
 const TITLE_MODEL = "gpt-5-mini";
 
-/**
- * CLI arguments passed alongside `--acp`. These form the *primary* security
- * boundary; the permission callback (see {@link decidePermission}) is a
- * fail-closed backstop.
- *   - `--allow-tool=trilium` auto-approves every tool from our "trilium" MCP
- *     server, so note tools run without a permission round-trip (and without
- *     relying on us recognizing them — the CLI presents MCP tool calls with
- *     opaque IDs and human-friendly titles that don't embed the server name).
- *   - `--deny-tool` on each built-in file/shell/network tool guarantees they
- *     can never run even if a future CLI build changed the permission-prompt
- *     defaults. The agent's only capability surface is Trilium's note tools.
- *   - `--no-custom-instructions` keeps any AGENTS.md/copilot-instructions.md in
- *     an enclosing directory out of the notes chat.
- *   - `--no-auto-update` keeps the pinned binary from mutating under us.
- */
-const COPILOT_ACP_ARGS = [
-    "--allow-tool=trilium",
-    ...["shell", "powershell", "write", "edit", "create", "view", "glob", "grep", "task", "web_fetch"].map(t => `--deny-tool=${t}`),
-    "--no-custom-instructions",
-    "--no-auto-update"
-];
-
-const INIT_TIMEOUT_MS = 30_000;
 const SESSION_TIMEOUT_MS = 120_000;
 /** Upper bound for a whole prompt turn (agentic loops included). */
 const PROMPT_TIMEOUT_MS = 15 * 60_000;
@@ -92,6 +78,18 @@ interface SessionEntry {
     sessionId: string;
     /** Hash of the transcript as it stood when the session last responded. */
     transcriptHash: string;
+    /**
+     * The pooled agent process the session was created on. A session only
+     * exists inside the process that created it, so a mismatch means the
+     * session must be re-loaded from disk rather than prompted directly.
+     */
+    generation: number;
+    /**
+     * Whether the session was created with the note-tools MCP server attached.
+     * MCP servers are fixed at `session/new`, so flipping the chat's note
+     * access forces a new session rather than a resume.
+     */
+    noteToolsEnabled: boolean;
 }
 
 /**
@@ -188,47 +186,69 @@ export class CopilotAgentProvider implements LlmProvider {
         };
 
         const collector = createUpdateCollector(emit);
-        let client: AcpClient | undefined;
-        let sessionId: string | undefined;
+        let lease: ClientLease | undefined;
+        let listeningTo: string | undefined;
         let assistantText = "";
 
         try {
-            client = await this.startClient(collector.onNotification);
+            // Held in a const too: `lease` is captured by the cleanup below, so
+            // narrowing it to non-undefined here wouldn't survive.
+            const acquired = await acquireSharedClient();
+            lease = acquired;
+            const client = acquired.client;
 
-            const mcpServers = noteToolsEnabled ? await buildMcpServersConfig() : [];
+            // MCP servers are fixed at session/new, so a flipped note-tools
+            // toggle can't reuse the mapped session at all — neither by
+            // prompting it nor by loading it back with a different config.
+            const resumable = resume !== undefined && stored?.noteToolsEnabled === noteToolsEnabled
+                ? resume
+                : undefined;
+            // The fast path: the session is still loaded in this very agent
+            // process, so the turn skips session/new (and the ~2.4 s auth and
+            // model-list refresh the first one pays) and prompts it directly.
+            const isLive = resumable !== undefined && stored?.generation === acquired.generation;
 
-            // Resume the existing session only when the transcript still
-            // matches what it last saw; any divergence (edited history, lost
-            // mapping, server restart) reseeds a fresh session. session/load
-            // replays the session's history as notifications — the collector
-            // suppresses everything until the load completes.
-            if (resume) {
-                collector.muted = true;
+            // Resolved through a local the closures below don't capture, so it
+            // still narrows to a definite string once every branch has run.
+            let resolved: string | undefined;
+            if (isLive) {
+                resolved = resumable;
+            } else if (resumable !== undefined) {
+                // The session outlived its process (reaped, crashed, or the
+                // server restarted). session/load replays its history from
+                // disk; no listener is registered yet, so that replay is
+                // dropped rather than streamed to the user as a fresh reply.
+                const mcpServers = noteToolsEnabled ? await buildMcpServersConfig() : [];
                 try {
-                    await client.request("session/load", { sessionId: resume, cwd: getAgentCwd(), mcpServers }, SESSION_TIMEOUT_MS);
-                    sessionId = resume;
+                    await client.request("session/load", { sessionId: resumable, cwd: getAgentCwd(), mcpServers }, SESSION_TIMEOUT_MS);
+                    resolved = resumable;
                 } catch (err) {
                     getLog().info(`Copilot Agent provider: session/load failed (${describeError(err)}); reseeding a fresh session.`);
-                } finally {
-                    collector.muted = false;
                 }
             }
 
-            if (!sessionId) {
+            if (!resolved) {
+                const mcpServers = noteToolsEnabled ? await buildMcpServersConfig() : [];
                 const created = await client.request<{ sessionId: string }>(
                     "session/new",
                     { cwd: getAgentCwd(), mcpServers },
                     SESSION_TIMEOUT_MS
                 );
-                sessionId = created.sessionId;
+                resolved = created.sessionId;
             }
-            collector.sessionId = sessionId;
+            const activeSession = resolved;
+            collector.sessionId = activeSession;
+            // Subscribe only now: everything above is setup whose notifications
+            // (session/load's replay, session/new's config announcements) must
+            // not reach the chat.
+            listeningTo = activeSession;
+            addSessionListener(activeSession, params => collector.onNotification("session/update", params));
 
             if (model !== "auto") {
                 // Model selection is an optional ACP capability — degrade to the
                 // agent's default rather than failing the turn.
                 try {
-                    await client.request("session/set_model", { sessionId, modelId: model }, INIT_TIMEOUT_MS);
+                    await client.request("session/set_model", { sessionId: activeSession, modelId: model }, INIT_TIMEOUT_MS);
                 } catch (err) {
                     getLog().error(`Copilot Agent provider: failed to select model "${model}" (${describeError(err)}); continuing with the agent's default.`);
                 }
@@ -238,7 +258,7 @@ export class CopilotAgentProvider implements LlmProvider {
             // instructions and replayed transcript when the session is fresh,
             // then the volatile current-note metadata hint (kept out of the
             // transcript hash so a later turn can still resume).
-            const isFreshSession = sessionId !== resume;
+            const isFreshSession = activeSession !== resumable;
             const hasAttachments = Array.isArray(lastMessage.content) && lastMessage.content.some(p => p.type !== "text");
             const noteHint = config.contextNoteId ? buildNoteHint(config.contextNoteId, hasAttachments) : null;
             const prefix = [
@@ -248,9 +268,10 @@ export class CopilotAgentProvider implements LlmProvider {
             ].filter((s): s is string => Boolean(s)).join("\n\n");
 
             const onAbort = () => {
-                if (sessionId) {
-                    client?.notify("session/cancel", { sessionId });
-                }
+                // Cancel the turn in-band. The client is shared with every
+                // other chat now, so disposing it here would kill their turns
+                // too — reaping is the pool's job alone.
+                client.notify("session/cancel", { sessionId: activeSession });
                 // Wake the drain loop below: an agent slow to honour the cancel
                 // (or ignoring it) would otherwise keep this generator — and its
                 // subprocess — suspended until PROMPT_TIMEOUT_MS elapses.
@@ -261,7 +282,7 @@ export class CopilotAgentProvider implements LlmProvider {
             try {
                 const promptPromise = client.request<{ stopReason?: string }>(
                     "session/prompt",
-                    { sessionId, prompt: buildPromptBlocks(lastMessage.content, prefix) },
+                    { sessionId: activeSession, prompt: buildPromptBlocks(lastMessage.content, prefix) },
                     PROMPT_TIMEOUT_MS
                 );
 
@@ -308,13 +329,15 @@ export class CopilotAgentProvider implements LlmProvider {
             // session's real history is unknown — recording a hash here would
             // let a later turn resume a session that diverged from the
             // transcript. Forgetting it just reseeds a fresh one.
-            if (config.chatNoteId && sessionId && !signal?.aborted) {
+            if (config.chatNoteId && !signal?.aborted) {
                 rememberSession(config.chatNoteId, {
-                    sessionId,
+                    sessionId: activeSession,
                     transcriptHash: hashTranscript([
                         ...conversation,
                         { role: "assistant", content: assistantText }
-                    ])
+                    ]),
+                    generation: acquired.generation,
+                    noteToolsEnabled
                 });
             }
 
@@ -322,29 +345,39 @@ export class CopilotAgentProvider implements LlmProvider {
         } catch (error) {
             yield { type: "error", error: describeCopilotError(error) };
         } finally {
-            client?.dispose();
+            // Stop listening, then hand the client back. The subprocess stays
+            // warm for the next turn; the pool reaps it once nothing is using
+            // it (see copilot_client_pool.ts).
+            if (listeningTo) {
+                removeSessionListener(listeningTo);
+            }
+            if (lease) {
+                releaseClient();
+            }
         }
     }
 
     async generateTitle(firstMessage: string): Promise<string> {
-        let client: AcpClient | undefined;
+        let lease: ClientLease | undefined;
+        let listeningTo: string | undefined;
         try {
             let title = "";
-            client = await this.startClient((method, params) => {
-                if (method !== "session/update") {
-                    return;
-                }
-                const update = (params as AcpSessionUpdate).update;
-                if (update?.sessionUpdate === "agent_message_chunk" && update.content && "text" in update.content && update.content.type === "text") {
-                    title += update.content.text;
-                }
-            });
+            const acquired = await acquireSharedClient();
+            lease = acquired;
+            const client = acquired.client;
 
             const { sessionId } = await client.request<{ sessionId: string }>(
                 "session/new",
                 { cwd: getAgentCwd(), mcpServers: [] },
                 SESSION_TIMEOUT_MS
             );
+            listeningTo = sessionId;
+            addSessionListener(sessionId, params => {
+                const update = (params as AcpSessionUpdate).update;
+                if (update?.sessionUpdate === "agent_message_chunk" && update.content && "text" in update.content && update.content.type === "text") {
+                    title += update.content.text;
+                }
+            });
             try {
                 await client.request("session/set_model", { sessionId, modelId: TITLE_MODEL }, INIT_TIMEOUT_MS);
             } catch {
@@ -366,37 +399,13 @@ export class CopilotAgentProvider implements LlmProvider {
             getLog().error(`Copilot Agent title generation failed: ${describeCopilotError(error)}`);
             return "";
         } finally {
-            client?.dispose();
+            if (listeningTo) {
+                removeSessionListener(listeningTo);
+            }
+            if (lease) {
+                releaseClient();
+            }
         }
-    }
-
-    /** Spawn `copilot --acp` and run the ACP initialize handshake. */
-    private async startClient(onNotification: (method: string, params: unknown) => void): Promise<AcpClient> {
-        const binary = await resolveCopilotBinaryPath();
-        const client = AcpClient.start(binary, {
-            cwd: getAgentCwd(),
-            shell: needsShell(binary),
-            args: COPILOT_ACP_ARGS,
-            onNotification,
-            onAgentRequest: handleAgentRequest
-        });
-        try {
-            await client.request(
-                "initialize",
-                {
-                    protocolVersion: 1,
-                    clientInfo: { name: "trilium-notes", version: "1.0" },
-                    // No fs capabilities: the agent must never touch the host
-                    // filesystem — notes are its only data surface.
-                    clientCapabilities: { fs: { readTextFile: false, writeTextFile: false } }
-                },
-                INIT_TIMEOUT_MS
-            );
-        } catch (err) {
-            client.dispose();
-            throw err;
-        }
-        return client;
     }
 
     /**
@@ -410,6 +419,17 @@ export class CopilotAgentProvider implements LlmProvider {
         /* v8 ignore next */
         return buildSystemPrompt(messages, config) ?? "";
     }
+}
+
+/**
+ * Borrow the shared agent process for one turn, resolving the user's binary on
+ * first use. The permission policy is installed from here rather than owned by
+ * the pool, so the security decision stays beside the CLI flags that back it.
+ */
+async function acquireSharedClient(): Promise<ClientLease> {
+    setAgentRequestHandler(handleAgentRequest);
+    const binary = await resolveCopilotBinaryPath();
+    return acquireClient(binary, getAgentCwd(), needsShell(binary));
 }
 
 /** The MCP server list for `session/new`/`session/load`, pointing at the private loopback endpoint. */

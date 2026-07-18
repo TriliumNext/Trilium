@@ -44,6 +44,7 @@ vi.mock("./attachment_content.js", () => ({ resolveAttachmentPart: resolveAttach
 class FakeAcpClient {
     onNotification: (method: string, params: unknown) => void;
     onAgentRequest?: (method: string, params: unknown) => unknown;
+    onExit?: (error: Error) => void;
     requests: { method: string; params: unknown }[] = [];
     notifications: { method: string; params: unknown }[] = [];
     disposed = false;
@@ -57,12 +58,13 @@ class FakeAcpClient {
     /** Id handed out by the next `session/new` (the real CLI never reuses one). */
     static newSessionId = "sess-1";
 
-    constructor(opts: { onNotification: (m: string, p: unknown) => void; onAgentRequest?: (m: string, p: unknown) => unknown }) {
+    constructor(opts: { onNotification: (m: string, p: unknown) => void; onAgentRequest?: (m: string, p: unknown) => unknown; onExit?: (e: Error) => void }) {
         this.onNotification = opts.onNotification;
         this.onAgentRequest = opts.onAgentRequest;
+        this.onExit = opts.onExit;
     }
 
-    static start(_binary: string, opts: { args?: string[]; onNotification: (m: string, p: unknown) => void; onAgentRequest?: (m: string, p: unknown) => unknown }) {
+    static start(_binary: string, opts: { args?: string[]; onNotification: (m: string, p: unknown) => void; onAgentRequest?: (m: string, p: unknown) => unknown; onExit?: (e: Error) => void }) {
         FakeAcpClient.current = new FakeAcpClient(opts);
         return FakeAcpClient.current;
     }
@@ -99,6 +101,25 @@ class FakeAcpClient {
         this.disposed = true;
     }
 
+    /** Mirrors the real client: the pool only reuses a live subprocess. */
+    get alive(): boolean {
+        return !this.disposed;
+    }
+
+    /** Simulate the subprocess dying on its own, as the real client reports it. */
+    die(message = "The ACP agent exited unexpectedly (SIGKILL)."): void {
+        this.disposed = true;
+        this.onExit?.(new Error(message));
+    }
+
+    /**
+     * Forget the requests recorded so far. The client outlives a turn now, so
+     * a test that spans several turns clears between them to assert on one.
+     */
+    clearRequests(): void {
+        this.requests = [];
+    }
+
     /** Fire a session/update notification as the agent would. */
     update(update: Record<string, unknown>, sessionId = "sess-1"): void {
         this.onNotification("session/update", { sessionId, update });
@@ -114,6 +135,7 @@ class FakeAcpError extends Error {
 vi.mock("./acp_client.js", () => ({ AcpClient: FakeAcpClient, AcpError: FakeAcpError }));
 
 const { buildPromptBlocks, CopilotAgentProvider, createUpdateCollector, decidePermission, resetAgentCwdForTests } = await import("./copilot_agent.js");
+const { IDLE_TIMEOUT_MS, resetCopilotClientPoolForTests } = await import("./copilot_client_pool.js");
 
 async function collect(iterable: AsyncIterable<LlmStreamChunk>): Promise<LlmStreamChunk[]> {
     const chunks: LlmStreamChunk[] = [];
@@ -131,6 +153,9 @@ function resetFakes() {
     infoLogMock.mockReset();
     resolveAttachmentPartMock.mockReset();
     resetAgentCwdForTests();
+    // The agent process is shared and outlives a turn now, so each test must
+    // start from a cold pool or it would reuse the previous test's client.
+    resetCopilotClientPoolForTests();
     mcpEndpointMock.mockClear();
     FakeAcpClient.current = undefined;
     FakeAcpClient.initializeError = undefined;
@@ -176,7 +201,8 @@ describe("CopilotAgentProvider.chatChunks", () => {
             { type: "tool_result", toolCallId: "t1", toolName: "search_notes", result: "3 results", isError: false },
             { type: "done" }
         ]);
-        expect(FakeAcpClient.current?.disposed).toBe(true);
+        // The agent process is kept warm for the next turn.
+        expect(FakeAcpClient.current?.disposed).toBe(false);
     });
 
     it("wires the loopback MCP server into session/new when note tools are enabled", async () => {
@@ -242,7 +268,9 @@ describe("CopilotAgentProvider.chatChunks", () => {
         const chunks = await collect(provider.chatChunks([userMessage("hi")], {}));
 
         expect(chunks).toEqual([{ type: "error", error: expect.stringContaining("copilot login") }]);
-        expect(FakeAcpClient.current?.disposed).toBe(true);
+        // A failed session is not a failed process: the client stays pooled so
+        // the next turn (e.g. after `copilot login`) doesn't pay a respawn.
+        expect(FakeAcpClient.current?.disposed).toBe(false);
     });
 
     it("rejects a transcript whose last message is not from the user", async () => {
@@ -291,7 +319,8 @@ describe("CopilotAgentProvider.chatChunks", () => {
 
         expect(chunks).toEqual([{ type: "text", content: "partial" }, { type: "done" }]);
         expect(FakeAcpClient.current?.notifications).toContainEqual({ method: "session/cancel", params: { sessionId: "sess-1" } });
-        expect(FakeAcpClient.current?.disposed).toBe(true);
+        // Cancelling one chat must not kill the process every other chat shares.
+        expect(FakeAcpClient.current?.disposed).toBe(false);
 
         // The aborted session's real history is unknown, so the next turn must
         // reseed rather than resume it — even though the transcript lines up.
@@ -352,7 +381,7 @@ describe("CopilotAgentProvider.chatChunks", () => {
         expect(blocks.at(-1)).toEqual({ type: "text", text: "[attached file: doc.pdf]" });
     });
 
-    it("resumes a mapped session, suppressing the load replay, and reseeds once the transcript diverges", async () => {
+    it("prompts a still-loaded session directly, and reseeds once the transcript diverges", async () => {
         const provider = new CopilotAgentProvider();
         FakeAcpClient.promptScript = async client => {
             client.update({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "answer" } });
@@ -360,17 +389,17 @@ describe("CopilotAgentProvider.chatChunks", () => {
         };
         await collect(provider.chatChunks([userMessage("hi")], { chatNoteId: "chat-resume" }));
 
-        // Same transcript → session/load instead of a fresh session/new, and no
-        // system instructions or history replay in the prompt.
+        // Same transcript and the session is still loaded in the pooled agent,
+        // so the turn is a bare session/prompt: no session/new (the ~2.4 s cost
+        // this whole feature exists to avoid) and no session/load either.
+        FakeAcpClient.current?.clearRequests();
         FakeAcpClient.promptScript = async () => ({ stopReason: "end_turn" });
         const resumed = await collect(provider.chatChunks(
             [userMessage("hi"), assistantMessage("answer"), userMessage("more")],
             { chatNoteId: "chat-resume" }
         ));
 
-        const load = FakeAcpClient.current?.requests.find(r => r.method === "session/load");
-        expect(load?.params).toMatchObject({ sessionId: "sess-1", cwd: AGENT_CWD });
-        expect(FakeAcpClient.current?.requests.some(r => r.method === "session/new")).toBe(false);
+        expect(FakeAcpClient.current?.requests.map(r => r.method)).toEqual(["session/prompt"]);
         expect(resumed).toEqual([{ type: "done" }]);
         const prompt = FakeAcpClient.current?.requests.find(r => r.method === "session/prompt");
         const blocks = (prompt?.params as { prompt: { type: string; text: string }[] }).prompt;
@@ -378,6 +407,7 @@ describe("CopilotAgentProvider.chatChunks", () => {
 
         // An edited history no longer hashes to the mapped session, so the next
         // turn must reseed rather than resume.
+        FakeAcpClient.current?.clearRequests();
         await collect(provider.chatChunks(
             [userMessage("rewritten"), assistantMessage("answer"), userMessage("more")],
             { chatNoteId: "chat-resume" }
@@ -386,10 +416,13 @@ describe("CopilotAgentProvider.chatChunks", () => {
         expect(FakeAcpClient.current?.requests.some(r => r.method === "session/new")).toBe(true);
     });
 
-    it("reseeds a fresh session when session/load fails", async () => {
+    it("reseeds a fresh session when session/load fails after the agent process died", async () => {
         const provider = new CopilotAgentProvider();
         await collect(provider.chatChunks([userMessage("hi")], { chatNoteId: "chat-load-fail" }));
 
+        // The session only exists inside the process that made it; once that is
+        // gone the next turn has to load it back from disk.
+        FakeAcpClient.current?.die();
         FakeAcpClient.sessionLoadError = new Error("unknown session");
         FakeAcpClient.newSessionId = "sess-2";
         const chunks = await collect(provider.chatChunks(
@@ -496,11 +529,114 @@ describe("CopilotAgentProvider.chatChunks", () => {
         }
 
         const followUp = [userMessage("hi"), assistantMessage(""), userMessage("more")];
+        // "lru-0" was evicted, so its follow-up has no session to resume.
+        FakeAcpClient.current?.clearRequests();
         await collect(provider.chatChunks(followUp, { chatNoteId: "lru-0" }));
-        expect(FakeAcpClient.current?.requests.some(r => r.method === "session/load")).toBe(false);
+        expect(FakeAcpClient.current?.requests.some(r => r.method === "session/new")).toBe(true);
 
+        // "lru-200" is still mapped and still loaded, so it prompts directly.
+        FakeAcpClient.current?.clearRequests();
         await collect(provider.chatChunks(followUp, { chatNoteId: "lru-200" }));
-        expect(FakeAcpClient.current?.requests.some(r => r.method === "session/load")).toBe(true);
+        expect(FakeAcpClient.current?.requests.map(r => r.method)).toEqual(["session/prompt"]);
+    });
+});
+
+describe("CopilotAgentProvider keep-alive", () => {
+    beforeEach(resetFakes);
+
+    it("reuses one agent process across turns and chats, spawning and initializing only once", async () => {
+        // spyOn returns the existing spy when one is already installed, so the
+        // count has to be cleared or it carries over from an earlier test.
+        const startSpy = vi.spyOn(FakeAcpClient, "start").mockClear();
+        const provider = new CopilotAgentProvider();
+
+        await collect(provider.chatChunks([userMessage("hi")], { chatNoteId: "chat-a" }));
+        const first = FakeAcpClient.current;
+        FakeAcpClient.newSessionId = "sess-b";
+        await collect(provider.chatChunks([userMessage("hi")], { chatNoteId: "chat-b" }));
+
+        // Same process, one handshake, one session per chat — ACP multiplexes.
+        expect(FakeAcpClient.current).toBe(first);
+        expect(startSpy).toHaveBeenCalledTimes(1);
+        const methods = FakeAcpClient.current?.requests.map(r => r.method) ?? [];
+        expect(methods.filter(m => m === "initialize")).toHaveLength(1);
+        expect(methods.filter(m => m === "session/new")).toHaveLength(2);
+    });
+
+    it("shares a single spawn between turns that start concurrently", async () => {
+        const startSpy = vi.spyOn(FakeAcpClient, "start").mockClear();
+        FakeAcpClient.promptScript = async () => {
+            await new Promise(resolve => setTimeout(resolve, 5));
+            return { stopReason: "end_turn" };
+        };
+        const provider = new CopilotAgentProvider();
+
+        await Promise.all([
+            collect(provider.chatChunks([userMessage("one")], { chatNoteId: "chat-1" })),
+            collect(provider.chatChunks([userMessage("two")], { chatNoteId: "chat-2" }))
+        ]);
+
+        expect(startSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps each turn's updates to its own session", async () => {
+        FakeAcpClient.promptScript = async client => {
+            client.update({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "mine" } }, "sess-1");
+            // Another chat's traffic on the shared connection must not leak in.
+            client.update({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "theirs" } }, "sess-other");
+            return { stopReason: "end_turn" };
+        };
+
+        const chunks = await collect(new CopilotAgentProvider().chatChunks([userMessage("hi")], {}));
+
+        expect(chunks).toEqual([{ type: "text", content: "mine" }, { type: "done" }]);
+    });
+
+    it("starts a replacement process transparently after the pooled one dies", async () => {
+        const provider = new CopilotAgentProvider();
+        await collect(provider.chatChunks([userMessage("hi")], {}));
+
+        FakeAcpClient.current?.die();
+        const dead = FakeAcpClient.current;
+        const chunks = await collect(provider.chatChunks([userMessage("hi again")], {}));
+
+        expect(FakeAcpClient.current).not.toBe(dead);
+        expect(FakeAcpClient.current?.requests.map(r => r.method))
+            .toEqual(["initialize", "session/new", "session/prompt"]);
+        expect(chunks).toEqual([{ type: "done" }]);
+    });
+
+    it("starts a new session when the note-tools toggle flips, since MCP servers are fixed at session/new", async () => {
+        const provider = new CopilotAgentProvider();
+        const transcript = [userMessage("hi")];
+        await collect(provider.chatChunks(transcript, { chatNoteId: "chat-tools", enableNoteTools: true }));
+
+        // Same transcript, so it would otherwise resume the live session.
+        FakeAcpClient.current?.clearRequests();
+        FakeAcpClient.newSessionId = "sess-2";
+        await collect(provider.chatChunks(
+            [...transcript, assistantMessage(""), userMessage("more")],
+            { chatNoteId: "chat-tools", enableNoteTools: false }
+        ));
+
+        const sessionNew = FakeAcpClient.current?.requests.find(r => r.method === "session/new");
+        expect(sessionNew?.params).toMatchObject({ mcpServers: [] });
+    });
+
+    it("reaps the idle process once no turn has used it for the timeout", async () => {
+        vi.useFakeTimers();
+        try {
+            await collect(new CopilotAgentProvider().chatChunks([userMessage("hi")], {}));
+            const client = FakeAcpClient.current;
+            expect(client?.disposed).toBe(false);
+
+            vi.advanceTimersByTime(IDLE_TIMEOUT_MS + 1);
+
+            expect(client?.disposed).toBe(true);
+            expect(infoLogMock).toHaveBeenCalledWith(expect.stringContaining("reaping the idle agent process"));
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 
@@ -525,7 +661,7 @@ describe("CopilotAgentProvider.generateTitle", () => {
             .toMatchObject({ modelId: "gpt-5-mini" });
         expect(FakeAcpClient.current?.requests.find(r => r.method === "session/new")?.params)
             .toMatchObject({ mcpServers: [] });
-        expect(FakeAcpClient.current?.disposed).toBe(true);
+        expect(FakeAcpClient.current?.disposed).toBe(false);
     });
 
     it("still produces a title when the cheap model cannot be selected", async () => {
@@ -543,7 +679,7 @@ describe("CopilotAgentProvider.generateTitle", () => {
 
         expect(await new CopilotAgentProvider().generateTitle("hi")).toBe("");
         expect(errorLogMock).toHaveBeenCalledWith(expect.stringContaining("Failed to start the GitHub Copilot CLI"));
-        expect(FakeAcpClient.current?.disposed).toBe(true);
+        expect(FakeAcpClient.current?.disposed).toBe(false);
     });
 });
 
