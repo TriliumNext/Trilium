@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getAvailableModelsMock = vi.hoisted(() => vi.fn());
 const streamChatCompletionMock = vi.hoisted(() => vi.fn());
+const executeToolCallMock = vi.hoisted(() => vi.fn());
 vi.mock("../../../services/llm_chat.js", () => ({
     getAvailableModels: getAvailableModelsMock,
-    streamChatCompletion: streamChatCompletionMock
+    streamChatCompletion: streamChatCompletionMock,
+    executeToolCall: executeToolCallMock
 }));
 
 // useTriliumEvent subscribes to the app-wide event bus; stub it so the hook
@@ -78,6 +80,7 @@ describe("useLlmChat", () => {
         captured = undefined;
         getAvailableModelsMock.mockReset();
         streamChatCompletionMock.mockReset();
+        executeToolCallMock.mockReset();
     });
 
     it("selects the default model with its provider and annotates model costs", async () => {
@@ -143,5 +146,123 @@ describe("useLlmChat", () => {
             api().setSelectedModel("mini", "openai");
         });
         expect(api().getContent()).toMatchObject({ selectedModel: "mini", selectedProvider: "openai" });
+    });
+});
+
+describe("useLlmChat tool approval", () => {
+    let captured: LlmChatApi | undefined;
+    let host: HTMLDivElement | undefined;
+
+    function Harness() {
+        captured = useLlmChat(undefined, {});
+        return null;
+    }
+
+    function api(): LlmChatApi {
+        if (!captured) throw new Error("harness not rendered");
+        return captured;
+    }
+
+    async function mountChat() {
+        host = document.createElement("div");
+        document.body.appendChild(host);
+        const target = host;
+        await act(async () => { render(<Harness />, target); });
+        await act(async () => {});
+    }
+
+    function pendingApprovalContent() {
+        return {
+            version: 1 as const,
+            messages: [{
+                id: "m1",
+                role: "assistant" as const,
+                content: [{
+                    type: "tool_call" as const,
+                    toolCall: { id: "tc1", toolName: "create_note", input: { title: "T" }, requiresApproval: true }
+                }],
+                createdAt: new Date().toISOString()
+            }]
+        };
+    }
+
+    function firstToolCall() {
+        const [msg] = api().messages;
+        const blocks = msg.content as Array<{ type: string; toolCall: { id: string; result?: string; isError?: boolean; rejected?: boolean } }>;
+        return blocks[0].toolCall;
+    }
+
+    beforeEach(() => {
+        getAvailableModelsMock.mockResolvedValue(MODELS);
+    });
+
+    afterEach(() => {
+        if (host) {
+            render(null, host);
+            host.remove();
+            host = undefined;
+        }
+        captured = undefined;
+        getAvailableModelsMock.mockReset();
+        executeToolCallMock.mockReset();
+    });
+
+    it("approveToolCall executes the tool server-side and stores its result", async () => {
+        executeToolCallMock.mockResolvedValue({ result: '{"ok":true}', isError: undefined });
+        await mountChat();
+        await act(async () => { api().loadFromContent(pendingApprovalContent()); });
+
+        await act(async () => { await api().approveToolCall("tc1"); });
+
+        expect(executeToolCallMock).toHaveBeenCalledWith("create_note", { title: "T" });
+        expect(firstToolCall().result).toBe('{"ok":true}');
+    });
+
+    it("ignores a second approval while the first request is in flight", async () => {
+        let resolveExec!: (v: unknown) => void;
+        executeToolCallMock.mockReturnValue(new Promise((r) => { resolveExec = r; }));
+        await mountChat();
+        await act(async () => { api().loadFromContent(pendingApprovalContent()); });
+
+        await act(async () => {
+            const first = api().approveToolCall("tc1");
+            const second = api().approveToolCall("tc1");
+            resolveExec({ result: "done" });
+            await Promise.all([first, second]);
+        });
+
+        expect(executeToolCallMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejectToolCall marks the call rejected without executing anything", async () => {
+        await mountChat();
+        await act(async () => { api().loadFromContent(pendingApprovalContent()); });
+
+        await act(async () => { api().rejectToolCall("tc1"); });
+
+        expect(firstToolCall().rejected).toBe(true);
+        expect(executeToolCallMock).not.toHaveBeenCalled();
+    });
+
+    it("persists the tool permission mode and sends it with the stream", async () => {
+        streamChatCompletionMock.mockImplementation(async (_m, _o, callbacks) => { callbacks.onDone(); });
+        await mountChat();
+
+        // Non-default mode is persisted; the default "ask" is omitted.
+        await act(async () => { api().setToolPermissionMode("auto"); });
+        expect(api().getContent().toolPermissionMode).toBe("auto");
+
+        await act(async () => { api().setInput("hi"); });
+        await act(async () => { await api().handleSubmit(new Event("submit")); });
+        expect(streamChatCompletionMock.mock.calls[0][1].toolPermissionMode).toBe("auto");
+
+        await act(async () => { api().setToolPermissionMode("ask"); });
+        expect(api().getContent().toolPermissionMode).toBeUndefined();
+
+        // Saved chats restore their mode; missing flag falls back to "ask".
+        await act(async () => { api().loadFromContent({ version: 1, messages: [], toolPermissionMode: "auto" }); });
+        expect(api().toolPermissionMode).toBe("auto");
+        await act(async () => { api().loadFromContent({ version: 1, messages: [] }); });
+        expect(api().toolPermissionMode).toBe("ask");
     });
 });
