@@ -1640,6 +1640,7 @@
     "note_tools": "Note access",
     "sources": "Sources",
     "sources_summary": "{{count}} sources from {{sites}} sites",
+    "sources_summary_notes": "{{count}} sources from your notes",
     "extended_thinking": "Extended thinking",
     "knowledge_base": "Knowledge base",
     "knowledge_base_sources": "Knowledge base sources",

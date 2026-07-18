@@ -18,6 +18,8 @@ export interface LlmMessage {
 export interface LlmCitation {
     /** Source URL (typically from web search) */
     url?: string;
+    /** Note ID for internal sources (knowledge base citations) */
+    noteId?: string;
     /** Document or page title */
     title?: string;
     /** The text that was cited */

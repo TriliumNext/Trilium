@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 
 import { generateChatTitle } from "../../services/llm/chat_title.js";
 import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
+import { resolveKnowledgeBaseSources } from "../../services/llm/providers/base_provider.js";
 import { streamToChunks } from "../../services/llm/stream.js";
 import log from "../../services/log.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
@@ -62,7 +63,10 @@ async function streamChat(req: Request, res: Response) {
 
         const pricing = provider.getModelPricing(modelId);
         const modelDisplayName = provider.getAvailableModels().find(m => m.id === modelId)?.name || modelId;
-        for await (const chunk of streamToChunks(result, { model: modelDisplayName, pricing })) {
+        const knowledgeBaseSources = config.sourceNoteIds?.length
+            ? resolveKnowledgeBaseSources(config.sourceNoteIds)
+            : undefined;
+        for await (const chunk of streamToChunks(result, { model: modelDisplayName, pricing, knowledgeBaseSources })) {
             res.write(`data: ${JSON.stringify(chunk)}\n\n`);
             // Flush immediately to ensure real-time streaming
             if (typeof flushableRes.flush === "function") {

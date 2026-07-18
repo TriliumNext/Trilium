@@ -1,17 +1,16 @@
 import "./ChatInputBar.css";
 
 import type { RefObject } from "preact";
-import { useState, useCallback, useEffect, useRef } from "preact/hooks";
+import { useState, useCallback } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import ActionButton from "../../react/ActionButton.js";
 import Button from "../../react/Button.js";
 import Dropdown from "../../react/Dropdown.js";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem } from "../../react/FormList.js";
+import KnowledgeBasePanel from "./KnowledgeBasePanel.js";
 import type { UseLlmChatReturn } from "./useLlmChat.js";
 import AddProviderModal, { type LlmProviderConfig } from "../options/llm/AddProviderModal.js";
-import NoteAutocomplete from "../../react/NoteAutocomplete.js";
-import froca from "../../../services/froca.js";
 import options from "../../../services/options.js";
 
 /** Format token count with thousands separators */
@@ -38,6 +37,8 @@ interface ChatInputBarProps {
     onNoteToolsChange?: () => void;
     /** Callback when extended thinking toggle changes */
     onExtendedThinkingChange?: () => void;
+    /** Callback when the knowledge base toggle or its sources change */
+    onKnowledgeBaseChange?: () => void;
     /** Callback when model changes */
     onModelChange?: (model: string) => void;
 }
@@ -52,6 +53,7 @@ export default function ChatInputBar({
     onWebSearchChange,
     onNoteToolsChange,
     onExtendedThinkingChange,
+    onKnowledgeBaseChange,
     onModelChange
 }: ChatInputBarProps) {
     const [showAddProviderModal, setShowAddProviderModal] = useState(false);
@@ -72,6 +74,21 @@ export default function ChatInputBar({
     const handleExtendedThinkingToggle = (newValue: boolean) => {
         chat.setEnableExtendedThinking(newValue);
         onExtendedThinkingChange?.();
+    };
+
+    const handleKnowledgeBaseToggle = (newValue: boolean) => {
+        chat.setEnableKnowledgeBase(newValue);
+        onKnowledgeBaseChange?.();
+    };
+
+    const handleAddSourceNote = (noteId: string) => {
+        chat.addSourceNote(noteId);
+        onKnowledgeBaseChange?.();
+    };
+
+    const handleRemoveSourceNote = (noteId: string) => {
+        chat.removeSourceNote(noteId);
+        onKnowledgeBaseChange?.();
     };
 
     const handleModelSelect = (model: string) => {
@@ -97,37 +114,6 @@ export default function ChatInputBar({
     }, [chat]);
 
     const isNoteContextEnabled = !!chat.contextNoteId && !!activeNoteId;
-
-    const [sourceTitles, setSourceTitles] = useState<Record<string, string>>({});
-    const [kbPanelOpen, setKbPanelOpen] = useState(chat.sourceNoteIds.length > 0);
-    const kbContainerRef = useRef<HTMLDivElement>(null);
-
-    // Open KB panel when sources are loaded from saved content
-    useEffect(() => {
-        if (chat.sourceNoteIds.length > 0) {
-            setKbPanelOpen(true);
-        }
-    }, [chat.sourceNoteIds.length]);
-
-    // Resolve note titles for source note chips
-    useEffect(() => {
-        const ids = chat.sourceNoteIds.filter(id => !sourceTitles[id]);
-        if (ids.length === 0) return;
-
-        Promise.all(ids.map(id => froca.getNote(id, true))).then(notes => {
-            const newTitles: Record<string, string> = {};
-            for (let i = 0; i < ids.length; i++) {
-                newTitles[ids[i]] = notes[i]?.title ?? ids[i];
-            }
-            setSourceTitles(prev => ({ ...prev, ...newTitles }));
-        });
-    }, [chat.sourceNoteIds]);
-
-    const handleAddSourceNote = useCallback((noteId: string) => {
-        if (noteId && !chat.sourceNoteIds.includes(noteId)) {
-            chat.addSourceNote(noteId);
-        }
-    }, [chat.sourceNoteIds, chat.addSourceNote]);
 
     const currentModel = chat.availableModels.find(m => m.id === chat.selectedModel);
     const currentModels = chat.availableModels.filter(m => !m.isLegacy);
@@ -172,44 +158,13 @@ export default function ChatInputBar({
                 onKeyDown={handleKeyDown}
                 rows={rows}
             />
-            {kbPanelOpen && (
-                <div className="llm-chat-kb-sources">
-                    <div className="llm-chat-kb-header">
-                        <span className="bx bx-book-open" />
-                        <span>{t("llm_chat.knowledge_base_sources")}</span>
-                    </div>
-                    <div className="llm-chat-kb-chips">
-                        {chat.sourceNoteIds.map(noteId => (
-                            <span key={noteId} className="llm-chat-kb-chip">
-                                <span className="llm-chat-kb-chip-title">{sourceTitles[noteId] ?? noteId}</span>
-                                <button
-                                    type="button"
-                                    className="llm-chat-kb-chip-remove"
-                                    onClick={() => {
-                                        chat.removeSourceNote(noteId);
-                                        setSourceTitles(prev => {
-                                            const next = { ...prev };
-                                            delete next[noteId];
-                                            return next;
-                                        });
-                                    }}
-                                    disabled={chat.isStreaming}
-                                    title={t("llm_chat.knowledge_base_remove")}
-                                >
-                                    <span className="bx bx-x" />
-                                </button>
-                            </span>
-                        ))}
-                    </div>
-                    <div className="llm-chat-kb-autocomplete-wrapper" ref={kbContainerRef}>
-                        <NoteAutocomplete
-                            placeholder={t("llm_chat.knowledge_base_add")}
-                            noteIdChanged={handleAddSourceNote}
-                            container={kbContainerRef}
-                            opts={{ closeOnBlur: true }}
-                        />
-                    </div>
-                </div>
+            {chat.enableKnowledgeBase && (
+                <KnowledgeBasePanel
+                    sourceNoteIds={chat.sourceNoteIds}
+                    onAddSource={handleAddSourceNote}
+                    onRemoveSource={handleRemoveSourceNote}
+                    disabled={chat.isStreaming}
+                />
             )}
             <div className="llm-chat-options">
                 <div className="llm-chat-model-selector">
@@ -273,14 +228,8 @@ export default function ChatInputBar({
                         <FormListToggleableItem
                             icon="bx bx-book-open"
                             title={t("llm_chat.knowledge_base")}
-                            currentValue={kbPanelOpen}
-                            onChange={(newValue) => {
-                                setKbPanelOpen(newValue);
-                                if (!newValue) {
-                                    chat.setSourceNoteIds([]);
-                                    setSourceTitles({});
-                                }
-                            }}
+                            currentValue={chat.enableKnowledgeBase}
+                            onChange={handleKnowledgeBaseToggle}
                             disabled={chat.isStreaming}
                         />
                     </Dropdown>

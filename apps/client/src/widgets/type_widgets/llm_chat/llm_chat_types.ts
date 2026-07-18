@@ -70,5 +70,6 @@ export interface LlmChatContent {
     enableWebSearch?: boolean;
     enableNoteTools?: boolean;
     enableExtendedThinking?: boolean;
+    enableKnowledgeBase?: boolean;
     sourceNoteIds?: string[];
 }

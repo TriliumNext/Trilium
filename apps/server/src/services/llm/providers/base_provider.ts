@@ -12,7 +12,7 @@ import becca from "../../../becca/becca.js";
 import { getSkillsSummary } from "../skills/index.js";
 import { getNoteMeta, SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
-import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
+import type { KnowledgeBaseSource, LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
 
 const DEFAULT_MAX_TOKENS = 8096;
 const TITLE_MAX_TOKENS = 30;
@@ -53,6 +53,18 @@ const KB_PREVIEW_MAX = 1500;
  * Build the knowledge base section of the system prompt from source note IDs.
  * Includes note metadata and extended content previews for each source.
  */
+/**
+ * Resolve source note IDs to {noteId, title} pairs, preserving order so that
+ * the index matches the numbered reference list in the system prompt.
+ * Missing notes keep their slot (with the ID as title) to preserve numbering.
+ */
+export function resolveKnowledgeBaseSources(sourceNoteIds: string[]): KnowledgeBaseSource[] {
+    return sourceNoteIds.slice(0, KB_MAX_SOURCES).map(noteId => ({
+        noteId,
+        title: becca.getNote(noteId)?.getTitleOrProtected() ?? noteId
+    }));
+}
+
 function buildKnowledgeBaseSources(sourceNoteIds: string[]): string | null {
     const sources: string[] = [];
 
@@ -109,13 +121,9 @@ function buildKnowledgeBaseSources(sourceNoteIds: string[]): string | null {
         "You can also use `search_notes` to find related information within source subtrees.",
         "",
         "**Citation rules**: When citing a source, use Harvard-style numbered references inline, e.g. [1], [2]. " +
-        "At the end of your response, include a **References** section listing each cited source " +
-        "with its number and a wiki-link to the note, for example:",
-        "```",
-        "## References",
-        "[1] Note Title [[noteId]]",
-        "[2] Another Note [[noteId]]",
-        "```",
+        "Use only the numbers from the reference list below. " +
+        "Do NOT append a reference or bibliography section at the end of your response — " +
+        "the sources you cite are displayed to the user automatically.",
         "",
         "Reference list for this conversation:",
         ...refList,

@@ -36,6 +36,7 @@ export interface UseLlmChatReturn {
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
     contextNoteId: string | undefined;
+    enableKnowledgeBase: boolean;
     sourceNoteIds: string[];
     lastPromptTokens: number;
     messagesEndRef: RefObject<HTMLDivElement>;
@@ -54,6 +55,7 @@ export interface UseLlmChatReturn {
     setEnableExtendedThinking: (value: boolean) => void;
     setContextNoteId: (noteId: string | undefined) => void;
     setChatNoteId: (noteId: string | undefined) => void;
+    setEnableKnowledgeBase: (value: boolean) => void;
     setSourceNoteIds: (noteIds: string[]) => void;
     addSourceNote: (noteId: string) => void;
     removeSourceNote: (noteId: string) => void;
@@ -88,6 +90,7 @@ export function useLlmChat(
     const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
     const [contextNoteId, setContextNoteId] = useState<string | undefined>(initialContextNoteId);
     const [chatNoteId, setChatNoteIdState] = useState<string | undefined>(initialChatNoteId);
+    const [enableKnowledgeBase, setEnableKnowledgeBase] = useState(false);
     const [sourceNoteIds, setSourceNoteIds] = useState<string[]>([]);
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
     const [hasProvider, setHasProvider] = useState<boolean>(true); // Assume true initially
@@ -116,6 +119,8 @@ export function useLlmChat(
     contextNoteIdRef.current = contextNoteId;
     const sourceNoteIdsRef = useRef(sourceNoteIds);
     sourceNoteIdsRef.current = sourceNoteIds;
+    const enableKnowledgeBaseRef = useRef(enableKnowledgeBase);
+    enableKnowledgeBaseRef.current = enableKnowledgeBase;
 
     const addSourceNote = useCallback((noteId: string) => {
         setSourceNoteIds(prev => prev.includes(noteId) ? prev : [...prev, noteId]);
@@ -183,9 +188,10 @@ export function useLlmChat(
         if (supportsExtendedThinking && typeof content.enableExtendedThinking === "boolean") {
             setEnableExtendedThinking(content.enableExtendedThinking);
         }
-        if (Array.isArray(content.sourceNoteIds)) {
-            setSourceNoteIds(content.sourceNoteIds);
-        }
+        const savedSourceNoteIds = Array.isArray(content.sourceNoteIds) ? content.sourceNoteIds : [];
+        setSourceNoteIds(savedSourceNoteIds);
+        // Older saved chats have no enableKnowledgeBase flag — treat stored sources as enabled
+        setEnableKnowledgeBase(content.enableKnowledgeBase ?? savedSourceNoteIds.length > 0);
         // Restore last prompt tokens from the most recent message with usage
         const lastUsage = [...(content.messages || [])].reverse().find(m => m.usage)?.usage;
         setLastPromptTokens(lastUsage?.promptTokens ?? 0);
@@ -203,7 +209,8 @@ export function useLlmChat(
         if (supportsExtendedThinking) {
             content.enableExtendedThinking = enableExtendedThinkingRef.current;
         }
-        if (sourceNoteIdsRef.current.length > 0) {
+        if (sourceNoteIdsRef.current.length > 0 || enableKnowledgeBaseRef.current) {
+            content.enableKnowledgeBase = enableKnowledgeBaseRef.current;
             content.sourceNoteIds = sourceNoteIdsRef.current;
         }
         return content;
@@ -260,14 +267,15 @@ export function useLlmChat(
         }));
 
         const selectedModelProvider = availableModels.find(m => m.id === selectedModel)?.provider;
+        const activeSourceNoteIds = enableKnowledgeBase && sourceNoteIds.length > 0 ? sourceNoteIds : undefined;
         const streamOptions: Parameters<typeof streamChatCompletion>[1] = {
             model: selectedModel || undefined,
             provider: selectedModelProvider,
             enableWebSearch,
-            enableNoteTools: enableNoteTools || sourceNoteIds.length > 0,
+            enableNoteTools: enableNoteTools || !!activeSourceNoteIds,
             contextNoteId,
             chatNoteId: chatNoteIdRef.current,
-            sourceNoteIds: sourceNoteIds.length > 0 ? sourceNoteIds : undefined
+            sourceNoteIds: activeSourceNoteIds
         };
         if (supportsExtendedThinking) {
             streamOptions.enableExtendedThinking = enableExtendedThinking;
@@ -378,7 +386,7 @@ export function useLlmChat(
                 }
             }
         );
-    }, [input, isStreaming, messages, selectedModel, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, sourceNoteIds, supportsExtendedThinking, setMessages]);
+    }, [input, isStreaming, messages, selectedModel, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, enableKnowledgeBase, sourceNoteIds, supportsExtendedThinking, setMessages]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -402,6 +410,7 @@ export function useLlmChat(
         enableNoteTools,
         enableExtendedThinking,
         contextNoteId,
+        enableKnowledgeBase,
         sourceNoteIds,
         lastPromptTokens,
         messagesEndRef,
@@ -418,6 +427,7 @@ export function useLlmChat(
         setEnableExtendedThinking,
         setContextNoteId,
         setChatNoteId,
+        setEnableKnowledgeBase,
         setSourceNoteIds,
         addSourceNote,
         removeSourceNote,
