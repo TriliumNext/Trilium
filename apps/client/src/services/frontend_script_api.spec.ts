@@ -3,19 +3,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
 import { buildNote } from "../test/easy-froca.js";
+import { BackendScriptingDisabledError } from "./backend_scripting.js";
 import dateNotesService from "./date_notes.js";
 import dialogService from "./dialog.js";
 import FrontendScriptApi, { type Api, type Entity } from "./frontend_script_api.js";
 import { preactAPI } from "./frontend_script_api_preact.js";
 import froca from "./froca.js";
 import linkService from "./link.js";
+import noteCreateService from "./note_create.js";
 import noteTooltipService from "./note_tooltip.js";
+import options from "./options.js";
 import protectedSessionService from "./protected_session.js";
 import searchService from "./search.js";
 import server from "./server.js";
 import shortcutService from "./shortcuts.js";
 import toastService from "./toast.js";
-import utils from "./utils.js";
+import utils, * as clientUtils from "./utils.js";
 import ws from "./ws.js";
 
 // The global ws mock from setup.ts does not define waitForMaxKnownEntityChangeId.
@@ -175,7 +178,71 @@ describe("addButtonToToolbar", () => {
 });
 
 describe("runOnBackend / __runOnBackendInner", () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // Backend scripting enabled by default; the disabled case is covered explicitly below.
+        vi.spyOn(options, "is").mockReturnValue(true);
+    });
+
+    it("short-circuits without posting and throws when backend scripting is disabled", async () => {
+        vi.spyOn(options, "is").mockReturnValue(false);
+        const post = vi.spyOn(server, "post");
+        const showPersistent = vi.spyOn(toastService, "showPersistent").mockImplementation(() => {});
+
+        await expect(makeApi().runOnBackend(() => {}, [])).rejects.toBeInstanceOf(BackendScriptingDisabledError);
+
+        // No server round-trip, and a single deduplicated toast (fixed id) is shown instead of a 500.
+        expect(post).not.toHaveBeenCalled();
+        expect(showPersistent).toHaveBeenCalledWith(expect.objectContaining({ id: "backend-scripting-disabled", wide: true }));
+
+        // The first action opens Security settings in the options modal, not a hoisted tab.
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined as never);
+        showPersistent.mock.calls[0][0].buttons?.[0].onClick({ dismissToast: vi.fn() });
+        expect(triggerCommand).toHaveBeenCalledWith("showOptions", { section: "_optionsSecurity" });
+
+        // The second action opens the corresponding help note.
+        const openHelp = vi.spyOn(clientUtils, "openInAppHelpFromUrl").mockReturnValue(undefined as never);
+        showPersistent.mock.calls[0][0].buttons?.[1].onClick({ dismissToast: vi.fn() });
+        expect(openHelp).toHaveBeenCalledWith("fiHicjpHjIRJ");
+    });
+
+    it("lists the attempting scripts as reference notes and accumulates them across attempts", async () => {
+        vi.spyOn(options, "is").mockReturnValue(false);
+        const showPersistent = vi.spyOn(toastService, "showPersistent").mockImplementation(() => {});
+        const noteA = buildNote({ title: "Script A" });
+        const noteB = buildNote({ title: "Script B" });
+        const attempt = (startNote: FNote) =>
+            expect(makeApi({ startNote }).runOnBackend(() => {}, [])).rejects.toBeInstanceOf(BackendScriptingDisabledError);
+
+        // Start from a clean list: trigger one attempt then remove the toast, clearing any residue
+        // accumulated by earlier tests sharing this module-level set.
+        await attempt(noteA);
+        showPersistent.mock.calls.at(-1)?.[0].onRemove?.();
+
+        await attempt(noteA);
+        await attempt(noteB);
+
+        // The latest (deduplicated) toast lists both attempting scripts as reference notes.
+        const lastOptions = showPersistent.mock.calls.at(-1)?.[0];
+        expect(lastOptions?.notes).toEqual([ noteA.noteId, noteB.noteId ]);
+        expect(lastOptions?.onRemove).toBeTypeOf("function");
+    });
+
+    it("clears the accumulated scripts when the toast is removed", async () => {
+        vi.spyOn(options, "is").mockReturnValue(false);
+        const showPersistent = vi.spyOn(toastService, "showPersistent").mockImplementation(() => {});
+        const noteA = buildNote({ title: "Script A" });
+        const noteB = buildNote({ title: "Script B" });
+        const attempt = (startNote: FNote) =>
+            expect(makeApi({ startNote }).runOnBackend(() => {}, [])).rejects.toBeInstanceOf(BackendScriptingDisabledError);
+
+        await attempt(noteA);
+        // Simulate the toast being removed (auto-hide or dismiss) — this should reset the list.
+        showPersistent.mock.calls.at(-1)?.[0].onRemove?.();
+
+        await attempt(noteB);
+        expect(showPersistent.mock.calls.at(-1)?.[0].notes).toEqual([ noteB.noteId ]);
+    });
 
     it("serializes a sync function, posts it, waits for sync and returns the result", async () => {
         const post = vi.spyOn(server, "post").mockResolvedValue({ success: true, executionResult: 42 } as never);
@@ -247,7 +314,21 @@ describe("runOnBackend / __runOnBackendInner", () => {
 });
 
 describe("runAsyncOnBackendWithManualTransactionHandling", () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.spyOn(options, "is").mockReturnValue(true);
+    });
+
+    it("short-circuits without posting and throws when backend scripting is disabled", async () => {
+        vi.spyOn(options, "is").mockReturnValue(false);
+        const post = vi.spyOn(server, "post");
+        const showPersistent = vi.spyOn(toastService, "showPersistent").mockImplementation(() => {});
+
+        await expect(makeApi().runAsyncOnBackendWithManualTransactionHandling(async () => {}, [])).rejects.toBeInstanceOf(BackendScriptingDisabledError);
+
+        expect(post).not.toHaveBeenCalled();
+        expect(showPersistent).toHaveBeenCalledWith(expect.objectContaining({ id: "backend-scripting-disabled", wide: true }));
+    });
 
     it("warns when passed a sync function reference, then runs non-transactionally", async () => {
         const post = vi.spyOn(server, "post").mockResolvedValue({ success: true, executionResult: 7 } as never);
@@ -282,6 +363,30 @@ describe("runAsyncOnBackendWithManualTransactionHandling", () => {
         // Passing null params exercises the `if (!params) return params;` early-return branch.
         await makeApi().runAsyncOnBackendWithManualTransactionHandling("async () => {}", null as unknown as unknown[]);
         expect((post.mock.calls[0][1] as Record<string, unknown>).params).toBeNull();
+    });
+});
+
+describe("scripting availability detection", () => {
+    it("isBackendScriptingEnabled reflects the backendScriptingEnabled option", () => {
+        const is = vi.spyOn(options, "is").mockImplementation((key) => key === "backendScriptingEnabled");
+        const api = makeApi();
+
+        expect(api.isBackendScriptingEnabled()).toBe(true);
+        expect(is).toHaveBeenCalledWith("backendScriptingEnabled");
+
+        is.mockReturnValue(false);
+        expect(api.isBackendScriptingEnabled()).toBe(false);
+    });
+
+    it("isSqlConsoleEnabled reflects the sqlConsoleEnabled option", () => {
+        const is = vi.spyOn(options, "is").mockImplementation((key) => key === "sqlConsoleEnabled");
+        const api = makeApi();
+
+        expect(api.isSqlConsoleEnabled()).toBe(true);
+        expect(is).toHaveBeenCalledWith("sqlConsoleEnabled");
+
+        is.mockReturnValue(false);
+        expect(api.isSqlConsoleEnabled()).toBe(false);
     });
 });
 
@@ -348,6 +453,20 @@ describe("froca passthroughs", () => {
     it("getInstanceName reads from window.glob", () => {
         window.glob.instanceName = "inst-A";
         expect(makeApi().getInstanceName()).toBe("inst-A");
+    });
+
+    it("createNote delegates to the note-create service and defaults opts to {}", async () => {
+        const note = buildNote({ title: "Created" });
+        const createNote = vi.spyOn(noteCreateService, "createNote").mockResolvedValue({ note, branch: undefined });
+        const api = makeApi();
+
+        const result = await api.createNote("root", { title: "Created", type: "text" });
+        expect(createNote).toHaveBeenCalledWith("root", { title: "Created", type: "text" });
+        expect(result).toEqual({ note, branch: undefined });
+
+        // opts defaults to an empty object when omitted
+        await (api.createNote as (p: string) => Promise<unknown>)("root");
+        expect(createNote).toHaveBeenLastCalledWith("root", {});
     });
 });
 

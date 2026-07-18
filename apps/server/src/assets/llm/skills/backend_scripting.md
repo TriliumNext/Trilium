@@ -2,6 +2,12 @@
 
 Backend scripts run in Node.js on the server. They have direct access to notes in memory and can interact with the system (files, processes).
 
+## Disabled by default — IMPORTANT
+
+Backend script execution is **turned off by default** for security (backend scripts have full server access). Until it is enabled, running a backend script — including a frontend `runOnBackend()` call, `#run` schedules, `~runOn*` triggers, and custom request handlers — fails with *"Backend script execution is disabled"*. When you create a backend script for the user, **tell them it will not run until they enable it** in **Options → Security** (equivalently `[Security] backendScriptingEnabled=true` in `config.ini`, or the `TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true` environment variable).
+
+A frontend script can detect this at runtime with `api.isBackendScriptingEnabled()` and degrade gracefully (see the `frontend_scripting` skill). Raw SQL access (the SQL Console note type and the `/sql/execute` route) is gated separately by `[Security] sqlConsoleEnabled` / `api.isSqlConsoleEnabled()`.
+
 ## Creating a backend script
 
 1. Create a Code note with language "JavaScript (Trilium backend)".

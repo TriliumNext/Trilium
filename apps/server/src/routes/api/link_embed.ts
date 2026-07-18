@@ -232,8 +232,9 @@ function collectIconCandidates(document: ReturnType<typeof parse>, pageUrl: stri
     candidates.sort((a, b) => b.size - a.size);
 
     const urls = candidates.map((candidate) => candidate.url);
-    const conventional = toAbsoluteUrl("/apple-touch-icon.png", pageUrl);
-    if (conventional && !urls.includes(conventional)) {
+    // `pageUrl` already passed validateUrl, so resolving the conventional path against it cannot fail.
+    const conventional = new URL("/apple-touch-icon.png", pageUrl).toString();
+    if (!urls.includes(conventional)) {
         urls.push(conventional);
     }
 
@@ -260,12 +261,10 @@ async function resolveFavicon(document: ReturnType<typeof parse>, pageUrl: strin
         || document.querySelector('link[rel="shortcut icon"]')
         || document.querySelector('link[rel="apple-touch-icon"]');
 
-    let faviconUrl = toAbsoluteUrl(faviconEl?.getAttribute("href"), pageUrl);
-    if (!faviconUrl) {
-        faviconUrl = toAbsoluteUrl("/favicon.ico", pageUrl);
-    }
+    // `pageUrl` already passed validateUrl, so the conventional fallback always forms a URL.
+    const faviconUrl = toAbsoluteUrl(faviconEl?.getAttribute("href"), pageUrl)
+        ?? new URL("/favicon.ico", pageUrl).toString();
 
-    if (!faviconUrl) return undefined;
     return await downloadFaviconAsDataUri(faviconUrl);
 }
 

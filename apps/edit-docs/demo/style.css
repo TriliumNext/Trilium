@@ -121,10 +121,13 @@
 }
 
 .ck-content hr{
+  vertical-align:middle;
   background:#dedede;
   border:0;
+  width:100%;
   height:4px;
   margin:15px 0;
+  display:inline-block;
 }
 
 :root{
@@ -464,8 +467,52 @@
 .ck-content .media{
   clear:both;
   min-width:15em;
-  margin:.9em 0;
+  margin:.9em auto;
   display:block;
+}
+
+.ck-content .media:has( > div[data-oembed-url*="open.spotify.com"]){
+  width:300px;
+  min-width:286px;
+}
+
+.ck-content .media.media_resized{
+  box-sizing:border-box;
+  max-width:100%;
+  display:block;
+}
+
+.ck-content .media.media_resized > div[data-oembed-url]{
+  width:100%;
+}
+
+:root{
+  --ck-content-media-style-spacing:1.5em;
+}
+
+.ck-content .media.media-style-align-left, .ck-content .media.media-style-align-right{
+  clear:none;
+  width:100%;
+}
+
+.ck-content .media.media-style-align-left{
+  float:left;
+  margin-right:var(--ck-content-media-style-spacing);
+}
+
+.ck-content .media.media-style-align-right{
+  float:right;
+  margin-left:var(--ck-content-media-style-spacing);
+}
+
+.ck-content .media.media-style-block-align-left{
+  margin-left:0;
+  margin-right:auto;
+}
+
+.ck-content .media.media-style-block-align-right{
+  margin-left:auto;
+  margin-right:0;
 }
 
 :root{

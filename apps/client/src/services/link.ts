@@ -72,6 +72,13 @@ interface CreateLinkOptions {
     referenceLink?: boolean;
     autoConvertToImage?: boolean;
     viewScope?: ViewScope;
+    /**
+     * Inline text appended right after the link title (before the note path, which renders on its
+     * own line). Rendered as a `.note-link-suffix` span so it rides the title's baseline instead of
+     * being pushed into a column by the wider note-path block — e.g. an annotation on why the note
+     * is being shown.
+     */
+    titleSuffix?: string;
 }
 
 async function createLink(notePath: string | undefined, options: CreateLinkOptions = {}) {
@@ -155,6 +162,10 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     }
 
     $container.append($noteLink);
+
+    if (options.titleSuffix) {
+        $container.append($("<span>").addClass("note-link-suffix").text(options.titleSuffix));
+    }
 
     if (showNotePath) {
         let pathSegments: string[];

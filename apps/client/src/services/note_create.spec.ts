@@ -99,10 +99,23 @@ describe("createNote", () => {
             expect.objectContaining({ title: "Hello", content: "", isProtected: false }),
             "comp-1"
         );
-        expect(setNote).toHaveBeenCalledWith(`root/${NOTE_ID}`);
-        expect(triggerEvent).toHaveBeenCalledWith("focusAndSelectTitle", { isNewNote: true });
+        expect(setNote).toHaveBeenCalledWith(`root/${NOTE_ID}`, { keepActiveDialog: false });
+        expect(triggerEvent).toHaveBeenCalledWith("focusAndSelectTitle", { isNewNote: true, ntxId: "ntx-1" });
         expect(result.note).toBe(childNote);
         expect(result.branch).toBe(froca.getBranch(BRANCH_ID));
+    });
+
+    it("activates in the supplied noteContext (popup) and keeps the dialog open", async () => {
+        // The tab manager's active context must remain untouched (background tab)
+        const activeSetNote = setActiveContext(true);
+        const popupSetNote = vi.fn(async () => {});
+        const popupContext = { ntxId: "ntx-popup", setNote: popupSetNote } as any;
+
+        await noteCreateService.createNote("root", { noteContext: popupContext });
+
+        expect(popupSetNote).toHaveBeenCalledWith(`root/${NOTE_ID}`, { keepActiveDialog: true });
+        expect(activeSetNote).not.toHaveBeenCalled();
+        expect(triggerEvent).toHaveBeenCalledWith("focusAndSelectTitle", { isNewNote: true, ntxId: "ntx-popup" });
     });
 
     it("focuses content when focus=content", async () => {
@@ -116,7 +129,7 @@ describe("createNote", () => {
         const setNote = setActiveContext(true);
         // an out-of-range focus value still activates the note but triggers no focus event
         await noteCreateService.createNote("root", { focus: undefined as any });
-        expect(setNote).toHaveBeenCalledWith(`root/${NOTE_ID}`);
+        expect(setNote).toHaveBeenCalledWith(`root/${NOTE_ID}`, { keepActiveDialog: false });
         expect(triggerEvent).not.toHaveBeenCalled();
     });
 

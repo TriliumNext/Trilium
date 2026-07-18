@@ -58,6 +58,9 @@ body#trilium-app.backdrop-effects-disabled *::after {
 
 .table {
     --bs-table-bg: transparent !important;
+    --bs-table-border-color: var(--main-border-color);
+    --bs-table-striped-bg: color-mix(in srgb, var(--main-text-color) 5%, transparent);
+    --bs-table-striped-color: var(--main-text-color);
 }
 
 :root {

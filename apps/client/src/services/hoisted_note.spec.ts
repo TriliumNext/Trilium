@@ -117,6 +117,19 @@ describe("hoisted_note service", () => {
             setActiveContext(orphan.noteId);
             expect(await hoistedNoteService.isHoistedInHiddenSubtree()).toBe(true);
         });
+
+        it("honours an explicit hoistedNoteId over the active context (e.g. a tree popup)", async () => {
+            buildNote({ id: "root", title: "Root" });
+            const visible = buildNote({ title: "Visible" });
+            visible.parents.push("root");
+            const orphan = buildNote({ title: "Orphan" }); // hidden completely
+
+            // Active tab hoisted on a visible note, but the caller (a popup tree) is hoisted into the
+            // hidden subtree — the explicit argument must win.
+            setActiveContext(visible.noteId);
+            expect(await hoistedNoteService.isHoistedInHiddenSubtree(orphan.noteId)).toBe(true);
+            expect(await hoistedNoteService.isHoistedInHiddenSubtree("root")).toBe(false);
+        });
     });
 
     describe("checkNoteAccess", () => {

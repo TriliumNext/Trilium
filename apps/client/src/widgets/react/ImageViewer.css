@@ -14,6 +14,14 @@
     z-index: 1;
 }
 
+/* Shortcut-hints button pinned to the top-right corner of the viewport. */
+.image-viewer-hint-button {
+    position: absolute;
+    inset-inline-end: 10px;
+    top: 10px;
+    z-index: 1;
+}
+
 /* Make the library's viewport fill the available space so the image fits and pans within it. */
 .image-viewer-viewport.react-transform-wrapper {
     width: 100%;

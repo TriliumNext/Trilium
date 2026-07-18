@@ -86,6 +86,8 @@ describe("isUrlAloneInBlock", () => {
         expect(isUrlAloneInBlock([text("  "), text(url), text("\n")], url)).toBe(true);
         // Adjacent text nodes that together spell the URL.
         expect(isUrlAloneInBlock([text("https://youtu.be/"), text("dQw4w9WgXcQ")], url)).toBe(true);
+        // A text child carrying no data contributes nothing, rather than the string "undefined".
+        expect(isUrlAloneInBlock([text(url), { isText: true }], url)).toBe(true);
     });
 
     it("is false when the URL is surrounded by other text or non-text nodes", () => {

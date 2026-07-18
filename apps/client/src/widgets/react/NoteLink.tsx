@@ -19,12 +19,14 @@ interface NoteLinkOpts {
     highlightedTokens?: string[] | null | undefined;
     // Override the text of the link, otherwise the note title is used.
     title?: string;
+    /** Inline text appended right after the link title (before the note path). */
+    titleSuffix?: string;
     viewScope?: ViewScope;
     noContextMenu?: boolean;
     onContextMenu?: (e: MouseEvent) => void;
 }
 
-export default function NoteLink({ className, containerClassName, notePath, showNotePath, showNoteIcon, style, noPreview, noTnLink, highlightedTokens, title, viewScope, noContextMenu, onContextMenu }: NoteLinkOpts) {
+export default function NoteLink({ className, containerClassName, notePath, showNotePath, showNoteIcon, style, noPreview, noTnLink, highlightedTokens, title, titleSuffix, viewScope, noContextMenu, onContextMenu }: NoteLinkOpts) {
     const stringifiedNotePath = Array.isArray(notePath) ? notePath.join("/") : notePath;
     const noteId = stringifiedNotePath.split("/").at(-1);
     const ref = useRef<HTMLSpanElement>(null);
@@ -35,11 +37,12 @@ export default function NoteLink({ className, containerClassName, notePath, show
     useEffect(() => {
         link.createLink(stringifiedNotePath, {
             title,
+            titleSuffix,
             showNotePath,
             showNoteIcon,
             viewScope
         }).then(setJqueryEl);
-    }, [ stringifiedNotePath, showNotePath, title, viewScope, noteTitle ]);
+    }, [ stringifiedNotePath, showNotePath, title, titleSuffix, viewScope, noteTitle ]);
 
     useEffect(() => {
         const el = jqueryEl?.[0];

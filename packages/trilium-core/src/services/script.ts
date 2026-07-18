@@ -247,7 +247,7 @@ apiContext.modules['${note.noteId}'] = { exports: {} };
 ${root ? "return " : ""}${isFrontend ? "await" : ""} ((${isFrontend ? "async" : ""} function(exports, module, require, api${modules.length > 0 ? ", " : ""}${modules.map((child) => sanitizeVariableName(child.title)).join(", ")}) {
 try {
 ${overrideContent || scriptContent};
-} catch (e) { throw new Error("Load of script note \\"${note.title}\\" (${note.noteId}) failed with: " + e.message); }
+} catch (e) { throw new Error("Load of script note \\"${note.title}\\" (${note.noteId}) failed with: " + e.message, { cause: e }); }
 for (const exportKey in exports) module.exports[exportKey] = exports[exportKey];
 return module.exports;
 }).call({}, {}, apiContext.modules['${note.noteId}'], apiContext.require(${JSON.stringify(moduleNoteIds)}), apiContext.apis['${note.noteId}']${modules.length > 0 ? ", " : ""}${modules.map((mod) => `apiContext.modules['${mod.noteId}'].exports`).join(", ")}));

@@ -19,6 +19,7 @@ import { parseNavigationStateFromUrl, ViewScope } from "../../services/link";
 import options, { type OptionValue } from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
 import server from "../../services/server";
+import type { ShortcutHintDefinition, ShortcutHintProvider } from "../../services/shortcut_hints";
 import shortcuts, { Handler, removeIndividualBinding } from "../../services/shortcuts";
 import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
 import { getEffectiveThemeStyle } from "../../services/theme";
@@ -1154,6 +1155,42 @@ export function useLegacyImperativeHandlers(handlers: Record<string, Function>) 
     useEffect(() => {
         Object.assign(parentComponent as never, handlers);
     }, [ handlers ]);
+}
+
+/**
+ * Registers this widget's contextual shortcut hints on its host component. When the user requests
+ * contextual shortcut help (Alt+F1 by default), the dispatcher walks up from the focused element
+ * and asks each component in the chain to contribute its hints — so these appear only while this
+ * widget (or one of its descendants) is focused. The registration is removed automatically on unmount.
+ *
+ * @param hints the sections to contribute, or a function returning them (use the function form when
+ *              the hints depend on component state). Read lazily on each request, so it need not be a
+ *              stable reference.
+ */
+export function useContextualShortcutHints(hints: ShortcutHintDefinition | (() => ShortcutHintDefinition)) {
+    const parentComponent = useContext(ParentComponent);
+    // Keep the latest hints in a ref so the provider registers once per host rather than
+    // re-registering on every render when the caller passes an inline array/function.
+    const hintsRef = useRef(hints);
+    hintsRef.current = hints;
+
+    useEffect(() => {
+        if (!parentComponent) return;
+
+        const provider: ShortcutHintProvider = (collector) => {
+            const current = hintsRef.current;
+            collector.add(...(typeof current === "function" ? current() : current));
+        };
+        parentComponent.getContextualShortcutHints = provider;
+
+        return () => {
+            // Only clear our own registration, in case another provider replaced it in the meantime.
+            if (parentComponent.getContextualShortcutHints === provider) {
+                delete parentComponent.getContextualShortcutHints;
+            }
+        };
+    }, [ parentComponent ]);
+    useDebugValue("contextual-shortcut-hints");
 }
 
 export function useSyncedRef<T>(externalRef?: Ref<T>, initialValue: T | null = null): RefObject<T> {

@@ -87,6 +87,10 @@ There are numerous keyboard shortcuts to format the text without having to use t
 
 For readability purposes on wider screens, the width of text notes is limited via a configurable option. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Content width</a> for more information.
 
+## Converting to a Markdown note
+
+Text notes can be converted to <a class="reference-link" href="Markdown.md">Markdown</a> notes. See <a class="reference-link" href="Converting%20between%20note%20types.md">Converting between note types</a>.
+
 ## Technical details
 
 For the text editing functionality, Trilium uses a commercial product (with an open-source base) called <a class="reference-link" href="../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a>. This brings the benefit of having a powerful WYSIWYG (What You See Is What You Get) editor.

@@ -16,7 +16,7 @@ function EvernotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderP
     const [shrinkImages, setShrinkImages] = useState(compressImages);
 
     // An Evernote export is one ENEX (.enex) file per notebook, so allow selecting several at once.
-    const onChange = useCallback((fileList: FileList | null) => setFiles(fileList ? Array.from(fileList) : []), []);
+    const onChange = useCallback((fileList: File[] | null) => setFiles(fileList ?? []), []);
 
     const doImport = useCallback(async () => {
         if (!files.length) {

@@ -1,11 +1,13 @@
 import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
 
+import { showBackendScriptingDisabledToast } from "../services/backend_scripting.js";
 import bundleService from "../services/bundle.js";
 import dialog from "../services/dialog.js";
 import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import linkService from "../services/link.js";
+import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
 import toastService from "../services/toast.js";
@@ -174,9 +176,26 @@ export default class Entrypoints extends Component {
 
         // TODO: use note.executeScript()
         if (note.mime.endsWith("env=frontend")) {
-            await bundleService.getAndExecuteBundle(note.noteId);
+            try {
+                // rethrow so a failed script doesn't fall through to the "Note executed" confirmation;
+                // executeBundle has already surfaced the error toast.
+                await bundleService.getAndExecuteBundle(note.noteId, null, null, null, { rethrow: true });
+            } catch {
+                return;
+            }
         } else if (note.mime.endsWith("env=backend")) {
-            await server.post(`script/run/${note.noteId}`);
+            if (!options.is("backendScriptingEnabled")) {
+                // Show the same friendly toast as the frontend runOnBackend path, rather than letting
+                // the /script/run request 500 and surface as an "Uncaught error" via the global handler.
+                showBackendScriptingDisabledToast(note.noteId);
+                return;
+            }
+            try {
+                await server.post(`script/run/${note.noteId}`);
+            } catch {
+                // server.js already reported the error; don't fall through to "Note executed".
+                return;
+            }
         } else if (note.mime === "text/x-sqlite;schema=trilium") {
             const response = await server.post<SqlExecuteResponse>(`sql/execute/${note.noteId}`);
             await appContext.triggerEvent("sqlQueryResults", { ntxId, response });

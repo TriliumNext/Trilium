@@ -357,6 +357,31 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             }
         });
 
+        it("rewrites a link preview's data-image reference to the exported attachment file", async () => {
+            // A link preview stores its card image as an attachment referenced from `data-image`
+            // (not an <img src>), so the attribute must be rewritten to the exported attachment
+            // file just like an image src. The markdown export keeps the preview's raw HTML, so
+            // the same rewrite must land there too.
+            const { note } = createNote("root", { title: "LinkPreviewHost", content: "" });
+            getContext().init(() => {
+                const attachment = note.saveAttachment({ role: "image", mime: "image/jpeg", title: "preview.jpg", content: "jpeg-bytes" });
+                note.setContent(`<section class="link-embed" data-url="https://example.com" data-embed-type="opengraph"` +
+                    ` data-title="Example" data-image="api/attachments/${attachment.attachmentId}/image/preview.jpg"></section>`);
+            });
+
+            for (const format of ["html", "markdown"] as const) {
+                const { entries } = await exportSubtree(note.getParentBranches()[0], format);
+                const rootMeta = parseMeta(entries).files[0];
+
+                const attFileName = (rootMeta.attachments ?? [])[0]?.dataFileName ?? "";
+                expect(entries[attFileName], format).toBeDefined();
+
+                const exported = entries[rootMeta.dataFileName ?? ""].toString("utf-8");
+                expect(exported, format).toContain(`data-image="${attFileName}"`);
+                expect(exported, format).not.toContain("api/attachments");
+            }
+        });
+
         it("pipes the archive to the response before appending any content", async () => {
             // Memory efficiency: the archive must start streaming to the response
             // before note/attachment content is appended, so blobs drain to the

@@ -5,9 +5,11 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { type ReactZoomPanPinchRef, TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 import { t } from "../../services/i18n";
+import type { ShortcutHintDefinition } from "../../services/shortcut_hints";
 import { isMobile } from "../../services/utils";
+import ShortcutHintButton from "../shortcut_hints/shortcut_hint_button";
 import ContentErrorMessage from "./ContentErrorMessage";
-import { useStaticTooltip } from "./hooks";
+import { useContextualShortcutHints, useStaticTooltip } from "./hooks";
 import { useImageViewerKeyboard } from "./image_viewer_keyboard";
 
 interface ImageViewerProps {
@@ -27,6 +29,36 @@ const CRISP_NATIVE_SCALE = 4;
 const BUTTON_ZOOM_STEP = 0.5;
 /** Reveal the image even if `decode()` never settles (it can stall for some images, e.g. SVGs). */
 const REVEAL_FALLBACK_MS = 1000;
+
+const IMAGE_VIEWER_HINTS: ShortcutHintDefinition = [
+    {
+        titleKey: "image_viewer.hints.zoom",
+        hints: [
+            { keys: ["Ctrl++", "E"], labelKey: "image_viewer.hints.zoom_in" },
+            { keys: ["Ctrl+-", "Q"], labelKey: "image_viewer.hints.zoom_out" },
+            { keys: ["/", "Numpad /"], labelKey: "image_viewer.hints.reset_zoom" }
+        ]
+    },
+    {
+        titleKey: "image_viewer.hints.pan",
+        hints: [
+            { keys: ["Up", "W"], labelKey: "image_viewer.hints.pan_up" },
+            { keys: ["Down", "S"], labelKey: "image_viewer.hints.pan_down" },
+            { keys: ["Left", "A"], labelKey: "image_viewer.hints.pan_left" },
+            { keys: ["Right", "D"], labelKey: "image_viewer.hints.pan_right" },
+            { keys: ["Shift"], labelKey: "image_viewer.hints.pan_fast" }
+        ]
+    },
+    {
+        titleKey: "image_viewer.hints.navigation",
+        hints: [
+            { keys: ["Space", "PageDown"], labelKey: "image_viewer.hints.next_image" },
+            { keys: ["Backspace", "PageUp"], labelKey: "image_viewer.hints.previous_image" },
+            { keys: ["Home"], labelKey: "image_viewer.hints.first_image" },
+            { keys: ["End"], labelKey: "image_viewer.hints.last_image" }
+        ]
+    }
+];
 
 /**
  * Derives the zoom-driven values: whether the image is pannable (zoomed past the fitted size),
@@ -114,6 +146,7 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
     }, [ src ]);
 
     useImageViewerKeyboard(zoomRef, rootRef);
+    useContextualShortcutHints(IMAGE_VIEWER_HINTS);
     useStaticTooltip(zoomOutRef, { title: t("image_buttons.zoom_out"), placement: "top" });
     useStaticTooltip(zoomLevelRef, { title: t("image_buttons.reset_zoom"), placement: "top" });
     useStaticTooltip(zoomInRef, { title: t("image_buttons.zoom_in"), placement: "top" });
@@ -154,6 +187,10 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
 
             {loadingError && (
                 <ContentErrorMessage message={t("image_viewer.loading_error")} />
+            )}
+
+            {!isMobile() && loaded && (
+                <ShortcutHintButton className="image-viewer-hint-button" />
             )}
 
             {!isMobile() && loaded && (

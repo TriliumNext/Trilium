@@ -274,10 +274,12 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             return url ? `src="${url}"` : match;
         });
 
-        content = content.replace(/src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/[^"]*"/g, (match, targetAttachmentId) => {
+        // `data-image` is where link previews (section.link-embed / span.link-mention) keep their
+        // card image reference; it points at the exported attachment file just like an <img> src.
+        content = content.replace(/(src|data-image)="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/[^"]*"/g, (match, attrName, targetAttachmentId) => {
             const url = findAttachment(targetAttachmentId);
 
-            return url ? `src="${url}"` : match;
+            return url ? `${attrName}="${url}"` : match;
         });
 
         content = content.replace(/href="[^"]*#root[^"]*attachmentId=([a-zA-Z0-9_]+)\/?"/g, (match, targetAttachmentId) => {

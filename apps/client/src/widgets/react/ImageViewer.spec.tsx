@@ -1,5 +1,10 @@
 import { type ComponentChildren, render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import Component from "../../components/component";
+import { collectShortcutHints } from "../../services/shortcut_hints";
+import { ParentComponent } from "./react_utils";
 
 // Capture the props handed to the zoom library without mounting it (it needs real layout).
 const { transformWrapperSpy } = vi.hoisted(() => ({ transformWrapperSpy: vi.fn() }));
@@ -15,8 +20,12 @@ vi.mock("react-zoom-pan-pinch", () => ({
     )
 }));
 
-// Avoid pulling the real hooks module (bootstrap tooltips + app context) into the test.
-vi.mock("./hooks", () => ({ useStaticTooltip: () => {} }));
+// Keep the real hooks (useContextualShortcutHints is exercised below), but stub the bootstrap-Tooltip
+// one, which needs real layout.
+vi.mock("./hooks", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./hooks")>()),
+    useStaticTooltip: () => {}
+}));
 
 import ImageViewer, { evaluateImageZoom } from "./ImageViewer";
 
@@ -46,6 +55,36 @@ describe("ImageViewer", () => {
         expect(img?.getAttribute("src")).toBe("api/images/abc/Pic");
         expect(img?.getAttribute("alt")).toBe("Pic");
         expect(img?.className).toBe("note-detail-image-view");
+    });
+
+    it("registers its contextual shortcut hints on the host component", () => {
+        const host = new Component();
+        const container = document.createElement("div");
+        act(() => render(
+            <ParentComponent.Provider value={host}><ImageViewer src="x" /></ParentComponent.Provider>,
+            container
+        ));
+
+        const sections = collectShortcutHints(host);
+        expect(sections).toHaveLength(3);
+        expect(sections[0].hints.map(h => h.labelKey)).toEqual([
+            "image_viewer.hints.zoom_in",
+            "image_viewer.hints.zoom_out",
+            "image_viewer.hints.reset_zoom"
+        ]);
+        expect(sections[1].hints.map(h => h.labelKey)).toEqual([
+            "image_viewer.hints.pan_up",
+            "image_viewer.hints.pan_down",
+            "image_viewer.hints.pan_left",
+            "image_viewer.hints.pan_right",
+            "image_viewer.hints.pan_fast"
+        ]);
+        expect(sections[2].hints.map(h => h.labelKey)).toEqual([
+            "image_viewer.hints.next_image",
+            "image_viewer.hints.previous_image",
+            "image_viewer.hints.first_image",
+            "image_viewer.hints.last_image"
+        ]);
     });
 
     it("wires up the interactive zoom behavior", () => {

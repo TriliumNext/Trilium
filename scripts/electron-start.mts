@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import { buildSync } from "esbuild";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getElectronPath, isNixOS } from "./utils.mjs";
+import { getElectronPath, getNixLdLibraryPath, isNixOS } from "./utils.mjs";
 
 // Compile the preload script to CJS so Electron's sandboxed renderer can load it.
 // Always build from apps/desktop/ regardless of CWD — window.ts resolves the
@@ -17,7 +17,7 @@ buildSync({
     external: ["electron"]
 });
 
-const LD_LIBRARY_PATH = isNixOS() && execSync("nix eval --raw nixpkgs#gcc.cc.lib").toString("utf-8") + "/lib";
+const LD_LIBRARY_PATH = isNixOS() && getNixLdLibraryPath();
 
 const args = process.argv.slice(2);
 execSync(`${getElectronPath()} ${args.join(" ")} --no-sandbox`, {

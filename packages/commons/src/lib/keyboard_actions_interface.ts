@@ -57,6 +57,7 @@ const enum KeyboardActionNamesEnum {
     showSQLConsole,
     showBackendLog,
     showCheatsheet,
+    showShortcutHints,
     showHelp,
     addLinkToText,
     followLinkUnderCursor,

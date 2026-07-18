@@ -268,11 +268,18 @@ button.tn-low-profile:hover {
         }
 
         &:first-child {
-            border-radius: var(--overlay-button-border-radius) 0 0 var(--overlay-button-border-radius);
+            --_start-border-radius: var(--overlay-button-border-radius);
         }
 
         &:last-child {
-            border-radius: 0 var(--overlay-button-border-radius) var(--overlay-button-border-radius) 0;
+            --_end-border-radius: var(--overlay-button-border-radius);
+        }
+
+        /* Reboot sets `button { border-radius: 0 }` (specificity 0,0,1), so the rounding must live on
+           these end selectors (0,1,0) to out-specify it; middle buttons keep Reboot's square corners. */
+        &:first-child,
+        &:last-child {
+            border-radius: var(--_start-border-radius, 0) var(--_end-border-radius, 0) var(--_end-border-radius, 0) var(--_start-border-radius, 0);
         }
 
     }

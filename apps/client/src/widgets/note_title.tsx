@@ -71,7 +71,10 @@ export default function NoteTitleWidget(props: {className?: string}) {
     }, [title]);
 
     useTriliumEvents([ "focusOnTitle", "focusAndSelectTitle" ], (e, eventName) => {
-        if (noteContext?.isActive() && textBoxRef.current) {
+        // When the event targets a specific context (e.g. a popup's own context, which is never
+        // "active" in the tab manager), match on it; otherwise fall back to the active context.
+        const isTargeted = e.ntxId ? e.ntxId === noteContext?.ntxId : noteContext?.isActive();
+        if (isTargeted && textBoxRef.current) {
             // In the new layout, there are two NoteTitleWidget instances. Only handle if visible.
             if (!textBoxRef.current.checkVisibility({ checkOpacity: true })) {
                 return;

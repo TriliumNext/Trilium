@@ -18,8 +18,6 @@ You can also import Markdown files from files:
     *   Markdown files need to be packaged into ZIP archive because browser can't read directories, only single files.
     *   You can use e.g. [7-zip](https://www.7-zip.org) to package directory of markdown files into the ZIP file
 
-\[\[gifs/markdown-file-import.gif\]\]
-
 ![](Markdown_markdown-file-import.gif)
 
 ## Export

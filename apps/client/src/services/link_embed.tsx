@@ -1,10 +1,11 @@
 import "../widgets/type_widgets/text/LinkEmbed.css";
 
-import { type LinkEmbedMetadata, YOUTUBE_REGEX, extractYouTubeVideoId, safeLinkPreviewHref } from "@triliumnext/commons";
+import { extractYouTubeVideoId, type LinkEmbedMetadata, safeLinkPreviewHref, YOUTUBE_REGEX } from "@triliumnext/commons";
 import { render } from "preact";
 import { useState } from "preact/hooks";
 
 import { t } from "./i18n.js";
+import { uploadImageAttachment } from "./image_upload.js";
 import server from "./server.js";
 
 export interface EmbedMetadata {
@@ -31,8 +32,13 @@ export function safeHostname(url: string): string {
 /**
  * Fetches link metadata from the server. Called once at link creation time.
  * The returned metadata is then stored in the note's HTML as data attributes.
+ *
+ * When `ownerNoteId` is given, the preview image is stored as an attachment of that note and only
+ * its `api/attachments/...` URL ends up in the metadata. Inlined as a base64 data URI it would be
+ * 10–140KB of note content per preview — enough for a single card to push the note past the
+ * `autoReadonlySizeText` threshold (32KB by default) and flip it read-only.
  */
-export async function fetchMetadata(url: string): Promise<EmbedMetadata> {
+export async function fetchMetadata(url: string, ownerNoteId?: string): Promise<EmbedMetadata> {
     try {
         // POSTed rather than passed in the query string: a URL can carry a one-time token or a
         // signed signature, and a query string ends up in every access log along the way.
@@ -44,7 +50,7 @@ export async function fetchMetadata(url: string): Promise<EmbedMetadata> {
             description: metadata.description,
             favicon: metadata.favicon,
             siteName: metadata.siteName,
-            image: metadata.image,
+            image: await offloadImageToAttachment(metadata.image, ownerNoteId),
             unresolved: metadata.unresolved
         };
     } catch {
@@ -55,6 +61,22 @@ export async function fetchMetadata(url: string): Promise<EmbedMetadata> {
             unresolved: true
         };
     }
+}
+
+/**
+ * Converts a base64 preview image into an attachment of the owning note, returning its
+ * `api/attachments/...` URL — or the data URI unchanged when the upload fails, so the preview
+ * still persists and renders, just at the old inline cost.
+ *
+ * Only the card image is offloaded. The favicon stays inline on purpose: it is a few KB, and it is
+ * carried by inline mentions too, where an attachment per mention would flood the attachment list.
+ */
+async function offloadImageToAttachment(image: string | undefined, ownerNoteId: string | undefined): Promise<string | undefined> {
+    if (!image || !ownerNoteId || !image.startsWith("data:")) {
+        return image;
+    }
+
+    return await uploadImageAttachment(ownerNoteId, image) ?? image;
 }
 
 // ---------------------------------------------------------------------------

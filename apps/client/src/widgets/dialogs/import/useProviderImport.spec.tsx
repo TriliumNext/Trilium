@@ -25,11 +25,6 @@ function Probe(args: Args) {
     return null;
 }
 
-/** Builds a FileList-like the hook can index (it only reads `[0]` and `.length`). */
-function fileListOf(...files: File[]): FileList {
-    return Object.assign(files.slice(), { item: (i: number) => files[i] ?? null }) as unknown as FileList;
-}
-
 describe("useProviderImport", () => {
     let container: HTMLElement;
     let closeDialog: ReturnType<typeof vi.fn>;
@@ -84,7 +79,7 @@ describe("useProviderImport", () => {
         it("marks a selection once a file is chosen via the upload route", async () => {
             await mount();
             const file = new File(["x"], "vault.zip");
-            await act(async () => current().onChange(fileListOf(file)));
+            await act(async () => current().onChange([file]));
             expect(current().hasSelection).toBe(true);
             // The upload route has no display name override — FileDropZone shows the File itself.
             expect(current().displayNames).toBeUndefined();
@@ -92,9 +87,26 @@ describe("useProviderImport", () => {
 
         it("clears the selection when onChange receives no files", async () => {
             await mount();
-            await act(async () => current().onChange(fileListOf(new File(["x"], "vault.zip"))));
+            await act(async () => current().onChange([new File(["x"], "vault.zip")]));
             await act(async () => current().onChange(null));
             expect(current().hasSelection).toBe(false);
+        });
+
+        it("clears either route's selection via onRemove (the drop zone's per-file [X])", async () => {
+            isElectron.mockReturnValue(true);
+            await mount();
+            await act(async () => current().onChange([new File(["x"], "vault.zip")]));
+            await act(async () => current().onRemove());
+            expect(current().hasSelection).toBe(false);
+
+            pickFiles.mockResolvedValueOnce({ status: "selected", files: [{ token: "tok", fileName: "Vault.zip" }] });
+            await act(async () => {
+                current().onBrowse?.();
+            });
+            expect(current().hasSelection).toBe(true);
+            await act(async () => current().onRemove());
+            expect(current().hasSelection).toBe(false);
+            expect(current().displayNames).toBeUndefined();
         });
 
         it("exposes native browse/drop on desktop", async () => {
@@ -110,7 +122,7 @@ describe("useProviderImport", () => {
 
         it("stores the native pick and shows its filename, clearing any upload file", async () => {
             await mount();
-            await act(async () => current().onChange(fileListOf(new File(["x"], "dropped.zip"))));
+            await act(async () => current().onChange([new File(["x"], "dropped.zip")]));
             pickFiles.mockResolvedValueOnce({ status: "selected", files: [{ token: "tok", fileName: "Vault.zip" }] });
 
             await act(async () => {
@@ -174,7 +186,7 @@ describe("useProviderImport", () => {
         it("uploads the chosen file with the provider format and safe-import flags", async () => {
             await mount({ shrinkImages: true });
             const file = new File(["x"], "vault.zip");
-            await act(async () => current().onChange(fileListOf(file)));
+            await act(async () => current().onChange([file]));
             await act(async () => current().doImport());
 
             expect(closeDialog).toHaveBeenCalled();

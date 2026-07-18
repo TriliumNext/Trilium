@@ -439,9 +439,22 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
         // Existing item, check if it's in the right state.
         branch = note.getParentBranches().find((branch) => branch.parentNoteId === parentNoteId);
 
-        if (item.content && note.getContent() !== item.content) {
-            log.info(`Updating content of ${item.id}.`);
-            note.setContent(item.content);
+        if (item.content && !note.isContentAvailable()) {
+            // The note was protected by the user. Without a protected session the content can neither be
+            // read (getContent() returns "") nor written — attempting to write would throw and take down
+            // the whole hidden subtree check (see #10549), so leave the content alone.
+            log.info(`Skipping content update of ${item.id} since it is protected and no protected session is available.`);
+        } else if (item.content) {
+            try {
+                if (note.getContent() !== item.content) {
+                    log.info(`Updating content of ${item.id}.`);
+                    note.setContent(item.content);
+                }
+            } catch (e) {
+                // Unreadable content of a single built-in note (e.g. a missing blob row in a damaged
+                // database) must not abort — and thereby roll back — the entire hidden subtree check.
+                log.error(`Failed to update content of ${item.id}: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
+            }
         }
 
         if (item.enforceBranches || item.id.startsWith("_help")) {

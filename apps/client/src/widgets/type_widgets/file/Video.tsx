@@ -4,11 +4,13 @@ import { RefObject } from "preact";
 import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
+import { isMobile } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import NoItems from "../../react/NoItems";
+import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import MediaFileActions from "./MediaFileActions";
 import { playerRootClasses, preloadFor, showsFileActions, showsViewportControls, usesCompactControls } from "./media_environment";
-import { MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
+import { MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 
 const AUTO_HIDE_DELAY = 3000;
 
@@ -65,6 +67,7 @@ export default function VideoPreview({ source, entity, environment, noteContext,
     const onKeyDown = useKeyboardShortcuts(videoRef, wrapperRef, togglePlayback, flashControls);
     const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, videoRef);
     const siblingNavigation = useMediaSessionController({ source, entity, environment, noteContext, isVisible, autoPlay, mimePrefix: "video/", mediaRef: videoRef, playMode });
+    useMediaPlayerShortcutHints({ fullscreen: true });
     const compact = usesCompactControls(environment);
 
     if (error) {
@@ -128,6 +131,8 @@ export default function VideoPreview({ source, entity, environment, noteContext,
                     </>
                 )}
             </div>
+
+            {!compact && !isMobile() && <ShortcutHintButton className="media-hint-button" />}
         </div>
     );
 }

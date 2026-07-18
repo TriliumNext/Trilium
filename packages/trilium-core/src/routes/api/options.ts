@@ -43,6 +43,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "codeNoteThemeDark",
     "codeNoteTabWidth",
     "codeNoteIndentWithTabs",
+    "pdfSignatures",
     "syncServerHost",
     "syncServerTimeout",
     "syncServerTimeoutTimeScale",

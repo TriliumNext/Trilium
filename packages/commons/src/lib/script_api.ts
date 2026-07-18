@@ -292,6 +292,41 @@ interface RightPanelWidget extends NoteContextAwareWidget {
 /** Constructor type allowing `class X extends api.Widget { … }`. */
 type WidgetClass<T> = new (...args: unknown[]) => T;
 
+/** An attribute to create together with a note (see {@link ScriptCreateNoteOpts.attributes}). */
+export interface ScriptCreateAttribute {
+    type: "label" | "relation";
+    name: string;
+    value?: string;
+    isInheritable?: boolean;
+    position?: number;
+}
+
+/** Options accepted by {@link FrontendApi.createNote}. */
+export interface ScriptCreateNoteOpts {
+    /** Title of the new note. */
+    title?: string | null;
+    /** Content of the new note (HTML for text notes, source for code notes, etc.). */
+    content?: string | null;
+    /** Note type, e.g. "text" (default), "code", "book". */
+    type?: string;
+    /** MIME type, e.g. "application/javascript;env=frontend" for a frontend code note. */
+    mime?: string;
+    /** Note ID of a template to apply to the new note. */
+    templateNoteId?: string;
+    /** Create the note as protected (only takes effect when a protected session is available). */
+    isProtected?: boolean;
+    /** Activate (open) the new note after creation. Defaults to `true`. */
+    activate?: boolean;
+    /** Which part of the activated note to focus. Defaults to "title". */
+    focus?: "title" | "content";
+    /** Where to place the note relative to the parent/target: "into" (default) or "after". */
+    target?: string;
+    /** Branch ID used together with `target: "after"`. */
+    targetBranchId?: string;
+    /** Attributes to set atomically on creation. */
+    attributes?: ScriptCreateAttribute[];
+}
+
 /**
  * The `api` global available inside **frontend** script notes
  * (`application/javascript;env=frontend`).
@@ -398,6 +433,22 @@ export interface FrontendApi {
     runAsyncOnBackendWithManualTransactionHandling(func: Func, params?: unknown[]): Promise<unknown>;
 
     /**
+     * Whether backend script execution is enabled on the server (the
+     * `[Security] backendScriptingEnabled` config toggle). When it's disabled,
+     * `api.runOnBackend()` / `api.runAsyncOnBackendWithManualTransactionHandling()`
+     * reject with a "Backend script execution is disabled" error, so check this
+     * first to let a script degrade gracefully instead of throwing.
+     */
+    isBackendScriptingEnabled(): boolean;
+    /**
+     * Whether the SQL console is enabled on the server (the
+     * `[Security] sqlConsoleEnabled` config toggle). When it's disabled, backend
+     * scripts that run raw SQL (`api.sql.*`) fail, so check this before invoking
+     * SQL-backed logic via `api.runOnBackend()`.
+     */
+    isSqlConsoleEnabled(): boolean;
+
+    /**
      * This is a powerful search method - you can search by attributes and their values, e.g.:
      * "#dateModified =* MONTH AND #log". See full documentation for all options at: https://triliumnext.github.io/Docs/Wiki/search.html
      */
@@ -424,6 +475,17 @@ export interface FrontendApi {
      * Update frontend tree (note) cache from the backend.
      */
     reloadNotes(noteIds: string[]): Promise<void>;
+    /**
+     * Creates a new note as a child of the given parent, entirely on the frontend — no backend
+     * scripting required (unlike `api.runOnBackend(() => api.createTextNote(...))`). By default the
+     * new note is activated in the current tab with its title focused for editing; pass
+     * `{ activate: false }` to create it silently.
+     *
+     * @param parentNotePath note path (or noteId) of the parent under which to create the note
+     * @param opts creation options — e.g. `{ title, content, type, mime, activate }`
+     * @returns the created note and its branch, resolved from the frontend cache
+     */
+    createNote(parentNotePath: string, opts?: ScriptCreateNoteOpts): Promise<{ note: ScriptFNote | null; branch: ScriptFBranch | undefined }>;
     /**
      * Instance name identifies particular Trilium instance. It can be useful for scripts
      * if some action needs to happen on only one specific instance.
