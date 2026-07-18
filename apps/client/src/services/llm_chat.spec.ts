@@ -159,7 +159,7 @@ describe("streamChatCompletion", () => {
         expect(cb.onThinking).toHaveBeenCalledWith("TH");
         expect(cb.onToolInputStart).toHaveBeenCalledWith("c1", "search");
         expect(cb.onToolInputDelta).toHaveBeenCalledWith("c1", "{");
-        expect(cb.onToolUse).toHaveBeenCalledWith("c1", "search", { q: "x" });
+        expect(cb.onToolUse).toHaveBeenCalledWith("c1", "search", { q: "x" }, undefined);
         expect(cb.onToolResult).toHaveBeenCalledWith("c1", "search", "res", false);
         expect(cb.onCitation).toHaveBeenCalledWith({ id: "cit1" });
         expect(cb.onUsage).toHaveBeenCalledWith({ totalTokens: 10 });
