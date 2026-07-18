@@ -230,6 +230,20 @@ describe("ContentHintManager", () => {
             scoped.destroy();
         });
 
+        it("preserves a function-form customClass, prepending the content-hint marker class", () => {
+            // Bootstrap accepts `customClass` as a function; the manager must keep that
+            // shape (rather than coercing to a string) and still stamp CONTENT_HINT_CLASS.
+            // The wrapper is invoked by Bootstrap when the popup is shown.
+            const scoped = new ContentHintManager({
+                tooltipOptions: { customClass: () => "fn-scope" }
+            });
+            const handle = scoped.createHandle(a, "hello");
+            handle.show();
+            expect(livePopup()?.classList.contains("fn-scope")).toBe(true);
+            expect(livePopup()?.classList.contains(CONTENT_HINT_CLASS)).toBe(true);
+            scoped.destroy();
+        });
+
         it("marks the popup as a content hint even when the consumer passes no customClass", () => {
             // Zen mode hides content hints as a group via this class, so it can't depend on
             // consumers opting in — the collapsible drag-handle hints pass no customClass.

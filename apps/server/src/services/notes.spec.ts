@@ -113,6 +113,20 @@ describe("checkImageAttachments", () => {
             expect(att.save).not.toHaveBeenCalled();
         });
 
+        it("keeps attachments referenced from a link preview's data-image attribute alive", () => {
+            const note = buildNote({ title: "Test", attachments: [{ title: "image.jpg", role: "image", mime: "image/jpeg" }] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+            att.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
+
+            // A link preview carries its card image in a data attribute, not an <img src>.
+            const content = `<section class="link-embed" data-url="https://example.com"` +
+                ` data-image="api/attachments/${att.attachmentId}/image/image.jpg"></section>`;
+            checkImageAttachments(note, content);
+
+            expect(att.utcDateScheduledForErasureSince).toBeNull();
+        });
+
         it("schedules unreferenced attachments for erasure", () => {
             const note = buildNote({ title: "Test", attachments: [{ title: "test.png", role: "image", mime: "image/png" }] });
             mockAttachmentSaves(note);

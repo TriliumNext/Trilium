@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/standalone",
-  "version": "0.103.0",
+  "version": "0.104.0",
   "description": "Standalone client for TriliumNext with SQLite WASM backend",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -59,7 +59,7 @@
     "mark.js": "8.11.1",
     "marked": "18.0.6",
     "mermaid": "11.16.0",
-    "mind-elixir": "5.13.0",
+    "mind-elixir": "5.14.0",
     "panzoom": "9.4.4",
     "preact": "10.29.7",
     "react-i18next": "17.0.9",
@@ -80,7 +80,7 @@
     "@types/leaflet-gpx": "1.3.8",
     "@types/mark.js": "8.11.12",
     "@types/reveal.js": "5.2.2",
-    "@types/tabulator-tables": "6.3.5",
+    "@types/tabulator-tables": "6.3.6",
     "cross-env": "10.1.0",
     "happy-dom": "20.10.6",
     "vite-plugin-static-copy": "4.1.1"

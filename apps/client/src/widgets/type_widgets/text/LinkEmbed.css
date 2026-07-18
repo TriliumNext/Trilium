@@ -2,10 +2,38 @@
    Link previews - inline mention, card, video embed
    ========================================================================== */
 
+:where(:root) {
+    --link-preview-stack-gap: 3px;
+    --link-preview-video-max-height: 70vh;
+    --link-preview-video-facade-blur-radius: 20px;
+
+
+    --link-preview-card-background-color: var(--card-background-color);
+    --link-preview-card-hover-background-color: var(--card-background-hover-color);
+    --link-preview-card-image-background-color: var(--accented-background-color);
+    --link-preview-card-image-hover-filter: brightness(1.15);
+    --link-preview-card-title-color: var(--link-color);
+    --link-preview-card-description-text-color: var(--muted-text-color);
+    --link-preview-card-url-text-color: var(--muted-text-color);
+}
+
 /* ---------- Inline mention (favicon + title) ---------- */
 
-.link-mention {
+:root span.link-mention {
     display: inline;
+    border-radius: 4px;
+    outline: none !important;
+
+    &.ck-widget.ck-widget_selected {
+        box-shadow: 0 0 0 2px var(--link-selection-outline-color);
+        background-color: var(--link-hover-background);
+    }
+
+    /* In the editor the mention is a widget, not a live link, so suppress the pointer.
+       In read mode (no .ck-widget) the anchor keeps its cursor: pointer below. */
+    &.ck-widget a {
+        cursor: default !important;
+    }
 }
 
 .link-mention-inner {
@@ -13,25 +41,22 @@
 }
 
 .link-embed-mention {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    display: inline;
     padding: 1px 6px 1px 4px;
-    border-radius: 4px;
-    background: var(--accented-background-color, rgba(0, 0, 0, 0.04));
     text-decoration: none;
-    color: var(--main-text-color, #333);
     font-size: 0.92em;
     line-height: 1.5;
-    vertical-align: baseline;
     transition: background-color 0.12s;
     cursor: pointer;
+
+    /* inline (not inline-flex) so a long link wraps line-by-line through the paragraph;
+       clone keeps each wrapped fragment's padding/rounded corners where a background applies. */
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
 }
 
 .link-embed-mention:hover {
-    background: var(--hover-item-background-color, rgba(0, 0, 0, 0.08));
     text-decoration: none;
-    color: var(--main-text-color, #333);
 }
 
 .link-embed-mention-favicon {
@@ -50,6 +75,14 @@
     flex-shrink: 0;
 }
 
+/* Sits the favicon before the link text and spaces it off the title. Scoped to the mention so
+   it doesn't disturb the same favicon reused in the card's flex URL row. */
+.link-embed-mention > .link-embed-mention-favicon,
+.link-embed-mention > .link-embed-mention-dot {
+    vertical-align: -0.2em;
+    margin-right: 4px;
+}
+
 .link-embed-mention-title {
     white-space: normal;
     word-break: break-word;
@@ -58,8 +91,15 @@
 /* ---------- Block embed wrapper ---------- */
 
 .link-embed {
-    border-bottom: 3px solid transparent;
+    border-bottom: var(--link-preview-stack-gap) solid transparent;
 }
+
+.ck-widget.link-embed {
+    margin-bottom: var(--link-preview-stack-gap);
+    border-bottom: 0;
+    --ck-color-focus-border: var(--link-color);
+}
+
 .link-embed-preview-wrapper {
     display: block;
 }
@@ -76,14 +116,18 @@
 .link-embed-video {
     position: relative;
     width: 100%;
-    max-width: 640px;
-    border-radius: 8px;
     overflow: hidden;
-    background: #000;
+}
+
+.link-embed-preview-wrapper > .link-embed-video {
+    padding: 8px;
+    background: var(--main-background-color);
 }
 
 .link-embed-video iframe {
     width: 100%;
+    height: 100%;
+    max-height: var(--link-preview-video-max-height);
     aspect-ratio: 16 / 9;
     border: none;
     display: block;
@@ -92,23 +136,32 @@
 /* ---------- Click-to-play facade ----------
    Shown in place of the player until the user asks for it, so opening a note never contacts
    YouTube. The thumbnail is the one stored in the note, not a remote one. */
+   
 
 .link-embed-video-facade {
     position: relative;
     display: block;
     width: 100%;
+    height: 100%;
+    max-height: var(--link-preview-video-max-height);
     aspect-ratio: 16 / 9;
     padding: 0;
     border: none;
     background: #000;
     cursor: pointer;
+    overflow: hidden;
+
+    &:hover .link-embed-video-thumbnail {
+        filter: blur(var(--link-preview-video-facade-blur-radius)) brightness(0.65);
+    }
 }
 
-.link-embed-video-thumbnail {
+.link-embed-video-facade .link-embed-video-thumbnail {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
+    filter: blur(var(--link-preview-video-facade-blur-radius)) brightness(0.5);
 }
 
 .link-embed-video-play {
@@ -142,29 +195,32 @@
 
 /* ---------- Card embed (Notion-style) ---------- */
 
-a.link-embed-card {
+:root a.link-embed-card {
     all: unset;
     display: flex;
-    border-radius: 4px;
     overflow: hidden;
     color: inherit;
-    cursor: pointer;
     max-height: 120px;
 
-    background: var(--card-background-color);
-    border-radius: var(--_link-embed-top-border-radius, 8px)
-                   var(--_link-embed-top-border-radius, 8px)
-                   var(--_link-embed-bottom-border-radius, 8px)
-                   var(--_link-embed-bottom-border-radius, 8px);
+    background: var(--link-preview-card-background-color);
 }
 
-a.link-embed-card:hover {
-    background: var(--card-background-hover-color) !important;
-    text-decoration: none;
-    box-shadow: none;
+.link-embed-preview-wrapper .link-embed-card-image-wrapper,
+.link-embed-preview-wrapper .link-embed-card-content {
+    cursor: default;
+}
+
+/* In read mode the card is a real link, so show a pointer (all: unset above clears it). */
+:root *:not(.link-embed-preview-wrapper) > a.link-embed-card {
+    cursor: pointer;
+}
+
+/* The hover effect is applied to the card, but not in editable mode */
+:root *:not(.link-embed-preview-wrapper) > a.link-embed-card:hover {
+    background: var(--card-background-hover-color);
 
     & img {
-        filter: brightness(1.25);
+        filter: var(--link-preview-card-image-hover-filter);
     }
 }
 
@@ -172,21 +228,32 @@ a.link-embed-card::after {
     display: none !important;
 }
 
-/* The first card in series */
-section.link-embed:not(section.link-embed + section.link-embed) {
-    --_link-embed-bottom-border-radius: 0;
-}
+/* Cards in a series share flush edges; only the outer corners stay rounded. A card that
+   stands alone matches neither rule below and keeps the default 8px on every corner. */
 
+/* Square off the top when another card sits directly above. */
 section.link-embed + section.link-embed {
     --_link-embed-top-border-radius: 0;
+}
+
+/* Square off the bottom when another card sits directly below. */
+section.link-embed:has(+ section.link-embed) {
     --_link-embed-bottom-border-radius: 0;
 }
 
-/* The last card in series */
-section.link-embed:not(:has(+ section.link-embed)) {
-    --_link-embed-top-border-radius: 0;
-    --_link-embed-bottom-border-radius: 8px;
-
+/* Shared rounded-corner treatment for every previewable surface — the editing widget, the video
+   iframe/facade, and the card. --_link-embed-*-border-radius default to 8px and get squared to 0
+   on the touching edges of stacked cards (above), so all surfaces round alike. Kept after the card
+   rule so it outweighs that block's `all: unset` at the same specificity. */
+.ck-widget.link-embed,
+.link-embed-video,
+.link-embed-video iframe,
+.link-embed-video-facade,
+:root a.link-embed-card {
+    border-radius: var(--_link-embed-top-border-radius, 8px)
+                   var(--_link-embed-top-border-radius, 8px)
+                   var(--_link-embed-bottom-border-radius, 8px)
+                   var(--_link-embed-bottom-border-radius, 8px);
 }
 
 .link-embed-card-image-wrapper {
@@ -197,13 +264,24 @@ section.link-embed:not(:has(+ section.link-embed)) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--accented-background-color, #f5f5f5);
+    background: var(--link-preview-card-image-background-color);
 }
 
 .link-embed-card-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+/* Let a click/double-click land on the wrapping anchor (card) or button (facade), not the image
+   itself. Without this, Firefox treats an inline data: image in a contenteditable as a draggable,
+   openable resource and a double-click navigates the tab to the base64 URI instead of following
+   the card's link. The wrappers carry the interaction; the images never need pointer events. */
+.link-embed-card-image,
+.link-embed-video-thumbnail {
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-select: none;
 }
 
 .link-embed-card-image-placeholder {
@@ -233,11 +311,12 @@ section.link-embed:not(:has(+ section.link-embed)) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--link-preview-card-title-color);
 }
 
 .link-embed-card-description {
     font-size: 0.82em;
-    color: var(--muted-text-color, #888);
+    color: var(--link-preview-card-description-text-color);
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -250,7 +329,7 @@ section.link-embed:not(:has(+ section.link-embed)) {
     align-items: center;
     gap: 5px;
     font-size: 0.78em;
-    color: var(--muted-text-color, #999);
+    color: var(--link-preview-card-url-text-color);
     min-width: 0;
     margin-top: auto;
 

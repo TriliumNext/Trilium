@@ -19,7 +19,8 @@
     &.controls-hidden {
         cursor: pointer;
 
-        .media-preview-controls {
+        .media-preview-controls,
+        .media-hint-button {
             opacity: 0;
             pointer-events: none;
         }

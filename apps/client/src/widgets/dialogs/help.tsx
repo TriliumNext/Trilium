@@ -161,5 +161,5 @@ function Card({ title, children }: { title: string, children: ComponentChildren 
 }
 
 function editShortcuts() {
-    appContext.tabManager.openContextWithNote("_optionsShortcuts", { activate: true });
+    void appContext.triggerCommand("showOptions", { section: "_optionsShortcuts" });
 }

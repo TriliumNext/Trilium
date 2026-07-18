@@ -49,8 +49,12 @@ const INFO_LINE = /^\d{2}:\d{2}:\d{2}\.\d{3} JS Info:/;
 // `Becca (note cache) load took …ms`, `Content hash computation took …ms` — are not caught.
 const SLOW_QUERY = /^\d{2}:\d{2}:\d{2}\.\d{3} (Slow (?:recursive )?query)( took )(\d+ms)(?:: (.+))?/;
 
-/** Upper bound on how many (trailing) lines are highlighted, to cap the per-rebuild work. */
-export const MAX_HIGHLIGHTED_LINES = 10_000;
+/**
+ * Upper bound on how many (trailing) lines are highlighted, to cap the per-rebuild work. Sized well
+ * above a typical single-day backend log (which can be ~10k lines); only pathologically large logs
+ * lose highlighting on their oldest lines.
+ */
+export const MAX_HIGHLIGHTED_LINES = 30_000;
 
 const timestampMark = Decoration.mark({ class: "cm-log-timestamp" });
 const slowMark = Decoration.mark({ class: "cm-log-slow" });

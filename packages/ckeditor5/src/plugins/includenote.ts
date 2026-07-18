@@ -141,7 +141,9 @@ class IncludeNoteEditing extends Plugin {
 
 				viewWriter.insert( viewWriter.createPositionAt( section, 0 ), includedNoteWrapper );
 
-				return toWidget( section, viewWriter, { label: 'include note widget' } );
+				// hasSelectionHandle gives the block widget CKEditor's own drag grip so it moves
+				// atomically, instead of the browser's native drag tearing the embedded note apart.
+				return toWidget( section, viewWriter, { label: 'include note widget', hasSelectionHandle: true } );
 			}
 		} );
 

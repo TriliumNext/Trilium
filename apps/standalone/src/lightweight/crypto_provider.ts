@@ -22,7 +22,13 @@ const FORCE_B64_FALLBACK = typeof __TRILIUM_FORCE_B64_FALLBACK__ !== "undefined"
 export default class BrowserCryptoProvider implements CryptoProvider {
 
     createHash(algorithm: "md5" | "sha1" | "sha512", content: string | Uint8Array): Uint8Array {
-        const data = binary_utils.unwrapStringOrBuffer(content);
+        // Hash the raw bytes. Binary content must NOT be routed through unwrapStringOrBuffer
+        // (UTF-8 decoding): it is lossy for non-UTF-8 bytes (invalid sequences become U+FFFD),
+        // which produced digests diverging from the Node.js provider — e.g. protected binary
+        // notes encrypted on server/desktop failed their integrity digest here and decrypted
+        // to empty. For strings this is equivalent to before (the js-* libs UTF-8 encode
+        // string inputs internally).
+        const data = binary_utils.wrapStringOrBuffer(content);
 
         let hexHash: string;
         if (algorithm === "md5") {
@@ -65,10 +71,11 @@ export default class BrowserCryptoProvider implements CryptoProvider {
     }
 
     hmac(secret: string | Uint8Array, value: string | Uint8Array): string {
-        const secretStr = binary_utils.unwrapStringOrBuffer(secret);
-        const valueStr = binary_utils.unwrapStringOrBuffer(value);
+        // Same byte-vs-string rationale as createHash above: never UTF-8-decode binary inputs.
+        const secretBytes = binary_utils.wrapStringOrBuffer(secret);
+        const valueBytes = binary_utils.wrapStringOrBuffer(value);
         // sha256.hmac returns hex, convert to base64 to match Node's behavior
-        const hexHash = sha256.hmac(secretStr, valueStr);
+        const hexHash = sha256.hmac(secretBytes, valueBytes);
         const bytes = new Uint8Array(hexHash.length / 2);
         for (let i = 0; i < hexHash.length; i += 2) {
             bytes[i / 2] = parseInt(hexHash.substr(i, 2), 16);

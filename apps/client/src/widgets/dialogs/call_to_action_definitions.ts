@@ -78,7 +78,11 @@ const CALL_TO_ACTIONS: CallToAction[] = [
         buttons: [
             {
                 text: t("call_to_action.scripting_disabled_button"),
-                onClick: () => appContext.tabManager.openInNewTab("_optionsSecurity", "_hidden", true)
+                onClick: () => {
+                    // Not awaited: the CTA dialog hides itself right after onClick (goToNext),
+                    // so the settings modal opens on top of an already-closing dialog.
+                    void appContext.triggerCommand("showOptions", { section: "_optionsSecurity" });
+                }
             }
         ]
     },

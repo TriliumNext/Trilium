@@ -98,6 +98,17 @@ overrides:
   # electron/electron#51619). yauzl@>=3.3.1 is the maintainer-recommended fix.
   "extract-zip>yauzl": "3.4.0"
 
+# Trilium's Claude Agent provider (apps/server) runs the SDK in
+# "bring-your-own-binary" mode (pathToClaudeCodeExecutable), so the ~250 MB
+# bundled per-platform binaries are never used and must not be downloaded into
+# every server install and Docker layer. Only the tiny JS wrapper is kept.
+# Declarative replacement for the former .pnpmfile.cjs readPackage hook: a
+# pnpmfile pins a pnpmfileChecksum into the lockfile, which Renovate's
+# --ignore-pnpmfile lockfile updates silently drop, breaking every frozen
+# CI install on its PRs (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH).
+ignoredOptionalDependencies:
+  - "@anthropic-ai/claude-agent-sdk-*"
+
 patchedDependencies:
   "@ckeditor/ckeditor5-mention": patches/@ckeditor__ckeditor5-mention.patch
   "@ckeditor/ckeditor5-code-block": patches/@ckeditor__ckeditor5-code-block.patch

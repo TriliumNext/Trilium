@@ -1,4 +1,4 @@
-import { _setModelData as setModelData, ClassicEditor, Essentials, Paragraph } from "ckeditor5";
+import { _setModelData as setModelData, ClassicEditor, Essentials, List, Paragraph } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
@@ -45,6 +45,21 @@ describe("CutToNotePlugin", () => {
         expect(html).toContain("first");
         expect(html).toContain("second");
         expect(html).toContain("<p>");
+    });
+
+    it("omits editor-only data-list-item-id from getSelectedHtml via the clipboard pipeline", async () => {
+        const listEditor = await createTestEditor([Essentials, Paragraph, List, CutToNotePlugin]);
+        setModelData(
+            listEditor.model,
+            `<paragraph listIndent="0" listItemId="a00" listType="bulleted">[foo]</paragraph>`
+        );
+
+        // Stored/data output keeps the id; the clipboard-pipeline selection drops it.
+        expect(listEditor.getData()).toContain("data-list-item-id");
+
+        const html = listEditor.getSelectedHtml();
+        expect(html).toContain("foo");
+        expect(html).not.toContain("data-list-item-id");
     });
 
     it("removeSelection deletes the selection, inserts a paragraph and saves the note", async () => {

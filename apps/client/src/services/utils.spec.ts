@@ -28,6 +28,7 @@ import utils, {
     reloadFrontendApp,
     replaceHtmlEscapedSlashes,
     restartDesktopApp,
+    rootCauseMessage,
     toggleBodyClass
 } from "./utils.js";
 
@@ -805,6 +806,38 @@ describe("getErrorMessage", () => {
         expect(getErrorMessage("plain string")).toBe("Unknown error");
         expect(getErrorMessage({ message: 5 })).toBe("Unknown error");
         expect(getErrorMessage(null)).toBe("Unknown error");
+    });
+});
+
+describe("rootCauseMessage", () => {
+    it("walks the cause chain to the bottom and returns the root message", () => {
+        const root = new Error("boom");
+        const middle = new Error(`Load of script note "B" (id2) failed with: boom`, { cause: root });
+        const outer = new Error(`Load of script note "A" (id1) failed with: ...`, { cause: middle });
+        expect(rootCauseMessage(outer)).toBe("boom");
+    });
+
+    it("returns the message of an unwrapped error or error-like object as-is", () => {
+        expect(rootCauseMessage(new Error("plain"))).toBe("plain");
+        expect(rootCauseMessage({ message: "server-side" })).toBe("server-side");
+    });
+
+    it("passes strings through and stringifies other primitives", () => {
+        expect(rootCauseMessage("raw string")).toBe("raw string");
+        expect(rootCauseMessage(42)).toBe("42");
+        expect(rootCauseMessage(new Error("outer", { cause: "string cause" }))).toBe("string cause");
+    });
+
+    it("does not loop forever on a cyclic cause chain", () => {
+        const self = new Error("self-cycle");
+        self.cause = self;
+        expect(rootCauseMessage(self)).toBe("self-cycle");
+
+        // A longer cycle: a -> b -> a. Walking stops once a repeat is seen.
+        const a = new Error("a");
+        const b = new Error("b", { cause: a });
+        a.cause = b;
+        expect(rootCauseMessage(b)).toBe("a");
     });
 });
 

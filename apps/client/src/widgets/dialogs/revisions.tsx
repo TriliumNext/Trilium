@@ -304,7 +304,7 @@ function RevisionsMenu({ note, onRevisionSaved, onAllDeleted, hasRevisions }: {
             </FormListItem>
             <FormListItem
                 icon="bx bx-cog"
-                onClick={() => appContext.tabManager.openContextWithNote("_optionsOther", { activate: true })}
+                onClick={() => void appContext.triggerCommand("showOptions", { section: "_optionsOther" })}
             >
                 {t("revisions.settings")}
             </FormListItem>

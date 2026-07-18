@@ -12,7 +12,11 @@ import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
 import type NoteContext from "../../../components/note_context";
 import { t } from "../../../services/i18n";
+import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
+import { isMobile } from "../../../services/utils";
+import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import ContentErrorMessage from "../ContentErrorMessage";
+import { useContextualShortcutHints } from "../hooks";
 import { type SiblingNavigationState, useSiblingKeyboard } from "../SiblingNavigator";
 import type { MediaGallery } from "./gallery";
 import { awaitImageReveal, type ImageReveal } from "./image_decode";
@@ -47,6 +51,44 @@ const INLINE_PROPS = { style: { width: "100%", height: "100%" } };
  * pan gesture oscillates between two fixed levels so the zoom never drifts.
  */
 const PAN_ZOOM_JIGGLE = 0.999;
+
+/** Contextual shortcut hints (Alt+F1 / the `?` overlay button), mirroring the wiring in {@link useMediaViewerKeyboard}. */
+const MEDIA_VIEWER_HINTS: ShortcutHintDefinition = [
+    {
+        titleKey: "media_viewer.hints.zoom",
+        hints: [
+            { keys: [ "+", "E" ], labelKey: "media_viewer.hints.zoom_in" },
+            { keys: [ "-", "Q" ], labelKey: "media_viewer.hints.zoom_out" },
+            { keys: [ "/", "Numpad /" ], labelKey: "media_viewer.hints.reset_zoom" }
+        ]
+    },
+    {
+        titleKey: "media_viewer.hints.pan",
+        hints: [
+            { keys: [ "Up", "W" ], labelKey: "media_viewer.hints.pan_up" },
+            { keys: [ "Down", "S" ], labelKey: "media_viewer.hints.pan_down" },
+            { keys: [ "Left", "A" ], labelKey: "media_viewer.hints.pan_left" },
+            { keys: [ "Right", "D" ], labelKey: "media_viewer.hints.pan_right" },
+            { keys: [ "Shift" ], labelKey: "media_viewer.hints.pan_fast" }
+        ]
+    },
+    {
+        titleKey: "media_viewer.hints.navigation",
+        hints: [
+            { keys: [ "Space", "PageDown" ], labelKey: "media_viewer.hints.next_image" },
+            { keys: [ "Backspace", "PageUp" ], labelKey: "media_viewer.hints.previous_image" },
+            { keys: [ "Home" ], labelKey: "media_viewer.hints.first_image" },
+            { keys: [ "End" ], labelKey: "media_viewer.hints.last_image" }
+        ]
+    },
+    {
+        titleKey: "media_viewer.hints.fullscreen",
+        hints: [
+            { keys: [ "F" ], labelKey: "media_viewer.hints.toggle_fullscreen" },
+            { keys: [ "Escape" ], labelKey: "media_viewer.hints.exit_fullscreen" }
+        ]
+    }
+];
 
 /** The surface the toolbar/keyboard drive. All ratios are native-relative: 1 = actual pixel size. */
 export interface MediaViewerApi {
@@ -380,6 +422,7 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
     internalApiRef.current = api;
 
     useMediaViewerKeyboard(internalApiRef, rootRef, gallery);
+    useContextualShortcutHints(MEDIA_VIEWER_HINTS);
     // Document-level gallery keys (PageUp/PageDown/Home/End + Backspace/Space), active-tab scoped.
     useSiblingKeyboard(toSiblingNavigation(gallery), noteContext, undefined, MEDIA_PREVIOUS_KEYS, MEDIA_NEXT_KEYS);
 
@@ -443,6 +486,10 @@ export default function MediaViewer({ gallery, noteContext, isVisible = true, on
             />
 
             {loadingError && <ContentErrorMessage message={t("media_viewer.loading_error")} />}
+
+            {!isMobile() && loaded && !loadingError && (
+                <ShortcutHintButton className="media-viewer-hint-button" />
+            )}
 
             {loaded && !loadingError && (
                 <MediaViewerToolbar

@@ -274,15 +274,15 @@
     /* Backend log (the `text/x-trilium-log` code note MIME) */
     --log-timestamp-color: #818181;
     --log-slow-color: #ffbb7f;
-    --log-http-line-background-color: rgba(255, 255, 255, 0.02);
+    --log-http-line-background-color: #826cd00e;
     --log-http-verb-color: #d99bf4;
     --log-http-url-color: #d0b6e4;
     --log-status-success-color: #74d369;
     --log-status-redirect-color: #69b8d3;
     --log-status-client-error-color: #d3c769;
     --log-status-server-error-color: #d36969;
-    --log-query-verb-color: #f4c79b;
-    --log-query-line-background-color: transparent;
+    --log-query-verb-color: #fa74bb;
+    --log-query-line-background-color: #edbe670f;
     --log-sql-color: #f4c8ae;
     --log-error-color: #FF867F;
     --log-error-line-background-color: #d44b4b1f;

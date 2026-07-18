@@ -44,7 +44,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     // editor-creation time, so the editor must be recreated when it changes.
     const [ multilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar");
     const [ editor, setEditor ] = useState<CKTextEditor>();
-    const { parentComponent, ntxId } = useNoteContext();
+    const { parentComponent, ntxId, note } = useNoteContext();
 
     useKeyboardShortcuts("text-detail", containerRef, parentComponent, ntxId);
 
@@ -151,7 +151,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
             await link.loadReferenceLinkTitle($el, href);
         },
         async fetchLinkMetadata(url: string) {
-            return await linkEmbedService.fetchMetadata(url);
+            return await linkEmbedService.fetchMetadata(url, note?.noteId);
         },
         detectEmbedType(url: string) {
             return linkEmbedService.detectEmbedType(url);

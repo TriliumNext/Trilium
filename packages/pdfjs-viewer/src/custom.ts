@@ -91,6 +91,7 @@ function configurePdfViewerOptions() {
             window.PDFViewerApplicationOptions.set("disablePreferences", true);
             window.PDFViewerApplicationOptions.set("enableHighlightFloatingButton", true);
             window.PDFViewerApplicationOptions.set("enableComment", true);
+            window.PDFViewerApplicationOptions.set("enableSignatureEditor", true);
             if (locale) {
                 window.PDFViewerApplicationOptions.set("localeProperties", { lang: locale });
             }

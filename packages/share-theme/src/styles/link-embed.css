@@ -5,9 +5,7 @@
 /* ---------- Inline mention (favicon + title) ---------- */
 
 .link-embed-mention {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    display: inline;
     padding: 1px 6px 1px 4px;
     border-radius: 4px;
     background: var(--background-highlight);
@@ -15,8 +13,12 @@
     color: var(--text-primary);
     font-size: 0.92em;
     line-height: 1.5;
-    vertical-align: baseline;
     transition: background-color 0.12s;
+
+    /* inline (not inline-flex) so a long link wraps line-by-line through the paragraph;
+       clone keeps each wrapped fragment's padding/rounded corners and background. */
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
 }
 
 .link-embed-mention:hover {
@@ -41,6 +43,14 @@
     flex-shrink: 0;
 }
 
+/* Sits the favicon before the link text and spaces it off the title. Scoped to the mention so
+   it doesn't disturb the same favicon reused in the card's flex URL row. */
+.link-embed-mention > .link-embed-mention-favicon,
+.link-embed-mention > .link-embed-mention-dot {
+    vertical-align: -0.2em;
+    margin-right: 4px;
+}
+
 .link-embed-mention-title {
     white-space: normal;
     word-break: break-word;
@@ -56,8 +66,8 @@
 
 .link-embed-video {
     position: relative;
-    width: 100%;
     max-width: 640px;
+    margin: auto;
     border-radius: 8px;
     overflow: hidden;
     background: #000;
@@ -90,6 +100,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    filter: blur(20px) brightness(0.65);
 }
 
 .link-embed-video-play {
@@ -125,6 +136,7 @@
 
 .link-embed-card {
     display: flex;
+    width: 100%;
     border: 1px solid var(--background-highlight);
     border-radius: 4px;
     overflow: hidden;

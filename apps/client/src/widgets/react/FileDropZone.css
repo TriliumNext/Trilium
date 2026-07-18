@@ -5,7 +5,6 @@
     justify-content: center;
     width: 100%;
     min-height: 8em;
-    padding: 0.5em 1.5em;
     border: 1px solid var(--main-border-color);
     border-radius: 8px;
     background: var(--accented-background-color);
@@ -56,15 +55,10 @@
     width: 100%;
 }
 
-.file-drop-zone-count {
-    color: var(--muted-text-color);
-    font-size: 0.9em;
-}
-
 .file-drop-zone-files {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 1em;
     display: flex;
     flex-direction: column;
     gap: 0.35em;
@@ -85,4 +79,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.file-drop-zone-remove {
+    margin-left: auto;
+    flex-shrink: 0;
 }

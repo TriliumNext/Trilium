@@ -125,6 +125,14 @@ describe("Share API test", () => {
         expect(cannotSetHeadersCount).toBe(0);
     });
 
+    it("rejects search results whose note path bypasses the share ancestor (clones)", async () => {
+        // A note cloned both under the share tree and elsewhere can surface with a
+        // best note path that never passes through the requested ancestor — such a
+        // result must be treated as not visible.
+        const { isVisibleInShareTree } = await import("./routes.js");
+        expect(isVisibleInShareTree(SHARE_ROOT_ID, ["root", "someUnsharedNote"])).toBe(false);
+    });
+
     it("renders custom share template", async () => {
         // Custom EJS templates require scripting to be enabled
         const originalEnabled = config.Security.backendScriptingEnabled;

@@ -1,3 +1,14 @@
+/** Mirror the quick-edit popup's z-index scheme (see PopupEditor.css). Reduce the popup below the
+    standard dialog layer so dialogs (delete/confirm) and ckeditor popups opened from within it show
+    on top instead of tying with it at Bootstrap's default 1055. */
+body.tree-popup-open:not(.tree-popup-stacked) > .modal-backdrop { z-index: 998; }
+body.tree-popup-open:not(.tree-popup-stacked) .tree-popup-editor-dialog { z-index: 999; }
+
+/** When stacked on top of another modal (e.g. opened from the Options dialog's Related Settings),
+    raise the popup and its own backdrop above the underlying modal. */
+body.tree-popup-stacked .tree-popup-editor-dialog { z-index: 1100; }
+.modal-backdrop.tree-popup-backdrop { z-index: 1099; }
+
 .modal.tree-popup-editor-dialog .modal-dialog {
     width: 90vw;
     max-width: 1100px;

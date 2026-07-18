@@ -28,7 +28,7 @@ export default class KbdEditing extends Plugin {
 		editor.model.schema.extend( '$text', { allowAttributes: KBD } );
 		editor.model.schema.setAttributeProperties( KBD, {
 			isFormatting: true,
-			copyOnEnter: true
+			copyOnEnter: false
 		} );
 
 		// Enable two-step caret movement so the user can arrow out of the kbd element.

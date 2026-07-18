@@ -44,10 +44,15 @@ function getStats() {
         return {};
     }
 
+    const initialized = getSql().getValue("SELECT value FROM options WHERE name = 'initialized'") === "true";
     const stats = {
-        initialized: getSql().getValue("SELECT value FROM options WHERE name = 'initialized'") === "true",
+        initialized,
         outstandingPullCount: syncService.getOutstandingPullCount(),
-        totalPullCount: syncService.getTotalPullCount()
+        totalPullCount: syncService.getTotalPullCount(),
+        // Lets the setup wizard's progress screen detect a failed initial sync (#10548).
+        // Only exposed pre-initialization: this endpoint is unauthenticated, so once the
+        // instance is up and running, sync errors must not leak to anonymous visitors.
+        ...(initialized ? {} : { lastSyncError: syncService.getLastSyncError() })
     };
 
     getLog().info(`Returning sync stats: ${JSON.stringify(stats)}`);

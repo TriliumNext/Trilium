@@ -64,24 +64,17 @@ function setupContextMenu() {
                 title: t("electron_context_menu.copy-as-markdown"),
                 uiIcon: "bx bx-copy-alt",
                 handler: async () => {
-                    const selection = window.getSelection();
-                    if (!selection || !selection.rangeCount) return '';
+                    const htmlContent = await getSelectedHtmlForMarkdown();
+                    if (!htmlContent) return;
 
-                    const range = selection.getRangeAt(0);
-                    const div = document.createElement('div');
-                    div.appendChild(range.cloneContents());
-
-                    const htmlContent = div.innerHTML;
-                    if (htmlContent) {
-                        try {
-                            const { markdownContent } = await server.post<{ markdownContent: string }>(
-                                "other/to-markdown",
-                                { htmlContent }
-                            );
-                            await clipboardExt.copyTextWithToast(markdownContent);
-                        } catch (error) {
-                            console.error("Failed to copy as markdown:", error);
-                        }
+                    try {
+                        const { markdownContent } = await server.post<{ markdownContent: string }>(
+                            "other/to-markdown",
+                            { htmlContent }
+                        );
+                        await clipboardExt.copyTextWithToast(markdownContent);
+                    } catch (error) {
+                        console.error("Failed to copy as markdown:", error);
                     }
                 }
             });
@@ -177,6 +170,46 @@ function setupContextMenu() {
             }
         });
     });
+}
+
+/**
+ * Returns the HTML to feed to the Markdown converter for the "Copy as Markdown" action.
+ *
+ * When the selection lives inside the active text note's CKEditor, we take the editor's
+ * data-pipeline HTML (`getSelectedHtml()`) — clean stored markup without the editing-view
+ * artifacts (`data-list-item-id`, collapsible handle/arrow spans, bogus-paragraph wrappers)
+ * that cloning the live DOM range drags along. For any other selection (read-only notes,
+ * dialogs, plain inputs) we fall back to cloning the DOM range.
+ */
+export async function getSelectedHtmlForMarkdown(): Promise<string> {
+    const note = appContext.tabManager.getActiveContextNote();
+
+    if (note?.type === "text") {
+        try {
+            const editor = await appContext.tabManager.getActiveContext()?.getTextEditor();
+            const domRoot = editor?.editing.view.getDomRoot();
+            const anchorNode = window.getSelection()?.anchorNode;
+
+            // Only trust the editor's model selection when the live DOM selection is
+            // actually inside the editor; otherwise a stale editor selection would win
+            // over what the user right-clicked (e.g. selected text in a dialog).
+            if (editor && domRoot && anchorNode && domRoot.contains(anchorNode)) {
+                const selectedHtml = editor.getSelectedHtml();
+                if (selectedHtml) return selectedHtml;
+            }
+        } catch (error) {
+            // Editor not ready or the request timed out — fall through to the DOM clone.
+            console.error("Failed to read selection from the text editor:", error);
+        }
+    }
+
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return "";
+
+    const range = selection.getRangeAt(0);
+    const div = document.createElement("div");
+    div.appendChild(range.cloneContents());
+    return div.innerHTML;
 }
 
 export default {

@@ -1,4 +1,5 @@
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 interface FakeSlide {
@@ -77,8 +78,23 @@ vi.mock("./orientation", async (importOriginal) => {
     const original = await importOriginal<typeof import("./orientation")>();
     return { ...original, renderOrientedImage: vi.fn() };
 });
-vi.mock("../hooks", () => ({ useStaticTooltip: () => {}, useTriliumEvent: () => {} }));
+// Keep the real hooks (useContextualShortcutHints is exercised below), but stub the ones that
+// need real layout (bootstrap tooltips) or the live app event bus.
+vi.mock("../hooks", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../hooks")>()),
+    useStaticTooltip: () => {},
+    useTriliumEvent: () => {}
+}));
+// The real hint button resolves the user's Alt+F1 binding through the server-backed keyboard
+// actions service; its own behavior is covered by shortcut_hint_button.spec.tsx.
+vi.mock("../../shortcut_hints/shortcut_hint_button", async () => {
+    const { h } = await import("preact");
+    return { default: ({ className }: { className?: string }) => h("div", { className }) };
+});
 
+import Component from "../../../components/component";
+import { collectShortcutHints } from "../../../services/shortcut_hints";
+import { ParentComponent } from "../react_utils";
 import type { MediaGallery, MediaViewerItem } from "./gallery";
 import MediaViewer, { type MediaViewerApi, toSiblingNavigation } from "./MediaViewer";
 import { renderOrientedImage } from "./orientation";
@@ -222,8 +238,36 @@ describe("MediaViewer", () => {
         settleImage();
         await vi.waitFor(() => expect(container.querySelector(".media-viewer-root")?.classList.contains("img-loaded")).toBe(true));
         expect(container.querySelector(".content-error-message")).toBeNull();
-        // The toolbar only appears once the image is displayable.
+        // The toolbar and the shortcut-hints button only appear once the image is displayable.
         expect(container.querySelector(".media-viewer-toolbar")).not.toBeNull();
+        expect(container.querySelector(".media-viewer-hint-button")).not.toBeNull();
+    });
+
+    it("registers its contextual shortcut hints on the host component", () => {
+        const host = new Component();
+        const container = document.createElement("div");
+        mountedContainers.push(container);
+        // preact's act() returns a thenable, but rendering and effect flushing complete synchronously.
+        void act(() => render(
+            <ParentComponent.Provider value={host}>
+                <MediaViewer gallery={makeGallery([ makeItem("a") ])} />
+            </ParentComponent.Provider>,
+            container
+        ));
+
+        const sections = collectShortcutHints(host);
+        expect(sections.map(section => section.titleKey)).toEqual([
+            "media_viewer.hints.zoom",
+            "media_viewer.hints.pan",
+            "media_viewer.hints.navigation",
+            "media_viewer.hints.fullscreen"
+        ]);
+        expect(sections[2].hints.map(hint => hint.labelKey)).toEqual([
+            "media_viewer.hints.next_image",
+            "media_viewer.hints.previous_image",
+            "media_viewer.hints.first_image",
+            "media_viewer.hints.last_image"
+        ]);
     });
 
     it("shows the error overlay when the viewed image truly fails to load", async () => {

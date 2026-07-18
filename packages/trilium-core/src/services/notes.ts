@@ -461,6 +461,9 @@ export function checkImageAttachments(note: BNote, content: string) {
             : [
                 // <img src="api/attachments/{id}/image/...">
                 /src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image/g,
+                // Link previews reference their card image from a data attribute, not an <img>:
+                // <section class="link-embed" data-image="api/attachments/{id}/image/...">
+                /data-image="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image/g,
                 // <a href="...attachmentId={id}">
                 /href="[^"]+attachmentId=([a-zA-Z0-9_]+)/g
             ];

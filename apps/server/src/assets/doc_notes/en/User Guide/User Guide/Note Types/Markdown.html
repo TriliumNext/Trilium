@@ -82,6 +82,38 @@
       class="reference-link" href="#root/_help_m1lbrzyKDaRB">Note ID</a>):</p><pre><code class="language-text-x-trilium-auto">[[Hg8TS5ZOxti6]]</code></pre>
   </li>
   <li>
+    <p>To-do lists with extended task states:</p>
+    <table class="ck-table-resized"
+    style="border-style:none">
+      <colgroup>
+        <col style="width:80.6%;">
+          <col style="width:19.4%;">
+      </colgroup>
+      <tbody>
+        <tr>
+          <td><pre><code class="language-text-x-markdown">- [ ] None
+- [/] Doing
+- [X] Done
+- [?] Maybe
+- [-] Cancelled</code></pre>
+          </td>
+          <td>
+            <figure class="image image-style-align-right">
+              <img style="aspect-ratio:218/221;" src="Markdown_image.png"
+              width="218" height="221">
+            </figure>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Task states are customizable: you can reorder them, create new ones with
+      different colors and symbols, or delete the ones you don't need. See&nbsp;
+      <a
+      class="reference-link" href="#root/_help_i16PM6A7GXdU">Customizing to-do task states</a>&nbsp;for more details.</p>
+    <p>Note that to-do items with task states other than "None" and "Done" are
+      Trilium-specific and may not work well with other Markdown software.</p>
+  </li>
+  <li>
     <p><a class="reference-link" href="#root/_help_AgjCISero73a">Footnotes</a>&nbsp;are
       also supported via the corresponding Markdown syntax:</p><pre><code class="language-text-x-trilium-auto">This is [^1], while this is [^2].
 
@@ -92,7 +124,7 @@
     </ul>
   </li>
   <li>
-    <p>Page breaks for&nbsp;<a class="reference-link" href="#root/jdjRLhLV3TtI/yeqU0zo0ZQ83/_help_W0msUwLxm40d">Printing and exporting to PDF</a>:</p><pre><code class="language-text-x-trilium-auto">&lt;div class="page-break"&gt;&lt;/div&gt;</code></pre>
+    <p>Page breaks for&nbsp;<a class="reference-link" href="#root/_help_NRnIZmSMc5sj">Printing &amp; Exporting as PDF</a>:</p><pre><code class="language-text-x-trilium-auto">&lt;div class="page-break"&gt;&lt;/div&gt;</code></pre>
   </li>
 </ul>
 <h3>Links</h3>
@@ -116,6 +148,10 @@
   <li>Use the <em>Add link</em> dialog by pressing <kbd>Ctrl</kbd>+<kbd>L</kbd> or
     typing the <code spellcheck="false">/link</code> command.</li>
 </ul>
+<p><a class="reference-link" href="#root/_help_UmgZAfcltxkS">Link Previews</a>&nbsp;are
+  also rendered, but there is no mechanism to insert them automatically as
+  of now, they have to be copied from a&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note
+  instead.</p>
 <h3>Keyboard shortcuts</h3>
 <p>The Markdown notes share some of the keyboard shortcuts from&nbsp;<a class="reference-link"
   href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes:</p>
@@ -243,22 +279,9 @@
   links to attachments so that they are replaced with a relative path to
   the attachment. On import, the links are re-written back.</p>
 <h2>Conversion between text notes and Markdown notes</h2>
-<p>Currently there is no built-in functionality to convert a&nbsp;<a class="reference-link"
-  href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note into a Markdown note or vice-versa.
-  We do have plans to address this in the future.</p>
-<p>This can be achieved manually, for a single note:</p>
-<ol>
-  <li>Export the file as Markdown, with single format.</li>
-  <li>Import the file again, but unchecking <em>Import HTML, Markdown and TXT as text notes if it's unclear from the metadata</em>.</li>
-</ol>
-<p>For multiple notes, the process is slightly more involved:</p>
-<ol>
-  <li>Export the file as Markdown, ZIP.</li>
-  <li>Extract the archive.</li>
-  <li>Remove the <code spellcheck="false">!!!meta.json</code> file.</li>
-  <li>Compress the extracted files back into an archive.</li>
-  <li>Import the newly create archive, but unchecking <em>Import HTML, Markdown and TXT as text notes if it's unclear from the metadata</em>.</li>
-</ol>
+<p><a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes
+  can be converted into Markdown notes and vice versa. See&nbsp;<a class="reference-link"
+  href="#root/_help_jludwdW7N4hg">Converting between note types</a>.</p>
 <h2>Sync-scrolling &amp; block highlight</h2>
 <p>When scrolling through the editing pane, the preview pane will attempt
   to synchronize its position to make it easier to see the preview.</p>

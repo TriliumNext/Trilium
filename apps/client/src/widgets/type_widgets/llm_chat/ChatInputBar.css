@@ -111,7 +111,15 @@
     outline: none;
 
     p {
-        margin: 0 !important;
+        margin-bottom: 0.5rem;
+
+        &:first-child {
+            margin-top: 0;
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
     }
 }
 
@@ -123,14 +131,6 @@
 .llm-chat-input.ck-read-only {
     opacity: 0.6;
     cursor: not-allowed;
-}
-
-.llm-chat-input.ck-content p {
-    margin: 0;
-}
-
-.llm-chat-input.ck-content p + p {
-    margin-top: 0.25rem;
 }
 
 .llm-chat-input.ck-content .mention {

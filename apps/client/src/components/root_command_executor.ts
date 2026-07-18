@@ -3,6 +3,7 @@ import froca from "../services/froca.js";
 import openService from "../services/open.js";
 import options from "../services/options.js";
 import protectedSessionService from "../services/protected_session.js";
+import { collectShortcutHints } from "../services/shortcut_hints.js";
 import treeService from "../services/tree.js";
 import utils, { openInReusableSplit } from "../services/utils.js";
 import appContext, { type CommandListenerData } from "./app_context.js";
@@ -15,6 +16,11 @@ export default class RootCommandExecutor extends Component {
             noteContext.viewScope.readOnlyTemporarilyDisabled = true;
             appContext.triggerEvent("readOnlyTemporarilyDisabled", { noteContext });
         }
+    }
+
+    async showShortcutHintsCommand() {
+        const sections = collectShortcutHints(await resolveFocusedComponent());
+        appContext.triggerEvent("shortcutHintsRequested", { sections });
     }
 
     async showSQLConsoleCommand() {
@@ -244,4 +250,20 @@ export default class RootCommandExecutor extends Component {
         }
     }
 
+}
+
+/**
+ * The component to start collecting shortcut hints from: the one owning the focused element, or —
+ * when nothing focusable is (e.g. the image/media viewers) — the active pane's type widget.
+ */
+async function resolveFocusedComponent(): Promise<Component | undefined> {
+    const activeEl = document.activeElement;
+    if (activeEl instanceof HTMLElement) {
+        const component = appContext.getComponentByEl(activeEl) as Component | undefined;
+        if (component) {
+            return component;
+        }
+    }
+
+    return appContext.tabManager.getActiveContext()?.getTypeWidget();
 }

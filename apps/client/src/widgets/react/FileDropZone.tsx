@@ -4,10 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import { isMobile } from "../../services/utils";
+import ActionButton from "./ActionButton";
 
 export interface FileDropZoneProps {
     name?: string;
-    onChange: (files: FileList | null) => void;
+    /** Reports the current selection after every change (picking, dropping, per-file removal, clearing); `null` when empty. */
+    onChange: (files: File[] | null) => void;
     multiple?: boolean;
     /** Optional `accept` attribute forwarded to the underlying file input (e.g. `".zip"`). */
     accept?: string;
@@ -26,14 +28,21 @@ export interface FileDropZoneProps {
      * `true` if handled — the upload `onChange` is then skipped; return `false` to fall back to upload.
      */
     onNativeDrop?: (files: File[]) => Promise<boolean>;
+    /**
+     * Called when the user removes an *external* entry (`displayNames[index]`) via its per-file [X].
+     * Internal selections are trimmed by the zone itself and reported through `onChange`; callers
+     * passing `displayNames` must pass this too.
+     */
+    onRemove?: (index: number) => void;
 }
 
 /**
  * A styled drop region for selecting files: drag-and-drop onto it or click it to open the native file
- * picker. Selected files are listed inside. Drop-in replacement for {@link FormFileUpload} — same
- * `onChange(files)` / `multiple` contract.
+ * picker. Selected files are listed inside, each removable via its own [X]. Covers the same role as
+ * {@link FormFileUpload}, but reports the selection as a `File[]` (so per-file removal can be
+ * expressed) rather than the input's raw `FileList`.
  */
-export default function FileDropZone({ name, onChange, multiple, accept, onBrowse, displayNames, onNativeDrop }: FileDropZoneProps) {
+export default function FileDropZone({ name, onChange, multiple, accept, onBrowse, displayNames, onNativeDrop, onRemove }: FileDropZoneProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [files, setFiles] = useState<File[]>([]);
     const [dragging, setDragging] = useState(false);
@@ -54,7 +63,7 @@ export default function FileDropZone({ name, onChange, multiple, accept, onBrows
     const update = useCallback((list: FileList | null) => {
         const selected = list && list.length ? (multiple ? Array.from(list) : [list[0]]) : [];
         setFiles(selected);
-        onChange(selected.length ? list : null);
+        onChange(selected.length ? selected : null);
     }, [multiple, onChange]);
 
     const onDragEnter = useCallback((e: DragEvent) => {
@@ -86,6 +95,24 @@ export default function FileDropZone({ name, onChange, multiple, accept, onBrows
         update(dropped);
     }, [update, onNativeDrop]);
 
+    // Removes a single entry. An external (native) selection belongs to the caller, so its entries go
+    // through onRemove; internal ones are trimmed here and reported via onChange. The input's value is
+    // dropped so its stale FileList can't resurface and re-picking the same file still fires a change event.
+    const removeAt = useCallback((e: MouseEvent, index: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (displayNames?.length) {
+            onRemove?.(index);
+            return;
+        }
+        if (inputRef.current) {
+            inputRef.current.value = "";
+        }
+        const remaining = files.filter((_, i) => i !== index);
+        setFiles(remaining);
+        onChange(remaining.length ? remaining : null);
+    }, [displayNames, files, onChange, onRemove]);
+
     // An external (native) selection takes precedence over whatever the in-page input/drop produced.
     const selectedNames = displayNames?.length ? displayNames : files.map((file) => file.name);
 
@@ -111,10 +138,19 @@ export default function FileDropZone({ name, onChange, multiple, accept, onBrows
             />
             {selectedNames.length ? (
                 <div className="file-drop-zone-selection">
-                    {selectedNames.length > 1 && <div className="file-drop-zone-count">{t("file_upload.selected", { count: selectedNames.length })}</div>}
                     <ul className="file-drop-zone-files">
                         {selectedNames.map((fileName, index) => (
-                            <li key={index}><span className="bx bx-file-blank" /> <span className="file-drop-zone-filename">{fileName}</span></li>
+                            <li key={index}>
+                                <span className="bx bx-file-blank" />
+                                <span className="file-drop-zone-filename">{fileName}</span>
+                                <ActionButton
+                                    className="file-drop-zone-remove"
+                                    icon="bx bx-x"
+                                    text={t("file_upload.remove_file")}
+                                    tooltipClass="tooltip-top"
+                                    onClick={(e) => removeAt(e, index)}
+                                />
+                            </li>
                         ))}
                     </ul>
                 </div>

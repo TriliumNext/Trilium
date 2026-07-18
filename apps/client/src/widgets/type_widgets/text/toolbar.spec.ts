@@ -29,8 +29,15 @@ describe("CKEditor config", () => {
             return result.flat();
         }
 
+        // Undo/redo live only on the fixed toolbar — they're always reachable via keyboard and
+        // have no natural slot in the floating selection/block toolbar — so exclude them from the
+        // fixed-vs-floating parity check.
+        const FIXED_ONLY_ITEMS = new Set(["undo", "redo"]);
+
         const classicToolbarConfig = buildClassicToolbar(false);
-        const classicToolbarItems = new Set(traverseItems(classicToolbarConfig.toolbar));
+        const classicToolbarItems = new Set(
+            traverseItems(classicToolbarConfig.toolbar).filter((item) => !FIXED_ONLY_ITEMS.has(item))
+        );
 
         const floatingToolbarConfig = buildFloatingToolbar();
         const floatingToolbarItems = traverseItems(floatingToolbarConfig.toolbar);

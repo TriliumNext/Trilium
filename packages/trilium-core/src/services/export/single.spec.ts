@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { mapByNoteType } from "./single.js";
+import { describe, expect, it, vi } from "vitest";
+
+import becca from "../../becca/becca.js";
+import type BAttachment from "../../becca/entities/battachment.js";
 import { buildNote } from "../../test/becca_easy_mocking.js";
+import { mapByNoteType } from "./single.js";
 
 describe("Note type mappings", () => {
     it("supports mermaid note", () => {
@@ -27,6 +30,29 @@ describe("Note type mappings", () => {
             expect(payload).not.toContain("data-list-item-id");
             expect(payload).toContain("Bullet");
             expect(payload).toContain("Cell");
+        }
+    });
+
+    it("inlines a link preview's data-image attachment as base64 in single-note HTML export", () => {
+        // A link preview references its card image attachment from `data-image`, not an <img src>;
+        // the single-file export must inline it the same way to stay self-contained.
+        const note = buildNote({ type: "text", title: "Preview" });
+        const fakeAttachment = {
+            mime: "image/jpeg",
+            getContent: () => new Uint8Array([1, 2, 3])
+        } as unknown as BAttachment;
+        const getAttachment = vi.spyOn(becca, "getAttachment").mockReturnValue(fakeAttachment);
+
+        try {
+            const content = `<section class="link-embed" data-url="https://example.com"`
+                + ` data-image="api/attachments/att1/image/preview.jpg"></section>`;
+            const { payload } = mapByNoteType(note, content, "html");
+
+            expect(getAttachment).toHaveBeenCalledWith("att1");
+            expect(payload).toContain(`data-image="data:image/jpeg;base64,AQID"`);
+            expect(payload).not.toContain("api/attachments");
+        } finally {
+            getAttachment.mockRestore();
         }
     });
 

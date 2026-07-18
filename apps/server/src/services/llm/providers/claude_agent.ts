@@ -6,7 +6,8 @@
  * machine running the server), and billing goes to the subscription.
  *
  * Bring-your-own-binary: the SDK's ~250 MB bundled native binary is stripped at
- * install time (root .pnpmfile.cjs); the provider drives the user's own
+ * install time (`ignoredOptionalDependencies` in the root pnpm-workspace.yaml);
+ * the provider drives the user's own
  * installed `claude` CLI (see claude_binary.ts), keeping the server lean.
  *
  * Unlike the AI-SDK providers, the Agent SDK runs its own agentic loop and is
@@ -19,11 +20,12 @@
  *     with every built-in Claude Code tool (file access, bash, …) disabled.
  */
 
-import { type Options as AgentOptions, query, type SDKAssistantMessage, type SDKMessage, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
+import { type Options as AgentOptions, query, type SDKAssistantMessage, type SDKMessage, type SDKUserMessage, type SpawnedProcess } from "@anthropic-ai/claude-agent-sdk";
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources";
 import type { LlmFilePart, LlmImagePart, LlmMessage, LlmMessagePart, LlmStreamChunk, LlmTextAttachmentPart } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
 import { encodeBase64 } from "@triliumnext/core/src/services/utils/binary.js";
+import { spawn as nodeSpawn } from "child_process";
 import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
@@ -443,10 +445,11 @@ export class ClaudeAgentProvider implements LlmProvider {
         const builtinTools = config.enableWebSearch ? ["WebSearch", "WebFetch"] : [];
         const allowedTools = [...builtinTools];
 
+        const binaryPath = await resolveClaudeBinaryPath();
         const options: AgentOptions = {
             // Bring-your-own-binary: the SDK's bundled native binary is stripped
             // at install time; drive the user's own installed Claude Code CLI.
-            pathToClaudeCodeExecutable: await resolveClaudeBinaryPath(),
+            pathToClaudeCodeExecutable: binaryPath,
             cwd: getAgentCwd(),
             tools: builtinTools,
             settingSources: [],
@@ -460,6 +463,18 @@ export class ClaudeAgentProvider implements LlmProvider {
                 ? { type: "adaptive", display: "summarized" }
                 : { type: "disabled" }
         };
+
+        // On Windows the resolved binary is typically a .cmd batch file (npm
+        // shim). Node's spawn() cannot execute .cmd files directly — it must
+        // delegate to cmd.exe via `shell: true`. The SDK spawns without a
+        // shell, so we override the spawn to add it.
+        if (process.platform === "win32" && binaryPath.endsWith(".cmd")) {
+            options.spawnClaudeCodeProcess = ({ command, args, cwd, env, signal }) => {
+                return nodeSpawn(command, args, {
+                    cwd, env, signal, shell: true, stdio: "pipe"
+                }) as unknown as SpawnedProcess;
+            };
+        }
 
         if (areNoteToolsAvailable(config)) {
             // In-process MCP: hand the agent Trilium's own MCP server instance

@@ -17,11 +17,13 @@ interface ProviderImport {
     hasSelection: boolean;
     /** Native-pick filename(s) to show in the drop zone; undefined when using the upload route. */
     displayNames?: string[];
-    onChange: (files: FileList | null) => void;
+    onChange: (files: File[] | null) => void;
     /** Desktop-only native browse (reads the zip in place); undefined elsewhere. */
     onBrowse?: () => void;
     /** Desktop-only native drop (reads the dropped zip in place); undefined elsewhere. */
     onNativeDrop?: (files: File[]) => Promise<boolean>;
+    /** Removes the selection — a provider holds a single file, so the index is irrelevant (the drop zone's per-file [X]). */
+    onRemove: () => void;
     doImport: () => Promise<void>;
 }
 
@@ -35,7 +37,7 @@ export default function useProviderImport({ format, parentNoteId, shrinkImages, 
     const [file, setFile] = useState<File | null>(null);
     const [nativeFile, setNativeFile] = useState<NativeImportPickedFile | null>(null);
 
-    const onChange = useCallback((files: FileList | null) => {
+    const onChange = useCallback((files: File[] | null) => {
         setFile(files?.[0] ?? null);
         if (files?.length) {
             setNativeFile(null);
@@ -61,6 +63,11 @@ export default function useProviderImport({ format, parentNoteId, shrinkImages, 
         setFile(null);
         setNativeFile(pick.files[0]);
         return true;
+    }, []);
+
+    const onRemove = useCallback(() => {
+        setFile(null);
+        setNativeFile(null);
     }, []);
 
     const doImport = useCallback(async () => {
@@ -90,6 +97,7 @@ export default function useProviderImport({ format, parentNoteId, shrinkImages, 
         onChange,
         onBrowse: utils.isElectron() ? () => void browse() : undefined,
         onNativeDrop: utils.isElectron() ? nativeDrop : undefined,
+        onRemove,
         doImport
     };
 }

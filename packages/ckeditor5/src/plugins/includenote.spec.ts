@@ -98,6 +98,8 @@ describe("IncludeNote", () => {
         const view = getViewData(editor.editing.view);
         expect(view).toContain("include-note");
         expect(view).toContain("ck-widget");
+        // The block widget carries CKEditor's selection handle so it can be dragged atomically.
+        expect(view).toContain("ck-widget_with-selection-handle");
         expect(view).toContain("box-size-small");
 
         // Querying the DOM root forces the UIElement render callback to run.

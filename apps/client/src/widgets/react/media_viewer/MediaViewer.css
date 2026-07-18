@@ -48,6 +48,20 @@
     & .yarl__thumbnails_thumbnail_active {
         opacity: 1;
     }
+
+    /* Shortcut-hints button pinned to the top-right corner of the viewer. */
+    & .media-viewer-hint-button {
+        position: absolute;
+        inset-inline-end: 10px;
+        top: 10px;
+        z-index: 1;
+    }
+}
+
+/* The shortcut-hints panel portals to <body> at its own z-index (1080), which the fullscreen
+   viewer root (1500) would cover — lift it above the toolbar (1501) while fullscreen is active. */
+body:has(> .media-viewer-root.media-viewer-fulled) .shortcut-hints-panel {
+    z-index: 1502;
 }
 
 /* Crisp pixels when zoomed far beyond the native resolution (parity with the previous viewer). */

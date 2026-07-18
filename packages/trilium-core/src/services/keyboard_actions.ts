@@ -488,6 +488,14 @@ function getDefaultKeyboardActions() {
             description: t("keyboard_actions.show-cheatsheet"),
             scope: "window"
         },
+        {
+            friendlyName: t("keyboard_action_names.show-shortcut-hints"),
+            actionName: "showShortcutHints",
+            iconClass: "bx bx-help-circle",
+            defaultShortcuts: ["Alt+F1"],
+            description: t("keyboard_actions.show-shortcut-hints"),
+            scope: "window"
+        },
 
         {
             separator: t("keyboard_actions.text-note-operations")

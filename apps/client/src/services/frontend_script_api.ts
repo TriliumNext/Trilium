@@ -5,17 +5,21 @@ import DOMPurify from "dompurify";
 import appContext from "../components/app_context.js";
 import type Component from "../components/component.js";
 import type NoteContext from "../components/note_context.js";
+import type FBranch from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
 import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
 import RightPanelWidget from "../widgets/right_panel_widget.js";
+import { BackendScriptingDisabledError, showBackendScriptingDisabledToast } from "./backend_scripting.js";
 import dateNotesService from "./date_notes.js";
 import dialogService from "./dialog.js";
 import froca from "./froca.js";
 import { preactAPI } from "./frontend_script_api_preact.js";
 import { t } from "./i18n.js";
 import linkService from "./link.js";
+import noteCreateService, { type CreateNoteOpts } from "./note_create.js";
 import noteTooltipService from "./note_tooltip.js";
+import options from "./options.js";
 import protectedSessionService from "./protected_session.js";
 import searchService from "./search.js";
 import server from "./server.js";
@@ -183,6 +187,23 @@ export interface Api {
     runAsyncOnBackendWithManualTransactionHandling(func: Func, params: unknown[]): unknown;
 
     /**
+     * Whether backend script execution is enabled on the server (the
+     * `[Security] backendScriptingEnabled` config toggle). When it's disabled,
+     * `api.runOnBackend()` / `api.runAsyncOnBackendWithManualTransactionHandling()`
+     * reject with a "Backend script execution is disabled" error, so check this
+     * first to let a script degrade gracefully instead of throwing.
+     */
+    isBackendScriptingEnabled(): boolean;
+
+    /**
+     * Whether the SQL console is enabled on the server (the
+     * `[Security] sqlConsoleEnabled` config toggle). When it's disabled, backend
+     * scripts that run raw SQL (`api.sql.*`) fail, so check this before invoking
+     * SQL-backed logic via `api.runOnBackend()`.
+     */
+    isSqlConsoleEnabled(): boolean;
+
+    /**
      * This is a powerful search method - you can search by attributes and their values, e.g.:
      * "#dateModified =* MONTH AND #log". See full documentation for all options at: https://triliumnext.github.io/Docs/Wiki/search.html
      */
@@ -213,6 +234,18 @@ export interface Api {
      * Update frontend tree (note) cache from the backend.
      */
     reloadNotes(noteIds: string[]): Promise<void>;
+
+    /**
+     * Creates a new note as a child of the given parent, entirely on the frontend — no backend
+     * scripting required (unlike `api.runOnBackend(() => api.createTextNote(...))`). By default the
+     * new note is activated in the current tab with its title focused for editing; pass
+     * `{ activate: false }` to create it silently.
+     *
+     * @param parentNotePath note path (or noteId) of the parent under which to create the note
+     * @param opts creation options — e.g. `{ title, content, type, mime, activate }`
+     * @returns the created note and its branch, resolved from the frontend cache
+     */
+    createNote(parentNotePath: string, opts?: CreateNoteOpts): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
 
     /**
      * Instance name identifies particular Trilium instance. It can be useful for scripts
@@ -577,6 +610,14 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     }
 
     this.__runOnBackendInner = async (func, params, transactional) => {
+        // Short-circuit when backend scripting is disabled: skip the request entirely so the
+        // server never returns a 500, show a single deduplicated toast (fixed id) instead of one
+        // generic HTTP-error toast per failing script, and throw a typed error callers can detect.
+        if (!options.is("backendScriptingEnabled")) {
+            showBackendScriptingDisabledToast(startNote.noteId);
+            throw new BackendScriptingDisabledError();
+        }
+
         if (typeof func === "function") {
             func = func.toString();
         }
@@ -619,6 +660,9 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
         return await this.__runOnBackendInner(func, params, false);
     };
 
+    this.isBackendScriptingEnabled = () => options.is("backendScriptingEnabled");
+    this.isSqlConsoleEnabled = () => options.is("sqlConsoleEnabled");
+
     this.searchForNotes = async (searchString) => {
         return await searchService.searchForNotes(searchString);
     };
@@ -632,6 +676,7 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     this.getNote = async (noteId) => await froca.getNote(noteId);
     this.getNotes = async (noteIds, silentNotFoundError = false) => await froca.getNotes(noteIds, silentNotFoundError);
     this.reloadNotes = async (noteIds) => await froca.reloadNotes(noteIds);
+    this.createNote = async (parentNotePath, opts = {}) => await noteCreateService.createNote(parentNotePath, opts);
     this.getInstanceName = () => window.glob.instanceName;
     this.formatDateISO = utils.formatDateISO;
     this.parseDate = utils.parseDate;

@@ -272,7 +272,7 @@
     /* Backend log (the `text/x-trilium-log` code note MIME) */
     --log-timestamp-color: #00000077;
     --log-slow-color: #db9345;
-    --log-http-line-background-color: #6c96d00b;
+    --log-http-line-background-color: #826cd00b;
     --log-http-verb-color: #9157ab;
     --log-http-url-color: #8057a0;
     --log-status-success-color: #32b323;
@@ -351,8 +351,8 @@
     --task-checkbox-without-state-hover-background: #0000004a;
     --task-checkbox-with-state-background: gray;
     --task-checkbox-with-state-hover-background: #000000a2;
-    --task-checkbox-done-color: green;
-    --task-checkbox-done-hover-color: #41b441;
+    --task-checkbox-done-color: #339933;
+    --task-checkbox-done-hover-color: #207920;
     --task-checkbox-unknown-state-color: #e95d5d;
     --task-checkbox-glyph-color: white;
 
@@ -414,5 +414,5 @@
 }
 
 :where(.ck-content .todo-list li[data-trilium-task-state]), .tn-task-checkbox {
-    --task-state-custom-hover-background-color: hsl(var(--task-state-hue), 50%, 60%);
+    --task-state-custom-hover-background-color: hsl(var(--task-state-hue), 60%, 40%);
 }

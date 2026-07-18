@@ -103,8 +103,10 @@ function hasCredentialAccess(note: SNote, req: Request) {
 // the public share tree below `ancestorNoteId`: every hop from the ancestor down
 // to the note must be a non-hidden branch whose child note is not
 // `shareHiddenFromTree`. Mirrors SNote.getVisibleChildBranches() so that search
-// cannot enumerate notes the navigation tree deliberately hides.
-function isVisibleInShareTree(ancestorNoteId: string, notePathArray: string[]) {
+// cannot enumerate notes the navigation tree deliberately hides. Exported for
+// tests: a clone's best note path can bypass the share subtree entirely, which
+// is impractical to stage through the full search stack.
+export function isVisibleInShareTree(ancestorNoteId: string, notePathArray: string[]) {
     const startIndex = notePathArray.indexOf(ancestorNoteId);
 
     if (startIndex < 0) {
