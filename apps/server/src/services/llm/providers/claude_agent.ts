@@ -35,6 +35,14 @@ import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamRes
 import { resolveAttachmentPart } from "./attachment_content.js";
 import { buildModelList } from "./base_provider.js";
 import { resolveClaudeBinaryPath } from "./claude_binary.js";
+import {
+    type ClaudeSession,
+    closeSession,
+    Pushable,
+    releaseSession,
+    rememberSession as rememberWarmSession,
+    takeWarmSession
+} from "./claude_session_pool.js";
 import { buildNoteHint } from "./note_hint.js";
 import { buildSystemPrompt } from "./system_prompt.js";
 import { attachmentPlaceholder, buildHistoryReplay, flattenContent, hashTranscript } from "./transcript.js";
@@ -229,6 +237,8 @@ export class ClaudeAgentProvider implements LlmProvider {
         const modelDisplayName = AVAILABLE_MODELS.find(m => m.id === model)?.name ?? model;
         let sessionId: string | undefined;
         let assistantText = "";
+        /** The session this turn is driving, released (not closed) at the end. */
+        let held: ClaudeSession | undefined;
         // tool_use id → name, for labelling results; also serves as the guard
         // that only results belonging to *this* turn's tool calls are emitted.
         const toolNamesById = new Map<string, string>();
@@ -236,21 +246,76 @@ export class ClaudeAgentProvider implements LlmProvider {
         const toolIdsByBlockIndex = new Map<number, string>();
 
         try {
-            const response = query({
-                prompt,
-                options: {
-                    ...await this.buildBaseOptions(config),
-                    systemPrompt: this.composeSystemPrompt(messages, config),
-                    model,
-                    resume,
-                    includePartialMessages: true,
-                    maxTurns: MAX_TURNS,
-                    abortController
-                }
+            const systemPrompt = this.composeSystemPrompt(messages, config);
+            // Options the SDK fixes at query() construction: a change to any of
+            // them can't be applied to a live session, so it forces a new one.
+            // `model` is deliberately absent — setModel() handles it in place.
+            const fingerprint = JSON.stringify({
+                systemPrompt,
+                noteTools: areNoteToolsAvailable(config),
+                thinking: config.enableExtendedThinking !== false
             });
 
-            for await (const message of response) {
+            // Only reuse a warm session when the transcript still matches what
+            // it last saw (`resume`), so an edited history reseeds as before.
+            const warm = config.chatNoteId && resume
+                ? takeWarmSession(config.chatNoteId, fingerprint)
+                : undefined;
+            let session = warm?.sessionId === resume ? warm : undefined;
+            if (warm && !session) {
+                // Right chat, wrong conversation — retire it rather than reply
+                // into the wrong session.
+                closeSession(config.chatNoteId ?? "", warm);
+            }
+
+            if (session) {
+                if (model && session.model !== model) {
+                    // Streaming input mode only; ~0 ms in practice.
+                    await session.query.setModel(model);
+                    session.model = model;
+                }
+            } else {
+                const input = new Pushable<SDKUserMessage>();
+                session = {
+                    query: query({
+                        prompt: input,
+                        options: {
+                            ...await this.buildBaseOptions(config),
+                            systemPrompt,
+                            model,
+                            resume,
+                            includePartialMessages: true,
+                            maxTurns: MAX_TURNS,
+                            abortController
+                        }
+                    }),
+                    input,
+                    fingerprint,
+                    closed: false,
+                    busy: true,
+                    model
+                };
+                if (config.chatNoteId) {
+                    rememberWarmSession(config.chatNoteId, session);
+                }
+            }
+            const active = session;
+            held = active;
+            await pushUserTurn(active.input, prompt);
+
+            // Manual iteration on purpose: `for await (…) { break }` calls
+            // iterator.return(), which closes the query and kills the process
+            // this whole pool exists to keep warm.
+            let turnComplete = false;
+            for (;;) {
+                const next = await active.query.next();
+                if (next.done) {
+                    active.closed = true;
+                    break;
+                }
+                const message = next.value;
                 sessionId = takeSessionId(message) ?? sessionId;
+                active.sessionId = sessionId ?? active.sessionId;
 
                 switch (message.type) {
                     case "stream_event": {
@@ -355,6 +420,9 @@ export class ClaudeAgentProvider implements LlmProvider {
                                 model: modelDisplayName
                             }
                         };
+                        // The turn is over, but the session stays open for the
+                        // next one — this is what keeps the process warm.
+                        turnComplete = true;
                         break;
                     }
 
@@ -376,6 +444,10 @@ export class ClaudeAgentProvider implements LlmProvider {
                     default:
                         break;
                 }
+
+                if (turnComplete) {
+                    break;
+                }
             }
 
             if (config.chatNoteId && sessionId) {
@@ -393,7 +465,21 @@ export class ClaudeAgentProvider implements LlmProvider {
             yield { type: "error", error: describeAgentError(error) };
         } finally {
             signal?.removeEventListener("abort", onAbort);
-            abortController.abort();
+            const reusable = held && config.chatNoteId && !held.closed && !signal?.aborted;
+            if (reusable && held && config.chatNoteId) {
+                // Keep the subprocess warm; the pool reaps it when idle.
+                releaseSession(config.chatNoteId, held);
+            } else {
+                // A cancelled turn stops mid-stream, so the session's real
+                // state is unknown and the SDK may be wedged mid-`next()`
+                // (interrupt() is not guaranteed to make it yield). Killing the
+                // process is the one reliable way out: the next turn simply
+                // pays a cold start rather than inheriting a broken session.
+                if (held) {
+                    closeSession(config.chatNoteId ?? "", held);
+                }
+                abortController.abort();
+            }
         }
     }
 
@@ -613,6 +699,26 @@ function buildContentBlocks(content: LlmMessagePart[], prefix: string): ContentB
 /** One-shot streaming-input prompt: a single user message, then end of input. */
 async function* streamSingleUserMessage(content: ContentBlockParam[]): AsyncIterable<SDKUserMessage> {
     yield { type: "user", message: { role: "user", content }, parent_tool_use_id: null };
+}
+
+/**
+ * Feed one user turn into a live session's streaming input. Accepts both prompt
+ * forms {@link buildPrompt} produces: a plain string, or the one-message stream
+ * used for natively-consumable attachments (drained here, since a pooled
+ * session's input is the only stream the SDK is reading).
+ */
+async function pushUserTurn(input: Pushable<SDKUserMessage>, prompt: string | AsyncIterable<SDKUserMessage>): Promise<void> {
+    if (typeof prompt !== "string") {
+        for await (const message of prompt) {
+            input.push(message);
+        }
+        return;
+    }
+    input.push({
+        type: "user",
+        message: { role: "user", content: [{ type: "text", text: prompt }] },
+        parent_tool_use_id: null
+    });
 }
 
 /** Strip the MCP prefix so the client shows "search_notes", not "mcp__trilium__search_notes". */
