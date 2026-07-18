@@ -62,8 +62,7 @@ function collectKbCitations(text: string, sources: KnowledgeBaseSource[]): LlmSt
     // are array subscripts or similar, not citations.
     const prose = text
         .replace(/```[\s\S]*?```/g, " ")
-        .replace(/`[^`
-]*`/g, " ");
+        .replace(/`[^`\n]*`/g, " ");
 
     const citedNumbers = new Set<number>();
     for (const match of prose.matchAll(/\[(\d{1,2})\]/g)) {
