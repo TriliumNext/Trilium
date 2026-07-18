@@ -323,6 +323,52 @@ describe("streamToChunks", () => {
     });
 });
 
+describe("knowledge base citations", () => {
+    const SOURCES = [
+        { noteId: "n1", title: "First note" },
+        { noteId: "n2", title: "Second note" }
+    ];
+
+    const citationsOf = (chunks: LlmStreamChunk[]) =>
+        chunks.filter((c): c is Extract<LlmStreamChunk, { type: "citation" }> => c.type === "citation");
+
+    async function collectText(text: string, sources = SOURCES) {
+        return collect(fakeResult(
+            [{ type: "text-delta", text }],
+            Promise.resolve({ inputTokens: 1, outputTokens: 1 })
+        ), { knowledgeBaseSources: sources });
+    }
+
+    it("emits a citation chunk for each cited source, in source order", async () => {
+        const chunks = await collectText("Per [2], and also [1] says so. [1] again.");
+
+        expect(citationsOf(chunks)).toEqual([
+            { type: "citation", citation: { noteId: "n1", title: "First note" } },
+            { type: "citation", citation: { noteId: "n2", title: "Second note" } }
+        ]);
+    });
+
+    it("ignores marker numbers that don't map to a source", async () => {
+        const chunks = await collectText("As [7] claims and [0] too.");
+        expect(citationsOf(chunks)).toEqual([]);
+    });
+
+    it("ignores bracketed numbers inside fenced code blocks and inline code", async () => {
+        const chunks = await collectText(
+            "Some code:\n```js\nconst x = arr[1];\n```\nand inline `arr[2]` too."
+        );
+        expect(citationsOf(chunks)).toEqual([]);
+    });
+
+    it("emits no citations when no knowledge base sources are configured", async () => {
+        const chunks = await collect(fakeResult(
+            [{ type: "text-delta", text: "See [1]." }],
+            Promise.resolve({ inputTokens: 1, outputTokens: 1 })
+        ));
+        expect(citationsOf(chunks)).toEqual([]);
+    });
+});
+
 describe("describeStreamError", () => {
     it("expands an APICallError into status, URL and response body", () => {
         const msg = describeStreamError(apiCallError());
