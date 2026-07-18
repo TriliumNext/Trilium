@@ -153,7 +153,7 @@ export default function ChatInputBar({
                                 onClick={() => handleModelSelect(model.id)}
                                 checked={chat.selectedModel === model.id}
                             >
-                                {model.name} <small>({model.costDescription})</small>
+                                {model.name}{model.costDescription && <> <small>({model.costDescription})</small></>}
                             </FormListItem>
                         ))}
                         {legacyModels.length > 0 && (
@@ -169,7 +169,7 @@ export default function ChatInputBar({
                                             onClick={() => handleModelSelect(model.id)}
                                             checked={chat.selectedModel === model.id}
                                         >
-                                            {model.name} <small>({model.costDescription})</small>
+                                            {model.name}{model.costDescription && <> <small>({model.costDescription})</small></>}
                                         </FormListItem>
                                     ))}
                                 </FormDropdownSubmenu>
