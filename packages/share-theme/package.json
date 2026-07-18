@@ -25,7 +25,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
-    "fuse.js": "7.4.2",
+    "fuse.js": "7.5.0",
     "katex": "0.17.0",
     "mermaid": "11.16.0"
   },

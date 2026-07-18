@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/desktop",
-  "version": "0.103.0",
+  "version": "0.104.0",
   "description": "Build your personal knowledge base with Trilium Notes",
   "private": true,
   "main": "src/main.ts",
@@ -14,8 +14,8 @@
     "dev": "cross-env TRILIUM_PORT=37743 TRILIUM_DATA_DIR=data TRILIUM_ELECTRON_DATA_DIR=data-electron-37742 tsx ../../scripts/electron-start.mts src/main.ts",
     "start-no-dir": "cross-env TRILIUM_PORT=37743 tsx ../../scripts/electron-start.mts src/main.ts",
     "build": "tsx scripts/build.ts",
-    "start-prod": "pnpm build && cross-env TRILIUM_DATA_DIR=data TRILIUM_ELECTRON_DATA_DIR=data-electron-37841 TRILIUM_PORT=37841 ELECTRON_IS_DEV=0 electron dist",
-    "start-prod-no-dir": "pnpm build && cross-env TRILIUM_PORT=37841 ELECTRON_IS_DEV=0 electron dist",
+    "start-prod": "pnpm build && cross-env TRILIUM_DATA_DIR=data TRILIUM_ELECTRON_DATA_DIR=data-electron-37841 TRILIUM_PORT=37841 ELECTRON_IS_DEV=0 tsx ../../scripts/electron-run-prod.mts dist",
+    "start-prod-no-dir": "pnpm build && cross-env TRILIUM_PORT=37841 ELECTRON_IS_DEV=0 tsx ../../scripts/electron-run-prod.mts dist",
     "electron-forge:make": "pnpm build && electron-forge make dist",
     "electron-forge:make-flatpak": "pnpm build && DEBUG=* electron-forge make dist --targets=@electron-forge/maker-flatpak",
     "electron-forge:package": "pnpm build && electron-forge package dist",
@@ -49,9 +49,9 @@
     "@triliumnext/server": "workspace:*",
     "@types/electron-squirrel-startup": "1.0.2",
     "@types/pngjs": "6.0.5",
-    "electron": "42.6.1",
+    "electron": "42.7.0",
     "gifenc": "1.0.3",
-    "node-mocks-http": "1.17.2",
+    "node-mocks-http": "1.18.0",
     "pngjs": "7.0.0",
     "prebuild-install": "7.1.3"
   }

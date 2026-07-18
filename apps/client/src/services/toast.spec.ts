@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildNote } from "../test/easy-froca";
-
 const openInNewTab = vi.fn();
 vi.mock("../components/app_context.js", () => ({
     default: {
@@ -95,41 +93,46 @@ describe("toast store", () => {
         expect(toasts.value).toHaveLength(0);
     });
 
-    it("showErrorForScriptNote uses note title/icon and wires the open-script button", async () => {
-        const note = buildNote({ title: "My Script" });
-        // Force a deterministic icon for assertion.
-        note.getIcon = () => "bx bx-code";
+    it("fires onRemove exactly once when a toast is removed", () => {
+        const onRemove = vi.fn();
+        toast.showPersistent({ id: "with-callback", icon: "i", message: "M", onRemove });
 
-        await showErrorForScriptNote(note.noteId, "it failed");
+        removeToastFromStore("with-callback");
+        expect(onRemove).toHaveBeenCalledTimes(1);
+        expect(toasts.value).toHaveLength(0);
 
-        const created = toasts.value.find(t => t.id === `custom-widget-failure-${note.noteId}`);
-        expect(created).toBeDefined();
-        expect(created).toMatchObject({
-            icon: "bx bx-code",
-            message: "it failed",
-            timeout: 15000
-        });
-        expect(created?.buttons).toHaveLength(1);
-
-        // Invoking the button delegates to the tab manager.
-        created!.buttons![0].onClick({ dismissToast: () => {} });
-        expect(openInNewTab).toHaveBeenCalledWith(note.noteId, null, true);
+        // A second removal for the same (now absent) id must not fire the callback again.
+        removeToastFromStore("with-callback");
+        expect(onRemove).toHaveBeenCalledTimes(1);
     });
 
-    it("showErrorForScriptNote falls back when the note cannot be found", async () => {
-        const froca = (await import("./froca.js")).default;
-        const original = froca.getNote;
-        froca.getNote = vi.fn(async () => null) as typeof froca.getNote;
+    it("does not require onRemove and skips it for toasts without one", () => {
+        toast.showPersistent({ id: "no-callback", icon: "i", message: "M" });
+        expect(() => removeToastFromStore("no-callback")).not.toThrow();
+        expect(toasts.value).toHaveLength(0);
+    });
 
-        try {
-            await showErrorForScriptNote("missing-note", "nope");
-            const created = toasts.value.find(t => t.id === "custom-widget-failure-missing-note");
-            expect(created).toBeDefined();
-            // Falls back to the default error icon.
-            expect(created?.icon).toBe("bx bx-error-circle");
-            expect(created?.message).toBe("nope");
-        } finally {
-            froca.getNote = original;
-        }
+    it("showErrorForScriptNote shows the script note as a reference link with a generic error icon", () => {
+        showErrorForScriptNote("scriptNote1", "it failed");
+
+        const created = toasts.value.find(t => t.id === "custom-widget-failure-scriptNote1");
+        expect(created).toMatchObject({
+            icon: "bx bx-error-circle",
+            message: "it failed",
+            timeout: 15000,
+            // The script note is attached as a reference link instead of a bespoke open-note button.
+            notes: [ "scriptNote1" ]
+        });
+        expect(created?.buttons).toBeUndefined();
+    });
+
+    it("showErrorForScriptNote renders the message monospace when requested", () => {
+        showErrorForScriptNote("scriptNote2", "api.logg is not a function", { monospace: true });
+
+        const created = toasts.value.find(t => t.id === "custom-widget-failure-scriptNote2");
+        expect(created).toMatchObject({
+            message: "api.logg is not a function",
+            messageMonospace: true
+        });
     });
 });

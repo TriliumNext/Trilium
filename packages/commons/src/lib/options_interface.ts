@@ -194,6 +194,14 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     backgroundEffects: boolean;
     newLayout: boolean;
 
+    // PDF settings
+    /**
+     * The pdf.js reusable signature library, stored as a JSON string keyed by signature UUID
+     * (`{ [uuid]: { description, signatureData } }`). Persisted here — instead of pdf.js' default
+     * per-browser `localStorage` — so saved signatures sync across devices.
+     */
+    pdfSignatures: string;
+
     // Search settings
     /** Whether fuzzy matching is enabled in search (matches similar words when exact matches are insufficient). */
     searchEnableFuzzyMatching: boolean;

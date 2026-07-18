@@ -110,7 +110,9 @@ function TextRepresentationModal({ textUrl, processUrl, onHidden }: TextRepresen
                         buttons: [{
                             text: t("ocr.open_media_settings"),
                             onClick: ({ dismissToast }) => {
-                                appContext.tabManager.openInNewTab("_optionsMedia", null, true);
+                                // Opening the settings modal auto-closes the OCR dialog if it is
+                                // still up (openDialog closes the active dialog by default).
+                                void appContext.triggerCommand("showOptions", { section: "_optionsMedia" });
                                 dismissToast();
                             }
                         }]

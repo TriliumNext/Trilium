@@ -138,6 +138,8 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     const sql = getSql();
     const log = getLog();
     sql.transactional(() => {
+        wipePartialSchema();
+
         log.info("Creating database schema ...");
         sql.executeScript(schema);
 
@@ -262,6 +264,8 @@ async function createDatabaseForSync(options: OptionRow[], syncServerHost = "", 
     const { initNotSyncedOptions } = await import("./options_init.js");
 
     sql.transactional(() => {
+        wipePartialSchema();
+
         sql.executeScript(schema);
 
         initNotSyncedOptions(false, { syncServerHost, syncProxy, syncMaxBlobContentSize });
@@ -273,6 +277,30 @@ async function createDatabaseForSync(options: OptionRow[], syncServerHost = "", 
     });
 
     log.info("Schema and not synced options generated.");
+}
+
+/**
+ * Drops every table and view left behind by a FAILED sync-from-server attempt (schema
+ * created, sync never converged, `initialized` still false — see #10548). From that state
+ * the setup wizard lets the user take any path again: resubmit the sync form, sync from a
+ * desktop, or create a new document — all of which rebuild the schema and must start from
+ * a clean slate, since the partially pulled rows may even belong to a different server.
+ * No-op on a virgin database.
+ */
+function wipePartialSchema() {
+    if (!schemaExists()) {
+        return;
+    }
+
+    getLog().info("Schema exists from a previous unfinished setup — wiping it before re-creating.");
+
+    const sql = getSql();
+    const objects = sql.getRows<{ name: string; type: string }>(
+        /*sql*/`SELECT name, type FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%'`
+    );
+    for (const { name, type } of objects) {
+        sql.execute(`DROP ${type === "view" ? "VIEW" : "TABLE"} IF EXISTS "${name.replace(/"/g, '""')}"`);
+    }
 }
 
 export default { isDbInitialized, createDatabaseForSync, setDbAsInitialized, schemaExists, getDbSize, initDbConnection, dbReady, initializeDb, createInitialDatabase };

@@ -32,8 +32,6 @@ This option requires the tray icon to be enabled, otherwise it has no effect.
 Two options control the automatic startup functionality in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Startup_:
 
 *   When _Launch on startup_ is enabled, the application will automatically start up when logging into the current user.
-    
     *   Note that on Linux support depends on the desktop environment. Feel free to [report](../../Troubleshooting/Reporting%20issues.md) any issues.
 *   If _Start minimized to tray_ is also enabled, the application will start up in the background and can be revealed from the tray icon.
-    
     *   This only applies if _Launch on startup_ is enabled, manual starts are not impacted by this option.

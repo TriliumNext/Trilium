@@ -201,7 +201,11 @@ const tableShouldBeHtml = (tableNode: any, options: TurnishOptions | null): bool
     'H6',
     'HR',
     'BLOCKQUOTE',
-    'PRE'
+    'PRE',
+    // Admonitions render as <aside class="admonition">. Like the other block-level
+    // tags above, they can't live inside a GFM table cell — flattening one there
+    // yields unrenderable `> [!NOTE]<br>...` — so keep the whole table as raw HTML.
+    'ASIDE'
   ];
 
   // In general we should leave as HTML tables that include other tables. The

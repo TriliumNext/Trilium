@@ -3,7 +3,15 @@
 <p>The state is configured through the following promoted attributes:</p>
 
 <ul>
-    <li><code>Identifier</code> — required. The internal name stored as metadata within the note markup. Only letters, digits, <code>-</code> and <code>_</code> are permitted. Examples: <code>postponed</code>, <code>awaiting-feedback</code>, <code>validated</code>.</li>
+    <li>
+        <code>Identifier</code> — required. The internal name stored as metadata within the note markup.
+        Only letters, digits, <code>-</code> and <code>_</code> are permitted.
+
+        <p class="admonition warning">
+            Prefix the identifiers of your custom task states with an underscore <code>_</code> or a hyphen <code>-</code> to avoid clashes with task states that may be introduced in future versions of Trilium.
+        </p>
+        
+        Examples: <code>_postponed</code>, <code>_awaiting-feedback</code>, <code>_validated</code>.</li>
     <li><code>Markdown symbol</code> — the single character used to represent the state when exporting to Markdown; for example, <code>/</code> produces <code>- [/]</code>.</li>
     <li><code>Counts as completed</code> — when enabled, a task in this state is treated as completed.</li>
     <li><code>Color</code> — the checkbox color for this state.</li>

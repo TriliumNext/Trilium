@@ -566,6 +566,54 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    // Admonitions are block content, and GFM table cells can only hold inline
+    // content. Flattening the admonition into a cell produces unrenderable
+    // `> [!NOTE]<br>...` noise, so a table containing one is kept as raw HTML to
+    // degrade gracefully and round-trip faithfully.
+    it("keeps a table containing an admonition as HTML", () => {
+        const html = trimIndentation/*html*/`\
+            <figure class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hello</th>
+                            <th>world</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>This is a table</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><aside class="admonition note"><p>With an admonition inside it</p></aside></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </figure>
+        `;
+        const expected = `<table>
+    <thead>
+        <tr>
+            <th>Hello</th>
+            <th>world</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>This is a table</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td><aside class="admonition note"><p>With an admonition inside it</p></aside></td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
     it("preserves superscript and subscript", () => {
         const html = /*html*/`<p>Hello <sup><strong>superscript</strong></sup> <sub><strong>subscript</strong></sub></p>`;
         const expected = `Hello <sup><strong>superscript</strong></sup> <sub><strong>subscript</strong></sub>`;

@@ -234,7 +234,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             } else if (target.classList.contains("add-note-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 const parentNotePath = treeService.getNotePath(node);
-                noteCreateService.createNote(parentNotePath, { isProtected: node.data.isProtected });
+                noteCreateService.createNote(parentNotePath, {
+                    isProtected: node.data.isProtected,
+                    // Activate in this tree's own context — in popup dialogs (e.g. the task states
+                    // tree popup) it is not the tab manager's active context.
+                    noteContext: this.noteContext
+                });
             } else if (target.classList.contains("enter-workspace-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 this.triggerCommand("hoistNote", { noteId: node.data.noteId });
@@ -1153,7 +1158,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
         const newActiveNode =
             this.noteContext?.notePath &&
-            (!treeService.isNotePathInHiddenSubtree(this.noteContext.notePath) || (await hoistedNoteService.isHoistedInHiddenSubtree())) &&
+            // Pass this tree's own hoisted note (e.g. a popup hoisted into the hidden subtree) rather
+            // than the active tab's — otherwise a hidden-subtree note never gets an active node here.
+            (!treeService.isNotePathInHiddenSubtree(this.noteContext.notePath) || (await hoistedNoteService.isHoistedInHiddenSubtree(this.hoistedNoteId))) &&
             (await this.getNodeFromPath(this.noteContext.notePath));
 
         if (this.spotlightedNode && newActiveNode !== this.spotlightedNode) {

@@ -13,6 +13,7 @@ Since v0.102.0, PDFs will be rendered using Trilium's built-in PDF viewer, which
 *   Can be printed or downloaded.
 *   Can be saved as a [template](../../Advanced%20Usage/Templates.md) and the content of the PDF will be copied over to the new note. This is especially useful in combination with annotations or filled forms.
 *   Integrates with the sidebar in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>, by displaying the list of pages with thumbnails, table of contents and a listing of the annotations.
+*   Basic support for signatures (the hand-drawn ones, not proper digital signatures), similar to annotations. Signatures are stored and can be reused across multiple documents (up to 5).
 
 ## Storing last position and settings
 

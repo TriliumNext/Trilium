@@ -6,6 +6,7 @@ import { useEffect } from "preact/hooks";
 import { removeToastFromStore, ToastOptionsWithRequiredId, toasts } from "../services/toast";
 import Button from "./react/Button";
 import Icon from "./react/Icon";
+import NoteLink from "./react/NoteLink";
 
 export default function ToastContainer() {
     return (
@@ -15,7 +16,7 @@ export default function ToastContainer() {
     );
 }
 
-function Toast({ id, title, timeout, progress, message, icon, buttons, dismissible }: ToastOptionsWithRequiredId) {
+function Toast({ id, title, timeout, progress, message, messageMonospace, icon, buttons, dismissible, wide, notes, notesHeading }: ToastOptionsWithRequiredId) {
     // Autohide.
     useEffect(() => {
         if (!timeout || timeout <= 0) return;
@@ -39,7 +40,7 @@ function Toast({ id, title, timeout, progress, message, icon, buttons, dismissib
 
     return (
         <div
-            class={clsx("toast", !title && "no-title", dismissible === false && "not-dismissible")}
+            class={clsx("toast", !title && "no-title", dismissible === false && "not-dismissible", wide && "wide")}
             role="alert" aria-live="assertive" aria-atomic="true"
             id={`toast-${id}`}
         >
@@ -52,13 +53,26 @@ function Toast({ id, title, timeout, progress, message, icon, buttons, dismissib
                         </strong>
                         {closeButton}
                     </div>
-                    <div className="toast-body">{message}</div>
+                    <div className={clsx("toast-body", messageMonospace && "monospace")}>{message}</div>
                 </>
             ) : (
                 <div class="toast-main-row">
                     <div class="toast-icon">{toastIcon}</div>
-                    <div className="toast-body">{message}</div>
+                    <div className={clsx("toast-body", messageMonospace && "monospace")}>{message}</div>
                     {closeButton && <div class="toast-close">{closeButton}</div>}
+                </div>
+            )}
+
+            {notes && notes.length > 0 && (
+                <div class="toast-notes">
+                    {notesHeading && <div class="toast-notes-heading">{notesHeading}</div>}
+                    <div class="toast-notes-list">
+                        {notes
+                            .map(note => (typeof note === "string" ? { noteId: note } : note))
+                            .map(({ noteId, description }) => (
+                                <NoteLink key={noteId} notePath={noteId} showNoteIcon noPreview showNotePath titleSuffix={description} />
+                            ))}
+                    </div>
                 </div>
             )}
 

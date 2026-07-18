@@ -349,6 +349,88 @@ describe("NodeRequestProvider.exec", () => {
         });
     });
 
+    describe("cookie jar handling (#10548)", () => {
+        it("replays a multi-Set-Cookie response as a single string of name=value pairs", async () => {
+            // A reverse proxy (LB affinity, CDN) can add its own cookie next to trilium.sid.
+            state.onEnd = (req) => {
+                const first = state.requests.length === 1;
+                const headers = first ? {
+                    "set-cookie": [
+                        "ws-server=affinity|123; Expires=Sun, 19-Jul-26 15:08:52 GMT; Max-Age=86400; Path=/; Secure; HttpOnly",
+                        "trilium.sid=s%3Aabc.def; Path=/; Expires=Sat, 08 Aug 2026 13:18:40 GMT; HttpOnly; SameSite=Lax"
+                    ]
+                } : {};
+                const res = makeResponse(200, "OK", headers);
+                req.triggerResponse(res);
+                res.emitData(Buffer.from("null"));
+                res.emitEnd();
+            };
+
+            const cookieJar = {};
+            await provider.exec(baseOpts({ cookieJar }));
+            await provider.exec(baseOpts({ cookieJar }));
+
+            // The jar must hold ONE plain string of name=value pairs. Replaying the raw
+            // Set-Cookie array breaks the desktop: Electron's `net` joins array header
+            // values with a bare comma, merging "…HttpOnly,trilium.sid=…" into a junk
+            // cookie name, so the sync server loses the session ("Logged in session not
+            // found"). Attributes (Path, Expires, …) must be stripped — the server would
+            // otherwise parse them as bogus cookies.
+            expect(state.requests[1].opts.headers["Cookie"]).toBe(
+                "ws-server=affinity|123; trilium.sid=s%3Aabc.def"
+            );
+        });
+
+        it("merges newly set cookies into the jar instead of replacing it", async () => {
+            // First response establishes the session; a later response that sets only the
+            // proxy's cookie must not wipe trilium.sid from the jar.
+            state.onEnd = (req) => {
+                const perCall: (string[] | undefined)[] = [
+                    ["trilium.sid=s%3Aabc.def; Path=/; HttpOnly; SameSite=Lax"],
+                    ["ws-server=affinity|123; Path=/; Secure; HttpOnly"],
+                    undefined
+                ];
+                const setCookie = perCall[state.requests.length - 1];
+                const res = makeResponse(200, "OK", setCookie ? { "set-cookie": setCookie } : {});
+                req.triggerResponse(res);
+                res.emitData(Buffer.from("null"));
+                res.emitEnd();
+            };
+
+            const cookieJar = {};
+            await provider.exec(baseOpts({ cookieJar }));
+            await provider.exec(baseOpts({ cookieJar }));
+            await provider.exec(baseOpts({ cookieJar }));
+
+            expect(state.requests[2].opts.headers["Cookie"]).toBe(
+                "trilium.sid=s%3Aabc.def; ws-server=affinity|123"
+            );
+        });
+
+        it("updates an existing cookie's value in place", async () => {
+            // e.g. express-session regenerating the session id must replace, not duplicate.
+            state.onEnd = (req) => {
+                const perCall: (string[] | undefined)[] = [
+                    ["trilium.sid=s%3Aold.sig; Path=/; HttpOnly"],
+                    ["trilium.sid=s%3Anew.sig; Path=/; HttpOnly"],
+                    undefined
+                ];
+                const setCookie = perCall[state.requests.length - 1];
+                const res = makeResponse(200, "OK", setCookie ? { "set-cookie": setCookie } : {});
+                req.triggerResponse(res);
+                res.emitData(Buffer.from("null"));
+                res.emitEnd();
+            };
+
+            const cookieJar = {};
+            await provider.exec(baseOpts({ cookieJar }));
+            await provider.exec(baseOpts({ cookieJar }));
+            await provider.exec(baseOpts({ cookieJar }));
+
+            expect(state.requests[2].opts.headers["Cookie"]).toBe("trilium.sid=s%3Anew.sig");
+        });
+    });
+
     it("rejects if the client throws synchronously while preparing the request", async () => {
         fakeHttp.request.mockImplementationOnce(() => {
             throw new Error("boom-prepare");

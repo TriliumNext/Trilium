@@ -27,6 +27,7 @@ The following features are supported by Trilium's Markdown format and will show 
 *   All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes).
 *   Basic HTML is also supported (e.g. collapsible blocks using `<details>` and `<summary>`).
 *   Code blocks with syntax highlight.
+    
     *   The language must be specified for syntax highlight to be applied (e.g. ` ```js `).
     *   Code blocks will respect the text wrapping from the <a class="reference-link" href="Text.md">Text</a> section in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>.
 *   <a class="reference-link" href="Text/Block%20quotes%20%26%20admonitions.md">Block quotes &amp; admonitions</a>
@@ -46,6 +47,28 @@ The following features are supported by Trilium's Markdown format and will show 
     ```
     [[Hg8TS5ZOxti6]]
     ```
+*   To-do lists with extended task states:
+    
+    <table class="ck-table-resized" style="border-style:none">
+        <colgroup>
+            <col style="width:80.6%;">
+            <col style="width:19.4%;">
+        </colgroup>
+        <tbody>
+            <tr>
+                <td><pre><code class="language-text-x-markdown">- [ ] None
+    - [/] Doing
+    - [X] Done
+    - [?] Maybe
+    - [-] Cancelled</code></pre></td>
+                <td><figure class="image image-style-align-right"><img style="aspect-ratio:218/221;" src="Markdown_image.png" width="218" height="221"></figure></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    Task states are customizable: you can reorder them, create new ones with different colors and symbols, or delete the ones you don't need. See <a class="reference-link" href="../Advanced%20Usage/Customizing%20to-do%20task%20states.md">Customizing to-do task states</a> for more details.
+    
+    Note that to-do items with task states other than "None" and "Done" are Trilium-specific and may not work well with other Markdown software.
 *   <a class="reference-link" href="Text/Footnotes.md">Footnotes</a> are also supported via the corresponding Markdown syntax:
     
     ```
@@ -56,7 +79,7 @@ The following features are supported by Trilium's Markdown format and will show 
     ```
     
     *   These can also be quickly created using the `/footnote` command.
-*   Page breaks for <a class="reference-link" href="#root/jdjRLhLV3TtI/yeqU0zo0ZQ83/W0msUwLxm40d">Printing and exporting to PDF</a>:
+*   Page breaks for <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a>:
     
     ```
     <div class="page-break"></div>
@@ -195,20 +218,7 @@ If the Markdown note contains attachments, a ZIP export will rewrite the links t
 
 ## Conversion between text notes and Markdown notes
 
-Currently there is no built-in functionality to convert a <a class="reference-link" href="Text.md">Text</a> note into a Markdown note or vice-versa. We do have plans to address this in the future.
-
-This can be achieved manually, for a single note:
-
-1.  Export the file as Markdown, with single format.
-2.  Import the file again, but unchecking _Import HTML, Markdown and TXT as text notes if it's unclear from the metadata_.
-
-For multiple notes, the process is slightly more involved:
-
-1.  Export the file as Markdown, ZIP.
-2.  Extract the archive.
-3.  Remove the `!!!meta.json` file.
-4.  Compress the extracted files back into an archive.
-5.  Import the newly create archive, but unchecking _Import HTML, Markdown and TXT as text notes if it's unclear from the metadata_.
+<a class="reference-link" href="Text.md">Text</a> notes can be converted into Markdown notes and vice versa. See <a class="reference-link" href="Converting%20between%20note%20types.md">Converting between note types</a>.
 
 ## Sync-scrolling & block highlight
 

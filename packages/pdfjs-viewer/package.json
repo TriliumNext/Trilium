@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/pdfjs-viewer",
-  "version": "0.103.0",
+  "version": "0.104.0",
   "private": true,
   "scripts": {
     "build": "tsx scripts/build.ts",

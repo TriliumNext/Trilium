@@ -20,7 +20,6 @@ import protectedSessionHolder from "./protected_session_holder.js";
 import renderService from "./render.js";
 import server from "./server.js";
 import { applySingleBlockSyntaxHighlight } from "./syntax_highlight.js";
-import { getErrorMessage } from "./utils.js";
 
 let idCounter = 1;
 
@@ -110,9 +109,8 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
     } else if (type === "render" && entity instanceof FNote) {
         const $content = $("<div>");
 
-        await renderService.render(entity, $content, (e) => {
-            const $error = $("<div>").addClass("admonition caution").text(typeof e === "string" ? e : getErrorMessage(e));
-            $content.empty().append($error);
+        await renderService.render(entity, $content, (e, noteId) => {
+            showRenderError($content, e, noteId).catch((cardError) => console.error("Failed to render the script error card:", cardError));
         });
 
         $renderedContent.append($content);
@@ -584,6 +582,20 @@ async function renderCollection(note: FNote, $renderedContent: JQuery<HTMLElemen
         }), container);
     }
     $renderedContent.append($container);
+}
+
+/**
+ * Replaces the failed render note's content with the shared error card. The card is imported
+ * lazily: this module is loaded early (via the app-context graph), and an eager import of
+ * `RenderErrorCard` drags in the react widget tree (`Admonition` → `Collapsible` → `hooks`),
+ * which circles back into `basic_widget` before it finishes initializing.
+ */
+async function showRenderError($content: JQuery<HTMLElement>, error: unknown, noteId?: string) {
+    const { default: RenderErrorCard } = await import("../widgets/react/RenderErrorCard.js");
+    const container = $content.empty().get(0);
+    if (container) {
+        render(h(RenderErrorCard, { error, noteId }), container);
+    }
 }
 
 function getRenderingType(entity: FNote | FAttachment) {
