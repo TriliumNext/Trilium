@@ -1,9 +1,10 @@
-import type { LlmProvider, ModelInfo } from "./types.js";
+import { getLog, options as optionService } from "@triliumnext/core";
+
 import { AnthropicProvider } from "./providers/anthropic.js";
+import { ClaudeAgentProvider } from "./providers/claude_agent.js";
 import { GoogleProvider } from "./providers/google.js";
 import { OpenAiProvider } from "./providers/openai.js";
-import optionService from "../options.js";
-import log from "../log.js";
+import type { LlmProvider, ModelInfo } from "./types.js";
 
 /**
  * Configuration for a single LLM provider instance.
@@ -14,13 +15,18 @@ export interface LlmProviderSetup {
     name: string;
     provider: string;
     apiKey: string;
+    /** Optional override for the SDK's default API endpoint (e.g. for self-hosted Ollama, vLLM, or proxies). */
+    baseURL?: string;
 }
 
 /** Factory functions for creating provider instances */
-const providerFactories: Record<string, (apiKey: string) => LlmProvider> = {
-    anthropic: (apiKey) => new AnthropicProvider(apiKey),
-    openai: (apiKey) => new OpenAiProvider(apiKey),
-    google: (apiKey) => new GoogleProvider(apiKey)
+const providerFactories: Record<string, (apiKey: string, baseURL?: string) => LlmProvider> = {
+    anthropic: (apiKey, baseURL) => new AnthropicProvider(apiKey, baseURL),
+    openai: (apiKey, baseURL) => new OpenAiProvider(apiKey, baseURL),
+    google: (apiKey, baseURL) => new GoogleProvider(apiKey, baseURL),
+    // Claude Pro/Max subscription via the Claude Agent SDK — no API key;
+    // authentication is handled by Claude Code itself (`claude /login`).
+    "claude-agent": () => new ClaudeAgentProvider()
 };
 
 /** Cache of instantiated providers by their config ID */
@@ -37,7 +43,7 @@ function getConfiguredProviders(): LlmProviderSetup[] {
         }
         return JSON.parse(providersJson) as LlmProviderSetup[];
     } catch (e) {
-        log.error(`Failed to parse llmProviders option: ${e}`);
+        getLog().error(`Failed to parse llmProviders option: ${e}`);
         return [];
     }
 }
@@ -73,7 +79,7 @@ export function getProvider(providerId?: string): LlmProvider {
         throw new Error(`Unknown LLM provider type: ${config.provider}. Available: ${Object.keys(providerFactories).join(", ")}`);
     }
 
-    const provider = factory(config.apiKey);
+    const provider = factory(config.apiKey, config.baseURL);
     cachedProviders[config.id] = provider;
     return provider;
 }
@@ -121,7 +127,7 @@ export function getAllModels(): ModelInfo[] {
                 allModels.push({ ...model, provider: config.provider });
             }
         } catch (e) {
-            log.error(`Failed to get models from provider ${config.provider}: ${e}`);
+            getLog().error(`Failed to get models from provider ${config.provider}: ${e}`);
         }
     }
 

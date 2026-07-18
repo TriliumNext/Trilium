@@ -3,7 +3,7 @@
     height: 1.9em;
     align-items: center;
     justify-content: center;
-    border-radius: var(--badge-radius);
+    border-radius: var(--badge-radius, 12px);
     padding-inline: 8px;
     font-size: 0.75em;
     letter-spacing: .2pt;
@@ -19,6 +19,18 @@
 
         &:hover {
             background-color: color-mix(in srgb, var(--color, --badge-background-color) 80%, black);
+        }
+    }
+
+    /* Outline variant: colored border and text over a transparent fill; fills solid on hover. */
+    &.outline {
+        background-color: transparent;
+        color: var(--color);
+        border: 1px solid var(--color);
+
+        &.clickable:hover {
+            background-color: var(--color);
+            color: white;
         }
     }
 

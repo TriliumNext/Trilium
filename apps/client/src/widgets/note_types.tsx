@@ -12,7 +12,7 @@ import { TypeWidgetProps } from "./type_widgets/type_widget";
  * A `NoteType` altered by the note detail widget, taking into consideration whether the note is editable or not and adding special note types such as an empty one,
  * for protected session or attachment information.
  */
-export type ExtendedNoteType = Exclude<NoteType, "launcher" | "text" | "code" | "llmChat"> | "empty" | "readOnlyCode" | "readOnlyText" | "readOnlyOCRText" | "editableText" | "editableCode" | "attachmentDetail" | "attachmentList" |  "protectedSession" | "sqlConsole" | "llmChat";
+export type ExtendedNoteType = Exclude<NoteType, "launcher" | "text" | "code" | "llmChat"> | "empty" | "readOnlyCode" | "readOnlyText" | "editableText" | "editableCode" | "attachmentDetail" | "attachmentList" |  "protectedSession" | "sqlConsole" | "markdown" | "iconPack" | "llmChat" | "blobStub";
 
 export type TypeWidget = ((props: TypeWidgetProps) => VNode | JSX.Element | undefined);
 type NoteTypeView = () => (Promise<{ default: TypeWidget } | TypeWidget> | TypeWidget);
@@ -46,6 +46,10 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         className: "protected-session-password-component",
         isFullHeight: true
     },
+    blobStub: {
+        view: () => import("./type_widgets/BlobStub"),
+        className: "note-detail-blob-stub"
+    },
     book: {
         view: () => import("./type_widgets/Book"),
         className: "note-detail-book",
@@ -76,11 +80,6 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
     readOnlyCode: {
         view: async () => (await import("./type_widgets/code/Code")).ReadOnlyCode,
         className: "note-detail-readonly-code",
-        printable: true
-    },
-    readOnlyOCRText: {
-        view: () => import("./type_widgets/ReadOnlyTextRepresentation"),
-        className: "note-detail-ocr-text",
         printable: true
     },
     editableCode: {
@@ -145,6 +144,18 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
     sqlConsole: {
         view: () => import("./type_widgets/SqlConsole"),
         className: "sql-console-widget-container",
+        isFullHeight: true
+    },
+    markdown: {
+        view: () => import("./type_widgets/markdown/Markdown"),
+        className: "note-detail-markdown",
+        printable: true,
+        isFullHeight: true
+    },
+    iconPack: {
+        view: () => import("./type_widgets/icon_pack/IconPack"),
+        className: "note-detail-icon-pack",
+        printable: true,
         isFullHeight: true
     },
     spreadsheet: {

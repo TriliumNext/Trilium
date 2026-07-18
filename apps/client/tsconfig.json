@@ -4,9 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../../packages/share-theme"
-    },
-    {
       "path": "../../packages/highlightjs"
     },
     {

@@ -1,8 +1,9 @@
 import type { AttributeRow } from "@triliumnext/commons";
 import type { Router } from "express";
 
-import becca from "../becca/becca.js";
-import attributeService from "../services/attributes.js";
+import { attributes as attributeService } from "@triliumnext/core";
+
+import { becca } from "@triliumnext/core";
 import eu from "./etapi_utils.js";
 import type { ValidatorMap } from "./etapi-interface.js";
 import mappers from "./mappers.js";

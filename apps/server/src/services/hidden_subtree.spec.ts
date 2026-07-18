@@ -1,13 +1,10 @@
 import { deferred, LOCALES } from "@triliumnext/commons";
+import { becca_loader, hidden_subtree as hiddenSubtreeService, i18n, note_service as notes } from "@triliumnext/core";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import becca from "../becca/becca.js";
-import becca_loader from "../becca/becca_loader.js";
+import { becca } from "@triliumnext/core";
 import branches from "./branches.js";
-import cls from "./cls.js";
-import hiddenSubtreeService from "./hidden_subtree.js";
-import { changeLanguage } from "./i18n.js";
-import notes from "./notes.js";
+import { cls } from "@triliumnext/core";
 import sql_init from "./sql_init.js";
 
 describe("Hidden Subtree", () => {
@@ -141,7 +138,7 @@ describe("Hidden Subtree", () => {
                     }
 
                     try {
-                        await changeLanguage(locale.id);
+                        await i18n.changeLanguage(locale.id);
                     } catch (error) {
                         done.reject(error);
                     }

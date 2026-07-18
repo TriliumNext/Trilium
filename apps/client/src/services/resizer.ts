@@ -37,6 +37,7 @@ function setupLeftPaneResizer(leftPaneVisible: boolean) {
     }
 
     const restPaneWidth = 100 - leftPaneWidth - reservedWidth;
+    /* v8 ignore next -- redundant guard: a falsy leftPaneVisible already returned above */
     if (leftPaneVisible) {
         // Delayed initialization ensures that all DOM elements are fully rendered and part of the layout,
         // preventing Split.js from retrieving incorrect dimensions due to #left-pane not being rendered yet,
@@ -75,6 +76,7 @@ function setupRightPaneResizer() {
         rightPaneWidth = 5;
     }
 
+    /* v8 ignore next -- redundant guard: a falsy rightPaneVisible already returned above */
     if (rightPaneVisible) {
         rightInstance = Split(["#center-pane", "#right-pane"], {
             sizes: [100 - rightPaneWidth, rightPaneWidth],

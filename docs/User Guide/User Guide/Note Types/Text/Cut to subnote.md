@@ -1,5 +1,5 @@
 # Cut to subnote
-<figure class="image image_resized image-style-align-right" style="width:64.63%;"><img style="aspect-ratio:812/585;" src="Cut to subnote_cut-to-subn.gif" width="812" height="585"></figure>
+<figure class="image image_resized image-style-align-right" style="width:64.63%;"><img style="aspect-ratio:812/585;" src="Cut to subnote_cut-to-subnote.gif" width="812" height="585"></figure>
 
 When editing a document that becomes too large, you can split it into sub-notes:
 

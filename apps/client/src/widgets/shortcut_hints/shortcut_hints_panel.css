@@ -1,0 +1,68 @@
+.shortcut-hints-panel {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1080;
+    /* Grow to fit the widest shortcut row (so keys never wrap), capped to the viewport. */
+    width: max-content;
+    max-width: min(90vw, 640px);
+    max-height: 60vh;
+    overflow: auto;
+    padding: 0.75rem 1rem;
+    background-color: var(--main-background-color);
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+
+    .shortcut-hints-section {
+        &:not(:last-child) {
+            margin-bottom: 0.75rem;
+        }
+    }
+
+    .shortcut-hints-section-title {
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        font-size: .75em;
+        letter-spacing: 0.5pt;
+        border-bottom: 2px solid var(--main-border-color);
+    }
+
+    /* Borderless two-column table: action label (max-content) then shortcut keys (fills the rest). */
+    .shortcut-hints-list {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        column-gap: 1rem;
+        row-gap: 0.25rem;
+        align-items: baseline;
+        margin: 0;
+        font-size: .85em;
+
+        dt,
+        dd {
+            margin: 2px 0;
+        }
+
+        /* `dt` is bold by default (Bootstrap reboot); action names should read as normal text. */
+        dt {
+            font-weight: normal;
+        }
+
+        dd {
+            white-space: nowrap;
+        }
+    }
+
+    /* Separate alternative shortcuts for the same action: "<keys>,  <keys>". */
+    .shortcut-hint-alt:not(:last-child)::after {
+        content: ",";
+        margin-inline-end: 8px;
+    }
+
+    .shortcut-hints-footer {
+        margin-top: 0.6rem;
+        color: var(--muted-text-color);
+        font-size: 0.8em;
+    }
+}

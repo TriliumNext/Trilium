@@ -1,0 +1,52 @@
+.ribbon-button-container {
+    display: flex;
+    border-bottom: 1px solid var(--main-border-color);
+    margin-inline-end: 5px;
+    align-items: center;
+    height: 36px;
+    gap: 10px;
+}
+
+.note-actions {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+}
+
+.note-actions .dropdown-menu {
+    min-width: 15em;
+}
+
+.note-actions .dropdown-item[disabled], .note-actions .dropdown-item[disabled]:hover {
+    color: var(--muted-text-color) !important;
+    background-color: transparent !important;
+    pointer-events: none; /* makes it unclickable */
+}
+
+body.experimental-feature-new-layout .ribbon-button-container {
+    --button-gap: 5px;
+
+    border-bottom: 0 !important;
+    margin: 0;
+    gap: var(--button-gap);
+
+    button {
+        transition: opacity 250ms ease-in;
+
+        &.disabled {
+            opacity: 0.4;
+        }
+    }
+
+    .note-actions-custom {
+        display: flex;
+        align-items: center;
+        height: 36px;
+        gap: var(--button-gap);
+
+        &> button:last-of-type {
+            margin-inline-end: 0.5em;
+        }
+    }
+}

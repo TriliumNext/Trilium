@@ -32,15 +32,15 @@ header {
         height: 32px;
     }
 
-    img+span {
-        font-size: 1.3em;
-    }
-
     nav {
         flex-grow: 1;
         display: flex;
-        justify-content: flex-end;
+        justify-content: flex-start;
         gap: var(--gap);
+
+        .nav-links {
+            display: contents;
+        }
 
         a {
             text-decoration: none;
@@ -50,20 +50,6 @@ header {
                 color: var(--brand-1);
             }
         }
-    }
-}
-
-.repository-button a {
-    display: flex;
-    color: currentColor;
-
-    &:hover {
-        color: var(--brand-1);
-        text-decoration: none;
-    }
-
-    .counter {
-        margin-inline-start: 4px;
     }
 }
 
@@ -81,6 +67,17 @@ header {
         box-sizing: border-box;
         display: flex;
 
+        &:has(nav.mobile-shown) {
+            height: 100vh;
+            overflow-y: auto;
+
+            .content-wrapper {
+                display: flex;
+                flex-direction: column;
+                min-height: 100%;
+            }
+        }
+
         .content-wrapper {
             display: block;
         }
@@ -90,13 +87,10 @@ header {
             align-items: center;
             width: 100%;
             gap: 2em;
+            flex-shrink: 0;
 
             .banner {
                 flex-grow: 1;
-            }
-
-            .social-button {
-                align-items: center;
             }
         }
 
@@ -112,8 +106,21 @@ header {
 
             &.mobile-shown {
                 display: flex;
+                flex-grow: 1;
                 max-height: 100vh;
                 padding: 2em 0;
+            }
+
+            .nav-links {
+                display: flex;
+                flex-direction: column;
+                gap: var(--gap);
+                margin-top: 2em;
+            }
+
+            .nav-bottom {
+                flex-shrink: 0;
+                margin-top: auto;
             }
         }
     }
@@ -156,23 +163,12 @@ header {
 
 @media ((min-width: 720px) and (max-width: 1115px)) {
     header {
-        .banner span {
-            display: none;
-        }
-
         .content-wrapper {
             width: 100%;
         }
 
-        .repository-button .social-button {
-            flex-direction: column;
-            align-items: center;
-            font-size: 0.6em;
-        }
-
         nav {
             font-size: 0.9em;
-            justify-content: center;
         }
 
         .download-button {

@@ -1,11 +1,10 @@
+import { becca, cls, options as optionService } from "@triliumnext/core";
 import { Application } from "express";
-import { beforeAll, describe, expect, it } from "vitest";
 import supertest from "supertest";
-import { createNote, login } from "./utils.js";
+import { beforeAll, describe, expect, it } from "vitest";
+
 import config from "../../src/services/config.js";
-import becca from "../../src/becca/becca.js";
-import optionService from "../../src/services/options.js";
-import cls from "../../src/services/cls.js";
+import { createNote, login } from "./utils.js";
 
 let app: Application;
 let token: string;
@@ -30,6 +29,10 @@ function parseSseResponse(text: string) {
 function mcpPost(app: Application) {
     return supertest(app)
         .post("/mcp")
+        // supertest binds to an ephemeral port, so its default Host (127.0.0.1:<random>)
+        // would be rejected by the DNS-rebinding allow-list. Present a bare loopback Host,
+        // matching what a real client on a standard port sends.
+        .set("Host", "localhost")
         .set("Accept", MCP_ACCEPT)
         .set("Content-Type", "application/json");
 }

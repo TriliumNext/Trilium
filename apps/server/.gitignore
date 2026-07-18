@@ -1,3 +1,3 @@
 spec/db/*
-!spec/db/*.db
 !spec/db/config.ini
+profiles/

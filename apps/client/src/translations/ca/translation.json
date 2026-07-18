@@ -1,10 +1,4 @@
 {
-  "about": {
-    "title": "Sobre Trilium Notes",
-    "homepage": "Pàgina principal:",
-    "app_version": "Versió de l'aplicació:",
-    "db_version": "Versió de la base de dades:"
-  },
   "add_link": {
     "note": "Nota"
   },
@@ -25,8 +19,7 @@
   },
   "delete_notes": {
     "close": "Tanca",
-    "cancel": "Cancel·la",
-    "ok": "OK"
+    "cancel": "Cancel·la"
   },
   "export": {
     "close": "Tanca",
@@ -59,12 +52,6 @@
   },
   "recent_changes": {
     "undelete_link": "recuperar"
-  },
-  "revisions": {
-    "restore_button": "Restaura",
-    "delete_button": "Suprimeix",
-    "download_button": "Descarrega",
-    "mime": "MIME: "
   },
   "sort_child_notes": {
     "title": "títol",

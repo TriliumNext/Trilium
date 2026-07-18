@@ -7,8 +7,9 @@ import server from "../../services/server";
 import FormCheckbox from "../react/FormCheckbox";
 import Button from "../react/Button";
 import bulk_action from "../../services/bulk_action";
+import dialog from "../../services/dialog";
 import toast from "../../services/toast";
-import RenameNoteBulkAction from "../bulk_actions/note/rename_note";
+import AbstractBulkAction from "../bulk_actions/abstract_bulk_action";
 import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { useTriliumEvent } from "../react/hooks";
@@ -18,7 +19,7 @@ export default function BulkActionsDialog() {
     const [ bulkActionNote, setBulkActionNote ] = useState<FNote | null>();
     const [ includeDescendants, setIncludeDescendants ] = useState(false);
     const [ affectedNoteCount, setAffectedNoteCount ] = useState(0);
-    const [ existingActions, setExistingActions ] = useState<RenameNoteBulkAction[]>([]);
+    const [ existingActions, setExistingActions ] = useState<AbstractBulkAction[]>([]);
     const [ shown, setShown ] = useState(false);
 
     useTriliumEvent("openBulkActionsDialog", async ({ selectedOrActiveNoteIds }) => {
@@ -57,12 +58,32 @@ export default function BulkActionsDialog() {
             className="bulk-actions-dialog"
             size="xl"
             title={t("bulk_actions.bulk_actions")}
-            footer={<Button text={t("bulk_actions.execute_bulk_actions")} kind="primary" />}
+            footer={<>
+                <Button text={t("modal.cancel")} onClick={() => setShown(false)} />
+                <Button text={t("bulk_actions.execute_bulk_actions")} kind="primary" />
+            </>}
             show={shown}
             onSubmit={async () => {
+                // Let actions surface a confirmation prompt (e.g. lossy conversions) before executing.
+                const confirmMessages = existingActions
+                    .map((action) => action.getConfirmationMessage())
+                    .filter((message): message is string => !!message);
+                if (confirmMessages.length && !await dialog.confirm(confirmMessages.join("\n\n"))) {
+                    return;
+                }
+
+                // Submit the in-memory action definitions rather than letting the server re-read the
+                // stored labels, so a still-in-flight action save can't make the batch run against a
+                // stale/empty choice.
+                const actions = existingActions.map((action) => ({
+                    ...action.actionDef,
+                    name: (action.constructor as typeof AbstractBulkAction).actionName
+                }));
+
                 await server.post("bulk-action/execute", {
                     noteIds: selectedOrActiveNoteIds,
-                    includeDescendants
+                    includeDescendants,
+                    actions
                 });
 
                 toast.showMessage(t("bulk_actions.bulk_actions_executed"), 3000);
@@ -104,7 +125,7 @@ function AvailableActionsList() {
     </table>;
 }
 
-function ExistingActionsList({ existingActions }: { existingActions?: RenameNoteBulkAction[] }) {
+function ExistingActionsList({ existingActions }: { existingActions?: AbstractBulkAction[] }) {
     return (
         <table class="bulk-existing-action-list">
             { existingActions

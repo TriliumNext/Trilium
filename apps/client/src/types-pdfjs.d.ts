@@ -10,6 +10,18 @@ type HistoryData = {
     }[];
 };
 
+/**
+ * A single reusable signature as stored by pdf.js' `SignatureStorage` (`web/signature_storage.js`):
+ * a human-readable description plus the compressed outline data produced by `SignatureExtractor`.
+ */
+type PdfSignatureEntry = {
+    description: string;
+    signatureData: unknown;
+};
+
+/** The pdf.js reusable signature library, keyed by signature UUID. Mirrors `localStorage["pdfjs.signature"]`. */
+type PdfSignatureStore = Record<string, PdfSignatureEntry>;
+
 interface Window {
     /**
      * By default, pdf.js will try to store information about the opened PDFs such as zoom and scroll position in local storage.
@@ -18,6 +30,15 @@ interface Window {
      * The variable must be set early at startup, before pdf.js fully initializes.
      */
     TRILIUM_VIEW_HISTORY_STORE?: HistoryData;
+
+    /**
+     * The reusable signature library used by the pdf.js signature tool. pdf.js keeps this in
+     * per-browser `localStorage`; Trilium instead injects it here (from a synced option) so signatures
+     * follow the user across devices. Reads/writes of `localStorage["pdfjs.signature"]` are intercepted
+     * in the viewer and routed through this global + a `pdfjs-viewer-save-signatures` message.
+     * Must be set early at startup, before pdf.js fully initializes.
+     */
+    TRILIUM_SIGNATURES?: PdfSignatureStore;
 
     /**
      * If set to true, hides the pdf.js viewer default sidebar containing the outline, page navigation, etc.
@@ -54,6 +75,12 @@ interface PdfDocumentBlobResultMessage extends WithContext {
 
 interface PdfSaveViewHistoryMessage extends WithContext {
     type: "pdfjs-viewer-save-view-history";
+    data: string;
+}
+
+interface PdfSaveSignaturesMessage extends WithContext {
+    type: "pdfjs-viewer-save-signatures";
+    /** JSON string of the full signature library, as written by pdf.js to `localStorage["pdfjs.signature"]`. */
     data: string;
 }
 
@@ -107,9 +134,27 @@ interface PdfViewerLayersMessage {
     toggleLayer?: (layerId: string, visible: boolean) => void;
 }
 
+interface PdfAnnotationInfo {
+    id: string;
+    type: string;
+    contents: string;
+    highlightedText: string;
+    author: string;
+    pageNumber: number;
+    color: string | null;
+    creationDate: string | null;
+    modificationDate: string | null;
+}
+
+interface PdfViewerAnnotationsMessage {
+    type: "pdfjs-viewer-annotations";
+    annotations: PdfAnnotationInfo[];
+}
+
 type PdfMessageEvent = MessageEvent<
     PdfDocumentModifiedMessage
     | PdfSaveViewHistoryMessage
+    | PdfSaveSignaturesMessage
     | PdfViewerTocMessage
     | PdfViewerActiveHeadingMessage
     | PdfViewerPageInfoMessage
@@ -117,5 +162,6 @@ type PdfMessageEvent = MessageEvent<
     | PdfViewerThumbnailMessage
     | PdfViewerAttachmentsMessage
     | PdfViewerLayersMessage
+    | PdfViewerAnnotationsMessage
     | PdfDocumentBlobResultMessage
 >;

@@ -1,19 +1,25 @@
-import { dayjs, formatLogMessage } from "@triliumnext/commons";
+import { dayjs, formatLogMessage, type ToMarkdownResponse } from "@triliumnext/commons";
+import type { FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote } from "@triliumnext/commons/src/lib/script_api.js";
+import DOMPurify from "dompurify";
 
 import appContext from "../components/app_context.js";
 import type Component from "../components/component.js";
 import type NoteContext from "../components/note_context.js";
+import type FBranch from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
 import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
 import RightPanelWidget from "../widgets/right_panel_widget.js";
+import { BackendScriptingDisabledError, showBackendScriptingDisabledToast } from "./backend_scripting.js";
 import dateNotesService from "./date_notes.js";
 import dialogService from "./dialog.js";
 import froca from "./froca.js";
 import { preactAPI } from "./frontend_script_api_preact.js";
 import { t } from "./i18n.js";
 import linkService from "./link.js";
+import noteCreateService, { type CreateNoteOpts } from "./note_create.js";
 import noteTooltipService from "./note_tooltip.js";
+import options from "./options.js";
 import protectedSessionService from "./protected_session.js";
 import searchService from "./search.js";
 import server from "./server.js";
@@ -67,21 +73,31 @@ export interface Api {
     $container: JQuery<HTMLElement> | null;
 
     /**
-     * Note where the script started executing, i.e., the (event) entrypoint of the current script execution.
+     * Note where the script execution started — the entry point of the current script bundle
+     * (in C terms, the file containing `main()`). When a script is spread across multiple code
+     * notes (descendant code notes loaded as modules via `require()`), every note in the
+     * bundle shares the same `startNote`, while {@link currentNote} differs per note.
+     * Messages from `api.log()` are grouped under this note.
      */
     startNote: FNote;
 
     /**
-     * Note where the script is currently executing, i.e. the note where the currently executing source code is written.
+     * Note containing the source code that is currently executing (in C terms, `__FILE__`).
+     * Equal to {@link startNote} unless execution has moved into a descendant module note
+     * loaded via `require()`. Don't confuse this with the note open in the UI — use
+     * `api.getActiveContextNote()` for that.
      */
     currentNote: FNote;
 
     /**
-     * Entity whose event triggered this execution.
+     * Entity whose event triggered this execution, or `null`.
      *
-     * <p>
-     * For front-end scripts, generally there's no origin entity specified since the scripts are run by the user or automatically by the UI (widgets).
-     * If there is an origin entity specified, then it's going to be a note entity.
+     * Most frontend scripts are started by the user or by the UI (startup scripts, widgets),
+     * so this is usually `null`. It is set to a note when:
+     * - the script runs through a `~renderNote` relation — then it's the note being rendered
+     *   (the one carrying the relation), not the script note;
+     * - a backend script calls `api.runOnFrontend()` — then it's the backend execution's
+     *   `originEntity`, provided that entity was a note.
      */
     originEntity: unknown | null;
 
@@ -171,6 +187,23 @@ export interface Api {
     runAsyncOnBackendWithManualTransactionHandling(func: Func, params: unknown[]): unknown;
 
     /**
+     * Whether backend script execution is enabled on the server (the
+     * `[Security] backendScriptingEnabled` config toggle). When it's disabled,
+     * `api.runOnBackend()` / `api.runAsyncOnBackendWithManualTransactionHandling()`
+     * reject with a "Backend script execution is disabled" error, so check this
+     * first to let a script degrade gracefully instead of throwing.
+     */
+    isBackendScriptingEnabled(): boolean;
+
+    /**
+     * Whether the SQL console is enabled on the server (the
+     * `[Security] sqlConsoleEnabled` config toggle). When it's disabled, backend
+     * scripts that run raw SQL (`api.sql.*`) fail, so check this before invoking
+     * SQL-backed logic via `api.runOnBackend()`.
+     */
+    isSqlConsoleEnabled(): boolean;
+
+    /**
      * This is a powerful search method - you can search by attributes and their values, e.g.:
      * "#dateModified =* MONTH AND #log". See full documentation for all options at: https://triliumnext.github.io/Docs/Wiki/search.html
      */
@@ -203,10 +236,22 @@ export interface Api {
     reloadNotes(noteIds: string[]): Promise<void>;
 
     /**
+     * Creates a new note as a child of the given parent, entirely on the frontend — no backend
+     * scripting required (unlike `api.runOnBackend(() => api.createTextNote(...))`). By default the
+     * new note is activated in the current tab with its title focused for editing; pass
+     * `{ activate: false }` to create it silently.
+     *
+     * @param parentNotePath note path (or noteId) of the parent under which to create the note
+     * @param opts creation options — e.g. `{ title, content, type, mime, activate }`
+     * @returns the created note and its branch, resolved from the frontend cache
+     */
+    createNote(parentNotePath: string, opts?: CreateNoteOpts): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+
+    /**
      * Instance name identifies particular Trilium instance. It can be useful for scripts
      * if some action needs to happen on only one specific instance.
      */
-    getInstanceName(): string;
+    getInstanceName(): string | null;
 
     /**
      * @returns date in YYYY-MM-DD format
@@ -458,13 +503,36 @@ export interface Api {
      */
     formatNoteSize: typeof utils.formatSize;
 
+    /**
+     * Converts the given HTML string to Markdown.
+     *
+     * Unlike the backend API, this runs on the server (the HTML→Markdown
+     * converter is backend-only), so it returns a promise.
+     *
+     * @param html - HTML content to convert
+     * @returns Markdown representation of the input HTML
+     */
+    htmlToMarkdown(html: string): Promise<string>;
+
+    /**
+     * Converts the given Markdown string to HTML.
+     *
+     * Runs entirely in the browser; the promise is only needed because the
+     * Markdown renderer is loaded on demand.
+     *
+     * @param markdown - Markdown content to convert
+     * @returns HTML representation of the input Markdown
+     */
+    markdownToHtml(markdown: string): Promise<string>;
+
     logMessages: Record<string, string[]>;
     logSpacedUpdates: Record<string, SpacedUpdate>;
 
     /**
-     * Log given message to the log pane in UI
+     * Log given message to the log pane in UI.
+     * Accepts multiple arguments which are joined with spaces, similar to `console.log`.
      */
-    log(message: string | object): void;
+    log(...args: unknown[]): void;
 
     preact: typeof preactAPI;
 }
@@ -542,6 +610,14 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     }
 
     this.__runOnBackendInner = async (func, params, transactional) => {
+        // Short-circuit when backend scripting is disabled: skip the request entirely so the
+        // server never returns a 500, show a single deduplicated toast (fixed id) instead of one
+        // generic HTTP-error toast per failing script, and throw a typed error callers can detect.
+        if (!options.is("backendScriptingEnabled")) {
+            showBackendScriptingDisabledToast(startNote.noteId);
+            throw new BackendScriptingDisabledError();
+        }
+
         if (typeof func === "function") {
             func = func.toString();
         }
@@ -584,6 +660,9 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
         return await this.__runOnBackendInner(func, params, false);
     };
 
+    this.isBackendScriptingEnabled = () => options.is("backendScriptingEnabled");
+    this.isSqlConsoleEnabled = () => options.is("sqlConsoleEnabled");
+
     this.searchForNotes = async (searchString) => {
         return await searchService.searchForNotes(searchString);
     };
@@ -597,6 +676,7 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     this.getNote = async (noteId) => await froca.getNote(noteId);
     this.getNotes = async (noteIds, silentNotFoundError = false) => await froca.getNotes(noteIds, silentNotFoundError);
     this.reloadNotes = async (noteIds) => await froca.reloadNotes(noteIds);
+    this.createNote = async (parentNotePath, opts = {}) => await noteCreateService.createNote(parentNotePath, opts);
     this.getInstanceName = () => window.glob.instanceName;
     this.formatDateISO = utils.formatDateISO;
     this.parseDate = utils.parseDate;
@@ -700,12 +780,25 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     this.formatSize = utils.formatSize;
     this.formatNoteSize = utils.formatSize;
 
+    this.htmlToMarkdown = async (html) => {
+        const { markdownContent } = await server.post<ToMarkdownResponse>("other/to-markdown", { htmlContent: html });
+        return markdownContent;
+    };
+    this.markdownToHtml = async (markdown) => {
+        // The Markdown renderer pulls in marked, so it is only loaded on demand.
+        const { renderToHtml } = await import("@triliumnext/commons/src/lib/markdown_renderer");
+        return renderToHtml(markdown, "", {
+            sanitize: (dirty) => DOMPurify.sanitize(dirty),
+            wikiLink: { formatHref: (id) => `#root/${id}` }
+        });
+    };
+
     this.logMessages = {};
     this.logSpacedUpdates = {};
-    this.log = (message) => {
+    this.log = (...args) => {
         const { noteId } = this.startNote;
 
-        message = `${utils.now()}: ${formatLogMessage(message)}`;
+        const message = `${utils.now()}: ${formatLogMessage(...args)}`;
 
         console.log(`Script ${noteId}: ${message}`);
 
@@ -729,3 +822,15 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
 export default FrontendScriptApi as any as {
     new(startNote: FNote, currentNote: FNote, originEntity: Entity | null, $container: JQuery<HTMLElement> | null): Api;
 };
+
+// --- Drift guards -----------------------------------------------------------
+// The public script API surface lives in @triliumnext/commons (self-contained so
+// it can feed the in-editor language service and the script-deployer). These
+// checks fail to compile — naming the offending member — if that public surface
+// claims an `api`/`FNote` member that has since been renamed or removed here.
+type _MissingApiMembers = Exclude<keyof PublicFrontendApi, keyof Api>;
+type _MissingFNoteMembers = Exclude<keyof PublicScriptFNote, keyof FNote>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _apiDriftGuard: [_MissingApiMembers] extends [never] ? true : _MissingApiMembers = true;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _fnoteDriftGuard: [_MissingFNoteMembers] extends [never] ? true : _MissingFNoteMembers = true;

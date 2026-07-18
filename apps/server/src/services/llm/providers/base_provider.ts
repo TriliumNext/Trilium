@@ -3,16 +3,14 @@
  * tool assembly, model pricing, and title generation.
  */
 
-import type { LlmMessage } from "@triliumnext/commons";
-import type { LanguageModel } from "ai";
-import { generateText, type ModelMessage, stepCountIs, streamText, type ToolSet } from "ai";
-import yaml from "js-yaml";
+import { type LlmMessage, type LlmMessagePart } from "@triliumnext/commons";
+import { type FilePart, generateText, type ImagePart, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type TextPart, type ToolSet } from "ai";
 
-import becca from "../../../becca/becca.js";
-import { getSkillsSummary } from "../skills/index.js";
-import { getNoteMeta, SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
-import type { KnowledgeBaseSource, LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
+import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
+import { resolveAttachmentPart } from "./attachment_content.js";
+import { buildNoteHint } from "./note_hint.js";
+import { buildSystemPrompt as composeSystemPrompt } from "./system_prompt.js";
 
 const DEFAULT_MAX_TOKENS = 8096;
 const TITLE_MAX_TOKENS = 30;
@@ -26,112 +24,44 @@ function effectiveCost(pricing: ModelPricing): number {
 }
 
 /**
- * Build a context hint about the current note with full metadata (same as get_note / ETAPI).
+ * Resolve a single LlmMessagePart to its AI SDK ModelMessage part form, mapping
+ * the provider-neutral {@link resolveAttachmentPart} result into `ai`'s block
+ * shapes. Returns null (and the caller drops the part) when it can't resolve.
  */
-function buildNoteHint(noteId: string): string | null {
-    const note = becca.getNote(noteId);
-    if (!note) {
+function resolveMessagePart(part: LlmMessagePart): TextPart | ImagePart | FilePart | null {
+    const resolved = resolveAttachmentPart(part);
+    if (!resolved) {
         return null;
     }
-
-    const metadata = yaml.dump(getNoteMeta(note, SYSTEM_PROMPT_LIMITS), { lineWidth: -1 });
-    return [
-        "The user is currently viewing the following note.",
-        "Use this metadata (including contentPreview) to answer questions about the note without calling tools when possible.",
-        "Use get_note_content only if the preview is insufficient.",
-        "",
-        metadata
-    ].join("\n");
-}
-
-/** Maximum number of source notes to include in the knowledge base prompt. */
-const KB_MAX_SOURCES = 20;
-/** Maximum characters of content preview per source note in the KB prompt. */
-const KB_PREVIEW_MAX = 1500;
-
-/**
- * Build the knowledge base section of the system prompt from source note IDs.
- * Includes note metadata and extended content previews for each source.
- */
-/**
- * Resolve source note IDs to {noteId, title} pairs, preserving order so that
- * the index matches the numbered reference list in the system prompt.
- * Missing notes keep their slot (with the ID as title) to preserve numbering.
- */
-export function resolveKnowledgeBaseSources(sourceNoteIds: string[]): KnowledgeBaseSource[] {
-    return sourceNoteIds.slice(0, KB_MAX_SOURCES).map(noteId => ({
-        noteId,
-        title: becca.getNote(noteId)?.getTitleOrProtected() ?? noteId
-    }));
-}
-
-function buildKnowledgeBaseSources(sourceNoteIds: string[]): string | null {
-    const sources: string[] = [];
-
-    for (const noteId of sourceNoteIds.slice(0, KB_MAX_SOURCES)) {
-        const note = becca.getNote(noteId);
-        if (!note) continue;
-
-        const title = note.getTitleOrProtected();
-        const childNotes = note.getChildNotes().slice(0, 10);
-
-        let entry = `### ${title} (noteId: ${noteId})`;
-        if (note.type !== "text") {
-            entry += `\nType: ${note.type}`;
-        }
-        if (childNotes.length > 0) {
-            entry += `\nChild notes: ${childNotes.map(c => `${c.getTitleOrProtected()} (${c.noteId})`).join(", ")}`;
-        }
-
-        // Build an extended content preview directly (up to KB_PREVIEW_MAX chars).
-        // For text notes, strip HTML tags cheaply instead of full markdown conversion.
-        if (note.isContentAvailable()) {
-            const content = note.getContent();
-            if (typeof content === "string" && content.length > 0) {
-                const plain = note.type === "text"
-                    ? content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
-                    : content;
-                if (plain.length > 0) {
-                    const preview = plain.length > KB_PREVIEW_MAX
-                        ? `${plain.slice(0, KB_PREVIEW_MAX)}…`
-                        : plain;
-                    entry += `\n\n${preview}`;
-                }
-            }
-        }
-
-        sources.push(entry);
+    switch (resolved.kind) {
+        case "text":
+            return { type: "text", text: resolved.text };
+        case "image":
+            return { type: "image", image: resolved.bytes, mediaType: resolved.mime };
+        case "file":
+            return { type: "file", data: resolved.bytes, mediaType: resolved.mime, filename: resolved.filename };
     }
+}
 
-    if (sources.length === 0) return null;
-
-    const refList = sourceNoteIds.slice(0, KB_MAX_SOURCES)
-        .map((id, i) => {
-            const note = becca.getNote(id);
-            return note ? `[${i + 1}] ${note.getTitleOrProtected()} [[${id}]]` : null;
-        })
-        .filter(Boolean);
-
-    return [
-        "## Knowledge Base Sources",
-        "",
-        "The following notes are the user's selected knowledge base. " +
-        "Answer questions primarily using information found in these sources. " +
-        "Use `get_note_content` to read the full content of any source when the preview is insufficient. " +
-        "You can also use `search_notes` to find related information within source subtrees.",
-        "",
-        "**Citation rules**: When citing a source, use Harvard-style numbered references inline, e.g. [1], [2]. " +
-        "Use only the numbers from the reference list below. " +
-        "Do NOT append a reference or bibliography section at the end of your response — " +
-        "the sources you cite are displayed to the user automatically.",
-        "",
-        "Reference list for this conversation:",
-        ...refList,
-        "",
-        "If the user's question cannot be answered from these sources, clearly say so and offer to search the broader note collection.",
-        "",
-        ...sources
-    ].join("\n");
+/**
+ * Build a single ModelMessage from an LlmMessage. Plain string content stays
+ * as-is; multimodal content is resolved into AI SDK text/image/file parts.
+ */
+export function buildModelMessage(m: LlmMessage): ModelMessage {
+    const role = m.role as "user" | "assistant";
+    if (typeof m.content === "string") {
+        return { role, content: m.content };
+    }
+    const resolved = m.content
+        .map(resolveMessagePart)
+        .filter((p): p is TextPart | ImagePart | FilePart => p !== null);
+    // Assistant turns can only carry TextParts (per the AI SDK type), so
+    // strip any stray attachments — they only make sense on user turns anyway.
+    if (role === "assistant") {
+        const textOnly: TextPart[] = resolved.filter((p): p is TextPart => p.type === "text");
+        return { role: "assistant", content: textOnly };
+    }
+    return { role: "user", content: resolved };
 }
 
 /**
@@ -168,90 +98,73 @@ export abstract class BaseProvider implements LlmProvider {
     protected abstract createModel(modelId: string): LanguageModel;
 
     /**
-     * Build the system prompt with note hints and skills summary.
+     * Build the system prompt. Delegates to the shared `system_prompt` module;
+     * kept as an overridable method so providers can post-process the result
+     * (e.g. Google appends a web-search/note-tool conflict notice).
      */
     protected buildSystemPrompt(messages: LlmMessage[], config: LlmProviderConfig): string | undefined {
-        const parts: string[] = [];
-
-        // Base system prompt from config or messages
-        const basePrompt = config.systemPrompt || messages.find(m => m.role === "system")?.content;
-        if (basePrompt) {
-            parts.push(basePrompt);
-        }
-
-        // Context note hint
-        if (config.contextNoteId) {
-            const noteHint = buildNoteHint(config.contextNoteId);
-            if (noteHint) {
-                parts.push(noteHint);
-            }
-        }
-
-        // Knowledge base sources
-        const hasKnowledgeBase = config.sourceNoteIds && config.sourceNoteIds.length > 0;
-        if (hasKnowledgeBase) {
-            const kbSection = buildKnowledgeBaseSources(config.sourceNoteIds!);
-            if (kbSection) {
-                parts.push(kbSection);
-            }
-        }
-
-        // Note tools hint
-        if (config.enableNoteTools || hasKnowledgeBase) {
-            parts.push(
-                `You have access to skills that provide specialized instructions. Load a skill with the load_skill tool before performing complex operations.\n\nAvailable skills:\n${getSkillsSummary()}`
-            );
-            parts.push(
-                `When referring to notes in your responses, use the wiki-link format [[noteId]] to create clickable internal links. Use the note ID (not the title) from tool results. The link will automatically display the note's title and icon, so don't repeat the title in your text. For example: "You can find more details in [[ZjSfLhzlqNY6]]" instead of "You can find more details in the Meeting Notes note ([[ZjSfLhzlqNY6]])".`
-            );
-            parts.push(
-                [
-                    "You can fully manage the user's notes: search, read, create, edit, rename, delete, move, and clone.",
-                    "Trilium uses a tree hierarchy where notes can have multiple parents (via cloning).",
-                    "Workflow: use search_notes or get_child_notes to find notes, get_note/get_note_content to read them,",
-                    "then create_note, update_note_content, append_to_note, rename_note to edit content,",
-                    "and move_note, clone_note, delete_note to organize the tree.",
-                    "Always confirm destructive actions (delete, overwrite) with the user before proceeding."
-                ].join(" ")
-            );
-        } else if (config.contextNoteId) {
-            parts.push(
-                `You can see the current note's metadata above, but you cannot search or access other notes. If the user asks about other notes, inform them that "Note access" is disabled and they need to enable it in the chat settings (click on the model name dropdown and toggle "Note access").`
-            );
-        } else {
-            parts.push(
-                `You do not have access to the user's notes. If the user asks about their notes, inform them that "Note access" is disabled and they need to enable it in the chat settings (click on the model name dropdown and toggle "Note access").`
-            );
-        }
-
-        // Web search hint
-        if (!config.enableWebSearch) {
-            parts.push(
-                `You do not have access to web search. If the user asks for current/real-time information, news, or anything that requires searching the web, inform them that "Web search" is disabled and they need to enable it in the chat settings (click on the model name dropdown and toggle "Web search").`
-            );
-        }
-
-        return parts.length > 0 ? parts.join("\n\n") : undefined;
+        return composeSystemPrompt(messages, config);
     }
 
     /**
      * Build the ModelMessage array from LlmMessages (no provider-specific options).
+     *
+     * Only user/assistant turns are included here — the system prompt is passed
+     * separately via the `system` option of `streamText` (see `buildSystemMessage`),
+     * which is resilient against prompt injection.
      */
-    protected buildMessages(chatMessages: LlmMessage[], systemPrompt: string | undefined): ModelMessage[] {
-        const coreMessages: ModelMessage[] = [];
+    protected buildMessages(chatMessages: LlmMessage[]): ModelMessage[] {
+        return chatMessages.map(m => buildModelMessage(m));
+    }
 
-        if (systemPrompt) {
-            coreMessages.push({ role: "system", content: systemPrompt });
+    /**
+     * Attach the current-note metadata hint to the last user message.
+     *
+     * The hint is deliberately kept OUT of the system prompt: it changes whenever
+     * the context note changes, and the system prompt carries the provider's
+     * prompt-cache breakpoint — embedding volatile content there would invalidate
+     * the cached system+tools prefix on every note edit. The last user message is
+     * regenerated every turn and never cached, so it is the right home for it.
+     */
+    protected applyNoteHint(chatMessages: LlmMessage[], config: LlmProviderConfig): LlmMessage[] {
+        if (!config.contextNoteId) {
+            return chatMessages;
         }
 
-        for (const m of chatMessages) {
-            coreMessages.push({
-                role: m.role as "user" | "assistant",
-                content: m.content
-            });
+        const lastUserIndex = chatMessages.map(m => m.role).lastIndexOf("user");
+        if (lastUserIndex === -1) {
+            return chatMessages;
         }
 
-        return coreMessages;
+        const lastUserContent = chatMessages[lastUserIndex].content;
+        const hasAttachments = Array.isArray(lastUserContent)
+            && lastUserContent.some(p => p.type !== "text");
+
+        const noteHint = buildNoteHint(config.contextNoteId, hasAttachments);
+        if (!noteHint) {
+            return chatMessages;
+        }
+
+        return chatMessages.map((m, i) => {
+            if (i !== lastUserIndex) return m;
+            if (typeof m.content === "string") {
+                return { ...m, content: `${noteHint}\n\n${m.content}` };
+            }
+            // For multimodal content, prepend the hint as a leading text part so
+            // any attached images still travel with the message.
+            return {
+                ...m,
+                content: [{ type: "text" as const, text: noteHint }, ...m.content]
+            };
+        });
+    }
+
+    /**
+     * Build the value for the `system` option of `streamText`. Subclasses can
+     * override to attach provider-specific metadata (e.g. cache control).
+     */
+    protected buildSystemMessage(systemPrompt: string | undefined): string | SystemModelMessage | undefined {
+        return systemPrompt;
     }
 
     /**
@@ -269,7 +182,7 @@ export abstract class BaseProvider implements LlmProvider {
             this.addWebSearchTool(tools);
         }
 
-        if (config.enableNoteTools || (config.sourceNoteIds && config.sourceNoteIds.length > 0)) {
+        if (config.enableNoteTools || config.sourceNoteIds?.length) {
             for (const registry of allToolRegistries) {
                 Object.assign(tools, registry.toToolSet());
             }
@@ -280,13 +193,21 @@ export abstract class BaseProvider implements LlmProvider {
 
     chat(messages: LlmMessage[], config: LlmProviderConfig): StreamResult {
         const systemPrompt = this.buildSystemPrompt(messages, config);
-        const chatMessages = messages.filter(m => m.role !== "system");
-        const coreMessages = this.buildMessages(chatMessages, systemPrompt);
+        const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
+        const coreMessages = this.buildMessages(chatMessages);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
             model: this.createModel(config.model || this.defaultModel),
+            system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
-            maxOutputTokens: config.maxTokens || DEFAULT_MAX_TOKENS
+            maxOutputTokens: config.maxTokens || DEFAULT_MAX_TOKENS,
+            // Reject any system message smuggled into `messages` (prompt injection guard).
+            allowSystemInMessages: false,
+            // The AI SDK's default onError handler dumps the raw error object straight
+            // to stdout, bypassing Trilium's logger. The error is still delivered through
+            // `fullStream`, where `streamToChunks` turns it into a detailed message that
+            // the chat route logs — so suppress the unstructured stdout dump here.
+            onError: () => {}
         };
 
         const tools = this.buildTools(config);

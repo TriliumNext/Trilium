@@ -19,4 +19,9 @@ export interface Content {
    * File name to be sent in Content-Disposition header
    */
   readonly fileName: string;
+  /**
+   * Optional entity tag (a stable content identifier, e.g. a content hash) sent in the ETag header. Lets a
+   * client revalidate and reliably resume a partially-downloaded stream after a dropped connection.
+   */
+  readonly etag?: string;
 };

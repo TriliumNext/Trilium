@@ -7,19 +7,20 @@ import CodeNoteSettings from "./options/code_notes";
 import MediaSettings from "./options/media";
 import SpellcheckSettings from "./options/spellcheck";
 import PasswordSettings from "./options/password";
-import MultiFactorAuthenticationSettings from "./options/multi_factor_authentication";
 import EtapiSettings from "./options/etapi";
 import BackupSettings from "./options/backup";
 import SyncOptions from "./options/sync";
+import DesktopSettings from "./options/desktop";
 import OtherSettings from "./options/other";
 import InternationalizationOptions from "./options/i18n";
 import AdvancedSettings from "./options/advanced";
+import SecuritySettings from "./options/security";
 import LlmSettings from "./options/llm";
 import "./ContentWidget.css";
 import { t } from "../../services/i18n";
 import BackendLog from "./code/BackendLog";
 
-export type OptionPages = "_optionsAppearance" | "_optionsShortcuts" | "_optionsTextNotes" | "_optionsCodeNotes" | "_optionsMedia" | "_optionsSpellcheck" | "_optionsPassword" | "_optionsMFA" | "_optionsEtapi" | "_optionsBackup" | "_optionsSync" | "_optionsOther" | "_optionsLocalization" | "_optionsAdvanced" | "_optionsLlm";
+export type OptionPages = "_optionsAppearance" | "_optionsShortcuts" | "_optionsTextNotes" | "_optionsCodeNotes" | "_optionsMedia" | "_optionsSpellcheck" | "_optionsPassword" | "_optionsEtapi" | "_optionsBackup" | "_optionsSync" | "_optionsDesktop" | "_optionsOther" | "_optionsLocalization" | "_optionsSecurity" | "_optionsAdvanced" | "_optionsLlm";
 
 const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", (props: TypeWidgetProps) => JSX.Element> = {
     _optionsAppearance: AppearanceSettings,
@@ -29,12 +30,13 @@ const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", (props: TypeWidgetPro
     _optionsMedia: MediaSettings,
     _optionsSpellcheck: SpellcheckSettings,
     _optionsPassword: PasswordSettings,
-    _optionsMFA: MultiFactorAuthenticationSettings,
     _optionsEtapi: EtapiSettings,
     _optionsBackup: BackupSettings,
     _optionsSync: SyncOptions,
+    _optionsDesktop: DesktopSettings,
     _optionsOther: OtherSettings,
     _optionsLocalization: InternationalizationOptions,
+    _optionsSecurity: SecuritySettings,
     _optionsAdvanced: AdvancedSettings,
     _optionsLlm: LlmSettings,
     _backendLog: BackendLog

@@ -8,16 +8,18 @@ CRITICAL: In JSX notes, always use top-level `import` statements (e.g. `import {
 
 ## Creating a frontend script
 
-1. Create a Code note with language "JSX" (preferred) or "JS frontend" (legacy only).
+1. Create a Code note with language "JSX" (preferred) or "JavaScript (Trilium frontend)" (legacy only).
 2. Add `#widget` label for widgets, or `#run=frontendStartup` for auto-run scripts.
 3. For mobile, use `#run=mobileStartup` instead.
+
+NOTE: `#widget`, `#run` and `~renderNote` enable code execution, so `set_attribute` refuses them as dangerous. Create the code note yourself, then ask the user to add the activating attribute, telling them exactly which note to open and what to type into its attribute area.
 
 ## Script types
 
 | Type | Language | Required attribute |
 |---|---|---|
 | Custom widget | JSX (preferred) | `#widget` |
-| Regular script | JS frontend | `#run=frontendStartup` (optional) |
+| Regular script | JavaScript (Trilium frontend) | `#run=frontendStartup` (optional) |
 | Render note | JSX | None (used via `~renderNote` relation) |
 
 ## Custom widgets (Preact JSX) — preferred
@@ -99,7 +101,8 @@ export default defineWidget({
 ```jsx
 // API methods
 import { showMessage, showError, getNote, searchForNotes, activateNote,
-         runOnBackend, getActiveContextNote } from "trilium:api";
+         runOnBackend, runAsyncOnBackendWithManualTransactionHandling,
+         getActiveContextNote } from "trilium:api";
 
 // Hooks and components
 import { defineWidget, defineLauncherWidget,
@@ -125,9 +128,18 @@ import { ActionButton, Button, LinkButton, Modal,
 For rendering custom content inside a note:
 1. Create a "render note" (type: Render Note) where you want the content to appear.
 2. Create a JSX code note **as a child** of the render note, exporting a default component.
-3. On the render note, add a `~renderNote` relation pointing to the child JSX note.
+3. Ask the user to add a `~renderNote` relation on the render note pointing to the child JSX note (you cannot set this dangerous attribute yourself).
 
 IMPORTANT: Always create the JSX code note as a child of the render note, not as a sibling or at the root. This keeps them organized together.
+
+IMPORTANT: To reference "this widget's note" from inside a render note component, use `originEntity` — for render notes it is the note being rendered (the one carrying the `~renderNote` relation). Do NOT use `getActiveContextNote()` for this: it returns the note the user currently has open in the UI, which is the render note's *host* (e.g. a dashboard or a book view), not the render note itself.
+
+```jsx
+import { originEntity } from "trilium:api";
+// originEntity = the render note hosting this component
+```
+
+Stateless example:
 
 ```jsx
 export default function MyRenderNote() {
@@ -140,9 +152,61 @@ export default function MyRenderNote() {
 }
 ```
 
+Stateful example — hooks MUST be imported from `"trilium:preact"`:
+
+```jsx
+import { useState } from "trilium:preact";
+
+export default function CelsiusToFahrenheit() {
+    const [celsius, setCelsius] = useState("");
+    const fahrenheit = celsius === "" ? "" : (Number(celsius) * 9 / 5 + 32).toFixed(2);
+    return (
+        <div>
+            <input
+                type="number"
+                value={celsius}
+                onInput={e => setCelsius(e.currentTarget.value)}
+            />
+            <span>{fahrenheit} °F</span>
+        </div>
+    );
+}
+```
+
+### Anti-patterns (do NOT do this)
+
+LLMs often invent syntax that does not exist in Trilium. Avoid these:
+
+- ❌ `trilium.preact.useState(...)` — `trilium` is not a global object; there is no `trilium.preact` namespace
+- ❌ `window.trilium.preact.useState(...)` — same; no such global
+- ❌ `React.useState(...)` / `import React from "react"` — Trilium uses Preact, NOT React
+- ❌ `const { useState } = await import("trilium:preact")` — dynamic imports break hooks; always use top-level `import`
+- ❌ `const { useState } = require("trilium:preact")` — JSX notes are ES modules, not CommonJS
+
+The ONLY correct way to use hooks or components is a top-level ES `import`:
+
+```jsx
+import { useState, useEffect } from "trilium:preact";
+import { showMessage } from "trilium:api";
+```
+
 ## Script API
 
-In JSX, use `import { method } from "trilium:api"`. In JS frontend, use the `api` global.
+In JSX, use `import { method } from "trilium:api"`. In JavaScript (Trilium frontend), use the `api` global.
+
+### Script context
+- `startNote` - note where the script execution started (the entry point of the script bundle). All module notes loaded by the same execution share one `startNote`; `log()` messages are grouped under it.
+- `currentNote` - note containing the source code currently executing. Equal to `startNote` except inside child module notes. NOT the note open in the UI — that is `getActiveContextNote()`.
+- `originEntity` - note whose event triggered this execution, or `null`. Usually `null` (scripts started by the user or the UI). It is set for render notes — the note being rendered, i.e. the one carrying the `~renderNote` relation — and for `api.runOnFrontend()` calls from the backend (the backend's `originEntity`, if it was a note).
+
+Concrete examples:
+
+| Scenario | `startNote` | `currentNote` | `originEntity` |
+|---|---|---|---|
+| Widget script "Clock" (`#widget`) | "Clock" | "Clock" (a child module note while its code runs) | `null` |
+| Startup script (`#run=frontendStartup`) or manual Execute on "Setup" | "Setup" | "Setup" (or module note) | `null` |
+| Render note "Stats" with `~renderNote` → JSX note "StatsComponent" | "StatsComponent" | "StatsComponent" (or module note) | "Stats" (the render note) |
+| `api.runOnFrontend()` called from a backend script | the backend execution's `currentNote` | same | the backend's `originEntity` if it was a note, else `null` |
 
 ### Navigation & tabs
 - `activateNote(notePath)` - navigate to a note
@@ -158,6 +222,13 @@ In JSX, use `import { method } from "trilium:api"`. In JS frontend, use the `api
 - `getNotes(noteIds)` - bulk fetch notes
 - `searchForNotes(searchString)` - search with full query syntax
 - `searchForNote(searchString)` - search returning first result
+
+### Note creation
+- `createNote(parentNotePath, opts?)` - create a note under `parentNotePath` (a noteId or path) **entirely on the frontend — no backend scripting required.** `opts` accepts `{ title, content, type, mime, templateNoteId, isProtected, activate, focus, target, attributes }` and returns `{ note, branch }` from the cache. The new note is activated with its title focused by default; pass `{ activate: false }` to create it silently. **Prefer this over `runOnBackend(() => api.createTextNote(...))`** — the backend variant needs backend scripting, which is off by default.
+
+```jsx
+const { note } = await createNote(parentNoteId, { title: "New task", type: "text" });
+```
 
 ### Calendar/date notes
 - `getTodayNote()` - get/create today's note
@@ -175,7 +246,37 @@ In JSX, use `import { method } from "trilium:api"`. In JS frontend, use the `api
 - `showPromptDialog(msg)` - prompt dialog (returns user input)
 
 ### Backend integration
-- `runOnBackend(func, params)` - execute a function on the backend
+
+Backend script execution is **disabled by default** (a security setting, since backend scripts have full server access). When it is off, `runOnBackend` and `runAsyncOnBackendWithManualTransactionHandling` reject with *"Backend script execution is disabled"*. **Prefer doing the work on the frontend** whenever possible (most `api.*` note/search/date operations are available on the frontend too). When the backend is genuinely required, guard the call with the check below and tell the user to enable it in **Options → Security**.
+
+- `isBackendScriptingEnabled()` - returns whether backend script execution is enabled (the `[Security] backendScriptingEnabled` config toggle). Check this before calling `runOnBackend` / `runAsyncOnBackendWithManualTransactionHandling` so the script can degrade gracefully instead of throwing.
+- `isSqlConsoleEnabled()` - returns whether the SQL console is enabled (the `[Security] sqlConsoleEnabled` config toggle). Check this before running raw SQL on the backend (`api.sql.*`).
+- `runOnBackend(func, params)` - execute a function on the backend. The function **MUST be synchronous** — do NOT pass an `async` function. `runOnBackend` wraps the call in a SQL transaction, which does not support async; passing an `async` function triggers the warning *"You're passing an async function to `api.runOnBackend()` which will likely not work as you intended"* and the transaction will not behave correctly.
+- `runAsyncOnBackendWithManualTransactionHandling(func, params)` - use this instead when the backend function genuinely needs to be `async` (e.g. it `await`s a `fetch()`). Automatic transaction management is disabled, so wrap any DB writes in `api.transactional(...)` yourself inside the function.
+
+```jsx
+// Guard backend work so a disabled instance shows a friendly message instead of an error toast
+import { isBackendScriptingEnabled, runOnBackend, showError } from "trilium:api";
+
+if (!isBackendScriptingEnabled()) {
+    showError("This feature needs backend scripting — enable it in Options → Security.");
+    return;
+}
+const title = await runOnBackend((noteId) => api.getNote(noteId).title, [noteId]);
+```
+
+```jsx
+// ✅ Synchronous backend work — use runOnBackend
+const title = await runOnBackend((noteId) => {
+    return api.getNote(noteId).title;
+}, [noteId]);
+
+// ✅ Async backend work (e.g. fetch) — use the manual-transaction variant
+const data = await runAsyncOnBackendWithManualTransactionHandling(async (url) => {
+    const response = await fetch(url);
+    return await response.json();
+}, [url]);
+```
 
 ### UI interaction
 - `triggerCommand(name, data)` - trigger a command
@@ -208,12 +309,89 @@ Available via `getNote()`, `getActiveContextNote()`, `useNoteContext()`, etc.
 - `note.getOwnedAttributes(type?, name?)` - only owned attributes
 - `note.hasAttribute(type, name)` - check for attribute
 
+## Electron API (desktop only)
+
+Desktop-only functionality is exposed on `window.electronApi` by the preload script. It is **not** part of the `api` global. The global is `undefined` in the browser/server build and in the standalone (WASM) build, so always guard usage.
+
+```jsx
+if (window.electronApi) {
+    window.electronApi.window.setZoomFactor(1.2);
+}
+```
+
+Use optional chaining for one-off calls: `window.electronApi?.window.minimizeWindow()`.
+
+### Groups
+
+| Group | What it covers |
+|---|---|
+| `window` | Zoom, theme, title bar, full screen, lifecycle, devtools, extra windows, global shortcut + open-in-tab events |
+| `clipboard` | `copyImageToClipboard(buffer)` for raw PNG bytes |
+| `shell` | `openExternal`, `openPath`, `openFileUrl`, `downloadURL`, `openCustom` — all validated in main process |
+| `contextMenu` | Subscribe to right-click events, dispatch cut/copy/paste/insertText |
+| `spellcheck` | `addWordToDictionary`, `getAvailableSpellCheckerLanguages` |
+| `tray` | `reloadTray()` |
+| `printing` | PDF export/preview/save, printer list, print progress events |
+| `navigation` | Back/forward history accessors and navigation events |
+
+### Common examples
+
+```js
+// Open a URL in the user's default browser
+window.electronApi?.shell.openExternal("https://example.com");
+
+// Toggle full screen
+const api = window.electronApi;
+if (api) api.window.setFullScreen(!api.window.isFullScreen());
+
+// Read & adjust zoom
+const zoom = window.electronApi?.window.getZoomFactor() ?? 1;
+window.electronApi?.window.setZoomFactor(zoom + 0.1);
+
+// React to global shortcuts (configured in Trilium options)
+window.electronApi?.window.onGlobalShortcut((actionName) => {
+    console.log("shortcut fired:", actionName);
+});
+
+// Copy a PNG to the clipboard
+const bytes = new Uint8Array(await blob.arrayBuffer());
+window.electronApi?.clipboard.copyImageToClipboard(bytes);
+```
+
+### Security notes (shell group)
+
+Every `shell.*` call is validated in the main process and will throw on invalid input — the renderer is treated as untrusted:
+
+- `openExternal(url)`: scheme is allowlisted. `file:`, `data:`, `smb:`, `ldap:`/`ldaps:`, `jar:`, `view-source:`, and Follina-class schemes are blocked.
+- `openPath(path)`: must resolve under the Trilium data dir or tmp dir. Returns an empty string on success, an error message on failure.
+- `openFileUrl(fileUrl)`: handles user-clicked `file:` links inside notes; resolves to any local path (no data/tmp sandbox — these links routinely point at arbitrary user documents). UNC `file://host/share` URLs are blocked (NTLM-leak prevention). Returns an empty string on success, an error message on failure.
+- `downloadURL(url)`: pinned to the app's own origin — cross-origin downloads are rejected.
+- `openCustom(filePath)`: must be a descendant of the tmp dir and the file must exist.
+
+### Cross-build patterns
+
+Because `window.electronApi` is missing outside desktop, write code that degrades:
+
+```jsx
+import { showMessage } from "trilium:api";
+
+function openInBrowser(url) {
+    if (window.electronApi) {
+        window.electronApi.shell.openExternal(url);
+    } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+    }
+}
+```
+
+Avoid `require("electron")`, `@electron/remote`, and `process` — `nodeIntegration` is disabled and `contextIsolation` is enabled, so they aren't available in the renderer.
+
 ## Legacy jQuery widgets (avoid if possible)
 
 Only use legacy widgets if you specifically need jQuery or cannot use JSX.
 
 ```javascript
-// Language: JS frontend, Label: #widget
+// Language: JavaScript (Trilium frontend), Label: #widget
 class MyWidget extends api.BasicWidget {
     get position() { return 1; }
     get parentWidget() { return "center-pane"; }
@@ -237,4 +415,4 @@ Key differences from Preact:
 
 ## Module system
 
-For JSX, use `import`/`export` syntax between notes. For JS frontend, use `module.exports` and function parameters matching child note titles.
+For JSX, use `import`/`export` syntax between notes. For JavaScript (Trilium frontend), use `module.exports` and function parameters matching child note titles.

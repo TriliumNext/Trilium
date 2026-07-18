@@ -4,7 +4,7 @@
  * should be imported from @triliumnext/commons.
  */
 
-import type { LlmChatConfig, LlmMessage } from "@triliumnext/commons";
+import type { LlmChatConfig, LlmMessage, LlmStreamChunk } from "@triliumnext/commons";
 import type { streamText } from "ai";
 
 /**
@@ -59,6 +59,8 @@ export interface ModelInfo {
     contextWindow?: number;
     /** Whether this is a legacy/older model */
     isLegacy?: boolean;
+    /** Whether usage is covered by a subscription plan rather than metered per token */
+    isSubscription?: boolean;
 }
 
 export interface LlmProvider {
@@ -72,6 +74,20 @@ export interface LlmProvider {
         messages: LlmMessage[],
         config: LlmProviderConfig
     ): StreamResult;
+
+    /**
+     * Chunk-native alternative to {@link chat} for providers that don't go
+     * through the AI SDK (e.g. the Claude Agent provider, which runs its own
+     * agentic loop in a subprocess). When implemented, the chat route streams
+     * these chunks directly and skips the AI SDK conversion entirely.
+     *
+     * @param signal aborts the underlying agent turn when the client disconnects
+     */
+    chatChunks?(
+        messages: LlmMessage[],
+        config: LlmProviderConfig,
+        signal?: AbortSignal
+    ): AsyncIterable<LlmStreamChunk>;
 
     /**
      * Get pricing for a model. Returns undefined if pricing is not available.

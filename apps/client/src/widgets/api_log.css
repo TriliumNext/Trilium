@@ -13,6 +13,7 @@
     font-size: 0.8em;
     white-space: pre;
     padding: 15px;
+    user-select: text;
 }
 
 .close-api-log-button {

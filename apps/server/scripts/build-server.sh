@@ -51,7 +51,8 @@ VERSION=`jq -r ".version" package.json`
 ARCHIVE_NAME="TriliumNotes-Server-${VERSION}-linux-${ARCH}"
 echo "Creating Archive $ARCHIVE_NAME..."
 
-mkdir $DIST_DIR
+rm -rf $DIST_DIR
+mkdir -p $DIST_DIR
 cp -r "$BUILD_DIR" "$DIST_DIR/$ARCHIVE_NAME"
 cd $DIST_DIR
 tar cJf "$ARCHIVE_NAME.tar.xz" "$ARCHIVE_NAME"

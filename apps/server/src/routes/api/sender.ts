@@ -1,10 +1,8 @@
+import { note_service as noteService, special_notes as specialNotesService,utils } from "@triliumnext/core";
 import type { Request } from "express";
 import imageType from "image-type";
 
 import imageService from "../../services/image.js";
-import noteService from "../../services/notes.js";
-import sanitizeAttributeName from "../../services/sanitize_attribute_name.js";
-import specialNotesService from "../../services/special_notes.js";
 
 async function uploadImage(req: Request) {
     const file = req.file;
@@ -43,14 +41,14 @@ async function uploadImage(req: Request) {
         const labels = JSON.parse(labelsStr);
 
         for (const { name, value } of labels) {
-            note.setLabel(sanitizeAttributeName(name), value);
+            note.setLabel(utils.sanitizeAttributeName(name), value);
         }
     }
 
     note.setLabel("sentFromSender");
 
     return {
-        noteId: noteId
+        noteId
     };
 }
 
@@ -72,7 +70,7 @@ async function saveNote(req: Request) {
 
     if (req.body.labels) {
         for (const { name, value } of req.body.labels) {
-            note.setLabel(sanitizeAttributeName(name), value);
+            note.setLabel(utils.sanitizeAttributeName(name), value);
         }
     }
 

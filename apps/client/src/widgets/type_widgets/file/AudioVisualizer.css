@@ -1,0 +1,42 @@
+.dark-theme {
+
+}
+
+.audio-preview-visualization-wrapper {
+    /* Gradient endpoints — tune to taste. Read by the canvas renderer via getComputedStyle. */
+    body.light-theme & {
+        --audio-visualizer-low-color: #cecece;
+        --audio-visualizer-high-color: black;
+    }
+    
+    body.dark-theme & {
+        --audio-visualizer-low-color: #2e2e2e;
+        --audio-visualizer-high-color: white;
+    }
+
+    flex-grow: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .audio-preview-icon {
+        /* Same size/position as before; layered above the canvas. */
+        font-size: 8em;
+        opacity: 0.6;
+        position: relative;
+        z-index: 1;
+    }
+
+    .audio-visualizer-canvas {
+        /* Bottom half of the wrapper, full width, behind the icon and ignoring pointer input. */
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 50%;
+        z-index: 0;
+        pointer-events: none;
+    }
+}

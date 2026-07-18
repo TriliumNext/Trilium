@@ -1,6 +1,7 @@
 import "./NoteBadges.css";
 
 import { clsx } from "clsx";
+import { useEffect, useState } from "preact/hooks";
 
 import { copyTextWithToast } from "../../services/clipboard_ext";
 import { t } from "../../services/i18n";
@@ -11,6 +12,7 @@ import { useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel,
 import { useShareState } from "../ribbon/BasicPropertiesTab";
 import { useShareInfo } from "../shared_info";
 import { ActiveContentBadges } from "./ActiveContentBadges";
+import { SnippetBadge } from "./SnippetBadge";
 
 export default function NoteBadges() {
     return (
@@ -20,6 +22,7 @@ export default function NoteBadges() {
             <ShareBadge />
             <ClippedNoteBadge />
             <ExecuteBadge />
+            <SnippetBadge />
             <ActiveContentBadges />
         </div>
     );
@@ -79,15 +82,30 @@ function ShareBadge() {
 
 function ClippedNoteBadge() {
     const { note } = useNoteContext();
-    const [ pageUrl ] = useNoteLabel(note, "pageUrl");
+    const isHelpNote = !!note?.noteId.startsWith("_help");
+    const [ url ] = useNoteLabel(note, isHelpNote ? "docUrl" : "pageUrl");
 
-    return (pageUrl &&
+    if (!url) return;
+
+    if (isHelpNote) {
+        return (
+            <Badge
+                className="doc-url-badge"
+                icon="bx bx-file-find"
+                text={t("breadcrumb_badges.doc_url")}
+                tooltip={t("breadcrumb_badges.doc_url_description")}
+                href={url}
+            />
+        );
+    }
+
+    return (
         <Badge
             className="clipped-note-badge"
             icon="bx bx-globe"
             text={t("breadcrumb_badges.clipped_note")}
-            tooltip={t("breadcrumb_badges.clipped_note_description", { url: pageUrl })}
-            href={pageUrl}
+            tooltip={t("breadcrumb_badges.clipped_note_description", { url })}
+            href={url}
         />
     );
 }
@@ -111,10 +129,19 @@ function ExecuteBadge() {
     );
 }
 
+const SAVE_STATE_DEBOUNCE_MS = 200;
+
 export function SaveStatusBadge() {
     const { noteContext} = useNoteContext();
     const saveState = useGetContextDataFrom(noteContext, "saveState");
-    if (!saveState) return;
+    const [debouncedState, setDebouncedState] = useState(saveState);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedState(saveState), SAVE_STATE_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+    }, [saveState]);
+
+    if (!debouncedState) return;
 
     const stateConfig = {
         saved: {
@@ -139,11 +166,11 @@ export function SaveStatusBadge() {
         }
     };
 
-    const { icon, title, tooltip } = stateConfig[saveState.state];
+    const { icon, title, tooltip } = stateConfig[debouncedState.state];
 
     return (
         <Badge
-            className={clsx("save-status-badge", saveState.state)}
+            className={clsx("save-status-badge", debouncedState.state)}
             icon={icon}
             text={title}
             tooltip={tooltip}

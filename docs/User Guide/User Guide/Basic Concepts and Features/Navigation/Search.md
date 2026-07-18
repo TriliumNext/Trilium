@@ -177,7 +177,7 @@ However, common label and relation searches have shortcut syntax:
 
 ```
 #publicationYear = 1954
-#author.title *=* Tolkien
+~author.title *=* Tolkien
 ```
 
 ### Separating Full-Text and Attribute Parts
@@ -229,10 +229,10 @@ You can open Trilium and automatically trigger a search by including the search 
 
 | Parameter | Value | Description |
 | --- | --- | --- |
-| MIN\_FUZZY\_TOKEN\_LENGTH | 3 | Minimum characters for fuzzy matching |
-| MAX\_EDIT\_DISTANCE | 2 | Maximum character changes allowed |
-| RESULT\_SUFFICIENCY\_THRESHOLD | 5 | Minimum exact results before fuzzy fallback |
-| MAX\_CONTENT\_SIZE | 10MB | Maximum note content size for search processing |
+| `MIN_FUZZY_TOKEN_LENGTH` | 3 | Minimum characters for fuzzy matching |
+| `MAX_EDIT_DISTANCE` | 2 | Maximum character changes allowed |
+| `RESULT_SUFFICIENCY_THRESHOLD` | 5 | Minimum exact results before fuzzy fallback |
+| `MAX_CONTENT_SIZE` | 10MB | Maximum note content size for search processing |
 
 ### Limits
 

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext (plain HTTP) traffic to any host.
+         Trilium users commonly self-host sync servers on LAN IPs or
+         personal domains without TLS. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

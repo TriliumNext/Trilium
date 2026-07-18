@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <!-- Circle outline, same stroke weight as the link-preview icon. -->
+    <circle cx="10" cy="10" r="8.4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <!-- Down-pointing chevron, same stroke weight. -->
+    <path d="M6.2 8.6 10 12.4 13.8 8.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,5 +1,6 @@
+import { options as optionService } from '@triliumnext/core';
 import crypto from 'crypto';
-import optionService from '../options.js';
+
 import sql from '../sql.js';
 import { constantTimeCompare } from '../utils.js';
 
@@ -21,6 +22,21 @@ function setRecoveryCodes(recoveryCodes: string) {
         return true;
     });
     return false;
+}
+
+/** Generates a fresh set of recovery codes WITHOUT persisting them (the caller decides when to commit). */
+function createRecoveryCodes(): string[] {
+    return Array.from({ length: 8 }, () => crypto.randomBytes(16).toString('base64'));
+}
+
+function clearRecoveryCodes() {
+    sql.transactional(() => {
+        optionService.setOption('recoveryCodeInitialVector', '');
+        optionService.setOption('recoveryCodeSecurityKey', '');
+        optionService.setOption('recoveryCodesEncrypted', '');
+        optionService.setOption('encryptedRecoveryCodes', 'false');
+        return true;
+    });
 }
 
 function getRecoveryCodes() {
@@ -77,6 +93,8 @@ function verifyRecoveryCode(recoveryCodeGuess: string) {
 
 export default {
     setRecoveryCodes,
+    createRecoveryCodes,
+    clearRecoveryCodes,
     getRecoveryCodes,
     verifyRecoveryCode,
     isRecoveryCodeSet

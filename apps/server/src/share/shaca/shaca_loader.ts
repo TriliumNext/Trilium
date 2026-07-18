@@ -1,15 +1,14 @@
-"use strict";
+import { events as eventService } from "@triliumnext/core";
 
-import sql from "../sql.js";
-import shaca from "./shaca.js";
-import log from "../../services/log.js";
-import SNote from "./entities/snote.js";
-import SBranch from "./entities/sbranch.js";
-import SAttribute from "./entities/sattribute.js";
-import SAttachment from "./entities/sattachment.js";
+import { getLog } from "@triliumnext/core";
 import shareRoot from "../share_root.js";
-import eventService from "../../services/events.js";
+import sql from "../sql.js";
 import type { SAttachmentRow, SAttributeRow, SBranchRow, SNoteRow } from "./entities/rows.js";
+import SAttachment from "./entities/sattachment.js";
+import SAttribute from "./entities/sattribute.js";
+import SBranch from "./entities/sbranch.js";
+import SNote from "./entities/snote.js";
+import shaca from "./shaca.js";
 
 function load() {
     const start = Date.now();
@@ -77,12 +76,20 @@ function load() {
         AND ownerId IN (${noteIdStr})`);
 
     for (const row of rawAttachmentRows) {
+        // Defense-in-depth for GHSA-xmv9-3v98-7gq8: protected notes cannot be
+        // shared, so their attachments must never enter the share cache. The
+        // note was loaded above (attachments are scoped to the same subtree).
+        const [, ownerId] = row;
+        if (shaca.notes[ownerId]?.isProtected) {
+            continue;
+        }
+
         new SAttachment(row);
     }
 
     shaca.loaded = true;
 
-    log.info(`Shaca loaded ${rawNoteRows.length} notes, ${rawBranchRows.length} branches, ${rawAttachmentRows.length} attributes took ${Date.now() - start}ms`);
+    getLog().info(`Shaca loaded ${rawNoteRows.length} notes, ${rawBranchRows.length} branches, ${rawAttachmentRows.length} attributes took ${Date.now() - start}ms`);
 }
 
 function ensureLoad() {

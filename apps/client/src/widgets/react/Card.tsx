@@ -50,6 +50,7 @@ export interface CardSectionProps {
     subSectionsVisible?: boolean;
     highlightOnHover?: boolean;
     onAction?: () => void;
+    noPadding?: boolean;
 }
 
 interface CardSectionContextType {
@@ -65,7 +66,8 @@ export function CardSection(props: {children: ComponentChildren} & CardSectionPr
     return <>
         <section className={clsx("tn-card-section", props.className, {
                     "tn-card-section-nested": nestingLevel > 0,
-                    "tn-card-highlight-on-hover": props.highlightOnHover || props.onAction
+                    "tn-card-highlight-on-hover": props.highlightOnHover || props.onAction,
+                    "tn-no-padding": props.noPadding
                  })}
                  style={{"--tn-card-section-nesting-level": (nestingLevel) ? nestingLevel : null}}
                  onClick={props.onAction}>

@@ -1,0 +1,17 @@
+services:
+  authelia:
+    image: "authelia/authelia:4.39"
+    restart: unless-stopped
+    ports:
+      # Authelia portal + OIDC provider
+      - "9091:9091"
+    volumes:
+      # Not :ro — Authelia's entrypoint chowns /config on startup.
+      - ./config:/config
+      - authelia_data:/data
+    # Lets Authelia reach the Trilium dev server running on the host, if ever needed.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  authelia_data:

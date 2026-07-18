@@ -75,6 +75,29 @@ export default class RelationMapApi {
         this.onDataChange(true);
     }
 
+    async renameRelation(connection: Connection, newName: string) {
+        newName = utils.filterAttributeName(newName);
+        const relation = this.relations.find((rel) => rel.attributeId === connection.id);
+
+        if (!relation) return false;
+
+        // Check if a relation with the new name already exists between these notes.
+        const exists = this.relations.some(
+            (rel) => rel.sourceNoteId === relation.sourceNoteId && rel.targetNoteId === relation.targetNoteId && rel.name === newName
+        );
+        if (exists) return false;
+
+        await server.put(`notes/${relation.sourceNoteId}/relations/${newName}/to/${relation.targetNoteId}`);
+        await server.remove(`notes/${relation.sourceNoteId}/relations/${relation.name}/to/${relation.targetNoteId}`);
+        this.onDataChange(true);
+        return true;
+    }
+
+    getRelationName(connection: Connection): string | undefined {
+        const relation = this.relations.find((rel) => rel.attributeId === connection.id);
+        return relation?.name;
+    }
+
     cleanupOtherNotes(noteIds: string[]) {
         const filteredNotes = this.data.notes.filter((note) => noteIds.includes(note.noteId));
         if (filteredNotes.length === this.data.notes.length) return;

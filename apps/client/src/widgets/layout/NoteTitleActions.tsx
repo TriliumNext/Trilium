@@ -23,7 +23,7 @@ export default function NoteTitleActions() {
             <PromotedAttributes note={note} componentId={componentId} noteContext={noteContext} />
             {noteType === "search" && <SearchProperties note={note} ntxId={ntxId} />}
             <EditedNotes />
-            {(!viewScope?.viewMode || viewScope.viewMode === "default") && <NoteTypeSwitcher />}
+            {(!viewScope?.viewMode || viewScope.viewMode === "default") && <NoteTypeSwitcher note={note} />}
         </div>
     );
 }

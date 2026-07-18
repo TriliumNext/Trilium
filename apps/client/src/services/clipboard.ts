@@ -23,6 +23,7 @@ async function pasteAfter(afterBranchId: string) {
         const clipboardBranches = clipboardBranchIds.map((branchId) => froca.getBranch(branchId));
 
         for (const clipboardBranch of clipboardBranches) {
+            /* v8 ignore next 3 -- isClipboardEmpty() already filtered out non-existent branches, so this is defensive */
             if (!clipboardBranch) {
                 continue;
             }
@@ -36,9 +37,11 @@ async function pasteAfter(afterBranchId: string) {
         }
 
         // copy will keep clipboardBranchIds and clipboardMode, so it's possible to paste into multiple places
+    /* v8 ignore start -- clipboardMode is only ever set to "cut"/"copy" while the clipboard is non-empty */
     } else {
         throwError(`Unrecognized clipboard mode=${clipboardMode}`);
     }
+    /* v8 ignore stop */
 }
 
 async function pasteInto(parentBranchId: string) {
@@ -55,6 +58,7 @@ async function pasteInto(parentBranchId: string) {
         const clipboardBranches = clipboardBranchIds.map((branchId) => froca.getBranch(branchId));
 
         for (const clipboardBranch of clipboardBranches) {
+            /* v8 ignore next 3 -- isClipboardEmpty() already filtered out non-existent branches, so this is defensive */
             if (!clipboardBranch) {
                 continue;
             }
@@ -68,9 +72,11 @@ async function pasteInto(parentBranchId: string) {
         }
 
         // copy will keep clipboardBranchIds and clipboardMode, so it's possible to paste into multiple places
+    /* v8 ignore start -- clipboardMode is only ever set to "cut"/"copy" while the clipboard is non-empty */
     } else {
         throwError(`Unrecognized clipboard mode=${clipboardMode}`);
     }
+    /* v8 ignore stop */
 }
 
 async function copy(branchIds: string[]) {
@@ -79,15 +85,21 @@ async function copy(branchIds: string[]) {
 
     if (utils.isElectron()) {
         // https://github.com/zadam/trilium/issues/2401
-        const { clipboard } = require("electron");
-        const links: string[] = [];
+        const htmlParts: string[] = [];
+        const textParts: string[] = [];
 
         for (const branch of froca.getBranches(clipboardBranchIds)) {
             const $link = await linkService.createLink(`${branch.parentNoteId}/${branch.noteId}`, { referenceLink: true });
-            links.push($link[0].outerHTML);
+            htmlParts.push($link[0].outerHTML);
+            textParts.push($link.text());
         }
 
-        clipboard.writeHTML(links.join(", "));
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                "text/html": new Blob([htmlParts.join(", ")], { type: "text/html" }),
+                "text/plain": new Blob([textParts.join(", ")], { type: "text/plain" })
+            })
+        ]);
     }
 
     toastService.showMessage(t("clipboard.copied"));

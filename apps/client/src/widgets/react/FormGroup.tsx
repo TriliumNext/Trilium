@@ -1,5 +1,6 @@
 import { cloneElement, ComponentChildren, RefObject, VNode } from "preact";
 import { CSSProperties } from "preact/compat";
+
 import { useUniqueName } from "./hooks";
 
 interface FormGroupProps {
@@ -8,6 +9,7 @@ interface FormGroupProps {
     label?: string;
     title?: string;
     className?: string;
+    error?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     children: VNode<any>;
     description?: string | ComponentChildren;
@@ -15,7 +17,7 @@ interface FormGroupProps {
     style?: CSSProperties;
 }
 
-export default function FormGroup({ name, label, title, className, children, description, labelRef, disabled, style }: FormGroupProps) {
+export default function FormGroup({ name, label, title, className, children, description, labelRef, disabled, style, error }: FormGroupProps) {
     const id = useUniqueName(name);
     const childWithId = cloneElement(children, { id });
 
@@ -26,6 +28,7 @@ export default function FormGroup({ name, label, title, className, children, des
 
             {childWithId}
 
+            {error && <div><small className="form-text text-danger">{error}</small></div>}
             {description && <div><small className="form-text">{description}</small></div>}
         </div>
     );

@@ -1,13 +1,6 @@
 {
   "about": {
-    "title": "A Trilium Notes-ról",
-    "homepage": "Kezdőlap:",
-    "app_version": "Alkalmazás verziója:",
-    "db_version": "Adatbázis verzió:",
-    "sync_version": "Verzió szinkronizálás :",
-    "build_revision": "Build revízió:",
-    "data_directory": "Adatkönyvtár:",
-    "build_date": "Build dátum:"
+    "data_directory": "Adatkönyvtár:"
   },
   "toast": {
     "critical-error": {

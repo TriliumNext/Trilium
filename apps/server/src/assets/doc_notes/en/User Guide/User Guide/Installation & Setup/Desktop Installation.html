@@ -23,7 +23,9 @@
   <li><code spellcheck="false">trilium-portable</code>: Launches Trilium in
     portable mode, where the <a href="#root/_help_tAassRL4RSQL">data directory</a> is
     created within the application's directory, making it easy to move the
-    entire setup.</li>
+    entire setup. Electron's internal data (caches, dictionaries, etc.) is
+    also stored within the data directory, so no files are written to the system's
+    roaming profile.</li>
   <li><code spellcheck="false">trilium-safe-mode</code>: Boots Trilium in "safe
     mode," disabling any startup scripts that might cause the application to
     crash.</li>

@@ -2,6 +2,7 @@ import { KeyboardActionNames } from "@triliumnext/commons";
 import { h, JSX, render } from "preact";
 
 import keyboardActionService, { getActionSync } from "../services/keyboard_actions.js";
+import { formatShortcut, joinShortcut } from "../services/keyboard_shortcut_display.js";
 import note_tooltip from "../services/note_tooltip.js";
 import utils from "../services/utils.js";
 
@@ -39,6 +40,7 @@ export interface MenuCommandItem<T> {
     title: string;
     command?: T;
     type?: string;
+    mime?: string;
     /**
      * The icon to display in the menu item.
      *
@@ -160,6 +162,24 @@ class ContextMenu {
             .addClass("show");
     }
 
+    private repositionSubmenu(submenuEl: HTMLElement) {
+        const CONTEXT_MENU_PADDING = 5;
+
+        // Reset so the natural (downward) placement is measured on every hover.
+        submenuEl.classList.remove("submenu-flip-up");
+
+        const rect = submenuEl.getBoundingClientRect();
+        const clientHeight = document.documentElement.clientHeight;
+        const overflowsBottom = rect.bottom > clientHeight - CONTEXT_MENU_PADDING;
+        // Only flip up if there is actually more room above the parent than below, otherwise flipping
+        // would just clip the other end.
+        const fitsWhenFlippedUp = rect.top - rect.height >= CONTEXT_MENU_PADDING;
+
+        if (overflowsBottom && fitsWhenFlippedUp) {
+            submenuEl.classList.add("submenu-flip-up");
+        }
+    }
+
     addItems($parent: JQuery<HTMLElement>, items: MenuItem<any>[], multicolumn = false) {
         let $group = $parent; // The current group or parent element to which items are being appended
         let shouldStartNewGroup = false; // If true, the next item will start a new group
@@ -276,9 +296,11 @@ class ContextMenu {
             if (shortcuts) {
                 const allShortcuts: string[] = [];
                 for (const effectiveShortcut of shortcuts) {
-                    allShortcuts.push(effectiveShortcut.split("+")
-                        .map(key => `<kbd>${key}</kbd>`)
-                        .join("+"));
+                    const tokens = formatShortcut(effectiveShortcut);
+                    // On macOS the glyphs sit in one <kbd> (⇧⌘J); elsewhere each token gets its own.
+                    allShortcuts.push(utils.isMac()
+                        ? `<kbd>${joinShortcut(tokens)}</kbd>`
+                        : tokens.map(key => `<kbd>${key}</kbd>`).join("+"));
                 }
 
                 if (allShortcuts.length) {
@@ -344,6 +366,12 @@ class ContextMenu {
             this.addItems($subMenu, item.items, hasColumns);
 
             $item.append($subMenu);
+
+            // Submenus open downward by default (CSS `:hover`); flip them up when the parent item sits
+            // near the bottom of the viewport, otherwise the submenu would be clipped off-screen.
+            if (!this.isMobile) {
+                $item.on("mouseenter", () => this.repositionSubmenu($subMenu[0]));
+            }
         }
         return $item;
     }

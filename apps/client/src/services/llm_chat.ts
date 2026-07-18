@@ -13,8 +13,10 @@ export async function getAvailableModels(): Promise<LlmModelInfo[]> {
 export interface StreamCallbacks {
     onChunk: (text: string) => void;
     onThinking?: (text: string) => void;
-    onToolUse?: (toolName: string, input: Record<string, unknown>) => void;
-    onToolResult?: (toolName: string, result: string, isError?: boolean) => void;
+    onToolInputStart?: (toolCallId: string, toolName: string) => void;
+    onToolInputDelta?: (toolCallId: string, delta: string) => void;
+    onToolUse?: (toolCallId: string, toolName: string, input: Record<string, unknown>) => void;
+    onToolResult?: (toolCallId: string, toolName: string, result: string, isError?: boolean) => void;
     onCitation?: (citation: LlmCitation) => void;
     onUsage?: (usage: LlmUsage) => void;
     onError: (error: string) => void;
@@ -27,18 +29,32 @@ export interface StreamCallbacks {
 export async function streamChatCompletion(
     messages: LlmMessage[],
     config: LlmChatConfig,
-    callbacks: StreamCallbacks
+    callbacks: StreamCallbacks,
+    abortSignal?: AbortSignal
 ): Promise<void> {
-    const headers = await server.getHeaders();
-
-    const response = await fetch(`${window.glob.baseApiUrl}llm-chat/stream`, {
-        method: "POST",
-        headers: {
-            ...headers,
-            "Content-Type": "application/json"
-        } as HeadersInit,
-        body: JSON.stringify({ messages, config })
-    });
+    let response: Response;
+    try {
+        const headers = await server.getHeaders();
+        response = await fetch(`${window.glob.baseApiUrl}llm-chat/stream`, {
+            method: "POST",
+            headers: {
+                ...headers,
+                "Content-Type": "application/json"
+            } as HeadersInit,
+            body: JSON.stringify({ messages, config }),
+            signal: abortSignal
+        });
+    } catch (e) {
+        // AbortError is the user stopping generation — let the caller handle it.
+        // Everything else (network failure, custom-protocol/CORS issues, DNS, etc.)
+        // is reported via onError so the chat UI shows it instead of hanging.
+        if (e instanceof DOMException && e.name === "AbortError") {
+            throw e;
+        }
+        const message = e instanceof Error ? e.message : String(e);
+        callbacks.onError(`Failed to connect to LLM stream: ${message}`);
+        return;
+    }
 
     if (!response.ok) {
         callbacks.onError(`HTTP ${response.status}: ${response.statusText}`);
@@ -75,14 +91,23 @@ export async function streamChatCompletion(
                             case "thinking":
                                 callbacks.onThinking?.(data.content);
                                 break;
+                            case "tool_input_start":
+                                callbacks.onToolInputStart?.(data.toolCallId, data.toolName);
+                                // Yield to force Preact to commit the pending tool call
+                                // state before any deltas arrive.
+                                await new Promise((r) => setTimeout(r, 1));
+                                break;
+                            case "tool_input_delta":
+                                callbacks.onToolInputDelta?.(data.toolCallId, data.delta);
+                                break;
                             case "tool_use":
-                                callbacks.onToolUse?.(data.toolName, data.toolInput);
+                                callbacks.onToolUse?.(data.toolCallId, data.toolName, data.toolInput);
                                 // Yield to force Preact to commit the pending tool call
                                 // state before we process the result.
                                 await new Promise((r) => setTimeout(r, 1));
                                 break;
                             case "tool_result":
-                                callbacks.onToolResult?.(data.toolName, data.result, data.isError);
+                                callbacks.onToolResult?.(data.toolCallId, data.toolName, data.result, data.isError);
                                 await new Promise((r) => setTimeout(r, 1));
                                 break;
                             case "citation":
@@ -108,6 +133,12 @@ export async function streamChatCompletion(
                 }
             }
         }
+    } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") {
+            throw e;
+        }
+        const message = e instanceof Error ? e.message : String(e);
+        callbacks.onError(`LLM stream interrupted: ${message}`);
     } finally {
         reader.releaseLock();
     }

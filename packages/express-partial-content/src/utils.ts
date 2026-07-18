@@ -11,3 +11,5 @@ export const setContentRangeHeader = (range: Range | null, size: number, res: Re
 export const setContentDispositionHeader = (fileName: string, res: Response) =>
   setHeader("Content-Disposition", `attachment; filename*=utf-8''${encodeURIComponent(fileName)}`, res);
 export const setCacheControlHeaderNoCache = setHeader.bind(null, "Cache-Control", "no-cache");
+export const setETagHeader = (etag: string, res: Response) =>
+  setHeader("ETag", /^(W\/)?".*"$/.test(etag) ? etag : `"${etag}"`, res);

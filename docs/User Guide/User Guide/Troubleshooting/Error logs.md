@@ -18,4 +18,4 @@ Often times, bugs manifest themselves in specific notes and having them would gr
 
 In such case, please export the relevant note subtree by right-clicking it on the left tree, choosing Export - HTML as ZIP:
 
-![](Error%20logs_error-logs-expo.png)
+![](Error%20logs_error-logs-export-subtree.png)

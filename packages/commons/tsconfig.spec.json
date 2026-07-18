@@ -3,8 +3,8 @@
   "compilerOptions": {
     "outDir": "./out-tsc/vitest",
     "types": [
-      "node",
-      "vitest"
+      "vitest",
+      "node"
     ],
     "forceConsistentCasingInFileNames": true
   },

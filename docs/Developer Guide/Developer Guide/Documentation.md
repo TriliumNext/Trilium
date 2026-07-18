@@ -1,5 +1,5 @@
 # Documentation
-There are multiple types of documentation for Trilium:<img class="image-style-align-right" src="api/images/7hmsAGuPacge/Documentation_image.png" width="205" height="162">
+There are multiple types of documentation for Trilium:
 
 *   The _User Guide_ represents the user-facing documentation. This documentation can be browsed by users directly from within Trilium, by pressing <kbd>F1</kbd>.
 *   The _Developer's Guide_ represents a set of Markdown documents that present the internals of Trilium, for developers.
@@ -12,7 +12,7 @@ All documentation is stored in the [Trilium](https://github.com/TriliumNext/Tril
 
 *   `docs/Developer Guide` contains Markdown documentation that can be modified either externally (using a Markdown editor, or internally using Trilium).
 *   `docs/Release Notes` is also stored in Markdown format and can be freely edited.
-*   `docs/Script API` contains auto-generated files and thus must not be modified.
+*   The _Script API_ is auto-generated and is **not** committed to the repository. It is built into the gitignored `site/` directory and published to [docs.triliumnotes.org](https://docs.triliumnotes.org/); see [Updating the Script API](#updating-the-script-api) below.
 *   `docs/User Guide` contains also Markdown-only documentation but must generally not be edited externally.
     *   The reason is that the `pnpm edit-docs:edit-docs` feature will not only import/export this documentation, but also generate the corresponding HTML documentation and meta structure in `src/public/app/doc_notes/en/User Guide`.
     *   It's theoretically possible to edit the Markdown files externally and then run `docs:edit` and trigger a change in order to build the documentation, but that would not be a very productive workflow.
@@ -70,7 +70,7 @@ The `deploy-docs` workflow triggers the documentation build and uploads it to Cl
 
 As mentioned previously, the Script API is not manually editable since it is auto-generated using TypeDoc.
 
-To update the API documentation, simply run `pnpm docs:build`. Compare the changes (if any) and commit them.
+The Script API is regenerated automatically as part of `pnpm docs:build` — its output goes into the gitignored `site/script-api/{backend,frontend,electron}` directory and is published by the `deploy-docs` workflow, so there is nothing to commit. To preview changes locally, run `pnpm docs:build` and inspect the output under `site/`.
 
 Note that in order to simulate the environment a script would have, some fake source files (in the sense that they are only used for documentation) are being used as entrypoints for the documentation. Look for `backend_script_entrypoint` and `frontend_script_entrypoint` in `apps/build-docs/src`.
 

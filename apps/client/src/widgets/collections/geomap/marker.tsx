@@ -1,6 +1,6 @@
 import { useContext, useEffect } from "preact/hooks";
 import { ParentMap } from "./map";
-import { DivIcon, GPX, GPXOptions, Icon, LatLng, Marker as LeafletMarker, LeafletMouseEvent, marker, MarkerOptions } from "leaflet";
+import L, { DivIcon, GPXOptions, Icon, LatLng, Marker as LeafletMarker, LeafletMouseEvent, marker, MarkerOptions } from "leaflet";
 import "leaflet-gpx";
 
 export interface MarkerProps {
@@ -61,7 +61,12 @@ export function GpxTrack({ gpxXmlString, options }: { gpxXmlString: string, opti
     useEffect(() => {
         if (!parentMap) return;
 
-        const track = new GPX(gpxXmlString, options);
+        // Use the runtime-augmented `L.GPX` (added by the `leaflet-gpx` side-effect import)
+        // rather than a named `{ GPX }` import: in production the Rollup CJS→ESM interop binds
+        // named imports to a static facade that never reflects leaflet-gpx's runtime mutation,
+        // so `new GPX()` throws "GPX is not a constructor". `L` is leaflet's real export object,
+        // which leaflet-gpx actually patches. See TriliumNext/Trilium#10236.
+        const track = new L.GPX(gpxXmlString, options);
         track.addTo(parentMap);
 
         return () => track.removeFrom(parentMap);

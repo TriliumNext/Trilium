@@ -10,6 +10,7 @@ const enum KeyboardActionNamesEnum {
     collapseTree,
     collapseSubtree,
     sortChildNotes,
+    toggleArchivedNotes,
     createNoteAfter,
     createNoteInto,
     createNoteIntoInbox,
@@ -52,9 +53,11 @@ const enum KeyboardActionNamesEnum {
     showOptions,
     showRevisions,
     showRecentChanges,
+    showDeletedNotes,
     showSQLConsole,
     showBackendLog,
     showCheatsheet,
+    showShortcutHints,
     showHelp,
     addLinkToText,
     followLinkUnderCursor,
@@ -78,6 +81,7 @@ const enum KeyboardActionNamesEnum {
     toggleRibbonTabNotePaths,
     toggleRibbonTabSimilarNotes,
     toggleRightPane,
+    peekRightPane,
     printActiveNote,
     exportAsPdf,
     openNoteExternally,
@@ -94,7 +98,8 @@ const enum KeyboardActionNamesEnum {
     zoomIn,
     zoomReset,
     copyWithoutFormatting,
-    forceSaveRevision
+    forceSaveRevision,
+    saveNamedRevision
 }
 
 export type KeyboardActionNames = keyof typeof KeyboardActionNamesEnum;

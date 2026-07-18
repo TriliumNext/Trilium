@@ -1,14 +1,11 @@
-import { dynamicRequire, isElectron } from "../services/utils";
+import { isElectron } from "../services/utils";
 import { useTriliumOption } from "./react/hooks";
 import "./title_bar_buttons.css";
-import type { BrowserWindow } from "electron";
 
 interface TitleBarButtonProps {
     className: string;
     icon: string;
-    onClick: (context: {
-        window: BrowserWindow
-    }) => void;
+    onClick: () => void;
 }
 
 export default function TitleBarButtons() {
@@ -22,17 +19,19 @@ export default function TitleBarButtons() {
                     <TitleBarButton
                         className="minimize-btn"
                         icon="bx bx-minus"
-                        onClick={({ window }) => window.minimize()}
+                        onClick={() => window.electronApi?.window.minimizeWindow()}
                     />
 
                     <TitleBarButton
                         className="maximize-btn"
                         icon="bx bx-checkbox"
-                        onClick={({ window }) => {
-                            if (window.isMaximized()) {
-                                window.unmaximize();
+                        onClick={() => {
+                            const api = window.electronApi?.window;
+                            if (!api) return;
+                            if (api.isMaximized()) {
+                                api.unmaximizeWindow();
                             } else {
-                                window.maximize();
+                                api.maximizeWindow();
                             }
                         }}
                     />
@@ -40,7 +39,7 @@ export default function TitleBarButtons() {
                     <TitleBarButton
                         className="close-btn"
                         icon="bx bx-x"
-                        onClick={({ window }) => window.close()}
+                        onClick={() => window.electronApi?.window.closeWindow()}
                     />
                 </>
             )}
@@ -52,12 +51,7 @@ function TitleBarButton({ className, icon, onClick }: TitleBarButtonProps) {
     // divs act as a hitbox for the buttons, making them clickable on corners
     return (
         <div className={className}>
-            <button className={`btn ${icon}`} onClick={() => {
-                const remote = dynamicRequire("@electron/remote");
-                const focusedWindow = remote.BrowserWindow.getFocusedWindow();
-                if (!focusedWindow) return;
-                onClick({ window: focusedWindow });
-            }} />
+            <button className={`btn ${icon}`} onClick={onClick} />
         </div>
     );
 }

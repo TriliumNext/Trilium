@@ -1,5 +1,6 @@
+import { app_info as appInfo } from "@triliumnext/core";
 import type { Router } from "express";
-import appInfo from "../services/app_info.js";
+
 import eu from "./etapi_utils.js";
 
 function register(router: Router) {

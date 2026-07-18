@@ -1,57 +1,63 @@
-import { parseExcel } from 'officeparser/dist/parsers/ExcelParser.js';
-import { parseOpenOffice } from 'officeparser/dist/parsers/OpenOfficeParser.js';
-import { parsePowerPoint } from 'officeparser/dist/parsers/PowerPointParser.js';
-import { parseWord } from 'officeparser/dist/parsers/WordParser.js';
-import type { OfficeParserConfig } from 'officeparser/dist/types.js';
+import { getLog } from "@triliumnext/core";
+import { OfficeParser, type OfficeParserConfig, type SupportedFileType } from 'officeparser';
 
-import log from '../../log.js';
 import { OCRProcessingOptions, OCRResult } from '../ocr_service.js';
 import { FileProcessor } from './file_processor.js';
 
-type Parser = (buffer: Buffer, config: OfficeParserConfig) => Promise<{ toText(): string }>;
-
-const PARSER_BY_MIME: Record<string, Parser> = {
+const SUPPORTED_MIME_TYPES = new Set([
     // Office Open XML
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': parseWord,
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': parseExcel,
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation': parsePowerPoint,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     // OpenDocument
-    'application/vnd.oasis.opendocument.text': parseOpenOffice,
-    'application/vnd.oasis.opendocument.spreadsheet': parseOpenOffice,
-    'application/vnd.oasis.opendocument.presentation': parseOpenOffice
-};
+    'application/vnd.oasis.opendocument.text',
+    'application/vnd.oasis.opendocument.spreadsheet',
+    'application/vnd.oasis.opendocument.presentation',
+    // Rich Text Format
+    'application/rtf',
+    'text/rtf'
+]);
 
 const PARSER_CONFIG: OfficeParserConfig = {
     outputErrorToConsole: false,
     newlineDelimiter: '\n',
-    ignoreNotes: false,
-    putNotesAtLast: false
+    ignoreNotes: false
+};
+
+// officeparser auto-detects most formats from the buffer's magic bytes, but its
+// RTF detection (via file-type) is unreliable — some valid RTF documents are not
+// recognised and parsing then fails. For those MIME types we route to the correct
+// parser explicitly with a fileType hint instead of relying on auto-detection.
+const MIME_TYPE_TO_FILE_TYPE: Record<string, SupportedFileType> = {
+    'application/rtf': 'rtf',
+    'text/rtf': 'rtf'
 };
 
 /**
  * Office document processor for extracting text from DOCX/XLSX/PPTX and ODT/ODS/ODP files.
- * Uses individual parsers from officeparser v6 to avoid pulling in pdfjs-dist.
+ * Uses officeparser's main API, which auto-detects the format from the buffer's magic bytes.
  */
 export class OfficeProcessor extends FileProcessor {
 
     canProcess(mimeType: string): boolean {
-        return mimeType in PARSER_BY_MIME;
+        return SUPPORTED_MIME_TYPES.has(mimeType);
     }
 
     getSupportedMimeTypes(): string[] {
-        return Object.keys(PARSER_BY_MIME);
+        return [...SUPPORTED_MIME_TYPES];
     }
 
     async extractText(buffer: Buffer, options: OCRProcessingOptions = {}): Promise<OCRResult> {
         const mimeType = options.mimeType;
-        if (!mimeType || !(mimeType in PARSER_BY_MIME)) {
+        if (!mimeType || !SUPPORTED_MIME_TYPES.has(mimeType)) {
             throw new Error(`Unsupported MIME type for Office processor: ${mimeType}`);
         }
 
-        log.info(`Starting Office document text extraction for ${mimeType}...`);
+        getLog().info(`Starting Office document text extraction for ${mimeType}...`);
 
-        const parse = PARSER_BY_MIME[mimeType];
-        const ast = await parse(buffer, PARSER_CONFIG);
+        const fileType = MIME_TYPE_TO_FILE_TYPE[mimeType];
+        const config = fileType ? { ...PARSER_CONFIG, fileType } : PARSER_CONFIG;
+        const ast = await OfficeParser.parseOffice(buffer, config);
         const trimmed = ast.toText().trim();
 
         return {

@@ -1,11 +1,32 @@
 # Events
-[Script](../../Scripting.md) notes can be triggered by events. Note that these are backend events and thus relation need to point to the "JS backend" code note.
+[Script](../../Scripting.md) notes can be triggered by events. Note that these are backend events and thus relation need to point to the "JavaScript (Trilium backend)" code note.
 
 ## Global events
 
 Global events are attached to the script note via label. Simply create e.g. "run" label with some of these values and script note will be executed once the event occurs.
 
-<table><thead><tr><th>Label</th><th>Description</th></tr></thead><tbody><tr><td><code spellcheck="false">run</code></td><td><p>Defines on which events script should run. Possible values are:</p><ul><li data-list-item-id="e658488cf1a0862603088ef384e41b8b6"><code spellcheck="false">backendStartup</code> - when Trilium backend starts up</li><li data-list-item-id="ef40ba992fc450d33a18ca4cb031eca66"><code spellcheck="false">hourly</code> - run once an hour. You can use additional label <code spellcheck="false">runAtHour</code> to specify at which hour, on the back-end.</li><li data-list-item-id="e07458d4f55b6eb42468a5535b8425c5f"><code spellcheck="false">daily</code> - run once a day, on the back-end</li></ul></td></tr><tr><td><code spellcheck="false">runOnInstance</code></td><td>Specifies that the script should only run on a particular&nbsp;<a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables)/Trilium%20instance.md">Trilium instance</a>.</td></tr><tr><td><code spellcheck="false">runAtHour</code></td><td>On which hour should this run. Should be used together with <code spellcheck="false">#run=hourly</code>. Can be defined multiple times for more runs during the day.</td></tr></tbody></table>
+<table>
+    <thead>
+        <tr>
+            <th>Label</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code spellcheck="false">run</code></td>
+            <td><p>Defines on which events script should run. Possible values are:</p><ul><li><code spellcheck="false">backendStartup</code> - when Trilium backend starts up</li><li><code spellcheck="false">hourly</code> - run once an hour. You can use additional label <code spellcheck="false">runAtHour</code> to specify at which hour, on the back-end.</li><li><code spellcheck="false">daily</code> - run once a day, on the back-end</li></ul></td>
+        </tr>
+        <tr>
+            <td><code spellcheck="false">runOnInstance</code></td>
+            <td>Specifies that the script should only run on a particular&nbsp;<a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables)/Trilium%20instance.md">Trilium instance</a>.</td>
+        </tr>
+        <tr>
+            <td><code spellcheck="false">runAtHour</code></td>
+            <td>On which hour should this run. Should be used together with <code spellcheck="false">#run=hourly</code>. Can be defined multiple times for more runs during the day.</td>
+        </tr>
+    </tbody>
+</table>
 
 ## Entity events
 

@@ -41,12 +41,22 @@
     --cmd-button-keyboard-shortcut-color: black;
     --cmd-button-disabled-opacity: 0.5;
 
-    --button-group-active-button-background: #00000026;
-    --button-group-active-button-text-color: black;
+    --low-profile-button-active-background-color: #00000087;
+    --low-profile-button-active-color: white;
+
+    --button-group-background-color: var(--input-background-color);
+    --button-group-active-button-background-color: white;
+    --button-group-active-button-color: black;
+    --button-group-active-button-shadow-color: #00000056;
 
     --icon-button-color: currentColor;
     --icon-button-hover-background: var(--hover-item-background-color);
     --icon-button-hover-color: var(--hover-item-text-color);
+
+    --opaque-icon-button-background: #e6e6e6d7;
+    --opaque-icon-button-color: var(--icon-button-color);
+    --opaque-icon-button-hover-background-color: #cbcbcbd7;
+    --opaque-icon-button-hover-color: var(--icon-button-hover-color);
 
     --muted-text-color: #666;
 
@@ -172,6 +182,10 @@
     --center-pane-horiz-layout-background-color-bgfx: #ffffffd6;
 
     --right-pane-heading-color: gray;
+    --right-pane-peek-background: #ffffffea;
+    
+    --peek-pane-backdrop-color: #0000000a;
+    --peek-pane-shadow-color: #0000003a;
 
     --root-background: var(--left-pane-background-color);
 
@@ -200,7 +214,9 @@
     --badge-temporaraily-editable-background-color: #35a64c;
     --badge-read-only-background-color: #c8302c;
     --badge-share-background-color: #6b6b6b;
+    --badge-snippet-background-color: #6b6b6b;
     --badge-clipped-note-background-color: #2284c0;
+    --badge-doc-url-background-color: #2e7d5e;
     --badge-execute-background-color: #7b47af;
     --badge-active-content-background-color: rgb(27, 164, 168);
 
@@ -224,6 +240,8 @@
     --floating-button-hide-button-background: #0000000d;
     --floating-button-hide-button-color: gray;
 
+    --overlay-button-shadow-color: #00000048;
+
     --new-tab-button-background: #d8d8d8;
     --new-tab-button-color: #3a3a3a;
     --new-tab-button-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
@@ -238,7 +256,7 @@
     --bottom-panel-background-color: #ffffff8c;
     --bottom-panel-title-bar-background-color: #94949414;
 
-    --status-bar-border-color: #0000003a;
+    --status-bar-border-color: #00000026;
 
     --scrollbar-thumb-color: #0000005c;
     --scrollbar-thumb-hover-color: #00000066;
@@ -250,6 +268,23 @@
     --mermaid-theme: default;
 
     --code-block-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
+
+    /* Backend log (the `text/x-trilium-log` code note MIME) */
+    --log-timestamp-color: #00000077;
+    --log-slow-color: #db9345;
+    --log-http-line-background-color: #826cd00b;
+    --log-http-verb-color: #9157ab;
+    --log-http-url-color: #8057a0;
+    --log-status-success-color: #32b323;
+    --log-status-redirect-color: #238db3;
+    --log-status-client-error-color: #b7bd10;
+    --log-status-server-error-color: #b32323;
+    --log-query-line-background-color: #edbe670b;
+    --log-query-verb-color: #ce4f7f;
+    --log-sql-color: #df5815;
+    --log-error-color: #b32017;
+    --log-error-line-background-color: #ff000017;
+    --log-info-color: inherit; /* Placeholder: give it a colour to make info lines stand out. */
 
     --card-background-color: #0000000d;
     --card-background-hover-color: #0000001c;
@@ -269,17 +304,23 @@
     --timeline-connector-active-color: #ddd;
     --timeline-connector-hover-blend-mode: multiply;
 
-    --tooltip-background-color: rgba(255, 255, 255, 0.85);
-    --tooltip-foreground-color: #000000ba;
-    --tooltip-shadow-color: rgba(0, 0, 0, 0.15);
+    --tooltip-background-color: rgba(0, 0, 0, 0.818);
+    --tooltip-foreground-color: #ffffffeb;
+    --tooltip-shadow-color: rgba(0, 0, 0, 0.2);
+    --tooltip-kbd-color: white;
+    --tooltip-kbd-background: #ffffff32;
+    --tooltip-kbd-border: #00000060;
+
+    --note-tooltip-background-color: white;
+
 
     --help-background-color: #fffc;
     --help-card-background: var(--card-background-color);
     --help-card-shadow: 2px 2px 2px rgba(0, 0, 0, 0.1);
     --help-card-heading-color: #797979;
     --help-kbd-shortcut-color: #3f3f3f;
-    --help-kbd-shortcut-background: white;
-    --help-kbd-shortcut-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    --help-kbd-shortcut-background: #f5f5f5;
+    --help-kbd-shortcut-border: #c9c9c9;
     --help-code-color: black;
     --help-code-background: #d7d5d5;
 
@@ -305,6 +346,16 @@
     --calendar-coll-event-hover-filter: brightness(.95) saturate(1.25);
     --callendar-coll-event-archived-sripe-color: #0000000a;
     --calendar-coll-today-background-color: #00000006;
+
+    --task-checkbox-without-state-background: #00000029;
+    --task-checkbox-without-state-hover-background: #0000004a;
+    --task-checkbox-with-state-background: gray;
+    --task-checkbox-with-state-hover-background: #000000a2;
+    --task-checkbox-done-color: #339933;
+    --task-checkbox-done-hover-color: #207920;
+    --task-checkbox-unknown-state-color: #e95d5d;
+    --task-checkbox-glyph-color: white;
+
 }
 
 #left-pane .fancytree-node.tinted,
@@ -318,7 +369,8 @@
     --custom-bg-color: hsl(var(--custom-color-hue), 37%, 89%, 1);
 }
 
-.quick-edit-dialog-wrapper.with-hue {
+.quick-edit-dialog-wrapper.with-hue,
+.note-tooltip.with-hue {
     --modal-background-color: hsl(var(--custom-color-hue), 56%, 96%);
     --modal-border-color: hsl(var(--custom-color-hue), 33%, 41%);
     --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 40%, 88%);
@@ -351,4 +403,16 @@
 .note-book-card.with-hue {
     --card-background-color: hsl(var(--custom-color-hue), 21%, 94%);
     --card-background-hover-color: hsl(var(--custom-color-hue), 21%, 87%);
+}
+
+.note-tooltip.with-hue {
+    --tooltip-background-color: hsl(var(--custom-color-hue), 56%, 96%);
+}
+
+[data-trilium-task-state] {
+    --task-state-adjusted-color: hsl(var(--task-state-hue), 50%, 50%);
+}
+
+:where(.ck-content .todo-list li[data-trilium-task-state]), .tn-task-checkbox {
+    --task-state-custom-hover-background-color: hsl(var(--task-state-hue), 60%, 40%);
 }

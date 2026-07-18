@@ -14,21 +14,18 @@
  */
 
 export type {
-    default as AbstractBeccaEntity
-} from "../../server/src/becca/entities/abstract_becca_entity.js";
-export type {
-    default as BAttachment
-} from "../../server/src/becca/entities/battachment.js";
-export type { default as BAttribute } from "../../server/src/becca/entities/battribute.js";
-export type { default as BBranch } from "../../server/src/becca/entities/bbranch.js";
-export type { default as BEtapiToken } from "../../server/src/becca/entities/betapi_token.js";
-export type { BNote };
-export type { default as BOption } from "../../server/src/becca/entities/boption.js";
-export type { default as BRecentNote } from "../../server/src/becca/entities/brecent_note.js";
-export type { default as BRevision } from "../../server/src/becca/entities/brevision.js";
+    AbstractBeccaEntity,
+    BAttachment,
+    BAttribute,
+    BBranch,
+    BEtapiToken,
+    BNote,
+    BOption,
+    BRecentNote,
+    BRevision
+} from "@triliumnext/core";
 
-import BNote from "../../server/src/becca/entities/bnote.js";
-import BackendScriptApi, { type Api } from "../../server/src/services/backend_script_api.js";
+import { BNote, BackendScriptApi, type BackendScriptApiInterface as Api } from "@triliumnext/core";
 
 export type { Api };
 

@@ -1,8 +1,8 @@
 import anonymizationService from "./services/anonymization.js";
 import sqlInit from "./services/sql_init.js";
-await import("./becca/entity_constructor.js");
+await import("@triliumnext/core");
 
-sqlInit.dbReady.then(async () => {
+void sqlInit.dbReady.then(async () => {
     try {
         console.log("Starting anonymization...");
 

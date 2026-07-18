@@ -1,7 +1,7 @@
 import type { AttachmentRow } from "@triliumnext/commons";
 import type { Router } from "express";
 
-import becca from "../becca/becca.js";
+import { becca } from "@triliumnext/core";
 import utils from "../services/utils.js";
 import eu from "./etapi_utils.js";
 import type { ValidatorMap } from "./etapi-interface.js";

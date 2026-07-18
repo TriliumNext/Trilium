@@ -19,6 +19,9 @@ export default function FormTextBox({ inputRef, className, type, currentValue, o
         if (type === "number") {
             const { min, max } = rest;
             const currentValueNum = parseInt(value, 10);
+            if (!Number.isFinite(currentValueNum)) {
+                return String(min ?? "");
+            }
             if (min && currentValueNum < parseInt(String(min), 10)) {
                 return String(min);
             } else if (max && currentValueNum > parseInt(String(max), 10)) {

@@ -1,0 +1,215 @@
+body.desktop .modal.options-dialog .modal-dialog {
+    max-width: min(1300px, 75vw);
+}
+
+/* Keep the sidebar background within the rounded corners. */
+.modal.options-dialog .modal-content {
+    overflow: hidden;
+}
+
+.modal.options-dialog .modal-body {
+    padding: 0;
+    height: 75vh;
+}
+
+.modal.options-dialog .modal-sidebar {
+    background-color: var(--card-background-color);
+}
+
+.modal.options-dialog .modal-sidebar .settings-navigation {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: auto;
+    width: 240px;
+    padding: 8px;
+}
+
+/* The main header only carries the window (maximize/close) buttons, with the title moved into the
+   sidebar. Float it over the content so it doesn't leave a tall empty band at the top. */
+body.desktop .modal.options-dialog .modal-main > .modal-header {
+    position: absolute;
+    top: 0;
+    right: 4px;
+    z-index: 9999;
+}
+
+.modal.options-dialog .options-section {
+    margin: auto;
+}
+
+/* The dialog fills the full mobile page (isFullPageOnMobile), so the body stretches instead of
+   using the fixed desktop height. Applies to both the master-detail and the tablet layout. */
+body.mobile .modal.options-dialog .modal-body {
+    height: auto;
+    flex: 1 1 auto;
+}
+
+/* On wider mobile viewports (tablets) the dialog keeps the desktop-style sidebar layout; undo the
+   generic bottom-strip arrangement that style.css applies to sidebar modals on mobile. The sidebar
+   only exists outside the master-detail flow, so no extra scoping is needed. */
+body.mobile .modal.options-dialog .modal-content-with-sidebar {
+    flex-direction: row !important;
+}
+
+body.mobile .modal.options-dialog .modal-content-with-sidebar > .modal-sidebar {
+    order: 0;
+    height: auto;
+    border-right: 1px solid var(--main-border-color);
+    border-bottom: none;
+}
+
+/* On tablets, don't take up the full page height like the master-detail flow does. */
+body.mobile .modal.options-dialog:not(.mobile-master-detail) .modal-dialog {
+    height: 90vh;
+}
+
+/* On narrow mobile viewports the dialog becomes a master-detail flow instead of the sidebar
+   layout (the `mobile-master-detail` class tracks this): the page selector is rendered as a pane
+   inside the modal body (the Modal sidebar is unused), so the list and the page can slide over
+   each other when switching between them. */
+body.mobile .modal.options-dialog.mobile-master-detail .modal-content .modal-body {
+    position: relative;
+    padding: 0;
+    /* The panes scroll themselves; this also keeps the sliding panes contained. */
+    overflow: hidden;
+}
+
+body.mobile .modal.options-dialog .options-mobile-nav {
+    height: 100%;
+    overflow: auto;
+    padding: 8px 25px;
+}
+
+body.mobile .modal.options-dialog.mobile-master-detail .note-detail {
+    height: 100%;
+    overflow: auto;
+}
+
+/* At rest only the active pane is displayed; during a transition both stay visible so the
+   outgoing pane can slide away as the incoming one slides in. */
+body.mobile .modal.options-dialog.mobile-master-detail.mobile-view-list:not(.mobile-transition-to-list) .note-detail {
+    display: none;
+}
+
+body.mobile .modal.options-dialog.mobile-master-detail.mobile-view-page:not(.mobile-transition-to-page) .options-mobile-nav {
+    display: none;
+}
+
+body.mobile .modal.options-dialog .modal-header  {
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+/* The back button + page title in the custom header replace the static "Options" title. */
+body.mobile .modal.options-dialog.mobile-master-detail .modal-header > .modal-title {
+    display: none;
+}
+
+/* Directional slide mirroring the setup wizard's page animation: opening a page, the list slides
+   out towards the start side while the page slides in from the end side; going back reverses the
+   directions. The page pane stacks above the list, and `forwards` holds the outgoing pane at its
+   off-screen position until the transition classes are removed after animationend. The global
+   `motion-disabled` rule suppresses the animations entirely; the dialog then switches views
+   directly without entering a transition. */
+body.mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-page,
+body.mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-list {
+    .options-mobile-nav,
+    .note-detail {
+        position: absolute;
+        inset: 0;
+        background-color: var(--modal-background-color);
+    }
+
+    .note-detail {
+        z-index: 1;
+    }
+}
+
+body.mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-page {
+    .note-detail {
+        animation: options-slide-in-end 0.35s ease-in-out forwards;
+    }
+
+    .options-mobile-nav {
+        animation: options-slide-out-start 0.35s ease-in-out forwards;
+    }
+}
+
+body.mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-list {
+    .note-detail {
+        animation: options-slide-out-end 0.35s ease-in-out forwards;
+    }
+
+    .options-mobile-nav {
+        animation: options-slide-in-start 0.35s ease-in-out forwards;
+    }
+}
+
+body[dir=rtl].mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-page {
+    .note-detail {
+        animation-name: options-slide-in-start;
+    }
+
+    .options-mobile-nav {
+        animation-name: options-slide-out-end;
+    }
+}
+
+body[dir=rtl].mobile .modal.options-dialog.mobile-master-detail.mobile-transition-to-list {
+    .note-detail {
+        animation-name: options-slide-out-start;
+    }
+
+    .options-mobile-nav {
+        animation-name: options-slide-in-end;
+    }
+}
+
+@keyframes options-slide-in-end {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes options-slide-in-start {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes options-slide-out-end {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes options-slide-out-start {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(-100%); opacity: 0; }
+}
+
+.options-mobile-page-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/* Decorative settings icon shown in the list view. It borrows the `icon-action` class so it keeps
+   exactly the back button's footprint (the title doesn't shift between views), with the
+   interactive affordances neutralized. */
+.options-mobile-page-header .options-header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    cursor: default;
+}
+
+.options-mobile-page-header .options-mobile-page-title {
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.modal.options-dialog .options-page-header {
+    margin-bottom: 2em;
+}

@@ -1,0 +1,160 @@
+<p>Trilium can import ENEX files, which are used by Evernote for backup/export.
+  One ENEX file represents the content (notes and resources) of one notebook.</p>
+<h2>Import process</h2>
+<p>The first step is to export the data from Evernote:</p>
+<ul>
+  <li>To export a single notebook:
+    <ul>
+      <li>In the left sidebar, select <em>Notebooks</em>.</li>
+      <li>If you have a notebook stack, expand it.</li>
+      <li>Right click on a notebook and select <em>Export notebook</em>.</li>
+      <li>Make sure the following options are set:
+        <ul>
+          <li>File format is set to <em>ENEX format</em>.</li>
+          <li>All the options in <em>Export note attributes</em> are checked.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>To export a bunch of notes (up to 100 notes):
+    <ul>
+      <li>In the left sidebar, select <em>Notes</em>.</li>
+      <li>In the list of notes, <kbd>Ctrl</kbd>-click individual notes to select
+        them. Alternatively, click on a note and then <kbd>Shift</kbd>-click a more
+        distant note to select all the notes in between.</li>
+      <li>At the bottom there should be a floating bar with some options. Select
+        […] → <em>Export.</em>
+      </li>
+      <li>Make sure the following options are set:
+        <ul>
+          <li>File format is set to <em>ENEX format</em>.</li>
+          <li>All the options in <em>Export note attributes</em> are checked.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>To export a single note:
+    <ul>
+      <li>Select the note.</li>
+      <li>In the top-right, press the […] button and select <em>Export</em>.</li>
+      <li>Make sure the following options are set:
+        <ul>
+          <li>File format is set to <em>ENEX format</em>.</li>
+          <li>All the options in <em>Export note attributes</em> are checked.</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+<aside class="admonition tip">
+  <p>To export multiple notebooks in bulk, consider using a third-party CLI
+    tool called <a href="https://github.com/vzhd1701/evernote-backup">evernote-backup</a>
+  </p>
+</aside>
+<p>Once you have your ENEX files, do the following to import them in Trilium:</p>
+<ol>
+  <li>In the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+    right click and select <em>Import into note</em>.</li>
+  <li>In the <em>Import from</em> section, select <em>Evernote</em>.</li>
+  <li>During the import, you will see "Import in progress" message. If the import
+    is successful, the message will change to “Import finished successfully”
+    and then disappear.</li>
+  <li>We recommend you to check the imported notes and their attachments to
+    verify that you haven’t lost any data.</li>
+</ol>
+<h2>Supported features</h2>
+<p>The following features are preserved by Trilium during the import process:</p>
+<ul>
+  <li>Basic formatting (bold, italic, underline, strikethrough, colors, highlights,
+    superscript, subscript, text alignment, inline code).</li>
+  <li>The hierarchy of headings (these are shifted to start with H2 because
+    H1 is reserved for note title, see&nbsp;<a href="#root/_help_Gr6xFaF6ioJ5">Headings</a>)</li>
+  <li>To-do lists. The new task format is collapsed to standard to-do lists</li>
+  <li><a class="reference-link" href="#root/_help_mT0HEkOsz6i1">Images</a>&nbsp;and&nbsp;
+    <a
+    class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>
+  </li>
+  <li><a class="reference-link" href="#root/_help_S6Xx8QIWTV66">Lists</a>&nbsp;(with
+    bullets or with numbers)</li>
+  <li><a class="reference-link" href="#root/_help_NdowYOC1GFKS">Tables</a>
+  </li>
+  <li>Block quotes</li>
+  <li><a href="#root/_help_NwBbFdNZ9h7O">Admonitions</a> are preserved, including its
+    emoji (added as part of the content).</li>
+  <li><a class="reference-link" href="#root/_help_QxEyIjRBizuC">Code blocks</a>, with
+    a best-effort attempt to restore the language.</li>
+  <li><a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>
+  </li>
+  <li><a class="reference-link" href="#root/_help_YfYAtQBcfo5V">Math Equations</a>
+  </li>
+  <li>Toggle sections</li>
+  <li>External links</li>
+  <li>Internal links are re-written to&nbsp;<a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;if
+    the target note is part of the same import.</li>
+</ul>
+<h2>Limitations</h2>
+<ul>
+  <li>The size limit of one import is 250Mb. If the total size of your files
+    is larger, you can increase the&nbsp;<a href="#root/_help_WOcw2SLH6tbX">upload limit</a>,
+    or divide your files, and run the import as many times as necessary.</li>
+  <li>All resources (except for images) are created as notes’ attachments.</li>
+  <li>If you have HTML inside ENEX files, the HTML formatting may be broken
+    or lost after import in Trilium. See&nbsp;<a class="reference-link" href="#root/_help_wy8So3yZZlH9">Reporting issues</a>.</li>
+</ul>
+<h3>Links to other notes</h3>
+<p>Since v0.104.0, the ENEX importer tries to recreate links to other notes
+  automatically by converting their Evernote-specific URLs to Trilium's&nbsp;
+  <a
+  class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>.</p>
+<p>Since the ENEX format does not provide the unique ID of notes, the note
+  references are determined via their note title.</p>
+<p>Limitations:</p>
+<ul>
+  <li>Only notes that are part of the same import will have their links rewritten
+    to reference links, to avoid linking to the wrong note.</li>
+  <li>If there are to notes with the same name, internal links will not be created
+    to avoid pointing to the wrong note.</li>
+  <li>Links that couldn't be rewritten (e.g. referring to a missing/duplicate
+    note) will be kept with their original <code spellcheck="false">evernote://</code> URL.</li>
+  <li>It will not fix links to anchors and links to notes that you renamed in
+    Evernote after you created the links.</li>
+</ul>
+<h4>Post-processing notes</h4>
+<aside class="admonition tip">
+  <p>This script allows rewriting links after the import has been done, and
+    it should also allow finding links between two different imports.</p>
+</aside>
+<p>If you want to restore the internal links in Trilium after you import
+  all of your ENEX files, you can use or adapt this custom script:&nbsp;
+  <a
+  class="reference-link" href="#root/_help_dj3j8dG4th4l">Process internal links by title</a>
+</p>
+<p>The script does the following:</p>
+<ol>
+  <li>It finds all Evernote internal links.</li>
+  <li>For each one, it checks if its link text matches a note title, and if
+    yes, it replaces the Evernote link with an internal Trilium link. If not,
+    it leaves the Evernote link in place.</li>
+  <li>If it finds more than one note with a matching note title, it leaves the
+    Evernote link in place.</li>
+  <li>It outputs the results in a log that you can see in the respective code
+    note in Trilium.</li>
+</ol>
+<p>The script has the following limitations:</p>
+<ul>
+  <li>It will not fix links to anchors and links to notes that you renamed in
+    Evernote after you created the links.</li>
+  <li>Some note titles might not be well identified, even if they exist. This
+    is especially the case if the note title contains some special characters.
+    Should this be problematic, consider&nbsp;<a class="reference-link" href="#root/_help_wy8So3yZZlH9">Reporting issues</a>.</li>
+</ul>
+<h2>Reporting issues</h2>
+<p>When importing your Evernote notebooks, you might find issues in how a
+  note is imported; in that case consider <a href="#root/_help_wy8So3yZZlH9">reporting</a> it.</p>
+<p>When reporting such an issue make sure to provide the following information:</p>
+<ul>
+  <li>A <code spellcheck="false">.enex</code> export of the original note. This
+    allows us to reproduce the issue.</li>
+  <li>A screenshot with how it originally looked like before the import and
+    how it looks after the import.</li>
+</ul>

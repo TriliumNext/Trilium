@@ -2,12 +2,51 @@
 
 Backend scripts run in Node.js on the server. They have direct access to notes in memory and can interact with the system (files, processes).
 
+## Disabled by default — IMPORTANT
+
+Backend script execution is **turned off by default** for security (backend scripts have full server access). Until it is enabled, running a backend script — including a frontend `runOnBackend()` call, `#run` schedules, `~runOn*` triggers, and custom request handlers — fails with *"Backend script execution is disabled"*. When you create a backend script for the user, **tell them it will not run until they enable it** in **Options → Security** (equivalently `[Security] backendScriptingEnabled=true` in `config.ini`, or the `TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true` environment variable).
+
+A frontend script can detect this at runtime with `api.isBackendScriptingEnabled()` and degrade gracefully (see the `frontend_scripting` skill). Raw SQL access (the SQL Console note type and the `/sql/execute` route) is gated separately by `[Security] sqlConsoleEnabled` / `api.isSqlConsoleEnabled()`.
+
 ## Creating a backend script
 
-1. Create a Code note with language "JS backend".
+1. Create a Code note with language "JavaScript (Trilium backend)".
 2. The script can be run manually (Execute button) or triggered automatically.
 
+## Async code — IMPORTANT
+
+The script body runs inside a **regular (non-async) function**, so **top-level `await` is NOT allowed**. Writing `await` directly at the top level fails with: *"await is only valid in async functions and the top level bodies of modules"*.
+
+To use `await`, wrap the awaited code in an async IIFE:
+
+```javascript
+(async () => {
+    const response = await fetch('https://api.example.com/data');
+    const data = await response.json();
+    api.log(JSON.stringify(data));
+})();
+```
+
+Note that most `api.*` methods (e.g. `api.getNote`, `api.searchForNotes`, `api.createTextNote`) are **synchronous** and do not need `await` at all. Only genuinely async operations like `fetch()` require the wrapper above.
+
 ## Script API (`api` global)
+
+### Script context
+- `api.startNote` - note where the script execution started (the entry point of the script bundle; in C terms, the file with `main()`). All module notes loaded via `require()` share the same `startNote`. May be null when the execution came from the frontend via `runOnBackend()` (the frontend's `startNote` is preserved). `api.log()` messages are grouped under this note.
+- `api.currentNote` - note containing the source code currently executing (in C terms, `__FILE__`). Equal to `startNote` except inside child module notes loaded via `require()`. NOT the note open in the UI.
+- `api.originEntity` - entity whose event triggered this execution; `undefined` when the run was not event-driven (manual Execute button, `note.executeScript()`). For `~runOn*` relations see the table under "Events and triggers"; for scheduled scripts (`#run=hourly`/`#run=daily`) it is the script note itself; for `~searchScript` scripts it is the search note.
+
+Concrete examples:
+
+| Scenario | `startNote` | `currentNote` | `originEntity` |
+|---|---|---|---|
+| Execute button / `note.executeScript()` on "Job" | "Job" | "Job" (a child module note while its code runs) | `undefined` |
+| Scheduled "Job" (`#run=backendStartup`/`hourly`/`daily`) | "Job" | "Job" (or module note) | "Job" (the script note itself) |
+| Note "Diary" has `~runOnNoteContentChange` → script "OnChange" | "OnChange" | "OnChange" (or module note) | "Diary" (the changed note; a BAttribute/BBranch for attribute/branch events) |
+| Custom request handler "Endpoint" (`#customRequestHandler`) | "Endpoint" | "Endpoint" (or module note) | `undefined` — the request is in `api.req` |
+| `api.runOnBackend()` called from frontend widget "Clock" | "Clock" (the frontend's `startNote`, preserved) | the frontend note whose function was serialized (the frontend's `currentNote`) | the frontend's `originEntity` (a note) or `null` |
+
+Note: `#customResourceProvider` notes never execute a script — the note's content is served directly as the HTTP response, so there is no `api` context at all. Only `#customRequestHandler` runs code.
 
 ### Note retrieval
 - `api.getNote(noteId)` - get note by ID
@@ -43,10 +82,22 @@ Backend scripts run in Node.js on the server. They have direct access to notes i
 - `api.getAppInfo()` - get application info
 
 ### Libraries
-- `api.axios` - HTTP client
 - `api.dayjs` - date manipulation
 - `api.xml2js` - XML parser
-- `api.cheerio` - HTML/XML parser
+- `api.htmlParser` - HTML parser (node-html-parser), use `api.htmlParser.parse(html)` to parse
+- `api.cheerio` - **DEPRECATED**, use `api.htmlParser` instead
+
+### HTTP Requests
+Use the native `fetch()` API for HTTP requests. Since `fetch()` is async and top-level `await` is not allowed (see "Async code" above), wrap it in an async IIFE:
+```javascript
+(async () => {
+    const response = await fetch('https://api.example.com/data');
+    const data = await response.json();
+    api.log(JSON.stringify(data));
+})();
+```
+
+Note: `api.axios` was removed in March 2026 following an npm supply chain attack. Use `fetch()` instead.
 
 ### Advanced
 - `api.transactional(func)` - wrap code in a database transaction
@@ -123,6 +174,31 @@ These are defined as relations. `api.originEntity` contains the entity that trig
 | `~runOnAttributeChange` | attribute changed/deleted on this note | BAttribute |
 
 Relations can be inheritable — when set, they apply to all descendant notes.
+
+## Custom request handlers
+
+A backend script with a `#customRequestHandler` label becomes a public REST endpoint under `/custom/...`. The label value is a regular expression matched against the request path (e.g. `#customRequestHandler=create-note` is reachable at `/custom/create-note`).
+
+**The label MUST have a value** — a bare `#customRequestHandler` with no value matches nothing and the endpoint will never run. Always give it a path regex (e.g. `#customRequestHandler=create-note`).
+
+The Express request and response objects are exposed as **`api.req`** and **`api.res`** — **not** bare `req`/`res`. Write the HTTP response by calling methods on `api.res`.
+
+```javascript
+const { req, res } = api; // destructure from api — api.req / api.res, never global req/res
+const { secret, title, content } = req.body;
+
+if (req.method === "POST" && secret === "secret-password") {
+    const targetParentNoteId = api.currentNote.getRelationValue("targetNote");
+    const { note } = api.createTextNote(targetParentNoteId, title, content);
+    res.status(201).json(note.getPojo());
+} else {
+    res.sendStatus(400);
+}
+```
+
+- Regex capture groups from the matched path are available in **`api.pathParams`** (e.g. `#customRequestHandler=notes/([0-9]+)` → `api.pathParams[0]`).
+- Query params come from standard Express: `api.req.query.noteId`.
+- These endpoints are **unauthenticated** by default — handle authentication yourself (e.g. a shared secret as above).
 
 ## Example: auto-color notes by category
 

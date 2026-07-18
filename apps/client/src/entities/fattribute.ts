@@ -66,7 +66,15 @@ class FAttribute {
     }
 
     get isAutoLink() {
-        return this.type === "relation" && ["internalLink", "imageLink", "relationMapLink", "includeNoteLink"].includes(this.name);
+        if (this.type === "relation") {
+            return ["internalLink", "imageLink", "relationMapLink", "includeNoteLink"].includes(this.name);
+        }
+
+        if (this.type === "label") {
+            return this.name === "internalBookmark";
+        }
+
+        return false;
     }
 
     get toString() {

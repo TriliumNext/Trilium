@@ -1,0 +1,87 @@
+/*
+ * Collapse/expand arrows for nested list items (CollapsibleListItems plugin).
+ *
+ * The collapsed state is persisted as `data-trilium-collapsed` on the `<li>`, but the hiding is
+ * scoped to `.ck-editor__editable` so read-only and shared note rendering stay fully expanded
+ * (they have no way to toggle the state).
+ */
+
+.ck-content.ck-editor__editable li {
+    position: relative;
+}
+
+/* The arrow, rendered in the gutter before items that have nested items: the same boxicons
+ * chevron the note tree and the collapsible blocks use. Kept clickable even while transparent;
+ * the plugin detects the pointer on it by its position outside the <li> box. */
+.ck-content.ck-editor__editable li:has(> ul, > ol)::before {
+    --_arrow-size: 1.2em;
+    /* Distance from the item's text edge to the arrow's centre. Together with the size above it
+     * fills the gap between the start of the list's indent (2.5em before the text) and the
+     * bullet (~1em before it), so the arrow never spills into the page margin — which is only
+     * 8px wide on mobile — and never covers the marker. */
+    --_arrow-inset: -1.6em;
+    --_arrow-rotation: 90deg; /* chevron pointing down: expanded */
+
+    content: "\ea50"; /* lookup code for "chevron-right" in boxicons.css */
+    font-family: boxicons;
+    /* The glyph is text, so it would otherwise inherit the item's bold/italic styling. Its size
+     * stays inherited on purpose: `lh` and `em` below must resolve against the item's metrics. */
+    font-weight: normal;
+    font-style: normal;
+
+    position: absolute;
+    inset-inline-start: calc(var(--_arrow-inset) - var(--_arrow-size) / 2);
+    /* Anchored to the centre of the item's first line (half a line-height), then pulled up by
+     * half of its own box, so it stays centred whatever the font size and line height are. */
+    top: 0.5lh;
+    width: var(--_arrow-size);
+    height: var(--_arrow-size);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    color: var(--text-editor-collapsible-list-arrow-color, currentColor);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(-50%) rotate(var(--_arrow-rotation));
+    transition: opacity 150ms ease, transform 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+
+/* To-do items have no marker — their checkbox is an inline box inside the content — so the
+ * indent before them is empty and the arrow can sit closer to the text, keeping the gap it
+ * leaves the same as the one it leaves a bullet. */
+.ck-content.ck-editor__editable .todo-list > li:has(> ul, > ol)::before {
+    --_arrow-inset: -2.2em;
+}
+
+/* Hovering the item hints at the arrow; hovering the arrow itself commits to it (below). */
+.ck-content.ck-editor__editable li:hover::before {
+    opacity: 0.45;
+}
+
+/* Collapsed items advertise themselves: the arrow is the only sign that content is hidden. */
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"]::before {
+    --_arrow-rotation: 0deg; /* chevron pointing at the text: collapsed */
+    opacity: 0.75;
+}
+
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"]:dir(rtl)::before {
+    /* Mirror of the LTR collapsed arrow: points left, toward the leftward-flowing text. */
+    --_arrow-rotation: 180deg;
+}
+
+/* Pointing at the arrow fills it into a circle, like the icon buttons elsewhere in the app. A
+ * pseudo-element cannot be matched by `:hover`, so the plugin flags the item with a class,
+ * derived from the same gutter geometry it uses for clicks. */
+.ck-content.ck-editor__editable li.trilium-list-arrow-hovered::before {
+    opacity: 1;
+    color: var(--text-editor-collapsible-list-arrow-hover-color, currentColor);
+    background-color: var(--text-editor-collapsible-list-arrow-hover-background, rgba(128, 128, 128, 0.25));
+}
+
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"] > ul,
+.ck-content.ck-editor__editable li[data-trilium-collapsed="true"] > ol {
+    display: none;
+}

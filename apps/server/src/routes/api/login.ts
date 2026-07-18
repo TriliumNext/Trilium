@@ -1,20 +1,17 @@
-"use strict";
-
-import options from "../../services/options.js";
-import utils from "../../services/utils.js";
-import dateUtils from "../../services/date_utils.js";
-import instanceId from "../../services/instance_id.js";
-import passwordEncryptionService from "../../services/encryption/password_encryption.js";
-import protectedSessionService from "../../services/protected_session.js";
-import appInfo from "../../services/app_info.js";
-import eventService from "../../services/events.js";
-import sqlInit from "../../services/sql_init.js";
-import sql from "../../services/sql.js";
-import ws from "../../services/ws.js";
-import etapiTokenService from "../../services/etapi_tokens.js";
+/**
+ * Server-only login routes.
+ *
+ * Protected session routes (loginToProtectedSession, logoutFromProtectedSession,
+ * touchProtectedSession) are now in core and registered via buildSharedApiRoutes.
+ */
+import { app_info as appInfo, date_utils as dateUtils, getInstanceId, options } from "@triliumnext/core";
 import type { Request } from "express";
-import totp from "../../services/totp";
-import recoveryCodeService from "../../services/encryption/recovery_codes";
+
+import { verifyLoginCredentials } from "../../services/auth.js";
+import etapiTokenService from "../../services/etapi_tokens.js";
+import sql from "../../services/sql.js";
+import sqlInit from "../../services/sql_init.js";
+import utils from "../../services/utils.js";
 
 /**
  * @swagger
@@ -78,7 +75,7 @@ import recoveryCodeService from "../../services/encryption/recovery_codes";
  *                   type: string
  *                   example: "Auth request time is out of sync, please check that both client and server have correct time. The difference between clocks has to be smaller than 5 minutes"
  */
-function loginSync(req: Request) {
+async function loginSync(req: Request) {
     if (!sqlInit.schemaExists()) {
         return [500, { message: "DB schema does not exist, can't sync." }];
     }
@@ -112,66 +109,30 @@ function loginSync(req: Request) {
         return [400, { message: "Sync login credentials are incorrect. It looks like you're trying to sync two different initialized documents which is not possible." }];
     }
 
+    // Regenerate session to prevent session fixation attacks.
+    await new Promise<void>((resolve, reject) => {
+        req.session.regenerate((err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
+
     req.session.loggedIn = true;
 
     return {
-        instanceId: instanceId,
+        instanceId: getInstanceId(),
         maxEntityChangeId: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes WHERE isSynced = 1")
     };
 }
 
-function loginToProtectedSession(req: Request) {
-    const password = req.body.password;
-
-    if (!passwordEncryptionService.verifyPassword(password)) {
-        return {
-            success: false,
-            message: "Given current password doesn't match hash"
-        };
-    }
-
-    const decryptedDataKey = passwordEncryptionService.getDataKey(password);
-    if (!decryptedDataKey) {
-        return {
-            success: false,
-            message: "Unable to obtain data key."
-        };
-    }
-
-    protectedSessionService.setDataKey(decryptedDataKey);
-
-    eventService.emit(eventService.ENTER_PROTECTED_SESSION);
-
-    ws.sendMessageToAllClients({ type: "protectedSessionLogin" });
-
-    return {
-        success: true
-    };
-}
-
-function logoutFromProtectedSession() {
-    protectedSessionService.resetDataKey();
-
-    eventService.emit(eventService.LEAVE_PROTECTED_SESSION);
-
-    ws.sendMessageToAllClients({ type: "protectedSessionLogout" });
-}
-
-function touchProtectedSession() {
-    protectedSessionService.touchProtectedSession();
-}
-
-function token(req: Request) {
+async function token(req: Request) {
     const password = req.body.password;
     const submittedTotpToken = req.body.totpToken;
 
-    if (totp.isTotpEnabled()) {
-        if (!verifyTOTP(submittedTotpToken)) {
-            return [401, "Incorrect credential"];
-        }
-    }
-
-    if (!passwordEncryptionService.verifyPassword(password)) {
+    if (await verifyLoginCredentials(password, submittedTotpToken)) {
         return [401, "Incorrect credential"];
     }
 
@@ -183,18 +144,7 @@ function token(req: Request) {
     return { token: authToken };
 }
 
-function verifyTOTP(submittedTotpToken: string) {
-    if (totp.validateTOTP(submittedTotpToken)) return true;
-
-    const recoveryCodeValidates = recoveryCodeService.verifyRecoveryCode(submittedTotpToken);
-
-    return recoveryCodeValidates;
-}
-
 export default {
     loginSync,
-    loginToProtectedSession,
-    logoutFromProtectedSession,
-    touchProtectedSession,
     token
 };

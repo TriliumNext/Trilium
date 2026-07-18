@@ -28,10 +28,13 @@ function isHoistedNode(node: Fancytree.FancytreeNode) {
     return node.data.noteId === "root" || node.data.noteId === getHoistedNoteId();
 }
 
-async function isHoistedInHiddenSubtree() {
-    const hoistedNoteId = getHoistedNoteId();
-
-    if (hoistedNoteId === "root") {
+/**
+ * Whether the given hoisted note lives entirely within the hidden subtree. Defaults to the active
+ * tab's hoisted note, but callers bound to another context (e.g. a tree popup with its own hoist)
+ * must pass that context's `hoistedNoteId` — otherwise the check reads the wrong context.
+ */
+async function isHoistedInHiddenSubtree(hoistedNoteId = getHoistedNoteId()) {
+    if (!hoistedNoteId || hoistedNoteId === "root") {
         return false;
     }
 

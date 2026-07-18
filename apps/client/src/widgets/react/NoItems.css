@@ -13,6 +13,7 @@
     .tn-icon {
         font-size: 4em;
         margin-bottom: 1rem;
+        opacity: 0.65;
     }
 
     button {

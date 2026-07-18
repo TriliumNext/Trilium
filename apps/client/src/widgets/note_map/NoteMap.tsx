@@ -11,11 +11,16 @@ import hoisted_note from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
 import { getEffectiveThemeStyle } from "../../services/theme";
 import ActionButton from "../react/ActionButton";
+import Button from "../react/Button";
 import { useElementSize, useNoteLabel } from "../react/hooks";
+import NoItems from "../react/NoItems";
 import Slider from "../react/Slider";
 import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
 import { CssData, setupRendering } from "./rendering";
 import { MapType, NoteMapWidgetMode, rgb2hex } from "./utils";
+
+/** Maximum number of notes to render in the note map before showing a warning. */
+const MAX_NOTES_THRESHOLD = 1_000;
 
 interface NoteMapProps {
     note: FNote;
@@ -34,6 +39,8 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     const containerSize = useElementSize(parentRef);
     const [ fixNodes, setFixNodes ] = useState(false);
     const [ linkDistance, setLinkDistance ] = useState(40);
+    const [ tooManyNotes, setTooManyNotes ] = useState<number | null>(null);
+    const [ bypassLimit, setBypassLimit ] = useState(false);
     const notesAndRelationsRef = useRef<NotesAndRelationsData>();
 
     const mapRootId = useMemo(() => {
@@ -61,6 +68,14 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
         const includeRelations = labelValues("mapIncludeRelation");
         loadNotesAndRelations(mapRootId, excludeRelations, includeRelations, mapType).then((notesAndRelations) => {
             if (!containerRef.current || !styleResolverRef.current) return;
+
+            // Guard against rendering too many notes which would freeze the browser.
+            if (notesAndRelations.nodes.length > MAX_NOTES_THRESHOLD && !bypassLimit) {
+                setTooManyNotes(notesAndRelations.nodes.length);
+                return;
+            }
+            setTooManyNotes(null);
+
             const cssData = getCssData(containerRef.current, styleResolverRef.current);
 
             // Configure rendering properties.
@@ -92,7 +107,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
         });
 
         return () => container.replaceChildren();
-    }, [ note, mapType ]);
+    }, [ note, mapType, bypassLimit ]);
 
     useEffect(() => {
         if (!graphRef.current || !notesAndRelationsRef.current) return;
@@ -118,6 +133,26 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             }
         });
     }, [ fixNodes, mapType ]);
+
+    useEffect(() => {
+        setBypassLimit(false);
+    }, [ note, mapType ]);
+
+    if (tooManyNotes && !bypassLimit) {
+        return (
+            <NoItems
+                icon="bx bxs-network-chart"
+                text={t("note_map.too-many-notes", { count: tooManyNotes })}
+            >
+                <Button
+                    text={t("note_map.show-anyway")}
+                    kind="primary"
+                    size="small"
+                    onClick={() => setBypassLimit(true)}
+                />
+            </NoItems>
+        );
+    }
 
     return (
         <div className="note-map-widget">

@@ -17,6 +17,8 @@
     "../server/src/*.d.ts"
   ],
   "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
     "eslint.config.js",
     "eslint.config.cjs",
     "eslint.config.mjs"
@@ -27,6 +29,9 @@
     },
     {
       "path": "../../packages/commons/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/trilium-core/tsconfig.lib.json"
     }
   ]
 }

@@ -1,5 +1,5 @@
 # Collection Properties
-<figure class="image"><img style="aspect-ratio:1177/98;" src="Collection Properties_imag.png" width="1177" height="98"></figure>
+<figure class="image"><img style="aspect-ratio:1177/98;" src="Collection Properties_image.png" width="1177" height="98"></figure>
 
 The _Collection Properties_ is a toolbar that is displayed at the top of every [collection note](../Collections.md).
 

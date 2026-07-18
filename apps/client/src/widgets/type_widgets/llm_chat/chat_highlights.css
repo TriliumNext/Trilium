@@ -1,0 +1,18 @@
+/* Painted over user-created highlight ranges via the CSS Custom Highlight API (see chat_highlights.ts).
+   The name matches the single registry entry ("chat-highlight"), so only chat highlight ranges use it. */
+::highlight(chat-highlight) {
+    background-color: var(--chat-highlight-background-color, #ffe066);
+    color: var(--chat-highlight-text-color, #1a1a1a);
+}
+
+/* The same highlight as an element, for the read-only previews: they consume the rendered markup
+   rather than the live document, so their highlights are materialized as <mark> (see
+   chat_highlights_static.ts) and the ::highlight() rule above — which only ever targets ranges —
+   does not reach them. print-color-adjust keeps the fill when the preview is printed, since print
+   engines drop backgrounds by default. */
+mark.chat-highlight {
+    background-color: var(--chat-highlight-background-color, #ffe066);
+    color: var(--chat-highlight-text-color, #1a1a1a);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}

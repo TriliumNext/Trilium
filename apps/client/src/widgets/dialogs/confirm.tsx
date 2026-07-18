@@ -1,7 +1,7 @@
 import Modal from "../react/Modal";
 import Button from "../react/Button";
 import { t } from "../../services/i18n";
-import { useState } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
 import FormCheckbox from "../react/FormCheckbox";
 import { useTriliumEvent } from "../react/hooks";
 import { isValidElement, type VNode } from "preact";
@@ -18,6 +18,7 @@ export default function ConfirmDialog() {
     const [ opts, setOpts ] = useState<ConfirmDialogProps>();
     const [ isDeleteNoteChecked, setIsDeleteNoteChecked ] = useState(false);
     const [ shown, setShown ] = useState(false);
+    const okButtonRef = useRef<HTMLButtonElement>(null);
 
     function showDialog(title: string | null, message: MessageType, callback: ConfirmDialogCallback, isConfirmDeleteNoteBox: boolean) {
         setOpts({
@@ -39,6 +40,7 @@ export default function ConfirmDialog() {
             size="md"
             zIndex={2000}
             scrollable={true}
+            onShown={() => okButtonRef.current?.focus()}
             onHidden={() => {
                 opts?.callback?.({
                     confirmed: false,
@@ -48,7 +50,7 @@ export default function ConfirmDialog() {
             }}
             footer={<>
                 <Button text={t("confirm.cancel")} onClick={() => setShown(false)} />
-                <Button text={t("confirm.ok")} onClick={() => {
+                <Button buttonRef={okButtonRef} text={t("confirm.ok")} onClick={() => {
                     opts?.callback?.({
                         confirmed: true,
                         isDeleteNoteChecked

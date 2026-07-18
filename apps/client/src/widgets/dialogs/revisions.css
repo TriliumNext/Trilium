@@ -3,72 +3,258 @@ body.mobile .revisions-dialog {
         height: 95vh;
     }
 
-    .modal-header {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.25em;
-        font-size: 0.9em;
-    }
-
-    .modal-title {
-        flex-grow: 1;
-        width: 100%;
-    }
-
-    .modal-body {
-        height: fit-content !important;
-        flex-direction: column;
-        padding: 0;
+    .modal-content {
+        flex: 1;
+        min-height: 0;
     }
 
     .modal-footer {
         font-size: 0.9em;
     }
 
-    .revision-list {
-        height: fit-content !important;
-        max-height: 20vh;
-        border-bottom: 1px solid var(--main-border-color) !important;
-        padding: 0 1em;
-        flex-shrink: 0;
-    }
-
-    .modal-body > .revision-content-wrapper {
-        flex-grow: 1;
-        max-width: unset !important;
-        height: 100%;
-        margin: 0;
-        display: block !important;
-    }
-
-    .modal-body > .revision-content-wrapper > div:first-of-type {
-        flex-direction: column;
-    }
-
     .revision-title {
         font-size: 1rem;
     }
 
-    .revision-title-buttons {
-        text-align: center;
-        display: flex;
-        gap: 0.25em;
+    .revision-toolbar-actions {
         flex-wrap: wrap;
     }
 
     .revision-content {
         padding: 0.5em;
-        height: fit-content;
+    }
+
+    /* The action buttons (delete/download/restore) move out of the toolbar into a bottom footer. */
+    .revision-detail-footer {
+        flex-shrink: 0;
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px calc(max(env(safe-area-inset-bottom), 12px));
+        border-top: 1px solid var(--main-border-color);
+        background-color: var(--modal-background-color);
+
+        > .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        /* Restore (the labelled primary action) grows to fill; the icon-only delete/download size
+           to their content. */
+        > .btn:last-child {
+            flex: 1;
+        }
+    }
+}
+
+body.desktop .revisions-dialog {
+    .revision-list {
+        width: 300px;
+    }
+
+    .modal-content-with-sidebar {
+        height: 80vh;
     }
 }
 
 .revisions-dialog {
-    .revision-title-buttons {
+    .modal-body {
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Wraps the toolbar + preview so it can fill the body (desktop) and act as the detail pane of
+       the mobile master-detail flow. */
+    .revision-detail {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .modal-sidebar {
+        background-color: var(--card-background-color);
+    }
+
+    .modal-sidebar .dropdown-menu.static {
+        background-color: transparent !important;
+        border-radius: 0 !important;
+    }
+
+    .revision-toolbar {
         flex-shrink: 0;
+        border-bottom: 1px solid var(--main-border-color);
+        padding: 8px 20px;
+    }
+
+    .revision-title {
+        font-size: 1.2em;
+        margin: 8px 0;
+    }
+
+    .revision-toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .revision-menu-header {
+        font-weight: bold;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        opacity: 0.6;
+    }
+
+    .revision-content-wrapper {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .revision-content {
+        flex-grow: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 20px;
+    }
+
+    .no-items {
+        padding-block: 0;
+        height: calc(100% - 2.5em);
     }
 
     .revision-list {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow: auto;
+
+        .dropdown-item {
+            min-height: 2.5em;
+
+            >div {
+                padding-left: 0.25em;
+                min-width: 0;
+            }
+        }
+
+        /* On touch devices the items carry the source/size inline (no hover tooltip), so let the
+           description wrap to its full text and give the rows a little more breathing room. */
+        &.detailed {
+            .dropdown-item {
+                padding-block: 6px;
+            }
+
+            .revision-item-description {
+                white-space: normal;
+            }
+        }
+    }
+
+    .revision-item-description {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.85em;
+        opacity: 0.7;
+    }
+
+    .revision-group-header {
+        font-size: 0.75em;
+        font-weight: bold;
+        text-transform: uppercase;
+        opacity: 0.5;
+        padding: 6px 12px 2px;
+    }
+
+    .revision-item-meta {
+        font-size: 0.85em;
+        opacity: 0.7;
+    }
+
+
+    .revision-description-icon {
+        opacity: 0.5;
         flex-shrink: 0;
+    }
+
+    .revision-description-editor {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        margin: 3px 0;
+
+        input {
+            flex-grow: 1;
+        }
+    }
+
+    .revision-description-display {
+        display: flex;
+        align-items: center;
+        margin: 3px 0;
+        gap: 5px;
+        min-height: 24px;
+    }
+
+    .revision-description-text {
+        font-size: 0.9em;
+
+        &.empty {
+            opacity: 0.5;
+            font-style: italic;
+        }
+    }
+
+    .revision-diff-code {
+        font-family: var(--font-family-monospace, monospace);
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-width: 100%;
+        padding: 0;
+    }
+
+    /* HTML diff styles (htmldiff-js) */
+    .revision-diff-content {
+        ins {
+            text-decoration: none;
+
+            &.diffins,
+            &.diffmod {
+                background-color: color-mix(in srgb, var(--bs-success) 25%, transparent);
+            }
+        }
+
+        del {
+            text-decoration: line-through;
+
+            &.diffdel,
+            &.diffmod {
+                background-color: color-mix(in srgb, var(--bs-danger) 25%, transparent);
+            }
+        }
+
+        /* Image diff styles */
+        ins img,
+        del img {
+            border: 3px solid;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        del img {
+            border-color: var(--bs-danger);
+            opacity: 0.6;
+        }
+
+        ins img {
+            border-color: var(--bs-success);
+        }
     }
 
     .revision-content.type-file {
@@ -104,4 +290,148 @@ body.mobile .revisions-dialog {
         }
     }
 
+}
+
+/* On narrow mobile viewports the dialog becomes a master-detail flow instead of the bottom-strip
+   sidebar layout (the `mobile-master-detail` class, toggled by useMobileMasterDetail, tracks this):
+   the revision list is rendered as a pane inside the modal body (the Modal sidebar is unused) so the
+   list and the selected revision can slide over each other when switching between them. */
+body.mobile .revisions-dialog.mobile-master-detail {
+    .modal-body {
+        position: relative;
+        padding: 0;
+        /* The panes scroll themselves; this also keeps the sliding panes contained. */
+        overflow: hidden;
+    }
+
+    .revision-mobile-nav {
+        height: 100%;
+        overflow: auto;
+    }
+
+    .revision-detail {
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* The back button + revision date in the custom header replace the static "Note revisions" title. */
+    .modal-header > .modal-title {
+        display: none;
+    }
+
+    /* At rest only the active pane is displayed; during a transition both stay visible so the
+       outgoing pane can slide away as the incoming one slides in. */
+    &.mobile-view-list:not(.mobile-transition-to-list) .revision-detail {
+        display: none;
+    }
+
+    &.mobile-view-page:not(.mobile-transition-to-page) .revision-mobile-nav {
+        display: none;
+    }
+
+    /* Directional slide: opening a revision, the list slides out towards the start side while the
+       detail slides in from the end side; going back reverses the directions. The detail pane stacks
+       above the list, and `forwards` holds the outgoing pane off-screen until the transition classes
+       are removed after animationend. The global `motion-disabled` rule suppresses the animations;
+       the dialog then switches views directly without entering a transition. */
+    &.mobile-transition-to-page,
+    &.mobile-transition-to-list {
+        .revision-mobile-nav,
+        .revision-detail {
+            position: absolute;
+            inset: 0;
+            background-color: var(--modal-background-color);
+        }
+
+        .revision-detail {
+            z-index: 1;
+        }
+    }
+
+    &.mobile-transition-to-page {
+        .revision-detail {
+            animation: revision-slide-in-end 0.35s ease-in-out forwards;
+        }
+
+        .revision-mobile-nav {
+            animation: revision-slide-out-start 0.35s ease-in-out forwards;
+        }
+    }
+
+    &.mobile-transition-to-list {
+        .revision-detail {
+            animation: revision-slide-out-end 0.35s ease-in-out forwards;
+        }
+
+        .revision-mobile-nav {
+            animation: revision-slide-in-start 0.35s ease-in-out forwards;
+        }
+    }
+}
+
+body[dir=rtl].mobile .revisions-dialog.mobile-master-detail.mobile-transition-to-page {
+    .revision-detail {
+        animation-name: revision-slide-in-start;
+    }
+
+    .revision-mobile-nav {
+        animation-name: revision-slide-out-end;
+    }
+}
+
+body[dir=rtl].mobile .revisions-dialog.mobile-master-detail.mobile-transition-to-list {
+    .revision-detail {
+        animation-name: revision-slide-out-start;
+    }
+
+    .revision-mobile-nav {
+        animation-name: revision-slide-in-end;
+    }
+}
+
+.revision-mobile-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-grow: 1;
+    min-width: 0;
+
+    /* Decorative history icon shown in the list view. It borrows `icon-action` so it keeps exactly
+       the back button's footprint (the title doesn't shift between views), with the interactive
+       affordances neutralized. */
+    .revision-header-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        cursor: default;
+    }
+
+    .revision-mobile-title {
+        margin: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        flex-grow: 1;
+    }
+}
+
+@keyframes revision-slide-in-end {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes revision-slide-in-start {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes revision-slide-out-end {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes revision-slide-out-start {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(-100%); opacity: 0; }
 }

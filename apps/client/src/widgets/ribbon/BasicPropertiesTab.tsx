@@ -1,3 +1,5 @@
+import "./BasicPropertiesTab.css";
+
 import { MimeType, NoteType, ToggleInParentResponse } from "@triliumnext/commons";
 import { createPortal } from "preact/compat";
 import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
@@ -5,9 +7,9 @@ import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useState } fro
 import FNote from "../../entities/fnote";
 import branches from "../../services/branches";
 import dialog from "../../services/dialog";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import { getAvailableLocales, t } from "../../services/i18n";
 import mime_types from "../../services/mime_types";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import { NOTE_TYPES } from "../../services/note_types";
 import protected_session from "../../services/protected_session";
 import server from "../../services/server";
@@ -20,7 +22,7 @@ import FormToggle from "../react/FormToggle";
 import HelpButton from "../react/HelpButton";
 import { useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import Modal from "../react/Modal";
-import { CodeMimeTypesList } from "../type_widgets/options/code_notes";
+import { CodeMimeTypesList } from "../type_widgets/options/code_mime_types_list";
 import { LocaleSelector } from "../type_widgets/options/components/LocaleSelector";
 import { ContentLanguagesList } from "../type_widgets/options/i18n";
 import { TabContext } from "./ribbon-interface";
@@ -72,7 +74,7 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
     setModalShown: Dispatch<StateUpdater<boolean>>;
     noCodeNotes?: boolean;
 }) {
-    const mimeTypes = useMimeTypes();
+    const { enabledMimeTypes } = useMimeTypes();
     const noteTypes = useMemo(() => NOTE_TYPES.filter((nt) => !nt.reserved && !nt.static && (nt.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))), []);
     const changeNoteType = useCallback(async (type: NoteType, mime?: string) => {
         if (!note || (type === currentNoteType && mime === currentNoteMime)) {
@@ -131,7 +133,7 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
                 );
             })}
 
-            {!noCodeNotes && <NoteTypeCodeNoteList mimeTypes={mimeTypes} changeNoteType={changeNoteType} setModalShown={setModalShown} />}
+            {!noCodeNotes && <NoteTypeCodeNoteList mimeTypes={enabledMimeTypes} changeNoteType={changeNoteType} setModalShown={setModalShown} />}
         </>
     );
 }
@@ -164,11 +166,14 @@ export function NoteTypeCodeNoteList({ currentMimeType, mimeTypes, changeNoteTyp
 
 export function useMimeTypes() {
     const [ codeNotesMimeTypes ] = useTriliumOption("codeNotesMimeTypes");
-    const mimeTypes = useMemo(() => {
+    return useMemo(() => {
         mime_types.loadMimeTypes();
-        return mime_types.getMimeTypes().filter(mimeType => mimeType.enabled);
+        const allMimeTypes = mime_types.getMimeTypes();
+        return {
+            enabledMimeTypes: allMimeTypes.filter(mimeType => mimeType?.enabled),
+            allMimeTypes
+        };
     }, [ codeNotesMimeTypes ]); // eslint-disable-line react-hooks/exhaustive-deps
-    return mimeTypes;
 }
 
 export function NoteTypeOptionsModal({ modalShown, setModalShown }: { modalShown: boolean, setModalShown: (shown: boolean) => void }) {

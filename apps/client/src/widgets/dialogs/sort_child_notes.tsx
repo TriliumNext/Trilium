@@ -18,8 +18,10 @@ export default function SortChildNotesDialog() {
     const [ sortLocale, setSortLocale ] = useState("");
     const [ shown, setShown ] = useState(false);
 
-    useTriliumEvent("sortChildNotes", ({ node }) => {
-        setParentNoteId(node.data.noteId);
+    useTriliumEvent("sortChildNotes", ({ node, noteId }) => {
+        const targetNoteId = noteId ?? node?.data.noteId;
+        if (!targetNoteId) return;
+        setParentNoteId(targetNoteId);
         setShown(true);
     });
 
@@ -43,7 +45,10 @@ export default function SortChildNotesDialog() {
             onSubmit={onSubmit}
             onHidden={() => setShown(false)}
             show={shown}
-            footer={<Button text={t("sort_child_notes.sort")} keyboardShortcut="Enter" />}
+            footer={<>
+                <Button text={t("modal.cancel")} onClick={() => setShown(false)} />
+                <Button text={t("sort_child_notes.sort")} keyboardShortcut="Enter" />
+            </>}
         >
             <h5>{t("sort_child_notes.sorting_criteria")}</h5>
             <FormRadioGroup

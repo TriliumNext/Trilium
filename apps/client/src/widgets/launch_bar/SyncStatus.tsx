@@ -9,6 +9,7 @@ import sync from "../../services/sync";
 import { escapeQuotes } from "../../services/utils";
 import ws, { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
 import { useStaticTooltip, useTriliumOption } from "../react/hooks";
+import { launcherContextMenuHandler, LauncherNoteProps } from "./launch_bar_widgets";
 
 type SyncState = "unknown" | "in-progress"
     | "connected-with-changes" | "connected-no-changes"
@@ -49,7 +50,7 @@ const STATE_MAPPINGS: Record<SyncState, StateMapping> = {
     }
 };
 
-export default function SyncStatus() {
+export default function SyncStatus({ launcherNote }: LauncherNoteProps) {
     const syncState = useSyncStatus();
     const { title, icon, hasChanges } = STATE_MAPPINGS[syncState];
     const spanRef = useRef<HTMLSpanElement>(null);
@@ -60,7 +61,10 @@ export default function SyncStatus() {
     });
 
     return (syncServerHost &&
-        <div class="sync-status-widget launcher-button">
+        <div
+            class="sync-status-widget launcher-button"
+            onContextMenu={launcherContextMenuHandler(launcherNote)}
+        >
             <div class="sync-status">
                 <span
                     key={syncState} // Force re-render when state changes to update tooltip content.

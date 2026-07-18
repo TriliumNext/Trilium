@@ -49,81 +49,84 @@ body.layout-horizontal #center-pane {
 <h2>Detecting platform (Windows, macOS) or Electron</h2>
 <p>It is possible to add particular styles that only apply to a given platform
   by using the classes in <code spellcheck="false">body</code>:</p>
-<table>
-  <thead>
-    <tr>
-      <th>Windows</th>
-      <th>macOS</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code spellcheck="false">&lt;br&gt;body.platform-win32 {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
-      </td>
-      <td><code spellcheck="false">&lt;br&gt;body.platform-darwin {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<p>It is also possible to only apply a style if running under Electron (desktop
-  application):</p><pre><code class="language-text-x-trilium-auto">body.electron {
+<figure
+class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Windows</th>
+        <th>macOS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">&lt;br&gt;body.platform-win32 {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
+        </td>
+        <td><code spellcheck="false">&lt;br&gt;body.platform-darwin {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  </figure>
+  <p>It is also possible to only apply a style if running under Electron (desktop
+    application):</p><pre><code class="language-text-x-trilium-auto">body.electron {
 	background: blue;
 }</code></pre>
-<h3>Native title bar</h3>
-<p>It's possible to detect if the user has selected the native title bar
-  or the custom title bar by querying against <code spellcheck="false">body</code>:</p><pre><code class="language-text-x-trilium-auto">body.electron.native-titlebar {
+  <h3>Native title bar</h3>
+  <p>It's possible to detect if the user has selected the native title bar
+    or the custom title bar by querying against <code spellcheck="false">body</code>:</p><pre><code class="language-text-x-trilium-auto">body.electron.native-titlebar {
 	/* Do something */
 }
 
 body.electron:not(.native-titlebar) {
 	/* Do something else */
 }</code></pre>
-<h3>Native window buttons</h3>
-<p>When running under Electron with native title bar off, a feature was introduced
-  to use the platform-specific window buttons such as the semaphore on macOS.</p>
-<p>See <a href="https://github.com/TriliumNext/Notes/pull/702">Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/Notes</a> for
-  the original implementation of this feature, including screenshots.</p>
-<h4>On Windows</h4>
-<p>The colors of the native window button area can be adjusted using a RGB
-  hex color:</p><pre><code class="language-text-x-trilium-auto">body {
+  <h3>Native window buttons</h3>
+  <p>When running under Electron with native title bar off, a feature was introduced
+    to use the platform-specific window buttons such as the semaphore on macOS.</p>
+  <p>See <a href="https://github.com/TriliumNext/Notes/pull/702">Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/Notes</a> for
+    the original implementation of this feature, including screenshots.</p>
+  <h4>On Windows</h4>
+  <p>The colors of the native window button area can be adjusted using a RGB
+    hex color:</p><pre><code class="language-text-x-trilium-auto">body {
 	--native-titlebar-foreground: #ffffff;
 	--native-titlebar-background: #ff0000;
 }</code></pre>
-<p>It is also possible to use transparency at the cost of reduced hover colors
-  using a RGBA hex color:</p><pre><code class="language-text-x-trilium-auto">body {
+  <p>It is also possible to use transparency at the cost of reduced hover colors
+    using a RGBA hex color:</p><pre><code class="language-text-x-trilium-auto">body {
 	--native-titlebar-background: #ff0000aa;
 }</code></pre>
-<p>Note that the value is read when the window is initialized and then it
-  is refreshed only when the user changes their light/dark mode preference.</p>
-<h4>On macOS</h4>
-<p>On macOS the semaphore window buttons are enabled by default when the
-  native title bar is disabled. The offset of the buttons can be adjusted
-  using:</p><pre><code class="language-text-css">body {
+  <p>Note that the value is read when the window is initialized and then it
+    is refreshed only when the user changes their light/dark mode preference.</p>
+  <h4>On macOS</h4>
+  <p>On macOS the semaphore window buttons are enabled by default when the
+    native title bar is disabled. The offset of the buttons can be adjusted
+    using:</p><pre><code class="language-text-css">body {
     --native-titlebar-darwin-x-offset: 12;
     --native-titlebar-darwin-y-offset: 14 !important;
 }</code></pre>
-<h3>Background/transparency effects on Windows (Mica)</h3>
-<p>Windows 11 offers a special background/transparency effect called Mica,
-  which can be enabled by themes by setting the <code spellcheck="false">--background-material</code> variable
-  at <code spellcheck="false">body</code> level:</p><pre><code class="language-text-css">body.electron.platform-win32 {
+  <h3>Background/transparency effects on Windows (Mica)</h3>
+  <p>Windows 11 offers a special background/transparency effect called Mica,
+    which can be enabled by themes by setting the <code spellcheck="false">--background-material</code> variable
+    at <code spellcheck="false">body</code> level:</p><pre><code class="language-text-css">body.electron.platform-win32 {
 	--background-material: tabbed; 
 }</code></pre>
-<p>The value can be either <code spellcheck="false">tabbed</code> (especially
-  useful for the horizontal layout) or <code spellcheck="false">mica</code> (ideal
-  for the vertical layout).</p>
-<p>Do note that the Mica effect is applied at <code spellcheck="false">body</code> level
-  and the theme needs to make the entire hierarchy (semi-)transparent in
-  order for it to be visible. Use the TrilumNext theme as an inspiration.</p>
-<h2>Note icons, tab workspace accent color</h2>
-<p>Theme capabilities are small adjustments done through CSS variables that
-  can affect the layout or the visual aspect of the application.</p>
-<p>In the tab bar, to display the icons of notes instead of the icon of the
-  workspace:</p><pre><code class="language-text-css">:root {
+  <p>The value can be either <code spellcheck="false">tabbed</code> (especially
+    useful for the horizontal layout) or <code spellcheck="false">mica</code> (ideal
+    for the vertical layout).</p>
+  <p>Do note that the Mica effect is applied at <code spellcheck="false">body</code> level
+    and the theme needs to make the entire hierarchy (semi-)transparent in
+    order for it to be visible. Use the TrilumNext theme as an inspiration.</p>
+  <h2>Note icons, tab workspace accent color</h2>
+  <p>Theme capabilities are small adjustments done through CSS variables that
+    can affect the layout or the visual aspect of the application.</p>
+  <p>In the tab bar, to display the icons of notes instead of the icon of the
+    workspace:</p><pre><code class="language-text-css">:root {
 	--tab-note-icons: true;
 }</code></pre>
-<p>When a workspace is hoisted for a given tab, it is possible to get the
-  background color of that workspace, for example to apply a small strip
-  on the tab instead of the whole background color:</p><pre><code class="language-text-css">.note-tab .note-tab-wrapper {
+  <p>When a workspace is hoisted for a given tab, it is possible to get the
+    background color of that workspace, for example to apply a small strip
+    on the tab instead of the whole background color:</p><pre><code class="language-text-css">.note-tab .note-tab-wrapper {
     --tab-background-color: initial !important;
 }
 
@@ -136,25 +139,25 @@ body.electron:not(.native-titlebar) {
     height: 3px;
     background-color: var(--workspace-tab-background-color);
 }</code></pre>
-<h2>Custom fonts</h2>
-<p>Currently the only way to include a custom font is to use&nbsp;<a href="#root/_help_d3fAXQ2diepH">Custom resource providers</a>.
-  Basically import a font into Trilium and assign it <code spellcheck="false">#customResourceProvider=fonts/myfont.ttf</code> and
-  then import the font in CSS via <code spellcheck="false">/custom/fonts/myfont.ttf</code>.
-  Use <code spellcheck="false">../../../custom/fonts/myfont.ttf</code> if you
-  run your Trilium server on a different path than <code spellcheck="false">/</code>.</p>
-<h2>Dark and light themes</h2>
-<p>A light theme needs to have the following CSS:</p><pre><code class="language-text-css">:root {
+  <h2>Custom fonts</h2>
+  <p>Currently the only way to include a custom font is to use&nbsp;<a href="#root/_help_d3fAXQ2diepH">Custom resource providers</a>.
+    Basically import a font into Trilium and assign it <code spellcheck="false">#customResourceProvider=fonts/myfont.ttf</code> and
+    then import the font in CSS via <code spellcheck="false">/custom/fonts/myfont.ttf</code>.
+    Use <code spellcheck="false">../../../custom/fonts/myfont.ttf</code> if you
+    run your Trilium server on a different path than <code spellcheck="false">/</code>.</p>
+  <h2>Dark and light themes</h2>
+  <p>A light theme needs to have the following CSS:</p><pre><code class="language-text-css">:root {
 	--theme-style: light;
 }</code></pre>
-<p>if the theme is dark, then <code spellcheck="false">--theme-style</code> needs
-  to be <code spellcheck="false">dark</code>.</p>
-<p>If the theme is auto (e.g. supports both light or dark based on <code spellcheck="false">prefers-color-scheme</code>)
-  it must also declare (in addition to setting <code spellcheck="false">--theme-style</code> to
-  either <code spellcheck="false">light</code> or <code spellcheck="false">dark</code>):</p><pre><code class="language-text-css">:root {
+  <p>if the theme is dark, then <code spellcheck="false">--theme-style</code> needs
+    to be <code spellcheck="false">dark</code>.</p>
+  <p>If the theme is auto (e.g. supports both light or dark based on <code spellcheck="false">prefers-color-scheme</code>)
+    it must also declare (in addition to setting <code spellcheck="false">--theme-style</code> to
+    either <code spellcheck="false">light</code> or <code spellcheck="false">dark</code>):</p><pre><code class="language-text-css">:root {
 
     --theme-style-auto: true;
 
 }</code></pre>
-<p>This will affect the behavior of the Electron application by informing
-  the operating system of the color preference (e.g. background effects will
-  appear correct on Windows).</p>
+  <p>This will affect the behavior of the Electron application by informing
+    the operating system of the color preference (e.g. background effects will
+    appear correct on Windows).</p>

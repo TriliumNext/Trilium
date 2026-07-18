@@ -1,7 +1,7 @@
 import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
 import { ComponentChildren, HTMLAttributes } from "preact";
-import { CSSProperties, HTMLProps } from "preact/compat";
-import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { createPortal, CSSProperties, HTMLProps } from "preact/compat";
+import { MutableRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { isMobile } from "../../services/utils";
 import { useTooltip, useUniqueName } from "./hooks";
@@ -34,41 +34,88 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
     titlePosition?: "top" | "right" | "bottom" | "left";
     titleOptions?: Partial<Tooltip.Options>;
     mobileBackdrop?: boolean;
+    /**
+     * Render the dropdown menu into `document.body` instead of nesting it next to the toggle.
+     *
+     * Use this when an ancestor establishes a containment/backdrop root (e.g. `container-type`,
+     * `transform`, `filter`) which would otherwise flatten the menu's `backdrop-filter` blur into a
+     * flat tint. The menu is wrapped in a `<div class={className}>` so any CSS scoped under that
+     * class keeps applying even though the menu no longer lives inside the toggle's wrapper.
+     */
+    portalToBody?: boolean;
 }
 
-export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop }: DropdownProps) {
+export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop, portalToBody }: DropdownProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const dropdownContainerRef = useRef<HTMLUListElement | null>(null);
 
-    const { showTooltip, hideTooltip } = useTooltip(containerRef, {
+    // Memoized so useTooltip's effect (keyed on config identity) doesn't dispose and recreate the
+    // Bootstrap tooltip on every re-render — only when the title (or positioning) actually changes.
+    const tooltipConfig = useMemo<Partial<Tooltip.Options>>(() => ({
         ...titleOptions,
+        // Drive the tooltip from config, not just the `title` attribute: Bootstrap reads the attribute once
+        // on init, so a dynamic title (e.g. the media play-mode button) would otherwise go stale (`title` is
+        // a dependency of this memo, so a change recreates the tooltip, keeping it in sync). Prefer the
+        // `title` prop, then a `titleOptions.title` escape-hatch, then "" (Bootstrap rejects `undefined`;
+        // "" shows no tooltip).
+        title: title ?? titleOptions?.title ?? "",
         placement: titlePosition ?? "bottom",
         fallbackPlacements: [ titlePosition ?? "bottom" ],
         trigger: "manual"
-    });
+    }), [title, titleOptions, titlePosition]);
+    const { showTooltip, hideTooltip } = useTooltip(containerRef, tooltipConfig);
 
     const [ shown, setShown ] = useState(false);
+    // A portaled menu lives in `document.body`, detached from the toggle's subtree. Mounting it eagerly
+    // for every instance leaves an empty menu wrapper in the body for every note context/tab, so only
+    // mount it while it's actually needed: open (`shown`), about to open (`armed` — set on interaction
+    // with the toggle, see the button handlers below), or forced open. Non-portaled menus stay inline
+    // next to the toggle and are always mounted, as before.
+    const [ armed, setArmed ] = useState(false);
+    const menuMounted = !portalToBody || shown || armed || !!forceShown;
+    const dropdownInstanceRef = useRef<BootstrapDropdown | null>(null);
 
-    useEffect(() => {
-        if (!triggerRef.current || !dropdownContainerRef.current) return;
+    // Create/wire the Bootstrap dropdown. Re-runs whenever the (portaled) menu remounts so `_menu` gets
+    // re-pointed at the fresh element. useLayoutEffect so the wiring lands synchronously after the
+    // interaction that mounts the menu but before Bootstrap's click handler opens it.
+    useLayoutEffect(() => {
+        if (!triggerRef.current) return;
 
         const dropdown = BootstrapDropdown.getOrCreateInstance(triggerRef.current, dropdownOptions);
+        dropdownInstanceRef.current = dropdown;
         if (dropdownRef) {
             dropdownRef.current = dropdown;
         }
-        if (forceShown) {
-            dropdown.show();
-            setShown(true);
+
+        // When the menu is portaled to `document.body` it is no longer a sibling of the toggle, so
+        // Bootstrap fails to locate it (it searches the toggle's wrapper). Wire it up by hand —
+        // Bootstrap only ever positions/toggles whatever `_menu` points at, regardless of where it
+        // lives in the DOM, and the popper reference stays the toggle button.
+        if (portalToBody && dropdownContainerRef.current) {
+            (dropdown as unknown as { _menu: HTMLElement })._menu = dropdownContainerRef.current;
         }
 
         // React to popup container size changes, which can affect the positioning.
-        const resizeObserver = new ResizeObserver(() => dropdown.update());
-        resizeObserver.observe(dropdownContainerRef.current);
+        let resizeObserver: ResizeObserver | undefined;
+        if (dropdownContainerRef.current) {
+            resizeObserver = new ResizeObserver(() => dropdown.update());
+            resizeObserver.observe(dropdownContainerRef.current);
+        }
 
+        return () => resizeObserver?.disconnect();
+    }, [ menuMounted ]);
+
+    // Show a forced-open dropdown once mounted, and dispose the instance only when the component truly
+    // unmounts (not on every menu remount driven by the effect above).
+    useEffect(() => {
+        if (forceShown) {
+            dropdownInstanceRef.current?.show();
+            setShown(true);
+        }
         return () => {
-            resizeObserver.disconnect();
-            dropdown.dispose();
+            dropdownInstanceRef.current?.dispose();
+            dropdownInstanceRef.current = null;
         };
     }, []);
 
@@ -83,6 +130,7 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
 
     const onHidden = useCallback(() => {
         setShown(false);
+        setArmed(false);
         externalOnHidden?.();
         if (mobileBackdrop && isMobile()) {
             document.getElementById("context-menu-cover")?.classList.remove("show", "global-menu-cover");
@@ -114,6 +162,23 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
 
     const ariaId = useUniqueName("button");
 
+    const menu = (
+        <ul
+            class={`dropdown-menu tn-dropdown-menu ${isStatic ? "static" : ""} ${dropdownContainerClassName ?? ""} ${!noDropdownListStyle ? "tn-dropdown-list" : ""}`}
+            style={dropdownContainerStyle}
+            aria-labelledby={ariaId}
+            ref={dropdownContainerRef}
+            onClick={(e) => {
+                // Prevent clicks directly inside the dropdown from closing.
+                if (e.target === dropdownContainerRef.current) {
+                    e.stopPropagation();
+                }
+            }}
+        >
+            {shown && children}
+        </ul>
+    );
+
     return (
         <div ref={containerRef} class={`dropdown ${className ?? ""}`} style={{ display: "flex" }} title={title}>
             <button
@@ -128,26 +193,26 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
                 disabled={disabled}
                 onMouseEnter={showTooltip}
                 onMouseLeave={hideTooltip}
+                // Mount the portaled menu just before it can open: any interaction that leads to a
+                // Bootstrap open (pointer press, or focusing the toggle ahead of a keyboard open) is
+                // preceded by one of these, so `_menu` is wired by the time the click/keydown fires.
+                // Releasing focus without opening tears the empty menu back down.
+                onPointerDown={portalToBody ? () => setArmed(true) : undefined}
+                onFocus={portalToBody ? () => setArmed(true) : undefined}
+                onBlur={portalToBody ? () => { if (!shown) setArmed(false); } : undefined}
                 {...buttonProps}
             >
                 {text}
                 <span className="caret" />
             </button>
 
-            <ul
-                class={`dropdown-menu tn-dropdown-menu ${isStatic ? "static" : ""} ${dropdownContainerClassName ?? ""} ${!noDropdownListStyle ? "tn-dropdown-list" : ""}`}
-                style={dropdownContainerStyle}
-                aria-labelledby={ariaId}
-                ref={dropdownContainerRef}
-                onClick={(e) => {
-                    // Prevent clicks directly inside the dropdown from closing.
-                    if (e.target === dropdownContainerRef.current) {
-                        e.stopPropagation();
-                    }
-                }}
-            >
-                {shown && children}
-            </ul>
+            {portalToBody
+                // Keep the `className` scope on the portaled wrapper so CSS scoped under it (e.g.
+                // `.note-icon-widget .icon-list`) still applies even though the menu now lives in body.
+                // Only mount it while needed (see `menuMounted`) so closed pickers don't each leave an
+                // empty menu wrapper in the body.
+                ? (menuMounted && createPortal(<div class={className ?? ""}>{menu}</div>, document.body))
+                : menu}
         </div>
     );
 }

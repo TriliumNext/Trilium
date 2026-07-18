@@ -1,0 +1,237 @@
+/* ==========================================================================
+   Link Embed – share theme styles for mention, card, and video embeds
+   ========================================================================== */
+
+/* ---------- Inline mention (favicon + title) ---------- */
+
+.link-embed-mention {
+    display: inline;
+    padding: 1px 6px 1px 4px;
+    border-radius: 4px;
+    background: var(--background-highlight);
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 0.92em;
+    line-height: 1.5;
+    transition: background-color 0.12s;
+
+    /* inline (not inline-flex) so a long link wraps line-by-line through the paragraph;
+       clone keeps each wrapped fragment's padding/rounded corners and background. */
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+.link-embed-mention:hover {
+    background: var(--background-active);
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.link-embed-mention-favicon {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.link-embed-mention-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-menu);
+    flex-shrink: 0;
+}
+
+/* Sits the favicon before the link text and spaces it off the title. Scoped to the mention so
+   it doesn't disturb the same favicon reused in the card's flex URL row. */
+.link-embed-mention > .link-embed-mention-favicon,
+.link-embed-mention > .link-embed-mention-dot {
+    vertical-align: -0.2em;
+    margin-right: 4px;
+}
+
+.link-embed-mention-title {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* ---------- Block embed wrapper ---------- */
+
+.link-embed {
+    margin: 12px 0;
+}
+
+/* ---------- Video embed (YouTube iframe) ---------- */
+
+.link-embed-video {
+    position: relative;
+    max-width: 640px;
+    margin: auto;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+}
+
+.link-embed-video iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: none;
+    display: block;
+}
+
+/* ---------- Click-to-play facade ----------
+   Stands in for the player until the visitor clicks, so reading a shared page containing a video
+   sends no request to YouTube. The thumbnail comes from the note, not from a remote server. */
+
+.link-embed-video-facade {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    border: none;
+    background: #000;
+    cursor: pointer;
+}
+
+.link-embed-video-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: blur(20px) brightness(0.65);
+}
+
+.link-embed-video-play {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 68px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    transition: background-color 0.12s;
+}
+
+/* The play triangle. */
+.link-embed-video-play::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 10px 0 10px 17px;
+    border-color: transparent transparent transparent #fff;
+}
+
+.link-embed-video-facade:hover .link-embed-video-play,
+.link-embed-video-facade:focus-visible .link-embed-video-play {
+    background: #f00;
+}
+
+/* ---------- Card embed ---------- */
+
+.link-embed-card {
+    display: flex;
+    width: 100%;
+    border: 1px solid var(--background-highlight);
+    border-radius: 4px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 0.15s ease;
+    max-height: 120px;
+}
+
+.link-embed-card:hover {
+    background-color: var(--background-highlight);
+    text-decoration: none;
+    color: inherit;
+}
+
+.link-embed-card-image-wrapper {
+    width: 160px;
+    min-height: 100px;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-secondary);
+}
+
+.link-embed-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.link-embed-card-image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 28px;
+    opacity: 0.5;
+}
+
+.link-embed-card-content {
+    flex: 1;
+    padding: 12px 14px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+}
+
+.link-embed-card-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.link-embed-card-description {
+    font-size: 0.82em;
+    color: var(--text-menu);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.link-embed-card-url {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78em;
+    color: var(--text-menu);
+    min-width: 0;
+    margin-top: auto;
+
+    /* The favicon keeps its size; only the site name is truncated. */
+    & > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Scaled down from the inline mention's 16px: it sits next to 0.78em text here. */
+    & .link-embed-mention-favicon {
+        width: 14px;
+        height: 14px;
+    }
+
+    & .link-embed-mention-dot {
+        width: 6px;
+        height: 6px;
+    }
+}

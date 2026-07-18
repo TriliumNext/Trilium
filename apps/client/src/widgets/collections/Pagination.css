@@ -4,8 +4,8 @@
     --note-list-pager-ellipsis-width: 20px;
     --note-list-pager-justify-content: flex-end;
 
-    --note-list-pager-current-page-button-background-color: var(--button-group-active-button-background);
-    --note-list-pager-current-page-button-text-color: var(--button-group-active-button-text-color);
+    --note-list-pager-current-page-button-background-color: var(--low-profile-button-active-background-color);
+    --note-list-pager-current-page-button-text-color: var(--low-profile-button-active-color);
 }
 
 .note-list-pager-container {

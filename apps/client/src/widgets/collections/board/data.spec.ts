@@ -1,4 +1,4 @@
-import { describe, expect,it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import FBranch from "../../../entities/fbranch";
 import froca from "../../../services/froca";
@@ -27,7 +27,7 @@ describe("Board data", () => {
         froca.branches["note1_note2"] = branch;
         froca.getNoteFromCache("note1")!.addChild("note2", "note1_note2", false);
         const data = await getBoardData(parentNote, "status", {}, false);
-        const noteIds = Array.from(data.byColumn.values()).flat().map(item => item.note.noteId);
+        const noteIds = [...data.byColumn.values()].flat().map(item => item.note.noteId);
         expect(noteIds.length).toBe(3);
     });
 });

@@ -60,7 +60,10 @@ export default function CloneToDialog() {
             title={t("clone_to.clone_notes_to")}
             helpPageId="IakOLONlIfGI"
             size="lg"
-            footer={<Button text={t("clone_to.clone_to_selected_note")} keyboardShortcut="Enter" />}
+            footer={<>
+                <Button text={t("modal.cancel")} onClick={() => setShown(false)} />
+                <Button text={t("clone_to.clone_to_selected_note")} keyboardShortcut="Enter" />
+            </>}
             onSubmit={onSubmit}
             onShown={() => triggerRecentNotes(autoCompleteRef.current)}
             onHidden={() => setShown(false)}

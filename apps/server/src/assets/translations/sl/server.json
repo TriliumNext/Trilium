@@ -1,9 +1,8 @@
 {
-    "keyboard_actions": {
-        "back-in-note-history": "Pojdi na prejšnji zapisek v zgodovini",
-        "forward-in-note-history": "Pojdi na naslednji zapisek v zgodovini",
-        "open-jump-to-note-dialog": "Odpri dialog \"Skoči na zapisek\"",
-        "open-command-palette": "Odpri komandno ploščo",
-        "scroll-to-active-note": "Pomaknite se po drevesu zapiskov do aktivnega zapiska"
-    }
+  "keyboard_actions": {
+    "back-in-note-history": "Pojdi na prejšnji zapisek v zgodovini",
+    "forward-in-note-history": "Pojdi na naslednji zapisek v zgodovini",
+    "open-jump-to-note-dialog": "Odpri dialog \"Skoči na zapisek\"",
+    "scroll-to-active-note": "Pomaknite se po drevesu zapiskov do aktivnega zapiska"
+  }
 }

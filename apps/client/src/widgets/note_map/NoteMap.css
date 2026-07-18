@@ -1,5 +1,5 @@
 .note-detail-note-map {
-            height: 100%;
+    height: 100%;
     overflow: hidden;
 }
 
@@ -55,3 +55,8 @@
 }
 
 /* End of styling the slider */
+
+.style-resolver {
+    color: var(--muted-text-color);
+    display: none;
+}
