@@ -92,8 +92,11 @@ export function needsShell(binary: string): boolean {
 }
 
 function findOnPath(binary: string): string | undefined {
-    // Windows resolves executables via PATHEXT; on POSIX the bare name suffices.
-    const extensions = process.platform === "win32" ? ["", ".cmd", ".exe", ".bat"] : [""];
+    // On Windows, npm-installed packages create a bare extensionless file (a
+    // POSIX bash script for Git Bash/WSL) alongside the real .cmd/.exe shims.
+    // The bash script can't be executed by Node's execFile/spawn, so we must
+    // try the Windows-native extensions first and skip the bare name entirely.
+    const extensions = process.platform === "win32" ? [".cmd", ".exe", ".bat"] : [""];
     for (const dir of (process.env.PATH ?? "").split(path.delimiter)) {
         if (!dir) {
             continue;

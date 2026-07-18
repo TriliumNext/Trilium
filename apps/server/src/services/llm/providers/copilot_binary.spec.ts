@@ -118,6 +118,30 @@ describe("resolveCopilotBinaryPath", () => {
             expect(execFileMock.mock.calls[0][2]).toMatchObject({ shell: true });
         });
 
+        it("prefers the .cmd shim over the extensionless bash script npm installs beside it", async () => {
+            stubPlatform("win32");
+            // The real `npm install -g @github/copilot` layout: a POSIX `sh`
+            // script (for Git Bash) sits next to the Windows shims. Node cannot
+            // spawn the bash script — resolving it fails with a misleading
+            // "found it but it failed to run" ENOENT.
+            const dir = path.join("npm", "prefix");
+            const shim = path.join(dir, "copilot.cmd");
+            const bashScript = path.join(dir, "copilot");
+            process.env.PATH = dir;
+            existsSyncMock.mockImplementation((candidate: string) => candidate === shim || candidate === bashScript);
+            probeSucceeds();
+
+            await expect(resolveCopilotBinaryPath()).resolves.toBe(shim);
+
+            // With only the unusable bash script present, the bare name is
+            // skipped entirely so the user gets the actionable install message
+            // instead of an opaque spawn failure.
+            resetCopilotBinaryCache();
+            existsSyncMock.mockImplementation((candidate: string) => candidate === bashScript);
+
+            await expect(resolveCopilotBinaryPath()).rejects.toThrow(/GitHub Copilot CLI not found/);
+        });
+
         it("rejects with install instructions when `copilot` is nowhere on PATH (or PATH is unset)", async () => {
             stubPlatform("linux");
             delete process.env.PATH;
