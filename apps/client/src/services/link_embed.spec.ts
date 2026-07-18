@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import server from "./server.js";
+import { uploadImageAttachment } from "./image_upload.js";
 import {
     applyLinkEmbeds,
     detectEmbedType,
@@ -9,6 +9,13 @@ import {
     renderMentionPreview,
     safeHostname
 } from "./link_embed.js";
+import server from "./server.js";
+
+vi.mock("./image_upload.js", () => ({
+    uploadImageAttachment: vi.fn()
+}));
+
+const uploadImageAttachmentMock = vi.mocked(uploadImageAttachment);
 
 let container: HTMLDivElement | undefined;
 
@@ -107,6 +114,57 @@ describe("fetchMetadata", () => {
         const result = await fetchMetadata("https://blocked.example.com/x");
         expect(result.unresolved).toBe(true);
     });
+
+    describe("image offload to attachment", () => {
+        const metaWithDataUriImage = {
+            url: "https://example.com",
+            embedType: "opengraph",
+            title: "Title",
+            favicon: "data:image/png;base64,FAV",
+            image: "data:image/jpeg;base64,IMG"
+        };
+
+        it("stores the image as an attachment of the owning note, keeping the favicon inline", async () => {
+            server.post = vi.fn(async () => metaWithDataUriImage) as typeof server.post;
+            uploadImageAttachmentMock.mockResolvedValueOnce("api/attachments/att1/image/image.jpg");
+
+            const result = await fetchMetadata("https://example.com", "note1");
+
+            expect(uploadImageAttachmentMock).toHaveBeenCalledExactlyOnceWith("note1", "data:image/jpeg;base64,IMG");
+            // Only the attachment URL lands in the note content — inlined base64 would count against
+            // the auto-read-only size threshold. The favicon stays inline: it is small and shared
+            // with inline mentions.
+            expect(result.image).toBe("api/attachments/att1/image/image.jpg");
+            expect(result.favicon).toBe("data:image/png;base64,FAV");
+        });
+
+        it("keeps the data URI when the upload fails, so the preview still persists", async () => {
+            server.post = vi.fn(async () => metaWithDataUriImage) as typeof server.post;
+            uploadImageAttachmentMock.mockResolvedValueOnce(null);
+
+            const result = await fetchMetadata("https://example.com", "note1");
+
+            expect(result.image).toBe("data:image/jpeg;base64,IMG");
+        });
+
+        it("does not upload without an owning note, a non-data-URI image, or a missing image", async () => {
+            uploadImageAttachmentMock.mockClear();
+
+            server.post = vi.fn(async () => metaWithDataUriImage) as typeof server.post;
+            const withoutNote = await fetchMetadata("https://example.com");
+            expect(withoutNote.image).toBe("data:image/jpeg;base64,IMG");
+
+            server.post = vi.fn(async () => ({ ...metaWithDataUriImage, image: "https://img.example/x.png" })) as typeof server.post;
+            const remoteImage = await fetchMetadata("https://example.com", "note1");
+            expect(remoteImage.image).toBe("https://img.example/x.png");
+
+            server.post = vi.fn(async () => ({ ...metaWithDataUriImage, image: undefined })) as typeof server.post;
+            const noImage = await fetchMetadata("https://example.com", "note1");
+            expect(noImage.image).toBeUndefined();
+
+            expect(uploadImageAttachmentMock).not.toHaveBeenCalled();
+        });
+    });
 });
 
 describe("renderEmbedPreview", () => {
@@ -135,6 +193,30 @@ describe("renderEmbedPreview", () => {
         // The click was the play command, so the player starts straight away.
         expect(iframe?.getAttribute("src")).toContain("autoplay=1");
         expect(root.querySelector("button.link-embed-video-facade")).toBeNull();
+    });
+
+    it("omits the player's origin param when not served from a web origin (desktop custom protocol)", async () => {
+        // On desktop the renderer is served from trilium-app://app, which YouTube's player rejects
+        // as an `origin` value — the param must be left out entirely there.
+        const happyDOM = (window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM;
+        const previousUrl = window.location.href;
+        happyDOM.setURL("trilium-app://app/index.html");
+
+        try {
+            const root = makeContainer();
+            renderEmbedPreview(root, {
+                url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                embedType: "youtube"
+            });
+            root.querySelector<HTMLButtonElement>("button.link-embed-video-facade")?.click();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            const src = root.querySelector("iframe")?.getAttribute("src") ?? "";
+            expect(src).toContain("youtube-nocookie.com/embed/dQw4w9WgXcQ");
+            expect(src).not.toContain("origin=");
+        } finally {
+            happyDOM.setURL(previousUrl);
+        }
     });
 
     it("shows the facade without a thumbnail when the note stores no image", () => {

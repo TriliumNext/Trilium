@@ -7,7 +7,7 @@ import CutToNotePlugin from "./plugins/cuttonote.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
 import IncludeNote from "./plugins/includenote.js";
 import InternalLinkPlugin from "./plugins/internallink.js";
-import LinkEmbed from "./plugins/linkembed.js";
+import LinkEmbed from "./plugins/link_embed/link_embed.js";
 import MentionCustomization from "./plugins/mention_customization.js";
 import ReferenceLink from "./plugins/referencelink.js";
 

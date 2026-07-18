@@ -138,7 +138,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         // Link preview functionality. The insert flow itself lives in the editor (a balloon form),
         // so the host only has to supply the metadata and the rendering.
         async fetchLinkMetadata(url: string) {
-            return await linkEmbedService.fetchMetadata(url);
+            return await linkEmbedService.fetchMetadata(url, note.noteId);
         },
         detectEmbedType(url: string) {
             return linkEmbedService.detectEmbedType(url);

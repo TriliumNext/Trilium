@@ -209,6 +209,16 @@ second line 2</code></pre><ul><li>Hello</li><li>world</li></ul><ol><li>Hello</li
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
     });
 
+    it("imports back link previews exported as raw HTML", () => {
+        // The Markdown exporter emits link previews as their canonical HTML plus a fallback
+        // anchor; both forms must survive sanitization so the editor can upcast them again.
+        const block = '<section class="link-embed" data-url="https://e.com/" data-embed-type="opengraph" data-title="Example"><a href="https://e.com/">Example</a></section>';
+        expect(markdownService.renderToHtml(block, "Title")).toStrictEqual(block);
+
+        const inline = 'See <span class="link-mention" data-url="https://e.com/" data-title="Example"><a href="https://e.com/">Example</a></span> for details.';
+        expect(markdownService.renderToHtml(inline, "Title")).toStrictEqual(`<p>${inline}</p>`);
+    });
+
     it("preserves figures and images with sizes", () => {
         const scenarios = [
             /*html*/`<figure class="image image-style-align-center image_resized" style="width:53.44%;"><img style="aspect-ratio:991/403;" src="Jump to Note_image.png" width="991" height="403"></figure>`,

@@ -336,6 +336,41 @@ describe("sync service", () => {
         await expect(runSync()).resolves.toEqual({ success: false, message: "kaboom" });
     });
 
+    describe("last sync error tracking", () => {
+        // The setup wizard's progress screen only polls sync/stats — the sync result itself
+        // is returned to whoever *triggered* the sync (often a fire-and-forget). The last
+        // error must therefore be queryable so the wizard can leave its progress screen
+        // instead of spinning forever (#10548).
+        it("records the failure message with the sync server's host redacted", async () => {
+            // The setup wizard displays this message and users paste screenshots of it
+            // into bug reports — the private host/port must not leak, while the path and
+            // status (the diagnostically useful parts) stay visible.
+            config.loginThrows = new Error(
+                "Request to PUT https://trilium.private-domain.example:8443/api/sync/update?logMarkerId=x failed, error: 401 Logged in session not found"
+            );
+            await expect(runSync()).resolves.toMatchObject({ success: false });
+            expect(syncService.getLastSyncError()).toBe(
+                "Request to PUT https://[redacted]/api/sync/update?logMarkerId=x failed, error: 401 Logged in session not found"
+            );
+        });
+
+        it("records connection failures with the user-facing message", async () => {
+            config.loginThrows = new Error("connect ECONNREFUSED 127.0.0.1:8080");
+            await expect(runSync()).resolves.toMatchObject({ success: false });
+            expect(syncService.getLastSyncError()).toBe("No connection to sync server.");
+        });
+
+        it("clears the recorded error once a subsequent sync succeeds", async () => {
+            config.loginThrows = new Error("kaboom");
+            await expect(runSync()).resolves.toMatchObject({ success: false });
+            expect(syncService.getLastSyncError()).toBe("kaboom");
+
+            config.loginThrows = undefined;
+            await expect(runSync()).resolves.toEqual({ success: true });
+            expect(syncService.getLastSyncError()).toBeNull();
+        });
+    });
+
     describe("login", () => {
         it("throws when the sync server shares the local instance id", async () => {
             config.login = { instanceId: getInstanceId(), maxEntityChangeId: 0 };

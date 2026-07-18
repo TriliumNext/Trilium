@@ -36,8 +36,7 @@ The same principle applies to all three list types (bullet, numbered and to-do).
 
 ## To-do lists
 
-*   To insert a to-do list from the keyboard, type `- [ ]` for an unchecked item or `[x]` for a checked item while on an empty paragraph.
-*   To reorder the item under the cursor, press <kbd>Alt</kbd>+<kbd>Up</kbd> or <kbd>Alt</kbd>+<kbd>Down</kbd>. To reorder multiple items, select them first.
+See <a class="reference-link" href="To-do%20Lists.md">To Do Lists</a>.
 
 ## Collapsible lists
 

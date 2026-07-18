@@ -6,7 +6,7 @@ import { installGlobMock } from "../../test/globals-test-kit.js";
 import IncludeNote from "./includenote.js";
 import IncludeNoteBoxSizeDropdown from "./include_note_box_size_dropdown.js";
 import IncludeNoteToolbar from "./include_note_toolbar.js";
-import LinkEmbed from "./linkembed.js";
+import LinkEmbed from "./link_embed/link_embed.js";
 
 // ---------------------------------------------------------------------------
 // Minimal inline plugin that registers a section widget WITHOUT a class

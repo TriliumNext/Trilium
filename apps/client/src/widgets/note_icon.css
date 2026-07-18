@@ -6,6 +6,14 @@ div.note-icon-widget {
     contain: unset;
 }
 
+/* The menu is portaled to `document.body` (see the Dropdown's `portalToBody`), so it competes with
+   modals in the root stacking context instead of painting inside them. The global dropdown z-index
+   (999) ties with the quick-edit dialog (999, or 1100 when stacked) and loses, hiding the picker.
+   Raise it above any modal it can be opened from. */
+body > div.note-icon-widget > .dropdown-menu {
+    --bs-dropdown-zindex: 1200;
+}
+
 .note-icon-widget button.note-icon {
     --size: calc(var(--note-icon-size) + var(--note-icon-container-padding-size) * 2);
 

@@ -1,7 +1,7 @@
 import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
 import { ComponentChildren, HTMLAttributes } from "preact";
 import { createPortal, CSSProperties, HTMLProps } from "preact/compat";
-import { MutableRef, useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { MutableRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { isMobile } from "../../services/utils";
 import { useTooltip, useUniqueName } from "./hooks";
@@ -67,11 +67,26 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
     const { showTooltip, hideTooltip } = useTooltip(containerRef, tooltipConfig);
 
     const [ shown, setShown ] = useState(false);
+    // A portaled menu lives in `document.body`, detached from the toggle's subtree. Mounting it eagerly
+    // for every instance leaves an empty menu wrapper in the body for every note context/tab, so only
+    // mount it while it's actually needed: open (`shown`), about to open (`armed` — set on interaction
+    // with the toggle, see the button handlers below), or forced open. Non-portaled menus stay inline
+    // next to the toggle and are always mounted, as before.
+    const [ armed, setArmed ] = useState(false);
+    const menuMounted = !portalToBody || shown || armed || !!forceShown;
+    const dropdownInstanceRef = useRef<BootstrapDropdown | null>(null);
 
-    useEffect(() => {
-        if (!triggerRef.current || !dropdownContainerRef.current) return;
+    // Create/wire the Bootstrap dropdown. Re-runs whenever the (portaled) menu remounts so `_menu` gets
+    // re-pointed at the fresh element. useLayoutEffect so the wiring lands synchronously after the
+    // interaction that mounts the menu but before Bootstrap's click handler opens it.
+    useLayoutEffect(() => {
+        if (!triggerRef.current) return;
 
         const dropdown = BootstrapDropdown.getOrCreateInstance(triggerRef.current, dropdownOptions);
+        dropdownInstanceRef.current = dropdown;
+        if (dropdownRef) {
+            dropdownRef.current = dropdown;
+        }
 
         // When the menu is portaled to `document.body` it is no longer a sibling of the toggle, so
         // Bootstrap fails to locate it (it searches the toggle's wrapper). Wire it up by hand —
@@ -81,21 +96,26 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
             (dropdown as unknown as { _menu: HTMLElement })._menu = dropdownContainerRef.current;
         }
 
-        if (dropdownRef) {
-            dropdownRef.current = dropdown;
+        // React to popup container size changes, which can affect the positioning.
+        let resizeObserver: ResizeObserver | undefined;
+        if (dropdownContainerRef.current) {
+            resizeObserver = new ResizeObserver(() => dropdown.update());
+            resizeObserver.observe(dropdownContainerRef.current);
         }
+
+        return () => resizeObserver?.disconnect();
+    }, [ menuMounted ]);
+
+    // Show a forced-open dropdown once mounted, and dispose the instance only when the component truly
+    // unmounts (not on every menu remount driven by the effect above).
+    useEffect(() => {
         if (forceShown) {
-            dropdown.show();
+            dropdownInstanceRef.current?.show();
             setShown(true);
         }
-
-        // React to popup container size changes, which can affect the positioning.
-        const resizeObserver = new ResizeObserver(() => dropdown.update());
-        resizeObserver.observe(dropdownContainerRef.current);
-
         return () => {
-            resizeObserver.disconnect();
-            dropdown.dispose();
+            dropdownInstanceRef.current?.dispose();
+            dropdownInstanceRef.current = null;
         };
     }, []);
 
@@ -110,6 +130,7 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
 
     const onHidden = useCallback(() => {
         setShown(false);
+        setArmed(false);
         externalOnHidden?.();
         if (mobileBackdrop && isMobile()) {
             document.getElementById("context-menu-cover")?.classList.remove("show", "global-menu-cover");
@@ -172,6 +193,13 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
                 disabled={disabled}
                 onMouseEnter={showTooltip}
                 onMouseLeave={hideTooltip}
+                // Mount the portaled menu just before it can open: any interaction that leads to a
+                // Bootstrap open (pointer press, or focusing the toggle ahead of a keyboard open) is
+                // preceded by one of these, so `_menu` is wired by the time the click/keydown fires.
+                // Releasing focus without opening tears the empty menu back down.
+                onPointerDown={portalToBody ? () => setArmed(true) : undefined}
+                onFocus={portalToBody ? () => setArmed(true) : undefined}
+                onBlur={portalToBody ? () => { if (!shown) setArmed(false); } : undefined}
                 {...buttonProps}
             >
                 {text}
@@ -181,7 +209,9 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
             {portalToBody
                 // Keep the `className` scope on the portaled wrapper so CSS scoped under it (e.g.
                 // `.note-icon-widget .icon-list`) still applies even though the menu now lives in body.
-                ? createPortal(<div class={className ?? ""}>{menu}</div>, document.body)
+                // Only mount it while needed (see `menuMounted`) so closed pickers don't each leave an
+                // empty menu wrapper in the body.
+                ? (menuMounted && createPortal(<div class={className ?? ""}>{menu}</div>, document.body))
                 : menu}
         </div>
     );

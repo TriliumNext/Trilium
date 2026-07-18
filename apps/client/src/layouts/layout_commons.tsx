@@ -7,6 +7,7 @@ import CallToActionDialog from "../widgets/dialogs/call_to_action.jsx";
 import PopupEditorDialog from "../widgets/dialogs/PopupEditor.jsx";
 import { useTriliumEvents } from "../widgets/react/hooks.jsx";
 import { ParentComponent } from "../widgets/react/react_utils.jsx";
+import ShortcutHintsPanel from "../widgets/shortcut_hints/shortcut_hints_panel.jsx";
 import ToastContainer from "../widgets/Toast.jsx";
 
 export function applyModals(rootContainer: RootContainer) {
@@ -44,7 +45,9 @@ export function applyModals(rootContainer: RootContainer) {
         //  - Toast is needed immediately and continuously to surface messages/errors, including ones raised during startup.
         .child(<PopupEditorDialog />)
         .child(<CallToActionDialog />)
-        .child(<ToastContainer />);
+        .child(<ToastContainer />)
+        // Auxiliary tooltip-style panel; always mounted (renders nothing until summoned), like the toast host.
+        .child(<ShortcutHintsPanel />);
 }
 
 interface LazyDialogProps {

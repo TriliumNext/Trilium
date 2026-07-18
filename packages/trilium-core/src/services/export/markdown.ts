@@ -1,6 +1,8 @@
-import { type TaskStateDef } from "@triliumnext/commons";
+import { safeLinkPreviewHref, type TaskStateDef } from "@triliumnext/commons";
 import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { gfm, serializeStructuralHtml } from "@triliumnext/turndown-plugin-gfm";
+import escapeHtml from "escape-html";
+import { parse as parseHtml } from "node-html-parser";
 import Turnish, { type Rule } from "turnish";
 
 import { getTaskStates } from "../task_states.js";
@@ -45,6 +47,12 @@ function toMarkdown(content: string) {
                     return node.outerHTML;
                 }
 
+                // Only reached by a link preview without a data-url (the fallback anchor injected
+                // by `injectLinkPreviewFallbacks` makes every other one non-blank).
+                if (isLinkPreview(node)) {
+                    return linkPreviewReplacement(node);
+                }
+
                 // Original implementation as per https://github.com/mixmark-io/turndown/blob/master/src/turndown.js.
                 return ("isBlock" in node && node.isBlock) ? '\n\n' : '';
             },
@@ -56,13 +64,14 @@ function toMarkdown(content: string) {
         instance.addRule("details", buildDetailsFilter());
         instance.addRule("inlineLink", buildInlineLinkFilter());
         instance.addRule("figure", buildFigureFilter());
+        instance.addRule("linkPreview", buildLinkPreviewFilter());
         instance.addRule("math", buildMathFilter());
         instance.addRule("li", buildListItemFilter());
         instance.use(gfm);
         instance.keep([ "kbd", "sup", "sub" ]);
     }
 
-    return instance.render(content);
+    return instance.render(injectLinkPreviewFallbacks(content));
 }
 
 function rewriteLanguageTag(source: string) {
@@ -216,6 +225,72 @@ function buildFigureFilter(): Rule {
         },
         replacement(content, node) {
             return (node as HTMLElement).outerHTML;
+        }
+    };
+}
+
+/**
+ * Link previews (block `<section class="link-embed">`, inline `<span class="link-mention">`) keep
+ * all their metadata in data attributes on an empty element, so without special handling turndown
+ * treats them as blank nodes and drops them from the export entirely — URL included.
+ *
+ * A fallback `<a>` child is injected before turndown parses the content, which solves three
+ * problems at once: the export stays meaningful in renderers that don't know the widget (GitHub,
+ * Obsidian show a plain link), the inline mention is no longer blank so turndown's whitespace
+ * collapsing doesn't eat the space that follows it (an empty inline element is assumed to render
+ * as nothing), and the `linkPreview` rule below fires (rules never run on blank nodes).
+ *
+ * An anchor already present — e.g. in content imported from Markdown that was never re-saved by
+ * the editor — is regenerated rather than kept, so a stale title is refreshed instead of
+ * accumulated. On reimport the round-trip is lossless: the sanitizer allows `section`/`span` and
+ * `data-*`, and the editor upcasts both purely by tag + class, ignoring children.
+ */
+function injectLinkPreviewFallbacks(content: string): string {
+    if (!content.includes("link-embed") && !content.includes("link-mention")) {
+        return content;
+    }
+
+    const root = parseHtml(content);
+    for (const element of root.querySelectorAll("section.link-embed, span.link-mention")) {
+        const url = element.getAttribute("data-url");
+        if (url) {
+            const title = element.getAttribute("data-title") || url;
+            // `safeLinkPreviewHref` renders a hostile scheme (`javascript:`, `data:`) inert —
+            // stored `data-url` values reach here unsanitized (see its JSDoc); `escapeHtml` on top
+            // stops an otherwise-valid http(s) URL containing a quote from breaking out of the attribute.
+            element.innerHTML = `<a href="${escapeHtml(safeLinkPreviewHref(url))}">${escapeHtml(title)}</a>`;
+        }
+    }
+
+    return root.toString();
+}
+
+/**
+ * The slice of a DOM node the link-preview rules read. Turndown hands its callbacks its own
+ * ExtendedNode — not a real HTMLElement — so the helpers ask only for what they use.
+ */
+interface LinkPreviewNodeLike {
+    nodeName: string;
+    classList: { contains(className: string): boolean };
+    outerHTML: string;
+}
+
+function isLinkPreview(node: LinkPreviewNodeLike): boolean {
+    return (node.nodeName === "SECTION" && node.classList.contains("link-embed"))
+        || (node.nodeName === "SPAN" && node.classList.contains("link-mention"));
+}
+
+function linkPreviewReplacement(node: LinkPreviewNodeLike): string {
+    return node.nodeName === "SECTION" ? `\n\n${node.outerHTML}\n\n` : node.outerHTML;
+}
+
+function buildLinkPreviewFilter(): Rule {
+    return {
+        filter(node) {
+            return isLinkPreview(node);
+        },
+        replacement(_content, node) {
+            return linkPreviewReplacement(node);
         }
     };
 }

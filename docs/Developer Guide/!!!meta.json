@@ -3115,6 +3115,61 @@
                             "attachments": []
                         }
                     ]
+                },
+                {
+                    "isClone": false,
+                    "noteId": "HMrVxa1lJBKv",
+                    "notePath": [
+                        "jdjRLhLV3TtI",
+                        "HMrVxa1lJBKv"
+                    ],
+                    "title": "Interoperability",
+                    "notePosition": 410,
+                    "prefix": null,
+                    "isExpanded": false,
+                    "type": "text",
+                    "mime": "text/html",
+                    "attributes": [
+                        {
+                            "type": "label",
+                            "name": "iconClass",
+                            "value": "bx bx-repost",
+                            "isInheritable": false,
+                            "position": 20
+                        }
+                    ],
+                    "format": "markdown",
+                    "attachments": [],
+                    "dirFileName": "Interoperability",
+                    "children": [
+                        {
+                            "isClone": false,
+                            "noteId": "dSgzBgbagtYP",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "HMrVxa1lJBKv",
+                                "dSgzBgbagtYP"
+                            ],
+                            "title": "Exported content with extended task states",
+                            "notePosition": 10,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-list-check",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Exported content with extended task states.md",
+                            "attachments": []
+                        }
+                    ]
                 }
             ]
         }

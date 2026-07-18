@@ -14,7 +14,7 @@ import type { ImportProvider, ImportProviderPanelProps } from "./types.js";
 
 function FilesPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPanelProps) {
     const [compressImages] = useTriliumOptionBool("compressImages");
-    const [files, setFiles] = useState<FileList | null>(null);
+    const [files, setFiles] = useState<File[] | null>(null);
     // Desktop only: files picked via the native OS dialog, identified by capability tokens (not paths) so
     // they can be imported in place. Mutually exclusive with `files` — picking clears one, the other clears it.
     const [nativeFiles, setNativeFiles] = useState<NativeImportPickedFile[] | null>(null);
@@ -63,7 +63,7 @@ function FilesPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPane
         };
 
         closeDialog();
-        await importService.uploadFiles("notes", parentNoteId, Array.from(files), options).catch(() => {});
+        await importService.uploadFiles("notes", parentNoteId, files, options).catch(() => {});
     }, [files, nativeFiles, safeImport, shrinkImages, textImportedAsText, codeImportedAsCode, spreadsheetImportedAsSpreadsheet, explodeArchives, replaceUnderscoresWithSpaces, parentNoteId, closeDialog]);
 
     // Desktop only: browse via the native OS dialog. The dialog (in the main process) is the sole source of
@@ -80,7 +80,7 @@ function FilesPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPane
 
     // Drag-and-drop (or, off desktop, the in-page picker) goes through the normal upload route; a fresh
     // selection there clears any native pick so the two never coexist.
-    const onFilesChange = useCallback((list: FileList | null) => {
+    const onFilesChange = useCallback((list: File[] | null) => {
         setFiles(list);
         if (list?.length) {
             setNativeFiles(null);
@@ -125,6 +125,11 @@ function FilesPanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPane
                         // are read in place. Drag-and-drop still uses the upload route via onChange.
                         onBrowse={utils.isElectron() ? () => void doNativeBrowse() : undefined}
                         onNativeDrop={utils.isElectron() ? onNativeDrop : undefined}
+                        // onChange handles the upload-route files; the native picks are ours to remove.
+                        onRemove={(index) => setNativeFiles((prev) => {
+                            const next = prev?.filter((_, i) => i !== index) ?? null;
+                            return next?.length ? next : null;
+                        })}
                         displayNames={nativeFiles?.map((file) => file.fileName)}
                     />
                 </CardSection>

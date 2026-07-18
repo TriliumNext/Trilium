@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/core",
-  "version": "0.103.0",
+  "version": "0.104.0",
   "description": "",
   "main": "src/index.ts",
   "scripts": {

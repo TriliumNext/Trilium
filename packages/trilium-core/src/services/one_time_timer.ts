@@ -1,3 +1,5 @@
+import { getLog } from "./log.js";
+
 const scheduledExecutions: Record<string, boolean> = {};
 
 /**
@@ -16,7 +18,19 @@ function scheduleExecution(name: string, milliseconds: number, cb: () => void) {
     setTimeout(() => {
         delete scheduledExecutions[name];
 
-        cb();
+        try {
+            cb();
+        } catch (e: unknown) {
+            // A synchronous throw here would surface as an uncaughtException and kill the process
+            // (see #10549), so contain it — a scheduled maintenance task must never take the app down.
+            const message = `Scheduled execution '${name}' failed: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`;
+            try {
+                getLog().error(message);
+            } catch {
+                // The log service may not be initialized yet; this handler must never throw.
+                console.error(message);
+            }
+        }
     }, milliseconds);
 }
 

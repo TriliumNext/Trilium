@@ -139,7 +139,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         link: {
             defaultProtocol: "https://",
             allowedProtocols: ALLOWED_PROTOCOLS,
-            toolbar: ["linkPreview", "copyLinkUrl", "|", "editLink", "linkProperties", "unlink"]
+            // linkEmbedDisplayDropdown is the same Display dropdown the link-preview widget toolbar
+            // shows: on a native link it reads "Plain link" and converts to a preview shape.
+            toolbar: ["linkPreview", "copyLinkUrl", "|", "editLink", "linkProperties", "unlink", "|", "linkEmbedDisplayDropdown"]
         },
         bookmark: {
             toolbar: [

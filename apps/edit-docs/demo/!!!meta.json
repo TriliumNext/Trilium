@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.102.2",
+    "appVersion": "0.103.0",
     "files": [
         {
             "isClone": false,
@@ -233,15 +233,7 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [
-                                        {
-                                            "type": "relation",
-                                            "name": "internalLink",
-                                            "value": "_help_nBAXQFj20hS1",
-                                            "isInheritable": false,
-                                            "position": 10
-                                        }
-                                    ],
+                                    "attributes": [],
                                     "format": "html",
                                     "dataFileName": "The Last Question.html",
                                     "attachments": [],
@@ -272,7 +264,7 @@
                                                     "position": 1
                                                 }
                                             ],
-                                            "dataFileName": "The Last Question by Issac.pdf",
+                                            "dataFileName": "The Last Question by Issac Asimov.pdf",
                                             "attachments": []
                                         }
                                     ]
@@ -1339,7 +1331,7 @@
                                                                 }
                                                             ],
                                                             "format": "html",
-                                                            "dataFileName": "TODO - Send invites for christ.html",
+                                                            "dataFileName": "TODO - Send invites for christmas party.html",
                                                             "attachments": []
                                                         }
                                                     ]
@@ -1866,7 +1858,7 @@
                                                                 }
                                                             ],
                                                             "format": "html",
-                                                            "dataFileName": "DONE - Buy a board game for Al.html",
+                                                            "dataFileName": "DONE - Buy a board game for Alice.html",
                                                             "attachments": [
                                                                 {
                                                                     "attachmentId": "SmnN1IA6sqy7",
@@ -1874,7 +1866,7 @@
                                                                     "role": "image",
                                                                     "mime": "image/jpg",
                                                                     "position": 10,
-                                                                    "dataFileName": "DONE - Buy a board game fo.jpg"
+                                                                    "dataFileName": "DONE - Buy a board game for Alice_codenames.jpg"
                                                                 }
                                                             ]
                                                         },
@@ -3077,7 +3069,7 @@
                                                     "role": "image",
                                                     "mime": "image/svg+xml",
                                                     "position": 10,
-                                                    "dataFileName": "Entity Relationship_mermai.svg"
+                                                    "dataFileName": "Entity Relationship_mermaid-export.svg"
                                                 }
                                             ]
                                         },
@@ -3214,7 +3206,7 @@
                                             "role": "viewConfig",
                                             "mime": "application/json",
                                             "position": 0,
-                                            "dataFileName": "Geo Map (The Seven Wonder.json"
+                                            "dataFileName": "Geo Map (The Seven Wonders of the World)_geoMap.json"
                                         }
                                     ],
                                     "dirFileName": "Geo Map (The Seven Wonders of the World)",
@@ -3861,7 +3853,7 @@
                                             "position": 30
                                         }
                                     ],
-                                    "dataFileName": "eb-garamond-v9-latin-reg.woff2",
+                                    "dataFileName": "eb-garamond-v9-latin-regular.woff2",
                                     "attachments": []
                                 },
                                 {
@@ -3902,7 +3894,7 @@
                                             "position": 30
                                         }
                                     ],
-                                    "dataFileName": "raleway-v12-latin-regula.woff2",
+                                    "dataFileName": "raleway-v12-latin-regular.woff2",
                                     "attachments": []
                                 }
                             ]
@@ -4122,7 +4114,7 @@
                                                                 }
                                                             ],
                                                             "format": "html",
-                                                            "dataFileName": "Send invites for christmas par.html",
+                                                            "dataFileName": "Send invites for christmas party.html",
                                                             "attachments": []
                                                         }
                                                     ]
@@ -4500,7 +4492,7 @@
                                                             "role": "image",
                                                             "mime": "image/jpg",
                                                             "position": 10,
-                                                            "dataFileName": "Buy a board game for Alice.jpg"
+                                                            "dataFileName": "Buy a board game for Alice_codenames.jpg"
                                                         }
                                                     ]
                                                 },
@@ -5573,7 +5565,7 @@
                                                                                     "position": 1
                                                                                 }
                                                                             ],
-                                                                            "dataFileName": "chartjs-plugin-datalabe.min.js",
+                                                                            "dataFileName": "chartjs-plugin-datalabels.min.js",
                                                                             "attachments": []
                                                                         }
                                                                     ]

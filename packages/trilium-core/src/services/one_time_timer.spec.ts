@@ -67,6 +67,25 @@ describe("oneTimeTimer", () => {
             expect(cbB).toHaveBeenCalledTimes(1);
         });
 
+        it("contains a throwing callback and frees the name for rescheduling", () => {
+            const boom = vi.fn(() => {
+                throw new Error("callback failure");
+            });
+            const next = vi.fn();
+
+            oneTimeTimer.scheduleExecution("throwing", 100, boom);
+
+            // The throw must not escape the timer callback — an uncaught exception here
+            // would crash the whole process (#10549).
+            expect(() => vi.advanceTimersByTime(100)).not.toThrow();
+            expect(boom).toHaveBeenCalledTimes(1);
+
+            // The failure still releases the slot so the task can run again later.
+            oneTimeTimer.scheduleExecution("throwing", 100, next);
+            vi.advanceTimersByTime(100);
+            expect(next).toHaveBeenCalledTimes(1);
+        });
+
         it("allows re-scheduling the same name from within the callback", () => {
             const inner = vi.fn();
             const outer = vi.fn(() => {

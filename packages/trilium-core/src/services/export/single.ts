@@ -135,7 +135,9 @@ function inlineAttachments(content: string) {
         return `src="${srcValue}"`;
     });
 
-    content = content.replace(/src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/?[^"]+"/g, (match, attachmentId) => {
+    // `data-image` is where link previews (section.link-embed) keep their card image reference;
+    // inlining it keeps the exported file self-contained just like an <img> src.
+    content = content.replace(/(src|data-image)="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/?[^"]+"/g, (match, attrName, attachmentId) => {
         const attachment = becca.getAttachment(attachmentId);
         if (!attachment || !attachment.mime.startsWith("image/")) {
             return match;
@@ -149,7 +151,7 @@ function inlineAttachments(content: string) {
         const base64Content = encodeBase64(attachmentContent);
         const srcValue = `data:${attachment.mime};base64,${base64Content}`;
 
-        return `src="${srcValue}"`;
+        return `${attrName}="${srcValue}"`;
     });
 
     content = content.replace(/href="[^"]*#root[^"]*attachmentId=([a-zA-Z0-9_]+)\/?"/g, (match, attachmentId) => {

@@ -1,7 +1,7 @@
 # Network Access
 The Trilium desktop app opens a TCP port (usually `37840`) for the following reasons:
 
-*   Integration with the <a class="reference-link" href="#root/jdjRLhLV3TtI/yeqU0zo0ZQ83/YTAxJMA3uWwn">Web Clipper</a>.
+*   Integration with the <a class="reference-link" href="../Web%20Clipper.md">Web Clipper</a>.
 *   Desktop-to-desktop <a class="reference-link" href="../Synchronization.md">Synchronization</a>.
 *   Making Trilium accessible over the web, similar to a <a class="reference-link" href="../Server%20Installation.md">Server Installation</a>. See <a class="reference-link" href="Using%20the%20desktop%20application%20as%20a%20server.md">Using the desktop application as a server</a>.
 
@@ -17,4 +17,4 @@ host=0.0.0.0
 ```
 
 > [!NOTE]
-> If you use the <a class="reference-link" href="#root/jdjRLhLV3TtI/yeqU0zo0ZQ83/YTAxJMA3uWwn">Web Clipper</a> on the same device as the one running the desktop application, there is no need to enable access on the LAN.
+> If you use the <a class="reference-link" href="../Web%20Clipper.md">Web Clipper</a> on the same device as the one running the desktop application, there is no need to enable access on the LAN.

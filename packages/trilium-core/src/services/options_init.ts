@@ -216,6 +216,9 @@ const defaultOptions: DefaultOption[] = [
     { name: "smoothScrollEnabled", value: "true", isSynced: false },
     { name: "newLayout", value: "true", isSynced: true },
 
+    // PDF
+    { name: "pdfSignatures", value: "{}", isSynced: true },
+
     // Internationalization
     { name: "locale", value: "en", isSynced: true },
     { name: "formattingLocale", value: "", isSynced: true }, // no value means auto-detect

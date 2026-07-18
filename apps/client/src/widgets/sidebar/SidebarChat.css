@@ -53,10 +53,6 @@
     line-height: 1.5;
 }
 
-.sidebar-chat-messages .llm-chat-markdown p {
-    margin: 0 0 0.5em 0;
-}
-
 .sidebar-chat-messages .llm-chat-markdown pre {
     padding: 0.5rem;
     font-size: 0.8rem;

@@ -330,6 +330,134 @@ describe("link-embed getMetadata", () => {
         expect(result.unresolved).toBeUndefined();
     });
 
+    it("drops a favicon whose stream exceeds the limit despite a smaller advertised size", async () => {
+        // A lying content-length must not bypass the cap: the limit is enforced while streaming too.
+        const html = `<html><head><title>Plain</title><link rel="icon" href="/liar.ico"></head></html>`;
+        const chunk = Buffer.alloc(40 * 1024, 7);
+        safeFetch.mockImplementation(async (url: string) => {
+            if (url.includes("liar.ico")) {
+                let sent = 0;
+                return {
+                    ok: true,
+                    status: 200,
+                    // No content-type either, exercising the caller-provided default.
+                    headers: { get: (h: string) => (h.toLowerCase() === "content-length" ? "10" : null) },
+                    body: {
+                        getReader: () => ({
+                            async read() {
+                                if (sent >= 2) return { done: true, value: undefined };
+                                sent++;
+                                return { done: false, value: new Uint8Array(chunk) };
+                            },
+                            async cancel() {}
+                        })
+                    },
+                    json: async () => undefined
+                };
+            }
+            return fakeResponse(html, { contentType: "text/html" });
+        });
+
+        const result = await linkEmbedRoute.getMetadata(req("https://example.com/page"));
+        expect(result.title).toBe("Plain");
+        expect(result.favicon).toBeUndefined();
+    });
+
+    it("keeps the preview when the favicon download throws or has no body", async () => {
+        const html = `<html><head><title>Plain</title><link rel="icon" href="/fav.ico"></head></html>`;
+
+        // The favicon fetch itself throws (network error): swallowed, the preview survives.
+        safeFetch.mockImplementation(async (url: string) => {
+            if (url.includes("fav.ico")) throw new Error("network down");
+            return fakeResponse(html, { contentType: "text/html" });
+        });
+        let result = await linkEmbedRoute.getMetadata(req("https://example.com/page"));
+        expect(result.title).toBe("Plain");
+        expect(result.favicon).toBeUndefined();
+
+        // A bodyless favicon response: nothing to stream, same graceful outcome.
+        safeFetch.mockImplementation(async (url: string) => {
+            if (url.includes("fav.ico")) return { ...fakeResponse(""), body: undefined };
+            return fakeResponse(html, { contentType: "text/html" });
+        });
+        result = await linkEmbedRoute.getMetadata(req("https://example.com/page"));
+        expect(result.favicon).toBeUndefined();
+    });
+
+    it("treats a bodyless or content-type-less page response as unresolved", async () => {
+        // No body: there is no HTML to read, so the page names itself nowhere.
+        safeFetch.mockResolvedValue({ ...fakeResponse("<html><head><title>T</title></head></html>"), body: undefined });
+        let result = await linkEmbedRoute.getMetadata(req("https://example.com/page"));
+        expect(result.unresolved).toBe(true);
+
+        // No content-type header at all: not provably HTML, same as a wrong content type.
+        const response = fakeResponse("<html><head><title>T</title></head></html>");
+        response.headers = { get: () => null };
+        safeFetch.mockResolvedValue(response);
+        result = await linkEmbedRoute.getMetadata(req("https://example.com/page"));
+        expect(result.unresolved).toBe(true);
+    });
+
+    it("skips icon links it cannot use, ranks a scalable 'any' icon first and dedupes the conventional path", async () => {
+        const html = `<html><head><title>T</title>
+            <link href="/no-rel.png">
+            <link rel="stylesheet" href="/style.css">
+            <link rel="icon">
+            <link rel="icon" sizes="garbage" href="/undeclared.png">
+            <link rel="icon" sizes="any" href="/scalable.svg">
+            <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        </head></html>`;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>`;
+        // The call log is inspected below, so drop the calls accumulated by earlier tests.
+        safeFetch.mockReset();
+        safeFetch.mockImplementation(async (url: string) => {
+            if (url.endsWith("/scalable.svg")) return fakeResponse(svg, { contentType: "image/svg+xml" });
+            if (url.endsWith("/page")) return fakeResponse(html, { contentType: "text/html" });
+            return fakeResponse("", { ok: false });
+        });
+
+        const result = await linkEmbedRoute.getMetadata(req("https://example.com/page"));
+        // "any" declares a scalable icon — the best possible candidate, tried (and kept) first.
+        expect(result.image).toMatch(/^data:image\/svg\+xml;base64,/);
+        // The declared apple-touch-icon href dedupes against the conventional fallback path, so it
+        // is never requested twice.
+        const touchIconRequests = safeFetch.mock.calls
+            .map((call) => String(call[0]))
+            .filter((url) => url.includes("apple-touch-icon"));
+        expect(touchIconRequests.length).toBeLessThanOrEqual(1);
+    });
+
+    it("sets no title or thumbnail override when oEmbed answers with an empty payload", async () => {
+        const thumb = await makePng(120, 90, 0xff0000ff);
+        safeFetch.mockImplementation(async (url: string) => {
+            if (url.includes("oembed")) return fakeResponse("", { json: {} });
+            if (url.includes("hqdefault.jpg")) return fakeResponse(thumb, { contentType: "image/jpeg" });
+            if (url.includes("favicon")) return fakeResponse(Buffer.from([1]), { contentType: "image/x-icon" });
+            return fakeResponse("", { ok: false });
+        });
+
+        const result = await linkEmbedRoute.getMetadata(req("https://youtu.be/dQw4w9WgXcQ"));
+        expect(result.embedType).toBe("youtube");
+        // An empty payload is not an error: nothing throws, so the generic fallback title is not
+        // used either, and the thumbnail comes from the conventional hqdefault URL.
+        expect(result.title).toBeUndefined();
+        expect(result.description).toBeUndefined();
+        expect(result.image).toMatch(/^data:image\/jpeg;base64,/);
+    });
+
+    it("ignores meta tags whose content is empty, falling back to the document title", async () => {
+        const html = `<html><head>
+            <meta property="og:title" content="">
+            <meta name="description" content="">
+            <title>Doc Title</title>
+        </head></html>`;
+        safeFetch.mockResolvedValue(fakeResponse(html, { contentType: "text/html" }));
+
+        const result = await linkEmbedRoute.getMetadata(req("https://example.com/page"));
+        expect(result.title).toBe("Doc Title");
+        expect(result.description).toBeUndefined();
+    });
+
     it("ignores a favicon that advertises a size over the limit", async () => {
         const html = `<html><head><title>Plain</title><link rel="icon" href="/big.ico"></head></html>`;
         safeFetch.mockImplementation(async (url: string) => {

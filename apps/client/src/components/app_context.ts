@@ -12,6 +12,7 @@ import linkService, { type ViewScope } from "../services/link.js";
 import type LoadResults from "../services/load_results.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
 import options from "../services/options.js";
+import type { ShortcutHintSection } from "../services/shortcut_hints.js";
 import toast from "../services/toast.js";
 import utils from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
@@ -331,6 +332,7 @@ export type CommandMappings = {
     showSQLConsole: CommandData;
     showBackendLog: CommandData;
     showCheatsheet: CommandData;
+    showShortcutHints: CommandData;
     showHelp: CommandData;
     addLinkToText: CommandData;
     followLinkUnderCursor: CommandData;
@@ -448,6 +450,14 @@ type EventMappings = {
     };
     activeContextChanged: {
         noteContext: NoteContext;
+    };
+    /** Emitted with the hints collected from the focused component chain (via the
+     * {@link CommandMappings.showShortcutHints} handler) or from a widget's help button, for the
+     * shortcut-hints pane to render. When `anchor` is set the pane opens as a dropdown by it;
+     * otherwise it opens in the bottom-right corner. */
+    shortcutHintsRequested: {
+        sections: ShortcutHintSection[];
+        anchor?: HTMLElement | null;
     };
     beforeNoteSwitch: {
         noteContext: NoteContext;

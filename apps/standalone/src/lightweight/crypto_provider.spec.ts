@@ -1,3 +1,4 @@
+import { createHash as nodeCreateHash, createHmac as nodeCreateHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import aesjs from "aes-js";
 
@@ -22,6 +23,39 @@ describe("BrowserCryptoProvider hashing", () => {
         expect(typeof mac).toBe("string");
         // base64 of a 32-byte sha256 digest is 44 chars
         expect(mac).toHaveLength(44);
+    });
+});
+
+describe("BrowserCryptoProvider parity with the Node.js provider", () => {
+    // The same document is opened by both the server/desktop (node:crypto) and the standalone
+    // app (this provider), so every digest must be byte-identical across the two. The binary
+    // vector is deliberately NOT valid UTF-8: a regression here once routed bytes through a
+    // lossy UTF-8 decode (invalid sequences become U+FFFD), which passed for strings and
+    // ASCII-ish bytes but made protected binary notes fail their integrity digest and decrypt
+    // to empty on standalone/mobile.
+    const allBytes = Uint8Array.from({ length: 256 }, (_, i) => i); // contains invalid UTF-8
+    const largeBinary = Uint8Array.from({ length: 50_000 }, (_, i) => (i * 31 + 7) % 256);
+    const utf8String = "héllo — 世界";
+
+    it("createHash matches node:crypto for strings and for (invalid-UTF-8) binary content", () => {
+        for (const algorithm of ["md5", "sha1", "sha512"] as const) {
+            for (const content of [utf8String, allBytes, largeBinary]) {
+                const expected = new Uint8Array(nodeCreateHash(algorithm).update(content).digest());
+                expect(provider.createHash(algorithm, content), `${algorithm} of ${typeof content === "string" ? "string" : `${content.length} bytes`}`).toEqual(expected);
+            }
+        }
+    });
+
+    it("hmac matches node:crypto for string and binary secrets/values", () => {
+        const cases: [string | Uint8Array, string | Uint8Array][] = [
+            ["secret", "value"],
+            [allBytes, largeBinary],
+            ["secret", allBytes]
+        ];
+        for (const [secret, value] of cases) {
+            const expected = nodeCreateHmac("sha256", secret).update(value).digest("base64");
+            expect(provider.hmac(secret, value)).toBe(expected);
+        }
     });
 });
 

@@ -45,7 +45,7 @@
     },
     "widget-missing-parent": "Custom widget does not have mandatory '{{property}}' property defined.\n\nIf this script is meant to be run without a UI element, use '#run=frontendStartup' instead.",
     "open-script-note": "Open script note",
-    "scripting-error": "Custom script error: {{title}}"
+    "scripting-error": "The script note failed to run"
   },
   "add_link": {
     "add_link": "Add link",
@@ -250,8 +250,7 @@
     "drop_or_browse_multiple": "Drag and drop files here, or click to browse",
     "browse_single": "Tap to choose a file",
     "browse_multiple": "Tap to choose files",
-    "selected_one": "{{count}} file selected",
-    "selected_other": "{{count}} files selected"
+    "remove_file": "Remove file"
   },
   "import_provider": {
     "choose_provider": "Choose a service above to import from."
@@ -997,7 +996,28 @@
     "next": "Next image: {{- title}}"
   },
   "image_viewer": {
-    "loading_error": "There was an error loading the image."
+    "loading_error": "There was an error loading the image.",
+    "hints": {
+      "zoom": "Zoom",
+      "zoom_in": "Zoom in",
+      "zoom_out": "Zoom out",
+      "reset_zoom": "Reset zoom",
+      "pan": "Pan",
+      "pan_up": "Up",
+      "pan_down": "Down",
+      "pan_left": "Left",
+      "pan_right": "Right",
+      "pan_fast": "Faster panning",
+      "navigation": "Navigation",
+      "next_image": "Next image",
+      "previous_image": "Previous image",
+      "first_image": "First image",
+      "last_image": "Last image"
+    }
+  },
+  "shortcut_hints": {
+    "show_button": "Show shortcut hints",
+    "esc_hint": "to close"
   },
   "zpetne_odkazy": {
     "backlink_one": "{{count}} Backlink",
@@ -1317,18 +1337,18 @@
     "too_big": "The preview only shows the first {{maxNumChars}} characters of the file for performance reasons. Download the file and open it externally to be able to see the entire content."
   },
   "media": {
-    "play": "Play (Space)",
+    "play": "Play",
     "activate": "Play {{- title}}",
-    "pause": "Pause (Space)",
-    "seek": "Seek (Left/Right arrow keys)",
-    "back-10s": "Back 10s (Left arrow key)",
-    "forward-10s": "Forward 10s (Right arrow key)",
+    "pause": "Pause",
+    "seek": "Seek",
+    "back-10s": "Back 10s",
+    "forward-10s": "Forward 10s",
     "previous-video": "Previous video: {{- title}}",
     "next-video": "Next video: {{- title}}",
     "previous-audio": "Previous audio: {{- title}}",
     "next-audio": "Next audio: {{- title}}",
-    "mute": "Mute (M)",
-    "unmute": "Unmute (M)",
+    "mute": "Mute",
+    "unmute": "Unmute",
     "playback-speed": "Playback speed",
     "play-mode-title": "Play mode: {{mode}}",
     "play-mode-once": "Play once",
@@ -1337,11 +1357,24 @@
     "rotate": "Rotate",
     "picture-in-picture": "Picture-in-picture",
     "exit-picture-in-picture": "Exit picture-in-picture",
-    "fullscreen": "Fullscreen (F)",
+    "fullscreen": "Fullscreen",
     "exit-fullscreen": "Exit fullscreen",
     "unsupported-format": "Media preview is not available for this file format:\n{{mime}}",
     "zoom-to-fit": "Zoom to fill",
-    "zoom-reset": "Reset zoom to fill"
+    "zoom-reset": "Reset zoom to fill",
+    "hints": {
+      "playback": "Playback",
+      "play_pause": "Play/Pause",
+      "back_10s": "Back 10s",
+      "forward_10s": "Forward 10s",
+      "jump_start": "Jump to start",
+      "jump_end": "Jump to end",
+      "mute": "Mute",
+      "fullscreen": "Fullscreen",
+      "navigation": "Navigation",
+      "previous": "Previous",
+      "next": "Next"
+    }
   },
   "protected_session": {
     "enter_password_instruction": "Showing protected note requires entering your password:",
@@ -1377,7 +1410,10 @@
     "setup_create_sample_html": "Create sample note with HTML",
     "setup_sample_created": "A sample note was created as a child note.",
     "disabled_description": "This render notes comes from an external source. To protect you from malicious content, it is not enabled by default. Make sure you trust the source before enabling it.",
-    "disabled_button_enable": "Enable render note"
+    "disabled_button_enable": "Enable render note",
+    "error_title": "The script note failed to run",
+    "error_show_details": "Show details",
+    "error_note_label": "Script note:"
   },
   "web_view_setup": {
     "title": "Create a live view of a webpage directly into Trilium",
@@ -2365,7 +2401,12 @@
   },
   "frontend_script_api": {
     "async_warning": "You're passing an async function to `api.runOnBackend()` which will likely not work as you intended.\\nEither make the function synchronous (by removing `async` keyword), or use `api.runAsyncOnBackendWithManualTransactionHandling()`.",
-    "sync_warning": "You're passing a synchronous function to `api.runAsyncOnBackendWithManualTransactionHandling()`,\\nwhile you should likely use `api.runOnBackend()` instead."
+    "sync_warning": "You're passing a synchronous function to `api.runAsyncOnBackendWithManualTransactionHandling()`,\\nwhile you should likely use `api.runOnBackend()` instead.",
+    "backend_scripting_disabled_title": "Backend scripting is disabled",
+    "backend_scripting_disabled_message": "A script tried to run code on the server, but backend scripting is turned off for security reasons. Enable it in Options → Security if you trust this script.",
+    "backend_scripting_disabled_notes_heading": "Scripts that tried to run backend code:",
+    "backend_scripting_disabled_open_settings": "Open security settings",
+    "backend_scripting_disabled_more_info": "More info"
   },
   "ws": {
     "sync-check-failed": "Sync check failed!",
@@ -2458,7 +2499,11 @@
     "display": "Display",
     "mode_inline": "Inline",
     "mode_card": "Card",
-    "mode_embed": "Embed"
+    "mode_embed": "Embed",
+    "mode_plain": "Plain link",
+    "edit_title": "Edit title",
+    "title_label": "Title",
+    "save": "Save"
   },
   "link_context_menu": {
     "open_note_in_new_tab": "Open note in a new tab",
@@ -3048,7 +3093,12 @@
     "sync-from-desktop-unreachable-description": "To sync, the other desktop has to connect to this one over the network. For security, this desktop app only accepts connections from this computer, so that other desktop can't reach it yet. Allow network access below — Trilium will restart to apply it.",
     "sync-from-desktop-allow-access": "Allow network access & restart",
     "advanced-options": "Advanced options",
-    "sync-failed": "Failed to sync: {{message}}",
+    "sync-failed": "Failed to sync: {{- message}}",
+    "sync-failed-title": "Sync failed",
+    "sync-failed-description": "The initial synchronization could not be completed. You can retry, or go back to check the server address and credentials.",
+    "sync-failed-admonition-title": "The last sync attempt failed",
+    "sync-failed-hint": "This can be caused by a wrong server address, a proxy interfering with the connection, or the server being temporarily unreachable.",
+    "button-retry": "Retry",
     "server-host": "Trilium server address",
     "server-host-placeholder": "https://<hostname>:<port>",
     "server-password": "Password",
@@ -3131,7 +3181,9 @@
       "delete_note": "Delete note",
       "move_note": "Move note",
       "clone_note": "Clone note",
-      "search_icons": "Search icons"
+      "search_icons": "Search icons",
+      "search_help": "Search User Guide",
+      "get_help_toc": "Get User Guide contents"
     }
   },
   "common": {
@@ -3158,7 +3210,11 @@
     "collapsible-tooltip": "Click on the arrow or press {{- shortcut}} to collapse/expand.",
     "edit-states-tooltip": "Edit task states",
     "unknown-task-state": "Undefined custom task state",
-    "task-state-dropped": "Dropped custom task state definition \"{{title}}\" ({{id}}) due to: {{reason}}",
+    "task-state-dropped-title": "Invalid task states",
+    "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
+    "task-state-dropped-message_other": "{{count}} custom task state definitions are invalid and were ignored.",
+    "task-state-dropped-heading": "Ignored definitions:",
+    "task-state-dropped-configure": "Configure task states",
     "validation-errors": {
       "undefined-name": "undefined identifier",
       "invalid-name": "invalid identifier",

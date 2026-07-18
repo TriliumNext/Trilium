@@ -220,6 +220,15 @@ describe("createLink", () => {
         expect($el.find("a").text()).toBe("Override");
     });
 
+    it("appends a .note-link-suffix span right after the link when titleSuffix is set", async () => {
+        const note = buildNote({ title: "Base" });
+        const $el = await linkService.createLink(`root/${note.noteId}`, { titleSuffix: "— dropped" });
+        const $suffix = $el.children("span.note-link-suffix");
+        expect($suffix.length).toBe(1);
+        expect($suffix.text()).toBe("— dropped");
+        expect($suffix.prev().is("a")).toBe(true);
+    });
+
     it("auto-converts image notes to an <img> element", async () => {
         const note = buildNote({ title: "Pic", type: "image" });
         const $el = await linkService.createLink(`root/${note.noteId}`, { autoConvertToImage: true, title: "Pic" });

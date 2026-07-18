@@ -9,11 +9,12 @@ import type FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import type { ShortcutHint, ShortcutHintDefinition, ShortcutHintSection } from "../../../services/shortcut_hints";
 import { isMobile } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import ActionButton from "../../react/ActionButton";
 import Dropdown from "../../react/Dropdown";
-import { useTriliumEvent, useTriliumEvents } from "../../react/hooks";
+import { useContextualShortcutHints, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import { getParentFromNotePath } from "../../react/sibling_navigation";
 import { noteSiblingProvider, type SiblingNavigationState, useSiblingKeyboard, useSiblingNavigation } from "../../react/SiblingNavigator";
@@ -37,6 +38,40 @@ export interface MediaPlayerProps {
     isVisible?: boolean;
     /** Start playing as soon as the media is ready — the user just activated a lazy preview. */
     autoPlay?: boolean;
+}
+
+// Navigation is Page Up/Down only — the player reserves Home/End for seeking (edgeKeys: false), and
+// Space/Backspace aren't bound.
+const MEDIA_NAVIGATION_HINTS: ShortcutHintSection = {
+    titleKey: "media.hints.navigation",
+    hints: [
+        { keys: ["PageUp"], labelKey: "media.hints.previous" },
+        { keys: ["PageDown"], labelKey: "media.hints.next" }
+    ]
+};
+
+/**
+ * Registers the media player's contextual keyboard hints. Video passes `fullscreen: true`; audio has
+ * no fullscreen. Mirrors the actual keys bound in Video/Audio's `useKeyboardShortcuts`.
+ */
+export function useMediaPlayerShortcutHints({ fullscreen }: { fullscreen: boolean }) {
+    useContextualShortcutHints((): ShortcutHintDefinition => {
+        const playback: ShortcutHint[] = [
+            { keys: ["Space"], labelKey: "media.hints.play_pause" },
+            { keys: ["Left"], labelKey: "media.hints.back_10s" },
+            { keys: ["Right"], labelKey: "media.hints.forward_10s" },
+            { keys: ["Home"], labelKey: "media.hints.jump_start" },
+            { keys: ["End"], labelKey: "media.hints.jump_end" },
+            { keys: ["M"], labelKey: "media.hints.mute" }
+        ];
+        if (fullscreen) {
+            playback.push({ keys: ["F"], labelKey: "media.hints.fullscreen" });
+        }
+        return [
+            { titleKey: "media.hints.playback", hints: playback },
+            MEDIA_NAVIGATION_HINTS
+        ];
+    });
 }
 
 export function SeekBar({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement> }) {

@@ -65,6 +65,82 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("exports link previews as raw HTML with a fallback anchor", () => {
+        // Block card/embed: kept as a section (the importer + editor upcast round-trip it), with a
+        // fallback link inside so external Markdown renderers show something instead of nothing.
+        expect(markdownExportService.toMarkdown(
+            '<p>before</p>' +
+            '<section class="link-embed" data-url="https://e.com/" data-embed-type="opengraph" data-title="Example"></section>' +
+            '<p>after</p>'
+        )).toBe(
+            'before\n\n' +
+            '<section class="link-embed" data-url="https://e.com/" data-embed-type="opengraph" data-title="Example"><a href="https://e.com/">Example</a></section>' +
+            '\n\nafter'
+        );
+
+        // Video embeds share the same element; without a title the URL doubles as the link text.
+        expect(markdownExportService.toMarkdown(
+            '<section class="link-embed" data-url="https://www.youtube.com/watch?v=abc" data-embed-type="youtube"></section>'
+        )).toBe(
+            '<section class="link-embed" data-url="https://www.youtube.com/watch?v=abc" data-embed-type="youtube">' +
+            '<a href="https://www.youtube.com/watch?v=abc">https://www.youtube.com/watch?v=abc</a></section>'
+        );
+
+        // Inline mention: stays inline within the sentence.
+        expect(markdownExportService.toMarkdown(
+            '<p>See <span class="link-mention" data-url="https://e.com/" data-title="Example"></span> for details.</p>'
+        )).toBe(
+            'See <span class="link-mention" data-url="https://e.com/" data-title="Example"><a href="https://e.com/">Example</a></span> for details.'
+        );
+    });
+
+    it("replaces an existing link preview fallback anchor instead of accumulating it", () => {
+        // Content imported from Markdown (and never re-saved by the editor) already carries the
+        // fallback anchor, so the element is non-blank and goes through the rule instead of
+        // blankReplacement. The anchor is regenerated from the (possibly edited) data attributes.
+        const exported = markdownExportService.toMarkdown(
+            '<section class="link-embed" data-url="https://e.com/" data-embed-type="opengraph" data-title="New title">' +
+            '<a href="https://e.com/">Stale title</a></section>'
+        );
+
+        expect(exported).toBe(
+            '<section class="link-embed" data-url="https://e.com/" data-embed-type="opengraph" data-title="New title">' +
+            '<a href="https://e.com/">New title</a></section>'
+        );
+    });
+
+    it("escapes HTML in link preview fallback anchors", () => {
+        const exported = markdownExportService.toMarkdown(
+            '<section class="link-embed" data-url="https://e.com/?a=1&amp;b=2" data-embed-type="opengraph" data-title="A &amp; B &lt;x&gt;"></section>'
+        );
+
+        // The fallback anchor is generated from the data attributes, so its href and title must be
+        // HTML-escaped or a title like `A & B <x>` would break the exported markup. This escaping is
+        // done deterministically with escape-html, so it holds under both test environments.
+        expect(exported).toContain('<a href="https://e.com/?a=1&amp;b=2">A &amp; B &lt;x&gt;</a>');
+
+        // The section wrapper and its data attributes survive so the preview re-imports losslessly.
+        // The escaping of `<`/`>` inside data-title is left to turndown's serializer, which differs by
+        // environment (server/node uses domino and escapes them; standalone/happy-dom uses the browser
+        // serializer and leaves them raw). It is not asserted because both forms decode to the same value.
+        expect(exported).toContain('<section class="link-embed" data-url="https://e.com/?a=1&amp;b=2" data-embed-type="opengraph"');
+    });
+
+    it("renders a hostile-scheme link preview URL inert in the fallback anchor", () => {
+        // `data-url` reaches export unsanitized (the sanitizers pass `data-*` through untouched), so a
+        // stored `javascript:` scheme must not become a live anchor in the exported Markdown.
+        // `safeLinkPreviewHref` maps it to `about:blank`; the escaping asserted in the test above still
+        // guards a valid http(s) URL that happens to contain a quote.
+        const exported = markdownExportService.toMarkdown(
+            '<section class="link-embed" data-url="javascript:alert(1)" data-embed-type="opengraph" data-title="Evil"></section>'
+        );
+
+        // The live fallback href is neutralised. The original scheme survives only in the inert
+        // `data-url` attribute (which round-trips losslessly on reimport), never as a linkable href.
+        expect(exported).toContain('<a href="about:blank">Evil</a>');
+        expect(exported).not.toContain('href="javascript:');
+    });
+
     it("exports strikethrough text correctly", () => {
         const html = "<s>hello</s>Hello <s>world</s>";
         const expected = "~~hello~~Hello ~~world~~";
@@ -484,6 +560,54 @@ describe("Markdown export", () => {
         <tr>
             <td>Hi</td>
             <td>there</td>
+        </tr>
+    </tbody>
+</table>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    // Admonitions are block content, and GFM table cells can only hold inline
+    // content. Flattening the admonition into a cell produces unrenderable
+    // `> [!NOTE]<br>...` noise, so a table containing one is kept as raw HTML to
+    // degrade gracefully and round-trip faithfully.
+    it("keeps a table containing an admonition as HTML", () => {
+        const html = trimIndentation/*html*/`\
+            <figure class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Hello</th>
+                            <th>world</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>This is a table</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><aside class="admonition note"><p>With an admonition inside it</p></aside></td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </figure>
+        `;
+        const expected = `<table>
+    <thead>
+        <tr>
+            <th>Hello</th>
+            <th>world</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>This is a table</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td><aside class="admonition note"><p>With an admonition inside it</p></aside></td>
+            <td></td>
         </tr>
     </tbody>
 </table>`;

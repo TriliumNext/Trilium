@@ -2,6 +2,7 @@ import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import { AttributeRow } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
+import type NoteContext from "../components/note_context.js";
 import type FBranch from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
 import type { ChooseNoteTypeResponse } from "../widgets/dialogs/note_type_chooser.js";
@@ -28,6 +29,13 @@ export interface CreateNoteOpts {
     textEditor?: CKTextEditor;
     /** Attributes to be set on the note. These are set atomically on note creation, so entity changes are not sent for attributes defined here. */
     attributes?: Omit<AttributeRow, "noteId" | "attributeId">[];
+    /**
+     * Note context to activate the new note in. Popup dialogs (quick edit, tree popup) pass their
+     * own context here — it lives outside the tab manager, so defaulting to the active tab would
+     * activate the note in the background and close the dialog. When set, the surrounding dialog
+     * is kept open.
+     */
+    noteContext?: NoteContext;
 }
 
 interface Response {
@@ -84,12 +92,14 @@ async function createNote(parentNotePath: string | undefined, options: CreateNot
 
     await ws.waitForMaxKnownEntityChangeId();
 
-    const activeNoteContext = appContext.tabManager.getActiveContext();
+    const activeNoteContext = options.noteContext ?? appContext.tabManager.getActiveContext();
     if (activeNoteContext && options.activate) {
-        await activeNoteContext.setNote(`${parentNotePath}/${note.noteId}`);
+        await activeNoteContext.setNote(`${parentNotePath}/${note.noteId}`, {
+            keepActiveDialog: !!options.noteContext
+        });
 
         if (options.focus === "title") {
-            appContext.triggerEvent("focusAndSelectTitle", { isNewNote: true });
+            appContext.triggerEvent("focusAndSelectTitle", { isNewNote: true, ntxId: activeNoteContext.ntxId });
         } else if (options.focus === "content") {
             appContext.triggerEvent("focusOnDetail", { ntxId: activeNoteContext.ntxId });
         }

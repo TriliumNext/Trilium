@@ -1,2 +1,0 @@
-# Theme development
-i

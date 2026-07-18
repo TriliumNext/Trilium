@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import $ from "jquery";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Control the bundle execution machinery (avoids eval / ScriptContext).
 const executeMock = vi.fn();
@@ -164,7 +164,7 @@ describe("render", () => {
         await render(note, $("<div>"), onError);
         await flush();
 
-        expect(onError).toHaveBeenCalledWith(boom);
+        expect(onError).toHaveBeenCalledWith(boom, target.noteId);
     });
 
     it("parses a JSON-shaped string error and passes the parsed object to onError", async () => {
@@ -177,7 +177,7 @@ describe("render", () => {
 
         await render(note, $("<div>"), onError);
 
-        expect(onError).toHaveBeenCalledWith({ message: "nope" });
+        expect(onError).toHaveBeenCalledWith({ message: "nope" }, target.noteId);
     });
 
     it("falls back to passing the raw error when a JSON-shaped string fails to parse", async () => {
@@ -207,7 +207,7 @@ describe("render", () => {
 
         await render(note, $("<div>"), onError);
 
-        expect(onError).toHaveBeenCalledWith(err);
+        expect(onError).toHaveBeenCalledWith(err, target.noteId);
     });
 
     it("triggers JSX rendering when the bundle html is empty", async () => {
@@ -331,7 +331,7 @@ describe("renderIfJsx", () => {
         // After catching an error: forwards to onError and renders null.
         const caught = new Error("inner");
         instance.componentDidCatch(caught);
-        expect(onError).toHaveBeenCalledWith(caught);
+        expect(onError).toHaveBeenCalledWith(caught, note.noteId);
         expect(instance.state.error).toBe(caught);
         expect(instance.render()).toBeNull();
     });
