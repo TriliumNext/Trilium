@@ -1,4 +1,4 @@
-import type { LlmCitation, LlmMessage, LlmModelInfo, LlmUsage } from "@triliumnext/commons";
+import type { LlmCitation, LlmMessage, LlmModelInfo, LlmUsage, ToolPermissionMode } from "@triliumnext/commons";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -36,6 +36,7 @@ export interface UseLlmChatReturn {
     enableWebSearch: boolean;
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
+    toolPermissionMode: ToolPermissionMode;
     contextNoteId: string | undefined;
     lastPromptTokens: number;
     messagesEndRef: RefObject<HTMLDivElement>;
@@ -52,6 +53,7 @@ export interface UseLlmChatReturn {
     setEnableWebSearch: (value: boolean) => void;
     setEnableNoteTools: (value: boolean) => void;
     setEnableExtendedThinking: (value: boolean) => void;
+    setToolPermissionMode: (mode: ToolPermissionMode) => void;
     setContextNoteId: (noteId: string | undefined) => void;
     setChatNoteId: (noteId: string | undefined) => void;
 
@@ -87,6 +89,7 @@ export function useLlmChat(
     const [enableWebSearch, setEnableWebSearch] = useState(true);
     const [enableNoteTools, setEnableNoteTools] = useState(defaultEnableNoteTools);
     const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
+    const [toolPermissionMode, setToolPermissionMode] = useState<ToolPermissionMode>("ask");
     const [contextNoteId, setContextNoteId] = useState<string | undefined>(initialContextNoteId);
     const [chatNoteId, setChatNoteIdState] = useState<string | undefined>(initialChatNoteId);
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
@@ -106,6 +109,8 @@ export function useLlmChat(
     enableNoteToolsRef.current = enableNoteTools;
     const enableExtendedThinkingRef = useRef(enableExtendedThinking);
     enableExtendedThinkingRef.current = enableExtendedThinking;
+    const toolPermissionModeRef = useRef(toolPermissionMode);
+    toolPermissionModeRef.current = toolPermissionMode;
     const chatNoteIdRef = useRef(chatNoteId);
     chatNoteIdRef.current = chatNoteId;
     const setChatNoteId = useCallback((noteId: string | undefined) => {
@@ -173,6 +178,7 @@ export function useLlmChat(
         if (supportsExtendedThinking && typeof content.enableExtendedThinking === "boolean") {
             setEnableExtendedThinking(content.enableExtendedThinking);
         }
+        setToolPermissionMode(content.toolPermissionMode ?? "ask");
         // Restore last prompt tokens from the most recent message with usage
         const lastUsage = [...(content.messages || [])].reverse().find(m => m.usage)?.usage;
         setLastPromptTokens(lastUsage?.promptTokens ?? 0);
@@ -189,6 +195,9 @@ export function useLlmChat(
         };
         if (supportsExtendedThinking) {
             content.enableExtendedThinking = enableExtendedThinkingRef.current;
+        }
+        if (toolPermissionModeRef.current !== "ask") {
+            content.toolPermissionMode = toolPermissionModeRef.current;
         }
         return content;
     }, [supportsExtendedThinking]);
@@ -250,7 +259,8 @@ export function useLlmChat(
             enableWebSearch,
             enableNoteTools,
             contextNoteId,
-            chatNoteId: chatNoteIdRef.current
+            chatNoteId: chatNoteIdRef.current,
+            toolPermissionMode
         };
         if (supportsExtendedThinking) {
             streamOptions.enableExtendedThinking = enableExtendedThinking;
@@ -362,7 +372,7 @@ export function useLlmChat(
                 }
             }
         );
-    }, [input, isStreaming, messages, selectedModel, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages]);
+    }, [input, isStreaming, messages, selectedModel, enableWebSearch, enableNoteTools, enableExtendedThinking, toolPermissionMode, contextNoteId, supportsExtendedThinking, setMessages]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -423,6 +433,7 @@ export function useLlmChat(
         enableWebSearch,
         enableNoteTools,
         enableExtendedThinking,
+        toolPermissionMode,
         contextNoteId,
         lastPromptTokens,
         messagesEndRef,
@@ -437,6 +448,7 @@ export function useLlmChat(
         setEnableWebSearch,
         setEnableNoteTools,
         setEnableExtendedThinking,
+        setToolPermissionMode,
         setContextNoteId,
         setChatNoteId,
 

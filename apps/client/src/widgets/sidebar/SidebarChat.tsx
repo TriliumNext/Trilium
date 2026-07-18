@@ -287,7 +287,12 @@ export default function SidebarChat() {
                         />
                     )}
                     {chat.messages.map(msg => (
-                        <ChatMessage key={msg.id} message={msg} />
+                        <ChatMessage
+                            key={msg.id}
+                            message={msg}
+                            onApproveToolCall={chat.approveToolCall}
+                            onRejectToolCall={chat.rejectToolCall}
+                        />
                     ))}
                     {chat.isStreaming && chat.streamingThinking && (
                         <ChatMessage

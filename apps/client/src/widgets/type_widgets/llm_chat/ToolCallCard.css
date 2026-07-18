@@ -113,19 +113,33 @@
 }
 
 /* Tool call approval UI */
+
+/* Highlight the whole pending section with the theme accent so it stands out */
+.llm-chat-tool-call-pending {
+    border-left: 3px solid var(--main-selection-color, #007bff);
+}
+
+.llm-chat-tool-call-pending .expandable-section-summary {
+    font-weight: 600;
+}
+
 .llm-chat-tool-call-approval {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
     padding: 0.5rem 0.75rem;
     border-top: 1px solid var(--main-border-color);
-    background: color-mix(in srgb, var(--warning-color, #ffc107) 8%, transparent);
+    background: var(--accented-background-color);
 }
 
 .llm-chat-tool-call-approval-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
     font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--warning-color, #b8860b);
+    color: var(--main-text-color);
 }
 
 .llm-chat-tool-call-approval-actions {
@@ -133,35 +147,8 @@
     gap: 0.5rem;
 }
 
-.llm-chat-tool-call-approve-btn,
-.llm-chat-tool-call-reject-btn {
+.llm-chat-tool-call-approval-actions .btn {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.25rem 0.75rem;
-    border: 1px solid var(--main-border-color);
-    border-radius: 4px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-}
-
-.llm-chat-tool-call-approve-btn {
-    background: color-mix(in srgb, var(--success-color, #28a745) 15%, transparent);
-    color: var(--success-color, #28a745);
-    border-color: var(--success-color, #28a745);
-}
-
-.llm-chat-tool-call-approve-btn:hover {
-    background: color-mix(in srgb, var(--success-color, #28a745) 30%, transparent);
-}
-
-.llm-chat-tool-call-reject-btn {
-    background: color-mix(in srgb, var(--danger-color, #dc3545) 10%, transparent);
-    color: var(--danger-color, #dc3545);
-    border-color: var(--danger-color, #dc3545);
-}
-
-.llm-chat-tool-call-reject-btn:hover {
-    background: color-mix(in srgb, var(--danger-color, #dc3545) 25%, transparent);
 }

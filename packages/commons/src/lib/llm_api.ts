@@ -43,7 +43,15 @@ export interface LlmChatConfig {
     contextNoteId?: string;
     /** The note ID of the chat note (used for auto-renaming on first message) */
     chatNoteId?: string;
+    /**
+     * How mutating (write) tool calls are handled:
+     * - "ask" (default): the client must approve each mutating tool call
+     * - "auto": mutating tools execute automatically without approval
+     */
+    toolPermissionMode?: ToolPermissionMode;
 }
+
+export type ToolPermissionMode = "ask" | "auto";
 
 /**
  * Pricing per million tokens for a model.

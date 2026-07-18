@@ -3,6 +3,7 @@ import "./ToolCallCard.css";
 import { Trans } from "react-i18next";
 
 import { t } from "../../../services/i18n.js";
+import Button from "../../react/Button.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import { ExpandableCard, ExpandableSection } from "./ExpandableCard.js";
 import type { ToolCall } from "./llm_chat_types.js";
@@ -191,7 +192,7 @@ function ToolCallSection({ toolCall, onApprove, onReject }: {
         <ExpandableSection
             icon={toolCallIcon(toolCall)}
             label={<ToolCallLabel toolCall={toolCall} />}
-            className={hasError ? "llm-chat-tool-call-error" : ""}
+            className={hasError ? "llm-chat-tool-call-error" : isPendingApproval ? "llm-chat-tool-call-pending" : ""}
             defaultExpanded={isPendingApproval}
         >
             <div className="llm-chat-tool-call-input">
@@ -200,20 +201,23 @@ function ToolCallSection({ toolCall, onApprove, onReject }: {
             </div>
             {isPendingApproval && onApprove && onReject && (
                 <div className="llm-chat-tool-call-approval">
-                    <span className="llm-chat-tool-call-approval-label">{t("llm_chat.pending_approval")}</span>
+                    <span className="llm-chat-tool-call-approval-label">
+                        <span className="bx bx-shield-quarter" /> {t("llm_chat.pending_approval")}
+                    </span>
                     <div className="llm-chat-tool-call-approval-actions">
-                        <button
-                            className="llm-chat-tool-call-approve-btn"
+                        <Button
+                            text={t("llm_chat.approve")}
+                            icon="bx-check"
+                            kind="primary"
+                            size="small"
                             onClick={() => onApprove(toolCall.id)}
-                        >
-                            <span className="bx bx-check" /> {t("llm_chat.approve")}
-                        </button>
-                        <button
-                            className="llm-chat-tool-call-reject-btn"
+                        />
+                        <Button
+                            text={t("llm_chat.reject")}
+                            icon="bx-x"
+                            size="small"
                             onClick={() => onReject(toolCall.id)}
-                        >
-                            <span className="bx bx-x" /> {t("llm_chat.reject")}
-                        </button>
+                        />
                     </div>
                 </div>
             )}

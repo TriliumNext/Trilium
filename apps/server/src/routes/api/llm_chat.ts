@@ -54,11 +54,14 @@ async function streamChat(req: Request, res: Response) {
 
         const provider = getProviderByType(config.provider || "anthropic");
 
-        // Collect names of tools that require human approval
+        // Collect names of tools that require human approval.
+        // In "auto" permission mode nothing needs approval — tools execute directly.
         const mutatingToolNames = new Set<string>();
-        for (const registry of allToolRegistries) {
-            for (const name of registry.getMutatingToolNames()) {
-                mutatingToolNames.add(name);
+        if (config.toolPermissionMode !== "auto") {
+            for (const registry of allToolRegistries) {
+                for (const name of registry.getMutatingToolNames()) {
+                    mutatingToolNames.add(name);
+                }
             }
         }
 

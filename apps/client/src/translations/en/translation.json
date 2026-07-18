@@ -1667,8 +1667,9 @@
     "add_provider": "Add AI Provider",
     "approve": "Approve",
     "reject": "Reject",
-    "pending_approval": "Pending approval",
-    "rejected_by_user": "Rejected by user"
+    "pending_approval": "This action will modify your notes",
+    "rejected_by_user": "Rejected by user",
+    "ask_before_changes": "Ask before changes"
   },
   "sidebar_chat": {
     "title": "AI Chat",

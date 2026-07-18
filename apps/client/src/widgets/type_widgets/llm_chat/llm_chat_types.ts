@@ -1,4 +1,4 @@
-import type { LlmCitation, LlmUsage } from "@triliumnext/commons";
+import type { LlmCitation, LlmUsage, ToolPermissionMode } from "@triliumnext/commons";
 
 export type MessageType = "message" | "error" | "thinking";
 
@@ -72,4 +72,5 @@ export interface LlmChatContent {
     enableWebSearch?: boolean;
     enableNoteTools?: boolean;
     enableExtendedThinking?: boolean;
+    toolPermissionMode?: ToolPermissionMode;
 }

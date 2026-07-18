@@ -12,6 +12,8 @@ import { tool } from "ai";
 import type { z } from "zod";
 import type { ToolSet } from "ai";
 
+import sql from "../../sql.js";
+
 /**
  * Type constraint that rejects Promises at compile time.
  * Works by requiring `then` to be void if present - Promises have `then: Function`.
@@ -57,16 +59,24 @@ export class ToolRegistry implements Iterable<[string, ToolDefinition]> {
      * Read-only tools are given an `execute` function so the AI SDK auto-runs them.
      * Mutating tools are registered WITHOUT `execute` so the SDK emits a tool-call
      * event but does NOT auto-execute — the client must approve first.
+     * With `autoExecuteMutating` (tool permission mode "auto"), mutating tools
+     * also get an `execute` function, wrapped in a transaction.
      * (CLS context is provided by the route handler.)
      */
-    toToolSet(): ToolSet {
+    toToolSet(options: { autoExecuteMutating?: boolean } = {}): ToolSet {
         const set: ToolSet = {};
         for (const [name, def] of this) {
-            if (def.mutates) {
+            if (def.mutates && !options.autoExecuteMutating) {
                 // No execute → AI SDK emits tool-call but doesn't auto-execute (human-in-the-loop)
                 set[name] = tool({
                     description: def.description,
                     inputSchema: def.inputSchema
+                });
+            } else if (def.mutates) {
+                set[name] = tool({
+                    description: def.description,
+                    inputSchema: def.inputSchema,
+                    execute: (args) => sql.transactional(() => def.execute(args))
                 });
             } else {
                 set[name] = tool({
