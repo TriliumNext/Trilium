@@ -84,7 +84,7 @@ function getCostDescription(model: LlmModelInfo): string | undefined {
     if (model.costMultiplier) {
         return `${model.costMultiplier}x`;
     }
-    if (model.pricing.input === 0 && model.pricing.output === 0) {
+    if (model.pricing && model.pricing.input === 0 && model.pricing.output === 0) {
         return t("llm_chat.free");
     }
     return undefined;

@@ -137,29 +137,29 @@ describe("llm/index provider registry", () => {
     });
 
     describe("getAllModels", () => {
-        it("aggregates models across provider types, tagged with the provider", () => {
+        it("aggregates models across provider types, tagged with the provider", async () => {
             setProviders(TWO);
-            const models = getAllModels();
+            const models = await getAllModels();
             expect(models).toEqual([
                 { id: "anthropic-model", name: "anthropic Model", provider: "anthropic" },
                 { id: "openai-model", name: "openai Model", provider: "openai" }
             ]);
         });
 
-        it("includes each provider type only once even with duplicate configs", () => {
+        it("includes each provider type only once even with duplicate configs", async () => {
             setProviders([
                 { id: "a1", name: "A1", provider: "anthropic", apiKey: "k1" },
                 { id: "a2", name: "A2", provider: "anthropic", apiKey: "k2" }
             ]);
-            const models = getAllModels();
+            const models = await getAllModels();
             expect(models).toHaveLength(1);
             expect(models[0].provider).toBe("anthropic");
         });
 
-        it("skips and logs a provider whose model lookup throws", () => {
+        it("skips and logs a provider whose model lookup throws", async () => {
             setProviders([{ id: "x", name: "X", provider: "mystery", apiKey: "k" }]);
             // Unknown type → getProvider throws inside getAllModels and is caught.
-            expect(getAllModels()).toEqual([]);
+            await expect(getAllModels()).resolves.toEqual([]);
             expect(errorMock).toHaveBeenCalled();
         });
     });
