@@ -4,7 +4,7 @@ import * as hooks from "preact/hooks";
 import ActionButton from "../widgets/react/ActionButton";
 import Admonition from "../widgets/react/Admonition";
 import Button from "../widgets/react/Button";
-import Calendar from "../widgets/react/Calendar";
+import Calendar from "../widgets/collections/calendar/calendar";
 import CKEditor from "../widgets/react/CKEditor";
 import Collapsible, { ExternallyControlledCollapsible } from "../widgets/react/Collapsible";
 import ColorPicker from "../widgets/react/ColorPicker";
@@ -32,7 +32,7 @@ import NoteAutocomplete from "../widgets/react/NoteAutocomplete";
 import NoteLink from "../widgets/react/NoteLink";
 import RawHtml from "../widgets/react/RawHtml";
 import Slider from "../widgets/react/Slider";
-import Table from "../widgets/react/Table";
+import Table from "../widgets/collections/table/tabulator";
 import RightPanelWidget from "../widgets/sidebar/RightPanelWidget";
 
 export interface WidgetDefinition {
