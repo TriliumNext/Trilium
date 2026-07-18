@@ -43,13 +43,13 @@ export function ExternallyControlledCollapsible({ title, children, className, ex
                     setFullyExpanded(true);
                 }, 250);
                 return () => clearTimeout(timeout);
-            } else {
-                setFullyExpanded(true);
-            }
+            } 
+            setFullyExpanded(true);
+            
         } else {
             setFullyExpanded(false);
         }
-    }, [expanded, transitionEnabled])
+    }, [expanded, transitionEnabled]);
 
     return (
         <div className={clsx("collapsible", className, {
@@ -58,7 +58,10 @@ export function ExternallyControlledCollapsible({ title, children, className, ex
         })}>
             <button
                 className="collapsible-title tn-low-profile"
-                onClick={() => setExpanded(!expanded)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    setExpanded(!expanded);
+                }}
                 aria-expanded={expanded}
                 aria-controls={contentId}
             >

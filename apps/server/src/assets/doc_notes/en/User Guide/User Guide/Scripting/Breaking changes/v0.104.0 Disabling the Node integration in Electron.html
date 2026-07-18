@@ -1,0 +1,40 @@
+<h2>Introduction</h2>
+<p>Before v0.104.0, code executed at renderer level (e.g. front-end scripts)
+  could directly require <code spellcheck="false">@electron/remote</code> or
+  even Node.js APIs (e.g. <code spellcheck="false">process</code> or <code spellcheck="false">fs</code>). While
+  this makes them powerful, it also exposes a significant attack surface
+  — any XSS or untrusted script in a note becomes remote code execution on
+  the host.</p>
+<p>To mitigate this, the client-side no longer has access to these APIs and
+  everything must go through the&nbsp;<a class="reference-link" href="#root/_help_GFXVHyblVN3d">Electron API</a>&nbsp;instead.</p>
+<aside
+class="admonition note">
+  <p>If this API change is causing issues with some of your front-end scripts,
+    consider:</p>
+  <ul>
+    <li>Interacting with&nbsp;<a class="reference-link" href="#root/_help_SPirpZypehBG">Backend scripts</a>&nbsp;which
+      have a greater degree of freedom.</li>
+    <li><a href="#root/_help_wy8So3yZZlH9">Reporting</a> it as a feature request.</li>
+  </ul>
+  </aside>
+  <h2>Overview of the API</h2>
+  <p>The Frontend and Backend APIs reside in a global variable, <code spellcheck="false">api</code>,
+    that can be used anywhere in the script. For example, to display a message
+    to the user the following front-end script can be used:</p><pre><code class="language-text-javascript">api.showMessage("Hello world.");</code></pre>
+  <p>The Electron API is different: it lives on <code spellcheck="false">window.electronApi</code> (exposed
+    by the desktop preload script), not on <code spellcheck="false">api</code>,
+    and is only available in the Electron desktop build. Frontend scripts that
+    use it should guard with <code spellcheck="false">if (window.electronApi)</code> so
+    they degrade cleanly in the browser and standalone (WASM) builds.</p><pre><code class="language-text-javascript">window.electronApi?.window.setZoomFactor(1.2);</code></pre>
+  <h2>Additional protection</h2>
+  <p>Some of the APIs have additional safe-guards built in which prevent unauthorized
+    access.</p>
+  <p>The <code spellcheck="false">shell</code> group is the most heavily validated:
+    <code
+    spellcheck="false">openExternal</code>is restricted to an allowlisted set of URL schemes
+      (blocking <code spellcheck="false">file:</code>, <code spellcheck="false">smb:</code>,
+      Follina-class schemes, etc.), <code spellcheck="false">openPath</code> must
+      resolve under the Trilium data directory or temporary directory, and
+      <code
+      spellcheck="false">downloadURL</code>is locked to the app's own origin. Invalid input throws
+        on the main side rather than being silently passed through.</p>

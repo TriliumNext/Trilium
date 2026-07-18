@@ -21,11 +21,11 @@ Relation map is a type of note which visualizes notes and their [relations](..
 
 This is a basic example how you can create simple diagram using relation maps:
 
-<img src="1_Relation Map_relation-map-.png" width="934" height="667">
+<img src="Relation Map_relation-map-dev-process.png" width="934" height="667">
 
 And this is how you can create it:
 
-<img src="1_Relation Map_relation-map-.gif" width="812" height="585">
+<img src="Relation Map_relation-map-dev-process-demo.gif" width="812" height="585">
 
 We start completely from scratch by first creating new note called "Development process" and changing its type to "Relation map". After that we create new notes one by one and place them by clicking into the map. We also drag [relations](../Advanced%20Usage/Attributes.md)between notes and name them. That's all!
 
@@ -35,11 +35,11 @@ Items on the map - "Specification", "Development", "Testing" and "Demo" are actu
 
 This is more complicated demo using some advanced concepts. Resulting diagram is here:
 
-<img src="Relation Map_relation-map-.png" width="941" height="758">
+<img src="Relation Map_relation-map-family.png" width="941" height="758">
 
 This is how you get to it:
 
-<img src="Relation Map_relation-map-.gif" width="812" height="585">
+<img src="Relation Map_relation-map-family-demo.gif" width="812" height="585">
 
 There are several steps here:
 

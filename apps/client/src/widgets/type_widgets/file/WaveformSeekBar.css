@@ -1,0 +1,21 @@
+.waveform-seekbar {
+    /* Placeholder colors — tune to taste. Read by the canvas renderer via getComputedStyle. */
+    --waveform-played-color: var(--quick-search-result-highlight-color);
+    --waveform-unplayed-color: #5a5a5a;
+    --waveform-silence-color: #333333;
+
+    .waveform-canvas {
+        flex: 1;
+        min-width: 0;
+        height: 42px;
+        display: block;
+        cursor: pointer;
+        touch-action: none;
+        border-radius: 4px;
+    }
+
+    .waveform-canvas:focus-visible {
+        outline: 2px solid var(--waveform-played-color);
+        outline-offset: 2px;
+    }
+}

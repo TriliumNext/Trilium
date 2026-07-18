@@ -8,11 +8,6 @@
     "sort-child-notes": "排序子笔记",
     "creating-and-moving-notes": "创建和移动笔记",
     "create-note-into-inbox": "在收件箱（若已定义）或日记中创建笔记",
-    "delete-note": "删除笔记",
-    "move-note-up": "向上移动笔记",
-    "move-note-down": "向下移动笔记",
-    "move-note-up-in-hierarchy": "在层级中向上移动笔记",
-    "move-note-down-in-hierarchy": "在层级中向下移动笔记",
     "edit-note-title": "从树跳转到笔记详情并编辑标题",
     "edit-branch-prefix": "显示编辑分支前缀对话框",
     "note-clipboard": "笔记剪贴板",
@@ -20,27 +15,12 @@
     "paste-notes-from-clipboard": "从剪贴板粘贴笔记到当前笔记中",
     "cut-notes-to-clipboard": "剪切选定的笔记到剪贴板",
     "select-all-notes-in-parent": "选择当前笔记级别的所有笔记",
-    "add-note-above-to-the-selection": "将上方笔记添加到选择中",
-    "add-note-below-to-selection": "将下方笔记添加到选择中",
-    "duplicate-subtree": "复制子树",
     "tabs-and-windows": "标签页和窗口",
-    "open-new-tab": "打开新标签页",
-    "close-active-tab": "关闭当前标签页",
     "reopen-last-tab": "重新打开最后关闭的标签页",
     "activate-next-tab": "切换下一个标签页",
     "activate-previous-tab": "切换上一个标签页",
     "open-new-window": "打开新窗口",
     "toggle-tray": "显示/隐藏系统托盘图标",
-    "first-tab": "切换到第一个标签页",
-    "second-tab": "切换到第二个标签页",
-    "third-tab": "切换到第三个标签页",
-    "fourth-tab": "切换到第四个标签页",
-    "fifth-tab": "切换到第五个标签页",
-    "sixth-tab": "切换到第六个标签页",
-    "seventh-tab": "切换到第七个标签页",
-    "eight-tab": "切换到第八个标签页",
-    "ninth-tab": "切换到第九个标签页",
-    "last-tab": "切换到最后一个标签页",
     "dialogs": "对话框",
     "show-note-source": "显示笔记源代码对话框",
     "show-options": "显示选项对话框",
@@ -55,46 +35,27 @@
     "paste-markdown-into-text": "从剪贴板粘贴 Markdown 到文本笔记",
     "cut-into-note": "剪切当前笔记的选区并创建包含选定文本的子笔记",
     "add-include-note-to-text": "打开对话框以添加一个包含笔记",
-    "edit-readonly-note": "编辑只读笔记",
     "attributes-labels-and-relations": "属性（标签和关系）",
     "add-new-label": "创建新标签",
     "create-new-relation": "创建新关系",
     "ribbon-tabs": "功能区标签页",
-    "toggle-basic-properties": "切换基本属性",
-    "toggle-file-properties": "切换文件属性",
-    "toggle-image-properties": "切换图像属性",
-    "toggle-owned-attributes": "切换拥有的属性",
-    "toggle-inherited-attributes": "切换继承的属性",
-    "toggle-promoted-attributes": "切换提升的属性",
     "toggle-link-map": "切换链接地图",
-    "toggle-note-info": "切换笔记信息",
-    "toggle-note-paths": "切换笔记路径",
-    "toggle-similar-notes": "切换相似笔记",
     "other": "其他",
     "toggle-right-pane": "切换右侧面板的显示，包括目录和高亮",
-    "print-active-note": "打印当前笔记",
     "open-note-externally": "以默认应用打开笔记文件",
     "render-active-note": "渲染（重新渲染）当前笔记",
     "run-active-note": "运行当前 JavaScript（前/后端）代码笔记",
     "toggle-note-hoisting": "提升笔记",
     "unhoist": "取消提升笔记",
-    "reload-frontend-app": "重新加载前端应用",
-    "open-dev-tools": "打开开发者工具",
     "toggle-left-note-tree-panel": "切换左侧（笔记树）面板",
-    "toggle-full-screen": "切换全屏模式",
-    "zoom-out": "缩小",
-    "zoom-in": "放大",
     "note-navigation": "笔记导航",
-    "reset-zoom-level": "重置缩放级别",
     "copy-without-formatting": "无格式复制选定文本",
     "force-save-revision": "强制创建/保存当前笔记的新修订版本",
     "show-help": "显示帮助",
     "toggle-book-properties": "切换书籍属性",
     "toggle-classic-editor-toolbar": "为编辑器切换格式标签页的固定工具栏",
-    "export-as-pdf": "导出当前笔记为 PDF",
     "show-cheatsheet": "显示快捷键指南",
     "toggle-zen-mode": "启用/禁用禅模式（为专注编辑而精简界面）",
-    "open-command-palette": "打开命令面板",
     "quick-search": "激活快速搜索栏",
     "create-note-after": "在当前笔记后面创建笔记",
     "create-note-into": "创建笔记作为当前笔记的子笔记",
@@ -103,66 +64,31 @@
     "find-in-text": "在文本中查找",
     "back-in-note-history": "导航到历史记录中的上一个笔记",
     "forward-in-note-history": "导航到历史记录的下一个笔记",
-    "scroll-to-active-note": "滚动笔记树到当前笔记"
+    "scroll-to-active-note": "滚动笔记树到当前笔记",
+    "save-named-revision": "保存活动笔记的命名修订",
+    "toggle-archived-notes": "在笔记树中显示/隐藏已归档笔记",
+    "show-deleted-notes": "显示“已删除的笔记”对话框",
+    "peek-right-pane": "将右侧面板以浮动面板的形式预览，失去焦点时自动关闭"
   },
   "login": {
     "title": "登录",
     "heading": "Trilium 登录",
-    "incorrect-totp": "TOTP 不正确，请重试。",
-    "incorrect-password": "密码不正确，请重试。",
+    "incorrect-totp": "TOTP 不正确，请再试一次。",
+    "incorrect-password": "密码不正确，请再试一次。",
     "password": "密码",
     "remember-me": "记住我",
     "button": "登录",
-    "sign_in_with_sso": "使用 {{ ssoIssuerName }} 登录"
+    "sign_in_with_sso": "使用 {{ ssoIssuerName }} 登录",
+    "sso-wrong-account": "该账户不是绑定到此 Trilium 实例的账户，请使用已绑定的账户登录。",
+    "sso-not-enrolled": "单点登录尚未设置。请先使用密码登录，然后在设置中绑定你的账户。"
   },
   "set_password": {
     "title": "设置密码",
     "heading": "设置密码",
-    "description": "在您能够从Web开始使用Trilium之前，您需要先设置一个密码。您之后将使用此密码登录。",
+    "description": "在开始使用 Trilium 网页版之前，需要先设置一个密码。之后您可以使用这个密码登录。",
     "password": "密码",
-    "password-confirmation": "密码确认",
+    "password-confirmation": "确认密码",
     "button": "设置密码"
-  },
-  "setup": {
-    "heading": "TriliumNext笔记设置",
-    "new-document": "我是新用户，我想为我的笔记创建一个新的Trilium文档",
-    "sync-from-desktop": "我已经有一个桌面实例，我想设置与它的同步",
-    "sync-from-server": "我已经有一个服务器实例，我想设置与它的同步",
-    "next": "下一步",
-    "init-in-progress": "文档初始化进行中",
-    "redirecting": "您将很快被重定向到应用程序。",
-    "title": "设置"
-  },
-  "setup_sync-from-desktop": {
-    "heading": "从桌面同步",
-    "description": "此设置需要从桌面实例开始：",
-    "step1": "打开您的TriliumNext笔记桌面实例。",
-    "step2": "从Trilium菜单中，点击“选项”。",
-    "step3": "点击“同步”类别。",
-    "step4": "将服务器实例地址更改为：{{- host}} 并点击保存。",
-    "step5": "点击“测试同步”按钮以验证连接是否成功。",
-    "step6": "完成这些步骤后，点击{{- link}}。",
-    "step6-here": "这里"
-  },
-  "setup_sync-from-server": {
-    "heading": "从服务器同步",
-    "instructions": "请在下面输入Trilium服务器地址和凭据。这将从服务器下载整个Trilium文档并设置与它的同步。根据文档大小和您的连接的速度，这可能需要一段时间。",
-    "server-host": "Trilium服务器地址",
-    "server-host-placeholder": "https://<主机名称>:<端口>",
-    "proxy-server": "代理服务器（可选）",
-    "proxy-server-placeholder": "https://<主机名称>:<端口>",
-    "note": "注意：",
-    "proxy-instruction": "如果您将代理设置留空，将使用系统代理（仅适用于桌面应用）",
-    "password": "密码",
-    "password-placeholder": "密码",
-    "back": "返回",
-    "finish-setup": "完成设置"
-  },
-  "setup_sync-in-progress": {
-    "heading": "同步中",
-    "successful": "同步已被正确设置。初始同步完成可能需要一些时间。完成后，您将被重定向到登录页面。",
-    "outstanding-items": "未完成的同步项目：",
-    "outstanding-items-default": "无"
   },
   "share_404": {
     "title": "未找到",
@@ -243,9 +169,9 @@
     "shortcuts-title": "快捷键",
     "text-notes": "文本笔记",
     "code-notes-title": "代码笔记",
-    "images-title": "图片",
+    "images-title": "媒体",
     "spellcheck-title": "拼写检查",
-    "password-title": "密码",
+    "password-title": "密码和身份验证",
     "multi-factor-authentication-title": "多因素认证",
     "etapi-title": "ETAPI",
     "backup-title": "备份",
@@ -261,7 +187,24 @@
     "zen-mode": "禅模式",
     "tab-switcher-title": "标签切换器",
     "llm-chat-history-title": "AI对话历史",
-    "sidebar-chat-title": "AI对话"
+    "sidebar-chat-title": "AI对话",
+    "custom-dictionary-title": "自定义词典",
+    "llm-title": "AI / LLM",
+    "task-states-title": "任务状态",
+    "task-state-none": "无",
+    "task-state-doing": "进行中",
+    "task-state-done": "已完成",
+    "task-state-maybe": "待定",
+    "task-state-cancelled": "已取消",
+    "task-state-attr-state-id": "标识符（必填）",
+    "task-state-attr-markdown-symbol": "Markdown 符号",
+    "task-state-attr-is-completed": "视为已完成",
+    "task-state-attr-color": "颜色",
+    "task-state-attr-is-hidden": "在列表中隐藏",
+    "security-title": "安全",
+    "desktop-title": "桌面",
+    "deleted-notes-title": "已删除的笔记",
+    "color-scheme-switcher-title": "配色方案切换"
   },
   "notes": {
     "new-note": "新建笔记",
@@ -293,9 +236,11 @@
     "open_new_window": "打开新窗口"
   },
   "migration": {
-    "old_version": "由您当前版本的直接迁移不被支持。请先升级到最新的 v0.60.4 然后再到这个版本。",
+    "old_version": "不支持从当前版本直接迁移。请先升级至最新的 v0.60.4 版本，然后再升级到本版本。",
     "error_message": "迁移到版本 {{version}} 时发生错误: {{stack}}",
-    "wrong_db_version": "数据库的版本（{{version}}）新于应用期望的版本（{{targetVersion}}），这意味着它由一个更加新的且不兼容的 Trilium 所创建。升级到最新版的 Trilium 以解决此问题。"
+    "wrong_db_version": "数据库的版本（{{version}}）新于应用期望的版本（{{targetVersion}}），这意味着它是由一个更加新的且不兼容的 Trilium 版本创建。请升级到最新版本的Trilium以解决此问题。",
+    "invalid_db_version": "数据库版本号无效。这通常表示数据库中的 'dbVersion' 选项已损坏。请从备份中恢复。",
+    "automatic_migrations_disabled": "已通过环境变量 TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}} 禁用了自动数据库迁移功能"
   },
   "modals": {
     "error_title": "错误"
@@ -395,7 +340,11 @@
     "open-developer-tools": "打开开发者工具",
     "find-in-text": "在文本中查找",
     "toggle-left-pane": "切换左侧面板",
-    "toggle-full-screen": "切换全屏模式"
+    "toggle-full-screen": "切换全屏模式",
+    "save-named-revision": "保存已命名的修订",
+    "toggle-archived-notes": "显示/隐藏已归档笔记",
+    "show-deleted-notes": "显示已删除的笔记",
+    "peek-right-pane": "快速查看右侧面板"
   },
   "share_theme": {
     "site-theme": "网站主题",
@@ -404,7 +353,11 @@
     "last-updated": "最后更新于 {{- date}}",
     "subpages": "子页面：",
     "on-this-page": "本页内容",
-    "expand": "展开"
+    "expand": "展开",
+    "toggle-navigation": "切换导航",
+    "toggle-toc": "切换目录",
+    "logo-alt": "Logo",
+    "login": "登录"
   },
   "hidden_subtree_templates": {
     "text-snippet": "文本片段",
@@ -432,7 +385,10 @@
     "presentation_slide": "演示幻灯片",
     "presentation_slide_first": "第一张幻灯片",
     "presentation_slide_second": "第二张幻灯片",
-    "background": "背景"
+    "background": "背景",
+    "markdown-snippet": "Markdown 片段",
+    "code-snippet": "代码片段",
+    "dashboard": "仪表板"
   },
   "sql_init": {
     "db_not_initialized_desktop": "数据库尚未初始化，请依照屏幕提示操作。",
@@ -440,5 +396,68 @@
   },
   "desktop": {
     "instance_already_running": "已经有一个运行中的实例，正在将焦点切换到该实例。"
+  },
+  "search": {
+    "error": {
+      "in-context": "{{-context}} 中出错：{{-message}}",
+      "reserved-keyword": "\"{{- token}}\" 是一个保留关键字。要搜索字面值，请使用引号：\"{{- token}}\"",
+      "cannot-compare-with": "无法与“{{- token}}”进行比较。要搜索字面值，请使用引号：“{{- token}}”",
+      "misplaced-expression": "位置错误或不完整的表达式“{{- token}}”",
+      "fulltext-after-expression": "“{{- token}}”不是有效表达式。要搜索文本，请将其放在属性筛选器之前（例如，“{{- token}} #label”而不是“#label {{- token}}”）。",
+      "unrecognized-expression": "无法识别的表达式“{{- token}}”"
+    }
+  },
+  "password": {
+    "incorrect": "你输入的密码不正确。"
+  },
+  "script": {
+    "wrong-environment": "无法执行笔记“{{-noteTitle}}”（{{-noteId}}）。这是一个 {{-actualEnv}} 脚本，但尝试在 {{-expectedEnv}} 中执行。"
+  },
+  "security-dialog": {
+    "enable-title": "启用{{settingLabel}}",
+    "enable-message": "确定要启用{{settingLabel}}吗？",
+    "enable-detail": "{{warning}}\n\n只有在你明确需要使用此功能时才启用。如果是某个脚本或陌生笔记提示你这么做，请不要启用。\n\n此更改需要重启才能生效。",
+    "disable-title": "禁用{{settingLabel}}",
+    "disable-message": "{{settingLabel}}将被禁用。",
+    "disable-detail": "此更改需要重启才能生效。",
+    "cancel": "取消",
+    "enable": "启用",
+    "disable": "禁用",
+    "dont-ask-again": "重启前不再询问",
+    "backend-scripting": "后端脚本执行",
+    "backend-scripting-warning": "后端脚本拥有服务器的完全访问权限，包括文件系统和网络。",
+    "sql-console": "SQL 控制台",
+    "sql-console-warning": "SQL 控制台允许对数据库执行任意 SQL 查询。",
+    "lan-access": "网络访问",
+    "lan-access-warning": "你本地网络中的其他设备将能够连接到此 Trilium 实例。"
+  },
+  "onenote_import": {
+    "root-title": "OneNote 导入"
+  },
+  "notion_import": {
+    "root-title": "Notion 导入",
+    "subpage-folders-disabled": "此次 Notion 导出是在没有勾选“为子页面创建文件夹”选项的情况下生成的，因此无法重建页面层级。请在 Notion 中重新导出，并勾选“为子页面创建文件夹”，然后再导入。",
+    "markdown-export-unsupported": "这看起来像是 Notion 的“Markdown & CSV”导出文件，Trilium 无法导入。请使用“HTML”导出格式重新导出你的 Notion 工作区，然后再导入。"
+  },
+  "keep_import": {
+    "root-title": "Google Keep 导入"
+  },
+  "note_conversion": {
+    "revision_before_markdown": "转换为 Markdown 之前",
+    "revision_before_text": "转换为文本笔记之前"
+  },
+  "anytype_import": {
+    "protobuf-export-unsupported": "这看起来是 Anytype 的“Protobuf”导出格式，Trilium 无法导入。请使用“Any-Block”格式并选择“JSON”重新导出你的 Anytype 空间，然后再导入该文件。",
+    "markdown-export-unsupported": "这看起来是 Anytype 的“Markdown”导出格式，Trilium 无法导入。请使用“Any-Block”格式并选择“JSON”重新导出你的 Anytype 空间，然后再导入该文件。",
+    "root-title": "Anytype 导入"
+  },
+  "obsidian_import": {
+    "root-title": "Obsidian 导入"
+  },
+  "export": {
+    "zip_filter": "ZIP 压缩文件 (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "文件选择已过期或无效。请重新选择文件。"
   }
 }

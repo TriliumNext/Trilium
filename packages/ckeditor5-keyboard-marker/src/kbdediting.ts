@@ -1,4 +1,4 @@
-import { AttributeCommand, Plugin } from "ckeditor5";
+import { AttributeCommand, Plugin, TwoStepCaretMovement } from "ckeditor5";
 
 const KBD = 'kbd';
 
@@ -14,6 +14,10 @@ export default class KbdEditing extends Plugin {
 		return 'KbdEditing' as const;
 	}
 
+	public static get requires() {
+		return [ TwoStepCaretMovement ] as const;
+	}
+
 	/**
 	 * @inheritDoc
 	 */
@@ -24,12 +28,20 @@ export default class KbdEditing extends Plugin {
 		editor.model.schema.extend( '$text', { allowAttributes: KBD } );
 		editor.model.schema.setAttributeProperties( KBD, {
 			isFormatting: true,
-			copyOnEnter: true
+			copyOnEnter: false
 		} );
+
+		// Enable two-step caret movement so the user can arrow out of the kbd element.
+		editor.plugins.get( TwoStepCaretMovement ).registerAttribute( KBD );
 
 		editor.conversion.attributeToElement( {
 			model: KBD,
-			view: KBD
+			view: {
+				name: KBD,
+				attributes: {
+					spellcheck: 'false'
+				}
+			}
 		} );
 
 		editor.commands.add( KBD, new AttributeCommand( editor, KBD ) );

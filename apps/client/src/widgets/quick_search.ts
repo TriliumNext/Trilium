@@ -297,7 +297,7 @@ export default class QuickSearchWidget extends BasicWidget {
                 // Build the display HTML with content snippet below the title
                 let itemHtml = `<div class="quick-search-item">
                     <div class="quick-search-item-header">
-                        <span class="quick-search-item-icon ${result.icon}"></span>
+                        <span class="quick-search-item-icon ${utils.escapeHtml(result.icon)}"></span>
                         <span class="search-result-title">${result.highlightedNotePathTitle}</span>
                     </div>`;
 

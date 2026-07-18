@@ -6,7 +6,7 @@ If that doesn't work, then:
 *   in Trilium desktop app, go to top-left menu button -> Advanced -> Open Dev Tools
 *   In Firefox/Chrome right-click anywhere in the page and click Inspect:
 
-![](Frontend%20logs_error-logs-f.png)
+![](Frontend%20logs_error-logs-firefox-context-men.png)
 
 Once you have Dev Tools open, click on "Console" tab:
 

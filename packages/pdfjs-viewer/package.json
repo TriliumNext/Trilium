@@ -1,15 +1,19 @@
 {
   "name": "@triliumnext/pdfjs-viewer",
-  "version": "0.102.2",
+  "version": "0.104.0",
   "private": true,
   "scripts": {
     "build": "tsx scripts/build.ts",
-    "watch": "tsx scripts/build.ts --watch"
+    "watch": "tsx scripts/build.ts --watch",
+    "test": "vitest",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@triliumnext/commons": "workspace:*"
   },
   "devDependencies": {
-    "pdfjs-dist": "5.6.205"
+    "@types/yauzl": "3.4.0",
+    "pdfjs-dist": "6.0.227",
+    "yauzl": "3.4.0"
   }
 }

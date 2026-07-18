@@ -3,7 +3,7 @@ Press the <img src="4_Insert buttons_image.png" width="34" height="16"> button i
 
 ## Bookmarks
 
-See the dedicated <a class="reference-link" href="Bookmarks.md">Bookmarks</a> section.
+See the dedicated <a class="reference-link" href="Anchors.md">Anchors</a> section.
 
 ## Emoji
 

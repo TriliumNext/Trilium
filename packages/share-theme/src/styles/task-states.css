@@ -1,0 +1,56 @@
+/*
+ * Todo checkboxes.
+ *
+ * Custom task states carry `data-trilium-task-state` on their `<li>`; the colour,
+ * hue and icon glyph of each state are injected per state into the icon pack
+ * stylesheet. The unchecked and done states carry no attribute and keep the
+ * default checkbox below.
+ *
+ * The doubled class is what it takes to override CKEditor's own checkbox rules:
+ * they are written as `:is(<content>, <editor>)`, so they take the specificity of
+ * the more specific editor arm.
+ */
+
+.ck-content .todo-list .todo-list__label > input:before {
+    background-color: var(--background-primary);
+    border-color: var(--text-primary) !important;
+}
+
+html.theme-light [data-trilium-task-state] {
+    --task-state-adjusted-color: hsl(var(--task-state-hue), 50%, 50%);
+}
+
+html.theme-dark [data-trilium-task-state] {
+    --task-state-adjusted-color: hsl(var(--task-state-hue), 40%, 50%);
+}
+
+/* A state that defines no colour is injected as `unset`, which on a custom property
+   means inherit — so without this a nested task would pick up its parent's colour. */
+.ck-content .todo-list .todo-list {
+    --task-state-hue: initial;
+    --task-state-color: initial;
+    --task-state-adjusted-color: initial;
+    --task-state-glyph: initial;
+    --task-state-glyph-font-family: initial;
+}
+
+/* Falls back to the raw colour when the state has no hue to adjust, and to the text
+   colour when it defines no colour at all — including states whose definition is gone. */
+.ck-content .todo-list li[data-trilium-task-state] {
+    --_task-state-color: var(--task-state-adjusted-color, var(--task-state-color, var(--text-primary)));
+}
+
+/* Direct children only, so a nested task keeps its own state instead of the parent's. */
+.ck-content.ck-content .todo-list li[data-trilium-task-state] > .todo-list__label > input[type="checkbox"]:after {
+    all: unset;
+
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    content: var(--task-state-glyph);
+    font-family: var(--task-state-glyph-font-family);
+    font-size: calc(var(--ck-content-todo-list-checkmark-size) * 0.8);
+    color: var(--_task-state-color);
+}

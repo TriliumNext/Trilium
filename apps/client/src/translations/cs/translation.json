@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "O Trilium Notes",
-    "homepage": "Domovská stránka:",
-    "app_version": "Verze aplikace:",
-    "db_version": "Verze DB:",
-    "sync_version": "Verze synchronizace:",
-    "build_date": "Datum sestavení:",
-    "build_revision": "Revize sestavení:",
     "data_directory": "Datový adresář:"
   },
   "toast": {
@@ -77,35 +70,23 @@
   },
   "delete_notes": {
     "cancel": "Zrušit",
-    "ok": "OK",
     "close": "Zavřít",
-    "delete_notes_preview": "Odstranit náhled poznámek",
     "delete_all_clones_description": "Odstraňte také všechny klony (lze vrátit zpět v nedávných změnách)",
     "erase_notes_description": "Normální (měkké) smazání pouze označí poznámky jako smazané a lze je během určité doby obnovit (v dialogovém okně posledních změn). Zaškrtnutím této možnosti se poznámky okamžitě vymažou a nebude možné je obnovit.",
     "erase_notes_warning": "Trvale smažte poznámky (nelze vrátit zpět), včetně všech klonů. Tím se vynutí opětovné načtení aplikace.",
     "notes_to_be_deleted": "Následující poznámky budou smazány ({{notesCount}})",
     "no_note_to_delete": "Žádná poznámka nebude smazána (pouze klony).",
-    "broken_relations_to_be_deleted": "Následující vazby budou přerušeny a smazány ({{relationCount}})",
-    "deleted_relation_text": "Poznámka {{- note}} (bude smazána) je odkazována vazbou {{- relation}} pocházející z {{- source}}."
+    "broken_relations_to_be_deleted": "Následující vazby budou přerušeny a smazány ({{relationCount}})"
   },
   "export": {
     "close": "Zavřít",
     "export_note_title": "Exportovat poznámku",
     "export_type_subtree": "Tato poznámka a všechny její odvozené poznámky",
-    "format_html": "HTML – doporučeno, protože zachovává veškeré formátování",
-    "format_html_zip": "HTML v archivu ZIP – toto se doporučuje, protože se tak zachová veškeré formátování.",
-    "format_markdown": "Markdown – zachovává většinu formátování.",
-    "format_opml": "OPML – formát pro výměnu osnov pouze pro text. Formátování, obrázky a soubory nejsou zahrnuty.",
-    "opml_version_1": "OPML v1.0 – pouze prostý text",
-    "opml_version_2": "OPML v2.0 – umožňuje také HTML",
     "export_type_single": "Pouze tato poznámka bez jejích potomků",
     "export": "Exportovat",
     "choose_export_type": "Nejprve vyberte typ exportu",
-    "export_status": "Stav exportu",
-    "export_in_progress": "Export probíhá: {{progressCount}}",
     "export_finished_successfully": "Export byl úspěšně dokončen.",
-    "format_pdf": "PDF – pro tisk nebo sdílení.",
-    "share-format": "HTML pro publikování na webu – používá stejný motiv jako sdílené poznámky, ale lze jej publikovat jako statický web."
+    "format_pdf": "PDF – pro tisk nebo sdílení."
   },
   "clone_to": {
     "clone_notes_to": "Klonovat poznámky do...",
@@ -183,7 +164,6 @@
   "import": {
     "importIntoNote": "Import do poznámky",
     "chooseImportFile": "Vyberte soubor k importu",
-    "importDescription": "Obsah vybraných souborů bude importován jako dceřiné poznámky do",
     "importZipRecommendation": "Při importu ZIP souboru bude hierarchie poznámek odrážet strukturu podadresářů v archivu.",
     "options": "Nastavení",
     "safeImportTooltip": "Exportované soubory Trilium <code>.zip</code> mohou obsahovat spustitelné skripty, které mohou mít škodlivé chování. Bezpečný import deaktivuje automatické spouštění všech importovaných skriptů. Zrušte zaškrtnutí \"Bezpečný import\" pouze v případě, že importovaný archiv má obsahovat spustitelné skripty a plně důvěřujete obsahu importovaného souboru.",
@@ -203,7 +183,6 @@
       "placeholder": "Zadejte HTML tagy, jeden na řádek",
       "reset_button": "Obnovit do výchozího seznamu"
     },
-    "import-status": "Stav importu",
     "in-progress": "Import probíhá: {{progress}}",
     "successful": "Import byl úspěšně dokončen."
   },
@@ -275,33 +254,6 @@
     "no_changes_message": "Zatím žádné změny...",
     "undelete_link": "obnovit",
     "confirm_undelete": "Chcete obnovit tuto poznámku a její podpoznámky?"
-  },
-  "revisions": {
-    "note_revisions": "Revize poznámek",
-    "delete_all_revisions": "Smazat všechny revize této poznámky",
-    "delete_all_button": "Smazat všechny revize",
-    "help_title": "Nápověda k revizím poznámek",
-    "confirm_delete_all": "Chcete smazat všechny revize této poznámky?",
-    "no_revisions": "Ještě nejsou žádné revize pro tuto poznámku...",
-    "restore_button": "Obnovit",
-    "diff_on": "Zobrazit rozdíly",
-    "diff_off": "Zobrazit obsah",
-    "diff_on_hint": "Klikněte pro zobrazení rozdílů zdrojového kódu poznámky",
-    "diff_off_hint": "Klikněte pro zobrazení obsahu poznámky",
-    "diff_not_available": "Rozdíly nejsou dostupné.",
-    "confirm_restore": "Chcete obnovit tuto revizi? Tím se přepíše aktuální název a obsah poznámky s touto revizí.",
-    "delete_button": "Smazat",
-    "confirm_delete": "Chcete smazat tuto revizi?",
-    "revisions_deleted": "Revize poznámky byly smazány.",
-    "revision_restored": "Revize poznámky byla obnovena.",
-    "revision_deleted": "Revize poznámky byla smazána.",
-    "snapshot_interval": "Interval snímků revizí poznámky: {{seconds}}s.",
-    "maximum_revisions": "Limit snímků revizí poznámky: {{number}}.",
-    "settings": "Nastavení revizí poznámky",
-    "download_button": "Stáhnout",
-    "mime": "MIME: ",
-    "file_size": "Velikost souboru:",
-    "preview_not_available": "Náhled není dostupný pro tento typ poznámky."
   },
   "sort_child_notes": {
     "sort_children_by": "Seřadit dceřiné podle...",
@@ -853,7 +805,9 @@
     "note_size": "Velikost Poznámky",
     "note_size_info": "Velikost Poznámky poskytuje hrubý odhad požadavků na úložiště pro tuto poznámku. Bere v úvahu obsah poznámky a obsah jejích revizí.",
     "calculate": "vypočítat",
-    "subtree_size": "(velikost podstromu: {{size}} v {{count}} poznámkách)",
+    "subtree_size_one": "(velikost podstromu: {{size}} v {{count}} poznámkách)",
+    "subtree_size_few": "",
+    "subtree_size_other": "",
     "title": "Informace o Poznámce",
     "show_similar_notes": "Zobrazit podobné Poznámky"
   },
@@ -1044,12 +998,9 @@
     "play": "Přehrát (Space)",
     "pause": "Pozastavit (Space)",
     "back-10s": "Zpět o 10s (Šipka doleva)",
-    "forward-30s": "Dopředu o 30s",
     "mute": "Ztlumit (M)",
     "unmute": "Zrušit ztlumení (M)",
     "playback-speed": "Rychlost přehrávání",
-    "loop": "Cyklus",
-    "disable-loop": "Zakázat cyklus",
     "rotate": "Otočit",
     "picture-in-picture": "Obraz v obraze",
     "exit-picture-in-picture": "Ukončit obraz v obraze",
@@ -1067,9 +1018,7 @@
     "protecting-finished-successfully": "Ochrana proběhla úspěšně.",
     "unprotecting-finished-successfully": "Ochrana byla úspěšně zrušena.",
     "protecting-in-progress": "Probíhá ochrana: {{count}}",
-    "unprotecting-in-progress-count": "Probíhá odchrana: {{count}}",
-    "protecting-title": "Stav ochrany",
-    "unprotecting-title": "Stav odchrany"
+    "unprotecting-in-progress-count": "Probíhá odchrana: {{count}}"
   },
   "relation_map": {
     "remove_note": "Odstranit poznámku",
@@ -1133,7 +1082,6 @@
   },
   "database_integrity_check": {
     "title": "Kontrola integrity databáze",
-    "description": "Toto zkontroluje, zda databáze není poškozena na úrovni SQLite. Může to chvíli trvat v závislosti na velikosti databáze.",
     "check_button": "Zkontrolovat integritu databáze",
     "checking_integrity": "Probíhá kontrola integrity databáze...",
     "integrity_check_succeeded": "Kontrola integrity proběhla úspěšně - nebyly nalezeny žádné problémy.",
@@ -1173,10 +1121,7 @@
     "note_tree_font": "Font stromu poznámek",
     "note_detail_font": "Font detailu poznámky",
     "monospace_font": "Monospace (kód) Font",
-    "note_tree_and_detail_font_sizing": "Upozorňujeme, že velikost fontu stromu a detailu je relativní k hlavnímu nastavení velikosti fontu.",
     "not_all_fonts_available": "Ne všechny uvedené fonty nemusí být dostupné ve vašem systému.",
-    "apply_font_changes": "Pro použití změn fontu klikněte na",
-    "reload_frontend": "obnovení frontendu",
     "generic-fonts": "Obecné fonty",
     "sans-serif-system-fonts": "Systémové sans-serif fonty",
     "serif-system-fonts": "Systémové serif fonty",
@@ -1200,8 +1145,6 @@
     "disabled": "vypnuto"
   },
   "ribbon": {
-    "widgets": "Widgety pásu karet",
-    "promoted_attributes_message": "Záložka „Propagované Atributy“ se automaticky otevře, pokud jsou v poznámce přítomny povýšené atributy",
     "edited_notes_message": "Záložka Upravené poznámky na pásu karet se automaticky otevře u denních poznámek"
   },
   "theme": {
@@ -1282,7 +1225,6 @@
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Časový limit pro vymazání příloh",
-    "attachment_auto_deletion_description": "Přílohy jsou automaticky smazány (a vymazány), pokud nejsou po definovaném časovém limitu odkazovány jejich poznámkách.",
     "erase_attachments_after": "Vymazat nepoužité přílohy po:",
     "manual_erasing_description": "Můžete také spustit vymazání ručně (bez ohledu na výše definovaný časový limit):",
     "erase_unused_attachments_now": "Vymazat nepoužité přílohy nyní",
@@ -1294,7 +1236,6 @@
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "Časový limit pro vymazání Poznámky",
-    "note_erasure_description": "Odstraněné poznámky (a atributy, revize...) jsou zpočátku pouze označeny jako odstraněné a lze je obnovit v dialogovém okně „Poslední poznámky“. Po uplynutí určité doby jsou odstraněné poznámky „vymazány“, což znamená, že jejich obsah již nelze obnovit. Toto nastavení vám umožňuje určit dobu, která uplyne mezi odstraněním a vymazáním poznámky.",
     "erase_notes_after": "Vymazat Poznámky po:",
     "manual_erasing_description": "Můžete také spustit vymazání ručně (bez ohledu na výše uvedený časový limit):",
     "erase_deleted_notes_now": "Vymazat smazané Poznámky nyní",
@@ -1384,7 +1325,6 @@
     "first-week-contains-first-thursday": "První týden obsahuje první čtvrtek v roce",
     "first-week-has-minimum-days": "První týden má minimální počet dní",
     "min-days-in-first-week": "Minimální počet dní v prvním týdnu",
-    "first-week-info": "První týden obsahuje první čtvrtek v roce je založen na <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a> standardu.",
     "first-week-warning": "Změna možností prvního týdne může způsobit duplikaci se stávajícími Týdenními Poznámkami a stávající Týdenní Poznámky nebudou odpovídajícím způsobem aktualizovány.",
     "formatting-locale": "Formát data & čísel",
     "formatting-locale-auto": "Na základě jazyka aplikace"
@@ -1405,7 +1345,6 @@
     "no_backup_yet": "Zatím neexistuje žádná záloha"
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI je REST API používané pro programatický přístup k instanci Trilium bez uživatelského rozhraní.",
     "create_token": "Vytvořit nový ETAPI token",
     "existing_tokens": "Existující tokeny",
@@ -1451,33 +1390,12 @@
     "password_changed_success": "Heslo bylo změněno. Trilium se po stisknutí OK znovu načte."
   },
   "multi_factor_authentication": {
-    "title": "Vícefaktorová autentizace",
-    "description": "Vícefaktorová autentizace (MFA) přidává další vrstvu zabezpečení k vašemu účtu. Místo pouhého zadání hesla pro přihlášení MFA vyžaduje, abyste poskytli jeden nebo více dalších důkazů pro ověření vaší identity. Tímto způsobem, i když se někdo dostane k vašemu heslu, nemůže se k vašemu účtu dostat bez druhého kusu informace. Je to jako přidání dalšího zámku ke dveřím, což ztěžuje vniknutí kohokoli jiného.<br><br>Postupujte podle pokynů níže a povolte MFA. Pokud to nenakonfigurujete správně, přihlášení se vrátí pouze k heslu.",
-    "mfa_enabled": "Povolit vícefaktorovou autentizaci",
-    "mfa_method": "Metoda MFA",
-    "electron_disabled": "Multifaktorová autentizace není v desktop verzi aktuálně podporována.",
-    "totp_title": "Časově založené jednorázové heslo (TOTP)",
-    "totp_description": "TOTP (Časově založené jednorázové heslo) je bezpečnostní funkce, která generuje jedinečný, dočasný kód, který se mění každých 30 sekund. Tento kód spolu s vaším heslem použijete k přihlášení do svého účtu, což ztěžuje přístup k němu pro kohokoli jiného.",
-    "totp_secret_title": "Generovat TOTP tajný klíč",
-    "totp_secret_generate": "Generovat TOTP tajný klíč",
-    "totp_secret_regenerate": "Regenerovat TOTP tajný klíč",
-    "no_totp_secret_warning": "Pro povolení TOTP je nejprve nutné vygenerovat TOTP tajný klíč.",
-    "totp_secret_description_warning": "Po vygenerování nového TOTP tajného klíče budete muset znovu přihlásit pomocí nového TOTP tajného klíče.",
-    "totp_secret_generated": "TOTP tajný klíč vygenerován",
-    "totp_secret_warning": "Uložte vygenerovaný tajný klíč na bezpečném místě. Nebude znovu zobrazen.",
-    "totp_secret_regenerate_confirm": "Jste si jisti, že chcete regenerovat TOTP tajný klíč? Tím se zneplatní předchozí TOTP tajný klíč a všechny existující záchranné kódy.",
-    "recovery_keys_title": "Záchranné klíče pro jednotné přihlašování",
-    "recovery_keys_description": "Záchranné klíče pro jednotné přihlašování se používají k přihlášení v případě, že nemáte přístup ke svým autentifikačním kódům.",
     "recovery_keys_description_warning": "Záchranné klíče nebudou po opuštění stránky znovu zobrazeny, uchovejte je na bezpečném místě. Po použití záchranného klíče jej nelze znovu použít.",
     "recovery_keys_error": "Chyba při generování záchranných kódů",
     "recovery_keys_no_key_set": "Nebyly nastaveny žádné záchranné kódy",
-    "recovery_keys_generate": "Generovat záchranné kódy",
     "recovery_keys_regenerate": "Regenerovat záchranné kódy",
-    "recovery_keys_used": "Použito: {{date}}",
-    "recovery_keys_unused": "Záchranný kód {{index}} nebyl použit",
     "oauth_title": "OAuth/OpenID",
     "oauth_description": "OpenID je standardizovaný způsob, jak se přihlásit na webové stránky pomocí účtu z jiné služby, jako je Google, pro ověření vaší identity. Výchozí vydavatel je Google, ale můžete jej změnit na jakéhokoli jiného ⟨OpenID provider⟩. Podrobnosti naleznete <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">zde</a>. Postupujte podle těchto <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instrukcí</a> pro nastavení služby OpenID přes Google.",
-    "oauth_description_warning": "Pro povolení OAuth/OpenID musíte nastavit základní ⟨URL⟩ OAuth/OpenID, ID klienta a tajný klíč klienta v souboru config.ini a restartovat aplikaci. Pokud chcete nastavit z proměnných prostředí, nastavte TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID a TRILIUM_OAUTH_CLIENT_SECRET.",
     "oauth_missing_vars": "Chybějící nastavení: {{-variables}}",
     "oauth_user_account": "Uživatelský účet: ",
     "oauth_user_email": "Uživatelský e-mail: ",
@@ -1485,13 +1403,7 @@
   },
   "shortcuts": {
     "keyboard_shortcuts": "Klávesové zkratky",
-    "multiple_shortcuts": "Více zkratek pro stejnou akci lze oddělit čárkou.",
-    "electron_documentation": "Dostupné modifikátory a kódy kláves naleznete v <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">dokumentaci Electronu</a>.",
     "type_text_to_filter": "Napište text pro filtrování zkratek...",
-    "action_name": "Název akce",
-    "shortcuts": "Zkratky",
-    "default_shortcuts": "Výchozí zkratky",
-    "description": "Popis",
     "reload_app": "Načtěte aplikaci pro použití změn",
     "set_all_to_default": "Nastavte všechny zkratky na výchozí",
     "confirm_reset": "Opravdu chcete resetovat všechny klávesové zkratky na výchozí?",
@@ -1501,18 +1413,13 @@
     "title": "Kontrola pravopisu",
     "description": "Tato nastavení platí pouze pro ⟨desktop⟩ verze, prohlížeče budou používat vlastní nativní kontrolu pravopisu.",
     "enable": "Povolit kontrolu pravopisu",
-    "language_code_label": "Kód jazyka(ů)",
-    "restart-required": "Změny v nastavení kontroly pravopisu se projeví po restartu aplikace."
+    "language_code_label": "Kód jazyka(ů)"
   },
   "sync_2": {
     "config_title": "Konfigurace Synchronizace",
     "server_address": "Adresa instance serveru",
     "timeout": "Časový limit synchronizace",
-    "timeout_unit": "milisekund",
     "proxy_label": "Proxy server pro synchronizaci (volitelné)",
-    "note": "Poznámka",
-    "note_description": "Pokud ponecháte nastavení proxy prázdné, bude použit systémový proxy (platí pouze pro desktop/electron build).",
-    "special_value_description": "Další speciální hodnota je <code>noproxy</code>, která vynutí ignorování i systémového proxy a respektuje <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
     "save": "Uložit",
     "help": "Nápověda",
     "test_title": "Test Synchronizace",
@@ -1582,7 +1489,9 @@
     "export": "Export",
     "import-into-note": "Importovat do Poznámky",
     "apply-bulk-actions": "Použít hromadné akce",
-    "converted-to-attachments": "{{count}} Poznámek bylo převedeno na Přílohy.",
+    "converted-to-attachments_one": "{{count}} Poznámek bylo převedeno na Přílohy.",
+    "converted-to-attachments_few": "",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "Jste si jisti, že chcete převést vybrané Poznámky na Přílohy jejich nadřazených Poznámek? Tato operace se vztahuje pouze na Poznámky typu Obrázek, ostatní Poznámky budou přeskočeny.",
     "open-in-popup": "Rychlá úprava"
   },
@@ -1768,9 +1677,6 @@
     "search_not_executed": "Hledání ještě nebylo provedeno.",
     "search_now": "Hledat nyní"
   },
-  "spacer": {
-    "configure_launchbar": "Konfigurovat Launchbar"
-  },
   "sql_result": {
     "not_executed": "Dotaz ještě nebyl proveden.",
     "no_rows": "Pro tento dotaz nebyly vráceny žádné řádky",
@@ -1826,7 +1732,6 @@
   },
   "branches": {
     "cannot-move-notes-here": "Poznámky sem nelze přesunout.",
-    "delete-status": "Stav mazání",
     "delete-notes-in-progress": "Probíhá mazání poznámek: {{count}}",
     "delete-finished-successfully": "Mazání proběhlo úspěšně.",
     "undeleting-notes-in-progress": "Probíhá obnovování poznámek: {{count}}",
@@ -2149,7 +2054,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} poznámek",
+    "total_notes_one": "{{count}} poznámek",
+    "total_notes_few": "",
+    "total_notes_other": "",
     "prev_page": "Předchozí stránka",
     "next_page": "Další stránka"
   },
@@ -2338,8 +2245,6 @@
     "summary": "Shrnutí"
   },
   "llm": {
-    "settings_title": "AI / LLM",
-    "settings_description": "Konfigurovat integrace AI a Large Language Model.",
     "feature_not_enabled": "Povolte experimentální funkci LLM v Nastavení → Pokročilé → Experimentální funkce pro použití integrací AI.",
     "add_provider": "Přidat poskytovatele",
     "add_provider_title": "Přidat poskytovatele AI",

@@ -1,10 +1,12 @@
 import "./ToolCallCard.css";
 
+import { useState } from "preact/hooks";
 import { Trans } from "react-i18next";
 
 import { t } from "../../../services/i18n.js";
 import Button from "../../react/Button.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
+import { EditNoteContentDiff, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 import { ExpandableCard, ExpandableSection } from "./ExpandableCard.js";
 import type { ToolCall } from "./llm_chat_types.js";
 
@@ -52,19 +54,29 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
     return { noteId: null, parentNoteId: null, detailText: detailText || null };
 }
 
-function toolCallIcon(toolCall: ToolCall): string {
-    if (toolCall.isError) return "bx bx-error-circle";
-    if (toolCall.requiresApproval && !toolCall.result) return "bx bx-shield-quarter";
-    if (!toolCall.result) return "bx bx-loader-alt bx-spin";
-
-    const name = toolCall.toolName;
-    if (name.includes("search")) return "bx bx-search";
-    if (name.includes("note")) return "bx bx-note";
-    if (name.includes("attribute")) return "bx bx-purchase-tag";
-    if (name.includes("attachment")) return "bx bx-paperclip";
-    if (name.includes("skill")) return "bx bx-book-open";
-    if (name.includes("web")) return "bx bx-globe";
+function toolNameIcon(toolName: string): string {
+    if (toolName.includes("search")) return "bx bx-search";
+    // Specific note-content tools, checked before the generic "note" match below.
+    if (toolName === "set_note_content" || toolName === "update_note_content") return "bx bx-sync";
+    if (toolName === "edit_note_content") return "bx bx-pencil";
+    if (toolName.includes("note")) return "bx bx-note";
+    if (toolName.includes("attribute")) return "bx bx-purchase-tag";
+    if (toolName.includes("attachment")) return "bx bx-paperclip";
+    if (toolName.includes("skill")) return "bx bx-book-open";
+    if (toolName.includes("web")) return "bx bx-globe";
     return "bx bx-wrench";
+}
+
+/** Whether the tool call is waiting for the user's Approve/Reject decision. */
+function isPendingApproval(toolCall: ToolCall): boolean {
+    return !!toolCall.requiresApproval && !toolCall.result && !toolCall.rejected;
+}
+
+function toolCallIcon(toolCall: ToolCall): string {
+    if (toolCall.isError || toolCall.rejected) return "bx bx-error-circle";
+    if (isPendingApproval(toolCall)) return "bx bx-shield-quarter";
+    if (!toolCall.result) return "bx bx-loader-alt bx-spin";
+    return toolNameIcon(toolCall.toolName);
 }
 
 /** Try to parse a JSON string into a structured value. */
@@ -179,27 +191,59 @@ function ToolCallLabel({ toolCall }: { toolCall: ToolCall }) {
     );
 }
 
-/** A single tool call section within a ToolCallCard. */
-function ToolCallSection({ toolCall, onApprove, onReject }: {
-    toolCall: ToolCall;
+/** Approve/Reject props threaded from the chat hook down to each tool call section. */
+export interface ToolApprovalHandlers {
     onApprove?: (toolCallId: string) => Promise<void>;
     onReject?: (toolCallId: string) => void;
-}) {
+}
+
+/** A single tool call section within a ToolCallCard. */
+function ToolCallSection({ toolCall, onApprove, onReject }: { toolCall: ToolCall } & ToolApprovalHandlers) {
     const hasError = toolCall.isError;
-    const isPendingApproval = toolCall.requiresApproval && !toolCall.result && !toolCall.rejected;
+    const isStreamingInput = toolCall.inputStreaming !== undefined;
+    const pendingApproval = isPendingApproval(toolCall);
+    // Disable the buttons while the approval request is in flight (double-click guard).
+    const [isApproving, setIsApproving] = useState(false);
+
+    // The `edit_note_content` tool gets a fancy unified diff instead of a raw input table.
+    // Suppress the diff view while input is still streaming — the partial JSON isn't parseable yet.
+    const noteContentEdits = !isStreamingInput && toolCall.toolName === "edit_note_content"
+        ? parseNoteContentEdits(toolCall.input?.edits)
+        : null;
+
+    const handleApprove = async () => {
+        if (isApproving || !onApprove) return;
+        setIsApproving(true);
+        try {
+            await onApprove(toolCall.id);
+        } finally {
+            setIsApproving(false);
+        }
+    };
 
     return (
         <ExpandableSection
             icon={toolCallIcon(toolCall)}
             label={<ToolCallLabel toolCall={toolCall} />}
-            className={hasError ? "llm-chat-tool-call-error" : isPendingApproval ? "llm-chat-tool-call-pending" : ""}
-            defaultExpanded={isPendingApproval}
+            className={hasError || toolCall.rejected ? "llm-chat-tool-call-error" : pendingApproval ? "llm-chat-tool-call-pending" : ""}
+            open={pendingApproval || (noteContentEdits ? isSmallEdit(noteContentEdits) : isStreamingInput || undefined)}
         >
-            <div className="llm-chat-tool-call-input">
-                <strong>{t("llm_chat.input")}</strong>
-                <KeyValueTable data={toolCall.input} />
+            <div className={`llm-chat-tool-call-input ${isStreamingInput ? "llm-chat-tool-call-input-streaming" : ""}`}>
+                {isStreamingInput ? (
+                    <>
+                        <strong>{t("llm_chat.input_streaming")}</strong>
+                        <pre>{toolCall.inputStreaming}</pre>
+                    </>
+                ) : noteContentEdits ? (
+                    <EditNoteContentDiff edits={noteContentEdits} />
+                ) : (
+                    <>
+                        <strong>{t("llm_chat.input")}</strong>
+                        <KeyValueTable data={toolCall.input} />
+                    </>
+                )}
             </div>
-            {isPendingApproval && onApprove && onReject && (
+            {pendingApproval && onApprove && onReject && (
                 <div className="llm-chat-tool-call-approval">
                     <span className="llm-chat-tool-call-approval-label">
                         <span className="bx bx-shield-quarter" /> {t("llm_chat.pending_approval")}
@@ -210,18 +254,25 @@ function ToolCallSection({ toolCall, onApprove, onReject }: {
                             icon="bx-check"
                             kind="primary"
                             size="small"
-                            onClick={() => onApprove(toolCall.id)}
+                            disabled={isApproving}
+                            onClick={handleApprove}
                         />
                         <Button
                             text={t("llm_chat.reject")}
                             icon="bx-x"
                             size="small"
+                            disabled={isApproving}
                             onClick={() => onReject(toolCall.id)}
                         />
                     </div>
                 </div>
             )}
-            {toolCall.result && (
+            {toolCall.rejected && (
+                <div className="llm-chat-tool-call-result llm-chat-tool-call-result-error">
+                    <strong>{t("llm_chat.rejected_by_user")}</strong>
+                </div>
+            )}
+            {toolCall.result && (!noteContentEdits || hasError) && (
                 <div className={`llm-chat-tool-call-result ${hasError ? "llm-chat-tool-call-result-error" : ""}`}>
                     <strong>{hasError ? t("llm_chat.error") : t("llm_chat.result")}</strong>
                     <KeyValueTable data={toolCall.result} />
@@ -231,16 +282,58 @@ function ToolCallSection({ toolCall, onApprove, onReject }: {
     );
 }
 
-/** A card that groups one or more sequential tool calls together. */
-export default function ToolCallCard({ toolCalls, onApprove, onReject }: {
-    toolCalls: ToolCall[];
-    onApprove?: (toolCallId: string) => Promise<void>;
-    onReject?: (toolCallId: string) => void;
-}) {
+/** Fold a section showing multiple invocations of the same tool under a single header. */
+function ToolCallGroupSection({ toolCalls, onApprove, onReject }: { toolCalls: ToolCall[] } & ToolApprovalHandlers) {
+    const first = toolCalls[0];
+    const anyPending = toolCalls.some(tc => !tc.result && !tc.rejected && !isPendingApproval(tc));
+    const anyError = toolCalls.some(tc => tc.isError || tc.rejected);
+
+    const icon = toolCalls.some(isPendingApproval)
+        ? "bx bx-shield-quarter"
+        : anyPending ? "bx bx-loader-alt bx-spin" : toolNameIcon(first.toolName);
+    const friendlyName = t(`llm.tools.${first.toolName}`, { defaultValue: first.toolName });
+    const label = (
+        <>
+            {friendlyName}
+            <span className="llm-chat-tool-call-count">×{toolCalls.length}</span>
+            {anyError && <span className="llm-chat-tool-call-error-badge">{t("llm_chat.tool_error")}</span>}
+        </>
+    );
+
     return (
-        <ExpandableCard>
+        <ExpandableSection icon={icon} label={label} className="llm-chat-tool-call-group" open={toolCalls.some(isPendingApproval) || undefined}>
             {toolCalls.map((tc, idx) => (
                 <ToolCallSection key={tc.id ?? idx} toolCall={tc} onApprove={onApprove} onReject={onReject} />
+            ))}
+        </ExpandableSection>
+    );
+}
+
+/** Group consecutive tool calls that share the same tool name. Singletons pass through unchanged. */
+function groupByToolName(toolCalls: ToolCall[]): Array<ToolCall | ToolCall[]> {
+    const groups: Array<ToolCall | ToolCall[]> = [];
+    for (const tc of toolCalls) {
+        const last = groups[groups.length - 1];
+        if (Array.isArray(last) && last[0].toolName === tc.toolName) {
+            last.push(tc);
+        } else if (last && !Array.isArray(last) && last.toolName === tc.toolName) {
+            groups[groups.length - 1] = [last, tc];
+        } else {
+            groups.push(tc);
+        }
+    }
+    return groups;
+}
+
+/** A card that groups one or more sequential tool calls together. */
+export default function ToolCallCard({ toolCalls, onApprove, onReject }: { toolCalls: ToolCall[] } & ToolApprovalHandlers) {
+    const groups = groupByToolName(toolCalls);
+    return (
+        <ExpandableCard className="llm-chat-tool-call-card">
+            {groups.map((group, idx) => (
+                Array.isArray(group)
+                    ? <ToolCallGroupSection key={idx} toolCalls={group} onApprove={onApprove} onReject={onReject} />
+                    : <ToolCallSection key={group.id ?? idx} toolCall={group} onApprove={onApprove} onReject={onReject} />
             ))}
         </ExpandableCard>
     );

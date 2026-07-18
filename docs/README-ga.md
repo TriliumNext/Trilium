@@ -1,14 +1,3 @@
-<div align="center">
-	<sup>Special thanks to:</sup><br />
-	<a href="https://go.warp.dev/Trilium" target="_blank">		
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
-		Warp, built for coding with multiple AI agents<br />
-	</a>
-  <sup>Available for macOS, Linux and Windows</sup>
-</div>
-
-<hr />
-
 # Trilium Notes
 
 ![Urraitheoirí GitHub](https://img.shields.io/github/sponsors/eliandoran)
@@ -16,17 +5,20 @@
 ![Tarraingtí Docker](https://img.shields.io/docker/pulls/triliumnext/trilium)
 ![Íoslódálacha GitHub (gach sócmhainn, gach
 eisiúint)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
 [![Stádas
 aistriúcháin](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
-script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
-| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
-| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
-[Spanish](./README-es.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md)
+| [Chinese (Traditional Han script)](./README-ZH_TW.md) |
+[Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) |
+[English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) |
+[Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md)
+| [Italian](./README-it.md) | [Japanese](./README-ja.md) |
+[Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
+| [Russian](./README-ru.md) | [Spanish](./README-es.md) |
+[Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
 <!-- translate:on -->
 
 Is feidhmchlár saor in aisce agus foinse oscailte, tras-ardán, ordlathach é
@@ -197,7 +189,7 @@ Más liostaithe sa tábla thíos atá do dháileadh, bain úsáid as pacáiste d
 dháilte.
 
 [![Stádas
-pacáistithe](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+pacáistithe](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
 Féadfaidh tú an scaoileadh dénártha do d'ardán a íoslódáil ón [leathanach
 scaoileadh is déanaí](https://github.com/TriliumNext/Trilium/releases/latest)
@@ -224,6 +216,8 @@ suiteála freastalaí (féach thíos).
 Féach ar an eagrán https://github.com/TriliumNext/Trilium/issues/4962 le
 haghaidh tuilleadh eolais faoi thacaíocht d’aipeanna soghluaiste.
 
+#### TriliumDroid
+
 Más fearr leat aip dhúchasach Android, is féidir leat
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)
 a úsáid. Tuairiscigh fabhtanna agus gnéithe atá ar iarraidh ag [a
@@ -231,6 +225,26 @@ stór](https://github.com/FliegendeWurst/TriliumDroid). Tabhair faoi deara: Is
 fearr nuashonruithe uathoibríocha a dhíchumasú ar do shuiteáil freastalaí (féach
 thíos) agus TriliumDroid in úsáid agat ós rud é go gcaithfidh an leagan
 sioncrónaithe a bheith mar an gcéanna idir Trilium agus TriliumDroid.
+
+#### Trilium Póca
+
+Más mian leat aip dhúchasach Android lánghnéitheach, féach ar [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). Ritheann sé sampla iomlán de
+Trilium ar do ghuthán, tacaíonn sé le húsáid iomlán as líne, agus ligeann sé
+duit sioncrónú le do fhreastalaí.
+
+#### Trinote
+
+Más mian leat aip dhúchasach iOS, is féidir leat
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249) a úsáid, cliant
+foinse oscailte chun do fhreastalaí Trilium / TriliumNext féinóstáilte. Ligeann
+sé duit do chrann nótaí a bhrabhsáil agus a eagrú, nótaí a chuardach ar an
+bhfreastalaí, gach cineál nótaí (téacs, cód, léarscáil intinne, scarbhileog,
+léarscáil gheo, chanbhás, srl.) a léamh agus a chur in eagar, agus coinníonn sé
+nótaí ar fáil agus in-eagarthóireacht as líne. Seo an
+[stór](https://github.com/StephenArg/Trinote) más spéis leat cur leis agus seo
+an freastalaí [discord](https://discord.com/invite/ghjJG56EUS) má tá aon
+aiseolas nó moltaí agat ar mhaith leat a phlé.
 
 ### Freastalaí
 
@@ -273,6 +287,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Nó, má tá Nix suiteáilte agat:
+```shell
+# Rith go díreach
+nix run .#edit-docs
+
+# Nó suiteáil chuig do phróifíl
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Ag Tógáil an Inrite
 Íoslódáil an stórlann, suiteáil spleáchais ag baint úsáide as `pnpm` agus ansin
 tóg an aip deisce do Windows:
@@ -294,6 +319,34 @@ le haghaidh tuilleadh sonraí. Má tá tuilleadh ceisteanna agat, bíodh leisce 
 teagmháil a dhéanamh linn trí na naisc a bhfuil cur síos orthu sa chuid "Pléigh
 Linn" thuas.
 
+## 💖 Urraitheoirí
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <a href="https://www.netperfect.fr">
+        <img src="https://www.netperfect.fr/sites/default/files/Logo%20NetPerfect%20V4%20250px_0.png" width="64" alt="NetPerfect logo" /><br />
+        <b>NetPerfect</b>
+      </a>
+      <br />EV certificate &amp; Windows CI
+    </td>
+    <td align="center" width="50%">
+      <a href="https://ckeditor.com/ckeditor-5/features/">
+        <img src="./logo-ck.svg" width="180" alt="CKEditor logo" /><br />
+        <b>CKEditor</b>
+      </a>
+      <br />Premium editor features
+    </td>
+    <td align="center" width="25%">
+      <a href="https://dosu.dev/">
+        <img src="https://dosu.dev/hero-new/dosu-icon.svg" width="64" height="64" alt="Dosu logo" /><br />
+        <b>Dosu</b>
+      </a>
+      <br />Automated GitHub support
+    </td>
+  </tr>
+</table>
+
 ## 👏 Glaonna amach
 
 * [zadam](https://github.com/zadam) as an gcoincheap bunaidh agus cur i bhfeidhm
@@ -304,15 +357,12 @@ Linn" thuas.
 * [Thomas Frei](https://github.com/thfrei) as a shaothar bunaidh ar an Chanbhás.
 * [antoniotejada](https://github.com/nriver) don ghiuirléid aibhsithe comhréire
   bunaidh.
-* [Dosu](https://dosu.dev/) as na freagraí uathoibrithe a sholáthar dúinn ar
-  shaincheisteanna agus ar phlé GitHub.
 * [Deilbhíní Tábla](https://tabler.io/icons) do na deilbhíní sa tráidire córais.
 
 Ní bheadh Trilium indéanta gan na teicneolaíochtaí atá taobh thiar de:
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - an t-eagarthóir amhairc
-  atá taobh thiar de nótaí téacs. Táimid buíoch as sraith de na gnéithe préimhe
-  a bheith curtha ar fáil dúinn.
+  atá taobh thiar de nótaí téacs.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - eagarthóir cóid le
   tacaíocht do líon ollmhór teangacha.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - an clár bán gan

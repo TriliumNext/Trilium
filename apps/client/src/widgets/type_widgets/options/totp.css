@@ -1,0 +1,113 @@
+/* Keeps the "Recovery codes" label text and its dots on one line, the dots sitting just after the
+   title. Lives inside the row's <label>, so text and dots share one box and stay aligned. */
+.recovery-codes-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Destructive removal action, tinted with the shared danger colour to set it apart. */
+.totp-remove-button.btn {
+    --color: var(--icon-button-danger-color, #d9534f);
+    color: var(--color);
+    border-color: var(--color);
+}
+
+.totp-remove-button.btn:hover {
+    background-color: var(--color);
+    color: white;
+}
+
+/* Enrollment dialog step 1: QR code (left) and the manual-entry secret (right) on one row — two
+   ways to add the same account. The QR takes a fixed width; the secret column fills the rest. */
+.modal.totp-enrollment-modal .totp-enroll-grid {
+    display: grid;
+    /* Fixed QR column (180px plate + 2×10px padding) so its caption wraps within it instead of
+       stretching the column and squeezing the field. */
+    grid-template-columns: 200px 1fr;
+    gap: 16px;
+    align-items: start;
+    margin-block: 12px;
+}
+
+/* Step headings ("1. …", "2. …") that break the enrollment flow into clear stages. */
+.modal.totp-enrollment-modal .totp-enroll-step-title {
+    margin-block: 18px 8px;
+    font-size: 1em;
+    font-weight: 600;
+}
+
+/* The scannable QR code with its caption stacked above it. */
+.modal.totp-enrollment-modal .totp-enroll-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+
+/* The QR itself sits on a white plate with quiet-zone padding so it scans reliably regardless of the
+   surrounding theme (QR readers expect dark modules on a light background). The SVG is viewBox-only
+   (scalable), so its size is fixed here. */
+.modal.totp-enrollment-modal .totp-enroll-qr-code {
+    width: 180px;
+    height: 180px;
+    padding: 10px;
+    background: #fff;
+    border-radius: 6px;
+}
+
+.modal.totp-enrollment-modal .totp-enroll-qr-code svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Enrollment dialog: render the generated secret in a monospace face and space the characters out a
+   little so the base32 string is easy to read and transcribe into an authenticator app. */
+.modal.totp-enrollment-modal .totp-enroll-secret {
+    font-family: var(--monospace-font-family, monospace);
+    letter-spacing: 0.15em;
+}
+
+/* Recovery-codes list (shared by the enrollment dialog and the regenerate dialog): two monospaced
+   columns so all eight codes fit compactly. */
+.totp-recovery-codes {
+    column-count: 2;
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.9em;
+    user-select: text;
+}
+
+/* Copy / download actions sit in a row beneath the codes. */
+.totp-recovery-actions {
+    display: flex;
+    gap: 8px;
+    margin-block: 12px;
+}
+
+/* One dot per recovery code, shown inline right after the "Recovery codes" label. */
+.recovery-code-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.recovery-code-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+/* Available (still usable) codes: solid accent fill. */
+.recovery-code-dot.available {
+    background-color: var(--admonition-tip-accent-color, #40c025);
+}
+
+/* Spent codes: hollow, muted outline so they read as no longer usable. */
+.recovery-code-dot.used {
+    background-color: transparent;
+    border: 1.5px solid var(--muted-text-color, #888);
+    opacity: 0.7;
+}

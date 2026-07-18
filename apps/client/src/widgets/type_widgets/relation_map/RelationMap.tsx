@@ -304,8 +304,10 @@ async function useRelationData(noteId: string, mapData: MapData | undefined, map
                 });
                 if (!connection) return;
 
-                // TODO: Does this actually do anything.
-                //@ts-expect-error
+                // Stash the attributeId on the connection so api.ts can map a clicked connection
+                // back to its relation (see the `rel.attributeId === connection.id` lookups there),
+                // and so it can be exposed as data-connection-id below.
+                //@ts-expect-error jsPlumb's Connection type has no writable `id` property.
                 connection.id = relation.attributeId;
 
                 if (relation.type === "inverse") {
@@ -425,10 +427,11 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObjec
         const sourceNoteId = idToNoteId(connection.source.id);
         const result = await mapApiRef.current.connect(name, sourceNoteId, targetNoteId);
         if (!result) {
-            await dialog.info(t("relation_map.connection_exists", { name }));
+            toast.showError(t("relation_map.connection_exists", { name }));
             jsPlumbApiRef.current?.deleteConnection(connection);
         }
     }, []);
 
     return connectionCallback;
 }
+

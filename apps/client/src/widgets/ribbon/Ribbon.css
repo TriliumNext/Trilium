@@ -1,0 +1,111 @@
+.ribbon-container {
+    margin-bottom: 5px;
+    position: relative;
+    z-index: 998;
+}
+
+/* When content header is floating, ribbon sticks below it */
+.scrolling-container:has(.content-header-widget.floating) .ribbon-container {
+    position: sticky;
+    top: var(--content-header-height, 100px);
+}
+
+.ribbon-top-row {
+    display: flex;
+    min-height: 36px;
+}
+
+.ribbon-tab-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin-inline-start: 10px;
+    flex-grow: 1;
+    flex-flow: row wrap;
+}
+
+.ribbon-tab-title {
+    color: var(--muted-text-color);
+    border-bottom: 1px solid var(--main-border-color);
+    min-width: 24px;
+    flex-basis: 24px;
+    max-width: max-content;
+    flex-grow: 10;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    padding-top: 2px;
+}
+
+.ribbon-tab-title .tn-icon {
+    font-size: 150%;
+    position: relative;
+}
+
+.ribbon-tab-title.active {
+    color: var(--main-text-color);
+    border-bottom: 3px solid var(--main-text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ribbon-tab-title:hover {
+    cursor: pointer;
+}
+
+.ribbon-tab-title:hover {
+    color: var(--main-text-color);
+}
+
+.ribbon-tab-title:first-of-type {
+    padding-inline-start: 10px;
+}
+
+.ribbon-tab-spacer {
+    flex-basis: 0;
+    min-width: 0;
+    max-width: 35px;
+    flex-grow: 1;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.ribbon-tab-spacer:last-of-type {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    max-width: 10000px;
+}
+
+.ribbon-body {
+    border-bottom: 1px solid var(--main-border-color);
+    margin-inline-start: 10px;
+    margin-inline-end: 5px; /* needs to have this value so that the bottom border is the same width as the top one */
+}
+
+.ribbon-body.active {
+    display: block;
+}
+
+.ribbon-tab-title.active .ribbon-tab-title-label {
+    display: inline;
+}
+
+body.experimental-feature-new-layout {
+    .ribbon-top-row {
+        min-height: 0;
+    }
+
+    .ribbon-container {
+        display: flex;
+        flex-direction: column-reverse;
+        border: 0;
+
+        .ribbon-tab-spacer,
+        .ribbon-tab-title,
+        .ribbon-body {
+            border-bottom: 0 !important;
+        }
+    }
+}

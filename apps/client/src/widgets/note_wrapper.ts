@@ -19,39 +19,33 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
     setNoteContextEvent({ noteContext }: EventData<"setNoteContext">) {
         this.noteContext = noteContext;
-
         this.refresh();
     }
 
     noteSwitchedAndActivatedEvent({ noteContext }: EventData<"setNoteContext">) {
         this.noteContext = noteContext;
-
         this.refresh();
     }
 
     noteSwitchedEvent({ noteContext }: EventData<"setNoteContext">) {
         this.noteContext = noteContext;
-
         this.refresh();
     }
 
     activeContextChangedEvent({ noteContext }: EventData<"setNoteContext">) {
         this.noteContext = noteContext;
-
         this.refresh();
     }
 
     refresh() {
-        const isHiddenExt = this.isHiddenExt(); // preserve through class reset
-        const isActive = this.$widget.hasClass("active");
+        // These are owned by SplitNoteContainer, not by the note — preserve them through the reset below.
+        const isHiddenExt = this.isHiddenExt();
+        const containerClasses = CONTAINER_OWNED_CLASSES.filter((cls) => this.$widget.hasClass(cls));
 
         this.$widget.removeClass();
 
         this.toggleExt(!isHiddenExt);
-
-        if (isActive) {
-            this.$widget.addClass("active");
-        }
+        this.$widget.addClass(containerClasses.join(" "));
 
         this.$widget.addClass("component note-split");
 
@@ -61,7 +55,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             return;
         }
 
-        this.$widget.toggleClass("full-content-width", this.#isFullWidthNote(note));
+        this.$widget.toggleClass("full-content-width", isFullWidthNote(note));
 
         this.$widget.addClass(note.getCssClass());
 
@@ -70,7 +64,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         this.$widget.addClass(`view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`);
         this.$widget.addClass(note.getColorClass());
         this.$widget.toggleClass("options", note.isOptions());
-        this.$widget.toggleClass("bgfx", this.#hasBackgroundEffects(note));
+        this.$widget.toggleClass("bgfx", hasBackgroundEffects(note));
         this.$widget.toggleClass("protected", note.isProtected);
 
         const noteLanguage = note?.getLabelValue("language");
@@ -78,50 +72,9 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         this.$widget.toggleClass("rtl", !!locale?.rtl);
     }
 
-    #isFullWidthNote(note: FNote) {
-        if (["code", "image", "mermaid", "book", "render", "canvas", "webView", "mindMap", "spreadsheet"].includes(note.type)) {
-            return true;
-        }
-
-        if (note.type === "file" && (note.mime === "application/pdf" || note.mime.startsWith("video/") || note.mime.startsWith("audio/"))) {
-            return true;
-        }
-
-        if (note.type === "search" && ![ "grid", "list" ].includes(note.getLabelValue("viewType") ?? "list")) {
-            return true;
-        }
-
-        return !!note?.isLabelTruthy("fullContentWidth");
-    }
-
-    #hasBackgroundEffects(note: FNote): boolean {
-        const MIME_TYPES_WITH_BACKGROUND_EFFECTS = [
-            "application/pdf"
-        ];
-
-        const COLLECTIONS_WITH_BACKGROUND_EFFECTS = [
-            "grid",
-            "list"
-        ];
-
-        if (note.isOptions()) {
-            return true;
-        }
-
-        if (note.type === "file" && (MIME_TYPES_WITH_BACKGROUND_EFFECTS.includes(note.mime) || note.mime.startsWith("audio/"))) {
-            return true;
-        }
-
-        if (note.type === "book" && COLLECTIONS_WITH_BACKGROUND_EFFECTS.includes(note.getLabelValue("viewType") ?? "none")) {
-            return true;
-        }
-
-        return false;
-    }
-
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
         // listening on changes of note.type and CSS class
-        const LABELS_CAUSING_REFRESH = ["cssClass", "language", "viewType", "color"];
+        const LABELS_CAUSING_REFRESH = ["cssClass", "language", "viewType", "color", "fullContentWidth"];
         const noteId = this.noteContext?.noteId;
         if (
             loadResults.isNoteReloaded(noteId) ||
@@ -130,4 +83,78 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             this.refresh();
         }
     }
+}
+
+/** Classes set on the split by `SplitNoteContainer`, based on the split's position among its siblings. */
+const CONTAINER_OWNED_CLASSES = [ "active", "last-visible" ];
+
+/**
+ * Whether the split should be translucent (`bgfx`), letting the window background effect show through.
+ * This suits notes that render their content on a bare background (media, option pages, grid/list
+ * collections); notes that paint their own background stay opaque. Exported as a pure function for
+ * unit testing.
+ */
+export function hasBackgroundEffects(note: FNote): boolean {
+    const MIME_TYPES_WITH_BACKGROUND_EFFECTS = [
+        "application/pdf"
+    ];
+
+    const COLLECTIONS_WITH_BACKGROUND_EFFECTS = [
+        "grid",
+        "list"
+    ];
+
+    if (note.isOptions()) {
+        return true;
+    }
+
+    if (note.type === "image") {
+        return true;
+    }
+
+    if (note.type === "file" && (MIME_TYPES_WITH_BACKGROUND_EFFECTS.includes(note.mime) || note.mime.startsWith("audio/"))) {
+        return true;
+    }
+
+    if (note.type === "book" && COLLECTIONS_WITH_BACKGROUND_EFFECTS.includes(note.getLabelValue("viewType") ?? "none")) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Whether a note is full width purely because of its type (e.g. canvas, collections, media),
+ * irrespective of the `fullContentWidth` label. For these notes the label has no effect, so the
+ * UI toggle is hidden. Exported as a pure function for unit testing.
+ */
+export function isAlwaysFullWidthByType(note: FNote) {
+    // Icon packs render a full-pane glyph grid; `code`-type ones are already covered below, this also
+    // catches the `file`-type packs (distributable zips).
+    if (note.isIconPack()) {
+        return true;
+    }
+
+    if (["code", "image", "mermaid", "book", "render", "canvas", "webView", "noteMap", "mindMap", "spreadsheet"].includes(note.type)) {
+        return true;
+    }
+
+    if (note.type === "file" && (note.mime === "application/pdf" || note.mime.startsWith("video/") || note.mime.startsWith("audio/"))) {
+        return true;
+    }
+
+    if (note.type === "search" && ![ "grid", "list" ].includes(note.getLabelValue("viewType") ?? "list")) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Whether a note should occupy the full available content width. Some note types are always
+ * full width by nature (see {@link isAlwaysFullWidthByType}), while regular notes opt in via the
+ * `fullContentWidth` label. Exported as a pure function for unit testing.
+ */
+export function isFullWidthNote(note: FNote) {
+    return isAlwaysFullWidthByType(note) || !!note?.isLabelTruthy("fullContentWidth");
 }

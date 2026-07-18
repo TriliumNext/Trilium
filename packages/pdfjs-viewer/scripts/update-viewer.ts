@@ -3,8 +3,14 @@ import packageJson from "../package.json" with { type: "json" };
 import fs from "fs/promises";
 import * as yauzl from "yauzl";
 import { createWriteStream } from "fs";
+import { pipeline } from "stream/promises";
 const version = packageJson.devDependencies["pdfjs-dist"];
-const url = `https://github.com/mozilla/pdf.js/releases/download/v${version}/pdfjs-${version}-dist.zip`;
+// The legacy build is functionally identical to the modern one but bundles core-js polyfills
+// for the newest JS APIs (Map.getOrInsertComputed, Math.sumPrecise, ...). The modern build
+// uses them unguarded and requires browsers only a few months old (Chrome 145+/Safari 26.2+),
+// while the legacy build is supported down to Chrome 125/Safari 18. Keep in sync with the
+// legacy library copied in scripts/build.ts.
+const url = `https://github.com/mozilla/pdf.js/releases/download/v${version}/pdfjs-${version}-legacy-dist.zip`;
 
 const FILES_TO_COPY = [
     "web/images/",
@@ -23,37 +29,24 @@ async function main() {
     }
 
     const buffer = await response.arrayBuffer();
-    yauzl.fromBuffer(Buffer.from(buffer), { lazyEntries: true }, (err, zip) => {
-        zip.readEntry();
-        zip.on("entry", (entry: yauzl.Entry) => {
-            if (entry.fileName.endsWith("/") || !FILES_TO_COPY.some(prefix => entry.fileName.startsWith(prefix))) {
-                // Directory entry or not in the list of files to copy, skip
-                console.log("Skipping", entry.fileName);
-                zip.readEntry();
-                return;
-            }
+    const zip = await yauzl.fromBufferPromise(Buffer.from(buffer));
+    for await (const entry of zip.eachEntry()) {
+        if (entry.fileName.endsWith("/") || !FILES_TO_COPY.some(prefix => entry.fileName.startsWith(prefix))) {
+            // Directory entry or not in the list of files to copy, skip
+            console.log("Skipping", entry.fileName);
+            continue;
+        }
 
-            const relativePath = entry.fileName.substring("web/".length);
-            zip.openReadStream(entry, async (err, readStream) => {
-                if (err) {
-                    console.error(`Failed to read ${entry.fileName} from zip:`, err);
-                    return;
-                }
-                const outPath = join(__dirname, "../viewer", relativePath);
-                await fs.mkdir(dirname(outPath), { recursive: true });
-                const outStream = createWriteStream(outPath);
-                readStream.pipe(outStream);
-                outStream.on("finish", () => {
-                    console.log(`Extracted ${relativePath} to ${outPath}`);
-                });
-            });
-            zip.readEntry();
-        });
-        zip.on("end", async () => {
-            console.log("Finished extracting pdfjs-dist files.");
-            await patchViewerHTML();
-        });
-    });
+        const relativePath = entry.fileName.substring("web/".length);
+        const outPath = join(__dirname, "../viewer", relativePath);
+        await fs.mkdir(dirname(outPath), { recursive: true });
+        const readStream = await zip.openReadStreamPromise(entry);
+        await pipeline(readStream, createWriteStream(outPath));
+        console.log(`Extracted ${relativePath} to ${outPath}`);
+    }
+
+    console.log("Finished extracting pdfjs-dist files.");
+    await patchViewerHTML();
 };
 
 async function patchViewerHTML() {

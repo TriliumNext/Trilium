@@ -1,7 +1,7 @@
 import { createWriteStream, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import cls from "@triliumnext/server/src/services/cls.js";
+import { cls } from "@triliumnext/core";
 
 import type { IconPackData } from "./provider";
 import boxicons3 from "./providers/boxicons3";

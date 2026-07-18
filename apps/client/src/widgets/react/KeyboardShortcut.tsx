@@ -2,6 +2,7 @@ import { ActionKeyboardShortcut, KeyboardActionNames } from "@triliumnext/common
 import { useEffect, useState } from "preact/hooks";
 import keyboard_actions from "../../services/keyboard_actions";
 import { joinElements } from "./react_utils";
+import { renderShortcutKbds } from "./shortcut_kbd";
 import utils from "../../services/utils";
 
 interface KeyboardShortcutProps {
@@ -23,12 +24,7 @@ export default function KeyboardShortcut({ actionName }: KeyboardShortcutProps) 
 
     return (!isMobile &&
         <span className="keyboard-shortcut">
-            {joinElements(action.effectiveShortcuts?.map((shortcut) => {
-                const keys = shortcut.split("+");
-                return joinElements(
-                    keys.map((key, i) => <kbd>{key}</kbd>)
-                , "+");
-            }))}
+            {joinElements(action.effectiveShortcuts?.map((shortcut) => renderShortcutKbds(shortcut)))}
         </span>
     );
 }

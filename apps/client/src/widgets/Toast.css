@@ -5,7 +5,7 @@
     align-items: center;
     position: absolute;
     width: 100%;
-    top: calc(env(safe-area-inset-top) + 20px);
+    top: calc(var(--safe-area-inset-top, env(safe-area-inset-top)) + 20px);
     pointer-events: none;
     contain: none;
 }
@@ -18,6 +18,12 @@
     overflow: hidden;
 }
 
+/* Wider variant for toasts with richer content (e.g. a reference-note list); capped to the
+   viewport so it stays within bounds on narrow screens. */
+.toast.wide {
+    --bs-toast-max-width: min(500px, 90vw);
+}
+
 .toast-header {
     background-color: var(--more-accented-background-color) !important;
     color: var(--main-text-color) !important;
@@ -25,7 +31,14 @@
 
 .toast-body {
     white-space: preserve-breaks;
+    user-select: text;
     overflow: hidden;
+}
+
+.toast-body.monospace {
+    font-family: var(--monospace-font-family);
+    font-size: var(--monospace-font-size);
+    overflow-wrap: anywhere;
 }
 
 .toast.no-title .toast-main-row {
@@ -52,21 +65,66 @@
     padding: var(--bs-toast-padding-y) var(--bs-toast-padding-x);
 }
 
+/* Without the close button the body would otherwise butt against the toast edge, since the body itself
+   carries no inline padding in the no-title layout (it relies on the icon/close padding for breathing room). */
+.toast.no-title.not-dismissible .toast-body {
+    padding-inline-end: var(--bs-toast-padding-x);
+}
+
 .toast {
     .toast-buttons {
-        padding: 0 var(--bs-toast-padding-x) var(--bs-toast-padding-y) var(--bs-toast-padding-x);
+        padding: 0.5em var(--bs-toast-padding-x) var(--bs-toast-padding-y) var(--bs-toast-padding-x);
         display: flex;
-        flex-direction: column;
-        gap: 0.5em;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 1em;
 
         .btn {
-            width: 100%;
+            /* Share the row equally; a lone button still spans the full width. */
+            flex: 1;
             color: var(--bs-toast-color);
             background: var(--modal-control-button-background);
 
             &:hover {
                 background: var(--modal-control-button-hover-background);
                 color: var(--bs-toast-color);
+            }
+        }
+    }
+
+    .toast-notes {
+        padding: 0 var(--bs-toast-padding-x) var(--bs-toast-padding-y) var(--bs-toast-padding-x);
+        user-select: text;
+
+        .toast-notes-heading {
+            opacity: 0.75;
+            margin-bottom: 0.25em;
+        }
+
+        .toast-notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15em;
+
+            a {
+                color: inherit;
+            }
+
+            .note-path {
+                display: block;
+                opacity: 0.5;
+                margin-inline-start: 2.1em;
+            }
+
+            /* Annotation injected inline after the note title (see NoteLink's titleSuffix). It rides
+               the title's line; the block-level .note-path drops below both. */
+            .note-link-suffix {
+                opacity: 0.75;
+                font-size: 0.9em;
+
+                &::before {
+                    content: " — ";
+                }
             }
         }
     }
@@ -81,4 +139,3 @@
         transition: width 0.1s linear;
     }
 }
-

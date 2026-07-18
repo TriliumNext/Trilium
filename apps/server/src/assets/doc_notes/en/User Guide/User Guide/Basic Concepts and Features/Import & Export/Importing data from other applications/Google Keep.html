@@ -1,0 +1,71 @@
+<p>Trilium can import notes from Google Keep, preserving their structure
+  and formatting.</p>
+<h2>Import process</h2>
+<p>Google Keep has no native export process, but Google Takeout allows you
+  to download a ZIP of all the notes.</p>
+<p>The first step is to download your Google Keep information:</p>
+<ol>
+  <li>Navigate to <a href="https://takeout.google.com/">takeout.google.com</a>.</li>
+  <li>In the <em>Create a new export</em> section, press <em>Deselect all.</em>
+  </li>
+  <li>In the list of data to export, check <em>Keep</em>.</li>
+  <li>Scroll all the way down and choose <em>Next step</em>.</li>
+  <li>In <em>Choose file type, frequency &amp; destination</em> make sure the
+    following options are set:
+    <ol>
+      <li><em>Transfer to</em> is set to <em>Send download link via email</em>.</li>
+      <li><em>Frequency</em> is set to <em>Export once</em>.</li>
+      <li><em>File type</em> is set to <em>.zip</em>.</li>
+      <li><em>File size</em> can remain set to <em>2 GB</em>.</li>
+    </ol>
+  </li>
+  <li>Press <em>Create export</em> and wait for the export to finish.</li>
+</ol>
+<p>Then in Trilium Notes:</p>
+<ol>
+  <li>In the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+    right click and select <em>Import into note</em>.</li>
+  <li>In the <em>Import from</em> section, select <em>Google Keep</em>.</li>
+  <li>Upload the ZIP obtained in the previous step.</li>
+</ol>
+<h2>Supported features</h2>
+<ul>
+  <li>Basic formatting (bold, italic, underline)</li>
+  <li><a href="#root/_help_p9kXRFAkwN4o">Note color</a>
+  </li>
+  <li>Note titles are maintained, if present.
+    <ul>
+      <li>In Google Keep it's common for notes not to have a title, case in which
+        the date and time of the note are used as a title.</li>
+    </ul>
+  </li>
+  <li>To-do lists</li>
+  <li><a class="reference-link" href="#root/_help_mT0HEkOsz6i1">Images</a>&nbsp;and&nbsp;
+    <a
+    class="reference-link" href="#root/_help_0vhv7lsOLy82">Attachments</a>.</li>
+  <li>Creation and modification dates are preserved.</li>
+</ul>
+<h2>Limitations</h2>
+<p>Currently the following information is not imported:</p>
+<ul>
+  <li>Labels are disregarded.</li>
+  <li>Pinned, archived or trashed state is not preserved, all notes are treated
+    the same.</li>
+</ul>
+<h2>Reporting issues</h2>
+<p>When importing your notes from Google Keep, you might encounter some issues
+  with how the notes are imported, or there might be some missing information.
+  In this case, consider <a href="#root/_help_wy8So3yZZlH9">reporting it</a>.</p>
+<p>When reporting such an issue make sure to provide the following information:</p>
+<ul>
+  <li>A sample of the note is required to better understand what happened.
+    <ul>
+      <li>Because Google Keep has no per-note export, extract the Google Takeout
+        ZIP and copy the files corresponding to the problematic note (<code spellcheck="false">.html</code>,
+        <code
+        spellcheck="false">.json</code>and any attachments if you are able to identify them).</li>
+    </ul>
+  </li>
+  <li>A screenshot with how it originally looked like before the import and
+    how it looks after the import.</li>
+</ul>

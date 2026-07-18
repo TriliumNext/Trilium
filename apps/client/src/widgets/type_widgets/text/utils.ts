@@ -4,21 +4,65 @@ import froca from "../../../services/froca";
 import link, { ViewScope } from "../../../services/link";
 import utils from "../../../services/utils";
 
-export async function loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>) {
+export async function loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
     const note = await froca.getNote(noteId);
     if (!note) return;
 
+    // The box size is supplied explicitly by the editing-view downcast; for the other
+    // callers (read-only rendering, script API refresh) fall back to reading it from the DOM.
+    const effectiveBoxSize = boxSize ?? $el.closest('section.include-note').attr('data-box-size');
+    const isExpandable = effectiveBoxSize === 'expandable';
+
+    // The editing-view downcast passes the `.include-note-wrapper` element itself as $el, whereas the
+    // read-only and refresh paths pass the outer `section.include-note`. Build the content in a
+    // detached wrapper either way (so the old content stays visible during the async render — no
+    // flicker), then swap it in; when $el is already the wrapper we move the built children straight
+    // into it instead of nesting a redundant second `.include-note-wrapper`.
+    const isWrapper = $el.hasClass('include-note-wrapper');
     const $wrapper = $('<div class="include-note-wrapper">');
     const $link = await link.createLink(note.noteId, {
-        showTooltip: false
+        showTooltip: false,
+        showNoteIcon: true
     });
 
-    $wrapper.empty().append($('<h4 class="include-note-title">').append($link));
+    if (isExpandable) {
+        // Create expandable structure with toggle
+        const $titleRow = $('<div class="include-note-title-row">');
+        const $toggle = $('<button class="include-note-toggle bx bx-chevron-right" aria-expanded="false">');
+        const $title = $('<h4 class="include-note-title">').append($link);
 
-    const { $renderedContent, type } = await content_renderer.getRenderedContent(note);
-    $wrapper.append($(`<div class="include-note-content type-${type}">`).append($renderedContent));
+        $titleRow.append($toggle, $title);
+        $wrapper.append($titleRow);
 
-    $el.empty().append($wrapper);
+        // The include widget itself is the first level of inclusion, so the included note's own
+        // includes are rendered as reference links rather than expanded (see includesAsReferenceLinks).
+        const { $renderedContent, type } = await content_renderer.getRenderedContent(note, { interactive: true, includesAsReferenceLinks: true, mediaEnvironment: "embedded" });
+        const $content = $(`<div class="include-note-content type-${type}" style="display: none;">`).append($renderedContent);
+        $wrapper.append($content);
+
+        // Add toggle functionality
+        $toggle.on('click', (e) => {
+            e.stopPropagation();
+            const isExpanded = $toggle.attr('aria-expanded') === 'true';
+            $toggle.attr('aria-expanded', String(!isExpanded));
+            $toggle.toggleClass('expanded');
+            $content.slideToggle(200);
+        });
+    } else {
+        // Standard display
+        $wrapper.append($('<h4 class="include-note-title">').append($link));
+
+        // The include widget itself is the first level of inclusion, so the included note's own
+        // includes are rendered as reference links rather than expanded (see includesAsReferenceLinks).
+        const { $renderedContent, type } = await content_renderer.getRenderedContent(note, { interactive: true, includesAsReferenceLinks: true, mediaEnvironment: "embedded" });
+        $wrapper.append($(`<div class="include-note-content type-${type}">`).append($renderedContent));
+    }
+
+    // Unmount any interactive widgets from a previous render of this include (e.g. on a box-size
+    // change or refreshIncludedNote) before $el.empty() discards their DOM — otherwise their
+    // standalone Preact roots (collections, web views) would leak.
+    content_renderer.disposeInteractiveContent($el);
+    $el.empty().append(isWrapper ? $wrapper.children() : $wrapper);
 }
 
 export function refreshIncludedNote(container: HTMLDivElement, noteId: string) {

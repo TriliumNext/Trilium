@@ -4,19 +4,67 @@ import "./MindMap.css";
 
 // allow node-menu plugin css to be bundled by webpack
 import nodeMenu from "@mind-elixir/node-menu";
-import { snapdom } from "@zumer/snapdom";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { t } from "i18next";
 import { DARK_THEME, default as VanillaMindElixir, MindElixirData, MindElixirInstance, Operation, THEME as LIGHT_THEME } from "mind-elixir";
 import type { LangPack } from "mind-elixir/i18n";
 import { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { sanitizeNoteContentHtml } from "../../services/sanitize_content";
+import toast from "../../services/toast";
 import utils from "../../services/utils";
-import { useColorScheme, useEditorSpacedUpdate, useNoteLabelBoolean, useSyncedRef, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
+import { useColorScheme, useEditorSpacedUpdate, useEffectiveReadOnly, useSyncedRef, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
 import { refToJQuerySelector } from "../react/react_utils";
+import { renderMindMapPreviewSvg } from "./helpers/mind_map_export";
 import { TypeWidgetProps } from "./type_widget";
 
 const NEW_TOPIC_NAME = "";
+
+/**
+ * Recursively sanitizes a parsed Mind Elixir data structure in place, neutralizing any
+ * `dangerouslySetInnerHTML` payloads found anywhere in the tree.
+ *
+ * Mind Elixir nodes support an (undocumented in its README) `dangerouslySetInnerHTML`
+ * property which replaces the node's content with raw HTML via `element.innerHTML`
+ * (see mind-elixir `utils/dom.ts`). Trilium's UI never produces this property, but a
+ * malicious note can embed it in the stored JSON. Because Safe Import only sanitizes
+ * notes of `type === "text"` and skips `mindMap` notes, such a payload reaches the
+ * client unsanitized and is injected into the DOM when the map is rendered, yielding
+ * stored XSS (and historically RCE on the Electron desktop client) — GHSA-rj57-j38v-3577.
+ *
+ * Rather than dropping the field, we run every occurrence through the same DOMPurify
+ * sanitizer used for text notes, so any legitimate markup is preserved while script
+ * execution vectors are stripped.
+ *
+ * @param data the parsed Mind Elixir content (mutated in place).
+ * @returns the same object, for convenience.
+ */
+export function sanitizeMindMapData<T>(data: T): T {
+    sanitizeMindMapNode(data);
+    return data;
+}
+
+function sanitizeMindMapNode(value: unknown): void {
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            sanitizeMindMapNode(item);
+        }
+        return;
+    }
+
+    if (value && typeof value === "object") {
+        const record = value as Record<string, unknown>;
+
+        if (typeof record.dangerouslySetInnerHTML === "string") {
+            record.dangerouslySetInnerHTML = sanitizeNoteContentHtml(record.dangerouslySetInnerHTML);
+        }
+
+        for (const key of Object.keys(record)) {
+            sanitizeMindMapNode(record[key]);
+        }
+    }
+}
 
 interface MindElixirProps {
     apiRef?: RefObject<MindElixirInstance>;
@@ -46,7 +94,7 @@ function buildMindElixirLangPack(): LangPack {
 export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     const apiRef = useRef<MindElixirInstance>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
 
 
     const spacedUpdate = useEditorSpacedUpdate({
@@ -56,24 +104,14 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
         getData: async () => {
             if (!apiRef.current) return;
 
-            const result = await snapdom(apiRef.current.nodes, {
-                backgroundColor: "transparent",
-                scale: 2
-            });
-
-            // a data URL in the format: "data:image/svg+xml;charset=utf-8,<url-encoded-svg>"
-            // We need to extract the content after the comma and decode the URL encoding (%3C to <, %20 to space, etc.)
-            // to get raw SVG content that Trilium's backend can store as an attachment
-            const svgContent = decodeURIComponent(result.url.split(',')[1]);
-
             return {
                 content: apiRef.current.getDataString(),
                 attachments: [
                     {
                         role: "image",
-                        title: "mindmap-export.svg",
+                        title: NOTE_TYPE_IMAGE_ATTACHMENTS.mindMap,
                         mime: "image/svg+xml",
-                        content: svgContent,
+                        content: await renderMindMapPreviewSvg(apiRef.current),
                         position: 0
                     }
                 ]
@@ -84,7 +122,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
 
             if (content) {
                 try {
-                    newContent = JSON.parse(content) as MindElixirData;
+                    newContent = sanitizeMindMapData(JSON.parse(content) as MindElixirData);
                     delete newContent.theme;    // The theme is managed internally by the widget, so we remove it from the loaded content to avoid inconsistencies.
                 } catch (e) {
                     console.warn(e);
@@ -106,13 +144,17 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     // Export as PNG or SVG.
     useTriliumEvents([ "exportSvg", "exportPng" ], async ({ ntxId: eventNtxId }, eventName) => {
         if (eventNtxId !== ntxId || !apiRef.current) return;
-        const nodes = apiRef.current.nodes;
-        if (eventName === "exportSvg") {
-            await utils.downloadAsSvg(note.title, nodes);
-        } else {
-            await utils.downloadAsPng(note.title, nodes);
+        try {
+            const svg = await renderMindMapPreviewSvg(apiRef.current);
+            if (eventName === "exportSvg") {
+                utils.downloadSvg(note.title, svg);
+            } else {
+                await utils.downloadSvgAsPng(note.title, svg);
+            }
+        } catch (e) {
+            console.warn(e);
+            toast.showError(t(eventName === "exportSvg" ? "svg.export_to_svg" : "svg.export_to_png"));
         }
-
     });
 
     const onKeyDown = useCallback((e: KeyboardEvent) => {

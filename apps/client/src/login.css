@@ -1,0 +1,55 @@
+body.setup .setup-container.login-container {
+    /* Drop the setup container's own padding (see set_password.css for why) and let the
+       short login form sit within the fixed wizard frame. */
+    padding: 0;
+
+    @media (min-width: 700px) {
+        height: auto;
+    }
+
+    /* The OIDC (SSO) variant has no form and a bit more breathing room. */
+    &.oidc {
+        padding-block: 4em;
+    }
+
+    /* The password variant wraps the whole page in a <form> so the footer's submit button
+       triggers its submit handler; setup.css styles every form at 80% width, which would
+       squeeze the page and float the footer. display: contents makes the form layout-
+       transparent so the page and its full-bleed footer fill the frame. */
+    > form {
+        display: contents;
+    }
+
+    .illustration-logo {
+        --size: 162px;
+    }
+
+    /* Centre the short form/card within the tall card. */
+    main {
+        padding-block: 2em;
+        margin-top: 2em;
+
+        @media (min-width: 700px) {
+            margin: auto;
+            justify-content: center;
+            width: 65%;
+            margin-top: unset;
+        }
+    }
+
+    .oidc-login {
+        font-weight: 500;
+        padding: 1.25rem 2rem;
+
+        @media (min-width: 700px) {
+            padding: 1.25rem 4rem;
+            margin: auto;
+        }
+
+        img {
+            margin-inline-end: 10px;
+            width: 18px;
+            height: 18px;
+        }
+    }
+}

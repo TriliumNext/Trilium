@@ -6,15 +6,15 @@ interface ExpandableSectionProps {
     icon: string;
     label: ComponentChildren;
     className?: string;
+    /** Whether the section is expanded on initial render. */
+    open?: boolean;
     children: ComponentChildren;
-    /** Whether the section should be expanded by default */
-    defaultExpanded?: boolean;
 }
 
 /** A collapsible section within an ExpandableCard. */
-export function ExpandableSection({ icon, label, className, children, defaultExpanded }: ExpandableSectionProps) {
+export function ExpandableSection({ icon, label, className, open, children }: ExpandableSectionProps) {
     return (
-        <details className={`expandable-section ${className ?? ""}`} open={defaultExpanded}>
+        <details className={`expandable-section ${className ?? ""}`} open={open}>
             <summary className="expandable-section-summary">
                 <span className={icon} />
                 <span className="expandable-section-label">{label}</span>

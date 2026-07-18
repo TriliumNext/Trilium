@@ -3,7 +3,7 @@
 
 As the name suggests, block quotes can be useful to cite one or more paragraphs.
 
-To create a block quote, press <img src="Block quotes &amp; admonitions.png" width="15" height="12"> from the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. It's also possible to type <kbd>&gt;</kbd>, followed by a space to create one (but only if the cursor is at the beginning of a line).
+To create a block quote, press <img src="Block quotes &amp; admonitions_image.png" width="15" height="12"> from the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. It's also possible to type <kbd>&gt;</kbd>, followed by a space to create one (but only if the cursor is at the beginning of a line).
 
 Inside the quote block, other block items can be inserted such as tables, images, or even other block quotes or admonitions.
 
@@ -11,7 +11,7 @@ Inside the quote block, other block items can be inserted such as tables, images
 
 Admonitions are a way to highlight information to the reader. Other names for it include _call-outs_ and _info/warning/alert boxes_.
 
-<figure class="image image-style-align-center"><img style="aspect-ratio:959/547;" src="2_Block quotes &amp; admonitions.png" width="959" height="547"></figure>
+<figure class="image image-style-align-center"><img style="aspect-ratio:959/547;" src="2_Block quotes &amp; admonitions_image.png" width="959" height="547"></figure>
 
 From a functional point of view, admonitions act very similarly to a block quote, just with different styling. This includes the ability to insert other elements in it such as headings, tables, images, etc.
 
@@ -19,7 +19,7 @@ From a functional point of view, admonitions act very similarly to a block quote
 
 In the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>:
 
-![](1_Block%20quotes%20&%20admonitions.png)
+![](1_Block%20quotes%20&%20admonitions_image.png)
 
 It's possible to insert an admonition simply by typing:
 

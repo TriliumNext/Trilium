@@ -3,16 +3,14 @@
  * tool assembly, model pricing, and title generation.
  */
 
-import type { LlmMessage } from "@triliumnext/commons";
-import type { LanguageModel } from "ai";
-import { generateText, type ModelMessage, stepCountIs, streamText, type ToolSet } from "ai";
-import yaml from "js-yaml";
+import { type LlmMessage, type LlmMessagePart } from "@triliumnext/commons";
+import { type FilePart, generateText, type ImagePart, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type TextPart, type ToolSet } from "ai";
 
-import becca from "../../../becca/becca.js";
-import { getSkillsSummary } from "../skills/index.js";
-import { getNoteMeta,SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
+import { resolveAttachmentPart } from "./attachment_content.js";
+import { buildNoteHint } from "./note_hint.js";
+import { buildSystemPrompt as composeSystemPrompt } from "./system_prompt.js";
 
 const DEFAULT_MAX_TOKENS = 8096;
 const TITLE_MAX_TOKENS = 30;
@@ -26,22 +24,44 @@ function effectiveCost(pricing: ModelPricing): number {
 }
 
 /**
- * Build a context hint about the current note with full metadata (same as get_note / ETAPI).
+ * Resolve a single LlmMessagePart to its AI SDK ModelMessage part form, mapping
+ * the provider-neutral {@link resolveAttachmentPart} result into `ai`'s block
+ * shapes. Returns null (and the caller drops the part) when it can't resolve.
  */
-function buildNoteHint(noteId: string): string | null {
-    const note = becca.getNote(noteId);
-    if (!note) {
+function resolveMessagePart(part: LlmMessagePart): TextPart | ImagePart | FilePart | null {
+    const resolved = resolveAttachmentPart(part);
+    if (!resolved) {
         return null;
     }
+    switch (resolved.kind) {
+        case "text":
+            return { type: "text", text: resolved.text };
+        case "image":
+            return { type: "image", image: resolved.bytes, mediaType: resolved.mime };
+        case "file":
+            return { type: "file", data: resolved.bytes, mediaType: resolved.mime, filename: resolved.filename };
+    }
+}
 
-    const metadata = yaml.dump(getNoteMeta(note, SYSTEM_PROMPT_LIMITS), { lineWidth: -1 });
-    return [
-        "The user is currently viewing the following note.",
-        "Use this metadata (including contentPreview) to answer questions about the note without calling tools when possible.",
-        "Use get_note_content only if the preview is insufficient.",
-        "",
-        metadata
-    ].join("\n");
+/**
+ * Build a single ModelMessage from an LlmMessage. Plain string content stays
+ * as-is; multimodal content is resolved into AI SDK text/image/file parts.
+ */
+export function buildModelMessage(m: LlmMessage): ModelMessage {
+    const role = m.role as "user" | "assistant";
+    if (typeof m.content === "string") {
+        return { role, content: m.content };
+    }
+    const resolved = m.content
+        .map(resolveMessagePart)
+        .filter((p): p is TextPart | ImagePart | FilePart => p !== null);
+    // Assistant turns can only carry TextParts (per the AI SDK type), so
+    // strip any stray attachments — they only make sense on user turns anyway.
+    if (role === "assistant") {
+        const textOnly: TextPart[] = resolved.filter((p): p is TextPart => p.type === "text");
+        return { role: "assistant", content: textOnly };
+    }
+    return { role: "user", content: resolved };
 }
 
 /**
@@ -78,71 +98,73 @@ export abstract class BaseProvider implements LlmProvider {
     protected abstract createModel(modelId: string): LanguageModel;
 
     /**
-     * Build the system prompt with note hints and skills summary.
+     * Build the system prompt. Delegates to the shared `system_prompt` module;
+     * kept as an overridable method so providers can post-process the result
+     * (e.g. Google appends a web-search/note-tool conflict notice).
      */
     protected buildSystemPrompt(messages: LlmMessage[], config: LlmProviderConfig): string | undefined {
-        const parts: string[] = [];
-
-        // Base system prompt from config or messages
-        const basePrompt = config.systemPrompt || messages.find(m => m.role === "system")?.content;
-        if (basePrompt) {
-            parts.push(basePrompt);
-        }
-
-        // Context note hint
-        if (config.contextNoteId) {
-            const noteHint = buildNoteHint(config.contextNoteId);
-            if (noteHint) {
-                parts.push(noteHint);
-            }
-        }
-
-        // Note tools hint
-        if (config.enableNoteTools) {
-            parts.push(
-                `You have access to skills that provide specialized instructions. Load a skill with the load_skill tool before performing complex operations.\n\nAvailable skills:\n${getSkillsSummary()}`
-            );
-            parts.push(
-                `When referring to notes in your responses, use the wiki-link format [[noteId]] to create clickable internal links. Use the note ID (not the title) from tool results. The link will automatically display the note's title and icon, so don't repeat the title in your text. For example: "You can find more details in [[ZjSfLhzlqNY6]]" instead of "You can find more details in the Meeting Notes note ([[ZjSfLhzlqNY6]])".`
-            );
-        } else if (config.contextNoteId) {
-            parts.push(
-                `You can see the current note's metadata above, but you cannot search or access other notes. If the user asks about other notes, inform them that "Note access" is disabled and they need to enable it in the chat settings (click on the model name dropdown and toggle "Note access").`
-            );
-        } else {
-            parts.push(
-                `You do not have access to the user's notes. If the user asks about their notes, inform them that "Note access" is disabled and they need to enable it in the chat settings (click on the model name dropdown and toggle "Note access").`
-            );
-        }
-
-        // Web search hint
-        if (!config.enableWebSearch) {
-            parts.push(
-                `You do not have access to web search. If the user asks for current/real-time information, news, or anything that requires searching the web, inform them that "Web search" is disabled and they need to enable it in the chat settings (click on the model name dropdown and toggle "Web search").`
-            );
-        }
-
-        return parts.length > 0 ? parts.join("\n\n") : undefined;
+        return composeSystemPrompt(messages, config);
     }
 
     /**
      * Build the ModelMessage array from LlmMessages (no provider-specific options).
+     *
+     * Only user/assistant turns are included here — the system prompt is passed
+     * separately via the `system` option of `streamText` (see `buildSystemMessage`),
+     * which is resilient against prompt injection.
      */
-    protected buildMessages(chatMessages: LlmMessage[], systemPrompt: string | undefined): ModelMessage[] {
-        const coreMessages: ModelMessage[] = [];
+    protected buildMessages(chatMessages: LlmMessage[]): ModelMessage[] {
+        return chatMessages.map(m => buildModelMessage(m));
+    }
 
-        if (systemPrompt) {
-            coreMessages.push({ role: "system", content: systemPrompt });
+    /**
+     * Attach the current-note metadata hint to the last user message.
+     *
+     * The hint is deliberately kept OUT of the system prompt: it changes whenever
+     * the context note changes, and the system prompt carries the provider's
+     * prompt-cache breakpoint — embedding volatile content there would invalidate
+     * the cached system+tools prefix on every note edit. The last user message is
+     * regenerated every turn and never cached, so it is the right home for it.
+     */
+    protected applyNoteHint(chatMessages: LlmMessage[], config: LlmProviderConfig): LlmMessage[] {
+        if (!config.contextNoteId) {
+            return chatMessages;
         }
 
-        for (const m of chatMessages) {
-            coreMessages.push({
-                role: m.role as "user" | "assistant",
-                content: m.content
-            });
+        const lastUserIndex = chatMessages.map(m => m.role).lastIndexOf("user");
+        if (lastUserIndex === -1) {
+            return chatMessages;
         }
 
-        return coreMessages;
+        const lastUserContent = chatMessages[lastUserIndex].content;
+        const hasAttachments = Array.isArray(lastUserContent)
+            && lastUserContent.some(p => p.type !== "text");
+
+        const noteHint = buildNoteHint(config.contextNoteId, hasAttachments);
+        if (!noteHint) {
+            return chatMessages;
+        }
+
+        return chatMessages.map((m, i) => {
+            if (i !== lastUserIndex) return m;
+            if (typeof m.content === "string") {
+                return { ...m, content: `${noteHint}\n\n${m.content}` };
+            }
+            // For multimodal content, prepend the hint as a leading text part so
+            // any attached images still travel with the message.
+            return {
+                ...m,
+                content: [{ type: "text" as const, text: noteHint }, ...m.content]
+            };
+        });
+    }
+
+    /**
+     * Build the value for the `system` option of `streamText`. Subclasses can
+     * override to attach provider-specific metadata (e.g. cache control).
+     */
+    protected buildSystemMessage(systemPrompt: string | undefined): string | SystemModelMessage | undefined {
+        return systemPrompt;
     }
 
     /**
@@ -172,13 +194,21 @@ export abstract class BaseProvider implements LlmProvider {
 
     chat(messages: LlmMessage[], config: LlmProviderConfig): StreamResult {
         const systemPrompt = this.buildSystemPrompt(messages, config);
-        const chatMessages = messages.filter(m => m.role !== "system");
-        const coreMessages = this.buildMessages(chatMessages, systemPrompt);
+        const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
+        const coreMessages = this.buildMessages(chatMessages);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
             model: this.createModel(config.model || this.defaultModel),
+            system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
-            maxOutputTokens: config.maxTokens || DEFAULT_MAX_TOKENS
+            maxOutputTokens: config.maxTokens || DEFAULT_MAX_TOKENS,
+            // Reject any system message smuggled into `messages` (prompt injection guard).
+            allowSystemInMessages: false,
+            // The AI SDK's default onError handler dumps the raw error object straight
+            // to stdout, bypassing Trilium's logger. The error is still delivered through
+            // `fullStream`, where `streamToChunks` turns it into a detailed message that
+            // the chat route logs — so suppress the unstructured stdout dump here.
+            onError: () => {}
         };
 
         const tools = this.buildTools(config);

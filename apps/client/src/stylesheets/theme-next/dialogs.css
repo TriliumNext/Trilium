@@ -106,6 +106,16 @@
     border-top: unset;
 }
 
+/*
+ * Footer buttons indicate focus on plain :focus (not only :focus-visible) so the
+ * dialog's auto-focused default action (e.g. the OK button of a confirm dialog) shows a
+ * ring even when the dialog was opened by mouse — programmatic focus after a pointer
+ * interaction does not match :focus-visible.
+ */
+.modal .modal-footer button.btn:focus {
+    outline: 2px solid var(--input-focus-outline-color);
+}
+
 /* Tool dialogs - small dialogs without a backdrop */
 div.tn-tool-dialog {
     border-radius: 10px;
@@ -253,7 +263,7 @@ div.tn-tool-dialog {
 }
 
 /* Item title for deleted notes */
-.recent-changes-content ul li.deleted-note .note-title {
+.recent-changes-dialog-view-mode-all-changes  ul li.deleted-note .note-title {
     text-decoration: line-through;
 }
 
@@ -370,18 +380,26 @@ div.tn-tool-dialog {
     margin-top: 0.4em;
 }
 
-/* Keyboard shortcut */
+/* Keyboard shortcut. Tooltips have their own palette — see the TOOLTIPS section in base.css. */
 .help-dialog .help-cards kbd,
 .ck-content kbd {
-    box-shadow: var(--help-kbd-shortcut-shadow);
-    margin: 0 4px;
-    border: none;
-    border-radius: 4px;
-    padding: 2px 10px;
+    display: inline-block;
+    margin: 0 2px 2px !important;
+    border: 1px solid var(--help-kbd-shortcut-border);
+    border-radius: 5px;
+    padding: 2px 8px;
     background: var(--help-kbd-shortcut-background);
+    box-shadow:
+        0 2px 0 var(--help-kbd-shortcut-border),
+        inset 0 -1px 0 var(--help-kbd-shortcut-border);
     color: var(--help-kbd-shortcut-color);
-    font-weight: 500;
+    font-family: var(--main-font-family) !important;
+    font-size: 0.75em;
+    font-weight: normal;
+    line-height: 1.4;
     letter-spacing: 0.5pt;
+    vertical-align: 1px;
+    white-space: nowrap;
 }
 
 .help-dialog .help-cards kbd:first-child {
@@ -397,10 +415,6 @@ div.tn-tool-dialog {
 }
 
 /* DELETE NOTE PREVIEW DIALOG */
-
-.delete-notes-dialog .modal-dialog {
-    --bs-modal-width: fit-content;
-}
 
 .delete-notes-list .note-path {
     padding-inline-start: 8px;

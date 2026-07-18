@@ -65,6 +65,7 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
                 "numberedList",
                 "todoList",
                 "|",
+                "imageUpload",
                 "blockQuote",
                 "admonition",
                 "insertTable",
@@ -76,7 +77,7 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
                 {
                     label: "Insert",
                     icon: "plus",
-                    items: ["imageUpload", "|", "link", "bookmark", "internallink", "includeNote", "|", "specialCharacters", "emoji", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
+                    items: ["link", "linkEmbed", "bookmark", "internallink", "includeNote", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "|", "dateTime", "specialCharacters", "emoji"]
                 },
                 "|",
                 buildAlignmentToolbar(),
@@ -85,7 +86,10 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
                 "|",
                 "insertTemplate",
                 "markdownImport",
-                "cuttonote"
+                "cuttonote",
+                "|",
+                "undo",
+                "redo"
             ],
             shouldNotGroupWhenFull: multilineToolbar
         }
@@ -112,8 +116,10 @@ export function buildFloatingToolbar() {
                 "code",
                 "link",
                 "bookmark",
-                "removeFormat",
                 "internallink",
+                "collapsible",
+                "|",
+                "removeFormat",
                 "cuttonote"
             ]
         },
@@ -125,6 +131,7 @@ export function buildFloatingToolbar() {
             "numberedList",
             "todoList",
             "|",
+            "imageUpload",
             "blockQuote",
             "admonition",
             "codeBlock",
@@ -133,7 +140,7 @@ export function buildFloatingToolbar() {
             {
                 label: "Insert",
                 icon: "plus",
-                items: ["link", "bookmark", "internallink", "includeNote", "|", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
+                items: ["link", "linkEmbed", "bookmark", "internallink", "includeNote", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
             },
             "|",
             buildAlignmentToolbar(),
@@ -141,7 +148,6 @@ export function buildFloatingToolbar() {
             "indent",
             "|",
             "insertTemplate",
-            "imageUpload",
             "markdownImport",
             "specialCharacters",
             "emoji"

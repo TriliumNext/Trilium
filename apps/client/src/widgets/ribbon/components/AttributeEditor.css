@@ -1,0 +1,52 @@
+/* Wrapper around the attribute editor, rendered by its consumers (e.g. the owned attributes tab, the status bar). */
+.attribute-list {
+    margin-inline-start: 7px;
+    margin-inline-end: 7px;
+    margin-top: 5px;
+    margin-bottom: 2px;
+    position: relative;
+}
+
+.attribute-list .attr-detail {
+    contain: none;
+}
+
+.attribute-list-editor {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    padding: 0 100px 0 5px !important;
+    margin: 0 !important;
+    max-height: 100px;
+    overflow: auto;
+    transition: opacity .1s linear;
+}
+
+body[dir=rtl] .attribute-list-editor {
+    padding: 0 5px 0 100px !important;
+    text-align: right !important;
+}
+
+.attribute-list-editor p {
+    margin: 0 !important;
+}
+
+.attribute-list-editor.ck-content .mention {
+    color: var(--muted-text-color) !important;
+    background: transparent !important;
+}
+
+.attribute-editor-buttons {
+    display: flex;
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+    bottom: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.attribute-errors {
+    color: red;
+    padding: 5px 100px 0px 5px; /* large right padding to avoid buttons */
+}

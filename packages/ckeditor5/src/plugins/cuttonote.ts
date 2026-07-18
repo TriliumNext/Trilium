@@ -36,7 +36,11 @@ export default class CutToNotePlugin extends Plugin {
 		const model = this.editor.model;
 		const document = model.document;
 
-		const content = this.editor.data.toView(model.getSelectedContent(document.selection));
+		// Downcast through the clipboard pipeline so editor-only list bookkeeping
+		// (data-list-item-id) is skipped, matching what a native copy produces.
+		const content = this.editor.data.toView(model.getSelectedContent(document.selection), {
+			isClipboardPipeline: true
+		});
 
 		return this.htmlDataProcessor.toData(content);
 	}

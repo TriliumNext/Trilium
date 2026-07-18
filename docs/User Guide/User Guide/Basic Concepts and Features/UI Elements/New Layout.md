@@ -5,7 +5,7 @@ The _New layout_ is a series of UI/UX changes that were introduced in v0.101.0 t
 
 ### Status bar
 
-At the bottom of the window there is a new bar called the _Status bar_. This bar houses multiple items such as the Breadcrumb navigation and information and settings about the current note, such as the [content language](../../Note%20Types/Text/Content%20language%20%26%20Right-to-le.md) and <a class="reference-link" href="../../Advanced%20Usage/Attributes.md">Attributes</a>.
+At the bottom of the window there is a new bar called the _Status bar_. This bar houses multiple items such as the Breadcrumb navigation and information and settings about the current note, such as the [content language](../../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md) and <a class="reference-link" href="../../Advanced%20Usage/Attributes.md">Attributes</a>.
 
 For more information, consult the [dedicated page](New%20Layout/Status%20bar.md).
 

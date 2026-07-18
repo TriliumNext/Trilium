@@ -1,0 +1,25 @@
+# DEV ONLY test users for the Authelia OIDC reproduction setup.
+#
+# Two accounts, both with password "authelia", so you can test that binding an
+# SSO identity is scoped per-account (sign in as one, bind, then verify the other
+# is treated as a distinct identity):
+#   username  testuser    password  authelia
+#   username  testuser2   password  authelia
+#
+# The argon2id hash below is for the password "authelia". Regenerate with:
+#   docker compose exec authelia authelia crypto hash generate argon2 --password 'yourpassword'
+users:
+  testuser:
+    disabled: false
+    displayname: 'Test User'
+    password: '$argon2id$v=19$m=65536,t=3,p=4$qQd8abEKDMNXIviIrwpiwg$JGj/Q1QkXJBhViqh7t4hy+QYt0y7rkh2+PuqZm0wcpc'
+    email: 'testuser@example.com'
+    groups:
+      - 'admins'
+  testuser2:
+    disabled: false
+    displayname: 'Test User Two'
+    password: '$argon2id$v=19$m=65536,t=3,p=4$qQd8abEKDMNXIviIrwpiwg$JGj/Q1QkXJBhViqh7t4hy+QYt0y7rkh2+PuqZm0wcpc'
+    email: 'testuser2@example.com'
+    groups:
+      - 'admins'

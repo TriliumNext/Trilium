@@ -1,21 +1,23 @@
 import { useState } from "preact/hooks";
 import protected_session_holder from "../../services/protected_session_holder";
-import { LaunchBarActionButton } from "./launch_bar_widgets";
+import { LaunchBarActionButton, LauncherNoteProps } from "./launch_bar_widgets";
 import { useTriliumEvent } from "../react/hooks";
 import { t } from "../../services/i18n";
 
-export default function ProtectedSessionStatusWidget() {
+export default function ProtectedSessionStatusWidget({ launcherNote }: LauncherNoteProps) {
     const protectedSessionAvailable = useProtectedSessionAvailable();
 
     return (
         protectedSessionAvailable ? (
             <LaunchBarActionButton
+                launcherNote={launcherNote}
                 icon="bx bx-check-shield"
                 text={t("protected_session_status.active")}
                 triggerCommand="leaveProtectedSession"
             />
         ) : (
             <LaunchBarActionButton
+                launcherNote={launcherNote}
                 icon="bx bx-shield-quarter"
                 text={t("protected_session_status.inactive")}
                 triggerCommand="enterProtectedSession"

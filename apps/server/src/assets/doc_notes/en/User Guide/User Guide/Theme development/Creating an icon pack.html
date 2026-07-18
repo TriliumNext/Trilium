@@ -27,38 +27,40 @@
   into Trilium.</p>
 <p>Trilium only supports <strong>font-based icon sets</strong>, with the following
   formats:</p>
-<table>
-  <thead>
-    <tr>
-      <th>Extension</th>
-      <th>MIME type</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code spellcheck="false">.woff2</code>
-      </td>
-      <td><code spellcheck="false">font/woff2</code>
-      </td>
-      <td>Recommended due to great compression (low size).</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">.woff</code>
-      </td>
-      <td><code spellcheck="false">font/woff</code>
-      </td>
-      <td>Higher compatibility, but the font file is bigger.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">.ttf</code>
-      </td>
-      <td><code spellcheck="false">font/ttf</code>
-      </td>
-      <td>Most common, but highest font size.</td>
-    </tr>
-  </tbody>
-</table>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Extension</th>
+        <th>MIME type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">.woff2</code>
+        </td>
+        <td><code spellcheck="false">font/woff2</code>
+        </td>
+        <td>Recommended due to great compression (low size).</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">.woff</code>
+        </td>
+        <td><code spellcheck="false">font/woff</code>
+        </td>
+        <td>Higher compatibility, but the font file is bigger.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">.ttf</code>
+        </td>
+        <td><code spellcheck="false">font/ttf</code>
+        </td>
+        <td>Most common, but highest font size.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <p>Trilium <strong>does not</strong> support the following formats:</p>
 <ul>
   <li>SVG-based fonts.</li>
@@ -136,7 +138,7 @@
   ]
 }</code></pre>
 <p>A tiny Node.js script to produce the manifest (place <code spellcheck="false">selection.json</code> in
-  the same directory and run with Node 20+):</p><pre><code class="language-application-javascript-env-backend">import { join } from "node:path";
+  the same directory and run with Node 20+):</p><pre><code class="language-text-javascript">import { join } from "node:path";
 import { readFileSync, writeFileSync } from "node:fs";
 
 function processIconPack(packName) {

@@ -38,7 +38,7 @@
     color: var(--muted-text-color);
 }
 
-.option-row:last-of-type {
+.option-row:last-child {
     border-bottom: unset;
 }
 
@@ -46,7 +46,31 @@
     justify-content: center;
 }
 
-.option-row-link.use-tn-links {
+.option-row.stacked {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.option-row.stacked .option-row-input {
+    width: 100%;
+}
+
+@container (max-width: 600px) {
+    /* Rows with compact inputs (toggles, icon buttons) keep the inline layout;
+       only rows with wide inputs (text boxes, selects) stack on narrow widths. */
+    .option-row:not(.option-row-link):not(.stacked):not(:has(.switch-widget)):not(:has(.icon-action)) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .option-row:not(.option-row-link):not(.stacked):not(:has(.switch-widget)):not(:has(.icon-action)) .option-row-input {
+        width: 100%;
+    }
+}
+
+.option-row-link {
     text-decoration: none;
     color: inherit;
     margin-inline: calc(-1 * var(--options-card-padding, 15px));
@@ -56,4 +80,43 @@
 
 .option-row-link:hover {
     background: var(--hover-item-background-color);
+}
+
+button.option-row-link {
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--main-border-color);
+    width: calc(100% + 2 * var(--options-card-padding, 15px));
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+button.option-row-link:last-child {
+    border-bottom: none;
+}
+
+button.option-row-link:disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.search-engine-templates {
+    --badge-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.search-engine-templates .ext-badge {
+    --color: var(--input-background-color);
+    color: var(--main-text-color);
+    font-size: 0.85em;
+}
+
+.search-engine-templates .ext-badge.selected {
+    --color: var(--accented-background-color);
+    outline: 2px solid var(--accent-color);
+    outline-offset: -2px;
 }

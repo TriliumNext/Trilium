@@ -1,12 +1,10 @@
 
 import { defineConfig } from 'vite';
-import dts from 'vite-plugin-dts';
-import * as path from 'path';
 
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/packages/codemirror',
-  plugins: [dts({ entryRoot: 'src', tsconfigPath: path.join(__dirname, 'tsconfig.lib.json') }), ],
+  plugins: [],
   build: {
     outDir: './dist',
     emptyOutDir: true,
@@ -27,5 +25,14 @@ export default defineConfig(() => ({
       // External packages that should not be bundled into your library.
       external: []
     },
+  },
+  test: {
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}', '**/*.d.ts'],
+      reporter: ['text', 'lcov'],
+      reportsDirectory: './test-output/vitest/coverage'
+    }
   },
 }));

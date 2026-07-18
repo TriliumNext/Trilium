@@ -16,7 +16,10 @@ const SKILLS_DIR = join(resourceDir.RESOURCE_DIR, "llm", "skills");
 
 interface SkillDefinition {
     name: string;
+    /** Long description shown in the load_skill tool's listing. */
     description: string;
+    /** Short noun phrase for inline use in the system prompt. */
+    summary: string;
     file: string;
 }
 
@@ -24,17 +27,26 @@ const SKILLS: SkillDefinition[] = [
     {
         name: "search_syntax",
         description: "Trilium search query syntax reference — labels, relations, note properties, boolean logic, ordering, and more.",
+        summary: "Trilium search query syntax",
         file: "search_syntax.md"
     },
     {
         name: "backend_scripting",
         description: "Backend (Node.js) scripting API — creating notes, handling events, accessing entities, database operations, and automation.",
+        summary: "the backend Node.js scripting API",
         file: "backend_scripting.md"
     },
     {
         name: "frontend_scripting",
         description: "Frontend (browser) scripting API — UI widgets, navigation, dialogs, editor access, Preact/JSX components, and keyboard shortcuts.",
+        summary: "the frontend browser scripting API",
         file: "frontend_scripting.md"
+    },
+    {
+        name: "dashboards",
+        description: "Dashboard collections — creating a dashboard note, adding widgets (text, diagrams, web views), and building interactive widgets with Preact render notes.",
+        summary: "creating dashboard collections and their widgets",
+        file: "dashboards.md"
     }
 ];
 
@@ -47,12 +59,13 @@ function loadSkillContent(name: string): string | null {
 }
 
 /**
- * Returns a summary of available skills for inclusion in the system prompt.
+ * Returns an inline-prose summary of available skills for the system prompt.
+ * Deliberately NOT a bulleted list — bullets with `- name: description` look
+ * like a tool catalog to some models (notably Gemini), which then hallucinate
+ * calls to the skill names as if they were tools.
  */
 export function getSkillsSummary(): string {
-    return SKILLS
-        .map((s) => `- **${s.name}**: ${s.description}`)
-        .join("\n");
+    return SKILLS.map((s) => `"${s.name}" for ${s.summary}`).join(", ");
 }
 
 export const skillTools = defineTools({

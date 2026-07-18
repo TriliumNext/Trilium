@@ -1,0 +1,91 @@
+name: Mobile
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile.yml"
+      - ".github/actions/build-mobile/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  packages: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v7
+
+      - name: Build mobile APK
+        uses: ./.github/actions/build-mobile
+
+  build_ios:
+    name: Build iOS App
+    # iOS builds require Xcode, which is only available on macOS runners.
+    runs-on: macos-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Update build info
+        run: pnpm run chore:update-build-info
+
+      - name: Build client-standalone (webDir for Capacitor)
+        run: pnpm --filter @triliumnext/mobile build
+
+      - name: Sync Capacitor iOS project
+        run: pnpm --filter @triliumnext/mobile exec cap sync ios
+
+      # Build an unsigned .app for the iOS Simulator. This sidesteps the need
+      # for Apple Developer signing credentials and produces a bundle that can
+      # be launched in the Simulator for smoke-testing or downloaded as an
+      # artifact. Switch to a signed archive build once we have certs + a
+      # provisioning profile in repo secrets.
+      - name: Build iOS app for Simulator (unsigned)
+        working-directory: apps/mobile/ios/App
+        run: |
+          xcodebuild \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package .app bundle
+        working-directory: apps/mobile/ios/App/build/Build/Products/Debug-iphonesimulator
+        run: zip -ry App.app.zip App.app
+
+      - name: Upload iOS Simulator app
+        uses: actions/upload-artifact@v7
+        with:
+          name: trilium-mobile-ios-simulator-app
+          path: apps/mobile/ios/App/build/Build/Products/Debug-iphonesimulator/App.app.zip
+          retention-days: 14

@@ -2,8 +2,21 @@ import { createGoogleGenerativeAI, type GoogleGenerativeAIProvider } from "@ai-s
 import { streamText, stepCountIs, type ToolSet } from "ai";
 import type { LlmMessage } from "@triliumnext/commons";
 
+import { getLog } from "@triliumnext/core";
 import type { LlmProviderConfig, StreamResult } from "../types.js";
 import { BaseProvider, buildModelList } from "./base_provider.js";
+
+/**
+ * Gemini 2.x models (every model we currently expose) cannot combine
+ * provider-defined tools like `googleSearch` with function declarations in a
+ * single request — Google's API rejects the combination. Combined tool use is
+ * Gemini-3-only and even there is flagged as Preview. When both are requested
+ * we silently drop `googleSearch` and keep function tools, since note access
+ * is Trilium's higher-value capability and is what the user explicitly toggled.
+ */
+function geminiHasToolConflict(config: LlmProviderConfig): boolean {
+    return !!(config.enableWebSearch && config.enableNoteTools);
+}
 
 /**
  * Available Google Gemini models with pricing (USD per million tokens).
@@ -48,12 +61,12 @@ export class GoogleProvider extends BaseProvider {
 
     private google: GoogleGenerativeAIProvider;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, baseURL?: string) {
         super();
         if (!apiKey) {
             throw new Error("API key is required for Google provider");
         }
-        this.google = createGoogleGenerativeAI({ apiKey });
+        this.google = createGoogleGenerativeAI({ apiKey, ...(baseURL && { baseURL }) });
     }
 
     protected createModel(modelId: string) {
@@ -62,6 +75,22 @@ export class GoogleProvider extends BaseProvider {
 
     protected override addWebSearchTool(tools: ToolSet): void {
         tools.google_search = this.google.tools.googleSearch({});
+    }
+
+    protected override buildTools(config: LlmProviderConfig): ToolSet {
+        if (geminiHasToolConflict(config)) {
+            getLog().info("Gemini: dropping google_search because note tools are enabled (Google API does not allow combining provider-defined tools with function declarations)");
+            return super.buildTools({ ...config, enableWebSearch: false });
+        }
+        return super.buildTools(config);
+    }
+
+    protected override buildSystemPrompt(messages: LlmMessage[], config: LlmProviderConfig): string | undefined {
+        const basePrompt = super.buildSystemPrompt(messages, config);
+        if (!geminiHasToolConflict(config) || !basePrompt) {
+            return basePrompt;
+        }
+        return `${basePrompt}\n\nNote: web search is unavailable in this turn because note tools are enabled — Google's Gemini API does not allow combining the two. If the user asks you to search the web, tell them they need to either switch to a different provider (OpenAI/Anthropic) or disable note tools.`;
     }
 
     /**
@@ -74,13 +103,16 @@ export class GoogleProvider extends BaseProvider {
         }
 
         const systemPrompt = this.buildSystemPrompt(messages, config);
-        const chatMessages = messages.filter(m => m.role !== "system");
-        const coreMessages = this.buildMessages(chatMessages, systemPrompt);
+        const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
+        const coreMessages = this.buildMessages(chatMessages);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
             model: this.createModel(config.model || this.defaultModel),
+            system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
             maxOutputTokens: config.maxTokens || 8096,
+            // Reject any system message smuggled into `messages` (prompt injection guard).
+            allowSystemInMessages: false,
             providerOptions: {
                 google: {
                     thinkingConfig: {

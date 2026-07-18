@@ -1,12 +1,5 @@
 {
   "about": {
-    "title": "Sobre o Trilium Notes",
-    "app_version": "Versão da App:",
-    "homepage": "Página inicial:",
-    "db_version": "Versão da base de dados:",
-    "sync_version": "Versão de sincronização:",
-    "build_date": "Data de compilação:",
-    "build_revision": "Revisão da compilação:",
     "data_directory": "Diretório de dados:"
   },
   "toast": {
@@ -88,7 +81,6 @@
     "also_delete_note": "Também apagar a nota"
   },
   "delete_notes": {
-    "delete_notes_preview": "Apagar pré-visualização de notas",
     "close": "Fechar",
     "delete_all_clones_description": "Apagar também todos os clones (pode ser desfeito em alterações recentes)",
     "erase_notes_description": "Apagar normal (suave) apenas marca as notas como apagadas, permitindo que sejam recuperadas (no diálogo de alterações recentes) num período. Se esta opção for marcada, as notas serão apagadas imediatamente e não será possível restaurá-las.",
@@ -96,28 +88,17 @@
     "notes_to_be_deleted": "As seguintes notas serão apagadas ({{notesCount}})",
     "no_note_to_delete": "Nenhuma nota será apagada (apenas os clones).",
     "broken_relations_to_be_deleted": "As seguintes relações serão quebradas e apagadas ({{ relationCount}})",
-    "cancel": "Cancelar",
-    "ok": "OK",
-    "deleted_relation_text": "A nota {{- note}} (a ser apagada) está referenciada pela relação {{- relation}} originada de {{- source}}."
+    "cancel": "Cancelar"
   },
   "export": {
     "export_note_title": "Exportar nota",
     "close": "Fechar",
     "export_type_subtree": "Esta nota e todos os seus descendentes",
-    "format_html": "HTML – recomendado, pois mantém toda a formatação",
-    "format_html_zip": "HTML num ficheiro ZIP – recomendado, pois preserva toda a formatação.",
-    "format_markdown": "Markdown – isto preserva a maior parte da formatação.",
-    "format_opml": "OPML - formato de intercâmbio de outliners apenas para texto. Formatação, imagens e ficheiros não estão incluídos.",
-    "opml_version_1": "OPML v1.0 – apenas texto simples",
-    "opml_version_2": "OPML v2.0 – permite também HTML",
     "export_type_single": "Apenas esta nota, sem os seus descendentes",
     "export": "Exportar",
     "choose_export_type": "Por favor, escolha primeiro o tipo de exportação",
-    "export_status": "Estado da exportação",
-    "export_in_progress": "Exportação em andamento: {{progressCount}}",
     "export_finished_successfully": "Exportação concluída com sucesso.",
-    "format_pdf": "PDF – para impressão ou compartilhamento.",
-    "share-format": "HTML para publicação web - usa o mesmo tema que é usado para notas partilhadas, mas pode ser publicado como um site estatico."
+    "format_pdf": "PDF – para impressão ou compartilhamento."
   },
   "help": {
     "title": "Folha de Dicas",
@@ -177,7 +158,6 @@
   "import": {
     "importIntoNote": "Importar para a nota",
     "chooseImportFile": "Escolher ficheiro para importar",
-    "importDescription": "O conteúdo do(s) ficheiro(s) selecionado(s) será importado como nota(s) filha(s) em",
     "options": "Opções",
     "safeImportTooltip": "Ficheiros de exportação Trilium<code> .zip</code> podem conter scripts executáveis que podem apresentar comportamentos prejudiciais. A importação segura desativará a execução automática de todos os scripts importados. Desmarque “Importação segura” apenas se o ficheiro de importação contiver scripts executáveis e você confiar totalmente no conteúdo do ficheiro importado.",
     "safeImport": "Importação segura",
@@ -196,7 +176,6 @@
       "placeholder": "Digite as tags HTML, uma por linha",
       "reset_button": "Redefinir para lista padrão"
     },
-    "import-status": "Estado da importação",
     "in-progress": "Importação em andamento: {{progress}}",
     "successful": "Importação concluída com sucesso.",
     "importZipRecommendation": "Quando a importar ficheiro ZIP, a hierarquia de notas vai reflectir a estrutura da sub directoria dentro do ficheiro."
@@ -269,33 +248,6 @@
     "no_changes_message": "Nenhuma alteração ainda...",
     "undelete_link": "Restaurar",
     "confirm_undelete": "Deseja restaurar esta nota e as suas subnotas?"
-  },
-  "revisions": {
-    "note_revisions": "Versões da nota",
-    "delete_all_revisions": "Apagar todas as versões desta nota",
-    "delete_all_button": "Apagar todas as versões",
-    "help_title": "Ajuda sobre as versões da nota",
-    "confirm_delete_all": "Quer apagar todas as versões desta nota?",
-    "no_revisions": "Ainda não há versões para esta nota...",
-    "restore_button": "Recuperar",
-    "confirm_restore": "Deseja restaurar esta versão? Isto irá substituir o título e o conteúdo atuais da nota por esta versão.",
-    "delete_button": "Apagar",
-    "confirm_delete": "Deseja apagar esta versão?",
-    "revisions_deleted": "As versões da nota foram removidas.",
-    "revision_restored": "A versão da nota foi restaurada.",
-    "revision_deleted": "A versão da nota foi apagada.",
-    "snapshot_interval": "Intervalo de captura das versões da nota: {{seconds}}s.",
-    "maximum_revisions": "Limite de capturas das versões da nota: {{number}}.",
-    "settings": "Configurações de versões da nota",
-    "download_button": "Descarregar",
-    "mime": "MIME: ",
-    "file_size": "Tamanho do ficheiro:",
-    "preview_not_available": "A visualização não está disponível para este tipo de nota.",
-    "diff_on": "Mostrar diferenças",
-    "diff_off": "Mostrar conteúdos",
-    "diff_on_hint": "Carregar para mostrar diferenças da fonte da nota",
-    "diff_off_hint": "Carregar para mostrar conteúdos da nota",
-    "diff_not_available": "Diferenças não disponível."
   },
   "sort_child_notes": {
     "sort_children_by": "Ordenar notas filhas por...",
@@ -847,7 +799,9 @@
     "note_size": "Tamanho da nota",
     "note_size_info": "O tamanho da nota fornece uma estimativa aproximada dos requisitos de armazenamento para esta nota. Leva em conta o conteúdo e o conteúdo das suas revisões de nota.",
     "calculate": "calcular",
-    "subtree_size": "(tamanho da subárvore: {{size}} em {{count}} notas)",
+    "subtree_size_one": "(tamanho da subárvore: {{size}} em {{count}} notas)",
+    "subtree_size_many": "",
+    "subtree_size_other": "",
     "title": "Informações da nota",
     "mime": "Tipo MIME",
     "show_similar_notes": "Mostrar notas semelhantes"
@@ -1035,16 +989,14 @@
     "too_big": "A prévia mostra apenas os primeiros {{maxNumChars}} caracteres do ficheiro por razões de desempenho. Descarregue o ficheiro e abra-o externamente para ver todo o conteúdo."
   },
   "protected_session": {
-    "enter_password_instruction": "É necessário digitar a sua palavra-passe para mostar notas protegidas:",
+    "enter_password_instruction": "É necessário digitar a sua palavra-passe para mostrar notas protegidas:",
     "start_session_button": "Iniciar sessão protegida",
     "started": "A sessão protegida foi iniciada.",
     "wrong_password": "Palavra-passe incorreta.",
     "protecting-finished-successfully": "A proteção foi finalizada com sucesso.",
     "unprotecting-finished-successfully": "A remoção da proteção foi finalizada com sucesso.",
     "protecting-in-progress": "Proteções em andamento: {{count}}",
-    "unprotecting-in-progress-count": "Remoções de proteção em andamento: {{count}}",
-    "protecting-title": "Estado da proteção",
-    "unprotecting-title": "Estado da remoção de proteção"
+    "unprotecting-in-progress-count": "Remoções de proteção em andamento: {{count}}"
   },
   "relation_map": {
     "remove_note": "Remover nota",
@@ -1091,7 +1043,6 @@
   },
   "database_integrity_check": {
     "title": "Verificação de Integridade da Base de Dados",
-    "description": "Isto verificará se a base de dados não está corrompida no nível SQLite. Pode levar algum tempo, dependendo do tamanho da base de dados.",
     "check_button": "Verificar integridade da base de dados",
     "checking_integrity": "A verificar integridade da base de dados…",
     "integrity_check_succeeded": "Verificação de integridade bem sucedida - nenhum problema encontrado.",
@@ -1123,10 +1074,7 @@
     "note_tree_font": "Fonte da Árvore de Notas",
     "note_detail_font": "Fonte Padrão da Nota",
     "monospace_font": "Fonte Monospace (código)",
-    "note_tree_and_detail_font_sizing": "Note que o tamanho da fonte da árvore e dos pormenores é relativo à configuração principal do tamanho de fonte.",
     "not_all_fonts_available": "Nem todas as fontes listadas podem estar disponíveis no seu sistema.",
-    "apply_font_changes": "Para aplicar as alterações de fonte, clique em",
-    "reload_frontend": "recarregar frontend",
     "generic-fonts": "Fontes genéricas",
     "sans-serif-system-fonts": "Fontes sem serifa de sistema",
     "serif-system-fonts": "Fontes serifadas de sistema",
@@ -1150,8 +1098,6 @@
     "disabled": "desativada"
   },
   "ribbon": {
-    "widgets": "Widgets de fita",
-    "promoted_attributes_message": "A guia de Atributos Promovidos irá abrir automaticamente se existirem atributos promovidos na nota",
     "edited_notes_message": "A guia de Notas Editadas será aberta automaticamente nas notas do dia"
   },
   "theme": {
@@ -1216,7 +1162,6 @@
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Tempo Limite para Apagar um Anexo",
-    "attachment_auto_deletion_description": "Os anexos são automaticamente apagados (e apagados) se já não forem referenciados pela sua nota após um tempo definido.",
     "erase_attachments_after": "Apagar anexos não utilizados após:",
     "manual_erasing_description": "Também pode ativar a apagar manualmente (sem considerar o timeout definido acima):",
     "erase_unused_attachments_now": "Apagar anexos não utilizados agora",
@@ -1228,7 +1173,6 @@
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "Tempo Limite para Apagar uma Nota",
-    "note_erasure_description": "Notas apagadas (e atributos, revisões...) inicialmente são apenas marcadas como apagadas e é possível recuperá-las a partir do diálogo de Notas Recentes. Depois de um tempo, as notas apagadas são \"apagadas\", o que significa que o seu conteúdo já não é recuperável. Esta configuração permite configurar o período entre apagar e apagar a nota.",
     "erase_notes_after": "Apagar notas após:",
     "manual_erasing_description": "Também pode ativar a apagar manualmente (sem considerar o timeout definido acima):",
     "erase_deleted_notes_now": "Apagar as notas apagadas agora",
@@ -1313,7 +1257,6 @@
     "first-week-contains-first-thursday": "Primeira semana que contenha a primeira quinta-feira do ano",
     "first-week-has-minimum-days": "Primeira semana que contenha um mínimo de dias",
     "min-days-in-first-week": "Mínimo de dias da primeira semana",
-    "first-week-info": "Primeira semana que contenha a primeira Quinta-feira do ano é baseado na <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
     "first-week-warning": "Alterar as opções de primeira semana pode causar duplicidade nas Notas Semanais existentes e estas Notas não serão atualizadas de acordo.",
     "formatting-locale": "Formato de data e número",
     "tuesday": "Terça-feira",
@@ -1339,7 +1282,6 @@
     "no_backup_yet": "ainda não existe nenhum backup"
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI é uma API REST usada para aceder a instância do Trilium programaticamente, sem interface gráfica.",
     "create_token": "Criar token ETAPI",
     "existing_tokens": "Tokens existentes",
@@ -1385,33 +1327,12 @@
     "password_changed_success": "A palavra-passe foi alterada. O Trilium será recarregado após pressionar OK."
   },
   "multi_factor_authentication": {
-    "title": "Autenticação Multifator",
-    "description": "A Autenticação Multifator (MFA) adiciona uma camada extra de segurança à sua conta. Em vez de apenas digitar uma palavra-passe para fazer login, a MFA exige que forneça uma ou mais evidências adicionais para verificar a sua identidade. Dessa forma, mesmo que alguém obtenha a sua palavra-passe, ainda não poderá aceder a sua conta sem a segunda informação. É como adicionar uma fechadura extra à sua porta, a fazer invadir muito mais difícil para qualquer outra pessoa.<br><br>Siga as instruções abaixo para ativar a MFA. Se a configuração não for feita corretamente, o login voltará a usar apenas a palavra-passe.",
-    "mfa_enabled": "Ativar a Autenticação Multifator",
-    "mfa_method": "Método MFA",
-    "electron_disabled": "A Autenticação Multifator não é suportada na versão desktop atualmente.",
-    "totp_title": "Palavra-passe Única Temporária baseada em Tempo (TOTP)",
-    "totp_description": "\"TOTP (Palavra-passe Única Temporária baseada em Tempo) é um recurso de segurança que gera um código único e temporário, que muda a cada 30 segundos. Utiliza este código junto com a sua palavra-passe para fazer login na conta, fazer acessar-la muito mais difícil para qualquer outra pessoa.",
-    "totp_secret_title": "Gerar segredo TOTP",
-    "totp_secret_generate": "Gerar segredo TOTP",
-    "totp_secret_regenerate": "Regenerar segredo TOTP",
-    "no_totp_secret_warning": "Para ativar o TOTP, primeiro deve gerar um segredo TOTP.",
-    "totp_secret_description_warning": "Após gerar um novo segredo TOTP, será necessário fazer login novamente com o novo segredo TOTP.",
-    "totp_secret_generated": "Segredo TOTP gerado",
-    "totp_secret_warning": "Por favor, grave o segredo gerado num local seguro. Ele não será exibido novamente.",
-    "totp_secret_regenerate_confirm": "Tem certeza que deseja regenerar o segredo TOTP? Isto invalidará o segredo TOTP anterior e todos os códigos de recuperação existentes.",
-    "recovery_keys_title": "Chaves de Recuperação do Single Sign-On",
-    "recovery_keys_description": "As chaves de recuperação do Single Sign-On são usadas para fazer login caso você não consiga aceder os seus códigos do Authenticator.",
     "recovery_keys_description_warning": "As chaves de recuperação não serão exibidas novamente após sair da página. Mantenha-as num local seguro.<br>Após o uso, uma chave de recuperação não poderá ser usada novamente.",
     "recovery_keys_error": "Erro ao gerar códigos de recuperação",
     "recovery_keys_no_key_set": "Nenhum código de recuperação definido",
-    "recovery_keys_generate": "Gerar Códigos de Recuperação",
     "recovery_keys_regenerate": "Regenerar Códigos de Recuperação",
-    "recovery_keys_used": "Usado: {{date}}",
-    "recovery_keys_unused": "Código de recuperação {{index}} não utilizado",
     "oauth_title": "OAuth/OpenID",
     "oauth_description": "OpenID é uma forma padronizada de permitir que faça login em sites usando uma conta de outro serviço, como o Google, para verificar a sua identidade. O emissor padrão é o Google, mas pode alterá-lo para qualquer outro provedor OpenID. Consulte <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">aqui</a> para mais informações. Siga estas <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instruções</a> para configurar um serviço OpenID através do Google.",
-    "oauth_description_warning": "Para ativar o OAuth/OpenID, precisa definir a URL base do OAuth/OpenID, o client ID e o client secret no ficheiro config.ini e reiniciar a aplicação. Se quiser configurar via variáveis de ambiente, defina TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID e TRILIUM_OAUTH_CLIENT_SECRET.",
     "oauth_user_account": "Conta do Utilizador: ",
     "oauth_user_email": "E-mail do Utilizador: ",
     "oauth_user_not_logged_in": "Não está logado!",
@@ -1419,13 +1340,7 @@
   },
   "shortcuts": {
     "keyboard_shortcuts": "Atalhos de Teclado",
-    "multiple_shortcuts": "Atalhos múltiplos para a mesma ação podem ser separados por vírgula.",
-    "electron_documentation": "Consulte a <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\\\">documentação do Electron</a> para ver os modificadores e códigos de teclas disponíveis.",
     "type_text_to_filter": "Digite para filtrar atalhos...",
-    "action_name": "Nome da ação",
-    "shortcuts": "Atalhos",
-    "default_shortcuts": "Atalhos padrão",
-    "description": "Descrição",
     "reload_app": "Recarregar aplicação para aplicar alterações",
     "set_all_to_default": "Redefinir todos os atalhos para o padrão",
     "confirm_reset": "Tem certeza que deseja redefinir todos os atalhos de teclado para o padrão?"
@@ -1434,18 +1349,13 @@
     "title": "Verificação Ortográfica",
     "description": "Estas opções aplicam-se apenas às versões desktop; os navegadores usarão a sua própria verificação ortográfica nativa.",
     "enable": "Ativar verificação ortográfica",
-    "language_code_label": "Código(s) de idioma",
-    "restart-required": "As alterações nas opções de verificação ortográfica terão efeito após reiniciar a aplicação."
+    "language_code_label": "Código(s) de idioma"
   },
   "sync_2": {
     "config_title": "Configuração da Sincronização",
     "server_address": "Endereço da instância do Servidor",
     "timeout": "Tempo limite da sincronização",
-    "timeout_unit": "milisegundos",
     "proxy_label": "Servidor proxy para sincronização (opcional)",
-    "note": "Nota",
-    "note_description": "Se deixar a configuração de proxy em branco, o proxy do sistema será usado (aplica-se apenas à versão desktop/Electron).",
-    "special_value_description": "Outro valor especial é <code>noproxy</code>, que força a ignorar até mesmo o proxy do sistema e respeita <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
     "save": "Gravar",
     "help": "Ajuda",
     "test_title": "Teste de Sincronização",
@@ -1510,7 +1420,9 @@
     "export": "Exportar",
     "import-into-note": "Importar na nota",
     "apply-bulk-actions": "Aplicar ações em massa",
-    "converted-to-attachments": "{{count}} notas foram convertidas em anexos.",
+    "converted-to-attachments_one": "{{count}} notas foram convertidas em anexos.",
+    "converted-to-attachments_many": "",
+    "converted-to-attachments_other": "",
     "convert-to-attachment-confirm": "Tem certeza que deseja converter as notas selecionadas em anexos das suas notas-pai?",
     "open-in-popup": "Edição rápida",
     "open-in-a-new-window": "Abrir numa nova janela",
@@ -1648,9 +1560,6 @@
     "no_notes_found": "Nenhuma nota encontrada para os parâmetros de pesquisa digitados.",
     "search_not_executed": "A pesquisa ainda não foi executada. Clique no botão \"Pesquisar\" acima para ver os resultados."
   },
-  "spacer": {
-    "configure_launchbar": "Configurar Barra de Lançamento"
-  },
   "sql_result": {
     "no_rows": "Esta consulta não retornou nenhuma linha"
   },
@@ -1702,7 +1611,6 @@
   },
   "branches": {
     "cannot-move-notes-here": "Não é possível mover notas para cá.",
-    "delete-status": "Apagar estado",
     "delete-notes-in-progress": "Apagar notas em andamento: {{count}}",
     "delete-finished-successfully": "Apagar concluído com sucesso.",
     "undeleting-notes-in-progress": "Restauração de notas em andamento: {{count}}",
@@ -2018,7 +1926,9 @@
     "delete_note": "Apagar nota..."
   },
   "pagination": {
-    "total_notes": "{{count}} notas"
+    "total_notes_one": "{{count}} notas",
+    "total_notes_many": "",
+    "total_notes_other": ""
   },
   "collections": {
     "rendering_error": "Sem possíbilidade de mostrar conteúdos devido a um erro."

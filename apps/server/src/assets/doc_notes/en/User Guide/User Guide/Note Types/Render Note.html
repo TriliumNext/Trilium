@@ -31,7 +31,7 @@ The current date &amp; time is &lt;span class="date"&gt;&lt;/span&gt;</code></pr
 <p>Now we need to add the script. Create another&nbsp;<a class="reference-link"
   href="#root/_help_6f9hih2hXXZk">Code</a>, but this time of JavaScript (frontend)
   language. Make sure the newly created note is a direct child of the HTML
-  note created previously; with the following content:</p><pre><code class="language-application-javascript-env-backend">const $dateEl = api.$container.find(".date");
+  note created previously; with the following content:</p><pre><code class="language-text-javascript">const $dateEl = api.$container.find(".date");
 $dateEl.text(new Date());</code></pre>
 <p>Now create a render note at any place and set its <code spellcheck="false">~renderNote</code> relation
   to point to the HTML note. When the render note is accessed it will display:</p>

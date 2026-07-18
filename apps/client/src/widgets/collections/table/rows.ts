@@ -1,5 +1,7 @@
+import { LabelType } from "@triliumnext/commons";
+
 import FNote from "../../../entities/fnote.js";
-import { extractAttributeDefinitionTypeAndName, type LabelType } from "../../../services/promoted_attribute_definition_parser.js";
+import { extractAttributeDefinitionTypeAndName } from "../../../services/promoted_attribute_definition_parser.js";
 import type { AttributeDefinitionInformation } from "./columns.js";
 
 export type TableData = {
@@ -49,7 +51,7 @@ export async function buildRowDefinitions(parentNote: FNote, infos: AttributeDef
             isArchived: note.isArchived,
             branchId: branch.branchId,
             colorClass: note.getColorClass()
-        }
+        };
 
         if (note.hasChildren() && (maxDepth < 0 || currentDepth < maxDepth)) {
             const { definitions, rowNumber: subRowNumber } = (await buildRowDefinitions(note, infos, includeArchived, maxDepth, currentDepth + 1));

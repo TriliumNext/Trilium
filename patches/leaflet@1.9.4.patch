@@ -1,0 +1,31 @@
+diff --git a/dist/leaflet-src.js b/dist/leaflet-src.js
+index 90f6db30412aa1219cba21fccd00644b994a51c8..d8d808c1ad314ffa787a8f2703bb466df52effe0 100644
+--- a/dist/leaflet-src.js
++++ b/dist/leaflet-src.js
+@@ -2542,6 +2542,13 @@
+   // (used by Leaflet internally to position its layers).
+   function setPosition(el, point) {
+ 
++  	// `el` can be undefined when a deferred interaction callback (a debounced wheel
++  	// zoom, a queued zoom-transition end, etc.) fires after the map was removed and
++  	// `_mapPane` was deleted. No-op instead of throwing on `el._leaflet_pos`, mirroring
++  	// the same guard in getPosition — together these keep a geo-map torn down mid-zoom
++  	// from breaking app-wide navigation.
++  	if (!el) { return; }
++
+   	/*eslint-disable */
+   	el._leaflet_pos = point;
+   	/* eslint-enable */
+@@ -2560,7 +2567,11 @@
+   	// this method is only used for elements previously positioned using setPosition,
+   	// so it's safe to cache the position for performance
+ 
+-  	return el._leaflet_pos || new Point(0, 0);
++  	// `el` can be undefined when a deferred interaction callback (a debounced wheel
++  	// zoom, a queued zoom-transition end, etc.) fires after the map was removed and
++  	// `_mapPane` was deleted. Tolerate that instead of throwing on `el._leaflet_pos`,
++  	// which otherwise breaks app-wide navigation when a geo-map is torn down mid-zoom.
++  	return (el && el._leaflet_pos) || new Point(0, 0);
+   }
+ 
+   // @function disableTextSelection()

@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Seleziona pagina { $page }
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Seleziona pagina { $page }
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Pagina { $page } di { $total }
@@ -654,12 +650,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Attiva/disattiva barra laterale
 pdfjs-toggle-views-manager-notification-button =
     .title = Attiva/disattiva barra laterale (il documento contiene miniature, struttura, allegati, livelli)
 pdfjs-toggle-views-manager-button1-label = Gestisci pagine
-pdfjs-toggle-views-manager-button-label = Attiva/disattiva barra laterale
 pdfjs-views-manager-sidebar =
     .aria-label = Barra laterale
 pdfjs-views-manager-sidebar-resizer =
@@ -670,11 +663,9 @@ pdfjs-views-manager-view-selector-button-label = Viste
 pdfjs-views-manager-pages-title = Pagine
 pdfjs-views-manager-outlines-title1 = Struttura del documento
     .title = Struttura del documento (doppio clic per espandere/comprimere tutti gli elementi)
-pdfjs-views-manager-outlines-title = Struttura del documento
 pdfjs-views-manager-attachments-title = Allegati
 pdfjs-views-manager-layers-title1 = Livelli
     .title = Livelli (doppio clic per ripristinare tutti i livelli allo stato predefinito)
-pdfjs-views-manager-layers-title = Livelli
 pdfjs-views-manager-pages-option-label = Pagine
 pdfjs-views-manager-outlines-option-label = Struttura del documento
 pdfjs-views-manager-attachments-option-label = Allegati
@@ -694,8 +685,7 @@ pdfjs-views-manager-pages-status-action-button-label = Gestisci
 pdfjs-views-manager-pages-status-copy-button-label = Copia
 pdfjs-views-manager-pages-status-cut-button-label = Taglia
 pdfjs-views-manager-pages-status-delete-button-label = Elimina
-pdfjs-views-manager-pages-status-export-selected-button-label = Esporta selezionati…
-pdfjs-views-manager-pages-status-save-as-button-label = Salva con nome…
+pdfjs-views-manager-pages-status-export-selected-button-label = Esporta selezionate…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =
@@ -738,6 +728,7 @@ pdfjs-views-manager-paste-button-after =
 # Badge used to promote a new feature in the UI, keep it as short as possible.
 # It's spelled uppercase for English, but it can be translated as usual.
 pdfjs-new-badge-content = NOVITÀ
+pdfjs-views-manager-waiting-for-file = Caricamento file…
 pdfjs-toggle-views-manager-button1 =
     .title = Gestisci pagine
 

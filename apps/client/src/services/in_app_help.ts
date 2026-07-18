@@ -30,11 +30,14 @@ export const byBookType: Record<ViewTypeOptions, string | null> = {
     table: "2FvYrpmOXm29",
     geoMap: "81SGnPGMk7Xc",
     board: "CtBQqbwXDx1w",
-    presentation: null
+    presentation: "zP3PMqaG71Ct",
+    dashboard: "IF7Q6I9x7zuw"
 };
 
 export function getHelpUrlForNote(note: FNote | null | undefined) {
-    if (note && note.type !== "book" && byNoteType[note.type]) {
+    if (note?.isMarkdown()) {
+        return "6RM1Q7ppFVoj";
+    } else if (note && note.type !== "book" && byNoteType[note.type]) {
         return byNoteType[note.type];
     } else if (note?.hasLabel("calendarRoot")) {
         return "l0tKav7yLHGF";

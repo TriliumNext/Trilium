@@ -1,19 +1,21 @@
-/// <reference types="../../../../node_modules/dayjs/plugin/advancedFormat.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/duration.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/isBetween.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/isoWeek.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/isSameOrAfter.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/isSameOrBefore.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/quarterOfYear.d.ts" />
-/// <reference types="../../../../node_modules/dayjs/plugin/utc.d.ts" />
+import "dayjs/plugin/advancedFormat.js";
+import "dayjs/plugin/duration.js";
+import "dayjs/plugin/isBetween.js";
+import "dayjs/plugin/isoWeek.js";
+import "dayjs/plugin/isSameOrAfter.js";
+import "dayjs/plugin/isSameOrBefore.js";
+import "dayjs/plugin/quarterOfYear.js";
+import "dayjs/plugin/utc.js";
 
 import { LOCALES } from "./i18n.js";
-import { DAYJS_LOADER, dayjs } from "./dayjs.js";
+import { DAYJS_LOADER, dayjs, setDayjsLocale } from "./dayjs.js";
 import { describe, expect, it } from "vitest";
 
 describe("dayjs", () => {
     it("all dayjs locales are valid", async () => {
         for (const locale of LOCALES) {
+            if (locale.contentOnly) continue;
+
             const dayjsLoader = DAYJS_LOADER[locale.id];
             expect(dayjsLoader, `Locale ${locale.id} missing.`).toBeDefined();
 
@@ -55,6 +57,22 @@ describe("dayjs", () => {
         it("utc is available", () => {
             const utcDate = dayjs("2023-10-01T12:00:00").utc();
             expect(utcDate.utcOffset()).toBe(0);
+        });
+    });
+
+    describe("setDayjsLocale", () => {
+        it("sets the locale when present in the loader", async () => {
+            await setDayjsLocale("en");
+            expect(dayjs.locale()).toBe("en");
+        });
+
+        it("leaves the locale unchanged when not present in the loader", async () => {
+            await setDayjsLocale("en");
+            expect(dayjs.locale()).toBe("en");
+
+            // "xx-not-a-locale" is not a key in DAYJS_LOADER, so the locale must stay as "en".
+            await setDayjsLocale("xx-not-a-locale" as never);
+            expect(dayjs.locale()).toBe("en");
         });
     });
 });

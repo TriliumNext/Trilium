@@ -11,9 +11,13 @@
     height: 100%;
     user-select: none;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 16px;
+    box-sizing: border-box;
 
     @media (max-width: 991px) {
-        padding: 0;
+        padding: 0 0 var(--content-margin-inline) 0;
 
         th {
             font-weight: normal;

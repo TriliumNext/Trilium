@@ -1,3 +1,5 @@
+import "./NoteMapTab.css";
+
 import { TabContext } from "./ribbon-interface";
 import { useElementSize, useWindowSize } from "../react/hooks";
 import ActionButton from "../react/ActionButton";

@@ -1,10 +1,10 @@
 import { AnonymizedDbResponse, BUILTIN_ATTRIBUTES, DatabaseAnonymizeResponse } from "@triliumnext/commons";
+import { date_utils as dateUtils } from "@triliumnext/core";
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 
 import dataDir from "./data_dir.js";
-import dateUtils from "./date_utils.js";
 import sql from "./sql.js";
 
 function getFullAnonymizationScript() {
@@ -84,11 +84,14 @@ function getExistingAnonymizedDatabases() {
 
     return fs
         .readdirSync(dataDir.ANONYMIZED_DB_DIR)
-        .filter((fileName) => fileName.includes("anonymized"))
-        .map((fileName) => ({
-            fileName,
-            filePath: path.resolve(dataDir.ANONYMIZED_DB_DIR, fileName)
-        })) satisfies AnonymizedDbResponse[];
+        // The .db check excludes intermediate SQLite files (e.g. *.db-journal) created while an anonymization is in progress.
+        .filter((fileName) => fileName.includes("anonymized") && fileName.endsWith(".db"))
+        .map((fileName) => {
+            const filePath = path.resolve(dataDir.ANONYMIZED_DB_DIR, fileName);
+            const stat = fs.statSync(filePath);
+
+            return { fileName, filePath, mtime: stat.mtime, fileSize: stat.size };
+        }) satisfies AnonymizedDbResponse[];
 }
 
 export default {

@@ -2,7 +2,7 @@
 Configuring TLS is essential for [server installation](../Server%20Installation.md) in Trilium. This guide details the steps to set up TLS within Trilium itself.
 
 > [!TIP]
-> While Trilium supports HTTPS on its own, it's generally a good idea to use a [reverse proxy](2.%20Reverse%20proxy) instead with TLS termination. You can follow a [guide like this](https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04) for such setups.
+> While Trilium supports HTTPS on its own, it's generally a good idea to use a [reverse proxy](2.%20Reverse%20proxy.md) instead with TLS termination. You can follow a [guide like this](https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04) for such setups.
 
 ## Obtaining a TLS Certificate
 
@@ -26,7 +26,7 @@ certPath=/[username]/.acme.sh/[hostname]/fullchain.cer
 keyPath=/[username]/.acme.sh/[hostname]/example.com.key
 ```
 
-You can also review the [configuration](../../Advanced%20Usage/Configuration%20\(config.ini%20or%20e.md) file to provide all `config.ini` values as environment variables instead. For example, you can configure TLS using environment variables:
+You can also review the [configuration](../../Advanced%20Usage/Configuration%20\(config.ini%20or%20environment%20variables\).md) file to provide all `config.ini` values as environment variables instead. For example, you can configure TLS using environment variables:
 
 ```
 export TRILIUM_NETWORK_HTTPS=true

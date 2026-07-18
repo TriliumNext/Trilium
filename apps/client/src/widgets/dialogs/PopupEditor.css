@@ -1,7 +1,14 @@
 /** Reduce the z-index of modals so that ckeditor popups are properly shown on top of it. */
-body.popup-editor-open > .modal-backdrop { z-index: 998; }
-body.popup-editor-open .popup-editor-dialog { z-index: 999; }
-body.popup-editor-open .ck-clipboard-drop-target-line { z-index: 1000; }
+body.popup-editor-open:not(.popup-editor-stacked) > .modal-backdrop { z-index: 998; }
+body.popup-editor-open:not(.popup-editor-stacked) .popup-editor-dialog { z-index: 999; }
+body.popup-editor-open:not(.popup-editor-stacked) .ck-clipboard-drop-target-line { z-index: 1000; }
+
+/** When stacked on top of another Bootstrap modal (e.g. opened from a dialog's help button),
+    raise the popup and its own backdrop above the underlying modal (Bootstrap defaults are
+    backdrop 1050, dialog 1055 — no native stacking increment). */
+body.popup-editor-stacked .popup-editor-dialog { z-index: 1100; }
+body.popup-editor-stacked .ck-clipboard-drop-target-line { z-index: 1101; }
+.modal-backdrop.popup-editor-backdrop { z-index: 1099; }
 
 body.desktop .modal.popup-editor-dialog .modal-dialog {
     max-width: 75vw;
@@ -9,7 +16,8 @@ body.desktop .modal.popup-editor-dialog .modal-dialog {
     border-bottom-right-radius: var(--bs-modal-border-radius);
 }
 
-body.desktop .modal.popup-editor-dialog .modal-dialog {
+body.desktop .modal.popup-editor-dialog .modal-dialog .modal-content {
+    border-radius: var(--bs-modal-border-radius);
     overflow: hidden;
 }
 
@@ -27,7 +35,10 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     font-size: 1.1em;
 }
 
-.modal.popup-editor-dialog .modal-header .title-row {
+/* The note-title header (icon + editable title) is shared with the tree popup, which reuses the same
+   TitleRow; keep both selectors together so the two dialogs stay pixel-identical. */
+.modal.popup-editor-dialog .modal-header .title-row,
+.modal.tree-popup-editor-dialog .modal-header .title-row {
     flex-grow: 1;
     display: flex;
     align-items: center;
@@ -40,7 +51,8 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     }
 }
 
-.modal.popup-editor-dialog .modal-header .note-title-widget {
+.modal.popup-editor-dialog .modal-header .note-title-widget,
+.modal.tree-popup-editor-dialog .modal-header .note-title-widget {
     display: flex;
     align-items: center;
 }
@@ -55,17 +67,22 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
 
 .modal.popup-editor-dialog .title-row,
 .modal.popup-editor-dialog .modal-title,
-.modal.popup-editor-dialog .note-icon-widget {
+.modal.popup-editor-dialog .note-icon-widget,
+.modal.tree-popup-editor-dialog .title-row,
+.modal.tree-popup-editor-dialog .note-icon-widget {
     height: 32px;
     min-height: unset;
 }
 
-:root div.modal.popup-editor-dialog div.note-title-widget {
+:root div.modal.popup-editor-dialog div.note-title-widget,
+:root div.modal.tree-popup-editor-dialog div.note-title-widget {
     --note-title-padding-inline: 8px;
 }
 
 .modal.popup-editor-dialog .note-icon-widget button.note-icon,
-.modal.popup-editor-dialog .note-title-widget input.note-title {
+.modal.popup-editor-dialog .note-title-widget input.note-title,
+.modal.tree-popup-editor-dialog .note-icon-widget button.note-icon,
+.modal.tree-popup-editor-dialog .note-title-widget input.note-title {
     font-size: 1em;
 }
 

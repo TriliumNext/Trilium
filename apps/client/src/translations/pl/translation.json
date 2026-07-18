@@ -1,13 +1,27 @@
 {
   "about": {
-    "title": "O Trilium Notes",
-    "homepage": "Strona domowa:",
-    "app_version": "Wersja aplikacji:",
-    "db_version": "Wersja bazy danych:",
-    "sync_version": "Wersja synchronizacji:",
-    "build_date": "Data kompilacji:",
-    "build_revision": "Rewizja:",
-    "data_directory": "Katalog danych:"
+    "data_directory": "Katalog danych:",
+    "version_label": "Wersja:",
+    "version": "{{appVersion}} (baza danych: {{dbVersion}}, protokół synchronizacji: {{syncVersion}})",
+    "license_tooltip": "Podgląd licencji",
+    "donate": "Wesprzeć",
+    "channel": {
+      "standalone": "Samodzielna",
+      "nightly": "Kompilacja nocna"
+    },
+    "build_info": "Data kompilacji: {{buildDate}}, wersja: <buildRevision />",
+    "contributors_label": "Autorzy:",
+    "contributor_roles": {
+      "lead-dev": "główny programista",
+      "original-dev": "pierwotny twórca"
+    },
+    "role_brief_history": {
+      "lead-dev": "W 2024 roku Elian Doran założył TriliumNext, społecznościowy fork powstały po tym, jak Zadam wycofał się z projektu. Zadam przekazał później oryginalne repozytorium zespołowi TriliumNext, łącząc oba projekty w jeden.",
+      "original-dev": "25 grudnia 2017 roku Zadam opublikował pierwszą wersję beta Trilium (pisane z jednym „l”, w odróżnieniu od nazwy kwiatu). Niezadowolony z istniejących narzędzi do zarządzania notatkami, stworzył potężną, hostowaną lokalnie hierarchiczną bazę wiedzy, która zebrała ponad 22 000 gwiazdek na GitHubie. W 2024 roku, gdy jego życie stało się bardziej intensywne, przełączył projekt w tryb konserwacji."
+    },
+    "contributor_full_list": "Zobacz całą społeczność",
+    "github_tooltip": "Zgłaszaj błędy, proponuj nowe funkcje lub współtwórz projekt na GitHubie",
+    "donate_tooltip": "Przekaż darowiznę, aby wesprzeć ten projekt"
   },
   "toast": {
     "critical-error": {
@@ -78,34 +92,33 @@
   "delete_notes": {
     "cancel": "Anuluj",
     "close": "Zamknij",
-    "delete_notes_preview": "Podgląd usuwania notatek",
     "delete_all_clones_description": "Usuń również wszystkie klony (można cofnąć w oknie Ostatnie zmiany)",
     "erase_notes_description": "Normalne (miękkie) usuwanie jedynie oznacza notatki jako usunięte i można je przywrócić (w oknie Ostatnie zmiany) przez pewien czas. Zaznaczenie tej opcji spowoduje natychmiastowe wymazanie notatek i nie będzie możliwe ich przywrócenie.",
     "erase_notes_warning": "Wymaż notatki trwale (nie można cofnąć), w tym wszystkie klony. Wymusi to przeładowanie aplikacji.",
     "notes_to_be_deleted": "Następujące notatki zostaną usunięte ({{notesCount}})",
     "no_note_to_delete": "Żadna notatka nie zostanie usunięta (tylko klony).",
     "broken_relations_to_be_deleted": "Następujące relacje zostaną zerwane i usunięte ({{ relationCount}})",
-    "ok": "OK",
-    "deleted_relation_text": "Notatka {{- note}} (do usunięcia) jest powiązana relacją {{- relation}} pochodzącą z {{- source}}."
+    "title": "Skasuj notatki",
+    "erase_notes_label": "Usuń trwale",
+    "table_note_with_relation": "Notatka z relacją",
+    "table_relation": "Relacja",
+    "delete": "Skasuj"
   },
   "export": {
     "close": "Zamknij",
     "export_note_title": "Eksportuj notatkę",
     "export_type_subtree": "Ta notatka i wszystkie jej elementy podrzędne",
-    "format_html": "HTML - zalecane, ponieważ zachowuje pełne formatowanie",
-    "format_html_zip": "HTML w archiwum ZIP - zalecane, ponieważ zachowuje pełne formatowanie.",
-    "format_markdown": "Markdown - zachowuje większość formatowania.",
-    "format_opml": "OPML - format wymiany konspektów (tylko tekst). Formatowanie, obrazy i pliki nie są dołączane.",
-    "opml_version_1": "OPML v1.0 - tylko zwykły tekst",
-    "opml_version_2": "OPML v2.0 - dopuszcza również HTML",
     "export_type_single": "Tylko ta notatka (bez elementów podrzędnych)",
     "export": "Eksportuj",
     "choose_export_type": "Proszę najpierw wybrać typ eksportu",
-    "export_status": "Status eksportu",
-    "export_in_progress": "Eksport w toku: {{progressCount}}",
     "export_finished_successfully": "Eksport zakończony pomyślnie.",
     "format_pdf": "PDF - do druku lub udostępniania.",
-    "share-format": "HTML do publikacji w sieci - używa tego samego motywu co udostępnione notatki, ale może być opublikowany jako statyczna strona."
+    "format": "Format",
+    "format_html_name": "HTML",
+    "format_html_description": "Zachowaj całe formatowanie",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Zachowaj większość formatowania",
+    "recommended": "Zalecane"
   },
   "clone_to": {
     "clone_notes_to": "Sklonuj notatki do...",
@@ -261,7 +274,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "total_notes": "{{count}} notatek",
+    "total_notes_one": "{{count}} notatek",
+    "total_notes_few": "",
+    "total_notes_many": "",
     "prev_page": "Poprzednia strona",
     "next_page": "Następna strona"
   },
@@ -408,11 +423,9 @@
   "import": {
     "importIntoNote": "Importuj do notatki",
     "chooseImportFile": "Wybierz plik importu",
-    "importDescription": "Zawartość wybranego pliku/plików zostanie zaimportowana jako notatka/notatki podrzędne do",
     "options": "Opcje",
     "shrinkImages": "Zmniejsz obrazy",
     "safeImport": "Bezpieczny import",
-    "import-status": "Status importu",
     "in-progress": "Import w toku: {{progress}}",
     "successful": "Import zakończony pomyślnie.",
     "safeImportTooltip": "Pliki eksportu <code>.zip</code> Trilium mogą zawierać skrypty wykonywalne, które mogą mieć szkodliwe działanie. Bezpieczny import dezaktywuje automatyczne wykonywanie wszystkich zaimportowanych skryptów. Odznacz \"Bezpieczny import\" tylko wtedy, gdy importowane archiwum ma zawierać skrypty i całkowicie ufasz zawartości pliku importu.",
@@ -457,7 +470,9 @@
     "note_size": "Rozmiar notatki",
     "note_size_info": "Rozmiar notatki zapewnia przybliżone oszacowanie wymagań pamięciowych dla tej notatki. Bierze pod uwagę treść notatki i zawartość jej wersji.",
     "calculate": "oblicz",
-    "subtree_size": "(rozmiar poddrzewa: {{size}} w {{count}} notatkach)",
+    "subtree_size_one": "(rozmiar poddrzewa: {{size}} w {{count}} notatkach)",
+    "subtree_size_few": "",
+    "subtree_size_many": "",
     "title": "Info o notatce",
     "show_similar_notes": "Pokaż podobne notatki",
     "mime": "Typ MIME"
@@ -797,33 +812,6 @@
     "no_changes_message": "Brak zmian...",
     "undelete_link": "przywróć",
     "confirm_undelete": "Czy chcesz przywrócić tę notatkę i jej pod-notatki?"
-  },
-  "revisions": {
-    "note_revisions": "Wersje notatki",
-    "delete_all_revisions": "Usuń wszystkie wersje tej notatki",
-    "delete_all_button": "Usuń wszystkie wersje",
-    "help_title": "Pomoc dotycząca wersji notatki",
-    "confirm_delete_all": "Czy chcesz usunąć wszystkie wersje tej notatki?",
-    "no_revisions": "Brak wersji dla tej notatki...",
-    "restore_button": "Przywróć",
-    "diff_on": "Pokaż różnice",
-    "diff_off": "Pokaż treść",
-    "diff_on_hint": "Kliknij, aby pokazać różnice w źródle notatki",
-    "diff_off_hint": "Kliknij, aby pokazać treść notatki",
-    "diff_not_available": "Różnice nie są dostępne.",
-    "confirm_restore": "Czy chcesz przywrócić tę wersję? Spowoduje to nadpisanie obecnego tytułu i treści notatki tą wersją.",
-    "delete_button": "Usuń",
-    "confirm_delete": "Czy chcesz usunąć tę wersję?",
-    "revisions_deleted": "Wersje notatki zostały usunięte.",
-    "revision_restored": "Wersja notatki została przywrócona.",
-    "revision_deleted": "Wersja notatki została usunięta.",
-    "snapshot_interval": "Interwał zrzutu wersji notatki: {{seconds}}s.",
-    "maximum_revisions": "Limit zrzutów wersji notatki: {{number}}.",
-    "settings": "Ustawienia wersji notatki",
-    "download_button": "Pobierz",
-    "mime": "MIME: ",
-    "file_size": "Rozmiar pliku:",
-    "preview_not_available": "Podgląd nie jest dostępny dla tego typu notatki."
   },
   "sort_child_notes": {
     "sort_children_by": "Sortuj elementy podrzędne według...",
@@ -1271,9 +1259,7 @@
     "protecting-finished-successfully": "Ochrona zakończona pomyślnie.",
     "unprotecting-finished-successfully": "Zdejmowanie ochrony zakończone pomyślnie.",
     "protecting-in-progress": "Ochrona w toku: {{count}}",
-    "unprotecting-in-progress-count": "Zdejmowanie ochrony w toku: {{count}}",
-    "protecting-title": "Status ochrony",
-    "unprotecting-title": "Status zdejmowania ochrony"
+    "unprotecting-in-progress-count": "Zdejmowanie ochrony w toku: {{count}}"
   },
   "relation_map": {
     "remove_note": "Usuń notatkę",
@@ -1320,7 +1306,6 @@
   },
   "database_integrity_check": {
     "title": "Sprawdzanie integralności bazy danych",
-    "description": "To sprawdzi, czy baza danych nie jest uszkodzona na poziomie SQLite. Może to zająć trochę czasu, w zależności od rozmiaru bazy danych.",
     "check_button": "Sprawdź integralność bazy danych",
     "checking_integrity": "Sprawdzanie integralności bazy danych...",
     "integrity_check_succeeded": "Sprawdzanie integralności powiodło się - nie znaleziono problemów.",
@@ -1352,10 +1337,7 @@
     "note_tree_font": "Czcionka drzewa notatek",
     "note_detail_font": "Czcionka szczegółów notatki",
     "monospace_font": "Czcionka o stałej szerokości (kod)",
-    "note_tree_and_detail_font_sizing": "Zauważ, że rozmiar czcionki drzewa i szczegółów jest względny do ustawienia rozmiaru głównej czcionki.",
     "not_all_fonts_available": "Nie wszystkie wymienione czcionki mogą być dostępne w twoim systemie.",
-    "apply_font_changes": "Aby zastosować zmiany czcionek, kliknij na",
-    "reload_frontend": "przeładuj frontend",
     "generic-fonts": "Czcionki ogólne",
     "sans-serif-system-fonts": "Systemowe czcionki bezszeryfowe",
     "serif-system-fonts": "Systemowe czcionki szeryfowe",
@@ -1379,8 +1361,6 @@
     "disabled": "wyłączony"
   },
   "ribbon": {
-    "widgets": "Widżety wstążki",
-    "promoted_attributes_message": "Karta wstążki Wyróżnione Atrybuty otworzy się automatycznie, jeśli w notatce obecne są wyróżnione atrybuty",
     "edited_notes_message": "Karta wstążki Edytowane Notatki otworzy się automatycznie na notatkach dziennych"
   },
   "theme": {
@@ -1445,7 +1425,6 @@
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Limit czasu wymazywania załączników",
-    "attachment_auto_deletion_description": "Załączniki są automatycznie usuwane (i wymazywane), jeśli nie są już powiązane z ich notatką po określonym czasie.",
     "erase_attachments_after": "Wymaż nieużywane załączniki po:",
     "manual_erasing_description": "Możesz również wywołać wymazywanie ręcznie (bez uwzględniania zdefiniowanego powyżej limitu czasu):",
     "erase_unused_attachments_now": "Wymaż nieużywane załączniki teraz",
@@ -1457,7 +1436,6 @@
   },
   "note_erasure_timeout": {
     "note_erasure_timeout_title": "Limit czasu wymazywania notatek",
-    "note_erasure_description": "Usunięte notatki (oraz atrybuty, wersje...) są początkowo tylko oznaczane jako usunięte i możliwe jest ich odzyskanie z okna Ostatnie notatki. Po pewnym czasie usunięte notatki są \"wymazywane\", co oznacza, że ich zawartość nie jest już możliwa do odzyskania. To ustawienie pozwala skonfigurować długość okresu między usunięciem a wymazaniem notatki.",
     "erase_notes_after": "Wymaż notatki po:",
     "manual_erasing_description": "Możesz również wywołać wymazywanie ręcznie (bez uwzględniania zdefiniowanego powyżej limitu czasu):",
     "erase_deleted_notes_now": "Wymaż usunięte notatki teraz",
@@ -1547,7 +1525,6 @@
     "first-week-contains-first-thursday": "Pierwszy tydzień zawiera pierwszy czwartek roku",
     "first-week-has-minimum-days": "Pierwszy tydzień ma minimalną liczbę dni",
     "min-days-in-first-week": "Minimalna liczba dni w pierwszym tygodniu",
-    "first-week-info": "Pierwszy tydzień zawiera pierwszy czwartek roku bazuje na standardzie <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
     "first-week-warning": "Zmiana opcji pierwszego tygodnia może spowodować duplikację istniejących notatek tygodniowych, a istniejące notatki tygodniowe nie zostaną odpowiednio zaktualizowane.",
     "formatting-locale": "Format daty i liczb",
     "formatting-locale-auto": "Na podstawie języka aplikacji"
@@ -1568,7 +1545,6 @@
     "no_backup_yet": "brak kopii zapasowych"
   },
   "etapi": {
-    "title": "ETAPI",
     "description": "ETAPI to REST API służące do programowego dostępu do instancji Trilium, bez interfejsu użytkownika.",
     "create_token": "Utwórz nowy token ETAPI",
     "existing_tokens": "Istniejące tokeny",
@@ -1614,33 +1590,12 @@
     "password_changed_success": "Hasło zostało zmienione. Trilium zostanie przeładowane po naciśnięciu OK."
   },
   "multi_factor_authentication": {
-    "title": "Uwierzytelnianie wieloskładnikowe",
-    "description": "Uwierzytelnianie wieloskładnikowe (MFA) dodaje dodatkową warstwę zabezpieczeń do Twojego konta. Zamiast tylko wpisywać hasło do logowania, MFA wymaga podania jednego lub więcej dodatkowych dowodów tożsamości. W ten sposób, nawet jeśli ktoś zdobędzie Twoje hasło, nadal nie będzie mógł uzyskać dostępu do Twojego konta bez drugiej informacji. To jak dodanie dodatkowego zamka do drzwi, utrudniającego włamanie.<br><br>Proszę postępować zgodnie z poniższymi instrukcjami, aby włączyć MFA. Jeśli nie skonfigurujesz poprawnie, logowanie powróci do samego hasła.",
-    "mfa_enabled": "Włącz uwierzytelnianie wieloskładnikowe",
-    "mfa_method": "Metoda MFA",
-    "electron_disabled": "Uwierzytelnianie wieloskładnikowe nie jest obecnie obsługiwane w wersji desktopowej.",
-    "totp_title": "Hasło jednorazowe oparte na czasie (TOTP)",
-    "totp_description": "TOTP (Time-Based One-Time Password) to funkcja bezpieczeństwa, która generuje unikalny, tymczasowy kod zmieniający się co 30 sekund. Używasz tego kodu wraz z hasłem do logowania się na konto, co znacznie utrudnia dostęp innym osobom.",
-    "totp_secret_title": "Wygeneruj sekret TOTP",
-    "totp_secret_generate": "Wygeneruj sekret TOTP",
-    "totp_secret_regenerate": "Wygeneruj ponownie sekret TOTP",
-    "no_totp_secret_warning": "Aby włączyć TOTP, musisz najpierw wygenerować sekret TOTP.",
-    "totp_secret_description_warning": "Po wygenerowaniu nowego sekretu TOTP będziesz musiał zalogować się ponownie przy użyciu nowego sekretu TOTP.",
-    "totp_secret_generated": "Sekret TOTP wygenerowany",
-    "totp_secret_warning": "Proszę zapisać wygenerowany sekret w bezpiecznym miejscu. Nie zostanie pokazany ponownie.",
-    "totp_secret_regenerate_confirm": "Czy na pewno chcesz ponownie wygenerować sekret TOTP? To unieważni poprzedni sekret TOTP i wszystkie istniejące kody odzyskiwania.",
-    "recovery_keys_title": "Klucze odzyskiwania logowania jednokrotnego",
-    "recovery_keys_description": "Klucze odzyskiwania logowania jednokrotnego służą do logowania w przypadku braku dostępu do kodów Authenticator.",
     "recovery_keys_description_warning": "Klucze odzyskiwania nie zostaną pokazane ponownie po opuszczeniu strony, przechowuj je w bezpiecznym miejscu.<br>Po użyciu klucza odzyskiwania nie można go użyć ponownie.",
     "recovery_keys_error": "Błąd generowania kodów odzyskiwania",
     "recovery_keys_no_key_set": "Nie ustawiono kodów odzyskiwania",
-    "recovery_keys_generate": "Wygeneruj kody odzyskiwania",
     "recovery_keys_regenerate": "Wygeneruj ponownie kody odzyskiwania",
-    "recovery_keys_used": "Użyto: {{date}}",
-    "recovery_keys_unused": "Kod odzyskiwania {{index}} jest nieużywany",
     "oauth_title": "OAuth/OpenID",
     "oauth_description": "OpenID to standardowy sposób logowania do stron internetowych przy użyciu konta z innej usługi, takiej jak Google, w celu weryfikacji tożsamości. Domyślnym dostawcą jest Google, ale można go zmienić na dowolnego innego dostawcę OpenID. Sprawdź <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">tutaj</a>, aby uzyskać więcej informacji. Postępuj zgodnie z tymi <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instrukcjami</a>, aby skonfigurować usługę OpenID przez Google.",
-    "oauth_description_warning": "Aby włączyć OAuth/OpenID, musisz ustawić bazowy URL OAuth/OpenID, ID klienta i sekret klienta w pliku config.ini i zrestartować aplikację. Jeśli chcesz ustawić je za pomocą zmiennych środowiskowych, ustaw TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID i TRILIUM_OAUTH_CLIENT_SECRET.",
     "oauth_missing_vars": "Brakujące ustawienia: {{-variables}}",
     "oauth_user_account": "Konto użytkownika: ",
     "oauth_user_email": "Email użytkownika: ",
@@ -1648,13 +1603,7 @@
   },
   "shortcuts": {
     "keyboard_shortcuts": "Skróty klawiszowe",
-    "multiple_shortcuts": "Wiele skrótów dla tej samej akcji można oddzielić przecinkiem.",
-    "electron_documentation": "Zobacz <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">dokumentację Electron</a> dla dostępnych modyfikatorów i kodów klawiszy.",
     "type_text_to_filter": "Wpisz tekst, aby filtrować skróty...",
-    "action_name": "Nazwa akcji",
-    "shortcuts": "Skróty",
-    "default_shortcuts": "Domyślne skróty",
-    "description": "Opis",
     "reload_app": "Przeładuj aplikację, aby zastosować zmiany",
     "set_all_to_default": "Ustaw wszystkie skróty na domyślne",
     "confirm_reset": "Czy na pewno chcesz zresetować wszystkie skróty klawiszowe do domyślnych?",
@@ -1664,18 +1613,13 @@
     "title": "Sprawdzanie pisowni",
     "description": "Te opcje dotyczą tylko wersji desktopowych, przeglądarki będą używać własnego natywnego sprawdzania pisowni.",
     "enable": "Włącz sprawdzanie pisowni",
-    "language_code_label": "Kod(y) języka",
-    "restart-required": "Zmiany w opcjach sprawdzania pisowni wejdą w życie po ponownym uruchomieniu aplikacji."
+    "language_code_label": "Kod(y) języka"
   },
   "sync_2": {
     "config_title": "Konfiguracja synchronizacji",
     "server_address": "Adres instancji serwera",
     "timeout": "Limit czasu synchronizacji",
-    "timeout_unit": "milisekund",
     "proxy_label": "Serwer proxy synchronizacji (opcjonalnie)",
-    "note": "Uwaga",
-    "note_description": "Jeśli pozostawisz ustawienie proxy puste, zostanie użyte proxy systemowe (dotyczy tylko wersji desktop/electron).",
-    "special_value_description": "Inną wartością specjalną jest <code>noproxy</code>, która wymusza ignorowanie nawet proxy systemowego i respektuje <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
     "save": "Zapisz",
     "help": "Pomoc",
     "test_title": "Test synchronizacji",
@@ -1742,7 +1686,9 @@
     "export": "Eksportuj",
     "import-into-note": "Importuj do notatki",
     "apply-bulk-actions": "Zastosuj akcje masowe",
-    "converted-to-attachments": "{{count}} notatek zostało przekonwertowanych na załączniki.",
+    "converted-to-attachments_one": "{{count}} notatek zostało przekonwertowanych na załączniki.",
+    "converted-to-attachments_few": "",
+    "converted-to-attachments_many": "",
     "convert-to-attachment-confirm": "Czy na pewno chcesz przekonwertować wybrane notatki na załączniki ich notatek nadrzędnych? Ta operacja dotyczy tylko notatek Obrazów, inne notatki zostaną pominięte.",
     "open-in-popup": "Szybka edycja",
     "open-in-a-new-window": "Otwórz w nowym oknie",
@@ -1883,9 +1829,6 @@
     "search_not_executed": "Nie przeprowadzono jeszcze wyszukiwania.",
     "search_now": "Szukaj teraz"
   },
-  "spacer": {
-    "configure_launchbar": "Konfiguruj pasek szybkiego dostępu"
-  },
   "sql_result": {
     "no_rows": "Dla tego zapytania nie zwrócono żadnych wierszy",
     "not_executed": "Zapytanie nie zostało jeszcze wykonane.",
@@ -1941,7 +1884,6 @@
   },
   "branches": {
     "cannot-move-notes-here": "Nie można przenieść notatek tutaj.",
-    "delete-status": "Status usuwania",
     "delete-notes-in-progress": "Usuwanie notatek w toku: {{count}}",
     "delete-finished-successfully": "Usuwanie zakończone pomyślnie.",
     "undeleting-notes-in-progress": "Przywracanie notatek w toku: {{count}}",
@@ -2201,13 +2143,10 @@
     "mute": "Wycisz (M)",
     "unmute": "Wyłącz wyciszenie (M)",
     "exit-fullscreen": "Wyłącz pełny ekran",
-    "loop": "Pętla",
-    "disable-loop": "Wyłącz pętle",
     "rotate": "Obróć",
     "picture-in-picture": "Obraz w obrazie",
     "pause": "Zatrzymaj (Space)",
     "back-10s": "Cofnij 10s (Lewa strzałka)",
-    "forward-30s": "Do przodu 30s",
     "playback-speed": "Szybkość odtwarzania",
     "exit-picture-in-picture": "Wyjdź z obrazu w obrazie",
     "zoom-to-fit": "Powiększ aby wypełnić",

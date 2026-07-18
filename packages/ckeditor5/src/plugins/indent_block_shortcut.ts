@@ -34,6 +34,7 @@ export default class IndentBlockShortcutPlugin extends Plugin {
                 return true;
             }
 
+            /* v8 ignore next 1 -- ModelPosition/ModelElement/ModelDocumentFragment all carry `parent`; the null fallback is a defensive guard that can never fire */
             el = "parent" in el ? el.parent : null;
         }
 

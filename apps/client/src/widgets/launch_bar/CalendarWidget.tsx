@@ -58,6 +58,7 @@ export default function CalendarWidget({ launcherNote }: LauncherNoteProps) {
 
     return (
         <LaunchBarDropdownButton
+            launcherNote={launcherNote}
             icon={icon} title={title}
             onShown={async () => {
                 const dateNote = appContext.tabManager.getActiveContextNote()?.getOwnedLabelValue("dateNote");

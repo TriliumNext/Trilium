@@ -52,6 +52,21 @@ async function rebuildNativeDependencies(projectRoot: string) {
     console.log(`Rebuilding ${projectRoot} with ${electronVersion} for ${targetArch}...`);
 
     const resolvedPath = resolve(projectRoot);
+
+    // Inside a Nix build, @electron/rebuild tries to download Electron headers
+    // from the internet which fails in the sandbox. Use node-gyp directly with
+    // the pre-fetched headers provided via ELECTRON_NODEDIR instead.
+    const nodedir = process.env.ELECTRON_NODEDIR;
+    if (process.env.NIX_BUILD_TOP && nodedir) {
+        const betterSqlite3 = join(resolvedPath, "node_modules/better-sqlite3");
+        console.log(`Nix build detected, running node-gyp directly for ${betterSqlite3}...`);
+        execSync(
+            `node-gyp rebuild --release --target=${electronVersion} --arch=${targetArch} --nodedir=${nodedir}`,
+            { cwd: betterSqlite3, stdio: "inherit" }
+        );
+        return;
+    }
+
     await rebuild({
         projectRootPath: resolvedPath,
         buildPath: resolvedPath,

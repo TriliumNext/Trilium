@@ -1,0 +1,64 @@
+/* Positioned host so the jump-to-bottom button can float over the scroll area
+   without scrolling along with the content. Fills the space the scroll container
+   used to occupy directly. */
+.chat-message-list-wrapper {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Shared scroll container for the chat message list (used by both the chat note
+   type widget and the sidebar chat). Widget-specific padding/layout lives in the
+   respective widget CSS, keyed off the extra class passed via `className`. */
+.chat-message-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    /* Layout/paint changes inside the timeline (e.g. streaming appends) stay inside it;
+       the element's own size comes from the flex container, so this is safe and free. */
+    contain: layout paint;
+}
+
+/* Content-end sentinel watched by the jump-to-latest IntersectionObserver. A 1px
+   height keeps it reliably observable across browsers (zero-area targets are flaky). */
+.chat-messages-end {
+    min-height: 1px;
+    flex-shrink: 0;
+}
+
+/* Reserved room below the last message so a new reply can be parked near the top and
+   type out in place. Height is set imperatively by useLlmChat (sized to what the turn
+   actually needs), so long replies leave little trailing blank. */
+.chat-bottom-spacer {
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+/* Floating jump-to-bottom button, centered along the bottom edge of the timeline. */
+.chat-message-list-wrapper .chat-scroll-to-bottom.icon-action {
+    position: absolute;
+    bottom: 0.75em;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.3rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--main-background-color);
+    border: 1px solid var(--main-border-color);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    color: var(--main-text-color);
+    opacity: 0.95;
+}
+
+.chat-message-list-wrapper .chat-scroll-to-bottom.icon-action:hover {
+    opacity: 1;
+    background-color: var(--hover-item-background-color);
+}

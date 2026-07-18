@@ -2159,7 +2159,7 @@ paths:
                 format: binary
 
   # Import/Export
-  /api/branches/{branchId}/export/{type}/{format}/{version}/{taskId}:
+  /api/branches/{branchId}/export/{type}/{format}/{taskId}:
     get:
       tags: [Import/Export]
       summary: Export branch
@@ -2182,11 +2182,6 @@ paths:
           schema:
             type: string
             enum: [html, markdown, opml]
-        - name: version
-          in: path
-          required: true
-          schema:
-            type: string
         - name: taskId
           in: path
           required: true
@@ -2774,9 +2769,27 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
+                type: object
+                properties:
+                  backupFolderPath:
+                    type: string
+                    nullable: true
+                    description: Directory where the backups are stored, or null if there is no user-accessible location.
+                  backups:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fileName:
+                          type: string
+                        filePath:
+                          type: string
+                        mtime:
+                          type: string
+                          format: date-time
+                        fileSize:
+                          type: integer
+                          description: Size of the backup file, in bytes.
                   
   /api/database/vacuum-database:
     post:
@@ -2814,10 +2827,54 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
-                  
+                type: object
+                properties:
+                  anonymizedFolderPath:
+                    type: string
+                    description: Directory where the anonymized databases are stored.
+                  databases:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fileName:
+                          type: string
+                        filePath:
+                          type: string
+                        mtime:
+                          type: string
+                          format: date-time
+                        fileSize:
+                          type: integer
+                          description: Size of the anonymized database file, in bytes.
+
+  /api/database/anonymized/download:
+    get:
+      tags: [Database]
+      summary: Download an anonymized database file
+      operationId: downloadAnonymizedDatabase
+      parameters:
+        - name: filePath
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Anonymized database file
+          content:
+            application/x-sqlite3:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Missing filePath
+        '403':
+          description: Path outside the anonymized database directory
+        '404':
+          description: File not found
+
+
   /api/database/find-and-fix-consistency-issues:
     post:
       tags: [Database]
@@ -3912,7 +3969,10 @@ paths:
   /api/totp/generate:
     get:
       tags: [Security]
-      summary: Generate TOTP secret
+      summary: Generate a TOTP secret
+      description: >-
+        Generates a fresh TOTP secret without persisting it. The caller must verify a code for this
+        secret (see `/api/totp/verify`) and commit it (see `/api/totp/enable`) before it becomes active.
       operationId: generateTotpSecret
       responses:
         '200':
@@ -3922,11 +3982,85 @@ paths:
               schema:
                 type: object
                 properties:
-                  secret:
+                  success:
+                    type: boolean
+                  message:
                     type: string
-                  qrCode:
+                    description: The bare TOTP secret (for manual entry), or an error message on failure.
+                  url:
                     type: string
-                    
+                    description: The `otpauth://` URL the authenticator expects, rendered as a QR code by the client.
+
+  /api/totp/verify:
+    post:
+      tags: [Security]
+      summary: Verify a generated TOTP secret
+      description: >-
+        Verifies a freshly generated secret against a code the user produced for it, without persisting
+        anything. On success, issues (unpersisted) recovery codes to be shown as the next enrollment step.
+      operationId: verifyTotpSecret
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["secret", "token"]
+              properties:
+                secret:
+                  type: string
+                token:
+                  type: string
+                  description: A TOTP code the user generated for the supplied secret.
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  recoveryCodes:
+                    type: array
+                    description: One-time recovery codes, present only when verification succeeds.
+                    items:
+                      type: string
+
+  /api/totp/enable:
+    post:
+      tags: [Security]
+      summary: Enable TOTP with a verified secret
+      description: >-
+        Commits a verified secret together with its recovery codes, activating TOTP. This is the final
+        enrollment step and the only point at which the secret and recovery codes are persisted.
+      operationId: enableTotp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: ["secret", "recoveryCodes"]
+              properties:
+                secret:
+                  type: string
+                recoveryCodes:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Result of enabling TOTP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
   /api/totp/status:
     get:
       tags: [Security]
@@ -3940,35 +4074,51 @@ paths:
               schema:
                 type: object
                 properties:
-                  enabled:
+                  success:
                     type: boolean
-                    
+                  message:
+                    type: boolean
+                    description: Whether TOTP is the active second factor and a secret is set.
+                  set:
+                    type: boolean
+                    description: Whether a TOTP secret is currently stored.
+
   /api/totp/get:
     get:
       tags: [Security]
-      summary: Get TOTP configuration
-      operationId: getTotpConfig
+      summary: Get the stored TOTP secret
+      operationId: getTotpSecret
       responses:
         '200':
-          description: TOTP configuration
+          description: The stored TOTP secret, or `null` if none is set.
+          content:
+            application/json:
+              schema:
+                type:
+                  - string
+                  - 'null'
+
+  /api/totp/reset:
+    post:
+      tags: [Security]
+      summary: Reset (disable) TOTP
+      description: Clears the stored TOTP secret and its recovery codes, disabling TOTP.
+      operationId: resetTotp
+      responses:
+        '200':
+          description: Result of resetting TOTP
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  secret:
-                    type: string
-                  qrCode:
-                    type: string
-                  backupCodes:
-                    type: array
-                    items:
-                      type: string
-                      
+                  success:
+                    type: boolean
+
   /api/totp_recovery/enabled:
     get:
       tags: [Security]
-      summary: Check if TOTP recovery is enabled
+      summary: Check if TOTP recovery codes are set
       operationId: isTotpRecoveryEnabled
       responses:
         '200':
@@ -3978,14 +4128,19 @@ paths:
               schema:
                 type: object
                 properties:
-                  enabled:
+                  success:
                     type: boolean
-                    
-  /api/totp_recovery/generate:
-    get:
+                  keysExist:
+                    type: boolean
+
+  /api/totp_recovery/regenerate:
+    post:
       tags: [Security]
-      summary: Generate TOTP recovery codes
-      operationId: generateTotpRecoveryCodes
+      summary: Regenerate TOTP recovery codes
+      description: >-
+        Issues a fresh batch of recovery codes for the already-enrolled TOTP secret, replacing any
+        existing ones, and returns them for one-time display. Refuses when no TOTP secret is set.
+      operationId: regenerateTotpRecoveryCodes
       responses:
         '200':
           description: Generated recovery codes
@@ -3994,11 +4149,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  codes:
+                  success:
+                    type: boolean
+                  recoveryCodes:
                     type: array
+                    description: New recovery codes, present only when regeneration succeeds.
                     items:
                       type: string
-                      
+
   /api/totp_recovery/used:
     get:
       tags: [Security]
@@ -4006,48 +4164,32 @@ paths:
       operationId: getUsedTotpRecoveryCodes
       responses:
         '200':
-          description: Used recovery codes
+          description: >-
+            Used recovery codes status. Returns an empty array if no recovery codes are set, otherwise
+            an object listing each code's status.
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  usedCodes:
-                    type: array
-                    items:
-                      type: string
-                      
-  /api/totp_recovery/set:
-    post:
-      tags: [Security]
-      summary: Set TOTP recovery codes
-      operationId: setTotpRecoveryCodes
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                codes:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        '200':
-          description: Recovery codes set
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    
+                oneOf:
+                  - type: array
+                    items: {}
+                    description: Empty array when no recovery codes are set.
+                  - type: object
+                    properties:
+                      success:
+                        type: boolean
+                      usedRecoveryCodes:
+                        type: array
+                        description: >-
+                          Per-code status. Each entry is either an ISO timestamp (when the code was
+                          used) or the code's index as a string (when still unused).
+                        items:
+                          type: string
+
   /api/totp_recovery/verify:
     post:
       tags: [Security]
-      summary: Verify TOTP recovery code
+      summary: Verify a TOTP recovery code
       operationId: verifyTotpRecoveryCode
       requestBody:
         required: true
@@ -4055,8 +4197,9 @@ paths:
           application/json:
             schema:
               type: object
+              required: ["recovery_code_guess"]
               properties:
-                code:
+                recovery_code_guess:
                   type: string
       responses:
         '200':
@@ -4066,7 +4209,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  valid:
+                  success:
                     type: boolean
                     
   # ETAPI tokens

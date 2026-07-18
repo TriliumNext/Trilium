@@ -1,0 +1,19 @@
+{
+  "name": "@triliumnext/ckeditor5-utils",
+  "description": "Shared editor-tier primitives (tooltip manager, …) used by @triliumnext/ckeditor5 and its plugin packages.",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@vitest/browser": "4.1.10",
+    "vitest": "4.1.10",
+    "webdriverio": "9.29.1"
+  },
+  "peerDependencies": {
+    "bootstrap": "^5.3.0"
+  }
+}

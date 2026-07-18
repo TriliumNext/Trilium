@@ -1,5 +1,9 @@
 import type { DifferItemAttribute, Editor, ModelDocumentFragment, ModelElement, ModelNode } from "ckeditor5";
 
+export function escapeHtml(str: string): string {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function hasHeadingAncestor(node: ModelElement | ModelNode | ModelDocumentFragment | null): boolean {
     let current: ModelElement | ModelNode | ModelDocumentFragment | null = node;
     while (current) {

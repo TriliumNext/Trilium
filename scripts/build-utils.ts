@@ -1,7 +1,6 @@
 import { execSync } from "child_process";
 import { build as esbuild } from "esbuild";
-import { cpSync, existsSync, rmSync, writeFileSync } from "fs";
-import { copySync, emptyDirSync, mkdirpSync } from "fs-extra";
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { delimiter, join } from "path";
 
 export default class BuildHelper {
@@ -15,7 +14,8 @@ export default class BuildHelper {
         this.projectDir = join(this.rootDir, projectPath);
         this.outDir = join(this.projectDir, "dist");
 
-        emptyDirSync(this.outDir);
+        rmSync(this.outDir, { recursive: true, force: true });
+        mkdirSync(this.outDir, { recursive: true });
     }
 
     copy(projectDirPath: string, outDirPath: string) {
@@ -27,16 +27,24 @@ export default class BuildHelper {
         }
 
         if (outDirPath.endsWith("/")) {
-            mkdirpSync(join(outDirPath));
+            mkdirSync(join(this.outDir, outDirPath), { recursive: true });
         }
-        copySync(sourcePath, join(this.outDir, outDirPath), { dereference: true });
+        cpSync(sourcePath, join(this.outDir, outDirPath), { recursive: true, dereference: true });
     }
 
     deleteFromOutput(path: string) {
         rmSync(join(this.outDir, path), { recursive: true });
     }
 
-    async buildBackend(entryPoints: string[]) {
+    /**
+     * @param entryPoints source entry points to bundle into CJS.
+     * @param opts.importMetaUrlShim redirects `import.meta.url` to the bundle's own file so
+     *   bundled ESM deps calling `createRequire(import.meta.url)` work in CJS output (defaults
+     *   to `true`). Must be disabled for scripts that run in Electron's sandboxed renderer (e.g.
+     *   the desktop preload), where the injected `require("node:url")` banner throws.
+     */
+    async buildBackend(entryPoints: string[], opts: { importMetaUrlShim?: boolean } = {}) {
+        const { importMetaUrlShim = true } = opts;
         const result = await esbuild({
             entryPoints: entryPoints.map(e => join(this.projectDir, e)),
             tsconfig: join(this.projectDir, "tsconfig.app.json"),
@@ -49,12 +57,27 @@ export default class BuildHelper {
             format: "cjs",
             external: [
                 "electron",
-                "@electron/remote",
                 "better-sqlite3",
                 "pdfjs-dist",
                 "./xhr-sync-worker.js",
                 "vite",
-                "tesseract.js"
+                "tesseract.js",
+                // Test fixtures referenced via require.resolve from
+                // integration-test-only code paths in apps/server. These
+                // paths are gated at runtime by TRILIUM_INTEGRATION_TEST and
+                // never reached in production, but esbuild can't see through
+                // the gate during static analysis. Marking them external
+                // suppresses the spurious "require.resolve not external"
+                // warning without affecting the bundle behavior.
+                "@triliumnext/core/src/test/*",
+                // schema.sql is read via core_assets.ts, which prefers a
+                // bundled copy at RESOURCE_DIR/schema.sql (placed there by
+                // apps/server/scripts/build.ts) and only falls back to
+                // require.resolve in dev/test mode. In bundled production
+                // the require.resolve branch is unreachable, but esbuild
+                // still sees the static string and warns. External marker
+                // suppresses the warning without changing runtime behavior.
+                "@triliumnext/core/src/assets/*"
             ],
             metafile: true,
             splitting: false,
@@ -64,7 +87,23 @@ export default class BuildHelper {
             },
             define: {
                 "process.env.NODE_ENV": JSON.stringify("production"),
+                // CJS output has no `import.meta`, so esbuild rewrites
+                // `import.meta.url` to `{}` (→ undefined). Bundled ESM deps
+                // (e.g. @anthropic-ai/claude-agent-sdk) call
+                // `createRequire(import.meta.url)` at module top level, which
+                // then throws `ERR_INVALID_ARG_VALUE`. Redirect it to the
+                // bundle's own file so createRequire()/`.resolve()` anchor at
+                // dist/ and can still locate sibling node_modules packages.
+                ...(importMetaUrlShim && { "import.meta.url": "__bundleImportMetaUrl" }),
             },
+            // The banner defines the redirect target above. It uses
+            // `require("node:url")`, which throws in Electron's sandboxed
+            // renderer, so it must be omitted for preload-style bundles.
+            ...(importMetaUrlShim && {
+                banner: {
+                    js: `const __bundleImportMetaUrl = require("node:url").pathToFileURL(__filename).href;`
+                }
+            }),
             minify: true
         });
         writeFileSync(join(this.outDir, "meta.json"), JSON.stringify(result.metafile));
@@ -80,7 +119,6 @@ export default class BuildHelper {
 
     buildFrontend() {
         this.triggerBuildAndCopyTo("apps/client", "public/");
-        this.deleteFromOutput("public/webpack-stats.json");
 
         // pdf.js
         this.triggerBuildAndCopyTo("packages/pdfjs-viewer", "pdfjs-viewer");
@@ -89,7 +127,7 @@ export default class BuildHelper {
     triggerBuildAndCopyTo(projectToBuild: string, destPath: string) {
         const projectDir = join(this.rootDir, projectToBuild);
         execSync("pnpm build", { cwd: projectDir, stdio: "inherit" });
-        copySync(join(projectDir, "dist"), join(this.projectDir, "dist", destPath));
+        cpSync(join(projectDir, "dist"), join(this.projectDir, "dist", destPath), { recursive: true });
     }
 
     copyNodeModules(nodeModules: string[]) {
@@ -100,7 +138,7 @@ export default class BuildHelper {
             ]);
 
             const destDir = join(this.outDir, "node_modules", moduleName);
-            mkdirpSync(destDir);
+            mkdirSync(destDir, { recursive: true });
             cpSync(sourceDir, destDir, { recursive: true, dereference: true });
         }
     }
@@ -109,7 +147,7 @@ export default class BuildHelper {
         const fullPath = join(this.outDir, relativePath);
         const dirPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
         if (dirPath) {
-            mkdirpSync(dirPath);
+            mkdirSync(dirPath, { recursive: true });
         }
         writeFileSync(fullPath, JSON.stringify(data, null, 4), "utf-8");
     }

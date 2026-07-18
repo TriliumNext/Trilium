@@ -2,9 +2,10 @@
  * LLM tools for attachment operations.
  */
 
+import { unwrapStringOrBuffer } from "@triliumnext/core/src/services/utils/binary.js";
 import { z } from "zod";
 
-import becca from "../../../becca/becca.js";
+import { becca } from "@triliumnext/core";
 import { defineTools } from "./tool_registry.js";
 
 export const attachmentTools = defineTools({
@@ -47,7 +48,7 @@ export const attachmentTools = defineTools({
                 return {
                     attachmentId: attachment.attachmentId,
                     source: "text" as const,
-                    content: typeof content === "string" ? content : content.toString("utf-8")
+                    content: unwrapStringOrBuffer(content)
                 };
             }
 

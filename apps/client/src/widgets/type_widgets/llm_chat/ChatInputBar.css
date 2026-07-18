@@ -7,29 +7,135 @@
     border-top: 1px solid var(--main-border-color);
 }
 
+/* Attachment preview row above the editor */
+.llm-chat-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.llm-chat-attachment-chip {
+    position: relative;
+    height: 56px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--main-border-color);
+    background: var(--accented-background-color);
+}
+
+.llm-chat-attachment-chip-image {
+    width: 56px;
+}
+
+.llm-chat-attachment-chip-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.llm-chat-attachment-chip-file {
+    max-width: 180px;
+}
+
+.llm-chat-attachment-file {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 100%;
+    padding: 0 1.75rem 0 0.5rem;
+}
+
+.llm-chat-attachment-file-icon {
+    font-size: 1.5rem;
+    color: var(--muted-text-color);
+    flex-shrink: 0;
+}
+
+.llm-chat-attachment-file-name {
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.llm-chat-attachment-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+.llm-chat-attachment-remove:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.llm-chat-attachment-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.llm-chat-attach-btn {
+    font-size: 1.1rem;
+}
+
 .llm-chat-input {
     flex: 1;
     min-height: 60px;
     max-height: 200px;
-    resize: vertical;
-    padding: 0.75rem;
-    border: 1px solid var(--main-border-color);
-    border-radius: 8px;
+    overflow-y: auto;
+    padding: 0.5rem !important;
+    border: 1px solid var(--main-border-color) !important;
+    border-radius: 4px !important;
     font-family: inherit;
     font-size: inherit;
     background: var(--main-background-color);
     color: var(--main-text-color);
+    transition: border-color 0.1s linear, box-shadow 0.1s linear;
 }
 
-.llm-chat-input:focus {
+/* CKEditor adds .ck-content / .ck-focused to the same element it took over. */
+.llm-chat-input.ck-content {
     outline: none;
+
+    p {
+        margin-bottom: 0.5rem;
+
+        &:first-child {
+            margin-top: 0;
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+.llm-chat-input.ck-focused {
     border-color: var(--main-selection-color);
     box-shadow: 0 0 0 2px var(--main-selection-color-soft, rgba(0, 123, 255, 0.25));
 }
 
-.llm-chat-input:disabled {
+.llm-chat-input.ck-read-only {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.llm-chat-input.ck-content .mention {
+    color: var(--main-selection-color, #007bff);
+    background: transparent;
 }
 
 /* Options row */
@@ -48,6 +154,10 @@
     opacity: 0.4;
 }
 
+.llm-chat-stop-btn {
+    color: var(--danger-color, #dc3545);
+}
+
 /* Model selector */
 .llm-chat-model-selector {
     display: flex;
@@ -63,17 +173,19 @@
 
 .llm-chat-model-selector .dropdown {
     display: flex;
+}
 
-    small {
-        margin-left: 0.5em;
-        color: var(--muted-text-color);
-    }
+/* Scoped to the dropdown wrapper (not `.llm-chat-model-selector`) so these menu styles
+   survive `portalToBody`, which reparents the menu to <body> under this same class. */
+.llm-chat-model-dropdown small {
+    margin-left: 0.5em;
+    color: var(--muted-text-color);
+}
 
-    /* Position legacy models submenu to open upward */
-    .dropdown-submenu .dropdown-menu {
-        bottom: 0;
-        top: auto;
-    }
+/* Position legacy models submenu to open upward */
+.llm-chat-model-dropdown .dropdown-submenu .dropdown-menu {
+    bottom: 0;
+    top: auto;
 }
 
 .llm-chat-model-select.select-button {

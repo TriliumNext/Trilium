@@ -1,0 +1,105 @@
+import "./TreePopupEditor.css";
+
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
+
+import appContext from "../../components/app_context";
+import NoteContext from "../../components/note_context";
+import NoteTreeWidget from "../note_tree";
+import NoteDetail from "../NoteDetail";
+import PromotedAttributes from "../PromotedAttributes";
+import { useContainedLinkNavigation, useLegacyWidget, useTriliumEvent } from "../react/hooks";
+import Modal from "../react/Modal";
+import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { TitleRow } from "./PopupEditor";
+
+/**
+ * A quick-edit-style popup whose sidebar is a hoisted note tree.
+ *
+ * Summoned via the `openInTreePopup` command with a `noteIdOrPath` to open and a `hoistedNoteId`
+ * to scope the sidebar tree to. Used to open the launch-bar configuration subtree in a modal
+ * (with the same hoisting it would get in a dedicated tab) instead of a separate tab.
+ */
+export default function TreePopupEditor() {
+    const [ shown, setShown ] = useState(false);
+    const [ stacked, setStacked ] = useState(false);
+    const parentComponent = useContext(ParentComponent);
+    const [ noteContext, setNoteContext ] = useState(() => new NoteContext("_tree-popup"));
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useTriliumEvent("openInTreePopup", async ({ noteIdOrPath, hoistedNoteId }) => {
+        // Fresh context per open so the sidebar tree is hoisted to the requested subtree.
+        const newContext = new NoteContext("_tree-popup", hoistedNoteId);
+        // Exclude our own modal so re-opening while already shown doesn't count as stacking.
+        setStacked(Array.from(document.querySelectorAll(".modal.show")).some((modal) => modal !== modalRef.current));
+        await newContext.setNote(noteIdOrPath, { keepActiveDialog: true });
+
+        // Events triggered at note-context level (e.g. the save indicator) would not work since this
+        // context has no parent component. Propagate them so they can be handled properly.
+        newContext.triggerEvent = (name, data) => parentComponent?.handleEventInChildren(name, data);
+
+        setNoteContext(newContext);
+        setShown(true);
+    });
+
+    // Mirror the quick-edit popup's stacking scheme (see PopupEditor): lower the popup below the
+    // standard dialog layer so dialogs opened from within it (delete/confirm, ckeditor popups)
+    // render on top, and raise it above an underlying modal when stacked (e.g. opened from the
+    // Options dialog's Related Settings). Without this the popup sits at Bootstrap's default 1055
+    // and ties with those dialogs, hiding them behind it.
+    useEffect(() => {
+        document.body.classList.toggle("tree-popup-open", shown);
+        document.body.classList.toggle("tree-popup-stacked", shown && stacked);
+    }, [ shown, stacked ]);
+
+    // When stacked, raise this popup's own backdrop above the underlying modal. Bootstrap does not
+    // auto-increment z-index for stacked modals, and the appended `.modal-backdrop` is not
+    // individually addressable.
+    useEffect(() => {
+        if (!shown || !stacked) return;
+        const backdrops = document.querySelectorAll(".modal-backdrop");
+        const popupBackdrop = backdrops[backdrops.length - 1] as HTMLElement | undefined;
+        if (!popupBackdrop) return;
+        popupBackdrop.classList.add("tree-popup-backdrop");
+        return () => popupBackdrop.classList.remove("tree-popup-backdrop");
+    }, [ shown, stacked ]);
+
+    // Keep navigation that follows internal links inside the popup, rather than letting the global
+    // link handler open the target in the background tab. Links that stay within the hoisted subtree
+    // navigate the modal's own context; links pointing outside it can't be shown in the hoisted
+    // context, so they fall back to the quick-edit popup.
+    useContainedLinkNavigation(modalRef, useCallback((notePath, viewScope) => {
+        if (notePath.split("/").includes(noteContext.hoistedNoteId)) {
+            void noteContext.setNote(notePath, { viewScope, keepActiveDialog: true });
+        } else {
+            void appContext.triggerCommand("openInPopup", { noteIdOrPath: notePath });
+        }
+    }, [ noteContext ]));
+
+    return (
+        <NoteContextContext.Provider value={noteContext}>
+            <Modal
+                modalRef={modalRef}
+                // Reuse the quick-edit note header (icon + editable title); it lives in the main
+                // header, so skip the sidebar header that would otherwise duplicate it.
+                title={<TitleRow />}
+                hideSidebarHeader
+                className="tree-popup-editor-dialog"
+                size="xl"
+                sidebar={<TreeSidebar noteContext={noteContext} />}
+                show={shown}
+                onShown={() => parentComponent?.handleEvent("focusOnDetail", { ntxId: noteContext.ntxId })}
+                onHidden={() => setShown(false)}
+                scrollable
+                stackable
+            >
+                <PromotedAttributes />
+                <NoteDetail />
+            </Modal>
+        </NoteContextContext.Provider>
+    );
+}
+
+function TreeSidebar({ noteContext }: { noteContext: NoteContext }) {
+    const [ treeEl ] = useLegacyWidget(() => new NoteTreeWidget(), { noteContext });
+    return <div className="tree-popup-sidebar">{treeEl}</div>;
+}

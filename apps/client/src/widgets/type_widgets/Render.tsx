@@ -8,14 +8,13 @@ import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
 import render from "../../services/render";
 import toast from "../../services/toast";
-import { getErrorMessage } from "../../services/utils";
-import Admonition from "../react/Admonition";
 import Button, { SplitButton } from "../react/Button";
 import FormGroup from "../react/FormGroup";
 import { FormListItem } from "../react/FormList";
 import { useNoteRelation, useTriliumEvent } from "../react/hooks";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 import { refToJQuerySelector } from "../react/react_utils";
+import RenderErrorCard from "../react/RenderErrorCard";
 import SetupForm from "./helpers/SetupForm";
 import { TypeWidgetProps } from "./type_widget";
 
@@ -49,12 +48,12 @@ export default function Render(props: TypeWidgetProps) {
 
 function RenderContent({ note, noteContext, ntxId }: TypeWidgetProps) {
     const contentRef = useRef<HTMLDivElement>(null);
-    const [ error, setError ] = useState<unknown | null>(null);
+    const [ error, setError ] = useState<{ error: unknown; noteId?: string } | null>(null);
 
     function refresh() {
         if (!contentRef) return;
         setError(null);
-        render.render(note, refToJQuerySelector(contentRef), setError);
+        render.render(note, refToJQuerySelector(contentRef), (e, noteId) => setError({ error: e, noteId }));
     }
 
     useEffect(refresh, [ note ]);
@@ -86,11 +85,7 @@ function RenderContent({ note, noteContext, ntxId }: TypeWidgetProps) {
 
     return (
         <>
-            {error && (
-                <Admonition type="caution">
-                    {getErrorMessage(error)}
-                </Admonition>
-            )}
+            {error && <RenderErrorCard error={error.error} noteId={error.noteId} />}
             <div ref={contentRef} className="note-detail-render-content" />
         </>
     );

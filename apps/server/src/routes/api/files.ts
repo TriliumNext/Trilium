@@ -1,19 +1,15 @@
+import { note_service as noteService, ValidationError, ws } from "@triliumnext/core";
 import chokidar from "chokidar";
-import type { Request, Response } from "express";
+import type { Request } from "express";
 import fs from "fs";
+import path from "path";
 import { Readable } from "stream";
 import tmp from "tmp";
 
-import becca from "../../becca/becca.js";
-import type BAttachment from "../../becca/entities/battachment.js";
-import type BNote from "../../becca/entities/bnote.js";
-import ValidationError from "../../errors/validation_error.js";
+import { becca } from "@triliumnext/core";
 import dataDirs from "../../services/data_dir.js";
-import log from "../../services/log.js";
-import noteService from "../../services/notes.js";
-import protectedSessionService from "../../services/protected_session.js";
+import { getLog } from "@triliumnext/core";
 import utils from "../../services/utils.js";
-import ws from "../../services/ws.js";
 
 function updateFile(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
@@ -37,7 +33,7 @@ function updateFile(req: Request<{ noteId: string }>) {
 
     note.setLabel("originalFileName", file.originalname);
 
-    noteService.asyncPostProcessContent(note, file.buffer);
+    void noteService.asyncPostProcessContent(note, file.buffer);
 
     return {
         uploaded: true
@@ -64,64 +60,22 @@ function updateAttachment(req: Request<{ attachmentId: string }>) {
     };
 }
 
-function downloadData(noteOrAttachment: BNote | BAttachment, res: Response, contentDisposition: boolean) {
-    if (noteOrAttachment.isProtected && !protectedSessionService.isProtectedSessionAvailable()) {
-        return res.status(401).send("Protected session not available");
-    }
-
-    if (contentDisposition) {
-        const fileName = noteOrAttachment.getFileName();
-
-        res.setHeader("Content-Disposition", utils.getContentDisposition(fileName));
-    }
-
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("Content-Type", noteOrAttachment.mime);
-
-    res.send(noteOrAttachment.getContent());
-}
-
-function downloadNoteInt(noteId: string, res: Response, contentDisposition = true) {
-    const note = becca.getNote(noteId);
-
-    if (!note) {
-        return res.setHeader("Content-Type", "text/plain").status(404).send(`Note '${noteId}' doesn't exist.`);
-    }
-
-    return downloadData(note, res, contentDisposition);
-}
-
-function downloadAttachmentInt(attachmentId: string, res: Response, contentDisposition = true) {
-    const attachment = becca.getAttachment(attachmentId);
-
-    if (!attachment) {
-        return res.setHeader("Content-Type", "text/plain").status(404).send(`Attachment '${attachmentId}' doesn't exist.`);
-    }
-
-    return downloadData(attachment, res, contentDisposition);
-}
-
-const downloadFile = (req: Request<{ noteId: string }>, res: Response) => downloadNoteInt(req.params.noteId, res, true);
-const openFile = (req: Request<{ noteId: string }>, res: Response) => downloadNoteInt(req.params.noteId, res, false);
-
-const downloadAttachment = (req: Request<{ attachmentId: string }>, res: Response) => downloadAttachmentInt(req.params.attachmentId, res, true);
-const openAttachment = (req: Request<{ attachmentId: string }>, res: Response) => downloadAttachmentInt(req.params.attachmentId, res, false);
-
 function fileContentProvider(req: Request<{ noteId: string }>) {
     // Read the file name from route params.
     const note = becca.getNoteOrThrow(req.params.noteId);
 
-    return streamContent(note.getContent(), note.getFileName(), note.mime);
+    // blobId is a content hash, so it's a stable ETag that changes only when the content does.
+    return streamContent(note.getContent(), note.getFileName(), note.mime, note.blobId);
 }
 
 function attachmentContentProvider(req: Request<{ attachmentId: string }>) {
     // Read the file name from route params.
     const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
 
-    return streamContent(attachment.getContent(), attachment.getFileName(), attachment.mime);
+    return streamContent(attachment.getContent(), attachment.getFileName(), attachment.mime, attachment.blobId);
 }
 
-async function streamContent(content: string | Buffer, fileName: string, mimeType: string) {
+async function streamContent(content: string | Uint8Array, fileName: string, mimeType: string, etag?: string) {
     if (typeof content === "string") {
         content = Buffer.from(content, "utf8");
     }
@@ -143,6 +97,7 @@ async function streamContent(content: string | Buffer, fileName: string, mimeTyp
         fileName,
         totalSize,
         mimeType,
+        etag,
         getStream
     };
 }
@@ -168,7 +123,7 @@ function saveAttachmentToTmpDir(req: Request<{ attachmentId: string }>) {
 
 const createdTemporaryFiles = new Set<string>();
 
-function saveToTmpDir(fileName: string, content: string | Buffer, entityType: string, entityId: string) {
+function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType: string, entityId: string) {
     const tmpObj = tmp.fileSync({
         postfix: fileName,
         tmpdir: dataDirs.TMP_DIR
@@ -184,7 +139,7 @@ function saveToTmpDir(fileName: string, content: string | Buffer, entityType: st
 
     createdTemporaryFiles.add(tmpObj.name);
 
-    log.info(`Saved temporary file ${tmpObj.name}`);
+    getLog().info(`Saved temporary file ${tmpObj.name}`);
 
     if (utils.isElectron) {
         chokidar.watch(tmpObj.name).on("change", (path, stats) => {
@@ -203,17 +158,40 @@ function saveToTmpDir(fileName: string, content: string | Buffer, entityType: st
     };
 }
 
+/**
+ * Validates that the given file path is a known temporary file created by this server
+ * and resides within the expected temporary directory. This prevents path traversal
+ * attacks (CWE-22) where an attacker could read arbitrary files from the filesystem.
+ */
+function validateTemporaryFilePath(filePath: string): void {
+    if (!filePath || typeof filePath !== "string") {
+        throw new ValidationError("Missing or invalid file path.");
+    }
+
+    // Check 1: The file must be in our set of known temporary files created by saveToTmpDir().
+    if (!createdTemporaryFiles.has(filePath)) {
+        throw new ValidationError(`File '${filePath}' is not a tracked temporary file.`);
+    }
+
+    // Check 2 (defense-in-depth): Resolve to an absolute path and verify it is within TMP_DIR.
+    // This guards against any future bugs where a non-temp path could end up in the set.
+    const resolvedPath = path.resolve(filePath);
+    const resolvedTmpDir = path.resolve(dataDirs.TMP_DIR);
+
+    if (!resolvedPath.startsWith(resolvedTmpDir + path.sep) && resolvedPath !== resolvedTmpDir) {
+        throw new ValidationError(`File path '${filePath}' is outside the temporary directory.`);
+    }
+}
+
 function uploadModifiedFileToNote(req: Request<{ noteId: string }>) {
     const noteId = req.params.noteId;
     const { filePath } = req.body;
 
-    if (!createdTemporaryFiles.has(filePath)) {
-        throw new ValidationError(`File '${filePath}' is not a temporary file.`);
-    }
+    validateTemporaryFilePath(filePath);
 
     const note = becca.getNoteOrThrow(noteId);
 
-    log.info(`Updating note '${noteId}' with content from '${filePath}'`);
+    getLog().info(`Updating note '${noteId}' with content from '${filePath}'`);
 
     note.saveRevision();
 
@@ -230,13 +208,11 @@ function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) 
     const { attachmentId } = req.params;
     const { filePath } = req.body;
 
-    if (!createdTemporaryFiles.has(filePath)) {
-        throw new ValidationError(`File '${filePath}' is not a temporary file.`);
-    }
+    validateTemporaryFilePath(filePath);
 
     const attachment = becca.getAttachmentOrThrow(attachmentId);
 
-    log.info(`Updating attachment '${attachmentId}' with content from '${filePath}'`);
+    getLog().info(`Updating attachment '${attachmentId}' with content from '${filePath}'`);
 
     attachment.getNote().saveRevision();
 
@@ -252,13 +228,8 @@ function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) 
 export default {
     updateFile,
     updateAttachment,
-    openFile,
     fileContentProvider,
-    downloadFile,
-    downloadNoteInt,
     saveNoteToTmpDir,
-    openAttachment,
-    downloadAttachment,
     saveAttachmentToTmpDir,
     attachmentContentProvider,
     uploadModifiedFileToNote,

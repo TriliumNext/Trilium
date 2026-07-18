@@ -1,10 +1,9 @@
 import { t } from "../../services/i18n";
 import options from "../../services/options";
 import BasicPropertiesTab from "./BasicPropertiesTab";
-import CollectionPropertiesTab from "./CollectionPropertiesTab";
 import EditedNotesTab from "./EditedNotesTab";
 import FilePropertiesTab from "./FilePropertiesTab";
-import FormattingToolbar from "./FormattingToolbar";
+import FormattingToolbar, { showFormattingToolbar } from "./FormattingToolbar";
 import ImagePropertiesTab from "./ImagePropertiesTab";
 import InheritedAttributesTab from "./InheritedAttributesTab";
 import NoteInfoTab from "./NoteInfoTab";
@@ -21,9 +20,7 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
     {
         title: t("classic_editor_toolbar.title"),
         icon: "bx bx-text",
-        show: async ({ note, noteContext }) => note?.type === "text" && noteContext?.viewScope?.viewMode === "default"
-            && options.get("textNoteEditorType") === "ckeditor-classic"
-            && !(await noteContext?.isReadOnly()),
+        show: showFormattingToolbar,
         toggleCommand: "toggleRibbonTabClassicEditor",
         content: FormattingToolbar,
         activate: ({ note }) => !options.is("editedNotesOpenInRibbon") || !note?.hasOwnedLabel("dateNote"),
@@ -51,13 +48,6 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         content: EditedNotesTab,
         show: ({ note }) => note?.hasOwnedLabel("dateNote"),
         activate: () => options.is("editedNotesOpenInRibbon")
-    },
-    {
-        title: t("book_properties.book_properties"),
-        icon: "bx bx-book",
-        content: CollectionPropertiesTab,
-        show: ({ note }) => (note?.type === "book" || note?.type === "search"),
-        toggleCommand: "toggleRibbonTabBookProperties"
     },
     {
         title: t("note_properties.info"),

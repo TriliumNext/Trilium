@@ -6,7 +6,8 @@ import type serveStatic from "serve-static";
 
 import { assetUrlFragment } from "../services/asset_path.js";
 import auth from "../services/auth.js";
-import { getResourceDir, isDev } from "../services/utils.js";
+import port from "../services/port.js";
+import { getResourceDir, isDev, isElectron } from "../services/utils.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 
 // Allow serving assets even if the installation path contains a hidden (dot-prefixed) directory.
@@ -35,7 +36,20 @@ async function register(app: express.Application) {
         const { createServer: createViteServer } = await import("vite");
         const clientDir = path.join(srcRoot, "../client");
         const vite = await createViteServer({
-            server: { middlewareMode: true },
+            server: {
+                middlewareMode: true,
+                hmr: {
+                    // Derive a unique HMR port from the application port so
+                    // multiple dev instances (e.g. server on 8080, desktop on
+                    // 37742) don't all fight over Vite's default port 24678.
+                    port: port + 10,
+                    // Under Electron the page loads from `trilium-app://app/`,
+                    // so Vite's default of using `window.location.hostname`
+                    // would try `ws://app:…` — DNS fails. Pin the HMR client
+                    // to loopback explicitly.
+                    ...(isElectron ? { host: "127.0.0.1", protocol: "ws" as const } : {})
+                }
+            },
             appType: "spa",
             configFile: path.join(clientDir, "vite.config.mts"),
             base: `/${assetUrlFragment}/`

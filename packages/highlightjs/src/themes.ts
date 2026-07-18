@@ -1,6 +1,12 @@
+export type ThemeVariant = "light" | "dark";
+
 export interface Theme {
     name: string;
     load: () => Promise<{ default: typeof import("*.css", { with: { "resolution-mode": "import" } }); }>;
+}
+
+export function getThemeVariant(theme: Theme): ThemeVariant {
+    return theme.name.includes("Dark") ? "dark" : "light";
 }
 
 const themeDefinitions: Record<string, Theme> = {

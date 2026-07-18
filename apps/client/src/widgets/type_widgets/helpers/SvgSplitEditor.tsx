@@ -12,9 +12,10 @@ import SplitEditor, { PreviewButton, SplitEditorProps } from "./SplitEditor";
 
 interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
     /**
-     * The name of the note attachment (without .svg extension) that will be used for storing the preview.
+     * The title of the note attachment used for storing the preview, extension included. Take it from
+     * `NOTE_TYPE_IMAGE_ATTACHMENTS` so that the `api/images` endpoints can find it again.
      */
-    attachmentName: string;
+    attachmentTitle: string;
     /**
      * Called upon when the SVG preview needs refreshing, such as when the editor has switched to a new note or the content has switched.
      *
@@ -36,10 +37,17 @@ interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
  * - Automatically saves the SVG attachment.
  *
  */
-export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg, ...props }: SvgSplitEditorProps) {
+export default function SvgSplitEditor({ ntxId, note, attachmentTitle, renderSvg, ...props }: SvgSplitEditorProps) {
     const [ svg, setSvg ] = useState<string>();
     const [ error, setError ] = useState<string | null | undefined>();
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // Reset the render state when switching notes so a previous note's render (and the
+    // "showing last valid render" badge) can't briefly carry over to a different note.
+    useEffect(() => {
+        setSvg(undefined);
+        setError(undefined);
+    }, [ note.noteId ]);
 
     // Render the SVG.
     async function onContentChanged(content: string) {
@@ -61,34 +69,33 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
 
         const payload = {
             role: "image",
-            title: `${attachmentName}.svg`,
+            title: attachmentTitle,
             mime: "image/svg+xml",
             content: svg,
             position: 0
         };
 
         server.post(`notes/${note.noteId}/attachments?matchBy=title`, payload);
-    }, [ svg, attachmentName, note.noteId ]);
+    }, [ svg, attachmentTitle, note.noteId ]);
 
     // Save the SVG when entering a note only when it does not have an attachment.
     useEffect(() => {
         if (!svg) return; // Wait until SVG is rendered
 
         note?.getAttachments().then((attachments) => {
-            if (!attachments.find((a) => a.title === `${attachmentName}.svg`)) {
+            if (!attachments.find((a) => a.title === attachmentTitle)) {
                 onSave();
             }
         }).catch(e => console.error("Failed to get attachments for SVGSplitEditor", e));
-    }, [ note, svg, attachmentName, onSave ]);
+    }, [ note, svg, attachmentTitle, onSave ]);
 
-    // Import/export
-    useTriliumEvent("exportSvg", async({ ntxId: eventNtxId }) => {
+    // Import/export. The renderer's `svg` string is exported rather than the on-screen element,
+    // which svg-pan-zoom has wrapped in a viewport transform reflecting the current pan/zoom.
+    useTriliumEvent("exportSvg", ({ ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId || !svg) return;
 
         try {
-            const svgEl = containerRef.current?.querySelector("svg");
-            if (!svgEl) throw new Error("SVG element not found");
-            await utils.downloadAsSvg(note.title, svgEl);
+            utils.downloadSvg(note.title, svg);
         } catch (e) {
             console.warn(e);
             toast.showError(t("svg.export_to_svg"));
@@ -98,9 +105,7 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
     useTriliumEvent("exportPng", async ({ ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId || !svg) return;
         try {
-            const svgEl = containerRef.current?.querySelector("svg");
-            if (!svgEl) throw new Error("SVG element not found");
-            await utils.downloadAsPng(note.title, svgEl);
+            await utils.downloadSvgAsPng(note.title, svg);
         } catch (e) {
             console.warn(e);
             toast.showError(t("svg.export_to_png"));
@@ -115,6 +120,7 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
             className="svg-editor"
             note={note} ntxId={ntxId}
             error={error}
+            previewStale={!!svg}
             onContentChanged={onContentChanged}
             dataSaved={onSave}
             placeholder={t("mermaid.placeholder")}

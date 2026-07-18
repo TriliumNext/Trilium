@@ -1,0 +1,40 @@
+.chat-highlights-list ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.chat-highlights-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.25em;
+    padding: 0.25em 0.4em;
+    border-radius: 4px;
+}
+
+.chat-highlights-list li:hover {
+    background-color: var(--hover-item-background-color);
+}
+
+.chat-highlights-list .chat-highlight-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.chat-highlights-list .chat-highlight-remove {
+    flex-shrink: 0;
+    opacity: 0;
+}
+
+.chat-highlights-list li:hover .chat-highlight-remove,
+.chat-highlights-list .chat-highlight-remove:focus-visible {
+    opacity: 1;
+}
+
+.chat-highlights-list .no-highlights {
+    padding: 0.4em;
+    opacity: 0.7;
+}

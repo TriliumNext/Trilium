@@ -1,3 +1,8 @@
+if (!api.isBackendScriptingEnabled() || !api.isSqlConsoleEnabled()) {
+    api.$container.html("<p>This statistic requires backend scripting and the SQL console to be enabled (Options → Security).</p>");
+    return;
+}
+
 const notes = await api.runOnBackend(() => {
     const blobSizes = api.sql.getMap(`SELECT blobId, LENGTH(content) FROM blobs`);
     const noteBlobIds = api.sql.getRows(`

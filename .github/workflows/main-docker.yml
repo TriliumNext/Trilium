@@ -2,11 +2,13 @@ on:
   push:
     branches:
       - "main"
-      - "feature/update**"
-      - "feature/server_esm**"
-    paths-ignore:
-      - "docs/**"
-      - "bin/**"
+    paths:
+      - "apps/server/**"
+      - "apps/client/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/main-docker.yml"
     tags:
       - "v*"
   workflow_dispatch:
@@ -32,7 +34,7 @@ jobs:
           - dockerfile: Dockerfile
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set IMAGE_NAME to lowercase
         run: echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV
@@ -42,9 +44,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: "pnpm"
@@ -70,6 +72,7 @@ jobs:
 
       - name: Validate container run output
         run: |
+          cp packages/trilium-core/src/test/fixtures/document.db apps/server/spec/db/document.db
           CONTAINER_ID=$(docker run -d --log-driver=journald --rm --network=host -e TRILIUM_PORT=8082 --volume ./apps/server/spec/db:/home/node/trilium-data --name trilium_local ${{ env.TEST_TAG }})
           echo "Container ID: $CONTAINER_ID"
 
@@ -82,7 +85,7 @@ jobs:
           require-healthy: true
 
       - name: Run Playwright tests
-        run: TRILIUM_DOCKER=1 TRILIUM_PORT=8082 pnpm --filter=server-e2e e2e
+        run: TRILIUM_DOCKER=1 TRILIUM_PORT=8082 pnpm --filter=server e2e
 
       - name: Upload Playwright trace
         if: failure()
@@ -141,10 +144,10 @@ jobs:
         run: echo "TEST_TAG=${TEST_TAG,,}" >> $GITHUB_ENV
 
       - name: Checkout repository
-        uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v5
+        uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - name: Set up node & dependencies
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: 'pnpm'
@@ -229,7 +232,7 @@ jobs:
         run: echo "TEST_TAG=${TEST_TAG,,}" >> $GITHUB_ENV
 
       - name: Set up crane
-        uses: imjasonh/setup-crane@v0.5
+        uses: imjasonh/setup-crane@v0.7
 
       - name: Login to GHCR
         uses: docker/login-action@v4

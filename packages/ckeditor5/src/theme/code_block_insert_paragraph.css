@@ -1,0 +1,108 @@
+/*
+ * "Insert paragraph before/after" hover buttons for code blocks.
+ *
+ * Code blocks are not widgets, so they can't reuse WidgetTypeAround's buttons directly: its
+ * global mousedown handler claims every `.ck-widget__type-around__button` and would crash trying
+ * to resolve a widget from our non-widget host. So we use our own classes, but avoid duplicating
+ * any *values*: every size/colour/timing below comes from ckeditor5-widget's own design tokens
+ * (the `--ck-widget-type-around-*` / `--ck-color-widget-*` custom properties) and its sonar
+ * `@keyframes`, so the buttons match the real widget arrows and track the editor theme.
+ *
+ * Source of truth: @ckeditor/ckeditor5-widget/dist/index.css (.ck-widget__type-around__*).
+ */
+
+/* The wrapper overlays the <pre> padding box (the nearest positioned ancestor) without taking
+   flow space or capturing pointer events. */
+.ck.ck-editor__editable .ck-code-block__type-around {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.ck.ck-editor__editable .ck-code-block__type-around__button {
+    position: absolute;
+    width: var(--ck-widget-type-around-button-size);
+    height: var(--ck-widget-type-around-button-size);
+    border-radius: 100px;
+    overflow: hidden;
+    background: var(--ck-color-widget-type-around-button-hover);
+    opacity: 0;
+    pointer-events: none;
+    cursor: pointer;
+    z-index: var(--ck-z-default);
+    transition:
+        opacity var(--ck-widget-handler-animation-duration) var(--ck-widget-handler-animation-curve),
+        background var(--ck-widget-handler-animation-duration) var(--ck-widget-handler-animation-curve);
+}
+
+/* "before" straddles the top-left edge, "after" the bottom-right — same as widgets. */
+.ck.ck-editor__editable .ck-code-block__type-around__button_before {
+    top: calc(-.5 * var(--ck-widget-outline-thickness));
+    left: min(10%, 30px);
+    transform: translateY(-50%);
+}
+
+.ck.ck-editor__editable .ck-code-block__type-around__button_after {
+    bottom: calc(-.5 * var(--ck-widget-outline-thickness));
+    right: min(10%, 30px);
+    transform: translateY(50%);
+}
+
+.ck.ck-editor__editable .ck-code-block__type-around__button svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 8px;
+    margin-top: 1px;
+    transform: translate(-50%, -50%);
+    z-index: calc(var(--ck-z-default) + 2);
+}
+
+.ck.ck-editor__editable .ck-code-block__type-around__button svg * {
+    fill: none;
+    stroke: var(--ck-color-widget-type-around-button-icon);
+    stroke-width: 1.5px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 10;
+}
+
+/* Reveal while hovering the code block; active colour + sonar pulse on the button itself. */
+.ck.ck-editor__editable pre:hover .ck-code-block__type-around__button {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.ck.ck-editor__editable .ck-code-block__type-around__button:hover {
+    background: var(--ck-color-widget-type-around-button-active);
+    animation: 1s infinite ck-widget-type-around-button-sonar;
+}
+
+/* Glossy highlight overlay on hover, matching the widget. */
+.ck.ck-editor__editable .ck-code-block__type-around__button:hover::after {
+    content: "";
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: calc(var(--ck-widget-type-around-button-size) - 2px);
+    height: calc(var(--ck-widget-type-around-button-size) - 2px);
+    border-radius: 100px;
+    z-index: calc(var(--ck-z-default) + 1);
+    background: linear-gradient(135deg, #fff0 0%, #ffffff4d 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ck.ck-editor__editable .ck-code-block__type-around__button {
+        transition: none;
+    }
+
+    .ck.ck-editor__editable .ck-code-block__type-around__button:hover {
+        animation: none;
+    }
+}
+
+/* In read-only mode the paragraph can't be inserted, so don't offer the affordance. */
+.ck.ck-editor__editable.ck-read-only .ck-code-block__type-around {
+    display: none;
+}

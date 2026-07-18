@@ -32,7 +32,11 @@ const keyMap: { [key: string]: string[] } = {
     'up': ['ArrowUp'],
     'down': ['ArrowDown'],
     'left': ['ArrowLeft'],
-    'right': ['ArrowRight']
+    'right': ['ArrowRight'],
+    // "+" doubles as the shortcut separator, so the plus key is referred to by the named "plus" token
+    // (e.g. "Ctrl+Plus"). Matches any key that produces "+": the dedicated key on QWERTZ/AZERTY
+    // layouts, Shift+"=" on US layouts, and the numpad "+".
+    'plus': ['+']
 };
 
 // Function keys
@@ -43,7 +47,8 @@ for (let i = 1; i <= 19; i++) {
     keyMap[`f${i}`] = [ keyCode ];
 }
 
-const KEYCODES_WITH_NO_MODIFIER = new Set([
+// Key codes (e.g. function keys, Delete, Enter) that are allowed as shortcuts without a modifier.
+export const KEYCODES_WITH_NO_MODIFIER = new Set([
     "Delete",
     "Enter",
     "NumpadEnter",
@@ -136,7 +141,7 @@ export function removeIndividualBinding(binding: ShortcutBinding) {
     const key = binding.namespace ?? "global";
     const activeBindingsInNamespace = activeBindings.get(key);
     if (activeBindingsInNamespace) {
-        activeBindings.set(key, activeBindingsInNamespace.filter(aBinding => aBinding.handler === binding.handler));
+        activeBindings.set(key, activeBindingsInNamespace.filter(aBinding => aBinding !== binding));
     }
     binding.element.removeEventListener("keydown", binding.listener);
 }
@@ -161,9 +166,7 @@ export function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
         return false;
     }
 
-    const parts = shortcut.toLowerCase().split('+');
-    const key = parts[parts.length - 1]; // Last part is the actual key
-    const modifiers = parts.slice(0, -1); // Everything before is modifiers
+    const { modifiers, key } = splitShortcut(shortcut);
 
     // Defensive check - ensure we have a valid key
     if (!key || key.trim() === '') {
@@ -229,6 +232,57 @@ export function keyMatches(e: KeyboardEvent, key: string): boolean {
 }
 
 /**
+ * Reduces a shortcut string to a canonical form so that two shortcuts that fire on the *same*
+ * physical key combination compare equal, mirroring the runtime semantics of {@link matchesShortcut}:
+ *  - modifiers are compared as an unordered set (so `Ctrl+Shift+J` === `Shift+Ctrl+J`),
+ *  - modifier aliases collapse (`Control`→`ctrl`, `Cmd`/`Command`→`meta`),
+ *  - the final key is mapped through {@link keyMap} so aliases collapse (`Del`===`Delete`, `Enter`===`Return`).
+ *
+ * Intended for conflict detection in the settings UI, not for binding.
+ */
+export function canonicalizeShortcut(shortcut: string): string {
+    const { modifiers: rawModifiers, key: rawKey } = splitShortcut(shortcut);
+    if (!rawKey) {
+        return "";
+    }
+
+    const modifiers = new Set<string>();
+    for (const modifier of rawModifiers) {
+        if (modifier === "ctrl" || modifier === "control") modifiers.add("ctrl");
+        else if (modifier === "meta" || modifier === "cmd" || modifier === "command") modifiers.add("meta");
+        else if (modifier === "alt" || modifier === "shift") modifiers.add(modifier);
+        else if (modifier) modifiers.add(modifier);
+    }
+
+    // Collapse key aliases (e.g. "del" and "delete" both resolve to the same canonical token, and
+    // the named "plus" token resolves to the raw "+" key).
+    const canonicalKey = keyMap[rawKey]?.[0]?.toLowerCase() ?? rawKey;
+
+    return [ ...[ ...modifiers ].sort(), canonicalKey ].join("+");
+}
+
+/**
+ * Splits a shortcut string into its modifier list and final key, returning both lowercased and
+ * trimmed. Handles the one key that collides with the "+" separator: the plus key is encoded either
+ * as a lone "+" (no modifiers) or as a trailing "++" (e.g. "Ctrl++"), both of which yield a key of
+ * "+". Aliases like the named "plus" token are left untouched here and collapsed by the callers via
+ * {@link keyMap}.
+ */
+function splitShortcut(shortcut: string): { modifiers: string[]; key: string } {
+    const lower = (shortcut ?? "").toLowerCase().trim();
+
+    // A trailing "+" (the whole string is "+", or it ends in "++") denotes the plus key, since a key
+    // is always the final token and "+" is otherwise the separator.
+    if (lower === "+" || lower.endsWith("++")) {
+        const modifiers = lower.slice(0, -1).split("+").map((p) => p.trim()).filter(Boolean);
+        return { modifiers, key: "+" };
+    }
+
+    const parts = lower.split("+").map((p) => p.trim());
+    return { modifiers: parts.slice(0, -1), key: parts[parts.length - 1] };
+}
+
+/**
  * Simple normalization - just lowercase and trim whitespace
  */
 function normalizeShortcut(shortcut: string): string {
@@ -238,8 +292,11 @@ function normalizeShortcut(shortcut: string): string {
 
     const normalized = shortcut.toLowerCase().trim().replace(/\s+/g, '');
 
-    // Warn about potentially problematic shortcuts
-    if (normalized.endsWith('+') || normalized.startsWith('+') || normalized.includes('++')) {
+    // Warn about potentially problematic shortcuts: a missing key (e.g. "ctrl+") or an empty modifier
+    // (e.g. "+a" or the double-separator "ctrl++a"). A genuine plus-key binding like "ctrl++" parses
+    // to a "+" key with no empty modifiers and is left alone.
+    const { modifiers, key } = splitShortcut(normalized);
+    if (!key || modifiers.some((modifier) => !modifier)) {
         console.warn('Potentially malformed shortcut:', shortcut, '-> normalized to:', normalized);
     }
 

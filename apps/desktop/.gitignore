@@ -1,1 +1,2 @@
 electron-forge/app-icon/mac
+src/preload.compiled.cjs

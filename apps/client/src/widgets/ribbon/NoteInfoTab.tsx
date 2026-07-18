@@ -1,3 +1,5 @@
+import "./NoteInfoTab.css";
+
 import { MetadataResponse, NoteSizeResponse, SubtreeSizeResponse } from "@triliumnext/commons";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 

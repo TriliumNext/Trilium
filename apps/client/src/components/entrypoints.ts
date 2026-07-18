@@ -1,10 +1,13 @@
 import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
 
+import { showBackendScriptingDisabledToast } from "../services/backend_scripting.js";
 import bundleService from "../services/bundle.js";
+import dialog from "../services/dialog.js";
 import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import linkService from "../services/link.js";
+import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
 import toastService from "../services/toast.js";
@@ -19,9 +22,7 @@ export default class Entrypoints extends Component {
     }
 
     openDevToolsCommand() {
-        if (utils.isElectron()) {
-            utils.dynamicRequire("@electron/remote").getCurrentWindow().webContents.toggleDevTools();
-        }
+        window.electronApi?.window.toggleDevTools();
     }
 
     async createNoteIntoInboxCommand() {
@@ -86,12 +87,9 @@ export default class Entrypoints extends Component {
     }
 
     toggleFullscreenCommand() {
-        if (utils.isElectron()) {
-            const win = utils.dynamicRequire("@electron/remote").getCurrentWindow();
-
-            if (win.isFullScreenable()) {
-                win.setFullScreen(!win.isFullScreen());
-            }
+        const api = window.electronApi?.window;
+        if (api) {
+            api.setFullScreen(!api.isFullScreen());
         } else {
             document.documentElement.requestFullscreen();
         }
@@ -107,24 +105,20 @@ export default class Entrypoints extends Component {
     }
 
     backInNoteHistoryCommand() {
-        if (utils.isElectron()) {
-            // standard JS version does not work completely correctly in electron
-            const webContents = utils.dynamicRequire("@electron/remote").getCurrentWebContents();
-            const activeIndex = webContents.navigationHistory.getActiveIndex();
-
-            webContents.goToIndex(activeIndex - 1);
+        const api = window.electronApi?.navigation;
+        if (api) {
+            const activeIndex = api.navigationGetActiveIndex();
+            api.navigationGoToIndex(activeIndex - 1);
         } else {
             window.history.back();
         }
     }
 
     forwardInNoteHistoryCommand() {
-        if (utils.isElectron()) {
-            // standard JS version does not work completely correctly in electron
-            const webContents = utils.dynamicRequire("@electron/remote").getCurrentWebContents();
-            const activeIndex = webContents.navigationHistory.getActiveIndex();
-
-            webContents.goToIndex(activeIndex + 1);
+        const api = window.electronApi?.navigation;
+        if (api) {
+            const activeIndex = api.navigationGetActiveIndex();
+            api.navigationGoToIndex(activeIndex + 1);
         } else {
             window.history.forward();
         }
@@ -145,10 +139,8 @@ export default class Entrypoints extends Component {
     async openInWindowCommand({ notePath, hoistedNoteId, viewScope }: NoteCommandData) {
         const extraWindowHash = linkService.calculateHash({ notePath, hoistedNoteId, viewScope });
 
-        if (utils.isElectron()) {
-            const { ipcRenderer } = utils.dynamicRequire("electron");
-
-            ipcRenderer.send("create-extra-window", { extraWindowHash });
+        if (window.electronApi) {
+            window.electronApi.window.createExtraWindow(extraWindowHash);
         } else {
             const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?extraWindow=1${extraWindowHash}`;
 
@@ -184,9 +176,26 @@ export default class Entrypoints extends Component {
 
         // TODO: use note.executeScript()
         if (note.mime.endsWith("env=frontend")) {
-            await bundleService.getAndExecuteBundle(note.noteId);
+            try {
+                // rethrow so a failed script doesn't fall through to the "Note executed" confirmation;
+                // executeBundle has already surfaced the error toast.
+                await bundleService.getAndExecuteBundle(note.noteId, null, null, null, { rethrow: true });
+            } catch {
+                return;
+            }
         } else if (note.mime.endsWith("env=backend")) {
-            await server.post(`script/run/${note.noteId}`);
+            if (!options.is("backendScriptingEnabled")) {
+                // Show the same friendly toast as the frontend runOnBackend path, rather than letting
+                // the /script/run request 500 and surface as an "Uncaught error" via the global handler.
+                showBackendScriptingDisabledToast(note.noteId);
+                return;
+            }
+            try {
+                await server.post(`script/run/${note.noteId}`);
+            } catch {
+                // server.js already reported the error; don't fall through to "Note executed".
+                return;
+            }
         } else if (note.mime === "text/x-sqlite;schema=trilium") {
             const response = await server.post<SqlExecuteResponse>(`sql/execute/${note.noteId}`);
             await appContext.triggerEvent("sqlQueryResults", { ntxId, response });
@@ -214,6 +223,23 @@ export default class Entrypoints extends Component {
 
         await server.post(`notes/${noteId}/revision`);
 
+        toastService.showMessage(t("entrypoints.note-revision-created"));
+    }
+
+    async saveNamedRevisionCommand() {
+        const noteId = appContext.tabManager.getActiveContextNoteId();
+        if (!noteId) return;
+
+        const name = await dialog.prompt({
+            title: t("entrypoints.save-named-revision-title"),
+            message: t("entrypoints.save-named-revision-message"),
+            defaultValue: ""
+        });
+
+        // null means the user cancelled
+        if (name === null) return;
+
+        await server.post(`notes/${noteId}/revision`, { description: name || undefined });
         toastService.showMessage(t("entrypoints.note-revision-created"));
     }
 }

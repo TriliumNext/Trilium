@@ -100,11 +100,15 @@
 const logoWidth = subRoot.note.getLabelValue("shareLogoWidth") ?? 53;
 const logoHeight = subRoot.note.getLabelValue("shareLogoHeight") ?? 40;
 const mobileLogoHeight = logoHeight && logoWidth ? 32 / (logoWidth / logoHeight) : "";
-const shareRootLink = subRoot.note.hasLabel("shareRootLink") ? subRoot.note.getLabelValue("shareRootLink") : `./${subRoot.note.noteId}`;
+const shareRootLink = subRoot.note.hasLabel("shareRootLink") ? sanitizeUrl(subRoot.note.getLabelValue("shareRootLink") ?? "") : `./${subRoot.note.noteId}`;
 const headingRe = /(<h[1-6]>)(.+?)(<\/h[1-6]>)/g;
 const headingMatches = [...content.matchAll(headingRe)];
+// Unique slug per heading (in document order) so duplicate titles get distinct
+// anchor IDs and the ToC links point to the right occurrence.
+const headingSlugs = utils.slugifyHeadings(headingMatches.map((m) => m[2]));
+let headingIndex = 0;
 content = content.replaceAll(headingRe, (...match) => {
-    const slug = utils.slugify(utils.stripTags(match[2]));
+    const slug = headingSlugs[headingIndex++];
     match[0] = match[0].replace(match[3], `<a id="${slug}" class="toc-anchor" name="${slug}" href="#${slug}">#</a>${match[3]}`);
     return match[0];
 });
@@ -156,7 +160,7 @@ content = content.replaceAll(headingRe, (...match) => {
     </div>
     <div id="right-pane">
         <div id="main">
-            <div id="content" class="type-<%= note.type %><% if (note.type === "text") { %> ck-content<% } %><% if (isEmpty) { %> no-content<% } %>">
+            <div id="content" class="type-<%= note.type %><% if (note.type === "text" || (note.type === "code" && note.mime === "text/x-markdown")) { %> ck-content<% } %><% if (isEmpty) { %> no-content<% } %>">
                 <%- renderSnippets("content:start") %>
                     <h1 id="title"><%= note.title %></h1>
                 <% if (isEmpty && (!note.hasVisibleChildren() && note.type !== "book")) { %>
@@ -181,7 +185,8 @@ content = content.replaceAll(headingRe, (...match) => {
                         const action = note.type === "book" ? "getChildNotes" : "getVisibleChildNotes";
                         for (const childNote of note[action]()) {
                             const isExternalLink = childNote.hasLabel("shareExternal") || childNote.hasLabel("shareExternalLink");
-                            const linkHref = isExternalLink ? childNote.getLabelValue("shareExternal") ?? childNote.getLabelValue("shareExternalLink") : `./${childNote.shareId}`;
+                            const rawHref = isExternalLink ? childNote.getLabelValue("shareExternal") ?? childNote.getLabelValue("shareExternalLink") : `./${childNote.shareId}`;
+                            const linkHref = isExternalLink ? sanitizeUrl(rawHref ?? "") : rawHref;
                             const target = isExternalLink ? ` target="_blank" rel="noopener noreferrer"` : "";
                         %>
                             <li>
@@ -203,31 +208,31 @@ content = content.replaceAll(headingRe, (...match) => {
                 <% if (hasTree) { %>
                     <%- include("prev_next", { note: note, subRoot: subRoot }) %>
                 <% } %>
+
+                <% if (showLoginInShareTheme && !isStatic) { %>
+                    <div class="login">
+                        <a href="../login" class="login-link"><%= t("share_theme.login") %></a>
+                    </div>
+                <% } %>
             </footer>
         </div>
         <%
         if (headingMatches.length > 1) {
             const level = (m) => parseInt(m[1].replace(/[<h>]+/g, ""));
 
-            const toc = [
-                {
-                    level: level(headingMatches[0]),
-                    name: headingMatches[0][2],
-                    children: []
-                }
-            ];
+            const makeEntry = (i) => ({level: level(headingMatches[i]), name: headingMatches[i][2], slug: headingSlugs[i], children: []});
+            const toc = [ makeEntry(0) ];
             const last = (arr = toc) => arr[arr.length - 1];
-            const makeEntry = (m) => ({level: level(m), name: m[2], children: []});
             const getLevelArr = (lvl, arr = toc) => {
                 if (arr[0].level === lvl) return arr;
                 const top = last(arr);
                 return top.children.length ? getLevelArr(lvl, top.children) : top.children;
             };
-            
-            
+
+
             for (let m = 1; m < headingMatches.length; m++) {
                 const target = getLevelArr(level(headingMatches[m]));
-                target.push(makeEntry(headingMatches[m]));
+                target.push(makeEntry(m));
             }
         %>
             <div id="toc-pane">

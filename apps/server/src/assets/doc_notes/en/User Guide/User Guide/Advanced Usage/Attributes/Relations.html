@@ -58,12 +58,8 @@
 </ul>
 <h2>Predefined relations</h2>
 <p>These relations are supported and used internally by Trilium.</p>
-<aside
-class="admonition tip">
-  <p>Some relations presented here end with a <code spellcheck="false">*</code>.
-    That means that there are multiple relations with the same prefix, consult
-    the specific page linked in the description of that relation for more information.</p>
-  </aside>
+<figure
+class="table">
   <table>
     <thead>
       <tr>
@@ -101,31 +97,31 @@ class="admonition tip">
           using this relation to which note should be rendered</td>
       </tr>
       <tr>
-        <td><code spellcheck="false">widget_relation</code>
+        <td><code spellcheck="false">widget</code>
         </td>
-        <td>target of this relation will be executed and rendered as a widget in the
-          sidebar</td>
+        <td>Used in the context of custom&nbsp;<a class="reference-link" href="#root/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>,
+          to refer to the widget that will be rendered.</td>
       </tr>
       <tr>
         <td><code spellcheck="false">shareCss</code>
         </td>
         <td>CSS note which will be injected into the share page. CSS note must be
-          in the shared sub-tree as well. Consider using <code spellcheck="false">share_hidden_from_tree</code> and
+          in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code> and
           <code
-          spellcheck="false">share_omit_default_css</code>as well.</td>
+          spellcheck="false">shareOmitDefaultCss</code>as well.</td>
       </tr>
       <tr>
         <td><code spellcheck="false">shareJs</code>
         </td>
         <td>JavaScript note which will be injected into the share page. JS note must
-          be in the shared sub-tree as well. Consider using <code spellcheck="false">share_hidden_from_tree</code>.</td>
+          be in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code>.</td>
       </tr>
       <tr>
         <td><code spellcheck="false">shareHtml</code>
         </td>
         <td>HTML note which will be injected into the share page at locations specified
           by the <code spellcheck="false">shareHtmlLocation</code> label. HTML note
-          must be in the shared sub-tree as well. Consider using <code spellcheck="false">share_hidden_from_tree</code>.</td>
+          must be in the shared sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code>.</td>
       </tr>
       <tr>
         <td><code spellcheck="false">shareTemplate</code>
@@ -133,14 +129,15 @@ class="admonition tip">
         <td>Embedded JavaScript note that will be used as the template for displaying
           the shared note. Falls back to the default template. Consider using
           <code
-          spellcheck="false">share_hidden_from_tree</code>.</td>
+          spellcheck="false">shareHiddenFromTree</code>.</td>
       </tr>
       <tr>
         <td><code spellcheck="false">shareFavicon</code>
         </td>
         <td>Favicon note to be set in the shared page. Typically you want to set it
           to share root and make it inheritable. Favicon note must be in the shared
-          sub-tree as well. Consider using <code spellcheck="false">share_hidden_from_tree</code>.</td>
+          sub-tree as well. Consider using <code spellcheck="false">shareHiddenFromTree</code>.</td>
       </tr>
     </tbody>
   </table>
+  </figure>

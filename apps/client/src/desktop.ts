@@ -1,16 +1,16 @@
 import "autocomplete.js/index_jquery.js";
 
-import type ElectronRemote from "@electron/remote";
-import type Electron from "electron";
+import type { ElectronWindowApi } from "@triliumnext/commons";
 
-import appContext from "./components/app_context.js";
+import appContext, { type CommandNames } from "./components/app_context.js";
 import electronContextMenu from "./menus/electron_context_menu.js";
 import bundleService from "./services/bundle.js";
 import glob from "./services/glob.js";
 import { t } from "./services/i18n.js";
+import { syncNativeWindowWithTheme } from "./services/native_window.js";
 import noteAutocompleteService from "./services/note_autocomplete.js";
 import noteTooltipService from "./services/note_tooltip.js";
-import options from "./services/options.js";
+import { setBackgroundEffectsSuspended } from "./services/theme.js";
 import toastService from "./services/toast.js";
 import utils from "./services/utils.js";
 
@@ -21,7 +21,7 @@ bundleService.getWidgetBundlesByParent().then(async (widgetBundles) => {
     const DesktopLayout = (await import("./layouts/desktop_layout.js")).default;
 
     appContext.setLayout(new DesktopLayout(widgetBundles));
-    appContext.start().catch((e) => {
+    appContext.start().then(reportFullRenderStartupMetric).catch((e) => {
         toastService.showPersistent({
             id: "critical-error",
             title: t("toast.critical-error.title"),
@@ -47,86 +47,53 @@ if (utils.isElectron()) {
 }
 
 function initOnElectron() {
-    const electron: typeof Electron = utils.dynamicRequire("electron");
-    electron.ipcRenderer.on("globalShortcut", async (event, actionName) => appContext.triggerCommand(actionName));
-    electron.ipcRenderer.on("openInSameTab", async (event, noteId) => appContext.tabManager.openInSameTab(noteId));
-    const electronRemote: typeof ElectronRemote = utils.dynamicRequire("@electron/remote");
-    const currentWindow = electronRemote.getCurrentWindow();
-    const style = window.getComputedStyle(document.body);
+    const api = window.electronApi;
+    if (!api) return;
 
-    initDarkOrLightMode();
-    initTransparencyEffects(style, currentWindow);
-    initFullScreenDetection(currentWindow);
+    const win = api.window;
+    // The action name comes from the keyboard-actions registry in the main
+    // process; runtime contract is that it's always a valid CommandNames key.
+    win.onGlobalShortcut(async (actionName) => appContext.triggerCommand(actionName as CommandNames));
+    win.onOpenInSameTab(async (noteId) => appContext.tabManager.openInSameTab(noteId));
 
-    if (options.get("nativeTitleBarVisible") !== "true") {
-        initTitleBarButtons(style, currentWindow);
-    }
+    syncNativeWindowWithTheme();
+    initFullScreenDetection(win);
+    initDevToolsDockDetection(win);
+
+    // With an "auto" theme the effective colors of background effects and the native title bar
+    // follow the OS color scheme.
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncNativeWindowWithTheme);
 
     // Clear navigation history on frontend refresh.
-    currentWindow.webContents.navigationHistory.clear();
-}
-
-function initTitleBarButtons(style: CSSStyleDeclaration, currentWindow: Electron.BrowserWindow) {
-    if (window.glob.platform === "win32") {
-        const applyWindowsOverlay = () => {
-            const color = style.getPropertyValue("--native-titlebar-background");
-            const symbolColor = style.getPropertyValue("--native-titlebar-foreground");
-            if (color && symbolColor) {
-                currentWindow.setTitleBarOverlay({ color, symbolColor });
-            }
-        };
-
-        applyWindowsOverlay();
-
-        // Register for changes to the native title bar colors.
-        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyWindowsOverlay);
-    }
-
-    if (window.glob.platform === "darwin") {
-        const xOffset = parseInt(style.getPropertyValue("--native-titlebar-darwin-x-offset"), 10);
-        const yOffset = parseInt(style.getPropertyValue("--native-titlebar-darwin-y-offset"), 10);
-        currentWindow.setWindowButtonPosition({ x: xOffset, y: yOffset });
-    }
-}
-
-function initFullScreenDetection(currentWindow: Electron.BrowserWindow) {
-    currentWindow.on("enter-full-screen", () => document.body.classList.add("full-screen"));
-    currentWindow.on("leave-full-screen", () => document.body.classList.remove("full-screen"));
-}
-
-function initTransparencyEffects(style: CSSStyleDeclaration, currentWindow: Electron.BrowserWindow) {
-    const material = style.getPropertyValue("--background-material").trim();
-    if (window.glob.platform === "win32") {
-        const bgMaterialOptions = ["auto", "none", "mica", "acrylic", "tabbed"] as const;
-        const foundBgMaterialOption = bgMaterialOptions.find((bgMaterialOption) => material === bgMaterialOption);
-        if (foundBgMaterialOption) {
-            currentWindow.setBackgroundMaterial(foundBgMaterialOption);
-        }
-    }
-
-    if (window.glob.platform === "darwin") {
-        const bgMaterialOptions = [ "popover", "tooltip", "titlebar", "selection", "menu", "sidebar", "header", "sheet", "window", "hud", "fullscreen-ui", "content", "under-window", "under-page" ] as const;
-        const foundBgMaterialOption = bgMaterialOptions.find((bgMaterialOption) => material === bgMaterialOption);
-        if (foundBgMaterialOption) {
-            currentWindow.setVibrancy(foundBgMaterialOption);
-        }
-    }
+    api.navigation.clearNavigationHistory();
 }
 
 /**
- * Informs Electron that we prefer a dark or light theme. Apart from changing prefers-color-scheme at CSS level which is a side effect,
- * this fixes color issues with background effects or native title bars.
- *
- * @param style the root CSS element to read variables from.
+ * Tells the Electron main process that the client finished its initial render
+ * (layout widgets attached, froca loaded, tab restoration started) so it gets
+ * logged against the other startup metrics. The double requestAnimationFrame
+ * defers the report until the browser has painted a frame of the rendered
+ * layout, rather than measuring DOM construction only. No-op outside Electron.
  */
-function initDarkOrLightMode() {
-    let themeSource: typeof nativeTheme.themeSource = "system";
+function reportFullRenderStartupMetric() {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            window.electronApi?.window.reportStartupMetric("client-full-render");
+        });
+    });
+}
 
-    const themeStyle = window.glob.getThemeStyle();
-    if (themeStyle !== "auto") {
-        themeSource = themeStyle;
-    }
+function initFullScreenDetection(win: ElectronWindowApi) {
+    win.onEnterFullScreen(() => document.body.classList.add("full-screen"));
+    win.onLeaveFullScreen(() => document.body.classList.remove("full-screen"));
+}
 
-    const { nativeTheme } = utils.dynamicRequire("@electron/remote") as typeof ElectronRemote;
-    nativeTheme.themeSource = themeSource;
+/**
+ * Chromium disables the native window material (Mica / vibrancy) while DevTools is docked into
+ * the window, which would leave the transparent background effects floating over a solid void —
+ * suspend them for the duration. DevTools in a separate window does not affect the material.
+ */
+function initDevToolsDockDetection(win: ElectronWindowApi) {
+    setBackgroundEffectsSuspended(win.isDevToolsDocked());
+    win.onDevToolsDockChanged(setBackgroundEffectsSuspended);
 }

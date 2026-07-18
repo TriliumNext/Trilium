@@ -27,10 +27,6 @@ export default function Resources() {
         <Section className="icon-packs fill">
             <h2>{t("resources.icon_packs")}</h2>
 
-            <div>
-                <p>Note: This feature is still in preview and is available only in the <a href="https://docs.triliumnotes.org/user-guide/advanced-usage/nightly-release" target="_blank" rel="noopener noreferrer">nightly release</a>.</p>
-            </div>
-
             <p>
                 <Trans
                     i18nKey="resources.icon_packs_intro"

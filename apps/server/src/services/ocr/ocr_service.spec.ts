@@ -47,29 +47,25 @@ const mockEntityChangesService = {
     putEntityChange: vi.fn()
 };
 
-vi.mock('../options.js', () => ({
-    default: mockOptions
-}));
-
-vi.mock('../log.js', () => ({
-    default: mockLog
-}));
-
 vi.mock('../sql.js', () => ({
     default: mockSql
 }));
 
-vi.mock('../../becca/becca.js', () => ({
-    default: mockBecca
-}));
-
-vi.mock('../blob.js', () => ({
-    default: mockBlobService
-}));
-
-vi.mock('../entity_changes.js', () => ({
-    default: mockEntityChangesService
-}));
+// Production code now imports becca/blob/entity_changes/options/getLog from
+// @triliumnext/core directly (the apps/server/src/services/* wrappers were
+// removed). Partial-mock core so each piece routes back to our stub while
+// the rest of core keeps its real implementation.
+vi.mock('@triliumnext/core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@triliumnext/core')>();
+    return {
+        ...actual,
+        becca: mockBecca,
+        blob: mockBlobService,
+        entity_changes: mockEntityChangesService,
+        options: mockOptions,
+        getLog: () => mockLog
+    };
+});
 
 // Import the service after mocking
 let ocrService: typeof import('./ocr_service.js').default;
@@ -108,7 +104,8 @@ beforeEach(async () => {
     (ocrService as any).batchProcessingState = {
         inProgress: false,
         total: 0,
-        processed: 0
+        processed: 0,
+        failed: 0
     };
 });
 
@@ -135,6 +132,10 @@ describe('OCRService', () => {
             expect(result).toBeDefined();
             expect(result.text).toBe('Extracted text from image');
             expect(result.extractedAt).toEqual(expect.any(String));
+            // Tesseract's 0-100 confidence is normalized to 0-1, and the processor
+            // tags the result with its processing type.
+            expect(result.confidence).toBeCloseTo(0.95, 2);
+            expect(result.processingType).toBe('image');
         });
 
         it('should handle OCR recognition errors', async () => {
@@ -143,6 +144,95 @@ describe('OCRService', () => {
 
             await expect(ocrService.extractTextFromFile(mockImageBuffer, 'image/jpeg')).rejects.toThrow('OCR recognition failed');
             expect(mockLog.error).toHaveBeenCalledWith('Image OCR text extraction failed: Error: OCR recognition failed');
+        });
+
+        it('should throw when no processor matches the MIME type', async () => {
+            await expect(
+                ocrService.extractTextFromFile(mockImageBuffer, 'text/plain')
+            ).rejects.toThrow('No processor found for MIME type: text/plain');
+        });
+    });
+
+    describe('resolveOcrLanguage', () => {
+        it('returns the explicit language when provided', () => {
+            expect(ocrService.resolveOcrLanguage('note123', 'fra')).toBe('fra');
+        });
+
+        it('uses the note language label when no explicit language', () => {
+            mockBecca.getNote.mockReturnValue({
+                getLabelValue: vi.fn().mockReturnValue('de')
+            });
+            expect(ocrService.resolveOcrLanguage('note123')).toBe('deu');
+        });
+
+        it('falls through note label when it maps to no tesseract code', () => {
+            mockBecca.getNote.mockReturnValue({
+                getLabelValue: vi.fn().mockReturnValue('not-a-locale')
+            });
+            mockOptions.getOption.mockImplementation((name: string) => {
+                if (name === 'languages') return '["en","de"]';
+                return '';
+            });
+            expect(ocrService.resolveOcrLanguage('note123')).toBe('eng+deu');
+        });
+
+        it('uses enabled content languages (deduplicated) when no note label', () => {
+            mockBecca.getNote.mockReturnValue({ getLabelValue: vi.fn().mockReturnValue(null) });
+            mockOptions.getOption.mockImplementation((name: string) => {
+                if (name === 'languages') return '["en","en-GB","de"]';
+                return '';
+            });
+            expect(ocrService.resolveOcrLanguage('note123')).toBe('eng+deu');
+        });
+
+        it('falls back to UI locale when the enabled languages list is empty', () => {
+            mockBecca.getNote.mockReturnValue({ getLabelValue: vi.fn().mockReturnValue(null) });
+            mockOptions.getOption.mockImplementation((name: string) => {
+                if (name === 'languages') return '[]';
+                if (name === 'locale') return 'fr';
+                return '';
+            });
+            expect(ocrService.resolveOcrLanguage('note123')).toBe('fra');
+        });
+
+        it('defaults the languages list to empty when the option is unset', () => {
+            mockBecca.getNote.mockReturnValue({ getLabelValue: vi.fn().mockReturnValue(null) });
+            mockOptions.getOption.mockImplementation((name: string) => {
+                if (name === 'languages') return null;
+                if (name === 'locale') return 'fr';
+                return '';
+            });
+            expect(ocrService.resolveOcrLanguage('note123')).toBe('fra');
+        });
+
+        it('falls back to UI locale when no enabled languages resolve', () => {
+            mockBecca.getNote.mockReturnValue({ getLabelValue: vi.fn().mockReturnValue(null) });
+            mockOptions.getOption.mockImplementation((name: string) => {
+                if (name === 'languages') return '["not-a-locale"]';
+                if (name === 'locale') return 'fr';
+                return '';
+            });
+            expect(ocrService.resolveOcrLanguage('note123')).toBe('fra');
+        });
+
+        it('falls back to eng when nothing resolves and parsing throws', () => {
+            mockBecca.getNote.mockReturnValue(undefined);
+            mockOptions.getOption.mockImplementation((name: string) => {
+                if (name === 'languages') return 'not json';
+                if (name === 'locale') return 'not-a-locale';
+                return '';
+            });
+            expect(ocrService.resolveOcrLanguage()).toBe('eng');
+        });
+
+        it('falls back to eng when the UI locale option is empty', () => {
+            mockBecca.getNote.mockReturnValue(undefined);
+            mockOptions.getOption.mockImplementation((name: string) => {
+                if (name === 'languages') return '[]';
+                if (name === 'locale') return '';
+                return '';
+            });
+            expect(ocrService.resolveOcrLanguage()).toBe('eng');
         });
     });
 
@@ -275,6 +365,63 @@ describe('OCRService', () => {
             expect(result).toBe(null);
             expect(mockLog.info).toHaveBeenCalledWith('note note123 has unsupported MIME type text/plain for text extraction, skipping');
         });
+
+        it('should skip notes that are not images or files', async () => {
+            (mockNote as any).type = 'text';
+
+            const result = await ocrService.processNoteOCR('note123');
+
+            expect(result).toBe(null);
+            expect(mockLog.info).toHaveBeenCalledWith('note note123 is not an image or file, skipping OCR');
+            (mockNote as any).type = 'image';
+        });
+
+        it('should skip when OCR result already stored and not forcing', async () => {
+            mockSql.getRow.mockReturnValue({ textRepresentation: 'existing' });
+
+            const result = await ocrService.processNoteOCR('note123');
+
+            expect(result).toBe(null);
+            expect(mockLog.info).toHaveBeenCalledWith('OCR already exists for note note123, skipping');
+        });
+
+        it('should throw when content is not a Buffer', async () => {
+            mockNote.getContent.mockReturnValue('not a buffer');
+
+            await expect(ocrService.processNoteOCR('note123')).rejects.toThrow(
+                'Cannot get content for note note123'
+            );
+            expect(mockLog.error).toHaveBeenCalledWith(
+                expect.stringContaining('Failed to process OCR for note note123')
+            );
+        });
+
+        it('processes a note whose blobId is undefined', async () => {
+            (mockNote as any).blobId = undefined;
+            mockSql.getRow.mockReturnValue(null);
+            mockWorker.recognize.mockResolvedValue({
+                data: { text: 'text', confidence: 90, words: [] }
+            });
+
+            const result = await ocrService.processNoteOCR('note123');
+
+            expect(result?.text).toBe('text');
+            expect(mockLog.error).toHaveBeenCalledWith('Cannot store OCR result: blobId is undefined');
+            (mockNote as any).blobId = 'blob123';
+        });
+
+        it('skips storing the blob entity change when blob is missing', async () => {
+            mockSql.getRow.mockReturnValue(null);
+            mockBecca.getBlob.mockReturnValue(null);
+            mockWorker.recognize.mockResolvedValue({
+                data: { text: 'text', confidence: 90, words: [] }
+            });
+
+            const result = await ocrService.processNoteOCR('note123');
+
+            expect(result?.text).toBe('text');
+            expect(mockEntityChangesService.putEntityChange).not.toHaveBeenCalled();
+        });
     });
 
     describe('processAttachmentOCR', () => {
@@ -331,6 +478,32 @@ describe('OCRService', () => {
             mockSql.getRows.mockReturnValueOnce(attachmentRows);
         }
 
+        /**
+         * `startBatchProcessing` kicks `processBlobs` off in the background and returns immediately,
+         * and the real `processBlobs` parks on a 50 ms timer between items. A test that starts it and
+         * walks away leaves that chain alive: it wakes up during a *later* test, and its `.finally`
+         * clears `batchProcessingState.inProgress` — on whatever state object is current by then,
+         * since `startBatchProcessing` replaces the object wholesale rather than mutating it. That is
+         * how the `processBlobs (background)` tests below intermittently lost their second item on
+         * CI, whose slower clock let the timer expire before the file was done.
+         *
+         * The tests using this only exercise `startBatchProcessing`'s own bookkeeping, so stub the
+         * background work out and settle the chain before the test returns.
+         */
+        function stubBackgroundBatch() {
+            let finishBatch: () => void = () => {};
+            const batch = new Promise<void>((resolve) => {
+                finishBatch = resolve;
+            });
+            vi.spyOn(ocrService as any, 'processBlobs').mockReturnValue(batch);
+
+            return async function settleBackgroundBatch() {
+                finishBatch();
+                // Let the .catch()/.finally() hanging off processBlobs run before the test ends.
+                await new Promise((resolve) => setImmediate(resolve));
+            };
+        }
+
         describe('startBatchProcessing', () => {
             beforeEach(() => {
                 ocrService.cancelBatchProcessing();
@@ -340,10 +513,13 @@ describe('OCRService', () => {
                 mockBlobsNeedingOCR(
                     [{ entityId: 'note1', mimeType: 'image/jpeg' }]
                 );
+                const settleBackgroundBatch = stubBackgroundBatch();
 
                 const result = await ocrService.startBatchProcessing();
 
                 expect(result).toEqual({ success: true });
+
+                await settleBackgroundBatch();
             });
 
             it('should return error if batch processing already in progress', async () => {
@@ -351,15 +527,9 @@ describe('OCRService', () => {
                 mockBlobsNeedingOCR(
                     [{ entityId: 'note1', mimeType: 'image/jpeg' }]
                 );
-                // Mock note for background processing
-                mockBecca.getNote.mockReturnValue({
-                    noteId: 'note1', type: 'image', mime: 'image/jpeg', blobId: 'blob1',
-                    getContent: vi.fn().mockReturnValue(Buffer.from('data')),
-                    getLabelValue: vi.fn().mockReturnValue(null)
-                });
-                mockWorker.recognize.mockResolvedValue({ data: { text: 'text', confidence: 90, words: [] } });
+                const settleBackgroundBatch = stubBackgroundBatch();
 
-                ocrService.startBatchProcessing();
+                void ocrService.startBatchProcessing();
 
                 const result = await ocrService.startBatchProcessing();
 
@@ -367,6 +537,8 @@ describe('OCRService', () => {
                     success: false,
                     message: 'Batch processing already in progress'
                 });
+
+                await settleBackgroundBatch();
             });
 
             it('should return error if no items need processing', async () => {
@@ -396,6 +568,61 @@ describe('OCRService', () => {
                     expect.stringContaining('Failed to get blobs needing OCR')
                 );
             });
+
+            it('returns failure when collecting blobs throws unexpectedly', async () => {
+                vi.spyOn(ocrService, 'getBlobsNeedingOCR').mockImplementation(() => {
+                    throw new Error('unexpected');
+                });
+
+                const result = await ocrService.startBatchProcessing();
+
+                expect(result).toEqual({ success: false, message: 'unexpected' });
+                expect(mockLog.error).toHaveBeenCalledWith(
+                    expect.stringContaining('Failed to start batch processing: unexpected')
+                );
+            });
+
+            it('stringifies non-Error failures when collecting blobs throws', async () => {
+                vi.spyOn(ocrService, 'getBlobsNeedingOCR').mockImplementation(() => {
+                    throw 'plain string';
+                });
+
+                const result = await ocrService.startBatchProcessing();
+
+                expect(result).toEqual({ success: false, message: 'plain string' });
+            });
+
+            it('logs a stringified non-Error when the background batch rejects', async () => {
+                vi.useFakeTimers();
+                mockBlobsNeedingOCR([{ entityId: 'note1', mimeType: 'image/jpeg' }]);
+                vi.spyOn(ocrService as any, 'processBlobs').mockRejectedValue('plain reject');
+
+                await ocrService.startBatchProcessing();
+                await vi.runAllTimersAsync();
+                vi.useRealTimers();
+
+                expect(mockLog.error).toHaveBeenCalledWith(
+                    expect.stringContaining('Batch processing failed: plain reject')
+                );
+            });
+
+            it('logs when the background batch fails', async () => {
+                vi.useFakeTimers();
+                mockBlobsNeedingOCR([{ entityId: 'note1', mimeType: 'image/jpeg' }]);
+                vi.spyOn(ocrService as any, 'processBlobs').mockRejectedValue(
+                    new Error('batch boom')
+                );
+
+                const result = await ocrService.startBatchProcessing();
+                expect(result).toEqual({ success: true });
+
+                await vi.runAllTimersAsync();
+                vi.useRealTimers();
+
+                expect(mockLog.error).toHaveBeenCalledWith(
+                    expect.stringContaining('Batch processing failed: batch boom')
+                );
+            });
         });
 
         describe('getBatchProgress', () => {
@@ -405,14 +632,16 @@ describe('OCRService', () => {
                 expect(progress.inProgress).toBe(false);
                 expect(progress.total).toBe(0);
                 expect(progress.processed).toBe(0);
+                expect(progress.failed).toBe(0);
             });
 
             it('should return progress with percentage when total > 0', async () => {
                 mockBlobsNeedingOCR(
                     Array.from({ length: 10 }, (_, i) => ({ entityId: `note${i}`, mimeType: 'image/jpeg' }))
                 );
+                const settleBackgroundBatch = stubBackgroundBatch();
 
-                ocrService.startBatchProcessing();
+                void ocrService.startBatchProcessing();
 
                 const progress = ocrService.getBatchProgress();
 
@@ -421,6 +650,8 @@ describe('OCRService', () => {
                 expect(progress.processed).toBe(0);
                 expect(progress.percentage).toBe(0);
                 expect(progress.startTime).toBeInstanceOf(Date);
+
+                await settleBackgroundBatch();
             });
         });
 
@@ -429,8 +660,9 @@ describe('OCRService', () => {
                 mockBlobsNeedingOCR(
                     [{ entityId: 'note1', mimeType: 'image/jpeg' }]
                 );
+                const settleBackgroundBatch = stubBackgroundBatch();
 
-                ocrService.startBatchProcessing();
+                void ocrService.startBatchProcessing();
 
                 expect(ocrService.getBatchProgress().inProgress).toBe(true);
 
@@ -438,12 +670,97 @@ describe('OCRService', () => {
 
                 expect(ocrService.getBatchProgress().inProgress).toBe(false);
                 expect(mockLog.info).toHaveBeenCalledWith('Batch OCR processing cancelled');
+
+                await settleBackgroundBatch();
             });
 
             it('should do nothing if no batch processing is running', () => {
                 ocrService.cancelBatchProcessing();
 
                 expect(mockLog.info).not.toHaveBeenCalledWith('Batch OCR processing cancelled');
+            });
+        });
+
+        describe('processBlobs (background)', () => {
+            beforeEach(() => {
+                vi.useFakeTimers();
+                (ocrService as any).batchProcessingState = {
+                    inProgress: true, total: 2, processed: 0, failed: 0
+                };
+            });
+
+            afterEach(() => {
+                vi.useRealTimers();
+            });
+
+            it('processes notes and attachments, counting per-item errors without aborting', async () => {
+                const processNote = vi
+                    .spyOn(ocrService, 'processNoteOCR')
+                    .mockResolvedValue(null);
+                const processAttachment = vi
+                    .spyOn(ocrService, 'processAttachmentOCR')
+                    .mockRejectedValue(new Error('boom'));
+
+                const promise = (ocrService as any).processBlobs([
+                    { entityType: 'note', entityId: 'n1' },
+                    { entityType: 'attachment', entityId: 'a1' }
+                ]);
+
+                await vi.runAllTimersAsync();
+                await promise;
+
+                expect(processNote).toHaveBeenCalledWith('n1');
+                expect(processAttachment).toHaveBeenCalledWith('a1');
+                expect((ocrService as any).batchProcessingState.processed).toBe(2);
+                expect((ocrService as any).batchProcessingState.failed).toBe(1);
+            });
+
+            it('stops the loop when processing is cancelled mid-way', async () => {
+                vi.spyOn(ocrService, 'processNoteOCR').mockImplementation(async () => {
+                    (ocrService as any).batchProcessingState.inProgress = false;
+                    return null;
+                });
+                const processAttachment = vi.spyOn(ocrService, 'processAttachmentOCR');
+
+                const promise = (ocrService as any).processBlobs([
+                    { entityType: 'note', entityId: 'n1' },
+                    { entityType: 'attachment', entityId: 'a1' }
+                ]);
+
+                await vi.runAllTimersAsync();
+                await promise;
+
+                expect(processAttachment).not.toHaveBeenCalled();
+                expect((ocrService as any).batchProcessingState.processed).toBe(1);
+            });
+        });
+
+        describe('getBlobsNeedingOCR', () => {
+            it('returns combined note and attachment rows', () => {
+                mockSql.getRows.mockReturnValueOnce([
+                    { blobId: 'b1', mimeType: 'image/png', entityId: 'n1' }
+                ]);
+                mockSql.getRows.mockReturnValueOnce([
+                    { blobId: 'b2', mimeType: 'image/jpeg', entityId: 'a1' }
+                ]);
+
+                const result = ocrService.getBlobsNeedingOCR();
+
+                expect(result).toEqual([
+                    { blobId: 'b1', mimeType: 'image/png', entityId: 'n1', entityType: 'note' },
+                    { blobId: 'b2', mimeType: 'image/jpeg', entityId: 'a1', entityType: 'attachment' }
+                ]);
+            });
+
+            it('returns empty array and logs when the query fails', () => {
+                mockSql.getRows.mockImplementation(() => {
+                    throw new Error('db down');
+                });
+
+                expect(ocrService.getBlobsNeedingOCR()).toEqual([]);
+                expect(mockLog.error).toHaveBeenCalledWith(
+                    expect.stringContaining('Failed to get blobs needing OCR')
+                );
             });
         });
     });

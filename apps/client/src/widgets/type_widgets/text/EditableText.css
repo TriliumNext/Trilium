@@ -53,3 +53,9 @@ body.heading-style-underline .note-detail-editable-text h6 { border-bottom: 1px 
 .note-detail-editable-text .ck.ck-editor__editable_inline {
     padding: 0;
 }
+
+.note-detail-editable-text ul.todo-list:not(.todo-list .todo-list) {
+    /* Prevent the block handle overlap the expand/collapse arrows for the first
+     * level of nested checkboxes */
+    margin-inline-start: 14px;
+}

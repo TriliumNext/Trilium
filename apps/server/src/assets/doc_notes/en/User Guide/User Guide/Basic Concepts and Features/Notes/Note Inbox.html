@@ -1,0 +1,30 @@
+<p>The inbox is the default destination for quickly captured notes. When
+  a note is created without picking a location first, it lands in the inbox.
+  This makes it easy to quickly capture notes and sort them later.</p>
+<h2>Where the inbox is used</h2>
+<ul>
+  <li>The <em>New note</em> button in the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>.</li>
+  <li>The global <em>Create note into inbox</em> shortcut (default <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>P</kbd>).</li>
+  <li>The <em>New note</em> action in the <a href="#root/_help_7iwde4lsKc6O">tray icon menu</a>.</li>
+  <li>The&nbsp;<a class="reference-link" href="#root/_help_MtPxeAWVAzMg">Web Clipper</a>&nbsp;extension.</li>
+</ul>
+<h2>Setting a note inbox</h2>
+<p>To create a note inbox, apply the <code spellcheck="false">#inbox</code> 
+  <a
+  href="#root/_help_HI6GBBIduIgv">label</a>to it.</p>
+<p>Only one note should carry this label. If there are multiple notes, only
+  one will be used by the application.</p>
+<aside class="admonition note">
+  <p>If there is no inbox note, Trilium will fall back to today's <a href="#root/_help_l0tKav7yLHGF">day note</a> instead.</p>
+</aside>
+<h2>Workspace inboxes</h2>
+<p>Each <a href="#root/_help_9sRHySam5fXb">workspace</a> can have its own inbox,
+  set via the <code spellcheck="false">#workspaceInbox</code> label.</p>
+<p>When a new note is created while hoisted in a workspace, the location
+  is determined in the following order:</p>
+<ul>
+  <li>A note carrying the <code spellcheck="false">#workspaceInbox</code> label
+    in that workspace.</li>
+  <li>A note carrying the <code spellcheck="false">#inbox</code> within that workspace.</li>
+  <li>The workspace root note itself.</li>
+</ul>

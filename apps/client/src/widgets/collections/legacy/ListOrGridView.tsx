@@ -207,19 +207,24 @@ function NoteAttributes({ note }: { note: FNote }) {
     return <span className="note-list-attributes" ref={ref} />;
 }
 
-export function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes, showTextRepresentation }: {
+export function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes, showTextRepresentation, interactive, onReady }: {
     note: FNote;
     trim?: boolean;
     noChildrenList?: boolean;
     highlightedTokens: string[] | null | undefined;
     includeArchivedNotes: boolean;
     showTextRepresentation?: boolean;
+    /** Render live interactive type widgets (e.g. web views) instead of static previews. */
+    interactive?: boolean;
+    onReady?: () => void;
 }) {
     const contentRef = useRef<HTMLDivElement>(null);
     const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
 
     const [ready, setReady] = useState(false);
     const [noteType, setNoteType] = useState<string>("none");
+    const onReadyRef = useRef(onReady);
+    onReadyRef.current = onReady;
 
     useEffect(() => {
         const contentElement = contentRef.current;
@@ -233,15 +238,29 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
     }, []);
 
     useEffect(() => {
+        let cancelled = false;
+        // Tracks the rendered content so the cleanup can unmount any interactive widget it carries
+        // (collections, web views) — otherwise their standalone Preact roots leak when the note
+        // changes or the card unmounts.
+        let rendered: JQuery<HTMLElement> | undefined;
+        setReady(false);
         content_renderer.getRenderedContent(note, {
             trim,
             noChildrenList,
+            // The note list is a lightweight preview: don't render included notes at all.
             noIncludedNotes: true,
             includeArchivedNotes,
-            showTextRepresentation
+            showTextRepresentation,
+            interactive
         })
             .then(({ $renderedContent, type }) => {
-                if (!contentRef.current) return;
+                if (cancelled || !contentRef.current) {
+                    // Superseded by a newer render or unmounted while rendering — tear down what was
+                    // just mounted instead of letting it leak (and don't clobber newer content).
+                    content_renderer.disposeInteractiveContent($renderedContent);
+                    return;
+                }
+                rendered = $renderedContent;
                 if ($renderedContent[0].innerHTML) {
                     contentRef.current.replaceChildren(...$renderedContent);
                 } else {
@@ -250,13 +269,22 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
                 highlightSearch(contentRef.current);
                 setNoteType(type);
                 setReady(true);
+                onReadyRef.current?.();
             })
             .catch(e => {
+                if (cancelled) return;
                 console.warn(`Caught error while rendering note '${note.noteId}' of type '${note.type}'`);
                 console.error(e);
                 contentRef.current?.replaceChildren(t("collections.rendering_error"));
                 setReady(true);
+                onReadyRef.current?.();
             });
+        return () => {
+            cancelled = true;
+            if (rendered) {
+                content_renderer.disposeInteractiveContent(rendered);
+            }
+        };
     }, [ note, highlightedTokens ]);
 
     return <div ref={contentRef} className={clsx("note-book-content", `type-${noteType}`, {"note-book-content-ready": ready})} />;
@@ -298,7 +326,7 @@ function NoteMenuButton(props: {notePath: string}) {
             />
 }
 
-function getNotePath(parentNote: FNote, childNote: FNote) {
+export function getNotePath(parentNote: FNote, childNote: FNote) {
     if (parentNote.type === "search") {
         // for search note parent, we want to display a non-search path
         return childNote.noteId;

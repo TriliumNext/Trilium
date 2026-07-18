@@ -21,22 +21,19 @@
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
-    "@typescript-eslint/eslint-plugin": "8.58.0",
-    "@typescript-eslint/parser": "8.58.0",
-    "@vitest/browser": "4.1.2",
-    "@vitest/coverage-istanbul": "4.1.2",
-    "ckeditor5": "48.0.0",
-    "eslint": "10.2.0",
+    "@vitest/browser": "4.1.10",
+    "ckeditor5": "48.2.0",
+    "eslint": "10.7.0",
     "eslint-config-ckeditor5": ">=9.1.0",
-    "stylelint": "17.6.0",
+    "stylelint": "17.14.0",
     "stylelint-config-ckeditor5": ">=9.1.0",
-    "typescript": "6.0.2",
+    "typescript": "6.0.3",
     "vite-plugin-svgo": "2.0.0",
-    "vitest": "4.1.2",
-    "webdriverio": "9.27.0"
+    "vitest": "4.1.10",
+    "webdriverio": "9.29.1"
   },
   "peerDependencies": {
-    "ckeditor5": "48.0.0"
+    "ckeditor5": "48.2.0"
   },
   "scripts": {
     "lint": "eslint \"**/*.{js,ts}\" --quiet",

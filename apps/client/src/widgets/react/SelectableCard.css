@@ -1,0 +1,60 @@
+.selectable-card-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--selectable-card-columns, 3), 1fr);
+    gap: 0.75em;
+}
+
+/* The grid columns get cramped on a phone — stack the cards into single-column rows instead. */
+body.mobile .selectable-card-grid {
+    grid-template-columns: 1fr;
+}
+
+.selectable-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    width: 100%;
+    padding: 0.75em;
+    text-align: left;
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    background: var(--accented-background-color);
+    cursor: pointer;
+}
+
+.selectable-card:hover {
+    border-color: var(--main-text-color);
+}
+
+.selectable-card.selected {
+    border-color: var(--main-text-color);
+    background: var(--active-item-background-color);
+    color: var(--active-item-text-color);
+}
+
+/* Boxicons-based card icon (used when `icon` is supplied instead of `iconUrl`). */
+.selectable-card-bxicon {
+    flex-shrink: 0;
+    font-size: 1.5em;
+    line-height: 1;
+}
+
+.selectable-card-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.selectable-card-name {
+    font-weight: bold;
+}
+
+.selectable-card-description {
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+}
+
+.selectable-card.selected .selectable-card-description {
+    color: inherit;
+    opacity: 0.8;
+}

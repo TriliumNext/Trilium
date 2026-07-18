@@ -1,0 +1,32 @@
+.render-error-card .render-error-message {
+    font-family: var(--monospace-font-family);
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: text;
+}
+
+.render-error-card .render-error-note {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    margin-block-start: 0.5em;
+    font-size: 0.9em;
+}
+
+.render-error-card .render-error-note-label {
+    opacity: 0.75;
+}
+
+.render-error-card pre {
+    margin: 0.5em 0 0;
+    padding: 0.5em 0.75em;
+    border-radius: 4px;
+    background-color: var(--accented-background-color);
+    font-family: var(--monospace-font-family);
+    font-size: 0.8em;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: text;
+}

@@ -1,16 +1,20 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
 import { defaultHighlightStyle, StreamLanguage, syntaxHighlighting, indentUnit, bracketMatching, foldGutter, codeFolding } from "@codemirror/language";
-import { Compartment, EditorSelection, EditorState, type Extension } from "@codemirror/state";
+import { Compartment, EditorSelection, EditorState, StateEffect, type Extension } from "@codemirror/state";
 import { highlightSelectionMatches } from "@codemirror/search";
+import { autocompletion, type CompletionSource } from "@codemirror/autocomplete";
 import { vim } from "@replit/codemirror-vim";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
-import byMimeType from "./syntax_highlighting.js";
+import byMimeType, { MIME_ALIASES } from "./syntax_highlighting.js";
 import smartIndentWithTab from "./extensions/custom_tab.js";
 import type { ThemeDefinition } from "./color_themes.js";
 import { createSearchHighlighter, SearchHighlighter, searchMatchHighlightTheme } from "./find_replace.js";
+import { buildTypeCompletion, type ScriptApiContext } from "./type_completion/index.js";
 
-export { default as ColorThemes, type ThemeDefinition, getThemeById } from "./color_themes.js";
+export { default as ColorThemes, type ThemeDefinition, type ThemeVariant, getThemeById } from "./color_themes.js";
+export { isScriptMime, type ScriptApiContext, SCRIPT_MIME_BACKEND, SCRIPT_MIME_FRONTEND } from "./type_completion/index.js";
+export { triliumLogHighlighter } from "./extensions/trilium_log_highlighter.js";
 
 // Custom keymap to prevent Ctrl+Enter from inserting a newline
 // This allows the parent application to handle the shortcut (e.g., for "Run Active Note")
@@ -23,6 +27,21 @@ const preventCtrlEnterKeymap: readonly KeyBinding[] = [
     }
 ];
 
+// Lint diagnostics (e.g. the TypeScript script linter or the Mermaid linter) can produce very
+// long messages; without a width cap and wrapping the tooltip overflows the editor and gets
+// clipped at the edges. `.cm-tooltip-lint` is the diagnostics list shared by both the gutter
+// tooltip (where it also carries `.cm-tooltip`) and the inline hover tooltip (where it's nested
+// inside a `.cm-tooltip-hover` wrapper), so targeting it directly covers both.
+const lintTooltipTheme = EditorView.baseTheme({
+    ".cm-tooltip-lint": {
+        maxWidth: "min(40em, 90vw)"
+    },
+    ".cm-diagnostic": {
+        whiteSpace: "normal",
+        overflowWrap: "anywhere"
+    }
+});
+
 type ContentChangedListener = () => void;
 
 export interface EditorConfig {
@@ -34,7 +53,15 @@ export interface EditorConfig {
     /** Disables some of the nice-to-have features (bracket matching, syntax highlighting, indentation markers) in order to improve performance. */
     preferPerformance?: boolean;
     tabIndex?: number;
+    /** The number of spaces used for indentation (also used as the tab display width). Defaults to 4. */
+    indentSize?: number;
+    /** If true, indent using a tab character instead of spaces. Defaults to false. */
+    useTabs?: boolean;
     onContentChanged?: ContentChangedListener;
+}
+
+function buildIndentUnit(indentSize: number, useTabs: boolean) {
+    return useTabs ? "\t" : " ".repeat(indentSize);
 }
 
 export default class CodeMirror extends EditorView {
@@ -44,15 +71,30 @@ export default class CodeMirror extends EditorView {
     private historyCompartment: Compartment;
     private themeCompartment: Compartment;
     private lineWrappingCompartment: Compartment;
+    private indentUnitCompartment: Compartment;
     private searchHighlightCompartment: Compartment;
+    private typeCompletionCompartment: Compartment;
+    private completionSourceCompartment: Compartment;
     private searchPlugin?: SearchHighlighter | null;
+    private namedCompartments = new Map<string, Compartment>();
+    /** Named completion sources aggregated into the editor's single autocompletion. */
+    private completionSources = new Map<string, CompletionSource>();
+    /** Monotonic token guarding against out-of-order async type-completion updates. */
+    private typeCompletionToken = 0;
+    /** Current MIME type, retained so the type completion can be rebuilt when only the api context changes. */
+    private currentMime: string | null = null;
+    /** Per-note context tuning the script `api` surface (e.g. custom-request-handler members). */
+    private scriptApiContext: ScriptApiContext = {};
 
     constructor(config: EditorConfig) {
         const languageCompartment = new Compartment();
         const historyCompartment = new Compartment();
         const themeCompartment = new Compartment();
         const lineWrappingCompartment = new Compartment();
+        const indentUnitCompartment = new Compartment();
         const searchHighlightCompartment = new Compartment();
+        const typeCompletionCompartment = new Compartment();
+        const completionSourceCompartment = new Compartment();
 
         let extensions: Extension[] = [];
 
@@ -65,10 +107,19 @@ export default class CodeMirror extends EditorView {
             languageCompartment.of([]),
             lineWrappingCompartment.of(config.lineWrapping ? EditorView.lineWrapping : []),
             searchMatchHighlightTheme,
+            lintTooltipTheme,
             searchHighlightCompartment.of([]),
+            typeCompletionCompartment.of([]),
+            completionSourceCompartment.of([]),
             highlightActiveLine(),
             lineNumbers(),
-            indentUnit.of(" ".repeat(4)),
+            themeCompartment.of([
+                syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+            ]),
+            indentUnitCompartment.of([
+                indentUnit.of(buildIndentUnit(config.indentSize ?? 4, !!config.useTabs)),
+                EditorState.tabSize.of(config.indentSize ?? 4)
+            ]),
             keymap.of([
                 ...preventCtrlEnterKeymap,
                 ...defaultKeymap,
@@ -80,9 +131,6 @@ export default class CodeMirror extends EditorView {
         if (!config.preferPerformance) {
             extensions = [
                 ...extensions,
-                themeCompartment.of([
-                    syntaxHighlighting(defaultHighlightStyle, { fallback: true })
-                ]),
                 highlightSelectionMatches(),
                 bracketMatching(),
                 codeFolding(),
@@ -91,14 +139,12 @@ export default class CodeMirror extends EditorView {
             ];
         }
 
+        extensions.push(EditorView.updateListener.of((v) => this.#onDocumentUpdated(v)));
+
         if (!config.readOnly) {
             // Logic specific to editable notes
             if (config.placeholder) {
                 extensions.push(placeholder(config.placeholder));
-            }
-
-            if (config.onContentChanged) {
-                extensions.push(EditorView.updateListener.of((v) => this.#onDocumentUpdated(v)));
             }
 
             extensions.push(historyCompartment.of(history()));
@@ -121,13 +167,31 @@ export default class CodeMirror extends EditorView {
         this.historyCompartment = historyCompartment;
         this.themeCompartment = themeCompartment;
         this.lineWrappingCompartment = lineWrappingCompartment;
+        this.indentUnitCompartment = indentUnitCompartment;
         this.searchHighlightCompartment = searchHighlightCompartment;
+        this.typeCompletionCompartment = typeCompletionCompartment;
+        this.completionSourceCompartment = completionSourceCompartment;
     }
 
     #onDocumentUpdated(v: ViewUpdate) {
         if (v.docChanged) {
             this.config.onContentChanged?.();
         }
+        for (const listener of this.#updateListeners) listener(v);
+    }
+
+    #updateListeners: Array<(v: ViewUpdate) => void> = [];
+
+    /**
+     * Subscribe to view updates (doc changes, selection changes, viewport changes, etc.).
+     * Returns an unsubscribe function. The listener will not fire after the view is destroyed.
+     */
+    addUpdateListener(listener: (v: ViewUpdate) => void): () => void {
+        this.#updateListeners.push(listener);
+        return () => {
+            const i = this.#updateListeners.indexOf(listener);
+            if (i >= 0) this.#updateListeners.splice(i, 1);
+        };
     }
 
     getText() {
@@ -168,6 +232,27 @@ export default class CodeMirror extends EditorView {
         });
     }
 
+    setIndent(size: number, useTabs: boolean) {
+        if (!Number.isFinite(size) || size < 1) size = 4;
+        if (size > 16) size = 16;
+        this.config.indentSize = size;
+        this.config.useTabs = useTabs;
+        this.dispatch({
+            effects: [ this.indentUnitCompartment.reconfigure([
+                indentUnit.of(buildIndentUnit(size, useTabs)),
+                EditorState.tabSize.of(size)
+            ]) ]
+        });
+    }
+
+    setIndentSize(size: number) {
+        this.setIndent(size, !!this.config.useTabs);
+    }
+
+    setUseTabs(useTabs: boolean) {
+        this.setIndent(this.config.indentSize ?? 4, useTabs);
+    }
+
     /**
      * Clears the history of undo/redo. Generally useful when changing to a new document.
      */
@@ -188,6 +273,26 @@ export default class CodeMirror extends EditorView {
         const endPos = this.state.doc.length;
         this.dispatch({
             selection: EditorSelection.cursor(endPos),
+        });
+    }
+
+    /**
+     * Inserts a blank line at the very top of the document and places the cursor on it — the code-note
+     * analog of the Notion-like behavior when pressing Enter in the note title. If the first line is
+     * already empty, the cursor is simply moved there instead of inserting another blank line, so a
+     * brand-new (empty) note does not end up with two blank lines. No-op for read-only editors, since
+     * CodeMirror's `readOnly` facet does not block programmatic transactions.
+     */
+    insertBlankLineAtTop() {
+        if (this.config.readOnly) {
+            return;
+        }
+        const firstLineEmpty = this.state.doc.line(1).length === 0;
+        this.dispatch({
+            ...(firstLineEmpty ? {} : { changes: { from: 0, insert: "\n" } }),
+            selection: EditorSelection.cursor(0),
+            // Reveal the new top line — the cursor may have been at the bottom of a long note.
+            scrollIntoView: true
         });
     }
 
@@ -230,10 +335,27 @@ export default class CodeMirror extends EditorView {
         }
     }
 
+    /**
+     * Adds or reconfigures a named extension. If the extension has already been
+     * added under this name, it is reconfigured in place (no duplicate config error).
+     * This is safe to call repeatedly (e.g. from React effects or during hot-reload).
+     */
+    setNamedExtension(name: string, ext: Extension) {
+        let compartment = this.namedCompartments.get(name);
+        if (compartment) {
+            this.dispatch({ effects: compartment.reconfigure(ext) });
+        } else {
+            compartment = new Compartment();
+            this.namedCompartments.set(name, compartment);
+            this.dispatch({ effects: StateEffect.appendConfig.of(compartment.of(ext)) });
+        }
+    }
+
     async setMimeType(mime: string) {
+        this.currentMime = mime;
         let newExtension: Extension[] = [];
 
-        const correspondingSyntax = byMimeType[mime];
+        const correspondingSyntax = byMimeType[MIME_ALIASES[mime] ?? mime];
         if (correspondingSyntax) {
             const resolvedSyntax = await correspondingSyntax();
 
@@ -249,6 +371,62 @@ export default class CodeMirror extends EditorView {
 
         this.dispatch({
             effects: this.languageCompartment.reconfigure(newExtension)
+        });
+
+        await this.#updateTypeCompletion(mime);
+    }
+
+    /**
+     * Updates the per-note script `api` context (e.g. whether the note is a custom
+     * request handler, which gates the `req`/`res`/`pathParams` members) and rebuilds
+     * the type completion in place. Safe to call before a MIME type is set — it takes
+     * effect on the next `setMimeType`.
+     */
+    async setScriptApiContext(context: ScriptApiContext) {
+        this.scriptApiContext = context;
+        if (this.currentMime !== null) {
+            await this.#updateTypeCompletion(this.currentMime);
+        }
+    }
+
+    /**
+     * Enables the TypeScript language service (full completion, hover docs and
+     * diagnostics) for backend/frontend script notes, and clears it otherwise.
+     * Guarded by a token so a slow async build for a previous MIME type can't
+     * overwrite a newer one.
+     */
+    async #updateTypeCompletion(mime: string) {
+        const token = ++this.typeCompletionToken;
+        const { extensions, source } = await buildTypeCompletion(mime, this.scriptApiContext);
+        if (token !== this.typeCompletionToken) {
+            return; // a newer setMimeType call superseded this one
+        }
+        this.dispatch({
+            effects: this.typeCompletionCompartment.reconfigure(extensions)
+        });
+        this.setCompletionSource("typescript", source);
+    }
+
+    /**
+     * Registers (or, with `null`, removes) a named autocompletion source. All
+     * registered sources are merged into the editor's single `autocompletion()`
+     * extension — CodeMirror permits only one `override` config per editor, so
+     * features (snippets, the TypeScript language service, …) contribute sources
+     * here rather than each adding their own autocompletion.
+     */
+    setCompletionSource(name: string, source: CompletionSource | null) {
+        if (source) {
+            this.completionSources.set(name, source);
+        } else {
+            this.completionSources.delete(name);
+        }
+        const sources = [...this.completionSources.values()];
+        this.dispatch({
+            effects: this.completionSourceCompartment.reconfigure(
+                sources.length
+                    ? autocompletion({ override: sources, activateOnTyping: true })
+                    : []
+            )
         });
     }
 }

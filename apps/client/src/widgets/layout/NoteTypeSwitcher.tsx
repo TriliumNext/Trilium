@@ -12,7 +12,7 @@ import { NOTE_TYPES, NoteTypeMapping } from "../../services/note_types";
 import server from "../../services/server";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useNoteContext, useNoteProperty, useNoteSavedData, useTriliumEvent } from "../react/hooks";
+import { useNoteProperty, useNoteSavedData, useTriliumEvent } from "../react/hooks";
 import { onWheelHorizontalScroll } from "../widget_utils";
 
 const SWITCHER_PINNED_NOTE_TYPES = new Set<NoteType>([ "text", "code", "book", "canvas" ]);
@@ -20,15 +20,15 @@ const supportedNoteTypes = new Set<NoteType>([
     "text", "code"
 ]);
 
-export default function NoteTypeSwitcher() {
-    const { note } = useNoteContext();
+export default function NoteTypeSwitcher({ note }: { note?: FNote | null }) {
     const blob = useNoteSavedData(note?.noteId);
     const currentNoteType = useNoteProperty(note, "type");
     const { pinnedNoteTypes, restNoteTypes } = useMemo(() => {
         const pinnedNoteTypes: NoteTypeMapping[] = [];
         const restNoteTypes: NoteTypeMapping[] = [];
         for (const noteType of NOTE_TYPES) {
-            if (noteType.reserved || noteType.static || noteType.type === "book") continue;
+            if (noteType.reserved || noteType.type === "book") continue;
+            if (noteType.type === "search") continue;
             if (noteType.type === "llmChat" && !isExperimentalFeatureEnabled("llm")) continue;
             if (SWITCHER_PINNED_NOTE_TYPES.has(noteType.type)) {
                 pinnedNoteTypes.push(noteType);
@@ -41,7 +41,7 @@ export default function NoteTypeSwitcher() {
     const currentNoteTypeData = useMemo(() => NOTE_TYPES.find(t => t.type === currentNoteType), [ currentNoteType ]);
     const { builtinTemplates, collectionTemplates } = useBuiltinTemplates();
 
-    return (currentNoteType && supportedNoteTypes.has(currentNoteType) && !note?.isTriliumSqlite() &&
+    return (currentNoteType && supportedNoteTypes.has(currentNoteType) && !note?.isTriliumSqlite() && !note?.isMarkdown() && !note?.isIconPack() &&
         <div
             className="note-type-switcher"
             onWheel={onWheelHorizontalScroll}

@@ -1,0 +1,18 @@
+{
+  "appId": "org.triliumnotes.trilium",
+  "appName": "Trilium Notes",
+  "webDir": "../standalone/dist",
+  "server": {
+    "androidScheme": "https",
+    "hostname": "localhost"
+  },
+  "ios": {
+    "limitsNavigationsToAppBoundDomains": true,
+    "includePlugins": ["@capacitor/keyboard"]
+  },
+  "plugins": {
+    "Keyboard": {
+      "resize": "native"
+    }
+  }
+}

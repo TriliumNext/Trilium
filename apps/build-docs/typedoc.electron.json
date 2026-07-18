@@ -1,0 +1,11 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Trilium Electron API",
+  "entryPoints": [
+    "src/electron_api_entrypoint.ts"
+  ],
+  "tsconfig": "tsconfig.app.json",
+  "plugin": [
+    "typedoc-plugin-missing-exports"
+  ]
+}

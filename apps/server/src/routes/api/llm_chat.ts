@@ -1,12 +1,11 @@
-import type { LlmMessage } from "@triliumnext/commons";
+import type { LlmMessage, LlmStreamChunk } from "@triliumnext/commons";
+import { getLog } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import { generateChatTitle } from "../../services/llm/chat_title.js";
 import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
 import { streamToChunks } from "../../services/llm/stream.js";
 import { allToolRegistries } from "../../services/llm/tools/index.js";
-import log from "../../services/log.js";
-import sql from "../../services/sql.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
 interface ChatRequest {
@@ -54,6 +53,16 @@ async function streamChat(req: Request, res: Response) {
 
         const provider = getProviderByType(config.provider || "anthropic");
 
+        // Get pricing and display name for the model
+        const modelId = config.model || provider.getAvailableModels().find(m => m.isDefault)?.id;
+        if (!modelId) {
+            res.write(`data: ${JSON.stringify({ type: "error", error: "No model specified and no default model available for the provider." })}\n\n`);
+            return;
+        }
+
+        const pricing = provider.getModelPricing(modelId);
+        const modelDisplayName = provider.getAvailableModels().find(m => m.id === modelId)?.name || modelId;
+
         // Collect names of tools that require human approval.
         // In "auto" permission mode nothing needs approval — tools execute directly.
         const mutatingToolNames = new Set<string>();
@@ -65,18 +74,22 @@ async function streamChat(req: Request, res: Response) {
             }
         }
 
-        const result = provider.chat(messages, config);
-
-        // Get pricing and display name for the model
-        const modelId = config.model || provider.getAvailableModels().find(m => m.isDefault)?.id;
-        if (!modelId) {
-            res.write(`data: ${JSON.stringify({ type: "error", error: "No model specified and no default model available for the provider." })}\n\n`);
-            return;
+        let chunks: AsyncIterable<LlmStreamChunk>;
+        if (provider.chatChunks) {
+            // Chunk-native provider (e.g. Claude Agent): it owns its own agentic
+            // loop and produces LlmStreamChunks directly. Abort the underlying
+            // agent turn when the client disconnects mid-stream.
+            const abortController = new AbortController();
+            res.on("close", () => abortController.abort());
+            chunks = provider.chatChunks(messages, config, abortController.signal);
+        } else {
+            chunks = streamToChunks(provider.chat(messages, config), { model: modelDisplayName, pricing, mutatingToolNames });
         }
 
-        const pricing = provider.getModelPricing(modelId);
-        const modelDisplayName = provider.getAvailableModels().find(m => m.id === modelId)?.name || modelId;
-        for await (const chunk of streamToChunks(result, { model: modelDisplayName, pricing, mutatingToolNames })) {
+        for await (const chunk of chunks) {
+            if (chunk.type === "error") {
+                getLog().error(`LLM chat stream error (model ${modelDisplayName}): ${chunk.error}`);
+            }
             res.write(`data: ${JSON.stringify(chunk)}\n\n`);
             // Flush immediately to ensure real-time streaming
             if (typeof flushableRes.flush === "function") {
@@ -87,14 +100,23 @@ async function streamChat(req: Request, res: Response) {
         const userMessages = messages.filter(m => m.role === "user");
         if (userMessages.length === 1 && config.chatNoteId) {
             try {
-                await generateChatTitle(config.chatNoteId, userMessages[0].content);
+                const firstContent = userMessages[0].content;
+                // Multimodal content: title from the text parts only — image
+                // bytes are useless to the title model.
+                const firstText = typeof firstContent === "string"
+                    ? firstContent
+                    : firstContent.filter(p => p.type === "text").map(p => p.text).join("\n").trim();
+                if (firstText) {
+                    await generateChatTitle(config.chatNoteId, firstText);
+                }
             } catch (err) {
                 // Title generation is best-effort; don't fail the chat
-                log.error(`Failed to generate chat title: ${safeExtractMessageAndStackFromError(err)}`);
+                getLog().error(`Failed to generate chat title: ${safeExtractMessageAndStackFromError(err)}`);
             }
         }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        getLog().error(`LLM chat stream failed: ${safeExtractMessageAndStackFromError(error)}`);
         res.write(`data: ${JSON.stringify({ type: "error", error: errorMessage })}\n\n`);
     } finally {
         res.end();
@@ -115,6 +137,7 @@ function getModels(_req: Request, _res: Response) {
 /**
  * Execute a single tool call after user approval.
  * Used for mutating tools that require human-in-the-loop confirmation.
+ * (Runs inside a transaction — apiRoute registers handlers transactionally.)
  */
 function executeTool(req: Request, _res: Response) {
     const { toolName, toolInput } = req.body as { toolName: string; toolInput: Record<string, unknown> };
@@ -131,8 +154,14 @@ function executeTool(req: Request, _res: Response) {
                     return { error: "Only mutating tools can be executed via this endpoint" };
                 }
 
-                const result = sql.transactional(() => def.execute(toolInput));
-                return { result };
+                // Validate the input against the tool's schema, the same way the
+                // AI SDK does before auto-executing a tool.
+                const parsed = def.inputSchema.safeParse(toolInput);
+                if (!parsed.success) {
+                    return { error: `Invalid tool input: ${parsed.error.message}` };
+                }
+
+                return { result: def.execute(parsed.data) };
             }
         }
     }

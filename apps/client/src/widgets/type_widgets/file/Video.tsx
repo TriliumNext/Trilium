@@ -3,24 +3,34 @@ import "./Video.css";
 import { RefObject } from "preact";
 import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
-import { getUrlForDownload } from "../../../services/open";
+import { isMobile } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import NoItems from "../../react/NoItems";
-import { LoopButton, PlaybackSpeed, PlayPauseButton, SeekBar, SkipButton, VolumeControl } from "./MediaPlayer";
+import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
+import MediaFileActions from "./MediaFileActions";
+import { playerRootClasses, preloadFor, showsFileActions, showsViewportControls, usesCompactControls } from "./media_environment";
+import { MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 
 const AUTO_HIDE_DELAY = 3000;
 
-export default function VideoPreview({ note }: { note: FNote }) {
+export default function VideoPreview({ source, entity, environment, noteContext, isVisible = true, autoPlay }: MediaPlayerProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [playing, setPlaying] = useState(false);
     const [error, setError] = useState(false);
-    const { visible: controlsVisible, onMouseMove, flash: flashControls } = useAutoHideControls(videoRef, playing);
+    const { visible: controlsVisible, flash: flashControls, toggle: toggleControls } = useAutoHideControls(videoRef, playing);
 
-    useEffect(() => setError(false), [note.noteId]);
+    useEffect(() => {
+        setError(false);
+        // The player instance is reused across notes (just a new src), which stops playback but doesn't
+        // reliably fire "pause" — reset so the controls don't keep showing the previous note's playing state.
+        setPlaying(false);
+    }, [source.id]);
     const onError = useCallback(() => setError(true), []);
+    // Mirror the element's real play state on every transition: "pause" isn't fired reliably when a track
+    // ends or its src is swapped, so derive from `paused` rather than assuming play→true / pause→false.
+    const syncPlaying = useCallback(() => setPlaying(!!videoRef.current && !videoRef.current.paused), []);
 
     const togglePlayback = useCallback(() => {
         const video = videoRef.current;
@@ -32,51 +42,97 @@ export default function VideoPreview({ note }: { note: FNote }) {
         }
     }, []);
 
+    // Track the pointer type of the current interaction: `click` doesn't reliably expose pointerType across
+    // browsers, but the preceding pointerdown always does.
+    const lastPointerType = useRef<string>("mouse");
+    const onPointerDown = useCallback((e: PointerEvent) => { lastPointerType.current = e.pointerType; }, []);
+
+    // Reveal-on-move is a mouse/pen affordance; a touch drag shouldn't flash the controls (touch uses tap).
+    const onPointerMove = useCallback((e: PointerEvent) => {
+        if (e.pointerType === "touch") return;
+        flashControls();
+    }, [flashControls]);
+
     const onVideoClick = useCallback((e: MouseEvent) => {
         if ((e.target as HTMLElement).closest(".media-preview-controls")) return;
+        // On touch there's no hover to reveal the auto-hidden controls, so a tap toggles them instead of
+        // playing/pausing (which stays on the play button); otherwise the same tap would do both.
+        if (lastPointerType.current === "touch") {
+            toggleControls();
+            return;
+        }
         togglePlayback();
-    }, [togglePlayback]);
+    }, [togglePlayback, toggleControls]);
 
     const onKeyDown = useKeyboardShortcuts(videoRef, wrapperRef, togglePlayback, flashControls);
+    const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, videoRef);
+    const siblingNavigation = useMediaSessionController({ source, entity, environment, noteContext, isVisible, autoPlay, mimePrefix: "video/", mediaRef: videoRef, playMode });
+    useMediaPlayerShortcutHints({ fullscreen: true });
+    const compact = usesCompactControls(environment);
 
     if (error) {
-        return <NoItems icon="bx bx-video-off" text={t("media.unsupported-format", { mime: note.mime.replace("/", "-") })} />;
+        return <NoItems icon="bx bx-video-off" text={t("media.unsupported-format", { mime: source.mime.replace("/", "-") })} />;
     }
 
     return (
-        <div ref={wrapperRef} className={`video-preview-wrapper ${controlsVisible ? "" : "controls-hidden"}`} tabIndex={0} onClick={onVideoClick} onKeyDown={onKeyDown} onMouseMove={onMouseMove}>
+        <div ref={wrapperRef} className={`video-preview-wrapper ${playerRootClasses(environment)} ${controlsVisible ? "" : "controls-hidden"}`} tabIndex={0} onClick={onVideoClick} onKeyDown={onKeyDown} onPointerDown={onPointerDown} onPointerMove={onPointerMove}>
             <video
                 ref={videoRef}
                 class="video-preview"
-                src={getUrlForDownload(`api/notes/${note.noteId}/open-partial`)}
-                datatype={note?.mime}
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
+                src={source.streamUrl}
+                preload={preloadFor(environment)}
+                datatype={source.mime}
+                onPlay={syncPlaying}
+                onPause={syncPlaying}
+                onEnded={syncPlaying}
+                onEmptied={syncPlaying}
                 onError={onError}
             />
 
             <div className="media-preview-controls">
-                <SeekBar mediaRef={videoRef} />
-                <div class="media-buttons-row">
-                    <div className="left">
-                        <PlaybackSpeed mediaRef={videoRef} />
-                        <RotateButton videoRef={videoRef} />
-                    </div>
-                    <div className="center">
-                        <div className="spacer" />
-                        <SkipButton mediaRef={videoRef} seconds={-10} icon="bx bx-rewind" text={t("media.back-10s")} />
+                {compact ? (
+                    <div class="media-compact-row">
                         <PlayPauseButton playing={playing} togglePlayback={togglePlayback} />
-                        <SkipButton mediaRef={videoRef} seconds={30} icon="bx bx-fast-forward" text={t("media.forward-30s")} />
-                        <LoopButton mediaRef={videoRef} />
-                    </div>
-                    <div className="right">
+                        <SeekBar mediaRef={videoRef} />
                         <VolumeControl mediaRef={videoRef} />
-                        <ZoomToFitButton videoRef={videoRef} />
-                        <PictureInPictureButton videoRef={videoRef} />
-                        <FullscreenButton targetRef={wrapperRef} />
+                        {showsViewportControls(environment) && (
+                            <>
+                                <PictureInPictureButton videoRef={videoRef} />
+                                <FullscreenButton targetRef={wrapperRef} />
+                            </>
+                        )}
+                        {showsFileActions(environment) && <MediaFileActions entity={entity} />}
                     </div>
-                </div>
+                ) : (
+                    <>
+                        <SeekBar mediaRef={videoRef} />
+                        <div class="media-buttons-row">
+                            <div className="left">
+                                <PlaybackSpeed mediaRef={videoRef} />
+                                {/* The play mode lives on the parent folder, which only the note detail knows. */}
+                                {noteContext && <PlayModeButton mode={playMode} onSelectMode={setPlayMode} />}
+                                <RotateButton videoRef={videoRef} />
+                            </div>
+                            <div className="center">
+                                <div className="spacer" />
+                                <MediaSiblingButton navigation={siblingNavigation} direction="previous" tooltipI18nKey="media.previous-video" />
+                                <SkipButton mediaRef={videoRef} seconds={-10} icon="bx bx-rewind" text={t("media.back-10s")} />
+                                <PlayPauseButton playing={playing} togglePlayback={togglePlayback} />
+                                <SkipButton mediaRef={videoRef} seconds={10} icon="bx bx-fast-forward" text={t("media.forward-10s")} />
+                                <MediaSiblingButton navigation={siblingNavigation} direction="next" tooltipI18nKey="media.next-video" />
+                            </div>
+                            <div className="right">
+                                <VolumeControl mediaRef={videoRef} />
+                                <ZoomToFitButton videoRef={videoRef} />
+                                <PictureInPictureButton videoRef={videoRef} />
+                                <FullscreenButton targetRef={wrapperRef} />
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
+
+            {!compact && !isMobile() && <ShortcutHintButton className="media-hint-button" />}
         </div>
     );
 }
@@ -152,10 +208,21 @@ function useAutoHideControls(videoRef: RefObject<HTMLVideoElement>, playing: boo
         }
     }, [ videoRef]);
 
-    const onMouseMove = useCallback(() => {
+    const reveal = useCallback(() => {
         setVisible(true);
         scheduleHide();
     }, [scheduleHide]);
+
+    // Toggle visibility for touch taps (which have no hover to reveal the controls): hide immediately, or
+    // show and re-arm the auto-hide.
+    const toggle = useCallback(() => {
+        if (visible) {
+            clearTimeout(hideTimerRef.current);
+            setVisible(false);
+        } else {
+            reveal();
+        }
+    }, [visible, reveal]);
 
     // Hide immediately when playback starts, show when paused.
     useEffect(() => {
@@ -168,7 +235,7 @@ function useAutoHideControls(videoRef: RefObject<HTMLVideoElement>, playing: boo
         return () => clearTimeout(hideTimerRef.current);
     }, [playing, scheduleHide]);
 
-    return { visible, onMouseMove, flash: onMouseMove };
+    return { visible, flash: reveal, toggle };
 }
 
 function RotateButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement> }) {

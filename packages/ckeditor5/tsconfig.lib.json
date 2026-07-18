@@ -8,7 +8,7 @@
     "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
     "emitDeclarationOnly": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["DOM", "ES2020"],
+    "lib": ["DOM", "ES2023"],
     "types": [
       "vite/client",
       "jquery"
@@ -16,6 +16,9 @@
   },
   "include": [
     "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts"
   ],
   "references": [
     {
@@ -28,10 +31,16 @@
       "path": "../ckeditor5-admonition"
     },
     {
+      "path": "../ckeditor5-collapsible"
+    },
+    {
       "path": "../ckeditor5-mermaid"
     },
     {
       "path": "../ckeditor5-keyboard-marker"
+    },
+    {
+      "path": "../ckeditor5-utils"
     }
   ]
 }

@@ -207,10 +207,6 @@ pdfjs-thumb-page-checkbox1 =
     .title = Pagina { $page } selecteren
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-checkbox =
-    .aria-label = Pagina { $page } selecteren
-# Variables:
-#   $page (Number) - the page number
 #   $total (Number) - the number of pages
 pdfjs-thumb-page-title1 =
     .title = Pagina { $page } van { $total }
@@ -654,12 +650,9 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button =
-    .title = Zijbalk in-/uitschakelen
 pdfjs-toggle-views-manager-notification-button =
     .title = Zijbalk in-/uitschakelen (document bevat miniaturen/overzicht/bijlagen/lagen)
 pdfjs-toggle-views-manager-button1-label = Pagina’s beheren
-pdfjs-toggle-views-manager-button-label = Zijbalk in-/uitschakelen
 pdfjs-views-manager-sidebar =
     .aria-label = Zijbalk
 pdfjs-views-manager-sidebar-resizer =
@@ -670,11 +663,9 @@ pdfjs-views-manager-view-selector-button-label = Weergaven
 pdfjs-views-manager-pages-title = Pagina’s
 pdfjs-views-manager-outlines-title1 = Documentoverzicht
     .title = Documentoverzicht (dubbelklik om alle items uit te vouwen/samen te vouwen)
-pdfjs-views-manager-outlines-title = Documentoverzicht
 pdfjs-views-manager-attachments-title = Bijlagen
 pdfjs-views-manager-layers-title1 = Lagen
     .title = Lagen (dubbelklik om alle lagen naar de standaardstatus terug te zetten)
-pdfjs-views-manager-layers-title = Lagen
 pdfjs-views-manager-pages-option-label = Pagina’s
 pdfjs-views-manager-outlines-option-label = Documentoverzicht
 pdfjs-views-manager-attachments-option-label = Bijlagen
@@ -695,7 +686,6 @@ pdfjs-views-manager-pages-status-copy-button-label = Kopiëren
 pdfjs-views-manager-pages-status-cut-button-label = Knippen
 pdfjs-views-manager-pages-status-delete-button-label = Verwijderen
 pdfjs-views-manager-pages-status-export-selected-button-label = Geselecteerde exporteren…
-pdfjs-views-manager-pages-status-save-as-button-label = Opslaan als…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label =
@@ -738,6 +728,7 @@ pdfjs-views-manager-paste-button-after =
 # Badge used to promote a new feature in the UI, keep it as short as possible.
 # It's spelled uppercase for English, but it can be translated as usual.
 pdfjs-new-badge-content = NIEUW
+pdfjs-views-manager-waiting-for-file = Bestand uploaden…
 pdfjs-toggle-views-manager-button1 =
     .title = Pagina’s beheren
 
