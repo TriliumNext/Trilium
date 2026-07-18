@@ -9,7 +9,23 @@ import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import OptionsRow from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
-import AddProviderModal, { type LlmProviderConfig, PROVIDER_TYPES } from "./llm/AddProviderModal";
+import AddProviderModal, { getProviderKind, type LlmProviderConfig, PROVIDER_TYPES } from "./llm/AddProviderModal";
+
+/** Shared state for the llmProviders option (used by both provider sections). */
+function useLlmProviders(): [LlmProviderConfig[], (providers: LlmProviderConfig[]) => void] {
+    const [providersJson, setProvidersJson] = useTriliumOption("llmProviders");
+    const providers = useMemo<LlmProviderConfig[]>(() => {
+        try {
+            return providersJson ? JSON.parse(providersJson) : [];
+        } catch {
+            return [];
+        }
+    }, [providersJson]);
+    const setProviders = useCallback((newProviders: LlmProviderConfig[]) => {
+        setProvidersJson(JSON.stringify(newProviders));
+    }, [setProvidersJson]);
+    return [providers, setProviders];
+}
 
 export default function LlmSettings() {
     if (!isExperimentalFeatureEnabled("llm")) {
@@ -30,17 +46,8 @@ export default function LlmSettings() {
 }
 
 function ProviderSettings() {
-    const [providersJson, setProvidersJson] = useTriliumOption("llmProviders");
-    const providers = useMemo<LlmProviderConfig[]>(() => {
-        try {
-            return providersJson ? JSON.parse(providersJson) : [];
-        } catch {
-            return [];
-        }
-    }, [providersJson]);
-    const setProviders = useCallback((newProviders: LlmProviderConfig[]) => {
-        setProvidersJson(JSON.stringify(newProviders));
-    }, [setProvidersJson]);
+    const [providers, setProviders] = useLlmProviders();
+    const llmProviders = useMemo(() => providers.filter(p => getProviderKind(p) === "llm"), [providers]);
     const [showAddModal, setShowAddModal] = useState(false);
 
     const handleAddProvider = useCallback((newProvider: LlmProviderConfig) => {
@@ -69,7 +76,8 @@ function ProviderSettings() {
 
             <h5>{t("llm.configured_providers")}</h5>
             <ProviderList
-                providers={providers}
+                providers={llmProviders}
+                emptyText={t("llm.no_providers_configured")}
                 onDelete={handleDeleteProvider}
             />
 
@@ -88,50 +96,62 @@ function getMcpEndpointUrl() {
 }
 
 function WebSearchSettings() {
-    const [searchEngine, setSearchEngine] = useTriliumOption("llmWebSearchEngine");
-    const [tavilyApiKey, setTavilyApiKey] = useTriliumOption("llmTavilyApiKey");
-    const [searxngUrl, setSearxngUrl] = useTriliumOption("llmSearxngUrl");
+    const [providers, setProviders] = useLlmProviders();
+    const searchEngines = useMemo(() => providers.filter(p => getProviderKind(p) === "search"), [providers]);
+    const [selectedEngine, setSelectedEngine] = useTriliumOption("llmWebSearchEngine");
     const [searchTimeout, setSearchTimeout] = useTriliumOption("llmSearchTimeout");
+    const [showAddModal, setShowAddModal] = useState(false);
+
+    const handleAddEngine = useCallback((newEngine: LlmProviderConfig) => {
+        setProviders([...providers, newEngine]);
+        // Select the newly added engine if the provider default was active
+        if (!selectedEngine || selectedEngine === "provider") {
+            setSelectedEngine(newEngine.id);
+        }
+    }, [providers, setProviders, selectedEngine, setSelectedEngine]);
+
+    const handleDeleteEngine = useCallback(async (engineId: string, engineName: string) => {
+        if (!(await dialog.confirm(t("llm.delete_provider_confirmation", { name: engineName })))) {
+            return;
+        }
+        setProviders(providers.filter(p => p.id !== engineId));
+        if (selectedEngine === engineId) {
+            setSelectedEngine("provider");
+        }
+    }, [providers, setProviders, selectedEngine, setSelectedEngine]);
 
     return (
         <OptionsSection title={t("llm.web_search_title")}>
             <p className="form-text">{t("llm.web_search_description")}</p>
 
+            <Button
+                size="small"
+                icon="bx bx-plus"
+                text={t("llm.add_search_engine")}
+                onClick={() => setShowAddModal(true)}
+            />
+
+            <hr />
+
+            <h5>{t("llm.configured_search_engines")}</h5>
+            <ProviderList
+                providers={searchEngines}
+                emptyText={t("llm.no_search_engines_configured")}
+                onDelete={handleDeleteEngine}
+            />
+
             <OptionsRow name="web-search-engine" label={t("llm.web_search_engine")} description={t("llm.web_search_engine_description")}>
                 <select
                     className="form-select"
-                    value={searchEngine || "provider"}
-                    onChange={(e) => setSearchEngine((e.target as HTMLSelectElement).value)}
+                    value={selectedEngine || "provider"}
+                    onChange={(e) => setSelectedEngine((e.target as HTMLSelectElement).value)}
                 >
                     <option value="provider">{t("llm.web_search_provider_default")}</option>
-                    <option value="tavily">Tavily</option>
-                    <option value="searxng">SearXNG</option>
+                    {searchEngines.map(engine => (
+                        <option key={engine.id} value={engine.id}>{engine.name}</option>
+                    ))}
                 </select>
             </OptionsRow>
-
-            {searchEngine === "tavily" && (
-                <OptionsRow name="tavily-api-key" label={t("llm.tavily_api_key")} description={t("llm.tavily_api_key_description")}>
-                    <input
-                        type="password"
-                        className="form-control"
-                        value={tavilyApiKey || ""}
-                        onChange={(e) => setTavilyApiKey((e.target as HTMLInputElement).value)}
-                        placeholder="tvly-..."
-                    />
-                </OptionsRow>
-            )}
-
-            {searchEngine === "searxng" && (
-                <OptionsRow name="searxng-url" label={t("llm.searxng_url")} description={t("llm.searxng_url_description")}>
-                    <input
-                        type="url"
-                        className="form-control"
-                        value={searxngUrl || ""}
-                        onChange={(e) => setSearxngUrl((e.target as HTMLInputElement).value)}
-                        placeholder="http://localhost:8888"
-                    />
-                </OptionsRow>
-            )}
 
             <OptionsRow name="search-timeout" label={t("llm.search_timeout")} description={t("llm.search_timeout_description")}>
                 <input
@@ -143,6 +163,13 @@ function WebSearchSettings() {
                     onChange={(e) => setSearchTimeout((e.target as HTMLInputElement).value)}
                 />
             </OptionsRow>
+
+            <AddProviderModal
+                show={showAddModal}
+                onHidden={() => setShowAddModal(false)}
+                onSave={handleAddEngine}
+                kind="search"
+            />
         </OptionsSection>
     );
 }
@@ -177,12 +204,13 @@ function McpSettings() {
 
 interface ProviderListProps {
     providers: LlmProviderConfig[];
+    emptyText: string;
     onDelete: (providerId: string, providerName: string) => Promise<void>;
 }
 
-function ProviderList({ providers, onDelete }: ProviderListProps) {
+function ProviderList({ providers, emptyText, onDelete }: ProviderListProps) {
     if (!providers.length) {
-        return <div>{t("llm.no_providers_configured")}</div>;
+        return <div>{emptyText}</div>;
     }
 
     return (

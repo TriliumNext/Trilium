@@ -1,23 +1,10 @@
-import type { LlmProvider, ModelInfo } from "./types.js";
+import log from "../log.js";
+import { getLlmProviderSetups } from "./provider_config.js";
 import { AnthropicProvider } from "./providers/anthropic.js";
 import { GoogleProvider } from "./providers/google.js";
 import { OllamaProvider } from "./providers/ollama.js";
 import { OpenAiProvider } from "./providers/openai.js";
-import optionService from "../options.js";
-import log from "../log.js";
-
-/**
- * Configuration for a single LLM provider instance.
- * This matches the structure stored in the llmProviders option.
- */
-export interface LlmProviderSetup {
-    id: string;
-    name: string;
-    provider: string;
-    apiKey: string;
-    /** Base URL for self-hosted providers (e.g. Ollama). */
-    baseUrl?: string;
-}
+import type { LlmProvider, ModelInfo } from "./types.js";
 
 /** Factory functions for creating provider instances */
 const providerFactories: Record<string, (apiKey: string, baseUrl?: string) => LlmProvider> = {
@@ -31,27 +18,11 @@ const providerFactories: Record<string, (apiKey: string, baseUrl?: string) => Ll
 let cachedProviders: Record<string, LlmProvider> = {};
 
 /**
- * Get configured providers from the options.
- */
-function getConfiguredProviders(): LlmProviderSetup[] {
-    try {
-        const providersJson = optionService.getOptionOrNull("llmProviders");
-        if (!providersJson) {
-            return [];
-        }
-        return JSON.parse(providersJson) as LlmProviderSetup[];
-    } catch (e) {
-        log.error(`Failed to parse llmProviders option: ${e}`);
-        return [];
-    }
-}
-
-/**
  * Get a provider instance by its configuration ID.
  * If no ID is provided, returns the first configured provider.
  */
 export function getProvider(providerId?: string): LlmProvider {
-    const configs = getConfiguredProviders();
+    const configs = getLlmProviderSetups();
 
     if (configs.length === 0) {
         throw new Error("No LLM providers configured. Please add a provider in Options → AI / LLM.");
@@ -86,7 +57,7 @@ export function getProvider(providerId?: string): LlmProvider {
  * Get the first configured provider of a specific type (e.g., "anthropic").
  */
 export function getProviderByType(providerType: string): LlmProvider {
-    const configs = getConfiguredProviders();
+    const configs = getLlmProviderSetups();
     const config = configs.find(c => c.provider === providerType);
 
     if (!config) {
@@ -100,14 +71,14 @@ export function getProviderByType(providerType: string): LlmProvider {
  * Check if any providers are configured.
  */
 export function hasConfiguredProviders(): boolean {
-    return getConfiguredProviders().length > 0;
+    return getLlmProviderSetups().length > 0;
 }
 
 /**
  * Get all models from all configured providers, tagged with their provider type.
  */
 export async function getAllModels(): Promise<ModelInfo[]> {
-    const configs = getConfiguredProviders();
+    const configs = getLlmProviderSetups();
     const seenProviderTypes = new Set<string>();
     const allModels: ModelInfo[] = [];
 
@@ -145,4 +116,5 @@ export function clearProviderCache(): void {
     cachedProviders = {};
 }
 
+export type { LlmProviderSetup } from "./provider_config.js";
 export type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing } from "./types.js";

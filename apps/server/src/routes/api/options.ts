@@ -109,8 +109,6 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "llmProviders",
     "mcpEnabled",
     "llmWebSearchEngine",
-    "llmTavilyApiKey",
-    "llmSearxngUrl",
     "llmSearchTimeout",
     // OCR options
     "ocrAutoProcessImages",

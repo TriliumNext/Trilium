@@ -215,8 +215,6 @@ const defaultOptions: DefaultOption[] = [
     { name: "llmProviders", value: "[]", isSynced: true },
     { name: "mcpEnabled", value: "false", isSynced: false },
     { name: "llmWebSearchEngine", value: "provider", isSynced: true },
-    { name: "llmTavilyApiKey", value: "", isSynced: true },
-    { name: "llmSearxngUrl", value: "", isSynced: true },
     { name: "llmSearchTimeout", value: "15", isSynced: true },
 
     // OCR options
