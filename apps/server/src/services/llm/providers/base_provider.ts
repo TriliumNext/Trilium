@@ -6,6 +6,7 @@
 import { type LlmMessage, type LlmMessagePart } from "@triliumnext/commons";
 import { type FilePart, generateText, type ImagePart, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type TextPart, type ToolSet } from "ai";
 
+import { addSemanticSearchTool } from "../semantic_search_tool.js";
 import { allToolRegistries } from "../tools/index.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
 import { resolveAttachmentPart } from "./attachment_content.js";
@@ -186,6 +187,8 @@ export abstract class BaseProvider implements LlmProvider {
             for (const registry of allToolRegistries) {
                 Object.assign(tools, registry.toToolSet());
             }
+            // Embedding-based search, available when an Ollama provider is configured
+            addSemanticSearchTool(tools);
         }
 
         return tools;

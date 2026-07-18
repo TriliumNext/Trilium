@@ -223,6 +223,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     aiEnabled: boolean;
     /** JSON array of configured LLM providers with their API keys */
     llmProviders: string;
+    /** Ollama model used for note embeddings (semantic search) */
+    llmEmbeddingModel: string;
     /** Whether the MCP (Model Context Protocol) server endpoint is enabled. */
     mcpEnabled: boolean;
 
