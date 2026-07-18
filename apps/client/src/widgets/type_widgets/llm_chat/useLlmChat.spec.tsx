@@ -145,3 +145,100 @@ describe("useLlmChat", () => {
         expect(api().getContent()).toMatchObject({ selectedModel: "mini", selectedProvider: "openai" });
     });
 });
+
+describe("useLlmChat knowledge base", () => {
+    let captured: LlmChatApi | undefined;
+    let host: HTMLDivElement | undefined;
+
+    function Harness() {
+        captured = useLlmChat(undefined, {});
+        return null;
+    }
+
+    function api(): LlmChatApi {
+        if (!captured) throw new Error("harness not rendered");
+        return captured;
+    }
+
+    async function mountChat() {
+        host = document.createElement("div");
+        document.body.appendChild(host);
+        const target = host;
+        await act(async () => { render(<Harness />, target); });
+        await act(async () => {});
+    }
+
+    beforeEach(() => {
+        getAvailableModelsMock.mockResolvedValue(MODELS);
+        streamChatCompletionMock.mockImplementation(async (_m, _o, callbacks) => { callbacks.onDone(); });
+    });
+
+    afterEach(() => {
+        if (host) {
+            render(null, host);
+            host.remove();
+            host = undefined;
+        }
+        captured = undefined;
+        getAvailableModelsMock.mockReset();
+        streamChatCompletionMock.mockReset();
+    });
+
+    it("adds sources without duplicates and removes them individually", async () => {
+        await mountChat();
+        await act(async () => { api().addSourceNote("n1"); });
+        await act(async () => { api().addSourceNote("n2"); });
+        await act(async () => { api().addSourceNote("n1"); });
+        expect(api().sourceNoteIds).toEqual(["n1", "n2"]);
+
+        await act(async () => { api().removeSourceNote("n1"); });
+        expect(api().sourceNoteIds).toEqual(["n2"]);
+    });
+
+    it("keeps the sources when the knowledge base is toggled off and restores them on re-enable", async () => {
+        await mountChat();
+        await act(async () => {
+            api().setEnableKnowledgeBase(true);
+            api().addSourceNote("n1");
+        });
+
+        await act(async () => { api().setEnableKnowledgeBase(false); });
+        expect(api().sourceNoteIds).toEqual(["n1"]);
+        expect(api().getContent()).toMatchObject({ enableKnowledgeBase: false, sourceNoteIds: ["n1"] });
+
+        await act(async () => { api().setEnableKnowledgeBase(true); });
+        expect(api().enableKnowledgeBase).toBe(true);
+        expect(api().sourceNoteIds).toEqual(["n1"]);
+    });
+
+    it("sends sources only while the knowledge base is enabled and forces note tools on", async () => {
+        await mountChat();
+        await act(async () => {
+            api().setEnableKnowledgeBase(true);
+            api().addSourceNote("n1");
+        });
+        await act(async () => { api().setInput("hi"); });
+        await act(async () => { await api().handleSubmit(new Event("submit")); });
+
+        expect(streamChatCompletionMock.mock.calls[0][1]).toMatchObject({
+            sourceNoteIds: ["n1"],
+            enableNoteTools: true
+        });
+
+        await act(async () => { api().setEnableKnowledgeBase(false); });
+        await act(async () => { api().setInput("again"); });
+        await act(async () => { await api().handleSubmit(new Event("submit")); });
+        expect(streamChatCompletionMock.mock.calls[1][1].sourceNoteIds).toBeUndefined();
+    });
+
+    it("treats stored sources without the enable flag as enabled (older chats)", async () => {
+        await mountChat();
+        await act(async () => { api().loadFromContent({ version: 1, messages: [], sourceNoteIds: ["n1"] }); });
+        expect(api().enableKnowledgeBase).toBe(true);
+        expect(api().sourceNoteIds).toEqual(["n1"]);
+
+        await act(async () => { api().loadFromContent({ version: 1, messages: [] }); });
+        expect(api().enableKnowledgeBase).toBe(false);
+        expect(api().sourceNoteIds).toEqual([]);
+    });
+});
