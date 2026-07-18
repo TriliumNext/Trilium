@@ -173,8 +173,6 @@ interface FormCheckboxProps {
 }
 export declare const FormCheckbox: FunctionComponent<FormCheckboxProps>;
 
-export declare const FormDatetime: FunctionComponent<Omit<FormTextBoxProps, "type">>;
-
 interface FormDropdownListProps<T> extends Omit<DropdownProps, "children"> {
     values: T[];
     keyProperty: keyof T;
@@ -236,8 +234,6 @@ interface FormDropdownSubmenuProps {
 }
 export declare const FormDropdownSubmenu: FunctionComponent<FormDropdownSubmenuProps>;
 
-export declare const FormNumber: FunctionComponent<Omit<FormTextBoxProps, "type">>;
-
 interface FormRadioGroupProps {
     name: string;
     currentValue?: string;
@@ -278,8 +274,6 @@ interface FormTextBoxProps {
 }
 export declare const FormTextBox: FunctionComponent<FormTextBoxProps>;
 
-export declare const FormTime: FunctionComponent<Omit<FormTextBoxProps, "type">>;
-
 interface FormToggleProps {
     currentValue: boolean | null;
     onChange(newValue: boolean): void;
@@ -293,19 +287,6 @@ interface FormToggleProps {
     id?: string;
 }
 export declare const FormToggle: FunctionComponent<FormToggleProps>;
-
-interface FormToggleButtonProps {
-    label: ComponentChildren;
-    icon?: string;
-    currentValue: boolean;
-    onChange(newValue: boolean): void;
-    kind?: "primary" | "secondary";
-    size?: "normal" | "small" | "micro";
-    disabled?: boolean;
-    title?: string;
-    className?: string;
-}
-export declare const FormToggleButton: FunctionComponent<FormToggleButtonProps>;
 
 interface IconProps {
     icon?: string;

@@ -3,7 +3,7 @@ import {
     Admonition, Collapsible,
     FormCheckbox, FormDropdownList, FormFileUploadButton, FormGroup, FormRadioGroup, FormTextArea,
     FormTextBox, FormToggle, Slider, RawHtml, LoadingSpinner, Icon,
-    FormNumber, FormTime, FormDatetime, FormToggleButton, ColorPicker,
+    ColorPicker,
     Dropdown, FormListItem, FormDropdownDivider, FormDropdownSubmenu,
     NoteAutocomplete, NoteLink, Modal,
     Table,
@@ -63,10 +63,6 @@ function FormElements() {
     const [ dropdownValue, setDropdownValue ] = useState("key-1");
     const [ radioGroupValue, setRadioGroupValue ] = useState("key-1");
     const [ sliderValue, setSliderValue ] = useState(50);
-    const [ numberValue, setNumberValue ] = useState("3");
-    const [ timeValue, setTimeValue ] = useState("09:00");
-    const [ datetimeValue, setDatetimeValue ] = useState("");
-    const [ toggleButtonOn, setToggleButtonOn ] = useState(false);
     const [ color, setColor ] = useState("#43a047");
 
     return (
@@ -111,18 +107,6 @@ function FormElements() {
                         placeholder="Type something bigger..."
                         currentValue="" onChange={(newValue) => {}}
                     />
-                </FormGroup>
-                <FormGroup name="number" label="Number">
-                    <FormNumber min={0} max={10} step={1} currentValue={numberValue} onChange={setNumberValue} />
-                </FormGroup>
-                <FormGroup name="time" label="Time">
-                    <FormTime currentValue={timeValue} onChange={setTimeValue} />
-                </FormGroup>
-                <FormGroup name="datetime" label="Date & time">
-                    <FormDatetime currentValue={datetimeValue} onChange={setDatetimeValue} />
-                </FormGroup>
-                <FormGroup name="toggle-button" label="Toggle button">
-                    <FormToggleButton label="Bold" icon="bx bx-bold" currentValue={toggleButtonOn} onChange={setToggleButtonOn} />
                 </FormGroup>
                 <FormGroup name="color-picker" label="Color picker">
                     <ColorPicker currentValue={color} onChange={setColor} />

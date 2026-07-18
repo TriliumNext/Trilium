@@ -10,19 +10,15 @@ import Collapsible, { ExternallyControlledCollapsible } from "../widgets/react/C
 import ColorPicker from "../widgets/react/ColorPicker";
 import Dropdown from "../widgets/react/Dropdown";
 import FormCheckbox from "../widgets/react/FormCheckbox";
-import FormDatetime from "../widgets/react/FormDatetime";
 import FormDropdownList from "../widgets/react/FormDropdownList";
 import { FormFileUploadActionButton, FormFileUploadButton } from "../widgets/react/FormFileUpload";
 import FormGroup from "../widgets/react/FormGroup";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../widgets/react/FormList";
-import FormNumber from "../widgets/react/FormNumber";
 import FormRadioGroup from "../widgets/react/FormRadioGroup";
 import FormText from "../widgets/react/FormText";
 import FormTextArea from "../widgets/react/FormTextArea";
 import FormTextBox from "../widgets/react/FormTextBox";
-import FormTime from "../widgets/react/FormTime";
 import FormToggle from "../widgets/react/FormToggle";
-import FormToggleButton from "../widgets/react/FormToggleButton";
 import * as triliumHooks from "../widgets/react/hooks";
 import Icon from "../widgets/react/Icon";
 import LinkButton from "../widgets/react/LinkButton";
@@ -85,18 +81,15 @@ export const preactAPI = Object.freeze({
     ColorPicker,
     Dropdown,
     FormCheckbox,
-    FormDatetime,
     FormDropdownList,
     FormFileUploadButton, FormFileUploadActionButton,
     FormGroup,
     FormListItem, FormDropdownDivider, FormDropdownSubmenu,
-    FormNumber,
     FormRadioGroup,
     FormText,
     FormTextArea,
     FormTextBox,
-    FormTime,
-    FormToggle, FormToggleButton,
+    FormToggle,
     Icon,
     LinkButton,
     LoadingSpinner,
