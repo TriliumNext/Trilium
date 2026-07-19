@@ -106,11 +106,10 @@ export function addSemanticSearchTool(tools: ToolSet): void {
                 ]);
 
                 const scored = candidates
-                    .filter(note => noteVectors.has(note.noteId))
-                    .map(note => ({
-                        note,
-                        similarity: cosineSimilarity(queryVector, noteVectors.get(note.noteId)!)
-                    }))
+                    .flatMap(note => {
+                        const vector = noteVectors.get(note.noteId);
+                        return vector ? [{ note, similarity: cosineSimilarity(queryVector, vector) }] : [];
+                    })
                     .sort((a, b) => b.similarity - a.similarity)
                     .slice(0, limit ?? DEFAULT_LIMIT);
 

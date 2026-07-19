@@ -19,8 +19,17 @@ const EMBED_BATCH_SIZE = 32;
 interface CachedEmbedding {
     /** blobId at the time of embedding — invalidates the cache on content change. */
     blobId: string | null;
+    /** Embedding model used — switching models invalidates the entry. */
+    model: string;
     vector: number[];
 }
+
+/**
+ * Safety cap for the in-memory cache: entries of deleted notes are never
+ * pruned individually (they simply stop being requested), so the whole cache
+ * is dropped when it grows past this bound and rebuilt lazily.
+ */
+const EMBEDDING_CACHE_MAX_ENTRIES = 5000;
 
 const embeddingCache = new Map<string, CachedEmbedding>();
 
@@ -73,7 +82,13 @@ async function embedTexts(texts: string[]): Promise<number[][]> {
             );
         }
 
-        const data = await response.json() as { embeddings: number[][] };
+        const data = await response.json() as { embeddings?: number[][] };
+        if (!Array.isArray(data.embeddings) || data.embeddings.length !== batch.length) {
+            throw new Error(
+                `Embedding response shape mismatch: expected ${batch.length} vectors, `
+                + `got ${Array.isArray(data.embeddings) ? data.embeddings.length : "none"}.`
+            );
+        }
         vectors.push(...data.embeddings);
     }
 
@@ -89,6 +104,9 @@ function isNomicModel(): boolean {
 export async function embedQuery(query: string): Promise<number[]> {
     const text = isNomicModel() ? `search_query: ${query}` : query;
     const [vector] = await embedTexts([text]);
+    if (!vector) {
+        throw new Error("Embedding the query produced no vector.");
+    }
     return vector;
 }
 
@@ -118,10 +136,11 @@ function getEmbeddableText(note: BNote): string | null {
 export async function getNoteEmbeddings(notes: BNote[]): Promise<Map<string, number[]>> {
     const result = new Map<string, number[]>();
     const toEmbed: { note: BNote; text: string }[] = [];
+    const model = getEmbeddingModel();
 
     for (const note of notes) {
         const cached = embeddingCache.get(note.noteId);
-        if (cached && cached.blobId === note.blobId) {
+        if (cached && cached.blobId === note.blobId && cached.model === model) {
             result.set(note.noteId, cached.vector);
             continue;
         }
@@ -132,10 +151,14 @@ export async function getNoteEmbeddings(notes: BNote[]): Promise<Map<string, num
     }
 
     if (toEmbed.length > 0) {
+        // embedTexts guarantees one vector per input or throws.
         const vectors = await embedTexts(toEmbed.map(e => e.text));
+        if (embeddingCache.size + toEmbed.length > EMBEDDING_CACHE_MAX_ENTRIES) {
+            embeddingCache.clear();
+        }
         for (let i = 0; i < toEmbed.length; i++) {
             const { note } = toEmbed[i];
-            embeddingCache.set(note.noteId, { blobId: note.blobId ?? null, vector: vectors[i] });
+            embeddingCache.set(note.noteId, { blobId: note.blobId ?? null, model, vector: vectors[i] });
             result.set(note.noteId, vectors[i]);
         }
     }
@@ -144,10 +167,15 @@ export async function getNoteEmbeddings(notes: BNote[]): Promise<Map<string, num
 }
 
 export function cosineSimilarity(a: number[], b: number[]): number {
+    // Different dimensionalities mean the vectors come from different models —
+    // comparing them would produce a plausible-looking but meaningless score.
+    if (a.length !== b.length) {
+        return 0;
+    }
     let dot = 0;
     let normA = 0;
     let normB = 0;
-    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    for (let i = 0; i < a.length; i++) {
         dot += a[i] * b[i];
         normA += a[i] * a[i];
         normB += b[i] * b[i];

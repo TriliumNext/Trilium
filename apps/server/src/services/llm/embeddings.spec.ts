@@ -93,6 +93,12 @@ describe("embeddings", () => {
             await expect(embedQuery("x")).rejects.toThrow(/requires a configured Ollama provider/);
         });
 
+        it("throws on a malformed embeddings response", async () => {
+            setOptions({ llmProviders: JSON.stringify([{ provider: "ollama" }]) });
+            fetchMock.mockResolvedValue({ ok: true, json: async () => ({ error: "boom" }) } as Response);
+            await expect(embedQuery("x")).rejects.toThrow(/shape mismatch/);
+        });
+
         it("surfaces a pull hint when the embedding model is missing", async () => {
             setOptions({ llmProviders: JSON.stringify([{ provider: "ollama" }]) });
             fetchMock.mockResolvedValue({ ok: false, status: 404, text: async () => "model not found" } as Response);
@@ -119,6 +125,31 @@ describe("embeddings", () => {
             await getNoteEmbeddings([noteStub("n1", "blob-b", "<p>changed</p>")]);
             expect(fetchMock).toHaveBeenCalledTimes(2);
         });
+
+        it("re-embeds cached notes after the embedding model changes", async () => {
+            setOptions({ llmProviders: JSON.stringify([{ provider: "ollama" }]) });
+            fetchMock.mockResolvedValue({ ok: true, json: async () => ({ embeddings: [[0.5]] }) } as Response);
+
+            const note = noteStub("model-switch", "blob-a", "<p>hello</p>");
+            await getNoteEmbeddings([note]);
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+
+            // Switching the model must not reuse vectors from the old model.
+            setOptions({
+                llmProviders: JSON.stringify([{ provider: "ollama" }]),
+                llmEmbeddingModel: "mxbai-embed-large"
+            });
+            await getNoteEmbeddings([note]);
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+
+        it("throws when the response vector count does not match the request", async () => {
+            setOptions({ llmProviders: JSON.stringify([{ provider: "ollama" }]) });
+            fetchMock.mockResolvedValue({ ok: true, json: async () => ({ embeddings: [] }) } as Response);
+
+            await expect(getNoteEmbeddings([noteStub("mismatch", "blob-a", "<p>x</p>")]))
+                .rejects.toThrow(/shape mismatch/);
+        });
     });
 
     describe("cosineSimilarity", () => {
@@ -129,6 +160,10 @@ describe("embeddings", () => {
 
         it("returns 0 for zero vectors", () => {
             expect(cosineSimilarity([0, 0], [1, 1])).toBe(0);
+        });
+
+        it("returns 0 for vectors of different dimensionality (different models)", () => {
+            expect(cosineSimilarity([1, 0], [1, 0, 0])).toBe(0);
         });
     });
 });
