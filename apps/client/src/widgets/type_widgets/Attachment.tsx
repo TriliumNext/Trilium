@@ -28,11 +28,11 @@ import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
 import { useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
-import ImageViewer from "../react/ImageViewer";
+import { useImageAttachmentGallery } from "../react/media_viewer/gallery";
+import MediaViewer from "../react/media_viewer/MediaViewer";
 import NoItems from "../react/NoItems";
 import NoteLink from "../react/NoteLink";
 import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
-import SiblingNavigator from "../react/SiblingNavigator";
 import { TextPreview } from "./File";
 import { TypeWidgetProps } from "./type_widget";
 
@@ -105,7 +105,7 @@ function AttachmentListHeader({ noteId }: { noteId: string }) {
 /**
  * Displays information about a single attachment.
  */
-export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetProps) {
+export function AttachmentDetail({ note, viewScope, noteContext, isVisible }: TypeWidgetProps) {
     const [ attachment, setAttachment ] = useState<FAttachment | null | undefined>(undefined);
 
     useEffect(() => {
@@ -132,7 +132,7 @@ export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetPro
 
             <div className="attachment-wrapper">
                 {attachment !== null ? (
-                    attachment && <AttachmentInfo attachment={attachment} isFullDetail ownerNote={note} noteContext={noteContext} viewScope={viewScope} />
+                    attachment && <AttachmentInfo attachment={attachment} isFullDetail ownerNote={note} noteContext={noteContext} viewScope={viewScope} isVisible={isVisible} />
                 ) : (
                     <strong>{t("attachment_detail.attachment_deleted")}</strong>
                 )}
@@ -141,9 +141,10 @@ export function AttachmentDetail({ note, viewScope, noteContext }: TypeWidgetPro
     );
 }
 
-function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, viewScope }: { attachment: FAttachment, isFullDetail?: boolean, ownerNote?: FNote, noteContext?: NoteContext, viewScope?: ViewScope }) {
+function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, viewScope, isVisible }: { attachment: FAttachment, isFullDetail?: boolean, ownerNote?: FNote, noteContext?: NoteContext, viewScope?: ViewScope, isVisible?: boolean }) {
     const contentWrapper = useRef<HTMLDivElement>(null);
     const imageViewerWrapper = useRef<HTMLDivElement>(null);
+    const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
     const [ title, setTitle ] = useState(attachment.title);
     const [ textContent, setTextContent ] = useState<string | null>(null);
     // Tracked in state so the deletion warning reacts to entity reloads. The FAttachment is mutated
@@ -158,7 +159,14 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
     // Image attachments opened in full detail get the interactive zoom/pan viewer; everything
     // else is rendered imperatively via the content renderer.
     const isZoomableImage = !!isFullDetail && attachment.role === "image";
-    const imageSrc = `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}?${attachment.utcDateModified}`;
+    // Unversioned (no `?v=`): this URL is also what copy-reference persists into note content, and
+    // stored notes must not pin a version — the server revalidates it via ETag instead.
+    const imageSrc = `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}`;
+    const gallery = useImageAttachmentGallery(ownerNote, noteContext, viewScope);
+    // The component instance persists while cycling attachments (only props change), so mount-time
+    // closures (the Electron context menu) must read the current state through a ref.
+    const galleryRef = useRef(gallery);
+    galleryRef.current = gallery;
 
     /** Unmounts whatever the content renderer previously mounted here (a media player), so that replacing
      *  or discarding the content doesn't leak its Preact root — or leave its audio playing. */
@@ -195,16 +203,34 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         }
     });
 
+    // (Hoisted function declaration below; the ref keeps the menu closure reading the fresh one.)
+    const copyReferenceRef = useRef(copyAttachmentReferenceToClipboard);
+    copyReferenceRef.current = copyAttachmentReferenceToClipboard;
+
     // Electron right-click menu (copy image / reference) for the interactive image viewer.
     useEffect(() => {
         if (isZoomableImage) {
-            return imageContextMenu.setupContextMenu(refToJQuerySelector(imageViewerWrapper));
+            return imageContextMenu.setupContextMenu(refToJQuerySelector(imageViewerWrapper), {
+                getSrc: () => galleryRef.current.items[galleryRef.current.currentIndex]?.src,
+                copyReference: () => void copyReferenceRef.current()
+            });
         }
     }, [ isZoomableImage ]);
 
     async function copyAttachmentReferenceToClipboard() {
         if (attachment.role === "image") {
-            const $img = refToJQuerySelector(isZoomableImage ? imageViewerWrapper : contentWrapper).find("img");
+            if (isZoomableImage) {
+                // The viewer's source list carries data-src only; stage clean `<img>` markup instead.
+                const wrapper = hiddenImageCopyRef.current;
+                if (!wrapper) return;
+                const imageEl = document.createElement("img");
+                imageEl.src = imageSrc;
+                wrapper.replaceChildren(imageEl);
+                image.copyImageReferenceToClipboard(refToJQuerySelector(hiddenImageCopyRef));
+                wrapper.removeChild(imageEl);
+                return;
+            }
+            const $img = refToJQuerySelector(contentWrapper).find("img");
             if ($img.length) image.copyImageReferenceToClipboard($img.parent());
         } else if (isFileLike) {
             const $link = await link.createLink(attachment.ownerId, {
@@ -261,16 +287,13 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
                 {textContent && <TextPreview content={textContent} />}
                 {isZoomableImage ? (
                     <div key="image-viewer" ref={imageViewerWrapper} className="attachment-content-wrapper attachment-image-viewer">
-                        <ImageViewer key={`${attachment.attachmentId}-${attachment.utcDateModified}`} src={imageSrc} alt={attachment.title} />
-                        <SiblingNavigator
-                            note={ownerNote}
+                        <MediaViewer
+                            gallery={gallery}
                             noteContext={noteContext}
-                            viewScope={viewScope}
-                            previousTooltipI18nKey="image_navigation.previous"
-                            nextTooltipI18nKey="image_navigation.next"
-                            extraPreviousKeys={[ "Backspace" ]}
-                            extraNextKeys={[ "Space" ]}
+                            isVisible={isVisible}
+                            onCopyReference={() => void copyAttachmentReferenceToClipboard()}
                         />
+                        <div ref={hiddenImageCopyRef} className="hidden-image-copy" />
                     </div>
                 ) : (
                     <div key="rendered" ref={contentWrapper} className="attachment-content-wrapper" />

@@ -601,8 +601,15 @@ function copyHtmlToClipboard(html: string, plainText: string = html) {
     return ok;
 }
 
-export function createImageSrcUrl(note: FNote) {
-    return `api/images/${note.noteId}/${encodeURIComponent(note.title)}?timestamp=${Date.now()}`;
+/**
+ * URL serving an image note's content, versioned (`?v=`) by the content-addressed blobId so the
+ * browser cache stays valid exactly until the content changes. Pass `versioned: false` for markup
+ * persisted into note content (image references) — stored notes must not pin a version; the server
+ * revalidates those via ETag instead.
+ */
+export function createImageSrcUrl(note: FNote, { versioned = true }: { versioned?: boolean } = {}) {
+    const url = `api/images/${note.noteId}/${encodeURIComponent(note.title)}`;
+    return versioned ? `${url}?v=${encodeURIComponent(note.blobId ?? "")}` : url;
 }
 
 

@@ -10,4 +10,9 @@
     position: relative;
     overflow: hidden;
     height: 100%;
+
+    /* Staging area for copy-reference markup; out of flow so the viewer layout is unaffected. */
+    & .hidden-image-copy {
+        position: absolute;
+    }
 }

@@ -110,9 +110,9 @@
 }
 
 /* The interactive viewer manages its own fit/zoom, so let its image use the full viewport. */
-.attachment-detail-wrapper.full-detail .attachment-content-wrapper.attachment-image-viewer img {
-    max-width: 100%;
-    object-fit: unset;
+/* Staging area for copy-reference markup; out of flow so the viewer layout is unaffected. */
+.attachment-content-wrapper.attachment-image-viewer .hidden-image-copy {
+    position: absolute;
 }
 
 /* Anchor the sibling-navigation overlay to the viewer, and constrain the viewer to its flex slot so

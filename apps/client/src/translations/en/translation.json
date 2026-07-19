@@ -986,16 +986,26 @@
     "zoom_in_title": "Zoom In",
     "zoom_out_title": "Zoom Out"
   },
-  "image_buttons": {
-    "zoom_in": "Zoom in",
-    "zoom_out": "Zoom out",
-    "reset_zoom": "Reset zoom"
-  },
   "image_navigation": {
     "previous": "Previous image: {{- title}}",
     "next": "Next image: {{- title}}"
   },
-  "image_viewer": {
+  "media_viewer": {
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "zoom_reset": "Reset zoom ({{percent}}%)",
+    "fit_to_window": "Fit to window",
+    "actual_size": "Actual size (1:1)",
+    "rotate_left": "Rotate left",
+    "rotate_right": "Rotate right",
+    "flip_horizontal": "Flip horizontally",
+    "enter_fullscreen": "Fullscreen",
+    "exit_fullscreen": "Exit fullscreen",
+    "download": "Download",
+    "copy_image": "Copy image to clipboard",
+    "copy_reference": "Copy reference to clipboard",
+    "open_externally": "Open externally",
+    "image_position": "Image {{index}} of {{total}}",
     "loading_error": "There was an error loading the image.",
     "hints": {
       "zoom": "Zoom",
@@ -1012,7 +1022,10 @@
       "next_image": "Next image",
       "previous_image": "Previous image",
       "first_image": "First image",
-      "last_image": "Last image"
+      "last_image": "Last image",
+      "fullscreen": "Fullscreen",
+      "toggle_fullscreen": "Toggle fullscreen",
+      "exit_fullscreen": "Exit fullscreen"
     }
   },
   "shortcut_hints": {

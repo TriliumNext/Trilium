@@ -108,11 +108,13 @@ function FileActions(props: NoteActionsCustomInnerProps) {
 }
 
 function ImageActions(props: NoteActionsCustomInnerProps) {
+    // On desktop the media viewer's own toolbar owns download/open-externally/copy-reference;
+    // duplicating them here would show every action twice. The mobile viewer toolbar is reduced
+    // to navigation + fullscreen, so mobile keeps the download menu item.
     return (
         <>
             <UploadNewRevisionButton {...props} onChange={buildUploadNewImageRevisionListener(props.note)} />
-            <OpenExternallyButton {...props} />
-            <DownloadFileButton {...props} />
+            {cachedIsMobile && <DownloadFileButton {...props} />}
         </>
     );
 }
@@ -157,7 +159,9 @@ function DownloadFileButton({ note, parentComponent, ntxId }: NoteActionsCustomI
 //#region Floating buttons
 function CopyReferenceToClipboardButton({ note, noteType }: NoteActionsCustomInnerProps) {
     const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
-    const isEnabled = ["mermaid", "canvas", "mindMap", "image"].includes(noteType);
+    // Image notes get this from the media viewer's toolbar on desktop (see ImageActions).
+    const isEnabled = ["mermaid", "canvas", "mindMap"].includes(noteType)
+        || (noteType === "image" && cachedIsMobile);
 
     return isEnabled && (
         <>
@@ -167,7 +171,7 @@ function CopyReferenceToClipboardButton({ note, noteType }: NoteActionsCustomInn
                 onClick={() => {
                     if (!hiddenImageCopyRef.current) return;
                     const imageEl = document.createElement("img");
-                    imageEl.src = createImageSrcUrl(note);
+                    imageEl.src = createImageSrcUrl(note, { versioned: false });
                     hiddenImageCopyRef.current.replaceChildren(imageEl);
                     copyImageReferenceToClipboard($(hiddenImageCopyRef.current));
                     hiddenImageCopyRef.current.removeChild(imageEl);
