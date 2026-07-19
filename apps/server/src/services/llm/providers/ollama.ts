@@ -146,6 +146,10 @@ export class OllamaProvider extends BaseProvider {
             }
 
             const data = (await res.json()) as OllamaTagsResponse;
+            if (!Array.isArray(data.models)) {
+                getLog().error("Ollama: unexpected /api/tags response shape");
+                return this.availableModels;
+            }
             this.availableModels = data.models.map((m, i) => ({
                 id: m.name,
                 name: formatModelName(m),

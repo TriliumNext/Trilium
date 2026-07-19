@@ -97,6 +97,12 @@ describe("OllamaProvider", () => {
         expect(models.map(m => m.id)).toEqual(["m1"]);
     });
 
+    it("returns the current list on a malformed /api/tags response", async () => {
+        fetchMock.mockResolvedValue({ ok: true, json: async () => ({ error: "boom" }) } as Response);
+        const provider = new OllamaProvider();
+        await expect(provider.loadModels()).resolves.toEqual([]);
+    });
+
     it("returns the current list when the instance responds with an error status", async () => {
         fetchMock.mockResolvedValue({ ok: false, status: 500 } as Response);
         const provider = new OllamaProvider();
