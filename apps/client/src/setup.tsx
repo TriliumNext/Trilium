@@ -36,7 +36,7 @@ type State = "selectLanguage" | "firstOptions" | "createNewDocumentOptions" | "c
 
 const STATE_ORDER: State[] = ["selectLanguage", "firstOptions", "createNewDocumentOptions", "createNewDocumentWithDemo", "createNewDocumentEmpty", "syncFromDesktop", "syncFromServer", "syncFromServerInProgress", "syncFromDesktopInProgress", "syncFailed"];
 
-function renderState(state: State, setState: (state: State) => void) {
+export function renderState(state: State, setState: (state: State) => void) {
     switch (state) {
         case "selectLanguage": return <SelectLanguage setState={setState} />;
         case "firstOptions": return <SetupOptions setState={setState} />;
@@ -45,8 +45,9 @@ function renderState(state: State, setState: (state: State) => void) {
         case "createNewDocumentEmpty": return <CreateNewDocumentInProgress />;
         case "syncFromServer": return <SyncFromServer setState={setState} />;
         case "syncFromDesktop": return <SyncFromDesktop setState={setState} />;
-        case "syncFromServerInProgress": return <SyncInProgress device="server" />;
-        case "syncFromDesktopInProgress": return <SyncInProgress device="desktop" />;
+        case "syncFromServerInProgress": return <SyncInProgress device="server" setState={setState} />;
+        case "syncFromDesktopInProgress": return <SyncInProgress device="desktop" setState={setState} />;
+        case "syncFailed": return <SyncFailed setState={setState} />;
         default: return null;
     }
 }
@@ -227,7 +228,7 @@ function useWakeLock() {
     }, []);
 }
 
-function SyncInProgress({ device }: { device: "server" | "desktop" }) {
+export function SyncInProgress({ device, setState }: { device: "server" | "desktop"; setState: (state: State) => void }) {
     const stats = useOutstandingSyncInfo();
     const step = getSyncStep(stats);
     useWakeLock();
@@ -237,6 +238,14 @@ function SyncInProgress({ device }: { device: "server" | "desktop" }) {
             onSetupFinished();
         }
     }, [stats.initialized]);
+
+    useEffect(() => {
+        // Only the sync-from-server flow runs sync attempts on this instance; in the
+        // sync-from-desktop flow the OTHER device pushes to us, so no local error can occur.
+        if (device === "server" && stats.lastSyncError && !stats.initialized) {
+            setState("syncFailed");
+        }
+    }, [device, stats.lastSyncError, stats.initialized, setState]);
 
     const steps: { key: SyncStep; label: string }[] = [
         { key: "connecting", label: t("setup.sync-step-connecting") },
@@ -287,16 +296,74 @@ function SyncInProgress({ device }: { device: "server" | "desktop" }) {
     );
 }
 
+export function SyncFailed({ setState }: { setState: (state: State) => void }) {
+    const stats = useOutstandingSyncInfo();
+    // Freeze the last seen error: when a retry starts, the server clears it before the
+    // attempt runs, and the text must not blank out while this page transitions away.
+    const [ message, setMessage ] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (stats.initialized) {
+            // The retry converged before we even switched back to the progress screen.
+            onSetupFinished();
+        } else if (stats.lastSyncError) {
+            setMessage(stats.lastSyncError);
+        } else if (message !== null) {
+            // The error was cleared server-side — a new sync attempt is underway, so hand
+            // back to the progress screen. Driven by the polled server state rather than the
+            // button click, which avoids racing the sync/now request against the next poll.
+            setState("syncFromServerInProgress");
+        }
+    }, [stats.lastSyncError, stats.initialized, message, setState]);
+
+    return (
+        <SetupPage
+            className="sync-failed"
+            title={t("setup.sync-failed-title")}
+            description={t("setup.sync-failed-description")}
+            illustration={<Icon icon="bx bx-error-circle" className="illustration-icon" />}
+            onBack={() => setState("syncFromServer")}
+            footer={
+                <Button
+                    text={t("setup.button-retry")}
+                    kind="primary"
+                    icon="bx bx-refresh"
+                    onClick={() => {
+                        // Fire-and-forget: the polling effect above notices the attempt
+                        // starting (error cleared) and switches to the progress screen.
+                        server.post("sync/now").catch(() => {});
+                    }}
+                />
+            }
+        >
+            {message && (
+                <ExtendedAdmonition
+                    type="caution"
+                    icon="bx bx-error-circle"
+                    title={t("setup.sync-failed-admonition-title")}
+                >
+                    {/* Kept fully visible (not collapsed): bug reports are often just a
+                        screenshot of this screen, and the raw error is what matters. */}
+                    <pre>{message}</pre>
+                    <p>{t("setup.sync-failed-hint")}</p>
+                </ExtendedAdmonition>
+            )}
+        </SetupPage>
+    );
+}
+
 function useOutstandingSyncInfo() {
     const [ outstandingPullCount, setOutstandingPullCount ] = useState(0);
     const [ totalPullCount, setTotalPullCount ] = useState<number | null>(null);
     const [ initialized, setInitialized ] = useState(false);
+    const [ lastSyncError, setLastSyncError ] = useState<string | null>(null);
 
     async function refresh() {
-        const resp = await server.get<{ outstandingPullCount: number; totalPullCount: number | null; initialized: boolean }>("sync/stats");
+        const resp = await server.get<{ outstandingPullCount: number; totalPullCount: number | null; initialized: boolean; lastSyncError?: string | null }>("sync/stats");
         setOutstandingPullCount(resp.outstandingPullCount);
         setTotalPullCount(resp.totalPullCount);
         setInitialized(resp.initialized);
+        setLastSyncError(resp.lastSyncError ?? null);
     }
 
     useEffect(() => {
@@ -305,7 +372,7 @@ function useOutstandingSyncInfo() {
 
         return () => clearInterval(interval);
     }, []);
-    return { outstandingPullCount, totalPullCount, initialized };
+    return { outstandingPullCount, totalPullCount, initialized, lastSyncError };
 }
 
 function CreateNewDocumentOptions({ setState }: { setState: (state: State) => void }) {
@@ -339,7 +406,7 @@ function CreateNewDocumentInProgress({ withDemo = false }: { withDemo?: boolean 
     );
 }
 
-function SyncFromServer({ setState }: { setState: (state: State) => void }) {
+export function SyncFromServer({ setState }: { setState: (state: State) => void }) {
     const [ syncServerHost, setSyncServerHost ] = useState("");
     const [ password, setPassword ] = useState("");
     const [ syncProxy, setSyncProxy ] = useState("");
@@ -347,6 +414,23 @@ function SyncFromServer({ setState }: { setState: (state: State) => void }) {
     const [ errorId, setErrorId ] = useState(0);
     const [ isWrongPassword, setIsWrongPassword ] = useState(false);
     const isValid = syncServerHost.trim() !== "" && password !== "";
+
+    useEffect(() => {
+        // After a failed attempt the sync options are already stored in the partial DB
+        // and exposed by setup/status — prefill so the user coming back from the failure
+        // screen only has to correct what's wrong (the password is never stored). The
+        // functional updates keep anything the user already typed.
+        server.get<{ syncServerHost?: string; syncProxy?: string }>("setup/status").then((status) => {
+            if (status.syncServerHost) {
+                setSyncServerHost((current) => current || status.syncServerHost || "");
+            }
+            if (status.syncProxy) {
+                setSyncProxy((current) => current || status.syncProxy || "");
+            }
+        }).catch(() => {
+            // Prefill is best-effort only.
+        });
+    }, []);
 
     function raiseError(message: string) {
         setError(message);
@@ -588,4 +672,7 @@ function onSetupFinished() {
     }
 }
 
-main();
+// Skip the bootstrap render under test, where the components are imported directly.
+if (import.meta.env.MODE !== "test") {
+    void main();
+}

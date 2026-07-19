@@ -593,6 +593,15 @@ class SetTaskStateCommand extends Command {
 
     declare public value: string | null;
 
+    constructor(editor: Editor) {
+        super(editor);
+        // Refresh before executing so a call made inside the same change block — e.g. the
+        // autoformat callback that runs `todoList` and then `setTaskState` back to back —
+        // sees the freshly-converted todo item rather than the stale pre-change `isEnabled`
+        // (a disabled command's `execute` is a no-op). Mirrors upstream `CheckTodoListCommand`.
+        this.on("execute", () => this.refresh(), { priority: "highest" });
+    }
+
     refresh() {
         const block = this._getTodoBlock();
         this.isEnabled = !!block;

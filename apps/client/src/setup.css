@@ -502,6 +502,24 @@ body[dir=rtl] .slide-in-backward {
     }
 }
 
+.page.sync-failed {
+    .admonition-body pre {
+        /* Sync errors embed full request URLs — wrap instead of overflowing the card. */
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0 0 0.5rem;
+        /* The error is meant to be copied into bug reports — opt back out of the
+           app-wide `body { user-select: none }`. */
+        user-select: text;
+    }
+
+    .admonition-body p {
+        margin: 0;
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+    }
+}
+
 @keyframes slide-out-left {
     from { transform: translateX(0); opacity: 1; }
     to   { transform: translateX(-100%); opacity: 0; }

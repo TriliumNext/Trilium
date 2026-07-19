@@ -1,10 +1,9 @@
 import { deferred, LOCALES } from "@triliumnext/commons";
-import { becca_loader, hidden_subtree as hiddenSubtreeService, i18n, note_service as notes } from "@triliumnext/core";
+import { becca, becca_loader, binary_utils, cls, hidden_subtree as hiddenSubtreeService, i18n, note_service as notes, TaskContext } from "@triliumnext/core";
+import protectedSessionService from "@triliumnext/core/src/services/protected_session.js";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { becca } from "@triliumnext/core";
 import branches from "./branches.js";
-import { cls } from "@triliumnext/core";
 import sql_init from "./sql_init.js";
 
 describe("Hidden Subtree", () => {
@@ -188,6 +187,38 @@ describe("Hidden Subtree", () => {
 
             llmNote = becca.getNote(noteId);
             expect(llmNote).toBeFalsy();
+        });
+
+        it("leaves the content of a protected template alone when no protected session is available (#10549)", () => {
+            const dataKey = binary_utils.encodeUtf8("0123456789abcdef"); // exactly 16 bytes
+            const note = becca.getNoteOrThrow("_template_presentation_first");
+            const originalContent = note.getContent();
+            expect(originalContent).toBeTruthy();
+
+            // Simulate a user who protected the hidden template while a protected session was active...
+            protectedSessionService.setDataKey(dataKey);
+            try {
+                cls.init(() => notes.protectNoteRecursively(note, true, false, new TaskContext("test-protect", "protectNotes", { protect: true })));
+                expect(note.isProtected).toBe(true);
+
+                // ...and then the server restarts without a protected session — the boot state of #10549.
+                protectedSessionService.resetDataKey();
+                expect(note.isContentAvailable()).toBe(false);
+
+                // The check must neither throw (it used to crash the server on startup) nor touch the content.
+                expect(() => cls.init(() => hiddenSubtreeService.checkHiddenSubtree(true))).not.toThrow();
+
+                // With the session restored, the content still decrypts to the original.
+                protectedSessionService.setDataKey(dataKey);
+                expect(note.getContent()).toBe(originalContent);
+
+                // Clean up: unprotect the note again so the remaining tests see the default state.
+                cls.init(() => notes.protectNoteRecursively(note, false, false, new TaskContext("test-unprotect", "protectNotes", { protect: false })));
+                expect(note.isProtected).toBe(false);
+                expect(note.getContent()).toBe(originalContent);
+            } finally {
+                protectedSessionService.resetDataKey();
+            }
         });
 
         it("fixes attribute of wrong type", () => {

@@ -28,6 +28,7 @@ let proxyToggle = true;
 
 let outstandingPullCount = 0;
 let totalPullCount: number | null = null;
+let lastSyncError: string | null = null;
 
 interface CheckResponse {
     maxEntityChangeId: number;
@@ -56,6 +57,10 @@ async function sync() {
             if (!syncOptions.isSyncSetup()) {
                 return { success: false, errorCode: "NOT_CONFIGURED", message: "Sync not configured" };
             }
+
+            // A new attempt is starting — clear the previous failure so consumers polling
+            // getLastSyncError() (the setup wizard) fall back to showing progress.
+            lastSyncError = null;
 
             let continueSync = false;
 
@@ -107,14 +112,18 @@ async function sync() {
 
             log.info("No connection to sync server.");
 
+            lastSyncError = "No connection to sync server.";
+
             return {
                 success: false,
-                message: "No connection to sync server."
+                message: lastSyncError
             };
         }
         log.info(`Sync failed: '${e.message}', stack: ${e.stack}`);
 
         ws.syncFailed();
+
+        lastSyncError = redactUrlHosts(e.message);
 
         return {
             success: false,
@@ -122,6 +131,28 @@ async function sync() {
         };
 
     }
+}
+
+/**
+ * Replaces the host (and any port/credentials) of every URL in the message with
+ * `[redacted]`, keeping the scheme and path. The recorded sync error is shown on the
+ * setup wizard's failure screen, which users paste as screenshots into bug reports —
+ * the private server host must not leak, while the endpoint path and status code (the
+ * diagnostically useful parts) stay visible. The full message still goes to the log.
+ */
+function redactUrlHosts(message: string) {
+    return message.replace(/(https?:\/\/)[^/\s]+/gi, "$1[redacted]");
+}
+
+/**
+ * The failure message of the most recent sync attempt, or null when the last attempt
+ * succeeded (or none ran yet). The sync result itself only reaches whoever *triggered*
+ * the sync — often fire-and-forget (setup, the sync timer) — so the setup wizard's
+ * progress screen polls this through `GET /api/sync/stats` to detect that the initial
+ * sync has failed instead of spinning forever (#10548).
+ */
+function getLastSyncError() {
+    return lastSyncError;
 }
 
 async function login() {
@@ -662,6 +693,7 @@ export default {
     getEntityChangeRecords,
     getOutstandingPullCount,
     getTotalPullCount,
+    getLastSyncError,
     getMaxEntityChangeId,
     startSyncTimer
 };

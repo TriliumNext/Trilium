@@ -1,6 +1,6 @@
 "use strict";
 
-import { type ExecOpts, getLog, type RequestProvider, sync_options as syncOptions } from "@triliumnext/core";
+import { type CookieJar, type ExecOpts, getLog, type RequestProvider, sync_options as syncOptions } from "@triliumnext/core";
 import url from "url";
 
 // this service provides abstraction over node's HTTP/HTTPS modules.
@@ -134,7 +134,7 @@ export default class NodeRequestProvider implements RequestProvider {
                     response.on("error", (err: unknown) => reject(generateError(opts, String(err))));
 
                     if (opts.cookieJar && response.headers["set-cookie"]) {
-                        opts.cookieJar.header = response.headers["set-cookie"];
+                        absorbSetCookies(opts.cookieJar, response.headers["set-cookie"]);
                     }
 
                     let responseStr = "";
@@ -242,4 +242,44 @@ export default class NodeRequestProvider implements RequestProvider {
             }
         });
     }
+}
+
+/**
+ * Merges the cookies from a response's Set-Cookie header(s) into the jar, storing a
+ * single "name=value; name=value" string.
+ *
+ * The naive alternative — replaying the raw Set-Cookie value(s) as the next Cookie
+ * header — breaks in two ways (#10548):
+ *
+ * - `electron.net` serializes an array header value via `Array.prototype.toString()`,
+ *   i.e. a bare-comma join. With more than one Set-Cookie in a response (a reverse
+ *   proxy's affinity cookie next to `trilium.sid`), the merged header glues
+ *   "…HttpOnly,trilium.sid=…" into a junk cookie name and the sync server loses the
+ *   session ("Logged in session not found"). Node's `http` special-cases cookie arrays
+ *   with a "; " join, which is why server↔server sync never exposed this.
+ * - Wholesale replacement drops cookies a later response didn't re-set.
+ *
+ * Cookie attributes (Path, Expires, HttpOnly, …) are stripped — clients must not echo
+ * them back, and the sync jar only lives for one sync cycle anyway.
+ */
+export function absorbSetCookies(cookieJar: CookieJar, setCookieValues: string | string[]) {
+    const cookies = new Map<string, string>();
+
+    const addPair = (pair: string) => {
+        const eqIndex = pair.indexOf("=");
+        if (eqIndex > 0) {
+            cookies.set(pair.slice(0, eqIndex).trim(), pair.slice(eqIndex + 1).trim());
+        }
+    };
+
+    for (const pair of (cookieJar.header ?? "").split(";")) {
+        addPair(pair);
+    }
+
+    for (const setCookie of Array.isArray(setCookieValues) ? setCookieValues : [setCookieValues]) {
+        // Only the leading name=value matters; the rest are attributes.
+        addPair(setCookie.split(";")[0]);
+    }
+
+    cookieJar.header = [...cookies].map(([name, value]) => `${name}=${value}`).join("; ");
 }
