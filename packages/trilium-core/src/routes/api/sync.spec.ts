@@ -79,6 +79,29 @@ describe("Sync API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body).toEqual({});
         });
+
+        it("exposes the last sync error while the DB is not yet initialized (setup wizard)", async () => {
+            vi.spyOn(syncService, "getLastSyncError").mockReturnValue("401 Logged in session not found");
+            const prevInitialized = optionService.getOption("initialized");
+            getSql().execute("UPDATE options SET value = 'false' WHERE name = 'initialized'");
+            try {
+                const res = await api.get<{ initialized: boolean; lastSyncError: string | null }>("/api/sync/stats");
+                expect(res.status).toBe(200);
+                expect(res.body.initialized).toBe(false);
+                expect(res.body.lastSyncError).toBe("401 Logged in session not found");
+            } finally {
+                getSql().execute("UPDATE options SET value = ? WHERE name = 'initialized'", [prevInitialized]);
+            }
+        });
+
+        it("does not expose sync errors once initialized — the stats endpoint is unauthenticated", async () => {
+            vi.spyOn(syncService, "getLastSyncError").mockReturnValue("must stay private");
+
+            const res = await api.get<{ initialized: boolean; lastSyncError?: string }>("/api/sync/stats");
+            expect(res.status).toBe(200);
+            expect(res.body.initialized).toBe(true);
+            expect(res.body.lastSyncError).toBeUndefined();
+        });
     });
 
     it("checkSync returns entity hashes and the max entity change id", async () => {

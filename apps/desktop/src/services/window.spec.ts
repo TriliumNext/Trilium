@@ -500,6 +500,23 @@ describe("window service", () => {
             expect(wc.session.setSpellCheckerEnabled).toHaveBeenCalledWith(true);
         });
 
+        // Regression for issue #10569: Electron's setSpellCheckerLanguages() force-sets the
+        // enabled pref to !languages.empty(), so loading a (non-empty) language list AFTER
+        // disabling would silently re-enable spell check on every launch. The enabled state
+        // must therefore be applied last.
+        it("loads languages before applying the disabled state so it is not re-enabled", async () => {
+            state.optionBools = { spellCheckEnabled: false };
+            state.options = { spellCheckLanguageCode: "en-US" };
+            await windowService.createExtraWindow("#order");
+            const session = state.windows[state.windows.length - 1].webContents.session;
+
+            expect(session.setSpellCheckerLanguages).toHaveBeenCalledWith(["en-US"]);
+            expect(session.setSpellCheckerEnabled).toHaveBeenCalledWith(false);
+            const languagesOrder = session.setSpellCheckerLanguages.mock.invocationCallOrder[0];
+            const enabledOrder = session.setSpellCheckerEnabled.mock.invocationCallOrder[0];
+            expect(languagesOrder).toBeLessThan(enabledOrder);
+        });
+
         it("loads spellcheck languages once per session", async () => {
             state.optionBools = { spellCheckEnabled: true };
             state.options = { spellCheckLanguageCode: "en-US, de , " };
@@ -752,6 +769,22 @@ describe("window service", () => {
             fireOn("set-spellchecker-languages", makeEvent(), ["en-US", "fr"]);
             for (const win of state.windows) {
                 expect(win.webContents.session.setSpellCheckerLanguages).toHaveBeenCalledWith(["en-US", "fr"]);
+            }
+        });
+
+        // Regression for issue #10569: setSpellCheckerLanguages() force-enables spell check, so a
+        // live language change while the option is disabled must re-assert the disabled state after.
+        it("set-spellchecker-languages re-asserts the disabled option after setting the codes", () => {
+            state.optionBools = { spellCheckEnabled: false };
+            new FakeBrowserWindow();
+            fireOn("set-spellchecker-languages", makeEvent(), ["en-US", "fr"]);
+            for (const win of state.windows) {
+                const session = win.webContents.session;
+                expect(session.setSpellCheckerLanguages).toHaveBeenCalledWith(["en-US", "fr"]);
+                expect(session.setSpellCheckerEnabled).toHaveBeenCalledWith(false);
+                const languagesOrder = session.setSpellCheckerLanguages.mock.invocationCallOrder[0];
+                const enabledOrder = session.setSpellCheckerEnabled.mock.invocationCallOrder[0];
+                expect(languagesOrder).toBeLessThan(enabledOrder);
             }
         });
 

@@ -66,6 +66,9 @@ export function buildSystemPrompt(messages: LlmMessage[], config: LlmProviderCon
         parts.push(
             `Never prepend emojis or other decorative characters to note titles. To give a note a visual marker, find a fitting icon with search_icons and assign it via set_attribute as the note's 'iconClass' label (e.g. value 'bx bx-rocket').`
         );
+        parts.push(
+            `For questions about how to use Trilium itself (features, settings, keyboard shortcuts, "how do I…?"), consult the built-in User Guide instead of relying on your own knowledge — it matches the installed version. Use search_help to find pages by keyword; if that misses, use get_help_toc to browse the table of contents (the guide may name a concept differently than the user, e.g. placing a note in two locations is "cloning"). Base your answer on those pages and link them with [[noteId]] so the user can open the full documentation.`
+        );
     } else if (config.contextNoteId) {
         parts.push(
             `You can see the current note's metadata above, but you cannot search or access other notes. If the user asks about other notes, inform them that "Note access" is disabled and they need to enable it in the chat settings (click on the model name dropdown and toggle "Note access").`

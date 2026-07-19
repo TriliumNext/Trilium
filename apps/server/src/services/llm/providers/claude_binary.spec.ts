@@ -115,6 +115,18 @@ describe("resolveClaudeBinaryPath", () => {
             await expect(resolveClaudeBinaryPath()).resolves.toBe(hit);
         });
 
+        it("skips the bare extensionless `claude` on Windows (it is a POSIX bash script)", async () => {
+            stubPlatform("win32");
+            const dir = path.join("npm", "prefix");
+            // Only the bare `claude` exists — no .cmd/.exe/.bat.
+            const bashScript = path.join(dir, "claude");
+            process.env.PATH = dir;
+            existsSyncMock.mockImplementation((candidate: string) => candidate === bashScript);
+
+            await expect(resolveClaudeBinaryPath()).rejects.toThrow(/Claude Code CLI not found/);
+            expect(execFileMock).not.toHaveBeenCalled();
+        });
+
         it("rejects with install instructions when `claude` is nowhere on PATH (or PATH is unset)", async () => {
             stubPlatform("linux");
             delete process.env.PATH;
