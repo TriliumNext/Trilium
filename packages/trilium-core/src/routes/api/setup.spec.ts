@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import appInfo from "../../services/app_info";
+import optionService from "../../services/options";
 import setupService from "../../services/setup";
 import sqlInit from "../../services/sql_init";
 import { CoreApiTester } from "../../test/api_tester";
@@ -31,6 +32,27 @@ describe("Setup API (core)", () => {
         expect(typeof res.body.isInitialized).toBe("boolean");
         expect(typeof res.body.schemaExists).toBe("boolean");
         expect(res.body.syncVersion).toBe(appInfo.syncVersion);
+    });
+
+    it("includes the stored sync server so a failed setup can prefill the form, but only pre-initialization", async () => {
+        vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+        const res = await api.get<{ syncServerHost?: string; syncProxy?: string }>("/api/setup/status");
+        // The fixture stores empty strings; presence of the keys is the contract.
+        expect(res.body.syncServerHost).toBeDefined();
+        expect(res.body.syncProxy).toBeDefined();
+    });
+
+    it("omits the sync server once initialized — setup/status is unauthenticated", async () => {
+        const res = await api.get<{ syncServerHost?: string }>("/api/setup/status");
+        expect(res.body.syncServerHost).toBeUndefined();
+    });
+
+    it("falls back to empty strings when the sync options are absent", async () => {
+        vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+        vi.spyOn(optionService, "getOptionOrNull").mockReturnValue(null);
+        const res = await api.get<{ syncServerHost?: string; syncProxy?: string }>("/api/setup/status");
+        expect(res.body.syncServerHost).toBe("");
+        expect(res.body.syncProxy).toBe("");
     });
 
     it("creates a new document (createInitialDatabase stubbed)", async () => {

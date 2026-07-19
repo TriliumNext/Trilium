@@ -3098,7 +3098,12 @@
     "sync-from-desktop-unreachable-description": "To sync, the other desktop has to connect to this one over the network. For security, this desktop app only accepts connections from this computer, so that other desktop can't reach it yet. Allow network access below — Trilium will restart to apply it.",
     "sync-from-desktop-allow-access": "Allow network access & restart",
     "advanced-options": "Advanced options",
-    "sync-failed": "Failed to sync: {{message}}",
+    "sync-failed": "Failed to sync: {{- message}}",
+    "sync-failed-title": "Sync failed",
+    "sync-failed-description": "The initial synchronization could not be completed. You can retry, or go back to check the server address and credentials.",
+    "sync-failed-admonition-title": "The last sync attempt failed",
+    "sync-failed-hint": "This can be caused by a wrong server address, a proxy interfering with the connection, or the server being temporarily unreachable.",
+    "button-retry": "Retry",
     "server-host": "Trilium server address",
     "server-host-placeholder": "https://<hostname>:<port>",
     "server-password": "Password",
@@ -3181,7 +3186,9 @@
       "delete_note": "Delete note",
       "move_note": "Move note",
       "clone_note": "Clone note",
-      "search_icons": "Search icons"
+      "search_icons": "Search icons",
+      "search_help": "Search User Guide",
+      "get_help_toc": "Get User Guide contents"
     }
   },
   "common": {

@@ -93,7 +93,7 @@ jobs:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.1
+        uses: softprops/action-gh-release@v3.0.2
         if: ${{ github.event_name != 'pull_request' }}
         with:
           make_latest: false
@@ -122,7 +122,7 @@ jobs:
         uses: ./.github/actions/build-mobile
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.1
+        uses: softprops/action-gh-release@v3.0.2
         with:
           make_latest: false
           prerelease: true
@@ -154,7 +154,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v3.0.1
+        uses: softprops/action-gh-release@v3.0.2
         if: ${{ github.event_name != 'pull_request' }}
         with:
           make_latest: false

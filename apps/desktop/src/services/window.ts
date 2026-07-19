@@ -289,13 +289,16 @@ function setupExportRevealForSession(session: Session) {
 }
 
 function setupSpellcheckForSession(session: Session, enabled: boolean) {
-    session.setSpellCheckerEnabled(enabled);
     // Preload the configured languages once per session (idempotent thereafter via the
     // WeakSet guard) so a later live enable already has them. Harmless while disabled.
+    // This MUST run before setSpellCheckerEnabled(): Electron's setSpellCheckerLanguages()
+    // implicitly forces kSpellCheckEnable = !languages.empty(), so calling it after a
+    // disable would silently re-enable spell check on every launch (issue #10569).
     if (!loadedSpellcheckSessions.has(session)) {
         loadedSpellcheckSessions.add(session);
         session.setSpellCheckerLanguages(getConfiguredSpellcheckLanguages());
     }
+    session.setSpellCheckerEnabled(enabled);
 }
 
 function getConfiguredSpellcheckLanguages(): string[] {
@@ -312,12 +315,17 @@ function getConfiguredSpellcheckLanguages(): string[] {
  * Sessions are deduplicated because all windows share the default session.
  */
 function applySpellcheckLanguages(languageCodes: string[]) {
+    // setSpellCheckerLanguages() forces the enabled state to !languageCodes.empty(), so a
+    // language change while spell check is disabled would re-enable it. Re-assert the option
+    // afterwards to keep the toggle authoritative (see setupSpellcheckForSession, issue #10569).
+    const enabled = optionService.getOptionBool("spellCheckEnabled");
     const sessions = new Set<Session>();
     for (const win of electron.BrowserWindow.getAllWindows()) {
         sessions.add(win.webContents.session);
     }
     for (const session of sessions) {
         session.setSpellCheckerLanguages(languageCodes);
+        session.setSpellCheckerEnabled(enabled);
     }
 }
 

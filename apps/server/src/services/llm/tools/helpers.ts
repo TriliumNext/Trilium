@@ -2,10 +2,12 @@
  * Shared helpers for LLM tools — content conversion, metadata building, and previews.
  */
 
-import { type BAttachment, type BNote, markdownExportService as markdownExport,markdownImportService as markdownImport } from "@triliumnext/core";
+import { type BAttachment, becca, type BNote, markdownExportService as markdownExport, markdownImportService as markdownImport } from "@triliumnext/core";
 import { unwrapStringOrBuffer } from "@triliumnext/core/src/services/utils/binary.js";
+import { readFileSync } from "fs";
+import path from "path";
 
-import { becca } from "@triliumnext/core";
+import resourceDir from "../../resource_dir.js";
 
 const CONTENT_PREVIEW_MAX_LENGTH = 500;
 const ATTACHMENT_PREVIEW_MAX_LENGTH = 200;
@@ -30,6 +32,13 @@ export function flag(value: boolean | undefined): true | undefined {
  * Text notes are converted from HTML to Markdown to reduce token usage.
  */
 export function getNoteContentForLlm(note: BNote) {
+    if (note.type === "doc") {
+        // Doc notes (in-app help / User Guide pages) store no content in the
+        // database — their HTML lives on disk and is fetched by the client.
+        const html = getDocNoteHtml(note);
+        return html ? markdownExport.toMarkdown(html) : "[doc content not available]";
+    }
+
     const content = note.getContent();
     if (typeof content !== "string") {
         // For binary content (images, files), use extracted text if available.
@@ -43,6 +52,32 @@ export function getNoteContentForLlm(note: BNote) {
         return markdownExport.toMarkdown(content);
     }
     return content;
+}
+
+/**
+ * Resolve the on-disk HTML of a `doc` note (in-app help / User Guide pages,
+ * identified by their `#docName` label), or null if it cannot be resolved.
+ * The User Guide ships in English only, so the `en` tree is always used
+ * (mirroring the client's doc_renderer behaviour).
+ */
+export function getDocNoteHtml(note: BNote): string | null {
+    const docName = note.getLabelValue("docName");
+    if (!docName) {
+        return null;
+    }
+
+    const docNotesDir = path.resolve(resourceDir.RESOURCE_DIR, "doc_notes");
+    const filePath = path.resolve(docNotesDir, "en", `${docName}.html`);
+    if (!filePath.startsWith(docNotesDir + path.sep)) {
+        // Path traversal guard — the docName label is note data, not trusted input.
+        return null;
+    }
+
+    try {
+        return readFileSync(filePath, "utf-8");
+    } catch {
+        return null;
+    }
 }
 
 /**
@@ -128,7 +163,7 @@ export function getContentPreview(note: BNote): string | null {
     }
 
     const full = getNoteContentForLlm(note);
-    if (!full || full === "[binary content]") {
+    if (!full || full === "[binary content]" || full === "[doc content not available]") {
         return null;
     }
 
