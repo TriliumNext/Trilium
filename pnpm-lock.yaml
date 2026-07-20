@@ -1680,8 +1680,8 @@ importers:
         specifier: 3.0.2
         version: 3.0.2
       node-html-parser:
-        specifier: 8.0.4
-        version: 8.0.4
+        specifier: 9.0.0
+        version: 9.0.0
       sanitize-filename:
         specifier: 1.6.4
         version: 1.6.4
@@ -11021,8 +11021,8 @@ packages:
   node-html-parser@6.1.13:
     resolution: {integrity: sha512-qIsTMOY4C/dAa5Q5vsobRpOOvPfC4pB61UVW2uSwZNUp0QU/jCekTal1vMmbO0DgdHeLUJpv/ARmDqErVxA3Sg==}
 
-  node-html-parser@8.0.4:
-    resolution: {integrity: sha512-w2YxujN/TqrSIWGVNW/fVgKKfAyQeHMXCvnKZI0owLnfP0tfjdLecUoy9zhOMZGoEFk6eP5qSDyvUarjPl3bwQ==}
+  node-html-parser@9.0.0:
+    resolution: {integrity: sha512-MhdaHPyxnyYu/sf0TpiRvDnTrkum0UKHC7FdbDGIUQNlx3I7xzwXoyV0eMUMv/XU+lkJT1glOUzpDPq7b2p1Ew==}
 
   node-mocks-http@1.18.0:
     resolution: {integrity: sha512-arItRIarSUnpHAagCV5SB0DARvPXTA2ur+cVPCMm8d/KT2sqr9AF/QuHOoT3/PZ5cYFaQrpVkmoDUmMxuGW1Cw==}
@@ -25914,7 +25914,7 @@ snapshots:
       css-select: 5.2.2
       he: 1.2.0
 
-  node-html-parser@8.0.4:
+  node-html-parser@9.0.0:
     dependencies:
       css-select: 5.2.2
       entities: 8.0.0
