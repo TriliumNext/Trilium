@@ -89,7 +89,8 @@ async function isTokenValid(req: Request, res: Response, next: NextFunction) {
                 message: "Token is valid",
                 user: userStatus,
             };
-        } catch {
+        } catch (err) {
+            getLog().info(`OIDC token validation failed: ${err instanceof Error ? err.message : String(err)}`);
             return {
                 success: false,
                 message: "Token is not valid",
@@ -154,7 +155,21 @@ function generateOAuthConfig(endSessionSupported = false) {
         clientAuthMethod: resolveClientAuthMethod(),
         authorizationParams: {
             response_type: "code",
-            scope: "openid profile email",
+            scope: config.MultiFactorAuthentication.oauthScope,
+        },
+        // Override the library's default 5000 ms timeout for discovery / token-exchange / userinfo requests.
+        // Cold-start IdP responses (e.g. a scaled-to-zero provider) routinely exceed 5s and manifest as a
+        // spurious "login twice" failure; the default is raised to 30s and is configurable via oauthHttpTimeout.
+        httpTimeout: config.MultiFactorAuthentication.oauthHttpTimeout,
+        // Match the OIDC appSession cookie lifetime to Trilium's own trilium.sid cookie. The library defaults
+        // (24h rolling, 7d absolute) silently capped the effective Trilium session at 7 days when SSO was on.
+        // Both bounds are set to cookieMaxAge (seconds; default 21d): rollingDuration is required when
+        // rolling: true, and keeping absoluteDuration as a hard cap follows OWASP / Auth0 guidance that every
+        // session should have an upper bound regardless of activity.
+        session: {
+            rolling: true,
+            rollingDuration: config.Session.cookieMaxAge,
+            absoluteDuration: config.Session.cookieMaxAge,
         },
         routes: authRoutes,
         // Only enable RP-Initiated Logout when the provider actually advertises an end_session_endpoint

@@ -34,10 +34,18 @@ Setting up authentication with OpenID connect is a two-step process:
     | Issuer icon | `oauthIssuerIcon` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON` | Optionally, the URL to a logo of the provider. By default it will try to obtain the favicon from the website, so it's optional. |
     
     All the fields here are optional, since the default OAuth issuer is Google.
-4.  Restart the server so that the changes are applied.
+4.  Optionally, tune the following advanced settings. All are optional and have sensible defaults:
+    
+    | Configuration | `config.ini` in `[MultiFactorAuthentication]` section | Environment variable | Description |
+    | --- | --- | --- | --- |
+    | HTTP timeout | `oauthHttpTimeout` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT` | Timeout in milliseconds for the provider HTTP requests (discovery, token exchange, userinfo). Defaults to `30000` (30s). Raise this if your provider cold-starts slowly and you are occasionally asked to sign in twice. Minimum accepted value is `500`. |
+    | Scopes | `oauthScope` | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE` | Space-separated list of OIDC scopes requested at login. Defaults to `openid profile email`. `openid` is required and is prepended automatically if you omit it. |
+    
+    The OIDC session lifetime is automatically bound to Trilium's own session cookie lifetime (the `cookieMaxAge` setting in the `[Session]` section, 21 days by default), so a single sign-in stays valid for as long as your Trilium session does rather than expiring early on the OIDC library's shorter internal defaults.
+5.  Restart the server so that the changes are applied.
 
 > [!NOTE]
-> Legacy environment variables are also supported: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, and for customizing the provider: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`
+> Legacy environment variables are also supported: `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`, and for customizing the provider: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`, `TRILIUM_OAUTH_HTTP_TIMEOUT`, `TRILIUM_OAUTH_SCOPE`
 
 ## Connecting to the authentication provider
 

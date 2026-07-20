@@ -75,6 +75,8 @@ Additionally, shorter aliases are available for common configurations (see Alter
 | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | string | "[https://accounts.google.com](https://accounts.google.com)" | OAuth issuer base URL |
 | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME` | string | "Google" | OAuth issuer display name |
 | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON` | string | "" | OAuth issuer icon URL |
+| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT` | integer | 30000 | Timeout in milliseconds for OAuth/OpenID HTTP requests (discovery, token exchange, userinfo). Minimum 500 |
+| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE` | string | "openid profile email" | Space-separated OIDC scopes requested at login (`openid` is prepended automatically if omitted) |
 
 ### Logging Section
 
@@ -113,6 +115,8 @@ The following alternative environment variable names are also supported and work
 *   `TRILIUM_OAUTH_ISSUER_BASE_URL` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL`)
 *   `TRILIUM_OAUTH_ISSUER_NAME` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME`)
 *   `TRILIUM_OAUTH_ISSUER_ICON` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON`)
+*   `TRILIUM_OAUTH_HTTP_TIMEOUT` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT`)
+*   `TRILIUM_OAUTH_SCOPE` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE`)
 
 ### Logging Variables
 
