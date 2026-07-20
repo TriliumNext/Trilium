@@ -1956,7 +1956,7 @@ function buildEnhanceTitle() {
         // Add shared indicator with tooltip if note is shared
         if (note.isShared()) {
             const shareId = note.getOwnedLabelValue("shareAlias") || note.noteId;
-            const shareUrl = `${location.origin}${location.pathname}share/${shareId}`;
+            const shareUrl = utils.buildShareUrl(shareId);
             const tooltipText = t("note_tree.shared-indicator-tooltip-with-url", { url: shareUrl });
 
             const $sharedIndicator = $(`<span class="note-indicator-icon shared-indicator"></span>`);

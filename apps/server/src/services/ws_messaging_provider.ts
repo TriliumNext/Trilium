@@ -15,9 +15,12 @@ type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
  * Handles the raw WebSocket transport: server setup, connection management,
  * message serialization, and client tracking.
  *
- * Note: this provider is no longer used by the Electron desktop build —
- * desktop runs IpcMessagingProvider instead so the renderer↔server messaging
- * channel never crosses a TCP socket. See `apps/server/src/main.ts`.
+ * Note: the Electron desktop renderer no longer uses this provider — it runs
+ * IpcMessagingProvider instead so the renderer↔server messaging channel never
+ * crosses a TCP socket. On desktop this provider still serves browsers
+ * connecting to the TCP HTTP listener (see the CompositeMessagingProvider
+ * wiring in `www.ts`); those connections require a logged-in session via
+ * `verifyClient` below.
  */
 export default class WebSocketMessagingProvider implements MessagingProvider {
     private webSocketServer!: WebSocketServer;

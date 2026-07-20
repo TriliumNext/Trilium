@@ -1,4 +1,4 @@
-import { app_info as appInfo, getLog, getMessagingProvider, getPlatform, utils } from "@triliumnext/core";
+import { app_info as appInfo, getLog, getMessagingProvider, getPlatform, initMessaging, utils } from "@triliumnext/core";
 import type { Express } from "express";
 import fs from "fs";
 import http from "http";
@@ -6,6 +6,7 @@ import https from "https";
 import tmp from "tmp";
 
 import buildApp from "./app.js";
+import CompositeMessagingProvider from "./services/composite_messaging_provider.js";
 import config from "./services/config.js";
 import { startCpuProfiler, writeCpuProfile } from "./services/cpu_profiler.js";
 import { registerOcrHandlers } from "./services/handlers.js";
@@ -84,9 +85,17 @@ export default async function startTriliumServer(): Promise<Express> {
     // initialised by their owning app before startup. Gating on the concrete
     // type keeps www.ts platform-agnostic.
     const messaging = getMessagingProvider();
+    const sessionParser = (await import("./routes/session_parser.js")).default;
     if (messaging instanceof WebSocketMessagingProvider) {
-        const sessionParser = (await import("./routes/session_parser.js")).default;
         messaging.init(httpServer, sessionParser);
+    } else {
+        // Desktop: the renderer talks over Electron IPC, but browsers hitting
+        // the TCP listener (localhost, or the LAN with allowLanAccess) still
+        // need a WebSocket for entity updates. Bind a session-authenticated
+        // WS endpoint alongside IPC and fan broadcasts out to both (#10589).
+        const browserMessaging = new WebSocketMessagingProvider();
+        browserMessaging.init(httpServer, sessionParser);
+        initMessaging(new CompositeMessagingProvider([messaging, browserMessaging]));
     }
 
     const { ws } = await import("@triliumnext/core");

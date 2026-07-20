@@ -7,9 +7,10 @@ import appPath from "../services/app_path.js";
 import assetPath from "../services/asset_path.js";
 import config from "../services/config.js";
 import { getLog } from "@triliumnext/core";
+import { isInternalElectronRequest } from "../services/electron_request.js";
 import port from "../services/port.js";
 import openID from "../services/open_id.js";
-import { isDev, isElectron, isMac, isWindows11 } from "../services/utils.js";
+import { isDev, isMac, isWindows11 } from "../services/utils.js";
 import totp from "../services/totp.js";
 import { generateCsrfToken } from "./csrf_protection.js";
 
@@ -25,7 +26,15 @@ export function bootstrap(req: Request, res: Response) {
         req.session.csrfInitialized = true;
     }
 
-    const view = getView(req);
+    // The desktop app serves two kinds of clients: its own renderer (requests
+    // dispatched over the trilium-app:// protocol carry the internal marker)
+    // and ordinary browsers on the TCP listener (localhost or, with
+    // allowLanAccess, the LAN). Only the former is the trusted Electron shell;
+    // browsers must get the same pre-auth flow as the web/server build, so all
+    // Electron-specific branches below key off the per-request marker rather
+    // than the process-wide isElectron flag (#10589).
+    const isElectronRenderer = isInternalElectronRequest(req);
+    const view = getView(req, isElectronRenderer);
     const isDbInitialized = sql_init.isDbInitialized();
     // When auth is disabled the user is implicitly authenticated, so the set-password
     // and login pre-auth screens never apply — fall through to the full payload.
@@ -35,7 +44,7 @@ export function bootstrap(req: Request, res: Response) {
         baseApiUrl: "api/",
         appPath,
         isStandalone: false,
-        isElectron,
+        isElectron: isElectronRenderer,
         isDev,
         platform: process.platform,
         triliumVersion: packageJson.version,
@@ -44,10 +53,12 @@ export function bootstrap(req: Request, res: Response) {
         instanceName: config.General ? config.General.instanceName : null,
         // The desktop renderer loads from trilium-app://, so location-based
         // ws:// URL derivation no longer works there. Send an absolute URL.
-        wsBaseUrl: isElectron ? `ws://127.0.0.1:${port}/` : undefined,
+        // Browsers must NOT get this: they derive the WS URL from their own
+        // location, which also works across the LAN.
+        wsBaseUrl: isElectronRenderer ? `ws://127.0.0.1:${port}/` : undefined,
         // Same reason for HTTP-origin-dependent UI (e.g. the MCP URL shown
         // in Options) — give the renderer a real loopback origin to display.
-        httpBaseUrl: isElectron
+        httpBaseUrl: isElectronRenderer
             ? `${config["Network"]["https"] ? "https" : "http"}://127.0.0.1:${port}`
             : undefined
     };
@@ -55,14 +66,14 @@ export function bootstrap(req: Request, res: Response) {
         res.send({
             ...commonItems,
             hasNativeTitleBar: false,
-            hasBackgroundEffects: isElectron && (isWindows11 || isMac),
+            hasBackgroundEffects: isElectronRenderer && (isWindows11 || isMac),
             isMainWindow: true,
             appCssNoteIds: []
         } satisfies BootstrapDefinition);
         return;
     }
 
-    if (!isElectron && !noAuthentication && !passwordService.isPasswordSet()) {
+    if (!isElectronRenderer && !noAuthentication && !passwordService.isPasswordSet()) {
         // Pre-auth window: the DB is initialized but no password has been set yet.
         // This screen is web/server-only — the desktop app manages its protected-notes
         // password through the options UI and never gates the app on it — so we exclude
@@ -80,7 +91,7 @@ export function bootstrap(req: Request, res: Response) {
         return;
     }
 
-    if (!isElectron && !noAuthentication && !req.session.loggedIn) {
+    if (!isElectronRenderer && !noAuthentication && !req.session.loggedIn) {
         // Pre-auth window: a password is set but the user hasn't logged in. Web/server
         // only — the desktop app doesn't gate on a web session. Serve a minimal payload
         // (no CSRF token / session data) carrying `loggedIn: false` plus the login-screen
@@ -133,9 +144,9 @@ export function bootstrap(req: Request, res: Response) {
         loggedIn: true,
         csrfToken,
         oauthJustEnrolled,
-        hasNativeTitleBar: isElectron && nativeTitleBarVisible,
+        hasNativeTitleBar: isElectronRenderer && nativeTitleBarVisible,
         hasBackgroundEffects: options.backgroundEffects === "true"
-            && isElectron
+            && isElectronRenderer
             && (isWindows11 || isMac)
             && !nativeTitleBarVisible,
         isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
@@ -151,14 +162,15 @@ export function bootstrap(req: Request, res: Response) {
     } satisfies BootstrapDefinition);
 }
 
-function getView(req: Request): View {
+function getView(req: Request, isElectronRenderer: boolean): View {
     // Special override for printing.
     if ("print" in req.query) {
         return "print";
     }
 
-    // Electron always uses the desktop view.
-    if (isElectron) {
+    // The Electron renderer always uses the desktop view; browsers connecting
+    // to the desktop's TCP listener go through the normal detection below.
+    if (isElectronRenderer) {
         return "desktop";
     }
 

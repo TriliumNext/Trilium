@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import utils, {
     arrayEqual,
+    buildShareUrl,
     clearBrowserCache,
     createImageSrcUrl,
     escapeHtml,
@@ -849,6 +850,21 @@ describe("handleRightToLeftPlacement", () => {
         expect(handleRightToLeftPlacement("right")).toBe("left");
         expect(handleRightToLeftPlacement("top")).toBe("top");
         window.glob.isRtl = original;
+    });
+});
+
+describe("buildShareUrl", () => {
+    afterEach(() => {
+        delete window.glob.httpBaseUrl;
+    });
+
+    it("prefers the injected httpBaseUrl (desktop renderer on trilium-app://)", () => {
+        window.glob.httpBaseUrl = "http://127.0.0.1:37840";
+        expect(buildShareUrl("abc")).toBe("http://127.0.0.1:37840/share/abc");
+    });
+
+    it("derives the URL from the page location in the browser", () => {
+        expect(buildShareUrl("abc")).toBe(`${location.origin}${location.pathname}share/abc`);
     });
 });
 

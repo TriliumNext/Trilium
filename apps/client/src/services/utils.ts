@@ -899,6 +899,21 @@ export function handleRightToLeftPlacement<T extends string>(placement: T) {
     return placement;
 }
 
+/**
+ * Builds the browser-openable URL of a shared note. In the desktop app the
+ * renderer itself lives on the custom `trilium-app://` scheme, which no
+ * browser can open — the server injects `httpBaseUrl` (the desktop's real
+ * loopback HTTP origin) for that case. Everywhere else the page's own
+ * location is already browser-reachable.
+ */
+export function buildShareUrl(shareId: string) {
+    if (window.glob.httpBaseUrl) {
+        return `${window.glob.httpBaseUrl}/share/${shareId}`;
+    }
+
+    return `${location.origin}${location.pathname}share/${shareId}`;
+}
+
 export default {
     reloadFrontendApp,
     restartDesktopApp,
@@ -945,5 +960,6 @@ export default {
     triggerDownload,
     compareVersions,
     isUpdateAvailable,
-    isLaunchBarConfig
+    isLaunchBarConfig,
+    buildShareUrl
 };
