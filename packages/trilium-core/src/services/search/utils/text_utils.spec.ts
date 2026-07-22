@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateOptimizedEditDistance, validateFuzzySearchTokens, fuzzyMatchWord, stripHtmlTags, stripWordPunctuation, tokenizeIntoWords, wordsContainPhrase } from './text_utils.js';
+import { calculateOptimizedEditDistance, validateFuzzySearchTokens, fuzzyMatchWord, fuzzyMatchWordWithResult, getAutoMaxEditDistance, stripHtmlTags, stripWordPunctuation, tokenizeIntoWords, wordsContainPhrase } from './text_utils.js';
 
 describe('Fuzzy Search Core', () => {
     describe('calculateOptimizedEditDistance', () => {
@@ -49,10 +49,14 @@ describe('Fuzzy Search Core', () => {
             expect(fuzzyMatchWord('naive', 'naïve')).toBe(true);
         });
 
-        it('matches with typos within distance threshold', () => {
+        it('matches with typos within the length-scaled distance threshold', () => {
+            // helo -> hello is a single edit (d=1), allowed for 5-char tokens.
             expect(fuzzyMatchWord('hello', 'helo')).toBe(true);
-            expect(fuzzyMatchWord('world', 'wrold')).toBe(true);
-            expect(fuzzyMatchWord('test', 'tset')).toBe(true);
+            // wrold/tset are transpositions (Levenshtein d=2). Under length-scaled
+            // distance, <=5-char tokens only allow d=1, so these no longer match.
+            // (Old behavior allowed a flat d=2 for any length — too loose, #10616.)
+            expect(fuzzyMatchWord('world', 'wrold')).toBe(false);
+            expect(fuzzyMatchWord('test', 'tset')).toBe(false);
             expect(fuzzyMatchWord('test', 'xyz')).toBe(false);
         });
 
@@ -104,6 +108,44 @@ describe('Fuzzy Search Core', () => {
         it('returns an empty array for empty or whitespace-only input', () => {
             expect(tokenizeIntoWords('')).toEqual([]);
             expect(tokenizeIntoWords('   ')).toEqual([]);
+        });
+    });
+
+    describe('getAutoMaxEditDistance', () => {
+        it('scales the allowed edit distance by token length (Elasticsearch AUTO-style)', () => {
+            // 0-2 chars: no fuzzy.
+            expect(getAutoMaxEditDistance(0)).toBe(0);
+            expect(getAutoMaxEditDistance(1)).toBe(0);
+            expect(getAutoMaxEditDistance(2)).toBe(0);
+            // 3-5 chars: 1 edit.
+            expect(getAutoMaxEditDistance(3)).toBe(1);
+            expect(getAutoMaxEditDistance(4)).toBe(1);
+            expect(getAutoMaxEditDistance(5)).toBe(1);
+            // 6+ chars: 2 edits.
+            expect(getAutoMaxEditDistance(6)).toBe(2);
+            expect(getAutoMaxEditDistance(8)).toBe(2);
+            expect(getAutoMaxEditDistance(20)).toBe(2);
+        });
+
+        it('rejects distance-2 typos for short (<=5 char) tokens', () => {
+            // "sync" (4) vs "send": d=2 > 1 -> no fuzzy match (was a false positive).
+            expect(fuzzyMatchWord('sync', 'send')).toBe(false);
+            // "ceck" (4) vs "tech": d=2 > 1 -> no fuzzy match.
+            expect(fuzzyMatchWord('ceck', 'tech')).toBe(false);
+        });
+
+        it('allows distance-2 typos for longer (6+ char) tokens', () => {
+            // "combinef" (8) vs "combined": d=1 <= 2 -> fuzzy match.
+            expect(fuzzyMatchWord('combinef', 'combined')).toBe(true);
+        });
+
+        it('does not treat a substring word as a fuzzy match', () => {
+            // "sync" is a substring of "async"; substring semantics belong to the
+            // callers' own .includes() checks, not to the fuzzy matcher. So the
+            // fuzzy matcher alone reports no match here.
+            expect(fuzzyMatchWordWithResult('sync', 'async text')).toBeNull();
+            // Sanity: a genuine 1-edit typo of a 4-char token still matches.
+            expect(fuzzyMatchWordWithResult('sync', 'sinc')).toBe('sinc');
         });
     });
 

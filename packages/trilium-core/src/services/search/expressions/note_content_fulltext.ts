@@ -8,6 +8,7 @@ import type SearchContext from "../search_context.js";
 import {
     FUZZY_SEARCH_CONFIG,
     fuzzyMatchWord,
+    getAutoMaxEditDistance,
     normalizeSearchText,
     stripWordPunctuation,
     tokenizeIntoWords,
@@ -437,8 +438,9 @@ class NoteContentFulltextExp extends Expression {
      * Fuzzy matches a single token against a single word
      */
     private fuzzyMatchSingle(token: string, word: string): boolean {
-        // Use shared optimized fuzzy matching logic
-        return fuzzyMatchWord(token, word, FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE);
+        // Use shared optimized fuzzy matching logic with a length-scaled (AUTO)
+        // edit-distance bound so short tokens don't produce false positives.
+        return fuzzyMatchWord(token, word, getAutoMaxEditDistance(token.length));
     }
 }
 

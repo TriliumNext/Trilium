@@ -3,6 +3,7 @@ import becca_service from "../../becca/becca_service.js";
 import {
     calculateOptimizedEditDistance,
     FUZZY_SEARCH_CONFIG,
+    getAutoMaxEditDistance,
     normalizeSearchText,
     stripWordPunctuation,
     tokenizeIntoWords,
@@ -116,9 +117,12 @@ class SearchResult {
                 } else if (enableFuzzyMatching &&
                            normalizedToken.length >= FUZZY_SEARCH_CONFIG.MIN_FUZZY_TOKEN_LENGTH &&
                            this.fuzzyScore < SCORE_WEIGHTS.MAX_TOTAL_FUZZY_SCORE) {
-                    // Only compute edit distance when fuzzy matching is enabled
-                    const editDistance = calculateOptimizedEditDistance(chunk, normalizedToken, FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE);
-                    if (editDistance <= FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE) {
+                    // Only compute edit distance when fuzzy matching is enabled.
+                    // Cap the per-chunk distance with the length-scaled (AUTO) bound
+                    // so short tokens can't fuzzy-match at distance 2.
+                    const maxEditDistance = getAutoMaxEditDistance(normalizedToken.length);
+                    const editDistance = calculateOptimizedEditDistance(chunk, normalizedToken, maxEditDistance);
+                    if (editDistance <= maxEditDistance) {
                         const fuzzyWeight = SCORE_WEIGHTS.TOKEN_FUZZY_MATCH * (1 - editDistance / FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE);
                         const cappedTokenLength = Math.min(tokens[ti].length, SCORE_WEIGHTS.MAX_FUZZY_TOKEN_LENGTH_MULTIPLIER);
                         const fuzzyTokenScore = Math.min(

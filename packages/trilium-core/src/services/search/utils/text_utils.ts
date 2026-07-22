@@ -280,6 +280,31 @@ function escapeRegExp(string: string): string {
 }
 
 /**
+ * Returns the maximum edit distance allowed for a fuzzy match of a token of the
+ * given length, scaled by length in the style of Elasticsearch's `fuzziness:
+ * AUTO`. A flat edit distance of 2 is too loose for short words (e.g. "sync"
+ * would match "send"), so short tokens get a tighter bound.
+ *
+ * - 0-2 chars: 0 (no fuzzy matching)
+ * - 3-5 chars: 1
+ * - 6+ chars: 2
+ *
+ * The result never exceeds {@link FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE}.
+ *
+ * @param tokenLength The length of the token being matched.
+ * @returns The maximum allowed edit distance for that token.
+ */
+export function getAutoMaxEditDistance(tokenLength: number): number {
+    if (tokenLength <= 2) {
+        return 0;
+    }
+    if (tokenLength <= 5) {
+        return 1;
+    }
+    return FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE;
+}
+
+/**
  * Checks if a word matches a token with fuzzy matching and returns the matched word.
  * Optimized for common case where distances are small.
  *
@@ -288,7 +313,7 @@ function escapeRegExp(string: string): string {
  * @param maxDistance Maximum allowed edit distance
  * @returns The matched word if found, null otherwise
  */
-export function fuzzyMatchWordWithResult(token: string, text: string, maxDistance: number = FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE): string | null {
+export function fuzzyMatchWordWithResult(token: string, text: string, maxDistance: number = getAutoMaxEditDistance(token.length)): string | null {
     // Input validation
     if (typeof token !== 'string' || typeof text !== 'string') {
         return null;
@@ -304,12 +329,11 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
         const normalizedToken = token.toLowerCase();
         const normalizedText = text.toLowerCase();
 
-        // Exact match check first (most common case)
-        if (normalizedText.includes(normalizedToken)) {
-            // Find the exact match position and return the original substring with case preserved
-            const matchIndex = normalizedText.indexOf(normalizedToken);
-            return text.substring(matchIndex, matchIndex + normalizedToken.length);
-        }
+        // NOTE: no whole-text substring shortcut here. Substring relationships are
+        // NOT fuzzy matches — callers that want substring semantics do their own
+        // .includes() check first (note_flat_text smartMatch, build_comparator ~=,
+        // note_content_fulltext tokenMatchesContent). Letting "async" count as a
+        // fuzzy match for "sync" was a false positive (#10616).
 
         // For fuzzy matching, split into words and check each against the token
         const words = normalizedText.split(/\s+/).filter(word => word.length > 0);
@@ -319,17 +343,20 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
             const word = words[i];
             const originalWord = originalWords[i];
 
+            // A word that literally contains the token is a substring relationship,
+            // not a fuzzy (typo) one — skip it so e.g. "sync" does not fuzzy-match
+            // "async". Callers handle substrings via their own .includes() checks.
+            if (word.length > normalizedToken.length && word.includes(normalizedToken)) {
+                continue;
+            }
+
             // Skip if word is too different in length for fuzzy matching
             if (Math.abs(word.length - normalizedToken.length) > maxDistance) {
                 continue;
             }
 
-            // For very short tokens or very different lengths, be more strict
-            if (normalizedToken.length < 4 || Math.abs(word.length - normalizedToken.length) > 2) {
-                continue;
-            }
-
-            // Use optimized edit distance calculation
+            // Use optimized edit distance calculation. maxDistance is length-scaled
+            // (Elasticsearch AUTO-style) via getAutoMaxEditDistance by default.
             const distance = calculateOptimizedEditDistance(normalizedToken, word, maxDistance);
             if (distance <= maxDistance) {
                 return originalWord; // Return the original word with case preserved
@@ -353,7 +380,7 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
  * @param maxDistance Maximum allowed edit distance
  * @returns True if the word matches the token within the distance threshold
  */
-export function fuzzyMatchWord(token: string, text: string, maxDistance: number = FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE): boolean {
+export function fuzzyMatchWord(token: string, text: string, maxDistance: number = getAutoMaxEditDistance(token.length)): boolean {
     return fuzzyMatchWordWithResult(token, text, maxDistance) !== null;
 }
 
