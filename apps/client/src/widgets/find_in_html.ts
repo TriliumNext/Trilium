@@ -2,6 +2,7 @@
 // uses for highlighting matches, use the same one on CodeMirror
 // for consistency
 import type Mark from "mark.js";
+import { expandCollapsedAncestors } from "../services/collapsibles.js";
 import utils from "../services/utils.js";
 import type FindWidget from "./find.js";
 import type { FindResult } from "./find.js";
@@ -85,6 +86,10 @@ export default class FindInHtml {
         if (this.$results?.length) {
             const $current = this.$results.eq(this.currentIndex);
             this.$results.removeClass(FIND_RESULT_SELECTED_CSS_CLASSNAME);
+            // Reveal the match if it's hidden inside a closed <details> (e.g. a collapsed
+            // CKEditor collapsible block) before scrolling to it, otherwise scrollIntoView is a
+            // no-op for content that isn't actually visible (#10616).
+            expandCollapsedAncestors($current[0]);
             $current[0].scrollIntoView({ block: 'center', inline: 'center'});
             $current.addClass(FIND_RESULT_SELECTED_CSS_CLASSNAME);
         }

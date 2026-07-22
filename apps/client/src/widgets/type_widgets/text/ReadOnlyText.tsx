@@ -10,6 +10,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "pre
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
+import { expandCollapsedAncestors } from "../../../services/collapsibles";
 import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
 import { getLocaleById } from "../../../services/i18n";
 import { applyLinkEmbeds } from "../../../services/link_embed";
@@ -33,7 +34,10 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
         if (!viewScope?.bookmark || !readOnlyContentRef.current) return;
 
         const el = readOnlyContentRef.current.querySelector(`[id="${CSS.escape(viewScope.bookmark)}"]`);
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (el) {
+            expandCollapsedAncestors(el);
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
         viewScope.bookmark = undefined;
     }, [blob]);
 

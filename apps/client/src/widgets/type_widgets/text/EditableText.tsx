@@ -6,6 +6,7 @@ import { deferred } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
+import { expandCollapsedAncestors } from "../../../services/collapsibles";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl } from "../../../services/link";
@@ -63,10 +64,14 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             // Scroll to bookmark anchor if navigated with ?bookmark=...
             const viewScope = noteContext?.viewScope;
             if (viewScope?.bookmark) {
+                const bookmark = viewScope.bookmark;
                 requestAnimationFrame(() => {
                     const el = watchdogRef.current?.editor?.editing.view.getDomRoot()
-                        ?.querySelector(`[id="${CSS.escape(viewScope.bookmark!)}"]`);
-                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        ?.querySelector(`[id="${CSS.escape(bookmark)}"]`);
+                    if (el) {
+                        expandCollapsedAncestors(el);
+                        el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
                     viewScope.bookmark = undefined;
                 });
             }
