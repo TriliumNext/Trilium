@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateOptimizedEditDistance, validateFuzzySearchTokens, fuzzyMatchWord, stripHtmlTags } from './text_utils.js';
+import { calculateOptimizedEditDistance, validateFuzzySearchTokens, fuzzyMatchWord, stripHtmlTags, stripWordPunctuation, tokenizeIntoWords, wordsContainPhrase } from './text_utils.js';
 
 describe('Fuzzy Search Core', () => {
     describe('calculateOptimizedEditDistance', () => {
@@ -60,6 +60,67 @@ describe('Fuzzy Search Core', () => {
             expect(fuzzyMatchWord('', 'test')).toBe(false);
             expect(fuzzyMatchWord('test', '')).toBe(false);
             expect(fuzzyMatchWord('a', 'b')).toBe(false); // Very short tokens
+        });
+    });
+
+    describe('stripWordPunctuation', () => {
+        it('strips leading and trailing punctuation while keeping the inner word', () => {
+            expect(stripWordPunctuation('(sync)')).toBe('sync');
+            expect(stripWordPunctuation('sync,')).toBe('sync');
+            expect(stripWordPunctuation('"sync"')).toBe('sync');
+            expect(stripWordPunctuation('—dash—')).toBe('dash');
+        });
+
+        it('keeps connector/symbol chars and inner punctuation', () => {
+            // "+" is a math symbol (Sm), "_" is a connector (Pc) — both deliberately kept.
+            expect(stripWordPunctuation('c++')).toBe('c++');
+            expect(stripWordPunctuation('_private')).toBe('_private');
+            // Inner apostrophe is preserved; only leading/trailing punctuation is stripped.
+            expect(stripWordPunctuation("d'artagnan")).toBe("d'artagnan");
+        });
+
+        it('handles words that are entirely punctuation or empty', () => {
+            expect(stripWordPunctuation('...')).toBe('');
+            expect(stripWordPunctuation('')).toBe('');
+        });
+    });
+
+    describe('tokenizeIntoWords', () => {
+        it('normalizes, splits on whitespace and strips per-word punctuation', () => {
+            expect(tokenizeIntoWords('see (sync) mode')).toEqual(['see', 'sync', 'mode']);
+            expect(tokenizeIntoWords('sync, async')).toEqual(['sync', 'async']);
+            expect(tokenizeIntoWords('"sync"')).toEqual(['sync']);
+        });
+
+        it('keeps symbol/connector tokens and inner punctuation intact', () => {
+            expect(tokenizeIntoWords('c++ _private')).toEqual(['c++', '_private']);
+            expect(tokenizeIntoWords("d'artagnan is dead")).toEqual(['d\'artagnan', 'is', 'dead']);
+        });
+
+        it('normalizes diacritics via the shared normalizer', () => {
+            expect(tokenizeIntoWords('ktorý')).toEqual(['ktory']);
+        });
+
+        it('returns an empty array for empty or whitespace-only input', () => {
+            expect(tokenizeIntoWords('')).toEqual([]);
+            expect(tokenizeIntoWords('   ')).toEqual([]);
+        });
+    });
+
+    describe('wordsContainPhrase', () => {
+        it('matches a consecutive run of words in order', () => {
+            expect(wordsContainPhrase(['a', 'exact', 'phrase', 'b'], ['exact', 'phrase'])).toBe(true);
+            expect(wordsContainPhrase(['exact', 'phrase'], ['exact', 'phrase'])).toBe(true);
+        });
+
+        it('does not match non-consecutive or out-of-order words', () => {
+            expect(wordsContainPhrase(['exact', 'x', 'phrase'], ['exact', 'phrase'])).toBe(false);
+            expect(wordsContainPhrase(['phrase', 'exact'], ['exact', 'phrase'])).toBe(false);
+        });
+
+        it('never matches an empty phrase or a phrase longer than the haystack', () => {
+            expect(wordsContainPhrase(['a', 'b'], [])).toBe(false);
+            expect(wordsContainPhrase(['a'], ['a', 'b'])).toBe(false);
         });
     });
 

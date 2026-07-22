@@ -3,7 +3,10 @@ import becca_service from "../../becca/becca_service.js";
 import {
     calculateOptimizedEditDistance,
     FUZZY_SEARCH_CONFIG,
-    normalizeSearchText} from "./utils/text_utils.js";
+    normalizeSearchText,
+    stripWordPunctuation,
+    tokenizeIntoWords,
+    wordsContainPhrase} from "./utils/text_utils.js";
 
 // Scoring constants for better maintainability
 const SCORE_WEIGHTS = {
@@ -89,17 +92,20 @@ class SearchResult {
     }
 
     addScoreForStrings(tokens: string[], str: string, factor: number, enableFuzzyMatching: boolean = true) {
-        // normalizeSearchText already lowercases — no need for .toLowerCase() first
-        const normalizedStr = normalizeSearchText(str);
-        const chunks = normalizedStr.split(" ");
+        // Tokenize (strip boundary punctuation) so a chunk like "(sync)" scores as
+        // an exact token match for "sync" rather than only a contains match.
+        const chunks = tokenizeIntoWords(str);
 
-        // Pre-normalize tokens once instead of per-chunk
-        const normalizedTokens = tokens.map(t => normalizeSearchText(t));
+        // Pre-normalize and strip tokens once instead of per-chunk
+        const normalizedTokens = tokens.map(t => stripWordPunctuation(normalizeSearchText(t)));
 
         let tokenScore = 0;
         for (const chunk of chunks) {
             for (let ti = 0; ti < normalizedTokens.length; ti++) {
                 const normalizedToken = normalizedTokens[ti];
+                if (!normalizedToken) {
+                    continue;
+                }
 
                 if (chunk === normalizedToken) {
                     tokenScore += SCORE_WEIGHTS.TOKEN_EXACT_MATCH * tokens[ti].length * factor;
@@ -130,12 +136,12 @@ class SearchResult {
     }
 
     /**
-     * Checks if the query matches as a complete word in the text
+     * Checks if the query matches as a complete word (or consecutive run of words)
+     * in the text. Tokenizing both sides makes this punctuation-aware, so a title
+     * like "(sync) notes" is a word match for the query "sync".
      */
     private isWordMatch(text: string, query: string): boolean {
-        return text.includes(` ${query} `) ||
-               text.startsWith(`${query} `) ||
-               text.endsWith(` ${query}`);
+        return wordsContainPhrase(tokenizeIntoWords(text), tokenizeIntoWords(query));
     }
 
     /**

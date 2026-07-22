@@ -356,3 +356,83 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
 export function fuzzyMatchWord(token: string, text: string, maxDistance: number = FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE): boolean {
     return fuzzyMatchWordWithResult(token, text, maxDistance) !== null;
 }
+
+/**
+ * Unicode character class for punctuation that should be trimmed from word
+ * boundaries during tokenization: initial/final quotes (Pi/Pf), open/close
+ * brackets (Ps/Pe), other punctuation such as `,` `.` `!` `#` `"` `'` (Po) and
+ * dashes (Pd).
+ *
+ * Deliberately EXCLUDED so those characters survive tokenization:
+ * - Connector punctuation (Pc), e.g. `_` — keeps identifiers like `_private`.
+ * - Symbols (S*), e.g. `+`, `=`, `$` — keeps tokens like `c++`.
+ */
+const WORD_BOUNDARY_PUNCTUATION = "\\p{Pi}\\p{Pf}\\p{Ps}\\p{Pe}\\p{Po}\\p{Pd}";
+const LEADING_PUNCTUATION = new RegExp(`^[${WORD_BOUNDARY_PUNCTUATION}]+`, "u");
+const TRAILING_PUNCTUATION = new RegExp(`[${WORD_BOUNDARY_PUNCTUATION}]+$`, "u");
+
+/**
+ * Strips leading and trailing punctuation from a single word so that a search
+ * token and a content word compare equal even when the content word is wrapped
+ * in punctuation, e.g. `(sync)` -> `sync`, `sync,` -> `sync`, `"sync"` -> `sync`.
+ *
+ * Tradeoffs (documented deliberately):
+ * - KEEPS connector punctuation (`_`, class Pc) and symbols (`+`, `=`, `$`,
+ *   class S), so `c++` and `_private` survive intact.
+ * - Only leading/trailing punctuation is removed; INNER punctuation is untouched,
+ *   so `d'artagnan` keeps its apostrophe.
+ * - Trailing symbol-like punctuation that IS in the stripped classes is removed:
+ *   `f#` -> `f`. This is acceptable because stripping is applied symmetrically to
+ *   both the query token and the content word, so matching stays self-consistent.
+ *
+ * @param word A single word (no internal whitespace expected).
+ * @returns The word with boundary punctuation removed (may be empty).
+ */
+export function stripWordPunctuation(word: string): string {
+    if (!word) {
+        return "";
+    }
+
+    return word.replace(LEADING_PUNCTUATION, "").replace(TRAILING_PUNCTUATION, "");
+}
+
+/**
+ * Splits text into normalized, punctuation-stripped words. This is the
+ * tokenization used by exact word / phrase matching so that punctuation in
+ * content (parentheses, quotes, trailing commas, newlines) does not prevent a
+ * word from matching.
+ *
+ * Pipeline: {@link normalizeSearchText} (lowercase + strip diacritics) ->
+ * split on whitespace -> {@link stripWordPunctuation} each -> drop empties.
+ *
+ * @param text The text to tokenize.
+ * @returns An array of normalized words with empty entries removed.
+ */
+export function tokenizeIntoWords(text: string): string[] {
+    return normalizeSearchText(text)
+        .split(/\s+/)
+        .map(stripWordPunctuation)
+        .filter((word) => word.length > 0);
+}
+
+/**
+ * Returns true if `phrase` appears as a consecutive run of words inside `words`.
+ * Both arrays are expected to already be tokenized (e.g. via
+ * {@link tokenizeIntoWords}). An empty phrase never matches.
+ *
+ * @param words The haystack words, in order.
+ * @param phrase The needle words that must appear consecutively and in order.
+ */
+export function wordsContainPhrase(words: string[], phrase: string[]): boolean {
+    if (phrase.length === 0 || phrase.length > words.length) {
+        return false;
+    }
+
+    for (let i = 0; i <= words.length - phrase.length; i++) {
+        if (phrase.every((phraseWord, j) => words[i + j] === phraseWord)) {
+            return true;
+        }
+    }
+
+    return false;
+}

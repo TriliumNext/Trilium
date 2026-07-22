@@ -1,4 +1,4 @@
-import { normalizeSearchText, fuzzyMatchWord, FUZZY_SEARCH_CONFIG } from "../utils/text_utils.js";
+import { FUZZY_SEARCH_CONFIG, fuzzyMatchWord, normalizeSearchText, stripWordPunctuation, tokenizeIntoWords } from "../utils/text_utils.js";
 
 const cachedRegexes: Record<string, RegExp> = {};
 
@@ -27,9 +27,10 @@ const stringComparators: Record<string, Comparator<string>> = {
             return normalizedVal.includes(normalizedCompared);
         }
 
-        // For single word, split into words and check for exact word match
-        const words = normalizedVal.split(/\s+/);
-        return words.some(word => word === normalizedCompared);
+        // For single word, tokenize into punctuation-stripped words and check for
+        // an exact word match, so a value like "(Books)" matches the token "books".
+        const words = tokenizeIntoWords(normalizedVal);
+        return words.some(word => word === stripWordPunctuation(normalizedCompared));
     },
     "!=": (comparedValue) => (val) => {
         // Negation of exact word/phrase match
@@ -44,9 +45,10 @@ const stringComparators: Record<string, Comparator<string>> = {
             return !normalizedVal.includes(normalizedCompared);
         }
 
-        // For single word, split into words and check for exact word match, then negate
-        const words = normalizedVal.split(/\s+/);
-        return !words.some(word => word === normalizedCompared);
+        // For single word, tokenize into punctuation-stripped words and check for
+        // an exact word match, then negate.
+        const words = tokenizeIntoWords(normalizedVal);
+        return !words.some(word => word === stripWordPunctuation(normalizedCompared));
     },
     ">": (comparedValue) => (val) => val > comparedValue,
     ">=": (comparedValue) => (val) => val >= comparedValue,
@@ -72,8 +74,8 @@ const stringComparators: Record<string, Comparator<string>> = {
             return true;
         }
         
-        // Then try fuzzy word matching
-        const words = normalizedVal.split(/\s+/);
+        // Then try fuzzy word matching over the tokenized (punctuation-stripped) value
+        const words = tokenizeIntoWords(normalizedVal);
         return words.some(word => fuzzyMatchWord(normalizedCompared, word));
     },
     "~*": (comparedValue) => (val) => {

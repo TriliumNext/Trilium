@@ -5,6 +5,8 @@ import BBranch from "../../../becca/entities/bbranch.js";
 import SearchContext from "../search_context.js";
 import dateUtils from "../../utils/date.js";
 import becca from "../../../becca/becca.js";
+import { getContext } from "../../context.js";
+import noteService from "../../notes.js";
 import { findNoteByTitle, note, NoteBuilder } from "../../../test/becca_mocking.js";
 
 describe("Search", () => {
@@ -385,6 +387,25 @@ describe("Search", () => {
         // Without =, should find all matches containing "test" substring
         searchResults = searchService.findResultsWithQuery("test", searchContext);
         expect(searchResults.length).toEqual(5);
+    });
+
+    it("exact word search matches a content word wrapped in punctuation (#10616)", () => {
+        // The note body contains "(sync)" (parenthesised). Exact-word search for
+        // "sync" must still find it — content tokenization strips boundary
+        // punctuation so "(sync)" tokenizes to the word "sync". The title
+        // deliberately omits the word so the match comes from the body.
+        const guide = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root",
+            title: "Networking Guide",
+            content: "see (sync) mode",
+            type: "text"
+        }).note);
+
+        const searchContext = new SearchContext();
+        const searchResults = searchService.findResultsWithQuery("=sync", searchContext);
+
+        expect(searchResults.length).toEqual(1);
+        expect(searchResults[0].noteId).toEqual(guide.noteId);
     });
 
     it("fuzzy attribute search", () => {

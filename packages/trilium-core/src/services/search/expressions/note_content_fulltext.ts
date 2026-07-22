@@ -9,8 +9,11 @@ import {
     FUZZY_SEARCH_CONFIG,
     fuzzyMatchWord,
     normalizeSearchText,
+    stripWordPunctuation,
+    tokenizeIntoWords,
     validateAndPreprocessContent,
-    validateFuzzySearchTokens} from "../utils/text_utils.js";
+    validateFuzzySearchTokens,
+    wordsContainPhrase} from "../utils/text_utils.js";
 import Expression from "./expression.js";
 import preprocessContent from "./note_content_fulltext_preprocessor.js";
 import { getSql } from "../../../services/sql/index.js";
@@ -135,8 +138,10 @@ class NoteContentFulltextExp extends Expression {
      * @returns true if the word is found as an exact match (not substring)
      */
     private exactWordMatch(wordToFind: string, text: string): boolean {
-        const words = text.split(/\s+/);
-        return words.some(word => word === wordToFind);
+        // Strip boundary punctuation from both sides so a content word wrapped in
+        // punctuation (e.g. "(sync)") still matches the bare token ("sync").
+        const needle = stripWordPunctuation(wordToFind);
+        return tokenizeIntoWords(text).some(word => word === needle);
     }
 
     /**
@@ -176,14 +181,20 @@ class NoteContentFulltextExp extends Expression {
             return this.exactWordMatch(phrase, normalizedContent);
         }
 
-        // For multi-word phrases, check if the phrase appears as consecutive words
-        if (normalizedContent.includes(phrase)) {
+        // For multi-word phrases, scan the tokenized content for a consecutive run
+        // of the phrase words. Tokenizing (instead of a raw substring scan) lets a
+        // phrase match across punctuation, newlines and repeated whitespace.
+        const phraseWords = normalizedTokens
+            .map(t => stripWordPunctuation(t))
+            .filter(word => word.length > 0);
+        if (wordsContainPhrase(tokenizeIntoWords(content), phraseWords)) {
             return true;
         }
 
-        // For flatText, also check if the phrase appears in attribute values
-        // Attributes in flatText appear as "#name=value" or "~name=value"
-        // So we need to check for "=phrase" to match attribute values
+        // For flatText, also check if the phrase appears in attribute values.
+        // Attributes in flatText appear as "#name=value" or "~name=value", so we
+        // look for "=phrase" against the raw string — this depends on the
+        // #name=value structure and must stay a raw-string scan.
         if (checkFlatTextAttributes && normalizedContent.includes(`=${phrase}`)) {
             return true;
         }
