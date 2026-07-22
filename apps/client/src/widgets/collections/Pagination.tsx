@@ -122,25 +122,38 @@ function createSegment(start: number, length: number, currentPage: number, setPa
     return children;
 }
 
-export function usePagination(note: FNote, noteIds: string[]): PaginationContext {
+export function usePagination(note: FNote, noteIds: string[], defaultPageSize = 20): PaginationContext {
     const [ page, setPage ] = useState(1);
     const [ pageNotes, setPageNotes ] = useState<FNote[]>();
 
-    // Parse page size.
-    const [ pageSize ] = useNoteLabelInt(note, "pageSize");
-    const normalizedPageSize = (pageSize && pageSize > 0 ? pageSize : 20);
+    // Parse page size. An explicit `#pageSize` label always wins; otherwise fall back to the
+    // caller-supplied default (e.g. the synced `searchResultsPageSize` option), and finally to 20
+    // when neither yields a usable positive size.
+    const [ labelPageSize ] = useNoteLabelInt(note, "pageSize");
+    const normalizedPageSize = (labelPageSize && labelPageSize > 0)
+        ? labelPageSize
+        : (defaultPageSize > 0 ? defaultPageSize : 20);
 
     // Calculate start/end index.
     const startIdx = (page - 1) * normalizedPageSize;
     const endIdx = startIdx + normalizedPageSize;
     const pageCount = Math.ceil(noteIds.length / normalizedPageSize);
 
+    // If the page size grows (or the result set shrinks) enough that the current page no longer
+    // exists, step back onto the last valid page so the slice below can't silently yield an empty
+    // page. A no-op in steady state, so existing list/grid callers are unaffected.
+    useEffect(() => {
+        if (pageCount > 0 && page > pageCount) {
+            setPage(pageCount);
+        }
+    }, [ page, pageCount ]);
+
     // Obtain notes within the range.
     const pageNoteIds = noteIds.slice(startIdx, Math.min(endIdx, noteIds.length));
 
     useEffect(() => {
         froca.getNotes(pageNoteIds).then(setPageNotes);
-    }, [ note, noteIds, page, pageSize ]);
+    }, [ note, noteIds, page, normalizedPageSize ]);
 
     return {
         page, setPage, pageNotes, pageCount,
