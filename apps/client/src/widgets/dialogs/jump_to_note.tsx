@@ -5,6 +5,7 @@ import { useRef, useState } from "preact/hooks";
 import appContext from "../../components/app_context";
 import commandRegistry from "../../services/command_registry";
 import { t } from "../../services/i18n";
+import type { ViewScope } from "../../services/link";
 import note_autocomplete, { Suggestion } from "../../services/note_autocomplete";
 import shortcutService from "../../services/shortcuts";
 import Button from "../react/Button";
@@ -64,7 +65,12 @@ export default function JumpToNoteDialogComponent() {
 
         setShown(false);
         if (suggestion.notePath) {
-            appContext.tabManager.getActiveContext()?.setNote(suggestion.notePath);
+            // Only carry search terms into the opened note when the dialog was actually used
+            // as a text search (not the command palette, and not the empty "recent notes" list) —
+            // jumping from a command or an untyped recent-note pick shouldn't highlight anything.
+            const searchString = !isCommandMode ? actualText.current?.trim() : "";
+            const viewScope: JumpToNoteViewScope = searchString ? { searchTerms: [searchString] } : {};
+            appContext.tabManager.getActiveContext()?.setNote(suggestion.notePath, { viewScope });
         } else if (suggestion.commandId) {
             await commandRegistry.executeCommand(suggestion.commandId);
         }
@@ -132,7 +138,8 @@ export default function JumpToNoteDialogComponent() {
                     allowCreatingNotes: true,
                     hideGoToSelectedNoteButton: true,
                     allowJumpToSearchNotes: true,
-                    isCommandPalette: true
+                    isCommandPalette: true,
+                    showContentSnippets: true
                 }}
                 onTextChange={(text) => {
                     actualText.current = text;
@@ -154,3 +161,11 @@ export default function JumpToNoteDialogComponent() {
         </Modal>
     );
 }
+
+/**
+ * Task 8 promotes `searchTerms` onto {@link ViewScope}; widened locally until then (same
+ * pattern as SearchResultCard.tsx's `SearchResultViewScope`). The autocomplete response has
+ * no per-suggestion token list, so we pass the trimmed raw query as a single term rather than
+ * re-deriving a token list client-side — simple, and good enough for jump-to-match highlighting.
+ */
+type JumpToNoteViewScope = ViewScope & { searchTerms?: string[] };

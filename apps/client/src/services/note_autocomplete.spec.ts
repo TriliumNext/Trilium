@@ -337,6 +337,34 @@ describe("autocompleteSource (via dataset)", () => {
         expect(html).toContain("#color=red");
     });
 
+    it("does not render a content snippet by default, even when the suggestion has one", () => {
+        // showContentSnippets defaults to false so compact consumers (link dialogs, relation
+        // editors, @-mentions) don't grow an extra line.
+        const { dataset } = initAndGetSource();
+        const html = dataset.templates.suggestion({
+            highlightedNotePathTitle: "T",
+            highlightedContentSnippet: "some <b>matched</b> content"
+        });
+        expect(html).not.toContain("search-result-content");
+        expect(html).not.toContain("matched");
+    });
+
+    it("does not render a content snippet when showContentSnippets is set but the suggestion has none", () => {
+        const { dataset } = initAndGetSource({ showContentSnippets: true });
+        const html = dataset.templates.suggestion({ highlightedNotePathTitle: "T" });
+        expect(html).not.toContain("search-result-content");
+    });
+
+    it("renders the content snippet when showContentSnippets is enabled (jump-to-note dialog)", () => {
+        const { dataset } = initAndGetSource({ showContentSnippets: true });
+        const html = dataset.templates.suggestion({
+            highlightedNotePathTitle: "T",
+            highlightedContentSnippet: "some <b>matched</b> content"
+        });
+        expect(html).toContain("search-result-content");
+        expect(html).toContain("some <b>matched</b> content");
+    });
+
     it("renders search-notes, create-note and external-link suggestion icons/classes", () => {
         const { dataset } = initAndGetSource();
         expect(dataset.templates.suggestion({ action: "search-notes", highlightedNotePathTitle: "S" }))

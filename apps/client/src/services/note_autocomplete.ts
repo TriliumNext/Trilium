@@ -40,6 +40,8 @@ export interface Suggestion {
     commandShortcut?: string;
     attributeSnippet?: string;
     highlightedAttributeSnippet?: string;
+    contentSnippet?: string;
+    highlightedContentSnippet?: string;
 }
 
 export interface Options {
@@ -54,6 +56,12 @@ export interface Options {
     hideAllButtons?: boolean;
     /** If set, enables command palette mode */
     isCommandPalette?: boolean;
+    /**
+     * If set, note suggestions also render their content snippet (below the attribute
+     * snippet), matching the quick-search dropdown / search results view. Off by default
+     * so compact consumers (link dialogs, relation editors, `@`-mentions) stay unchanged.
+     */
+    showContentSnippets?: boolean;
 }
 
 async function autocompleteSourceForCKEditor(queryText: string) {
@@ -362,6 +370,12 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         // Add attribute snippet inline if available
                         if (suggestion.highlightedAttributeSnippet) {
                             html += `<span class="search-result-attributes">${suggestion.highlightedAttributeSnippet}</span>`;
+                        }
+
+                        // Add content snippet below, only for consumers that opted in (e.g. the
+                        // jump-to-note dialog) — link dialogs/relation editors/`@`-mentions stay compact.
+                        if (options.showContentSnippets && suggestion.highlightedContentSnippet) {
+                            html += `<span class="search-result-content">${suggestion.highlightedContentSnippet}</span>`;
                         }
 
                         html += `</span>`;
