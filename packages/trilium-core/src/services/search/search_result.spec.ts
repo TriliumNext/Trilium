@@ -311,6 +311,14 @@ describe("SearchResult", () => {
 
             // The fuzzy budget was already capped, so the fuzzy content match added 0.
             expect(withFuzzyContent.score).toBe(withoutContent.score);
+
+            // Sanity: on a fresh budget the very same fuzzy content match does contribute,
+            // proving the equality above is the cap gating it rather than a no-op.
+            const fresh = note("Totally Different Title");
+            rootNote.child(fresh);
+            const freshResult = resultFor(fresh);
+            freshResult.computeScore("zzznomatch", ["zzznomatch"], true, { tier: "fuzzy", matchedTokenCount: 5, inOrder: false });
+            expect(freshResult.score).toBeGreaterThan(0);
         });
     });
 
