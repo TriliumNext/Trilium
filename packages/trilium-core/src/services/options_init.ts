@@ -185,6 +185,7 @@ const defaultOptions: DefaultOption[] = [
     // Search settings
     { name: "searchEnableFuzzyMatching", value: "true", isSynced: true },
     { name: "searchAutocompleteFuzzy", value: "false", isSynced: true },
+    { name: "searchResultsPageSize", value: "20", isSynced: true },
 
     { name: "editedNotesOpenInRibbon", value: "true", isSynced: true },
     { name: "mfaMethod", value: "totp", isSynced: false },

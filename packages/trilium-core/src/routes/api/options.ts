@@ -120,6 +120,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "allowedHtmlTags",
     "searchEnableFuzzyMatching",
     "searchAutocompleteFuzzy",
+    "searchResultsPageSize",
     "redirectBareDomain",
     "showLoginInShareTheme",
     "splitEditorOrientation",

@@ -207,6 +207,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     searchEnableFuzzyMatching: boolean;
     /** Whether fuzzy matching is enabled for autocomplete (typing in search bar). Disabled by default for faster response. */
     searchAutocompleteFuzzy: boolean;
+    /** Number of search results shown per page on the full-search results view. */
+    searchResultsPageSize: number;
 
     // Share settings
     redirectBareDomain: boolean;
