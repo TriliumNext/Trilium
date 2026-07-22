@@ -867,6 +867,23 @@ describe("Search", () => {
             // so it never suppresses the fuzzy phase.
             expect(searchResults[fuzzyRank].score).toBeLessThan(10);
         });
+
+        it("skips content matching in fast search, so content scoring is a natural no-op", () => {
+            const doc = contentNote("Doc", "please sync the database now");
+
+            // Fast search builds no NoteContentFulltextExp, so the body is never
+            // scanned: no content match is recorded and the body-only note is absent.
+            const fast = new SearchContext({ fastSearch: true });
+            const fastResults = searchService.findResultsWithQuery("sync", fast);
+            expect(fast.contentMatches.size).toBe(0);
+            expect(rank(fastResults, doc.noteId)).toBe(-1);
+
+            // A normal search does scan the body and records the content match.
+            const full = new SearchContext();
+            const fullResults = searchService.findResultsWithQuery("sync", full);
+            expect(full.contentMatches.get(doc.noteId)?.tier).toBe("exact_word");
+            expect(rank(fullResults, doc.noteId)).toBeGreaterThanOrEqual(0);
+        });
     });
 
 
