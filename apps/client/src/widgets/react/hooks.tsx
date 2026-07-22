@@ -18,6 +18,7 @@ import keyboard_actions from "../../services/keyboard_actions";
 import { parseNavigationStateFromUrl, ViewScope } from "../../services/link";
 import options, { type OptionValue } from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
+import { consumeSearchTerms } from "../../services/search_jump";
 import server from "../../services/server";
 import type { ShortcutHintDefinition, ShortcutHintProvider } from "../../services/shortcut_hints";
 import shortcuts, { Handler, removeIndividualBinding } from "../../services/shortcuts";
@@ -827,6 +828,28 @@ export function useNoteBlob(note: FNote | null | undefined, componentId?: string
     useDebugValue(note?.noteId);
 
     return blob;
+}
+
+/**
+ * Handles the same-note re-click half of jump-to-match consumption (see `search_jump.ts`), shared
+ * by the text and code type widgets. The other half — consuming when a note's content first loads
+ * — is done directly at each widget's content-ready point (`[blob]` effect / `onContentChange`),
+ * because that signal differs between the read-only and editable variants.
+ *
+ * Re-clicking the same search result re-runs `setNote` (it proceeds because the viewScope now
+ * carries new `searchTerms` and so differs from the current one) and fires `noteSwitched` without
+ * changing the blob — so the content-ready path doesn't re-run. We consume here instead, but only
+ * when the switch targets the note this widget already shows: a genuine switch to a *different*
+ * note is handled by the newly mounted widget's content-ready path, and consuming it here (against
+ * this widget's stale, about-to-unmount content) would clear the terms before the real content is
+ * ready, so we skip it.
+ */
+export function useSearchTermsConsumer(note: FNote | null | undefined, noteContext: NoteContext | undefined, ntxId: string | null | undefined) {
+    useTriliumEvent("noteSwitched", ({ noteContext: switchedContext }) => {
+        if (switchedContext.ntxId !== ntxId) return;
+        if (switchedContext.note?.noteId !== note?.noteId) return;
+        consumeSearchTerms(noteContext, ntxId);
+    });
 }
 
 export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, { noteContext, containerClassName, containerStyle }: {

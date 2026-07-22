@@ -16,8 +16,9 @@ import { getLocaleById } from "../../../services/i18n";
 import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { trackPendingRender } from "../../../services/pending_renders";
+import { consumeSearchTerms } from "../../../services/search_jump";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
-import { useNoteBlob, useNoteLabel, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useNoteBlob, useNoteLabel, useSearchTermsConsumer, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { TypeWidgetProps } from "../type_widget";
 import { applyReferenceLinks } from "./read_only_helper";
@@ -40,6 +41,13 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
         }
         viewScope.bookmark = undefined;
     }, [blob]);
+
+    // Jump to the first search match (and pre-fill the find bar) when navigated from search results.
+    // Runs once the content has loaded; the same-note re-click case is covered by the hook below.
+    useEffect(() => {
+        if (blob) consumeSearchTerms(noteContext, ntxId);
+    }, [blob]);
+    useSearchTermsConsumer(note, noteContext, ntxId);
 
     return (
         <>
