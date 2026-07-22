@@ -55,6 +55,145 @@ The options available are:
     3.  The actions given are the same as the ones in <a class="reference-link" href="../../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a>, which is an alternative for operating directly with notes within the <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a>.
     4.  After defining the actions, first press _Search_ to check the matched notes and then press _Search & Execute actions_ to trigger the actions.
 
+## Viewing search results
+
+Results appear below the search pane as a list of **snippet cards** — each card shows the note title and a short excerpt of the text that matched, with your search terms highlighted.
+
+*   The **total number of results** is always shown, so you can immediately tell how broad a query is.
+*   A **page-size selector** lets you choose how many results to display per page. Your choice is remembered and synced across your devices (stored in the `searchResultsPageSize` option), so you do not have to reset it on every device.
+*   **Clicking a result** opens the note and jumps straight to the first match. The in-note find bar opens pre-filled with your search terms, so you can step through the remaining matches with the find controls.
+*   If a match is inside a **collapsed section** (for example a folded heading), that section is expanded automatically so the match is visible.
+
+## How search matches your text
+
+The single most common source of confusion is that the `=` sign means two _different_ things depending on where it appears. Read this section once and the rest of search becomes predictable.
+
+There are three matching modes:
+
+| Mode | How you trigger it | What it matches | Substring? | Fuzzy (typos)? |
+| --- | --- | --- | --- | --- |
+| **Default** | type words with no prefix | whole words _and_ substrings, anywhere in title, content or attributes, relevance-ranked | Yes | Yes |
+| **Exact full-text** | a leading `=` (e.g. `=sync`) | the exact whole word or phrase, ignoring surrounding punctuation | No | No |
+| **Attribute / property equality** | `=` inside a `#label=value` or `note.property=value` clause | the _entire_ attribute or property value, exactly | No | No |
+
+Every example below is backed 1:1 by an automated test, so the documentation cannot drift from the engine.
+
+### Default matching (no prefix)
+
+**Rule:** typing words with no prefix finds notes that contain those words anywhere in the title, content or attributes — as whole words _or_ as substrings — and ranks the closest matches first.
+
+| Query | Example note content | Matches? | Why |
+| --- | --- | --- | --- |
+| `sync` | `please sync the folders` | Yes (ranked higher) | contains the exact word `sync` |
+| `sync` | `synchronize the database now` | Yes (ranked lower) | `sync` is a substring of `synchronize` |
+
+### Exact match with the `=` prefix
+
+**Rule:** a leading `=` switches the full-text search to exact matching — it finds the whole word or phrase only, ignoring surrounding punctuation, with **no** substring and **no** fuzzy matching. Use it when a normal search returns too many near-matches.
+
+| Query | Example note content | Matches? | Why |
+| --- | --- | --- | --- |
+| `=sync` | `see (sync) mode` | Yes | `(sync)` is the whole word `sync`; punctuation is ignored |
+| `=sync` | `in sync, then continue` | Yes | `sync,` is the whole word `sync` |
+| `=sync` | `he said "sync" out loud` | Yes | `"sync"` is the whole word `sync` |
+| `=sync` | `synchronize the database now` | No | `=` never matches substrings |
+| `=sync` | `please send the file` | No | `=` never matches typos / fuzzy |
+
+To match an exact **phrase**, quote it after the `=` (single, double or backtick quotes all work). The phrase must appear as consecutive words, but punctuation between or around them is ignored:
+
+| Query | Example note (title or content) | Matches? | Why |
+| --- | --- | --- | --- |
+| `="project plan"` | title `Project Plan` | Yes | the title is exactly the phrase |
+| `="project plan"` | `the (project plan) is ready to share` | Yes | the consecutive phrase appears; punctuation is ignored |
+| `="project plan"` | `the plan for this project is late` | No | the words are present but not consecutive |
+
+### Attribute and property equality (`=`, `!=`)
+
+**Rule:** when `=` compares an attribute or property — `#label=value`, `note.title=value` — it is **strict full-value equality**: the _whole_ value must equal what you typed (case- and diacritic-insensitive). This is **not** word matching. `!=` inverts it.
+
+The examples below assume four notes: _Austria_ (`#capital=Vienna`), _Somewhere_ (`#capital=Vienna Austria`), _Czech Republic_ (`#capital=Prague`) and _Switzerland_ (`#capital=Zürich`).
+
+| Query | Example label value | Matches? | Why |
+| --- | --- | --- | --- |
+| `#capital=Vienna` | `Vienna` | Yes | the whole value equals `Vienna` |
+| `#capital=Vienna` | `Vienna Austria` | No | the whole value is `Vienna Austria`, not `Vienna` |
+| `#capital="Vienna Austria"` | `Vienna Austria` | Yes | quote a multi-word value to match it in full |
+| `#capital=Zurich` | `Zürich` | Yes | equality ignores diacritics |
+| `#capital!=Vienna` | `Prague` | Yes | `!=` matches every value that is not `Vienna` |
+| `#capital!=Vienna` | `Vienna` | No | `!=` excludes the exact value |
+
+### Fuzzy operators (`~=` and `~*`)
+
+**Rule:** the fuzzy operators tolerate typos. `~=` (fuzzy-equals) matches a value that is a close whole-word variant of your term; `~*` (fuzzy-contains) matches when your term appears — as a fragment _or_ a near-miss — anywhere inside the value. Both work on note properties (`note.title`, `note.content`, …) and on labels (`#label`). Fuzzy operators require at least 3 characters.
+
+The examples assume a note titled `Books` carrying the label `#author=Tolkien`, and a note whose content is `learn programming today`.
+
+| Query | Example value | Matches? | Why |
+| --- | --- | --- | --- |
+| `note.title ~= boks` | title `Books` | Yes | one edit away from `books` |
+| `#author ~= tolkein` | author `Tolkien` | Yes | `tolkein` is a typo of `tolkien` |
+| `note.content ~* progr` | `learn programming today` | Yes | `progr` is a fragment of `programming` |
+| `note.content ~* programing` | `learn programming today` | Yes | `programing` is one edit from `programming` |
+
+### Fuzzy tolerance (AUTO)
+
+**Rule:** how many typos are tolerated depends on the **length** of your search term (the "AUTO" scheme popularized by Elasticsearch). Short terms must match almost exactly to avoid noise; longer terms tolerate more.
+
+| Term length | Edits allowed |
+| --- | --- |
+| 1–2 characters | 0 (exact only) |
+| 3–5 characters | 1 |
+| 6+ characters | 2 |
+
+| Query | Term length | Example note content | Matches? | Why |
+| --- | --- | --- | --- | --- |
+| `cat` | 3 | `a bright red car` | Yes | 1 edit is within budget for 3–5 character terms |
+| `ceck` | 4 | `the latest tech trends` | No | `ceck`→`tech` needs 2 edits; only 1 is allowed at this length |
+| `combinef` | 8 | `the values were combined together` | Yes | `combinef`→`combined` is 1 edit; up to 2 are allowed at 6+ characters |
+
+### Relevance ranking
+
+**Rule:** results are ordered by _how well_ they match, not merely whether they match. Exact whole-word and phrase matches rank above substring and fuzzy matches, and a note where your words appear as a consecutive phrase outranks one where they are scattered.
+
+| Query | Ranked higher | Ranked lower | Why |
+| --- | --- | --- | --- |
+| `sync` | `please sync the folders` | `synchronize the database now` | exact word beats substring |
+| `you and me` | `I like you and me as a phrase` | `the menu is here and you know it` | consecutive phrase beats scattered words |
+
+### What is searchable
+
+A search looks at more than the visible body text. All of the following are indexed and searchable:
+
+*   note titles,
+*   note body content,
+*   labels and relations ([attributes](../../Advanced%20Usage/Attributes.md)),
+*   link URLs and the titles/descriptions of link previews,
+*   the titles of notes that a note reference-links to.
+
+The last point is the least obvious: if a note's only content is a reference link to another note, searching for that other note's **title** still finds the linking note.
+
+| Query | Setup | Matches? | Why |
+| --- | --- | --- | --- |
+| `special topic` | a note whose only content is a reference link to a note titled `Special Topic` | Yes — the linking note is found; the linked target ranks first | the target's title is indexed into the linking note's searchable text |
+
+### Diacritics
+
+**Rule:** accents are normalized on both sides, so an accented word and its plain form match each other.
+
+| Query | Example note content | Matches? |
+| --- | --- | --- |
+| `ktory` | `slovo ktorý znamena nieco` | Yes |
+| `ktorý` | `the word ktory appears here` | Yes |
+
+### Regular expressions (`%=`)
+
+**Rule:** the `%=` operator matches a property or label value against a regular expression.
+
+| Query | Example note content | Matches? |
+| --- | --- | --- |
+| `note.content %= 'colou?r'` | `my favorite color of all` | Yes |
+| `note.content %= 'colou?r'` | `my favourite colour of all` | Yes |
+
 ### Simple Note Search Examples
 
 *   `rings tolkien`: Full-text search to find notes containing both "rings" and "tolkien".
@@ -70,21 +209,6 @@ The options available are:
 *   `~author.title *=* Tolkien`: Find notes related to an author whose title contains "Tolkien".
 *   `#publicationYear %= '19[0-9]{2}'`: Use the '%=' operator to match a regular expression (regex). This feature has been available since Trilium 0.52.
 *   `note.content %= '\\d{2}:\\d{2} (PM|AM)'`: Find notes that mention a time. Backslashes in a regex must be escaped.
-
-### Fuzzy Search
-
-Trilium supports fuzzy search operators that find results with typos or spelling variations:
-
-*   `#title ~= trilim`: Fuzzy exact match - finds notes with titles like "Trilium" even if you typed "trilim" (with typo)
-*   `#content ~* progra`: Fuzzy contains match - finds notes containing words like "program", "programmer", "programming" even with slight misspellings
-*   `note.content ~* develpment`: Will find notes containing "development" despite the typo
-
-**Important notes about fuzzy search:**
-
-*   Fuzzy search requires at least 3 characters in the search term
-*   Maximum edit distance is 2 characters (number of character changes needed)
-*   Diacritics are normalized (e.g., "café" matches "cafe")
-*   Fuzzy matches work best for finding content with minor typos or spelling variations
 
 ### Advanced Use Cases
 
@@ -230,7 +354,7 @@ You can open Trilium and automatically trigger a search by including the search 
 | Parameter | Value | Description |
 | --- | --- | --- |
 | `MIN_FUZZY_TOKEN_LENGTH` | 3 | Minimum characters for fuzzy matching |
-| `MAX_EDIT_DISTANCE` | 2 | Maximum character changes allowed |
+| `MAX_EDIT_DISTANCE` | 2 | Ceiling on character changes, reached only by 6+ character terms; shorter terms allow fewer — see the _Fuzzy tolerance (AUTO)_ section above |
 | `RESULT_SUFFICIENCY_THRESHOLD` | 5 | Minimum exact results before fuzzy fallback |
 | `MAX_CONTENT_SIZE` | 10MB | Maximum note content size for search processing |
 
