@@ -2,15 +2,32 @@ import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_cha
 import { extractSpreadsheetText } from "@triliumnext/commons/src/lib/spreadsheet/extract_text.js";
 import striptags from "striptags";
 import { normalizeSearchText } from "../utils/text_utils";
-import { normalize } from "../../utils/index";
+import { normalize, unescapeHtml } from "../../utils/index";
 
-export default function preprocessContent(rawContent: string | Uint8Array, type: string, mime: string, raw?: boolean) {
-    let content = normalize(rawContent.toString());
+/**
+ * Resolves a note's title by its id. Injected by the caller so this module stays
+ * pure and browser-safe (no becca import here). Returns null for unknown notes.
+ */
+export type NoteTitleResolver = (noteId: string) => string | null;
+
+export default function preprocessContent(rawContent: string | Uint8Array, type: string, mime: string, raw?: boolean, resolveNoteTitle?: NoteTitleResolver) {
+    const originalContent = rawContent.toString();
+    let content = normalize(originalContent);
 
     if (type === "text" && mime === "text/html") {
         if (!raw) {
+            // Pull searchable text out of link previews and internal-link targets BEFORE
+            // stripTags discards their data-* metadata and (stale) anchor text. Extraction
+            // runs against the original, case-preserved markup so link target noteIds still
+            // resolve (normalize() lowercases, which would corrupt the ids).
+            const injectedText = extractLinkSearchText(originalContent, resolveNoteTitle);
+
             // Content size already filtered at DB level, safe to process
             content = stripTags(content);
+
+            if (injectedText) {
+                content = `${content} ${injectedText}`;
+            }
         }
 
         content = content.replace(/&nbsp;/g, " ");
@@ -112,6 +129,66 @@ function processCanvasContent(content: string) {
         content = "";
     }
     return content;
+}
+
+/** Metadata attributes to index from link previews, in the order they are appended. */
+const LINK_PREVIEW_ATTRIBUTES = ["data-url", "data-title", "data-description", "data-site-name"] as const;
+
+// Matches the opening tag of a link-embed section or link-mention span (serialized by
+// packages/ckeditor5/src/plugins/link_embed/link_embed_editing.ts dataDowncast).
+const LINK_PREVIEW_TAG_RE = /<(?:section|span)\b[^>]*\bclass=["'][^"']*\blink-(?:embed|mention)\b[^"']*["'][^>]*>/gi;
+
+// Copy of services/notes.ts findInternalLinks: captures the target noteId of a reference
+// link or plain internal link. Kept inline so the preprocessor stays free of the notes service.
+const INTERNAL_LINK_RE = /href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)\/?"/g;
+
+/**
+ * Builds a space-separated bag of extra searchable text from a text/html note's link
+ * previews (their data-* metadata) and internal-link targets (their resolved titles).
+ */
+function extractLinkSearchText(content: string, resolveNoteTitle?: NoteTitleResolver): string {
+    const parts: string[] = [];
+
+    for (const tag of content.match(LINK_PREVIEW_TAG_RE) ?? []) {
+        for (const attrName of LINK_PREVIEW_ATTRIBUTES) {
+            const value = extractAttribute(tag, attrName);
+            if (value) {
+                parts.push(value);
+            }
+        }
+    }
+
+    if (resolveNoteTitle) {
+        const seen = new Set<string>();
+        let match: RegExpExecArray | null;
+        INTERNAL_LINK_RE.lastIndex = 0;
+        while ((match = INTERNAL_LINK_RE.exec(content)) !== null) {
+            const noteId = match[1];
+            if (seen.has(noteId)) {
+                continue;
+            }
+            seen.add(noteId);
+
+            const title = resolveNoteTitle(noteId);
+            if (title) {
+                parts.push(title);
+            }
+        }
+    }
+
+    return parts.join(" ");
+}
+
+/** Reads a single/double-quoted HTML attribute value from a tag string, entity-decoded. */
+function extractAttribute(tag: string, attrName: string): string | null {
+    const re = new RegExp(`\\b${attrName}=(?:"([^"]*)"|'([^']*)')`, "i");
+    const match = re.exec(tag);
+    if (!match) {
+        return null;
+    }
+
+    const rawValue = match[1] !== undefined ? match[1] : match[2];
+    return rawValue ? unescapeHtml(rawValue) : null;
 }
 
 function stripTags(content: string) {

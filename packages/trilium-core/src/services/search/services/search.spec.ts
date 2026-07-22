@@ -868,6 +868,23 @@ describe("Search", () => {
             expect(searchResults[fuzzyRank].score).toBeLessThan(10);
         });
 
+        it("finds a note via a reference-link's resolved target title, ranked below the target (#10616)", () => {
+            // Note A is the link target; note B links to it with an empty-text reference link.
+            // Searching A's title must find B (its title is injected into B's searchable content)
+            // and rank A (a direct title match) above B (an indirect content match).
+            const target = contentNote("Special Topic", "");
+            const linker = contentNote("Linker", `<p>see <a class="reference-link" href="#root/${target.noteId}"></a></p>`);
+
+            const searchResults = searchService.findResultsWithQuery("special topic", new SearchContext());
+
+            const targetRank = rank(searchResults, target.noteId);
+            const linkerRank = rank(searchResults, linker.noteId);
+
+            expect(targetRank).toBeGreaterThanOrEqual(0);
+            expect(linkerRank).toBeGreaterThanOrEqual(0);
+            expect(targetRank).toBeLessThan(linkerRank);
+        });
+
         it("skips content matching in fast search, so content scoring is a natural no-op", () => {
             const doc = contentNote("Doc", "please sync the database now");
 

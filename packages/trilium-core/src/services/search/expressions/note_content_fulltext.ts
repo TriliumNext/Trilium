@@ -237,7 +237,7 @@ class NoteContentFulltextExp extends Expression {
             return;
         }
 
-        content = preprocessContent(content, type, mime, this.raw);
+        content = preprocessContent(content, type, mime, this.raw, (id) => becca.notes[id]?.title ?? null);
 
         // Apply content size validation and preprocessing
         const processedContent = validateAndPreprocessContent(content, noteId);
