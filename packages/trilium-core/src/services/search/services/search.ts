@@ -290,6 +290,10 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
     const originalFuzzyMatching = searchContext.enableFuzzyMatching;
     searchContext.enableFuzzyMatching = enableFuzzyMatching;
 
+    // Each progressive phase re-executes the expression tree, so clear content-match
+    // records first — otherwise phase-2 (fuzzy) records would mix with phase-1 ones.
+    searchContext.contentMatches.clear();
+
     const noteSet = expression.execute(allNoteSet, executionContext, searchContext);
 
     const searchResults = noteSet.notes.map((note) => {
@@ -303,7 +307,7 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
     });
 
     for (const res of searchResults) {
-        res.computeScore(searchContext.fulltextQuery, searchContext.highlightedTokens, enableFuzzyMatching);
+        res.computeScore(searchContext.fulltextQuery, searchContext.highlightedTokens, enableFuzzyMatching, searchContext.contentMatches.get(res.noteId));
     }
 
     // Restore original fuzzy setting

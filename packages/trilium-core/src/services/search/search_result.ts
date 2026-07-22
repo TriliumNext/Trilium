@@ -1,5 +1,6 @@
 import becca from "../../becca/becca.js";
 import becca_service from "../../becca/becca_service.js";
+import type { ContentMatchQuality } from "./match_quality.js";
 import {
     calculateOptimizedEditDistance,
     FUZZY_SEARCH_CONFIG,
@@ -22,6 +23,18 @@ const SCORE_WEIGHTS = {
     TITLE_FACTOR: 2.0,
     PATH_FACTOR: 0.3,
     HIDDEN_NOTE_PENALTY: 3,
+    // Content match weights (body content quality), by tier. The maximum possible
+    // content contribution is exact_phrase (150) + the four-token bonus (4 x 5 = 20)
+    // = 170, which stays below TITLE_WORD_MATCH (300) by construction so an
+    // exact/prefix/word title match always outranks a content-only match.
+    CONTENT_EXACT_PHRASE: 150,
+    CONTENT_PROXIMITY: 80,
+    CONTENT_IN_ORDER_BONUS: 20, // only when tier === "proximity" && inOrder
+    CONTENT_EXACT_WORD: 60,
+    CONTENT_WORD_PREFIX: 30,
+    CONTENT_SUBSTRING: 15,
+    CONTENT_FUZZY: 5,
+    CONTENT_TOKEN_COUNT_BONUS: 5, // per distinct matched token beyond the first, capped at 5 tokens total
     // Score caps to prevent fuzzy matches from outranking exact matches
     MAX_FUZZY_SCORE_PER_TOKEN: 3, // Cap fuzzy token contributions to stay below exact matches
     MAX_FUZZY_TOKEN_LENGTH_MULTIPLIER: 3, // Limit token length impact for fuzzy matches
@@ -55,7 +68,7 @@ class SearchResult {
         return this.notePathArray[this.notePathArray.length - 1];
     }
 
-    computeScore(fulltextQuery: string, tokens: string[], enableFuzzyMatching: boolean = true) {
+    computeScore(fulltextQuery: string, tokens: string[], enableFuzzyMatching: boolean = true, contentMatch?: ContentMatchQuality) {
         this.score = 0;
         this.fuzzyScore = 0; // Reset fuzzy score tracking
 
@@ -87,9 +100,59 @@ class SearchResult {
         this.addScoreForStrings(tokens, note.title, SCORE_WEIGHTS.TITLE_FACTOR, enableFuzzyMatching);
         this.addScoreForStrings(tokens, this.notePathTitle, SCORE_WEIGHTS.PATH_FACTOR, enableFuzzyMatching);
 
+        // Add score for how well the note's body content matched the query.
+        if (contentMatch) {
+            this.addContentScore(contentMatch);
+        }
+
         if (note.isInHiddenSubtree()) {
             this.score = this.score / SCORE_WEIGHTS.HIDDEN_NOTE_PENALTY;
         }
+    }
+
+    /**
+     * Adds the content-match contribution for a note's body. The tier weight plus a
+     * per-token bonus (capped at five tokens) is bounded well below the title
+     * weights, so content quality can reorder equally-titled notes without ever
+     * overtaking a title match. Fuzzy-tier content counts toward the shared fuzzy
+     * budget so it cannot help a fuzzy result outrank an exact one.
+     */
+    private addContentScore(contentMatch: ContentMatchQuality) {
+        let base = 0;
+        switch (contentMatch.tier) {
+            case "exact_phrase":
+                base = SCORE_WEIGHTS.CONTENT_EXACT_PHRASE;
+                break;
+            case "proximity":
+                base = SCORE_WEIGHTS.CONTENT_PROXIMITY + (contentMatch.inOrder ? SCORE_WEIGHTS.CONTENT_IN_ORDER_BONUS : 0);
+                break;
+            case "exact_word":
+                base = SCORE_WEIGHTS.CONTENT_EXACT_WORD;
+                break;
+            case "word_prefix":
+                base = SCORE_WEIGHTS.CONTENT_WORD_PREFIX;
+                break;
+            case "substring":
+                base = SCORE_WEIGHTS.CONTENT_SUBSTRING;
+                break;
+            case "fuzzy":
+                base = SCORE_WEIGHTS.CONTENT_FUZZY;
+                break;
+        }
+
+        const cappedTokens = Math.min(contentMatch.matchedTokenCount, 5);
+        const tokenBonus = SCORE_WEIGHTS.CONTENT_TOKEN_COUNT_BONUS * Math.max(0, cappedTokens - 1);
+        let contentScore = base + tokenBonus;
+
+        if (contentMatch.tier === "fuzzy") {
+            if (this.fuzzyScore >= SCORE_WEIGHTS.MAX_TOTAL_FUZZY_SCORE) {
+                contentScore = 0;
+            } else {
+                this.fuzzyScore += contentScore;
+            }
+        }
+
+        this.score += contentScore;
     }
 
     addScoreForStrings(tokens: string[], str: string, factor: number, enableFuzzyMatching: boolean = true) {
