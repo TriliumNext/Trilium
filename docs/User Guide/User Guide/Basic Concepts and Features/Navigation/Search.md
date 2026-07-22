@@ -251,7 +251,7 @@ This example will:
 Some queries can only be expressed with negation:
 
 ```
-#book AND not(note.ancestor.title = 'Tolkien')
+#book AND not(note.ancestors.title = 'Tolkien')
 ```
 
 This query finds all book notes not in the "Tolkien" subtree.
