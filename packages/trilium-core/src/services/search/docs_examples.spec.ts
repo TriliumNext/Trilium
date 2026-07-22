@@ -19,6 +19,7 @@ import becca from "../../becca/becca.js";
 import BBranch from "../../becca/entities/bbranch.js";
 import BNote from "../../becca/entities/bnote.js";
 import { getContext } from "../context.js";
+import dateUtils from "../utils/date.js";
 import noteService from "../notes.js";
 import { findNoteByTitle, note, NoteBuilder } from "../../test/becca_mocking.js";
 import searchService from "./services/search.js";
@@ -273,6 +274,300 @@ describe("Search documentation examples", () => {
             expect(findNoteByTitle(results, "US spelling")).toBeTruthy();
             expect(findNoteByTitle(results, "UK spelling")).toBeTruthy();
             expect(results.length).toEqual(2);
+        });
+    });
+
+    // ------------------------------------------------------------------
+    // Legacy reference examples (pre-existing docs sections). Each of the
+    // example strings already present in Search.md is validated here so the
+    // whole document — not only the newly-authored sections — is covered.
+    // ------------------------------------------------------------------
+
+    describe('Legacy: Simple Note Search Examples', () => {
+        // Docs: Search.md § "Simple Note Search Examples" — `rings tolkien`
+        it("`rings tolkien` finds a note containing both words, not one with only `rings`", () => {
+            contentNote("Both", "the rings by tolkien are legendary");
+            contentNote("OnlyRings", "the rings saga continues");
+
+            const results = search("rings tolkien");
+
+            expect(findNoteByTitle(results, "Both")).toBeTruthy();
+            expect(findNoteByTitle(results, "OnlyRings")).toBeFalsy();
+            expect(results.length).toEqual(1);
+        });
+
+        // Docs: Search.md § "Simple Note Search Examples" — `"The Lord of the Rings" Tolkien`
+        it('`"The Lord of the Rings" Tolkien` requires the exact phrase plus the word', () => {
+            contentNote("Book", "The Lord of the Rings was written by Tolkien");
+            contentNote("Scrambled", "the rings lord of the tolkien mixed up");
+
+            const results = search('"The Lord of the Rings" Tolkien');
+
+            expect(findNoteByTitle(results, "Book")).toBeTruthy();
+            expect(findNoteByTitle(results, "Scrambled")).toBeFalsy();
+            expect(results.length).toEqual(1);
+        });
+
+        // Docs: Search.md § "Simple Note Search Examples" — `note.content *=* rings OR note.content *=* tolkien`
+        it("`note.content *=* rings OR note.content *=* tolkien` matches either substring", () => {
+            contentNote("RingsOnly", "many rings here");
+            contentNote("TolkienOnly", "written by tolkien");
+            contentNote("Neither", "nothing relevant at all");
+
+            const results = search("note.content *=* rings OR note.content *=* tolkien");
+
+            expect(findNoteByTitle(results, "RingsOnly")).toBeTruthy();
+            expect(findNoteByTitle(results, "TolkienOnly")).toBeTruthy();
+            expect(findNoteByTitle(results, "Neither")).toBeFalsy();
+            expect(results.length).toEqual(2);
+        });
+
+        // Docs: Search.md § "Simple Note Search Examples" — `towers #book`, `towers #book or #author`, `towers #!book`
+        it("combines full-text `towers` with label filters `#book`, `#book or #author`, `#!book`", () => {
+            rootNote
+                .child(note("Two Towers").label("book"))
+                .child(note("Grey Towers").label("author", "someone"))
+                .child(note("Dark Towers"))
+                .child(note("Random Author").label("author", "other"));
+
+            // full-text AND a label
+            let results = search("towers #book");
+            expect(findNoteByTitle(results, "Two Towers")).toBeTruthy();
+            expect(results.length).toEqual(1);
+
+            // full-text AND (labelA OR labelB): the author-only note (no "towers") is excluded
+            results = search("towers #book or #author");
+            expect(findNoteByTitle(results, "Two Towers")).toBeTruthy();
+            expect(findNoteByTitle(results, "Grey Towers")).toBeTruthy();
+            expect(findNoteByTitle(results, "Random Author")).toBeFalsy();
+            expect(results.length).toEqual(2);
+
+            // full-text AND NOT a label
+            results = search("towers #!book");
+            expect(findNoteByTitle(results, "Grey Towers")).toBeTruthy();
+            expect(findNoteByTitle(results, "Dark Towers")).toBeTruthy();
+            expect(findNoteByTitle(results, "Two Towers")).toBeFalsy();
+            expect(results.length).toEqual(2);
+        });
+
+        // Docs: Search.md § "Simple Note Search Examples" — `#book #publicationYear = 1954`,
+        //  `#book #publicationYear >= 1950 #publicationYear < 1960`, `#publicationYear %= '19[0-9]{2}'`
+        it("filters by exact, numeric-range and regex label values on `publicationYear`", () => {
+            rootNote
+                .child(note("The Lord of the Rings").label("book").label("publicationYear", "1954"))
+                .child(note("The Hobbit").label("book").label("publicationYear", "1937"))
+                .child(note("Later Book").label("book").label("publicationYear", "1965"))
+                .child(note("Modern Book").label("book").label("publicationYear", "2001"));
+
+            // exact numeric equality
+            let results = search("#book #publicationYear = 1954");
+            expect(findNoteByTitle(results, "The Lord of the Rings")).toBeTruthy();
+            expect(results.length).toEqual(1);
+
+            // numeric range (the 1950s)
+            results = search("#book #publicationYear >= 1950 #publicationYear < 1960");
+            expect(findNoteByTitle(results, "The Lord of the Rings")).toBeTruthy();
+            expect(results.length).toEqual(1);
+
+            // regex: a 4-digit year in the 1900s
+            results = search("#publicationYear %= '19[0-9]{2}'");
+            expect(findNoteByTitle(results, "The Lord of the Rings")).toBeTruthy();
+            expect(findNoteByTitle(results, "The Hobbit")).toBeTruthy();
+            expect(findNoteByTitle(results, "Later Book")).toBeTruthy();
+            expect(findNoteByTitle(results, "Modern Book")).toBeFalsy();
+            expect(results.length).toEqual(3);
+        });
+
+        // Docs: Search.md § "Simple Note Search Examples" — `#genre *=* fan`
+        it("`#genre *=* fan` matches a label value containing the substring `fan`", () => {
+            rootNote
+                .child(note("Fantasy Novel").label("genre", "fantasy"))
+                .child(note("SciFi Novel").label("genre", "science fiction"));
+
+            const results = search("#genre *=* fan");
+
+            expect(findNoteByTitle(results, "Fantasy Novel")).toBeTruthy();
+            expect(findNoteByTitle(results, "SciFi Novel")).toBeFalsy();
+            expect(results.length).toEqual(1);
+        });
+
+        // Docs: Search.md § "Simple Note Search Examples" — `#dateNote >= TODAY-30`
+        it("`#dateNote >= TODAY-30` matches a recent date but not an old one (smart date)", () => {
+            rootNote
+                .child(note("Recent").label("dateNote", dateUtils.localNowDate()))
+                .child(note("Old").label("dateNote", "2000-01-01"));
+
+            const results = search("#dateNote >= TODAY-30");
+
+            expect(findNoteByTitle(results, "Recent")).toBeTruthy();
+            expect(findNoteByTitle(results, "Old")).toBeFalsy();
+            expect(results.length).toEqual(1);
+        });
+
+        // Docs: Search.md § "Simple Note Search Examples" — `~author.title *=* Tolkien`
+        it("`~author.title *=* Tolkien` matches via the related author note's title", () => {
+            const tolkien = note("J. R. R. Tolkien");
+            const herbert = note("Frank Herbert");
+            rootNote
+                .child(tolkien)
+                .child(herbert)
+                .child(note("Lord of the Rings").relation("author", tolkien.note))
+                .child(note("Dune").relation("author", herbert.note));
+
+            const results = search("~author.title *=* Tolkien");
+
+            expect(findNoteByTitle(results, "Lord of the Rings")).toBeTruthy();
+            expect(findNoteByTitle(results, "Dune")).toBeFalsy();
+            expect(results.length).toEqual(1);
+        });
+
+        // Docs: Search.md § "Simple Note Search Examples" — `note.content %= '\d{2}:\d{2} (PM|AM)'`
+        // NOTE: the docs render the backslashes as `\\d` (a literal backslash must be
+        // escaped in the query); in JS source that literal `\\` is written `\\\\`.
+        it("`note.content %= '\\\\d{2}:\\\\d{2} (PM|AM)'` matches note content mentioning a time", () => {
+            contentNote("Meeting", "the call is at 12:30 PM today");
+            contentNote("Plain", "no time here just words");
+
+            const results = search("note.content %= '\\\\d{2}:\\\\d{2} (PM|AM)'");
+
+            expect(findNoteByTitle(results, "Meeting")).toBeTruthy();
+            expect(findNoteByTitle(results, "Plain")).toBeFalsy();
+            expect(results.length).toEqual(1);
+        });
+    });
+
+    describe('Legacy: Advanced Use Cases', () => {
+        // Docs: Search.md § "Advanced Use Cases" — `~author.relations.son.title = 'Christopher Tolkien'`
+        it("`~author.relations.son.title = 'Christopher Tolkien'` traverses two relation hops", () => {
+            const christopher = note("Christopher Tolkien");
+            const brian = note("Brian Herbert");
+            const jrr = note("J. R. R. Tolkien").relation("son", christopher.note);
+            const frank = note("Frank Herbert").relation("son", brian.note);
+            rootNote
+                .child(christopher)
+                .child(brian)
+                .child(jrr)
+                .child(frank)
+                .child(note("Lord of the Rings").label("book").relation("author", jrr.note))
+                .child(note("Dune").label("book").relation("author", frank.note));
+
+            const results = search("~author.relations.son.title = 'Christopher Tolkien'");
+
+            expect(findNoteByTitle(results, "Lord of the Rings")).toBeTruthy();
+            expect(findNoteByTitle(results, "Dune")).toBeFalsy();
+            expect(results.length).toEqual(1);
+        });
+
+        // Docs: Search.md § "Advanced Use Cases" — boolean expression with grouping parentheses
+        it("`~author.title *= Tolkien OR (#publicationDate >= 1954 AND #publicationDate <= 1960)` groups clauses", () => {
+            const tolkien = note("J. R. R. Tolkien");
+            rootNote
+                .child(tolkien)
+                .child(note("Lord of the Rings").relation("author", tolkien.note))
+                .child(note("Mid Century").label("publicationDate", "1955"))
+                .child(note("Modern").label("publicationDate", "1990"));
+
+            const results = search("~author.title *= Tolkien OR (#publicationDate >= 1954 AND #publicationDate <= 1960)");
+
+            expect(findNoteByTitle(results, "Lord of the Rings")).toBeTruthy();
+            expect(findNoteByTitle(results, "Mid Century")).toBeTruthy();
+            expect(findNoteByTitle(results, "Modern")).toBeFalsy();
+            expect(results.length).toEqual(2);
+        });
+
+        // Docs: Search.md § "Advanced Use Cases" — `note.parents.title`, `note.parents.parents.title`, `note.ancestors.title`
+        it("filters by parent, grandparent and ancestor title against a `Books` subtree", () => {
+            const lotr = note("Lord of the Rings");
+            const fiction = note("Fiction").child(lotr);
+            const books = note("Books").child(fiction);
+            rootNote.child(books).child(note("Movies").child(note("Inception")));
+
+            // direct parent named Books
+            let results = search("note.parents.title = 'Books'");
+            expect(findNoteByTitle(results, "Fiction")).toBeTruthy();
+            expect(results.length).toEqual(1);
+
+            // grandparent named Books
+            results = search("note.parents.parents.title = 'Books'");
+            expect(findNoteByTitle(results, "Lord of the Rings")).toBeTruthy();
+            expect(results.length).toEqual(1);
+
+            // any ancestor named Books — note the filter is subtree-inclusive: it
+            // returns the "Books" note itself as well as its descendants.
+            results = search("note.ancestors.title = 'Books'");
+            expect(findNoteByTitle(results, "Fiction")).toBeTruthy();
+            expect(findNoteByTitle(results, "Lord of the Rings")).toBeTruthy();
+            expect(findNoteByTitle(results, "Books")).toBeTruthy();
+            expect(findNoteByTitle(results, "Inception")).toBeFalsy();
+            expect(results.length).toEqual(3);
+        });
+
+        // Docs: Search.md § "Advanced Use Cases" — `note.children.title = 'sub-note'`
+        it("`note.children.title = 'sub-note'` matches a note that has such a child", () => {
+            rootNote
+                .child(note("Parent Note").child(note("sub-note")))
+                .child(note("Lonely Note"));
+
+            const results = search("note.children.title = 'sub-note'");
+
+            expect(findNoteByTitle(results, "Parent Note")).toBeTruthy();
+            expect(findNoteByTitle(results, "Lonely Note")).toBeFalsy();
+            expect(results.length).toEqual(1);
+        });
+    });
+
+    describe('Legacy: Note Properties', () => {
+        // Docs: Search.md § "Search with Note Properties" — `note.type = code AND note.mime = 'application/json'`
+        it("`note.type = code AND note.mime = 'application/json'` filters by type and mime", () => {
+            rootNote
+                .child(note("Config", { type: "code", mime: "application/json" }))
+                .child(note("Script", { type: "code", mime: "application/javascript" }))
+                .child(note("Doc", { type: "text", mime: "text/html" }));
+
+            const results = search("note.type = code AND note.mime = 'application/json'");
+
+            expect(findNoteByTitle(results, "Config")).toBeTruthy();
+            expect(findNoteByTitle(results, "Script")).toBeFalsy();
+            expect(findNoteByTitle(results, "Doc")).toBeFalsy();
+            expect(results.length).toEqual(1);
+        });
+    });
+
+    describe('Legacy: Order by and Limit', () => {
+        // Docs: Search.md § "Order by and Limit" — `#author=Tolkien orderBy #publicationDate desc, note.title limit 10`
+        it("orders by publication date descending with a title tie-breaker, limited", () => {
+            rootNote
+                .child(note("The Hobbit").label("author", "Tolkien").label("publicationDate", "1937"))
+                .child(note("Fellowship").label("author", "Tolkien").label("publicationDate", "1954"))
+                .child(note("Two Towers").label("author", "Tolkien").label("publicationDate", "1954"))
+                .child(note("Dune").label("author", "Herbert").label("publicationDate", "1965"));
+
+            const results = search("#author=Tolkien orderBy #publicationDate desc, note.title limit 10");
+
+            // Only the three Tolkien books; Dune (author Herbert) is excluded.
+            expect(results.length).toEqual(3);
+            // 1954 books first (ties broken by title ascending), then 1937.
+            expect(becca.notes[results[0].noteId]?.title).toEqual("Fellowship");
+            expect(becca.notes[results[1].noteId]?.title).toEqual("Two Towers");
+            expect(becca.notes[results[2].noteId]?.title).toEqual("The Hobbit");
+        });
+    });
+
+    describe('Legacy: Negation', () => {
+        // Docs: Search.md § "Negation" — `#book AND not(note.ancestors.title = 'Tolkien')`
+        // NOTE: the docs previously wrote the singular `note.ancestor.title`, which is an
+        // unrecognized property specifier and returns garbage; corrected to the plural
+        // `note.ancestors.title` (see task report).
+        it("`#book AND not(note.ancestors.title = 'Tolkien')` finds books outside the Tolkien subtree", () => {
+            rootNote
+                .child(note("Tolkien").child(note("LOTR").label("book")))
+                .child(note("Herbert").child(note("Dune").label("book")));
+
+            const results = search("#book AND not(note.ancestors.title = 'Tolkien')");
+
+            expect(findNoteByTitle(results, "Dune")).toBeTruthy();
+            expect(findNoteByTitle(results, "LOTR")).toBeFalsy();
+            expect(results.length).toEqual(1);
         });
     });
 });
