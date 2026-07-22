@@ -3,6 +3,7 @@ import type { NoteRow } from "@triliumnext/commons";
 import becca from "../../../becca/becca.js";
 import { getLog } from "../../log.js";
 import protectedSessionService from "../../protected_session.js";
+import { classifyContentMatch } from "../match_quality.js";
 import NoteSet from "../note_set.js";
 import type SearchContext from "../search_context.js";
 import {
@@ -90,7 +91,7 @@ class NoteContentFulltextExp extends Expression {
                 WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap', 'spreadsheet', 'llmChat')
                   AND isDeleted = 0
                   AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
-            this.findInText(row, inputNoteSet, resultNoteSet);
+            this.findInText(row, inputNoteSet, resultNoteSet, searchContext);
         }
 
         // For exact match with flatText, also search notes WITHOUT content (they may have matching attributes)
@@ -204,7 +205,7 @@ class NoteContentFulltextExp extends Expression {
         return false;
     }
 
-    findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet) {
+    findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet, searchContext: SearchContext) {
         if (!inputNoteSet.hasNoteId(noteId) || !(noteId in becca.notes)) {
             return;
         }
@@ -235,72 +236,107 @@ class NoteContentFulltextExp extends Expression {
         }
         content = processedContent;
 
+        const { matched, negation } = this.matchesContent(content, noteId);
+
+        if (matched) {
+            resultNoteSet.add(becca.notes[noteId]);
+            // Record how well the content matched so scoring can rank body matches.
+            // Negation (!=) matches are added because content does NOT contain the
+            // query — there is no positive content match to record.
+            if (!negation) {
+                this.recordContentMatchQuality(noteId, content, searchContext);
+            }
+        }
+
+        return content;
+    }
+
+    /**
+     * Applies the operator's matching semantics for this note's content and
+     * returns whether it matched and whether the match was a negation (!=).
+     */
+    private matchesContent(content: string, noteId: string): { matched: boolean; negation: boolean } {
         if (this.tokens.length === 1) {
             const [token] = this.tokens;
 
-            let matches = false;
             if (this.operator === "=") {
-                matches = this.containsExactWord(token, content);
+                let matches = this.containsExactWord(token, content);
                 // Also check flatText if enabled (includes attributes)
                 if (!matches && this.flatText) {
-                    const flatText = becca.notes[noteId].getFlatText();
-                    matches = this.containsExactPhrase([token], flatText, true);
+                    matches = this.containsExactPhrase([token], becca.notes[noteId].getFlatText(), true);
                 }
-            } else if (this.operator === "!=") {
-                matches = !this.containsExactWord(token, content);
-                // For negation, check flatText too
-                if (matches && this.flatText) {
-                    const flatText = becca.notes[noteId].getFlatText();
-                    matches = !this.containsExactPhrase([token], flatText, true);
-                }
+                return { matched: matches, negation: false };
             }
 
-            if (
-                matches ||
+            if (this.operator === "!=") {
+                let matches = !this.containsExactWord(token, content);
+                // For negation, check flatText too
+                if (matches && this.flatText) {
+                    matches = !this.containsExactPhrase([token], becca.notes[noteId].getFlatText(), true);
+                }
+                return { matched: matches, negation: true };
+            }
+
+            const matched =
                 (this.operator === "*=" && content.endsWith(token)) ||
                 (this.operator === "=*" && content.startsWith(token)) ||
                 (this.operator === "*=*" && content.includes(token)) ||
                 (this.operator === "%=" && getRegex(token).test(content)) ||
                 (this.operator === "~=" && this.matchesWithFuzzy(content, noteId)) ||
-                (this.operator === "~*" && this.fuzzyContainsToken(normalizeSearchText(token), normalizeSearchText(content)))
-            ) {
-                resultNoteSet.add(becca.notes[noteId]);
-            }
-        } else {
-            // Multi-token matching with fuzzy support and phrase proximity
-            if (this.operator === "~=" || this.operator === "~*") {
-                // Fuzzy phrase matching
-                if (this.matchesWithFuzzy(content, noteId)) {
-                    resultNoteSet.add(becca.notes[noteId]);
-                }
-            } else if (this.operator === "=" || this.operator === "!=") {
-                // Exact phrase matching for = and !=
-                let matches = this.containsExactPhrase(this.tokens, content, false);
+                (this.operator === "~*" && this.fuzzyContainsToken(normalizeSearchText(token), normalizeSearchText(content)));
 
-                // Also check flatText if enabled (includes attributes)
-                if (!matches && this.flatText) {
-                    const flatText = becca.notes[noteId].getFlatText();
-                    matches = this.containsExactPhrase(this.tokens, flatText, true);
-                }
-
-                if ((this.operator === "=" && matches) ||
-                    (this.operator === "!=" && !matches)) {
-                    resultNoteSet.add(becca.notes[noteId]);
-                }
-            } else {
-                // Other operators: check all tokens present (any order)
-                const nonMatchingToken = this.tokens.find(
-                    (token) =>
-                        !this.tokenMatchesContent(token, content, noteId)
-                );
-
-                if (!nonMatchingToken) {
-                    resultNoteSet.add(becca.notes[noteId]);
-                }
-            }
+            return { matched, negation: false };
         }
 
-        return content;
+        // Multi-token matching with fuzzy support and phrase proximity
+        if (this.operator === "~=" || this.operator === "~*") {
+            return { matched: this.matchesWithFuzzy(content, noteId), negation: false };
+        }
+
+        if (this.operator === "=" || this.operator === "!=") {
+            // Exact phrase matching for = and !=
+            let matches = this.containsExactPhrase(this.tokens, content, false);
+            // Also check flatText if enabled (includes attributes)
+            if (!matches && this.flatText) {
+                matches = this.containsExactPhrase(this.tokens, becca.notes[noteId].getFlatText(), true);
+            }
+
+            if (this.operator === "=") {
+                return { matched: matches, negation: false };
+            }
+            return { matched: !matches, negation: true };
+        }
+
+        // Other operators: check all tokens present (any order)
+        const nonMatchingToken = this.tokens.find((token) => !this.tokenMatchesContent(token, content, noteId));
+        return { matched: !nonMatchingToken, negation: false };
+    }
+
+    /**
+     * Classifies how well this note's body content matched the query tokens and
+     * records the result on the search context for scoring. An exact-operator
+     * match that came from flat text (attributes) rather than the body is recorded
+     * at the exact tier directly, since body classification would find nothing.
+     */
+    private recordContentMatchQuality(noteId: string, content: string, searchContext: SearchContext) {
+        const normalizedTokens = this.tokens.flatMap((token) => tokenizeIntoWords(token));
+        if (normalizedTokens.length === 0) {
+            return;
+        }
+
+        let quality = classifyContentMatch(normalizedTokens, tokenizeIntoWords(content));
+
+        if (!quality && this.operator === "=") {
+            quality = {
+                tier: normalizedTokens.length > 1 ? "exact_phrase" : "exact_word",
+                matchedTokenCount: new Set(normalizedTokens).size,
+                inOrder: false
+            };
+        }
+
+        if (quality) {
+            searchContext.recordContentMatch(noteId, quality);
+        }
     }
 
     /**
