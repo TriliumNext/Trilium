@@ -39,6 +39,14 @@ interface ConstructorOpts {
     tokens: string[];
     raw?: boolean;
     flatText?: boolean;
+    /**
+     * When set, a note that fails normal `*=*` matching is retried with fuzzy
+     * matching against its body content (progressive phase 2 only, gated on
+     * {@link SearchContext.enableFuzzyMatching}). Only the default plain-query
+     * content expression built by parse's getFulltext sets this; explicit user
+     * operators never do.
+     */
+    fuzzyFallback?: boolean;
 }
 
 type SearchRow = Pick<NoteRow, "noteId" | "type" | "mime" | "content" | "isProtected">;
@@ -48,8 +56,9 @@ class NoteContentFulltextExp extends Expression {
     tokens: string[];
     private raw: boolean;
     private flatText: boolean;
+    private fuzzyFallback: boolean;
 
-    constructor(operator: string, { tokens, raw, flatText }: ConstructorOpts) {
+    constructor(operator: string, { tokens, raw, flatText, fuzzyFallback }: ConstructorOpts) {
         super();
 
         if (!operator || !tokens || !Array.isArray(tokens)) {
@@ -66,6 +75,7 @@ class NoteContentFulltextExp extends Expression {
         this.tokens = tokens;
         this.raw = !!raw;
         this.flatText = !!flatText;
+        this.fuzzyFallback = !!fuzzyFallback;
     }
 
     execute(inputNoteSet: NoteSet, executionContext: {}, searchContext: SearchContext) {
@@ -238,17 +248,44 @@ class NoteContentFulltextExp extends Expression {
 
         const { matched, negation } = this.matchesContent(content, noteId);
 
-        if (matched) {
+        // A4: progressive phase-2 fuzzy fallback for plain-query body content. Only
+        // runs for notes that failed the cheap match above, and only when this is the
+        // default *=* content expression (fuzzyFallback) with fuzzy matching enabled.
+        const fuzzyMatched = !matched && !negation && this.fuzzyFallback && searchContext.enableFuzzyMatching
+            && this.allTokensFuzzyMatchContent(content);
+
+        if (matched || fuzzyMatched) {
             resultNoteSet.add(becca.notes[noteId]);
-            // Record how well the content matched so scoring can rank body matches.
-            // Negation (!=) matches are added because content does NOT contain the
-            // query — there is no positive content match to record.
-            if (!negation) {
+
+            if (fuzzyMatched) {
+                searchContext.recordContentMatch(noteId, {
+                    tier: "fuzzy",
+                    matchedTokenCount: new Set(this.tokens.flatMap((token) => tokenizeIntoWords(token))).size,
+                    inOrder: false
+                });
+            } else if (!negation) {
+                // Record how well the content matched so scoring can rank body matches.
+                // Negation (!=) matches are added because content does NOT contain the
+                // query — there is no positive content match to record.
                 this.recordContentMatchQuality(noteId, content, searchContext);
             }
         }
 
         return content;
+    }
+
+    /**
+     * True when every query token fuzzy-matches (or is a substring of) some word in
+     * the content. Used only by the phase-2 fuzzy fallback; per-word work is bounded
+     * by the length-difference early-skip and AUTO edit distances.
+     */
+    private allTokensFuzzyMatchContent(content: string): boolean {
+        const normalizedContent = normalizeSearchText(content);
+
+        return this.tokens.every((token) => {
+            const normalizedToken = normalizeSearchText(token);
+            return normalizedContent.includes(normalizedToken) || this.fuzzyMatchToken(normalizedToken, normalizedContent);
+        });
     }
 
     /**

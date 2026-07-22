@@ -56,7 +56,9 @@ function getFulltext(_tokens: TokenData[], searchContext: SearchContext, leading
 
         const searchExpressions: Expression[] = [
             new NoteFlatTextExp(tokens),
-            new NoteContentFulltextExp(operator, { tokens, flatText: true }),
+            // fuzzyFallback lets progressive phase 2 fuzzy-match body content (e.g.
+            // "combinef" finding "combined"); only this default plain-query path sets it.
+            new NoteContentFulltextExp(operator, { tokens, flatText: true, fuzzyFallback: true }),
             new OCRContentExpression(tokens)
         ];
 

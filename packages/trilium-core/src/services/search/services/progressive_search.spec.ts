@@ -4,6 +4,8 @@ import BNote from "../../../becca/entities/bnote.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import SearchContext from "../search_context.js";
 import becca from "../../../becca/becca.js";
+import { getContext } from "../../context.js";
+import noteService from "../../notes.js";
 import { findNoteByTitle, note, NoteBuilder } from "../../../test/becca_mocking.js";
 
 describe("Progressive Search Strategy", () => {
@@ -237,6 +239,44 @@ describe("Progressive Search Strategy", () => {
             const searchResults = searchService.findResultsWithQuery("nonexistent", searchContext);
 
             expect(searchResults.length).toBe(0);
+        });
+    });
+
+    describe("Content Match Quality Thresholds", () => {
+        function contentNote(title: string, content: string) {
+            return getContext().init(() => noteService.createNewNote({
+                parentNoteId: "root",
+                title,
+                content,
+                type: "text"
+            }).note);
+        }
+
+        it("does not run phase-2 body fuzzy matching when phase 1 has enough exact content results", () => {
+            for (let i = 0; i < 5; i++) {
+                contentNote(`Note ${i}`, `this document section ${i}`);
+            }
+            // Body typo of "document" — reachable only via the phase-2 fuzzy fallback.
+            const typo = contentNote("Typo", "this documnt section");
+
+            const searchResults = searchService.findResultsWithQuery("document", new SearchContext());
+
+            expect(searchResults.length).toBe(5);
+            expect(searchResults.some((result) => result.noteId === typo.noteId)).toBe(false);
+        });
+
+        it("counts substring-only body matches as phase-1 quality results (weight 15 clears the bar)", () => {
+            // "ument" is a substring of "document" (not an exact word or prefix), so each
+            // note earns the substring tier (15), which exceeds the quality threshold (10).
+            for (let i = 0; i < 5; i++) {
+                contentNote(`Note ${i}`, `the document ${i} here`);
+            }
+            const typo = contentNote("Typo", "the docmnt here");
+
+            const searchResults = searchService.findResultsWithQuery("ument", new SearchContext());
+
+            expect(searchResults.length).toBe(5);
+            expect(searchResults.some((result) => result.noteId === typo.noteId)).toBe(false);
         });
     });
 });

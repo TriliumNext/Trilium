@@ -809,6 +809,66 @@ describe("Search", () => {
         expect(lastExactIndex).toBeLessThan(firstFuzzyIndex);
     });
 
+    describe("content-aware ranking (search-overhaul)", () => {
+        function contentNote(title: string, content: string) {
+            return getContext().init(() => noteService.createNewNote({
+                parentNoteId: "root",
+                title,
+                content,
+                type: "text"
+            }).note);
+        }
+
+        function rank(searchResults: Array<{ noteId: string }>, noteId: string) {
+            return searchResults.findIndex((result) => result.noteId === noteId);
+        }
+
+        it("ranks a body phrase match above scattered word matches (#10616)", () => {
+            const phrase = contentNote("Alpha", "I like you and me as a phrase");
+            const scattered = contentNote("Beta", "the menu is here and you know it");
+
+            const searchResults = searchService.findResultsWithQuery("you and me", new SearchContext());
+
+            const phraseRank = rank(searchResults, phrase.noteId);
+            const scatteredRank = rank(searchResults, scattered.noteId);
+
+            expect(phraseRank).toBeGreaterThanOrEqual(0);
+            expect(scatteredRank).toBeGreaterThanOrEqual(0);
+            expect(phraseRank).toBeLessThan(scatteredRank);
+        });
+
+        it("ranks a title match above a content-only match for the same query", () => {
+            const titled = contentNote("sync stuff", "");
+            const bodyOnly = contentNote("Docs", "please sync now");
+
+            const searchResults = searchService.findResultsWithQuery("sync", new SearchContext());
+
+            const titledRank = rank(searchResults, titled.noteId);
+            const bodyRank = rank(searchResults, bodyOnly.noteId);
+
+            expect(titledRank).toBeGreaterThanOrEqual(0);
+            expect(bodyRank).toBeGreaterThanOrEqual(0);
+            expect(titledRank).toBeLessThan(bodyRank);
+        });
+
+        it("finds a body typo via phase-2 fuzzy fallback, ranked below exact matches (combinef -> combined)", () => {
+            const exact = contentNote("ExactNote", "the combinef marker is set");
+            const fuzzy = contentNote("FuzzyNote", "the values were combined together");
+
+            const searchResults = searchService.findResultsWithQuery("combinef", new SearchContext());
+
+            const exactRank = rank(searchResults, exact.noteId);
+            const fuzzyRank = rank(searchResults, fuzzy.noteId);
+
+            expect(exactRank).toBeGreaterThanOrEqual(0);
+            expect(fuzzyRank).toBeGreaterThanOrEqual(0);
+            expect(exactRank).toBeLessThan(fuzzyRank);
+            // A fuzzy-only body match (weight 5) stays below the quality threshold (10),
+            // so it never suppresses the fuzzy phase.
+            expect(searchResults[fuzzyRank].score).toBeLessThan(10);
+        });
+    });
+
 
     // FIXME: test what happens when we order without any filter criteria
 
