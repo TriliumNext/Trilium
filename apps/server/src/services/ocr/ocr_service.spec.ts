@@ -752,6 +752,21 @@ describe('OCRService', () => {
                 ]);
             });
 
+            it('selects only never-processed blobs, treating an empty result as terminal', () => {
+                mockSql.getRows.mockReturnValue([]);
+
+                ocrService.getBlobsNeedingOCR();
+
+                // A stored empty string means "processed, found no text" and must not be
+                // re-selected, otherwise a blank/text-less blob would be re-OCR'd on every
+                // batch run. Both the note and attachment queries filter on NULL only.
+                expect(mockSql.getRows.mock.calls).toHaveLength(2);
+                for (const [sqlText] of mockSql.getRows.mock.calls) {
+                    expect(sqlText).toContain('textRepresentation IS NULL');
+                    expect(sqlText).not.toContain("textRepresentation = ''");
+                }
+            });
+
             it('returns empty array and logs when the query fails', () => {
                 mockSql.getRows.mockImplementation(() => {
                     throw new Error('db down');
