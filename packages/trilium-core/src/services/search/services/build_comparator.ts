@@ -88,8 +88,14 @@ const stringComparators: Record<string, Comparator<string>> = {
         
         const normalizedVal = normalizeSearchText(val);
         const normalizedCompared = normalizeSearchText(comparedValue);
-        
-        // For ~* operator, use fuzzy matching across the entire content
+
+        // "~*" is fuzzy CONTAINS: first try a plain substring (fragment) match, so
+        // a fragment like "progr" matches "programming" (mirrors the ~= fallback).
+        // Then fall back to fuzzy matching for typos that are not substrings.
+        if (normalizedVal.includes(normalizedCompared)) {
+            return true;
+        }
+
         return fuzzyMatchWord(normalizedCompared, normalizedVal);
     }
 };

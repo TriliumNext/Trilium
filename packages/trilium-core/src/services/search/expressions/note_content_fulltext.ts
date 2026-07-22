@@ -154,10 +154,11 @@ class NoteContentFulltextExp extends Expression {
         const normalizedToken = normalizeSearchText(token);
         const normalizedContent = normalizeSearchText(content);
 
-        // If token contains spaces, it's a multi-word phrase from quotes
-        // Check for substring match (consecutive phrase)
+        // If token contains spaces, it's a multi-word phrase from quotes. Scan the
+        // tokenized content for a consecutive run so the phrase matches across
+        // boundary punctuation (consistent with containsExactPhrase).
         if (normalizedToken.includes(' ')) {
-            return normalizedContent.includes(normalizedToken);
+            return wordsContainPhrase(tokenizeIntoWords(content), tokenizeIntoWords(normalizedToken));
         }
 
         // For single words, use exact word matching to avoid substring matches
@@ -261,7 +262,7 @@ class NoteContentFulltextExp extends Expression {
                 (this.operator === "*=*" && content.includes(token)) ||
                 (this.operator === "%=" && getRegex(token).test(content)) ||
                 (this.operator === "~=" && this.matchesWithFuzzy(content, noteId)) ||
-                (this.operator === "~*" && this.fuzzyMatchToken(normalizeSearchText(token), normalizeSearchText(content)))
+                (this.operator === "~*" && this.fuzzyContainsToken(normalizeSearchText(token), normalizeSearchText(content)))
             ) {
                 resultNoteSet.add(becca.notes[noteId]);
             }
@@ -432,6 +433,16 @@ class NoteContentFulltextExp extends Expression {
         const limitedWords = words.slice(0, FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT);
 
         return limitedWords.some(word => this.fuzzyMatchSingle(token, word));
+    }
+
+    /**
+     * Fuzzy CONTAINS for a single "~*" token: a plain substring (fragment) match
+     * counts (so "progr" matches "programming"), otherwise fall back to per-word
+     * fuzzy matching. Mirrors the substring fallback used by "~=" and keeps "~="
+     * (fuzzy equals, word-level via fuzzyMatchToken) unaffected.
+     */
+    private fuzzyContainsToken(token: string, content: string): boolean {
+        return content.includes(token) || this.fuzzyMatchToken(token, content);
     }
 
     /**

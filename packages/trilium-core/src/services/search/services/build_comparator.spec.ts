@@ -155,5 +155,20 @@ describe("buildComparator", () => {
             expect(fuzzy("crab")).toBe(true);
             expect(fuzzy("xyz")).toBe(false);
         });
+
+        it("~* matches a substring fragment of a longer word (fuzzy contains, #10616)", () => {
+            // "~*" is fuzzy CONTAINS, so a fragment like "progr" must match a value
+            // containing "programming" even though it is a proper substring.
+            const fuzzy = buildComparator("~*", "progr");
+            expect(fuzzy?.("learn programming today")).toBe(true);
+            expect(fuzzy?.("unrelated content")).toBe(false);
+        });
+
+        it("~* still matches a fuzzy typo that is not a substring", () => {
+            // "progrms" is one edit from "programs" (not a substring), so fuzzy
+            // matching must still catch it.
+            const fuzzy = buildComparator("~*", "progrms");
+            expect(fuzzy?.("view programs list")).toBe(true);
+        });
     });
 });
