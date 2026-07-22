@@ -26,7 +26,7 @@
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
     "fuse.js": "7.5.0",
-    "katex": "0.17.0",
+    "katex": "0.18.1",
     "mermaid": "11.16.0"
   },
   "devDependencies": {
