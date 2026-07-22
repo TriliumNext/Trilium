@@ -1,3 +1,4 @@
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import clsx from "clsx";
 import { HTMLAttributes } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -16,7 +17,7 @@ interface NoteLinkOpts {
     style?: Record<string, string | number>;
     noPreview?: boolean;
     noTnLink?: boolean;
-    highlightedTokens?: string[] | null | undefined;
+    highlightedTokens?: (string | HighlightedTokenInfo)[] | null | undefined;
     // Override the text of the link, otherwise the note title is used.
     title?: string;
     /** Inline text appended right after the link title (before the note path). */

@@ -1,10 +1,11 @@
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type DelayedVisibilityPhase, useDelayedVisibility, useStaticTooltip } from "./hooks";
+import { type DelayedVisibilityPhase, useDelayedVisibility, useImperativeSearchHighlighlighting, useStaticTooltip } from "./hooks";
 
 let currentPhase: DelayedVisibilityPhase | undefined;
 
@@ -124,5 +125,81 @@ describe("useStaticTooltip", () => {
         await act(async () => render(<TooltipHarness generation={2} />, container));
 
         expect(document.querySelector(".tooltip")).toBeNull();
+    });
+});
+
+describe("useImperativeSearchHighlighlighting", () => {
+    let container: HTMLElement;
+    let target: HTMLElement;
+
+    beforeEach(() => {
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        target = document.createElement("div");
+        document.body.appendChild(target);
+    });
+
+    afterEach(() => {
+        render(null, container);
+        container.remove();
+        target.remove();
+    });
+
+    function Probe({ tokens, onReady }: {
+        tokens: (string | HighlightedTokenInfo)[] | null | undefined;
+        onReady: (fn: (el: HTMLElement | null | undefined) => void) => void;
+    }) {
+        const highlight = useImperativeSearchHighlighlighting(tokens);
+        onReady(highlight);
+        return null;
+    }
+
+    /** Mounts a fresh hook instance (so each call gets its own `Mark` instance) and applies it to `target`. */
+    function highlight(tokens: (string | HighlightedTokenInfo)[] | null | undefined, html: string) {
+        target.innerHTML = html;
+        render(null, container);
+        let highlightFn: ((el: HTMLElement | null | undefined) => void) | undefined;
+        act(() => {
+            render(<Probe tokens={tokens} onReady={(fn) => { highlightFn = fn; }} />, container);
+        });
+        highlightFn?.(target);
+        return target;
+    }
+
+    function markedTexts(el: HTMLElement) {
+        return Array.from(el.querySelectorAll("span.ck-find-result")).map((mark) => mark.textContent);
+    }
+
+    it("wraps a diacritic match when searching a plain, unaccented token (#10616)", () => {
+        const el = highlight(["ktory"], "<p>Aký ktorý</p>");
+        expect(markedTexts(el)).toEqual(["ktorý"]);
+    });
+
+    it("wraps a CJK substring match inside a larger word", () => {
+        const el = highlight(["笔记"], "<p>我的笔记本</p>");
+        expect(markedTexts(el)).toEqual(["笔记"]);
+    });
+
+    it("wraps every match of a regex-typed token (#5332)", () => {
+        const el = highlight([{ token: "ba.", type: "regex" }], "<p>foo bar baz qux</p>");
+        expect(markedTexts(el)).toEqual(["bar", "baz"]);
+    });
+
+    it("skips an invalid regex token without throwing", () => {
+        expect(() => highlight([{ token: "(unterminated", type: "regex" }], "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+    });
+
+    it("still highlights when given legacy string[] input", () => {
+        const el = highlight(["bar"], "<p>foo bar baz</p>");
+        expect(markedTexts(el)).toEqual(["bar"]);
+    });
+
+    it("is a no-op for null or undefined tokens", () => {
+        expect(() => highlight(null, "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+
+        expect(() => highlight(undefined, "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
     });
 });

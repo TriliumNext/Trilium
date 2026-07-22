@@ -1,5 +1,6 @@
 import "./search_result.css";
 
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
@@ -18,7 +19,7 @@ enum SearchResultState {
 export default function SearchResult() {
     const { note, notePath, ntxId } = useNoteContext();
     const [ state, setState ] = useState<SearchResultState>();
-    const [ highlightedTokens, setHighlightedTokens ] = useState<string[]>();
+    const [ highlightedTokens, setHighlightedTokens ] = useState<(string | HighlightedTokenInfo)[]>();
 
     function refresh() {
         if (note?.type !== "search") {
@@ -29,7 +30,7 @@ export default function SearchResult() {
             setState(SearchResultState.NO_RESULTS);
         } else {
             setState(SearchResultState.GOT_RESULTS);
-            setHighlightedTokens(note.highlightedTokens);
+            setHighlightedTokens(note.highlightedTokenInfos ?? note.highlightedTokens);
         }
     }
 
