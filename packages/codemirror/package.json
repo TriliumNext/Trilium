@@ -24,7 +24,7 @@
     "@codemirror/view": "6.43.6",
     "@typescript/vfs": "1.6.4",
     "@valtown/codemirror-ts": "2.3.1",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "@fsegurai/codemirror-theme-abcdef": "6.2.5",
     "@fsegurai/codemirror-theme-abyss": "6.2.5",
     "@fsegurai/codemirror-theme-android-studio": "6.2.5",
