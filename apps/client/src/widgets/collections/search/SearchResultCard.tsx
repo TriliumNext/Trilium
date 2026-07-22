@@ -30,11 +30,7 @@ export default function SearchResultCard({ noteId, details, loading, highlighted
     const breadcrumb = getBreadcrumbTitle(details?.notePathTitle);
 
     const searchTerms = toPlainSearchTerms(highlightedTokens);
-    // Task 8 adds `searchTerms` to ViewScope and teaches calculateHash to encode it. Until then we
-    // attach it through a locally-widened view scope so the card link already carries the plain
-    // terms; calculateHash ignores unknown viewScope fields today, so this is harmless and
-    // forward-compatible.
-    const viewScope: SearchResultViewScope = { searchTerms };
+    const viewScope: ViewScope = { searchTerms };
     const href = calculateHash({ notePath: noteId, viewScope });
 
     // Set the title text imperatively so mark.js (which mutates the DOM to inject `.ck-find-result`
@@ -64,9 +60,6 @@ export default function SearchResultCard({ noteId, details, loading, highlighted
         </a>
     );
 }
-
-/** Task 8 promotes `searchTerms` onto {@link ViewScope}; widened locally until then. */
-type SearchResultViewScope = ViewScope & { searchTerms?: string[] };
 
 function SearchResultSnippet({ details, loading }: { details: SearchResultDetails | undefined; loading: boolean }) {
     if (!details) {

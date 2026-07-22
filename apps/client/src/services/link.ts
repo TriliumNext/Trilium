@@ -62,6 +62,11 @@ export interface ViewScope {
     tocCollapsedHeadings?:  Set<string>;
     /** When set, scrolls to a bookmark anchor within the note after navigation. */
     bookmark?: string;
+    /**
+     * Search terms to highlight and jump to after navigating from search results; consumed once
+     * by the destination type widget (mirrors `bookmark` semantics).
+     */
+    searchTerms?: string[];
 }
 
 interface CreateLinkOptions {
@@ -196,7 +201,10 @@ export function calculateHash({ notePath, ntxId, hoistedNoteId, viewScope = {} }
         ntxId ? { ntxId } : null,
         hoistedNoteId && hoistedNoteId !== "root" ? { hoistedNoteId } : null,
         viewScope.viewMode && viewScope.viewMode !== "default" ? { viewMode: viewScope.viewMode } : null,
-        viewScope.attachmentId ? { attachmentId: viewScope.attachmentId } : null
+        viewScope.attachmentId ? { attachmentId: viewScope.attachmentId } : null,
+        viewScope.searchTerms?.length
+            ? { searchTerms: viewScope.searchTerms.map(encodeURIComponent).join(",") }
+            : null
     ].filter((p) => !!p);
 
     const paramStr = params
@@ -261,6 +269,21 @@ export function parseNavigationStateFromUrl(url: string | undefined) {
                 hoistedNoteId = value;
             } else if (name === "searchString") {
                 searchString = value; // supports triggering search from URL, e.g. #?searchString=blabla
+            } else if (name === "searchTerms") {
+                // `value` already went through one decodeURIComponent() above (undoing the generic
+                // pipeline's outer encode); each comma-separated token needs its own inner decode.
+                // A malformed token (corrupted URL, hand-edited link) must not break navigation for
+                // the rest of the link, so drop it rather than letting decodeURIComponent throw.
+                viewScope.searchTerms = value
+                    .split(",")
+                    .map((token) => {
+                        try {
+                            return decodeURIComponent(token);
+                        } catch {
+                            return null;
+                        }
+                    })
+                    .filter((token): token is string => token !== null);
             } else if (["viewMode", "attachmentId", "bookmark"].includes(name)) {
                 (viewScope as any)[name] = value;
             } else if (name === "popup") {

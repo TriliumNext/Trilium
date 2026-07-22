@@ -165,22 +165,18 @@ export default function JumpToNoteDialogComponent() {
 }
 
 /**
- * Task 8 promotes `searchTerms` onto {@link ViewScope}; widened locally until then (same
- * pattern as SearchResultCard.tsx's `SearchResultViewScope`). The autocomplete response has
- * no per-suggestion token list, so we pass the trimmed raw query as a single term rather than
- * re-deriving a token list client-side — simple, and good enough for jump-to-match highlighting.
- */
-type JumpToNoteViewScope = ViewScope & { searchTerms?: string[] };
-
-/**
  * Only carry search terms into the opened note when the dialog was actually used as a text
  * search — not the command palette, and not an untyped "recent notes" pick — since jumping
  * from a command or a blank query shouldn't highlight anything. Exported (and kept pure) so
  * the gating itself is unit-testable without rendering the dialog; the caller is responsible
  * for keeping `typedText` accurate (see the `actualText` ref sync in `openDialog`/`onTextChange`
  * and the "input"-triggering functions in note_autocomplete.ts).
+ *
+ * The autocomplete response has no per-suggestion token list, so we pass the trimmed raw query
+ * as a single term rather than re-deriving a token list client-side — simple, and good enough
+ * for jump-to-match highlighting.
  */
-export function deriveSearchViewScope(isCommandMode: boolean, typedText: string | undefined): JumpToNoteViewScope {
+export function deriveSearchViewScope(isCommandMode: boolean, typedText: string | undefined): ViewScope {
     const searchString = !isCommandMode ? typedText?.trim() : "";
     return searchString ? { searchTerms: [searchString] } : {};
 }
