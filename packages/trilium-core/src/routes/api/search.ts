@@ -8,7 +8,6 @@ import SearchContext from "../../services/search/search_context.js";
 import type SearchResult from "../../services/search/search_result.js";
 import searchService, { EMPTY_RESULT, type SearchNoteResult } from "../../services/search/services/search.js";
 import { ValidationError } from "../../errors.js";
-import becca_service from "../../becca/becca_service.js";
 import { getHoistedNoteId } from "../../services/context.js";
 
 function searchFromNote(req: Request<{ noteId: string }>): SearchNoteResult {
@@ -57,39 +56,11 @@ function quickSearch(req: Request<{ searchString: string }>) {
         ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId()
     });
 
-    // Execute search with our context
-    const allSearchResults = searchService.findResultsWithQuery(searchString, searchContext);
-    const trimmed = allSearchResults.slice(0, 200);
-
-    // Extract snippets using highlightedTokens from our context
-    for (const result of trimmed) {
-        result.contentSnippet = searchService.extractContentSnippet(result.noteId, searchContext.highlightedTokens);
-        result.attributeSnippet = searchService.extractAttributeSnippet(result.noteId, searchContext.highlightedTokens);
-    }
-
-    // Highlight the results
-    searchService.highlightSearchResults(trimmed, searchContext.highlightedTokens, searchContext.ignoreInternalAttributes);
-
-    // Map to API format
-    const searchResults = trimmed.map((result) => {
-        const { title, icon } = becca_service.getNoteTitleAndIcon(result.noteId);
-        return {
-            notePath: result.notePath,
-            noteTitle: title,
-            notePathTitle: result.notePathTitle,
-            highlightedNotePathTitle: result.highlightedNotePathTitle,
-            contentSnippet: result.contentSnippet,
-            highlightedContentSnippet: result.highlightedContentSnippet,
-            attributeSnippet: result.attributeSnippet,
-            highlightedAttributeSnippet: result.highlightedAttributeSnippet,
-            icon
-        };
-    });
-
-    const resultNoteIds = searchResults.map((result) => result.notePath.split("/").pop()).filter(Boolean) as string[];
+    const trimmed = searchService.findResultsWithQuery(searchString, searchContext).slice(0, 200);
+    const searchResults = searchService.buildSearchResultDetails(trimmed, searchContext);
 
     return {
-        searchResultNoteIds: resultNoteIds,
+        searchResultNoteIds: searchResults.map((result) => result.noteId),
         searchResults,
         error: searchContext.getError()
     };

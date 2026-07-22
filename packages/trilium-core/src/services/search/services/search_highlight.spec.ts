@@ -5,6 +5,7 @@ import BBranch from "../../../becca/entities/bbranch.js";
 import BNote from "../../../becca/entities/bnote.js";
 import { note, NoteBuilder } from "../../../test/becca_mocking.js";
 import { normalizePreservingLength } from "../../utils/index.js";
+import SearchContext from "../search_context.js";
 import SearchResult from "../search_result.js";
 import searchService from "./search.js";
 
@@ -83,5 +84,46 @@ describe("highlightSearchResults", () => {
             searchService.highlightSearchResults([result], [{ token: "(unclosed", type: "regex" }])
         ).not.toThrow();
         expect(result.highlightedContentSnippet).toBe("plain text");
+    });
+});
+
+describe("buildSearchResultDetails", () => {
+    beforeEach(() => {
+        becca.reset();
+        rootNote = new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
+        new BBranch({ branchId: "none_root", noteId: "root", parentNoteId: "none", notePosition: 10 });
+    });
+
+    it("maps results to the wire shape including noteId, titles, icon and highlighted attribute snippet", () => {
+        const child = note("Meeting notes").label("project", "phoenix");
+        rootNote.child(child);
+        const result = new SearchResult(["root", child.note.noteId]);
+
+        const searchContext = new SearchContext();
+        searchContext.highlightedTokens.push("phoenix");
+
+        const [details] = searchService.buildSearchResultDetails([result], searchContext);
+
+        expect(details.noteId).toBe(child.note.noteId);
+        expect(details.noteTitle).toBe("Meeting notes");
+        expect(details.notePath).toBe(`root/${child.note.noteId}`);
+        expect(details.notePathTitle).toContain("Meeting notes");
+        expect(details.icon).toBeTruthy();
+        expect(details.attributeSnippet).toContain("phoenix");
+        expect(details.highlightedAttributeSnippet).toContain("<b>phoenix</b>");
+    });
+
+    it("matches attribute values with a regex token from getHighlightedTokenInfos", () => {
+        const child = note("Server config").label("env", "production");
+        rootNote.child(child);
+        const result = new SearchResult(["root", child.note.noteId]);
+
+        const searchContext = new SearchContext();
+        searchContext.highlightedTokens.push("prod[a-z]+");
+        searchContext.regexTokens.add("prod[a-z]+");
+
+        const [details] = searchService.buildSearchResultDetails([result], searchContext);
+
+        expect(details.highlightedAttributeSnippet).toContain("<b>production</b>");
     });
 });

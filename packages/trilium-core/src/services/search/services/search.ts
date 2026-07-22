@@ -1,4 +1,4 @@
-import type { HighlightedTokenInfo } from "@triliumnext/commons";
+import type { HighlightedTokenInfo, SearchResultDetails } from "@triliumnext/commons";
 import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_chat_text.js";
 import striptags from "striptags";
 
@@ -43,46 +43,58 @@ export const EMPTY_RESULT: SearchNoteResult = {
 };
 
 function searchFromNote(note: BNote): SearchNoteResult {
-    let searchResultNoteIds;
-    let highlightedTokens: string[];
-    let highlightedTokenInfos: HighlightedTokenInfo[];
-
-    const searchScript = note.getRelationValue("searchScript");
-    const searchString = note.getLabelValue("searchString") || "";
-    let error: string | null = null;
-
-    if (searchScript) {
-        searchResultNoteIds = searchFromRelation(note, "searchScript");
-        highlightedTokens = [];
-        highlightedTokenInfos = [];
-    } else {
-        const searchContext = new SearchContext({
-            fastSearch: note.hasLabel("fastSearch"),
-            ancestorNoteId: note.getRelationValue("ancestor") || undefined,
-            ancestorDepth: note.getLabelValue("ancestorDepth") || undefined,
-            includeArchivedNotes: note.hasLabel("includeArchivedNotes"),
-            orderBy: note.getLabelValue("orderBy") || undefined,
-            orderDirection: note.getLabelValue("orderDirection") || undefined,
-            limit: parseInt(note.getLabelValue("limit") || "0", 10),
-            debug: note.hasLabel("debug"),
-            fuzzyAttributeSearch: false
-        });
-
-        searchResultNoteIds = findResultsWithQuery(searchString, searchContext).map((sr) => sr.noteId);
-
-        highlightedTokens = searchContext.highlightedTokens;
-        highlightedTokenInfos = searchContext.getHighlightedTokenInfos();
-        error = searchContext.getError();
-    }
+    const { searchResults, searchContext, error } = searchFromNoteWithContext(note);
 
     // we won't return search note's own noteId
     // also don't allow root since that would force infinite cycle
     return {
-        searchResultNoteIds: searchResultNoteIds.filter((resultNoteId) => !["root", note.noteId].includes(resultNoteId)),
-        highlightedTokens,
-        highlightedTokenInfos,
+        searchResultNoteIds: searchResults
+            .map((sr) => sr.noteId)
+            .filter((resultNoteId) => !["root", note.noteId].includes(resultNoteId)),
+        highlightedTokens: searchContext ? searchContext.highlightedTokens : [],
+        highlightedTokenInfos: searchContext ? searchContext.getHighlightedTokenInfos() : [],
         error
     };
+}
+
+/**
+ * Runs a saved search note, returning the raw {@link SearchResult}s together with
+ * the {@link SearchContext} that produced them so callers can build snippets and
+ * highlight token infos. Script-based searches (`~searchScript`) have no lexed
+ * query, so `searchContext` is `null` for them (and there are no snippets/tokens).
+ */
+function searchFromNoteWithContext(note: BNote): {
+    searchResults: SearchResult[];
+    searchContext: SearchContext | null;
+    error: string | null;
+} {
+    const searchScript = note.getRelationValue("searchScript");
+    const searchString = note.getLabelValue("searchString") || "";
+
+    if (searchScript) {
+        const searchResults = searchFromRelation(note, "searchScript").map((noteId) => {
+            const notePath = becca.notes[noteId]?.getBestNotePath() ?? [noteId];
+            return new SearchResult(notePath);
+        });
+
+        return { searchResults, searchContext: null, error: null };
+    }
+
+    const searchContext = new SearchContext({
+        fastSearch: note.hasLabel("fastSearch"),
+        ancestorNoteId: note.getRelationValue("ancestor") || undefined,
+        ancestorDepth: note.getLabelValue("ancestorDepth") || undefined,
+        includeArchivedNotes: note.hasLabel("includeArchivedNotes"),
+        orderBy: note.getLabelValue("orderBy") || undefined,
+        orderDirection: note.getLabelValue("orderDirection") || undefined,
+        limit: parseInt(note.getLabelValue("limit") || "0", 10),
+        debug: note.hasLabel("debug"),
+        fuzzyAttributeSearch: false
+    });
+
+    const searchResults = findResultsWithQuery(searchString, searchContext);
+
+    return { searchResults, searchContext, error: searchContext.getError() };
 }
 
 function searchFromRelation(note: BNote, relationName: string) {
@@ -712,21 +724,32 @@ function searchNotesForAutocomplete(query: string, fastSearch: boolean = true) {
         ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId()
     });
 
-    const allSearchResults = findResultsWithQuery(query, searchContext);
+    const trimmed = findResultsWithQuery(query, searchContext).slice(0, 200);
 
-    const trimmed = allSearchResults.slice(0, 200);
+    return buildSearchResultDetails(trimmed, searchContext);
+}
 
-    // Extract content and attribute snippets
-    for (const result of trimmed) {
-        result.contentSnippet = extractContentSnippet(result.noteId, searchContext.highlightedTokens);
-        result.attributeSnippet = extractAttributeSnippet(result.noteId, searchContext.highlightedTokens);
+/**
+ * Shared builder for the snippet + highlight details of a page of search results.
+ * Extracts content/attribute snippets using the context's structured (regex-aware)
+ * highlight tokens, applies highlighting, and maps each result to the wire shape
+ * (including `noteId`). Mutates the passed {@link SearchResult}s (setting their
+ * snippet fields) as a side effect of extraction/highlighting.
+ */
+function buildSearchResultDetails(results: SearchResult[], searchContext: SearchContext): SearchResultDetails[] {
+    const tokenInfos = searchContext.getHighlightedTokenInfos();
+
+    for (const result of results) {
+        result.contentSnippet = extractContentSnippet(result.noteId, tokenInfos);
+        result.attributeSnippet = extractAttributeSnippet(result.noteId, tokenInfos);
     }
 
-    highlightSearchResults(trimmed, searchContext.highlightedTokens, searchContext.ignoreInternalAttributes);
+    highlightSearchResults(results, tokenInfos, searchContext.ignoreInternalAttributes);
 
-    return trimmed.map((result) => {
+    return results.map((result) => {
         const { title, icon } = becca_service.getNoteTitleAndIcon(result.noteId);
         return {
+            noteId: result.noteId,
             notePath: result.notePath,
             noteTitle: title,
             notePathTitle: result.notePathTitle,
@@ -799,7 +822,9 @@ function highlightSearchResults(searchResults: SearchResult[], tokens: Highlight
 
 export default {
     searchFromNote,
+    searchFromNoteWithContext,
     searchNotesForAutocomplete,
+    buildSearchResultDetails,
     findResultsWithQuery,
     findFirstNoteWithQuery,
     searchNotes,

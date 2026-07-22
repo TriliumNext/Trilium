@@ -242,6 +242,24 @@ export interface HighlightedTokenInfo {
     type: "plain" | "regex";
 }
 
+/**
+ * Per-note snippet + highlight details for one search result, built lazily for a
+ * page of results. Snippet fields are absent when there is nothing to show (e.g.
+ * protected notes without a session, or script-based searches).
+ */
+export interface SearchResultDetails {
+    noteId: string;
+    notePath: string;
+    noteTitle: string;
+    notePathTitle: string;
+    highlightedNotePathTitle?: string;
+    contentSnippet?: string;
+    highlightedContentSnippet?: string;
+    attributeSnippet?: string;
+    highlightedAttributeSnippet?: string;
+    icon: string;
+}
+
 export interface SimilarNote {
     score: number;
     notePath: string[];
