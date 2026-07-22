@@ -576,7 +576,7 @@ async function renderCollection(note: FNote, $renderedContent: JQuery<HTMLElemen
             notePath: note.getBestNotePathString(),
             ntxId: undefined,
             media: "screen",
-            highlightedTokens: note.highlightedTokens,
+            highlightedTokens: note.highlightedTokenInfos ?? note.highlightedTokens,
             // Search results get text-representation (highlighted snippets); books don't.
             showTextRepresentation: note.type === "search"
         }), container);

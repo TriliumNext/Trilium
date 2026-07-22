@@ -1,0 +1,143 @@
+.search-results-list {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    .search-results-list-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        white-space: nowrap;
+    }
+
+    .search-results-list-count {
+        opacity: 0.7;
+        font-size: 0.9em;
+    }
+
+    .search-results-list-page-size {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+    }
+
+    .search-results-list-page-size-label {
+        opacity: 0.7;
+        font-size: 0.9em;
+    }
+
+    .search-results-list-page-size .form-select {
+        width: auto;
+    }
+
+    .search-results-list-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px 0;
+        margin-inline: var(--content-margin-inline);
+        min-width: 0;
+    }
+
+    .search-result-card {
+        display: block;
+        min-width: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--main-border-color);
+        border-radius: 8px;
+        background: var(--accented-background-color);
+        color: inherit;
+        text-decoration: none;
+        transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .search-result-card:hover {
+        background: var(--hover-item-background-color);
+        border-color: var(--main-border-color);
+        text-decoration: none;
+    }
+
+    .search-result-card-header {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 4px 8px;
+        min-width: 0;
+    }
+
+    .search-result-card-icon {
+        flex: 0 0 auto;
+        align-self: center;
+    }
+
+    .search-result-card-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .search-result-card-path {
+        flex: 0 1 auto;
+        min-width: 0;
+        margin-inline-start: auto;
+        opacity: 0.6;
+        font-size: 0.85em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .search-result-card-snippet {
+        margin-top: 4px;
+        line-height: 1.4;
+        color: var(--muted-text-color);
+        overflow-wrap: anywhere;
+    }
+
+    .search-result-card-snippet.unavailable {
+        font-style: italic;
+        opacity: 0.7;
+    }
+
+    .search-result-card-snippet.skeleton {
+        height: 2.6em;
+        border-radius: 4px;
+        background: linear-gradient(
+            90deg,
+            var(--main-border-color) 25%,
+            var(--accented-background-color) 37%,
+            var(--main-border-color) 63%
+        );
+        background-size: 400% 100%;
+        animation: search-result-skeleton 1.4s ease infinite;
+    }
+
+    .search-result-card-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 6px;
+    }
+
+    /* Style the server-injected <b> highlights (snippet + attribute badges) and the client-side
+       mark.js .ck-find-result spans (title) identically. */
+    .search-result-card-title .ck-find-result,
+    .search-result-card-snippet b,
+    .search-result-card-badges b {
+        background: var(--note-list-view-search-result-highlight-background);
+        color: var(--note-list-view-search-result-highlight-color);
+        font-weight: 600;
+        text-decoration: underline;
+    }
+}
+
+@keyframes search-result-skeleton {
+    from {
+        background-position: 100% 0;
+    }
+    to {
+        background-position: 0 0;
+    }
+}

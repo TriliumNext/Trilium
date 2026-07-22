@@ -5,7 +5,8 @@ import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
 import { t } from "../services/i18n";
-import { SearchNoteList } from "./collections/NoteList";
+import { SearchNoteList, useNoteViewType } from "./collections/NoteList";
+import SearchResultsList from "./collections/search/SearchResultsList";
 import Button from "./react/Button";
 import { useNoteContext,  useTriliumEvent } from "./react/hooks";
 import NoItems from "./react/NoItems";
@@ -18,6 +19,7 @@ enum SearchResultState {
 
 export default function SearchResult() {
     const { note, notePath, ntxId } = useNoteContext();
+    const viewType = useNoteViewType(note);
     const [ state, setState ] = useState<SearchResultState>();
     const [ highlightedTokens, setHighlightedTokens ] = useState<(string | HighlightedTokenInfo)[]>();
 
@@ -59,13 +61,25 @@ export default function SearchResult() {
             )}
 
             {state === SearchResultState.GOT_RESULTS && (
-                <SearchNoteList
-                    media="screen"
-                    note={note}
-                    notePath={notePath}
-                    highlightedTokens={highlightedTokens}
-                    ntxId={ntxId}
-                />
+                viewType === "list"
+                    ? (
+                        <SearchResultsList
+                            media="screen"
+                            note={note}
+                            notePath={notePath}
+                            highlightedTokens={highlightedTokens}
+                            ntxId={ntxId}
+                        />
+                    )
+                    : (
+                        <SearchNoteList
+                            media="screen"
+                            note={note}
+                            notePath={notePath}
+                            highlightedTokens={highlightedTokens}
+                            ntxId={ntxId}
+                        />
+                    )
             )}
         </div>
     );
