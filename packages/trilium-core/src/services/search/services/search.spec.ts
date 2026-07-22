@@ -408,6 +408,25 @@ describe("Search", () => {
         expect(searchResults[0].noteId).toEqual(guide.noteId);
     });
 
+    it("fuzzy operator queries (~=) match note properties, labels and relations end-to-end (#9426)", () => {
+        const tolkienAuthor = note("Tolkien");
+        const booksNote = note("Books")
+            .label("title", "Books")
+            .label("book", "Tolkien")
+            .relation("author", tolkienAuthor.note);
+        rootNote.child(booksNote).child(tolkienAuthor);
+
+        const searchContext = new SearchContext();
+
+        // note.property ~= value
+        expect(findNoteByTitle(searchService.findResultsWithQuery("note.title ~= books", searchContext), "Books")).toBeTruthy();
+        // #label ~= value
+        expect(findNoteByTitle(searchService.findResultsWithQuery("#title ~= books", searchContext), "Books")).toBeTruthy();
+        expect(findNoteByTitle(searchService.findResultsWithQuery("#book ~= tolkien", searchContext), "Books")).toBeTruthy();
+        // ~relation.property ~= value
+        expect(findNoteByTitle(searchService.findResultsWithQuery("~author.title ~= tolkien", searchContext), "Books")).toBeTruthy();
+    });
+
     it("fuzzy attribute search", () => {
         rootNote.child(note("Europe")
                 .label("country", "", true)
