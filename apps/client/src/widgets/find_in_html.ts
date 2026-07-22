@@ -9,6 +9,10 @@ import type { FindResult } from "./find.js";
 
 const FIND_RESULT_SELECTED_CSS_CLASSNAME = "ck-find-result_selected";
 const FIND_RESULT_CSS_CLASSNAME = "ck-find-result";
+// Muted highlight for the non-seed tokens of a multi-token search (jump-to-match). Styled in the
+// FindWidget's style block. Deliberately distinct from FIND_RESULT_CSS_CLASSNAME so these marks are
+// not counted as primary matches and Enter/F3 keeps cycling only the seed.
+const FIND_RESULT_SECONDARY_CSS_CLASSNAME = "find-result-secondary";
 
 export default class FindInHtml {
 
@@ -78,7 +82,37 @@ export default class FindInHtml {
         }
     }
 
+    /**
+     * Highlights additional (non-seed) search tokens with a muted secondary style, so opening a
+     * multi-token search result shows every matched term at a glance while Enter/F3 keep cycling
+     * only the primary (seed) matches counted by {@link performFind}.
+     *
+     * Only this read-only HTML handler supports the multi-token pass; the editable CKEditor and
+     * CodeMirror handlers stay seed-only (their find engines highlight a single term). These marks
+     * reuse the same mark.js instance created by {@link performFind}, so {@link findBoxClosed}'s
+     * `unmark()` — and any subsequent manual re-search's `unmark()` — clears them too. mark.js
+     * escapes each keyword internally, so regex metacharacters in a token can't inject.
+     */
+    async highlightExtraTokens(tokens: string[]) {
+        const mark = this.mark;
+        const cleaned = tokens.filter((token) => token.length > 0);
+        if (!mark || cleaned.length === 0) {
+            return;
+        }
+
+        return new Promise<void>((res) => {
+            mark.mark(cleaned, {
+                element: "span",
+                className: FIND_RESULT_SECONDARY_CSS_CLASSNAME,
+                separateWordSearch: false,
+                done: () => res()
+            });
+        });
+    }
+
     async findBoxClosed(totalFound: number, currentFound: number) {
+        // A single unmark() clears both the primary (seed) marks and any secondary marks from
+        // highlightExtraTokens, since they share this mark.js instance.
         this.mark?.unmark();
     }
 
