@@ -99,11 +99,15 @@ const TPL = /*html*/`
         text-overflow: ellipsis;
     }
 
-    /* Search result highlighting */
+    /* Search result highlighting: point at the same highlight vars the snippet cards
+       (SearchResultsList.css / ListOrGridView.css) use, falling back to the pre-existing
+       colors if a theme hasn't defined them. */
     .quick-search .search-result-title b,
     .quick-search .search-result-content b,
     .quick-search .search-result-attributes b {
-        color: var(--admonition-warning-accent-color);
+        background: var(--note-list-view-search-result-highlight-background, transparent);
+        color: var(--note-list-view-search-result-highlight-color, var(--admonition-warning-accent-color));
+        font-weight: 600;
         text-decoration: underline;
     }
 
@@ -144,6 +148,8 @@ interface QuickSearchResponse {
         highlightedAttributeSnippet?: string;
         icon: string;
     }>;
+    /** Plain search tokens the server highlighted; consumed by jump-to-match producers. */
+    highlightedTokens?: string[];
     error: string;
 }
 
@@ -158,6 +164,10 @@ export default class QuickSearchWidget extends BasicWidget {
     private allSearchResultNoteIds: string[] = [];
     private currentDisplayedCount: number = 0;
     private isLoadingMore: boolean = false;
+
+    // Plain tokens the server highlighted for the last completed search. Consumed by
+    // jump-to-match producers (Task 9) to know what to highlight in the opened note.
+    private lastHighlightedTokens: string[] = [];
 
     doRender() {
         this.$widget = $(TPL);
@@ -243,7 +253,9 @@ export default class QuickSearchWidget extends BasicWidget {
                 ${t("quick-search.searching")}
             </span>`);
 
-        const { searchResultNoteIds, searchResults, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
+        const { searchResultNoteIds, searchResults, highlightedTokens, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
+
+        this.lastHighlightedTokens = highlightedTokens || [];
 
         if (error) {
             const tooltip = new Tooltip(this.$searchString[0], {

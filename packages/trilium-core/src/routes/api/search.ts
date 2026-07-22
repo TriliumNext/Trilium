@@ -119,6 +119,7 @@ function quickSearch(req: Request<{ searchString: string }>) {
     return {
         searchResultNoteIds: searchResults.map((result) => result.noteId),
         searchResults,
+        highlightedTokens: searchContext.highlightedTokens,
         error: searchContext.getError()
     };
 }

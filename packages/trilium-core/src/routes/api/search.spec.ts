@@ -30,12 +30,15 @@ describe("Search API (core)", () => {
     });
 
     it("returns structured quick-search results with snippets", async () => {
-        const res = await api.get<{ searchResultNoteIds: string[]; searchResults: unknown[] }>(
+        const res = await api.get<{ searchResultNoteIds: string[]; searchResults: unknown[]; highlightedTokens: string[] }>(
             `/api/quick-search/${UNIQUE_TOKEN}`
         );
         expect(res.status).toBe(200);
         expect(res.body.searchResultNoteIds).toContain(createdNoteId);
         expect(Array.isArray(res.body.searchResults)).toBe(true);
+        // highlightedTokens lets clients (quick-search dropdown, jump-to-match) know which
+        // tokens the server highlighted, without re-deriving them from the raw query string.
+        expect(res.body.highlightedTokens).toContain(UNIQUE_TOKEN.toLowerCase());
     });
 
     it("lists template note ids including a freshly-labelled template", async () => {
