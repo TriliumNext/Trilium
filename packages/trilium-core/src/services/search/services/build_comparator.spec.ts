@@ -48,34 +48,61 @@ describe("buildComparator", () => {
     });
 
     describe("equality operators (= and !=)", () => {
-        it("matches a single word case-insensitively against any word in the value", () => {
-            const eq = buildComparator("=", "Hello")!;
-            expect(eq("hello world")).toBe(true);
-            expect(eq("say HELLO there")).toBe(true);
-            expect(eq("hellothere")).toBe(false); // not an exact word
-            expect(eq("")).toBe(false);
+        it("matches only the exact full value, case-insensitively (strict equality)", () => {
+            const eq = buildComparator("=", "Vienna");
+            expect(eq?.("vienna")).toBe(true);
+            expect(eq?.("VIENNA")).toBe(true);
+            // No longer a word/substring match: the value must equal the whole thing.
+            expect(eq?.("Vienna Austria")).toBe(false);
+            expect(eq?.("hello vienna world")).toBe(false);
+            expect(eq?.("")).toBe(false);
         });
 
-        it("matches a multi-word phrase as a consecutive substring", () => {
-            const eq = buildComparator("=", "hello world")!;
-            expect(eq("well hello world friend")).toBe(true);
-            expect(eq("world hello")).toBe(false);
+        it("matches a multi-word compared value only against the whole value", () => {
+            const eq = buildComparator("=", "Vienna Austria");
+            expect(eq?.("vienna austria")).toBe(true);
+            expect(eq?.("well vienna austria friend")).toBe(false);
+            expect(eq?.("austria vienna")).toBe(false);
         });
 
         it("normalizes diacritics on both sides", () => {
-            const eq = buildComparator("=", "café")!;
-            expect(eq("the cafe is open")).toBe(true);
+            const eq = buildComparator("=", "café");
+            expect(eq?.("cafe")).toBe(true);
+            expect(eq?.("the cafe is open")).toBe(false);
         });
 
-        it("negates the equality match and treats empty value as a match", () => {
-            const neq = buildComparator("!=", "hello")!;
-            expect(neq("hello world")).toBe(false);
-            expect(neq("goodbye world")).toBe(true);
-            expect(neq("")).toBe(true);
+        it("negates the strict equality match and treats empty value as a match", () => {
+            const neq = buildComparator("!=", "vienna");
+            expect(neq?.("vienna")).toBe(false);
+            expect(neq?.("Vienna Austria")).toBe(true);
+            expect(neq?.("goodbye world")).toBe(true);
+            expect(neq?.("")).toBe(true);
+        });
+    });
 
-            const neqPhrase = buildComparator("!=", "hello world")!;
-            expect(neqPhrase("well hello world")).toBe(false);
-            expect(neqPhrase("world hello")).toBe(true);
+    describe("internal word= operator (title fulltext word/phrase match)", () => {
+        it("matches a single word case-insensitively against any word in the value", () => {
+            const eq = buildComparator("word=", "Hello");
+            expect(eq?.("hello world")).toBe(true);
+            expect(eq?.("say HELLO there")).toBe(true);
+            expect(eq?.("hellothere")).toBe(false); // not an exact word
+            expect(eq?.("")).toBe(false);
+        });
+
+        it("matches a multi-word phrase as a consecutive substring", () => {
+            const eq = buildComparator("word=", "hello world");
+            expect(eq?.("well hello world friend")).toBe(true);
+            expect(eq?.("world hello")).toBe(false);
+        });
+
+        it("matches a punctuation-wrapped word against the bare token", () => {
+            const eq = buildComparator("word=", "books");
+            expect(eq?.("(Books)")).toBe(true);
+        });
+
+        it("normalizes diacritics on both sides", () => {
+            const eq = buildComparator("word=", "café");
+            expect(eq?.("the cafe is open")).toBe(true);
         });
     });
 

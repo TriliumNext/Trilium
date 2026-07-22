@@ -39,6 +39,23 @@ describe("etapi/search", () => {
         expect(response.body.results).toHaveLength(0);
     });
 
+    it("attribute = uses strict equality, not word/phrase matching", async () => {
+        // Regression for #9422: "#capital=Vienna" must match the note whose label
+        // value equals "Vienna" exactly, and must NOT match one whose value merely
+        // contains the word "Vienna" (e.g. "Vienna Austria").
+        const exactNoteId = await createNoteWithLabel(app, token, "capital", "Vienna");
+        await createNoteWithLabel(app, token, "capital", "Vienna Austria");
+
+        const query = encodeURIComponent("#capital=Vienna");
+        const response = await supertest(app)
+            .get(`/etapi/notes?search=${query}`)
+            .auth(USER, token, { "type": "basic"})
+            .expect(200);
+
+        const resultIds = response.body.results.map((r: { noteId: string }) => r.noteId);
+        expect(resultIds).toStrictEqual([exactNoteId]);
+    });
+
     describe("query parameter handling", () => {
         afterEach(() => {
             vi.restoreAllMocks();
@@ -95,3 +112,16 @@ describe("etapi/search", () => {
         });
     });
 });
+
+async function createNoteWithLabel(app: Application, token: string, name: string, value: string) {
+    const noteId = await createNote(app, token, randomUUID());
+    const attributeId = `label${randomUUID().replace(/-/g, "")}`.substring(0, 32);
+
+    await supertest(app)
+        .post("/etapi/attributes")
+        .auth(USER, token, { "type": "basic" })
+        .send({ attributeId, noteId, type: "label", name, value })
+        .expect(201);
+
+    return noteId;
+}

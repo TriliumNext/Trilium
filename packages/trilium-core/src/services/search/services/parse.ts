@@ -44,7 +44,10 @@ function getFulltext(_tokens: TokenData[], searchContext: SearchContext, leading
             // For multi-word, join tokens with space to form exact phrase
             const titleSearchValue = tokens.join(" ");
             const exactMatchExpressions: Expression[] = [
-                new PropertyComparisonExp(searchContext, "title", "=", titleSearchValue),
+                // "word=" (not the strict "=") keeps the leading-"=" fulltext title
+                // match at word/phrase granularity, matching the content expressions
+                // below and preserving historical user-visible behavior.
+                new PropertyComparisonExp(searchContext, "title", "word=", titleSearchValue),
                 new NoteContentFulltextExp("=", { tokens, flatText: false }),
                 new NoteContentFulltextExp("=", { tokens, flatText: true })
             ];
