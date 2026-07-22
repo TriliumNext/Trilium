@@ -1,5 +1,7 @@
 "use strict";
 
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
+
 import hoistedNoteService from "../hoisted_note.js";
 import optionService from "../options.js";
 import { betterQuality, type ContentMatchQuality } from "./match_quality.js";
@@ -24,6 +26,11 @@ class SearchContext {
     /** When true, skip the two-phase fuzzy fallback and use the single-token fast path. */
     autocomplete: boolean;
     highlightedTokens: string[];
+    /**
+     * Subset of {@link highlightedTokens} that came from the `%=` (regex) operator
+     * and must be matched as regular expressions rather than literal text.
+     */
+    regexTokens: Set<string>;
     originalQuery: string;
     fulltextQuery: string;
     dbLoadNeeded: boolean;
@@ -63,6 +70,7 @@ class SearchContext {
             this.enableFuzzyMatching = true; // Default to true if option not yet initialized
         }
         this.highlightedTokens = [];
+        this.regexTokens = new Set();
         this.originalQuery = "";
         this.fulltextQuery = ""; // complete fulltext part
         // if true, becca does not have (up-to-date) information needed to process the query
@@ -79,6 +87,17 @@ class SearchContext {
     recordContentMatch(noteId: string, quality: ContentMatchQuality) {
         const existing = this.contentMatches.get(noteId);
         this.contentMatches.set(noteId, existing ? betterQuality(existing, quality) : quality);
+    }
+
+    /**
+     * Maps {@link highlightedTokens} to structured token infos, tagging each token
+     * as `regex` when it was collected from a `%=` operator and `plain` otherwise.
+     */
+    getHighlightedTokenInfos(): HighlightedTokenInfo[] {
+        return this.highlightedTokens.map((token) => ({
+            token,
+            type: this.regexTokens.has(token) ? "regex" : "plain"
+        }));
     }
 
     addError(error: string) {

@@ -90,6 +90,12 @@ class NoteContentFulltextExp extends Expression {
             if (!searchContext.highlightedTokens.includes(token)) {
                 searchContext.highlightedTokens.push(token);
             }
+
+            if (this.operator === "%=") {
+                // Regex operator: tag each token so snippet highlighting matches it
+                // as a RegExp rather than literal text.
+                searchContext.regexTokens.add(token);
+            }
         }
 
         const resultNoteSet = new NoteSet();

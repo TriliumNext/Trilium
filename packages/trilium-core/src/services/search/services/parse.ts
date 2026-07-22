@@ -286,6 +286,12 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
 
             searchContext.highlightedTokens.push(comparedValue);
 
+            if (operator === "%=") {
+                // Regex operator: the compared value is a pattern, tag it so snippet
+                // highlighting matches it as a RegExp rather than literal text.
+                searchContext.regexTokens.add(comparedValue);
+            }
+
             if (searchContext.fuzzyAttributeSearch && operator === "=") {
                 operator = "*=*";
             }

@@ -76,6 +76,31 @@ export function normalize(str: string) {
 }
 
 /**
+ * Diacritic-stripping + lowercasing normalizer that is GUARANTEED to preserve the
+ * original code-unit length, so a position found in the normalized string maps 1:1
+ * onto the original string for slicing/highlighting. This is what the search
+ * snippet/highlight index math relies on: it finds match offsets on the normalized
+ * text but inserts markers into (or slices) the original text at the same offsets.
+ *
+ * Each character (Unicode code point) is transformed individually; when the
+ * transformed result is not the same code-unit length as the source character —
+ * a bare combining mark that would vanish, or (hypothetically) a ligature that
+ * would expand — the original character is kept instead. This trades perfect
+ * folding of already-decomposed content for a hard length invariant.
+ */
+export function normalizePreservingLength(str: string) {
+    let result = "";
+    for (const char of str) {
+        const transformed = removeDiacritic(char).toLowerCase();
+        // Keep the transform only when it stays the same code-unit length as the
+        // source character, otherwise index alignment against the original breaks.
+        result += transformed.length === char.length ? transformed : char;
+    }
+
+    return result;
+}
+
+/**
  * Normalizes URL by removing trailing slashes and fixing double slashes.
  * Preserves the protocol (http://, https://) but removes trailing slashes from the rest.
  *

@@ -147,6 +147,28 @@ describe("SearchContext", () => {
         });
     });
 
+    describe("getHighlightedTokenInfos", () => {
+        it("starts with an empty regexTokens set", () => {
+            const ctx = new SearchContext();
+
+            expect(ctx.regexTokens.size).toBe(0);
+            expect(ctx.getHighlightedTokenInfos()).toEqual([]);
+        });
+
+        it("tags each highlighted token as regex or plain based on regexTokens membership", () => {
+            const ctx = new SearchContext();
+
+            ctx.highlightedTokens.push("hello", "wor.d", "world");
+            ctx.regexTokens.add("wor.d");
+
+            expect(ctx.getHighlightedTokenInfos()).toEqual([
+                { token: "hello", type: "plain" },
+                { token: "wor.d", type: "regex" },
+                { token: "world", type: "plain" }
+            ]);
+        });
+    });
+
     describe("addError / hasError / getError", () => {
         it("records the first error and ignores subsequent ones", () => {
             const ctx = new SearchContext();

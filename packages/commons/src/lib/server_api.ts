@@ -232,6 +232,16 @@ export interface SubtreeSizeResponse {
     subTreeSize: number;
 }
 
+/**
+ * A single token to highlight in search results, tagged with how it should be
+ * matched. `plain` tokens are matched literally (case-insensitively); `regex`
+ * tokens (produced by the `%=` operator) are compiled to a regular expression.
+ */
+export interface HighlightedTokenInfo {
+    token: string;
+    type: "plain" | "regex";
+}
+
 export interface SimilarNote {
     score: number;
     notePath: string[];
