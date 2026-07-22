@@ -151,6 +151,26 @@ describe("SearchResult", () => {
             expect(doubled.score).toBeCloseTo(single.score * 2);
         });
 
+        it("scores a punctuation-wrapped chunk as an exact token match (#10616)", () => {
+            const target = note("alpha");
+            rootNote.child(target);
+
+            // "(sync)" tokenizes to the word "sync", so it must score as an exact
+            // token match — identical to an unwrapped "sync" chunk — rather than a
+            // weaker contains match.
+            const wrapped = new SearchResult(["root", target.note.noteId]);
+            wrapped.addScoreForStrings(["sync"], "(sync) notes", 1, false);
+
+            const bare = new SearchResult(["root", target.note.noteId]);
+            bare.addScoreForStrings(["sync"], "sync notes", 1, false);
+
+            const contains = new SearchResult(["root", target.note.noteId]);
+            contains.addScoreForStrings(["sync"], "asynchronous", 1, false);
+
+            expect(wrapped.score).toBe(bare.score);
+            expect(wrapped.score).toBeGreaterThan(contains.score);
+        });
+
         it("does not award token score when no chunk matches", () => {
             const target = note("alpha");
             rootNote.child(target);
