@@ -242,6 +242,11 @@ export interface HighlightedTokenInfo {
     type: "plain" | "regex";
 }
 
+/** Request body for `POST /api/search-note/:noteId/result-details` (max 100 noteIds). */
+export interface SearchResultDetailsRequest {
+    noteIds: string[];
+}
+
 /**
  * Per-note snippet + highlight details for one search result, built lazily for a
  * page of results. Snippet fields are absent when there is nothing to show (e.g.
@@ -258,6 +263,14 @@ export interface SearchResultDetails {
     attributeSnippet?: string;
     highlightedAttributeSnippet?: string;
     icon: string;
+}
+
+/** Response for `POST /api/search-note/:noteId/result-details`. */
+export interface SearchResultDetailsResponse {
+    /** Requested-order details; requested ids not in the result set are omitted. */
+    results: SearchResultDetails[];
+    highlightedTokenInfos: HighlightedTokenInfo[];
+    error: string | null;
 }
 
 export interface SimilarNote {

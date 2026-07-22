@@ -1,6 +1,8 @@
+import type { SearchResultDetails, SearchResultDetailsRequest, SearchResultDetailsResponse } from "@triliumnext/commons";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
+import becca_service from "../../becca/becca_service.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import bulkActionService from "../../services/bulk_actions.js";
 import hoistedNoteService from "../../services/hoisted_note.js";
@@ -42,6 +44,61 @@ function searchAndExecute(req: Request<{ noteId: string }>) {
     const { searchResultNoteIds } = searchService.searchFromNote(note);
 
     bulkActionService.executeActionsFromNote(note, searchResultNoteIds);
+}
+
+/**
+ * Lazily builds snippet + highlight details for a page of a saved search's results.
+ * The client fetches these per visible page rather than for the whole result set.
+ *
+ * Stateless by design: the search is re-run per request. A future optimization
+ * could cache the result set in an LRU keyed by (search noteId + searchString),
+ * but that is intentionally not built here.
+ */
+function getSearchResultDetails(req: Request<{ noteId: string }>): SearchResultDetailsResponse {
+    const note = becca.getNoteOrThrow(req.params.noteId);
+
+    if (note.type !== "search") {
+        throw new ValidationError(`Note '${req.params.noteId}' is not a search note.`);
+    }
+
+    const { noteIds } = (req.body ?? {}) as Partial<SearchResultDetailsRequest>;
+    if (!Array.isArray(noteIds) || noteIds.some((noteId) => typeof noteId !== "string")) {
+        throw new ValidationError("Request body must contain a 'noteIds' string array.");
+    }
+    if (noteIds.length > 100) {
+        throw new ValidationError("A maximum of 100 noteIds can be requested at once.");
+    }
+
+    const { searchResults, searchContext } = searchService.searchFromNoteWithContext(note);
+
+    // Restrict to actual result notes so the endpoint can't be used as a snippet
+    // oracle for arbitrary notes; preserve the caller's requested order.
+    const resultByNoteId = new Map(searchResults.map((sr) => [sr.noteId, sr]));
+    const requestedResults = noteIds
+        .map((noteId) => resultByNoteId.get(noteId))
+        .filter((sr): sr is SearchResult => sr !== undefined);
+
+    // Script-based searches have no lexed query: return titles/icons, no snippets/tokens.
+    if (!searchContext) {
+        const results: SearchResultDetails[] = requestedResults.map((sr) => {
+            const { title, icon } = becca_service.getNoteTitleAndIcon(sr.noteId);
+            return {
+                noteId: sr.noteId,
+                notePath: sr.notePath,
+                noteTitle: title,
+                notePathTitle: sr.notePathTitle,
+                icon: icon ?? "bx bx-note"
+            };
+        });
+
+        return { results, highlightedTokenInfos: [], error: null };
+    }
+
+    return {
+        results: searchService.buildSearchResultDetails(requestedResults, searchContext),
+        highlightedTokenInfos: searchContext.getHighlightedTokenInfos(),
+        error: searchContext.getError()
+    };
 }
 
 function quickSearch(req: Request<{ searchString: string }>) {
@@ -132,6 +189,7 @@ function searchTemplates() {
 
 export default {
     searchFromNote,
+    getSearchResultDetails,
     searchAndExecute,
     getRelatedNotes,
     quickSearch,

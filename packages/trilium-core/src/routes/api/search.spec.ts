@@ -1,3 +1,4 @@
+import type { SearchResultDetailsResponse } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { createTextNote } from "../../test/api_fixtures";
@@ -5,6 +6,13 @@ import { CoreApiTester } from "../../test/api_tester";
 
 let api: CoreApiTester;
 const UNIQUE_TOKEN = "ZzUniqueSearchTokenQwerty";
+
+async function createSearchNote(searchString: string): Promise<string> {
+    const created = await api.post<{ noteId: string }>("/api/special-notes/search-note", {
+        body: { searchString }
+    });
+    return created.body.noteId;
+}
 
 describe("Search API (core)", () => {
     let createdNoteId: string;
@@ -97,5 +105,112 @@ describe("Search API (core)", () => {
     it("400s when executing a note that is not a search note", async () => {
         const res = await api.post("/api/search-and-execute-note/root");
         expect(res.status).toBe(400);
+    });
+
+    describe("result-details endpoint", () => {
+        it("returns snippet details in requested order with highlightedTokenInfos", async () => {
+            const token = "ZzDetailsUniqueQwerty";
+            const alpha = await createTextNote(api, {
+                title: `${token} Alpha`,
+                content: `<p>${token} shows up in the alpha body text</p>`
+            });
+            const beta = await createTextNote(api, {
+                title: `${token} Beta`,
+                content: `<p>${token} shows up in the beta body text</p>`
+            });
+            await api.post(`/api/notes/${alpha.noteId}/attributes`, {
+                body: { type: "label", name: token, value: "" }
+            });
+
+            const searchNoteId = await createSearchNote(token);
+
+            // Request in the reverse of natural order to prove requested-order preservation.
+            const res = await api.post<SearchResultDetailsResponse>(
+                `/api/search-note/${searchNoteId}/result-details`,
+                { body: { noteIds: [beta.noteId, alpha.noteId] } }
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.results.map((r) => r.noteId)).toEqual([beta.noteId, alpha.noteId]);
+            expect(res.body.error).toBeNull();
+
+            const alphaDetail = res.body.results.find((r) => r.noteId === alpha.noteId);
+            expect(alphaDetail?.noteTitle).toContain(token);
+            expect(alphaDetail?.notePath).toContain(alpha.noteId);
+            expect(alphaDetail?.icon).toBeTruthy();
+            expect(alphaDetail?.contentSnippet).toContain(token);
+            expect(alphaDetail?.highlightedContentSnippet).toContain(`<b>${token}</b>`);
+            expect(alphaDetail?.attributeSnippet).toContain(token);
+
+            expect(
+                res.body.highlightedTokenInfos.some(
+                    (t) => t.token.toLowerCase() === token.toLowerCase() && t.type === "plain"
+                )
+            ).toBe(true);
+        });
+
+        it("omits requested ids that are not in the result set", async () => {
+            const token = "ZzOmitUniqueQwerty";
+            const inScope = await createTextNote(api, { title: `${token} note`, content: `<p>${token}</p>` });
+            const outOfScope = await createTextNote(api, { title: "Unrelated note", content: "<p>nothing here</p>" });
+
+            const searchNoteId = await createSearchNote(token);
+
+            const res = await api.post<SearchResultDetailsResponse>(
+                `/api/search-note/${searchNoteId}/result-details`,
+                { body: { noteIds: [inScope.noteId, outOfScope.noteId, "nonexistentNoteId"] } }
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.results.map((r) => r.noteId)).toEqual([inScope.noteId]);
+        });
+
+        it("400s on a note that is not a search note", async () => {
+            const res = await api.post("/api/search-note/root/result-details", { body: { noteIds: [] } });
+            expect(res.status).toBe(400);
+        });
+
+        it("400s when more than 100 noteIds are requested", async () => {
+            const searchNoteId = await createSearchNote("anything");
+            const noteIds = Array.from({ length: 101 }, (_, i) => `note${i}`);
+
+            const res = await api.post(`/api/search-note/${searchNoteId}/result-details`, {
+                body: { noteIds }
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it("400s when noteIds is not a string array", async () => {
+            const searchNoteId = await createSearchNote("anything");
+
+            const res = await api.post(`/api/search-note/${searchNoteId}/result-details`, {
+                body: { noteIds: "not-an-array" }
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it("produces a regex token info and a match-centered snippet for a %= query", async () => {
+            const marker = "ZzRegexHaystackQwerty";
+            const target = await createTextNote(api, {
+                title: "Regex target",
+                content: `<p>${"padding words ".repeat(30)}${marker}${" trailing words".repeat(30)}</p>`
+            });
+
+            const searchNoteId = await createSearchNote(`note.content %= '${marker}'`);
+
+            const res = await api.post<SearchResultDetailsResponse>(
+                `/api/search-note/${searchNoteId}/result-details`,
+                { body: { noteIds: [target.noteId] } }
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.highlightedTokenInfos.some((t) => t.type === "regex")).toBe(true);
+
+            const detail = res.body.results.find((r) => r.noteId === target.noteId);
+            expect(detail?.contentSnippet).toContain(marker);
+            expect(detail?.highlightedContentSnippet).toContain(`<b>${marker}</b>`);
+            // Match-centered: the padding-heavy head is trimmed to an ellipsis, not shown from index 0.
+            expect(detail?.contentSnippet?.startsWith("padding words padding")).toBe(false);
+        });
     });
 });
