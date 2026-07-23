@@ -32,13 +32,17 @@ RUN rm -rf \
     groupadd -g ${GID} ${USER} && \
     useradd -u ${UID} -g ${USER} -s /bin/sh -m ${USER}
 
+# Create the app directory up front so it belongs to the user; WORKDIR alone would create it
+# as root.
+RUN mkdir -p /home/${USER}/app && chown ${USER}:${USER} /home/${USER}/app
 WORKDIR /home/${USER}/app
-COPY ./dist /home/${USER}/app
+# Ownership is set as part of each COPY. A trailing `chown -R` would instead rewrite every file
+# into an extra layer, roughly doubling the image.
+COPY --chown=${USER}:${USER} ./dist /home/${USER}/app
 # Also copy the rootless entrypoint script
-COPY rootless-entrypoint.sh /home/${USER}/app/
+COPY --chown=${USER}:${USER} rootless-entrypoint.sh /home/${USER}/app/
 RUN rm -rf /home/${USER}/app/node_modules/better-sqlite3
-COPY --from=builder /usr/src/app/node_modules/better-sqlite3 /home/${USER}/app/node_modules/better-sqlite3
-RUN chown -R ${USER}:${USER} /home/${USER}
+COPY --from=builder --chown=${USER}:${USER} /usr/src/app/node_modules/better-sqlite3 /home/${USER}/app/node_modules/better-sqlite3
 
 # Configure container
 USER ${USER}
@@ -53,4 +57,4 @@ ENV TRILIUM_DATA_DIR=/home/${USER}/trilium-data
 # Use the entrypoint script
 CMD [ "bash", "./rootless-entrypoint.sh" ]
 
-HEALTHCHECK --start-period=10s CMD node /home/${USER}/app/docker_healthcheck.js
+HEALTHCHECK --start-period=10s CMD node /home/${USER}/app/docker_healthcheck.cjs

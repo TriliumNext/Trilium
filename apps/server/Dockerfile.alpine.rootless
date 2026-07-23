@@ -1,4 +1,8 @@
-FROM node:24.18.0-alpine AS builder
+# Alpine is pinned to 3.23 deliberately: musl 1.2.6 (Alpine 3.24+) issues pwritev2, which hosts
+# with libseccomp < 2.3.3 deny with EPERM instead of ENOSYS. musl only falls back on ENOSYS, so
+# SQLite fails with "disk I/O error" there. Alpine 3.23 ships musl 1.2.5 and is supported until
+# 2027-11-01. See https://github.com/TriliumNext/Trilium/issues/10627
+FROM node:24.18.0-alpine3.23 AS builder
 RUN corepack enable
 
 # Install build tools required to compile native addons (e.g. better-sqlite3) on ARM
@@ -10,7 +14,7 @@ COPY ./docker/package.json ./docker/pnpm-workspace.yaml /usr/src/app/
 # We have to use --no-frozen-lockfile due to CKEditor patches
 RUN pnpm install --no-frozen-lockfile --prod && pnpm rebuild
 
-FROM node:24.18.0-alpine
+FROM node:24.18.0-alpine3.23
 # Create a non-root user with configurable UID/GID
 ARG USER=trilium
 ARG UID=1001
@@ -26,13 +30,17 @@ RUN apk add --no-cache dumb-init && \
     addgroup -g ${GID} ${USER} && \
     adduser -u ${UID} -G ${USER} -s /bin/sh -D -h /home/${USER} ${USER}
 
+# Create the app directory up front so it belongs to the user; WORKDIR alone would create it
+# as root.
+RUN mkdir -p /home/${USER}/app && chown ${USER}:${USER} /home/${USER}/app
 WORKDIR /home/${USER}/app
-COPY ./dist /home/${USER}/app
+# Ownership is set as part of each COPY. A trailing `chown -R` would instead rewrite every file
+# into an extra layer, roughly doubling the image.
+COPY --chown=${USER}:${USER} ./dist /home/${USER}/app
 # Also copy the rootless entrypoint script
-COPY rootless-entrypoint.sh /home/${USER}/app/
+COPY --chown=${USER}:${USER} rootless-entrypoint.sh /home/${USER}/app/
 RUN rm -rf /home/${USER}/app/node_modules/better-sqlite3
-COPY --from=builder /usr/src/app/node_modules/better-sqlite3 /home/${USER}/app/node_modules/better-sqlite3
-RUN chown -R ${USER}:${USER} /home/${USER}
+COPY --from=builder --chown=${USER}:${USER} /usr/src/app/node_modules/better-sqlite3 /home/${USER}/app/node_modules/better-sqlite3
 
 # Configure container
 USER ${USER}
@@ -50,4 +58,4 @@ ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 # Use the entrypoint script
 CMD [ "bash", "./rootless-entrypoint.sh" ]
 
-HEALTHCHECK --start-period=10s CMD node /home/${USER}/app/docker_healthcheck.js
+HEALTHCHECK --start-period=10s CMD node /home/${USER}/app/docker_healthcheck.cjs

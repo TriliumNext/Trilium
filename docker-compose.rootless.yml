@@ -8,7 +8,7 @@ services:
   trilium:
     # Optionally, replace `latest` with a version tag like `v0.90.3`
     # Using `latest` may cause unintended updates to the container
-    image: triliumnext/notes:rootless
+    image: triliumnext/trilium:rootless
     restart: unless-stopped
     environment:
       - TRILIUM_DATA_DIR=/home/trilium/trilium-data
