@@ -791,8 +791,8 @@ importers:
         specifier: 1.1.1
         version: 1.1.1
       officeparser:
-        specifier: 7.3.0
-        version: 7.3.0(encoding@0.1.13)(supports-color@10.2.2)
+        specifier: 7.4.0
+        version: 7.4.0(encoding@0.1.13)(supports-color@10.2.2)
       openid-client:
         specifier: 6.8.4
         version: 6.8.4
@@ -2629,7 +2629,7 @@ packages:
     engines: {node: '>=22.12.0'}
 
   '@electron/node-gyp@https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
+    resolution: {gitHosted: true, integrity: sha512-MXgzlTDEEndJB3TBbvd5uFQO/8gaINo1Hfen8vef5rq/VHVPeB63uuv/uO5+8GFsAJ/rauu6XB79S6K4+aXc+w==, tarball: https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2}
     version: 10.2.0-electron.1
     engines: {node: '>=12.13.0'}
     hasBin: true
@@ -11140,8 +11140,8 @@ packages:
   ofetch@1.5.1:
     resolution: {integrity: sha512-2W4oUZlVaqAPAil6FUg/difl6YhqhUR7x2eZY4bQCko22UXg3hptq9KLQdqFClV+Wu85UX7hNtdGTngi/1BxcA==}
 
-  officeparser@7.3.0:
-    resolution: {integrity: sha512-OfW388kpvh9Gh/2afUjJI+yipPNcJI1oYqQcZI2bw3LORf6pvu3BKpq5c2glDChtwZbK8dEL6S7YjoKIKL0SPg==}
+  officeparser@7.4.0:
+    resolution: {integrity: sha512-32l/wEJhnpCQ58qK6y79Fk6LxL2NE5/5HEJKEWTv/5J1D/edkMEsf/nkHVVNX+9ctbaeU/QPtQm/Mrr5zJ35Hw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -26070,7 +26070,7 @@ snapshots:
       node-fetch-native: 1.6.7
       ufo: 1.6.4
 
-  officeparser@7.3.0(encoding@0.1.13)(supports-color@10.2.2):
+  officeparser@7.4.0(encoding@0.1.13)(supports-color@10.2.2):
     dependencies:
       '@xmldom/xmldom': 0.9.10
       fflate: 0.8.3
